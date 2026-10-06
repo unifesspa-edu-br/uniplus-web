@@ -85,7 +85,12 @@ describe('TiposBancaApi', () => {
     const promise = firstValueFrom(
       api.atualizar(
         ID,
-        { id: ID, nome: 'Banca de Entrevista (revisada)', faseTipica: 'Avaliação', descricao: null },
+        {
+          id: ID,
+          nome: 'Banca de Entrevista (revisada)',
+          faseTipica: 'Avaliação',
+          descricao: null,
+        },
         withIdempotencyKey('k'),
       ),
     );

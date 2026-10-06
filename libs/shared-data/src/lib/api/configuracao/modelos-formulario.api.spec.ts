@@ -3,7 +3,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Observable, firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { VENDOR_MIME_TOKEN, apiResultInterceptor, withIdempotencyKey } from '@uniplus/shared-core/http';
+import {
+  VENDOR_MIME_TOKEN,
+  apiResultInterceptor,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/http';
 import { ModelosFormularioApi } from './modelos-formulario.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -49,18 +53,37 @@ describe('ModelosFormularioApi', () => {
   it('obter() pede o media type do modelo, sem o qual a API responde 406', async () => {
     const promise = firstValueFrom(api.obter(ID));
     const req = controller.expectOne(`${ADMIN}/${ID}`);
-    expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({ resource: 'modelo-formulario', version: 1 });
+    expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({
+      resource: 'modelo-formulario',
+      version: 1,
+    });
     req.flush({});
     await promise;
   });
 
   it('preVisualizar() pede o media type da pré-visualização e envia as respostas simuladas', async () => {
-    const promise = firstValueFrom(api.preVisualizar(ID, { respostas: { IDADE: 18 }, etapasConcluidas: [], pressupostos: null }));
+    const promise = firstValueFrom(
+      api.preVisualizar(ID, { respostas: { IDADE: 18 }, etapasConcluidas: [], pressupostos: null }),
+    );
     const req = controller.expectOne(`${ADMIN}/${ID}/pre-visualizacao`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({ resource: 'pre-visualizacao-modelo-formulario', version: 1 });
+    expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({
+      resource: 'pre-visualizacao-modelo-formulario',
+      version: 1,
+    });
     expect(req.request.body.respostas).toEqual({ IDADE: 18 });
     req.flush({ itens: [], termos: [] });
+    await promise;
+  });
+
+  it('obterRenderizavel() pede o formulário v2 do modelo', async () => {
+    const promise = firstValueFrom(api.obterRenderizavel(ID));
+    const req = controller.expectOne(`${ADMIN}/${ID}/renderizavel`);
+    expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({
+      resource: 'formulario',
+      version: 2,
+    });
+    req.flush({});
     await promise;
   });
 });

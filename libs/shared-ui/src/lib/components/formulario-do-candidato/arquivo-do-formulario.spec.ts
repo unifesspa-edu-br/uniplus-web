@@ -65,6 +65,28 @@ describe('arquivo importado no simulador', () => {
     ).toMatchObject({ valido: false, caminho: 'etapasConcluidas' });
   });
 
+  it('os pressupostos do formulário importado são conferidos, com o caminho', () => {
+    const base = { regras: {}, etapas: [], termos: [], grupos: [], fatosColetados: [] };
+
+    expect(
+      lerArquivoDoFormulario(JSON.stringify({ ...base, pressupostos: { TRABALHA: true } })),
+    ).toMatchObject({
+      valido: false,
+      caminho: 'pressupostos',
+    });
+    expect(
+      lerArquivoDoFormulario(
+        JSON.stringify({
+          ...base,
+          pressupostos: [{ fatoCodigo: 'IDADE', calculadoDe: 'DATA_NASCIMENTO' }],
+        }),
+      ),
+    ).toMatchObject({
+      valido: false,
+      caminho: 'pressupostos[0].calculadoDe',
+    });
+  });
+
   it('o termo de um caso aparece no bloco de revisão e aceite, que o caso não declara', () => {
     const caso = {
       regras: { etapas: [], termos: [{ codigo: 'VERACIDADE', obrigatoriedade: 'SEMPRE' }] },

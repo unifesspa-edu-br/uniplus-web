@@ -10,7 +10,12 @@ import {
   isApiOk,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
-import { AtualizarTipoDocumentoCommand, CriarTipoDocumentoCommand, TipoDocumentoDto, TiposDocumentoApi } from './tipos-documento.api';
+import {
+  AtualizarTipoDocumentoCommand,
+  CriarTipoDocumentoCommand,
+  TipoDocumentoDto,
+  TiposDocumentoApi,
+} from './tipos-documento.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';

@@ -38,10 +38,13 @@ export class CampiApi {
     } else {
       params = params.set('limit', String(query.limit ?? 100));
     }
-    return this.http.get<ApiResult<readonly CampusDto[]>>(`${this.basePath}/api/configuracao/campi`, {
-      params,
-      context: withVendorMime('campus', 1),
-    });
+    return this.http.get<ApiResult<readonly CampusDto[]>>(
+      `${this.basePath}/api/configuracao/campi`,
+      {
+        params,
+        context: withVendorMime('campus', 1),
+      },
+    );
   }
 
   /** GET `/api/configuracao/campi/{id}` — detalhe de um Campus. */
@@ -54,10 +57,14 @@ export class CampiApi {
 
   /** POST `/api/configuracao/admin/campi` — cria um Campus. Idempotency-Key obrigatório (ADR-0027). */
   criar(command: CriarCampusCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(`${this.basePath}/api/configuracao/admin/campi`, command, {
-      context,
-      headers: new HttpHeaders({ Accept: 'application/json' }),
-    });
+    return this.http.post<ApiResult<string>>(
+      `${this.basePath}/api/configuracao/admin/campi`,
+      command,
+      {
+        context,
+        headers: new HttpHeaders({ Accept: 'application/json' }),
+      },
+    );
   }
 
   /** PUT `/api/configuracao/admin/campi/{id}` — atualiza um Campus. */

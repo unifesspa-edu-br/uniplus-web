@@ -59,10 +59,7 @@ export class PrecedenciasFaseApi {
   }
 
   /** POST `/api/configuracao/admin/precedencias-fase` — cria. Idempotency-Key obrigatório. */
-  criar(
-    command: CriarPrecedenciaFaseCommand,
-    context: HttpContext,
-  ): Observable<ApiResult<string>> {
+  criar(command: CriarPrecedenciaFaseCommand, context: HttpContext): Observable<ApiResult<string>> {
     return this.http.post<ApiResult<string>>(
       `${this.basePath}/api/configuracao/admin/precedencias-fase`,
       command,

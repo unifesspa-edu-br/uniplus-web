@@ -7,8 +7,10 @@ import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type CondicaoAtendimentoDto = components['schemas']['CondicaoAtendimentoDto'];
-export type CriarCondicaoAtendimentoCommand = components['schemas']['CriarCondicaoAtendimentoCommand'];
-export type AtualizarCondicaoAtendimentoCommand = components['schemas']['AtualizarCondicaoAtendimentoCommand'];
+export type CriarCondicaoAtendimentoCommand =
+  components['schemas']['CriarCondicaoAtendimentoCommand'];
+export type AtualizarCondicaoAtendimentoCommand =
+  components['schemas']['AtualizarCondicaoAtendimentoCommand'];
 
 /** Filtro de listagem (cursor pagination, ADR-0026). */
 export interface CondicoesAtendimentoQuery {
@@ -23,7 +25,9 @@ export class CondicoesAtendimentoApi {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
   /** GET `/api/configuracao/condicoes-atendimento` — lista (vivas) por cursor. */
-  listar(query: CondicoesAtendimentoQuery = {}): Observable<ApiResult<readonly CondicaoAtendimentoDto[]>> {
+  listar(
+    query: CondicoesAtendimentoQuery = {},
+  ): Observable<ApiResult<readonly CondicaoAtendimentoDto[]>> {
     let params = new HttpParams();
     if (query.cursor !== undefined) {
       params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
@@ -45,7 +49,10 @@ export class CondicoesAtendimentoApi {
   }
 
   /** POST `/api/configuracao/admin/condicoes-atendimento` — cria. Idempotency-Key (ADR-0027). */
-  criar(command: CriarCondicaoAtendimentoCommand, context: HttpContext): Observable<ApiResult<string>> {
+  criar(
+    command: CriarCondicaoAtendimentoCommand,
+    context: HttpContext,
+  ): Observable<ApiResult<string>> {
     return this.http.post<ApiResult<string>>(
       `${this.basePath}/api/configuracao/admin/condicoes-atendimento`,
       command,

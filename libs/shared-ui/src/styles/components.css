@@ -641,6 +641,25 @@ ui-editor-de-condicoes {
   color: var(--text-heading);
   font-weight: var(--weight-semibold);
 }
+/* Os pressupostos da simulação: os fatos de fora do formulário, informados antes de responder. */
+.pressupostos-simulacao {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  min-inline-size: 0;
+}
+.pressupostos-simulacao__titulo {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+.pressupostos-simulacao__item {
+  display: grid;
+  gap: var(--space-2);
+  max-inline-size: 40rem;
+}
 .simulador-formulario__arquivo {
   max-inline-size: 40rem;
   margin-block-end: var(--space-4);

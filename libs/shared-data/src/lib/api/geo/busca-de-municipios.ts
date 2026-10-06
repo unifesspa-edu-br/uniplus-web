@@ -11,7 +11,11 @@ const MUNICIPIOS_POR_BUSCA = 20;
  * candidato recebem por injeção; com a UF, o Geo devolve só os municípios dela.
  * Fábrica de provider (`useFactory`): roda no contexto de injeção de quem a provê.
  */
-export function buscaDeMunicipiosNoGeo(): (termo: string, uf?: string) => Observable<ApiResult<readonly CidadeResumoDto[]>> {
+export function buscaDeMunicipiosNoGeo(): (
+  termo: string,
+  uf?: string,
+) => Observable<ApiResult<readonly CidadeResumoDto[]>> {
   const geo = inject(GeoApi);
-  return (termo, uf) => geo.listarCidades({ q: termo, limit: MUNICIPIOS_POR_BUSCA, ...(uf ? { uf } : {}) });
+  return (termo, uf) =>
+    geo.listarCidades({ q: termo, limit: MUNICIPIOS_POR_BUSCA, ...(uf ? { uf } : {}) });
 }

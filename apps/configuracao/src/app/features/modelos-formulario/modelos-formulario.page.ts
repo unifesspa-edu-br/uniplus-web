@@ -1,5 +1,14 @@
 import { HttpParams } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, linkedSignal, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -28,7 +37,11 @@ import {
   ModelosFormularioApi,
   TipoProcessoDto,
 } from '@uniplus/shared-data/configuracao';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO, sugerirCodigoDeCadastro } from '@uniplus/shared-utils';
+import {
+  CODIGO_CADASTRO_FORMATO,
+  CODIGO_CADASTRO_TAMANHO_MAXIMO,
+  sugerirCodigoDeCadastro,
+} from '@uniplus/shared-utils';
 import {
   AlertComponent,
   DrawerComponent,
@@ -85,8 +98,9 @@ type CampoDaCriacao = keyof CriacaoForm;
       <div class="page-header__content">
         <h1 class="page-header__title">Modelo de Formulário</h1>
         <p class="page-header__desc">
-          Formulários prontos por tipo de processo e finalidade. O processo parte de um modelo e recebe uma
-          cópia, que edita à vontade; mudar o modelo depois não muda o processo. UNI-REQ-0144.
+          Formulários prontos por tipo de processo e finalidade. O processo parte de um modelo e
+          recebe uma cópia, que edita à vontade; mudar o modelo depois não muda o processo.
+          UNI-REQ-0144.
         </p>
       </div>
     </div>
@@ -95,7 +109,12 @@ type CampoDaCriacao = keyof CriacaoForm;
       <ui-alert variant="danger" heading="Não foi possível carregar os modelos">
         {{ errorMessage() }}
         <div class="cfg-list__retry">
-          <button type="button" class="btn btn--secondary btn--sm" [disabled]="loading()" (click)="tentarNovamente()">
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [disabled]="loading()"
+            (click)="tentarNovamente()"
+          >
             Tentar novamente
           </button>
         </div>
@@ -110,9 +129,17 @@ type CampoDaCriacao = keyof CriacaoForm;
     >
       <ng-container uiFilterBarSecondary>
         <span class="u-eyebrow">Finalidade</span>
-        <ui-filter-chips [options]="finalidadeChips" [(selected)]="filtroFinalidade" ariaLabel="Filtrar por finalidade" />
+        <ui-filter-chips
+          [options]="finalidadeChips"
+          [(selected)]="filtroFinalidade"
+          ariaLabel="Filtrar por finalidade"
+        />
         <span class="u-eyebrow">Situação</span>
-        <ui-filter-chips [options]="situacaoChips" [(selected)]="filtroSituacao" ariaLabel="Filtrar por situação" />
+        <ui-filter-chips
+          [options]="situacaoChips"
+          [(selected)]="filtroSituacao"
+          ariaLabel="Filtrar por situação"
+        />
         <label class="field">
           <span class="u-eyebrow">Tipo de processo</span>
           <select class="select" [value]="filtroTipo()" (change)="filtroTipo.set(valorDe($event))">
@@ -142,7 +169,9 @@ type CampoDaCriacao = keyof CriacaoForm;
       @if (modelosBuscados().length > 0) {
         <div class="table-responsive">
           <table>
-            <caption class="sr-only">Modelos de formulário, com finalidade, tipo de processo e situação</caption>
+            <caption class="sr-only">
+              Modelos de formulário, com finalidade, tipo de processo e situação
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
@@ -156,7 +185,9 @@ type CampoDaCriacao = keyof CriacaoForm;
             <tbody>
               @for (modelo of modelosBuscados(); track modelo.id) {
                 <tr>
-                  <td data-label="Código"><code>{{ modelo.codigo }}</code></td>
+                  <td data-label="Código">
+                    <code>{{ modelo.codigo }}</code>
+                  </td>
                   <td data-label="Nome">{{ modelo.nome }}</td>
                   <td data-label="Finalidade">{{ rotuloDaFinalidade(modelo.finalidade) }}</td>
                   <td data-label="Tipo de processo">
@@ -167,7 +198,9 @@ type CampoDaCriacao = keyof CriacaoForm;
                     }
                   </td>
                   <td data-label="Situação">
-                    <ui-tag [variant]="modelo.ativo ? 'success' : 'neutral'">{{ modelo.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
+                    <ui-tag [variant]="modelo.ativo ? 'success' : 'neutral'">{{
+                      modelo.ativo ? 'Ativo' : 'Desativado'
+                    }}</ui-tag>
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
@@ -200,7 +233,10 @@ type CampoDaCriacao = keyof CriacaoForm;
           </table>
         </div>
       } @else if (!loading() && !errorMessage()) {
-        <ui-empty-state heading="Nenhum modelo encontrado" description="Ajuste a busca ou os filtros, ou crie o primeiro modelo." />
+        <ui-empty-state
+          heading="Nenhum modelo encontrado"
+          description="Ajuste a busca ou os filtros, ou crie o primeiro modelo."
+        />
       }
 
       @if (prevCursor() !== null || nextCursor() !== null) {
@@ -216,20 +252,41 @@ type CampoDaCriacao = keyof CriacaoForm;
       }
     </section>
 
-    <ui-drawer class="cfg-form-drawer" [(visible)]="drawerAberto" heading="Novo modelo de formulário" ariaLabel="Novo modelo de formulário" position="right">
+    <ui-drawer
+      class="cfg-form-drawer"
+      [(visible)]="drawerAberto"
+      heading="Novo modelo de formulário"
+      ariaLabel="Novo modelo de formulário"
+      position="right"
+    >
       @if (drawerAberto()) {
-        <form [formGroup]="form" id="cfg-modelo-criacao" class="cfg-form" (ngSubmit)="criar()" novalidate>
+        <form
+          [formGroup]="form"
+          id="cfg-modelo-criacao"
+          class="cfg-form"
+          (ngSubmit)="criar()"
+          novalidate
+        >
           <ui-alert variant="info" heading="O modelo nasce desativado" [dynamic]="false">
-            Monte o formulário com calma: o modelo só é oferecido a processos novos depois de ativado na
-            lista.
+            Monte o formulário com calma: o modelo só é oferecido a processos novos depois de
+            ativado na lista.
           </ui-alert>
           @if (erroDaCriacao()) {
-            <ui-alert variant="danger" heading="Não foi possível criar o modelo">{{ erroDaCriacao() }}</ui-alert>
+            <ui-alert variant="danger" heading="Não foi possível criar o modelo">{{
+              erroDaCriacao()
+            }}</ui-alert>
           }
 
           <label class="field" [class.is-error]="erro('nome')">
             <span class="field__label is-required">Nome</span>
-            <input class="input" type="text" formControlName="nome" maxlength="200" [attr.aria-invalid]="erro('nome') ? 'true' : null" [attr.aria-describedby]="erro('nome') ? 'cfg-modelo-nome-erro' : null" />
+            <input
+              class="input"
+              type="text"
+              formControlName="nome"
+              maxlength="200"
+              [attr.aria-invalid]="erro('nome') ? 'true' : null"
+              [attr.aria-describedby]="erro('nome') ? 'cfg-modelo-nome-erro' : null"
+            />
             @if (erro('nome')) {
               <span class="field__error" id="cfg-modelo-nome-erro">{{ erro('nome') }}</span>
             }
@@ -237,8 +294,16 @@ type CampoDaCriacao = keyof CriacaoForm;
 
           <label class="field" [class.is-error]="erro('codigo')">
             <span class="field__label is-required">Código</span>
-            <input class="input cfg-input-uppercase" type="text" formControlName="codigo" [attr.aria-invalid]="erro('codigo') ? 'true' : null" aria-describedby="cfg-modelo-codigo-nota cfg-modelo-codigo-erro" />
-            <span class="field__hint" id="cfg-modelo-codigo-nota">Caixa alta, com letras, números e sublinhado. Não muda depois de criado.</span>
+            <input
+              class="input cfg-input-uppercase"
+              type="text"
+              formControlName="codigo"
+              [attr.aria-invalid]="erro('codigo') ? 'true' : null"
+              aria-describedby="cfg-modelo-codigo-nota cfg-modelo-codigo-erro"
+            />
+            <span class="field__hint" id="cfg-modelo-codigo-nota"
+              >Caixa alta, com letras, números e sublinhado. Não muda depois de criado.</span
+            >
             @if (erro('codigo')) {
               <span class="field__error" id="cfg-modelo-codigo-erro">{{ erro('codigo') }}</span>
             }
@@ -246,43 +311,79 @@ type CampoDaCriacao = keyof CriacaoForm;
 
           <label class="field" [class.is-error]="erro('finalidade')">
             <span class="field__label is-required">Finalidade</span>
-            <select class="select" formControlName="finalidade" [attr.aria-invalid]="erro('finalidade') ? 'true' : null" [attr.aria-describedby]="erro('finalidade') ? 'cfg-modelo-finalidade-erro' : null">
+            <select
+              class="select"
+              formControlName="finalidade"
+              [attr.aria-invalid]="erro('finalidade') ? 'true' : null"
+              [attr.aria-describedby]="erro('finalidade') ? 'cfg-modelo-finalidade-erro' : null"
+            >
               <option value="">Escolha a finalidade</option>
               @for (finalidade of finalidades; track finalidade.valor) {
                 <option [value]="finalidade.valor">{{ finalidade.rotulo }}</option>
               }
             </select>
             @if (erro('finalidade')) {
-              <span class="field__error" id="cfg-modelo-finalidade-erro">{{ erro('finalidade') }}</span>
+              <span class="field__error" id="cfg-modelo-finalidade-erro">{{
+                erro('finalidade')
+              }}</span>
             }
           </label>
 
           <label class="field" [class.is-error]="erro('tipoProcessoCodigo')">
             <span class="field__label">Tipo de processo</span>
-            <select class="select" formControlName="tipoProcessoCodigo" [attr.aria-invalid]="erro('tipoProcessoCodigo') ? 'true' : null" aria-describedby="cfg-modelo-tipo-nota cfg-modelo-tipo-erro">
+            <select
+              class="select"
+              formControlName="tipoProcessoCodigo"
+              [attr.aria-invalid]="erro('tipoProcessoCodigo') ? 'true' : null"
+              aria-describedby="cfg-modelo-tipo-nota cfg-modelo-tipo-erro"
+            >
               <option value="">Qualquer tipo de processo</option>
               @for (tipo of tiposDeProcesso(); track tipo.codigo) {
                 <option [value]="tipo.codigo">{{ tipo.nome }}</option>
               }
             </select>
-            <span class="field__hint" id="cfg-modelo-tipo-nota">O modelo só é oferecido a processos do tipo escolhido.</span>
+            <span class="field__hint" id="cfg-modelo-tipo-nota"
+              >O modelo só é oferecido a processos do tipo escolhido.</span
+            >
             @if (erro('tipoProcessoCodigo')) {
-              <span class="field__error" id="cfg-modelo-tipo-erro">{{ erro('tipoProcessoCodigo') }}</span>
+              <span class="field__error" id="cfg-modelo-tipo-erro">{{
+                erro('tipoProcessoCodigo')
+              }}</span>
             }
           </label>
 
           <label class="field" [class.is-error]="erro('descricao')">
             <span class="field__label">Descrição</span>
-            <textarea class="textarea" formControlName="descricao" rows="3" maxlength="1000" [attr.aria-invalid]="erro('descricao') ? 'true' : null" [attr.aria-describedby]="erro('descricao') ? 'cfg-modelo-descricao-erro' : null"></textarea>
+            <textarea
+              class="textarea"
+              formControlName="descricao"
+              rows="3"
+              maxlength="1000"
+              [attr.aria-invalid]="erro('descricao') ? 'true' : null"
+              [attr.aria-describedby]="erro('descricao') ? 'cfg-modelo-descricao-erro' : null"
+            ></textarea>
             @if (erro('descricao')) {
-              <span class="field__error" id="cfg-modelo-descricao-erro">{{ erro('descricao') }}</span>
+              <span class="field__error" id="cfg-modelo-descricao-erro">{{
+                erro('descricao')
+              }}</span>
             }
           </label>
         </form>
 
         <div class="cfg-form-footer">
-          <button type="button" class="btn btn--tertiary btn--rect" (click)="drawerAberto.set(false)">Cancelar</button>
-          <button type="submit" form="cfg-modelo-criacao" class="btn btn--primary" [disabled]="salvando()">
+          <button
+            type="button"
+            class="btn btn--tertiary btn--rect"
+            (click)="drawerAberto.set(false)"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="cfg-modelo-criacao"
+            class="btn btn--primary"
+            [disabled]="salvando()"
+          >
             @if (salvando()) {
               <ui-spinner size="sm" />
             }
@@ -319,7 +420,8 @@ export class ModelosFormularioPage {
   protected readonly filtroTipo = signal('');
   /** O cursor pertence ao filtro com que foi emitido: trocar o filtro volta à primeira página. */
   private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
-    source: () => JSON.stringify([this.filtroFinalidade(), this.filtroSituacao(), this.filtroTipo()]),
+    source: () =>
+      JSON.stringify([this.filtroFinalidade(), this.filtroSituacao(), this.filtroTipo()]),
     computation: () => undefined,
   });
 
@@ -368,7 +470,8 @@ export class ModelosFormularioPage {
       const atual = previous?.value ?? { prev: null, next: null };
       if (envelope === undefined) return atual;
       // A falha na primeira página do filtro novo não pode deixar o cursor do filtro anterior no paginador.
-      if (!envelope.ok) return untracked(() => this.pagina() === undefined) ? { prev: null, next: null } : atual;
+      if (!envelope.ok)
+        return untracked(() => this.pagina() === undefined) ? { prev: null, next: null } : atual;
       const link = untracked(() => this.lista.headers()?.get('Link') ?? null);
       return { prev: extractPrevCursor(link), next: extractNextCursor(link) };
     },
@@ -384,7 +487,9 @@ export class ModelosFormularioPage {
     return termo.length === 0
       ? modelos
       : modelos.filter(
-          (modelo) => modelo.codigo.toLocaleLowerCase('pt-BR').includes(termo) || modelo.nome.toLocaleLowerCase('pt-BR').includes(termo),
+          (modelo) =>
+            modelo.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
+            modelo.nome.toLocaleLowerCase('pt-BR').includes(termo),
         );
   });
 
@@ -398,17 +503,28 @@ export class ModelosFormularioPage {
   protected readonly form = new FormGroup<CriacaoForm>({
     codigo: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO), Validators.pattern(CODIGO_CADASTRO_FORMATO)],
+      validators: [
+        Validators.required,
+        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
+        Validators.pattern(CODIGO_CADASTRO_FORMATO),
+      ],
     }),
-    nome: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
+    nome: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(200)],
+    }),
     descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
     finalidade: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     tipoProcessoCodigo: new FormControl('', { nonNullable: true }),
   });
 
   constructor() {
-    this.form.controls.nome.valueChanges.pipe(takeUntilDestroyed()).subscribe((nome) => this.sugerirCodigo(nome));
-    this.form.controls.codigo.valueChanges.pipe(takeUntilDestroyed()).subscribe((codigo) => this.normalizarCaixaDoCodigo(codigo));
+    this.form.controls.nome.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((nome) => this.sugerirCodigo(nome));
+    this.form.controls.codigo.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((codigo) => this.normalizarCaixaDoCodigo(codigo));
   }
 
   protected valorDe(evento: Event): string {
@@ -487,7 +603,8 @@ export class ModelosFormularioPage {
     const backend = controle.errors['backend'] as { message: string } | undefined;
     if (backend) return backend.message;
     if (controle.errors['required']) return 'Campo obrigatório.';
-    if (controle.errors['pattern']) return 'Use caixa alta, começando por letra, com letras, números e sublinhado.';
+    if (controle.errors['pattern'])
+      return 'Use caixa alta, começando por letra, com letras, números e sublinhado.';
     if (controle.errors['maxlength']) return 'Valor acima do tamanho permitido.';
     return 'Valor inválido.';
   }
@@ -498,22 +615,30 @@ export class ModelosFormularioPage {
 
   protected proximaPagina(): void {
     const proximo = this.nextCursor();
-    if (proximo !== null && !this.loading()) this.pagina.set({ cursor: proximo, direction: 'next' });
+    if (proximo !== null && !this.loading())
+      this.pagina.set({ cursor: proximo, direction: 'next' });
   }
 
   protected paginaAnterior(): void {
     const anterior = this.prevCursor();
-    if (anterior !== null && !this.loading()) this.pagina.set({ cursor: anterior, direction: 'prev' });
+    if (anterior !== null && !this.loading())
+      this.pagina.set({ cursor: anterior, direction: 'prev' });
   }
 
-  private aoTrocarSituacao(resultado: ApiResult<void>, mensagem: string, modelo: ModeloFormularioView): void {
+  private aoTrocarSituacao(
+    resultado: ApiResult<void>,
+    mensagem: string,
+    modelo: ModeloFormularioView,
+  ): void {
     this.emAndamento.set(null);
     if (resultado.ok) {
       this.notifications.success(mensagem, modelo.codigo);
       this.lista.reload();
       return;
     }
-    this.notifications.errorFromProblem(resultado.problem, { title: this.problemI18n.resolve(resultado.problem).title });
+    this.notifications.errorFromProblem(resultado.problem, {
+      title: this.problemI18n.resolve(resultado.problem).title,
+    });
   }
 
   private montarParams(): HttpParams {
@@ -560,7 +685,10 @@ export class ModelosFormularioPage {
   private normalizarCaixaDoCodigo(codigo: string): void {
     const emCaixaAlta = codigo.toLocaleUpperCase('pt-BR');
     if (emCaixaAlta !== codigo) {
-      this.form.controls.codigo.setValue(emCaixaAlta, { emitEvent: false, emitModelToViewChange: false });
+      this.form.controls.codigo.setValue(emCaixaAlta, {
+        emitEvent: false,
+        emitModelToViewChange: false,
+      });
     }
   }
 
@@ -575,7 +703,17 @@ export class ModelosFormularioPage {
 
 /** O campo do drawer a que a recusa se refere, pelo último segmento; nulo quando é do conteúdo. */
 function campoDaRecusa(campo: string): CampoDaCriacao | null {
-  const ultimo = (campo.split('.').at(-1) ?? campo).replace(/^./u, (letra) => letra.toLocaleLowerCase('pt-BR'));
-  const campos: readonly CampoDaCriacao[] = ['codigo', 'nome', 'descricao', 'finalidade', 'tipoProcessoCodigo'];
-  return campos.includes(ultimo as CampoDaCriacao) && !/conteudo/iu.test(campo) ? (ultimo as CampoDaCriacao) : null;
+  const ultimo = (campo.split('.').at(-1) ?? campo).replace(/^./u, (letra) =>
+    letra.toLocaleLowerCase('pt-BR'),
+  );
+  const campos: readonly CampoDaCriacao[] = [
+    'codigo',
+    'nome',
+    'descricao',
+    'finalidade',
+    'tipoProcessoCodigo',
+  ];
+  return campos.includes(ultimo as CampoDaCriacao) && !/conteudo/iu.test(campo)
+    ? (ultimo as CampoDaCriacao)
+    : null;
 }

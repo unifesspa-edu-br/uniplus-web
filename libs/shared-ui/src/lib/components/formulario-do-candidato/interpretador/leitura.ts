@@ -18,6 +18,7 @@ import type {
   RegrasDoFormulario,
   RestricaoDasRegras,
   TermoDasRegras,
+  ValorJson,
 } from './regras-do-formulario';
 import {
   FAIXA_NUMERICA,
@@ -466,7 +467,7 @@ function lerCondicao(condicao: CondicaoDasRegras, caminho: string): Condicao {
         : 'Os operadores IGUAL, DIFERENTE, MAIOR_IGUAL e MENOR_IGUAL exigem um valor simples não branco.',
     );
   }
-  return { fato: condicao.fato.trim(), operador: condicao.operador, valor };
+  return { fato: condicao.fato.trim(), operador: condicao.operador, valor: valor as ValorJson };
 }
 
 /** A oferta de valores de cada campo — itens e subitens. */

@@ -1,4 +1,8 @@
-import { conteudoInicial, type ConteudoDoFormulario, type ItemDoFormulario } from '@uniplus/shared-ui/components';
+import {
+  conteudoInicial,
+  type ConteudoDoFormulario,
+  type ItemDoFormulario,
+} from '@uniplus/shared-ui/components';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -10,7 +14,11 @@ import {
   type FaseQueRespondeFormulario,
 } from './formularios-por-finalidade';
 
-const item = (fatoCodigo: string, ordem: number, extra: Partial<ItemDoFormulario> = {}): ItemDoFormulario => ({
+const item = (
+  fatoCodigo: string,
+  ordem: number,
+  extra: Partial<ItemDoFormulario> = {},
+): ItemDoFormulario => ({
   fatoCodigo,
   ordem,
   rotulo: fatoCodigo,
@@ -24,10 +32,16 @@ const item = (fatoCodigo: string, ordem: number, extra: Partial<ItemDoFormulario
   ...extra,
 });
 
-const com = (...itens: ItemDoFormulario[]): ConteudoDoFormulario => ({ ...conteudoInicial(), itens });
+const com = (...itens: ItemDoFormulario[]): ConteudoDoFormulario => ({
+  ...conteudoInicial(),
+  itens,
+});
 const citando = (fato: string) => ({ precondicao: [[{ fato, operador: 'IGUAL', valor: 'true' }]] });
 
-const fase = (codigo: string, extra: Partial<FaseQueRespondeFormulario> = {}): FaseQueRespondeFormulario => ({
+const fase = (
+  codigo: string,
+  extra: Partial<FaseQueRespondeFormulario> = {},
+): FaseQueRespondeFormulario => ({
   codigo,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
@@ -61,8 +75,16 @@ describe('a ordem em que as finalidades gravam', () => {
     // espera a inscrição, e não grava primeiro só por vir antes na ordem das finalidades.
     expect(
       ordemDeGravacao([
-        { finalidade: 'INSCRICAO', servidor: com(), desejado: com(item('PCD', 0), item('RENDA', 1)) },
-        { finalidade: 'ISENCAO_TAXA', servidor: com(item('BOLSA', 0)), desejado: com(item('BOLSA', 0, citando('PCD'))) },
+        {
+          finalidade: 'INSCRICAO',
+          servidor: com(),
+          desejado: com(item('PCD', 0), item('RENDA', 1)),
+        },
+        {
+          finalidade: 'ISENCAO_TAXA',
+          servidor: com(item('BOLSA', 0)),
+          desejado: com(item('BOLSA', 0, citando('PCD'))),
+        },
         { finalidade: 'HABILITACAO', servidor: com(item('RENDA', 0)), desejado: com() },
       ]),
     ).toEqual(['HABILITACAO', 'INSCRICAO', 'ISENCAO_TAXA']);
@@ -72,22 +94,34 @@ describe('a ordem em que as finalidades gravam', () => {
     expect(
       ordemDeGravacao([
         { finalidade: 'INSCRICAO', servidor: com(item('PCD', 0)), desejado: com() },
-        { finalidade: 'HABILITACAO', servidor: com(item('LAUDO', 0, citando('PCD'))), desejado: com(item('LAUDO', 0)) },
+        {
+          finalidade: 'HABILITACAO',
+          servidor: com(item('LAUDO', 0, citando('PCD'))),
+          desejado: com(item('LAUDO', 0)),
+        },
       ]),
     ).toEqual(['HABILITACAO', 'INSCRICAO']);
   });
 });
 
 describe('as finalidades que podem ganhar formulário', () => {
-  const oferecidas = (existentes: readonly string[], cobraTaxa: boolean, fases: readonly FaseQueRespondeFormulario[]) =>
-    finalidadesParaAcrescentar(existentes, cobraTaxa, fases).map((opcao) => opcao.valor);
+  const oferecidas = (
+    existentes: readonly string[],
+    cobraTaxa: boolean,
+    fases: readonly FaseQueRespondeFormulario[],
+  ) => finalidadesParaAcrescentar(existentes, cobraTaxa, fases).map((opcao) => opcao.valor);
 
   it('oferece as que faltam e têm fase no cronograma', () => {
-    expect(oferecidas(['INSCRICAO'], true, [INSCRICAO, ISENCAO, HABILITACAO])).toEqual(['ISENCAO_TAXA', 'HABILITACAO']);
+    expect(oferecidas(['INSCRICAO'], true, [INSCRICAO, ISENCAO, HABILITACAO])).toEqual([
+      'ISENCAO_TAXA',
+      'HABILITACAO',
+    ]);
   });
 
   it('não oferece isenção em processo que não cobra taxa, mesmo com a fase de isenção', () => {
-    expect(oferecidas(['INSCRICAO'], false, [INSCRICAO, ISENCAO, HABILITACAO])).toEqual(['HABILITACAO']);
+    expect(oferecidas(['INSCRICAO'], false, [INSCRICAO, ISENCAO, HABILITACAO])).toEqual([
+      'HABILITACAO',
+    ]);
   });
 
   it('não oferece habilitação sem a fase de habilitação no cronograma', () => {
@@ -97,7 +131,11 @@ describe('as finalidades que podem ganhar formulário', () => {
 
 describe('as finalidades que a fase atende', () => {
   it('a fase que coleta inscrição e isenção atende os dois formulários, e a de habilitação, o dela', () => {
-    expect(finalidadesQueAtende(fase('INSCRICAO', { coletaInscricao: true, coletaSolicitacaoIsencao: true }))).toEqual(['INSCRICAO', 'ISENCAO_TAXA']);
+    expect(
+      finalidadesQueAtende(
+        fase('INSCRICAO', { coletaInscricao: true, coletaSolicitacaoIsencao: true }),
+      ),
+    ).toEqual(['INSCRICAO', 'ISENCAO_TAXA']);
     expect(finalidadesQueAtende(HABILITACAO)).toEqual(['HABILITACAO']);
     expect(finalidadesQueAtende(fase('RESULTADO'))).toEqual([]);
   });

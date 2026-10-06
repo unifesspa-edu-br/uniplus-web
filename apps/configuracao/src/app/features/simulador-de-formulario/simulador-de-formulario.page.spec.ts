@@ -107,7 +107,11 @@ describe('SimuladorDeFormularioPage', () => {
 
     await importar(JSON.stringify({ ...CASO, respostas: {} }));
 
-    expect(req.cancelled).toBe(true);
+    // O formulário do arquivo anterior já está na tela: espera a leitura do novo chegar a ela.
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(req.cancelled).toBe(true);
+    });
     expect(tela().querySelector('.simulador-formulario__conferencia')?.textContent?.trim()).toBe(
       '',
     );

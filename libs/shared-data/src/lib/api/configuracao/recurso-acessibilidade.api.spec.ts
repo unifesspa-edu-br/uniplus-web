@@ -60,9 +60,13 @@ describe('RecursoAcessibilidadeApi', () => {
 
   it('listar() faz GET /api/configuracao/recursos-acessibilidade com limit e Accept versionado', async () => {
     const promise = firstValueFrom(api.listar({ limit: 50 }));
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/recursos-acessibilidade`);
+    const req = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/recursos-acessibilidade`,
+    );
     expect(req.request.params.get('limit')).toBe('50');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('recurso-acessibilidade', 1));
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('recurso-acessibilidade', 1),
+    );
     req.flush([recursoAcessibilidadeSeed]);
     const result = (await promise) as ApiResult<readonly RecursoAcessibilidadeDto[]>;
     expect(isApiOk(result)).toBe(true);
@@ -80,8 +84,12 @@ describe('RecursoAcessibilidadeApi', () => {
   });
 
   it('atualizar() faz PUT /api/configuracao/admin/recursos-acessibilidade com Idempotency-Key', async () => {
-    const promise = firstValueFrom(api.atualizar(atualizarCommand.id, atualizarCommand, withIdempotencyKey('k')));
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/recursos-acessibilidade/${RECURSO_ACESSIBILIDADE_ID}`);
+    const promise = firstValueFrom(
+      api.atualizar(atualizarCommand.id, atualizarCommand, withIdempotencyKey('k')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/recursos-acessibilidade/${RECURSO_ACESSIBILIDADE_ID}`,
+    );
     expect(req.request.method).toBe('PUT');
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     req.flush(RECURSO_ACESSIBILIDADE_ID, { status: 204, statusText: 'No Content' });
@@ -91,7 +99,9 @@ describe('RecursoAcessibilidadeApi', () => {
 
   it('remover() faz DELETE /api/configuracao/admin/recursos-acessibilidade/{id} — soft-delete', async () => {
     const promise = firstValueFrom(api.remover(RECURSO_ACESSIBILIDADE_ID));
-    const req = controller.expectOne((`${BASE}/api/configuracao/admin/recursos-acessibilidade/${RECURSO_ACESSIBILIDADE_ID}`));
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/recursos-acessibilidade/${RECURSO_ACESSIBILIDADE_ID}`,
+    );
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     const result = (await promise) as ApiResult<void>;

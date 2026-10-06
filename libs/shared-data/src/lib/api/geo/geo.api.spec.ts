@@ -32,8 +32,20 @@ const cepSeed: CepResolvidoDto = {
 };
 
 const cidadesSeed: readonly CidadeResumoDto[] = [
-  { id: '01960000-0000-7000-0000-0000000000c1', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' },
-  { id: '01960000-0000-7000-0000-0000000000c2', codigoIbge: '1505304', nome: 'Parauapebas', uf: 'PA', ddd: '94' },
+  {
+    id: '01960000-0000-7000-0000-0000000000c1',
+    codigoIbge: '1504208',
+    nome: 'Marabá',
+    uf: 'PA',
+    ddd: '94',
+  },
+  {
+    id: '01960000-0000-7000-0000-0000000000c2',
+    codigoIbge: '1505304',
+    nome: 'Parauapebas',
+    uf: 'PA',
+    ddd: '94',
+  },
 ];
 
 describe('GeoApi', () => {
@@ -84,9 +96,7 @@ describe('GeoApi', () => {
   it('listarCidades() faz GET /api/cidades com uf/q/limit e Accept versionado', async () => {
     const promise = firstValueFrom(api.listarCidades({ uf: 'pa', q: 'mar', limit: 20 }));
 
-    const req = controller.expectOne(
-      (r) => r.url === `${BASE}/api/cidades`,
-    );
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/cidades`);
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('uf')).toBe('PA');
     expect(req.request.params.get('q')).toBe('mar');

@@ -71,9 +71,7 @@ describe('CalendarioDiasUteisApi', () => {
   it('listar() faz GET com paginação e Accept versionado', async () => {
     const promise = firstValueFrom(api.listar({ limit: 50 }));
 
-    const req = controller.expectOne(
-      `${BASE}/api/configuracao/calendarios-dias-uteis?limit=50`,
-    );
+    const req = controller.expectOne(`${BASE}/api/configuracao/calendarios-dias-uteis?limit=50`);
     expect(req.request.method).toBe('GET');
     expect(req.request.headers.get('Accept')).toBe(
       buildVendorMimeAccept('calendario-dias-uteis', 1),

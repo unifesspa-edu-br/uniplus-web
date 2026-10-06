@@ -7,7 +7,9 @@
 <!-- O catálogo e os termos só servem para editar: em consulta, carga e falha deles não interessam. -->
 @if (!store.emConsulta()) {
   @if (catalogoCarregando()) {
-    <p class="alert alert--info" role="status">Carregando os dados que o candidato pode declarar…</p>
+    <p class="alert alert--info" role="status">
+      Carregando os dados que o candidato pode declarar…
+    </p>
   } @else if (catalogoErro(); as erro) {
     <p class="alert alert--danger" role="alert">
       {{ erro }} Sem esses dados não é possível acrescentar campos nem declarar condições.
@@ -33,26 +35,26 @@
   <!-- O tablist só contém abas: acrescentar formulário é outro controle, logo depois dele. Com um
        formulário só, não há entre o que navegar, e a consulta fica sem controle algum. -->
   @if (comAbas()) {
-  <div class="form-abas__lista" role="tablist" aria-label="Formulários do processo">
-    @for (aba of abas(); track aba.finalidade; let indice = $index) {
-      <button
-        type="button"
-        role="tab"
-        class="form-abas__aba"
-        [id]="aba.aba"
-        [attr.aria-selected]="aba.finalidade === abaAtiva()"
-        [attr.aria-controls]="aba.painel"
-        [attr.tabindex]="aba.finalidade === abaAtiva() ? 0 : -1"
-        (click)="selecionarAba(aba.finalidade)"
-        (keydown)="navegarNasAbas($event, indice)"
-      >
-        {{ aba.rotulo }}
-        @if (aba.recusada) {
-          <span class="form-abas__recusa">(recusado)</span>
-        }
-      </button>
-    }
-  </div>
+    <div class="form-abas__lista" role="tablist" aria-label="Formulários do processo">
+      @for (aba of abas(); track aba.finalidade; let indice = $index) {
+        <button
+          type="button"
+          role="tab"
+          class="form-abas__aba"
+          [id]="aba.aba"
+          [attr.aria-selected]="aba.finalidade === abaAtiva()"
+          [attr.aria-controls]="aba.painel"
+          [attr.tabindex]="aba.finalidade === abaAtiva() ? 0 : -1"
+          (click)="selecionarAba(aba.finalidade)"
+          (keydown)="navegarNasAbas($event, indice)"
+        >
+          {{ aba.rotulo }}
+          @if (aba.recusada) {
+            <span class="form-abas__recusa">(recusado)</span>
+          }
+        </button>
+      }
+    </div>
   }
 
   @if (!store.emConsulta() && finalidadesOferecidas().length > 0) {
@@ -66,7 +68,9 @@
           [disabled]="!store.aceitaEdicao()"
           (change)="finalidadeAAcrescentar.set($any($event.target).value)"
         >
-          <option value="" [selected]="finalidadeAAcrescentar() === ''">Escolha a finalidade</option>
+          <option value="" [selected]="finalidadeAAcrescentar() === ''">
+            Escolha a finalidade
+          </option>
           @for (opcao of finalidadesOferecidas(); track opcao.valor) {
             <option [value]="opcao.valor" [selected]="opcao.valor === finalidadeAAcrescentar()">
               {{ opcao.rotulo }}
@@ -108,7 +112,9 @@
     <!-- Partir de um modelo substitui o formulário: só em rascunho, e a consulta só lê a origem. -->
     @if (!store.emConsulta()) {
       <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-modelo-titulo'">
-        <h2 [id]="aba.idBase + '-modelo-titulo'" class="step-section__title">Partir de um modelo</h2>
+        <h2 [id]="aba.idBase + '-modelo-titulo'" class="step-section__title">
+          Partir de um modelo
+        </h2>
 
         @if (aba.modeloOrigemCodigo; as origem) {
           <p class="field__hint" [id]="aba.idBase + '-origem'">
@@ -153,8 +159,14 @@
               type="button"
               class="btn btn--secondary"
               [id]="aba.idBase + '-aplicar-modelo'"
-              [attr.aria-describedby]="aba.resumoDaAplicacao ? aba.idBase + '-resumo-modelo' : aba.idBase + '-modelo-ajuda'"
-              [disabled]="!store.aceitaEdicao() || aba.modeloEscolhido === '' || store.processoSeletivoId() === null"
+              [attr.aria-describedby]="
+                aba.resumoDaAplicacao ? aba.idBase + '-resumo-modelo' : aba.idBase + '-modelo-ajuda'
+              "
+              [disabled]="
+                !store.aceitaEdicao() ||
+                aba.modeloEscolhido === '' ||
+                store.processoSeletivoId() === null
+              "
               (click)="pedirAplicacao(aba.finalidade)"
             >
               Aplicar modelo
@@ -164,7 +176,8 @@
             Só aparecem os modelos ativos de {{ aba.nome }} que servem ao tipo deste processo.
             Aplicar um modelo substitui este formulário inteiro pela cópia dele.
             @if (store.processoSeletivoId() === null) {
-              O modelo só pode ser aplicado depois que o processo for criado, ao gravar o primeiro passo.
+              O modelo só pode ser aplicado depois que o processo for criado, ao gravar o primeiro
+              passo.
             }
           </span>
         }
@@ -188,7 +201,9 @@
     }
 
     <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-fase-titulo'">
-      <h2 [id]="aba.idBase + '-fase-titulo'" class="step-section__title" tabindex="-1">Quando o candidato responde</h2>
+      <h2 [id]="aba.idBase + '-fase-titulo'" class="step-section__title" tabindex="-1">
+        Quando o candidato responde
+      </h2>
 
       @if (store.emConsulta()) {
         <div class="form-grid">
@@ -201,11 +216,11 @@
       } @else if (aba.fases.length === 0) {
         <p class="field__hint" role="status" [id]="aba.idBase + '-sem-fase'">
           @if (aba.ehInscricao) {
-            O cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição
-            no passo Cronograma.
+            O cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de
+            inscrição no passo Cronograma.
           } @else {
-            O cronograma não tem fase em que o formulário de {{ aba.nome }} é respondido. Acrescente a
-            fase no passo Cronograma, ou remova o formulário.
+            O cronograma não tem fase em que o formulário de {{ aba.nome }} é respondido. Acrescente
+            a fase no passo Cronograma, ou remova o formulário.
           }
         </p>
       } @else {
@@ -239,7 +254,9 @@
     </section>
 
     <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-conteudo-titulo'">
-      <h2 [id]="aba.idBase + '-conteudo-titulo'" class="step-section__title">O que o candidato preenche</h2>
+      <h2 [id]="aba.idBase + '-conteudo-titulo'" class="step-section__title">
+        O que o candidato preenche
+      </h2>
 
       @if (aba.ehInscricao) {
         <p class="field__hint">
@@ -352,8 +369,8 @@
   <h2 id="form-idade-titulo" class="step-section__title">Apuração da idade</h2>
 
   <p class="field__hint">
-    A idade não é respondida pelo candidato: é apurada contra um instante, e uma única política
-    vale para todo o certame.
+    A idade não é respondida pelo candidato: é apurada contra um instante, e uma única política vale
+    para todo o certame.
     @if (exigeApuracaoDeIdade()) {
       Há documento exigido por faixa etária, então declará-la é obrigatório.
     }
@@ -443,10 +460,41 @@
   }
 </section>
 
+<!-- A simulação abre em nova aba, sem sair do assistente, e usa o processo gravado. -->
+@if (store.processoSeletivoId(); as processoId) {
+  @if (formulariosParaSimular().length > 0) {
+    <section class="step-section" aria-labelledby="form-simulacao-titulo">
+      <h2 id="form-simulacao-titulo" class="step-section__title">Simular a inscrição</h2>
+      <p class="field__hint">
+        Responda o formulário como o candidato responderia, sem gravar nada. A simulação usa o
+        processo gravado: grave o passo para simular as alterações.
+      </p>
+      <ul class="form-simulacao__links">
+        @for (formulario of formulariosParaSimular(); track formulario.finalidade) {
+          <li>
+            <a
+              class="btn btn--secondary btn--sm"
+              [routerLink]="['/processo-seletivo', processoId, 'simulacao', formulario.finalidade]"
+              target="_blank"
+              rel="noopener"
+            >
+              <i class="pi pi-play" aria-hidden="true"></i>
+              Simular {{ formulario.nome }}
+              <span class="sr-only">(abre em nova aba)</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}
+
 <!-- A pré-visualização avalia o processo gravado no servidor: o que está na tela só entra depois de gravado. -->
 @if (avaliarProcesso(); as avaliar) {
   <section class="step-section" aria-labelledby="form-pre-visualizacao-titulo">
-    <h2 id="form-pre-visualizacao-titulo" class="step-section__title">Pré-visualização do processo</h2>
+    <h2 id="form-pre-visualizacao-titulo" class="step-section__title">
+      Pré-visualização do processo
+    </h2>
     <ui-pre-visualizacao-de-formularios
       idBase="form-pre-visualizacao"
       origem="A pré-visualização usa o processo gravado: o que foi alterado e ainda não foi gravado, neste ou em outro passo, não entra. Grave o passo para pré-visualizar as alterações."
@@ -467,9 +515,9 @@
     o caminho inteiro a refazer.
   -->
   <p class="field__hint" role="status">
-    O formulário pergunta {{ camposSemValoresOfertados().join(' e ') }} ao candidato, e a oferta
-    de atendimento especializado não declara nenhum valor para escolher. Declare ao menos um de
-    cada em "Atend. especial", ou retire o campo daqui.
+    O formulário pergunta {{ camposSemValoresOfertados().join(' e ') }} ao candidato, e a oferta de
+    atendimento especializado não declara nenhum valor para escolher. Declare ao menos um de cada em
+    "Atend. especial", ou retire o campo daqui.
   </p>
 }
 

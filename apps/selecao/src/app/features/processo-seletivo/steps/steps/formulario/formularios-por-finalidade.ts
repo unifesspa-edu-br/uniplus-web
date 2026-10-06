@@ -57,14 +57,19 @@ export function faseServeAFinalidade(finalidade: string, fase: FaseQueRespondeFo
  * mesma lista que a API confere na exigência documental. Inscrição e isenção podem dividir a fase.
  */
 export function finalidadesQueAtende(fase: FaseQueRespondeFormulario): readonly string[] {
-  return FINALIDADES.map((opcao) => opcao.valor).filter((finalidade) => faseServeAFinalidade(finalidade, fase));
+  return FINALIDADES.map((opcao) => opcao.valor).filter((finalidade) =>
+    faseServeAFinalidade(finalidade, fase),
+  );
 }
 
 /**
  * A fase do formulário: a escolhida, enquanto estiver entre as que servem à finalidade, ou a única
  * que serve — preenchida sozinha. Sem nenhuma das duas, vazia, e o passo pede a escolha.
  */
-export function faseEfetiva(escolhida: string, opcoes: readonly { readonly codigo: string }[]): string {
+export function faseEfetiva(
+  escolhida: string,
+  opcoes: readonly { readonly codigo: string }[],
+): string {
   if (opcoes.some((opcao) => opcao.codigo === escolhida)) return escolhida;
   return opcoes.length === 1 ? opcoes[0].codigo : '';
 }
@@ -94,7 +99,9 @@ export function finalidadesParaAcrescentar(
 
 /** O nome da finalidade em meio de frase: "o formulário de isenção da taxa de inscrição". */
 export function nomeDaFinalidade(finalidade: string): string {
-  return (FINALIDADES.find((opcao) => opcao.valor === finalidade)?.rotulo ?? finalidade).toLocaleLowerCase('pt-BR');
+  return (
+    FINALIDADES.find((opcao) => opcao.valor === finalidade)?.rotulo ?? finalidade
+  ).toLocaleLowerCase('pt-BR');
 }
 
 /** O trecho dos ids da aba, do painel e do editor de cada finalidade — únicos na tela. */
@@ -108,12 +115,18 @@ const posicaoDaFinalidade = (finalidade: string): number => {
 };
 
 /** Em ordem das finalidades: a inscrição, a isenção e a habilitação, que é a ordem em que o candidato as responde. */
-export function emOrdemDasFinalidades<T extends { readonly finalidade: string }>(formularios: readonly T[]): readonly T[] {
-  return [...formularios].sort((um, outro) => posicaoDaFinalidade(um.finalidade) - posicaoDaFinalidade(outro.finalidade));
+export function emOrdemDasFinalidades<T extends { readonly finalidade: string }>(
+  formularios: readonly T[],
+): readonly T[] {
+  return [...formularios].sort(
+    (um, outro) => posicaoDaFinalidade(um.finalidade) - posicaoDaFinalidade(outro.finalidade),
+  );
 }
 
 /** Todos os formulários do rascunho, a inscrição primeiro. */
-export function formulariosDoRascunho(formulario: FormularioDeInscricao): readonly FormularioDaFinalidade[] {
+export function formulariosDoRascunho(
+  formulario: FormularioDeInscricao,
+): readonly FormularioDaFinalidade[] {
   return [
     {
       finalidade: FINALIDADE_INSCRICAO,
@@ -126,23 +139,40 @@ export function formulariosDoRascunho(formulario: FormularioDeInscricao): readon
 }
 
 /** O rascunho com o formulário da finalidade trocado; a inscrição nos campos dela, as outras na lista. */
-export function comFormulario(formulario: FormularioDeInscricao, novo: FormularioDaFinalidade): FormularioDeInscricao {
+export function comFormulario(
+  formulario: FormularioDeInscricao,
+  novo: FormularioDaFinalidade,
+): FormularioDeInscricao {
   if (novo.finalidade === FINALIDADE_INSCRICAO) {
-    return { ...formulario, faseCodigo: novo.faseCodigo, conteudo: novo.conteudo, modeloOrigemCodigo: novo.modeloOrigemCodigo ?? null };
+    return {
+      ...formulario,
+      faseCodigo: novo.faseCodigo,
+      conteudo: novo.conteudo,
+      modeloOrigemCodigo: novo.modeloOrigemCodigo ?? null,
+    };
   }
-  const outras = formulario.outrasFinalidades.filter((outro) => outro.finalidade !== novo.finalidade);
+  const outras = formulario.outrasFinalidades.filter(
+    (outro) => outro.finalidade !== novo.finalidade,
+  );
   return { ...formulario, outrasFinalidades: emOrdemDasFinalidades([...outras, novo]) };
 }
 
 /** Os formulários das outras finalidades que o servidor tem, na forma do rascunho e em ordem. */
-export function outrasFinalidadesDoServidor(dto: ProcessoComFormularios): readonly FormularioDaFinalidade[] {
+export function outrasFinalidadesDoServidor(
+  dto: ProcessoComFormularios,
+): readonly FormularioDaFinalidade[] {
   return emOrdemDasFinalidades(
-    dto.formularios.filter((formulario) => formulario.finalidade !== FINALIDADE_INSCRICAO).map((formulario) => formularioDoServidor(dto, formulario)),
+    dto.formularios
+      .filter((formulario) => formulario.finalidade !== FINALIDADE_INSCRICAO)
+      .map((formulario) => formularioDoServidor(dto, formulario)),
   );
 }
 
 /** O formulário da finalidade que o servidor tem, na forma do rascunho; nulo quando não tem. */
-export function formularioDoServidorNaFinalidade(dto: ProcessoComFormularios, finalidade: string): FormularioDaFinalidade | null {
+export function formularioDoServidorNaFinalidade(
+  dto: ProcessoComFormularios,
+  finalidade: string,
+): FormularioDaFinalidade | null {
   const formulario = formularioDaFinalidade(dto.formularios, finalidade);
   return formulario === null ? null : formularioDoServidor(dto, formulario);
 }
@@ -150,14 +180,24 @@ export function formularioDoServidorNaFinalidade(dto: ProcessoComFormularios, fi
 /** Os formulários do servidor na forma do rascunho: a inscrição nos campos dela e as outras finalidades. */
 export function formulariosDoServidor(
   dto: ProcessoComFormularios,
-): Pick<FormularioDeInscricao, 'faseCodigo' | 'conteudo' | 'outrasFinalidades' | 'modeloOrigemCodigo'> {
+): Pick<
+  FormularioDeInscricao,
+  'faseCodigo' | 'conteudo' | 'outrasFinalidades' | 'modeloOrigemCodigo'
+> {
   return { ...inscricaoDoServidor(dto), outrasFinalidades: outrasFinalidadesDoServidor(dto) };
 }
 
 /** Os fatos que os OUTROS formulários do rascunho coletam — o que este não pode coletar. */
-export function fatosColetadosPelasOutras(formularios: readonly FormularioDaFinalidade[], finalidade: string): readonly string[] {
+export function fatosColetadosPelasOutras(
+  formularios: readonly FormularioDaFinalidade[],
+  finalidade: string,
+): readonly string[] {
   return [
-    ...new Set(formularios.filter((formulario) => formulario.finalidade !== finalidade).flatMap((formulario) => fatosColetadosPor(formulario.conteudo))),
+    ...new Set(
+      formularios
+        .filter((formulario) => formulario.finalidade !== finalidade)
+        .flatMap((formulario) => fatosColetadosPor(formulario.conteudo)),
+    ),
   ];
 }
 
@@ -165,9 +205,14 @@ export function fatosColetadosPelasOutras(formularios: readonly FormularioDaFina
  * Os fatos da inscrição que uma regra de outra finalidade cita por negação ou com impedimento: a
  * inscrição precisa torná-los obrigatórios, e o editor dela não vê aquelas regras (UNI-REQ-0074).
  */
-export function fatosDaInscricaoQueOutrasExigem(inscricao: ConteudoDoFormulario, outras: readonly FormularioDaFinalidade[]): readonly string[] {
+export function fatosDaInscricaoQueOutrasExigem(
+  inscricao: ConteudoDoFormulario,
+  outras: readonly FormularioDaFinalidade[],
+): readonly string[] {
   const daInscricao = new Set(fatosColetadosPor(inscricao));
-  return [...new Set(outras.flatMap((outra) => [...fatosQueExigemResposta(outra.conteudo)]))].filter((fato) => daInscricao.has(fato));
+  return [
+    ...new Set(outras.flatMap((outra) => [...fatosQueExigemResposta(outra.conteudo)])),
+  ].filter((fato) => daInscricao.has(fato));
 }
 
 /** Um formulário na gravação: o que o servidor tem, quando tem, e o que o rascunho quer. */
@@ -177,10 +222,14 @@ export interface FormularioNaGravacao {
   readonly desejado: ConteudoDoFormulario;
 }
 
-const coletados = (conteudo: ConteudoDoFormulario | null): ReadonlySet<string> => new Set(conteudo === null ? [] : fatosColetadosPor(conteudo));
-const citados = (conteudo: ConteudoDoFormulario | null): ReadonlySet<string> => (conteudo === null ? new Set() : fatosCitadosPeloConteudo(conteudo));
-const diferenca = (um: ReadonlySet<string>, outro: ReadonlySet<string>): readonly string[] => [...um].filter((fato) => !outro.has(fato));
-const algumEm = (fatos: readonly string[], conjunto: ReadonlySet<string>): boolean => fatos.some((fato) => conjunto.has(fato));
+const coletados = (conteudo: ConteudoDoFormulario | null): ReadonlySet<string> =>
+  new Set(conteudo === null ? [] : fatosColetadosPor(conteudo));
+const citados = (conteudo: ConteudoDoFormulario | null): ReadonlySet<string> =>
+  conteudo === null ? new Set() : fatosCitadosPeloConteudo(conteudo);
+const diferenca = (um: ReadonlySet<string>, outro: ReadonlySet<string>): readonly string[] =>
+  [...um].filter((fato) => !outro.has(fato));
+const algumEm = (fatos: readonly string[], conjunto: ReadonlySet<string>): boolean =>
+  fatos.some((fato) => conjunto.has(fato));
 
 /**
  * A ordem em que as finalidades gravam. Cada PUT é conferido contra o que as OUTRAS têm gravado,
@@ -196,7 +245,9 @@ const algumEm = (fatos: readonly string[], conjunto: ReadonlySet<string>): boole
  * resto vai na ordem das finalidades e a recusa da API aponta o conflito.
  */
 export function ordemDeGravacao(formularios: readonly FormularioNaGravacao[]): readonly string[] {
-  const antesDe = new Map<string, Set<string>>(formularios.map((formulario) => [formulario.finalidade, new Set<string>()]));
+  const antesDe = new Map<string, Set<string>>(
+    formularios.map((formulario) => [formulario.finalidade, new Set<string>()]),
+  );
   const exigir = (primeira: string, depois: string): void => {
     if (primeira !== depois) antesDe.get(depois)?.add(primeira);
   };
@@ -208,7 +259,9 @@ export function ordemDeGravacao(formularios: readonly FormularioNaGravacao[]): r
     }
   }
 
-  const inscricao = formularios.find((formulario) => formulario.finalidade === FINALIDADE_INSCRICAO);
+  const inscricao = formularios.find(
+    (formulario) => formulario.finalidade === FINALIDADE_INSCRICAO,
+  );
   if (inscricao !== undefined) {
     const ganhos = diferenca(coletados(inscricao.desejado), coletados(inscricao.servidor));
     const perdas = diferenca(coletados(inscricao.servidor), coletados(inscricao.desejado));
@@ -221,7 +274,9 @@ export function ordemDeGravacao(formularios: readonly FormularioNaGravacao[]): r
   const pendentes = emOrdemDasFinalidades(formularios).map((formulario) => formulario.finalidade);
   const ordem: string[] = [];
   while (pendentes.length > 0) {
-    const livre = pendentes.findIndex((finalidade) => [...(antesDe.get(finalidade) ?? [])].every((anterior) => ordem.includes(anterior)));
+    const livre = pendentes.findIndex((finalidade) =>
+      [...(antesDe.get(finalidade) ?? [])].every((anterior) => ordem.includes(anterior)),
+    );
     ordem.push(...pendentes.splice(livre === -1 ? 0 : livre, 1));
   }
   return ordem;

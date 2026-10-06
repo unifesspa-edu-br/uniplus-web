@@ -34,21 +34,44 @@ describe('FatosCandidatoApi', () => {
     ['criar', () => api.criar({} as never, chave()), 'POST', ADMIN],
     ['criarDerivado', () => api.criarDerivado({} as never, chave()), 'POST', `${ADMIN}/derivados`],
     ['criarAgregado', () => api.criarAgregado({} as never, chave()), 'POST', `${ADMIN}/agregados`],
-    ['atualizarDescritivo', () => api.atualizarDescritivo(ID, { nome: 'N', descricao: null }, chave()), 'PUT', `${ADMIN}/${ID}`],
+    [
+      'atualizarDescritivo',
+      () => api.atualizarDescritivo(ID, { nome: 'N', descricao: null }, chave()),
+      'PUT',
+      `${ADMIN}/${ID}`,
+    ],
     ['ativar', () => api.ativar(ID, chave()), 'POST', `${ADMIN}/${ID}/ativacao`],
-    ['definirRegrasPadrao', () => api.definirRegrasPadrao(ID, { regras: [] }, chave()), 'PUT', `${ADMIN}/${ID}/regras-padrao`],
-    ['acrescentarValor', () => api.acrescentarValor(ID, { codigo: 'A', descricao: null, ordem: 0 }, chave()), 'POST', `${ADMIN}/${ID}/valores`],
-    ['reativarValor', () => api.reativarValor(ID, 'ATE 1/SM', chave()), 'POST', `${ADMIN}/${ID}/valores/ATE%201%2FSM/ativacao`],
+    [
+      'definirRegrasPadrao',
+      () => api.definirRegrasPadrao(ID, { regras: [] }, chave()),
+      'PUT',
+      `${ADMIN}/${ID}/regras-padrao`,
+    ],
+    [
+      'acrescentarValor',
+      () => api.acrescentarValor(ID, { codigo: 'A', descricao: null, ordem: 0 }, chave()),
+      'POST',
+      `${ADMIN}/${ID}/valores`,
+    ],
+    [
+      'reativarValor',
+      () => api.reativarValor(ID, 'ATE 1/SM', chave()),
+      'POST',
+      `${ADMIN}/${ID}/valores/ATE%201%2FSM/ativacao`,
+    ],
   ];
 
-  it.each(escritas)('%s() chama o endpoint de admin com a Idempotency-Key', async (_nome, chamar, metodo, url) => {
-    const promise = firstValueFrom(chamar());
-    const req = controller.expectOne(url);
-    expect(req.request.method).toBe(metodo);
-    expect(req.request.headers.get('Idempotency-Key')).toBe('k');
-    req.flush(null, { status: 204, statusText: 'No Content' });
-    await promise;
-  });
+  it.each(escritas)(
+    '%s() chama o endpoint de admin com a Idempotency-Key',
+    async (_nome, chamar, metodo, url) => {
+      const promise = firstValueFrom(chamar());
+      const req = controller.expectOne(url);
+      expect(req.request.method).toBe(metodo);
+      expect(req.request.headers.get('Idempotency-Key')).toBe('k');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      await promise;
+    },
+  );
 
   it('desativarValor() codifica o código do valor no caminho', async () => {
     const promise = firstValueFrom(api.desativarValor(ID, 'ATE 1/SM'));

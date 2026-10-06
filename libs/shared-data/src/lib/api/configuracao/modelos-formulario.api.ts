@@ -6,6 +6,7 @@ import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type ModeloFormularioView = components['schemas']['ModeloFormularioView'];
+export type FormularioRenderizavel = components['schemas']['FormularioRenderizavel'];
 export type CriarModeloFormularioCommand = components['schemas']['CriarModeloFormularioCommand'];
 export type EdicaoDoModeloInput = components['schemas']['EdicaoDoModeloInput'];
 export type ConteudoDoModeloInput = components['schemas']['ConteudoDoModeloInput'];
@@ -53,7 +54,9 @@ export class ModelosFormularioApi {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
   /** GET `/api/configuracao/admin/modelos-formulario` — a primeira página da listagem filtrada. */
-  listar(query: ModelosFormularioQuery = {}): Observable<ApiResult<readonly ModeloFormularioView[]>> {
+  listar(
+    query: ModelosFormularioQuery = {},
+  ): Observable<ApiResult<readonly ModeloFormularioView[]>> {
     let params = new HttpParams().set('limit', String(query.limit ?? 100));
     if (query.tipoProcesso !== undefined) params = params.set('tipoProcesso', query.tipoProcesso);
     if (query.finalidade !== undefined) params = params.set('finalidade', query.finalidade);
@@ -72,12 +75,22 @@ export class ModelosFormularioApi {
   }
 
   /** POST `/api/configuracao/admin/modelos-formulario` — cria o modelo, já ativo. */
-  criar(command: CriarModeloFormularioCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(this.admin(), command, { context, headers: ACEITA_JSON });
+  criar(
+    command: CriarModeloFormularioCommand,
+    context: HttpContext,
+  ): Observable<ApiResult<string>> {
+    return this.http.post<ApiResult<string>>(this.admin(), command, {
+      context,
+      headers: ACEITA_JSON,
+    });
   }
 
   /** PUT `/api/configuracao/admin/modelos-formulario/{id}` — substitui nome, descrição, tipo de processo e conteúdo. */
-  atualizar(id: string, input: EdicaoDoModeloInput, context: HttpContext): Observable<ApiResult<void>> {
+  atualizar(
+    id: string,
+    input: EdicaoDoModeloInput,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(this.admin(id), input, { context });
   }
 
@@ -95,14 +108,34 @@ export class ModelosFormularioApi {
    * POST `/api/configuracao/admin/modelos-formulario/{id}/pre-visualizacao` — avalia o modelo
    * gravado contra respostas simuladas. É leitura: não leva Idempotency-Key.
    */
-  preVisualizar(id: string, input: PreVisualizacaoDoModeloInput): Observable<ApiResult<PreVisualizacaoDoModeloDto>> {
-    return this.http.post<ApiResult<PreVisualizacaoDoModeloDto>>(this.admin(id, 'pre-visualizacao'), input, {
-      context: withVendorMime('pre-visualizacao-modelo-formulario', 1),
+  preVisualizar(
+    id: string,
+    input: PreVisualizacaoDoModeloInput,
+  ): Observable<ApiResult<PreVisualizacaoDoModeloDto>> {
+    return this.http.post<ApiResult<PreVisualizacaoDoModeloDto>>(
+      this.admin(id, 'pre-visualizacao'),
+      input,
+      {
+        context: withVendorMime('pre-visualizacao-modelo-formulario', 1),
+      },
+    );
+  }
+
+  /**
+   * GET `/api/configuracao/admin/modelos-formulario/{id}/renderizavel` — o modelo no formato que o
+   * candidato veria, com as regras que o interpretador avalia, para a simulação antes de aplicá-lo.
+   */
+  obterRenderizavel(id: string): Observable<ApiResult<FormularioRenderizavel>> {
+    return this.http.get<ApiResult<FormularioRenderizavel>>(this.admin(id, 'renderizavel'), {
+      context: withVendorMime('formulario', 2),
     });
   }
 
   private admin(...segmentos: readonly string[]): string {
-    return [`${this.basePath}/api/configuracao/admin/modelos-formulario`, ...segmentos.map(encodeURIComponent)].join('/');
+    return [
+      `${this.basePath}/api/configuracao/admin/modelos-formulario`,
+      ...segmentos.map(encodeURIComponent),
+    ].join('/');
   }
 }
 

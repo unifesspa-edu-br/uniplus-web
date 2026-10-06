@@ -135,9 +135,7 @@ describe('RegrasCatalogoApi', () => {
     it('escapa os segmentos de caminho', async () => {
       const promessa = firstValueFrom(api.obterVersao('REGRA/COM BARRA', '2024.1+rev'));
 
-      controller
-        .expectOne(`${ROTA}/REGRA%2FCOM%20BARRA/versoes/2024.1%2Brev`)
-        .flush(regra);
+      controller.expectOne(`${ROTA}/REGRA%2FCOM%20BARRA/versoes/2024.1%2Brev`).flush(regra);
 
       await promessa;
     });
@@ -147,10 +145,12 @@ describe('RegrasCatalogoApi', () => {
   it('entrega a recusa como resultado, sem lançar', async () => {
     const promessa = firstValueFrom(api.listar({ tipo: 'INEXISTENTE' }));
 
-    controller.expectOne((r) => r.url === ROTA).flush(
-      { type: 'about:blank', title: 'Tipo desconhecido', status: 422 },
-      { status: 422, statusText: 'Unprocessable Entity' },
-    );
+    controller
+      .expectOne((r) => r.url === ROTA)
+      .flush(
+        { type: 'about:blank', title: 'Tipo desconhecido', status: 422 },
+        { status: 422, statusText: 'Unprocessable Entity' },
+      );
 
     const resultado = await promessa;
     expect(isApiOk(resultado)).toBe(false);

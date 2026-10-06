@@ -13,15 +13,26 @@ import type {
  * cada seção, campo, grupo e termo, mais as regras que o interpretador avalia. Espelha o contrato; quem
  * hospeda passa o tipo gerado do OpenAPI.
  */
+/**
+ * Um inteiro do contrato. O tipo gerado aceita também o número escrito em texto, como a API lê o
+ * corpo; quem compara ou ordena usa `comoInteiro`.
+ */
+export type Inteiro = number | string;
+
+/** O inteiro do contrato como número. */
+export function comoInteiro(valor: Inteiro): number {
+  return Number(valor);
+}
+
 export interface ValorSelecionavel {
   readonly codigo: string;
   readonly descricao?: string | null;
-  readonly ordem: number;
+  readonly ordem: Inteiro;
 }
 
 export interface CampoRenderizavel {
   readonly fatoCodigo: string;
-  readonly ordem: number;
+  readonly ordem: Inteiro;
   readonly rotulo: string;
   readonly tipoRenderizacao: string;
   readonly valoresSelecionaveis?: readonly ValorSelecionavel[] | null;
@@ -32,10 +43,10 @@ export interface CampoRenderizavel {
 
 export interface GrupoRenderizavel {
   readonly codigo: string;
-  readonly ordem: number;
+  readonly ordem: Inteiro;
   readonly rotulo: string;
-  readonly minimo: number;
-  readonly maximo?: number | null;
+  readonly minimo: Inteiro;
+  readonly maximo?: Inteiro | null;
   readonly incluiCandidato: boolean;
   readonly subitens: readonly CampoRenderizavel[];
 }
@@ -44,7 +55,7 @@ export interface SecaoRenderizavel {
   readonly codigo: string;
   /** O código com que a seção aparece nas regras; nulo nos blocos do sistema, que não têm regra. */
   readonly codigoNasRegras?: string | null;
-  readonly ordem: number;
+  readonly ordem: Inteiro;
   /** `SECAO` ou `BLOCO`. */
   readonly tipo: string;
   readonly bloco?: string | null;
@@ -56,10 +67,23 @@ export interface SecaoRenderizavel {
 export interface TermoRenderizavel {
   readonly codigo: string;
   readonly codigoNasRegras: string;
-  readonly ordem: number;
+  readonly ordem: Inteiro;
   readonly nome: string;
   readonly texto: string;
   readonly baseLegal: string;
+}
+
+/**
+ * Um fato que o formulário cita sem perguntar: respondido em outro formulário — com a apresentação de
+ * lá —, ou calculado pelo sistema a partir de outros fatos, que `calculadoDe` lista.
+ */
+export interface PressupostoDoFormulario {
+  readonly fatoCodigo: string;
+  readonly rotulo?: string | null;
+  readonly tipoRenderizacao?: string | null;
+  readonly formato?: string | null;
+  readonly valoresSelecionaveis?: readonly ValorSelecionavel[] | null;
+  readonly calculadoDe?: readonly string[] | null;
 }
 
 export interface FormularioDoCandidato {
@@ -70,6 +94,8 @@ export interface FormularioDoCandidato {
   readonly fatosColetados: readonly CampoRenderizavel[];
   readonly grupos: readonly GrupoRenderizavel[];
   readonly regras: RegrasDoFormulario;
+  /** Os fatos citados que o formulário não pergunta; a simulação os informa à parte. */
+  readonly pressupostos?: readonly PressupostoDoFormulario[] | null;
 }
 
 export const BLOCO_MODALIDADES_CALCULADAS = 'MODALIDADES_CALCULADAS';
@@ -132,7 +158,7 @@ export function passosDo(
   const etapaVisivel = new Map(avaliacao.etapas.map((e) => [e.codigo, e.visivel]));
 
   const campos = [...formulario.fatosColetados]
-    .sort((a, b) => a.ordem - b.ordem)
+    .sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem))
     .flatMap((campo): CampoNoPasso[] => {
       const avaliado = avaliadoPorFato.get(campo.fatoCodigo);
       return avaliado && avaliado.visivel === VISIVEL
@@ -140,7 +166,7 @@ export function passosDo(
         : [];
     });
   const grupos = [...formulario.grupos]
-    .sort((a, b) => a.ordem - b.ordem)
+    .sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem))
     .flatMap((grupo): GrupoNoPasso[] => {
       const avaliado = avaliadoPorGrupo.get(grupo.codigo);
       return avaliado && avaliado.visivel === VISIVEL
@@ -177,7 +203,7 @@ export function passosDo(
 
   const termos = termosVisiveis(formulario, avaliacao);
   const secoes = [...formulario.etapas]
-    .sort((a, b) => a.ordem - b.ordem)
+    .sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem))
     .filter((secao) => !secao.codigoNasRegras || etapaVisivel.get(secao.codigoNasRegras) !== OCULTO)
     .map((secao): PassoDoFormulario => {
       const etapas = secao.codigoNasRegras ? [secao.codigoNasRegras] : [];
@@ -203,7 +229,7 @@ function termosVisiveis(
 ): TermoNoPasso[] {
   const avaliadoPorCodigo = new Map(avaliacao.termos.map((t) => [t.codigo, t]));
   return [...formulario.termos]
-    .sort((a, b) => a.ordem - b.ordem)
+    .sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem))
     .flatMap((termo): TermoNoPasso[] => {
       const avaliado = avaliadoPorCodigo.get(termo.codigoNasRegras);
       return avaliado && avaliado.visivel === VISIVEL ? [{ termo, avaliado }] : [];
@@ -235,7 +261,7 @@ export function opcoesDoCampo(
   escolhidos: readonly string[] = [],
 ): readonly OpcaoDoCampo[] {
   const valores = [...(campo.valoresSelecionaveis ?? [])].sort(
-    (a, b) => a.ordem - b.ordem || (a.codigo < b.codigo ? -1 : 1),
+    (a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem) || (a.codigo < b.codigo ? -1 : 1),
   );
   const porCodigo = new Map(valores.map((v) => [v.codigo, v]));
   let opcoes: OpcaoDoCampo[] = valores;
@@ -276,8 +302,14 @@ export function mensagensDasRestricoes(
     regra?.restricoes?.find((r) => r.tipo === tipo);
   return avaliado.restricoesVioladas.map((tipo) => {
     const restricao = declarada(tipo);
-    const minimo = restricao?.minimo ?? null;
-    const maximo = restricao?.maximo ?? null;
+    const minimo =
+      restricao?.minimo === null || restricao?.minimo === undefined
+        ? null
+        : Number(restricao.minimo);
+    const maximo =
+      restricao?.maximo === null || restricao?.maximo === undefined
+        ? null
+        : Number(restricao.maximo);
     switch (tipo) {
       case 'FAIXA_NUMERICA':
         return minimo !== null && maximo !== null

@@ -43,9 +43,12 @@ export class InstituicaoApi {
    * (leitura vs criação) lendo `result.status`.
    */
   obter(): Observable<ApiResult<InstituicaoDto>> {
-    return this.http.get<ApiResult<InstituicaoDto>>(`${this.basePath}/api/organizacao/instituicao`, {
-      context: withVendorMime('instituicao', 1),
-    });
+    return this.http.get<ApiResult<InstituicaoDto>>(
+      `${this.basePath}/api/organizacao/instituicao`,
+      {
+        context: withVendorMime('instituicao', 1),
+      },
+    );
   }
 
   /**
@@ -57,10 +60,14 @@ export class InstituicaoApi {
    * em `application/json` porque o contrato também declara `text/plain` para 201.
    */
   criar(command: CriarInstituicaoCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(`${this.basePath}/api/organizacao/admin/instituicao`, command, {
-      context,
-      headers: new HttpHeaders({ Accept: 'application/json' }),
-    });
+    return this.http.post<ApiResult<string>>(
+      `${this.basePath}/api/organizacao/admin/instituicao`,
+      command,
+      {
+        context,
+        headers: new HttpHeaders({ Accept: 'application/json' }),
+      },
+    );
   }
 
   /**
