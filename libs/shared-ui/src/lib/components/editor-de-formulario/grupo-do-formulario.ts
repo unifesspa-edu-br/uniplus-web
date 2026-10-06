@@ -53,10 +53,10 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
         <h4 class="editor-formulario__titulo-item" [id]="idDe('titulo')">{{ posicao() }}. {{ nome() }}</h4>
         <ui-tag variant="info">Grupo repetível</ui-tag>
         <div class="editor-formulario__acoes-do-cabecalho" role="group" [attr.aria-label]="'Ações do grupo ' + nome()">
-          <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('subir')" [disabled]="disabled() || !podeSubir()" [attr.aria-label]="'Mover o grupo ' + nome() + ' para cima'" (click)="mover.emit(-1)">
+          <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('subir')" [disabled]="disabled() || !podeSubir()" [attr.aria-label]="'Subir o grupo ' + nome()" (click)="mover.emit(-1)">
             Subir
           </button>
-          <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('descer')" [disabled]="disabled() || !podeDescer()" [attr.aria-label]="'Mover o grupo ' + nome() + ' para baixo'" (click)="mover.emit(1)">
+          <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('descer')" [disabled]="disabled() || !podeDescer()" [attr.aria-label]="'Descer o grupo ' + nome()" (click)="mover.emit(1)">
             Descer
           </button>
           <button
