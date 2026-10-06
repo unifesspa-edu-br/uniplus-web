@@ -70,6 +70,28 @@ describe('FatoCandidatoEdicaoComponent', () => {
     expect(sistema.textContent).not.toContain('Desativar');
   });
 
+  it('só para consultar, nada se edita: sem salvar, sem acrescentar nem desativar, e a definição chega aberta', async () => {
+    fixture.componentRef.setInput('somenteLeitura', true);
+    const tela = await carregar(corRaca(false));
+
+    expect(tela.textContent).not.toContain('Salvar nome e descrição');
+    expect(tela.textContent).not.toContain('Acrescentar valor');
+    expect(tela.textContent).not.toContain('Desativar');
+    expect((tela.querySelector('input[formcontrolname="nome"]') as HTMLInputElement).readOnly).toBe(true);
+    const definicao = tela.querySelector('ui-recolhivel button') as HTMLButtonElement;
+    expect(definicao.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('só para consultar, o Enter que envia o formulário não grava nada', async () => {
+    fixture.componentRef.setInput('somenteLeitura', true);
+    const tela = await carregar(corRaca(false));
+
+    (tela.querySelector('#cfg-fato-descritivo') as HTMLFormElement).dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    controller.expectNone(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}`);
+  });
+
   it('CA-03: no fato do administrador, os valores se acrescentam e desativam', async () => {
     const administrador = await carregar(corRaca(false));
     expect(administrador.textContent).not.toContain('Fato de sistema');

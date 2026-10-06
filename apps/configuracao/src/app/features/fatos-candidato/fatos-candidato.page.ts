@@ -206,12 +206,29 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
+                      icon="pi-eye"
+                      [accessibleName]="'Visualizar o fato ' + fato.codigo"
+                      tooltip="Visualizar fato"
+                      [isDisabled]="loading()"
+                      (triggered)="abrirEdicao(fato.id, true)"
+                    />
+                    <ui-icon-button
                       icon="pi-pencil"
                       [accessibleName]="'Editar o fato ' + fato.codigo"
                       tooltip="Editar fato"
                       [isDisabled]="loading()"
                       (triggered)="abrirEdicao(fato.id)"
                     />
+                    @if (fato.sistema) {
+                      <!-- O fato de sistema não se desativa: o botão fica, desabilitado, com o porquê. -->
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="'Desativar o fato ' + fato.codigo"
+                        tooltip="Fato de sistema: não pode ser desativado"
+                        description="Fato de sistema não pode ser desativado; só o nome e a descrição se alteram."
+                        [isDisabled]="true"
+                      />
+                    }
                     @switch (acaoDeAtivacao(fato)) {
                       @case ('DESATIVAR') {
                         <ui-icon-button
@@ -258,7 +275,10 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
     <ui-drawer class="cfg-form-drawer" [(visible)]="drawerAberto" [heading]="tituloDoDrawer()" ariaLabel="Fato do candidato" position="right">
       <!-- O conteúdo só existe com o drawer aberto: reabrir o mesmo fato recarrega do servidor e descarta o rascunho fechado. -->
       @if (drawerAberto() && fatoEmEdicao(); as id) {
-        <cfg-fato-candidato-edicao [id]="id" (alterado)="recarregar()" />
+        <cfg-fato-candidato-edicao [id]="id" [somenteLeitura]="somenteLeitura()" (alterado)="recarregar()" />
+        <div class="cfg-form-footer">
+          <button type="button" class="btn btn--secondary btn--rect" (click)="drawerAberto.set(false)">Fechar</button>
+        </div>
       } @else if (drawerAberto()) {
         @if (erroDaCriacao()) {
           <ui-alert variant="danger" heading="Não foi possível criar o fato">{{ erroDaCriacao() }}</ui-alert>
@@ -543,6 +563,8 @@ export class FatosCandidatoPage {
 
   protected readonly drawerAberto = signal(false);
   protected readonly fatoEmEdicao = signal<string | null>(null);
+  /** O fato aberto só para consultar, pela ação de visualizar. */
+  protected readonly somenteLeitura = signal(false);
   protected readonly salvando = signal(false);
   protected readonly erroDaCriacao = signal<string | null>(null);
   private chaveDaCriacao = idempotencyKey.create();
@@ -726,6 +748,7 @@ export class FatosCandidatoPage {
 
   protected abrirCriacao(): void {
     this.fatoEmEdicao.set(null);
+    this.somenteLeitura.set(false);
     this.form.reset();
     this.ultimaSugestao = '';
     this.erroDaCriacao.set(null);
@@ -733,8 +756,9 @@ export class FatosCandidatoPage {
     this.drawerAberto.set(true);
   }
 
-  protected abrirEdicao(id: string): void {
+  protected abrirEdicao(id: string, somenteLeitura = false): void {
     this.fatoEmEdicao.set(id);
+    this.somenteLeitura.set(somenteLeitura);
     this.drawerAberto.set(true);
   }
 

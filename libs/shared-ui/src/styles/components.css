@@ -4393,3 +4393,52 @@ body.uni-drawer-open {
   font-size: var(--text-sm);
   line-height: 1.25;
 }
+
+/* ============================================================================
+ * RECOLHÍVEL — bloco que abre e fecha pelo título (ui-recolhivel)
+ * ========================================================================== */
+.recolhivel {
+  display: grid;
+  gap: var(--space-3);
+}
+.recolhivel__titulo {
+  margin: 0;
+  font-size: var(--text-md);
+}
+.recolhivel__alternar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-heading);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  text-align: left;
+  cursor: pointer;
+}
+.recolhivel__alternar:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+/* Triângulo que gira: o estado aberto/fechado visível sem depender de cor. */
+.recolhivel__seta {
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transition: transform var(--duration-fast, 150ms) var(--ease-standard, ease);
+}
+.recolhivel__alternar[aria-expanded='true'] > .recolhivel__seta {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .recolhivel__seta {
+    transition: none;
+  }
+}
