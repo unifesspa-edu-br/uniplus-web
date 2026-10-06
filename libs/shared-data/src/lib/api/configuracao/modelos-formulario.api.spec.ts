@@ -61,21 +61,6 @@ describe('ModelosFormularioApi', () => {
     await promise;
   });
 
-  it('preVisualizar() pede o media type da pré-visualização e envia as respostas simuladas', async () => {
-    const promise = firstValueFrom(
-      api.preVisualizar(ID, { respostas: { IDADE: 18 }, etapasConcluidas: [], pressupostos: null }),
-    );
-    const req = controller.expectOne(`${ADMIN}/${ID}/pre-visualizacao`);
-    expect(req.request.method).toBe('POST');
-    expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({
-      resource: 'pre-visualizacao-modelo-formulario',
-      version: 1,
-    });
-    expect(req.request.body.respostas).toEqual({ IDADE: 18 });
-    req.flush({ itens: [], termos: [] });
-    await promise;
-  });
-
   it('obterRenderizavel() pede o formulário v2 do modelo', async () => {
     const promise = firstValueFrom(api.obterRenderizavel(ID));
     const req = controller.expectOne(`${ADMIN}/${ID}/renderizavel`);

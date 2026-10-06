@@ -48,7 +48,6 @@ import {
   type RecusasDoConteudo,
   type TermoDisponivel,
 } from '@uniplus/shared-ui/components';
-import { PreVisualizacaoDoModeloComponent } from './pre-visualizacao-do-modelo.component';
 
 interface CabecalhoForm {
   nome: FormControl<string>;
@@ -68,7 +67,6 @@ interface CabecalhoForm {
     RouterLink,
     AlertComponent,
     EditorDeFormularioComponent,
-    PreVisualizacaoDoModeloComponent,
     SpinnerComponent,
     TagComponent,
   ],
@@ -232,13 +230,6 @@ interface CabecalhoForm {
         }
       </p>
 
-      <cfg-pre-visualizacao-do-modelo
-        [modeloId]="m.id"
-        [conteudo]="m.conteudo"
-        [catalogo]="fatos()"
-        [desatualizado]="conteudoAlterado()"
-      />
-
       <div class="cfg-form-footer">
         <a class="btn btn--tertiary btn--rect" routerLink="/modelos-formulario"
           >Voltar sem salvar</a
@@ -297,7 +288,7 @@ export class ModeloFormularioEdicaoPage {
     () => this.catalogo.problem() !== null || this.catalogo.error() !== undefined,
   );
   protected readonly tiposDeProcesso = computed(() => this.tipos.data() ?? []);
-  /** O conteúdo na tela difere do gravado: a pré-visualização, que avalia o gravado, não o refletiria. */
+  /** O conteúdo na tela difere do gravado: a simulação, que abre o modelo gravado, não o refletiria. */
   protected readonly conteudoAlterado = computed(
     () => JSON.stringify(this.conteudo()) !== JSON.stringify(this.modelo()?.conteudo ?? null),
   );
