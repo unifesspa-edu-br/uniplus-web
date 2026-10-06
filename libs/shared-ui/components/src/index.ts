@@ -36,7 +36,10 @@ export {
 export { ConfirmDialogComponent } from '../../src/lib/components/confirm-dialog/confirm-dialog';
 export { FormFieldComponent } from '../../src/lib/components/form-field/form-field';
 export { InstitutionalBarComponent } from '../../src/lib/components/institutional-bar/institutional-bar';
-export { IconButtonComponent, type UiTooltipPosition } from '../../src/lib/components/icon-button/icon-button';
+export {
+  IconButtonComponent,
+  type UiTooltipPosition,
+} from '../../src/lib/components/icon-button/icon-button';
 export { LoadingOverlayComponent } from '../../src/lib/components/loading-overlay/loading-overlay';
 export {
   LookupAlertComponent,
@@ -82,6 +85,40 @@ export {
   type SimulacaoDeFormularios,
   type TermoAvaliado,
 } from '../../src/lib/components/pre-visualizacao-de-formularios/pre-visualizacao-de-formularios';
+export {
+  FormularioDoCandidatoComponent,
+  type DocumentoDoFormulario,
+} from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
+export type {
+  CampoRenderizavel,
+  FormularioDoCandidato,
+  GrupoRenderizavel,
+  SecaoRenderizavel,
+  TermoRenderizavel,
+  ValorSelecionavel,
+} from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato.model';
+export {
+  casoDaSimulacao,
+  lerArquivoDoFormulario,
+  type ArquivoDoFormulario,
+} from '../../src/lib/components/formulario-do-candidato/arquivo-do-formulario';
+export { baixarJson } from '../../src/lib/components/formulario-do-candidato/baixar-json';
+export {
+  divergenciasEntre,
+  type Divergencia,
+} from '../../src/lib/components/formulario-do-candidato/divergencias';
+export {
+  interpretarFormulario,
+  type InterpretacaoDoFormulario,
+} from '../../src/lib/components/formulario-do-candidato/interpretador/interpretador';
+export type { RegrasInvalidas } from '../../src/lib/components/formulario-do-candidato/interpretador/leitura';
+export type {
+  AvaliacaoDoFormulario,
+  CampoAvaliado,
+  RegrasDoFormulario,
+  SimulacaoDoFormulario,
+  ValorJson,
+} from '../../src/lib/components/formulario-do-candidato/interpretador/regras-do-formulario';
 export { SkeletonComponent } from '../../src/lib/components/skeleton/skeleton';
 export { SkipLinkComponent } from '../../src/lib/components/skip-link/skip-link';
 export { SpinnerComponent } from '../../src/lib/components/spinner/spinner';

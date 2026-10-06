@@ -117,13 +117,25 @@ export const appRoutes: Routes = [
         path: 'fatos-candidato',
         data: { breadcrumb: 'Fato do Candidato' },
         loadChildren: () =>
-          import('./features/fatos-candidato/fatos-candidato.routes').then((m) => m.FATOS_CANDIDATO_ROUTES),
+          import('./features/fatos-candidato/fatos-candidato.routes').then(
+            (m) => m.FATOS_CANDIDATO_ROUTES,
+          ),
       },
       {
         path: 'modelos-formulario',
         data: { breadcrumb: 'Modelo de Formulário' },
         loadChildren: () =>
-          import('./features/modelos-formulario/modelos-formulario.routes').then((m) => m.MODELOS_FORMULARIO_ROUTES),
+          import('./features/modelos-formulario/modelos-formulario.routes').then(
+            (m) => m.MODELOS_FORMULARIO_ROUTES,
+          ),
+      },
+      {
+        path: 'simulador-de-formulario',
+        data: { breadcrumb: 'Simulador de Formulário' },
+        loadChildren: () =>
+          import('./features/simulador-de-formulario/simulador-de-formulario.routes').then(
+            (m) => m.SIMULADOR_DE_FORMULARIO_ROUTES,
+          ),
       },
       {
         path: 'tipos-documento',

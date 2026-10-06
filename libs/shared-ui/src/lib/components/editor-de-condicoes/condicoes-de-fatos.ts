@@ -14,11 +14,7 @@
  */
 
 /** Os quatro domínios que o vocabulário distingue, no formato que o wire usa. */
-export type TipoDeDominio =
-  | 'BOOLEANO'
-  | 'NUMERICO'
-  | 'CATEGORICO_ESTATICO'
-  | 'CATEGORICO_DINAMICO';
+export type TipoDeDominio = 'BOOLEANO' | 'NUMERICO' | 'CATEGORICO_ESTATICO' | 'CATEGORICO_DINAMICO';
 
 /** Os operadores do predicado, nos tokens canônicos do wire. */
 export const OPERADOR_IGUAL = 'IGUAL';
@@ -403,7 +399,9 @@ export function comClausulaEm<T extends CondicaoEmClausula>(
 ): readonly (T | CondicaoEmClausula)[] {
   const numero = Math.max(...numerosDeClausula(condicoes)) + 1;
   const doRecorte =
-    fatoDoRecorte === '' ? undefined : condicoes.find((condicao) => condicao.fato === fatoDoRecorte);
+    fatoDoRecorte === ''
+      ? undefined
+      : condicoes.find((condicao) => condicao.fato === fatoDoRecorte);
 
   return [
     ...condicoes,

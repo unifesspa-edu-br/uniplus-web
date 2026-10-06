@@ -10,7 +10,13 @@ import {
   VERDADEIRO,
 } from './logica';
 import { avaliarOuVerdadeiro, fatosCitadosPor, type Predicado } from './predicado';
-import type { OpcoesVigentes, ValorJson } from './regras-do-formulario';
+import type { ValorJson } from './regras-do-formulario';
+
+/** As opções que uma restrição deixa escolher; definitivas quando nenhuma resposta pendente pode mudá-las. */
+export interface OpcoesDaRestricao {
+  readonly codigos: readonly string[];
+  readonly definitivas: boolean;
+}
 
 /** Os tipos de restrição sobre a resposta, pelo token do contrato. */
 export const FAIXA_NUMERICA = 'FAIXA_NUMERICA';
@@ -30,7 +36,7 @@ export interface Restricao {
   readonly tipo: string;
   readonly fatosCitados: readonly string[];
   avaliar(resposta: ValorJson, fatos: Fatos): Ternario;
-  opcoes(fatos: Fatos): OpcoesVigentes | null;
+  opcoes(fatos: Fatos): OpcoesDaRestricao | null;
 }
 
 const semOpcoes = (): null => null;
@@ -121,7 +127,7 @@ export function opcoesPermitidas(entradas: readonly OpcoesCondicionadas[]): Rest
  */
 export function opcoesDasRespostas(fatosDeOrigem: readonly string[]): Restricao {
   const ordenados = [...new Set(fatosDeOrigem)].sort(compararOrdinal);
-  const opcoes = (fatos: Fatos): OpcoesVigentes => {
+  const opcoes = (fatos: Fatos): OpcoesDaRestricao => {
     const codigos = new Set<string>();
     let definitivas = true;
     for (const codigo of ordenados) {
@@ -178,12 +184,15 @@ function escolheSoEntre(
   return codigos.every((c) => vigentes.has(c) || talvez.has(c)) ? INDETERMINADO : FALSO;
 }
 
-function opcoesVigentes(codigos: Iterable<string>, definitivas: boolean): OpcoesVigentes {
+function opcoesVigentes(codigos: Iterable<string>, definitivas: boolean): OpcoesDaRestricao {
   return { codigos: [...new Set(codigos)].sort(compararOrdinal), definitivas };
 }
 
 /** A interseção das opções de duas restrições: definitivas só se as duas forem. */
-export function juntarOpcoes(umas: OpcoesVigentes, outras: OpcoesVigentes): OpcoesVigentes {
+export function juntarOpcoes(
+  umas: OpcoesDaRestricao,
+  outras: OpcoesDaRestricao,
+): OpcoesDaRestricao {
   const delas = new Set(outras.codigos);
   return {
     codigos: umas.codigos.filter((c) => delas.has(c)),
