@@ -45,13 +45,17 @@ export interface ListaDeReferencia<T> extends LookupCompleto<T> {
 }
 
 /**
- * @param utilizavel Item que a tela consegue usar. Os demais são descartados na chegada,
- *   e uma resposta sem nenhum item utilizável conta como lista vazia (falha de carga).
+ * @param utilizavel Item que a tela consegue usar, já normalizado. Os demais são
+ *   descartados na chegada, e uma resposta sem nenhum item utilizável conta como lista
+ *   vazia (falha de carga).
+ * @param normalizar Ajuste de cada item na chegada (ex.: aparar o código), antes de
+ *   `utilizavel`: nenhum consumidor da lista vê o item cru.
  */
 export function listaDeReferencia<T>(
   listar: (cursor?: Cursor) => Observable<ApiResult<readonly T[]>>,
   destroyRef: DestroyRef,
   utilizavel: (item: T) => boolean = () => true,
+  normalizar: (item: T) => T = (item) => item,
 ): ListaDeReferencia<T> {
   /** A última lista completa com itens: continua valendo se a recarga voltar vazia. */
   const ultimaUtil = signal<readonly T[]>([]);
@@ -80,7 +84,7 @@ export function listaDeReferencia<T>(
               return;
             }
             ultimoProblema.set(null);
-            coletados = [...coletados, ...resultado.data.filter(utilizavel)];
+            coletados = [...coletados, ...resultado.data.map(normalizar).filter(utilizavel)];
             const ultimaPagina = extractNextCursor(resultado.headers.get('Link')) === null;
             if (!ultimaPagina) {
               return;
@@ -102,7 +106,7 @@ export function listaDeReferencia<T>(
     destroyRef,
   );
 
-  const atuais = computed(() => lookup.opcoes().filter(utilizavel));
+  const atuais = computed(() => lookup.opcoes().map(normalizar).filter(utilizavel));
   /** Os itens da última lista utilizável: a recusa mantém os anteriores (`lookupCompleto`
    *  não os limpa), e a resposta vazia também. */
   const opcoes = computed(() => (atuais().length > 0 ? atuais() : ultimaUtil()));
@@ -154,17 +158,23 @@ export function listaDeReferencia<T>(
  * de servidor, com o traceId para o suporte. O aviso sai só para falha acontecida com a
  * tela aberta: a de uma visita anterior, guardada num catálogo raiz, já foi avisada.
  *
+ * `avisar` diz se a lista está sendo pedida pelo fluxo do usuário: com `false`, a falha
+ * de uma carga de fundo não gera aviso, e ele sai quando `avisar` volta a `true` (uma
+ * única vez por falha).
+ *
  * Chamar em contexto de injeção (inicializador de campo ou construtor).
  */
 export function motivoDaFalha(
   lista: Pick<ListaDeReferencia<unknown>, 'ultimoProblema'>,
+  avisar: () => boolean = () => true,
 ): Signal<string | null> {
   const problemI18n = inject(ProblemI18nService);
   const notifications = inject(NotificationService);
-  const jaAvisado = untracked(lista.ultimoProblema);
+  let jaAvisado = untracked(lista.ultimoProblema);
   effect(() => {
     const problema = lista.ultimoProblema();
-    if (problema !== null && problema !== jaAvisado && problema.status >= 500) {
+    if (problema !== null && problema !== jaAvisado && problema.status >= 500 && avisar()) {
+      jaAvisado = problema;
       untracked(() => notifications.errorFromProblem(problema));
     }
   });

@@ -66,6 +66,28 @@ describe('CatalogoGruposAreaEnem', () => {
     expect(catalogo.opcoes().length).toBe(1);
   });
 
+  it('apara o código na entrada: chave, opção e exibível usam o código aparado', () => {
+    catalogo.garantirCarregado();
+    controller.expectOne(URL).flush([{ codigo: '  TECNOLOGICA ', rotulo: 'Tecnológica' }, saude]);
+
+    expect(catalogo.opcoes().map((grupo) => grupo.codigo)).toEqual(['TECNOLOGICA', 'SAUDE_E_BIOLOGICAS']);
+    expect(catalogo.porCodigo().get('TECNOLOGICA')?.rotulo).toBe('Tecnológica');
+    expect(catalogo.exibivel({ codigo: ' TECNOLOGICA', rotulo: 'Antigo' }).rotulo).toBe('Tecnológica');
+  });
+
+  it('descarta grupo com código ausente, vazio ou só espaços', () => {
+    catalogo.garantirCarregado();
+    controller.expectOne(URL).flush([
+      { rotulo: 'Sem código' },
+      { codigo: null, rotulo: 'Nulo' },
+      { codigo: '', rotulo: 'Vazio' },
+      { codigo: '   ', rotulo: 'Espaços' },
+      tecnologica,
+    ]);
+
+    expect(catalogo.opcoes().map((grupo) => grupo.codigo)).toEqual(['TECNOLOGICA']);
+  });
+
   it('vocabulário só com itens sem código é falha de carga, com alerta', () => {
     catalogo.garantirCarregado();
     controller.expectOne(URL).flush([{ codigo: ' ', rotulo: 'X' }]);
