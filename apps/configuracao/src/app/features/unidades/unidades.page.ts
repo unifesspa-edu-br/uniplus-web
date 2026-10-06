@@ -41,7 +41,7 @@ import {
   UnidadeDto,
   UnidadesApi,
 } from '@uniplus/shared-data/organizacao';
-import { type CidadeRef, ehErroDeEndereco } from '../../shared/endereco';
+import { ehErroDeEndereco } from '../../shared/endereco';
 import {
   AlertComponent,
   ConfirmDialogComponent,
@@ -53,6 +53,7 @@ import {
   PagerComponent,
   SpinnerComponent,
   type UiFilterChipOption,
+  type CidadeRef,
 } from '@uniplus/shared-ui/components';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */

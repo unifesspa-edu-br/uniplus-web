@@ -8,7 +8,7 @@ import { CampusDto, CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configur
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CampiPage } from './campi.page';
-import type { EnderecoEstruturado } from '../../shared/endereco';
+import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
 
 const BASE = 'http://localhost:5000';
 

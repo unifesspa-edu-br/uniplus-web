@@ -44,14 +44,15 @@ import {
   IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
+  EnderecoGeoComponent,
+  type EnderecoEstruturado,
 } from '@uniplus/shared-ui/components';
 import {
-  EnderecoFormComponent,
+  ENDERECO_NO_GEO,
   cidadeObrigatoriaValidator,
   ehErroDeEndereco,
   enderecoEstruturadoDe,
   enderecoParaCommand,
-  type EnderecoEstruturado,
 } from '../../shared/endereco';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
@@ -68,6 +69,7 @@ interface CampusForm {
 
 @Component({
   selector: 'cfg-campi-page',
+  providers: [ENDERECO_NO_GEO],
   standalone: true,
   imports: [
     ReactiveFormsModule,
@@ -75,7 +77,7 @@ interface CampusForm {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
-    EnderecoFormComponent,
+    EnderecoGeoComponent,
     IconButtonComponent,
     PagerComponent,
     SpinnerComponent,
@@ -251,7 +253,7 @@ interface CampusForm {
           </div>
         </section>
 
-        <cfg-endereco-form
+        <ui-endereco-geo
           formControlName="endereco"
           idPrefix="campus-endereco"
           legend="Endereço do campus"

@@ -6,22 +6,22 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { EnderecoFormComponent } from './endereco-form';
 import {
-  EnderecoEstruturado,
+  EnderecoGeoComponent,
   camposAncorados,
-  ehErroDeEndereco,
-  enderecoEstruturadoDe,
-  enderecoParaCommand,
   normalizarNivel,
-} from './endereco.model';
+  type EnderecoEstruturado,
+} from '@uniplus/shared-ui/components';
+import { ehErroDeEndereco, enderecoEstruturadoDe, enderecoParaCommand } from './endereco.model';
+import { ENDERECO_NO_GEO } from './provedores-do-geo';
 
 const BASE = 'http://localhost:5000';
 
 @Component({
   standalone: true,
-  imports: [ReactiveFormsModule, EnderecoFormComponent],
-  template: `<cfg-endereco-form [formControl]="ctrl" idPrefix="t" [erroExterno]="erro()" />`,
+  imports: [ReactiveFormsModule, EnderecoGeoComponent],
+  providers: [ENDERECO_NO_GEO],
+  template: `<ui-endereco-geo [formControl]="ctrl" idPrefix="t" [erroExterno]="erro()" />`,
 })
 class HostComponent {
   readonly ctrl = new FormControl<EnderecoEstruturado | null>(null);
@@ -202,7 +202,7 @@ describe('ehErroDeEndereco (casamento por segmento, não substring)', () => {
   });
 });
 
-describe('EnderecoFormComponent', () => {
+describe('EnderecoGeoComponent com o Geo', () => {
   let fixture: ComponentFixture<HostComponent>;
   let host: HostComponent;
   let controller: HttpTestingController;

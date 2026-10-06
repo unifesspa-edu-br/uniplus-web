@@ -67,6 +67,8 @@ export {
   type BuscaDeMunicipios,
   type MunicipioEncontrado,
 } from '../../src/lib/components/editor-de-condicoes/valor-de-municipio';
+export { EnderecoGeoComponent } from '../../src/lib/components/endereco-geo/endereco-geo';
+export * from '../../src/lib/components/endereco-geo/endereco-geo.model';
 export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
 export * from '../../src/lib/components/editor-de-formulario/formulario-editavel';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
