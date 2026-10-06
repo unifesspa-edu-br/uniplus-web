@@ -63,9 +63,13 @@ describe('CondicoesAtendimentoApi', () => {
 
   it('listar() faz GET /api/configuracao/condicoes-atendimento com limit e Accept versionado', async () => {
     const promise = firstValueFrom(api.listar({ limit: 50 }));
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`);
+    const req = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`,
+    );
     expect(req.request.params.get('limit')).toBe('50');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('condicao-atendimento', 1));
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('condicao-atendimento', 1),
+    );
     req.flush([condicaoAtendimentoSeed]);
     const result = (await promise) as ApiResult<readonly CondicaoAtendimentoDto[]>;
     expect(isApiOk(result)).toBe(true);
@@ -73,7 +77,9 @@ describe('CondicoesAtendimentoApi', () => {
 
   it('listar() com cursor envia cursor + direction e omite limit', async () => {
     const promise = firstValueFrom(api.listar({ cursor: 'abc', direction: 'prev' }));
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`);
+    const req = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`,
+    );
     expect(req.request.params.get('cursor')).toBe('abc');
     expect(req.request.params.get('direction')).toBe('prev');
     expect(req.request.params.has('limit')).toBe(false);
@@ -93,8 +99,12 @@ describe('CondicoesAtendimentoApi', () => {
   });
 
   it('atualizar() faz PUT /api/configuracao/admin/condicoes-atendimento com Idempotency-Key', async () => {
-    const promise = firstValueFrom(api.atualizar(atualizarCommand.id, atualizarCommand, withIdempotencyKey('k')));
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`);
+    const promise = firstValueFrom(
+      api.atualizar(atualizarCommand.id, atualizarCommand, withIdempotencyKey('k')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`,
+    );
     expect(req.request.method).toBe('PUT');
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     req.flush(CONDICAO_ATENDIMENTO_ID, { status: 204, statusText: 'No Content' });
@@ -104,7 +114,9 @@ describe('CondicoesAtendimentoApi', () => {
 
   it('obter() faz GET /api/configuracao/admin/condicoes-atendimento/{id}>', async () => {
     const promise = firstValueFrom(api.obter(CONDICAO_ATENDIMENTO_ID));
-    const req = controller.expectOne(`${BASE}/api/configuracao/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`);
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`,
+    );
     expect(req.request.method).toBe('GET');
     req.flush(CONDICAO_ATENDIMENTO_ID, { status: 200, statusText: 'Ok' });
     const result = (await promise) as ApiResult<string>;
@@ -113,7 +125,9 @@ describe('CondicoesAtendimentoApi', () => {
 
   it('remover() faz DELETE /api/configuracao/admin/condicoes-atendimento/{id}', async () => {
     const promise = firstValueFrom(api.remover(CONDICAO_ATENDIMENTO_ID));
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`);
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`,
+    );
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     const result = (await promise) as ApiResult<void>;

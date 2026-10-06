@@ -1,8 +1,31 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  linkedSignal,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
-import { ProblemI18nService, STATUS_HTTP, isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
-import { FatoCandidatoView, FatosCandidatoApi, ModelosFormularioApi, TermosConsentimentoApi } from '@uniplus/shared-data/configuracao';
+import {
+  ProblemI18nService,
+  STATUS_HTTP,
+  isApiOk,
+  type ProblemDetails,
+} from '@uniplus/shared-core/http';
+import {
+  FatoCandidatoView,
+  FatosCandidatoApi,
+  ModelosFormularioApi,
+  TermosConsentimentoApi,
+} from '@uniplus/shared-data/configuracao';
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import { ProcessosSeletivosApi, type AplicacaoDeModeloDto } from '@uniplus/shared-data/selecao';
 import {
@@ -34,7 +57,11 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { descreverFase } from '../cronograma/cronograma-do-certame';
-import { desempateIdosoSemApuracao, desempateSemDataDeNascimento, PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
+import {
+  desempateIdosoSemApuracao,
+  desempateSemDataDeNascimento,
+  PASSO_DESEMPATE,
+} from '../desempate/desempate-por-idade';
 import {
   ANCORAS_DA_IDADE,
   camposSemUsoDeclarado,
@@ -48,7 +75,12 @@ import {
   quemCitaNoProcesso,
   remocoesTravadasPor,
 } from './formulario-de-inscricao';
-import { conteudoDoFormulario, fatosColetadosPor, formularioDaFinalidade, rascunhoDifereDoGravado } from './formulario-do-processo';
+import {
+  conteudoDoFormulario,
+  fatosColetadosPor,
+  formularioDaFinalidade,
+  rascunhoDifereDoGravado,
+} from './formulario-do-processo';
 import { resultadoDoProcesso } from './pre-visualizacao-do-processo';
 import {
   comAplicacaoDoServidor,
@@ -77,7 +109,6 @@ import {
   emOrdemDasFinalidades,
 } from './formularios-por-finalidade';
 
-
 /** O que a gravação de um formulário precisa: a fase resolvida para id e o conteúdo desejado. */
 interface FormularioParaEnvio {
   readonly finalidade: string;
@@ -98,7 +129,14 @@ interface FormularioParaEnvio {
 @Component({
   selector: 'sel-step-formulario',
   standalone: true,
-  imports: [ConfirmDialogComponent, DateBrPipe, EditorDeFormularioComponent, PreVisualizacaoDeFormulariosComponent, ValorEmConsultaComponent],
+  imports: [
+    ConfirmDialogComponent,
+    DateBrPipe,
+    EditorDeFormularioComponent,
+    PreVisualizacaoDeFormulariosComponent,
+    RouterLink,
+    ValorEmConsultaComponent,
+  ],
   templateUrl: './formulario.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
@@ -149,7 +187,10 @@ export class FormularioStepComponent {
   /** O modelo escolhido em cada aba, pelo id. */
   readonly modelosEscolhidos = signal<ReadonlyMap<string, string>>(new Map());
   /** A aplicação que aguarda confirmação: a finalidade e o modelo. */
-  readonly aplicacaoPendente = signal<{ readonly finalidade: string; readonly modelo: ModeloOferecido } | null>(null);
+  readonly aplicacaoPendente = signal<{
+    readonly finalidade: string;
+    readonly modelo: ModeloOferecido;
+  } | null>(null);
   /** O resumo da última aplicação, por finalidade: fica na aba do formulário que a recebeu. */
   readonly resumosDaAplicacao = signal<ReadonlyMap<string, readonly string[]>>(new Map());
   /** A recusa da aplicação, por finalidade, já com o desfecho dito: fica na aba do formulário. */
@@ -188,7 +229,9 @@ export class FormularioStepComponent {
   /** Sem cópia em aberto, a recusa das abas bloqueadas por ela não vale mais. */
   private esquecerBloqueios(): void {
     const bloqueadas = this.bloqueadasPorCopiaEmAberto();
-    this.recusasDaAplicacao.update((atuais) => new Map([...atuais].filter(([aba]) => !bloqueadas.has(aba))));
+    this.recusasDaAplicacao.update(
+      (atuais) => new Map([...atuais].filter(([aba]) => !bloqueadas.has(aba))),
+    );
     this.bloqueadasPorCopiaEmAberto.set(new Set());
   }
 
@@ -289,12 +332,15 @@ export class FormularioStepComponent {
   );
 
   /** Há alteração nos formulários ainda não gravada: a pré-visualização não a veria. */
-  readonly previaDesatualizada = computed(() => rascunhoDifereDoGravado(this.processoLido()?.formularios ?? [], this.formularios()));
+  readonly previaDesatualizada = computed(() =>
+    rascunhoDifereDoGravado(this.processoLido()?.formularios ?? [], this.formularios()),
+  );
 
   /** Relê o processo e guarda a leitura, quando ela ainda é do processo em edição. */
   private async lerProcesso(processoId: string) {
     const detalhe = await firstValueFrom(this.api.obter(processoId));
-    if (isApiOk(detalhe) && detalhe.data.id === this.store.processoSeletivoId()) this.processoLido.set(detalhe.data);
+    if (isApiOk(detalhe) && detalhe.data.id === this.store.processoSeletivoId())
+      this.processoLido.set(detalhe.data);
     return detalhe;
   }
 
@@ -314,7 +360,14 @@ export class FormularioStepComponent {
         .pipe(
           map((resultado) =>
             resultado.ok
-              ? { ...resultado, data: resultadoDoProcesso(resultado.data, this.processoLido(), this.catalogos.fasePorId()) }
+              ? {
+                  ...resultado,
+                  data: resultadoDoProcesso(
+                    resultado.data,
+                    this.processoLido(),
+                    this.catalogos.fasePorId(),
+                  ),
+                }
               : resultado,
           ),
         );
@@ -322,7 +375,9 @@ export class FormularioStepComponent {
 
   readonly abaAtiva = computed(() => {
     const escolhida = this.abaEscolhida();
-    return this.formularios().some((formulario) => formulario.finalidade === escolhida) ? escolhida : FINALIDADE_INSCRICAO;
+    return this.formularios().some((formulario) => formulario.finalidade === escolhida)
+      ? escolhida
+      : FINALIDADE_INSCRICAO;
   });
 
   /** As fases do cronograma, com o que decide a finalidade que cada uma atende. */
@@ -348,13 +403,20 @@ export class FormularioStepComponent {
     () =>
       new Map(
         this.formularios().map((formulario) => {
-          const opcoes = this.fasesDoCronograma().filter((fase) => faseServeAFinalidade(formulario.finalidade, fase));
-          return [formulario.finalidade, { opcoes, escolhida: faseEfetiva(formulario.faseCodigo, opcoes) }] as const;
+          const opcoes = this.fasesDoCronograma().filter((fase) =>
+            faseServeAFinalidade(formulario.finalidade, fase),
+          );
+          return [
+            formulario.finalidade,
+            { opcoes, escolhida: faseEfetiva(formulario.faseCodigo, opcoes) },
+          ] as const;
         }),
       ),
   );
 
-  readonly faseDaInscricao = computed(() => this.fasesDosFormularios().get(FINALIDADE_INSCRICAO)?.escolhida ?? '');
+  readonly faseDaInscricao = computed(
+    () => this.fasesDosFormularios().get(FINALIDADE_INSCRICAO)?.escolhida ?? '',
+  );
 
   /** As finalidades que o operador pode acrescentar agora. */
   readonly finalidadesOferecidas = computed(() =>
@@ -366,7 +428,9 @@ export class FormularioStepComponent {
   );
 
   /** Os fatos que a inscrição coleta, o conjunto básico ainda não gravado inclusive: as outras finalidades os citam. */
-  private readonly fatosDaInscricao = computed(() => [...fatosColetadosPelaInscricao(this.conteudo())]);
+  private readonly fatosDaInscricao = computed(() => [
+    ...fatosColetadosPelaInscricao(this.conteudo()),
+  ]);
 
   /** Quem, no processo, cita cada fato — a fonte única do que entra sozinho e do que não sai. */
   readonly citantes = computed(() => {
@@ -410,7 +474,9 @@ export class FormularioStepComponent {
       const recusaDaAplicacao = this.recusasDaAplicacao().get(formulario.finalidade) ?? null;
       return {
         finalidade: formulario.finalidade,
-        rotulo: FINALIDADES.find((opcao) => opcao.valor === formulario.finalidade)?.rotulo ?? formulario.finalidade,
+        rotulo:
+          FINALIDADES.find((opcao) => opcao.valor === formulario.finalidade)?.rotulo ??
+          formulario.finalidade,
         nome: nomeDaFinalidade(formulario.finalidade),
         ehInscricao,
         aba: `form-aba-${sufixo}`,
@@ -423,7 +489,10 @@ export class FormularioStepComponent {
         nomeDaFase: fase.opcoes.find((opcao) => opcao.codigo === fase.escolhida)?.nome ?? null,
         recusas: this.recusas().get(formulario.finalidade) ?? null,
         recusaDaRemocao,
-        recusada: this.recusas().has(formulario.finalidade) || recusaDaRemocao !== null || recusaDaAplicacao !== null,
+        recusada:
+          this.recusas().has(formulario.finalidade) ||
+          recusaDaRemocao !== null ||
+          recusaDaAplicacao !== null,
         modelos: this.modelos().get(formulario.finalidade) ?? [],
         modeloEscolhido: this.modelosEscolhidos().get(formulario.finalidade) ?? '',
         modeloOrigemCodigo: formulario.modeloOrigemCodigo ?? null,
@@ -431,9 +500,14 @@ export class FormularioStepComponent {
         resumoDaAplicacao: this.resumosDaAplicacao().get(formulario.finalidade) ?? null,
         fatosDaInscricao: ehInscricao ? null : this.fatosDaInscricao(),
         fatosIndisponiveis: ehInscricao
-          ? fatosForaDaColetaDaInscricao(formulario.conteudo, fatosColetadosPelasOutras(formularios, FINALIDADE_INSCRICAO))
+          ? fatosForaDaColetaDaInscricao(
+              formulario.conteudo,
+              fatosColetadosPelasOutras(formularios, FINALIDADE_INSCRICAO),
+            )
           : fatosColetadosPelasOutras(formularios, formulario.finalidade),
-        fatosQueExigemRespostaPorFora: ehInscricao ? fatosDaInscricaoQueOutrasExigem(formulario.conteudo, outras) : [],
+        fatosQueExigemRespostaPorFora: ehInscricao
+          ? fatosDaInscricaoQueOutrasExigem(formulario.conteudo, outras)
+          : [],
         leitura: leituraDe(formulario.conteudo),
       };
     });
@@ -475,7 +549,9 @@ export class FormularioStepComponent {
     // quando a exigência que o pediu deixar de existir.
     const acrescentados = fatosColetadosPor(reconciliado).filter((codigo) => !antes.has(codigo));
     if (acrescentados.length > 0) {
-      this.store.camposPostosPelasExigencias.update((atual) => new Set([...atual, ...acrescentados]));
+      this.store.camposPostosPelasExigencias.update(
+        (atual) => new Set([...atual, ...acrescentados]),
+      );
     }
     this.store.patchSection('formulario', { ...formulario, conteudo: reconciliado });
     return acrescentados;
@@ -488,7 +564,9 @@ export class FormularioStepComponent {
   editar(finalidade: string, conteudo: ConteudoDoFormulario): void {
     if (finalidade === FINALIDADE_INSCRICAO) {
       const presentes = new Set(fatosColetadosPor(conteudo));
-      this.store.camposPostosPelasExigencias.update((atual) => new Set([...atual].filter((codigo) => presentes.has(codigo))));
+      this.store.camposPostosPelasExigencias.update(
+        (atual) => new Set([...atual].filter((codigo) => presentes.has(codigo))),
+      );
     }
     this.atualizarFormulario(finalidade, (formulario) => ({ ...formulario, conteudo }));
   }
@@ -497,10 +575,16 @@ export class FormularioStepComponent {
     this.atualizarFormulario(finalidade, (formulario) => ({ ...formulario, faseCodigo: codigo }));
   }
 
-  private atualizarFormulario(finalidade: string, mudar: (formulario: FormularioDaFinalidade) => FormularioDaFinalidade): void {
+  private atualizarFormulario(
+    finalidade: string,
+    mudar: (formulario: FormularioDaFinalidade) => FormularioDaFinalidade,
+  ): void {
     const atual = this.formularios().find((formulario) => formulario.finalidade === finalidade);
     if (atual === undefined) return;
-    this.store.patchSection('formulario', comFormulario(this.store.draft().formulario, mudar(atual)));
+    this.store.patchSection(
+      'formulario',
+      comFormulario(this.store.draft().formulario, mudar(atual)),
+    );
   }
 
   /**
@@ -514,11 +598,17 @@ export class FormularioStepComponent {
 
     this.store.patchSection(
       'formulario',
-      comFormulario(this.store.draft().formulario, { finalidade, faseCodigo: '', conteudo: conteudoInicial() }),
+      comFormulario(this.store.draft().formulario, {
+        finalidade,
+        faseCodigo: '',
+        conteudo: conteudoInicial(),
+      }),
     );
     this.finalidadeAAcrescentar.set('');
     this.selecionarAba(finalidade);
-    this.anuncio.set(`Formulário de ${nomeDaFinalidade(finalidade)} acrescentado. Ele é criado no processo ao gravar o passo.`);
+    this.anuncio.set(
+      `Formulário de ${nomeDaFinalidade(finalidade)} acrescentado. Ele é criado no processo ao gravar o passo.`,
+    );
     this.focarAba(finalidade);
   }
 
@@ -563,7 +653,9 @@ export class FormularioStepComponent {
       if (geracao !== this.store.geracao()) return;
       if (recusa !== null) {
         this.recusasDaRemocao.update((atuais) => new Map([...atuais, [finalidade, recusa]]));
-        this.anuncio.set(`O formulário de ${nomeDaFinalidade(finalidade)} não foi removido. ${recusa}`);
+        this.anuncio.set(
+          `O formulário de ${nomeDaFinalidade(finalidade)} não foi removido. ${recusa}`,
+        );
         return;
       }
     }
@@ -571,7 +663,9 @@ export class FormularioStepComponent {
     const formulario = this.store.draft().formulario;
     this.store.patchSection('formulario', {
       ...formulario,
-      outrasFinalidades: formulario.outrasFinalidades.filter((outro) => outro.finalidade !== finalidade),
+      outrasFinalidades: formulario.outrasFinalidades.filter(
+        (outro) => outro.finalidade !== finalidade,
+      ),
     });
     this.recusas.update((atuais) => semChave(atuais, finalidade));
     this.selecionarAba(FINALIDADE_INSCRICAO);
@@ -585,13 +679,18 @@ export class FormularioStepComponent {
    */
   private async removerDoServidor(processoId: string, finalidade: string): Promise<string | null> {
     const detalhe = await this.lerProcesso(processoId);
-    if (!isApiOk(detalhe)) return 'Não foi possível reler o processo para remover o formulário. Tente de novo.';
+    if (!isApiOk(detalhe))
+      return 'Não foi possível reler o processo para remover o formulário. Tente de novo.';
     if (formularioDaFinalidade(detalhe.data.formularios, finalidade) === null) return null;
 
     const remocao = await this.cadastro.removerFormulario(processoId, finalidade);
     if (remocao.ok) {
       // A leitura guardada é de antes do DELETE: sem o formulário removido, ela volta a ser o gravado.
-      this.processoLido.update((lido) => (lido === null ? lido : { ...lido, formularios: lido.formularios.filter((f) => f.finalidade !== finalidade) }));
+      this.processoLido.update((lido) =>
+        lido === null
+          ? lido
+          : { ...lido, formularios: lido.formularios.filter((f) => f.finalidade !== finalidade) },
+      );
       return null;
     }
     return this.textoDaRecusa(remocao.problem);
@@ -603,16 +702,22 @@ export class FormularioStepComponent {
 
   pedirAplicacao(finalidade: string): void {
     const escolhido = this.modelosEscolhidos().get(finalidade);
-    const modelo = this.modelos().get(finalidade)?.find((oferecido) => oferecido.id === escolhido);
+    const modelo = this.modelos()
+      .get(finalidade)
+      ?.find((oferecido) => oferecido.id === escolhido);
     if (modelo === undefined) return;
     // Uma aplicação sem desfecho, em qualquer aba, só admite a nova tentativa dela: as cópias
     // mexem no que é do processo inteiro (fatos da inscrição, derivações) e dividem a mesma chave.
     const bloqueio = [...this.store.aplicacoesDeModeloEmAberto()].find(
-      ([outra, emAberto]) => emAberto.copiaConfirmada || outra !== finalidade || emAberto.modeloId !== modelo.id,
+      ([outra, emAberto]) =>
+        emAberto.copiaConfirmada || outra !== finalidade || emAberto.modeloId !== modelo.id,
     );
     if (bloqueio !== undefined) {
       const [outra, emAberto] = bloqueio;
-      this.mostrarRecusaDaAplicacao(finalidade, textoDaAplicacaoEmAberto(nomeDaFinalidade(outra), emAberto));
+      this.mostrarRecusaDaAplicacao(
+        finalidade,
+        textoDaAplicacaoEmAberto(nomeDaFinalidade(outra), emAberto),
+      );
       this.bloqueadasPorCopiaEmAberto.update((atuais) => new Set([...atuais, finalidade]));
       return;
     }
@@ -657,7 +762,9 @@ export class FormularioStepComponent {
     const { finalidade, modelo } = pendente;
     const faseDaAba = this.fasesDosFormularios().get(finalidade)?.escolhida ?? '';
     this.recusasDaAplicacao.update((atuais) => semChave(atuais, finalidade));
-    this.bloqueadasPorCopiaEmAberto.update((atuais) => new Set([...atuais].filter((aba) => aba !== finalidade)));
+    this.bloqueadasPorCopiaEmAberto.update(
+      (atuais) => new Set([...atuais].filter((aba) => aba !== finalidade)),
+    );
     this.resumosDaAplicacao.update((atuais) => semChave(atuais, finalidade));
 
     const geracao = this.store.geracao();
@@ -674,15 +781,24 @@ export class FormularioStepComponent {
       this.store.aplicacoesDeModeloEmAberto.update((atuais) => semChave(atuais, finalidade));
       if (this.store.aplicacoesDeModeloEmAberto().size === 0) this.esquecerBloqueios();
     } else if (desfecho.copiaConfirmada !== null) {
-      const emAberto = { modeloId: modelo.id, modeloNome: modelo.nome, copiaConfirmada: desfecho.copiaConfirmada };
-      this.store.aplicacoesDeModeloEmAberto.update((atuais) => new Map([...atuais, [finalidade, emAberto]]));
+      const emAberto = {
+        modeloId: modelo.id,
+        modeloNome: modelo.nome,
+        copiaConfirmada: desfecho.copiaConfirmada,
+      };
+      this.store.aplicacoesDeModeloEmAberto.update(
+        (atuais) => new Map([...atuais, [finalidade, emAberto]]),
+      );
     }
     if (!desfecho.ok) {
       // Enquanto houver cópia sem desfecho — desta tentativa ou de uma anterior —, a aba diz o
       // mesmo que a trava do passo: uma recusa nova não desfaz a cópia que pode ter chegado. A
       // recusa da nova tentativa vem antes, para o operador saber o que corrigir.
       const emAberto = this.store.aplicacoesDeModeloEmAberto().get(finalidade);
-      const textoEmAberto = emAberto === undefined ? null : textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto);
+      const textoEmAberto =
+        emAberto === undefined
+          ? null
+          : textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto);
       const texto =
         textoEmAberto === null
           ? `O modelo não foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}. ${desfecho.recusa}`
@@ -696,13 +812,26 @@ export class FormularioStepComponent {
     // O que o rascunho marcava como posto pelas exigências era do formulário que saiu: a cópia é
     // decisão do modelo, e só o que a reconciliação acrescentar agora volta a ser dela.
     if (finalidade === FINALIDADE_INSCRICAO) this.store.camposPostosPelasExigencias.set(new Set());
-    this.store.projetarSecao('formulario', comAplicacaoDoServidor(this.store.draft().formulario, desfecho.servidor, desfecho.relato, faseDaAba));
+    this.store.projetarSecao(
+      'formulario',
+      comAplicacaoDoServidor(
+        this.store.draft().formulario,
+        desfecho.servidor,
+        desfecho.relato,
+        faseDaAba,
+      ),
+    );
     const acrescentados = this.reconciliar();
     this.recusas.update((atuais) => semChave(atuais, finalidade));
 
     const nomeDoFato = new Map(this.catalogo().map((fato) => [fato.codigo, fato.nome]));
     const resumo = [
-      ...resumoDaAplicacao(desfecho.relato, modelo.nome, acrescentados, (codigo) => nomeDoFato.get(codigo) ?? codigo),
+      ...resumoDaAplicacao(
+        desfecho.relato,
+        modelo.nome,
+        acrescentados,
+        (codigo) => nomeDoFato.get(codigo) ?? codigo,
+      ),
       ...(desfecho.avisoDaFase === null ? [] : [desfecho.avisoDaFase]),
     ];
     this.resumosDaAplicacao.update((atuais) => new Map([...atuais, [finalidade, resumo]]));
@@ -715,10 +844,24 @@ export class FormularioStepComponent {
    * A fase precisa estar no cronograma gravado ANTES da cópia: sem ela, o formulário nasceria sem
    * fase, e a publicação o recusa.
    */
-  private async aplicarNoServidor(processoId: string, finalidade: string, modeloId: string, faseDaAba: string): Promise<DesfechoDaAplicacao> {
+  private async aplicarNoServidor(
+    processoId: string,
+    finalidade: string,
+    modeloId: string,
+    faseDaAba: string,
+  ): Promise<DesfechoDaAplicacao> {
     const antes = await this.lerProcesso(processoId);
-    if (!isApiOk(antes)) return { ok: false, recusa: 'Não foi possível reler o processo para aplicar o modelo. Tente de novo.', copiaConfirmada: null };
-    const fase = faseQueAAplicacaoDeclara(formularioDaFinalidade(antes.data.formularios, finalidade), faseDaAba, antes.data.cronogramaFases);
+    if (!isApiOk(antes))
+      return {
+        ok: false,
+        recusa: 'Não foi possível reler o processo para aplicar o modelo. Tente de novo.',
+        copiaConfirmada: null,
+      };
+    const fase = faseQueAAplicacaoDeclara(
+      formularioDaFinalidade(antes.data.formularios, finalidade),
+      faseDaAba,
+      antes.data.cronogramaFases,
+    );
     if (fase.declarar && fase.faseId === null) {
       return {
         ok: false,
@@ -728,7 +871,12 @@ export class FormularioStepComponent {
     }
 
     const aplicacao = await this.cadastro.aplicarModeloDeFormulario(processoId, modeloId);
-    if (!aplicacao.ok) return { ok: false, recusa: this.textoDaRecusa(aplicacao.problem), copiaConfirmada: aplicacao.inconclusiva ? false : null };
+    if (!aplicacao.ok)
+      return {
+        ok: false,
+        recusa: this.textoDaRecusa(aplicacao.problem),
+        copiaConfirmada: aplicacao.inconclusiva ? false : null,
+      };
 
     const depois = await this.lerProcesso(processoId);
     if (!isApiOk(depois)) {
@@ -739,8 +887,14 @@ export class FormularioStepComponent {
     const copiado = formularioDaFinalidade(depois.data.formularios, finalidade);
     if (fase.declarar && copiado !== null) {
       const conteudo = conteudoDoFormulario(copiado);
-      const cabecalho = await this.cadastro.gravarFormulario(processoId, finalidade, { faseId: copiado.faseId, conteudo }, { faseId: fase.faseId, conteudo });
-      if (!cabecalho.ok) avisoDaFase = `A fase do formulário não foi gravada: ${this.textoDaRecusa(cabecalho.problem)} Grave o passo para declará-la.`;
+      const cabecalho = await this.cadastro.gravarFormulario(
+        processoId,
+        finalidade,
+        { faseId: copiado.faseId, conteudo },
+        { faseId: fase.faseId, conteudo },
+      );
+      if (!cabecalho.ok)
+        avisoDaFase = `A fase do formulário não foi gravada: ${this.textoDaRecusa(cabecalho.problem)} Grave o passo para declará-la.`;
     }
 
     return {
@@ -750,7 +904,10 @@ export class FormularioStepComponent {
       servidor: {
         formularios: depois.data.formularios,
         cronogramaFases: depois.data.cronogramaFases,
-        regrasDerivacao: depois.data.regrasDerivacao.map((config) => ({ codigoFato: config.codigoFato, regras: config.regras })),
+        regrasDerivacao: depois.data.regrasDerivacao.map((config) => ({
+          codigoFato: config.codigoFato,
+          regras: config.regras,
+        })),
       },
     };
   }
@@ -770,7 +927,11 @@ export class FormularioStepComponent {
   private focarAba(finalidade: string): void {
     const sufixo = sufixoDaFinalidade(finalidade);
     afterNextRender(
-      () => (document.getElementById(`form-aba-${sufixo}`) ?? document.getElementById(`form-${sufixo}-fase-titulo`))?.focus(),
+      () =>
+        (
+          document.getElementById(`form-aba-${sufixo}`) ??
+          document.getElementById(`form-${sufixo}-fase-titulo`)
+        )?.focus(),
       { injector: this.injector },
     );
   }
@@ -792,7 +953,10 @@ export class FormularioStepComponent {
   readonly desempateSemDataDeNascimento = computed(() => {
     if (this.store.emConsulta()) return false;
     const draft = this.store.draft();
-    return desempateSemDataDeNascimento(draft.desempate, fatosColetadosPelaInscricao(draft.formulario.conteudo));
+    return desempateSemDataDeNascimento(
+      draft.desempate,
+      fatosColetadosPelaInscricao(draft.formulario.conteudo),
+    );
   });
 
   /** O desempate por idoso declarado sem apuração da idade neste formulário. */
@@ -812,7 +976,9 @@ export class FormularioStepComponent {
   );
 
   /** As fases do cronograma, para ancorar a apuração da idade. */
-  readonly fasesEscolhiveis = computed(() => this.store.draft().cronograma.fases.map((fase) => fase.codigo));
+  readonly fasesEscolhiveis = computed(() =>
+    this.store.draft().cronograma.fases.map((fase) => fase.codigo),
+  );
 
   /**
    * Os campos que nada no certame usa. Existem porque a remoção automática só alcança o que a
@@ -821,8 +987,8 @@ export class FormularioStepComponent {
    */
   readonly camposSemUso = computed(() => {
     const draft = this.store.draft();
-    return camposSemUsoDeclarado(draft.formulario, draft.documentos, draft.desempate).map((campo) =>
-      campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo,
+    return camposSemUsoDeclarado(draft.formulario, draft.documentos, draft.desempate).map(
+      (campo) => (campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo),
     );
   });
 
@@ -859,7 +1025,11 @@ export class FormularioStepComponent {
       ...[...this.store.aplicacoesDeModeloEmAberto()].map(([finalidade, emAberto]) =>
         textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto),
       ),
-      ...problemasDoFormulario(draft.formulario, draft.documentos, new Set(draft.cronograma.fases.map((fase) => fase.codigo))),
+      ...problemasDoFormulario(
+        draft.formulario,
+        draft.documentos,
+        new Set(draft.cronograma.fases.map((fase) => fase.codigo)),
+      ),
       ...this.camposSemValoresOfertados().map(
         (campo) =>
           `O formulário pergunta ${campo} ao candidato, e a oferta de atendimento especializado não declara nenhum valor para escolher. Declare ao menos um em "Atend. especial", ou retire o campo daqui.`,
@@ -886,7 +1056,9 @@ export class FormularioStepComponent {
     if (processoId === null) {
       return {
         valid: false,
-        messages: ['O cadastro do processo precisa estar concluído antes de declarar os formulários.'],
+        messages: [
+          'O cadastro do processo precisa estar concluído antes de declarar os formulários.',
+        ],
       };
     }
 
@@ -901,28 +1073,39 @@ export class FormularioStepComponent {
       if (!isApiOk(detalhe)) {
         return {
           valid: false,
-          messages: ['Não foi possível reler o processo para gravar os formulários. Tente gravar de novo.'],
+          messages: [
+            'Não foi possível reler o processo para gravar os formulários. Tente gravar de novo.',
+          ],
         };
       }
 
-      const faseIdPorCodigo = new Map(detalhe.data.cronogramaFases.map((fase) => [fase.codigo, fase.id] as const));
+      const faseIdPorCodigo = new Map(
+        detalhe.data.cronogramaFases.map((fase) => [fase.codigo, fase.id] as const),
+      );
       const paraEnvio: FormularioParaEnvio[] = [];
       for (const aba of this.abas()) {
         const faseId = faseIdPorCodigo.get(aba.fase);
         if (faseId === undefined) {
           return {
             valid: false,
-            messages: [`A fase do formulário de ${aba.nome} ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.`],
+            messages: [
+              `A fase do formulário de ${aba.nome} ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.`,
+            ],
           };
         }
         paraEnvio.push({ finalidade: aba.finalidade, faseId, conteudo: aba.conteudo });
       }
 
-      const gravados = (finalidade: string) => formularioDaFinalidade(detalhe.data.formularios, finalidade);
+      const gravados = (finalidade: string) =>
+        formularioDaFinalidade(detalhe.data.formularios, finalidade);
       const ordem = ordemDeGravacao(
         paraEnvio.map((formulario) => {
           const gravado = gravados(formulario.finalidade);
-          return { finalidade: formulario.finalidade, servidor: gravado === null ? null : conteudoDoFormulario(gravado), desejado: formulario.conteudo };
+          return {
+            finalidade: formulario.finalidade,
+            servidor: gravado === null ? null : conteudoDoFormulario(gravado),
+            desejado: formulario.conteudo,
+          };
         }),
       );
 
@@ -934,7 +1117,9 @@ export class FormularioStepComponent {
         const gravacao = await this.cadastro.gravarFormulario(
           processoId,
           finalidade,
-          gravado === null ? null : { faseId: gravado.faseId, conteudo: conteudoDoFormulario(gravado) },
+          gravado === null
+            ? null
+            : { faseId: gravado.faseId, conteudo: conteudoDoFormulario(gravado) },
           { faseId: desejado.faseId, conteudo: desejado.conteudo },
         );
         if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
@@ -950,13 +1135,18 @@ export class FormularioStepComponent {
 
       const temporal = await this.cadastro.definirReferenciaTemporalFatos(
         processoId,
-        comoComandoDeReferenciaTemporal(this.store.draft().formulario.referenciaTemporal, faseIdPorCodigo),
+        comoComandoDeReferenciaTemporal(
+          this.store.draft().formulario.referenciaTemporal,
+          faseIdPorCodigo,
+        ),
       );
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!temporal.ok) {
         return {
           valid: false,
-          messages: [`Os formulários foram gravados. ${this.problemI18n.resolve(temporal.problem).title}`],
+          messages: [
+            `Os formulários foram gravados. ${this.problemI18n.resolve(temporal.problem).title}`,
+          ],
         };
       }
 
@@ -971,17 +1161,25 @@ export class FormularioStepComponent {
    * A recusa que aponta um item, uma etapa, um grupo ou um termo vai para ele no editor da aba; o
    * resto — a do grafo, que só cita o fato na mensagem — volta como mensagem do passo.
    */
-  private aplicarRecusa(finalidade: string, problem: ProblemDetails, conteudo: ConteudoDoFormulario): readonly string[] {
+  private aplicarRecusa(
+    finalidade: string,
+    problem: ProblemDetails,
+    conteudo: ConteudoDoFormulario,
+  ): readonly string[] {
     const erros = problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? (problem.errors ?? []) : [];
     if (erros.length === 0) {
       this.recusas.set(new Map());
-      return [`O formulário de ${nomeDaFinalidade(finalidade)} não foi gravado. ${this.problemI18n.resolve(problem).title}`];
+      return [
+        `O formulário de ${nomeDaFinalidade(finalidade)} não foi gravado. ${this.problemI18n.resolve(problem).title}`,
+      ];
     }
     const recusas = distribuirRecusas(erros, semDadosBasicos(conteudo));
     this.recusas.set(new Map([[finalidade, recusas]]));
     return recusas.gerais.length > 0
       ? recusas.gerais
-      : [`O formulário de ${nomeDaFinalidade(finalidade)} foi recusado: veja os campos marcados na aba dele.`];
+      : [
+          `O formulário de ${nomeDaFinalidade(finalidade)} foi recusado: veja os campos marcados na aba dele.`,
+        ];
   }
 
   /**
@@ -990,7 +1188,11 @@ export class FormularioStepComponent {
    * que gravaram antes dela: o conteúdo dos outros, na tela, é o que o operador quer, e a próxima
    * tentativa se compara com a releitura que fizer.
    */
-  private async reconciliarComOServidor(processoId: string, geracao: number, gravadas: readonly string[] | null): Promise<void> {
+  private async reconciliarComOServidor(
+    processoId: string,
+    geracao: number,
+    gravadas: readonly string[] | null,
+  ): Promise<void> {
     const detalhe = await this.lerProcesso(processoId);
     if (geracao !== this.store.geracao() || !isApiOk(detalhe)) return;
     if (gravadas === null) {
@@ -1030,7 +1232,11 @@ function leituraDe(conteudo: ConteudoDoFormulario) {
     titulo: etapa.titulo,
     entradas: entradasDaSecao(conteudo, etapa.codigo).map((entrada) =>
       entrada.tipo === 'item'
-        ? { chave: entrada.item.fatoCodigo, rotulo: entrada.item.rotulo, resposta: resposta(entrada.item.obrigatoriedade) }
+        ? {
+            chave: entrada.item.fatoCodigo,
+            rotulo: entrada.item.rotulo,
+            resposta: resposta(entrada.item.obrigatoriedade),
+          }
         : {
             chave: entrada.grupo.codigo,
             rotulo: entrada.grupo.rotulo,

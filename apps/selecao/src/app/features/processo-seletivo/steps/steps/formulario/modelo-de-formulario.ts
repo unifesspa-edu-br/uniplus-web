@@ -3,7 +3,11 @@ import type { AplicacaoDeModeloDto, FormularioDto } from '@uniplus/shared-data/s
 
 import type { DerivacaoDeFato, FormularioDeInscricao } from '../../processo-seletivo.models';
 import { fatosColetadosPor, type ProcessoComFormularios } from './formulario-do-processo';
-import { comFormulario, formularioDoServidorNaFinalidade, formulariosDoRascunho } from './formularios-por-finalidade';
+import {
+  comFormulario,
+  formularioDoServidorNaFinalidade,
+  formulariosDoRascunho,
+} from './formularios-por-finalidade';
 
 /**
  * Partir de um modelo (UNI-REQ-0144): o processo copia um modelo de formulário da Configuração
@@ -24,7 +28,9 @@ export interface ModeloOferecido {
  * ativos — quem decide o que serve ao processo é o servidor —, e cada aba oferece só os da
  * finalidade dela.
  */
-export function modelosPorFinalidade(modelos: readonly ModeloFormularioView[]): ReadonlyMap<string, readonly ModeloOferecido[]> {
+export function modelosPorFinalidade(
+  modelos: readonly ModeloFormularioView[],
+): ReadonlyMap<string, readonly ModeloOferecido[]> {
   const porFinalidade = new Map<string, ModeloOferecido[]>();
   for (const modelo of modelos) {
     const daFinalidade = porFinalidade.get(modelo.finalidade) ?? [];
@@ -54,7 +60,10 @@ export function faseQueAAplicacaoDeclara(
   fasesGravadas: readonly { readonly id: string; readonly codigo: string }[],
 ): FaseDaAplicacao {
   if (gravado?.faseId != null) return { declarar: false };
-  return { declarar: true, faseId: fasesGravadas.find((fase) => fase.codigo === faseCodigo)?.id ?? null };
+  return {
+    declarar: true,
+    faseId: fasesGravadas.find((fase) => fase.codigo === faseCodigo)?.id ?? null,
+  };
 }
 
 /** O processo relido como a projeção da aplicação o precisa: os formulários, as fases e as derivações. */
@@ -80,11 +89,18 @@ export function comAplicacaoDoServidor(
   const aplicado = formularioDoServidorNaFinalidade(servidor, relato.finalidade);
   if (aplicado === null) return rascunho;
 
-  let formulario = comFormulario(rascunho, { ...aplicado, faseCodigo: aplicado.faseCodigo === '' ? faseDaAba : aplicado.faseCodigo });
+  let formulario = comFormulario(rascunho, {
+    ...aplicado,
+    faseCodigo: aplicado.faseCodigo === '' ? faseDaAba : aplicado.faseCodigo,
+  });
 
   const trazidos = new Set(relato.fatosTrazidosParaAInscricao);
   for (const outro of formulariosDoRascunho(rascunho)) {
-    if (outro.finalidade === relato.finalidade || !fatosColetadosPor(outro.conteudo).some((fato) => trazidos.has(fato))) continue;
+    if (
+      outro.finalidade === relato.finalidade ||
+      !fatosColetadosPor(outro.conteudo).some((fato) => trazidos.has(fato))
+    )
+      continue;
     const doServidor = formularioDoServidorNaFinalidade(servidor, outro.finalidade);
     if (doServidor !== null) formulario = comFormulario(formulario, doServidor);
   }
@@ -125,7 +141,9 @@ export function resumoDaAplicacao(
     );
   }
   if (relato.fatosTrazidosParaAInscricao.length > 0) {
-    frases.push(`Trazidos de outro formulário para a inscrição: ${nomes(relato.fatosTrazidosParaAInscricao)}.`);
+    frases.push(
+      `Trazidos de outro formulário para a inscrição: ${nomes(relato.fatosTrazidosParaAInscricao)}.`,
+    );
   }
   if (relato.fatosMantidosNaInscricao.length > 0) {
     frases.push(
@@ -134,16 +152,20 @@ export function resumoDaAplicacao(
   }
   if (relato.descartados.length > 0) {
     const partes = relato.descartados.map(
-      (parte) => `${parte.parte === 'TERMO' ? parte.codigo : nomeDoFato(parte.codigo)} (${MOTIVOS_DO_DESCARTE[parte.motivo] ?? parte.motivo})`,
+      (parte) =>
+        `${parte.parte === 'TERMO' ? parte.codigo : nomeDoFato(parte.codigo)} (${MOTIVOS_DO_DESCARTE[parte.motivo] ?? parte.motivo})`,
     );
-    frases.push(`Fora da cópia porque o catálogo mudou depois do modelo: ${partes.join(', ')}. A correção é editar o modelo.`);
+    frases.push(
+      `Fora da cópia porque o catálogo mudou depois do modelo: ${partes.join(', ')}. A correção é editar o modelo.`,
+    );
   }
   if (relato.derivacoesCopiadas.length > 0) {
-    frases.push(`Regras de derivação copiadas do catálogo para o processo: ${nomes(relato.derivacoesCopiadas)}.`);
+    frases.push(
+      `Regras de derivação copiadas do catálogo para o processo: ${nomes(relato.derivacoesCopiadas)}.`,
+    );
   }
   return frases;
 }
-
 
 /**
  * A aplicação que ficou sem desfecho conhecido no rascunho. Sem confirmação, o envio falhou por
@@ -158,7 +180,10 @@ export interface AplicacaoEmAberto {
 }
 
 /** O que a aba e a trava do passo dizem da aplicação em aberto, com o que resolve cada caso. */
-export function textoDaAplicacaoEmAberto(nomeDaFinalidade: string, emAberto: AplicacaoEmAberto): string {
+export function textoDaAplicacaoEmAberto(
+  nomeDaFinalidade: string,
+  emAberto: AplicacaoEmAberto,
+): string {
   return emAberto.copiaConfirmada
     ? `O modelo “${emAberto.modeloNome}” foi aplicado ao formulário de ${nomeDaFinalidade}, mas não foi possível reler o processo. Recarregue o processo antes de continuar, para não gravar por cima da cópia.`
     : `Não foi possível confirmar se o modelo “${emAberto.modeloNome}” foi aplicado ao formulário de ${nomeDaFinalidade}. Aplique o mesmo modelo de novo ou recarregue o processo antes de continuar, para não gravar por cima da cópia.`;

@@ -10,7 +10,11 @@ import {
   isApiOk,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
-import { CriarFaseCanonicaCommand, FaseCanonicaDto, FasesCanonicasApi } from './fases-canonicas.api';
+import {
+  CriarFaseCanonicaCommand,
+  FaseCanonicaDto,
+  FasesCanonicasApi,
+} from './fases-canonicas.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';

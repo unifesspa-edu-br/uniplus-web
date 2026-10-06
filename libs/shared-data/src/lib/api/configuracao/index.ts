@@ -206,7 +206,11 @@ export type {
 } from './fatos-candidato.api';
 
 export { AvaliacoesDeFormularioApi } from './avaliacoes-de-formulario.api';
-export type { AvaliacaoDeFormularioInput, AvaliacaoPortavel, FormularioPortavel } from './avaliacoes-de-formulario.api';
+export type {
+  AvaliacaoDeFormularioInput,
+  AvaliacaoPortavel,
+  FormularioPortavel,
+} from './avaliacoes-de-formulario.api';
 
 export { ModelosFormularioApi } from './modelos-formulario.api';
 export type {
@@ -214,6 +218,7 @@ export type {
   CriarModeloFormularioCommand,
   EdicaoDoModeloInput,
   ItemPreVisualizadoDto,
+  FormularioRenderizavel,
   ModeloFormularioView,
   ModelosFormularioQuery,
   PreVisualizacaoDoModeloDto,

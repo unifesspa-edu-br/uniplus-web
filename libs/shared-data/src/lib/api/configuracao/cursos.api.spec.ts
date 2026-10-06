@@ -89,9 +89,7 @@ describe('CursosApi', () => {
   });
 
   it('listar() com cursor omite sort (o cursor carrega a ordenação assinada)', async () => {
-    const promise = firstValueFrom(
-      api.listar({ cursor: 'abc', direction: 'next', sort: 'nome' }),
-    );
+    const promise = firstValueFrom(api.listar({ cursor: 'abc', direction: 'next', sort: 'nome' }));
     const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
     expect(req.request.params.has('sort')).toBe(false);
     req.flush([cursoSeed]);

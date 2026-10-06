@@ -23,7 +23,12 @@ const ofertaSeed: OfertaCursoDto = {
   id: ID,
   cursoId: CURSO_ID,
   localOfertaId: LOCAL_ID,
-  unidadeOfertante: { origemId: UNIDADE_ID, sigla: 'IGE', nome: 'Instituto de Geociências e Engenharias', tipo: 'Instituto' },
+  unidadeOfertante: {
+    origemId: UNIDADE_ID,
+    sigla: 'IGE',
+    nome: 'Instituto de Geociências e Engenharias',
+    tipo: 'Instituto',
+  },
   programaDeOferta: 'REGULAR',
   formatoPedagogico: 'PRESENCIAL',
   turno: 'MATUTINO',

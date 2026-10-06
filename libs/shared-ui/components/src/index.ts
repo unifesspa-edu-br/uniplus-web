@@ -93,6 +93,7 @@ export type {
   CampoRenderizavel,
   FormularioDoCandidato,
   GrupoRenderizavel,
+  PressupostoDoFormulario,
   SecaoRenderizavel,
   TermoRenderizavel,
   ValorSelecionavel,
@@ -102,6 +103,12 @@ export {
   lerArquivoDoFormulario,
   type ArquivoDoFormulario,
 } from '../../src/lib/components/formulario-do-candidato/arquivo-do-formulario';
+export {
+  SimulacaoDeFormularioComponent,
+  type ConferenciaComOServidor,
+  type SimulacaoParaConferir,
+} from '../../src/lib/components/formulario-do-candidato/simulacao-de-formulario';
+export { PressupostosDaSimulacaoComponent } from '../../src/lib/components/formulario-do-candidato/pressupostos-da-simulacao';
 export { baixarJson } from '../../src/lib/components/formulario-do-candidato/baixar-json';
 export {
   divergenciasEntre,

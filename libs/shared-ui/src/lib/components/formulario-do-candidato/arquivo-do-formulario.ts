@@ -224,7 +224,10 @@ function valoresDasCondicoes(
     for (const clausula of predicado ?? []) {
       for (const condicao of clausula ?? []) {
         if (!condicao) continue;
-        valores.set(condicao.fato, [...(valores.get(condicao.fato) ?? []), condicao.valor]);
+        valores.set(condicao.fato, [
+          ...(valores.get(condicao.fato) ?? []),
+          condicao.valor as ValorJson,
+        ]);
       }
     }
   };
@@ -261,7 +264,9 @@ function recusaDaApresentacao(
   conteudo: Record<string, unknown>,
 ): { caminho: string; mensagem: string } | null {
   const texto = (v: unknown): boolean => typeof v === 'string';
-  const numero = (v: unknown): boolean => typeof v === 'number';
+  // O inteiro do contrato vem como número ou, como a API também o lê, como número escrito em texto.
+  const numero = (v: unknown): boolean =>
+    typeof v === 'number' || (typeof v === 'string' && /^-?[0-9]+$/.test(v));
   const opcional =
     (conferir: (v: unknown) => boolean) =>
     (v: unknown): boolean =>
@@ -336,9 +341,25 @@ function recusaDaApresentacao(
       valoresDosCampos(grupo['subitens'] as Record<string, unknown>[], `grupos[${i}].subitens`);
     if (recusa) return recusa;
   }
-  return valoresDosCampos(
+  const recusaDosCampos = valoresDosCampos(
     conteudo['fatosColetados'] as Record<string, unknown>[],
     'fatosColetados',
+  );
+  if (recusaDosCampos) return recusaDosCampos;
+
+  // Os pressupostos são opcionais no arquivo; quando vêm, cada um é conferido como os campos.
+  const pressupostos = conteudo['pressupostos'];
+  if (pressupostos === undefined || pressupostos === null) return null;
+  const textos = (v: unknown): boolean => Array.isArray(v) && v.every(texto);
+  return (
+    conferir(pressupostos, 'pressupostos', {
+      fatoCodigo: texto,
+      rotulo: opcional(texto),
+      tipoRenderizacao: opcional(texto),
+      formato: opcional(texto),
+      calculadoDe: opcional(textos),
+      valoresSelecionaveis: opcional((v) => Array.isArray(v)),
+    }) ?? valoresDosCampos(pressupostos as Record<string, unknown>[], 'pressupostos')
   );
 }
 

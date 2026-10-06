@@ -8,6 +8,7 @@ import { SELECAO_BASE_PATH } from './tokens';
 
 export type CriarProcessoSeletivoCommand = components['schemas']['CriarProcessoSeletivoCommand'];
 export type ProcessoSeletivoDto = components['schemas']['ProcessoSeletivoDto'];
+export type FormularioRenderizavelDto = components['schemas']['FormularioRenderizavelDto'];
 export type ProcessoSeletivoResumoDto = components['schemas']['ProcessoSeletivoResumoDto'];
 export type TipoProcessoSnapshotDto = components['schemas']['TipoProcessoSnapshotDto'];
 export type IniciarUploadDocumentoEditalDto =
@@ -48,8 +49,10 @@ export type DefinirReferenciaTemporalFatosRequest =
   components['schemas']['DefinirReferenciaTemporalFatosRequest'];
 export type FormularioDto = components['schemas']['FormularioDto'];
 export type DefinirFormularioRequest = components['schemas']['DefinirFormularioRequest'];
-export type DefinirItensDoFormularioRequest = components['schemas']['DefinirItensDoFormularioRequest'];
-export type DefinirTermosDoFormularioRequest = components['schemas']['DefinirTermosDoFormularioRequest'];
+export type DefinirItensDoFormularioRequest =
+  components['schemas']['DefinirItensDoFormularioRequest'];
+export type DefinirTermosDoFormularioRequest =
+  components['schemas']['DefinirTermosDoFormularioRequest'];
 export type AplicacaoDeModeloInput = components['schemas']['AplicacaoDeModeloInput'];
 export type AplicacaoDeModeloDto = components['schemas']['AplicacaoDeModeloDto'];
 export type ParteDescartadaDto = components['schemas']['ParteDescartadaDto'];
@@ -352,10 +355,14 @@ export class ProcessosSeletivosApi {
     request: DefinirFormularioRequest,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(this.urlDoFormulario(processoSeletivoId, finalidade), request, {
-      context,
-      headers: new HttpHeaders({ Accept: 'application/json' }),
-    });
+    return this.http.put<ApiResult<void>>(
+      this.urlDoFormulario(processoSeletivoId, finalidade),
+      request,
+      {
+        context,
+        headers: new HttpHeaders({ Accept: 'application/json' }),
+      },
+    );
   }
 
   /**
@@ -368,10 +375,14 @@ export class ProcessosSeletivosApi {
     request: DefinirItensDoFormularioRequest,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(`${this.urlDoFormulario(processoSeletivoId, finalidade)}/itens`, request, {
-      context,
-      headers: new HttpHeaders({ Accept: 'application/json' }),
-    });
+    return this.http.put<ApiResult<void>>(
+      `${this.urlDoFormulario(processoSeletivoId, finalidade)}/itens`,
+      request,
+      {
+        context,
+        headers: new HttpHeaders({ Accept: 'application/json' }),
+      },
+    );
   }
 
   /** PUT `…/formularios/{finalidade}/termos` — substitui os termos exigidos. Responde 204 sem corpo. */
@@ -381,10 +392,14 @@ export class ProcessosSeletivosApi {
     request: DefinirTermosDoFormularioRequest,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(`${this.urlDoFormulario(processoSeletivoId, finalidade)}/termos`, request, {
-      context,
-      headers: new HttpHeaders({ Accept: 'application/json' }),
-    });
+    return this.http.put<ApiResult<void>>(
+      `${this.urlDoFormulario(processoSeletivoId, finalidade)}/termos`,
+      request,
+      {
+        context,
+        headers: new HttpHeaders({ Accept: 'application/json' }),
+      },
+    );
   }
 
   /**
@@ -413,7 +428,10 @@ export class ProcessosSeletivosApi {
       `${this.basePath}/api/selecao/admin/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/formularios/aplicacoes-de-modelo`,
       request,
       {
-        context: withVendorMime('aplicacao-de-modelo-formulario', 1).set(IDEMPOTENCY_KEY_TOKEN, context.get(IDEMPOTENCY_KEY_TOKEN)),
+        context: withVendorMime('aplicacao-de-modelo-formulario', 1).set(
+          IDEMPOTENCY_KEY_TOKEN,
+          context.get(IDEMPOTENCY_KEY_TOKEN),
+        ),
       },
     );
   }
@@ -432,6 +450,23 @@ export class ProcessosSeletivosApi {
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/pre-visualizacao`,
       simulacao,
       { context: withVendorMime('pre-visualizacao-processo-seletivo', 1) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/renderizavel` — o
+   * formulário da finalidade pronto para o candidato ver, com as regras que o interpretador avalia,
+   * montado da configuração viva: serve também ao rascunho, para a simulação.
+   */
+  obterFormularioRenderizavel(
+    processoSeletivoId: string,
+    finalidade: string,
+  ): Observable<ApiResult<FormularioRenderizavelDto>> {
+    return this.http.get<ApiResult<FormularioRenderizavelDto>>(
+      `${this.urlDoFormulario(processoSeletivoId, finalidade)}/renderizavel`,
+      {
+        context: withVendorMime('formulario', 2),
+      },
     );
   }
 

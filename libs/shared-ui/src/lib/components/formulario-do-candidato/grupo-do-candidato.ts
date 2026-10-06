@@ -1,7 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { CampoDoCandidatoComponent } from './campo-do-candidato';
-import { type CampoNoPasso, fatoDaUf, type GrupoNoPasso } from './formulario-do-candidato.model';
+import {
+  type CampoNoPasso,
+  comoInteiro,
+  fatoDaUf,
+  type GrupoNoPasso,
+} from './formulario-do-candidato.model';
 import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
 
 /** O parentesco que identifica a ocorrência do próprio candidato no grupo que o inclui. */
@@ -34,7 +39,7 @@ interface OcorrenciaNaTela {
 
       @if (ocorrencias() === undefined) {
         <!-- Sem resposta ainda: nenhuma ocorrência na lista. -->
-      } @else if (naTela().length === 0 && grupo().minimo === 0) {
+      } @else if (naTela().length === 0 && minimo() === 0) {
         <p class="formulario-candidato__declaracao">
           Declarado: não há {{ grupo().rotulo.toLocaleLowerCase('pt-BR') }}.
         </p>
@@ -93,7 +98,7 @@ interface OcorrenciaNaTela {
             Acrescentar a {{ grupo().rotulo.toLocaleLowerCase('pt-BR') }}
           </button>
         }
-        @if (grupo().minimo === 0 && naTela().length === 0 && ocorrencias() === undefined) {
+        @if (minimo() === 0 && naTela().length === 0 && ocorrencias() === undefined) {
           <button
             type="button"
             class="btn btn--tertiary btn--sm"
@@ -130,9 +135,15 @@ export class GrupoDoCandidatoComponent {
     () => this.noPasso().avaliado.obrigatorio === 'VERDADEIRO',
   );
   private readonly lista = computed(() => this.ocorrencias() ?? []);
-  protected readonly cheio = computed(() => {
+  /** O mínimo e o máximo de ocorrências, como números; o máximo nulo é sem limite. */
+  protected readonly minimo = computed(() => comoInteiro(this.grupo().minimo));
+  protected readonly maximo = computed(() => {
     const maximo = this.grupo().maximo;
-    return maximo !== null && maximo !== undefined && this.lista().length >= maximo;
+    return maximo === null || maximo === undefined ? null : comoInteiro(maximo);
+  });
+  protected readonly cheio = computed(() => {
+    const maximo = this.maximo();
+    return maximo !== null && this.lista().length >= maximo;
   });
   /**
    * A ocorrência do candidato: a primeira com o parentesco de próprio candidato, no grupo que o inclui.
@@ -146,8 +157,9 @@ export class GrupoDoCandidatoComponent {
   protected readonly temOcorrenciaDoCandidato = computed(() => this.indiceDoCandidato() !== null);
 
   protected readonly limites = computed(() => {
-    const { minimo, maximo } = this.grupo();
-    if (maximo !== null && maximo !== undefined)
+    const minimo = this.minimo();
+    const maximo = this.maximo();
+    if (maximo !== null)
       return minimo === maximo ? `Informe ${minimo}.` : `Informe de ${minimo} a ${maximo}.`;
     return minimo > 0 ? `Informe ao menos ${minimo}.` : 'Informe quantos houver.';
   });
@@ -155,7 +167,9 @@ export class GrupoDoCandidatoComponent {
   /** Cada ocorrência com os campos que aparecem nela, na ordem do grupo. */
   protected readonly naTela = computed<readonly OcorrenciaNaTela[]>(() => {
     const { grupo, avaliado, regras } = this.noPasso();
-    const subitens = [...grupo.subitens].sort((a, b) => a.ordem - b.ordem);
+    const subitens = [...grupo.subitens].sort(
+      (a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem),
+    );
     const indiceDoCandidato = this.indiceDoCandidato();
     let integrante = 0;
     return this.lista().map((ocorrencia, i) => {

@@ -16,11 +16,14 @@ export type ValorJson =
   | readonly ValorJson[]
   | { readonly [chave: string]: ValorJson };
 
-/** Uma condição sobre um fato: `{ fato, operador, valor }`. */
+/**
+ * Uma condição sobre um fato: `{ fato, operador, valor }`. O valor chega como qualquer JSON — o contrato o
+ * declara sem forma — e a leitura das regras confere se ele cabe no operador.
+ */
 export interface CondicaoDasRegras {
   readonly fato: string;
   readonly operador: string;
-  readonly valor: ValorJson;
+  readonly valor?: unknown;
 }
 
 /**
@@ -34,10 +37,16 @@ export interface OpcoesCondicionadasDasRegras {
   readonly valores?: readonly string[] | null;
 }
 
+/**
+ * Um número do contrato. O tipo gerado aceita também o número escrito em texto, como a API lê o corpo;
+ * a leitura das regras o converte.
+ */
+export type NumeroDoContrato = number | string;
+
 export interface RestricaoDasRegras {
   readonly tipo: string;
-  readonly minimo?: number | null;
-  readonly maximo?: number | null;
+  readonly minimo?: NumeroDoContrato | null;
+  readonly maximo?: NumeroDoContrato | null;
   readonly entradas?: readonly OpcoesCondicionadasDasRegras[] | null;
   readonly fatos?: readonly string[] | null;
 }
@@ -63,8 +72,8 @@ export interface GrupoDasRegras {
   readonly exibicao?: PredicadoDasRegras;
   readonly obrigatoriedade: string;
   readonly predicadoObrigatoriedade?: PredicadoDasRegras;
-  readonly minimo: number;
-  readonly maximo?: number | null;
+  readonly minimo: NumeroDoContrato;
+  readonly maximo?: NumeroDoContrato | null;
   readonly incluiCandidato: boolean;
   readonly subitens?: readonly ItemDasRegras[] | null;
 }

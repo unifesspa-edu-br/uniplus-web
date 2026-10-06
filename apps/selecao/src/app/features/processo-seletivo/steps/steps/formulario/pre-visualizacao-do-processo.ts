@@ -1,9 +1,16 @@
 import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
-import type { NoExigenciaDto, PreVisualizacaoDoProcessoDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import type {
+  NoExigenciaDto,
+  PreVisualizacaoDoProcessoDto,
+  ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import type { DocumentoAvaliado, ResultadoDaPreVisualizacao } from '@uniplus/shared-ui/components';
 
 /** O que do processo lido nomeia o resultado: o cronograma, as etapas e a árvore de exigências gravados. */
-export type ProcessoParaNomear = Pick<ProcessoSeletivoDto, 'cronogramaFases' | 'etapas' | 'raizesExigencia'>;
+export type ProcessoParaNomear = Pick<
+  ProcessoSeletivoDto,
+  'cronogramaFases' | 'etapas' | 'raizesExigencia'
+>;
 
 /**
  * O resultado da pré-visualização do processo como a tela o mostra. A API cita a fase, a etapa e a
@@ -20,7 +27,11 @@ export function resultadoDoProcesso(
   const fases = new Map(
     (processo?.cronogramaFases ?? []).map((fase) => [
       fase.id,
-      { chave: fase.codigo, nome: fasePorId.get(fase.faseCanonicaOrigemId)?.nome ?? fase.codigo, ordem: Number(fase.ordem) },
+      {
+        chave: fase.codigo,
+        nome: fasePorId.get(fase.faseCanonicaOrigemId)?.nome ?? fase.codigo,
+        ordem: Number(fase.ordem),
+      },
     ]),
   );
   const etapas = new Map((processo?.etapas ?? []).map((etapa) => [etapa.id, etapa.nome]));
@@ -33,13 +44,21 @@ export function resultadoDoProcesso(
         nome: documento.tipoDocumentoNome,
         obrigatorio: documento.obrigatorio,
         // A fase fora do cronograma lido só acontece sem leitura ou com ela defasada: fica pela identidade, no fim.
-        fase: fases.get(documento.faseId) ?? { chave: documento.faseId, nome: documento.faseId, ordem: Number.POSITIVE_INFINITY },
+        fase: fases.get(documento.faseId) ?? {
+          chave: documento.faseId,
+          nome: documento.faseId,
+          ordem: Number.POSITIVE_INFINITY,
+        },
         finalidade: documento.finalidade,
-        etapa: documento.etapaId === null ? null : (etapas.get(documento.etapaId) ?? documento.etapaId),
+        etapa:
+          documento.etapaId === null ? null : (etapas.get(documento.etapaId) ?? documento.etapaId),
         situacao: documento.situacao,
         grupo: grupos.get(documento.exigenciaId) ?? null,
         ocorrenciaId: documento.entidadeId,
-        alternativas: documento.alternativas.map((alternativa) => ({ grupoId: alternativa.grupoId, minimo: Number(alternativa.minimo) })),
+        alternativas: documento.alternativas.map((alternativa) => ({
+          grupoId: alternativa.grupoId,
+          minimo: Number(alternativa.minimo),
+        })),
       }),
     ),
   };

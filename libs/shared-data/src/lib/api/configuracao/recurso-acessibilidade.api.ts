@@ -1,14 +1,16 @@
-import { Observable } from "rxjs";
-import { inject, Injectable } from "@angular/core";
-import { HttpClient, HttpContext, HttpHeaders, HttpParams } from "@angular/common/http";
+import { Observable } from 'rxjs';
+import { inject, Injectable } from '@angular/core';
+import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 
-import { ApiResult, withVendorMime } from "@uniplus/shared-core/http";
-import { components } from "./schema";
-import { CONFIGURACAO_BASE_PATH } from "./tokens";
+import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { components } from './schema';
+import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type RecursoAcessibilidadeDto = components['schemas']['RecursoAcessibilidadeDto'];
-export type CriarRecursoAcessibilidadeCommand = components['schemas']['CriarRecursoAcessibilidadeCommand'];
-export type AtualizarRecursoAcessibilidadeCommand = components['schemas']['AtualizarRecursoAcessibilidadeCommand'];
+export type CriarRecursoAcessibilidadeCommand =
+  components['schemas']['CriarRecursoAcessibilidadeCommand'];
+export type AtualizarRecursoAcessibilidadeCommand =
+  components['schemas']['AtualizarRecursoAcessibilidadeCommand'];
 
 /** Filtro de listagem (cursor pagination, ADR-0026). */
 export interface RecursoAcessibilidadeQuery {
@@ -23,7 +25,9 @@ export class RecursoAcessibilidadeApi {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
   /** GET `/api/configuracao/recursos-acessibilidade` — lista (vivas) por cursor. */
-  listar(query: RecursoAcessibilidadeQuery = {}): Observable<ApiResult<readonly RecursoAcessibilidadeDto[]>> {
+  listar(
+    query: RecursoAcessibilidadeQuery = {},
+  ): Observable<ApiResult<readonly RecursoAcessibilidadeDto[]>> {
     let params = new HttpParams();
     if (query.cursor !== undefined) {
       params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
@@ -45,7 +49,10 @@ export class RecursoAcessibilidadeApi {
   }
 
   /** POST `/api/configuracao/admin/recursos-acessibilidade{` — cria. Idempotency-Key (ADR-0027). */
-  criar(command: CriarRecursoAcessibilidadeCommand, context: HttpContext): Observable<ApiResult<string>> {
+  criar(
+    command: CriarRecursoAcessibilidadeCommand,
+    context: HttpContext,
+  ): Observable<ApiResult<string>> {
     return this.http.post<ApiResult<string>>(
       `${this.basePath}/api/configuracao/admin/recursos-acessibilidade`,
       command,

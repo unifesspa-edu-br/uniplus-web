@@ -85,6 +85,7 @@ export {
   type FundamentoIsencaoDto,
   type DocumentoEditalDto,
   type IniciarUploadDocumentoEditalDto,
+  type FormularioRenderizavelDto,
   type ProcessoSeletivoDto,
   type ProcessoSeletivoResumoDto,
   type ProcessosSeletivosQuery,

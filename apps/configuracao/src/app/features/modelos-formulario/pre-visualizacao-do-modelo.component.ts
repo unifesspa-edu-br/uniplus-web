@@ -22,7 +22,9 @@ import {
   template: `
     <section class="panel cfg-pre-visualizacao" aria-labelledby="cfg-pre-visualizacao-titulo">
       <div class="panel-head">
-        <div class="panel-head__title"><h2 id="cfg-pre-visualizacao-titulo">Pré-visualização</h2></div>
+        <div class="panel-head__title">
+          <h2 id="cfg-pre-visualizacao-titulo">Pré-visualização</h2>
+        </div>
       </div>
 
       <div class="panel-body">
@@ -60,7 +62,19 @@ export class PreVisualizacaoDoModeloComponent {
         etapasConcluidas: simulacao.etapasConcluidas.map((concluida) => concluida.etapa),
         pressupostos: simulacao.pressupostos,
       })
-      .pipe(map((resultado) => (resultado.ok ? { ...resultado, data: { formularios: [{ finalidade: MODELO, ...resultado.data, grupos: [] }], documentos: null } } : resultado)));
+      .pipe(
+        map((resultado) =>
+          resultado.ok
+            ? {
+                ...resultado,
+                data: {
+                  formularios: [{ finalidade: MODELO, ...resultado.data, grupos: [] }],
+                  documentos: null,
+                },
+              }
+            : resultado,
+        ),
+      );
 }
 
 const MODELO = 'MODELO';

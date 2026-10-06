@@ -52,10 +52,19 @@ function fato(patch: Partial<FatoCandidatoView> & { codigo: string }): FatoCandi
 const SEXO = fato({ codigo: 'SEXO', nome: 'Sexo', dominio: 'CATEGORICO' });
 const PCD = fato({ codigo: 'PCD', nome: 'Pessoa com deficiência' });
 const RENDA = fato({ codigo: 'RENDA_FAMILIAR', nome: 'Renda familiar', dominio: 'NUMERICO' });
-const MODALIDADE = fato({ codigo: 'MODALIDADE', origem: 'DERIVADO', binding: 'REGRA_DERIVACAO:MODALIDADE', dominio: 'CATEGORICO' });
+const MODALIDADE = fato({
+  codigo: 'MODALIDADE',
+  origem: 'DERIVADO',
+  binding: 'REGRA_DERIVACAO:MODALIDADE',
+  dominio: 'CATEGORICO',
+});
 const CATALOGO = [SEXO, PCD, RENDA, MODALIDADE];
 
-const secao = (codigo: string, ordem: number, extra: Partial<EtapaDoFormulario> = {}): EtapaDoFormulario => ({
+const secao = (
+  codigo: string,
+  ordem: number,
+  extra: Partial<EtapaDoFormulario> = {},
+): EtapaDoFormulario => ({
   codigo,
   ordem,
   tipo: 'SECAO',
@@ -66,8 +75,17 @@ const secao = (codigo: string, ordem: number, extra: Partial<EtapaDoFormulario> 
   exibicao: null,
   ...extra,
 });
-const bloco = (codigo: string, ordem: number): EtapaDoFormulario => ({ ...secao(codigo, ordem), tipo: 'BLOCO', bloco: codigo });
-const item = (fatoCodigo: string, ordem: number, etapaCodigo: string, extra: Partial<ItemDoFormulario> = {}): ItemDoFormulario => ({
+const bloco = (codigo: string, ordem: number): EtapaDoFormulario => ({
+  ...secao(codigo, ordem),
+  tipo: 'BLOCO',
+  bloco: codigo,
+});
+const item = (
+  fatoCodigo: string,
+  ordem: number,
+  etapaCodigo: string,
+  extra: Partial<ItemDoFormulario> = {},
+): ItemDoFormulario => ({
   fatoCodigo,
   ordem,
   rotulo: fatoCodigo,
@@ -85,8 +103,17 @@ const item = (fatoCodigo: string, ordem: number, etapaCodigo: string, extra: Par
 function inscricaoGravada(extra: Partial<ConteudoDoFormulario> = {}): ConteudoDoFormulario {
   return {
     titulo: null,
-    etapas: [secao('DADOS_BASICOS', 0), secao('S1', 1), bloco('COMPROVACAO_DOCUMENTAL', 2), bloco('REVISAO_E_ACEITE', 3)],
-    itens: [item('NOME', 0, 'DADOS_BASICOS'), item('SEXO', 1, 'DADOS_BASICOS'), item('PCD', 2, 'S1')],
+    etapas: [
+      secao('DADOS_BASICOS', 0),
+      secao('S1', 1),
+      bloco('COMPROVACAO_DOCUMENTAL', 2),
+      bloco('REVISAO_E_ACEITE', 3),
+    ],
+    itens: [
+      item('NOME', 0, 'DADOS_BASICOS'),
+      item('SEXO', 1, 'DADOS_BASICOS'),
+      item('PCD', 2, 'S1'),
+    ],
     termos: [],
     pressupostos: [],
     grupos: [],
@@ -94,7 +121,10 @@ function inscricaoGravada(extra: Partial<ConteudoDoFormulario> = {}): ConteudoDo
   };
 }
 
-function formularioCom(conteudo: ConteudoDoFormulario, extra: Partial<FormularioDeInscricao> = {}): FormularioDeInscricao {
+function formularioCom(
+  conteudo: ConteudoDoFormulario,
+  extra: Partial<FormularioDeInscricao> = {},
+): FormularioDeInscricao {
   return {
     faseCodigo: 'INSCRICAO',
     conteudo,
@@ -144,19 +174,34 @@ describe('os fatos que as exigências citam', () => {
 });
 
 describe('quem cita cada fato no processo', () => {
-  const nomes = { documento: (id: string) => (id === ID_TITULO ? 'Título de eleitor' : id), fato: (codigo: string) => codigo.toLowerCase() };
+  const nomes = {
+    documento: (id: string) => (id === ID_TITULO ? 'Título de eleitor' : id),
+    fato: (codigo: string) => codigo.toLowerCase(),
+  };
 
   it('junta exigências, regras de derivação e desempate, e trava a remoção dizendo quem depende', () => {
     const citantes = quemCitaNoProcesso(
       {
-        documentos: rascunhoCom(exigenciaCom(ID_TITULO, [{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }])),
-        derivacao: [{ codigoFato: 'MODALIDADE', regras: [{ contribui: 'LB_PCD', quando: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]] }] }],
+        documentos: rascunhoCom(
+          exigenciaCom(ID_TITULO, [{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }]),
+        ),
+        derivacao: [
+          {
+            codigoFato: 'MODALIDADE',
+            regras: [
+              { contribui: 'LB_PCD', quando: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]] },
+            ],
+          },
+        ],
         desempate: [MAIOR_IDADE],
       },
       nomes,
     );
 
-    expect(citantes.get('PCD')).toEqual(['o documento “Título de eleitor”', 'as regras que calculam “modalidade”']);
+    expect(citantes.get('PCD')).toEqual([
+      'o documento “Título de eleitor”',
+      'as regras que calculam “modalidade”',
+    ]);
     expect(citantes.get('DATA_NASCIMENTO')).toEqual(['o desempate por maior idade']);
     expect(remocoesTravadasPor(citantes).get('PCD')).toContain('dependem deste dado');
   });
@@ -177,7 +222,9 @@ describe('quem cita cada fato no processo', () => {
             etapas: [secao('H1', 0), ...(habilitacao.etapas ?? [])],
             itens: [
               item('LAUDO', 0, 'H1', { precondicao: citaPcd }),
-              item('CID', 1, 'H1', { precondicao: [[{ fato: 'LAUDO', operador: 'IGUAL', valor: 'true' }]] }),
+              item('CID', 1, 'H1', {
+                precondicao: [[{ fato: 'LAUDO', operador: 'IGUAL', valor: 'true' }]],
+              }),
             ],
           },
         },
@@ -195,10 +242,22 @@ describe('os campos que o processo pressupõe na inscrição', () => {
   const citados = (...fatos: string[]): ReadonlySet<string> => new Set(fatos);
 
   it('põe o campo citado na seção "Outros dados", criada antes do primeiro bloco do sistema e sem exibição', () => {
-    const resultado = comCamposQueAsExigenciasPressupoem(inscricaoGravada(), citados('RENDA_FAMILIAR'), CATALOGO, new Set(), []);
+    const resultado = comCamposQueAsExigenciasPressupoem(
+      inscricaoGravada(),
+      citados('RENDA_FAMILIAR'),
+      CATALOGO,
+      new Set(),
+      [],
+    );
 
     const etapas = [...(resultado.etapas ?? [])].sort((a, b) => Number(a.ordem) - Number(b.ordem));
-    expect(etapas.map((e) => e.codigo)).toEqual(['DADOS_BASICOS', 'S1', SECAO_OUTROS_DADOS, 'COMPROVACAO_DOCUMENTAL', 'REVISAO_E_ACEITE']);
+    expect(etapas.map((e) => e.codigo)).toEqual([
+      'DADOS_BASICOS',
+      'S1',
+      SECAO_OUTROS_DADOS,
+      'COMPROVACAO_DOCUMENTAL',
+      'REVISAO_E_ACEITE',
+    ]);
     expect(etapas[2].exibicao).toBeNull();
     expect(resultado.itens?.find((i) => i.fatoCodigo === 'RENDA_FAMILIAR')).toMatchObject({
       etapaCodigo: SECAO_OUTROS_DADOS,
@@ -211,9 +270,18 @@ describe('os campos que o processo pressupõe na inscrição', () => {
   it('reaproveita a seção "Outros dados" que já existe, tirando a exibição condicional dela', () => {
     const condicional = [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]];
     const base = inscricaoGravada();
-    const comSecao = { ...base, etapas: [...(base.etapas ?? []), secao(SECAO_OUTROS_DADOS, 1.5, { exibicao: condicional })] };
+    const comSecao = {
+      ...base,
+      etapas: [...(base.etapas ?? []), secao(SECAO_OUTROS_DADOS, 1.5, { exibicao: condicional })],
+    };
 
-    const resultado = comCamposQueAsExigenciasPressupoem(comSecao, citados('RENDA_FAMILIAR'), CATALOGO, new Set(), []);
+    const resultado = comCamposQueAsExigenciasPressupoem(
+      comSecao,
+      citados('RENDA_FAMILIAR'),
+      CATALOGO,
+      new Set(),
+      [],
+    );
 
     expect(resultado.etapas?.filter((e) => e.codigo === SECAO_OUTROS_DADOS)).toHaveLength(1);
     expect(resultado.etapas?.find((e) => e.codigo === SECAO_OUTROS_DADOS)?.exibicao).toBeNull();
@@ -221,36 +289,83 @@ describe('os campos que o processo pressupõe na inscrição', () => {
 
   /** Fora da seção reservada, o fato básico seria recusado como alteração dos dados básicos. */
   it('não põe fato do conjunto básico, nem antes de o formulário existir no servidor', () => {
-    expect(comCamposQueAsExigenciasPressupoem(conteudoInicial(), citados('SEXO'), CATALOGO, new Set(), []).itens).toEqual([]);
+    expect(
+      comCamposQueAsExigenciasPressupoem(
+        conteudoInicial(),
+        citados('SEXO'),
+        CATALOGO,
+        new Set(),
+        [],
+      ).itens,
+    ).toEqual([]);
   });
 
   /** Um fato tem um único formulário que o coleta: repeti-lo na inscrição é recusado. */
   it('não põe fato que outra finalidade já coleta', () => {
     const inscricao = inscricaoGravada();
-    expect(comCamposQueAsExigenciasPressupoem(inscricao, citados('RENDA_FAMILIAR'), CATALOGO, new Set(), ['RENDA_FAMILIAR'])).toBe(inscricao);
+    expect(
+      comCamposQueAsExigenciasPressupoem(
+        inscricao,
+        citados('RENDA_FAMILIAR'),
+        CATALOGO,
+        new Set(),
+        ['RENDA_FAMILIAR'],
+      ),
+    ).toBe(inscricao);
   });
 
   it('não põe fato que um grupo do formulário já coleta', () => {
     const inscricao = inscricaoGravada({
       grupos: [
         {
-          codigo: 'FAMILIA', ordem: 3, rotulo: 'Família', etapaCodigo: 'S1', minimo: 1, maximo: null, exibicao: null,
-          obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null, subitens: [item('RENDA_FAMILIAR', 0, 'S1')], incluiCandidato: false,
+          codigo: 'FAMILIA',
+          ordem: 3,
+          rotulo: 'Família',
+          etapaCodigo: 'S1',
+          minimo: 1,
+          maximo: null,
+          exibicao: null,
+          obrigatoriedade: 'SEMPRE',
+          predicadoObrigatoriedade: null,
+          subitens: [item('RENDA_FAMILIAR', 0, 'S1')],
+          incluiCandidato: false,
         },
       ],
     });
-    expect(comCamposQueAsExigenciasPressupoem(inscricao, citados('RENDA_FAMILIAR'), CATALOGO, new Set(), [])).toBe(inscricao);
+    expect(
+      comCamposQueAsExigenciasPressupoem(
+        inscricao,
+        citados('RENDA_FAMILIAR'),
+        CATALOGO,
+        new Set(),
+        [],
+      ),
+    ).toBe(inscricao);
   });
 
   it('não põe campo para fato derivado', () => {
     const inscricao = inscricaoGravada();
-    expect(comCamposQueAsExigenciasPressupoem(inscricao, citados('MODALIDADE'), CATALOGO, new Set(), [])).toBe(inscricao);
+    expect(
+      comCamposQueAsExigenciasPressupoem(inscricao, citados('MODALIDADE'), CATALOGO, new Set(), []),
+    ).toBe(inscricao);
   });
 
   it('tira o campo que entrou sozinho e nada cita mais, e a seção que ele esvaziou', () => {
-    const comCampo = comCamposQueAsExigenciasPressupoem(inscricaoGravada(), citados('RENDA_FAMILIAR'), CATALOGO, new Set(), []);
+    const comCampo = comCamposQueAsExigenciasPressupoem(
+      inscricaoGravada(),
+      citados('RENDA_FAMILIAR'),
+      CATALOGO,
+      new Set(),
+      [],
+    );
 
-    const semGatilho = comCamposQueAsExigenciasPressupoem(comCampo, citados(), CATALOGO, new Set(['RENDA_FAMILIAR']), []);
+    const semGatilho = comCamposQueAsExigenciasPressupoem(
+      comCampo,
+      citados(),
+      CATALOGO,
+      new Set(['RENDA_FAMILIAR']),
+      [],
+    );
 
     expect(semGatilho.itens?.map((i) => i.fatoCodigo)).not.toContain('RENDA_FAMILIAR');
     expect(semGatilho.etapas?.map((e) => e.codigo)).not.toContain(SECAO_OUTROS_DADOS);
@@ -259,17 +374,26 @@ describe('os campos que o processo pressupõe na inscrição', () => {
   /** Removê-lo apagaria no servidor uma configuração que ninguém pediu para tirar. */
   it('preserva o campo que não entrou por este mecanismo', () => {
     const inscricao = inscricaoGravada();
-    expect(comCamposQueAsExigenciasPressupoem(inscricao, citados(), CATALOGO, new Set(), [])).toBe(inscricao);
+    expect(comCamposQueAsExigenciasPressupoem(inscricao, citados(), CATALOGO, new Set(), [])).toBe(
+      inscricao,
+    );
   });
 
   it('não tira o campo que outra regra do formulário cita', () => {
     const base = inscricaoGravada();
     const citadoPorCampo = {
       ...base,
-      itens: [...(base.itens ?? []), item('RENDA_FAMILIAR', 3, 'S1', { precondicao: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]] })],
+      itens: [
+        ...(base.itens ?? []),
+        item('RENDA_FAMILIAR', 3, 'S1', {
+          precondicao: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]],
+        }),
+      ],
     };
 
-    expect(comCamposQueAsExigenciasPressupoem(citadoPorCampo, citados(), CATALOGO, new Set(['PCD']), [])).toBe(citadoPorCampo);
+    expect(
+      comCamposQueAsExigenciasPressupoem(citadoPorCampo, citados(), CATALOGO, new Set(['PCD']), []),
+    ).toBe(citadoPorCampo);
   });
 });
 
@@ -277,7 +401,12 @@ describe('a política que ancora a apuração da idade', () => {
   const FASES = new Map([['INSCRICAO', 'id-inscricao']]);
 
   it('resolve a fase de código para identificador', () => {
-    expect(comoComandoDeReferenciaTemporal({ tipo: 'INICIO_FASE', data: '', faseCodigo: 'INSCRICAO' }, FASES)).toEqual({
+    expect(
+      comoComandoDeReferenciaTemporal(
+        { tipo: 'INICIO_FASE', data: '', faseCodigo: 'INSCRICAO' },
+        FASES,
+      ),
+    ).toEqual({
       tipo: 'INICIO_FASE',
       data: null,
       faseId: 'id-inscricao',
@@ -285,7 +414,11 @@ describe('a política que ancora a apuração da idade', () => {
   });
 
   it('tudo nulo remove a política', () => {
-    expect(comoComandoDeReferenciaTemporal({ tipo: '', data: '', faseCodigo: '' }, FASES)).toEqual({ tipo: null, data: null, faseId: null });
+    expect(comoComandoDeReferenciaTemporal({ tipo: '', data: '', faseCodigo: '' }, FASES)).toEqual({
+      tipo: null,
+      data: null,
+      faseId: null,
+    });
   });
 });
 
@@ -295,7 +428,9 @@ describe('o que impede gravar o formulário', () => {
   it('cobra a política quando alguma exigência condiciona por idade', () => {
     const problemas = problemasDoFormulario(
       formularioCom(inscricaoGravada()),
-      rascunhoCom(exigenciaCom(ID_TITULO, [{ fato: 'FAIXA_ETARIA', operador: 'MAIOR_IGUAL', valor: '18' }])),
+      rascunhoCom(
+        exigenciaCom(ID_TITULO, [{ fato: 'FAIXA_ETARIA', operador: 'MAIOR_IGUAL', valor: '18' }]),
+      ),
       FASES_VIVAS,
     );
 
@@ -304,7 +439,9 @@ describe('o que impede gravar o formulário', () => {
 
   it('acusa a apuração ancorada em fase que saiu do cronograma', () => {
     const problemas = problemasDoFormulario(
-      formularioCom(inscricaoGravada(), { referenciaTemporal: { tipo: 'INICIO_FASE', data: '', faseCodigo: 'RECURSOS' } }),
+      formularioCom(inscricaoGravada(), {
+        referenciaTemporal: { tipo: 'INICIO_FASE', data: '', faseCodigo: 'RECURSOS' },
+      }),
       NENHUMA_EXIGENCIA,
       FASES_VIVAS,
     );
@@ -333,12 +470,27 @@ describe('campos que nada no certame usa', () => {
   it('não aponta o campo que uma exigência, a derivação ou outra regra do formulário cita', () => {
     const quando = [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]];
 
-    expect(camposSemUsoDeclarado(formularioCom(inscricaoGravada()), rascunhoCom(exigenciaCom(ID_TITULO, [{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }])))).toEqual([]);
-    expect(camposSemUsoDeclarado(formularioCom(inscricaoGravada(), { derivacao: [{ codigoFato: 'MODALIDADE', regras: [{ quando }] }] }), NENHUMA_EXIGENCIA)).toEqual([]);
+    expect(
+      camposSemUsoDeclarado(
+        formularioCom(inscricaoGravada()),
+        rascunhoCom(exigenciaCom(ID_TITULO, [{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }])),
+      ),
+    ).toEqual([]);
+    expect(
+      camposSemUsoDeclarado(
+        formularioCom(inscricaoGravada(), {
+          derivacao: [{ codigoFato: 'MODALIDADE', regras: [{ quando }] }],
+        }),
+        NENHUMA_EXIGENCIA,
+      ),
+    ).toEqual([]);
     const citadoPorSecao = inscricaoGravada();
     expect(
       camposSemUsoDeclarado(
-        formularioCom({ ...citadoPorSecao, etapas: [...(citadoPorSecao.etapas ?? []), secao('S2', 1.5, { exibicao: quando })] }),
+        formularioCom({
+          ...citadoPorSecao,
+          etapas: [...(citadoPorSecao.etapas ?? []), secao('S2', 1.5, { exibicao: quando })],
+        }),
         NENHUMA_EXIGENCIA,
       ),
     ).toEqual([]);
@@ -348,17 +500,34 @@ describe('campos que nada no certame usa', () => {
 describe('campos cujo domínio sai da oferta de atendimento', () => {
   const semOferta = { condicoes: [], recursos: [], tiposDeficiencia: [] };
   const comCampos = (...campos: readonly [string, string][]) =>
-    formularioCom(inscricaoGravada({ itens: campos.map(([codigo, tipo], i) => item(codigo, i, 'S1', { tipoRenderizacao: tipo })) }));
+    formularioCom(
+      inscricaoGravada({
+        itens: campos.map(([codigo, tipo], i) => item(codigo, i, 'S1', { tipoRenderizacao: tipo })),
+      }),
+    );
 
   it('acusa os campos de seleção sem valor nenhum ofertado, na ordem em que a tela os nomeia', () => {
-    const formulario = comCampos(['TIPO_DEFICIENCIA', 'SELECAO_MULTIPLA'], ['CONDICAO_ATENDIMENTO', 'SELECAO_UNICA']);
+    const formulario = comCampos(
+      ['TIPO_DEFICIENCIA', 'SELECAO_MULTIPLA'],
+      ['CONDICAO_ATENDIMENTO', 'SELECAO_UNICA'],
+    );
 
-    expect(camposSemValoresOfertados(formulario, semOferta)).toEqual(['a condição de atendimento', 'o tipo de deficiência']);
+    expect(camposSemValoresOfertados(formulario, semOferta)).toEqual([
+      'a condição de atendimento',
+      'o tipo de deficiência',
+    ]);
   });
 
   it('acusa também o campo perguntado em outro formulário do processo', () => {
-    const habilitacao = inscricaoGravada({ itens: [item('TIPO_DEFICIENCIA', 0, 'S1', { tipoRenderizacao: 'SELECAO_MULTIPLA' })] });
-    const formulario = { ...comCampos(), outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: habilitacao }] };
+    const habilitacao = inscricaoGravada({
+      itens: [item('TIPO_DEFICIENCIA', 0, 'S1', { tipoRenderizacao: 'SELECAO_MULTIPLA' })],
+    });
+    const formulario = {
+      ...comCampos(),
+      outrasFinalidades: [
+        { finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: habilitacao },
+      ],
+    };
 
     expect(camposSemValoresOfertados(formulario, semOferta)).toEqual(['o tipo de deficiência']);
   });
@@ -366,7 +535,11 @@ describe('campos cujo domínio sai da oferta de atendimento', () => {
   it('cala quando a oferta declara ao menos um valor, ou quando o campo não é de seleção', () => {
     const comOferta = { ...semOferta, condicoes: [{ id: 'c1', codigo: 'PCD', nome: 'PcD' }] };
 
-    expect(camposSemValoresOfertados(comCampos(['CONDICAO_ATENDIMENTO', 'SELECAO_UNICA']), comOferta)).toEqual([]);
-    expect(camposSemValoresOfertados(comCampos(['CONDICAO_ATENDIMENTO', 'TEXTO']), semOferta)).toEqual([]);
+    expect(
+      camposSemValoresOfertados(comCampos(['CONDICAO_ATENDIMENTO', 'SELECAO_UNICA']), comOferta),
+    ).toEqual([]);
+    expect(
+      camposSemValoresOfertados(comCampos(['CONDICAO_ATENDIMENTO', 'TEXTO']), semOferta),
+    ).toEqual([]);
   });
 });

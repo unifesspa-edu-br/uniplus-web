@@ -91,8 +91,12 @@ describe('TipoDeficienciaApi', () => {
   });
 
   it('atualizar() faz PUT /api/configuracao/admin/tipos-deficiencia com Idempotency-Key', async () => {
-    const promise = firstValueFrom(api.atualizar(atualizarCommand.id, atualizarCommand, withIdempotencyKey('k')));
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`);
+    const promise = firstValueFrom(
+      api.atualizar(atualizarCommand.id, atualizarCommand, withIdempotencyKey('k')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`,
+    );
     expect(req.request.method).toBe('PUT');
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     req.flush(TIPO_DEFICIENCIA_ID, { status: 204, statusText: 'No Content' });
@@ -102,7 +106,9 @@ describe('TipoDeficienciaApi', () => {
 
   it('remover() faz DELETE /api/configuracao/admin/tipos-deficiencia/{id}', async () => {
     const promise = firstValueFrom(api.remover(TIPO_DEFICIENCIA_ID));
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`);
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`,
+    );
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     const result = (await promise) as ApiResult<void>;

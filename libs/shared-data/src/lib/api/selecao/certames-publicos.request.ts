@@ -57,7 +57,10 @@ export function certamesPublicosRequest(
  * os documentos exigidos, com o link público do modelo de documento que a exigência oferece.
  * Mesmo vendor MIME da vitrine: o recurso é o certame, num item ou em coleção.
  */
-export function certamePublicoRequest(basePath: string, processoSeletivoId: string): HttpResourceRequest {
+export function certamePublicoRequest(
+  basePath: string,
+  processoSeletivoId: string,
+): HttpResourceRequest {
   return {
     url: `${basePath}${CERTAMES_PUBLICOS_PATH}/${encodeURIComponent(processoSeletivoId)}`,
     context: withVendorMime('certame', 1),
