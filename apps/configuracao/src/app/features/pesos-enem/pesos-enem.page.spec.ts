@@ -1151,6 +1151,31 @@ describe('PesosEnemPage', () => {
     await propagate();
   });
 
+  it('PesosEnemPage_Criar_CodigosComEspacosViajamAparadosNoPayload', async () => {
+    const areas = AREAS.map((a, i) => (i === 0 ? { ...a, codigo: ` ${a.codigo} ` } : a));
+    const grupos = GRUPOS.map((g, i) => (i === 0 ? { ...g, codigo: ` ${g.codigo} ` } : g));
+    await carregarUmaPagina([], areas, grupos);
+    component.abrirDrawerCriacao();
+    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
+    component.criarResolucao();
+    await propagate();
+
+    const requests = controller.match(
+      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
+    );
+    expect(requests).toHaveLength(GRUPOS.length);
+    expect(requests.map((req) => req.request.body.grupoCurso)).toEqual(GRUPOS.map((g) => g.codigo));
+    requests.forEach((req, i) => {
+      expect(req.request.body.areas.map((a: { codigo: string }) => a.codigo)).toEqual(
+        AREAS.map((a) => a.codigo),
+      );
+      req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' });
+    });
+    await propagate();
+    expectListagem().flush([]);
+    await propagate();
+  });
+
   it('PesosEnemPage_FalhaTransitoriaNaCriacao_PreservaIdempotencyKey', async () => {
     // Regressão: renovar a key numa falha transitória
     // (rede/5xx) trocaria um retry idempotente seguro por uma criação
