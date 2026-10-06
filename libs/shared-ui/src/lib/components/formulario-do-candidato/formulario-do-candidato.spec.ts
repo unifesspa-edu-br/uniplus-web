@@ -680,4 +680,29 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(tela.textContent).toContain('Responda este campo.');
     expect(cep.value).toBe('6850');
   });
+
+  it('a orientação da opção aparece abaixo dela e descreve o controle; a opção sem orientação não tem descrição', () => {
+    const tela = montar({
+      ...ENDERECO,
+      fatosColetados: [
+        campo('COR_RACA', 'Cor ou raça', 'SELECAO_UNICA', {
+          valoresSelecionaveis: [
+            { codigo: 'BRANCA', descricao: 'Branca', ordem: 0 },
+            {
+              codigo: 'PRETA',
+              descricao: 'Preta',
+              ordem: 1,
+              orientacao: 'Quem concorre às vagas para pretos e pardos passa pela heteroidentificação.',
+            },
+          ],
+        }),
+      ],
+      regras: { etapas: [{ codigo: SECAO, itens: [regra('COR_RACA')] }] },
+    });
+
+    const preta = opcao(tela, 'Preta');
+    const orientacao = tela.querySelector(`#${preta.getAttribute('aria-describedby')}`);
+    expect(orientacao?.textContent).toContain('heteroidentificação');
+    expect(opcao(tela, 'Branca').hasAttribute('aria-describedby')).toBe(false);
+  });
 });

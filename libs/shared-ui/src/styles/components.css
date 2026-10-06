@@ -745,6 +745,13 @@ ui-editor-de-condicoes {
 .formulario-candidato__secao > ui-campo-do-candidato {
   max-inline-size: 40rem;
 }
+/*
+ * O campo de escolha não tem caixa que se alongue: o limite das caixas de texto só cortaria a
+ * orientação das opções com espaço sobrando. O teto mais largo ainda mantém a linha legível.
+ */
+.formulario-candidato__secao > ui-campo-do-candidato:has(> .formulario-candidato__escolhas) {
+  max-inline-size: 60rem;
+}
 .formulario-candidato__titulo:focus-visible {
   box-shadow: var(--focus-ring);
   outline: none;
@@ -767,6 +774,18 @@ ui-editor-de-condicoes {
 .formulario-candidato__grupo {
   gap: var(--space-3);
   justify-items: stretch;
+}
+/*
+ * A orientação fica sob o texto da opção, alinhada a ele e não ao marcador, e colada à opção a que se
+ * refere. Tem a aparência da ajuda do campo (field__hint): o candidato reconhece a orientação pelo mesmo
+ * texto menor e esmaecido em todo o formulário.
+ */
+.formulario-candidato__orientacao {
+  margin-block-start: calc(-1 * var(--space-2));
+  padding-inline-start: calc(20px + var(--space-2));
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
 }
 .formulario-candidato__ocorrencia {
   display: grid;

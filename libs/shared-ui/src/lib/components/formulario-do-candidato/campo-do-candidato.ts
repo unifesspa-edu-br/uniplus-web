@@ -69,11 +69,17 @@ const ENTRADA_DO_FORMATO: Readonly<
                 [name]="id()"
                 [checked]="escolhido(opcao.codigo)"
                 [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
+                [attr.aria-describedby]="opcao.orientacao ? idDaOrientacao(opcao.codigo) : null"
                 (change)="escolher(opcao.codigo, $event)"
               />
               <span [class]="multipla() ? 'checkbox__box' : 'radio__dot'" aria-hidden="true"></span>
               {{ rotuloDa(opcao) }}
             </label>
+            @if (opcao.orientacao) {
+              <span class="formulario-candidato__orientacao" [id]="idDaOrientacao(opcao.codigo)">{{
+                opcao.orientacao
+              }}</span>
+            }
           } @empty {
             <p class="field__hint">Nenhuma opção vale com as respostas dadas até aqui.</p>
           }
@@ -363,6 +369,11 @@ export class CampoDoCandidatoComponent {
   protected rotuloDa(opcao: OpcaoDoCampo): string {
     const rotulo = opcao.descricao?.trim() || opcao.codigo;
     return opcao.foraDasOpcoes ? `${rotulo} (não vale com as respostas dadas)` : rotulo;
+  }
+
+  /** O id da orientação da opção, que descreve o controle dela. */
+  protected idDaOrientacao(codigo: string): string {
+    return `${this.id()}-${codigo}-orientacao`;
   }
 
   protected escolhido(codigo: string): boolean {

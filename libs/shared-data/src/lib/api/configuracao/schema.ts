@@ -11371,6 +11371,7 @@ export interface components {
             /** Format: int32 */
             readonly ordem: number | string;
             readonly ativo: boolean;
+            readonly orientacao: null | string;
         };
         readonly FatoValorDominioViewItem: {
             readonly codigo: string;
@@ -11378,6 +11379,7 @@ export interface components {
             /** Format: int32 */
             readonly ordem: number | string;
             readonly ativo: boolean;
+            readonly orientacao?: null | string;
         };
         readonly FormularioPortavel: {
             readonly etapas: readonly components["schemas"]["EtapaPortavel"][];
@@ -11884,12 +11886,14 @@ export interface components {
             readonly descricao: null | string;
             /** Format: int32 */
             readonly ordem: number | string;
+            readonly orientacao?: null | string;
         };
         readonly ValorSelecionavel: {
             readonly codigo: string;
             readonly descricao: null | string;
             /** Format: int32 */
             readonly ordem: number | string;
+            readonly orientacao?: null | string;
         };
     };
     responses: never;
