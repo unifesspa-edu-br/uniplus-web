@@ -103,7 +103,7 @@
   }
 </div>
 
-@if (pcdSelecionada()) {
+@if (pcdSelecionada() || !store.emConsulta()) {
   <div class="step-card">
     <h2 class="form-section__title" id="atend-secao-tipos" tabindex="-1">Tipos de deficiência reconhecidos</h2>
 
@@ -118,7 +118,20 @@
         Só pode ser preenchido com a condição "Pessoa com deficiência" marcada acima.
       </p>
 
-      @if (catalogos.tiposDeficiencia().length > 0 || tiposDeficienciaInativos().length > 0) {
+      @if (!pcdSelecionada()) {
+        @if (pcdAusenteDoCadastro()) {
+          <p class="field__hint" role="status" id="atend-aviso-sem-pcd">
+            O cadastro de condições de atendimento não tem a condição "Pessoa com deficiência"
+            (código PCD), então não há como declarar tipos de deficiência. Cadastre-a em
+            Configuração → Condições de atendimento, com o código PCD, e volte a este passo.
+          </p>
+        } @else if (catalogoConfirmado()) {
+          <p class="field__hint" role="status" id="atend-aviso-pcd-desmarcada">
+            Marque a condição "Pessoa com deficiência" em "Condições aceitas" para escolher os
+            tipos de deficiência.
+          </p>
+        }
+      } @else if (catalogos.tiposDeficiencia().length > 0 || tiposDeficienciaInativos().length > 0) {
         <div class="checkbox-grid">
           @for (tipo of catalogos.tiposDeficiencia(); track tipo.id) {
             <label class="check-item">

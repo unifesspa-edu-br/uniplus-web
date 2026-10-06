@@ -90,8 +90,64 @@ describe('AtendimentoStepComponent', () => {
     expect(elemento.textContent).toContain('Ledor');
   });
 
-  it('não exibe a seção de tipos de deficiência sem a condição PcD marcada', () => {
-    expect(elemento.textContent).not.toContain('Tipos de deficiência reconhecidos');
+  it('com a condição PcD cadastrada e desmarcada, a seção orienta a marcá-la (CA-02)', () => {
+    expect(elemento.textContent).toContain('Tipos de deficiência reconhecidos');
+    expect(elemento.querySelector('#atend-aviso-pcd-desmarcada')?.textContent).toContain(
+      'Marque a condição "Pessoa com deficiência"',
+    );
+    expect(elemento.querySelector('#atend-aviso-sem-pcd')).toBeNull();
+    expect(elemento.textContent).not.toContain('Deficiência visual');
+  });
+
+  it('sem a condição PcD no cadastro, a seção nomeia o que falta e onde cadastrar (CA-01)', () => {
+    componente.catalogos.condicoes.set([CONDICOES[1]]);
+    detectar();
+
+    expect(elemento.textContent).toContain('Tipos de deficiência reconhecidos');
+    const aviso = elemento.querySelector('#atend-aviso-sem-pcd')?.textContent ?? '';
+    expect(aviso).toContain('Pessoa com deficiência');
+    expect(aviso).toContain('PCD');
+    expect(aviso).toContain('Configuração → Condições de atendimento');
+    expect(elemento.querySelector('#atend-aviso-pcd-desmarcada')).toBeNull();
+  });
+
+  it('sem a condição PcD no cadastro, a validação do passo nomeia o cadastro a corrigir (CA-03)', () => {
+    componente.catalogos.condicoes.set([CONDICOES[1]]);
+    store.patchObjectSection('formulario', {
+      ...store.draft().formulario,
+      conteudo: {
+        titulo: null,
+        etapas: [],
+        itens: [
+          {
+            fatoCodigo: 'TIPO_DEFICIENCIA',
+            ordem: 0,
+            rotulo: 'Tipo de deficiência',
+            tipoRenderizacao: 'SELECAO_MULTIPLA',
+            obrigatoriedade: 'SEMPRE',
+            precondicao: null,
+            etapaCodigo: 'S1',
+            predicadoObrigatoriedade: null,
+            ajuda: null,
+            pedirConfirmacao: false,
+          },
+        ],
+        termos: [],
+        pressupostos: [],
+        grupos: [],
+      },
+    });
+    detectar();
+
+    const resultado = componente.validate();
+
+    expect(componente.pcdAusenteDoCadastro()).toBe(true);
+    expect(resultado.valid).toBe(false);
+    expect(
+      resultado.messages?.some(
+        (m) => m.includes('código PCD') && m.includes('Configuração → Condições de atendimento'),
+      ),
+    ).toBe(true);
   });
 
   it('marcar a condição PCD revela a seção de tipos de deficiência', () => {
