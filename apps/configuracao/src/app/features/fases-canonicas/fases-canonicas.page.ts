@@ -43,6 +43,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  type UiFiltroAtivo,
   IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
@@ -150,6 +151,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
         searchPlaceholder="Buscar por código ou nome…"
         searchAriaLabel="Buscar fase canônica"
         [(searchValue)]="termoBusca"
+        [filtrosAtivos]="filtrosAtivos()"
       >
         <ng-container uiFilterBarSecondary>
           <label class="field">
@@ -486,6 +488,10 @@ export class FasesCanonicasPage {
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
   protected readonly donoTipicoFiltro = signal('');
+  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
+    const dono = this.donoTipicoFiltro();
+    return dono === '' ? [] : [{ nome: 'Dono típico', valor: dono }];
+  });
 
   private readonly pagina = signal<CursorPagina | undefined>(undefined);
 

@@ -3841,6 +3841,53 @@ body.uni-drawer-open {
 .filter-bar__group:empty {
   display: none;
 }
+/* O título do bloco recolhível dos filtros, com os ativos à vista quando fechado. */
+.filter-bar__alternar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-heading);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.filter-bar__alternar:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+.filter-bar__titulo {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.filter-bar__seta {
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transition: transform var(--duration-fast, 150ms) var(--ease-standard, ease);
+}
+.filter-bar__alternar[aria-expanded='true'] > .filter-bar__seta {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .filter-bar__seta {
+    transition: none;
+  }
+}
+.filter-bar__ativo {
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
 .filter-chips {
   display: flex;
   flex-wrap: wrap;

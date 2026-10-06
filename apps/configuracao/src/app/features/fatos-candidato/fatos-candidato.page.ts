@@ -36,6 +36,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  type UiFiltroAtivo,
   FilterChipsComponent,
   IconButtonComponent,
   PagerComponent,
@@ -152,6 +153,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
       searchPlaceholder="Buscar por código ou nome…"
       searchAriaLabel="Buscar fato do candidato"
       [(searchValue)]="termoBusca"
+      [filtrosAtivos]="filtrosAtivos()"
     >
       <ng-container uiFilterBarSecondary>
         <span class="u-eyebrow">Origem</span>
@@ -555,6 +557,21 @@ export class FatosCandidatoPage {
   protected readonly termoBusca = signal('');
   protected readonly filtroOrigem = signal('');
   protected readonly filtroSituacao = signal('true');
+  /** Situação começa em "Ativos": é esse o padrão que fica de fora, não "Todos". */
+  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
+    const ativos: UiFiltroAtivo[] = [];
+    const origem = this.filtroOrigem();
+    if (origem !== '') {
+      const rotulo = this.origemChips.find((chip) => chip.value === origem)?.label ?? origem;
+      ativos.push({ nome: 'Origem', valor: rotulo });
+    }
+    const situacao = this.filtroSituacao();
+    if (situacao !== 'true') {
+      const rotulo = this.situacaoChips.find((chip) => chip.value === situacao)?.label ?? situacao;
+      ativos.push({ nome: 'Situação', valor: rotulo });
+    }
+    return ativos;
+  });
   /** O cursor pertence ao filtro com que foi emitido: trocar o filtro volta à primeira página. */
   private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
     source: () => JSON.stringify([this.filtroOrigem(), this.filtroSituacao()]),

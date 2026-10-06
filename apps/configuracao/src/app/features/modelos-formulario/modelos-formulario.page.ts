@@ -48,6 +48,7 @@ import {
   EmptyStateComponent,
   FINALIDADES,
   FilterBarComponent,
+  type UiFiltroAtivo,
   FilterChipsComponent,
   IconButtonComponent,
   PagerComponent,
@@ -126,6 +127,7 @@ type CampoDaCriacao = keyof CriacaoForm;
       searchPlaceholder="Buscar por código ou nome…"
       searchAriaLabel="Buscar modelo de formulário"
       [(searchValue)]="termoBusca"
+      [filtrosAtivos]="filtrosAtivos()"
     >
       <ng-container uiFilterBarSecondary>
         <span class="u-eyebrow">Finalidade</span>
@@ -425,6 +427,25 @@ export class ModelosFormularioPage {
   protected readonly filtroFinalidade = signal('');
   protected readonly filtroSituacao = signal('');
   protected readonly filtroTipo = signal('');
+  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
+    const ativos: UiFiltroAtivo[] = [];
+    const finalidade = this.filtroFinalidade();
+    if (finalidade !== '') {
+      const rotulo =
+        this.finalidadeChips.find((chip) => chip.value === finalidade)?.label ?? finalidade;
+      ativos.push({ nome: 'Finalidade', valor: rotulo });
+    }
+    const situacao = this.filtroSituacao();
+    if (situacao !== '') {
+      const rotulo = this.situacaoChips.find((chip) => chip.value === situacao)?.label ?? situacao;
+      ativos.push({ nome: 'Situação', valor: rotulo });
+    }
+    const tipo = this.filtroTipo();
+    if (tipo !== '') {
+      ativos.push({ nome: 'Tipo de processo', valor: this.rotuloDoTipo(tipo) });
+    }
+    return ativos;
+  });
   /** O cursor pertence ao filtro com que foi emitido: trocar o filtro volta à primeira página. */
   private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
     source: () =>

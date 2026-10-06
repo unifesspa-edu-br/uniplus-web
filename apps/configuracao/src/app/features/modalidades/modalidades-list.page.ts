@@ -38,6 +38,7 @@ import {
   DialogComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  type UiFiltroAtivo,
   FilterChipsComponent,
   IconButtonComponent,
   PagerComponent,
@@ -123,6 +124,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
         searchPlaceholder="Buscar por código ou descrição..."
         searchAriaLabel="Buscar modalidade"
         [(searchValue)]="busca"
+        [filtrosAtivos]="filtrosAtivos()"
         secondaryRole="group"
         secondaryAriaLabel="Filtrar por natureza legal"
       >
@@ -350,6 +352,14 @@ export class ModalidadesListPage {
 
   protected readonly busca = signal('');
   protected readonly naturezaSelecionada = signal<string | null>(null);
+  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
+    const natureza = this.naturezaSelecionada();
+    if (natureza === null) {
+      return [];
+    }
+    const rotulo = NATUREZAS_LEGAIS.find((n) => n.value === natureza)?.label ?? natureza;
+    return [{ nome: 'Natureza', valor: rotulo }];
+  });
   protected readonly dialogAberto = signal(false);
   protected readonly removendo = signal(false);
   protected readonly modalidadeParaRemover = signal<ModalidadeDto | null>(null);
