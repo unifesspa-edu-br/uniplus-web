@@ -8,10 +8,14 @@ describe('CpfPipe', () => {
   });
 
   it('should mask CPF correctly', () => {
-    expect(pipe.transform('52998224725', true)).toBe('***.***.***-25');
+    expect(pipe.transform('52998224725', true)).toBe('***.982.247-**');
   });
 
   it('should handle empty value', () => {
     expect(pipe.transform(null)).toBe('');
+  });
+
+  it('mascara com valor padrão quando entrada é diferente de 11', () => {
+    expect(pipe.transform('529982247250', true)).toBe('***.***.***-**');
   });
 });
