@@ -8,7 +8,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ControlValueAccessor,
   FormControl,
@@ -19,30 +19,23 @@ import {
   type ValidationErrors,
   type Validator,
 } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs';
-import { ApiResult, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
+import { ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
+import { UNIDADES_FEDERATIVAS } from '@uniplus/shared-utils';
+import { NomesDeMunicipios, ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-municipio';
+import { SpinnerComponent } from '../spinner/spinner';
 import {
-  CepResolvidoDto,
-  CidadeResumoDto,
-  GeoApi,
+  BUSCA_DE_CEP,
+  type CampoEndereco,
+  type CepEncontrado,
+  type CidadeRef,
+  type EnderecoEstruturado,
   type NivelResolucao,
-} from '@uniplus/shared-data/geo';
-import { SpinnerComponent } from '@uniplus/shared-ui/components';
-import {
-  CampoEndereco,
-  CidadeRef,
-  EnderecoEstruturado,
   ORIGEM_GEO,
   ORIGEM_MANUAL,
   camposAncorados,
   normalizarNivel,
-} from './endereco.model';
+} from './endereco-geo.model';
 
-/** Debounce da busca textual de cidade (uma request por rajada, não por tecla). */
-const BUSCA_DEBOUNCE_MS = 300;
-
-/** Tamanho da janela do seletor de cidade (cursor pagination, ADR-0026). */
-const CIDADES_LIMIT = 20;
 
 interface EnderecoFormControls {
   cep: FormControl<string>;
@@ -57,18 +50,21 @@ interface EnderecoFormControls {
 
 /**
  * Componente reutilizável de endereço estruturado (referência ao Geo, ADR-0096),
- * consumido pelas telas de Instituição, Campus e Local de Oferta (story #412).
+ * consumido pelas telas de Instituição, Campus e Local de Oferta e pelo campo de
+ * endereço do formulário do candidato. O Geo chega por injeção: `BUSCA_DE_CEP` e
+ * `BUSCA_DE_MUNICIPIOS`, providos por quem hospeda o componente.
  *
  * Implementa `ControlValueAccessor` sobre um `EnderecoEstruturado | null`. Dois
  * fluxos:
  *
  * - **Autofill por CEP** (CA-01): o usuário informa o CEP, o componente resolve
- *   via `GET /api/cep/{cep}` e preenche o formulário. Os campos resolvidos pelo
+ *   pela busca de CEP e preenche o formulário. Os campos resolvidos pelo
  *   DNE ficam **read-only (âncora)** conforme o `nivelResolucao`; os não
  *   resolvidos ficam editáveis (`camposAncorados`). `numero`/`complemento` são
- *   sempre editáveis (dado próprio, fora do DNE).
+ *   dado próprio, sempre editáveis e nunca preenchidos pelo CEP: o complemento do
+ *   DNE descreve o CEP ("lado par", "Clique e Retire Correios"), não a residência.
  * - **Fallback manual / sem CEP** (CA-02): o usuário escolhe a cidade pelo
- *   seletor (`GET /api/cidades`) e digita o endereço manualmente.
+ *   campo de município com busca e digita o endereço manualmente.
  *
  * Um CEP já resolvido pode ser corrigido via botão "Trocar CEP" — reabre só o
  * campo CEP (`iniciarEdicaoCep`) sem descartar o restante do endereço já
@@ -80,13 +76,39 @@ interface EnderecoFormControls {
  * `aria-invalid`/`aria-describedby`, estados read-only anunciados.
  */
 @Component({
-  selector: 'cfg-endereco-form',
+  selector: 'ui-endereco-geo',
   standalone: true,
-  imports: [ReactiveFormsModule, SpinnerComponent],
+  imports: [ReactiveFormsModule, SpinnerComponent, ValorDeMunicipioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `
+    .endereco-geo__cidade {
+      display: flex;
+      gap: var(--space-2);
+      align-items: flex-start;
+    }
+    .endereco-geo__cidade > ui-valor-de-municipio {
+      flex: 1;
+      min-inline-size: 0;
+    }
+    .endereco-geo__link {
+      padding: 0;
+      color: inherit;
+      background: transparent;
+      border: 0;
+      font: inherit;
+      text-align: left;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  `,
   template: `
-    <fieldset class="cfg-endereco" [disabled]="disabled()">
-      <legend class="form-section__title">{{ legend() }}</legend>
+    <fieldset class="endereco-geo" [disabled]="disabled()" [attr.aria-describedby]="descritoPor()">
+      <legend
+        [class]="aparencia() === 'campo' ? 'field__label' : 'form-section__title'"
+        [class.is-required]="obrigatorio()"
+      >
+        {{ legend() }}
+      </legend>
 
       <div class="form-grid">
         <div class="field" [class.is-error]="cepErro() !== null || cepPendente()">
@@ -133,7 +155,7 @@ interface EnderecoFormControls {
           </div>
           <span class="field__hint">
             Informe o CEP para preencher o endereço automaticamente, ou
-            <button type="button" class="cfg-link-button" (click)="alternarModoManual()">
+            <button type="button" class="endereco-geo__link" (click)="alternarModoManual()">
               {{ modoManual() ? 'voltar a buscar por CEP' : 'preencher sem CEP' }}
             </button>
             .
@@ -148,51 +170,59 @@ interface EnderecoFormControls {
         </div>
 
         @if (modoManual()) {
-          <div class="field form-grid__full">
-            <label [for]="id('cidade-busca')" class="field__label is-required">Cidade</label>
-            <input
-              [id]="id('cidade-busca')"
-              class="input"
-              type="search"
-              autocomplete="off"
-              placeholder="Buscar cidade por nome..."
-              [value]="buscaCidade()"
-              (input)="buscaCidade.set(valorDoInput($event))"
-            />
+          <div class="field">
+            <label [for]="id('uf')" class="field__label is-required">UF</label>
             <select
               class="select"
-              aria-label="Selecionar cidade"
-              [attr.aria-invalid]="erroExterno() ? 'true' : null"
-              [attr.aria-describedby]="erroExterno() ? id('erro') : null"
-              (change)="selecionarCidade($event)"
+              [id]="id('uf')"
+              [disabled]="disabled()"
+              (change)="escolherUf(valorDoSelect($event))"
             >
-              <option value="">
-                {{ buscandoCidades() ? 'Buscando…' : 'Selecione a cidade' }}
-              </option>
-              @for (opcao of cidadeOpcoes(); track opcao.codigoIbge) {
-                <option [value]="opcao.codigoIbge" [selected]="opcao.codigoIbge === cidade()?.codigoIbge">
-                  {{ opcao.nome }} — {{ opcao.uf }}
-                </option>
+              <option value="" [selected]="ufDaCidade() === ''">Selecione a UF</option>
+              @for (uf of unidadesFederativas; track uf.sigla) {
+                <option [value]="uf.sigla" [selected]="uf.sigla === ufDaCidade()">{{ uf.nome }}</option>
               }
             </select>
-            @if (cidadesErro()) {
-              <span class="field__error" role="alert">
-                Não foi possível carregar as cidades.
-                <button type="button" class="cfg-link-button" (click)="recarregarCidades()">
-                  Tentar novamente
+          </div>
+          <div class="field">
+            <label class="field__label is-required" [attr.for]="municipio.campoId()">Cidade</label>
+            <div class="endereco-geo__cidade">
+              <ui-valor-de-municipio
+                #municipio
+                rotulo="Cidade"
+                [values]="codigoDaCidade()"
+                [uf]="ufDaCidade() || null"
+                [disabled]="disabled() || ufDaCidade() === ''"
+                [invalido]="!!erroExterno()"
+                [descritoPor]="erroExterno() ? id('erro') : ufDaCidade() === '' ? id('cidade-uf') : null"
+                [contagemVisivel]="false"
+                (valuesChange)="selecionarCidade($event[0] ?? '')"
+              />
+              @if (cidade() && !disabled()) {
+                <button
+                  type="button"
+                  class="btn btn--secondary btn--rect"
+                  aria-label="Limpar cidade"
+                  (click)="selecionarCidade('')"
+                >
+                  Limpar
                 </button>
-              </span>
-            }
-            @if (cidade(); as c) {
-              <span class="field__hint">Cidade selecionada: {{ c.nome }} — {{ c.uf }}</span>
+              }
+            </div>
+            @if (ufDaCidade() === '') {
+              <span class="field__hint" [id]="id('cidade-uf')">Escolha antes a UF.</span>
             }
           </div>
         } @else if (cidade(); as c) {
-          <div class="field form-grid__full">
-            <span class="field__label">Cidade</span>
-            <output class="field__readonly" [attr.aria-label]="'Cidade resolvida pelo CEP'">
-              {{ c.nome }} — {{ c.uf }}
-            </output>
+          <div class="field">
+            <label [for]="id('uf')" class="field__label">UF</label>
+            <input [id]="id('uf')" class="input" type="text" [value]="c.uf" readonly aria-readonly="true" />
+            <span class="field__hint">Preenchida pelo CEP.</span>
+          </div>
+          <div class="field">
+            <label [for]="id('cidade')" class="field__label">Cidade</label>
+            <input [id]="id('cidade')" class="input" type="text" [value]="c.nome" readonly aria-readonly="true" />
+            <span class="field__hint">Preenchida pelo CEP.</span>
           </div>
         }
 
@@ -236,8 +266,10 @@ interface EnderecoFormControls {
             autocomplete="off"
             [formControl]="form.controls.complemento"
           />
+          <span class="field__hint">Dado próprio — sempre editável.</span>
         </div>
 
+        @if (!semValorDoCep('bairro')) {
         <div class="field">
           <label [for]="id('bairro')" class="field__label">Bairro</label>
           <input
@@ -253,7 +285,9 @@ interface EnderecoFormControls {
             <span class="field__hint">Preenchido pelo CEP.</span>
           }
         </div>
+        }
 
+        @if (!semValorDoCep('distrito')) {
         <div class="field">
           <label [for]="id('distrito')" class="field__label">Distrito</label>
           <input
@@ -270,6 +304,7 @@ interface EnderecoFormControls {
           }
         </div>
         }
+        }
       </div>
 
       @if (erroExterno(); as erro) {
@@ -280,18 +315,19 @@ interface EnderecoFormControls {
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => EnderecoFormComponent),
+      useExisting: forwardRef(() => EnderecoGeoComponent),
       multi: true,
     },
     {
       provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => EnderecoFormComponent),
+      useExisting: forwardRef(() => EnderecoGeoComponent),
       multi: true,
     },
   ],
 })
-export class EnderecoFormComponent implements ControlValueAccessor, Validator {
-  private readonly geo = inject(GeoApi);
+export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
+  private readonly buscaDeCep = inject(BUSCA_DE_CEP);
+  private readonly municipios = inject(NomesDeMunicipios);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -301,6 +337,12 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
   readonly legend = input('Endereço');
   /** Erro de coerência cidade↔CEP (422) ou de campo vindo do backend (CA-06). */
   readonly erroExterno = input<string | null>(null);
+  /** Marca a legenda como de resposta obrigatória. */
+  readonly obrigatorio = input(false);
+  /** A legenda como título de seção do cadastro, ou como rótulo de um campo entre outros. */
+  readonly aparencia = input<'secao' | 'campo'>('secao');
+  /** Ids das mensagens de quem hospeda (ajuda, pendência) que descrevem o grupo. */
+  readonly descritoPor = input<string | null>(null);
 
   protected readonly disabled = signal(false);
   protected readonly resolvendoCep = signal(false);
@@ -309,17 +351,17 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
   protected readonly editandoCep = signal(false);
   protected readonly modoManual = signal(false);
   protected readonly cidade = signal<CidadeRef | null>(null);
-  protected readonly buscaCidade = signal('');
-  protected readonly cidadeOpcoes = signal<readonly CidadeResumoDto[]>([]);
-  protected readonly buscandoCidades = signal(false);
-  /** Falha na busca de cidades — distingue "sem resultado" de "não carregou" (retry inline). */
-  protected readonly cidadesErro = signal(false);
+  protected readonly unidadesFederativas = UNIDADES_FEDERATIVAS;
+  /** A UF escolhida no endereço sem CEP, antes da cidade: a busca de municípios se limita a ela. */
+  private readonly ufEscolhida = signal('');
+  /** A UF da cidade escolhida, ou a escolhida antes dela. */
+  protected readonly ufDaCidade = computed(() => this.cidade()?.uf ?? this.ufEscolhida());
 
-  /** Gatilho reativo da busca de cidade: modo manual + termo digitado. */
-  private readonly buscaParams = computed(() => ({
-    manual: this.modoManual(),
-    termo: this.buscaCidade().trim(),
-  }));
+  /** A cidade escolhida no campo de município, pelo código IBGE. */
+  protected readonly codigoDaCidade = computed(() => {
+    const cidade = this.cidade();
+    return cidade ? [cidade.codigoIbge] : [];
+  });
 
   /** Nível de resolução vigente — governa os campos ancorados (read-only). */
   private readonly nivel = signal<NivelResolucao | null>(null);
@@ -382,39 +424,6 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
     this.form.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.emitir());
-
-    // Busca de cidade do fluxo manual — só dispara no modo manual (evita request
-    // ocioso ao montar) e debounced (uma request por rajada, cancela a anterior).
-    toObservable(this.buscaParams)
-      .pipe(
-        debounceTime(BUSCA_DEBOUNCE_MS),
-        distinctUntilChanged((a, b) => a.manual === b.manual && a.termo === b.termo),
-        filter((p) => p.manual),
-        switchMap((p) => {
-          this.buscandoCidades.set(true);
-          return this.geo.listarCidades(
-            p.termo.length > 0 ? { q: p.termo, limit: CIDADES_LIMIT } : { limit: CIDADES_LIMIT },
-          );
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((result) => this.aplicarResultadoCidades(result));
-  }
-
-  private aplicarResultadoCidades(result: ApiResult<readonly CidadeResumoDto[]>): void {
-    this.buscandoCidades.set(false);
-    this.cidadesErro.set(!result.ok);
-    this.cidadeOpcoes.set(result.ok ? result.data : []);
-  }
-
-  /** Refaz a busca de cidades após falha (retry inline do fluxo "sem CEP"). */
-  protected recarregarCidades(): void {
-    const termo = this.buscaCidade().trim();
-    this.buscandoCidades.set(true);
-    this.geo
-      .listarCidades(termo.length > 0 ? { q: termo, limit: CIDADES_LIMIT } : { limit: CIDADES_LIMIT })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => this.aplicarResultadoCidades(result));
   }
 
   writeValue(value: EnderecoEstruturado | null): void {
@@ -424,6 +433,7 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
         { emitEvent: false },
       );
       this.cidade.set(null);
+      this.ufEscolhida.set('');
       this.nivel.set(null);
       this.origem.set(null);
       this.modoManual.set(false);
@@ -449,6 +459,11 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
       { emitEvent: false },
     );
     this.cidade.set(value.cidade);
+    this.ufEscolhida.set(value.cidade?.uf ?? '');
+    // O nome da cidade gravada aparece no campo de município sem passar pela busca.
+    if (value.cidade) {
+      this.municipios.lembrar([value.cidade]);
+    }
     const nivel = normalizarNivel(value.nivelResolucao);
     this.nivel.set(nivel);
     this.origem.set(value.origem);
@@ -500,8 +515,13 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
     return this.ancorados().has(campo);
   }
 
-  protected valorDoInput(event: Event): string {
-    return event.target instanceof HTMLInputElement ? event.target.value : '';
+  /**
+   * O campo que o CEP resolveu sem valor: o DNE não tem bairro ou distrito para esse logradouro — o
+   * distrito, em especial, só existe fora da sede do município. Travado e vazio, ele não informa
+   * nada ao usuário e parece defeito, então não aparece; o valor continua nulo.
+   */
+  protected semValorDoCep(campo: 'bairro' | 'distrito'): boolean {
+    return this.ehAncorado(campo) && this.form.controls[campo].value.trim() === '';
   }
 
   /** Resolve o CEP no blur apenas quando há 8 dígitos novos (evita request redundante). */
@@ -535,8 +555,7 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
 
     this.resolvendoCep.set(true);
     this.cepErro.set(null);
-    this.geo
-      .obterCep(digitos)
+    this.buscaDeCep(digitos)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         this.resolvendoCep.set(false);
@@ -570,18 +589,20 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
       });
   }
 
-  private aplicarCepResolvido(dto: CepResolvidoDto, digitos: string): void {
+  private aplicarCepResolvido(dto: CepEncontrado, digitos: string): void {
     this.modoManual.set(false);
     this.editandoCep.set(false);
     this.cepResolvido.set(digitos);
-    this.cidade.set({ codigoIbge: dto.codigoIbge, nome: dto.cidade, uf: dto.uf });
+    const cidade = { codigoIbge: dto.codigoIbge, nome: dto.cidade, uf: dto.uf };
+    this.cidade.set(cidade);
+    // Passando ao endereço sem CEP, a cidade resolvida segue no campo de município, pelo nome.
+    this.municipios.lembrar([cidade]);
     this.nivel.set(normalizarNivel(dto.nivelResolucao));
     this.origem.set(dto.origem ?? ORIGEM_GEO);
     this.form.patchValue(
       {
         cep: dto.cep,
-        logradouro: logradouroCompleto(dto.tipo, dto.logradouro),
-        complemento: dto.complemento ?? '',
+        logradouro: logradouroCompleto(dto.tipo ?? null, dto.logradouro ?? null),
         bairro: dto.bairro ?? '',
         distrito: dto.distrito ?? '',
         latitude: textoDeCoordenada(dto.latitude),
@@ -595,6 +616,8 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
   /** Alterna entre autofill por CEP e preenchimento manual (sem CEP). */
   protected alternarModoManual(): void {
     const manual = !this.modoManual();
+    // A UF da cidade que já havia (a do CEP, por exemplo) segue escolhida no endereço sem CEP.
+    this.ufEscolhida.set(this.cidade()?.uf ?? '');
     this.modoManual.set(manual);
     this.cepErro.set(null);
     this.editandoCep.set(false);
@@ -619,16 +642,25 @@ export class EnderecoFormComponent implements ControlValueAccessor, Validator {
         { emitEvent: false },
       );
       this.cepResolvido.set('');
-      if (this.cidadeOpcoes().length === 0) {
-        this.buscaCidade.set('');
-      }
     }
     this.emitir();
   }
 
-  protected selecionarCidade(event: Event): void {
-    const codigo = event.target instanceof HTMLSelectElement ? event.target.value : '';
-    const selecionada = this.cidadeOpcoes().find((c) => c.codigoIbge === codigo);
+  /** A UF do endereço sem CEP: trocá-la tira a cidade de outra UF. */
+  protected escolherUf(sigla: string): void {
+    this.ufEscolhida.set(sigla);
+    if (this.cidade() !== null && this.cidade()?.uf !== sigla) {
+      this.selecionarCidade('');
+    }
+  }
+
+  protected valorDoSelect(evento: Event): string {
+    return evento.target instanceof HTMLSelectElement ? evento.target.value : '';
+  }
+
+  /** A cidade escolhida no campo de município, achada pela busca; o código vazio tira a cidade. */
+  protected selecionarCidade(codigo: string): void {
+    const selecionada = codigo === '' ? null : this.municipios.municipio(codigo);
     this.cidade.set(
       selecionada ? { codigoIbge: selecionada.codigoIbge, nome: selecionada.nome, uf: selecionada.uf } : null,
     );

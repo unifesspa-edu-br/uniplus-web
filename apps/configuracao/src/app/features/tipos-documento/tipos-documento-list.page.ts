@@ -58,6 +58,7 @@ import {
   SpinnerComponent,
   TagComponent,
   type UiFilterChipOption,
+  type UiFiltroAtivo,
   type UiLookupFalho,
   FilterBarComponent,
 } from '@uniplus/shared-ui/components';
@@ -161,6 +162,7 @@ interface TipoDocumentoForm {
     }
 
     <ui-filter-bar
+      [filtrosAtivos]="filtrosAtivos()"
       ariaLabel="Filtrar tipos de documento"
       searchPlaceholder="Buscar por código ou nome…"
       searchAriaLabel="Buscar tipo de documento"
@@ -633,6 +635,14 @@ export class TiposDocumentoListPage {
       });
     }
     return chips;
+  });
+
+  /** A categoria escolhida, para o título do bloco de filtros recolhido; "Todas" não entra. */
+  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
+    const categoria = this.filtroCategoria();
+    if (categoria === '') return [];
+    const chip = this.categoriaChips().find((c) => c.value === categoria);
+    return [{ nome: 'Categoria', valor: chip?.label ?? categoria }];
   });
 
   /**

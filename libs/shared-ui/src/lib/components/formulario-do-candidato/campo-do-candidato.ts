@@ -2,13 +2,18 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   input,
   linkedSignal,
   output,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-municipio';
+import { EnderecoGeoComponent } from '../endereco-geo/endereco-geo';
+import type { EnderecoEstruturado } from '../endereco-geo/endereco-geo.model';
 import {
   type CampoNoPasso,
   fatoDaUf,
@@ -47,7 +52,7 @@ const ENTRADA_DO_FORMATO: Readonly<
 @Component({
   selector: 'ui-campo-do-candidato',
   standalone: true,
-  imports: [ValorDeMunicipioComponent],
+  imports: [ValorDeMunicipioComponent, EnderecoGeoComponent, ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'field' },
   template: `
@@ -64,11 +69,17 @@ const ENTRADA_DO_FORMATO: Readonly<
                 [name]="id()"
                 [checked]="escolhido(opcao.codigo)"
                 [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
+                [attr.aria-describedby]="opcao.orientacao ? idDaOrientacao(opcao.codigo) : null"
                 (change)="escolher(opcao.codigo, $event)"
               />
               <span [class]="multipla() ? 'checkbox__box' : 'radio__dot'" aria-hidden="true"></span>
               {{ rotuloDa(opcao) }}
             </label>
+            @if (opcao.orientacao) {
+              <span class="formulario-candidato__orientacao" [id]="idDaOrientacao(opcao.codigo)">{{
+                opcao.orientacao
+              }}</span>
+            }
           } @empty {
             <p class="field__hint">Nenhuma opção vale com as respostas dadas até aqui.</p>
           }
@@ -139,19 +150,14 @@ const ENTRADA_DO_FORMATO: Readonly<
         />
       }
       @case ('endereco') {
-        <label class="field__label" [class.is-required]="obrigatorio()" [for]="id()">{{
-          campo().rotulo
-        }}</label>
-        <textarea
-          class="textarea"
-          rows="3"
-          autocomplete="street-address"
-          [id]="id()"
-          [value]="texto()"
-          [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
-          [attr.aria-describedby]="descritoPor()"
-          (input)="responderTexto(valorDe($event))"
-        ></textarea>
+        <ui-endereco-geo
+          aparencia="campo"
+          [formControl]="endereco"
+          [idPrefix]="id()"
+          [legend]="campo().rotulo"
+          [obrigatorio]="obrigatorio()"
+          [descritoPor]="descritoPor()"
+        />
       }
       @default {
         <label class="field__label" [class.is-required]="obrigatorio()" [for]="id()">{{
@@ -293,6 +299,8 @@ export class CampoDoCandidatoComponent {
   /** O número digitado que não se reconhece: não vira resposta. */
   private readonly numeroInvalido = signal(false);
   protected readonly confirmacao = signal('');
+  /** O endereço do campo de endereço: composto no Geo, pelo CEP ou pela cidade. */
+  protected readonly endereco = new FormControl<EnderecoEstruturado | null>(null);
   protected readonly confirmacaoDiverge = computed(
     () => this.confirmacao() !== '' && this.confirmacao() !== textoDa(this.resposta()),
   );
@@ -337,9 +345,35 @@ export class CampoDoCandidatoComponent {
         .join(' ') || null,
   );
 
+  /** A última resposta que o endereço deu, para reconhecer a que volta dela. */
+  private respostaDoEnderecoDada: string | undefined;
+
+  constructor() {
+    // A resposta recebida chega ao endereço só quando não é a que ele mesmo deu: reescrevê-lo com
+    // ela desfaria o modo sem CEP e a correção do CEP em curso.
+    effect(() => {
+      const resposta = this.resposta();
+      if (JSON.stringify(resposta) !== this.respostaDoEnderecoDada) {
+        this.endereco.setValue(enderecoDa(resposta), { emitEvent: false });
+      }
+    });
+    // O endereço com o CEP digitado e ainda não resolvido não é resposta: o obrigatório segue pendente.
+    this.endereco.valueChanges.pipe(takeUntilDestroyed()).subscribe((endereco) => {
+      const resposta =
+        endereco === null || this.endereco.invalid ? undefined : respostaDoEndereco(endereco);
+      this.respostaDoEnderecoDada = JSON.stringify(resposta);
+      this.responder(resposta);
+    });
+  }
+
   protected rotuloDa(opcao: OpcaoDoCampo): string {
     const rotulo = opcao.descricao?.trim() || opcao.codigo;
     return opcao.foraDasOpcoes ? `${rotulo} (não vale com as respostas dadas)` : rotulo;
+  }
+
+  /** O id da orientação da opção, que descreve o controle dela. */
+  protected idDaOrientacao(codigo: string): string {
+    return `${this.id()}-${codigo}-orientacao`;
   }
 
   protected escolhido(codigo: string): boolean {
@@ -409,4 +443,45 @@ function textoDa(resposta: ValorJson | undefined): string {
   if (typeof resposta === 'number')
     return resposta.toLocaleString('pt-BR', { useGrouping: false, maximumFractionDigits: 20 });
   return String(resposta);
+}
+
+/** O endereço que a resposta guarda, na forma de `EnderecoGeoInput`; outra forma é sem endereço. */
+function enderecoDa(resposta: ValorJson | undefined): EnderecoEstruturado | null {
+  if (resposta === undefined || resposta === null || typeof resposta !== 'object' || Array.isArray(resposta))
+    return null;
+  const objeto = resposta as { readonly [chave: string]: ValorJson };
+  const cidade = objeto['cidade'];
+  const daCidade =
+    cidade !== null && typeof cidade === 'object' && !Array.isArray(cidade)
+      ? (cidade as { readonly [chave: string]: ValorJson })
+      : null;
+  return {
+    cep: textoOuNulo(objeto['cep']),
+    logradouro: textoOuNulo(objeto['logradouro']),
+    numero: textoOuNulo(objeto['numero']),
+    complemento: textoOuNulo(objeto['complemento']),
+    bairro: textoOuNulo(objeto['bairro']),
+    distrito: textoOuNulo(objeto['distrito']),
+    cidade:
+      daCidade === null
+        ? null
+        : {
+            codigoIbge: textoOuNulo(daCidade['codigoIbge']) ?? '',
+            nome: textoOuNulo(daCidade['nome']) ?? '',
+            uf: textoOuNulo(daCidade['uf']) ?? '',
+          },
+    latitude: textoOuNulo(objeto['latitude']),
+    longitude: textoOuNulo(objeto['longitude']),
+    nivelResolucao: textoOuNulo(objeto['nivelResolucao']),
+    origem: textoOuNulo(objeto['origem']),
+  };
+}
+
+/** O endereço como resposta: um objeto JSON com a cidade aninhada. */
+function respostaDoEndereco(endereco: EnderecoEstruturado): ValorJson {
+  return { ...endereco, cidade: endereco.cidade === null ? null : { ...endereco.cidade } };
+}
+
+function textoOuNulo(valor: ValorJson | undefined): string | null {
+  return typeof valor === 'string' ? valor : typeof valor === 'number' ? String(valor) : null;
 }

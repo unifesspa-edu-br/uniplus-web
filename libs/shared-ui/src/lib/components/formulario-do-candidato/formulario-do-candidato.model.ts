@@ -26,8 +26,11 @@ export function comoInteiro(valor: Inteiro): number {
 
 export interface ValorSelecionavel {
   readonly codigo: string;
+  /** O nome da opção. */
   readonly descricao?: string | null;
   readonly ordem: Inteiro;
+  /** O que o candidato precisa saber sobre a opção, mostrado abaixo dela. */
+  readonly orientacao?: string | null;
 }
 
 export interface CampoRenderizavel {

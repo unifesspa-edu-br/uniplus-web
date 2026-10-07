@@ -7,8 +7,8 @@ import { GeoApi, type CidadeResumoDto } from './geo.api';
 const MUNICIPIOS_POR_BUSCA = 20;
 
 /**
- * A busca de municípios por nome no Geo, na forma que o editor de condições e o formulário do
- * candidato recebem por injeção; com a UF, o Geo devolve só os municípios dela.
+ * A busca de municípios por nome no Geo, na forma que o editor de condições, o formulário do
+ * candidato e o endereço recebem por injeção; com a UF, o Geo devolve só os municípios dela.
  * Fábrica de provider (`useFactory`): roda no contexto de injeção de quem a provê.
  */
 export function buscaDeMunicipiosNoGeo(): (

@@ -28,7 +28,10 @@ export { DialogComponent } from '../../src/lib/components/dialog/dialog';
 export { DrawerComponent } from '../../src/lib/components/drawer/drawer';
 export { EmptyStateComponent } from '../../src/lib/components/empty-state/empty-state';
 export { FileUploadComponent } from '../../src/lib/components/file-upload/file-upload';
-export { FilterBarComponent } from '../../src/lib/components/filter-bar/filter-bar';
+export {
+  FilterBarComponent,
+  type UiFiltroAtivo,
+} from '../../src/lib/components/filter-bar/filter-bar';
 export {
   FilterChipsComponent,
   type UiFilterChipOption,
@@ -53,6 +56,7 @@ export {
   ListFooterComponent,
 } from '../../src/lib/components/list-footer/list-footer';
 export { PagerComponent } from '../../src/lib/components/pager/pager';
+export { RecolhivelComponent } from '../../src/lib/components/recolhivel/recolhivel';
 export { RolagemFocavelDirective } from '../../src/lib/directives/rolagem-focavel.directive';
 export {
   SegmentedComponent,
@@ -67,6 +71,8 @@ export {
   type BuscaDeMunicipios,
   type MunicipioEncontrado,
 } from '../../src/lib/components/editor-de-condicoes/valor-de-municipio';
+export { EnderecoGeoComponent } from '../../src/lib/components/endereco-geo/endereco-geo';
+export * from '../../src/lib/components/endereco-geo/endereco-geo.model';
 export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
 export * from '../../src/lib/components/editor-de-formulario/formulario-editavel';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';

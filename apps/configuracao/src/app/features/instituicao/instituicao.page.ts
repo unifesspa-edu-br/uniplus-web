@@ -35,13 +35,14 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   SpinnerComponent,
+  EnderecoGeoComponent,
+  type EnderecoEstruturado,
 } from '@uniplus/shared-ui/components';
 import {
-  EnderecoFormComponent,
+  ENDERECO_NO_GEO,
   ehErroDeEndereco,
   enderecoEstruturadoDe,
   enderecoParaCommand,
-  type EnderecoEstruturado,
 } from '../../shared/endereco';
 
 /** Valor de `TipoUnidade` da Reitoria no roster fechado (`TIPOS_UNIDADE`). */
@@ -92,6 +93,7 @@ interface InstituicaoForm {
 
 @Component({
   selector: 'cfg-instituicao-page',
+  providers: [ENDERECO_NO_GEO],
   standalone: true,
   imports: [
     ReactiveFormsModule,
@@ -99,7 +101,7 @@ interface InstituicaoForm {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
-    EnderecoFormComponent,
+    EnderecoGeoComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -513,7 +515,7 @@ interface InstituicaoForm {
               }
             </label>
           </div>
-          <cfg-endereco-form
+          <ui-endereco-geo
             formControlName="endereco"
             idPrefix="inst-endereco"
             legend="Endereço da sede"

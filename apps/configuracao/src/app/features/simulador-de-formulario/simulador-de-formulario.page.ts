@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AvaliacoesDeFormularioApi } from '@uniplus/shared-data/configuracao';
-import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
-  BUSCA_DE_MUNICIPIOS,
   SimulacaoDeFormularioComponent,
   lerArquivoDoFormulario,
   type ArquivoDoFormulario,
   type ConferenciaComOServidor,
 } from '@uniplus/shared-ui/components';
+import { ENDERECO_NO_GEO } from '../../shared/endereco';
 
 /**
  * O simulador de formulário a partir de um arquivo: um formulário renderizável exportado de um modelo
@@ -21,7 +20,7 @@ import {
   imports: [SimulacaoDeFormularioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // O campo de município escolhe o município pela busca no Geo, limitada à UF respondida.
-  providers: [{ provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosNoGeo }],
+  providers: [ENDERECO_NO_GEO],
   template: `
     <div class="page-header">
       <div class="page-header__content">

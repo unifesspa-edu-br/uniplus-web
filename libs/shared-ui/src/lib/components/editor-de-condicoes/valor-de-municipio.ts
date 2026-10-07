@@ -55,13 +55,17 @@ const ESPERA_DA_DIGITACAO_MS = 300;
  */
 @Injectable({ providedIn: 'root' })
 export class NomesDeMunicipios {
-  private readonly nomes = signal<ReadonlyMap<string, string>>(new Map());
+  private readonly municipios = signal<ReadonlyMap<string, MunicipioEncontrado>>(new Map());
 
   lembrar(municipios: readonly MunicipioEncontrado[]): void {
-    this.nomes.update(
-      (atual) =>
-        new Map([...atual, ...municipios.map((m) => [m.codigoIbge, rotuloDe(m)] as const)]),
+    this.municipios.update(
+      (atual) => new Map([...atual, ...municipios.map((m) => [m.codigoIbge, m] as const)]),
     );
+  }
+
+  /** O município que a busca achou nesta sessão, com o nome e a UF; nulo quando não passou por ela. */
+  municipio(codigoIbge: string): MunicipioEncontrado | null {
+    return this.municipios().get(codigoIbge) ?? null;
   }
 
   /**
@@ -69,7 +73,8 @@ export class NomesDeMunicipios {
    * condição gravada antes: o Geo não tem leitura por código, e o código é o que a regra compara.
    */
   rotulo(codigoIbge: string): string {
-    return this.nomes().get(codigoIbge) ?? `Município de código IBGE ${codigoIbge}`;
+    const municipio = this.municipio(codigoIbge);
+    return municipio ? rotuloDe(municipio) : `Município de código IBGE ${codigoIbge}`;
   }
 }
 
@@ -107,6 +112,7 @@ function rotuloDe(municipio: MunicipioEncontrado): string {
         [estadoDaBusca]="estadoDaBusca()"
         [invalido]="invalido()"
         [descritoPor]="descritoPor()"
+        [contagemVisivel]="contagemVisivel()"
         (buscaChange)="buscar($event)"
         (valuesChange)="valuesChange.emit($event)"
       />
@@ -122,6 +128,7 @@ function rotuloDe(municipio: MunicipioEncontrado): string {
         [estadoDaBusca]="estadoDaBusca()"
         [invalido]="invalido()"
         [descritoPor]="descritoPor()"
+        [contagemVisivel]="contagemVisivel()"
         (buscaChange)="buscar($event)"
         (valueChange)="valuesChange.emit([$event])"
       />
@@ -141,6 +148,8 @@ export class ValorDeMunicipioComponent {
   readonly disabled = input<boolean>(false);
   readonly invalido = input<boolean>(false);
   readonly descritoPor = input<string | null>(null);
+  /** A contagem de municípios achados aparece sob o campo; sem ela, só o leitor de tela a anuncia. */
+  readonly contagemVisivel = input<boolean>(true);
   /** A UF a que a busca se limita, como no campo de município da UF respondida antes. */
   readonly uf = input<string | null>(null);
 

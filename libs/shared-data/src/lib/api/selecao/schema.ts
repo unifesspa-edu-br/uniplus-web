@@ -8435,6 +8435,7 @@ export interface components {
             readonly descricao: null | string;
             /** Format: int32 */
             readonly ordem: number | string;
+            readonly orientacao?: null | string;
         };
     };
     responses: never;

@@ -107,7 +107,9 @@ let comboboxIdSeed = 0;
       A contagem é anunciada a cada busca: quem não enxerga a lista precisa saber se o que
       digitou alcançou alguma coisa antes de apertar a seta para baixo.
     -->
-    <p class="field__hint" role="status" [id]="contagemId">{{ contagem() }}</p>
+    <p [class]="contagemVisivel() ? 'field__hint' : 'sr-only'" role="status" [id]="contagemId">
+      {{ contagem() }}
+    </p>
   `,
 })
 export class ComboboxComponent {
@@ -151,6 +153,8 @@ export class ComboboxComponent {
    * país; filtrar aqui de novo esconderia o que o servidor achou por outra grafia.
    */
   readonly buscaExterna = input(false, { transform: booleanAttribute });
+  /** A contagem aparece sob o campo; sem ela, só o leitor de tela a anuncia. */
+  readonly contagemVisivel = input(true, { transform: booleanAttribute });
 
   readonly valueChange = output<string>();
   readonly valuesChange = output<readonly string[]>();

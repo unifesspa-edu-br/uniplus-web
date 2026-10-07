@@ -1,7 +1,9 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { vi } from 'vitest';
 import { of } from 'rxjs';
 
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
+import { BUSCA_DE_CEP, type CepEncontrado } from '../endereco-geo/endereco-geo.model';
 
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type { CampoRenderizavel, FormularioDoCandidato } from './formulario-do-candidato.model';
@@ -64,13 +66,38 @@ const ENDERECO: FormularioDoCandidato = {
   },
 };
 
+const MARABA = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };
+const CEP_DE_MARABA: CepEncontrado = {
+  cep: '68507590',
+  tipo: 'Rua',
+  logradouro: 'Folha 31',
+  complemento: null,
+  bairro: 'Nova Marabá',
+  distrito: null,
+  cidade: 'Marabá',
+  codigoIbge: '1504208',
+  uf: 'PA',
+  latitude: null,
+  longitude: null,
+  nivelResolucao: 'logradouro',
+  origem: 'geo-api',
+};
+const RESIDENCIA: FormularioDoCandidato = {
+  ...ENDERECO,
+  fatosColetados: [campo('ENDERECO_RESIDENCIAL', 'Endereço residencial', 'ENDERECO')],
+  regras: { etapas: [{ codigo: SECAO, itens: [regra('ENDERECO_RESIDENCIAL')] }] },
+};
+
 describe('FormularioDoCandidatoComponent', () => {
   let fixture: ComponentFixture<FormularioDoCandidatoComponent>;
   let simulacoes: SimulacaoDoFormulario[];
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [{ provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) }],
+      providers: [
+        { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [MARABA] }) },
+        { provide: BUSCA_DE_CEP, useValue: () => of({ ok: true, data: CEP_DE_MARABA }) },
+      ],
     });
   });
 
@@ -571,5 +598,121 @@ describe('FormularioDoCandidatoComponent', () => {
     });
 
     expect(tela.textContent).toContain('etapas[0].itens[0].obrigatoriedade');
+  });
+
+  it('o endereço pelo CEP é respondido como o endereço estruturado do Geo, com a cidade', () => {
+    const tela = montar(RESIDENCIA);
+    expect(tela.querySelector('legend')?.textContent).toContain('Endereço residencial');
+
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507-590');
+    clicar(botao(tela, 'Buscar CEP'));
+    digitar(tela.querySelector('input[id$="-numero"]') as HTMLInputElement, '12');
+
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toEqual({
+      cep: '68507590',
+      logradouro: 'Rua Folha 31',
+      numero: '12',
+      complemento: null,
+      bairro: 'Nova Marabá',
+      distrito: null,
+      cidade: MARABA,
+      latitude: null,
+      longitude: null,
+      nivelResolucao: 'logradouro',
+      origem: 'geo-api',
+    });
+  });
+
+  it('sem CEP, a cidade escolhida no campo com busca do Geo é a resposta', async () => {
+    const tela = montar(RESIDENCIA);
+
+    clicar(botao(tela, 'preencher sem CEP'));
+    const uf = tela.querySelector('select[id$="-uf"]') as HTMLSelectElement;
+    uf.value = 'PA';
+    uf.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const campo = tela.querySelector('input[role="combobox"]') as HTMLInputElement;
+    campo.value = 'Mara';
+    campo.dispatchEvent(new Event('input'));
+    let marabaNaLista: HTMLElement | undefined;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      marabaNaLista = [...tela.querySelectorAll<HTMLElement>('[role="option"]')].find((item) =>
+        item.textContent?.includes('Marabá (PA)'),
+      );
+      expect(marabaNaLista).toBeDefined();
+    });
+    marabaNaLista?.dispatchEvent(new MouseEvent('mousedown'));
+    fixture.detectChanges();
+
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
+      cep: null,
+      cidade: MARABA,
+      origem: 'manual',
+    });
+  });
+
+  it('o endereço já respondido volta à tela com a cidade', () => {
+    fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
+    fixture.componentRef.setInput('formulario', RESIDENCIA);
+    fixture.componentRef.setInput('inicial', {
+      respostas: {
+        ENDERECO_RESIDENCIAL: {
+          cep: '68507590',
+          logradouro: 'Rua Folha 31',
+          cidade: MARABA,
+          nivelResolucao: 'logradouro',
+          origem: 'geo-api',
+        },
+      },
+    });
+    fixture.detectChanges();
+
+    const tela = fixture.nativeElement as HTMLElement;
+    expect((tela.querySelector('input[id$="-cidade"]') as HTMLInputElement).value).toBe('Marabá');
+    expect((tela.querySelector('input[id$="-uf"]') as HTMLInputElement).value).toBe('PA');
+    expect((tela.querySelector('input[id$="-logradouro"]') as HTMLInputElement).value).toBe(
+      'Rua Folha 31',
+    );
+  });
+
+  it('o CEP trocado e ainda não resolvido deixa o endereço obrigatório sem resposta', () => {
+    const tela = montar(RESIDENCIA);
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
+    clicar(botao(tela, 'Buscar CEP'));
+
+    clicar(botao(tela, 'Trocar CEP'));
+    const cep = tela.querySelector('input[id$="-cep"]') as HTMLInputElement;
+    digitar(cep, '6850');
+    clicar(botao(tela, 'Concluir a seção'));
+
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(tela.textContent).toContain('Responda este campo.');
+    expect(cep.value).toBe('6850');
+  });
+
+  it('a orientação da opção aparece abaixo dela e descreve o controle; a opção sem orientação não tem descrição', () => {
+    const tela = montar({
+      ...ENDERECO,
+      fatosColetados: [
+        campo('COR_RACA', 'Cor ou raça', 'SELECAO_UNICA', {
+          valoresSelecionaveis: [
+            { codigo: 'BRANCA', descricao: 'Branca', ordem: 0 },
+            {
+              codigo: 'PRETA',
+              descricao: 'Preta',
+              ordem: 1,
+              orientacao: 'Quem concorre às vagas para pretos e pardos passa pela heteroidentificação.',
+            },
+          ],
+        }),
+      ],
+      regras: { etapas: [{ codigo: SECAO, itens: [regra('COR_RACA')] }] },
+    });
+
+    const preta = opcao(tela, 'Preta');
+    const orientacao = tela.querySelector(`#${preta.getAttribute('aria-describedby')}`);
+    expect(orientacao?.textContent).toContain('heteroidentificação');
+    expect(opcao(tela, 'Branca').hasAttribute('aria-describedby')).toBe(false);
   });
 });
