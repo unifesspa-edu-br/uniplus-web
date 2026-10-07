@@ -48,6 +48,7 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  type UiFiltroAtivo,
   FilterChipsComponent,
   IconButtonComponent,
   PagerComponent,
@@ -212,6 +213,7 @@ const BACKEND_FIELD_TO_CONTROL = {
         searchPlaceholder="Buscar por sigla ou nome..."
         searchAriaLabel="Buscar unidade"
         [(searchValue)]="busca"
+        [filtrosAtivos]="filtrosAtivos()"
       >
         <button
           uiFilterBarActions
@@ -732,6 +734,14 @@ export class UnidadesPage {
   protected readonly cidadeErro = signal<string | null>(null);
   protected readonly busca = signal('');
   protected readonly tipoFiltro = signal('');
+  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
+    const tipo = this.tipoFiltro();
+    if (tipo === '') {
+      return [];
+    }
+    const rotulo = this.tipoChips.find((chip) => chip.value === tipo)?.label ?? tipo;
+    return [{ nome: 'Tipo', valor: rotulo }];
+  });
   protected readonly drawerOpen = signal(false);
   protected readonly formOpen = signal(false);
   protected readonly confirmOpen = signal(false);

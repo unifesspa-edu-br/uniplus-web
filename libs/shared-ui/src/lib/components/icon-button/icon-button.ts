@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  booleanAttribute, ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 /** Posição da dica — contrato `[data-tooltip-position]` do Uni+ DS. */
@@ -38,6 +39,8 @@ export type UiTooltipPosition = 'top' | 'bottom' | 'left' | 'right';
         [class.btn--tertiary]="!danger()"
         [class.btn--danger]="danger()"
         [routerLink]="destino"
+        [target]="novaAba() ? '_blank' : undefined"
+        [attr.rel]="novaAba() ? 'noopener' : null"
         [attr.aria-label]="accessibleName()"
         [attr.aria-describedby]="description() ? descriptionId : null"
         [attr.data-tooltip]="tooltip() || accessibleName()"
@@ -81,6 +84,8 @@ export class IconButtonComponent {
    * desabilitada). Vazio não renderiza nada.
    */
   readonly description = input<string>('');
+  /** No modo `link`, abre o destino em nova aba; o nome acessível deve dizer isso. */
+  readonly novaAba = input(false, { transform: booleanAttribute });
   /**
    * Variante destrutiva. Disponível para uso fora de célula de tabela; nas
    * células de "Ações" o padrão do repo mantém `tertiary` mesmo em

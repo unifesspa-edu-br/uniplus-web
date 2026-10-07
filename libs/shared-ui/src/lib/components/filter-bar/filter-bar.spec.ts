@@ -103,7 +103,8 @@ describe('FilterBarComponent', () => {
     fixture.componentRef.setInput('ariaLabel', 'Filtrar unidades');
     fixture.detectChanges();
 
-    const group = fixture.debugElement.query(By.css('.filter-bar__group')).nativeElement as HTMLElement;
+    const group = fixture.debugElement.query(By.css('.filter-bar__group'))
+      .nativeElement as HTMLElement;
     expect(group.childNodes.length).toBe(0);
   });
 
@@ -184,5 +185,52 @@ describe('FilterBarComponent (projeção de conteúdo e two-way binding)', () =>
     input.dispatchEvent(new Event('input'));
 
     expect(host.busca()).toBe('campus 2');
+  });
+});
+
+describe('FilterBarComponent com filtros recolhíveis', () => {
+  function montar(filtrosAtivos: readonly { nome: string; valor: string }[] | undefined) {
+    const fixture = TestBed.createComponent(FilterBarComponent);
+    fixture.componentRef.setInput('ariaLabel', 'Filtrar');
+    fixture.componentRef.setInput('filtrosAtivos', filtrosAtivos);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('fechado, mostra até dois filtros ativos e "+N"; o leitor de tela ouve todos', () => {
+    const fixture = montar([
+      { nome: 'Finalidade', valor: 'Inscrição' },
+      { nome: 'Situação', valor: 'Ativos' },
+      { nome: 'Tipo de processo', valor: 'PSR' },
+    ]);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const alternar = raiz.querySelector('.filter-bar__alternar') as HTMLButtonElement;
+    const grupo = raiz.querySelector('.filter-bar__group') as HTMLElement;
+
+    expect(alternar.getAttribute('aria-expanded')).toBe('false');
+    expect(grupo.hidden).toBe(true);
+    expect(
+      [...raiz.querySelectorAll('.filter-bar__ativo')].map((e) => e.textContent?.trim()),
+    ).toEqual(['Finalidade: Inscrição', 'Situação: Ativos', '+1']);
+    expect(alternar.getAttribute('aria-label')).toBe(
+      'Filtros, 3 ativos: Finalidade Inscrição, Situação Ativos, Tipo de processo PSR',
+    );
+
+    alternar.click();
+    fixture.detectChanges();
+    expect(grupo.hidden).toBe(false);
+    expect(raiz.querySelectorAll('.filter-bar__ativo')).toHaveLength(0);
+  });
+
+  it('sem filtro ativo, o título é só "Filtros"; sem a lista, os filtros ficam sempre abertos', () => {
+    const vazio = montar([]).nativeElement as HTMLElement;
+    expect(vazio.querySelector('.filter-bar__alternar')?.getAttribute('aria-label')).toBe(
+      'Filtros, nenhum ativo',
+    );
+    expect(vazio.querySelectorAll('.filter-bar__ativo')).toHaveLength(0);
+
+    const semLista = montar(undefined).nativeElement as HTMLElement;
+    expect(semLista.querySelector('.filter-bar__alternar')).toBeNull();
+    expect((semLista.querySelector('.filter-bar__group') as HTMLElement).hidden).toBe(false);
   });
 });

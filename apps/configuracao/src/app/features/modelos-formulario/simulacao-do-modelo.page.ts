@@ -14,8 +14,9 @@ import { ENDERECO_NO_GEO } from '../../shared/endereco';
 
 /**
  * A simulação de um modelo de formulário: o modelo como o candidato o veria, montado pela API com o
- * catálogo vivo, para responder antes de aplicar o modelo a um processo. Nada é gravado. As opções que
- * só o processo oferta — as modalidades, os municípios do bônus — ainda não existem no modelo.
+ * catálogo vivo, para responder antes de aplicar o modelo a um processo. Nada é gravado. Sem processo,
+ * a condição de atendimento, o tipo de deficiência e os municípios do bônus vêm do cadastro
+ * institucional; as demais opções que só o processo oferta, como as modalidades, ainda não existem.
  */
 @Component({
   selector: 'cfg-simulacao-do-modelo-page',
@@ -36,8 +37,10 @@ import { ENDERECO_NO_GEO } from '../../shared/endereco';
       <div class="page-header__content">
         <h1 class="page-header__title">Simulação do modelo de formulário</h1>
         <p class="page-header__desc">
-          Responda como o candidato responderia. Simula o modelo gravado; as opções que só o
-          processo oferta aparecem pelo código.
+          Responda como o candidato responderia. Simula o modelo gravado. Sem processo, a condição
+          de atendimento, o tipo de deficiência e o município da área do bônus mostram todo o
+          cadastro institucional; no processo, as opções são as que ele oferece. As demais opções que
+          só o processo oferta aparecem pelo código.
         </p>
       </div>
     </div>
