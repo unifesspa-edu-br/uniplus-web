@@ -337,7 +337,7 @@ describe('PesosEnemPage', () => {
     ]);
 
     const rotulos = Array.from(
-      fixture.nativeElement.querySelectorAll('.cell-label--group-label',) as NodeListOf<HTMLElement>
+      fixture.nativeElement.querySelectorAll('.cell-label--group-label') as NodeListOf<HTMLElement>
     ).map((el) => el.textContent?.trim());
     expect(rotulos).toEqual(['Tecnológica']);
   });
@@ -1987,8 +1987,8 @@ describe('PesosEnemPage', () => {
 
     const retry = fixture.nativeElement.querySelector(
       '.cfg-list__retry button',
-    ) as HTMLButtonElement;
-    expect(retry).toBeDefined();
+    ) as HTMLButtonElement | null;
+    expect(retry).not.toBeNull();
     retry?.click();
     await propagate();
     expectAreas().flush([...AREAS]);
