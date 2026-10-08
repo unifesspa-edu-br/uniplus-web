@@ -369,8 +369,9 @@ describe('ReservaDemograficaListPage', () => {
     component['pedirRemocao'](seed);
 
     expect(component['confirmOpen']()).toBe(true);
-    expect(component['mensagemRemocao']()).toContain('removendo');
-    expect(component['mensagemRemocao']()).toContain('2022');
+    expect(component['mensagemRemocao']()).toContain(
+      'Deseja remover a referência demográfica do Censo 2022?',
+    );
     expect(component['mensagemRemocao']()).not.toContain('Inativar');
   });
 
@@ -380,13 +381,6 @@ describe('ReservaDemograficaListPage', () => {
     const cabecalhos = Array.from(
       fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
     ).map((th) => th.textContent?.trim());
-    expect(cabecalhos).toEqual([
-      'Censo',
-      'PPI %',
-      'Quilombola %',
-      'PcD %',
-      'Base legal',
-      'Ações',
-    ]);
+    expect(cabecalhos).toEqual(['Censo', 'PPI %', 'Quilombola %', 'PcD %', 'Base legal', 'Ações']);
   });
 });
