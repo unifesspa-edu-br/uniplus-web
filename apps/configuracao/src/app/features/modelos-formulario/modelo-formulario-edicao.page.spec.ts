@@ -185,7 +185,9 @@ describe('ModeloFormularioEdicaoPage', () => {
   }
 
   function salvar(tela: HTMLElement): void {
-    const botao = [...tela.querySelectorAll('button[type="submit"]')].find((b) =>
+    const botao = Array
+      .from(tela.querySelectorAll('button[type="submit"]') as NodeListOf<HTMLButtonElement>)
+      .find((b) =>
       b.textContent?.includes('Salvar modelo'),
     );
     (botao as HTMLButtonElement).click();

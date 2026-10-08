@@ -377,14 +377,14 @@ describe('PesosEnemPage', () => {
     await carregarUmaPagina([...linhas805], [...AREAS, ...invalidas]);
 
     expect(component['areas']().map((a) => a.codigo)).toEqual(AREAS.map((a) => a.codigo));
-    const cabecalhos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.num-cell--head')].map(
-      (el) => el.textContent?.trim(),
-    );
+    const cabecalhos = Array.from(
+      fixture.nativeElement.querySelectorAll('.num-cell--head') as NodeListOf<HTMLDivElement>,
+    ).map((el) => el.textContent?.trim());
     expect(cabecalhos).toHaveLength(AREAS.length);
 
-    component.abrirDrawerCriacao();
+    component['abrirDrawerCriacao']();
     await propagate();
-    for (const grupo of component.pesoLoteForm.controls.grupos.controls) {
+    for (const grupo of component['pesoLoteForm'].controls.grupos.controls) {
       expect(grupo.controls.areas.controls.map((a) => a.controls.codigo.value)).toEqual(
         AREAS.map((a) => a.codigo),
       );
@@ -396,9 +396,9 @@ describe('PesosEnemPage', () => {
     const grupos = GRUPOS.map((g, i) => (i === 0 ? { ...g, codigo: ` ${g.codigo} ` } : g));
     await carregarUmaPagina([...linhas805], areas, grupos);
 
-    component.abrirDrawerCriacao();
+    component['abrirDrawerCriacao']();
     await propagate();
-    const [primeiro] = component.pesoLoteForm.controls.grupos.controls;
+    const [primeiro] = component['pesoLoteForm'].controls.grupos.controls;
     expect(primeiro?.controls.grupoCurso.value.codigo).toBe(GRUPOS[0]?.codigo);
     expect(primeiro?.controls.areas.controls.map((a) => a.controls.codigo.value)).toEqual(
       AREAS.map((a) => a.codigo),
@@ -414,9 +414,9 @@ describe('PesosEnemPage', () => {
       }),
     ]);
 
-    const rotulos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cell-label--group-label')].map(
-      (el) => el.textContent?.trim(),
-    );
+    const rotulos = Array.from(
+      fixture.nativeElement.querySelectorAll('.cell-label--group-label') as NodeListOf<HTMLElement>,
+    ).map((el) => el.textContent?.trim());
     expect(rotulos).toEqual(['—']);
   });
 
@@ -1180,9 +1180,12 @@ describe('PesosEnemPage', () => {
     const areas = AREAS.map((a, i) => (i === 0 ? { ...a, codigo: ` ${a.codigo} ` } : a));
     const grupos = GRUPOS.map((g, i) => (i === 0 ? { ...g, codigo: ` ${g.codigo} ` } : g));
     await carregarUmaPagina([], areas, grupos);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match(
