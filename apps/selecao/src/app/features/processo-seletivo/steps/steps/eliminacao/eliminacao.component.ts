@@ -32,6 +32,7 @@ import {
   classificacaoUsaFormulaLocal,
   comoComandoDeClassificacao,
   divisorDaMediaValido,
+  eliminacaoAceitaUmaSoVez,
   eliminacaoExigeBaseadoEmEnem,
   eliminacaoUsaAreaEMinimo,
   eliminacaoUsaEtapaENotaMinima,
@@ -461,6 +462,17 @@ export class EliminacaoStepComponent {
         messages.push(...this.mensagensDoCorte(regra, indice));
       }
 
+      if (
+        eliminacaoAceitaUmaSoVez(regra.regraCodigo) &&
+        this.regras().some(
+          (outra, item) => item < indice && outra.regraCodigo === regra.regraCodigo,
+        )
+      ) {
+        messages.push(
+          `Regra de eliminação ${posicao}: esta regra já foi declarada em outra posição; deixe uma só.`,
+        );
+      }
+
       if (eliminacaoExigeBaseadoEmEnem(regra.regraCodigo) && !classificacao.baseadoEmEnem) {
         messages.push(
           `Regra de eliminação ${posicao}: só se aplica quando a classificação está marcada como baseada em ENEM (passo Fórmula).`,
@@ -713,6 +725,10 @@ const RECUSA_DA_ELIMINACAO: ReadonlyMap<string, string> = new Map([
   [
     `${PREFIXO_DA_RECUSA}corte_em_area_fora_do_quadro`,
     'a área não está em todos os grupos da resolução de Peso por Área; escolha outra área ou outra resolução no passo Fórmula',
+  ],
+  [
+    `${PREFIXO_DA_RECUSA}falta_em_dia_de_prova_enem_repetida`,
+    'a falta em dia de prova do ENEM já foi declarada em outra regra; deixe uma só',
   ],
   [
     'uniplus.selecao.regra_eliminacao.area_invalida',
