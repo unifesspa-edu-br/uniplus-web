@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   afterNextRender,
   inject,
@@ -9,6 +10,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { ApiResult } from '@uniplus/shared-core/http';
 import { DOMAIN_ROLES, PROFILE_BASE_PATH, ROLE_LABELS } from '@uniplus/shared-auth/bootstrap';
 
@@ -173,6 +175,7 @@ type Estado =
 })
 export class UserProfileDialogComponent {
   private readonly http = inject(HttpClient);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(PROFILE_BASE_PATH);
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
@@ -252,12 +255,15 @@ export class UserProfileDialogComponent {
   }
 
   private carregar(): void {
-    this.http.get<ApiResult<ProfileResponse>>(`${this.basePath}/api/profile/me`).subscribe({
-      next: (resultado) =>
-        this.estado.set(
-          resultado.ok ? { tipo: 'pronto', perfil: resultado.data } : { tipo: 'erro' },
-        ),
-      error: () => this.estado.set({ tipo: 'erro' }),
-    });
+    this.http
+      .get<ApiResult<ProfileResponse>>(`${this.basePath}/api/profile/me`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resultado) =>
+          this.estado.set(
+            resultado.ok ? { tipo: 'pronto', perfil: resultado.data } : { tipo: 'erro' },
+          ),
+        error: () => this.estado.set({ tipo: 'erro' }),
+      });
   }
 }
