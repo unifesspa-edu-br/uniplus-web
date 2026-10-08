@@ -119,9 +119,9 @@ describe('CalendarioDiasUteisDetalhePage', () => {
   const abrirCadastroDoDia = async (rotuloInicio: string): Promise<void> => {
     botaoDoDiaVazio(rotuloInicio).click();
     fixture.detectChanges();
-    const abrir = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
-      (b) => b.textContent?.includes('Adicionar feriado'),
-    ) as HTMLButtonElement;
+    const abrir = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Adicionar feriado')) as HTMLButtonElement;
     abrir.click();
     fixture.detectChanges();
     await propagate();
@@ -137,9 +137,9 @@ describe('CalendarioDiasUteisDetalhePage', () => {
   };
 
   const submeter = (): void => {
-    const adicionar = Array
-      .from(fixture.nativeElement.querySelectorAll('dialog button') as NodeListOf<HTMLButtonElement>)
-      .find((b) => b.textContent?.trim() === 'Adicionar') as HTMLButtonElement;
+    const adicionar = Array.from(
+      fixture.nativeElement.querySelectorAll('dialog button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.trim() === 'Adicionar') as HTMLButtonElement;
     adicionar.click();
     fixture.detectChanges();
   };
@@ -476,9 +476,9 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     const dialogoDeCadastro = (fixture.nativeElement as HTMLElement)
       .querySelector('#cfg-calendario-dias-uteis-form')
       ?.closest('dialog') as HTMLElement;
-    const fechar = Array.from(dialogoDeCadastro.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
-      (b) => b.getAttribute('aria-label') === 'Fechar',
-    ) as HTMLButtonElement;
+    const fechar = Array.from(
+      dialogoDeCadastro.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.getAttribute('aria-label') === 'Fechar') as HTMLButtonElement;
     expect(fechar.disabled).toBe(true);
 
     controller.expectOne(POST_URL).flush({

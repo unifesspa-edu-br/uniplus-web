@@ -86,10 +86,9 @@ async function escolherCidade(
   expect(busca.request.params.get('uf')).toBe('PA');
   busca.flush([{ id: 'c1', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
   fixture.detectChanges();
-  const opcao = Array.from(fixture.nativeElement.querySelectorAll(
-      '[role="option"]',
-    ) as NodeListOf<HTMLOptionElement>)
-  .find((item) => item.textContent?.includes('Marabá (PA)'));
+  const opcao = Array.from(
+    fixture.nativeElement.querySelectorAll('[role="option"]') as NodeListOf<HTMLElement>,
+  ).find((item) => item.textContent?.includes('Marabá (PA)'));
   if (opcao === undefined) {
     throw new Error('A cidade buscada não apareceu entre as opções');
   }
