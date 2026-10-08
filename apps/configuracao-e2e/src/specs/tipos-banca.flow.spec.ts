@@ -191,7 +191,7 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
       .getByRole('button', { name: `Remover tipo de banca ${bancaSeed.codigo}`, exact: true })
       .click();
     const dialog = page.locator('dialog.uni-dialog');
-    dialog.getByRole('button', { name: 'Remover', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
     expect(capturado.deletedIds[0]).toBe(BANCA_ID);
