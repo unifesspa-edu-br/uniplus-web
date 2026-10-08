@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -18,7 +19,11 @@ import {
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import {
+  ComboboxComponent,
+  ValorEmConsultaComponent,
+  type UiComboboxGroup,
+} from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { LocalidadeSelecionada } from '../../processo-seletivo.models';
 import { OrigemCandidatosSelecionada, StepValidation } from '../../processo-seletivo.models';
@@ -55,7 +60,7 @@ export const ORIGENS_CANDIDATOS: readonly {
 @Component({
   selector: 'sel-step-identificacao',
   standalone: true,
-  imports: [ReactiveFormsModule, ValorEmConsultaComponent],
+  imports: [ReactiveFormsModule, ComboboxComponent, ValorEmConsultaComponent],
   templateUrl: './identificacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(IdentificacaoStepComponent)],
@@ -78,6 +83,32 @@ export class IdentificacaoStepComponent {
   readonly municipiosErro = signal<string | null>(null);
   /** Termo digitado no seletor; não é persistido no rascunho. */
   readonly buscaMunicipio = signal('');
+
+  /** O combobox do município: o rótulo do campo aponta para o id que ele gera. */
+  protected readonly campoDoMunicipio = viewChild(ComboboxComponent);
+
+  /** Os municípios achados, como as opções do combobox; o código IBGE identifica cada uma. */
+  protected readonly gruposDeMunicipios = computed<readonly UiComboboxGroup[]>(() =>
+    this.municipios().length === 0
+      ? []
+      : [
+          {
+            label: 'Municípios encontrados',
+            options: this.municipios().map((m) => ({
+              value: m.codigoIbge,
+              label: `${m.nome} — ${m.uf}`,
+            })),
+          },
+        ],
+  );
+
+  /** O que a lista diz enquanto não há município a escolher. */
+  protected readonly textoSemMunicipios = computed(() => {
+    if (this.municipiosErro() !== null) return 'Não foi possível buscar os municípios.';
+    if (this.buscaMunicipio().trim().length < 3) return 'Digite ao menos três letras do município.';
+    if (this.municipiosCarregando()) return 'Consultando a API Geo…';
+    return 'Nenhum município com esse nome.';
+  });
 
   private readonly catalogoUnidades = signal<readonly UnidadeOption[]>([]);
 
@@ -259,6 +290,16 @@ export class IdentificacaoStepComponent {
     this.store.patchObjectSection('identificacao', { localidade });
     this.buscaMunicipio.set('');
     this.municipios.set([]);
+  }
+
+  protected escolherMunicipio(codigoIbge: string): void {
+    const municipio = this.municipios().find((m) => m.codigoIbge === codigoIbge);
+    if (municipio === undefined) return;
+    this.selecionarLocalidade({
+      codigoIbge: municipio.codigoIbge,
+      nome: municipio.nome,
+      uf: municipio.uf,
+    });
   }
 
   limparLocalidade(): void {

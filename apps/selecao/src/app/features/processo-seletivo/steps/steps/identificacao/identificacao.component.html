@@ -105,7 +105,7 @@
         </p>
       </div>
       <div class="form-field form-grid__full">
-        <label class="label" for="f-localidade">Município que rege os prazos</label>
+        <label class="label" [attr.for]="campoDoMunicipio()?.campoId ?? 'f-localidade'">Município que rege os prazos</label>
         @if (store.draft().identificacao.localidade; as localidade) {
           @if (camposDoComandoBloqueados()) {
             <input
@@ -130,48 +130,28 @@
             </div>
           }
         } @else {
-          <input
-            class="input"
-            id="f-localidade"
-            type="search"
-            autocomplete="off"
+          <!-- A lista de sugestões é a do combobox do DS: flutua sobre o conteúdo, com fundo, borda e
+               elevação, e expõe cada município como `option` de um `listbox`. O rótulo aponta para o
+               campo pelo id que o próprio combobox gera. -->
+          <ui-combobox
+            #municipio
+            buscaExterna
+            rotulo="Municípios encontrados"
             placeholder="Digite ao menos 3 letras do município"
-            aria-describedby="f-localidade-hint"
-            [attr.aria-busy]="municipiosCarregando() || null"
-            [attr.aria-invalid]="invalidFields().has('localidade') || null"
-            [class.is-invalid]="invalidFields().has('localidade')"
+            descritoPor="f-localidade-hint"
+            [grupos]="gruposDeMunicipios()"
+            [textoSemResultado]="textoSemMunicipios()"
+            [estadoDaBusca]="municipios().length === 0 ? textoSemMunicipios() : null"
+            [invalido]="invalidFields().has('localidade')"
             [disabled]="camposDoComandoBloqueados()"
-            [value]="buscaMunicipio()"
-            (input)="buscarMunicipios($any($event.target).value)"
+            [contagemVisivel]="false"
+            (buscaChange)="buscarMunicipios($event)"
+            (valueChange)="escolherMunicipio($event)"
           />
-          @if (municipiosCarregando()) {
-            <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
-          }
           @if (municipiosErro(); as erro) {
             <div class="field__erro" role="alert">
               <p>{{ erro }}</p>
             </div>
-          }
-          @if (municipios().length > 0) {
-            <ul class="localidade-opcoes" aria-label="Municípios encontrados">
-              @for (municipio of municipios(); track municipio.codigoIbge) {
-                <li>
-                  <button
-                    class="btn btn--tertiary"
-                    type="button"
-                    (click)="
-                      selecionarLocalidade({
-                        codigoIbge: municipio.codigoIbge,
-                        nome: municipio.nome,
-                        uf: municipio.uf,
-                      })
-                    "
-                  >
-                    {{ municipio.nome }} — {{ municipio.uf }}
-                  </button>
-                </li>
-              }
-            </ul>
           }
         }
         <p class="field__hint" id="f-localidade-hint">

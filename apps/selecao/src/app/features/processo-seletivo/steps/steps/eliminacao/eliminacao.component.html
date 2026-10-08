@@ -213,22 +213,34 @@
             }
           </div>
           <!--
-            O nome acessível COMEÇA pelo texto visível e acrescenta qual regra ele remove: dez
-            botões chamados só "Remover" ficam indistinguíveis na lista de elementos do leitor de
-            tela, e o grupo que envolve cada regra não aparece lá. Quem dita por voz continua
-            dizendo "Remover", porque é assim que o nome começa.
+            Ação só-ícone, igual à do critério de desempate: remover uma regra é secundário, e um botão
+            cheio por regra disputava o peso visual com a ação principal do passo. Sem texto visível, o
+            nome acessível diz qual regra o botão remove — dez "Remover" seriam indistinguíveis na
+            lista de elementos do leitor de tela.
           -->
-          <button
-            class="btn btn--outline btn--sm"
-            type="button"
-            style="margin-top: var(--space-3)"
-            [id]="'elim-remover-' + indice"
-            [attr.aria-label]="'Remover regra de eliminação ' + (indice + 1)"
-            [disabled]="!store.aceitaEdicao()"
-            (click)="removerRegra(indice)"
-          >
-            Remover
-          </button>
+          <div class="eliminacao-acoes">
+            <button
+              class="desempate-btn"
+              type="button"
+              [id]="'elim-remover-' + indice"
+              [attr.aria-label]="'Remover regra de eliminação ' + (indice + 1)"
+              [disabled]="!store.aceitaEdicao()"
+              (click)="removerRegra(indice)"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                aria-hidden="true"
+              >
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+              </svg>
+            </button>
+          </div>
         </div>
       }
     </div>

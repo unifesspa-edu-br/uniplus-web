@@ -257,11 +257,14 @@ export class ProcessoSeletivoPage {
       const barra = this.barraDeEtapas()?.nativeElement;
       const rodape = this.rodape()?.nativeElement;
       const area = this.root.nativeElement.closest<HTMLElement>('.page');
+      const raiz = this.root.nativeElement.ownerDocument.documentElement;
       if (!barra || !rodape || !area || typeof ResizeObserver === 'undefined') return;
 
       const observador = new ResizeObserver(() => {
         area.style.setProperty('--wiz-reserva-topo', `${barra.offsetHeight}px`);
         area.style.setProperty('--wiz-reserva-base', `${rodape.offsetHeight}px`);
+        // O "Voltar ao topo" é irmão do `.page` no shell, fora do alcance da variável acima.
+        raiz.style.setProperty('--wiz-reserva-base', `${rodape.offsetHeight}px`);
       });
       observador.observe(barra);
       observador.observe(rodape);
@@ -269,6 +272,7 @@ export class ProcessoSeletivoPage {
         observador.disconnect();
         area.style.removeProperty('--wiz-reserva-topo');
         area.style.removeProperty('--wiz-reserva-base');
+        raiz.style.removeProperty('--wiz-reserva-base');
       });
     });
 
@@ -1030,6 +1034,14 @@ export class ProcessoSeletivoPage {
 
   /** Título do passo — o destino de foco a cada troca. */
   private focarTituloDoPasso(): void {
+    // O passo novo abre no topo: com a rolagem do passo anterior mantida, ele aparecia rolado até
+    // o meio, com o título fora da tela. O foco vai sem rolar para não brigar com esta rolagem.
+    const scroller = this.root.nativeElement.closest<HTMLElement>('.page');
+    try {
+      scroller?.scrollTo({ top: 0, behavior: 'instant' });
+    } catch {
+      // jsdom não implementa scrollTo(options); o foco não pode ser bloqueado.
+    }
     this.root.nativeElement.querySelector<HTMLElement>('.step-head h1')?.focus({
       preventScroll: true,
     });
