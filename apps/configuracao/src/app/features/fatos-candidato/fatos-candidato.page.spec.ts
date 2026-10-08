@@ -267,7 +267,9 @@ describe('FatosCandidatoPage', () => {
     expect(component['drawerAberto']()).toBe(true);
     expect(component['somenteLeitura']()).toBe(true);
     fixture.detectChanges();
-    const fechar = [...tela.querySelectorAll<HTMLButtonElement>('.cfg-form-footer button')].find((b) => b.textContent?.trim() === 'Fechar');
+    const fechar = Array.from(
+      tela.querySelectorAll('.cfg-form-footer button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.trim() === 'Fechar');
     fechar?.click();
     expect(component['drawerAberto']()).toBe(false);
     controller.match(() => true).forEach((req) => req.flush(null));

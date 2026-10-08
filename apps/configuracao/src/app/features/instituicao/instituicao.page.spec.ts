@@ -129,7 +129,7 @@ describe('InstituicaoPage', () => {
   }
 
   function preencherObrigatorios(): void {
-    component.form.patchValue({
+    component['form'].patchValue({
       nome: 'Universidade Federal do Sul e Sudeste do Pará',
       sigla: 'Unifesspa',
       codigoEmec: '3990',
@@ -173,28 +173,28 @@ describe('InstituicaoPage', () => {
 
   it('InstituicaoForm_SelectReitoria_PopulaOptions', async () => {
     await carregar(null);
-    expect(component.reitorias()).toHaveLength(1);
-    expect(component.reitorias()[0]?.sigla).toBe('REITORIA');
+    expect(component['reitorias']()).toHaveLength(1);
+    expect(component['reitorias']()[0]?.sigla).toBe('REITORIA');
   });
 
   it('InstituicaoForm_CamposObrigatorios_MarcaErros', async () => {
     await carregar(null);
-    component.abrirCadastro();
-    component.salvar();
+    component['abrirCadastro']();
+    component['salvar']();
     await propagate();
 
     // Nenhuma request de POST disparada (form inválido).
     controller.expectNone(`${BASE}/api/organizacao/admin/instituicao`);
-    expect(component.erroDoCampo('nome')).toBe('Campo obrigatório.');
-    expect(component.erroDoCampo('codigoEmec')).toBe('Campo obrigatório.');
-    expect(component.drawerAberto()).toBe(true);
+    expect(component['erroDoCampo']('nome')).toBe('Campo obrigatório.');
+    expect(component['erroDoCampo']('codigoEmec')).toBe('Campo obrigatório.');
+    expect(component['drawerAberto']()).toBe(true);
   });
 
   it('InstituicaoForm_ErroSingleton_ExibeBanner', async () => {
     await carregar(null);
-    component.abrirCadastro();
+    component['abrirCadastro']();
     preencherObrigatorios();
-    component.salvar();
+    component['salvar']();
     await propagate();
 
     const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
@@ -205,15 +205,15 @@ describe('InstituicaoPage', () => {
     );
     await propagate();
 
-    expect(component.submitError()).toContain('Já existe uma instituição cadastrada');
-    expect(component.drawerAberto()).toBe(true);
+    expect(component['submitError']()).toContain('Já existe uma instituição cadastrada');
+    expect(component['drawerAberto']()).toBe(true);
   });
 
   it('InstituicaoForm_ErroUnidadeRaiz_MapeiaCampo', async () => {
     await carregar(instituicaoSeed);
-    component.abrirEdicao();
-    const chaveInicial = component.idempotencyKeyAtual();
-    component.salvar();
+    component['abrirEdicao']();
+    const chaveInicial = component['idempotencyKeyAtual']();
+    component['salvar']();
     await propagate();
 
     const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
@@ -232,15 +232,15 @@ describe('InstituicaoPage', () => {
     );
     await propagate();
 
-    expect(component.erroDoCampo('unidadeRaizId')).toContain('reitoria');
+    expect(component['erroDoCampo']('unidadeRaizId')).toContain('reitoria');
     // Idempotency-Key é renovada após a falha (retry seguro com body corrigido).
-    expect(component.idempotencyKeyAtual()).not.toBe(chaveInicial);
+    expect(component['idempotencyKeyAtual']()).not.toBe(chaveInicial);
   });
 
   it('InstituicaoForm_ErroUnidadeRaizNaoEncontrada_MapeiaCampo', async () => {
     await carregar(instituicaoSeed);
-    component.abrirEdicao();
-    component.salvar();
+    component['abrirEdicao']();
+    component['salvar']();
     await propagate();
 
     const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
@@ -259,14 +259,14 @@ describe('InstituicaoPage', () => {
     );
     await propagate();
 
-    expect(component.erroDoCampo('unidadeRaizId')).toContain('não foi encontrada');
-    expect(component.submitError()).toBeNull();
+    expect(component['erroDoCampo']('unidadeRaizId')).toContain('não foi encontrada');
+    expect(component['submitError']()).toBeNull();
   });
 
   it('InstituicaoForm_CodeUnidadeRaizEmOutroAgregado_NaoAncoraNoControle', async () => {
     await carregar(instituicaoSeed);
-    component.abrirEdicao();
-    component.salvar();
+    component['abrirEdicao']();
+    component['salvar']();
     await propagate();
 
     const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
@@ -286,15 +286,15 @@ describe('InstituicaoPage', () => {
     );
     await propagate();
 
-    expect(component.erroDoCampo('unidadeRaizId')).toBeNull();
-    expect(component.submitError()).toContain('Unidade raiz órfã em outro agregado');
+    expect(component['erroDoCampo']('unidadeRaizId')).toBeNull();
+    expect(component['submitError']()).toContain('Unidade raiz órfã em outro agregado');
   });
 
   it('InstituicaoForm_Erro409ProcessingConflict_NaoConfundeComSingleton', async () => {
     await carregar(null);
-    component.abrirCadastro();
+    component['abrirCadastro']();
     preencherObrigatorios();
-    component.salvar();
+    component['salvar']();
     await propagate();
 
     const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
@@ -314,16 +314,16 @@ describe('InstituicaoPage', () => {
     );
     await propagate();
 
-    expect(component.submitError()).toBe('Uma requisição idêntica ainda está em processamento');
-    expect(component.submitError()).not.toContain('Já existe uma instituição cadastrada');
+    expect(component['submitError']()).toBe('Uma requisição idêntica ainda está em processamento');
+    expect(component['submitError']()).not.toContain('Já existe uma instituição cadastrada');
   });
 
   it('InstituicaoForm_Criar_RequisicaoCorreta', async () => {
     await carregar(null);
-    component.abrirCadastro();
+    component['abrirCadastro']();
     preencherObrigatorios();
-    const chave = component.idempotencyKeyAtual();
-    component.salvar();
+    const chave = component['idempotencyKeyAtual']();
+    component['salvar']();
     await propagate();
 
     const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
@@ -343,19 +343,19 @@ describe('InstituicaoPage', () => {
 
     // Pós-sucesso: drawer fecha e recarrega o singleton (`obter()`); o resource
     // de reitorias não re-dispara (params inalterados, sem reload).
-    expect(component.drawerAberto()).toBe(false);
+    expect(component['drawerAberto']()).toBe(false);
     expectObter().flush(instituicaoSeed);
     await propagate();
-    expect(component.instituicao()?.sigla).toBe('Unifesspa');
+    expect(component['instituicao']()?.sigla).toBe('Unifesspa');
   });
 
   it('InstituicaoPage_Remocao_RetornaModoCriacao', async () => {
     await carregar(instituicaoSeed);
-    component.abrirEdicao();
-    component.pedirRemocao();
-    expect(component.dialogRemover()).toBe(true);
+    component['abrirEdicao']();
+    component['pedirRemocao']();
+    expect(component['dialogRemover']()).toBe(true);
 
-    component.removerConfirmado();
+    component['removerConfirmado']();
     await propagate();
 
     const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
@@ -363,16 +363,16 @@ describe('InstituicaoPage', () => {
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
-    expect(component.instituicao()).toBeNull();
-    expect(component.drawerAberto()).toBe(false);
+    expect(component['instituicao']()).toBeNull();
+    expect(component['drawerAberto']()).toBe(false);
     expect(fixture.nativeElement.querySelector('ui-empty-state')).not.toBeNull();
   });
 
   it('InstituicaoForm_RemocaoEmVoo_BloqueiaSalvar', async () => {
     await carregar(instituicaoSeed);
-    component.abrirEdicao();
-    component.pedirRemocao();
-    component.removerConfirmado();
+    component['abrirEdicao']();
+    component['pedirRemocao']();
+    component['removerConfirmado']();
     await propagate();
 
     // DELETE em voo (não flushado): removendo() = true.
@@ -382,20 +382,20 @@ describe('InstituicaoPage', () => {
     // Tentar salvar nessa janela é no-op (guard de corrida): retorna antes de
     // marcar submitting e não dispara PUT. Se um PUT fosse criado, o
     // controller.verify() do afterEach acusaria a request não consumida.
-    component.salvar();
+    component['salvar']();
     await propagate();
-    expect(component.submitting()).toBe(false);
+    expect(component['submitting']()).toBe(false);
 
     del.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
-    expect(component.instituicao()).toBeNull();
+    expect(component['instituicao']()).toBeNull();
   });
 
   it('InstituicaoForm_ErroCampoOpcional_MapeiaInline', async () => {
     await carregar(null);
-    component.abrirCadastro();
+    component['abrirCadastro']();
     preencherObrigatorios();
-    component.salvar();
+    component['salvar']();
     await propagate();
 
     const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
@@ -417,7 +417,7 @@ describe('InstituicaoPage', () => {
     await propagate();
 
     // Erro de campo opcional é mapeado ao controle e renderizado inline.
-    expect(component.erroDoCampo('cnpj')).toBe('CNPJ inválido.');
-    expect(component.drawerAberto()).toBe(true);
+    expect(component['erroDoCampo']('cnpj')).toBe('CNPJ inválido.');
+    expect(component['drawerAberto']()).toBe(true);
   });
 });

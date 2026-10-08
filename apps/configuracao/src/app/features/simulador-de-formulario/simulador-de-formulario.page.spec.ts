@@ -126,7 +126,7 @@ describe('SimuladorDeFormularioPage', () => {
     });
   };
   const botao = (texto: string): HTMLButtonElement =>
-    [...tela().querySelectorAll('button')].find(
+    Array.from(tela().querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (b) => b.textContent?.trim() === texto,
     ) as HTMLButtonElement;
 
@@ -201,8 +201,12 @@ describe('SimuladorDeFormularioPage', () => {
     });
     fixture.detectChanges();
 
-    const linhas = [...tela().querySelectorAll('tbody tr')].map((tr) =>
-      [...tr.querySelectorAll('td')].map((td) => td.textContent?.trim()).join(' '),
+    const linhas = Array.from(
+      tela().querySelectorAll('tbody tr') as NodeListOf<HTMLTableRowElement>,
+    ).map((tr) =>
+      Array.from(tr.querySelectorAll('td') as NodeListOf<HTMLTableCellElement>)
+        .map((td) => td.textContent?.trim())
+        .join(' '),
     );
     expect(linhas).toContain('Campo NOME_ALDEIA visivel "FALSO" "VERDADEIRO"');
   });
