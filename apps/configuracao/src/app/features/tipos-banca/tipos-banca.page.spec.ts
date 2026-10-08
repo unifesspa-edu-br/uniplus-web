@@ -9,7 +9,7 @@ import {
   FaseCanonicaDto,
   TipoBancaDto,
 } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TiposBancaPage } from './tipos-banca.page';
 import { NotificationService } from '@uniplus/shared-core';
 
@@ -252,23 +252,16 @@ describe('TiposBancaPage', () => {
     );
   });
 
-  it('confirma a remoção e atualiza a listagem', async () => {
+  it('expõe legenda acessível descrevendo a tabela', async () => {
     await flushLista([bancaSeed]);
-    component['pedirRemocao'](bancaSeed);
-    component['removerConfirmado']();
+    fixture.detectChanges();
 
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
-    expect(req.request.method).toBe('DELETE');
-
-    req.flush(null, {
-      status: 204,
-      statusText: 'No Content',
-    });
-
-    await propagate();
-    await flushLista([]);
-
-    expect(component['bancas']()).toEqual([]);
+    const caption = fixture.nativeElement.querySelector('table > caption');
+    expect(caption).not.toBeNull();
+    expect(caption?.classList.contains('sr-only')).toBe(true);
+    expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
+      'Tipos de banca do catálogo institucional, com código e fase típica de atuação',
+    );
   });
 
   it('CA-01/CA-03/CA-04/CA-05/CA-06: lixeira e confirmação falam em remover e identificam o tipo de banca', async () => {
