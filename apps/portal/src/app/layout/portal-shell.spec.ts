@@ -35,7 +35,7 @@ describe('PortalShellComponent — navegação por autenticação', () => {
     const fixture = TestBed.createComponent(PortalShellComponent);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
-    return [...host.querySelectorAll('nav.portal-nav a, nav.portal-nav span')]
+    return Array.from(host.querySelectorAll('nav.portal-nav a, nav.portal-nav span'))
       .map((el) => el.textContent?.trim() ?? '')
       .filter((texto) => texto.length > 0);
   }

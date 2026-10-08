@@ -87,7 +87,7 @@ describe('CertameDocumentosComponent', () => {
     });
     await propagar();
 
-    const links = [...host.querySelectorAll<HTMLAnchorElement>('a')];
+    const links = Array.from(host.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>);
     expect(links).toHaveLength(1);
     expect(links[0].getAttribute('href')).toBe(URL_DOWNLOAD);
     expect(links[0].textContent?.replace(/\s+/g, ' ')).toContain('Baixar o modelo (DOCX)');
