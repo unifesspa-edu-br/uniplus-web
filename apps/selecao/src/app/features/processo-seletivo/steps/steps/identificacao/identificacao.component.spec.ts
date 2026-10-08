@@ -340,10 +340,10 @@ describe('IdentificacaoStepComponent', () => {
   });
 
   it('descreve o município como fonte dos feriados aplicáveis, sem decorrer da unidade', () => {
-    const campo = host.querySelector('#f-localidade');
+    const campo = host.querySelector('input[role="combobox"]');
     const hint = host.querySelector('#f-localidade-hint');
 
-    expect(campo?.getAttribute('aria-describedby')).toBe('f-localidade-hint');
+    expect(campo?.getAttribute('aria-describedby')).toContain('f-localidade-hint');
     expect(hint?.textContent).toMatch(/feriados municipais e estaduais/i);
     expect(hint?.textContent).toMatch(/não decorre dela/i);
   });
@@ -381,6 +381,23 @@ describe('IdentificacaoStepComponent', () => {
 
     expect(store.draft().identificacao.localidade).toEqual(MARABA);
     expect(componente.municipios()).toEqual([]);
+  });
+
+  it('oferece os municípios achados como opções de um listbox e grava a escolhida', async () => {
+    const campo = host.querySelector<HTMLInputElement>('input[role="combobox"]');
+    campo?.focus();
+    componente.buscarMunicipios('mar');
+    controller
+      .expectOne((r) => r.url.includes('/api/cidades'))
+      .flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
+    await tick();
+    detectar();
+
+    const opcao = host.querySelector<HTMLElement>('[role="listbox"] [role="option"]');
+    expect(opcao?.textContent?.trim()).toBe('Marabá — PA');
+
+    opcao?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    expect(store.draft().identificacao.localidade).toEqual(MARABA);
   });
 
   it('limpar a localidade devolve o campo à busca', () => {

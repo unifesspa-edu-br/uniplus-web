@@ -85,6 +85,20 @@ sel-layout {
   scroll-padding-block: var(--wiz-reserva-topo, 0px) var(--wiz-reserva-base, 0px);
 }
 
+/* Faixa que o botão do VLibras ocupa na borda direita: 40 px do botão, 10 px de margem e folga. */
+:root {
+  --reserva-vlibras: 3.5rem;
+}
+
+/*
+ * O "Voltar ao topo" do shell é fixo no canto, e o rodapé do editor (`Gravar e avançar`) também:
+ * sem este deslocamento, o botão redondo cobre a ação principal. A altura do rodapé vem do editor,
+ * que a publica na raiz enquanto está montado.
+ */
+:root:has(.sel-processo) .uni-back-to-top {
+  bottom: calc(var(--wiz-reserva-base, 0px) + var(--space-4));
+}
+
 .sel-processo {
   display: flex;
   flex: 1 0 auto;

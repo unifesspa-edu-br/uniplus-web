@@ -75,8 +75,8 @@ test.describe('Cadastro inicial do processo seletivo', () => {
     // servidor recusa a criação sem ele. A busca da Geo casa por trecho do
     // nome, não por prefixo — com "Mar" viriam vinte "…do Maranhão" antes de
     // Marabá aparecer, e a janela de resultados cortaria fora.
-    await page.locator('#f-localidade').fill('Marabá');
-    const opcaoMaraba = page.getByRole('button', { name: /^Marabá — PA$/ }).first();
+    await page.getByRole('combobox', { name: 'Município que rege os prazos' }).fill('Marabá');
+    const opcaoMaraba = page.getByRole('option', { name: /^Marabá — PA$/ }).first();
     await expect(opcaoMaraba).toBeVisible({ timeout: 15_000 });
     await opcaoMaraba.click();
 
