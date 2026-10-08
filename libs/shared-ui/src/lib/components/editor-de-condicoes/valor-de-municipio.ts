@@ -123,7 +123,7 @@ function rotuloDe(municipio: MunicipioEncontrado): string {
         placeholder="Digite o nome do município"
         [textoSemResultado]="textoSemResultado()"
         [grupos]="grupos()"
-        [value]="values() && values()[0] ? values()[0] : ''"
+        [value]="values().at(0) ?? ''"
         [disabled]="disabled()"
         [estadoDaBusca]="estadoDaBusca()"
         [invalido]="invalido()"

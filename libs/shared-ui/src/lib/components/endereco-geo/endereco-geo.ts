@@ -196,7 +196,7 @@ interface EnderecoFormControls {
                 [invalido]="!!erroExterno()"
                 [descritoPor]="erroExterno() ? id('erro') : ufDaCidade() === '' ? id('cidade-uf') : null"
                 [contagemVisivel]="false"
-                (valuesChange)="selecionarCidade($event && $event[0] ? $event[0] : '')"
+                (valuesChange)="selecionarCidade($event.at(0) ?? '')"
               />
               @if (cidade() && !disabled()) {
                 <button
