@@ -221,8 +221,9 @@ describe('ModeloDaExigenciaComponent', () => {
     fixture.componentRef.setInput('modelo', VINCULADO);
     fixture.detectChanges();
 
-    const remover = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
-      (botao) => botao.textContent?.includes('Remover o modelo'),
+    const remover = Array
+      .from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
+      .find((botao) => botao.textContent?.includes('Remover o modelo'),
     );
     remover?.click();
 
