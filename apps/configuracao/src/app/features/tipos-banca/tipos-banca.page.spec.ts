@@ -11,7 +11,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TiposBancaPage } from './tipos-banca.page';
-import { NotificationService } from '@uniplus/shared-core';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 
 const BASE = 'http://localhost:5000';
 const CRIAR_URL = `${BASE}/api/configuracao/admin/tipos-banca`;
