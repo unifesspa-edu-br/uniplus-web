@@ -318,9 +318,9 @@ describe('BonusStepComponent', () => {
       // jsdom não faz layout de verdade — scrollHeight/clientHeight ficam
       // ambos em 0, o mesmo estado de "cabe sem rolar" que uma base legal com
       // poucos municípios produz numa tela real.
-      const regiao = fixture.nativeElement.querySelector<HTMLDivElement>(
+      const regiao = fixture.nativeElement.querySelector(
         '.bonus-municipios__scroll',
-      );
+      ) as HTMLDivElement;
       expect(regiao?.hasAttribute('tabindex')).toBe(false);
       expect(regiao?.hasAttribute('role')).toBe(false);
       expect(regiao?.hasAttribute('aria-labelledby')).toBe(false);
@@ -345,9 +345,9 @@ describe('BonusStepComponent', () => {
       componente.escolherBaseLegal(BASE_LEGAL_ID);
       fixture.detectChanges();
 
-      const regiao = fixture.nativeElement.querySelector<HTMLDivElement>(
+      const regiao = fixture.nativeElement.querySelector(
         '.bonus-municipios__scroll',
-      );
+      ) as HTMLDivElement;
       vi.spyOn(regiao as HTMLDivElement, 'scrollHeight', 'get').mockReturnValue(500);
       vi.spyOn(regiao as HTMLDivElement, 'clientHeight', 'get').mockReturnValue(256);
       window.dispatchEvent(new Event('resize'));
@@ -357,7 +357,7 @@ describe('BonusStepComponent', () => {
       expect(regiao?.getAttribute('role')).toBe('region');
 
       const legendaId = regiao?.getAttribute('aria-labelledby');
-      const legenda = fixture.nativeElement.querySelector<HTMLElement>(`#${legendaId}`);
+      const legenda = fixture.nativeElement.querySelector(`#${legendaId}`) as HTMLElement;
       expect(legenda?.textContent).toContain('1 município(s) beneficiado(s)');
     });
   });

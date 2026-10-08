@@ -550,7 +550,9 @@ describe('AtendimentoStepComponent', () => {
     detectar();
 
     function checkboxes(): HTMLInputElement[] {
-      return [...elemento.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
+      return Array.from(
+        elemento.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>
+      );
     }
 
     // Ainda carregando: o rascunho gravado segue visível (achado seguinte),
@@ -618,7 +620,9 @@ describe('AtendimentoStepComponent', () => {
     );
     detectar();
 
-    const checkboxes = [...elemento.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
+    const checkboxes = Array.from(
+      elemento.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>
+    );
     expect(checkboxes.length).toBeGreaterThan(0);
     expect(checkboxes.every((input) => input.disabled)).toBe(true);
 
@@ -680,9 +684,9 @@ describe('AtendimentoStepComponent', () => {
   });
 
   it('marca a condição pelo checkbox real da tela, no DOM', () => {
-    const checkbox = [...elemento.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].find(
-      (input) => input.closest('label')?.textContent?.includes('Pessoa com deficiência'),
-    );
+    const checkbox = Array.from(
+      elemento.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>
+    ).find((input) => input.closest('label')?.textContent?.includes('Pessoa com deficiência'));
     if (checkbox === undefined) throw new Error('Checkbox da condição PcD não encontrado.');
 
     checkbox.checked = true;
@@ -695,17 +699,17 @@ describe('AtendimentoStepComponent', () => {
   // ── "Marcar todas" (#788) ───────────────────────────────────────────────
 
   function marcarTodasCheckbox(): HTMLInputElement {
-    const checkbox = [...elemento.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].find(
-      (input) => input.closest('label')?.textContent?.includes('Marcar todas as'),
-    );
+    const checkbox = Array
+      .from(elemento.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>)
+      .find((input) => input.closest('label')?.textContent?.includes('Marcar todas as'));
     if (checkbox === undefined) throw new Error('Checkbox "Marcar todas" (condições) não encontrado.');
     return checkbox;
   }
 
   function marcarTodosCheckbox(): HTMLInputElement {
-    const checkbox = [...elemento.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].find(
-      (input) => input.closest('label')?.textContent?.includes('Marcar todos os'),
-    );
+    const checkbox = Array
+      .from(elemento.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>,)
+      .find((input) => input.closest('label')?.textContent?.includes('Marcar todos os'));
     if (checkbox === undefined) throw new Error('Checkbox "Marcar todos" (recursos) não encontrado.');
     return checkbox;
   }

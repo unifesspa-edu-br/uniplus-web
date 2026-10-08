@@ -23,7 +23,7 @@ describe('WizardStepperComponent — semântica', () => {
    */
   it('não sobrescreve o papel do item de lista', () => {
     const { host } = montar();
-    const itens = [...host.querySelectorAll('li.steps__item')];
+    const itens = Array.from(host.querySelectorAll('li.steps__item') as NodeList);
 
     expect(itens.length).toBeGreaterThan(0);
     expect(itens.every((item) => item.getAttribute('role') === null)).toBe(true);
@@ -32,7 +32,7 @@ describe('WizardStepperComponent — semântica', () => {
 
   it('usa botão nativo como alvo de cada passo', () => {
     const { host } = montar();
-    const itens = [...host.querySelectorAll('li.steps__item')];
+    const itens = Array.from(host.querySelectorAll('li.steps__item') as NodeListOf<HTMLLIElement>);
 
     expect(itens.every((item) => item.querySelector('button[type="button"]') !== null)).toBe(true);
   });

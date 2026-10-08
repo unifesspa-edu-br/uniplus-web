@@ -706,7 +706,7 @@ describe('RevisaoStepComponent', () => {
       await flushPreflightVerde();
       fixture.detectChanges();
 
-      const ano = fixture.nativeElement.querySelector<HTMLInputElement>('#rev-ano');
+      const ano = fixture.nativeElement.querySelector('#rev-ano') as HTMLInputElement;
       expect(ano).not.toBeNull();
 
       ano!.value = '2027';
@@ -725,7 +725,7 @@ describe('RevisaoStepComponent', () => {
       componente.form.controls.tipoAtoCodigo.setValue('PORTARIA');
       fixture.detectChanges();
 
-      let select = fixture.nativeElement.querySelector<HTMLSelectElement>('#rev-tipo-ato');
+      let select = fixture.nativeElement.querySelector('#rev-tipo-ato') as HTMLSelectElement;
       expect(select?.value).toBe('PORTARIA');
 
       // Recarga que falha — o `@else` inteiro sai da árvore, o `<select>` é destruído.
@@ -750,7 +750,7 @@ describe('RevisaoStepComponent', () => {
       await flushMicrotasks();
       fixture.detectChanges();
 
-      select = fixture.nativeElement.querySelector<HTMLSelectElement>('#rev-tipo-ato');
+      select = fixture.nativeElement.querySelector('#rev-tipo-ato') as HTMLSelectElement;
       expect(select?.value).toBe('PORTARIA');
       expect(store.draft().publicacao.ato.tipoAtoCodigo).toBe('PORTARIA');
     });
