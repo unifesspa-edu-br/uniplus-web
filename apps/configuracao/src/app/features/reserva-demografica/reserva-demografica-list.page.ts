@@ -393,8 +393,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
       confirmLabel="Remover"
       confirmVariant="danger"
       (confirmed)="removerConfirmado()"
-    >
-    </ui-confirm-dialog>
+    />
   `,
   host: { class: 'cfg-page' },
 })
@@ -419,7 +418,7 @@ export class ReservaDemograficaListPage {
       return 'Confirma a remoção desta referência demográfica?';
     }
 
-    return `Você está removendo a referência demográfica do Censo ${ref.censoReferencia}. A referência será removida (soft-delete) e mantida na trilha de auditoria. Edições e remoções não afetam processos já publicados — cópias congeladas em quadros de vagas (snapshot) permanecem. Confirma?`;
+    return `Deseja remover a referência demográfica do Censo ${ref.censoReferencia}? A referência é removida (soft-delete) e mantida na trilha de auditoria. Edições e remoções não afetam processos já publicados — cópias congeladas em quadros de vagas (snapshot) permanecem.`;
   });
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly busca = signal('');
