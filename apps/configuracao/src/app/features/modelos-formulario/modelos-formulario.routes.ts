@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 
 /**
  * A lista de modelos, com a criação no drawer, e a edição em tela própria: o formulário inteiro
@@ -10,9 +11,12 @@ export const MODELOS_FORMULARIO_ROUTES: Routes = [
     loadComponent: () => import('./modelos-formulario.page').then((m) => m.ModelosFormularioPage),
   },
   {
+    // A simulação do modelo vive no simulador de formulário; o endereço antigo continua valendo.
     path: ':id/simulacao',
-    data: { breadcrumb: 'Simular o modelo' },
-    loadComponent: () => import('./simulacao-do-modelo.page').then((m) => m.SimulacaoDoModeloPage),
+    redirectTo: ({ params }) =>
+      inject(Router).createUrlTree(['/simulador-de-formulario'], {
+        queryParams: { modelo: params['id'] },
+      }),
   },
   {
     path: ':id',

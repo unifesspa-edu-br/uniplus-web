@@ -215,7 +215,8 @@ interface CabecalhoForm {
       <p>
         <a
           class="btn btn--secondary"
-          [routerLink]="['/modelos-formulario', m.id, 'simulacao']"
+          routerLink="/simulador-de-formulario"
+          [queryParams]="{ modelo: m.id }"
           target="_blank"
           rel="noopener"
         >

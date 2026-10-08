@@ -1,6 +1,12 @@
 import {
-  booleanAttribute, ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { RouterLink } from '@angular/router';
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+} from '@angular/core';
+import { RouterLink, type Params } from '@angular/router';
 
 /** Posição da dica — contrato `[data-tooltip-position]` do Uni+ DS. */
 export type UiTooltipPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -39,6 +45,7 @@ export type UiTooltipPosition = 'top' | 'bottom' | 'left' | 'right';
         [class.btn--tertiary]="!danger()"
         [class.btn--danger]="danger()"
         [routerLink]="destino"
+        [queryParams]="queryParams()"
         [target]="novaAba() ? '_blank' : undefined"
         [attr.rel]="novaAba() ? 'noopener' : null"
         [attr.aria-label]="accessibleName()"
@@ -96,6 +103,8 @@ export class IconButtonComponent {
   readonly isDisabled = input<boolean>(false);
   /** Destino do `routerLink`; quando definido, renderiza `<a>` em vez de `<button>`. */
   readonly link = input<unknown[] | string | undefined>(undefined);
+  /** No modo `link`, os parâmetros de consulta do destino; ausente, o destino vai sem eles. */
+  readonly queryParams = input<Params | null>(null);
   readonly triggered = output<void>();
 
   protected readonly iconClasses = computed(() => `pi ${this.icon()}`);

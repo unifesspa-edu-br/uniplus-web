@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-/** O simulador de formulário a partir de um arquivo, sem cadastro nenhum. */
+/** O simulador de formulário, a partir de um modelo gravado ou de um arquivo. */
 export const SIMULADOR_DE_FORMULARIO_ROUTES: Routes = [
   {
     path: '',
