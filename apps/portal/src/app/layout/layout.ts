@@ -27,8 +27,9 @@ export class LayoutComponent {
       items: [
         // De volta ao shell público — sem isso, quem entra por /recursos (única
         // rota que ainda vive neste shell) não tem como voltar à vitrine
-        // exceto editando a URL. Documentos e Meu Perfil migraram pro shell
-        // público (mesmo motivo de Minhas inscrições/Resultados).
+        // exceto editando a URL. Documentos migrou pro shell público
+        // (mesmo motivo de Minhas inscrições/Resultados); "Meu perfil" vive no
+        // menu do avatar.
         { label: 'Editais', routerLink: '/processos' },
       ],
     },

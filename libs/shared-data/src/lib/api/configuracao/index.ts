@@ -205,15 +205,19 @@ export type {
   ValorDominioInput,
 } from './fatos-candidato.api';
 
+export { AvaliacoesDeFormularioApi } from './avaliacoes-de-formulario.api';
+export type {
+  AvaliacaoDeFormularioInput,
+  AvaliacaoPortavel,
+  FormularioPortavel,
+} from './avaliacoes-de-formulario.api';
+
 export { ModelosFormularioApi } from './modelos-formulario.api';
 export type {
   ConteudoDoModeloInput,
   CriarModeloFormularioCommand,
   EdicaoDoModeloInput,
-  ItemPreVisualizadoDto,
+  FormularioRenderizavel,
   ModeloFormularioView,
   ModelosFormularioQuery,
-  PreVisualizacaoDoModeloDto,
-  PreVisualizacaoDoModeloInput,
-  TermoPreVisualizadoDto,
 } from './modelos-formulario.api';

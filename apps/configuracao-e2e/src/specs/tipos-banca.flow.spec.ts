@@ -7,7 +7,7 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
  * via projeto `fluxo-chromium` (auth-setup + storageState).
  *
  * Issue #713: a interface comum não cria tipo de banca — só lista, filtra,
- * edita e inativa. O endpoint de criação continua existindo na API, mas a tela
+ * edita e remove. O endpoint de criação continua existindo na API, mas a tela
  * nunca o aciona.
  */
 
@@ -182,16 +182,16 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
     expect(capturado.posts).toHaveLength(0);
   });
 
-  test('CA-15: inativa um tipo de banca após confirmação', async ({ page }) => {
+  test('CA-15: remove um tipo de banca após confirmação', async ({ page }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, [bancaSeed]);
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Inativar tipo de banca ${bancaSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Remover tipo de banca ${bancaSeed.codigo}`, exact: true })
       .click();
     const dialog = page.locator('dialog.uni-dialog');
-    await dialog.getByRole('button', { name: 'Inativar' }).click();
+    await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
     expect(capturado.deletedIds[0]).toBe(BANCA_ID);

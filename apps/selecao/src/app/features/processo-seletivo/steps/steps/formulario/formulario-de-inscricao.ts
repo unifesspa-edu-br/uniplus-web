@@ -25,7 +25,10 @@ import type {
   WizardDraft,
 } from '../../processo-seletivo.models';
 import { todasAsExigencias } from '../../shared/exigencias-documentais';
-import { desempateUsaDataDeNascimento, FATO_DATA_NASCIMENTO } from '../desempate/desempate-por-idade';
+import {
+  desempateUsaDataDeNascimento,
+  FATO_DATA_NASCIMENTO,
+} from '../desempate/desempate-por-idade';
 import { fatosColetadosPor } from './formulario-do-processo';
 import { formulariosDoRascunho, nomeDaFinalidade } from './formularios-por-finalidade';
 
@@ -74,7 +77,9 @@ export const TITULO_SECAO_OUTROS_DADOS = 'Outros dados exigidos pelo certame';
 
 /** O conjunto básico enquanto a seção dele ainda não chegou do servidor; depois, a seção o traz. */
 function basicosAindaNaoGravados(conteudo: ConteudoDoFormulario): readonly string[] {
-  return (conteudo.etapas ?? []).some((etapa) => etapa.codigo === SECAO_DADOS_BASICOS) ? [] : FATOS_DO_CONJUNTO_BASICO;
+  return (conteudo.etapas ?? []).some((etapa) => etapa.codigo === SECAO_DADOS_BASICOS)
+    ? []
+    : FATOS_DO_CONJUNTO_BASICO;
 }
 
 /**
@@ -89,7 +94,10 @@ export function fatosColetadosPelaInscricao(conteudo: ConteudoDoFormulario): Rea
  * O que o editor da inscrição não oferece para coletar: o que as outras finalidades coletam e o
  * conjunto básico ainda não gravado, que a API põe na seção reservada e recusa em outra seção.
  */
-export function fatosForaDaColetaDaInscricao(conteudo: ConteudoDoFormulario, dasOutrasFinalidades: readonly string[]): readonly string[] {
+export function fatosForaDaColetaDaInscricao(
+  conteudo: ConteudoDoFormulario,
+  dasOutrasFinalidades: readonly string[],
+): readonly string[] {
   return [...dasOutrasFinalidades, ...basicosAindaNaoGravados(conteudo)];
 }
 
@@ -148,10 +156,12 @@ export function quemCitaNoProcesso(
   }
   for (const config of processo.derivacao) {
     for (const fato of fatosCitadosPelaDerivacao(config.regras)) {
-      if (fato !== config.codigoFato) citar(fato, `as regras que calculam “${nomes.fato(config.codigoFato)}”`);
+      if (fato !== config.codigoFato)
+        citar(fato, `as regras que calculam “${nomes.fato(config.codigoFato)}”`);
     }
   }
-  if (desempateUsaDataDeNascimento(processo.desempate)) citar(FATO_DATA_NASCIMENTO, 'o desempate por maior idade');
+  if (desempateUsaDataDeNascimento(processo.desempate))
+    citar(FATO_DATA_NASCIMENTO, 'o desempate por maior idade');
   for (const outra of processo.outrasFinalidades ?? []) {
     // O que o formulário cita dos próprios campos não depende da inscrição.
     const proprios = new Set(fatosColetadosPor(outra.conteudo));
@@ -164,7 +174,9 @@ export function quemCitaNoProcesso(
 }
 
 /** O motivo, por fato, de o campo não poder sair: alguém no processo o cita. */
-export function remocoesTravadasPor(citantes: ReadonlyMap<string, readonly string[]>): ReadonlyMap<string, string> {
+export function remocoesTravadasPor(
+  citantes: ReadonlyMap<string, readonly string[]>,
+): ReadonlyMap<string, string> {
   return new Map(
     [...citantes].map(([fato, quem]) => [
       fato,
@@ -203,11 +215,23 @@ export function comCamposQueAsExigenciasPressupoem(
   // ninguém coleta.
   const citadosNoFormulario = fatosCitadosPeloConteudo(conteudo);
   const orfaos = (conteudo.itens ?? []).filter(
-    (item) => postosPelasExigencias.has(item.fatoCodigo) && !citados.has(item.fatoCodigo) && !citadosNoFormulario.has(item.fatoCodigo),
+    (item) =>
+      postosPelasExigencias.has(item.fatoCodigo) &&
+      !citados.has(item.fatoCodigo) &&
+      !citadosNoFormulario.has(item.fatoCodigo),
   );
-  let resultado = orfaos.length === 0 ? conteudo : renumerar({ ...conteudo, itens: (conteudo.itens ?? []).filter((item) => !orfaos.includes(item)) });
+  let resultado =
+    orfaos.length === 0
+      ? conteudo
+      : renumerar({
+          ...conteudo,
+          itens: (conteudo.itens ?? []).filter((item) => !orfaos.includes(item)),
+        });
 
-  const presentes = new Set([...fatosColetadosPelaInscricao(resultado), ...fatosDeOutrasFinalidades]);
+  const presentes = new Set([
+    ...fatosColetadosPelaInscricao(resultado),
+    ...fatosDeOutrasFinalidades,
+  ]);
   const porCodigo = new Map(catalogo.map((fato) => [fato.codigo, fato]));
   // Fato citado que não é coletável — modalidade, faixa etária — não vira campo: ele resolve por
   // derivação ou por atributo do candidato, não por pergunta no formulário.
@@ -222,9 +246,13 @@ export function comCamposQueAsExigenciasPressupoem(
   }
 
   const esvaziouOutrosDados =
-    orfaos.some((item) => item.etapaCodigo === SECAO_OUTROS_DADOS) && entradasDaSecao(resultado, SECAO_OUTROS_DADOS).length === 0;
+    orfaos.some((item) => item.etapaCodigo === SECAO_OUTROS_DADOS) &&
+    entradasDaSecao(resultado, SECAO_OUTROS_DADOS).length === 0;
   if (esvaziouOutrosDados) {
-    resultado = renumerar({ ...resultado, etapas: (resultado.etapas ?? []).filter((etapa) => etapa.codigo !== SECAO_OUTROS_DADOS) });
+    resultado = renumerar({
+      ...resultado,
+      etapas: (resultado.etapas ?? []).filter((etapa) => etapa.codigo !== SECAO_OUTROS_DADOS),
+    });
   }
 
   return resultado;
@@ -234,7 +262,9 @@ export function comCamposQueAsExigenciasPressupoem(
 function comSecaoDeOutrosDados(conteudo: ConteudoDoFormulario): ConteudoDoFormulario {
   const existente = (conteudo.etapas ?? []).find((etapa) => etapa.codigo === SECAO_OUTROS_DADOS);
   if (existente !== undefined) {
-    return existente.exibicao === null || existente.exibicao === undefined ? conteudo : comEtapa(conteudo, { ...existente, exibicao: null });
+    return existente.exibicao === null || existente.exibicao === undefined
+      ? conteudo
+      : comEtapa(conteudo, { ...existente, exibicao: null });
   }
 
   const primeiroBloco = etapasEmOrdem(conteudo).find((etapa) => etapa.tipo === TIPO_BLOCO);
@@ -244,7 +274,8 @@ function comSecaoDeOutrosDados(conteudo: ConteudoDoFormulario): ConteudoDoFormul
       ...(conteudo.etapas ?? []),
       {
         codigo: SECAO_OUTROS_DADOS,
-        ordem: primeiroBloco === undefined ? Number.MAX_SAFE_INTEGER : Number(primeiroBloco.ordem) - 0.5,
+        ordem:
+          primeiroBloco === undefined ? Number.MAX_SAFE_INTEGER : Number(primeiroBloco.ordem) - 0.5,
         tipo: TIPO_SECAO,
         bloco: null,
         titulo: TITULO_SECAO_OUTROS_DADOS,
@@ -291,7 +322,9 @@ export function problemasDoFormulario(
 
   for (const { finalidade, conteudo } of formulariosDoRascunho(formulario)) {
     if (todosOsCampos(conteudo).some((campo) => campo.rotulo.trim() === '')) {
-      problemas.push(`Todo campo do formulário de ${nomeDaFinalidade(finalidade)} precisa do rótulo que o candidato vai ler.`);
+      problemas.push(
+        `Todo campo do formulário de ${nomeDaFinalidade(finalidade)} precisa do rótulo que o candidato vai ler.`,
+      );
     }
   }
 
@@ -337,7 +370,12 @@ export function camposSemUsoDeclarado(
   desempate: readonly CriterioDesempateConfigurado[] = [],
 ): readonly ItemDoFormulario[] {
   const usados = new Set([
-    ...quemCitaNoProcesso({ documentos: exigencias, derivacao: formulario.derivacao, desempate, outrasFinalidades: formulario.outrasFinalidades }).keys(),
+    ...quemCitaNoProcesso({
+      documentos: exigencias,
+      derivacao: formulario.derivacao,
+      desempate,
+      outrasFinalidades: formulario.outrasFinalidades,
+    }).keys(),
     ...fatosCitadosPeloConteudo(formulario.conteudo),
   ]);
 

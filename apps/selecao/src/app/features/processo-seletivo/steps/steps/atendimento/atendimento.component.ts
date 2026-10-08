@@ -391,6 +391,15 @@ export class AtendimentoStepComponent {
     camposSemValoresOfertados(this.store.draft().formulario, this.atendimento()),
   );
 
+  /**
+   * O cadastro de condições, já confirmado, não tem a condição PCD e o rascunho também não a
+   * guarda — sem ela não há como declarar tipos de deficiência por esta tela.
+   */
+  readonly pcdAusenteDoCadastro = computed(
+    () =>
+      this.catalogoConfirmado() && !this.catalogos.condicaoPcd() && !this.pcdSelecionada(),
+  );
+
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {
     const mensagens: string[] = [];
@@ -401,6 +410,12 @@ export class AtendimentoStepComponent {
     for (const pendente of this.fatosQueDependemDaOferta()) {
       mensagens.push(
         `O formulário de inscrição pergunta ${pendente} ao candidato, e esta oferta não declara nenhum valor para escolher. Declare ao menos um, ou retire o campo do formulário.`,
+      );
+    }
+
+    if (this.pcdAusenteDoCadastro() && this.fatosQueDependemDaOferta().includes('o tipo de deficiência')) {
+      mensagens.push(
+        'Não há tipos de deficiência para declarar porque o cadastro de condições não tem a condição "Pessoa com deficiência" (código PCD). Cadastre-a em Configuração → Condições de atendimento e volte a este passo.',
       );
     }
 

@@ -620,6 +620,77 @@ describe('CursosPage', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('#cfg-curso-grupos-tentar')).toBeNull();
   });
 
+  describe('bordas do vocabulário de grupos', () => {
+    const falha503 = (): void => {
+      controller.expectOne(GRUPOS_URL).flush(
+        JSON.stringify({ title: 'Serviço indisponível', status: 503, code: 'uniplus.indisponivel', traceId: 'trace-fundo' }),
+        { status: 503, statusText: 'Service Unavailable', headers: { 'content-type': 'application/problem+json' } },
+      );
+    };
+
+    const opcoes = (): string[] =>
+      Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLOptionElement>('#cfg-curso-grupo-area-enem option'),
+        (opcao) => opcao.value,
+      );
+
+    it('falha da carga de fundo com o formulário fechado não gera aviso', async () => {
+      const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+      falha503();
+      await flushLista([cursoSeed]);
+      fixture.detectChanges();
+
+      expect(erroSpy).not.toHaveBeenCalled();
+    });
+
+    it('com o formulário aberto, a falha dos grupos continua sendo apresentada', async () => {
+      const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+      falha503();
+      await flushLista([cursoSeed]);
+      expect(erroSpy).not.toHaveBeenCalled();
+
+      component['abrirCadastro']();
+      falha503();
+      fixture.detectChanges();
+      await propagate();
+
+      expect(erroSpy).toHaveBeenCalledTimes(1);
+      expect((fixture.nativeElement as HTMLElement).querySelector('#cfg-curso-grupos-falha')).not.toBeNull();
+    });
+
+    it('grupo do curso sem código e sem rótulo não gera opção vazia', async () => {
+      const semGrupo = { ...cursoSeed, grupoAreaEnem: { codigo: ' ', rotulo: ' ' } };
+      await flushLista([semGrupo]);
+      component['abrirEdicao'](semGrupo);
+      controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+      fixture.detectChanges();
+
+      expect(component['grupoForaDasOpcoes']()).toBeNull();
+      expect(opcoes()).toEqual(['', ...GRUPOS.map((g) => g.codigo)]);
+    });
+
+    it('código com espaços é aparado: a opção, a seleção e o payload usam o código aparado', async () => {
+      const comEspacos = { ...cursoSeed, grupoAreaEnem: { codigo: ' TECNOLOGICA ', rotulo: 'Tecnológica' } };
+      await flushLista([comEspacos]);
+      component['abrirEdicao'](comEspacos);
+      controller
+        .expectOne(GRUPOS_URL)
+        .flush([{ codigo: ' TECNOLOGICA ', rotulo: 'Tecnológica' }, ...GRUPOS.slice(1)]);
+      fixture.detectChanges();
+
+      expect(opcoes()).toEqual(['', ...GRUPOS.map((g) => g.codigo)]);
+      expect(component['grupoForaDasOpcoes']()).toBeNull();
+      expect(component['form'].controls.grupoAreaEnem.value).toBe('TECNOLOGICA');
+
+      component['salvar']();
+      const put = controller.expectOne((r) => r.method === 'PUT');
+      expect(put.request.body.grupoAreaEnem).toBe('TECNOLOGICA');
+      put.flush(null, { status: 204, statusText: 'No Content' });
+      await propagate();
+      await flushLista([]);
+    });
+  });
+
   describe('grupo de área do ENEM vindo da API', () => {
     const opcoesDoSelect = (): { value: string; texto: string }[] =>
       Array.from(

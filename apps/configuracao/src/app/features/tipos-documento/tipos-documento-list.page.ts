@@ -58,6 +58,7 @@ import {
   SpinnerComponent,
   TagComponent,
   type UiFilterChipOption,
+  type UiFiltroAtivo,
   type UiLookupFalho,
   FilterBarComponent,
 } from '@uniplus/shared-ui/components';
@@ -161,6 +162,7 @@ interface TipoDocumentoForm {
     }
 
     <ui-filter-bar
+      [filtrosAtivos]="filtrosAtivos()"
       ariaLabel="Filtrar tipos de documento"
       searchPlaceholder="Buscar por código ou nome…"
       searchAriaLabel="Buscar tipo de documento"
@@ -322,7 +324,7 @@ interface TipoDocumentoForm {
         novalidate
         class="cfg-form"
       >
-        <div class="form-grid form-grid--pair">
+        <div class="form-grid">
           @let erroCampoCodigo = erroDoCampo('codigo');
           <label class="field" [class.is-error]="erroCampoCodigo">
             <span class="field__label is-required">Código</span>
@@ -377,7 +379,7 @@ interface TipoDocumentoForm {
           </label>
         </div>
 
-        <label class="field field--full" [class.is-error]="erroDoCampo('nome')">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
           <span class="field__label is-required">Nome</span>
           <input
             class="input"
@@ -390,7 +392,7 @@ interface TipoDocumentoForm {
           }
         </label>
 
-        <label class="field field--full" [class.is-error]="erroDoCampo('descricao')">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
           <span class="field__label">Descrição</span>
           <textarea class="textarea" rows="3" formControlName="descricao"></textarea>
           <span class="field__hint">
@@ -402,7 +404,7 @@ interface TipoDocumentoForm {
           }
         </label>
 
-        <label class="field field--full" [class.is-error]="erroDoCampo('tipoEquivalente')">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('tipoEquivalente')">
           <span class="field__label">Tipo equivalente</span>
           <input
             class="input cfg-input-uppercase"
@@ -419,7 +421,7 @@ interface TipoDocumentoForm {
           }
         </label>
 
-        <fieldset class="field field--full">
+        <fieldset class="field form-grid__full">
           <legend class="field__label">Formatos aceitos</legend>
           <div class="cfg-tipo-documento-formatos">
             @for (opcao of formatosAceitosOpcoes; track opcao.key) {
@@ -633,6 +635,14 @@ export class TiposDocumentoListPage {
       });
     }
     return chips;
+  });
+
+  /** A categoria escolhida, para o título do bloco de filtros recolhido; "Todas" não entra. */
+  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
+    const categoria = this.filtroCategoria();
+    if (categoria === '') return [];
+    const chip = this.categoriaChips().find((c) => c.value === categoria);
+    return [{ nome: 'Categoria', valor: chip?.label ?? categoria }];
   });
 
   /**

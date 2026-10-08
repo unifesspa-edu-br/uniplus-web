@@ -630,6 +630,16 @@
   margin-top: var(--space-2);
 }
 
+/* Os links de simulação de cada formulário gravado, em linha, quebrando em telas estreitas. */
+.form-simulacao__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .step-section__title {
   font-size: var(--text-md);
   font-weight: var(--weight-bold);
@@ -719,18 +729,6 @@
   margin-top: 1px;
   accent-color: var(--color-primary);
   cursor: pointer;
-}
-
-/* ---- Form grid (step 2+) ---- */
-.sel-processo .form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4) var(--space-5);
-  align-items: start;
-}
-
-.sel-processo .form-grid__full {
-  grid-column: 1 / -1;
 }
 
 /*
@@ -1465,17 +1463,6 @@
   align-self: end;
 }
 
-/*
- * Item de grid tem `min-width: auto`, então o conteúdo intrínseco decide o piso
- * da largura: um `<select>` com opção longa — nome de unidade, rótulo de origem
- * dos candidatos — esticava a coluna e o passo transbordava na horizontal em
- * 320 px. O piso zero devolve a decisão à coluna; o campo então respeita a
- * largura disponível qualquer que seja a fonte em uso.
- */
-.sel-processo .form-grid > * {
-  min-width: 0;
-}
-
 .sel-processo .form-field .input,
 .sel-processo .form-field select.input {
   max-width: 100%;
@@ -1504,16 +1491,6 @@
 .sel-processo .field__erro p {
   margin: 0;
   overflow-wrap: anywhere;
-}
-
-@media (max-width: 479px) {
-  .sel-processo .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .sel-processo .form-grid__full {
-    grid-column: auto;
-  }
 }
 
 /* Step card (mobile wrapper) */
@@ -2138,12 +2115,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-}
-
-@media (max-width: 767px) {
-  .bonus-config .form-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /*
@@ -3107,7 +3078,7 @@
   cursor: pointer;
 }
 
-.sel-processo .form-abas__aba[aria-selected="true"] {
+.sel-processo .form-abas__aba[aria-selected='true'] {
   border-block-end-color: var(--text-link);
   color: var(--text-link);
   font-weight: var(--weight-semibold);

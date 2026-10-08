@@ -11,8 +11,9 @@ import { rascunhoNaoGravadoGuard } from './steps/shared/rascunho-nao-gravado.gua
 const EDITOR_PROCESSO_SELETIVO = 'editor-processo-seletivo';
 
 /**
- * A rota base é a listagem administrativa; `novo` inicia um cadastro vazio e
- * `:id` retoma um processo existente.
+ * A rota base é a listagem administrativa; `novo` inicia um cadastro vazio,
+ * `:id` retoma um processo existente e `:id/simulacao/:finalidade` simula um
+ * formulário dele.
  *
  * `novo` é declarada antes de `:id` porque o roteador casa na ordem — sem
  * isso, `/processo-seletivo/novo` seria lido como um id chamado "novo".
@@ -33,6 +34,14 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
       breadcrumb: 'Novo Processo Seletivo',
       [ROTA_REUSE_KEY]: EDITOR_PROCESSO_SELETIVO,
     },
+  },
+  {
+    // A simulação abre fora do editor, em nova aba: não reaproveita a tela do editor nem tem
+    // rascunho a guardar.
+    path: ':id/simulacao/:finalidade',
+    loadComponent: () =>
+      import('./simulacao/simulacao-do-processo.page').then((m) => m.SimulacaoDoProcessoPage),
+    data: { breadcrumb: 'Simulação do formulário' },
   },
   {
     path: ':id',

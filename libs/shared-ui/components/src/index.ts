@@ -28,7 +28,10 @@ export { DialogComponent } from '../../src/lib/components/dialog/dialog';
 export { DrawerComponent } from '../../src/lib/components/drawer/drawer';
 export { EmptyStateComponent } from '../../src/lib/components/empty-state/empty-state';
 export { FileUploadComponent } from '../../src/lib/components/file-upload/file-upload';
-export { FilterBarComponent } from '../../src/lib/components/filter-bar/filter-bar';
+export {
+  FilterBarComponent,
+  type UiFiltroAtivo,
+} from '../../src/lib/components/filter-bar/filter-bar';
 export {
   FilterChipsComponent,
   type UiFilterChipOption,
@@ -36,7 +39,10 @@ export {
 export { ConfirmDialogComponent } from '../../src/lib/components/confirm-dialog/confirm-dialog';
 export { FormFieldComponent } from '../../src/lib/components/form-field/form-field';
 export { InstitutionalBarComponent } from '../../src/lib/components/institutional-bar/institutional-bar';
-export { IconButtonComponent, type UiTooltipPosition } from '../../src/lib/components/icon-button/icon-button';
+export {
+  IconButtonComponent,
+  type UiTooltipPosition,
+} from '../../src/lib/components/icon-button/icon-button';
 export { LoadingOverlayComponent } from '../../src/lib/components/loading-overlay/loading-overlay';
 export {
   LookupAlertComponent,
@@ -50,6 +56,7 @@ export {
   ListFooterComponent,
 } from '../../src/lib/components/list-footer/list-footer';
 export { PagerComponent } from '../../src/lib/components/pager/pager';
+export { RecolhivelComponent } from '../../src/lib/components/recolhivel/recolhivel';
 export { RolagemFocavelDirective } from '../../src/lib/directives/rolagem-focavel.directive';
 export {
   SegmentedComponent,
@@ -64,24 +71,52 @@ export {
   type BuscaDeMunicipios,
   type MunicipioEncontrado,
 } from '../../src/lib/components/editor-de-condicoes/valor-de-municipio';
+export { EnderecoGeoComponent } from '../../src/lib/components/endereco-geo/endereco-geo';
+export * from '../../src/lib/components/endereco-geo/endereco-geo.model';
 export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
 export * from '../../src/lib/components/editor-de-formulario/formulario-editavel';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
 export {
-  PreVisualizacaoDeFormulariosComponent,
-  type AvaliacaoDeFormularios,
-  type DocumentoAvaliado,
-  type EtapaConcluida,
-  type FormularioAvaliado,
-  type FormularioParaSimular,
-  type GrupoAvaliado,
-  type ItemAvaliado,
-  type OcorrenciaAvaliada,
-  type OcorrenciaSimulada,
-  type ResultadoDaPreVisualizacao,
-  type SimulacaoDeFormularios,
-  type TermoAvaliado,
-} from '../../src/lib/components/pre-visualizacao-de-formularios/pre-visualizacao-de-formularios';
+  FormularioDoCandidatoComponent,
+  type DocumentoDoFormulario,
+} from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
+export type {
+  CampoRenderizavel,
+  FormularioDoCandidato,
+  GrupoRenderizavel,
+  PressupostoDoFormulario,
+  SecaoRenderizavel,
+  TermoRenderizavel,
+  ValorSelecionavel,
+} from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato.model';
+export {
+  casoDaSimulacao,
+  lerArquivoDoFormulario,
+  type ArquivoDoFormulario,
+} from '../../src/lib/components/formulario-do-candidato/arquivo-do-formulario';
+export {
+  SimulacaoDeFormularioComponent,
+  type ConferenciaComOServidor,
+  type SimulacaoParaConferir,
+} from '../../src/lib/components/formulario-do-candidato/simulacao-de-formulario';
+export { PressupostosDaSimulacaoComponent } from '../../src/lib/components/formulario-do-candidato/pressupostos-da-simulacao';
+export { baixarJson } from '../../src/lib/components/formulario-do-candidato/baixar-json';
+export {
+  divergenciasEntre,
+  type Divergencia,
+} from '../../src/lib/components/formulario-do-candidato/divergencias';
+export {
+  interpretarFormulario,
+  type InterpretacaoDoFormulario,
+} from '../../src/lib/components/formulario-do-candidato/interpretador/interpretador';
+export type { RegrasInvalidas } from '../../src/lib/components/formulario-do-candidato/interpretador/leitura';
+export type {
+  AvaliacaoDoFormulario,
+  CampoAvaliado,
+  RegrasDoFormulario,
+  SimulacaoDoFormulario,
+  ValorJson,
+} from '../../src/lib/components/formulario-do-candidato/interpretador/regras-do-formulario';
 export { SkeletonComponent } from '../../src/lib/components/skeleton/skeleton';
 export { SkipLinkComponent } from '../../src/lib/components/skip-link/skip-link';
 export { SpinnerComponent } from '../../src/lib/components/spinner/spinner';

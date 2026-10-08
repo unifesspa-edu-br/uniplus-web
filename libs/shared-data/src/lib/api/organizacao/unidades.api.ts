@@ -70,10 +70,14 @@ export class UnidadesApi {
   }
 
   criar(command: CriarUnidadeCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(`${this.basePath}/api/organizacao/admin/unidades`, command, {
-      context,
-      headers: new HttpHeaders({ Accept: 'application/json' }),
-    });
+    return this.http.post<ApiResult<string>>(
+      `${this.basePath}/api/organizacao/admin/unidades`,
+      command,
+      {
+        context,
+        headers: new HttpHeaders({ Accept: 'application/json' }),
+      },
+    );
   }
 
   atualizar(

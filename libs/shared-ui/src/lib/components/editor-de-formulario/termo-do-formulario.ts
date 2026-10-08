@@ -1,7 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import { type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import {
+  type CondicaoEmClausula,
+  type FatoEscolhivel,
+} from '../editor-de-condicoes/condicoes-de-fatos';
 import {
   OBRIGATORIEDADE_NUNCA,
   OBRIGATORIEDADE_QUANDO,
@@ -10,7 +20,11 @@ import {
   type TermoDisponivel,
   type TermoDoFormulario,
 } from './formulario-editavel';
-import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import {
+  paraPredicado,
+  problemasDasCondicoes,
+  recopiarSeMudouPorFora,
+} from './predicado-em-edicao';
 
 const ACEITES = [
   { valor: OBRIGATORIEDADE_SEMPRE, rotulo: 'Aceite obrigatório' },
@@ -31,8 +45,45 @@ const ACEITES = [
   template: `
     <article class="editor-formulario__item" [attr.aria-labelledby]="idDe('titulo')">
       <div class="editor-formulario__cabecalho">
-        <h4 class="editor-formulario__titulo-item" [id]="idDe('titulo')">{{ posicao() }}. {{ nome() }}</h4>
+        <h4 class="editor-formulario__titulo-item" [id]="idDe('titulo')">
+          {{ posicao() }}. {{ nome() }}
+        </h4>
         <code>{{ termo().codigo }}</code>
+        <div
+          class="editor-formulario__acoes-do-cabecalho"
+          role="group"
+          [attr.aria-label]="'Ações do termo ' + nome()"
+        >
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [id]="idDe('subir')"
+            [disabled]="disabled() || !podeSubir()"
+            [attr.aria-label]="'Subir ' + nome()"
+            (click)="mover.emit(-1)"
+          >
+            Subir
+          </button>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [id]="idDe('descer')"
+            [disabled]="disabled() || !podeDescer()"
+            [attr.aria-label]="'Descer ' + nome()"
+            (click)="mover.emit(1)"
+          >
+            Descer
+          </button>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [disabled]="disabled()"
+            [attr.aria-label]="'Remover a exigência do termo ' + nome()"
+            (click)="remover.emit()"
+          >
+            Remover
+          </button>
+        </div>
       </div>
 
       @if (erros().length > 0) {
@@ -43,21 +94,35 @@ const ACEITES = [
         </ul>
       }
 
-      <div class="editor-formulario__campos">
+      <div class="form-grid">
         <div class="field">
           <label class="field__label" [for]="idDe('versao')">Versão aceita</label>
-          <select class="select" [id]="idDe('versao')" [disabled]="disabled()" (change)="trocar({ versaoId: valorDe($event) })">
+          <select
+            class="select"
+            [id]="idDe('versao')"
+            [disabled]="disabled()"
+            (change)="trocar({ versaoId: valorDe($event) })"
+          >
             @for (versao of versoes(); track versao.versaoId) {
-              <option [value]="versao.versaoId" [selected]="versao.versaoId === termo().versaoId">{{ versao.rotulo }}</option>
+              <option [value]="versao.versaoId" [selected]="versao.versaoId === termo().versaoId">
+                {{ versao.rotulo }}
+              </option>
             }
           </select>
         </div>
 
         <div class="field">
           <label class="field__label" [for]="idDe('aceite')">Aceite</label>
-          <select class="select" [id]="idDe('aceite')" [disabled]="disabled()" (change)="trocarAceite(valorDe($event))">
+          <select
+            class="select"
+            [id]="idDe('aceite')"
+            [disabled]="disabled()"
+            (change)="trocarAceite(valorDe($event))"
+          >
             @for (opcao of aceites; track opcao.valor) {
-              <option [value]="opcao.valor" [selected]="opcao.valor === termo().obrigatoriedade">{{ opcao.rotulo }}</option>
+              <option [value]="opcao.valor" [selected]="opcao.valor === termo().obrigatoriedade">
+                {{ opcao.rotulo }}
+              </option>
             }
           </select>
         </div>
@@ -87,14 +152,38 @@ const ACEITES = [
         (condicoesChange)="trocarExibicao($event)"
       />
 
-      <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações do termo ' + nome()">
-        <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('subir')" [disabled]="disabled() || !podeSubir()" [attr.aria-label]="'Subir ' + nome()" (click)="mover.emit(-1)">
+      <div
+        class="editor-formulario__acoes"
+        role="group"
+        [attr.aria-label]="'Ações do termo ' + nome()"
+      >
+        <button
+          class="btn btn--tertiary btn--sm"
+          type="button"
+          [id]="idDe('subir')"
+          [disabled]="disabled() || !podeSubir()"
+          [attr.aria-label]="'Subir ' + nome()"
+          (click)="mover.emit(-1)"
+        >
           <i class="pi pi-arrow-up" aria-hidden="true"></i> Subir
         </button>
-        <button class="btn btn--tertiary btn--sm" type="button" [id]="idDe('descer')" [disabled]="disabled() || !podeDescer()" [attr.aria-label]="'Descer ' + nome()" (click)="mover.emit(1)">
+        <button
+          class="btn btn--tertiary btn--sm"
+          type="button"
+          [id]="idDe('descer')"
+          [disabled]="disabled() || !podeDescer()"
+          [attr.aria-label]="'Descer ' + nome()"
+          (click)="mover.emit(1)"
+        >
           <i class="pi pi-arrow-down" aria-hidden="true"></i> Descer
         </button>
-        <button class="btn btn--tertiary btn--sm" type="button" [disabled]="disabled()" [attr.aria-label]="'Deixar de exigir o termo ' + nome()" (click)="remover.emit()">
+        <button
+          class="btn btn--tertiary btn--sm"
+          type="button"
+          [disabled]="disabled()"
+          [attr.aria-label]="'Deixar de exigir o termo ' + nome()"
+          (click)="remover.emit()"
+        >
           <i class="pi pi-trash" aria-hidden="true"></i> Remover
         </button>
       </div>
@@ -127,15 +216,24 @@ export class TermoDoFormularioComponent {
     const versoes = this.disponivel()?.versoes ?? [];
     return versoes.some((versao) => versao.versaoId === this.termo().versaoId)
       ? versoes
-      : [{ versaoId: this.termo().versaoId, rotulo: 'Versão gravada (fora do catálogo)' }, ...versoes];
+      : [
+          { versaoId: this.termo().versaoId, rotulo: 'Versão gravada (fora do catálogo)' },
+          ...versoes,
+        ];
   });
 
-  protected readonly condicoesDaExibicao = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
+  protected readonly condicoesDaExibicao = linkedSignal<
+    PredicadoNoWire,
+    readonly CondicaoEmClausula[]
+  >({
     source: () => this.termo().exibicao,
     computation: recopiarSeMudouPorFora,
   });
 
-  protected readonly condicoesDoAceite = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
+  protected readonly condicoesDoAceite = linkedSignal<
+    PredicadoNoWire,
+    readonly CondicaoEmClausula[]
+  >({
     source: () => this.termo().predicadoObrigatoriedade,
     computation: recopiarSeMudouPorFora,
   });
@@ -148,7 +246,9 @@ export class TermoDoFormularioComponent {
     return (evento.target as HTMLSelectElement).value;
   }
 
-  protected problemas(condicoes: readonly CondicaoEmClausula[]): Readonly<Record<number, string | undefined>> {
+  protected problemas(
+    condicoes: readonly CondicaoEmClausula[],
+  ): Readonly<Record<number, string | undefined>> {
     return problemasDasCondicoes(condicoes, this.fatos());
   }
 
@@ -160,7 +260,10 @@ export class TermoDoFormularioComponent {
   protected trocarAceite(obrigatoriedade: string): void {
     const condicional = obrigatoriedade === OBRIGATORIEDADE_QUANDO;
     if (!condicional) this.condicoesDoAceite.set([]);
-    this.trocar({ obrigatoriedade, predicadoObrigatoriedade: condicional ? paraPredicado(this.condicoesDoAceite()) : null });
+    this.trocar({
+      obrigatoriedade,
+      predicadoObrigatoriedade: condicional ? paraPredicado(this.condicoesDoAceite()) : null,
+    });
   }
 
   protected trocarAceiteQuando(condicoes: readonly CondicaoEmClausula[]): void {

@@ -9,8 +9,9 @@ import {
   FaseCanonicaDto,
   TipoBancaDto,
 } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TiposBancaPage } from './tipos-banca.page';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 
 const BASE = 'http://localhost:5000';
 const CRIAR_URL = `${BASE}/api/configuracao/admin/tipos-banca`;
@@ -251,17 +252,6 @@ describe('TiposBancaPage', () => {
     );
   });
 
-  it('CA-15: inativa um tipo de banca após confirmação', async () => {
-    await flushLista([bancaSeed]);
-    component['pedirRemocao'](bancaSeed);
-    component['removerConfirmado']();
-
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
-    expect(req.request.method).toBe('DELETE');
-    req.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([]);
-  });
   it('expõe legenda acessível descrevendo a tabela', async () => {
     await flushLista([bancaSeed]);
     fixture.detectChanges();
@@ -272,5 +262,130 @@ describe('TiposBancaPage', () => {
     expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
       'Tipos de banca do catálogo institucional, com código e fase típica de atuação',
     );
+  });
+
+  it('CA-01/CA-03/CA-04/CA-05/CA-06: lixeira e confirmação falam em remover e identificam o tipo de banca', async () => {
+    await flushLista([bancaSeed]);
+    fixture.detectChanges();
+
+    const lixeira = fixture.nativeElement.querySelector(
+      'button[aria-label="Remover tipo de banca BANCA_ENTREVISTA"]',
+    ) as HTMLButtonElement;
+
+    expect(lixeira.getAttribute('data-tooltip')).toBe('Remover tipo de banca');
+    expect(lixeira.querySelector('.pi-trash')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('button[aria-label^="Inativar"]')).toBeNull();
+
+    lixeira.click();
+    fixture.detectChanges();
+
+    const dialogo = fixture.nativeElement.querySelector('ui-confirm-dialog') as HTMLElement;
+
+    expect(dialogo.querySelector('h3')?.textContent?.trim()).toBe('Remover tipo de banca');
+
+    expect(dialogo.querySelector('.uni-dialog__body')?.textContent).toContain(
+      'Deseja remover o tipo de banca BANCA_ENTREVISTA?',
+    );
+
+    expect(
+      dialogo.querySelector('[data-testid="confirm-dialog-confirm"]')?.textContent?.trim(),
+    ).toBe('Remover');
+
+    expect(dialogo.textContent).not.toMatch(/inativ/iu);
+  });
+
+  it('CA-06: cancelar a remoção fecha a confirmação e não envia a requisição', async () => {
+    await flushLista([bancaSeed]);
+    component['pedirRemocao'](bancaSeed);
+    fixture.detectChanges();
+
+    expect(component['confirmOpen']()).toBe(true);
+
+    const dialogo = fixture.nativeElement.querySelector('ui-confirm-dialog') as HTMLElement;
+    const cancelar = dialogo.querySelector(
+      '[data-testid="confirm-dialog-cancel"]',
+    ) as HTMLButtonElement;
+
+    expect(cancelar.textContent?.trim()).toBe('Cancelar');
+
+    cancelar.click();
+    fixture.detectChanges();
+
+    expect(component['confirmOpen']()).toBe(false);
+    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
+  });
+
+  it('CA-08: confirma a remoção e atualiza a listagem', async () => {
+    await flushLista([bancaSeed]);
+
+    component['pedirRemocao'](bancaSeed);
+    component['removerConfirmado']();
+
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
+
+    expect(req.request.method).toBe('DELETE');
+
+    req.flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+
+    await propagate();
+    await flushLista([]);
+
+    expect(component['bancas']()).toEqual([]);
+  });
+
+  it('CA-09: falha na remoção avisa o usuário e mantém a lista', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+
+    await flushLista([bancaSeed]);
+
+    component['pedirRemocao'](bancaSeed);
+    component['removerConfirmado']();
+
+    controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`).flush(
+      {
+        type: 'about:blank',
+        title: 'Tipo de banca não encontrado',
+        status: 404,
+        code: 'uniplus.configuracao.tipo_banca.nao_encontrado',
+      },
+      {
+        status: 404,
+        statusText: 'Not Found',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+
+    await propagate();
+
+    expect(erroSpy).toHaveBeenCalled();
+    expect(component['bancas']()).toEqual([bancaSeed]);
+
+    controller.expectNone((r) => r.url === `${BASE}/api/configuracao/tipos-banca`);
+  });
+
+  it('CA-10: a remoção pendente não é reenviada', async () => {
+    await flushLista([bancaSeed]);
+
+    component['pedirRemocao'](bancaSeed);
+    component['removerConfirmado']();
+
+    const primeira = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`,
+    );
+
+    component['removerConfirmado']();
+
+    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
+
+    primeira.flush(null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+
+    await propagate();
+    await flushLista([]);
   });
 });

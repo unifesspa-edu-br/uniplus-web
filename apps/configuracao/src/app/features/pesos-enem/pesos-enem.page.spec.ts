@@ -234,14 +234,14 @@ describe('PesosEnemPage', () => {
     pagina2.flush([...linhas750]);
     await propagate();
 
-    expect(component.resolucoes()).toEqual([RES_805, RES_750]);
-    expect(component.porResolucao().get(RES_805)).toHaveLength(4);
-    expect(component.porResolucao().get(RES_750)).toHaveLength(4);
+    expect(component['resolucoes']()).toEqual([RES_805, RES_750]);
+    expect(component['porResolucao']().get(RES_805)).toHaveLength(4);
+    expect(component['porResolucao']().get(RES_750)).toHaveLength(4);
   });
 
   it('PesosEnemPage_ResolucoesOrdenadasPorDataDesc_MaisRecentePrimeiro', async () => {
     await carregarUmaPagina([...linhas750, ...linhas805]);
-    expect(component.resolucoes()).toEqual([RES_805, RES_750]);
+    expect(component['resolucoes']()).toEqual([RES_805, RES_750]);
   });
 
   it('PesosEnemPage_ModoLeitura_ExibeTagsVigenteEAnterior', async () => {
@@ -263,7 +263,7 @@ describe('PesosEnemPage', () => {
     );
     await propagate();
 
-    expect(component.errorMessage()).toBeTruthy();
+    expect(component['errorMessage']()).toBeTruthy();
     const botaoRetry = fixture.nativeElement.querySelector('.cfg-list__retry button') as HTMLButtonElement;
     expect(botaoRetry).not.toBeNull();
 
@@ -272,8 +272,8 @@ describe('PesosEnemPage', () => {
     expectListagem().flush([...linhas805]);
     await propagate();
 
-    expect(component.errorMessage()).toBeNull();
-    expect(component.resolucoes()).toEqual([RES_805]);
+    expect(component['errorMessage']()).toBeNull();
+    expect(component['resolucoes']()).toEqual([RES_805]);
   });
 
   const ERRO_500 = {
@@ -336,9 +336,9 @@ describe('PesosEnemPage', () => {
       }),
     ]);
 
-    const rotulos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cell-label--group-label')].map(
-      (el) => el.textContent?.trim(),
-    );
+    const rotulos = Array.from(
+      fixture.nativeElement.querySelectorAll('.cell-label--group-label') as NodeListOf<HTMLElement>
+    ).map((el) => el.textContent?.trim());
     expect(rotulos).toEqual(['Tecnológica']);
   });
 
@@ -351,9 +351,9 @@ describe('PesosEnemPage', () => {
       }),
     ]);
 
-    const rotulos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cell-label--group-label')].map(
-      (el) => el.textContent?.trim(),
-    );
+    const rotulos = Array.from(
+      fixture.nativeElement.querySelectorAll('.cell-label--group-label') as NodeListOf<HTMLElement>,
+    ).map((el) => el.textContent?.trim());
     expect(rotulos).toEqual(['OUTRO']);
   });
 
@@ -361,10 +361,63 @@ describe('PesosEnemPage', () => {
     const areas = AREAS.map((area) => (area.codigo === 'MATEMATICA' ? { ...area, rotulo: ' ' } : area));
     await carregarUmaPagina([...linhas805], areas);
 
-    const cabecalhos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.num-cell--head')].map(
-      (el) => el.textContent?.trim(),
-    );
+    const cabecalhos = Array.from(
+      fixture.nativeElement.querySelectorAll('.num-cell--head') as NodeListOf<HTMLDivElement>,
+    ).map((el) => el.textContent?.trim());
     expect(cabecalhos).toContain('MATEMATICA');
+  });
+
+  it('PesosEnemPage_AreaSemCodigoUtilizavel_NaoGeraColunaNemCampo', async () => {
+    const invalidas = [
+      { rotulo: 'Sem código' },
+      { codigo: null, rotulo: 'Nulo' },
+      { codigo: '', rotulo: 'Vazio' },
+      { codigo: '   ', rotulo: 'Espaços' },
+    ] as unknown as readonly AreaPesoAreaEnemDto[];
+    await carregarUmaPagina([...linhas805], [...AREAS, ...invalidas]);
+
+    expect(component['areas']().map((a) => a.codigo)).toEqual(AREAS.map((a) => a.codigo));
+    const cabecalhos = Array.from(
+      fixture.nativeElement.querySelectorAll('.num-cell--head') as NodeListOf<HTMLDivElement>,
+    ).map((el) => el.textContent?.trim());
+    expect(cabecalhos).toHaveLength(AREAS.length);
+
+    component['abrirDrawerCriacao']();
+    await propagate();
+    for (const grupo of component['pesoLoteForm'].controls.grupos.controls) {
+      expect(grupo.controls.areas.controls.map((a) => a.controls.codigo.value)).toEqual(
+        AREAS.map((a) => a.codigo),
+      );
+    }
+  });
+
+  it('PesosEnemPage_AreaEGrupoComEspacosNoCodigo_UsamOCodigoAparadoNoFormulario', async () => {
+    const areas = AREAS.map((a, i) => (i === 0 ? { ...a, codigo: ` ${a.codigo} ` } : a));
+    const grupos = GRUPOS.map((g, i) => (i === 0 ? { ...g, codigo: ` ${g.codigo} ` } : g));
+    await carregarUmaPagina([...linhas805], areas, grupos);
+
+    component['abrirDrawerCriacao']();
+    await propagate();
+    const [primeiro] = component['pesoLoteForm'].controls.grupos.controls;
+    expect(primeiro?.controls.grupoCurso.value.codigo).toBe(GRUPOS[0]?.codigo);
+    expect(primeiro?.controls.areas.controls.map((a) => a.controls.codigo.value)).toEqual(
+      AREAS.map((a) => a.codigo),
+    );
+  });
+
+  it('PesosEnemPage_GrupoSemRotuloNemCodigo_MostraOTraco', async () => {
+    await carregarUmaPagina([
+      linha({
+        id: '01960000-0000-7000-0000-0000000000d3',
+        resolucao: RES_805,
+        grupoCurso: { codigo: ' ', rotulo: ' ' },
+      }),
+    ]);
+
+    const rotulos = Array.from(
+      fixture.nativeElement.querySelectorAll('.cell-label--group-label') as NodeListOf<HTMLElement>,
+    ).map((el) => el.textContent?.trim());
+    expect(rotulos).toEqual(['—']);
   });
 
   it('PesosEnemPage_ListagemVoltaDepoisDoTentarDeNovo_FocoVaiAoTitulo', async () => {
@@ -412,7 +465,7 @@ describe('PesosEnemPage', () => {
     };
 
     await tentar();
-    expect(component.isLoading()).toBe(false);
+    expect(component['isLoading']()).toBe(false);
     const botao = raiz.querySelector('#cfg-pesos-enem-registros-tentar');
     expect(botao?.getAttribute('aria-disabled')).toBeNull();
     expect(botao?.closest('ui-alert')?.textContent).toContain('Tentativa 2 sem sucesso.');
@@ -507,7 +560,7 @@ describe('PesosEnemPage', () => {
     fixture.detectChanges();
 
     expect(naoTratados).toHaveLength(1);
-    expect(component.isLoading()).toBe(false);
+    expect(component['isLoading']()).toBe(false);
     expect(raiz.querySelector('#cfg-pesos-enem-registros-tentar')?.getAttribute('aria-disabled')).toBeNull();
   });
 
@@ -573,11 +626,11 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_EnterEdit_HabilitaInputsERevelaBarra', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    expect(component.editandoResolucao()).toBe(RES_805);
-    const form = component.editForm();
+    expect(component['editandoResolucao']()).toBe(RES_805);
+    const form = component['editForm']();
     expect(form).not.toBeNull();
     expect(form?.controls).toHaveLength(4);
     expect(form?.controls[0]?.controls.grupoCurso.value).toEqual({ codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' });
@@ -594,39 +647,46 @@ describe('PesosEnemPage', () => {
       (l): l is PesoAreaEnemDto => l !== undefined,
     );
     await carregarUmaPagina(foraDeOrdem);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    const ordemObtida = component.editForm()?.controls.map((g) => g.controls.grupoCurso.value.codigo);
+    const ordemObtida = component['editForm']()?.controls.map(
+      (g) => g.controls.grupoCurso.value.codigo,
+    );
     expect(ordemObtida).toEqual(['TECNOLOGICA', 'HUMANISTICA_I', 'HUMANISTICA_II', 'SAUDE_E_BIOLOGICAS']);
   });
 
   it('PesosEnemPage_Cancelar_ReverteSemChamarApiEDevolveFoco', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    areaDo(component.editForm()?.controls[0], 'LINGUAGENS').controls.peso.setValue(3);
-    component.cancelarEdicao();
+    areaDo(component['editForm']()?.controls[0], 'LINGUAGENS').controls.peso.setValue(3);
+    component['cancelarEdicao']();
     await propagate();
 
-    expect(component.editandoResolucao()).toBeNull();
-    expect(component.editForm()).toBeNull();
+    expect(component['editandoResolucao']()).toBeNull();
+    expect(component['editForm']()).toBeNull();
     // Nenhuma chamada de API disparada pelo cancelamento (o afterEach->verify()
     // garante isso: qualquer request não esperada falharia o teste).
-    expect(pesoDe(component.registros().find((l) => l.id === linhas805[0]?.id), 'LINGUAGENS')).toBe(1);
+    expect(
+      pesoDe(
+        component['registros']().find((l) => l.id === linhas805[0]?.id),
+        'LINGUAGENS',
+      ),
+    ).toBe(1);
   });
 
   it('PesosEnemPage_Esc_FechaModoEdicaoERestauraValores', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
     const grid = fixture.nativeElement.querySelector('.pe-grid') as HTMLElement;
     grid.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     fixture.detectChanges();
 
-    expect(component.editandoResolucao()).toBeNull();
+    expect(component['editandoResolucao']()).toBeNull();
   });
 
   it('PesosEnemPage_EscDuranteEnvio_NaoLimpaSessaoAntesDoForkJoinResolver', async () => {
@@ -636,10 +696,10 @@ describe('PesosEnemPage', () => {
     // estadoLinhasEdicao() antes da resposta chegar, e o sucesso posterior
     // não tinha mais onde aplicar os valores salvos.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const grid = fixture.nativeElement.querySelector('.pe-grid') as HTMLElement;
@@ -647,8 +707,8 @@ describe('PesosEnemPage', () => {
     fixture.detectChanges();
 
     // Esc não teve efeito: a sessão continua aberta.
-    expect(component.editandoResolucao()).toBe(RES_805);
-    expect(component.editForm()).not.toBeNull();
+    expect(component['editandoResolucao']()).toBe(RES_805);
+    expect(component['editForm']()).not.toBeNull();
 
     const requests = [0, 1, 2, 3].map((i) =>
       controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -659,17 +719,17 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     // Só depois do envio resolver a sessão fecha de fato.
-    expect(component.editandoResolucao()).toBeNull();
+    expect(component['editandoResolucao']()).toBeNull();
   });
 
   it('PesosEnemPage_Salvar_CoordenaQuatroChamadasComIdempotencyKeyDistintas', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    const form = component.editForm();
+    const form = component['editForm']();
     areaDo(form?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -684,16 +744,21 @@ describe('PesosEnemPage', () => {
     expect(chaves.size).toBe(4);
     await propagate();
 
-    expect(component.editandoResolucao()).toBeNull();
-    expect(pesoDe(component.registros().find((l) => l.id === linhas805[0]?.id), 'MATEMATICA')).toBe(3.0);
+    expect(component['editandoResolucao']()).toBeNull();
+    expect(
+      pesoDe(
+        component['registros']().find((l) => l.id === linhas805[0]?.id),
+        'MATEMATICA',
+      ),
+    ).toBe(3.0);
   });
 
   it('PesosEnemPage_PesoZero_Valido_PesoNegativo_InvalidaForm', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    const grupo = component.editForm()?.controls[0];
+    const grupo = component['editForm']()?.controls[0];
     expect(grupo).toBeDefined();
     if (!grupo) throw new Error('form de edição não inicializado');
     areaDo(grupo, 'CIENCIAS_HUMANAS').controls.peso.setValue(0);
@@ -702,38 +767,38 @@ describe('PesosEnemPage', () => {
     const linguagens = areaDo(grupo, 'LINGUAGENS');
     linguagens.controls.peso.setValue(-1);
     linguagens.controls.peso.markAsTouched();
-    expect(component.erroDaArea(linguagens, 'peso')).toBe('O peso não pode ser negativo.');
+    expect(component['erroDaArea'](linguagens, 'peso')).toBe('O peso não pode ser negativo.');
 
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
     controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem/'));
   });
 
   it('PesosEnemPage_CorteNegativo_InvalidaForm', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    const redacao = areaDo(component.editForm()?.controls[3], 'REDACAO');
+    const redacao = areaDo(component['editForm']()?.controls[3], 'REDACAO');
     redacao.controls.corte.setValue(-10);
     redacao.controls.corte.markAsTouched();
-    expect(component.erroDaArea(redacao, 'corte')).toBe('O corte não pode ser negativo.');
+    expect(component['erroDaArea'](redacao, 'corte')).toBe('O corte não pode ser negativo.');
   });
 
   it('PesosEnemPage_CorteVazioNaEdicao_ViajaComoSemCorte', async () => {
     // O corte é opcional: limpar o campo é "sem corte", não erro de campo
     // obrigatório — o PUT leva corte null para a área.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    const redacao = areaDo(component.editForm()?.controls[0], 'REDACAO');
+    const redacao = areaDo(component['editForm']()?.controls[0], 'REDACAO');
     redacao.controls.corte.setValue(null);
     redacao.controls.corte.markAsTouched();
     expect(redacao.controls.corte.valid).toBe(true);
-    expect(component.erroDaArea(redacao, 'corte')).toBeNull();
+    expect(component['erroDaArea'](redacao, 'corte')).toBeNull();
 
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
     const requests = [0, 1, 2, 3].map((i) =>
       controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -750,11 +815,11 @@ describe('PesosEnemPage', () => {
     // Um retry idêntico (corpo inalterado) reusa a mesma key — cobre o
     // caso de falha transitória (rede/5xx) e de retry sem correção alguma.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    areaDo(component.editForm()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
-    component.salvarEdicao();
+    areaDo(component['editForm']()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
+    component['salvarEdicao']();
     await propagate();
 
     const requests1 = [0, 1, 2, 3].map((i) =>
@@ -770,17 +835,17 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    expect(component.editErro()).toContain('1 de 4');
+    expect(component['editErro']()).toContain('1 de 4');
 
     // Retry sem alterar nada — mesmo corpo, mesma key.
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
     const retry = controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[0]?.id}`);
     expect(retry.request.headers.get('Idempotency-Key')).toBe(chaveOriginal);
     retry.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
-    expect(component.editandoResolucao()).toBeNull();
+    expect(component['editandoResolucao']()).toBeNull();
   });
 
   it('PesosEnemPage_IdempotencyKey_RenovadaQuandoCorpoMudaApos422', async () => {
@@ -792,10 +857,10 @@ describe('PesosEnemPage', () => {
     // conflitaria como corpo divergente. Comparar o payload evita depender
     // de saber qual caminho ocorreu: corrigir o valor renova a key.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests1 = [0, 1, 2, 3].map((i) =>
@@ -813,15 +878,15 @@ describe('PesosEnemPage', () => {
 
     // Usuário muda um valor antes de reenviar (a recusa sem `errors[]` vai ao banner,
     // sem apontar campo).
-    areaDo(component.editForm()?.controls[0], 'REDACAO').controls.peso.setValue(2.0);
-    component.salvarEdicao();
+    areaDo(component['editForm']()?.controls[0], 'REDACAO').controls.peso.setValue(2.0);
+    component['salvarEdicao']();
     await propagate();
     const retry = controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[0]?.id}`);
     expect(retry.request.headers.get('Idempotency-Key')).not.toBe(chaveOriginal);
     retry.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
-    expect(component.editandoResolucao()).toBeNull();
+    expect(component['editandoResolucao']()).toBeNull();
   });
 
   it('PesosEnemPage_FalhaTransitoria_NaoTravaFormNemImpedeRetryImediato', async () => {
@@ -829,9 +894,9 @@ describe('PesosEnemPage', () => {
     // campo nenhum, que invalidaria o form e bloquearia o retry até o usuário editar
     // algum campo só para limpá-lo.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -846,17 +911,17 @@ describe('PesosEnemPage', () => {
     requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
-    const grupoFalho = component.editForm()?.controls[0];
+    const grupoFalho = component['editForm']()?.controls[0];
     expect(areaDo(grupoFalho, 'REDACAO').controls.peso.errors).toBeNull();
-    expect(component.editForm()?.invalid).toBe(false);
+    expect(component['editForm']()?.invalid).toBe(false);
 
     // Retry imediato, sem editar nada — deve disparar o PUT de novo.
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
     const retry = controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[0]?.id}`);
     retry.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
-    expect(component.editandoResolucao()).toBeNull();
+    expect(component['editandoResolucao']()).toBeNull();
   });
 
   it('PesosEnemPage_LinhaSalvaEmRodadaParcial_FicaTravadaENaoSofreDriftLocal', async () => {
@@ -864,9 +929,9 @@ describe('PesosEnemPage', () => {
     // continuar editável — senão uma edição local não reenviada seria
     // gravada em `registros` como se estivesse persistida.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -881,9 +946,9 @@ describe('PesosEnemPage', () => {
     requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
-    const grupoSalvo = component.editForm()?.controls[0];
+    const grupoSalvo = component['editForm']()?.controls[0];
     expect(grupoSalvo?.disabled).toBe(true);
-    expect(component.estadoLinhasEdicao().get(linhas805[0]?.id ?? '')).toBe('ok');
+    expect(component['estadoLinhasEdicao']().get(linhas805[0]?.id ?? '')).toBe('ok');
   });
 
   it('PesosEnemPage_Salvar_TravaInputsDuranteEnvioEReabilitaSoALinhaComFalha', async () => {
@@ -892,13 +957,13 @@ describe('PesosEnemPage', () => {
     // ao backend (mas antes do PUT resolver) — aplicarLinhasAtualizadas()
     // gravaria em registros() esse valor nunca persistido.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
-    const formEmVoo = component.editForm();
+    const formEmVoo = component['editForm']();
     for (const grupo of formEmVoo?.controls ?? []) {
       expect(grupo.disabled).toBe(true);
     }
@@ -915,7 +980,7 @@ describe('PesosEnemPage', () => {
     requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
-    const form = component.editForm();
+    const form = component['editForm']();
     expect(form?.controls[0]?.disabled).toBe(false);
     expect(form?.controls[1]?.disabled).toBe(true);
   });
@@ -927,16 +992,16 @@ describe('PesosEnemPage', () => {
     // cancelarEdicao()) fechasse ou corrompesse a sessão nova que o usuário
     // já tinha aberto.
     await carregarUmaPagina([...linhas805, ...linhas750]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     // Tenta trocar para outra resolução enquanto o envio está em voo.
-    component.clicarEditarParametros(RES_750);
+    component['clicarEditarParametros'](RES_750);
     await propagate();
-    expect(component.editandoResolucao()).toBe(RES_805);
+    expect(component['editandoResolucao']()).toBe(RES_805);
 
     const requests = [0, 1, 2, 3].map((i) =>
       controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
@@ -947,9 +1012,9 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     // Só agora, com o envio concluído, a troca de sessão é permitida.
-    component.clicarEditarParametros(RES_750);
+    component['clicarEditarParametros'](RES_750);
     await propagate();
-    expect(component.editandoResolucao()).toBe(RES_750);
+    expect(component['editandoResolucao']()).toBe(RES_750);
   });
 
   it('PesosEnemPage_CancelarAposSucessoParcial_AplicaLinhasJaPersistidas', async () => {
@@ -958,11 +1023,11 @@ describe('PesosEnemPage', () => {
     // voltar a mostrar o valor pré-edição das 3 linhas que JÁ foram salvas —
     // isso ficaria desatualizado até um reload manual da página.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    areaDo(component.editForm()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
-    component.salvarEdicao();
+    areaDo(component['editForm']()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -977,11 +1042,16 @@ describe('PesosEnemPage', () => {
     requests[3]?.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
-    component.cancelarEdicao();
+    component['cancelarEdicao']();
     await propagate();
 
-    expect(component.editandoResolucao()).toBeNull();
-    expect(pesoDe(component.registros().find((l) => l.id === linhas805[0]?.id), 'MATEMATICA')).toBe(3.0);
+    expect(component['editandoResolucao']()).toBeNull();
+    expect(
+      pesoDe(
+        component['registros']().find((l) => l.id === linhas805[0]?.id),
+        'MATEMATICA',
+      ),
+    ).toBe(3.0);
   });
 
   it('PesosEnemPage_TrocarResolucaoAposSucessoParcial_AplicaLinhasJaPersistidas', async () => {
@@ -991,11 +1061,11 @@ describe('PesosEnemPage', () => {
     // reload manual — mesmo bug do Cancelar, mas pelo caminho de troca de
     // sessão.
     await carregarUmaPagina([...linhas805, ...linhas750]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    areaDo(component.editForm()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
-    component.salvarEdicao();
+    areaDo(component['editForm']()?.controls[0], 'MATEMATICA').controls.peso.setValue(3.0);
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -1011,22 +1081,27 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
-    component.clicarEditarParametros(RES_750);
+    component['clicarEditarParametros'](RES_750);
     await propagate();
     confirmSpy.mockRestore();
 
-    expect(component.editandoResolucao()).toBe(RES_750);
-    expect(pesoDe(component.registros().find((l) => l.id === linhas805[0]?.id), 'MATEMATICA')).toBe(3.0);
+    expect(component['editandoResolucao']()).toBe(RES_750);
+    expect(
+      pesoDe(
+        component['registros']().find((l) => l.id === linhas805[0]?.id),
+        'MATEMATICA',
+      ),
+    ).toBe(3.0);
   });
 
   // --- Drawer de criação ----------------------------------------------
 
   it('PesosEnemPage_Drawer_Cria4GruposFixosComGrupoCursoReadonly', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
+    component['abrirDrawerCriacao']();
     await propagate();
 
-    const grupos = component.pesoLoteForm.controls.grupos.controls;
+    const grupos = component['pesoLoteForm'].controls.grupos.controls;
     expect(grupos).toHaveLength(4);
     expect(grupos.map((g) => g.controls.grupoCurso.value)).toEqual(GRUPOS);
 
@@ -1043,19 +1118,22 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_ResolucaoVazia_InvalidaFormDeCriacao', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['criarResolucao']();
     await propagate();
 
     controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem'));
-    expect(component.erroDoCampoLote('resolucao')).toBe('Campo obrigatório.');
+    expect(component['erroDoCampoLote']('resolucao')).toBe('Campo obrigatório.');
   });
 
   it('PesosEnemPage_Criar_CoordenaQuatroChamadasComIdempotencyKeyPropria', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1069,7 +1147,7 @@ describe('PesosEnemPage', () => {
     expect(chaves.size).toBe(4);
     await propagate();
 
-    expect(component.drawerAberto()).toBe(false);
+    expect(component['drawerAberto']()).toBe(false);
     expectListagem().flush(
       linhas805.map((l) => ({ ...l, resolucao: 'Res. 900/2026' })),
     );
@@ -1080,9 +1158,9 @@ describe('PesosEnemPage', () => {
     // `Validators.required` aceita espaços em branco: sem normalizar, o payload
     // levaria '' e o backend responderia sobre formato, não sobre ausência.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: '   ', baseLegalGlobal: '  ' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({ resolucao: '   ', baseLegalGlobal: '  ' });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match(
@@ -1098,15 +1176,46 @@ describe('PesosEnemPage', () => {
     await propagate();
   });
 
+  it('PesosEnemPage_Criar_CodigosComEspacosViajamAparadosNoPayload', async () => {
+    const areas = AREAS.map((a, i) => (i === 0 ? { ...a, codigo: ` ${a.codigo} ` } : a));
+    const grupos = GRUPOS.map((g, i) => (i === 0 ? { ...g, codigo: ` ${g.codigo} ` } : g));
+    await carregarUmaPagina([], areas, grupos);
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
+    await propagate();
+
+    const requests = controller.match(
+      (r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`,
+    );
+    expect(requests).toHaveLength(GRUPOS.length);
+    expect(requests.map((req) => req.request.body.grupoCurso)).toEqual(GRUPOS.map((g) => g.codigo));
+    requests.forEach((req, i) => {
+      expect(req.request.body.areas.map((a: { codigo: string }) => a.codigo)).toEqual(
+        AREAS.map((a) => a.codigo),
+      );
+      req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' });
+    });
+    await propagate();
+    expectListagem().flush([]);
+    await propagate();
+  });
+
   it('PesosEnemPage_FalhaTransitoriaNaCriacao_PreservaIdempotencyKey', async () => {
     // Regressão: renovar a key numa falha transitória
     // (rede/5xx) trocaria um retry idempotente seguro por uma criação
     // duplicada — o POST original pode ter sido processado no servidor
     // mesmo com a resposta perdida.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests1 = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1119,15 +1228,17 @@ describe('PesosEnemPage', () => {
     requests1.slice(1).forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
     await propagate();
 
-    expect(areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'REDACAO').controls.peso.errors).toBeNull();
+    expect(
+      areaDo(component['pesoLoteForm'].controls.grupos.controls[0], 'REDACAO').controls.peso.errors,
+    ).toBeNull();
 
-    component.criarResolucao();
+    component['criarResolucao']();
     await propagate();
     const retry = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
     expect(retry.request.headers.get('Idempotency-Key')).toBe(chaveOriginal);
     retry.flush('novo-id-3', { status: 201, statusText: 'Created' });
     await propagate();
-    expect(component.drawerAberto()).toBe(false);
+    expect(component['drawerAberto']()).toBe(false);
     expectListagem().flush([]);
     await propagate();
   });
@@ -1139,12 +1250,15 @@ describe('PesosEnemPage', () => {
     // MESMO FormGroup marcando "Criado" com um valor diferente do que o
     // backend recebeu.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
-    for (const grupo of component.pesoLoteForm.controls.grupos.controls) {
+    for (const grupo of component['pesoLoteForm'].controls.grupos.controls) {
       expect(grupo.disabled).toBe(true);
     }
 
@@ -1159,8 +1273,8 @@ describe('PesosEnemPage', () => {
     requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
     await propagate();
 
-    expect(component.pesoLoteForm.controls.grupos.controls[0]?.disabled).toBe(false);
-    expect(component.pesoLoteForm.controls.grupos.controls[1]?.disabled).toBe(true);
+    expect(component['pesoLoteForm'].controls.grupos.controls[0]?.disabled).toBe(false);
+    expect(component['pesoLoteForm'].controls.grupos.controls[1]?.disabled).toBe(true);
   });
 
   it('PesosEnemPage_RetryComCorpoAlterado_RenovaIdempotencyKey', async () => {
@@ -1170,9 +1284,12 @@ describe('PesosEnemPage', () => {
     // mesma key arriscaria um conflito de idempotência (corpo divergente)
     // no backend.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests1 = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1186,14 +1303,17 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     // Usuário altera o grupo que falhou antes de reenviar.
-    areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'LINGUAGENS').controls.peso.setValue(3.5);
-    component.criarResolucao();
+    areaDo(
+      component['pesoLoteForm'].controls.grupos.controls[0],
+      'LINGUAGENS',
+    ).controls.peso.setValue(3.5);
+    component['criarResolucao']();
     await propagate();
     const retry = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
     expect(retry.request.headers.get('Idempotency-Key')).not.toBe(chaveOriginal);
     retry.flush('novo-id-3', { status: 201, statusText: 'Created' });
     await propagate();
-    expect(component.drawerAberto()).toBe(false);
+    expect(component['drawerAberto']()).toBe(false);
     expectListagem().flush([]);
     await propagate();
   });
@@ -1203,9 +1323,12 @@ describe('PesosEnemPage', () => {
     // usuário desistir do restante, cancelar sem recarregar deixaria esses
     // grupos invisíveis em registros() até um reload manual.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1222,11 +1345,11 @@ describe('PesosEnemPage', () => {
     // Simula o fechamento real: o botão Cancelar (ou X/Esc do próprio
     // ui-drawer) muda `drawerAberto`, e o drawer emite `(closed)` ao
     // terminar de fechar — aoFecharDrawerCriacao() é o handler desse evento.
-    component.drawerAberto.set(false);
-    component.aoFecharDrawerCriacao();
+    component['drawerAberto'].set(false);
+    component['aoFecharDrawerCriacao']();
     await propagate();
 
-    expect(component.drawerAberto()).toBe(false);
+    expect(component['drawerAberto']()).toBe(false);
     // A recarga da lista é disparada — sem ela, este GET não seria esperado.
     expectListagem().flush([]);
     await propagate();
@@ -1234,12 +1357,12 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_CancelarDrawerSemSucessoParcial_NaoRecarrega', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.drawerAberto.set(false);
-    component.aoFecharDrawerCriacao();
+    component['abrirDrawerCriacao']();
+    component['drawerAberto'].set(false);
+    component['aoFecharDrawerCriacao']();
     await propagate();
 
-    expect(component.drawerAberto()).toBe(false);
+    expect(component['drawerAberto']()).toBe(false);
     controller.expectNone((r) => r.url === LIST_URL);
   });
 
@@ -1250,17 +1373,20 @@ describe('PesosEnemPage', () => {
     // forkJoin resolve depois (parcial), o branch de falha precisa detectar
     // que o drawer já está fechado e recarregar ali mesmo.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
     expect(requests).toHaveLength(4);
 
     // Usuário fecha o drawer (X/Esc) antes de qualquer POST responder.
-    component.drawerAberto.set(false);
-    component.aoFecharDrawerCriacao();
+    component['drawerAberto'].set(false);
+    component['aoFecharDrawerCriacao']();
     await propagate();
     controller.expectNone((r) => r.url === LIST_URL);
 
@@ -1285,17 +1411,20 @@ describe('PesosEnemPage', () => {
     // anterior ainda referencia, deixando a resposta tardia mexer nos
     // campos da sessão nova que o usuário já está preenchendo.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
     expect(requests).toHaveLength(4);
 
     // Tenta reabrir/reset enquanto o envio está em voo — deve ser no-op.
-    component.abrirDrawerCriacao();
-    expect(component.pesoLoteForm.controls.resolucao.value).toBe('Res. 900/2026');
+    component['abrirDrawerCriacao']();
+    expect(component['pesoLoteForm'].controls.resolucao.value).toBe('Res. 900/2026');
 
     for (const req of requests) {
       req.flush(`novo-id`, { status: 201, statusText: 'Created' });
@@ -1305,8 +1434,8 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     // Só agora, com o envio concluído, abrir reseta normalmente.
-    component.abrirDrawerCriacao();
-    expect(component.pesoLoteForm.controls.resolucao.value).toBe('');
+    component['abrirDrawerCriacao']();
+    expect(component['pesoLoteForm'].controls.resolucao.value).toBe('');
   });
 
   it('PesosEnemPage_FecharDrawerDuranteRetrySubmitting_NaoRecarregaPrematuramente', async () => {
@@ -1317,9 +1446,12 @@ describe('PesosEnemPage', () => {
     // guard de isLoading() em carregar(), publicando a lista sem o grupo
     // recém-criado no retry.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const primeiraRodada = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1335,14 +1467,16 @@ describe('PesosEnemPage', () => {
 
     // Muda um valor do grupo que falhou (a recusa sem `errors[]` vai ao banner) e
     // reenvia (retry só do pendente).
-    areaDo(component.pesoLoteForm.controls.grupos.controls[1], 'REDACAO').controls.peso.setValue(2.0);
-    component.criarResolucao();
+    areaDo(component['pesoLoteForm'].controls.grupos.controls[1], 'REDACAO').controls.peso.setValue(
+      2.0,
+    );
+    component['criarResolucao']();
     await propagate();
     const retry = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
 
     // Fecha o drawer ENQUANTO o retry ainda está em voo — não deve disparar GET.
-    component.drawerAberto.set(false);
-    component.aoFecharDrawerCriacao();
+    component['drawerAberto'].set(false);
+    component['aoFecharDrawerCriacao']();
     await propagate();
     controller.expectNone((r) => r.url === LIST_URL);
 
@@ -1355,9 +1489,12 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_ResolucaoDuplicada_MapeiaErroNoCampo', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: RES_805, baseLegalGlobal: 'Res. 805/2024 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: RES_805,
+      baseLegalGlobal: 'Res. 805/2024 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1370,10 +1507,10 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    expect(component.erroDoCampoLote('resolucao')).toBe(
+    expect(component['erroDoCampoLote']('resolucao')).toBe(
       'Resolução já cadastrada. Informe um identificador diferente.',
     );
-    expect(component.drawerAberto()).toBe(true);
+    expect(component['drawerAberto']()).toBe(true);
   });
 
   it('PesosEnemPage_DuplicidadeComSucessoParcial_NaoInstruiTrocarCampoTravado', async () => {
@@ -1384,9 +1521,12 @@ describe('PesosEnemPage', () => {
     // num campo desabilitado é uma instrução impossível de seguir. Nesse
     // caso o aviso vai só para o banner geral, sem pinar erro no campo.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1400,10 +1540,10 @@ describe('PesosEnemPage', () => {
     requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
     await propagate();
 
-    expect(component.pesoLoteForm.controls.resolucao.disabled).toBe(true);
-    expect(component.erroDoCampoLote('resolucao')).toBeNull();
-    expect(component.submitError()).toContain('já criados foram salvos');
-    expect(component.drawerAberto()).toBe(true);
+    expect(component['pesoLoteForm'].controls.resolucao.disabled).toBe(true);
+    expect(component['erroDoCampoLote']('resolucao')).toBeNull();
+    expect(component['submitError']()).toContain('já criados foram salvos');
+    expect(component['drawerAberto']()).toBe(true);
   });
 
   it('PesosEnemPage_SucessoParcialNaCriacao_TravaResolucaoContraMistura', async () => {
@@ -1411,9 +1551,12 @@ describe('PesosEnemPage', () => {
     // reenvio dos grupos pendentes criaria uma resolução distinta da dos
     // grupos já persistidos — misturando duas resoluções na mesma sessão.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1427,19 +1570,19 @@ describe('PesosEnemPage', () => {
     requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
     await propagate();
 
-    expect(component.pesoLoteForm.controls.resolucao.disabled).toBe(true);
+    expect(component['pesoLoteForm'].controls.resolucao.disabled).toBe(true);
 
-    component.abrirDrawerCriacao();
-    expect(component.pesoLoteForm.controls.resolucao.disabled).toBe(false);
+    component['abrirDrawerCriacao']();
+    expect(component['pesoLoteForm'].controls.resolucao.disabled).toBe(false);
   });
 
   it('PesosEnemPage_BaseLegalGlobal_PrePreencheGruposPristine', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.controls.baseLegalGlobal.setValue('Res. 900/2026 Anexo I');
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].controls.baseLegalGlobal.setValue('Res. 900/2026 Anexo I');
     await propagate();
 
-    for (const grupo of component.pesoLoteForm.controls.grupos.controls) {
+    for (const grupo of component['pesoLoteForm'].controls.grupos.controls) {
       expect(grupo.controls.baseLegal.value).toBe('Res. 900/2026 Anexo I');
     }
   });
@@ -1450,9 +1593,12 @@ describe('PesosEnemPage', () => {
     // uma base legal nunca enviada ao backend (a linha real fica com a
     // antiga).
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Base original' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Base original',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1466,19 +1612,23 @@ describe('PesosEnemPage', () => {
     requests[3]?.flush('novo-id-3', { status: 201, statusText: 'Created' });
     await propagate();
 
-    component.pesoLoteForm.controls.baseLegalGlobal.setValue('Base corrigida');
+    component['pesoLoteForm'].controls.baseLegalGlobal.setValue('Base corrigida');
     await propagate();
 
-    expect(component.pesoLoteForm.controls.grupos.controls[0]?.controls.baseLegal.value).toBe('Base original');
-    expect(component.pesoLoteForm.controls.grupos.controls[1]?.controls.baseLegal.value).toBe('Base corrigida');
+    expect(component['pesoLoteForm'].controls.grupos.controls[0]?.controls.baseLegal.value).toBe(
+      'Base original',
+    );
+    expect(component['pesoLoteForm'].controls.grupos.controls[1]?.controls.baseLegal.value).toBe(
+      'Base corrigida',
+    );
   });
 
   // --- Inativação -------------------------------------------------------
 
   it('PesosEnemPage_ConfirmarInativacao_Remove4LinhasERecarrega', async () => {
     await carregarUmaPagina([...linhas805, ...linhas750]);
-    component.pedirInativacao(RES_805);
-    component.confirmarInativacao();
+    component['pedirInativacao'](RES_805);
+    component['confirmarInativacao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -1494,7 +1644,7 @@ describe('PesosEnemPage', () => {
     expectListagem().flush([...linhas750]);
     await propagate();
 
-    expect(component.resolucoes()).toEqual([RES_750]);
+    expect(component['resolucoes']()).toEqual([RES_750]);
   });
 
   it('PesosEnemPage_InativarResolucaoEmEdicao_LimpaSessaoAntesDoReload', async () => {
@@ -1505,12 +1655,12 @@ describe('PesosEnemPage', () => {
     // edição" com o form antigo — e Salvar tentaria PUT em linhas que não
     // existem mais.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    expect(component.editandoResolucao()).toBe(RES_805);
+    expect(component['editandoResolucao']()).toBe(RES_805);
 
-    component.pedirInativacao(RES_805);
-    component.confirmarInativacao();
+    component['pedirInativacao'](RES_805);
+    component['confirmarInativacao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -1521,8 +1671,8 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    expect(component.editandoResolucao()).toBeNull();
-    expect(component.editForm()).toBeNull();
+    expect(component['editandoResolucao']()).toBeNull();
+    expect(component['editForm']()).toBeNull();
 
     expectListagem().flush([]);
     await propagate();
@@ -1538,8 +1688,8 @@ describe('PesosEnemPage', () => {
     expect(inativacaoButtonEl.textContent).toContain(
       'Inativar resolução',
     );
-    component.pedirInativacao(RES_805);
-    component.confirmarInativacao();
+    component['pedirInativacao'](RES_805);
+    component['confirmarInativacao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -1567,9 +1717,12 @@ describe('PesosEnemPage', () => {
     // reutilizado sem 409 — a página não faz checagem client-side de
     // duplicidade, apenas reflete o que o backend aceitar.
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: RES_805, baseLegalGlobal: 'Res. 805/2024 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: RES_805,
+      baseLegalGlobal: 'Res. 805/2024 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1577,30 +1730,30 @@ describe('PesosEnemPage', () => {
     requests.forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
     await propagate();
 
-    expect(component.drawerAberto()).toBe(false);
+    expect(component['drawerAberto']()).toBe(false);
     expectListagem().flush([...linhas805]);
     await propagate();
-    expect(component.resolucoes()).toEqual([RES_805]);
+    expect(component['resolucoes']()).toEqual([RES_805]);
   });
 
   it('PesosEnemPage_TrocarResolucaoEmEdicaoSuja_PedeConfirmacao', async () => {
     await carregarUmaPagina([...linhas805, ...linhas750]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    areaDo(component.editForm()?.controls[0], 'LINGUAGENS').controls.peso.setValue(9);
-    areaDo(component.editForm()?.controls[0], 'LINGUAGENS').controls.peso.markAsDirty();
+    areaDo(component['editForm']()?.controls[0], 'LINGUAGENS').controls.peso.setValue(9);
+    areaDo(component['editForm']()?.controls[0], 'LINGUAGENS').controls.peso.markAsDirty();
 
     const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
-    component.clicarEditarParametros(RES_750);
+    component['clicarEditarParametros'](RES_750);
     await propagate();
 
     expect(confirmSpy).toHaveBeenCalled();
-    expect(component.editandoResolucao()).toBe(RES_805);
+    expect(component['editandoResolucao']()).toBe(RES_805);
 
     confirmSpy.mockReturnValue(true);
-    component.clicarEditarParametros(RES_750);
+    component['clicarEditarParametros'](RES_750);
     await propagate();
-    expect(component.editandoResolucao()).toBe(RES_750);
+    expect(component['editandoResolucao']()).toBe(RES_750);
 
     confirmSpy.mockRestore();
   });
@@ -1610,9 +1763,11 @@ describe('PesosEnemPage', () => {
   it('PesosEnemPage_Colunas_VemDasAreasDaApiNaOrdemDela', async () => {
     await carregarUmaPagina([...linhas805]);
 
-    const cabecalho = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll('.num-grid__header .num-cell--head'),
-    ].map((celula) => celula.textContent?.trim());
+    const cabecalho = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '.num-grid__header .num-cell--head',
+      ) as NodeListOf<HTMLDivElement>,
+    ).map((celula) => celula.textContent?.trim());
     expect(cabecalho).toEqual(AREAS.map((area) => area.rotulo));
     expect((fixture.nativeElement.textContent as string)).not.toContain('Corte de redação');
   });
@@ -1626,30 +1781,35 @@ describe('PesosEnemPage', () => {
     ];
     await carregarUmaPagina([...linhas805], duas);
 
-    const cabecalho = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll('.num-grid__header .num-cell--head'),
-    ].map((celula) => celula.textContent?.trim());
+    const cabecalho = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '.num-grid__header .num-cell--head',
+      ) as NodeListOf<HTMLDivElement>,
+    ).map((celula) => celula.textContent?.trim());
     expect(cabecalho).toEqual(['Matemática e suas Tecnologias', 'Redação']);
   });
 
   it('PesosEnemPage_ModoLeitura_MostraCorteAbaixoDoPesoSoQuandoExiste', async () => {
     await carregarUmaPagina([...linhas805]);
 
-    const cortes = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.pe-corte')].map(
-      (el) => el.textContent?.trim(),
-    );
+    const cortes = Array.from(
+      fixture.nativeElement.querySelectorAll('.pe-corte') as NodeListOf<HTMLSpanElement>,
+    ).map((el) => el.textContent?.trim());
     // Uma por grupo: só a Redação tem corte nas linhas de exemplo.
     expect(cortes).toEqual(['Corte: 400', 'Corte: 400', 'Corte: 400', 'Corte: 400']);
   });
 
   it('PesosEnemPage_Criar_EnviaAreasComCodigoPesoECorteSemRotulo', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    const grupo0 = component.pesoLoteForm.controls.grupos.controls[0];
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    const grupo0 = component['pesoLoteForm'].controls.grupos.controls[0];
     areaDo(grupo0, 'REDACAO').controls.corte.setValue(450);
     areaDo(grupo0, 'MATEMATICA').controls.peso.setValue(2.5);
-    component.criarResolucao();
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1674,8 +1834,8 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_CodigoERotulo_NaoSaoEditaveis', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.abrirDrawerCriacao();
-    component.clicarEditarParametros(RES_805);
+    component['abrirDrawerCriacao']();
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
 
@@ -1687,9 +1847,9 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_ErroDoBackendPorArea_VaiAoCampoDaArea', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -1715,21 +1875,24 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    const grupo = component.editForm()?.controls[0];
-    expect(component.erroDaArea(areaDo(grupo, 'LINGUAGENS'), 'corte')).toBe(
+    const grupo = component['editForm']()?.controls[0];
+    expect(component['erroDaArea'](areaDo(grupo, 'LINGUAGENS'), 'corte')).toBe(
       'Por enquanto só a Redação aceita corte; Linguagens e suas Tecnologias deve ficar sem corte.',
     );
-    expect(component.erroDaArea(areaDo(grupo, 'MATEMATICA'), 'peso')).toBe(
+    expect(component['erroDaArea'](areaDo(grupo, 'MATEMATICA'), 'peso')).toBe(
       'O peso de Matemática e suas Tecnologias não pode exceder 99.99.',
     );
-    expect(component.erroDaArea(areaDo(grupo, 'REDACAO'), 'peso')).toBeNull();
+    expect(component['erroDaArea'](areaDo(grupo, 'REDACAO'), 'peso')).toBeNull();
   });
 
   it('PesosEnemPage_AreaFaltandoNoBackend_VaiAoPrimeiroPeso', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -1746,8 +1909,8 @@ describe('PesosEnemPage', () => {
     requests.slice(1).forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
     await propagate();
 
-    const grupo0 = component.pesoLoteForm.controls.grupos.controls[0];
-    expect(component.erroDaArea(areaDo(grupo0, 'REDACAO'), 'peso')).toBe(
+    const grupo0 = component['pesoLoteForm'].controls.grupos.controls[0];
+    expect(component['erroDaArea'](areaDo(grupo0, 'REDACAO'), 'peso')).toBe(
       'Informe o peso das cinco áreas; faltam: MATEMATICA.',
     );
   });
@@ -1757,11 +1920,13 @@ describe('PesosEnemPage', () => {
     const raiz = fixture.nativeElement as HTMLElement;
 
     // Modo leitura: label associado ao input nomeia área e grupo.
-    const rotulos = [...raiz.querySelectorAll('label.sr-only')].map((l) => l.textContent?.trim());
+    const rotulos = Array.from(
+      fixture.nativeElement.querySelectorAll('label.sr-only') as NodeListOf<HTMLLabelElement>,
+    ).map((l) => l.textContent?.trim());
     expect(rotulos).toContain('Peso de Matemática e suas Tecnologias — Tecnológica');
 
     // Drawer: o nome acessível começa pelo texto visível e acrescenta o grupo.
-    component.abrirDrawerCriacao();
+    component['abrirDrawerCriacao']();
     await propagate();
     fixture.detectChanges();
     expect(
@@ -1802,9 +1967,9 @@ describe('PesosEnemPage', () => {
     }));
     await carregarUmaPagina(comCorteFracionado);
 
-    const cortes = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.pe-corte')].map(
-      (el) => el.textContent?.trim(),
-    );
+    const cortes = Array.from(
+      fixture.nativeElement.querySelectorAll('.pe-corte') as NodeListOf<HTMLSpanElement>,
+    ).map((el) => el.textContent?.trim());
     expect(cortes).toEqual(['Corte: 450,5', 'Corte: 450,5', 'Corte: 450,5', 'Corte: 450,5']);
   });
 
@@ -1819,22 +1984,22 @@ describe('PesosEnemPage', () => {
     await propagate();
     fixture.detectChanges();
 
-    expect(component.listaAreas.falhou()).toBe(true);
-    component.abrirDrawerCriacao();
-    expect(component.drawerAberto()).toBe(false);
+    expect(component['listaAreas'].falhou()).toBe(true);
+    component['abrirDrawerCriacao']();
+    expect(component['drawerAberto']()).toBe(false);
 
-    const retry = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.cfg-list__retry button')][0] as
-      | HTMLButtonElement
-      | undefined;
-    expect(retry).toBeDefined();
+    const retry = fixture.nativeElement.querySelector(
+      '.cfg-list__retry button',
+    ) as HTMLButtonElement | null;
+    expect(retry).not.toBeNull();
     retry?.click();
     await propagate();
     expectAreas().flush([...AREAS]);
     await propagate();
 
-    expect(component.listaAreas.falhou()).toBe(false);
-    component.abrirDrawerCriacao();
-    expect(component.drawerAberto()).toBe(true);
+    expect(component['listaAreas'].falhou()).toBe(false);
+    component['abrirDrawerCriacao']();
+    expect(component['drawerAberto']()).toBe(true);
   });
 
   // --- Acessibilidade e validação dos campos numéricos --------------------
@@ -1866,7 +2031,7 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_EdicaoEmLinha_PesoECorteTemRotuloVisivel', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
 
@@ -1877,7 +2042,7 @@ describe('PesosEnemPage', () => {
       expect(rotulo).not.toBeNull();
       // Visível: o rótulo não é sr-only, e o texto fora do trecho sr-only é curto.
       expect(rotulo?.classList.contains('sr-only')).toBe(false);
-      const visivel = [...(rotulo?.childNodes ?? [])]
+      const visivel = Array.from((rotulo?.childNodes ?? []) as NodeListOf<ChildNode>)
         .filter((no) => no.nodeType === Node.TEXT_NODE)
         .map((no) => no.textContent?.trim())
         .join('');
@@ -1906,24 +2071,24 @@ describe('PesosEnemPage', () => {
   it('PesosEnemPage_EdicaoEmLinha_NumeroInvalidoNoCorteBloqueiaEnvio', async () => {
     // Sem a recusa, o texto não numérico virava null e o PUT apagava o corte sem aviso.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
 
     digitarNumeroInvalidoESair(inputDaEdicao('corte', 0, 0));
     fixture.detectChanges();
 
-    const redacao = areaDo(component.editForm()?.controls[0], 'REDACAO');
-    expect(component.erroDaArea(redacao, 'corte')).toBe('Número inválido.');
+    const redacao = areaDo(component['editForm']()?.controls[0], 'REDACAO');
+    expect(component['erroDaArea'](redacao, 'corte')).toBe('Número inválido.');
 
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
     controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem/'));
   });
 
   it('PesosEnemPage_Drawer_NumeroInvalidoNoPesoMostraErroProprio', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
+    component['abrirDrawerCriacao']();
     await propagate();
     fixture.detectChanges();
 
@@ -1935,27 +2100,31 @@ describe('PesosEnemPage', () => {
     digitarNumeroInvalidoESair(input);
     fixture.detectChanges();
 
-    const matematica = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'MATEMATICA');
-    expect(component.erroDaArea(matematica, 'peso')).toBe('Número inválido.');
+    const matematica = areaDo(component['pesoLoteForm'].controls.grupos.controls[0], 'MATEMATICA');
+    expect(component['erroDaArea'](matematica, 'peso')).toBe('Número inválido.');
   });
 
   it('PesosEnemPage_CasasDecimaisAlemDoGravado_SaoRecusadas', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
 
-    const grupo = component.editForm()?.controls[0];
+    const grupo = component['editForm']()?.controls[0];
     const matematica = areaDo(grupo, 'MATEMATICA');
     matematica.controls.peso.setValue(1.125);
     matematica.controls.peso.markAsTouched();
-    expect(component.erroDaArea(matematica, 'peso')).toBe('O peso aceita no máximo 2 casas decimais.');
+    expect(component['erroDaArea'](matematica, 'peso')).toBe(
+      'O peso aceita no máximo 2 casas decimais.',
+    );
 
     const redacao = areaDo(grupo, 'REDACAO');
     redacao.controls.corte.setValue(400.1234);
     redacao.controls.corte.markAsTouched();
-    expect(component.erroDaArea(redacao, 'corte')).toBe('O corte aceita no máximo 3 casas decimais.');
+    expect(component['erroDaArea'](redacao, 'corte')).toBe(
+      'O corte aceita no máximo 3 casas decimais.',
+    );
 
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
     controller.expectNone((r) => r.url.includes('/admin/pesos-area-enem/'));
 
@@ -1969,7 +2138,7 @@ describe('PesosEnemPage', () => {
   it('PesosEnemPage_ListaDeAreasVazia_TrataComoFalhaDeCarregamento', async () => {
     await carregarUmaPagina([], []);
 
-    expect(component.listaAreas.falhou()).toBe(true);
+    expect(component['listaAreas'].falhou()).toBe(true);
     const raiz = fixture.nativeElement as HTMLElement;
     expect(raiz.querySelector('ui-empty-state')).toBeNull();
     expect(raiz.querySelector('.cfg-list__retry button')).not.toBeNull();
@@ -1977,7 +2146,7 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_AbrirEdicao_FocaOPrimeiroCampoEditavel', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
     await propagate();
@@ -1989,9 +2158,9 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_ErroDoBackendComPrefixoOuMaiuscula_VaiAoCampoCerto', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -2010,19 +2179,23 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    const grupo = component.editForm()?.controls[0];
-    expect(component.erroDaArea(areaDo(grupo, 'LINGUAGENS'), 'corte')).toBe('Erro no corte de Linguagens.');
-    expect(component.erroDaArea(areaDo(grupo, 'CIENCIAS_HUMANAS'), 'peso')).toBe(
+    const grupo = component['editForm']()?.controls[0];
+    expect(component['erroDaArea'](areaDo(grupo, 'LINGUAGENS'), 'corte')).toBe(
+      'Erro no corte de Linguagens.',
+    );
+    expect(component['erroDaArea'](areaDo(grupo, 'CIENCIAS_HUMANAS'), 'peso')).toBe(
       'Erro no item de Ciências Humanas.',
     );
-    expect(component.erroDaArea(areaDo(grupo, 'MATEMATICA'), 'peso')).toBe('Erro no peso de Matemática.');
+    expect(component['erroDaArea'](areaDo(grupo, 'MATEMATICA'), 'peso')).toBe(
+      'Erro no peso de Matemática.',
+    );
   });
 
   it('PesosEnemPage_VariosErrosNoMesmoCampo_MostraTodos', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -2041,7 +2214,10 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    const erro = component.erroDaArea(areaDo(component.editForm()?.controls[0], 'REDACAO'), 'peso');
+    const erro = component['erroDaArea'](
+      areaDo(component['editForm']()?.controls[0], 'REDACAO'),
+      'peso',
+    );
     expect(erro).toContain('Área fora do Peso por Área.');
     expect(erro).toContain('O peso não pode ser negativo.');
     expect(erro).toContain('Faltam áreas: MATEMATICA.');
@@ -2058,9 +2234,9 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_SairDoCampoComTab_NaoApagaOErroDoBackend', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -2082,9 +2258,11 @@ describe('PesosEnemPage', () => {
     inputDaEdicao('corte', 0, 3).dispatchEvent(new FocusEvent('blur'));
     fixture.detectChanges();
 
-    const linguagens = areaDo(component.editForm()?.controls[0], 'LINGUAGENS');
-    expect(component.erroDaArea(linguagens, 'corte')).toBe('Por enquanto só a Redação aceita corte.');
-    expect(component.editForm()?.invalid).toBe(true);
+    const linguagens = areaDo(component['editForm']()?.controls[0], 'LINGUAGENS');
+    expect(component['erroDaArea'](linguagens, 'corte')).toBe(
+      'Por enquanto só a Redação aceita corte.',
+    );
+    expect(component['editForm']()?.invalid).toBe(true);
   });
 
   it('PesosEnemPage_ErroDeBaseLegalNaEdicaoEmLinha_VaiAoBannerSemTravarCampo', async () => {
@@ -2092,9 +2270,9 @@ describe('PesosEnemPage', () => {
     // num controle escondido (trava o formulário sem mensagem) nem num campo que não é
     // o dele (o operador mexeria no lugar errado e reenviaria o mesmo pedido).
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -2112,23 +2290,28 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    const grupo = component.editForm()?.controls[0];
+    const grupo = component['editForm']()?.controls[0];
     if (!grupo) throw new Error('form de edição não inicializado');
-    expect(component.editErro()).toContain('Tecnológica: Base legal deve ter no máximo 500 caracteres.');
+    expect(component['editErro']()).toContain(
+      'Tecnológica: Base legal deve ter no máximo 500 caracteres.',
+    );
     expect(grupo.controls.baseLegal.errors).toBeNull();
-    expect(component.erroDaArea(areaDo(grupo, 'REDACAO'), 'peso')).toBeNull();
-    expect(component.editForm()?.invalid).toBe(false);
+    expect(component['erroDaArea'](areaDo(grupo, 'REDACAO'), 'peso')).toBeNull();
+    expect(component['editForm']()?.invalid).toBe(false);
 
     // O operador pode desistir da edição.
-    component.cancelarEdicao();
-    expect(component.editandoResolucao()).toBeNull();
+    component['cancelarEdicao']();
+    expect(component['editandoResolucao']()).toBeNull();
   });
 
   it('PesosEnemPage_Drawer_ErroDoCampoEntraNaDescricaoDoInput', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -2178,7 +2361,7 @@ describe('PesosEnemPage', () => {
 
       expect(construtor).not.toHaveBeenCalled();
       expect(toLocaleString).not.toHaveBeenCalled();
-      const cortes = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.pe-corte')].map(
+      const cortes = Array.from(fixture.nativeElement.querySelectorAll('.pe-corte') as NodeListOf<HTMLSpanElement>).map(
         (el) => el.textContent?.trim(),
       );
       expect(cortes).toEqual(['Corte: 450,5', 'Corte: 450,5', 'Corte: 450,5', 'Corte: 450,5']);
@@ -2192,9 +2375,12 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_Drawer_ErroDeResolucaoVaiAoCampoDaResolucaoEDestravaReenvio', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -2210,13 +2396,15 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    expect(component.erroDoCampoLote('resolucao')).toBe('Resolução deve ter entre 5 e 40 caracteres.');
-    const redacao = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'REDACAO');
-    expect(component.erroDaArea(redacao, 'peso')).toBeNull();
+    expect(component['erroDoCampoLote']('resolucao')).toBe(
+      'Resolução deve ter entre 5 e 40 caracteres.',
+    );
+    const redacao = areaDo(component['pesoLoteForm'].controls.grupos.controls[0], 'REDACAO');
+    expect(component['erroDaArea'](redacao, 'peso')).toBeNull();
 
     // Corrigir a resolução limpa o erro, e o reenvio volta a sair.
-    component.pesoLoteForm.controls.resolucao.setValue('Res. 900/2026');
-    component.criarResolucao();
+    component['pesoLoteForm'].controls.resolucao.setValue('Res. 900/2026');
+    component['criarResolucao']();
     await propagate();
     const reenvio = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
     expect(reenvio).toHaveLength(4);
@@ -2228,9 +2416,12 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_Drawer_ErroDeGrupoQueNaoSeEditaVaiAoBanner', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -2239,9 +2430,9 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    expect(component.submitError()).toContain('Tecnológica: Grupo fora do domínio.');
-    const redacao = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'REDACAO');
-    expect(component.erroDaArea(redacao, 'peso')).toBeNull();
+    expect(component['submitError']()).toContain('Tecnológica: Grupo fora do domínio.');
+    const redacao = areaDo(component['pesoLoteForm'].controls.grupos.controls[0], 'REDACAO');
+    expect(component['erroDaArea'](redacao, 'peso')).toBeNull();
   });
 
   it('PesosEnemPage_TentarDeNovoAsAreas_MantemOFocoEmPontoEstavel', async () => {
@@ -2278,7 +2469,7 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_EdicaoEmLinha_CalculaErroDeCadaCampoUmaVezPorPassada', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
 
@@ -2314,31 +2505,31 @@ describe('PesosEnemPage', () => {
     // "2," e "2." são estados intermediários com badInput no navegador: acusá-los
     // durante a digitação dispararia o alerta a cada separador digitado.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
 
     const input = inputDaEdicao('corte', 0, 0);
-    const redacao = areaDo(component.editForm()?.controls[0], 'REDACAO');
+    const redacao = areaDo(component['editForm']()?.controls[0], 'REDACAO');
     digitarNumeroInvalido(input);
     fixture.detectChanges();
-    expect(component.erroDaArea(redacao, 'corte')).toBeNull();
+    expect(component['erroDaArea'](redacao, 'corte')).toBeNull();
     expect(input.parentElement?.querySelector('.field__error')).toBeNull();
 
     // Ao sair do campo com o texto ainda inválido, o erro aparece.
     input.dispatchEvent(new FocusEvent('blur'));
     fixture.detectChanges();
-    expect(component.erroDaArea(redacao, 'corte')).toBe('Número inválido.');
+    expect(component['erroDaArea'](redacao, 'corte')).toBe('Número inválido.');
 
     // Voltar a digitar tira o alerta até o operador terminar de novo.
     digitarNumeroInvalido(input);
     fixture.detectChanges();
-    expect(component.erroDaArea(redacao, 'corte')).toBeNull();
+    expect(component['erroDaArea'](redacao, 'corte')).toBeNull();
   });
 
   it('PesosEnemPage_Drawer_EnterComTextoInvalido_AcusaAntesDeEnviar', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
+    component['abrirDrawerCriacao']();
     await propagate();
     fixture.detectChanges();
 
@@ -2349,15 +2540,18 @@ describe('PesosEnemPage', () => {
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     fixture.detectChanges();
 
-    const redacao = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'REDACAO');
-    expect(component.erroDaArea(redacao, 'corte')).toBe('Número inválido.');
+    const redacao = areaDo(component['pesoLoteForm'].controls.grupos.controls[0], 'REDACAO');
+    expect(component['erroDaArea'](redacao, 'corte')).toBe('Número inválido.');
   });
 
   it('PesosEnemPage_Drawer_DuplicidadeSemGrupoCriado_MostraMensagensSemCampoDosOutros', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -2371,19 +2565,19 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    expect(component.erroDoCampoLote('resolucao')).toBe(
+    expect(component['erroDoCampoLote']('resolucao')).toBe(
       'Resolução já cadastrada. Informe um identificador diferente.',
     );
-    expect(component.submitError()).toContain('Humanística I: Grupo fora do domínio.');
-    expect(component.submitError()).toContain('Saúde e Biológicas: Grupo fora do domínio.');
+    expect(component['submitError']()).toContain('Humanística I: Grupo fora do domínio.');
+    expect(component['submitError']()).toContain('Saúde e Biológicas: Grupo fora do domínio.');
   });
 
   it('PesosEnemPage_SalvarComSucesso_DevolveOFocoAoBotaoDeEditar', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
     fixture.detectChanges();
 
@@ -2397,15 +2591,15 @@ describe('PesosEnemPage', () => {
     fixture.detectChanges();
     await propagate();
 
-    expect(component.editandoResolucao()).toBeNull();
+    expect(component['editandoResolucao']()).toBeNull();
     expect(document.activeElement?.id).toBe('pe-editar-res-805-2024');
   });
 
   it('PesosEnemPage_RecusaSemErrorsNaEdicao_VaiAoBannerSemMarcarCampo', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -2425,17 +2619,20 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     const titulo = TestBed.inject(ProblemI18nService).resolve(naoEncontrado).title;
-    expect(component.editErro()).toContain(titulo);
-    const grupo = component.editForm()?.controls[0];
-    expect(component.erroDaArea(areaDo(grupo, 'REDACAO'), 'peso')).toBeNull();
-    expect(component.editForm()?.invalid).toBe(false);
+    expect(component['editErro']()).toContain(titulo);
+    const grupo = component['editForm']()?.controls[0];
+    expect(component['erroDaArea'](areaDo(grupo, 'REDACAO'), 'peso')).toBeNull();
+    expect(component['editForm']()?.invalid).toBe(false);
   });
 
   it('PesosEnemPage_RecusaSemErrorsNaCriacao_VaiAoBannerSemMarcarCampo', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -2451,18 +2648,18 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     const titulo = TestBed.inject(ProblemI18nService).resolve(conflito).title;
-    expect(component.submitError()).toContain(titulo);
-    const redacao = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'REDACAO');
-    expect(component.erroDaArea(redacao, 'peso')).toBeNull();
+    expect(component['submitError']()).toContain(titulo);
+    const redacao = areaDo(component['pesoLoteForm'].controls.grupos.controls[0], 'REDACAO');
+    expect(component['erroDaArea'](redacao, 'peso')).toBeNull();
   });
 
   // --- Anúncio das recusas, digitação no peso e chave depois de recusa -----
 
   it('PesosEnemPage_RecusaSemCampoNaEdicao_BannerEhRegiaoViva', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -2480,33 +2677,33 @@ describe('PesosEnemPage', () => {
 
     const banner = (fixture.nativeElement as HTMLElement).querySelector('#grid-pe-bar .alert');
     expect(banner?.getAttribute('role')).toBe('alert');
-    expect(banner?.textContent).toContain(component.editErro() ?? '<sem mensagem>');
+    expect(banner?.textContent).toContain(component['editErro']() ?? '<sem mensagem>');
   });
 
   it('PesosEnemPage_EdicaoEmLinha_DigitandoSeparadorNoPeso_NaoAcusaNada', async () => {
     // No peso (obrigatório), o texto incompleto vira valor vazio: sem a chave
     // silenciosa, "Campo obrigatório." apareceria a cada separador digitado.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
 
     const input = inputDaEdicao('peso', 0, 4);
-    const matematica = areaDo(component.editForm()?.controls[0], 'MATEMATICA');
+    const matematica = areaDo(component['editForm']()?.controls[0], 'MATEMATICA');
     digitarNumeroInvalido(input);
     fixture.detectChanges();
-    expect(component.erroDaArea(matematica, 'peso')).toBeNull();
+    expect(component['erroDaArea'](matematica, 'peso')).toBeNull();
     expect(input.parentElement?.querySelector('.field__error')).toBeNull();
     expect(matematica.controls.peso.invalid).toBe(true);
 
     input.dispatchEvent(new FocusEvent('blur'));
     fixture.detectChanges();
-    expect(component.erroDaArea(matematica, 'peso')).toBe('Número inválido.');
+    expect(component['erroDaArea'](matematica, 'peso')).toBe('Número inválido.');
   });
 
   it('PesosEnemPage_Drawer_DigitandoSeparadorNoPeso_NaoAcusaNada', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
+    component['abrirDrawerCriacao']();
     await propagate();
     fixture.detectChanges();
 
@@ -2515,23 +2712,23 @@ describe('PesosEnemPage', () => {
       'input[aria-label="Peso de Matemática e suas Tecnologias — Tecnológica"]',
     );
     if (!input) throw new Error('campo de peso ausente');
-    const matematica = areaDo(component.pesoLoteForm.controls.grupos.controls[0], 'MATEMATICA');
+    const matematica = areaDo(component['pesoLoteForm'].controls.grupos.controls[0], 'MATEMATICA');
     digitarNumeroInvalido(input);
     fixture.detectChanges();
-    expect(component.erroDaArea(matematica, 'peso')).toBeNull();
+    expect(component['erroDaArea'](matematica, 'peso')).toBeNull();
 
     input.dispatchEvent(new FocusEvent('blur'));
     fixture.detectChanges();
-    expect(component.erroDaArea(matematica, 'peso')).toBe('Número inválido.');
+    expect(component['erroDaArea'](matematica, 'peso')).toBe('Número inválido.');
   });
 
   it('PesosEnemPage_EdicaoEmLinha_RecusaDefinitivaSemErrors_ReenvioIgualSaiComChaveNova', async () => {
     // A API guarda a recusa 4xx: reenviar o mesmo corpo com a mesma chave devolveria
     // a mesma recusa, mesmo depois de a causa externa ter sido resolvida.
     await carregarUmaPagina([...linhas805]);
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
 
     const requests = [0, 1, 2, 3].map((i) =>
@@ -2547,7 +2744,7 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
     const retry = controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[0]?.id}`);
     expect(retry.request.headers.get('Idempotency-Key')).not.toBe(chaveOriginal);
@@ -2557,9 +2754,12 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_Criacao_RecusaDefinitivaSemErrors_ReenvioIgualSaiComChaveNova', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -2571,7 +2771,7 @@ describe('PesosEnemPage', () => {
     requests.slice(1).forEach((req, i) => req.flush(`novo-id-${i}`, { status: 201, statusText: 'Created' }));
     await propagate();
 
-    component.criarResolucao();
+    component['criarResolucao']();
     await propagate();
     const retry = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
     expect(retry.request.headers.get('Idempotency-Key')).not.toBe(chaveOriginal);
@@ -2583,9 +2783,9 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_Drawer_CampoDePrimeiroNivelComPrefixoEMaiuscula_VaiAoCampoCerto', async () => {
     await carregarUmaPagina([]);
-    component.abrirDrawerCriacao();
-    component.pesoLoteForm.patchValue({ resolucao: 'Res', baseLegalGlobal: 'Base' });
-    component.criarResolucao();
+    component['abrirDrawerCriacao']();
+    component['pesoLoteForm'].patchValue({ resolucao: 'Res', baseLegalGlobal: 'Base' });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -2598,9 +2798,9 @@ describe('PesosEnemPage', () => {
     }
     await propagate();
 
-    expect(component.erroDoCampoLote('resolucao')).toBe('Resolução curta demais.');
-    expect(component.erroDoCampoGrupo(0, 'baseLegal')).toBe('Base legal curta demais.');
-    expect(component.submitError()).not.toContain('curta demais');
+    expect(component['erroDoCampoLote']('resolucao')).toBe('Resolução curta demais.');
+    expect(component['erroDoCampoGrupo'](0, 'baseLegal')).toBe('Base legal curta demais.');
+    expect(component['submitError']()).not.toContain('curta demais');
   });
 
   // --- Grupos de área do ENEM vindos da API ---------------------------------
@@ -2608,7 +2808,7 @@ describe('PesosEnemPage', () => {
   it('PesosEnemPage_Drawer_GruposVemDaApiNaOrdemDelaEGravamPeloCodigo', async () => {
     // Outra lista e outra ordem: o cadastro acompanha a API, não uma lista do cliente.
     await carregarUmaPagina([], AREAS, [grupo('SAUDE_E_BIOLOGICAS'), grupo('TECNOLOGICA')]);
-    component.abrirDrawerCriacao();
+    component['abrirDrawerCriacao']();
     await propagate();
     fixture.detectChanges();
 
@@ -2621,8 +2821,11 @@ describe('PesosEnemPage', () => {
       (fixture.nativeElement as HTMLElement).querySelector('input[aria-label="Peso de Redação — Saúde e Biológicas"]'),
     ).not.toBeNull();
 
-    component.pesoLoteForm.patchValue({ resolucao: 'Res. 900/2026', baseLegalGlobal: 'Res. 900/2026 Anexo I' });
-    component.criarResolucao();
+    component['pesoLoteForm'].patchValue({
+      resolucao: 'Res. 900/2026',
+      baseLegalGlobal: 'Res. 900/2026 Anexo I',
+    });
+    component['criarResolucao']();
     await propagate();
 
     const requests = controller.match((r) => r.url === `${BASE}/api/configuracao/admin/pesos-area-enem`);
@@ -2663,12 +2866,12 @@ describe('PesosEnemPage', () => {
   it('PesosEnemPage_ListaDeGruposVazia_TrataComoFalhaDeCarregamento', async () => {
     await carregarUmaPagina([], AREAS, []);
 
-    expect(component.catalogoGrupos.falhou()).toBe(true);
+    expect(component['catalogoGrupos'].falhou()).toBe(true);
     const raiz = fixture.nativeElement as HTMLElement;
     expect(raiz.querySelector('ui-empty-state')).toBeNull();
     expect(raiz.querySelector('.cfg-list__retry button')).not.toBeNull();
-    component.abrirDrawerCriacao();
-    expect(component.drawerAberto()).toBe(false);
+    component['abrirDrawerCriacao']();
+    expect(component['drawerAberto']()).toBe(false);
   });
 
   it('PesosEnemPage_ErroAoCarregarGrupos_MostraAsLinhasEBloqueiaSoOCadastroAteONovoCarregamento', async () => {
@@ -2697,17 +2900,17 @@ describe('PesosEnemPage', () => {
     );
     expect(cadastrar.length).toBeGreaterThan(0);
     expect(cadastrar.every((botao) => botao.disabled)).toBe(true);
-    component.abrirDrawerCriacao();
-    expect(component.drawerAberto()).toBe(false);
+    component['abrirDrawerCriacao']();
+    expect(component['drawerAberto']()).toBe(false);
 
     // A edição em linha funciona: ela usa as linhas e as áreas, não a lista de grupos.
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
-    expect(component.editForm()?.controls.map((g) => g.controls.grupoCurso.value.codigo)).toEqual(
-      linhas805.map((l) => l.grupoCurso.codigo),
-    );
-    component.cancelarEdicao();
+    expect(
+      component['editForm']()?.controls.map((g) => g.controls.grupoCurso.value.codigo),
+    ).toEqual(linhas805.map((l) => l.grupoCurso.codigo));
+    component['cancelarEdicao']();
     await propagate();
     fixture.detectChanges();
 
@@ -2718,10 +2921,10 @@ describe('PesosEnemPage', () => {
     await propagate();
     fixture.detectChanges();
 
-    expect(component.catalogoGrupos.falhou()).toBe(false);
+    expect(component['catalogoGrupos'].falhou()).toBe(false);
     expect(raiz.querySelectorAll('.cell-label--group-label')).toHaveLength(4);
-    component.abrirDrawerCriacao();
-    expect(component.drawerAberto()).toBe(true);
+    component['abrirDrawerCriacao']();
+    expect(component['drawerAberto']()).toBe(true);
   });
 
   it('PesosEnemPage_TentarDeNovoOsGrupos_NaoDesmontaAEdicaoEmLinhaNemApagaOCorteDigitado', async () => {
@@ -2736,7 +2939,7 @@ describe('PesosEnemPage', () => {
     fixture.detectChanges();
 
     // Edição em linha aberta, com texto inválido num corte e o operador fora do campo.
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
     const corte = inputDaEdicao('corte', 0, 0);
@@ -2765,7 +2968,7 @@ describe('PesosEnemPage', () => {
     // Depois: o erro continua, e Salvar não envia o corte apagado.
     expect(raiz.querySelector(`[id="${corte.id}"]`)).toBe(corte);
     expect(erroDoCorte()).toBe('Número inválido.');
-    component.salvarEdicao();
+    component['salvarEdicao']();
     await propagate();
     controller.expectNone((r) => r.method === 'PUT');
   });
@@ -2788,7 +2991,7 @@ describe('PesosEnemPage', () => {
       Array.from(raiz.querySelectorAll('.cell-label--group-label'), (el) => el.textContent?.trim());
     const naOrdemDaApi = ordemDaApi(linhas805).map((l) => l.grupoCurso.rotulo);
 
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
     // Edição (Res. 805) e leitura (Res. 750) na ordem da API.
@@ -2803,7 +3006,7 @@ describe('PesosEnemPage', () => {
     expect(rotulos()).toEqual([...naOrdemDaApi, ...naOrdemDaApi]);
 
     // Fechada a edição, a ordem dos grupos vale para todas as resoluções.
-    component.cancelarEdicao();
+    component['cancelarEdicao']();
     await propagate();
     fixture.detectChanges();
     const naOrdemDosGrupos = GRUPOS.map((grupo) => grupo.rotulo);
@@ -2830,7 +3033,7 @@ describe('PesosEnemPage', () => {
     expect(erroSpy).toHaveBeenCalledTimes(1);
     expect(erroSpy.mock.calls[0]?.[0]).toMatchObject({ status: 503, traceId: 'test-trace' });
     const titulo = TestBed.inject(ProblemI18nService).resolve(indisponivel).title;
-    expect(component.motivoFalhaAreas()).toBe(titulo);
+    expect(component['motivoFalhaAreas']()).toBe(titulo);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(titulo);
   });
 
@@ -2921,7 +3124,7 @@ describe('PesosEnemPage', () => {
     fixture.detectChanges();
     expect(raiz.querySelectorAll('.cell-label--group-label')).toHaveLength(linhas805.length);
 
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
     expect(raiz.querySelector('#grid-pe-bar')).not.toBeNull();
@@ -2942,7 +3145,7 @@ describe('PesosEnemPage', () => {
     expectListagem().flush([...linhas805]);
     await propagate();
     fixture.detectChanges();
-    component.clicarEditarParametros(RES_805);
+    component['clicarEditarParametros'](RES_805);
     await propagate();
     fixture.detectChanges();
     const raiz = fixture.nativeElement as HTMLElement;
@@ -2964,7 +3167,7 @@ describe('PesosEnemPage', () => {
 
   it('PesosEnemPage_RecargaDosGruposVoltaVazia_SegueComAListaAnteriorECadastroLiberado', async () => {
     await carregarUmaPagina([...linhas805]);
-    expect(component.podeCadastrar()).toBe(true);
+    expect(component['podeCadastrar']()).toBe(true);
 
     TestBed.inject(CatalogoGruposAreaEnem).recarregar();
     expectGrupos().flush([]);
@@ -2973,9 +3176,9 @@ describe('PesosEnemPage', () => {
 
     const raiz = fixture.nativeElement as HTMLElement;
     expect(raiz.textContent).not.toContain('Não foi possível carregar os grupos de área do ENEM');
-    expect(component.podeCadastrar()).toBe(true);
-    component.abrirDrawerCriacao();
-    expect(component.pesoLoteForm.controls.grupos.controls).toHaveLength(GRUPOS.length);
+    expect(component['podeCadastrar']()).toBe(true);
+    component['abrirDrawerCriacao']();
+    expect(component['pesoLoteForm'].controls.grupos.controls).toHaveLength(GRUPOS.length);
   });
 
   it('PesosEnemPage_ListaDeGruposVaziaComLinhas_MostraAsLinhasNaOrdemDaApi', async () => {
@@ -2990,12 +3193,12 @@ describe('PesosEnemPage', () => {
     expect(
       Array.from(raiz.querySelectorAll('.cell-label--group-label'), (el) => el.textContent?.trim()),
     ).toEqual(foraDeOrdem.map((l) => l.grupoCurso.rotulo));
-    expect(component.podeCadastrar()).toBe(false);
+    expect(component['podeCadastrar']()).toBe(false);
   });
 
   it('PesosEnemPage_Textos_AtribuemAResolucaoAoConsepeENaoAoInep', async () => {
     await carregarUmaPagina([...linhas805]);
-    component.abrirDrawerCriacao();
+    component['abrirDrawerCriacao']();
     await propagate();
     fixture.detectChanges();
 
@@ -3028,8 +3231,8 @@ describe('PesosEnemPage', () => {
     fixture.detectChanges();
 
     // A carga não fica presa: o alerta continua, com o botão de tentar de novo habilitado.
-    expect(component.listaAreas.pendente()).toBe(false);
-    expect(component.listaAreas.falhou()).toBe(true);
+    expect(component['listaAreas'].pendente()).toBe(false);
+    expect(component['listaAreas'].falhou()).toBe(true);
     expect(raiz.textContent).toContain('A lista de áreas do ENEM não foi carregada.');
     const botao = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar');
     expect(botao?.getAttribute('aria-disabled')).toBeNull();
@@ -3039,8 +3242,8 @@ describe('PesosEnemPage', () => {
     expectAreas().flush([...AREAS]);
     await propagate();
     fixture.detectChanges();
-    expect(component.listaAreas.falhou()).toBe(false);
-    expect(component.podeCadastrar()).toBe(true);
+    expect(component['listaAreas'].falhou()).toBe(false);
+    expect(component['podeCadastrar']()).toBe(true);
   });
 
   it('PesosEnemPage_AreasFalhamComGruposPendentes_TentarDeNovoRecarregaAsAreas', async () => {
@@ -3065,7 +3268,7 @@ describe('PesosEnemPage', () => {
     expectAreas().flush([...AREAS]);
     grupos.flush([...GRUPOS]);
     await propagate();
-    expect(component.listaAreas.falhou()).toBe(false);
+    expect(component['listaAreas'].falhou()).toBe(false);
   });
 
   it('PesosEnemPage_TentarDeNovoAsAreasComGruposPendentes_FocoNaoEsperaOsGrupos', async () => {
@@ -3187,8 +3390,8 @@ describe('PesosEnemPage', () => {
     expectGrupos().flush([...GRUPOS]);
     areasDeNovo.flush([...AREAS]);
     await propagate();
-    expect(component.catalogoGrupos.falhou()).toBe(false);
-    expect(component.listaAreas.falhou()).toBe(false);
+    expect(component['catalogoGrupos'].falhou()).toBe(false);
+    expect(component['listaAreas'].falhou()).toBe(false);
   });
 
   it('PesosEnemPage_RecargaDosGruposEmSegundoPlano_NaoMexeNoFoco', async () => {
@@ -3210,7 +3413,7 @@ describe('PesosEnemPage', () => {
     fixture.detectChanges();
     await propagate();
 
-    expect(component.catalogoGrupos.falhou()).toBe(false);
+    expect(component['catalogoGrupos'].falhou()).toBe(false);
     expect(document.activeElement).toBe(document.body);
   });
 });

@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -79,7 +80,11 @@ const GRAVADO = {
   titulo: 'Inscrição — Medicina 2027',
   modeloOrigemId: null,
   modeloOrigemCodigo: null,
-  etapas: [etapa('DADOS_BASICOS', 0), etapa('S1', 1), etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE')],
+  etapas: [
+    etapa('DADOS_BASICOS', 0),
+    etapa('S1', 1),
+    etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
+  ],
   fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS'), campo('PCD', 1, 'S1')],
   termos: [],
   grupos: [],
@@ -120,6 +125,7 @@ describe('FormularioStepComponent', () => {
     await TestBed.configureTestingModule({
       imports: [FormularioStepComponent],
       providers: [
+        provideRouter([]),
         ProcessoSeletivoStore,
         CadastroInicialService,
         CatalogosDoCronogramaService,
@@ -160,87 +166,44 @@ describe('FormularioStepComponent', () => {
 
   function declararDesempate(regraCodigo: string): void {
     store.patchSection('desempate', [
-      { regraCodigo, regraVersao: 'v1', etapaRef: '', idadeMinima: '', fato: '', operador: '', valor: '', areas: [] },
+      {
+        regraCodigo,
+        regraVersao: 'v1',
+        etapaRef: '',
+        idadeMinima: '',
+        fato: '',
+        operador: '',
+        valor: '',
+        areas: [],
+      },
     ]);
   }
 
-  /** O processo como a hidratação o deixa: o gravado é o que a pré-visualização pergunta. */
+  /** O processo como a hidratação o deixa: o gravado é o que a simulação abre. */
   function comProcessoLido(): void {
     store.remoteSnapshot.set({ ...PROCESSO, id: PROCESSO_ID, status: 'rascunho' } as never);
     fixture.detectChanges();
   }
 
-  it('a pré-visualização pergunta o processo gravado e não pré-visualiza alteração ainda não gravada', () => {
+  it('a simulação usa o processo gravado e avisa a alteração ainda não gravada', () => {
     comProcessoLido();
-    expect(fixture.componentInstance.previaDesatualizada()).toBe(false);
+    expect(fixture.componentInstance.simulacaoDesatualizada()).toBe(false);
 
-    store.patchObjectSection('formulario', { conteudo: { ...conteudoDoFormulario(GRAVADO), titulo: 'Outro título' } });
+    store.patchObjectSection('formulario', {
+      conteudo: { ...conteudoDoFormulario(GRAVADO), titulo: 'Outro título' },
+    });
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.previaDesatualizada()).toBe(true);
-    expect(fixture.componentInstance.formulariosParaSimular()[0].conteudo.titulo, 'pergunta o gravado, não o rascunho').toBe(GRAVADO.titulo);
+    expect(fixture.componentInstance.simulacaoDesatualizada()).toBe(true);
+    expect(host.textContent).toContain('Há alteração nos formulários ainda não gravada');
   });
 
-  it('pré-visualiza o processo gravado e mostra no campo o impedimento com a mensagem ao candidato', async () => {
+  it('cada formulário gravado tem o link que abre a simulação dele em nova aba', () => {
     comProcessoLido();
-    const pcd = host.querySelector('#form-pre-visualizacao-simulacao-PCD') as HTMLSelectElement;
-    pcd.value = 'true';
-    pcd.dispatchEvent(new Event('change'));
-    const secao = Array.from(host.querySelectorAll('label.checkbox')).find((rotulo) => rotulo.textContent?.includes('Condições especiais'));
-    (secao?.querySelector('input') as HTMLInputElement).click();
-    fixture.detectChanges();
-    (Array.from(host.querySelectorAll('button')).find((botao) => botao.textContent?.trim() === 'Pré-visualizar') as HTMLButtonElement).click();
 
-    const req = controller.expectOne(`${ROTA_PROCESSO}/pre-visualizacao`);
-    expect(req.request.body).toEqual({
-      respostas: { PCD: true },
-      pressupostos: {},
-      etapasConcluidas: [{ finalidade: 'INSCRICAO', etapa: 'S1' }],
-      grupos: null,
-    });
-    req.flush({
-      formularios: [{
-        finalidade: 'INSCRICAO',
-        itens: [{ fatoCodigo: 'PCD', etapaCodigo: 'S1', visivel: 'VERDADEIRO', obrigatorio: 'VERDADEIRO', restricoesVioladas: [], impedido: 'VERDADEIRO', mensagemDoImpedimento: 'Quem já cursa pelo PARFOR não pode se inscrever.' }],
-        grupos: [],
-        termos: [],
-      }],
-      documentos: [],
-    });
-    await proximoPasso();
-    fixture.detectChanges();
-
-    expect(host.querySelector('.pre-visualizacao-formularios__resumo')?.textContent).toContain('A inscrição seria impedida por 1 resposta(s).');
-    expect(host.textContent).toContain('Quem já cursa pelo PARFOR não pode se inscrever.');
-  });
-
-  it('mostra os documentos exigidos na fase do cronograma gravado, com a situação de cada um', async () => {
-    comProcessoLido();
-    (Array.from(host.querySelectorAll('button')).find((botao) => botao.textContent?.trim() === 'Pré-visualizar') as HTMLButtonElement).click();
-
-    controller.expectOne(`${ROTA_PROCESSO}/pre-visualizacao`).flush({
-      formularios: [{ finalidade: 'INSCRICAO', itens: [], grupos: [], termos: [] }],
-      documentos: [
-        {
-          exigenciaId: 'e-rg',
-          tipoDocumentoCodigo: 'RG',
-          tipoDocumentoNome: 'Documento de identidade',
-          obrigatorio: true,
-          faseId: 'F-INSCRICAO',
-          finalidade: 'INSCRICAO',
-          etapaId: null,
-          situacao: 'EXIGIDO',
-          entidadeId: null,
-          alternativas: [],
-        },
-      ],
-    });
-    await proximoPasso();
-    fixture.detectChanges();
-
-    const tabela = Array.from(host.querySelectorAll('table')).find((elemento) => elemento.querySelector('caption')?.textContent?.includes('Documentos da fase'));
-    expect(tabela?.querySelector('caption')?.textContent?.trim()).toBe('Documentos da fase INSCRICAO, no formulário de inscrição, diante das respostas simuladas');
-    expect(tabela?.querySelector('td[data-label="Situação"]')?.textContent?.trim()).toBe('Exigido');
+    const link = host.querySelector('.form-simulacao__links a') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toMatch(/\/processo-seletivo\/.+\/simulacao\/INSCRICAO$/);
+    expect(link.target).toBe('_blank');
   });
 
   it('com uma só fase que coleta inscrição, a escolhe sozinho', () => {
@@ -250,7 +213,10 @@ describe('FormularioStepComponent', () => {
   });
 
   it('antes de o formulário existir no servidor, o combo não oferece o conjunto básico, que a API põe na seção reservada', () => {
-    expect(fixture.componentInstance.abas()[0].fatosIndisponiveis, 'com a seção dos dados básicos, ela é a referência').not.toContain('SEXO');
+    expect(
+      fixture.componentInstance.abas()[0].fatosIndisponiveis,
+      'com a seção dos dados básicos, ela é a referência',
+    ).not.toContain('SEXO');
 
     store.patchObjectSection('formulario', { conteudo: conteudoInicial() });
 
@@ -259,14 +225,18 @@ describe('FormularioStepComponent', () => {
 
   it('o formulário de isenção que já existe barra o passo quando o processo deixa de cobrar taxa', () => {
     store.patchObjectSection('formulario', {
-      outrasFinalidades: [{ finalidade: 'ISENCAO_TAXA', faseCodigo: 'INSCRICAO', conteudo: conteudoInicial() }],
+      outrasFinalidades: [
+        { finalidade: 'ISENCAO_TAXA', faseCodigo: 'INSCRICAO', conteudo: conteudoInicial() },
+      ],
     });
     store.patchObjectSection('pagamento', { cobra: false });
 
     const validacao = fixture.componentInstance.validate();
 
     expect(validacao.valid).toBe(false);
-    expect(validacao.messages?.join(' ')).toContain('O processo não cobra taxa de inscrição, e o formulário de isenção');
+    expect(validacao.messages?.join(' ')).toContain(
+      'O processo não cobra taxa de inscrição, e o formulário de isenção',
+    );
   });
 
   it('o campo que uma exigência documental cita não sai, e o editor diz por quê', () => {
@@ -278,29 +248,44 @@ describe('FormularioStepComponent', () => {
     store.patchSection('documentos', comExigencia({ raizes: [], emTodasAsFases: [] }, exigencia));
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.remocoesTravadas().get('PCD')).toMatch(/^Não pode sair: o documento/);
+    expect(fixture.componentInstance.remocoesTravadas().get('PCD')).toMatch(
+      /^Não pode sair: o documento/,
+    );
     expect(host.textContent).toContain('Não pode sair: o documento');
   });
 
   it('grava só o que mudou, seguindo o plano, e envia os itens sem os dados básicos', async () => {
     const conteudo = store.draft().formulario.conteudo;
     store.patchObjectSection('formulario', {
-      conteudo: { ...conteudo, itens: conteudo.itens?.map((i) => (i.fatoCodigo === 'PCD' ? { ...i, rotulo: 'Você tem deficiência?' } : i)) ?? [] },
+      conteudo: {
+        ...conteudo,
+        itens:
+          conteudo.itens?.map((i) =>
+            i.fatoCodigo === 'PCD' ? { ...i, rotulo: 'Você tem deficiência?' } : i,
+          ) ?? [],
+      },
     });
 
     const gravacao = fixture.componentInstance.persistir();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);
     await proximoPasso();
 
-    const itens = controller.expectOne((r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`);
-    expect(itens.request.body.itens.map((i: { fatoCodigo: string; rotulo: string }) => [i.fatoCodigo, i.rotulo])).toEqual([
-      ['PCD', 'Você tem deficiência?'],
-    ]);
+    const itens = controller.expectOne(
+      (r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`,
+    );
+    expect(
+      itens.request.body.itens.map((i: { fatoCodigo: string; rotulo: string }) => [
+        i.fatoCodigo,
+        i.rotulo,
+      ]),
+    ).toEqual([['PCD', 'Você tem deficiência?']]);
     expect(itens.request.headers.has('Idempotency-Key')).toBe(true);
     itens.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
 
-    controller.expectOne(`${ROTA_PROCESSO}/referencia-temporal-fatos`).flush(null, { status: 204, statusText: 'No Content' });
+    controller
+      .expectOne(`${ROTA_PROCESSO}/referencia-temporal-fatos`)
+      .flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);
 
@@ -312,30 +297,44 @@ describe('FormularioStepComponent', () => {
   it('a recusa de um item vai para ele, pelo índice da lista enviada sem os dados básicos', async () => {
     const conteudo = store.draft().formulario.conteudo;
     store.patchObjectSection('formulario', {
-      conteudo: { ...conteudo, itens: conteudo.itens?.map((i) => (i.fatoCodigo === 'PCD' ? { ...i, rotulo: 'Outro' } : i)) ?? [] },
+      conteudo: {
+        ...conteudo,
+        itens:
+          conteudo.itens?.map((i) => (i.fatoCodigo === 'PCD' ? { ...i, rotulo: 'Outro' } : i)) ??
+          [],
+      },
     });
 
     const gravacao = fixture.componentInstance.persistir();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);
     await proximoPasso();
-    controller
-      .expectOne(`${ROTA_INSCRICAO}/itens`)
-      .flush(
-        { type: 'about:blank', title: 'Recusado.', status: 422, code: 'uniplus.selecao.formulario.item_invalido', traceId: '00000000000000000000000000000003', errors: [{ field: 'itens[0].rotulo', code: 'x', message: 'Rótulo recusado.' }] },
-        { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
-      );
+    controller.expectOne(`${ROTA_INSCRICAO}/itens`).flush(
+      {
+        type: 'about:blank',
+        title: 'Recusado.',
+        status: 422,
+        code: 'uniplus.selecao.formulario.item_invalido',
+        traceId: '00000000000000000000000000000003',
+        errors: [{ field: 'itens[0].rotulo', code: 'x', message: 'Rótulo recusado.' }],
+      },
+      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
+    );
     await proximoPasso();
     // Depois da recusa, relê para comparar a próxima tentativa com o que ficou gravado.
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO);
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    expect(fixture.componentInstance.recusas().get('INSCRICAO')?.porItem.get('PCD')).toEqual(['Rótulo recusado.']);
+    expect(fixture.componentInstance.recusas().get('INSCRICAO')?.porItem.get('PCD')).toEqual([
+      'Rótulo recusado.',
+    ]);
   });
 
   it('avisa do desempate por idoso sem apuração da idade e leva ao passo Desempate', () => {
     declararDesempate('DESEMPATE-IDOSO');
-    store.patchObjectSection('formulario', { referenciaTemporal: { tipo: '', data: '', faseCodigo: '' } });
+    store.patchObjectSection('formulario', {
+      referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
+    });
     fixture.detectChanges();
 
     expect(host.querySelector('#form-idoso-sem-apuracao')).not.toBeNull();
@@ -352,20 +351,44 @@ describe('FormularioStepComponent', () => {
       faseCanonicaId: 'fc-habilitacao',
       codigo: 'HABILITACAO',
       ordem: 1,
-      congelados: { donoTipico: 'CEPS', origemData: 'PROPRIA', agrupaEtapas: false, coletaInscricao: false, permiteComplementacao: false, coletaSolicitacaoIsencao: false, bancas: [] },
+      congelados: {
+        donoTipico: 'CEPS',
+        origemData: 'PROPRIA',
+        agrupaEtapas: false,
+        coletaInscricao: false,
+        permiteComplementacao: false,
+        coletaSolicitacaoIsencao: false,
+        bancas: [],
+      },
     };
-    const HABILITACAO_GRAVADA = { ...GRAVADO, finalidade: 'HABILITACAO', faseId: 'F-HABILITACAO', etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')], fatosColetados: [] } as unknown as FormularioDto;
+    const HABILITACAO_GRAVADA = {
+      ...GRAVADO,
+      finalidade: 'HABILITACAO',
+      faseId: 'F-HABILITACAO',
+      etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')],
+      fatosColetados: [],
+    } as unknown as FormularioDto;
 
-    const abas = (): HTMLButtonElement[] => Array.from(host.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const abas = (): HTMLButtonElement[] =>
+      Array.from(host.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
     const teclar = (aba: HTMLButtonElement, key: string): void => {
       aba.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
       fixture.detectChanges();
     };
 
     beforeEach(() => {
-      store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE_INSCRICAO, FASE_HABILITACAO] });
+      store.patchSection('cronograma', {
+        ...store.draft().cronograma,
+        fases: [FASE_INSCRICAO, FASE_HABILITACAO],
+      });
       store.patchObjectSection('formulario', {
-        outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: '', conteudo: conteudoDoFormulario(HABILITACAO_GRAVADA) }],
+        outrasFinalidades: [
+          {
+            finalidade: 'HABILITACAO',
+            faseCodigo: '',
+            conteudo: conteudoDoFormulario(HABILITACAO_GRAVADA),
+          },
+        ],
       });
       fixture.detectChanges();
     });
@@ -373,7 +396,11 @@ describe('FormularioStepComponent', () => {
     it('só a aba ativa entra no Tab, e setas, Home e End trocam de aba levando o foco', () => {
       const [inscricao, habilitacao] = abas();
       expect([inscricao.tabIndex, habilitacao.tabIndex]).toEqual([0, -1]);
-      expect(host.querySelector(`#${inscricao.getAttribute('aria-controls')}`)?.getAttribute('aria-labelledby')).toBe(inscricao.id);
+      expect(
+        host
+          .querySelector(`#${inscricao.getAttribute('aria-controls')}`)
+          ?.getAttribute('aria-labelledby'),
+      ).toBe(inscricao.id);
 
       teclar(inscricao, 'ArrowRight');
       expect(abas().map((aba) => aba.getAttribute('aria-selected'))).toEqual(['false', 'true']);
@@ -393,7 +420,9 @@ describe('FormularioStepComponent', () => {
     });
 
     it('os fatos da inscrição são citáveis na habilitação, e o fato que ela cita não sai da inscrição', () => {
-      const habilitacao = fixture.componentInstance.abas().find((aba) => aba.finalidade === 'HABILITACAO');
+      const habilitacao = fixture.componentInstance
+        .abas()
+        .find((aba) => aba.finalidade === 'HABILITACAO');
       expect(habilitacao?.fatosDaInscricao).toContain('PCD');
 
       const conteudo = conteudoDoFormulario(HABILITACAO_GRAVADA);
@@ -402,47 +431,85 @@ describe('FormularioStepComponent', () => {
           {
             finalidade: 'HABILITACAO',
             faseCodigo: '',
-            conteudo: { ...conteudo, termos: [{ codigo: 'T', ordem: 0, termoId: 't', versaoId: 'v', exibicao: [[{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }]], obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null }] },
+            conteudo: {
+              ...conteudo,
+              termos: [
+                {
+                  codigo: 'T',
+                  ordem: 0,
+                  termoId: 't',
+                  versaoId: 'v',
+                  exibicao: [[{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }]],
+                  obrigatoriedade: 'SEMPRE',
+                  predicadoObrigatoriedade: null,
+                },
+              ],
+            },
           },
         ],
       });
 
-      expect(fixture.componentInstance.remocoesTravadas().get('PCD')).toMatch(/o formulário de habilitação depende deste dado/);
+      expect(fixture.componentInstance.remocoesTravadas().get('PCD')).toMatch(
+        /o formulário de habilitação depende deste dado/,
+      );
     });
 
     it('a recusa da remoção aparece em texto na aba, que continua, e a remoção trava o passo enquanto está no ar', async () => {
       fixture.componentInstance.pedirRemocao('HABILITACAO');
       const remocao = fixture.componentInstance.confirmarRemocao();
-      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO, formularios: [GRAVADO, HABILITACAO_GRAVADA] });
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush({ ...PROCESSO, formularios: [GRAVADO, HABILITACAO_GRAVADA] });
       await proximoPasso();
-      expect(store.operacaoEmAndamento(), 'um PUT da aba depois do DELETE recriaria o formulário').toBe(true);
+      expect(
+        store.operacaoEmAndamento(),
+        'um PUT da aba depois do DELETE recriaria o formulário',
+      ).toBe(true);
       controller
         .expectOne((r) => r.method === 'DELETE' && r.url === ROTA_HABILITACAO)
         .flush(
-          { type: 'about:blank', title: 'A remoção foi recusada.', status: 422, code: 'uniplus.selecao.formulario.remocao_so_em_rascunho', traceId: '00000000000000000000000000000004' },
+          {
+            type: 'about:blank',
+            title: 'A remoção foi recusada.',
+            status: 422,
+            code: 'uniplus.selecao.formulario.remocao_so_em_rascunho',
+            traceId: '00000000000000000000000000000004',
+          },
           { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
         );
       await remocao;
       fixture.detectChanges();
 
-      expect(host.querySelector('#form-habilitacao-recusa-remocao')?.textContent).toContain('A remoção foi recusada.');
+      expect(host.querySelector('#form-habilitacao-recusa-remocao')?.textContent).toContain(
+        'A remoção foi recusada.',
+      );
       expect(abas()[1].textContent).toContain('(recusado)');
-      expect(store.draft().formulario.outrasFinalidades.map((outra) => outra.finalidade)).toEqual(['HABILITACAO']);      expect(store.operacaoEmAndamento()).toBe(false);
+      expect(store.draft().formulario.outrasFinalidades.map((outra) => outra.finalidade)).toEqual([
+        'HABILITACAO',
+      ]);
+      expect(store.operacaoEmAndamento()).toBe(false);
     });
 
     it('removido o penúltimo formulário, sem abas, o foco vai ao título do painel que sobra', async () => {
       fixture.componentInstance.pedirRemocao('HABILITACAO');
       const remocao = fixture.componentInstance.confirmarRemocao();
-      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO, id: PROCESSO_ID, formularios: [GRAVADO, HABILITACAO_GRAVADA] });
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush({ ...PROCESSO, id: PROCESSO_ID, formularios: [GRAVADO, HABILITACAO_GRAVADA] });
       await proximoPasso();
-      controller.expectOne((r) => r.method === 'DELETE' && r.url === ROTA_HABILITACAO).flush(null, { status: 204, statusText: 'No Content' });
+      controller
+        .expectOne((r) => r.method === 'DELETE' && r.url === ROTA_HABILITACAO)
+        .flush(null, { status: 204, statusText: 'No Content' });
       await remocao;
       fixture.detectChanges();
       await fixture.whenStable();
 
       expect(abas()).toEqual([]);
       expect(document.activeElement?.id).toBe('form-inscricao-fase-titulo');
-      expect(fixture.componentInstance.previaDesatualizada(), 'o servidor já está como o rascunho').toBe(false);
+      expect(
+        fixture.componentInstance.simulacaoDesatualizada(),
+        'o servidor já está como o rascunho',
+      ).toBe(false);
     });
 
     it('acrescentar uma finalidade abre a aba dela, leva o foco até ela e anuncia', async () => {
@@ -456,7 +523,9 @@ describe('FormularioStepComponent', () => {
 
       expect(fixture.componentInstance.abaAtiva()).toBe('HABILITACAO');
       expect(document.activeElement?.id).toBe('form-aba-habilitacao');
-      expect(host.querySelector('#form-anuncio')?.textContent).toContain('Formulário de habilitação acrescentado');
+      expect(host.querySelector('#form-anuncio')?.textContent).toContain(
+        'Formulário de habilitação acrescentado',
+      );
     });
   });
 
@@ -474,7 +543,10 @@ describe('FormularioStepComponent', () => {
       ativo: true,
       conteudo: {},
     });
-    const MODELOS = [modelo('insc', 'Inscrição de Medicina', 'INSCRICAO'), modelo('hab', 'Habilitação padrão', 'HABILITACAO')];
+    const MODELOS = [
+      modelo('insc', 'Inscrição de Medicina', 'INSCRICAO'),
+      modelo('hab', 'Habilitação padrão', 'HABILITACAO'),
+    ];
     const relato = (finalidade: string) => ({
       finalidade,
       fatosTrazidosParaAInscricao: [],
@@ -484,7 +556,12 @@ describe('FormularioStepComponent', () => {
       derivacoesMantidas: [],
     });
     /** A inscrição que a cópia deixa no servidor: sem PCD, que o modelo não traz. */
-    const INSCRICAO_COPIADA = { ...GRAVADO, modeloOrigemId: 'insc', modeloOrigemCodigo: 'INSC', fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS')] } as unknown as FormularioDto;
+    const INSCRICAO_COPIADA = {
+      ...GRAVADO,
+      modeloOrigemId: 'insc',
+      modeloOrigemCodigo: 'INSC',
+      fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS')],
+    } as unknown as FormularioDto;
     const PROCESSO_COM_DERIVACOES = { ...PROCESSO, regrasDerivacao: [] };
 
     beforeEach(() => {
@@ -509,9 +586,13 @@ describe('FormularioStepComponent', () => {
       listagem.flush(MODELOS);
       fixture.detectChanges();
 
-      const opcoes = Array.from(host.querySelectorAll<HTMLOptionElement>('#form-inscricao-modelo option')).map((opcao) => opcao.value);
+      const opcoes = Array.from(
+        host.querySelectorAll<HTMLOptionElement>('#form-inscricao-modelo option'),
+      ).map((opcao) => opcao.value);
       expect(opcoes).toEqual(['', 'insc']);
-      expect(host.querySelector('#form-inscricao-modelo')?.getAttribute('aria-describedby')).toBe('form-inscricao-modelo-ajuda');
+      expect(host.querySelector('#form-inscricao-modelo')?.getAttribute('aria-describedby')).toBe(
+        'form-inscricao-modelo-ajuda',
+      );
     });
 
     it('antes de o processo existir, aplicar fica indisponível e a ajuda diz por quê', () => {
@@ -519,8 +600,12 @@ describe('FormularioStepComponent', () => {
       store.processoSeletivoId.set(null);
       fixture.detectChanges();
 
-      expect((host.querySelector('#form-inscricao-aplicar-modelo') as HTMLButtonElement).disabled).toBe(true);
-      expect(host.querySelector('#form-inscricao-modelo-ajuda')?.textContent).toContain('depois que o processo for criado');
+      expect(
+        (host.querySelector('#form-inscricao-aplicar-modelo') as HTMLButtonElement).disabled,
+      ).toBe(true);
+      expect(host.querySelector('#form-inscricao-modelo-ajuda')?.textContent).toContain(
+        'depois que o processo for criado',
+      );
     });
 
     it('pede confirmação antes de substituir, dizendo que as edições não gravadas saem', () => {
@@ -531,7 +616,9 @@ describe('FormularioStepComponent', () => {
 
       // Nenhuma requisição saiu: o afterEach confere.
       expect(fixture.componentInstance.aplicacaoPendente()?.modelo.id).toBe('insc');
-      expect(fixture.componentInstance.avisoDaAplicacao()).toContain('inclusive as edições desta aba ainda não gravadas');
+      expect(fixture.componentInstance.avisoDaAplicacao()).toContain(
+        'inclusive as edições desta aba ainda não gravadas',
+      );
       fixture.componentInstance.cancelarAplicacao();
       expect(fixture.componentInstance.aplicacaoPendente()).toBeNull();
     });
@@ -545,46 +632,94 @@ describe('FormularioStepComponent', () => {
       store.patchSection('documentos', comExigencia({ raizes: [], emTodasAsFases: [] }, exigencia));
 
       const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
-      expect(store.operacaoEmAndamento(), 'um PUT da aba durante a aplicação gravaria por cima da cópia').toBe(true);
+      expect(
+        store.operacaoEmAndamento(),
+        'um PUT da aba durante a aplicação gravaria por cima da cópia',
+      ).toBe(true);
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
       await proximoPasso();
       const post = controller.expectOne((r) => r.method === 'POST' && r.url === ROTA_APLICACAO);
       expect(post.request.body).toEqual({ modeloId: 'insc' });
-      expect(post.request.headers.get('Accept')).toBe('application/vnd.uniplus.aplicacao-de-modelo-formulario.v1+json');
+      expect(post.request.headers.get('Accept')).toBe(
+        'application/vnd.uniplus.aplicacao-de-modelo-formulario.v1+json',
+      );
       expect(post.request.headers.has('Idempotency-Key')).toBe(true);
       post.flush(relato('INSCRICAO'));
       await proximoPasso();
-      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_DERIVACOES, formularios: [INSCRICAO_COPIADA] });
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush({ ...PROCESSO_COM_DERIVACOES, formularios: [INSCRICAO_COPIADA] });
       await aplicacao;
       fixture.detectChanges();
 
       expect(store.operacaoEmAndamento()).toBe(false);
-      expect(store.draft().formulario.conteudo.itens?.map((i) => i.fatoCodigo)).toEqual(['NOME', 'PCD']);
-      expect(host.querySelector('#form-inscricao-resumo-modelo')?.textContent).toContain('Acrescentados porque o processo os pressupõe');
-      expect(host.querySelector('#form-inscricao-resumo-modelo')?.textContent).toContain('Pessoa com deficiência');
+      expect(store.draft().formulario.conteudo.itens?.map((i) => i.fatoCodigo)).toEqual([
+        'NOME',
+        'PCD',
+      ]);
+      expect(host.querySelector('#form-inscricao-resumo-modelo')?.textContent).toContain(
+        'Acrescentados porque o processo os pressupõe',
+      );
+      expect(host.querySelector('#form-inscricao-resumo-modelo')?.textContent).toContain(
+        'Pessoa com deficiência',
+      );
       expect(host.querySelector('#form-inscricao-origem')?.textContent).toContain('INSC');
     });
 
     it('a finalidade que nasce da cópia recebe em seguida o cabeçalho com a fase da aba', async () => {
-      const FASE_HABILITACAO: FaseDoCronograma = { ...FASE_INSCRICAO, faseCanonicaId: 'fc-habilitacao', codigo: 'HABILITACAO', ordem: 1, congelados: { ...FASE_INSCRICAO.congelados, coletaInscricao: false } };
-      store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE_INSCRICAO, FASE_HABILITACAO] });
-      store.patchObjectSection('formulario', { outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: '', conteudo: conteudoInicial() }] });
-      const fases = [...PROCESSO.cronogramaFases, { id: 'F-HABILITACAO', codigo: 'HABILITACAO', coletaInscricao: false }];
-      const copiada = { ...GRAVADO, finalidade: 'HABILITACAO', faseId: null, modeloOrigemId: 'hab', modeloOrigemCodigo: 'HAB', etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')], fatosColetados: [] };
+      const FASE_HABILITACAO: FaseDoCronograma = {
+        ...FASE_INSCRICAO,
+        faseCanonicaId: 'fc-habilitacao',
+        codigo: 'HABILITACAO',
+        ordem: 1,
+        congelados: { ...FASE_INSCRICAO.congelados, coletaInscricao: false },
+      };
+      store.patchSection('cronograma', {
+        ...store.draft().cronograma,
+        fases: [FASE_INSCRICAO, FASE_HABILITACAO],
+      });
+      store.patchObjectSection('formulario', {
+        outrasFinalidades: [
+          { finalidade: 'HABILITACAO', faseCodigo: '', conteudo: conteudoInicial() },
+        ],
+      });
+      const fases = [
+        ...PROCESSO.cronogramaFases,
+        { id: 'F-HABILITACAO', codigo: 'HABILITACAO', coletaInscricao: false },
+      ];
+      const copiada = {
+        ...GRAVADO,
+        finalidade: 'HABILITACAO',
+        faseId: null,
+        modeloOrigemId: 'hab',
+        modeloOrigemCodigo: 'HAB',
+        etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')],
+        fatosColetados: [],
+      };
 
       const aplicacao = escolherEAplicar('HABILITACAO', 'hab');
-      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_DERIVACOES, cronogramaFases: fases });
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush({ ...PROCESSO_COM_DERIVACOES, cronogramaFases: fases });
       await proximoPasso();
       controller.expectOne(ROTA_APLICACAO).flush(relato('HABILITACAO'));
       await proximoPasso();
-      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_DERIVACOES, cronogramaFases: fases, formularios: [GRAVADO, copiada] });
+      controller.expectOne(ROTA_PROCESSO).flush({
+        ...PROCESSO_COM_DERIVACOES,
+        cronogramaFases: fases,
+        formularios: [GRAVADO, copiada],
+      });
       await proximoPasso();
-      const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_HABILITACAO);
+      const cabecalho = controller.expectOne(
+        (r) => r.method === 'PUT' && r.url === ROTA_HABILITACAO,
+      );
       expect(cabecalho.request.body.faseId).toBe('F-HABILITACAO');
       cabecalho.flush(null, { status: 204, statusText: 'No Content' });
       await aplicacao;
 
-      const habilitacao = store.draft().formulario.outrasFinalidades.find((outra) => outra.finalidade === 'HABILITACAO');
+      const habilitacao = store
+        .draft()
+        .formulario.outrasFinalidades.find((outra) => outra.finalidade === 'HABILITACAO');
       expect(habilitacao?.faseCodigo).toBe('HABILITACAO');
       expect(habilitacao?.modeloOrigemCodigo).toBe('HAB');
     });
@@ -602,16 +737,27 @@ describe('FormularioStepComponent', () => {
           status: 422,
           code: 'uniplus.selecao.validacao',
           traceId: '00000000000000000000000000000005',
-          errors: [{ field: 'modelo.pressupostos[0]', code: 'AplicacaoDeModelo.PressupostoAusente', message: "O modelo cita 'RENDA', que a inscrição do processo não coleta." }],
+          errors: [
+            {
+              field: 'modelo.pressupostos[0]',
+              code: 'AplicacaoDeModelo.PressupostoAusente',
+              message: "O modelo cita 'RENDA', que a inscrição do processo não coleta.",
+            },
+          ],
         },
         { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
       );
       await aplicacao;
       fixture.detectChanges();
 
-      expect(host.querySelector('#form-inscricao-recusa-modelo')?.textContent).toContain("O modelo cita 'RENDA', que a inscrição do processo não coleta.");
+      expect(host.querySelector('#form-inscricao-recusa-modelo')?.textContent).toContain(
+        "O modelo cita 'RENDA', que a inscrição do processo não coleta.",
+      );
       expect(store.draft().formulario.conteudo).toBe(antes);
-      expect(store.aplicacoesDeModeloEmAberto().size, 'a recusa é definitiva: nada foi copiado').toBe(0);
+      expect(
+        store.aplicacoesDeModeloEmAberto().size,
+        'a recusa é definitiva: nada foi copiado',
+      ).toBe(0);
     });
 
     it('sem saber se a cópia aconteceu, o passo não grava o rascunho antigo por cima dela', async () => {
@@ -619,37 +765,68 @@ describe('FormularioStepComponent', () => {
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
       await proximoPasso();
       controller.expectOne(ROTA_APLICACAO).flush(
-        { type: 'about:blank', title: 'Serviço indisponível.', status: 503, traceId: '00000000000000000000000000000006' },
+        {
+          type: 'about:blank',
+          title: 'Serviço indisponível.',
+          status: 503,
+          traceId: '00000000000000000000000000000006',
+        },
         { status: 503, statusText: 'Service Unavailable', headers: PROBLEM_JSON },
       );
       await aplicacao;
 
       const validacao = fixture.componentInstance.validate();
       expect(validacao.valid).toBe(false);
-      expect(validacao.messages?.join(' ')).toContain('Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado ao formulário de inscrição');
+      expect(validacao.messages?.join(' ')).toContain(
+        'Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado ao formulário de inscrição',
+      );
       fixture.detectChanges();
       const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
-      expect(naAba, 'a aba não desmente a trava').toContain('Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado');
+      expect(naAba, 'a aba não desmente a trava').toContain(
+        'Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado',
+      );
       expect(naAba).not.toContain('não foi aplicado');
     });
 
     it('sem saber se a cópia aconteceu, só o mesmo modelo pode ser aplicado de novo', async () => {
-      fixture.componentInstance.modelos.set(new Map([['INSCRICAO', [{ id: 'insc', nome: 'Inscrição de Medicina' }, { id: 'outro', nome: 'Outra inscrição' }]], ['HABILITACAO', [{ id: 'hab', nome: 'Habilitação padrão' }]]]) as never);
+      fixture.componentInstance.modelos.set(
+        new Map([
+          [
+            'INSCRICAO',
+            [
+              { id: 'insc', nome: 'Inscrição de Medicina' },
+              { id: 'outro', nome: 'Outra inscrição' },
+            ],
+          ],
+          ['HABILITACAO', [{ id: 'hab', nome: 'Habilitação padrão' }]],
+        ]) as never,
+      );
       const aplicacao = escolherEAplicar('INSCRICAO', 'insc');
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
       await proximoPasso();
       controller.expectOne(ROTA_APLICACAO).flush(
-        { type: 'about:blank', title: 'Serviço indisponível.', status: 503, traceId: '00000000000000000000000000000007' },
+        {
+          type: 'about:blank',
+          title: 'Serviço indisponível.',
+          status: 503,
+          traceId: '00000000000000000000000000000007',
+        },
         { status: 503, statusText: 'Service Unavailable', headers: PROBLEM_JSON },
       );
       await aplicacao;
 
       fixture.componentInstance.escolherModelo('INSCRICAO', 'outro');
       fixture.componentInstance.pedirAplicacao('INSCRICAO');
-      expect(fixture.componentInstance.aplicacaoPendente(), 'outro modelo trocaria a chave, e a primeira cópia ainda pode chegar').toBeNull();
+      expect(
+        fixture.componentInstance.aplicacaoPendente(),
+        'outro modelo trocaria a chave, e a primeira cópia ainda pode chegar',
+      ).toBeNull();
       fixture.componentInstance.escolherModelo('HABILITACAO', 'hab');
       fixture.componentInstance.pedirAplicacao('HABILITACAO');
-      expect(fixture.componentInstance.aplicacaoPendente(), 'nem em outra aba: as cópias mexem no que é do processo inteiro').toBeNull();
+      expect(
+        fixture.componentInstance.aplicacaoPendente(),
+        'nem em outra aba: as cópias mexem no que é do processo inteiro',
+      ).toBeNull();
 
       fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
       fixture.componentInstance.pedirAplicacao('INSCRICAO');
@@ -660,14 +837,24 @@ describe('FormularioStepComponent', () => {
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
       await proximoPasso();
       controller.expectOne(ROTA_APLICACAO).flush(
-        { type: 'about:blank', title: 'O modelo não serve a este processo.', status: 422, code: 'uniplus.selecao.validacao', traceId: '00000000000000000000000000000009' },
+        {
+          type: 'about:blank',
+          title: 'O modelo não serve a este processo.',
+          status: 422,
+          code: 'uniplus.selecao.validacao',
+          traceId: '00000000000000000000000000000009',
+        },
         { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_JSON },
       );
       await nova;
       fixture.detectChanges();
       const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
-      expect(naAba, 'o operador sabe o que corrigir').toContain('A nova tentativa foi recusada: O modelo não serve a este processo.');
-      expect(naAba).toContain('Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado');
+      expect(naAba, 'o operador sabe o que corrigir').toContain(
+        'A nova tentativa foi recusada: O modelo não serve a este processo.',
+      );
+      expect(naAba).toContain(
+        'Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado',
+      );
       // A cópia em aberto se resolve: a outra aba deixa de ser recusada por causa dela.
       fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
       fixture.componentInstance.pedirAplicacao('INSCRICAO');
@@ -676,9 +863,14 @@ describe('FormularioStepComponent', () => {
       await proximoPasso();
       controller.expectOne(ROTA_APLICACAO).flush(relato('INSCRICAO'));
       await proximoPasso();
-      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_DERIVACOES, formularios: [INSCRICAO_COPIADA] });
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush({ ...PROCESSO_COM_DERIVACOES, formularios: [INSCRICAO_COPIADA] });
       await resolvida;
-      expect(fixture.componentInstance.recusasDaAplicacao().has('HABILITACAO'), 'a recusa da habilitação era só o bloqueio').toBe(false);
+      expect(
+        fixture.componentInstance.recusasDaAplicacao().has('HABILITACAO'),
+        'a recusa da habilitação era só o bloqueio',
+      ).toBe(false);
     });
 
     it('com a cópia confirmada e a releitura falhando, a aba diz que o modelo foi aplicado e pede recarregar', async () => {
@@ -688,14 +880,21 @@ describe('FormularioStepComponent', () => {
       controller.expectOne(ROTA_APLICACAO).flush(relato('INSCRICAO'));
       await proximoPasso();
       controller.expectOne(ROTA_PROCESSO).flush(
-        { type: 'about:blank', title: 'Serviço indisponível.', status: 503, traceId: '00000000000000000000000000000008' },
+        {
+          type: 'about:blank',
+          title: 'Serviço indisponível.',
+          status: 503,
+          traceId: '00000000000000000000000000000008',
+        },
         { status: 503, statusText: 'Service Unavailable', headers: PROBLEM_JSON },
       );
       await aplicacao;
       fixture.detectChanges();
 
       const naAba = host.querySelector('#form-inscricao-recusa-modelo')?.textContent ?? '';
-      expect(naAba).toContain('foi aplicado ao formulário de inscrição, mas não foi possível reler o processo. Recarregue o processo');
+      expect(naAba).toContain(
+        'foi aplicado ao formulário de inscrição, mas não foi possível reler o processo. Recarregue o processo',
+      );
       expect(naAba).not.toContain('Não foi possível confirmar');
       expect(fixture.componentInstance.validate().valid).toBe(false);
     });
@@ -716,10 +915,17 @@ describe('FormularioStepComponent', () => {
 
       store.patchObjectSection('tipoProcesso', { codigo: 'PSIQ' });
       fixture.detectChanges();
-      controller.expectOne((r) => r.url === ROTA_MODELOS && r.params.get('tipoProcesso') === 'PSIQ').flush([modelo('psiq', 'Inscrição do PSIQ', 'INSCRICAO')]);
+      controller
+        .expectOne((r) => r.url === ROTA_MODELOS && r.params.get('tipoProcesso') === 'PSIQ')
+        .flush([modelo('psiq', 'Inscrição do PSIQ', 'INSCRICAO')]);
       doTipoAnterior.flush(MODELOS);
 
-      expect(fixture.componentInstance.modelos().get('INSCRICAO')?.map((m) => m.id)).toEqual(['psiq']);
+      expect(
+        fixture.componentInstance
+          .modelos()
+          .get('INSCRICAO')
+          ?.map((m) => m.id),
+      ).toEqual(['psiq']);
     });
   });
 
@@ -731,7 +937,10 @@ describe('FormularioStepComponent', () => {
 
     it('não oferece partir de um modelo, e lê de que modelo o formulário partiu', () => {
       // Pelo sinal, porque a consulta não aceita edição: com o tipo conhecido, a listagem não sai.
-      store.draft.update((draft) => ({ ...draft, tipoProcesso: { ...draft.tipoProcesso, codigo: 'MEDICINA' } }));
+      store.draft.update((draft) => ({
+        ...draft,
+        tipoProcesso: { ...draft.tipoProcesso, codigo: 'MEDICINA' },
+      }));
       store.projetarSecao('formulario', { modeloOrigemCodigo: 'INSC' });
       fixture.detectChanges();
 
@@ -741,7 +950,9 @@ describe('FormularioStepComponent', () => {
 
     it('lê o formulário como texto, sem controle nem ação de edição', () => {
       // Com a inscrição só, não há aba: nada entre o que navegar.
-      expect(host.querySelector('input, select, textarea, button, ui-editor-de-formulario')).toBeNull();
+      expect(
+        host.querySelector('input, select, textarea, button, ui-editor-de-formulario'),
+      ).toBeNull();
       expect(valor('Título do formulário')).toEqual(['Inscrição — Medicina 2027']);
       expect(valor('Fase da inscrição')).toEqual(['INSCRICAO']);
       expect(host.textContent).toContain('Condições especiais');
@@ -756,7 +967,9 @@ describe('FormularioStepComponent', () => {
     it('não mostra os avisos de idade: o processo publicado não admite a correção', () => {
       store.remoteSnapshot.set({ status: 'rascunho' } as never);
       declararDesempate('DESEMPATE-IDOSO');
-      store.patchObjectSection('formulario', { referenciaTemporal: { tipo: '', data: '', faseCodigo: '' } });
+      store.patchObjectSection('formulario', {
+        referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
+      });
       expect(fixture.componentInstance.desempateIdosoSemApuracao()).toBe(true);
 
       store.remoteSnapshot.set({ status: 'publicado' } as never);

@@ -6,24 +6,10 @@ import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type ModeloFormularioView = components['schemas']['ModeloFormularioView'];
+export type FormularioRenderizavel = components['schemas']['FormularioRenderizavel'];
 export type CriarModeloFormularioCommand = components['schemas']['CriarModeloFormularioCommand'];
 export type EdicaoDoModeloInput = components['schemas']['EdicaoDoModeloInput'];
 export type ConteudoDoModeloInput = components['schemas']['ConteudoDoModeloInput'];
-export type PreVisualizacaoDoModeloDto = components['schemas']['PreVisualizacaoDoModeloDto'];
-export type ItemPreVisualizadoDto = components['schemas']['ItemPreVisualizadoDto'];
-export type TermoPreVisualizadoDto = components['schemas']['TermoPreVisualizadoDto'];
-
-/**
- * As respostas simuladas, por código de fato, com o valor em JSON (`true`, `18`, `"PRETA"`,
- * `["A", "B"]`). O schema gerado tipa o dicionário de `JsonElement` como `Record<string, never>`,
- * que não aceita valor nenhum; a forma aqui é a que a API recebe.
- */
-export interface PreVisualizacaoDoModeloInput {
-  readonly respostas: Readonly<Record<string, unknown>> | null;
-  readonly etapasConcluidas: readonly string[] | null;
-  readonly pressupostos: Readonly<Record<string, unknown>> | null;
-}
-
 /**
  * Os filtros da listagem: o tipo de processo traz os modelos que servem a ele, inclusive os que
  * servem a todos os tipos; a finalidade é o token canônico.
@@ -53,7 +39,9 @@ export class ModelosFormularioApi {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
   /** GET `/api/configuracao/admin/modelos-formulario` — a primeira página da listagem filtrada. */
-  listar(query: ModelosFormularioQuery = {}): Observable<ApiResult<readonly ModeloFormularioView[]>> {
+  listar(
+    query: ModelosFormularioQuery = {},
+  ): Observable<ApiResult<readonly ModeloFormularioView[]>> {
     let params = new HttpParams().set('limit', String(query.limit ?? 100));
     if (query.tipoProcesso !== undefined) params = params.set('tipoProcesso', query.tipoProcesso);
     if (query.finalidade !== undefined) params = params.set('finalidade', query.finalidade);
@@ -72,12 +60,22 @@ export class ModelosFormularioApi {
   }
 
   /** POST `/api/configuracao/admin/modelos-formulario` — cria o modelo, já ativo. */
-  criar(command: CriarModeloFormularioCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(this.admin(), command, { context, headers: ACEITA_JSON });
+  criar(
+    command: CriarModeloFormularioCommand,
+    context: HttpContext,
+  ): Observable<ApiResult<string>> {
+    return this.http.post<ApiResult<string>>(this.admin(), command, {
+      context,
+      headers: ACEITA_JSON,
+    });
   }
 
   /** PUT `/api/configuracao/admin/modelos-formulario/{id}` — substitui nome, descrição, tipo de processo e conteúdo. */
-  atualizar(id: string, input: EdicaoDoModeloInput, context: HttpContext): Observable<ApiResult<void>> {
+  atualizar(
+    id: string,
+    input: EdicaoDoModeloInput,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(this.admin(id), input, { context });
   }
 
@@ -92,17 +90,20 @@ export class ModelosFormularioApi {
   }
 
   /**
-   * POST `/api/configuracao/admin/modelos-formulario/{id}/pre-visualizacao` — avalia o modelo
-   * gravado contra respostas simuladas. É leitura: não leva Idempotency-Key.
+   * GET `/api/configuracao/admin/modelos-formulario/{id}/renderizavel` — o modelo no formato que o
+   * candidato veria, com as regras que o interpretador avalia, para a simulação antes de aplicá-lo.
    */
-  preVisualizar(id: string, input: PreVisualizacaoDoModeloInput): Observable<ApiResult<PreVisualizacaoDoModeloDto>> {
-    return this.http.post<ApiResult<PreVisualizacaoDoModeloDto>>(this.admin(id, 'pre-visualizacao'), input, {
-      context: withVendorMime('pre-visualizacao-modelo-formulario', 1),
+  obterRenderizavel(id: string): Observable<ApiResult<FormularioRenderizavel>> {
+    return this.http.get<ApiResult<FormularioRenderizavel>>(this.admin(id, 'renderizavel'), {
+      context: withVendorMime('formulario', 2),
     });
   }
 
   private admin(...segmentos: readonly string[]): string {
-    return [`${this.basePath}/api/configuracao/admin/modelos-formulario`, ...segmentos.map(encodeURIComponent)].join('/');
+    return [
+      `${this.basePath}/api/configuracao/admin/modelos-formulario`,
+      ...segmentos.map(encodeURIComponent),
+    ].join('/');
   }
 }
 

@@ -10,11 +10,7 @@ import {
   isApiOk,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
-import {
-  CriarTipoProcessoCommand,
-  TipoProcessoDto,
-  TiposProcessoApi,
-} from './tipos-processo.api';
+import { CriarTipoProcessoCommand, TipoProcessoDto, TiposProcessoApi } from './tipos-processo.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';

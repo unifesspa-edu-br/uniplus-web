@@ -74,10 +74,14 @@ export class LocaisOfertaApi {
 
   /** POST `/api/configuracao/admin/locais-oferta` — cria. Idempotency-Key obrigatório (ADR-0027). */
   criar(command: CriarLocalOfertaCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(`${this.basePath}/api/configuracao/admin/locais-oferta`, command, {
-      context,
-      headers: new HttpHeaders({ Accept: 'application/json' }),
-    });
+    return this.http.post<ApiResult<string>>(
+      `${this.basePath}/api/configuracao/admin/locais-oferta`,
+      command,
+      {
+        context,
+        headers: new HttpHeaders({ Accept: 'application/json' }),
+      },
+    );
   }
 
   /** PUT `/api/configuracao/admin/locais-oferta/{id}` — atualiza. */

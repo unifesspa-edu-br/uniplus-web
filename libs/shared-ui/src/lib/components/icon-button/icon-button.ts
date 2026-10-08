@@ -1,5 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import {
+  booleanAttribute,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+} from '@angular/core';
+import { RouterLink, type Params } from '@angular/router';
 
 /** Posição da dica — contrato `[data-tooltip-position]` do Uni+ DS. */
 export type UiTooltipPosition = 'top' | 'bottom' | 'left' | 'right';
@@ -38,6 +45,9 @@ export type UiTooltipPosition = 'top' | 'bottom' | 'left' | 'right';
         [class.btn--tertiary]="!danger()"
         [class.btn--danger]="danger()"
         [routerLink]="destino"
+        [queryParams]="queryParams()"
+        [target]="novaAba() ? '_blank' : undefined"
+        [attr.rel]="novaAba() ? 'noopener' : null"
         [attr.aria-label]="accessibleName()"
         [attr.aria-describedby]="description() ? descriptionId : null"
         [attr.data-tooltip]="tooltip() || accessibleName()"
@@ -81,6 +91,8 @@ export class IconButtonComponent {
    * desabilitada). Vazio não renderiza nada.
    */
   readonly description = input<string>('');
+  /** No modo `link`, abre o destino em nova aba; o nome acessível deve dizer isso. */
+  readonly novaAba = input(false, { transform: booleanAttribute });
   /**
    * Variante destrutiva. Disponível para uso fora de célula de tabela; nas
    * células de "Ações" o padrão do repo mantém `tertiary` mesmo em
@@ -91,6 +103,8 @@ export class IconButtonComponent {
   readonly isDisabled = input<boolean>(false);
   /** Destino do `routerLink`; quando definido, renderiza `<a>` em vez de `<button>`. */
   readonly link = input<unknown[] | string | undefined>(undefined);
+  /** No modo `link`, os parâmetros de consulta do destino; ausente, o destino vai sem eles. */
+  readonly queryParams = input<Params | null>(null);
   readonly triggered = output<void>();
 
   protected readonly iconClasses = computed(() => `pi ${this.icon()}`);

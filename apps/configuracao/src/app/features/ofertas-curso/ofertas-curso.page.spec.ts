@@ -817,10 +817,10 @@ describe('OfertasCursoPage', () => {
     // O seletor precisa mostrar o token: sem opção correspondente ele
     // renderizaria em branco enquanto o modelo guarda o valor.
     expect(component['regimeNaoReconhecido']()).toBe('ROTATIVO');
-    const opcoes = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLOptionElement>(
+    const opcoes = fixture.nativeElement.querySelectorAll(
       'select[formControlName="regimeDeTurno"] option',
-    );
-    expect([...opcoes].map((o) => o.value)).toContain('ROTATIVO');
+    ) as NodeListOf<HTMLOptionElement>;
+    expect(Array.from(opcoes).map((o) => o.value)).toContain('ROTATIVO');
   });
 
   it('turno desconhecido pela versão aparece no grupo, marcado', async () => {

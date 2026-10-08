@@ -35,13 +35,14 @@ import {
   DrawerComponent,
   EmptyStateComponent,
   SpinnerComponent,
+  EnderecoGeoComponent,
+  type EnderecoEstruturado,
 } from '@uniplus/shared-ui/components';
 import {
-  EnderecoFormComponent,
+  ENDERECO_NO_GEO,
   ehErroDeEndereco,
   enderecoEstruturadoDe,
   enderecoParaCommand,
-  type EnderecoEstruturado,
 } from '../../shared/endereco';
 
 /** Valor de `TipoUnidade` da Reitoria no roster fechado (`TIPOS_UNIDADE`). */
@@ -92,6 +93,7 @@ interface InstituicaoForm {
 
 @Component({
   selector: 'cfg-instituicao-page',
+  providers: [ENDERECO_NO_GEO],
   standalone: true,
   imports: [
     ReactiveFormsModule,
@@ -99,7 +101,7 @@ interface InstituicaoForm {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
-    EnderecoFormComponent,
+    EnderecoGeoComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -282,7 +284,7 @@ interface InstituicaoForm {
         <section aria-labelledby="cfg-form-identificacao">
           <h3 id="cfg-form-identificacao" class="form-section__title">Identificação</h3>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('nome')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
               <span class="field__label is-required">Nome oficial</span>
               <input
                 class="input"
@@ -323,7 +325,7 @@ interface InstituicaoForm {
                 <span class="field__error">{{ erroDoCampo('codigoEmec') }}</span>
               }
             </label>
-            <label class="field field--full" [class.is-error]="erroDoCampo('cnpj')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('cnpj')">
               <span class="field__label">CNPJ</span>
               <input
                 class="input"
@@ -343,7 +345,7 @@ interface InstituicaoForm {
         <section aria-labelledby="cfg-form-classificacao">
           <h3 id="cfg-form-classificacao" class="form-section__title">Classificação e-MEC</h3>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('organizacaoAcademica')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('organizacaoAcademica')">
               <span class="field__label is-required">Organização acadêmica</span>
               <input
                 class="input"
@@ -363,7 +365,7 @@ interface InstituicaoForm {
               }
             </label>
             <label
-              class="field field--full"
+              class="field form-grid__full"
               [class.is-error]="erroDoCampo('categoriaAdministrativa')"
             >
               <span class="field__label is-required">Categoria administrativa</span>
@@ -391,7 +393,7 @@ interface InstituicaoForm {
         <section aria-labelledby="cfg-form-mantenedora">
           <h3 id="cfg-form-mantenedora" class="form-section__title">Mantenedora</h3>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('mantenedora')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('mantenedora')">
               <span class="field__label">Mantenedora</span>
               <input
                 class="input"
@@ -403,7 +405,7 @@ interface InstituicaoForm {
                 <span class="field__error">{{ erroDoCampo('mantenedora') }}</span>
               }
             </label>
-            <label class="field field--full" [class.is-error]="erroDoCampo('codigoMantenedoraEmec')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('codigoMantenedoraEmec')">
               <span class="field__label">Código mantenedora e-MEC</span>
               <input
                 class="input"
@@ -422,7 +424,7 @@ interface InstituicaoForm {
         <section aria-labelledby="cfg-form-situacao">
           <h3 id="cfg-form-situacao" class="form-section__title">Situação regulatória</h3>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('situacao')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('situacao')">
               <span class="field__label">Situação</span>
               <input
                 class="input"
@@ -435,7 +437,7 @@ interface InstituicaoForm {
                 <span class="field__error">{{ erroDoCampo('situacao') }}</span>
               }
             </label>
-            <label class="field field--full" [class.is-error]="erroDoCampo('atoCredenciamento')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('atoCredenciamento')">
               <span class="field__label">Ato de credenciamento</span>
               <input
                 class="input"
@@ -448,7 +450,7 @@ interface InstituicaoForm {
                 <span class="field__error">{{ erroDoCampo('atoCredenciamento') }}</span>
               }
             </label>
-            <label class="field field--full" [class.is-error]="erroDoCampo('atoRecredenciamento')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('atoRecredenciamento')">
               <span class="field__label">Ato de recredenciamento</span>
               <input
                 class="input"
@@ -500,7 +502,7 @@ interface InstituicaoForm {
         <section aria-labelledby="cfg-form-contato">
           <h3 id="cfg-form-contato" class="form-section__title">Contato e localização da sede</h3>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('website')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('website')">
               <span class="field__label">Site institucional</span>
               <input
                 class="input"
@@ -513,7 +515,7 @@ interface InstituicaoForm {
               }
             </label>
           </div>
-          <cfg-endereco-form
+          <ui-endereco-geo
             formControlName="endereco"
             idPrefix="inst-endereco"
             legend="Endereço da sede"
@@ -524,7 +526,7 @@ interface InstituicaoForm {
         <section aria-labelledby="cfg-form-estrutura">
           <h3 id="cfg-form-estrutura" class="form-section__title">Estrutura organizacional</h3>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('unidadeRaizId')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('unidadeRaizId')">
               <span class="field__label">Unidade raiz (reitoria)</span>
               <select
                 class="select"

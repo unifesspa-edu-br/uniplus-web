@@ -62,7 +62,12 @@ import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa
 import { contadorDeFalhas } from '../../shared/contador-de-falhas';
 import { focarAposNovaTentativa } from '../../shared/foco';
 import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
-import { comRotuloExibivel } from '../../shared/codigo-e-rotulo';
+import {
+  comCodigoAparado,
+  comRotuloExibivel,
+  temCodigoUtilizavel,
+  textoExibivel,
+} from '../../shared/codigo-e-rotulo';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { listaDeReferencia, motivoDaFalha } from '../../shared/lista-de-referencia';
 import { NumeroDigitadoValidoDirective } from './numero-digitado-valido.directive';
@@ -279,7 +284,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
               <div class="num-grid__row">
                 <div>
                   <strong class="cell-label--group-label">{{
-                    grupo.controls.grupoCurso.value.rotulo
+                    rotuloDoGrupo(grupo.controls.grupoCurso.value)
                   }}</strong>
                   <span class="field__hint">Chave composta — não editável</span>
                   @if (estadoLinhasEdicao().get(grupo.controls.id.value) === 'ok') {
@@ -295,7 +300,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                   @let idCorte = idCampo(resolucao, gi, ai, 'corte');
                   @let erroPeso = erroDaArea(area, 'peso');
                   @let erroCorte = erroDaArea(area, 'corte');
-                  @let sufixo = sufixoDoRotulo(area.controls.codigo.value, grupo.controls.grupoCurso.value.rotulo);
+                  @let sufixo = sufixoDoRotulo(area.controls.codigo.value, rotuloDoGrupo(grupo.controls.grupoCurso.value));
                   <div class="num-cell" [formGroup]="area">
                     <span class="pe-cell-rotulo" aria-hidden="true">{{
                       rotuloDaArea(area.controls.codigo.value)
@@ -379,7 +384,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
             @for (linha of linhasDaResolucao(resolucao); track linha.id; let gi = $index) {
               <div class="num-grid__row">
                 <div>
-                  <strong class="cell-label--group-label">{{ linha.grupoCurso.rotulo }}</strong>
+                  <strong class="cell-label--group-label">{{ rotuloDoGrupo(linha.grupoCurso) }}</strong>
                 </div>
                 @for (area of areas(); track area.codigo; let ai = $index) {
                   @let valor = valorDaArea(linha, area.codigo);
@@ -388,7 +393,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                   <div class="num-cell">
                     <span class="pe-cell-rotulo" aria-hidden="true">{{ area.rotulo }}</span>
                     <label class="sr-only" [for]="idLeitura">
-                      {{ rotuloDoCampo('peso', area.codigo, linha.grupoCurso.rotulo) }}
+                      {{ rotuloDoCampo('peso', area.codigo, rotuloDoGrupo(linha.grupoCurso)) }}
                     </label>
                     <!-- O corte é anunciado junto do peso: fica ligado ao campo como descrição. -->
                     <input
@@ -466,7 +471,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
         class="cfg-form"
       >
         <div class="form-grid">
-          <label class="field field--full" [class.is-error]="erroDoCampoLote('resolucao')">
+          <label class="field form-grid__full" [class.is-error]="erroDoCampoLote('resolucao')">
             <span class="field__label is-required">Número/ano da resolução</span>
             <input
               class="input"
@@ -483,7 +488,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
               <span class="field__error" role="alert">{{ erroDoCampoLote('resolucao') }}</span>
             }
           </label>
-          <label class="field field--full" [class.is-error]="erroDoCampoLote('baseLegalGlobal')">
+          <label class="field form-grid__full" [class.is-error]="erroDoCampoLote('baseLegalGlobal')">
             <span class="field__label is-required">Base legal (padrão para todos os grupos)</span>
             <input
               class="input"
@@ -511,7 +516,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
               [disabled]="estadoGruposCriacao().get(gi) === 'ok'"
             >
               <legend>
-                {{ grupo.controls.grupoCurso.value.rotulo }}
+                {{ rotuloDoGrupo(grupo.controls.grupoCurso.value) }}
                 @if (estadoGruposCriacao().get(gi) === 'ok') {
                   <ui-tag variant="success">Criado</ui-tag>
                 }
@@ -538,7 +543,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                       step="0.05"
                       formControlName="peso"
                       cfgNumeroDigitadoValido
-                      [attr.aria-label]="rotuloDoCampo('peso', area.controls.codigo.value, grupo.controls.grupoCurso.value.rotulo)"
+                      [attr.aria-label]="rotuloDoCampo('peso', area.controls.codigo.value, rotuloDoGrupo(grupo.controls.grupoCurso.value))"
                       [attr.aria-describedby]="descritoPor(erroPeso ? idPesoErro : null)"
                       [attr.aria-invalid]="erroPeso ? 'true' : null"
                     />
@@ -557,7 +562,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                       placeholder="Sem corte"
                       formControlName="corte"
                       cfgNumeroDigitadoValido
-                      [attr.aria-label]="rotuloDoCampo('corte', area.controls.codigo.value, grupo.controls.grupoCurso.value.rotulo)"
+                      [attr.aria-label]="rotuloDoCampo('corte', area.controls.codigo.value, rotuloDoGrupo(grupo.controls.grupoCurso.value))"
                       [attr.aria-describedby]="descritoPor(idCorteDica, erroCorte ? idCorteErro : null)"
                       [attr.aria-invalid]="erroCorte ? 'true' : null"
                     />
@@ -569,7 +574,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                     }
                   </label>
                 }
-                <label class="field field--full">
+                <label class="field form-grid__full">
                   <span class="field__label is-required">Base legal</span>
                   <input class="input" type="text" formControlName="baseLegal" />
                   @if (erroDoCampoGrupo(gi, 'baseLegal'); as erro) {
@@ -621,6 +626,8 @@ export class PesosEnemPage {
   protected readonly listaAreas = listaDeReferencia<AreaPesoAreaEnemDto>(
     () => this.api.listarAreas(),
     this.destroyRef,
+    temCodigoUtilizavel,
+    comCodigoAparado,
   );
   protected readonly areas: Signal<readonly AreaPesoAreaEnemDto[]> = computed(() =>
     this.listaAreas.opcoes().map(comRotuloExibivel),
@@ -833,7 +840,12 @@ export class PesosEnemPage {
   }
 
   protected rotuloDaArea(codigo: string): string {
-    return this.rotuloPorCodigo().get(codigo) ?? codigo;
+    return textoExibivel({ codigo, rotulo: this.rotuloPorCodigo().get(codigo) });
+  }
+
+  /** O grupo como a tela o mostra: rótulo, código, ou "—" quando não há identificação. */
+  protected rotuloDoGrupo(grupo: GrupoAreaEnemDto): string {
+    return textoExibivel(grupo);
   }
 
   /** Nome acessível completo do campo: área e grupo, para quem navega campo a campo
@@ -854,7 +866,7 @@ export class PesosEnemPage {
   }
 
   protected valorDaArea(linha: PesoAreaEnemDto, codigo: string): PesoAreaEnemAreaDto | undefined {
-    return linha.areas.find((area) => area.codigo === codigo);
+    return linha.areas.find((area) => area.codigo?.trim() === codigo);
   }
 
   /** O corte da área como texto em pt-BR, ou `null` quando a área não tem corte (o
@@ -1059,7 +1071,7 @@ export class PesosEnemPage {
           // A edição em linha só permite corrigir as áreas: resolução, grupo e base legal
           // não aparecem nela, e o erro deles vai para o banner, nomeando o grupo.
           const mensagens = this.aplicarErroGrupo(grupo, result.problem, {});
-          semCampo.push(...mensagens.map((m) => `${grupo.controls.grupoCurso.value.rotulo}: ${m}`));
+          semCampo.push(...mensagens.map((m) => `${this.rotuloDoGrupo(grupo.controls.grupoCurso.value)}: ${m}`));
         }
 
         this.estadoLinhasEdicao.set(novoEstado);
@@ -1274,7 +1286,7 @@ export class PesosEnemPage {
               resolucao: algumSucesso ? undefined : this.pesoLoteForm.controls.resolucao,
               baseLegal: grupo.controls.baseLegal,
             });
-            semCampo.push(...mensagens.map((m) => `${grupo.controls.grupoCurso.value.rotulo}: ${m}`));
+            semCampo.push(...mensagens.map((m) => `${this.rotuloDoGrupo(grupo.controls.grupoCurso.value)}: ${m}`));
           }
         }
 
@@ -1657,7 +1669,7 @@ function criarPesoEdicaoGrupoForm(
     grupoCurso: new FormControl(linha.grupoCurso, { nonNullable: true }),
     areas: new FormArray(
       areas.map((area) => {
-        const valor = linha.areas.find((existente) => existente.codigo === area.codigo);
+        const valor = linha.areas.find((existente) => existente.codigo?.trim() === area.codigo);
         return criarAreaForm(
           area.codigo,
           valor === undefined ? 0 : numeroDaApi(valor.peso),

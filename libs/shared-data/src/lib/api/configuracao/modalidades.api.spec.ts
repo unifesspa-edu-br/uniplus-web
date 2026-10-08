@@ -10,11 +10,7 @@ import {
   isApiOk,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
-import {
-  CriarModalidadeCommand,
-  ModalidadeDto,
-  ModalidadesApi,
-} from './modalidades.api';
+import { CriarModalidadeCommand, ModalidadeDto, ModalidadesApi } from './modalidades.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';

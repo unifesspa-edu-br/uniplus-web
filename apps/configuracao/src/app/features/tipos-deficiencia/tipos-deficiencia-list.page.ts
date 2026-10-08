@@ -282,7 +282,7 @@ const PAGE_SIZE = 50;
       >
         <section aria-labelledby="cfg-form-identificadores">
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('nome')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
               <span class="field__label is-required">Nome</span>
               <input
                 class="input"
@@ -303,7 +303,7 @@ const PAGE_SIZE = 50;
               }
             </label>
             @let erroCampoCodigo = erroDoCampo('codigo');
-            <label class="field field--full" [class.is-error]="erroCampoCodigo">
+            <label class="field form-grid__full" [class.is-error]="erroCampoCodigo">
               <span class="field__label is-required">Código</span>
               <input
                 class="input"
@@ -325,7 +325,7 @@ const PAGE_SIZE = 50;
                 <span class="field__error" id="cfg-td-codigo-erro">{{ erroCampoCodigo }}</span>
               }
             </label>
-            <label class="field field--full" [class.is-error]="erroDoCampo('descricao')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
               <span class="field__label is-required">Descrição</span>
               <textarea
                 class="input"

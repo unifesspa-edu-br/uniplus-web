@@ -109,6 +109,11 @@ cfg-pesos-enem-page {
   flex-wrap: wrap;
 }
 
+/* Conteúdo que não é tabela nem paginação: o mesmo respiro lateral do cabeçalho. */
+.panel-body {
+  padding: var(--space-4) var(--space-5);
+}
+
 .panel-head__title {
   display: flex;
   align-items: center;
@@ -228,19 +233,10 @@ cfg-pesos-enem-page {
   flex-wrap: wrap;
 }
 
-/* Edição do modelo de formulário: o cabeçalho em grade, o resumo das recusas como alvo de foco. */
-.cfg-modelo-cabecalho {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
-}
-
-.cfg-modelo-cabecalho__largo { grid-column: 1 / -1; }
+/* Edição do modelo de formulário: o resumo das recusas como alvo de foco. */
+.cfg-modelo-cabecalho { margin-bottom: var(--space-4); }
 .cfg-modelo-resumo:focus { outline: none; }
 .cfg-modelo-resumo:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-
-.cfg-pre-visualizacao { margin-top: var(--space-4); }
 
 /* Os ícones de ação ficam juntos: com quebra, a tabela estreitava a coluna até um ícone por linha. */
 .table-responsive__actions {
@@ -388,16 +384,6 @@ cfg-pesos-enem-page {
   margin-bottom: 0;
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-4);
-}
-
-.form-grid .field--full {
-  grid-column: 1 / -1;
-}
-
 .cfg-termo-consentimento__campos {
   min-inline-size: 0;
   margin: 0;
@@ -440,10 +426,6 @@ cfg-pesos-enem-page {
   border-radius: var(--radius-sm);
 }
 
-.cfg-form-drawer .form-grid--compact {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .form-section__title {
   margin: 0 0 var(--space-4);
   color: var(--text-heading);
@@ -482,16 +464,6 @@ cfg-pesos-enem-page {
   .cfg-form-drawer .uni-drawer__panel {
     max-width: min(760px, 100vw);
   }
-
-  .cfg-form-drawer .form-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* Vocabulários fechados (Fase canônica, Tipo de banca): formulário compacto
-   com poucos campos — mantém 1 coluna mesmo em telas largas (issue #393). */
-.cfg-form-drawer .form-grid--1col {
-  grid-template-columns: 1fr;
 }
 
 @media (max-width: 767px) {

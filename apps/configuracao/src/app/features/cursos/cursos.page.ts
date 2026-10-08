@@ -60,6 +60,7 @@ import {
 
 import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
 import { focarAposNovaTentativa } from '../../shared/foco';
+import { textoExibivel } from '../../shared/codigo-e-rotulo';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { nullIfBlank } from '../../shared/formulario';
 import { comPontoFinal } from '../../shared/texto';
@@ -183,7 +184,7 @@ interface CursoForm {
                     <span class="tag">{{ curso.grau }}</span>
                   </td>
                   <td data-label="Nível">{{ curso.nivelEnsino }}</td>
-                  <td data-label="Grupo ENEM">{{ curso.grupoAreaEnem?.rotulo || '—' }}</td>
+                  <td data-label="Grupo ENEM">{{ textoExibivel(curso.grupoAreaEnem) }}</td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
                       icon="pi-briefcase"
@@ -489,7 +490,12 @@ export class CursosPage {
 
   /** Grupos de área do ENEM vindos da API: o select oferece os rótulos e grava o código. */
   protected readonly gruposAreaEnem = inject(CatalogoGruposAreaEnem);
-  private readonly motivoFalhaGrupos = motivoDaFalha(this.gruposAreaEnem);
+  protected readonly textoExibivel = textoExibivel;
+  private readonly motivoFalhaGrupos = motivoDaFalha(
+    this.gruposAreaEnem,
+    // Carga de fundo da tabela: só avisa quando o formulário, que depende dos grupos, está aberto.
+    () => this.formOpen(),
+  );
   protected readonly mensagemFalhaGrupos = computed(() => {
     const semLista = 'Sem a lista de grupos não é possível classificar o curso.';
     const motivo = nullIfBlank(this.motivoFalhaGrupos());
@@ -763,7 +769,8 @@ export class CursosPage {
     if (doCurso === null || this.gruposAreaEnem.porCodigo().has(doCurso.codigo)) {
       return null;
     }
-    return doCurso;
+    // Sem código não há o que selecionar nem gravar: o "—" é só da tabela.
+    return nullIfBlank(doCurso.codigo) === null ? null : doCurso;
   });
 
   /** A lista chegou depois do "Tentar novamente": o alerta sai com o botão, e o foco vai
@@ -922,7 +929,7 @@ export class CursosPage {
       nome: curso.nome,
       grau: curso.grau,
       nivelEnsino: curso.nivelEnsino,
-      grupoAreaEnem: curso.grupoAreaEnem?.codigo ?? '',
+      grupoAreaEnem: curso.grupoAreaEnem?.codigo?.trim() ?? '',
     });
     this.grupoDoCursoEmEdicao.set(
       curso.grupoAreaEnem ? this.gruposAreaEnem.exibivel(curso.grupoAreaEnem) : null,

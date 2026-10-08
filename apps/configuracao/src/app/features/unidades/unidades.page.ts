@@ -41,18 +41,20 @@ import {
   UnidadeDto,
   UnidadesApi,
 } from '@uniplus/shared-data/organizacao';
-import { type CidadeRef, ehErroDeEndereco } from '../../shared/endereco';
+import { ehErroDeEndereco } from '../../shared/endereco';
 import {
   AlertComponent,
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  type UiFiltroAtivo,
   FilterChipsComponent,
   IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
   type UiFilterChipOption,
+  type CidadeRef,
 } from '@uniplus/shared-ui/components';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
@@ -211,6 +213,7 @@ const BACKEND_FIELD_TO_CONTROL = {
         searchPlaceholder="Buscar por sigla ou nome..."
         searchAriaLabel="Buscar unidade"
         [(searchValue)]="busca"
+        [filtrosAtivos]="filtrosAtivos()"
       >
         <button
           uiFilterBarActions
@@ -487,7 +490,7 @@ const BACKEND_FIELD_TO_CONTROL = {
               <input class="input" type="text" placeholder="Ex.: PROEG" formControlName="alias" />
               <span class="field__hint"> Nome popular de agrupamento. Não é único. </span>
             </label>
-            <label class="field field--full" [class.is-error]="erroDoCampo('nome')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
               <span class="field__label is-required">Nome completo</span>
               <input
                 class="input"
@@ -506,7 +509,7 @@ const BACKEND_FIELD_TO_CONTROL = {
         <section aria-labelledby="cfg-form-hierarquia">
           <h3 id="cfg-form-hierarquia" class="form-section__title">Classificação e hierarquia</h3>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="tipoNaoReconhecido()">
+            <label class="field form-grid__full" [class.is-error]="tipoNaoReconhecido()">
               <span class="field__label is-required">Tipo</span>
               <select
                 class="select"
@@ -526,7 +529,7 @@ const BACKEND_FIELD_TO_CONTROL = {
                 </span>
               }
             </label>
-            <div class="field field--full">
+            <div class="field form-grid__full">
               <span class="field__label">Unidade superior</span>
               <input
                 type="search"
@@ -575,7 +578,7 @@ const BACKEND_FIELD_TO_CONTROL = {
         <section aria-labelledby="cfg-form-localizacao">
           <h3 id="cfg-form-localizacao" class="form-section__title">Localização</h3>
           <div class="form-grid">
-            <div class="field field--full" [class.is-error]="cidadeErro() !== null">
+            <div class="field form-grid__full" [class.is-error]="cidadeErro() !== null">
               <label class="field__label" for="cfg-unidade-cidade-busca">Cidade</label>
               @if (cidadeSelecionada(); as cidade) {
                 <div class="input-group">
@@ -680,7 +683,7 @@ const BACKEND_FIELD_TO_CONTROL = {
               }
             </label>
             @if (modo() === 'editar') {
-              <label class="field field--full">
+              <label class="field form-grid__full">
                 <span class="field__label">Motivo da mudança de identificador</span>
                 <textarea class="textarea" formControlName="motivoMudancaIdentificador"></textarea>
               </label>
@@ -731,6 +734,14 @@ export class UnidadesPage {
   protected readonly cidadeErro = signal<string | null>(null);
   protected readonly busca = signal('');
   protected readonly tipoFiltro = signal('');
+  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
+    const tipo = this.tipoFiltro();
+    if (tipo === '') {
+      return [];
+    }
+    const rotulo = this.tipoChips.find((chip) => chip.value === tipo)?.label ?? tipo;
+    return [{ nome: 'Tipo', valor: rotulo }];
+  });
   protected readonly drawerOpen = signal(false);
   protected readonly formOpen = signal(false);
   protected readonly confirmOpen = signal(false);

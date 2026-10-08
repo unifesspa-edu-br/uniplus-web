@@ -119,9 +119,9 @@ describe('CalendarioDiasUteisDetalhePage', () => {
   const abrirCadastroDoDia = async (rotuloInicio: string): Promise<void> => {
     botaoDoDiaVazio(rotuloInicio).click();
     fixture.detectChanges();
-    const abrir = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
-      (b) => b.textContent?.includes('Adicionar feriado'),
-    ) as HTMLButtonElement;
+    const abrir = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Adicionar feriado')) as HTMLButtonElement;
     abrir.click();
     fixture.detectChanges();
     await propagate();
@@ -137,9 +137,9 @@ describe('CalendarioDiasUteisDetalhePage', () => {
   };
 
   const submeter = (): void => {
-    const adicionar = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll('dialog button'),
-    ].find((b) => b.textContent?.trim() === 'Adicionar') as HTMLButtonElement;
+    const adicionar = Array.from(
+      fixture.nativeElement.querySelectorAll('dialog button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.trim() === 'Adicionar') as HTMLButtonElement;
     adicionar.click();
     fixture.detectChanges();
   };
@@ -260,7 +260,7 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     botaoDoDia(DIA_MUNICIPAL.data).click();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.drawerVisivel()).toBe(true);
+    expect(fixture.componentInstance['drawerVisivel']()).toBe(true);
     const dialogo = fixture.nativeElement.querySelector('dialog') as HTMLElement;
     expect(dialogo.getAttribute('aria-label')).toBe('5 de abril de 2026');
     expect(dialogo.textContent).toContain('Aniversário de Marabá');
@@ -327,11 +327,11 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     const botao = botaoDoDia(DIA_MUNICIPAL.data);
     botao.click();
     fixture.detectChanges();
-    expect(fixture.componentInstance.drawerVisivel()).toBe(true);
+    expect(fixture.componentInstance['drawerVisivel']()).toBe(true);
 
-    fixture.componentInstance.mostrarPreview(DIA_MUNICIPAL.data);
+    fixture.componentInstance['mostrarPreview'](DIA_MUNICIPAL.data);
     fixture.detectChanges();
-    expect(fixture.componentInstance.diaEmPreview()).toBe(DIA_MUNICIPAL.data);
+    expect(fixture.componentInstance['diaEmPreview']()).toBe(DIA_MUNICIPAL.data);
 
     const botaoFechar = fixture.nativeElement.querySelector(
       '.uni-drawer__header button',
@@ -339,7 +339,7 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     botaoFechar.click();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.diaEmPreview()).toBeNull();
+    expect(fixture.componentInstance['diaEmPreview']()).toBeNull();
   });
 
   it('não expõe abrangência como token técnico cru (CA-10)', async () => {
@@ -358,18 +358,18 @@ describe('CalendarioDiasUteisDetalhePage', () => {
 
     const botao = botaoDoDia(DIA_MUNICIPAL.data);
     botao.click();
-    fixture.componentInstance.mostrarPreview(DIA_MUNICIPAL.data);
+    fixture.componentInstance['mostrarPreview'](DIA_MUNICIPAL.data);
     fixture.detectChanges();
-    expect(fixture.componentInstance.drawerVisivel()).toBe(true);
-    expect(fixture.componentInstance.diaEmPreview()).toBe(DIA_MUNICIPAL.data);
+    expect(fixture.componentInstance['drawerVisivel']()).toBe(true);
+    expect(fixture.componentInstance['diaEmPreview']()).toBe(DIA_MUNICIPAL.data);
 
     const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b999';
     routeParams$.next({ id: OUTRO_ID });
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.drawerVisivel()).toBe(false);
-    expect(fixture.componentInstance.diaSelecionado()).toBeNull();
-    expect(fixture.componentInstance.diaEmPreview()).toBeNull();
+    expect(fixture.componentInstance['drawerVisivel']()).toBe(false);
+    expect(fixture.componentInstance['diaSelecionado']()).toBeNull();
+    expect(fixture.componentInstance['diaEmPreview']()).toBeNull();
 
     controller.expectOne(`${BASE}/api/configuracao/calendarios-dias-uteis/${OUTRO_ID}`).flush({
       id: OUTRO_ID,
@@ -380,7 +380,7 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     });
     await propagate();
 
-    expect(fixture.componentInstance.drawerVisivel()).toBe(false);
+    expect(fixture.componentInstance['drawerVisivel']()).toBe(false);
     expect(fixture.nativeElement.querySelector('dialog[open]')).toBeNull();
   });
 
@@ -476,9 +476,9 @@ describe('CalendarioDiasUteisDetalhePage', () => {
     const dialogoDeCadastro = (fixture.nativeElement as HTMLElement)
       .querySelector('#cfg-calendario-dias-uteis-form')
       ?.closest('dialog') as HTMLElement;
-    const fechar = [...dialogoDeCadastro.querySelectorAll('button')].find(
-      (b) => b.getAttribute('aria-label') === 'Fechar',
-    ) as HTMLButtonElement;
+    const fechar = Array.from(
+      dialogoDeCadastro.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.getAttribute('aria-label') === 'Fechar') as HTMLButtonElement;
     expect(fechar.disabled).toBe(true);
 
     controller.expectOne(POST_URL).flush({

@@ -25,15 +25,36 @@ const CATALOGO: readonly FatoDoCatalogo[] = [
     valoresDominio: ['FEMININO', 'MASCULINO', 'INTERSEXO'],
     binding: 'CAMPO_FORMULARIO:SEXO',
   },
-  { codigo: 'PCD', nome: 'Pessoa com deficiência', dominio: 'BOOLEANO', binding: 'CAMPO_INSCRICAO:PCD' },
-  { codigo: 'FAIXA_ETARIA', nome: 'Faixa etária', dominio: 'NUMERICO', binding: 'ATRIBUTO_CANDIDATO:IDADE' },
-  { codigo: 'MODALIDADE', nome: 'Modalidade', dominio: 'CATEGORICO', valoresDominio: null, binding: 'REGRA_DERIVACAO:MODALIDADE' },
+  {
+    codigo: 'PCD',
+    nome: 'Pessoa com deficiência',
+    dominio: 'BOOLEANO',
+    binding: 'CAMPO_INSCRICAO:PCD',
+  },
+  {
+    codigo: 'FAIXA_ETARIA',
+    nome: 'Faixa etária',
+    dominio: 'NUMERICO',
+    binding: 'ATRIBUTO_CANDIDATO:IDADE',
+  },
+  {
+    codigo: 'MODALIDADE',
+    nome: 'Modalidade',
+    dominio: 'CATEGORICO',
+    valoresDominio: null,
+    binding: 'REGRA_DERIVACAO:MODALIDADE',
+  },
   { codigo: 'NOME', nome: 'Nome', dominio: 'TEXTO', binding: 'CAMPO_FORMULARIO:NOME' },
 ];
 
 const FATOS: readonly FatoEscolhivel[] = fatosEscolhiveis(CATALOGO, new Map(), ['MODALIDADE']);
 
-function condicao(clausula: number, fato: string, operador = 'IGUAL', valor = ''): CondicaoEmClausula {
+function condicao(
+  clausula: number,
+  fato: string,
+  operador = 'IGUAL',
+  valor = '',
+): CondicaoEmClausula {
   return { clausula, fato, operador, valor };
 }
 
@@ -104,7 +125,10 @@ class HospedeiroDeTeste {
 describe('o predicado na forma aninhada da API', () => {
   it('vai e volta sem perder cláusula, operador nem valor', () => {
     const wire = [
-      [{ fato: 'SEXO', operador: 'IGUAL', valor: 'FEMININO' }, { fato: 'IDADE', operador: 'MAIOR_IGUAL', valor: 18 }],
+      [
+        { fato: 'SEXO', operador: 'IGUAL', valor: 'FEMININO' },
+        { fato: 'IDADE', operador: 'MAIOR_IGUAL', valor: 18 },
+      ],
       [{ fato: 'MODALIDADE', operador: 'EM', valor: ['AC', 'LB_PPI'] }],
     ];
 

@@ -5,10 +5,8 @@ import { ApiResult, apiOk, coletarPaginas, withVendorMime } from '@uniplus/share
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
-export type TermoConsentimentoDto =
-  components['schemas']['TermoConsentimentoDto'];
-export type TermoConsentimentoResumoDto =
-  components['schemas']['TermoConsentimentoResumoDto'];
+export type TermoConsentimentoDto = components['schemas']['TermoConsentimentoDto'];
+export type TermoConsentimentoResumoDto = components['schemas']['TermoConsentimentoResumoDto'];
 export type TermoConsentimentoVersaoDto = components['schemas']['TermoConsentimentoVersaoDto'];
 export type CriarTermoConsentimentoCommand =
   components['schemas']['CriarTermoConsentimentoCommand'];
@@ -109,13 +107,18 @@ export class TermosConsentimentoApi {
     return coletarPaginas((cursor) => this.listar({ cursor })).pipe(
       switchMap((lista): Observable<ApiResult<readonly TermoConsentimentoDto[]>> => {
         if (!lista.ok) return of(lista);
-        if (lista.data.length === 0) return of(apiOk<readonly TermoConsentimentoDto[]>([], lista.status, lista.headers));
+        if (lista.data.length === 0)
+          return of(apiOk<readonly TermoConsentimentoDto[]>([], lista.status, lista.headers));
         return forkJoin(lista.data.map((termo) => this.obter(termo.id))).pipe(
           map((termos) => {
             const recusa = termos.find((termo) => !termo.ok);
             return recusa !== undefined && !recusa.ok
               ? recusa
-              : apiOk(termos.flatMap((termo) => (termo.ok ? [termo.data] : [])), lista.status, lista.headers);
+              : apiOk(
+                  termos.flatMap((termo) => (termo.ok ? [termo.data] : [])),
+                  lista.status,
+                  lista.headers,
+                );
           }),
         );
       }),
@@ -183,4 +186,3 @@ export class TermosConsentimentoApi {
     );
   }
 }
-

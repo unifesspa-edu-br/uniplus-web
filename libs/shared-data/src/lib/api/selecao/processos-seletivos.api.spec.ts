@@ -8,6 +8,7 @@ import {
   apiResultInterceptor,
   buildVendorMimeAccept,
   isApiOk,
+  VENDOR_MIME_TOKEN,
   withIdempotencyKey,
 } from '@uniplus/shared-core/http';
 import { CaraterEtapa, UnidadePrazo } from './index';
@@ -213,7 +214,11 @@ describe('ProcessosSeletivosApi', () => {
 
   it('confirmarUploadDocumentoEdital() usa os dois ids na rota de confirmação', async () => {
     const promise = firstValueFrom(
-      api.confirmarUploadDocumentoEdital(ID, DOCUMENTO_ID, withIdempotencyKey('documento-conf-key')),
+      api.confirmarUploadDocumentoEdital(
+        ID,
+        DOCUMENTO_ID,
+        withIdempotencyKey('documento-conf-key'),
+      ),
     );
     const req = controller.expectOne(
       `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-edital/${DOCUMENTO_ID}/confirmacao`,
@@ -814,15 +819,17 @@ describe('ProcessosSeletivosApi', () => {
       );
     }
   });
-  it('preVisualizar() pede o media type da pré-visualização do processo e envia o perfil simulado', async () => {
-    const simulacao = { respostas: { PARFOR: true }, grupos: null, etapasConcluidas: [{ finalidade: 'INSCRICAO', etapa: 'S1' }], pressupostos: null };
-    const promise = firstValueFrom(api.preVisualizar(ID, simulacao));
-    const req = controller.expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/pre-visualizacao`);
-
-    expect(req.request.method).toBe('POST');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('pre-visualizacao-processo-seletivo', 1));
-    expect(req.request.body).toEqual(simulacao);
-    req.flush({ formularios: [], documentos: [] });
+  it('obterFormularioRenderizavel() pede o formulário v2 da finalidade, rascunho incluído', async () => {
+    const promise = firstValueFrom(api.obterFormularioRenderizavel(ID, 'INSCRICAO'));
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/admin/processos-seletivos/${ID}/formularios/INSCRICAO/renderizavel`,
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({
+      resource: 'formulario',
+      version: 2,
+    });
+    req.flush({});
     await promise;
   });
 });

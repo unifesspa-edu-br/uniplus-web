@@ -279,7 +279,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
       >
         <section aria-labelledby="cfg-form-identificadores">
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('codigo')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('codigo')">
               <span class="field__label is-required">Código</span>
               <input
                 class="input"
@@ -300,7 +300,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
               }
             </label>
 
-            <label class="field field--full" [class.is-error]="erroDoCampo('nome')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
               <span class="field__label is-required">Nome</span>
               <input
                 class="input"
@@ -317,7 +317,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
               }
             </label>
 
-            <label class="field field--full" [class.is-error]="erroDoCampo('descricao')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
               <span class="field__label">Descrição</span>
               <textarea
                 class="input"

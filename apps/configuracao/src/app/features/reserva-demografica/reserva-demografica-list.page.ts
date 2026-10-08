@@ -101,8 +101,8 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
     >
       Cada linha registra os percentuais de um Censo. Quando um processo adota a regra de
       distribuição da Lei 12.711, os percentuais e o Censo são copiados por valor para o snapshot do
-      edital (ADR-0061). Por isso editar ou inativar uma referência não impacta editais já
-      publicados, e a inativação não fica bloqueada. Processos SiSU não usam esta configuração. Base
+      edital (ADR-0061). Por isso editar ou remover uma referência não impacta editais já
+      publicados, e a remoção não fica bloqueada. Processos SiSU não usam esta configuração. Base
       legal: Lei 12.711/2012, art. 10, III (atualizada pela Lei 14.723/2023).
     </ui-alert>
 
@@ -160,8 +160,8 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
           <div class="table-responsive">
             <table>
               <caption class="sr-only">
-                Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD, base
-                legal e situação
+                Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD e
+                respectiva base legal.
               </caption>
               <thead>
                 <tr>
@@ -170,7 +170,6 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                   <th scope="col">Quilombola %</th>
                   <th scope="col">PcD %</th>
                   <th scope="col">Base legal</th>
-                  <th scope="col">Status</th>
                   <th scope="col"><span class="sr-only">Ações</span></th>
                 </tr>
               </thead>
@@ -186,7 +185,6 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                     </td>
                     <td data-label="PcD %" class="cfg-num">{{ pct(ref.pcdPercentual) }}</td>
                     <td data-label="Base legal">{{ ref.baseLegal }}</td>
-                    <td data-label="Status"><span class="tag tag--success">Ativa</span></td>
                     <td class="table-responsive__actions" data-label="Ações">
                       <ui-icon-button
                         icon="pi-pencil"
@@ -198,11 +196,11 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
                         (triggered)="abrirEdicao(ref)"
                       />
                       <ui-icon-button
-                        icon="pi-power-off"
+                        icon="pi-trash"
                         [accessibleName]="
-                          'Inativar reserva demográfica do censo ' + ref.censoReferencia
+                          'Remover reserva demográfica do censo ' + ref.censoReferencia
                         "
-                        tooltip="Inativar reserva demográfica"
+                        tooltip="Remover reserva demográfica"
                         [isDisabled]="loading()"
                         (triggered)="pedirRemocao(ref)"
                       />
@@ -269,7 +267,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
         <section aria-labelledby="cfg-reserva-dados">
           <h3 id="cfg-reserva-dados" class="form-section__title">Dados do Censo</h3>
           <div class="form-grid">
-            <label class="field field--full" [class.is-error]="erroDoCampo('censoReferencia')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('censoReferencia')">
               <span class="field__label is-required">Censo de referência</span>
               <input
                 class="input"
@@ -328,7 +326,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
               </label>
             </div>
 
-            <label class="field field--full" [class.is-error]="erroDoCampo('pcdPercentual')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('pcdPercentual')">
               <span class="field__label is-required">PcD %</span>
               <input
                 class="input"
@@ -348,7 +346,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
               }
             </label>
 
-            <label class="field field--full" [class.is-error]="erroDoCampo('baseLegal')">
+            <label class="field form-grid__full" [class.is-error]="erroDoCampo('baseLegal')">
               <span class="field__label is-required">Base legal</span>
               <input
                 class="input"
@@ -390,9 +388,9 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
 
     <ui-confirm-dialog
       [(visible)]="confirmOpen"
-      heading="Inativar referência demográfica"
-      message="A referência é inativada (soft-delete) e mantida na trilha de auditoria. Edições e inativações não afetam processos já publicados — cópias congeladas em quadros de vagas (snapshot) permanecem. Confirma?"
-      confirmLabel="Inativar"
+      heading="Remover referência demográfica"
+      [message]="mensagemRemocao()"
+      confirmLabel="Remover"
       confirmVariant="danger"
       (confirmed)="removerConfirmado()"
     />
@@ -413,6 +411,15 @@ export class ReservaDemograficaListPage {
   protected readonly modo = signal<ModoFormulario>('criar');
   protected readonly idEmEdicao = signal<string | null>(null);
   protected readonly refParaRemover = signal<ReferenciaReservaDemograficaDto | null>(null);
+  protected readonly mensagemRemocao = computed(() => {
+    const ref = this.refParaRemover();
+
+    if (ref === null) {
+      return 'Confirma a remoção desta referência demográfica?';
+    }
+
+    return `Deseja remover a referência demográfica do Censo ${ref.censoReferencia}? A referência é removida (soft-delete) e mantida na trilha de auditoria. Edições e remoções não afetam processos já publicados — cópias congeladas em quadros de vagas (snapshot) permanecem.`;
+  });
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly busca = signal('');
 
@@ -611,14 +618,14 @@ export class ReservaDemograficaListPage {
       .subscribe((result) => {
         this.saving.set(false);
         if (result.ok) {
-          this.notifications.success('Referência inativada', ref.censoReferencia);
+          this.notifications.success('Referência removida', ref.censoReferencia);
           this.confirmOpen.set(false);
           this.refParaRemover.set(null);
           this.recarregar();
           return;
         }
         this.notifications.errorFromProblem(result.problem, {
-          title: this.problemI18n.resolve(result.problem).title,
+          title: 'Não foi possível remover a referência demográfica',
         });
       });
   }

@@ -55,21 +55,40 @@ export class FatosCandidatoApi {
 
   /** POST `/api/configuracao/admin/fatos-candidato` — cria um fato declarado. */
   criar(command: CriarFatoCandidatoCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(this.admin(), command, { context, headers: ACEITA_JSON });
+    return this.http.post<ApiResult<string>>(this.admin(), command, {
+      context,
+      headers: ACEITA_JSON,
+    });
   }
 
   /** POST `/api/configuracao/admin/fatos-candidato/derivados` — cria um fato derivado por regra. */
-  criarDerivado(command: CriarFatoDerivadoCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(this.admin('derivados'), command, { context, headers: ACEITA_JSON });
+  criarDerivado(
+    command: CriarFatoDerivadoCommand,
+    context: HttpContext,
+  ): Observable<ApiResult<string>> {
+    return this.http.post<ApiResult<string>>(this.admin('derivados'), command, {
+      context,
+      headers: ACEITA_JSON,
+    });
   }
 
   /** POST `/api/configuracao/admin/fatos-candidato/agregados` — cria um agregado sobre um campo de grupo. */
-  criarAgregado(command: CriarFatoAgregadoCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(this.admin('agregados'), command, { context, headers: ACEITA_JSON });
+  criarAgregado(
+    command: CriarFatoAgregadoCommand,
+    context: HttpContext,
+  ): Observable<ApiResult<string>> {
+    return this.http.post<ApiResult<string>>(this.admin('agregados'), command, {
+      context,
+      headers: ACEITA_JSON,
+    });
   }
 
   /** PUT `/api/configuracao/admin/fatos-candidato/{id}` — altera nome e descrição, os únicos campos editáveis. */
-  atualizarDescritivo(id: string, input: DescritivoDoFatoInput, context: HttpContext): Observable<ApiResult<void>> {
+  atualizarDescritivo(
+    id: string,
+    input: DescritivoDoFatoInput,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(this.admin(id), input, { context });
   }
 
@@ -84,12 +103,20 @@ export class FatosCandidatoApi {
   }
 
   /** PUT `/api/configuracao/admin/fatos-candidato/{id}/regras-padrao` — substitui as regras padrão do derivado. */
-  definirRegrasPadrao(id: string, input: RegrasPadraoInput, context: HttpContext): Observable<ApiResult<void>> {
+  definirRegrasPadrao(
+    id: string,
+    input: RegrasPadraoInput,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(this.admin(id, 'regras-padrao'), input, { context });
   }
 
   /** POST `/api/configuracao/admin/fatos-candidato/{id}/valores` — acrescenta um valor de domínio. */
-  acrescentarValor(id: string, input: ValorDominioInput, context: HttpContext): Observable<ApiResult<void>> {
+  acrescentarValor(
+    id: string,
+    input: ValorDominioInput,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
     return this.http.post<ApiResult<void>>(this.admin(id, 'valores'), input, { context });
   }
 
@@ -100,11 +127,16 @@ export class FatosCandidatoApi {
 
   /** POST `/api/configuracao/admin/fatos-candidato/{id}/valores/{codigo}/ativacao` — reativa um valor de domínio. */
   reativarValor(id: string, codigo: string, context: HttpContext): Observable<ApiResult<void>> {
-    return this.http.post<ApiResult<void>>(this.admin(id, 'valores', codigo, 'ativacao'), null, { context });
+    return this.http.post<ApiResult<void>>(this.admin(id, 'valores', codigo, 'ativacao'), null, {
+      context,
+    });
   }
 
   private admin(...segmentos: readonly string[]): string {
-    return [`${this.basePath}/api/configuracao/admin/fatos-candidato`, ...segmentos.map(encodeURIComponent)].join('/');
+    return [
+      `${this.basePath}/api/configuracao/admin/fatos-candidato`,
+      ...segmentos.map(encodeURIComponent),
+    ].join('/');
   }
 }
 

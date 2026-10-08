@@ -830,7 +830,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "application/vnd.uniplus.formulario.v1\u002Bjson": {
+              "application/vnd.uniplus.formulario.v2\u002Bjson": {
                 "schema": {
                   "$ref": "#/components/schemas/FormularioRenderizavelDto"
                 }
@@ -868,6 +868,99 @@
             }
           }
         }
+      }
+    },
+    "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/renderizavel": {
+      "get": {
+        "tags": [
+          "Formularios"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "finalidade",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.formulario.v2\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormularioRenderizavelDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}": {
@@ -8555,6 +8648,29 @@
           }
         }
       },
+      "AgregadoPortavel": {
+        "required": [
+          "codigo",
+          "grupoCodigo",
+          "fatoDeMembro",
+          "operacao"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "grupoCodigo": {
+            "type": "string"
+          },
+          "fatoDeMembro": {
+            "type": "string"
+          },
+          "operacao": {
+            "type": "string"
+          }
+        }
+      },
       "AlterarMotivoRetificacaoRequest": {
         "required": [
           "motivo"
@@ -9112,6 +9228,70 @@
             "type": "boolean"
           },
           "exigeJustificativa": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CampoRenderizavel": {
+        "required": [
+          "fatoCodigo",
+          "ordem",
+          "rotulo",
+          "tipoRenderizacao",
+          "valoresSelecionaveis",
+          "etapaCodigo",
+          "formato",
+          "ajuda",
+          "pedirConfirmacao"
+        ],
+        "type": "object",
+        "properties": {
+          "fatoCodigo": {
+            "type": "string"
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rotulo": {
+            "type": "string"
+          },
+          "tipoRenderizacao": {
+            "type": "string"
+          },
+          "valoresSelecionaveis": {
+            "minItems": 1,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ValorSelecionavel"
+            }
+          },
+          "etapaCodigo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "formato": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ajuda": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pedirConfirmacao": {
             "type": "boolean"
           }
         }
@@ -10788,6 +10968,28 @@
           }
         }
       },
+      "DerivacaoPortavel": {
+        "required": [
+          "fatoCodigo",
+          "booleano",
+          "regras"
+        ],
+        "type": "object",
+        "properties": {
+          "fatoCodigo": {
+            "type": "string"
+          },
+          "booleano": {
+            "type": "boolean"
+          },
+          "regras": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegraDerivacaoPortavel"
+            }
+          }
+        }
+      },
       "DestinoRemanejamentoDto": {
         "required": [
           "id",
@@ -11299,6 +11501,44 @@
               "items": {
                 "$ref": "#/components/schemas/CondicaoPrecondicaoInput"
               }
+            }
+          }
+        }
+      },
+      "EtapaPortavel": {
+        "required": [
+          "codigo",
+          "exibicao",
+          "itens",
+          "grupos"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "exibicao": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoPrecondicaoInput"
+              }
+            }
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemPortavel"
+            }
+          },
+          "grupos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrupoPortavel"
             }
           }
         }
@@ -12193,18 +12433,65 @@
           }
         }
       },
+      "FormularioPortavel": {
+        "required": [
+          "etapas",
+          "termos",
+          "derivacoes",
+          "agregados"
+        ],
+        "type": "object",
+        "properties": {
+          "etapas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EtapaPortavel"
+            }
+          },
+          "termos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TermoPortavel"
+            }
+          },
+          "derivacoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DerivacaoPortavel"
+            }
+          },
+          "agregados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgregadoPortavel"
+            }
+          }
+        }
+      },
       "FormularioRenderizavelDto": {
         "required": [
+          "comprovacaoDocumental",
           "finalidade",
           "titulo",
           "etapas",
           "termos",
           "fatosColetados",
-          "comprovacaoDocumental",
-          "grupos"
+          "grupos",
+          "regras",
+          "pressupostos",
+          "dataReferenciaFatos"
         ],
         "type": "object",
         "properties": {
+          "comprovacaoDocumental": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ExigenciaDocumentalCertameDto"
+            }
+          },
           "finalidade": {
             "type": "string"
           },
@@ -12217,35 +12504,42 @@
           "etapas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/EtapaFormularioDto"
+              "$ref": "#/components/schemas/SecaoRenderizavel"
             }
           },
           "termos": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TermoExigidoDto"
+              "$ref": "#/components/schemas/TermoRenderizavel"
             }
           },
           "fatosColetados": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/FatoFormularioRenderizavelDto"
-            }
-          },
-          "comprovacaoDocumental": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "$ref": "#/components/schemas/ExigenciaDocumentalCertameDto"
+              "$ref": "#/components/schemas/CampoRenderizavel"
             }
           },
           "grupos": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/GrupoFormularioRenderizavelDto"
+              "$ref": "#/components/schemas/GrupoRenderizavel"
             }
+          },
+          "regras": {
+            "$ref": "#/components/schemas/FormularioPortavel"
+          },
+          "pressupostos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PressupostoRenderizavel"
+            }
+          },
+          "dataReferenciaFatos": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
           }
         }
       },
@@ -12583,6 +12877,138 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AreaPesoAreaEnemCongeladaDto"
+            }
+          }
+        }
+      },
+      "GrupoPortavel": {
+        "required": [
+          "codigo",
+          "exibicao",
+          "obrigatoriedade",
+          "predicadoObrigatoriedade",
+          "minimo",
+          "maximo",
+          "incluiCandidato",
+          "subitens"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "exibicao": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoPrecondicaoInput"
+              }
+            }
+          },
+          "obrigatoriedade": {
+            "type": "string"
+          },
+          "predicadoObrigatoriedade": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoPrecondicaoInput"
+              }
+            }
+          },
+          "minimo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maximo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "incluiCandidato": {
+            "type": "boolean"
+          },
+          "subitens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemPortavel"
+            }
+          }
+        }
+      },
+      "GrupoRenderizavel": {
+        "required": [
+          "codigo",
+          "ordem",
+          "etapaCodigo",
+          "rotulo",
+          "minimo",
+          "maximo",
+          "incluiCandidato",
+          "subitens"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "etapaCodigo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rotulo": {
+            "type": "string"
+          },
+          "minimo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maximo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "incluiCandidato": {
+            "type": "boolean"
+          },
+          "subitens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CampoRenderizavel"
             }
           }
         }
@@ -12950,6 +13376,81 @@
             "format": "uuid"
           },
           "finalidade": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ItemPortavel": {
+        "required": [
+          "fatoCodigo",
+          "exibicao",
+          "obrigatoriedade",
+          "predicadoObrigatoriedade",
+          "restricoes",
+          "impedimento",
+          "oferta"
+        ],
+        "type": "object",
+        "properties": {
+          "fatoCodigo": {
+            "type": "string"
+          },
+          "exibicao": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoPrecondicaoInput"
+              }
+            }
+          },
+          "obrigatoriedade": {
+            "type": "string"
+          },
+          "predicadoObrigatoriedade": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoPrecondicaoInput"
+              }
+            }
+          },
+          "restricoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RestricaoValorInput"
+            }
+          },
+          "impedimento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ImpedimentoInput"
+              }
+            ]
+          },
+          "oferta": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "formato": {
             "type": [
               "null",
               "string"
@@ -14018,6 +14519,59 @@
           }
         }
       },
+      "PressupostoRenderizavel": {
+        "required": [
+          "fatoCodigo",
+          "rotulo",
+          "tipoRenderizacao",
+          "formato",
+          "valoresSelecionaveis",
+          "calculadoDe"
+        ],
+        "type": "object",
+        "properties": {
+          "fatoCodigo": {
+            "type": "string"
+          },
+          "rotulo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tipoRenderizacao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "formato": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "valoresSelecionaveis": {
+            "minItems": 1,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ValorSelecionavel"
+            }
+          },
+          "calculadoDe": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "PreVisualizacaoDoProcessoDto": {
         "required": [
           "formularios",
@@ -14964,6 +15518,30 @@
           }
         }
       },
+      "RegraDerivacaoPortavel": {
+        "required": [
+          "quando",
+          "contribui"
+        ],
+        "type": "object",
+        "properties": {
+          "quando": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoPrecondicaoInput"
+              }
+            }
+          },
+          "contribui": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "RegraEliminacaoDto": {
         "required": [
           "id",
@@ -15398,6 +15976,62 @@
           }
         }
       },
+      "SecaoRenderizavel": {
+        "required": [
+          "codigo",
+          "codigoNasRegras",
+          "ordem",
+          "tipo",
+          "bloco",
+          "titulo",
+          "descricao",
+          "aviso"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "codigoNasRegras": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "bloco": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "aviso": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "SituacaoDoCertame": {
         "enum": [
           "emBreve",
@@ -15603,6 +16237,101 @@
                 "$ref": "#/components/schemas/CondicaoPrecondicaoInput"
               }
             }
+          }
+        }
+      },
+      "TermoPortavel": {
+        "required": [
+          "codigo",
+          "exibicao",
+          "obrigatoriedade",
+          "predicadoObrigatoriedade"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "exibicao": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoPrecondicaoInput"
+              }
+            }
+          },
+          "obrigatoriedade": {
+            "type": "string"
+          },
+          "predicadoObrigatoriedade": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoPrecondicaoInput"
+              }
+            }
+          }
+        }
+      },
+      "TermoRenderizavel": {
+        "required": [
+          "codigo",
+          "codigoNasRegras",
+          "ordem",
+          "termoId",
+          "versaoId",
+          "nome",
+          "texto",
+          "baseLegal",
+          "formaAceite",
+          "hashVersao"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "codigoNasRegras": {
+            "type": "string"
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "termoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versaoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "baseLegal": {
+            "type": "string"
+          },
+          "formaAceite": {
+            "type": "string"
+          },
+          "hashVersao": {
+            "type": "string"
           }
         }
       },
@@ -15881,6 +16610,33 @@
           }
         }
       },
+      "ValorSelecionavel": {
+        "required": [
+          "codigo",
+          "descricao",
+          "ordem"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "ValorSelecionavelDto": {
         "required": [
           "codigo",
@@ -15905,6 +16661,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "orientacao": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       }

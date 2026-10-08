@@ -1,7 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import { type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import {
+  type CondicaoEmClausula,
+  type FatoEscolhivel,
+} from '../editor-de-condicoes/condicoes-de-fatos';
 import { TagComponent } from '../tag/tag';
 import {
   LIMITES_DO_FORMULARIO,
@@ -13,7 +23,11 @@ import {
   type RecusaDaRestricao,
 } from './formulario-editavel';
 import { ImpedimentoDoCampoComponent } from './impedimento-do-campo';
-import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import {
+  paraPredicado,
+  problemasDasCondicoes,
+  recopiarSeMudouPorFora,
+} from './predicado-em-edicao';
 import { RestricoesDoCampoComponent } from './restricoes-do-campo';
 
 /** Como o candidato responde, pelo tipo de campo. */
@@ -38,20 +52,65 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
 @Component({
   selector: 'ui-item-do-formulario',
   standalone: true,
-  imports: [EditorDeCondicoesComponent, ImpedimentoDoCampoComponent, RestricoesDoCampoComponent, TagComponent],
+  imports: [
+    EditorDeCondicoesComponent,
+    ImpedimentoDoCampoComponent,
+    RestricoesDoCampoComponent,
+    TagComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article class="editor-formulario__item" [attr.aria-labelledby]="idDe('titulo')">
       <div class="editor-formulario__cabecalho">
         @if (nivelDoTitulo() === 5) {
-          <h5 class="editor-formulario__titulo-item" [id]="idDe('titulo')">{{ posicao() }}. {{ nome() }}</h5>
+          <h5 class="editor-formulario__titulo-item" [id]="idDe('titulo')">
+            {{ posicao() }}. {{ nome() }}
+          </h5>
         } @else {
-          <h4 class="editor-formulario__titulo-item" [id]="idDe('titulo')">{{ posicao() }}. {{ nome() }}</h4>
+          <h4 class="editor-formulario__titulo-item" [id]="idDe('titulo')">
+            {{ posicao() }}. {{ nome() }}
+          </h4>
         }
         <ui-tag variant="neutral">{{ tipoDeCampo() }}</ui-tag>
         @if (fatoDesativado()) {
           <ui-tag variant="warning">Fato desativado</ui-tag>
         }
+        <div
+          class="editor-formulario__acoes-do-cabecalho"
+          role="group"
+          [attr.aria-label]="'Ações do campo ' + nome()"
+        >
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [id]="idDe('subir')"
+            [disabled]="disabled() || !podeSubir()"
+            [attr.aria-label]="'Subir ' + nome()"
+            (click)="mover.emit(-1)"
+          >
+            Subir
+          </button>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [id]="idDe('descer')"
+            [disabled]="disabled() || !podeDescer()"
+            [attr.aria-label]="'Descer ' + nome()"
+            (click)="mover.emit(1)"
+          >
+            Descer
+          </button>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            [disabled]="disabled() || remocaoTravadaPor() !== null"
+            [attr.aria-label]="'Remover o campo ' + nome()"
+            [attr.aria-describedby]="remocaoTravadaPor() !== null ? idDe('remocao-travada') : null"
+            (click)="remover.emit()"
+          >
+            Remover
+          </button>
+        </div>
       </div>
 
       @if (remocaoTravadaPor(); as motivo) {
@@ -70,7 +129,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         </ul>
       }
 
-      <div class="editor-formulario__campos">
+      <div class="form-grid">
         <div class="field" [class.is-error]="rotuloVazio()">
           <label class="field__label is-required" [for]="idDe('rotulo')">Rótulo</label>
           <input
@@ -85,7 +144,9 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
             (input)="trocar({ rotulo: valorDe($event) })"
           />
           @if (rotuloVazio()) {
-            <span class="field__error" [id]="idDe('rotulo-erro')">O rótulo é o que o candidato lê: não pode ficar vazio.</span>
+            <span class="field__error" [id]="idDe('rotulo-erro')"
+              >O rótulo é o que o candidato lê: não pode ficar vazio.</span
+            >
           }
         </div>
 
@@ -95,7 +156,13 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
             class="select"
             [id]="idDe('obrigatoriedade')"
             [disabled]="disabled() || travadoPor() !== null"
-            [attr.aria-describedby]="travadoPor() !== null ? idDe('trava') : exigeResposta() ? idDe('obrigatoriedade-nota') : null"
+            [attr.aria-describedby]="
+              travadoPor() !== null
+                ? idDe('trava')
+                : exigeResposta()
+                  ? idDe('obrigatoriedade-nota')
+                  : null
+            "
             [attr.aria-invalid]="opcionalQueExigeResposta() ? 'true' : null"
             (change)="trocarObrigatoriedade(valorDe($event))"
           >
@@ -110,14 +177,18 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
             }
           </select>
           @if (exigeResposta()) {
-            <span [class]="opcionalQueExigeResposta() ? 'field__error' : 'field__hint'" [id]="idDe('obrigatoriedade-nota')">
-              Precisa ser obrigatório: uma condição de negação cita este campo, ou ele tem impedimento. Sem
-              resposta, toda comparação dá falso, e a regra concluiria o que o candidato não declarou.
+            <span
+              [class]="opcionalQueExigeResposta() ? 'field__error' : 'field__hint'"
+              [id]="idDe('obrigatoriedade-nota')"
+            >
+              Precisa ser obrigatório: uma condição de negação cita este campo, ou ele tem
+              impedimento. Sem resposta, toda comparação dá falso, e a regra concluiria o que o
+              candidato não declarou.
             </span>
           }
         </div>
 
-        <div class="field editor-formulario__largo">
+        <div class="field form-grid__full">
           <label class="field__label" [for]="idDe('ajuda')">Ajuda</label>
           <textarea
             class="textarea"
@@ -129,7 +200,9 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
             [attr.aria-describedby]="idDe('ajuda-nota')"
             (input)="trocar({ ajuda: valorDe($event).trim() === '' ? null : valorDe($event) })"
           ></textarea>
-          <span class="field__hint" [id]="idDe('ajuda-nota')">Texto opcional exibido abaixo do campo.</span>
+          <span class="field__hint" [id]="idDe('ajuda-nota')"
+            >Texto opcional exibido abaixo do campo.</span
+          >
         </div>
       </div>
 
@@ -182,7 +255,11 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         />
       }
 
-      <div class="editor-formulario__acoes" role="group" [attr.aria-label]="'Ações do campo ' + nome()">
+      <div
+        class="editor-formulario__acoes"
+        role="group"
+        [attr.aria-label]="'Ações do campo ' + nome()"
+      >
         <button
           class="btn btn--tertiary btn--sm"
           type="button"
@@ -236,7 +313,9 @@ export class ItemDoFormularioComponent {
   /** Os valores do domínio do próprio fato, quando conhecidos: os que as opções permitidas marcam. */
   readonly valoresConhecidos = input<readonly string[]>([]);
   /** Os campos anteriores de onde as opções da seleção podem vir: os de opções que cabem nas dele. */
-  readonly fontesDeOpcoes = input<readonly { readonly codigo: string; readonly nome: string }[]>([]);
+  readonly fontesDeOpcoes = input<readonly { readonly codigo: string; readonly nome: string }[]>(
+    [],
+  );
   /** As recusas da API que apontam uma restrição do campo. */
   readonly recusasDasRestricoes = input<readonly RecusaDaRestricao[]>([]);
   /** Os campos de UF anteriores, para o município escolher de onde vêm os municípios. */
@@ -264,17 +343,29 @@ export class ItemDoFormularioComponent {
     'Nenhum campo anterior pode ser citado: condições citam só campos que vêm antes deste.';
 
   protected readonly nome = computed(() => this.item().rotulo.trim() || this.item().fatoCodigo);
-  protected readonly tipoDeCampo = computed(() => TIPOS_DE_CAMPO[this.item().tipoRenderizacao] ?? this.item().tipoRenderizacao);
+  protected readonly tipoDeCampo = computed(
+    () => TIPOS_DE_CAMPO[this.item().tipoRenderizacao] ?? this.item().tipoRenderizacao,
+  );
   protected readonly rotuloVazio = computed(() => this.item().rotulo.trim() === '');
-  protected readonly obrigatoriedade = computed(() => this.item().obrigatoriedade ?? OBRIGATORIEDADE_SEMPRE);
-  protected readonly opcionalQueExigeResposta = computed(() => this.exigeResposta() && this.obrigatoriedade() !== OBRIGATORIEDADE_SEMPRE);
+  protected readonly obrigatoriedade = computed(
+    () => this.item().obrigatoriedade ?? OBRIGATORIEDADE_SEMPRE,
+  );
+  protected readonly opcionalQueExigeResposta = computed(
+    () => this.exigeResposta() && this.obrigatoriedade() !== OBRIGATORIEDADE_SEMPRE,
+  );
 
-  protected readonly condicoesDaExibicao = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
+  protected readonly condicoesDaExibicao = linkedSignal<
+    PredicadoNoWire,
+    readonly CondicaoEmClausula[]
+  >({
     source: () => this.item().precondicao,
     computation: recopiarSeMudouPorFora,
   });
 
-  protected readonly condicoesDaObrigatoriedade = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
+  protected readonly condicoesDaObrigatoriedade = linkedSignal<
+    PredicadoNoWire,
+    readonly CondicaoEmClausula[]
+  >({
     source: () => this.item().predicadoObrigatoriedade ?? null,
     computation: recopiarSeMudouPorFora,
   });
@@ -287,7 +378,9 @@ export class ItemDoFormularioComponent {
     return `${this.idBase()}-${parte}`;
   }
 
-  protected problemas(condicoes: readonly CondicaoEmClausula[]): Readonly<Record<number, string | undefined>> {
+  protected problemas(
+    condicoes: readonly CondicaoEmClausula[],
+  ): Readonly<Record<number, string | undefined>> {
     return problemasDasCondicoes(condicoes, this.fatos());
   }
 
@@ -301,7 +394,9 @@ export class ItemDoFormularioComponent {
     if (!condicional) this.condicoesDaObrigatoriedade.set([]);
     this.trocar({
       obrigatoriedade,
-      predicadoObrigatoriedade: condicional ? paraPredicado(this.condicoesDaObrigatoriedade()) : null,
+      predicadoObrigatoriedade: condicional
+        ? paraPredicado(this.condicoesDaObrigatoriedade())
+        : null,
     });
   }
 

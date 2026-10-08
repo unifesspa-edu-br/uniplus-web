@@ -166,9 +166,9 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
                       (triggered)="abrirEdicao(banca)"
                     />
                     <ui-icon-button
-                      icon="pi-power-off"
-                      [accessibleName]="'Inativar tipo de banca ' + banca.codigo"
-                      tooltip="Inativar tipo de banca"
+                      icon="pi-trash"
+                      [accessibleName]="'Remover tipo de banca ' + banca.codigo"
+                      tooltip="Remover tipo de banca"
                       [isDisabled]="loading()"
                       (triggered)="pedirRemocao(banca)"
                     />
@@ -296,9 +296,9 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
 
     <ui-confirm-dialog
       [(visible)]="confirmOpen"
-      heading="Inativar tipo de banca"
+      heading="Remover tipo de banca"
       [message]="confirmMessage()"
-      confirmLabel="Inativar"
+      confirmLabel="Remover"
       confirmVariant="danger"
       (confirmed)="removerConfirmado()"
     />
@@ -399,8 +399,8 @@ export class TiposBancaPage {
   protected readonly confirmMessage = computed(() => {
     const banca = this.bancaParaRemover();
     return banca
-      ? `Deseja inativar o tipo de banca ${banca.codigo}? A inativação impede novos editais de requerer esta banca, mas não altera bancas já congeladas — a cópia por valor permanece íntegra.`
-      : 'Deseja inativar este tipo de banca?';
+      ? `Deseja remover o tipo de banca ${banca.codigo}? A remoção impede novos editais de requerer esta banca, mas não altera bancas já congeladas — a cópia por valor permanece íntegra.`
+      : 'Deseja remover este tipo de banca?';
   });
 
   // Sugestões de "Fase típica" — carregadas lazy na primeira abertura do
@@ -491,7 +491,7 @@ export class TiposBancaPage {
       .subscribe((result) => {
         this.saving.set(false);
         if (result.ok) {
-          this.notifications.success('Tipo de banca inativado', banca.codigo);
+          this.notifications.success('Tipo de banca removido', banca.codigo);
           this.confirmOpen.set(false);
           this.bancaParaRemover.set(null);
           this.recarregar();

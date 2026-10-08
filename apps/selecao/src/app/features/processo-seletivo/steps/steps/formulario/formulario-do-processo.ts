@@ -38,7 +38,11 @@ function restricaoDoDto(restricao: FatoColetadoDto['restricoes'][number]): Restr
     tipo: restricao.tipo,
     minimo: restricao.minimo,
     maximo: restricao.maximo,
-    entradas: restricao.entradas?.map((entrada) => ({ quando: predicado(entrada.quando), valores: entrada.valores })) ?? null,
+    entradas:
+      restricao.entradas?.map((entrada) => ({
+        quando: predicado(entrada.quando),
+        valores: entrada.valores,
+      })) ?? null,
     fatos: restricao.fatos,
   };
 }
@@ -56,7 +60,10 @@ function itemDoDto(fato: FatoColetadoDto): ItemDoFormulario {
     ajuda: fato.ajuda,
     pedirConfirmacao: fato.pedirConfirmacao,
     restricoes: fato.restricoes.length === 0 ? null : fato.restricoes.map(restricaoDoDto),
-    impedimento: fato.impedimento === null ? null : { quando: predicado(fato.impedimento.quando), mensagem: fato.impedimento.mensagem },
+    impedimento:
+      fato.impedimento === null
+        ? null
+        : { quando: predicado(fato.impedimento.quando), mensagem: fato.impedimento.mensagem },
   };
 }
 
@@ -64,7 +71,11 @@ function itemDoDto(fato: FatoColetadoDto): ItemDoFormulario {
 export function conteudoDoFormulario(dto: FormularioDto): ConteudoDoFormulario {
   return {
     titulo: dto.titulo,
-    etapas: dto.etapas.map((etapa) => ({ ...etapa, ordem: Number(etapa.ordem), exibicao: predicado(etapa.exibicao) })),
+    etapas: dto.etapas.map((etapa) => ({
+      ...etapa,
+      ordem: Number(etapa.ordem),
+      exibicao: predicado(etapa.exibicao),
+    })),
     itens: dto.fatosColetados.map(itemDoDto),
     grupos: dto.grupos.map(
       (grupo): GrupoDoFormulario => ({
@@ -97,7 +108,10 @@ export function conteudoDoFormulario(dto: FormularioDto): ConteudoDoFormulario {
 }
 
 /** O cabeçalho para o PUT: fase, título e etapas, sem a seção dos dados básicos, que a API repõe. */
-export function cabecalhoParaEnvio(faseId: string, conteudo: ConteudoDoFormulario): DefinirFormularioRequest {
+export function cabecalhoParaEnvio(
+  faseId: string,
+  conteudo: ConteudoDoFormulario,
+): DefinirFormularioRequest {
   return { faseId, titulo: conteudo.titulo, etapas: semDadosBasicos(conteudo).etapas ?? [] };
 }
 
@@ -106,11 +120,16 @@ export function cabecalhoParaEnvio(faseId: string, conteudo: ConteudoDoFormulari
  * rascunho aceita item sem seção —, para gravar os itens antes de um cabeçalho que muda as seções.
  * `grupos` vai sempre como lista: nulo manteria os grupos gravados.
  */
-export function itensParaEnvio(conteudo: ConteudoDoFormulario, semSecao = false): DefinirItensDoFormularioRequest {
+export function itensParaEnvio(
+  conteudo: ConteudoDoFormulario,
+  semSecao = false,
+): DefinirItensDoFormularioRequest {
   const enviado = semDadosBasicos(conteudo);
   return {
     itens: (enviado.itens ?? []).map((item) => (semSecao ? { ...item, etapaCodigo: null } : item)),
-    grupos: (enviado.grupos ?? []).map((grupo) => (semSecao ? { ...grupo, etapaCodigo: null } : grupo)),
+    grupos: (enviado.grupos ?? []).map((grupo) =>
+      semSecao ? { ...grupo, etapaCodigo: null } : grupo,
+    ),
   };
 }
 
@@ -127,7 +146,8 @@ export interface FormularioParaGravar {
   readonly conteudo: ConteudoDoFormulario;
 }
 
-const mesmo = (um: unknown, outro: unknown): boolean => JSON.stringify(um) === JSON.stringify(outro);
+const mesmo = (um: unknown, outro: unknown): boolean =>
+  JSON.stringify(um) === JSON.stringify(outro);
 
 /** A etapa sem a posição: o que a distingue de si mesma noutro lugar. */
 function semOrdem(etapa: EtapaDoFormulario): EtapaDoFormulario {
@@ -139,10 +159,18 @@ function semOrdem(etapa: EtapaDoFormulario): EtapaDoFormulario {
  * mesma ordem relativa. Aí o cabeçalho pode ir primeiro, porque os itens gravados continuam
  * dentro de seções que existem e na ordem delas.
  */
-function soAcrescentouEtapas(servidor: ConteudoDoFormulario, desejado: ConteudoDoFormulario): boolean {
+function soAcrescentouEtapas(
+  servidor: ConteudoDoFormulario,
+  desejado: ConteudoDoFormulario,
+): boolean {
   const antes = etapasEmOrdem(semDadosBasicos(servidor));
-  const depois = etapasEmOrdem(semDadosBasicos(desejado)).filter((etapa) => antes.some((a) => a.codigo === etapa.codigo));
-  return antes.length === depois.length && antes.every((etapa, indice) => mesmo(semOrdem(etapa), semOrdem(depois[indice])));
+  const depois = etapasEmOrdem(semDadosBasicos(desejado)).filter((etapa) =>
+    antes.some((a) => a.codigo === etapa.codigo),
+  );
+  return (
+    antes.length === depois.length &&
+    antes.every((etapa, indice) => mesmo(semOrdem(etapa), semOrdem(depois[indice])))
+  );
 }
 
 /**
@@ -152,44 +180,82 @@ function soAcrescentouEtapas(servidor: ConteudoDoFormulario, desejado: ConteudoD
  * seção (o rascunho aceita), o cabeçalho depois, e os itens de novo com a seção. Só o que mudou em
  * relação ao servidor é enviado, cada parte comparada pelo mesmo mapeamento do envio.
  */
-export function planoDeGravacao(servidor: FormularioParaGravar | null, desejado: FormularioParaGravar & { readonly faseId: string }): readonly PassoDaGravacao[] {
-  const termosMudaram = !mesmo(termosParaEnvio(desejado.conteudo), servidor === null ? { termos: [] } : termosParaEnvio(servidor.conteudo));
-  const comTermos = (passos: readonly PassoDaGravacao[]): readonly PassoDaGravacao[] => (termosMudaram ? [...passos, 'termos'] : passos);
+export function planoDeGravacao(
+  servidor: FormularioParaGravar | null,
+  desejado: FormularioParaGravar & { readonly faseId: string },
+): readonly PassoDaGravacao[] {
+  const termosMudaram = !mesmo(
+    termosParaEnvio(desejado.conteudo),
+    servidor === null ? { termos: [] } : termosParaEnvio(servidor.conteudo),
+  );
+  const comTermos = (passos: readonly PassoDaGravacao[]): readonly PassoDaGravacao[] =>
+    termosMudaram ? [...passos, 'termos'] : passos;
 
   if (servidor === null) {
     const enviados = itensParaEnvio(desejado.conteudo);
-    return comTermos(['cabecalho', ...(enviados.itens.length + (enviados.grupos ?? []).length > 0 ? (['itens'] as const) : [])]);
+    return comTermos([
+      'cabecalho',
+      ...(enviados.itens.length + (enviados.grupos ?? []).length > 0 ? (['itens'] as const) : []),
+    ]);
   }
 
-  const cabecalhoMudou = !mesmo(cabecalhoParaEnvio(desejado.faseId, desejado.conteudo), cabecalhoParaEnvio(servidor.faseId ?? '', servidor.conteudo));
+  const cabecalhoMudou = !mesmo(
+    cabecalhoParaEnvio(desejado.faseId, desejado.conteudo),
+    cabecalhoParaEnvio(servidor.faseId ?? '', servidor.conteudo),
+  );
   const itensMudaram = !mesmo(itensParaEnvio(desejado.conteudo), itensParaEnvio(servidor.conteudo));
-  const etapasMudaram = !mesmo(semDadosBasicos(desejado.conteudo).etapas, semDadosBasicos(servidor.conteudo).etapas);
+  const etapasMudaram = !mesmo(
+    semDadosBasicos(desejado.conteudo).etapas,
+    semDadosBasicos(servidor.conteudo).etapas,
+  );
 
   if (etapasMudaram && itensMudaram) {
-    return comTermos(soAcrescentouEtapas(servidor.conteudo, desejado.conteudo) ? ['cabecalho', 'itens'] : ['itensSemSecao', 'cabecalho', 'itens']);
+    return comTermos(
+      soAcrescentouEtapas(servidor.conteudo, desejado.conteudo)
+        ? ['cabecalho', 'itens']
+        : ['itensSemSecao', 'cabecalho', 'itens'],
+    );
   }
-  return comTermos([...(cabecalhoMudou ? (['cabecalho'] as const) : []), ...(itensMudaram ? (['itens'] as const) : [])]);
+  return comTermos([
+    ...(cabecalhoMudou ? (['cabecalho'] as const) : []),
+    ...(itensMudaram ? (['itens'] as const) : []),
+  ]);
 }
 
 /** O formulário da finalidade, quando o processo o tem. */
-export function formularioDaFinalidade(formularios: readonly FormularioDto[], finalidade: string): FormularioDto | null {
+export function formularioDaFinalidade(
+  formularios: readonly FormularioDto[],
+  finalidade: string,
+): FormularioDto | null {
   return formularios.find((formulario) => formulario.finalidade === finalidade) ?? null;
 }
 
 /** Os fatos que o formulário coleta: os itens, os campos dos grupos e os próprios códigos dos grupos. */
 export function fatosColetadosPor(conteudo: ConteudoDoFormulario): readonly string[] {
-  return [...todosOsCampos(conteudo).map((campo) => campo.fatoCodigo), ...(conteudo.grupos ?? []).map((grupo) => grupo.codigo)];
+  return [
+    ...todosOsCampos(conteudo).map((campo) => campo.fatoCodigo),
+    ...(conteudo.grupos ?? []).map((grupo) => grupo.codigo),
+  ];
 }
 
 /** Os fatos que os formulários das outras finalidades coletam no servidor. */
-export function fatosDasOutrasFinalidades(formularios: readonly FormularioDto[], finalidade: string): readonly string[] {
+export function fatosDasOutrasFinalidades(
+  formularios: readonly FormularioDto[],
+  finalidade: string,
+): readonly string[] {
   return [
-    ...new Set(formularios.filter((formulario) => formulario.finalidade !== finalidade).flatMap((formulario) => fatosColetadosPor(conteudoDoFormulario(formulario)))),
+    ...new Set(
+      formularios
+        .filter((formulario) => formulario.finalidade !== finalidade)
+        .flatMap((formulario) => fatosColetadosPor(conteudoDoFormulario(formulario))),
+    ),
   ];
 }
 
 /** A fase do cronograma em que a inscrição é respondida: a que coleta inscrição. */
-export function faseDaInscricao<T extends { readonly coletaInscricao: boolean }>(fases: readonly T[]): T | null {
+export function faseDaInscricao<T extends { readonly coletaInscricao: boolean }>(
+  fases: readonly T[],
+): T | null {
   return fases.find((fase) => fase.coletaInscricao) ?? null;
 }
 
@@ -209,7 +275,10 @@ export function formularioDoServidor(
   readonly conteudo: ConteudoDoFormulario;
   readonly modeloOrigemCodigo: string | null;
 } {
-  const fase = formulario.faseId === null ? undefined : dto.cronogramaFases.find((f) => f.id === formulario.faseId);
+  const fase =
+    formulario.faseId === null
+      ? undefined
+      : dto.cronogramaFases.find((f) => f.id === formulario.faseId);
   return {
     finalidade: formulario.finalidade,
     faseCodigo: fase?.codigo ?? '',
@@ -228,7 +297,8 @@ export function inscricaoDoServidor(dto: ProcessoComFormularios): {
   readonly modeloOrigemCodigo: string | null;
 } {
   const inscricao = formularioDaFinalidade(dto.formularios, FINALIDADE_INSCRICAO);
-  if (inscricao === null) return { faseCodigo: '', conteudo: conteudoInicial(), modeloOrigemCodigo: null };
+  if (inscricao === null)
+    return { faseCodigo: '', conteudo: conteudoInicial(), modeloOrigemCodigo: null };
   const { faseCodigo, conteudo, modeloOrigemCodigo } = formularioDoServidor(dto, inscricao);
   return { faseCodigo, conteudo, modeloOrigemCodigo };
 }
@@ -244,6 +314,12 @@ export function rascunhoDifereDoGravado(
   if (gravados.length !== rascunho.length) return true;
   return rascunho.some(({ finalidade, conteudo }) => {
     const gravado = formularioDaFinalidade(gravados, finalidade);
-    return gravado === null || planoDeGravacao({ faseId: '', conteudo: conteudoDoFormulario(gravado) }, { faseId: '', conteudo }).length > 0;
+    return (
+      gravado === null ||
+      planoDeGravacao(
+        { faseId: '', conteudo: conteudoDoFormulario(gravado) },
+        { faseId: '', conteudo },
+      ).length > 0
+    );
   });
 }

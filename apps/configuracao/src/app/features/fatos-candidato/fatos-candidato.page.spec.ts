@@ -244,13 +244,39 @@ describe('FatosCandidatoPage', () => {
     expect(component['erro']('fatoDeMembro')).toBe('O fato está desativado.');
   });
 
-  it('CA-02: o fato de sistema não oferece desativar nem reativar', async () => {
+  it('CA-02: o fato de sistema mostra o desativar desabilitado, com o porquê, e não oferece reativar', async () => {
     atenderFases();
     controller.expectOne((r) => r.url === LISTA).flush([{ ...fatoDoAdministrador, sistema: true }]);
     await propagar();
     fixture.detectChanges();
     const tela = fixture.nativeElement as HTMLElement;
-    expect(tela.querySelector('[aria-label^="Desativar"], [aria-label^="Reativar"]')).toBeNull();
+    const desativar = tela.querySelector('[aria-label^="Desativar"]') as HTMLButtonElement;
+    expect(desativar.disabled).toBe(true);
+    expect(tela.querySelector(`#${desativar.getAttribute('aria-describedby')}`)?.textContent).toContain('Fato de sistema');
+    expect(tela.querySelector('[aria-label^="Reativar"]')).toBeNull();
+  });
+
+  it('visualizar abre o fato só para consultar; editar, para alterar', async () => {
+    atenderFases();
+    controller.expectOne((r) => r.url === LISTA).flush([fatoDoAdministrador]);
+    await propagar();
+    fixture.detectChanges();
+    const tela = fixture.nativeElement as HTMLElement;
+
+    (tela.querySelector('[aria-label^="Visualizar"]') as HTMLButtonElement).click();
+    expect(component['drawerAberto']()).toBe(true);
+    expect(component['somenteLeitura']()).toBe(true);
+    fixture.detectChanges();
+    const fechar = Array.from(
+      tela.querySelectorAll('.cfg-form-footer button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.trim() === 'Fechar');
+    fechar?.click();
+    expect(component['drawerAberto']()).toBe(false);
+    controller.match(() => true).forEach((req) => req.flush(null));
+
+    component['drawerAberto'].set(false);
+    (tela.querySelector('[aria-label^="Editar"]') as HTMLButtonElement).click();
+    expect(component['somenteLeitura']()).toBe(false);
   });
 
   it('CA-02: desativar confirmado vai à API e recarrega a lista; o foco passa ao título dela', async () => {

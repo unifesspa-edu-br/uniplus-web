@@ -82,7 +82,12 @@ const ATO_DTO = {
 interface MockarProcessoOpcoes {
   readonly status?: 'rascunho' | 'publicado';
   readonly cronogramaFases?: readonly unknown[];
-  readonly conformidadeItens?: readonly { codigo: string; dimensao: string; mensagem: string; ok: boolean }[];
+  readonly conformidadeItens?: readonly {
+    codigo: string;
+    dimensao: string;
+    mensagem: string;
+    ok: boolean;
+  }[];
   readonly conformidadeLegalRegras?: readonly unknown[];
 }
 
@@ -90,7 +95,11 @@ function processoDto(cronogramaFases: readonly unknown[], status: string) {
   return {
     id: PROCESSO_ID,
     nome: 'Processo Seletivo de teste',
-    tipoProcesso: { origemId: '01960000-0000-7000-0000-000000000905', codigo: 'GRAD', nome: 'Graduação' },
+    tipoProcesso: {
+      origemId: '01960000-0000-7000-0000-000000000905',
+      codigo: 'GRAD',
+      nome: 'Graduação',
+    },
     // Vocabulário do wire é camelCase, não o nome do enum C# — status: 'Rascunho'
     // faria hidratar() marcar o processo como somente leitura (edicaoPermitida()
     // compara com StatusProcesso.rascunho === 'rascunho') e todo campo do
@@ -303,7 +312,9 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
     await irAoPasso(page, 'Revisão e publicação', testInfo);
 
     await expect(page.getByLabel('Início do período de inscrição', { exact: true })).toBeVisible();
-    await page.getByLabel('Início do período de inscrição', { exact: true }).fill('2027-05-01T08:00');
+    await page
+      .getByLabel('Início do período de inscrição', { exact: true })
+      .fill('2027-05-01T08:00');
     await page.getByLabel('Fim do período de inscrição', { exact: true }).fill('2027-05-10T18:00');
     await page.getByLabel('Número do ato (opcional)', { exact: true }).fill('001/2027');
     await page.getByLabel('Tipo de ato', { exact: true }).selectOption('PORTARIA');

@@ -32,6 +32,7 @@ import {
   AlertComponent,
   EmptyStateComponent,
   FilterBarComponent,
+  type UiFiltroAtivo,
   FilterChipsComponent,
   ListFooterComponent,
   PageHeaderComponent,
@@ -342,6 +343,15 @@ export class ProcessosComponent {
       label: SITUACAO_LABEL[situacao],
       count: contadores?.[situacao],
     }));
+  });
+
+  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
+    const situacao = this.situacaoSelecionada();
+    if (situacao === null) {
+      return [];
+    }
+    const rotulo = this.statusChips().find((chip) => chip.value === situacao)?.label ?? situacao;
+    return [{ nome: 'Situação', valor: rotulo }];
   });
 
   protected readonly temFiltrosAtivos = computed(

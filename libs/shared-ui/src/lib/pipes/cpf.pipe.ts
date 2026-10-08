@@ -9,7 +9,8 @@ export class CpfPipe implements PipeTransform {
     if (!value) return '';
     const digits = value.replace(/\D/g, '').padStart(11, '0');
     if (masked) {
-      return `***.***.***-${digits.slice(-2)}`;
+      if (digits.length !== 11) return '***.***.***-**';
+      return `***.${digits.slice(3, 6)}.${digits.slice(6, 9)}-**`;
     }
     return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
   }

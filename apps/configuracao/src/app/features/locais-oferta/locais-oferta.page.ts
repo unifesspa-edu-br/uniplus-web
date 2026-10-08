@@ -55,14 +55,15 @@ import {
   PagerComponent,
   SpinnerComponent,
   type UiLookupFalho,
+  EnderecoGeoComponent,
+  type EnderecoEstruturado,
 } from '@uniplus/shared-ui/components';
 import {
-  EnderecoFormComponent,
+  ENDERECO_NO_GEO,
   cidadeObrigatoriaValidator,
   ehErroDeEndereco,
   enderecoEstruturadoDe,
   enderecoParaCommand,
-  type EnderecoEstruturado,
 } from '../../shared/endereco';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
@@ -81,6 +82,7 @@ interface LocalOfertaForm {
 
 @Component({
   selector: 'cfg-locais-oferta-page',
+  providers: [ENDERECO_NO_GEO],
   standalone: true,
   imports: [
     ReactiveFormsModule,
@@ -88,7 +90,7 @@ interface LocalOfertaForm {
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
-    EnderecoFormComponent,
+    EnderecoGeoComponent,
     IconButtonComponent,
     LookupAlertComponent,
     LookupLabelComponent,
@@ -274,7 +276,7 @@ interface LocalOfertaForm {
                 <span class="field__error">{{ erroDoCampo('codigoEmec') }}</span>
               }
             </label>
-            <label class="field field--full">
+            <label class="field form-grid__full">
               <span class="field__label">Campus responsável</span>
               <select class="select" formControlName="campusResponsavelId">
                 <option value="">(Sem campus responsável)</option>
@@ -295,7 +297,7 @@ interface LocalOfertaForm {
           </div>
         </section>
 
-        <cfg-endereco-form
+        <ui-endereco-geo
           formControlName="endereco"
           idPrefix="local-endereco"
           legend="Endereço do local de oferta"

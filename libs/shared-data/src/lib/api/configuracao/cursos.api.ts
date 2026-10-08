@@ -65,10 +65,13 @@ export class CursosApi {
         params = params.set('sort', sort);
       }
     }
-    return this.http.get<ApiResult<readonly CursoDto[]>>(`${this.basePath}/api/configuracao/cursos`, {
-      params,
-      context: withVendorMime('curso', 1),
-    });
+    return this.http.get<ApiResult<readonly CursoDto[]>>(
+      `${this.basePath}/api/configuracao/cursos`,
+      {
+        params,
+        context: withVendorMime('curso', 1),
+      },
+    );
   }
 
   /** GET `/api/configuracao/cursos/{id}` — detalhe de um Curso. */
@@ -81,10 +84,14 @@ export class CursosApi {
 
   /** POST `/api/configuracao/admin/cursos` — cria um Curso. Idempotency-Key obrigatório (ADR-0027). */
   criar(command: CriarCursoCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(`${this.basePath}/api/configuracao/admin/cursos`, command, {
-      context,
-      headers: new HttpHeaders({ Accept: 'application/json' }),
-    });
+    return this.http.post<ApiResult<string>>(
+      `${this.basePath}/api/configuracao/admin/cursos`,
+      command,
+      {
+        context,
+        headers: new HttpHeaders({ Accept: 'application/json' }),
+      },
+    );
   }
 
   /** PUT `/api/configuracao/admin/cursos/{id}` — atualiza um Curso. */

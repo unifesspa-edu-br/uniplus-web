@@ -1,14 +1,15 @@
-import { Observable } from "rxjs";
-import { inject, Injectable } from "@angular/core";
-import { HttpClient, HttpContext, HttpHeaders, HttpParams } from "@angular/common/http";
+import { Observable } from 'rxjs';
+import { inject, Injectable } from '@angular/core';
+import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 
-import { components } from "./schema";
-import { CONFIGURACAO_BASE_PATH } from "./tokens";
-import { ApiResult, withVendorMime } from "@uniplus/shared-core/http";
+import { components } from './schema';
+import { CONFIGURACAO_BASE_PATH } from './tokens';
+import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 
 export type TipoDeficienciaDto = components['schemas']['TipoDeficienciaDto'];
 export type CriarTipoDeficienciaCommand = components['schemas']['CriarTipoDeficienciaCommand'];
-export type AtualizarTipoDeficienciaCommand = components['schemas']['AtualizarTipoDeficienciaCommand'];
+export type AtualizarTipoDeficienciaCommand =
+  components['schemas']['AtualizarTipoDeficienciaCommand'];
 
 /** Filtro de listagem (cursor pagination, ADR-0026). */
 export interface TipoDeficienciaQuery {
