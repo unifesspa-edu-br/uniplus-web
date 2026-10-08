@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  forwardRef,
-  input,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, forwardRef, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 export interface UiSelectOption<T extends string = string> {
@@ -40,7 +34,12 @@ let selectIdSeed = 0;
           <option value="">{{ placeholderText() }}</option>
         }
         @for (option of choices(); track option.value) {
-          <option [value]="option.value" [disabled]="option.disabled ?? false">
+          <!-- As opções podem chegar depois do valor: marcar a escolhida mantém a seleção. -->
+          <option
+            [value]="option.value"
+            [selected]="option.value === value()"
+            [disabled]="option.disabled ?? false"
+          >
             {{ option.label }}
           </option>
         }

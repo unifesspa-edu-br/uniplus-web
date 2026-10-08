@@ -95,4 +95,13 @@ describe('IconButtonComponent (ação só-ícone com dica)', () => {
     expect(link.classList.contains('btn--icon-only')).toBe(true);
     expect(link.getAttribute('href')).toBe('/123');
   });
+
+  it('link com queryParams leva os parâmetros de consulta ao destino', () => {
+    fixture.componentRef.setInput('link', ['/simulador']);
+    fixture.componentRef.setInput('queryParams', { modelo: 'abc' });
+    fixture.detectChanges();
+
+    const link = fixture.debugElement.query(By.css('a')).nativeElement as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/simulador?modelo=abc');
+  });
 });

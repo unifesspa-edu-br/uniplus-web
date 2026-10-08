@@ -215,7 +215,8 @@ type CampoDaCriacao = keyof CriacaoForm;
                       icon="pi-play"
                       [accessibleName]="'Simular o modelo ' + modelo.codigo + ' (abre em nova aba)'"
                       tooltip="Simular formulário"
-                      [link]="[modelo.id, 'simulacao']"
+                      [link]="['/simulador-de-formulario']"
+                      [queryParams]="{ modelo: modelo.id }"
                       novaAba
                     />
                     @if (modelo.ativo) {
