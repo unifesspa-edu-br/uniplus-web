@@ -10,6 +10,7 @@ import {
   comoComandoDeClassificacao,
   comoComandoDeRegraEliminacao,
   divisorDaMediaValido,
+  eliminacaoAceitaUmaSoVez,
   eliminacaoExigeBaseadoEmEnem,
   exigeResolucaoPesoAreaEnem,
   eliminacaoUsaEtapaENotaMinima,
@@ -240,6 +241,15 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
 
   it('a regra antiga de corte de redação não tem mais shape reconhecido', () => {
     expect(eliminacaoUsaAreaEMinimo('ELIM-CORTE-REDACAO')).toBe(false);
+  });
+
+  it('ELIM-FALTA-EM-DIA-DE-PROVA-ENEM exige ENEM, não usa campo e vale uma só vez', () => {
+    const codigo = 'ELIM-FALTA-EM-DIA-DE-PROVA-ENEM';
+    expect(eliminacaoUsaEtapaENotaMinima(codigo)).toBe(false);
+    expect(eliminacaoUsaAreaEMinimo(codigo)).toBe(false);
+    expect(eliminacaoExigeBaseadoEmEnem(codigo)).toBe(true);
+    expect(eliminacaoAceitaUmaSoVez(codigo)).toBe(true);
+    expect(eliminacaoAceitaUmaSoVez('ELIM-ZERO-EM-AREA')).toBe(false);
   });
 
   it('ELIM-ZERO-EM-AREA não usa nenhum campo', () => {

@@ -27,6 +27,7 @@ export const REGRA_CALCULO_MEDIA_PONDERADA = 'FORMULA-MEDIA-PONDERADA';
 const ELIM_NOTA_MINIMA_ETAPA = 'ELIM-NOTA-MINIMA-ETAPA';
 const ELIM_CORTE_EM_AREA = 'ELIM-CORTE-EM-AREA';
 const ELIM_ZERO_EM_AREA = 'ELIM-ZERO-EM-AREA';
+const ELIM_FALTA_EM_DIA_DE_PROVA_ENEM = 'ELIM-FALTA-EM-DIA-DE-PROVA-ENEM';
 
 /**
  * A classificação exige a resolução de Peso por Área: baseada em ENEM e com a média ponderada
@@ -65,7 +66,16 @@ export function eliminacaoUsaAreaEMinimo(regraCodigo: string): boolean {
 
 /** Regras cujo uso exige `baseadoEmEnem === true` (`EliminacaoEnemForaDeProcessoEnem`). */
 export function eliminacaoExigeBaseadoEmEnem(regraCodigo: string): boolean {
-  return regraCodigo === ELIM_CORTE_EM_AREA || regraCodigo === ELIM_ZERO_EM_AREA;
+  return (
+    regraCodigo === ELIM_CORTE_EM_AREA ||
+    regraCodigo === ELIM_ZERO_EM_AREA ||
+    regraCodigo === ELIM_FALTA_EM_DIA_DE_PROVA_ENEM
+  );
+}
+
+/** A regra que a classificação aceita no máximo uma vez (`falta_em_dia_de_prova_enem_repetida`). */
+export function eliminacaoAceitaUmaSoVez(regraCodigo: string): boolean {
+  return regraCodigo === ELIM_FALTA_EM_DIA_DE_PROVA_ENEM;
 }
 
 /** Texto vazio vira `null` — é assim que um campo não aplicável viaja no comando. */

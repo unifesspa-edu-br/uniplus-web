@@ -671,6 +671,50 @@ describe('EliminacaoStepComponent', () => {
     });
   });
 
+  describe('ELIM-FALTA-EM-DIA-DE-PROVA-ENEM — sem argumento e uma só vez', () => {
+    const FALTA = {
+      regraCodigo: 'ELIM-FALTA-EM-DIA-DE-PROVA-ENEM',
+      regraVersao: '1.0',
+      etapaRef: '',
+      notaMinima: '',
+      minimo: '',
+      areaCodigo: '',
+    };
+
+    beforeEach(() => prepararClassificacaoLocal());
+
+    it('mostra a pendência sem baseadoEmEnem, antes de gravar', () => {
+      store.patchObjectSection('classificacao', { regrasEliminacao: [FALTA] });
+
+      const resultado = componente.validate();
+      expect(resultado.valid).toBe(false);
+      expect(resultado.messages?.join(' ')).toContain('baseada em ENEM');
+    });
+
+    it('aceita uma vez, com baseadoEmEnem', () => {
+      store.patchObjectSection('classificacao', {
+        baseadoEmEnem: true,
+        resolucaoPesoAreaEnem: RESOLUCAO,
+        regrasEliminacao: [FALTA],
+      });
+
+      expect(componente.validate().valid).toBe(true);
+    });
+
+    it('mostra a pendência quando a regra é declarada duas vezes', () => {
+      store.patchObjectSection('classificacao', {
+        baseadoEmEnem: true,
+        resolucaoPesoAreaEnem: RESOLUCAO,
+        regrasEliminacao: [FALTA, FALTA],
+      });
+
+      const resultado = componente.validate();
+      expect(resultado.valid).toBe(false);
+      expect(resultado.messages?.join(' ')).toContain('Regra de eliminação 2');
+      expect(resultado.messages?.join(' ')).toContain('já foi declarada');
+    });
+  });
+
   describe('critério de desempate que compara a nota de área do ENEM', () => {
     const CRITERIO_POR_AREA = {
       regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
