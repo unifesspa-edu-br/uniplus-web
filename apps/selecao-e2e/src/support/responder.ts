@@ -1,24 +1,33 @@
 import type { Page, Route } from '@playwright/test';
 
-export interface Options {
-  headers?: { [p: string]: string } | undefined;
-}
-
-export async function responder(page: Page, rota: RegExp, corpo: unknown, opcoes: Options): Promise<void> {
+/**
+ * Responde à rota com JSON 200 e atende o preflight CORS. O corpo pode ser uma função: ela é lida
+ * a cada requisição, para o spec que muda o dado entre uma consulta e outra.
+ */
+export async function responder(
+  page: Page,
+  rota: RegExp,
+  corpo: unknown,
+  cabecalhos: Record<string, string>,
+): Promise<void> {
   await page.route(rota, async (route: Route) => {
     if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: opcoes.headers });
+      await route.fulfill({ status: 204, headers: cabecalhos });
       return;
     }
-    await responderCom(route, corpo, opcoes);
+    await responderCom(route, typeof corpo === 'function' ? corpo() : corpo, cabecalhos);
   });
 }
 
-export async function responderCom(route: Route, corpo: unknown, opcoes: Options): Promise<void> {
+export async function responderCom(
+  route: Route,
+  corpo: unknown,
+  cabecalhos: Record<string, string>,
+): Promise<void> {
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
-    headers: opcoes.headers,
+    headers: cabecalhos,
     body: JSON.stringify(corpo),
   });
 }

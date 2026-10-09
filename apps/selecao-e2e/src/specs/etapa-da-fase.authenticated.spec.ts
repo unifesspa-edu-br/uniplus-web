@@ -342,18 +342,19 @@ function blocoDaEtapa(page: Page, titulo: string) {
 }
 
 async function mockarCatalogos(page: Page): Promise<void> {
-  await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_PROCESSO, { headers: CORS, },);
-  await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS, {
-    headers: CORS,
-  });
-  await responder(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, [], { headers: CORS });
-  await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, TIPOS_BANCA, { headers: CORS });
-  await responder(page, /\/api\/configuracao\/categorias-documento(\?.*)?$/, CATEGORIAS_DOCUMENTO, {
-    headers: CORS,
-  });
-  await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, TIPOS_ETAPA, { headers: CORS });
-  await responder(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, TIPOS_DOCUMENTO, { headers: CORS, },);
-  await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO, { headers: CORS });
+  await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_PROCESSO, CORS);
+  await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS, CORS);
+  await responder(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, [], CORS);
+  await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, TIPOS_BANCA, CORS);
+  await responder(
+    page,
+    /\/api\/configuracao\/categorias-documento(\?.*)?$/,
+    CATEGORIAS_DOCUMENTO,
+    CORS,
+  );
+  await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, TIPOS_ETAPA, CORS);
+  await responder(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, TIPOS_DOCUMENTO, CORS);
+  await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO, CORS);
 
   await page.route(/\/api\/selecao\/regras-catalogo(\?.*)?$/, async (route: Route) => {
     if (route.request().method() === 'OPTIONS') {

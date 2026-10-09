@@ -110,19 +110,25 @@ test.describe('Atendimento sem a condição PCD no cadastro (web#1008)', () => {
 
 async function mockarApi(page: Page, catalogo: { condicoes: readonly object[] }): Promise<void> {
   // A rota genérica é registrada primeiro: o Playwright consulta da mais recente à mais antiga.
-  await responder(page, /\/api\//, () => [], { headers: CORS, });
-  await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, () => TIPOS_DE_PROCESSO, {
-    headers: CORS,
-  });
+  await responder(page, /\/api\//, () => [], CORS);
+  await responder(
+    page,
+    /\/api\/configuracao\/tipos-processo(\?.*)?$/,
+    () => TIPOS_DE_PROCESSO,
+    CORS,
+  );
   await responder(
     page,
     /\/api\/configuracao\/condicoes-atendimento(\?.*)?$/,
     () => catalogo.condicoes,
-    { headers: CORS },
+    CORS,
   );
-  await responder(page, /\/api\/configuracao\/tipos-deficiencia(\?.*)?$/, () => [TIPO_VISUAL], {
-    headers: CORS,
-  });
+  await responder(
+    page,
+    /\/api\/configuracao\/tipos-deficiencia(\?.*)?$/,
+    () => [TIPO_VISUAL],
+    CORS,
+  );
 
   const id = PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO.id;
   await page.route(new RegExp(`/api/selecao/processos-seletivos/${id}`), async (route: Route) => {
@@ -132,9 +138,9 @@ async function mockarApi(page: Page, catalogo: { condicoes: readonly object[] })
     }
     const caminho = new URL(route.request().url()).pathname;
     if (caminho.endsWith(id)) {
-      await responderCom(route, PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO, { headers: CORS });
+      await responderCom(route, PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO, CORS);
     } else if (caminho.endsWith('/documentos-edital')) {
-      await responderCom(route, [], { headers: CORS });
+      await responderCom(route, [], CORS);
     } else {
       await route.fulfill({ status: 404, headers: CORS });
     }

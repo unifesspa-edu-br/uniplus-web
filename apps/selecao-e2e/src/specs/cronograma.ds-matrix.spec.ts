@@ -6,6 +6,7 @@ import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
+import { responder } from '../support/responder';
 
 /** Larguras em que a grade dos eixos da exigência tem de três a cinco colunas. */
 const LARGURAS_DA_GRADE_DOS_EIXOS = [1440, 1680, 1920, 2200] as const;
@@ -764,14 +765,29 @@ function identificadoresDe(resultado: AxeResults): string[] {
  * devolver a mesma lista para qualquer tipo mascararia um filtro quebrado.
  */
 async function mockarCatalogos(page: Page): Promise<void> {
-  await responderCatalogo(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_PROCESSO);
-  await responderCatalogo(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS);
-  await responderCatalogo(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, []);
-  await responderCatalogo(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, []);
-  await responderCatalogo(page, /\/api\/configuracao\/categorias-documento(\?.*)?$/, []);
-  await responderCatalogo(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, TIPOS_DOCUMENTO);
-  await responderCatalogo(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, []);
-  await responderCatalogo(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, []);
+  await responder(
+    page,
+    /\/api\/configuracao\/tipos-processo(\?.*)?$/,
+    TIPOS_PROCESSO,
+    CORS_HEADERS,
+  );
+  await responder(
+    page,
+    /\/api\/configuracao\/fases-canonicas(\?.*)?$/,
+    FASES_CANONICAS,
+    CORS_HEADERS,
+  );
+  await responder(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, [], CORS_HEADERS);
+  await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, [], CORS_HEADERS);
+  await responder(page, /\/api\/configuracao\/categorias-documento(\?.*)?$/, [], CORS_HEADERS);
+  await responder(
+    page,
+    /\/api\/configuracao\/tipos-documento(\?.*)?$/,
+    TIPOS_DOCUMENTO,
+    CORS_HEADERS,
+  );
+  await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, [], CORS_HEADERS);
+  await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, [], CORS_HEADERS);
   await mockarRegrasCatalogo(page);
 }
 
@@ -812,26 +828,6 @@ async function mockarRegrasCatalogo(page: Page): Promise<void> {
 
     const tipo = new URL(request.url()).searchParams.get('tipo');
     const itens = tipo === 'algoritmo_contagem_prazo' ? REGRAS_CONTAGEM : [];
-
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: CORS_HEADERS,
-      body: JSON.stringify(itens),
-    });
-  });
-}
-
-async function responderCatalogo(
-  page: Page,
-  rota: RegExp,
-  itens: readonly unknown[],
-): Promise<void> {
-  await page.route(rota, async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
 
     await route.fulfill({
       status: 200,

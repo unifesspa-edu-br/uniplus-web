@@ -154,13 +154,19 @@ function identificadoresDe(resultado: AxeResults): string[] {
  * recente para a mais antiga.
  */
 async function mockarApi(page: Page, status: Status): Promise<void> {
-  await responder(page, /\/api\//, [], { headers: CORS_HEADERS });
-  await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_DE_PROCESSO, {
-    headers: CORS_HEADERS,
-  });
-  await responder(page, /\/api\/selecao\/fundamentos-isencao(\?.*)?$/, FUNDAMENTOS_DE_ISENCAO, {
-    headers: CORS_HEADERS,
-  });
+  await responder(page, /\/api\//, [], CORS_HEADERS);
+  await responder(
+    page,
+    /\/api\/configuracao\/tipos-processo(\?.*)?$/,
+    TIPOS_DE_PROCESSO,
+    CORS_HEADERS,
+  );
+  await responder(
+    page,
+    /\/api\/selecao\/fundamentos-isencao(\?.*)?$/,
+    FUNDAMENTOS_DE_ISENCAO,
+    CORS_HEADERS,
+  );
 
   const processo = new RegExp(
     `/api/selecao/processos-seletivos/${PROCESSO_PUBLICADO_DA_MEDICINA.id}`,
@@ -174,11 +180,11 @@ async function mockarApi(page: Page, status: Status): Promise<void> {
 
     const caminho = new URL(request.url()).pathname;
     if (caminho.endsWith(PROCESSO_PUBLICADO_DA_MEDICINA.id)) {
-      await responderCom(route, { ...PROCESSO_PUBLICADO_DA_MEDICINA, status }, { headers: CORS_HEADERS, }, );
+      await responderCom(route, { ...PROCESSO_PUBLICADO_DA_MEDICINA, status }, CORS_HEADERS);
       return;
     }
     if (caminho.endsWith('/documentos-edital')) {
-      await responderCom(route, [], { headers: CORS_HEADERS, },);
+      await responderCom(route, [], CORS_HEADERS);
       return;
     }
     await route.fulfill({ status: 404, headers: CORS_HEADERS });

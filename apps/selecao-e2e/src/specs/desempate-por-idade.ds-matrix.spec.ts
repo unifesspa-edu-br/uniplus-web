@@ -144,10 +144,13 @@ function identificadoresDe(resultado: AxeResults): string[] {
  * recente para a mais antiga.
  */
 async function mockarApi(page: Page): Promise<void> {
-  await responder(page, /\/api\//, [], { headers: CORS_HEADERS, }, );
-  await responder(page, /\/api\/configuracao\/fatos-candidato(\?.*)?$/, FATOS_DO_CANDIDATO, {
-    headers: CORS_HEADERS,
-  });
+  await responder(page, /\/api\//, [], CORS_HEADERS);
+  await responder(
+    page,
+    /\/api\/configuracao\/fatos-candidato(\?.*)?$/,
+    FATOS_DO_CANDIDATO,
+    CORS_HEADERS,
+  );
 
   await page.route(/\/api\/selecao\/regras-catalogo(\?.*)?$/, async (route: Route) => {
     if (route.request().method() === 'OPTIONS') {
@@ -156,8 +159,10 @@ async function mockarApi(page: Page): Promise<void> {
     }
 
     const tipo = new URL(route.request().url()).searchParams.get('tipo') ?? '';
-    await responderCom(route, tipo === 'criterio_desempate' ? REGRAS_DE_DESEMPATE : [], {
-      headers: CORS_HEADERS,
-    });
+    await responderCom(
+      route,
+      tipo === 'criterio_desempate' ? REGRAS_DE_DESEMPATE : [],
+      CORS_HEADERS,
+    );
   });
 }

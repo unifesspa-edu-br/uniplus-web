@@ -1,4 +1,4 @@
-import { test, expect, type Page, type Route, type TestInfo } from '@playwright/test';
+import { test, expect, type Page, type Route } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import { blocosColados } from '../support/ritmo-vertical';
 import {
@@ -10,6 +10,7 @@ import {
   medirTransbordoHorizontal,
   rolarAteOMeio,
 } from '../support/rolagem-do-editor';
+import { LARGURA_STEPPER_LATERAL, larguraDoProjeto } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 
 /**
@@ -22,16 +23,8 @@ import { instalarPreferencia, temaDoProject } from '../support/tema';
  * a lembrar de cada verificação ao acrescentar um viewport — foi assim que a
  * entrada de 375 px passou a clicar num stepper que aquela largura esconde.
  */
-const LARGURA_STEPPER_LATERAL = 768;
 const LARGURA_MENU_AMPLO = 1024;
 
-function larguraDoProject(testInfo: TestInfo): number {
-  const largura = testInfo.project.use.viewport?.width;
-  if (largura === undefined) {
-    throw new Error(`Project ${testInfo.project.name} não declara viewport.`);
-  }
-  return largura;
-}
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -71,7 +64,7 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
    * estilo. Cada botão reporta o próprio estado em `aria-expanded`.
    */
   test('expõe um único controle de menu, coerente com a largura', async ({ page }, testInfo) => {
-    const menu = controleDeMenu(larguraDoProject(testInfo));
+    const menu = controleDeMenu(larguraDoProjeto(testInfo));
 
     await expect(page.locator(menu.visivel)).toBeVisible();
     await expect(page.locator(menu.oculto)).toBeHidden();
@@ -165,7 +158,7 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
     page,
   }, testInfo) => {
     test.skip(
-      larguraDoProject(testInfo) < LARGURA_STEPPER_LATERAL,
+      larguraDoProjeto(testInfo) < LARGURA_STEPPER_LATERAL,
       'Abaixo de 768 px o stepper lateral dá lugar à barra de etapas.',
     );
     await expect(page.locator('.wiz-content h1')).toContainText('Tipo do processo');
@@ -215,7 +208,7 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
   });
 
   test('recusa publicar rascunho incompleto', async ({ page }, testInfo) => {
-    const stepper = navegacaoDePassos(page, larguraDoProject(testInfo));
+    const stepper = navegacaoDePassos(page, larguraDoProjeto(testInfo));
     await stepper();
 
     await page.getByRole('button', { name: 'Publicar' }).click();
