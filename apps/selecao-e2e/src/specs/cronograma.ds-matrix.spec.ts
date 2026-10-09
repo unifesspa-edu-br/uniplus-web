@@ -600,10 +600,10 @@ const DETALHE_PUBLICADO = {
 };
 
 /**
- * Conferência dos documentos de uma fase publicada (web#902): o resumo mostra todas as regras
- * com os campos recolhidos — cada documento com a quem se aplica, a entrega, a consequência e a
- * coleta, a norma comum uma vez —, o nome abre os campos desabilitados, e a lista é filtrável
- * por público.
+ * Conferência dos documentos de uma fase publicada (web#902, web#905): o resumo mostra todas as
+ * regras com os campos recolhidos — cada documento com a quem se aplica, a entrega, a
+ * consequência e a coleta, a norma comum uma vez — e, abaixo de cada um, o detalhe lido como
+ * texto. Nenhum botão abre campo, e nenhum campo desabilitado aparece.
  */
 test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -615,7 +615,6 @@ test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     await irAoPasso(page, 'Cronograma', testInfo);
-    await page.getByRole('button', { name: /Inscrição \d+ documentos/ }).click();
     await expect(
       page.getByRole('heading', { name: 'Documentos exigidos nesta fase' }),
     ).toBeVisible();
@@ -623,18 +622,20 @@ test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
 
   test('mostra o que decide cada exigência com os campos recolhidos', async ({ page }) => {
     const tabela = page.getByRole('table', { name: 'Documentos exigidos nesta fase' });
-    const autodeclaracao = tabela.getByRole('row', { name: /Autodeclaração étnico-racial/ });
+    const autodeclaracao = tabela
+      .getByRole('row', { name: /Autodeclaração étnico-racial/ })
+      .first();
 
-    await expect(tabela.getByRole('row', { name: new RegExp(NOME_DOCUMENTO) })).toContainText(
-      'Todo candidato',
-    );
+    await expect(
+      tabela.getByRole('row', { name: new RegExp(NOME_DOCUMENTO) }).first(),
+    ).toContainText('Todo candidato');
     await expect(autodeclaracao).toContainText('Modalidades LB_PPI');
     await expect(autodeclaracao).toContainText('Facultativa');
     await expect(autodeclaracao).toContainText('Reclassifica para ampla concorrência');
     await expect(autodeclaracao).toContainText('Na fase inteira');
     await expect(page.getByText('Norma de todos os documentos:')).toBeVisible();
     await expect(tabela.locator('button[aria-expanded="true"]')).toHaveCount(0);
-    await expect(tabela.locator('.doc-conferencia__campos')).toHaveCount(0);
+    await expect(tabela.locator('select, input, button')).toHaveCount(0);
 
     const transbordo = await medirTransbordoHorizontal(page);
     expect(transbordo.documento).toBeLessThanOrEqual(1);
@@ -644,23 +645,17 @@ test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
   });
 
   /**
-   * O detalhe continua ao alcance em consulta: o nome abre os campos pelo teclado, e eles vêm
-   * desabilitados — o processo publicado só muda por retificação.
+   * O detalhe continua ao alcance em consulta, agora como texto: o que a conferência não resume
+   * (em que fases vale, o modelo do candidato) fica sob o documento, sem campo desabilitado.
    */
-  test('abre pelo teclado os campos do documento, desabilitados', async ({ page }) => {
-    const alternar = page.getByRole('button', {
-      name: 'Autodeclaração étnico-racial',
-      exact: true,
-    });
-    await expect(alternar).toHaveAttribute('aria-expanded', 'false');
+  test('lê o detalhe do documento como texto', async ({ page }) => {
+    const detalhe = page.getByRole('group', { name: 'Detalhe de Autodeclaração étnico-racial' });
 
-    await alternar.focus();
-    await page.keyboard.press('Enter');
-
-    await expect(alternar).toHaveAttribute('aria-expanded', 'true');
-    const campos = page.locator(`[id="${await alternar.getAttribute('aria-controls')}"]`);
-    await expect(campos.getByLabel('Entrega')).toBeDisabled();
-    await expect(campos.getByLabel('Se não for entregue')).toBeDisabled();
+    await expect(detalhe).toBeVisible();
+    await expect(detalhe.getByText('Exigido em')).toBeVisible();
+    await expect(detalhe.getByText('Só em Inscrição')).toBeVisible();
+    await expect(detalhe.getByText('Sem modelo')).toBeVisible();
+    await expect(detalhe.locator('select, input, textarea, button')).toHaveCount(0);
 
     const transbordo = await medirTransbordoHorizontal(page);
     expect(transbordo.documento).toBeLessThanOrEqual(1);
@@ -690,16 +685,6 @@ test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
       );
 
     expect(problemas).toEqual([]);
-  });
-
-  test('filtra o que cada público entrega e diz quantos sobraram', async ({ page }) => {
-    await page.getByLabel('Conferir os documentos de').selectOption({
-      label: 'Exigidos de todo candidato',
-    });
-
-    await expect(page.locator('.doc-conferencia__linha')).toHaveCount(1);
-    await expect(page.getByText('1 de 2 documentos.')).toBeVisible();
-    expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
   });
 });
 
