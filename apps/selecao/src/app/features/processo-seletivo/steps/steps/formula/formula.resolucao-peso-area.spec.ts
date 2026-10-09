@@ -783,6 +783,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       expect(pedidosDoCadastro(m)).toHaveLength(0);
       expect(m.el.querySelector('select, input, button')).toBeNull();
       expect(resolucaoEmConsulta(m)).toBe(RESOLUCAO);
+      expect(texto(m.el)).not.toContain('fora do cadastro');
       expect(texto(m.el.querySelector('caption'))).toContain('congelado no processo');
       expect(texto(m.el.querySelector('tbody tr td'))).toBe('Peso 9 corte 700');
     });
