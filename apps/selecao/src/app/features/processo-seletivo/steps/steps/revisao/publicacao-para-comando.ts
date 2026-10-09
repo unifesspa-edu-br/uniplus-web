@@ -402,6 +402,20 @@ function comoItemDaRevisao(item: ItemConformidadeDto): ItemDaRevisao {
   return { codigo, mensagem, ok, idDaMensagem, orientacao, passo };
 }
 
+/**
+ * Os passos em que o checklist estrutural tem item reprovado — o mesmo destino que o painel da
+ * Revisão aponta no botão de cada item, para o stepper e a Revisão não se contradizerem.
+ */
+export function passosComPendencia(itens: readonly ItemConformidadeDto[]): ReadonlySet<number> {
+  const indices = new Set<number>();
+  for (const grupo of comoGruposDaRevisao(agruparPorDimensao(itens))) {
+    for (const item of grupo.itens) {
+      if (!item.ok && item.passo !== null) indices.add(item.passo.indice);
+    }
+  }
+  return indices;
+}
+
 /** Os grupos do checklist com o que o painel mostra de cada item, calculado uma vez. */
 export function comoGruposDaRevisao(
   grupos: readonly GrupoDeConformidade[],
