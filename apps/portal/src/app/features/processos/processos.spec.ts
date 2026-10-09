@@ -29,6 +29,7 @@ const sisu: CertameNaVitrineDto = {
   inscricoesAte: '2026-04-16T23:59:59Z',
   situacao: SituacaoDoCertame.inscricoesAbertas,
   totalDeVagas: 1234,
+  identificadorLegivel: 'sisu-2026-1',
 };
 
 const tecnicoEnfermagem: CertameNaVitrineDto = {
@@ -41,6 +42,7 @@ const tecnicoEnfermagem: CertameNaVitrineDto = {
   inscricoesAte: '2026-03-25T23:59:59Z',
   situacao: SituacaoDoCertame.ultimosDias,
   totalDeVagas: 60,
+  identificadorLegivel: 'psr-tec-enfermagem-2026',
 };
 
 const encerrado: CertameNaVitrineDto = {
@@ -53,6 +55,7 @@ const encerrado: CertameNaVitrineDto = {
   inscricoesAte: '2026-03-22T23:59:59Z',
   situacao: SituacaoDoCertame.encerradas,
   totalDeVagas: 40,
+  identificadorLegivel: 'pg-educacao-2026',
 };
 
 function stubMatchMedia(matches: boolean): void {
@@ -523,6 +526,7 @@ describe('ProcessosComponent', () => {
 describe('ProcessosComponent — sem documento de edital de abertura (CA-14)', () => {
   const semDocumento: CertameNaVitrineDto = {
     processoSeletivoId: '01960000-0000-7000-0000-0000000000e9',
+    identificadorLegivel: 'ps-sem-documento',
     numero: 'Edital 99/2026',
     nome: 'Certame sem PDF do edital',
     tipoProcesso: { codigo: 'VESTIBULAR', nome: 'Vestibular' },
