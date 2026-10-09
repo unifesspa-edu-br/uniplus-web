@@ -7124,6 +7124,7 @@ export interface components {
             readonly versao: null | string;
         };
         readonly DefinirBonusRegionalRequest: {
+            readonly aplica: boolean;
             readonly regraCodigo: null | string;
             readonly regraVersao: null | string;
             /** Format: double */
@@ -8002,6 +8003,7 @@ export interface components {
             readonly ofertaAtendimento: null | components["schemas"]["OfertaAtendimentoEspecializadoDto"];
             readonly distribuicaoVagas: readonly components["schemas"]["ConfiguracaoDistribuicaoVagasDto"][];
             readonly bonusRegional: null | components["schemas"]["ConfiguracaoBonusRegionalDto"];
+            readonly aplicaBonusRegional: null | boolean;
             readonly cascata: null | components["schemas"]["ConfiguracaoCascataRemanejamentoDto"];
             readonly criteriosDesempate: readonly components["schemas"]["CriterioDesempateDto"][];
             readonly classificacao: null | components["schemas"]["ConfiguracaoClassificacaoDto"];
