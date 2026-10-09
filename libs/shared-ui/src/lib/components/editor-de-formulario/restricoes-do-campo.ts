@@ -20,6 +20,7 @@ import {
   type RestricaoDeValor,
 } from './formulario-editavel';
 import { GrupoDeOpcoesComponent } from './grupo-de-opcoes';
+import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
 interface CampoCitavel {
   readonly codigo: string;
@@ -35,7 +36,7 @@ interface CampoCitavel {
 @Component({
   selector: 'ui-restricoes-do-campo',
   standalone: true,
-  imports: [GrupoDeOpcoesComponent],
+  imports: [ValorLegivelDirective, GrupoDeOpcoesComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (restricoes().length > 0 || paraAcrescentar().length > 0) {

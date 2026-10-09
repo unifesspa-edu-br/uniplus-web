@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { AuthService } from '@uniplus/shared-auth/bootstrap';
 import { AppConfigService, resolveConfiguracaoWebUrl } from '@uniplus/shared-data/config';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { formatarNumeroPtBr } from '@uniplus/shared-utils';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
@@ -80,7 +80,7 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 @Component({
   selector: 'sel-step-formula',
   standalone: true,
-  imports: [ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, ValorEmConsultaComponent],
   templateUrl: './formula.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FormulaStepComponent)],
@@ -155,6 +155,11 @@ export class FormulaStepComponent {
   );
 
   /**
+   * Em consulta a leitura diz só o nome gravado, sem "(fora do cadastro)" (web#1073). O passo
+   * não lê o cadastro de um processo que não aceita edição, então não há como afirmar que a
+   * resolução saiu dele; e o que vale em consulta é o que foi gravado, que o quadro congelado
+   * do processo registra. O sufixo é diagnóstico de quem ainda vai gravar.
+   *
    * As resoluções do cadastro. A escolha do rascunho que não está na lista continua oferecida —
    * como `regrasEscolhiveis` faz com as regras —, e só é marcada "fora do cadastro" quando a
    * leitura do cadastro permite afirmar isso.

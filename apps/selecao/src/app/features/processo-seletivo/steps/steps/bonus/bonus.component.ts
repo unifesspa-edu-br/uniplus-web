@@ -15,7 +15,7 @@ import {
   BaseLegalBonusRegionalDto,
   TiposInstrumentoNormativoApi,
 } from '@uniplus/shared-data/configuracao';
-import { RolagemFocavelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { RolagemFocavelDirective, ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -64,7 +64,7 @@ interface MunicipioBeneficiado {
 @Component({
   selector: 'sel-step-bonus',
   standalone: true,
-  imports: [ReactiveFormsModule, RolagemFocavelDirective, ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, ReactiveFormsModule, RolagemFocavelDirective, ValorEmConsultaComponent],
   templateUrl: './bonus.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(BonusStepComponent)],
