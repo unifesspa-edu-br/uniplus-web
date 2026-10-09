@@ -171,6 +171,17 @@ describe('IdentificacaoStepComponent', () => {
     expect(store.processoSeletivoId()).toBeNull();
   });
 
+  it('não cria o cadastro sem o identificador legível, e não chama a API', async () => {
+    preencherCamposDoComando();
+    store.patchObjectSection('identificacao', { identificadorLegivel: '   ' });
+
+    await componente.persistir();
+
+    expect(componente.erroDeCriacao()).toContain('identificador legível');
+    expect(store.processoSeletivoId()).toBeNull();
+    controller.expectNone(`${BASE}/api/selecao/processos-seletivos`);
+  });
+
   it('congela os campos do comando depois de criar o processo', async () => {
     preencherCamposDoComando();
     const criado = componente.persistir();
@@ -582,6 +593,9 @@ describe('IdentificacaoStepComponent', () => {
 
       // O servidor tem o que foi enviado: avançar de novo não regrava.
       expect(componente.rotuloDeAvanco()).toBe('Próximo');
+      controller.expectNone(
+        `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/identificador-legivel`,
+      );
     });
 
     it('mostra junto ao campo o identificador já usado por outro processo', async () => {
