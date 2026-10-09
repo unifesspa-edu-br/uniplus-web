@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { responder } from '../support/responder';
 
 /**
  * O que a reformulação do eixo fase → etapa habilita, exercitado de ponta a ponta na
@@ -341,14 +342,18 @@ function blocoDaEtapa(page: Page, titulo: string) {
 }
 
 async function mockarCatalogos(page: Page): Promise<void> {
-  await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_PROCESSO);
-  await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS);
-  await responder(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, []);
-  await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, TIPOS_BANCA);
-  await responder(page, /\/api\/configuracao\/categorias-documento(\?.*)?$/, CATEGORIAS_DOCUMENTO);
-  await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, TIPOS_ETAPA);
-  await responder(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, TIPOS_DOCUMENTO);
-  await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO);
+  await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_PROCESSO, { headers: CORS, },);
+  await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS, {
+    headers: CORS,
+  });
+  await responder(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, [], { headers: CORS });
+  await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, TIPOS_BANCA, { headers: CORS });
+  await responder(page, /\/api\/configuracao\/categorias-documento(\?.*)?$/, CATEGORIAS_DOCUMENTO, {
+    headers: CORS,
+  });
+  await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, TIPOS_ETAPA, { headers: CORS });
+  await responder(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, TIPOS_DOCUMENTO, { headers: CORS, },);
+  await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO, { headers: CORS });
 
   await page.route(/\/api\/selecao\/regras-catalogo(\?.*)?$/, async (route: Route) => {
     if (route.request().method() === 'OPTIONS') {
@@ -362,22 +367,6 @@ async function mockarCatalogos(page: Page): Promise<void> {
       contentType: 'application/json',
       headers: CORS,
       body: JSON.stringify(tipo === 'regra_prazo_recurso' ? REGRAS_RECURSO : []),
-    });
-  });
-}
-
-async function responder(page: Page, rota: RegExp, itens: readonly unknown[]): Promise<void> {
-  await page.route(rota, async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS });
-      return;
-    }
-
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: CORS,
-      body: JSON.stringify(itens),
     });
   });
 }

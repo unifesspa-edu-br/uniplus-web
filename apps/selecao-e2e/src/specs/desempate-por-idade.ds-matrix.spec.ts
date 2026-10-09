@@ -3,12 +3,11 @@ import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
+import { irAoPasso } from '../support/navega-passo';
+import { instalarPreferencia, temaDoProject } from '../support/tema';
+import { responder, responderCom } from '../support/responder';
 
-type DsTheme = 'light' | 'dark' | 'contrast';
 type CriterioDeIdade = 'DESEMPATE-MAIOR-IDADE' | 'DESEMPATE-IDOSO';
-
-/** Abaixo desta largura o stepper lateral dá lugar à barra com diálogo. */
-const LARGURA_STEPPER_LATERAL = 768;
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -134,52 +133,9 @@ async function declararCriterio(
   }
 }
 
-function larguraDoProject(testInfo: TestInfo): number {
-  const largura = testInfo.project.use.viewport?.width;
-  if (largura === undefined) {
-    throw new Error(`Project ${testInfo.project.name} não declara viewport.`);
-  }
-  return largura;
-}
-
-/**
- * Abaixo de 768 px o stepper lateral dá lugar à barra de etapas com diálogo, e o caminho até um
- * passo muda com ele.
- */
-async function irAoPasso(page: Page, rotulo: string, testInfo: TestInfo): Promise<void> {
-  if (larguraDoProject(testInfo) >= LARGURA_STEPPER_LATERAL) {
-    await page.getByRole('button', { name: rotulo }).click();
-    return;
-  }
-
-  await page.getByRole('button', { name: 'Abrir lista de etapas' }).click();
-  const dialogo = page.getByRole('dialog', { name: 'Etapas do cadastro' });
-  await expect(dialogo).toBeVisible();
-  await dialogo.getByRole('button', { name: rotulo }).click();
-  await expect(dialogo).toBeHidden();
-}
-
 /** Falhar por id diz qual regra caiu; a coleção crua não. */
 function identificadoresDe(resultado: AxeResults): string[] {
   return resultado.violations.map((violacao) => violacao.id);
-}
-
-async function instalarPreferencia(page: Page, theme: DsTheme): Promise<void> {
-  await page.addInitScript((dsTheme) => {
-    window.localStorage.setItem(
-      'uniplus.a11y',
-      JSON.stringify({
-        theme: dsTheme === 'contrast' ? 'auto' : dsTheme,
-        contrast: dsTheme === 'contrast',
-        fontMode: 'default',
-      }),
-    );
-  }, theme);
-}
-
-function temaDoProject(projectName: string): DsTheme {
-  const parte = projectName.split('-').at(-1);
-  return parte === 'dark' || parte === 'contrast' ? parte : 'light';
 }
 
 /**
@@ -188,8 +144,10 @@ function temaDoProject(projectName: string): DsTheme {
  * recente para a mais antiga.
  */
 async function mockarApi(page: Page): Promise<void> {
-  await responder(page, /\/api\//, []);
-  await responder(page, /\/api\/configuracao\/fatos-candidato(\?.*)?$/, FATOS_DO_CANDIDATO);
+  await responder(page, /\/api\//, [], { headers: CORS_HEADERS, }, );
+  await responder(page, /\/api\/configuracao\/fatos-candidato(\?.*)?$/, FATOS_DO_CANDIDATO, {
+    headers: CORS_HEADERS,
+  });
 
   await page.route(/\/api\/selecao\/regras-catalogo(\?.*)?$/, async (route: Route) => {
     if (route.request().method() === 'OPTIONS') {
@@ -198,25 +156,8 @@ async function mockarApi(page: Page): Promise<void> {
     }
 
     const tipo = new URL(route.request().url()).searchParams.get('tipo') ?? '';
-    await responderCom(route, tipo === 'criterio_desempate' ? REGRAS_DE_DESEMPATE : []);
-  });
-}
-
-async function responder(page: Page, rota: RegExp, corpo: unknown): Promise<void> {
-  await page.route(rota, async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    await responderCom(route, corpo);
-  });
-}
-
-async function responderCom(route: Route, corpo: unknown): Promise<void> {
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    headers: CORS_HEADERS,
-    body: JSON.stringify(corpo),
+    await responderCom(route, tipo === 'criterio_desempate' ? REGRAS_DE_DESEMPATE : [], {
+      headers: CORS_HEADERS,
+    });
   });
 }
