@@ -475,11 +475,6 @@ export class CadastroInicialService {
     return { ok: false, problem: result.problem, inconclusiva };
   }
 
-  /**
-   * Declara o bônus regional do processo (RN05). Enviar os cinco campos
-   * `null` é a forma de declarar "sem bônus" — não existe rota separada para
-   * desligá-lo.
-   */
   /** Declara como os fatos derivados do certame são calculados a partir dos coletados. */
   async definirRegrasDerivacao(
     processoSeletivoId: string,
@@ -664,6 +659,10 @@ export class CadastroInicialService {
     return { ok: false, problem: result.problem };
   }
 
+  /**
+   * Declara se o processo aplica o bônus regional (RN05). `aplica: false` grava a declaração com
+   * os cinco campos do bônus `null`; `aplica: true` exige a configuração.
+   */
   async definirBonusRegional(
     processoSeletivoId: string,
     request: DefinirBonusRegionalRequest,

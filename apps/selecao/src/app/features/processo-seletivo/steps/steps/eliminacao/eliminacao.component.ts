@@ -361,11 +361,18 @@ export class EliminacaoStepComponent {
 
     const classificacao = this.store.draft().classificacao;
     const local = this.usaFormulaLocal();
+    // O passo Desempate adia a gravação dos critérios por área até a classificação: é aqui que eles
+    // saem, e quem confirma precisa ver quais são.
+    const criteriosAdiados = this.store.desempatePendenteDeGravacao()
+      ? this.store.draft().desempate
+      : [];
 
     return {
       titulo: 'Confirmar a classificação do processo',
       aviso: [
-        'A classificação, a precisão e a eliminação serão gravadas juntas nesta confirmação.',
+        criteriosAdiados.length > 0
+          ? 'A classificação, a precisão, a eliminação e os critérios de desempate serão gravados juntos nesta confirmação.'
+          : 'A classificação, a precisão e a eliminação serão gravadas juntas nesta confirmação.',
         ...avisoDoDesempate,
       ].join(' '),
       rotuloDeConfirmar: 'Gravar classificação',
@@ -392,6 +399,13 @@ export class EliminacaoStepComponent {
             ? `${classificacao.regrasEliminacao.length} regra(s)`
             : 'nenhuma (classificação importada)',
         },
+        ...criteriosAdiados.map((criterio, indice) => ({
+          rotulo: `${indice + 1}º critério de desempate`,
+          valor:
+            criterio.areas.length > 0
+              ? `${criterio.regraCodigo}: ${criterio.areas.map((codigo) => this.rotuloDaArea(codigo)).join(', ')}`
+              : criterio.regraCodigo,
+        })),
       ],
     };
   }

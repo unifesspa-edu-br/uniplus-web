@@ -171,6 +171,17 @@ describe('IdentificacaoStepComponent', () => {
     expect(store.processoSeletivoId()).toBeNull();
   });
 
+  it('não cria o cadastro sem o identificador legível, e não chama a API', async () => {
+    preencherCamposDoComando();
+    store.patchObjectSection('identificacao', { identificadorLegivel: '   ' });
+
+    await componente.persistir();
+
+    expect(componente.erroDeCriacao()).toContain('identificador legível');
+    expect(store.processoSeletivoId()).toBeNull();
+    controller.expectNone(`${BASE}/api/selecao/processos-seletivos`);
+  });
+
   it('congela os campos do comando depois de criar o processo', async () => {
     preencherCamposDoComando();
     const criado = componente.persistir();
@@ -340,10 +351,10 @@ describe('IdentificacaoStepComponent', () => {
   });
 
   it('descreve o município como fonte dos feriados aplicáveis, sem decorrer da unidade', () => {
-    const campo = host.querySelector('#f-localidade');
+    const campo = host.querySelector('input[role="combobox"]');
     const hint = host.querySelector('#f-localidade-hint');
 
-    expect(campo?.getAttribute('aria-describedby')).toBe('f-localidade-hint');
+    expect(campo?.getAttribute('aria-describedby')).toContain('f-localidade-hint');
     expect(hint?.textContent).toMatch(/feriados municipais e estaduais/i);
     expect(hint?.textContent).toMatch(/não decorre dela/i);
   });
@@ -381,6 +392,23 @@ describe('IdentificacaoStepComponent', () => {
 
     expect(store.draft().identificacao.localidade).toEqual(MARABA);
     expect(componente.municipios()).toEqual([]);
+  });
+
+  it('oferece os municípios achados como opções de um listbox e grava a escolhida', async () => {
+    const campo = host.querySelector<HTMLInputElement>('input[role="combobox"]');
+    campo?.focus();
+    componente.buscarMunicipios('mar');
+    controller
+      .expectOne((r) => r.url.includes('/api/cidades'))
+      .flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
+    await tick();
+    detectar();
+
+    const opcao = host.querySelector<HTMLElement>('[role="listbox"] [role="option"]');
+    expect(opcao?.textContent?.trim()).toBe('Marabá — PA');
+
+    opcao?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    expect(store.draft().identificacao.localidade).toEqual(MARABA);
   });
 
   it('limpar a localidade devolve o campo à busca', () => {
@@ -565,6 +593,9 @@ describe('IdentificacaoStepComponent', () => {
 
       // O servidor tem o que foi enviado: avançar de novo não regrava.
       expect(componente.rotuloDeAvanco()).toBe('Próximo');
+      controller.expectNone(
+        `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/identificador-legivel`,
+      );
     });
 
     it('mostra junto ao campo o identificador já usado por outro processo', async () => {

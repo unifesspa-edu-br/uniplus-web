@@ -157,7 +157,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
-    const paineis = [...host.querySelectorAll('.step-pane')];
+    const paineis = Array.from(host.querySelectorAll('.step-pane') as NodeListOf<HTMLElement>);
 
     expect(paineis).toHaveLength(STEP_LABELS.length);
     for (const painel of paineis) {
@@ -205,9 +205,9 @@ describe('ProcessoSeletivoPage — estrutura', () => {
       store.goTo(indice);
       fixture.detectChanges();
 
-      const visiveis = [...host.querySelectorAll('.step-pane')].filter(
-        (painel) => !painel.hasAttribute('hidden'),
-      );
+      const visiveis = Array.from(
+        host.querySelectorAll('.step-pane') as NodeListOf<HTMLElement>,
+      ).filter((painel) => !painel.hasAttribute('hidden'));
 
       expect(visiveis, `nenhum painel visível no passo ${indice} ("${rotulo}")`).toHaveLength(1);
       expect(
@@ -1208,8 +1208,8 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     expect(aviso?.getAttribute('role')).toBe('status');
     expect(aviso?.querySelector('.alert__title')?.textContent).toContain('Atenção!');
 
-    const botao = [...host.querySelectorAll('button')].find((b) =>
-      /Voltar e corrigir/.test(b.textContent ?? ''),
+    const botao = Array.from(host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+      (b) => /Voltar e corrigir/.test(b.textContent ?? ''),
     );
     expect(botao).toBeDefined();
   });
@@ -1310,9 +1310,9 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     // aberta sem destino de foco nem de Tab. O de confirmar permanece
     // operável pelo teclado, anunciado como ocupado.
     const host = fixture.nativeElement as HTMLElement;
-    const confirmar = [...host.querySelectorAll('button')].find((b) =>
-      /Gravando/.test(b.textContent ?? ''),
-    );
+    const confirmar = Array.from(
+      host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => /Gravando/.test(b.textContent ?? ''));
     expect(confirmar).toBeDefined();
     expect(confirmar?.disabled).toBe(false);
     expect(confirmar?.getAttribute('aria-busy')).toBe('true');

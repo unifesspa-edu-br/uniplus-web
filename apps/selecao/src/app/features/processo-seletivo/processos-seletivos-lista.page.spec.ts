@@ -294,9 +294,9 @@ describe('ProcessosSeletivosListaPage', () => {
     await propagate();
     fixture.detectChanges();
 
-    const botao = [...host().querySelectorAll('button')].find((b) =>
-      b.textContent?.includes('Tentar novamente'),
-    );
+    const botao = Array.from(
+      host().querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Tentar novamente'));
     botao?.click();
     fixture.detectChanges();
 
@@ -319,10 +319,12 @@ describe('ProcessosSeletivosListaPage', () => {
   it('rotula todas as células com o cabeçalho correspondente', async () => {
     await flushLista([processo()]);
 
-    const cabecalhos = [...host().querySelectorAll('thead th')].map((th) => th.textContent?.trim());
-    const rotulos = [...host().querySelectorAll('tbody tr td')].map((td) =>
-      td.getAttribute('data-label'),
-    );
+    const cabecalhos = Array.from(
+      host().querySelectorAll('thead th') as NodeListOf<HTMLTableCellElement>,
+    ).map((th) => th.textContent?.trim());
+    const rotulos = Array.from(
+      host().querySelectorAll('tbody tr td') as NodeListOf<HTMLTableCellElement>,
+    ).map((td) => td.getAttribute('data-label'));
 
     expect(rotulos).toEqual(cabecalhos);
   });
@@ -341,7 +343,9 @@ describe('ProcessosSeletivosListaPage', () => {
   it('não expõe âncoras sem destino', async () => {
     await flushLista([processo()]);
 
-    const vazias = [...host().querySelectorAll('a')].filter((a) => a.getAttribute('href') === '#');
+    const vazias = Array.from(host().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).filter(
+      (a) => a.getAttribute('href') === '#',
+    );
 
     expect(vazias).toHaveLength(0);
   });
@@ -364,8 +368,8 @@ describe('ProcessosSeletivosListaPage', () => {
   it('leva ao cadastro pelo atalho de novo processo', async () => {
     await flushLista([processo()]);
 
-    const atalho = [...host().querySelectorAll('a')].find((a) =>
-      a.textContent?.includes('Novo Processo'),
+    const atalho = Array.from(host().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).find(
+      (a) => a.textContent?.includes('Novo Processo'),
     );
 
     expect(atalho?.getAttribute('href')).toBe('/processo-seletivo/novo');
@@ -379,8 +383,8 @@ describe('ProcessosSeletivosListaPage', () => {
     papeis.set(['gestor']);
     await flushLista([processo()]);
 
-    const atalho = [...host().querySelectorAll('a')].find((a) =>
-      a.textContent?.includes('Novo Processo'),
+    const atalho = Array.from(host().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).find(
+      (a) => a.textContent?.includes('Novo Processo'),
     );
 
     expect(atalho).toBeUndefined();
@@ -421,7 +425,7 @@ describe('ProcessosSeletivosListaPage', () => {
   });
 
   function nomesNaTabela(): string[] {
-    return [...host().querySelectorAll('tbody tr')].map(
+    return Array.from(host().querySelectorAll('tbody tr') as NodeListOf<HTMLTableRowElement>).map(
       (linha) => linha.querySelector('td')?.textContent?.trim().split('\n')[0] ?? '',
     );
   }

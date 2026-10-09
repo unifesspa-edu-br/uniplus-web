@@ -182,7 +182,7 @@ function seletor(m: Montagem): HTMLSelectElement {
 }
 
 function botao(m: Montagem, rotulo: string): HTMLButtonElement | undefined {
-  return [...m.el.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
+  return Array.from(m.el.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find((b) =>
     texto(b).includes(rotulo),
   );
 }
@@ -271,7 +271,9 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       marcarEnemComMediaPonderada(m);
       responderPesos(m);
 
-      const opcoes = [...m.el.querySelectorAll<HTMLOptionElement>(`${SELETOR_RESOLUCAO} option`)];
+      const opcoes = Array.from(
+        m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`) as NodeListOf<HTMLOptionElement>,
+      );
       expect(opcoes.map((opcao) => texto(opcao))).toEqual([
         '— escolher —',
         OUTRA_RESOLUCAO,
@@ -360,14 +362,18 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       expect(legenda).toContain('Prévia');
       expect(legenda).toContain('será copiado para o processo');
 
-      const cabecalhos = [...(tabela?.querySelectorAll('thead th') ?? [])].map(texto);
+      const cabecalhos = Array.from(
+        (tabela?.querySelectorAll('thead th') ?? []) as NodeListOf<HTMLTableCellElement>,
+      ).map(texto);
       // A base legal é a mesma nos dois grupos: dita uma vez acima do quadro, e não em coluna.
       expect(cabecalhos).toEqual(['Grupo de área', 'Área de teste A', 'Área de teste B']);
       expect(texto(m.el.querySelector('.peso-area__base-legal'))).toBe(
         `Base legal: ${RESOLUCAO} – Anexo I`,
       );
 
-      const linhas = [...(tabela?.querySelectorAll('tbody tr') ?? [])];
+      const linhas = Array.from(
+        (tabela?.querySelectorAll('tbody tr') ?? []) as NodeListOf<HTMLTableRowElement>,
+      );
       // Grupos pelo código, a mesma ordem da cópia que o servidor congela.
       expect(linhas.map((tr) => texto(tr.querySelector('th[scope="row"]')))).toEqual([
         'Saúde e Biológicas',
@@ -388,9 +394,14 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       escolherNoSeletor(m, RESOLUCAO);
 
       const tabela = m.el.querySelector('table');
-      const cabecalhos = [...(tabela?.querySelectorAll('thead th') ?? [])].map(texto);
+      const cabecalhos = Array.from(
+        (tabela?.querySelectorAll('thead th') ?? []) as NodeListOf<HTMLTableCellElement>,
+      ).map(texto);
       expect(cabecalhos.at(-1)).toBe('Base legal');
-      const basesLegais = [...(tabela?.querySelectorAll('td[data-label="Base legal"]') ?? [])];
+      const basesLegais = Array.from(
+        (tabela?.querySelectorAll('td[data-label="Base legal"]') ??
+          []) as NodeListOf<HTMLTableCellElement>,
+      );
       expect(basesLegais.map(texto)).toEqual([`${RESOLUCAO} – Anexo II`, `${RESOLUCAO} – Anexo I`]);
       expect(m.el.querySelector('.peso-area__base-legal')).toBeNull();
     });
@@ -420,9 +431,19 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
 
       const tabela = m.el.querySelector('table');
       expect(texto(tabela?.querySelector('caption') ?? null)).toContain('congelado no processo');
-      const linhas = [...(tabela?.querySelectorAll('tbody tr') ?? [])];
+      const linhas = Array.from(
+        (tabela?.querySelectorAll('tbody tr') ?? []) as NodeListOf<HTMLTableRowElement>,
+      );
       expect(linhas).toHaveLength(1);
-      expect(texto(linhas[0].querySelectorAll('td')[0])).toBe('Peso 9 corte 700');
+      expect(
+        texto(
+          (
+            (linhas[0] as HTMLTableRowElement).querySelectorAll(
+              'td',
+            ) as NodeListOf<HTMLTableCellElement>
+          )[0],
+        ),
+      ).toBe('Peso 9 corte 700');
       expect(texto(m.el.querySelector('.peso-area__base-legal'))).toBe(
         `Base legal: ${RESOLUCAO} – Anexo I (congelada)`,
       );
@@ -461,7 +482,9 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
 
       expect(texto(m.el.querySelector('caption'))).toContain('congelado no processo');
       expect(texto(m.el)).not.toContain('O cadastro de Peso por Área mudou depois');
-      const cabecalhos = [...m.el.querySelectorAll('thead th')].map(texto);
+      const cabecalhos = Array.from(
+        m.el.querySelectorAll('thead th') as NodeListOf<HTMLTableCellElement>,
+      ).map(texto);
       expect(cabecalhos.slice(1)).toEqual(ROTULOS_CANONICOS);
     });
 
@@ -563,9 +586,9 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       const m = await montar({ antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO) });
       responderPesos(m);
 
-      const aviso = [...m.el.querySelectorAll('.alert--warning')].find((el) =>
-        texto(el).includes('O cadastro de Peso por Área mudou depois'),
-      );
+      const aviso = Array.from(
+        m.el.querySelectorAll('.alert--warning') as NodeListOf<HTMLElement>,
+      ).find((el) => texto(el).includes('O cadastro de Peso por Área mudou depois'));
       expect(aviso?.getAttribute('role')).toBe('status');
     });
 
@@ -578,7 +601,9 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       ]);
       escolherNoSeletor(m, RESOLUCAO);
 
-      const cabecalhos = [...m.el.querySelectorAll('thead th')].map(texto);
+      const cabecalhos = Array.from(
+        m.el.querySelectorAll('thead th') as NodeListOf<HTMLTableCellElement>,
+      ).map(texto);
       expect(cabecalhos.slice(1)).toEqual(ROTULOS_CANONICOS);
     });
 
@@ -588,7 +613,9 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       responderPesos(m, [linha(RESOLUCAO, TECNOLOGICA, AREAS_CANONICAS)]);
       escolherNoSeletor(m, RESOLUCAO);
 
-      const cabecalhos = [...m.el.querySelectorAll('thead th')].map(texto);
+      const cabecalhos = Array.from(
+        m.el.querySelectorAll('thead th') as NodeListOf<HTMLTableCellElement>,
+      ).map(texto);
       expect(cabecalhos.slice(1)).toEqual(ROTULOS_CANONICOS);
     });
 
@@ -645,12 +672,16 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
     it('só marca "fora do cadastro" depois de o cadastro ter sido lido', async () => {
       const m = await montar({ antesDeMontar: rascunhoComResolucao('Resolução revogada') });
 
-      const enquantoCarrega = [...m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`)].map(texto);
+      const enquantoCarrega = Array.from(
+        m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`) as NodeListOf<HTMLOptionElement>,
+      ).map(texto);
       expect(enquantoCarrega).toContain('Resolução revogada');
       expect(enquantoCarrega.join(' ')).not.toContain('fora do cadastro');
 
       falharPesos(m);
-      const depoisDaFalha = [...m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`)].map(texto);
+      const depoisDaFalha = Array.from(
+        m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`) as NodeListOf<HTMLOptionElement>,
+      ).map(texto);
       expect(depoisDaFalha.join(' ')).not.toContain('fora do cadastro');
     });
 
@@ -667,7 +698,9 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       });
       m.fixture.detectChanges();
 
-      const opcoes = [...m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`)].map(texto);
+      const opcoes = Array.from(
+        m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`) as NodeListOf<HTMLOptionElement>,
+      ).map(texto);
       expect(opcoes).toContain('Resolução revogada (fora do cadastro)');
       expect(texto(m.el)).toContain('não está no cadastro de Peso por Área lido');
 
@@ -705,7 +738,9 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       m.fixture.detectChanges();
 
       expect(pedidosDoCadastro(m)).toHaveLength(0);
-      const opcoes = [...m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`)].map(texto);
+      const opcoes = Array.from(
+        m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`) as NodeListOf<HTMLOptionElement>,
+      ).map(texto);
       expect(opcoes).toContain(RESOLUCAO);
       expect(texto(m.el.querySelector('caption'))).toContain('Prévia');
     });
@@ -967,7 +1002,9 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       m.fixture.detectChanges();
       responderPesos(m, [...PESOS, linha('Resolução criada agora', TECNOLOGICA, [])]);
 
-      const opcoes = [...m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`)].map(texto);
+      const opcoes = Array.from(
+        m.el.querySelectorAll(`${SELETOR_RESOLUCAO} option`) as NodeListOf<HTMLOptionElement>,
+      ).map(texto);
       expect(opcoes).toContain('Resolução criada agora');
       expect(texto(m.el.querySelector('#f-resolucao-peso-area-lista'))).toBe(
         'Lista de resoluções de Peso por Área atualizada.',

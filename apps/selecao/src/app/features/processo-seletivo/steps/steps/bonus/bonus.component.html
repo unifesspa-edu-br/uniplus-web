@@ -1,6 +1,6 @@
 <p class="step-subtitle">
-  Bônus regional (opcional). A ausência de bônus é um estado válido — a gravação declara isso
-  explicitamente ao servidor.
+  Bônus regional. O processo declara se aplica o bônus ou não: a resposta é obrigatória para
+  publicar, e "não aplica" é uma resposta válida.
 </p>
 @if (!store.emConsulta() && catalogos.erro(); as erro) {
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
@@ -15,21 +15,40 @@
 }
 <div class="step-card">
   @if (store.emConsulta()) {
-    <ui-valor-em-consulta rotulo="Bônus regional" [valor]="leitura().aplicacao" />
+    <ui-valor-em-consulta
+      rotulo="Bônus regional"
+      seVazio="Ainda não declarado"
+      [valor]="leitura().aplicacao"
+    />
   } @else {
-    <label class="check-item"
-      ><input
-        type="checkbox"
-        [checked]="store.draft().bonus.ativo"
-        [disabled]="!store.aceitaEdicao()"
-        (change)="alternarAtivo($any($event.target).checked)"
-      /><span>Aplicar bônus regional neste processo seletivo?</span></label
-    >
+    <fieldset class="form-field">
+      <legend class="label">Este processo seletivo aplica o bônus regional?</legend>
+      <div class="checkbox-grid">
+        <label class="check-item"
+          ><input
+            type="radio"
+            name="bonus-aplica"
+            [value]="true"
+            [formControl]="aplica"
+          /><span>Aplica o bônus regional</span></label
+        >
+        <label class="check-item"
+          ><input
+            type="radio"
+            name="bonus-aplica"
+            [value]="false"
+            [formControl]="aplica"
+          /><span>Não aplica o bônus regional</span></label
+        >
+      </div>
+    </fieldset>
   }
-  @if (!store.draft().bonus.ativo && !store.emConsulta()) {
-    <div class="bonus-info">Bônus desabilitado — a gravação declara a ausência ao servidor.</div>
+  @if (store.draft().bonus.aplica === false && !store.emConsulta()) {
+    <div class="bonus-info">
+      O processo não aplica o bônus regional — a gravação declara isso ao servidor.
+    </div>
   }
-  @if (store.draft().bonus.ativo) {
+  @if (store.draft().bonus.aplica === true) {
     <div class="bonus-config">
       @if (store.emConsulta()) {
         <div class="form-grid">

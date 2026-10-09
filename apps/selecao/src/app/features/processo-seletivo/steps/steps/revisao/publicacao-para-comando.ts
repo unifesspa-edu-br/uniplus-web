@@ -158,6 +158,8 @@ const ROTULO_POR_DIMENSAO: ReadonlyMap<string, string> = new Map<string, string>
   ['classificacao', 'Classificação'],
   ['atendimento_especializado', 'Atendimento especializado'],
   ['coleta_de_fatos', 'Coleta de fatos'],
+  ['bonus_regional', 'Bônus regional'],
+  ['desempate', 'Critérios de desempate'],
 ]);
 
 /**
@@ -212,6 +214,10 @@ const PASSO_POR_DIMENSAO: ReadonlyMap<string, RotuloDePasso> = new Map<string, R
   // referência temporal são declarados. Três itens desta dimensão se resolvem noutro passo, e
   // estão nomeados em DESTINO_POR_ITEM.
   ['coleta_de_fatos', 'Formulários'],
+  // A declaração de aplicar ou não o bônus e os critérios de desempate exigidos com inscrição
+  // própria têm passo próprio.
+  ['bonus_regional', 'Bônus'],
+  ['desempate', 'Desempate'],
 ]);
 
 /**
@@ -400,6 +406,20 @@ function comoItemDaRevisao(item: ItemConformidadeDto): ItemDaRevisao {
   const orientacao = texto === undefined ? null : { id: idDoItem(codigo, 'orientacao'), texto };
   const passo = destino?.passo == null ? null : passoPeloRotulo(destino.passo);
   return { codigo, mensagem, ok, idDaMensagem, orientacao, passo };
+}
+
+/**
+ * Os passos em que o checklist estrutural tem item reprovado — o mesmo destino que o painel da
+ * Revisão aponta no botão de cada item, para o stepper e a Revisão não se contradizerem.
+ */
+export function passosComPendencia(itens: readonly ItemConformidadeDto[]): ReadonlySet<number> {
+  const indices = new Set<number>();
+  for (const grupo of comoGruposDaRevisao(agruparPorDimensao(itens))) {
+    for (const item of grupo.itens) {
+      if (!item.ok && item.passo !== null) indices.add(item.passo.indice);
+    }
+  }
+  return indices;
 }
 
 /** Os grupos do checklist com o que o painel mostra de cada item, calculado uma vez. */

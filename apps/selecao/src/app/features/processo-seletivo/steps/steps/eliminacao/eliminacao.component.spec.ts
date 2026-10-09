@@ -1685,6 +1685,17 @@ describe('EliminacaoStepComponent', () => {
   });
 
   describe('confirmacaoDeGravacao()', () => {
+    const MAIOR_IDADE = {
+      regraCodigo: 'DESEMPATE-MAIOR-IDADE',
+      regraVersao: '1',
+      etapaRef: '',
+      idadeMinima: '',
+      fato: '',
+      operador: '',
+      valor: '',
+      areas: [],
+    };
+
     it('devolve null quando a configuração ainda é inválida', () => {
       expect(componente.confirmacaoDeGravacao()).toBeNull();
     });
@@ -1710,6 +1721,32 @@ describe('EliminacaoStepComponent', () => {
         ?.itens.find((linha) => linha.rotulo === 'Resolução de Peso por Área');
 
       expect(item?.valor).toBe(RESOLUCAO);
+    });
+
+    it('lista os critérios de desempate que a classificação grava junto', () => {
+      prepararClassificacaoLocal();
+      store.desempatePendenteDeGravacao.set(true);
+      store.patchSection('desempate', [MAIOR_IDADE]);
+
+      const confirmacao = componente.confirmacaoDeGravacao();
+
+      expect(confirmacao?.aviso).toContain('critérios de desempate');
+      expect(confirmacao?.itens).toContainEqual({
+        rotulo: '1º critério de desempate',
+        valor: 'DESEMPATE-MAIOR-IDADE',
+      });
+    });
+
+    it('não lista o desempate quando ele não espera a classificação', () => {
+      prepararClassificacaoLocal();
+      store.patchSection('desempate', [MAIOR_IDADE]);
+
+      const confirmacao = componente.confirmacaoDeGravacao();
+
+      expect(confirmacao?.aviso).not.toContain('desempate');
+      expect(confirmacao?.itens.map((item) => item.rotulo)).not.toContain(
+        '1º critério de desempate',
+      );
     });
   });
 });

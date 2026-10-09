@@ -19,7 +19,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ProblemI18nService, isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { ProcessoSeletivoDto, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 import { StepValidation } from './steps/processo-seletivo.models';
@@ -47,6 +47,7 @@ import { EliminacaoStepComponent } from './steps/steps/eliminacao/eliminacao.com
 import { AtendimentoStepComponent } from './steps/steps/atendimento/atendimento.component';
 import { RevisaoStepComponent } from './steps/steps/revisao/revisao.component';
 import { classificarDocumentos } from './steps/shared/hidratacao';
+import { passosConcluidosDe } from './steps/shared/passos-concluidos';
 import {
   VERSAO_DO_RASCUNHO,
   blocoDoDocumento,
@@ -257,11 +258,14 @@ export class ProcessoSeletivoPage {
       const barra = this.barraDeEtapas()?.nativeElement;
       const rodape = this.rodape()?.nativeElement;
       const area = this.root.nativeElement.closest<HTMLElement>('.page');
+      const raiz = this.root.nativeElement.ownerDocument.documentElement;
       if (!barra || !rodape || !area || typeof ResizeObserver === 'undefined') return;
 
       const observador = new ResizeObserver(() => {
         area.style.setProperty('--wiz-reserva-topo', `${barra.offsetHeight}px`);
         area.style.setProperty('--wiz-reserva-base', `${rodape.offsetHeight}px`);
+        // O "Voltar ao topo" é irmão do `.page` no shell, fora do alcance da variável acima.
+        raiz.style.setProperty('--wiz-reserva-base', `${rodape.offsetHeight}px`);
       });
       observador.observe(barra);
       observador.observe(rodape);
@@ -269,6 +273,7 @@ export class ProcessoSeletivoPage {
         observador.disconnect();
         area.style.removeProperty('--wiz-reserva-topo');
         area.style.removeProperty('--wiz-reserva-base');
+        raiz.style.removeProperty('--wiz-reserva-base');
       });
     });
 
@@ -416,8 +421,25 @@ export class ProcessoSeletivoPage {
     if (superada()) return;
     await this.restaurarRascunhoDaPublicacao(id, superada);
     if (superada()) return;
+    await this.derivarPassosConcluidos(detalhe.data, superada);
+    if (superada()) return;
 
     this.store.hidratando.set(false);
+  }
+
+  /**
+   * O stepper de um processo retomado mostra o que o servidor tem gravado e conforme, não a
+   * navegação desta sessão — que recomeça vazia a cada abertura. Sem o checklist não há como
+   * afirmar a conformidade, então nenhum passo é dado por concluído: o mesmo estado de antes,
+   * em vez de um verde que a Revisão contradiria.
+   */
+  private async derivarPassosConcluidos(
+    detalhe: ProcessoSeletivoDto,
+    superada: () => boolean,
+  ): Promise<void> {
+    const checklist = await firstValueFrom(this.api.obterConformidade(detalhe.id));
+    if (superada() || !isApiOk(checklist)) return;
+    this.store.syncCompleted(passosConcluidosDe(detalhe, checklist.data.itens));
   }
 
   /**
@@ -1030,6 +1052,14 @@ export class ProcessoSeletivoPage {
 
   /** Título do passo — o destino de foco a cada troca. */
   private focarTituloDoPasso(): void {
+    // O passo novo abre no topo: com a rolagem do passo anterior mantida, ele aparecia rolado até
+    // o meio, com o título fora da tela. O foco vai sem rolar para não brigar com esta rolagem.
+    const scroller = this.root.nativeElement.closest<HTMLElement>('.page');
+    try {
+      scroller?.scrollTo({ top: 0, behavior: 'instant' });
+    } catch {
+      // jsdom não implementa scrollTo(options); o foco não pode ser bloqueado.
+    }
     this.root.nativeElement.querySelector<HTMLElement>('.step-head h1')?.focus({
       preventScroll: true,
     });

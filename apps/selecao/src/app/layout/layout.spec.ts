@@ -32,7 +32,7 @@ describe('LayoutComponent — navegação por papel', () => {
     const fixture = TestBed.createComponent(LayoutComponent);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
-    return [...host.querySelectorAll('nav a')]
+    return Array.from(host.querySelectorAll('nav a') as NodeListOf<HTMLAnchorElement>)
       .map((a) => a.textContent?.trim() ?? '')
       .filter((texto) => texto.length > 0);
   }

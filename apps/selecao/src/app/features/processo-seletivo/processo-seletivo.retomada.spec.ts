@@ -37,6 +37,7 @@ import { AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   DocumentoEditalDto,
+  ItemConformidadeDto,
   OrigemCandidatos,
   RegrasCatalogoApi,
   ProcessoSeletivoDto,
@@ -49,6 +50,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditorRouteReuseStrategy, ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
 import { ConfirmacaoDeSaida } from './steps/shared/rascunho-nao-gravado.guard';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
+import { PASSOS } from './steps/processo-seletivo.data';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
 import { PROCESSO_SELETIVO_ROUTES } from './processo-seletivo.routes';
@@ -138,6 +140,8 @@ function documento(overrides: Partial<DocumentoEditalDto> = {}): DocumentoEdital
 interface CenarioOpts {
   readonly id?: string | null;
   readonly obter?: ReturnType<typeof vi.fn>;
+  /** O checklist estrutural que o servidor devolve — sem item nenhum por padrão. */
+  readonly obterConformidade?: ReturnType<typeof vi.fn>;
   readonly listarDocumentos?: ReturnType<typeof vi.fn>;
   /** O rascunho da publicação que o servidor devolve — 404 por padrão (não há nenhum). */
   readonly obterRascunho?: ReturnType<typeof vi.fn>;
@@ -151,6 +155,8 @@ interface CenarioOpts {
 
 function montar(opts: CenarioOpts = {}) {
   const obter = opts.obter ?? vi.fn(() => of(okResult(detalhe())));
+  const obterConformidade =
+    opts.obterConformidade ?? vi.fn(() => of(okResult({ itens: [] as ItemConformidadeDto[] })));
   const definirTaxaInscricao = vi.fn(() => of(okResult(undefined)));
   const listarDocumentos = opts.listarDocumentos ?? vi.fn(() => of(okResult([])));
   const obterRascunho =
@@ -210,6 +216,7 @@ function montar(opts: CenarioOpts = {}) {
         provide: ProcessosSeletivosApi,
         useValue: {
           obter,
+          obterConformidade,
           listarDocumentosEdital: listarDocumentos,
           obterRascunhoDaPublicacao: obterRascunho,
           // A Revisão de processo publicado lê o ato vigente; esta suíte não exercita o ato.
@@ -251,13 +258,19 @@ function montar(opts: CenarioOpts = {}) {
 }
 
 const propagar = async (): Promise<void> => {
-  // Uma volta por await encadeado de `retomar`: o detalhe, os documentos do edital e o rascunho
-  // da publicação. Sobra de volta não atrapalha quem precisa de menos.
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
+  // Uma volta por await encadeado de `retomar`: o detalhe, os documentos do edital, o rascunho
+  // da publicação e o checklist que dá o estado do stepper. Sobra de volta não atrapalha quem
+  // precisa de menos.
+  for (let volta = 0; volta < 8; volta += 1) await Promise.resolve();
 };
+
+function item(codigo: string, dimensao: string, ok: boolean): ItemConformidadeDto {
+  return { codigo, dimensao, mensagem: codigo, ok };
+}
+
+function indiceDoPasso(rotulo: string): number {
+  return PASSOS.findIndex((passo) => passo.rotulo === rotulo);
+}
 
 describe('ProcessoSeletivoPage — retomada por endereço', () => {
   beforeEach(() => TestBed.resetTestingModule());
@@ -271,6 +284,48 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     expect(cenario.obter).toHaveBeenCalledWith(PROCESSO_ID);
     expect(cenario.store.processoSeletivoId()).toBe(PROCESSO_ID);
   }, 30_000);
+
+  it('abre o stepper com concluídos os passos gravados e conformes no servidor', async () => {
+    const { store } = montar({
+      obter: vi.fn(() => of(okResult(detalhe({ identificadorLegivel: 'ps-2027' })))),
+    });
+    await propagar();
+
+    const concluidos = [...store.completedSteps()].sort((a, b) => a - b);
+    // O detalhe grava o tipo (que nasce com o processo), o identificador e a taxa; o resto
+    // está vazio e continua pendente, mesmo sem item reprovado no checklist.
+    expect(concluidos).toEqual(
+      ['Tipo do processo', 'Identificação', 'Pagamento'].map(indiceDoPasso),
+    );
+  });
+
+  it('não dá por concluído o passo que o checklist aponta com pendência', async () => {
+    const { store } = montar({
+      obter: vi.fn(() => of(okResult(detalhe({ identificadorLegivel: 'ps-2027' })))),
+      obterConformidade: vi.fn(() =>
+        of(
+          okResult({
+            itens: [item('taxa_inscricao_sem_fundamento_de_isencao', 'taxa_inscricao', false)],
+          }),
+        ),
+      ),
+    });
+    await propagar();
+
+    expect(store.completedSteps().has(indiceDoPasso('Pagamento'))).toBe(false);
+    expect(store.completedSteps().has(indiceDoPasso('Identificação'))).toBe(true);
+  });
+
+  it('não afirma conformidade quando o checklist não carrega', async () => {
+    const { store } = montar({
+      obter: vi.fn(() => of(okResult(detalhe({ identificadorLegivel: 'ps-2027' })))),
+      obterConformidade: vi.fn(() => of(errorResult(mockProblemDetails({ status: 503 })))),
+    });
+    await propagar();
+
+    expect(store.completedSteps().size).toBe(0);
+    expect(store.hidratando()).toBe(false);
+  });
 
   /**
    * CA-05: as dimensões sem tela própria não podem sumir só porque o wizard
@@ -422,9 +477,9 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const opcao = [...cenario.host.querySelectorAll('#f-unidade option')].find(
-      (o) => o.getAttribute('value') === UNIDADE_ORIGEM_ID,
-    );
+    const opcao = Array.from(
+      cenario.host.querySelectorAll('#f-unidade option') as NodeListOf<HTMLOptionElement>,
+    ).find((o) => o.getAttribute('value') === UNIDADE_ORIGEM_ID);
 
     expect(opcao?.textContent).toContain('IGE');
     expect(opcao?.textContent).toContain('Instituto de Geociências e Engenharias');
@@ -442,9 +497,9 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const opcao = [...cenario.host.querySelectorAll('#f-unidade option')].find(
-      (o) => o.getAttribute('value') === UNIDADE_ORIGEM_ID,
-    );
+    const opcao = Array.from(
+      cenario.host.querySelectorAll('#f-unidade option') as NodeListOf<HTMLOptionElement>,
+    ).find((o) => o.getAttribute('value') === UNIDADE_ORIGEM_ID);
 
     expect(opcao?.textContent).toContain('IGE');
     expect(cenario.host.querySelector('.field__erro')).not.toBeNull();
@@ -503,7 +558,9 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
 
     // Cada documento oferece duas ações — usar e abrir para conferir —, então o
     // que identifica a opção é o rótulo da escolha, não a contagem de botões.
-    const rotulos = [...cenario.host.querySelectorAll('.ps-doc-escolha button')]
+    const rotulos = Array.from(
+      cenario.host.querySelectorAll('.ps-doc-escolha button') as NodeListOf<HTMLButtonElement>,
+    )
       .map((b) => b.getAttribute('aria-label'))
       .filter((rotulo): rotulo is string => rotulo?.startsWith('Usar o documento') ?? false);
 
@@ -584,9 +641,9 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const botao = [...cenario.host.querySelectorAll('button')].find((b) =>
-      b.textContent?.includes('Verificar novamente'),
-    ) as HTMLButtonElement;
+    const botao = Array.from(
+      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Verificar novamente')) as HTMLButtonElement;
     expect(botao).toBeDefined();
 
     botao.click();
@@ -1172,9 +1229,9 @@ describe('ProcessoSeletivoPage — falhas de leitura', () => {
     cenario.fixture.detectChanges();
 
     expect(cenario.store.falhaDeLeitura()?.motivo).toBe('falhaTemporaria');
-    const botao = [...cenario.host.querySelectorAll('button')].find((b) =>
-      b.textContent?.includes('Tentar novamente'),
-    );
+    const botao = Array.from(
+      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Tentar novamente'));
     expect(botao).toBeDefined();
   });
 
@@ -1185,9 +1242,9 @@ describe('ProcessoSeletivoPage — falhas de leitura', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const botao = [...cenario.host.querySelectorAll('button')].find((b) =>
-      b.textContent?.includes('Tentar novamente'),
-    );
+    const botao = Array.from(
+      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Tentar novamente'));
     expect(botao).toBeUndefined();
   });
 
@@ -1198,9 +1255,9 @@ describe('ProcessoSeletivoPage — falhas de leitura', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const voltar = [...cenario.host.querySelectorAll('a')].find((a) =>
-      a.textContent?.includes('Voltar à listagem'),
-    );
+    const voltar = Array.from(
+      cenario.host.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
+    ).find((a) => a.textContent?.includes('Voltar à listagem'));
     expect(voltar?.getAttribute('href')).toBe('/processo-seletivo');
   });
 
@@ -1222,9 +1279,9 @@ describe('ProcessoSeletivoPage — falhas de leitura', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const botao = [...cenario.host.querySelectorAll('button')].find((b) =>
-      b.textContent?.includes('Tentar novamente'),
-    ) as HTMLButtonElement;
+    const botao = Array.from(
+      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Tentar novamente')) as HTMLButtonElement;
     botao.click();
     await propagar();
 
@@ -1796,9 +1853,9 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       cenario.store.goTo(cenario.store.totalSteps - 1);
       cenario.fixture.detectChanges();
 
-      const botao = [...cenario.host.querySelectorAll('button')].find(
-        (b) => b.textContent?.trim() === 'Salvar rascunho',
-      );
+      const botao = Array.from(
+        cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+      ).find((b) => b.textContent?.trim() === 'Salvar rascunho');
       expect(botao).toBeUndefined();
       expect(cenario.host.querySelector('.rascunho-publicacao')).toBeNull();
     });

@@ -16,6 +16,7 @@ import {
   ValorEmConsultaComponent,
 } from '@uniplus/shared-ui/components';
 import { isApiOk } from '@uniplus/shared-core/http';
+import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { FatoCandidatoView, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
 
 import {
@@ -379,6 +380,19 @@ export class DesempateStepComponent {
   }
 
   readonly criterios = computed(() => this.store.draft().desempate);
+
+  /**
+   * Com inscrição feita no sistema o desempate é obrigatório; com resultado importado a lista já
+   * vem classificada e o passo não o exige (a API aceita critérios, mas não os cobra).
+   */
+  readonly desempateObrigatorio = computed(
+    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria,
+  );
+
+  /** Só diz que o desempate não é obrigatório quando a origem já foi escolhida como importação. */
+  readonly desempateDispensado = computed(
+    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.importacaoExterna,
+  );
 
   /**
    * O desempate por maior idade sem a data de nascimento no formulário. Em consulta não há o que
@@ -780,6 +794,12 @@ export class DesempateStepComponent {
   validate(): StepValidation {
     const idsDeEtapa = new Set(this.etapasReferenciaveis().map((etapa) => etapa.id));
     const messages: string[] = [];
+
+    if (this.desempateObrigatorio() && this.criterios().length === 0) {
+      messages.push(
+        'Informe ao menos um critério de desempate: com inscrição feita no sistema, ele é obrigatório.',
+      );
+    }
 
     this.criterios().forEach((criterio, indice) => {
       const posicao = indice + 1;

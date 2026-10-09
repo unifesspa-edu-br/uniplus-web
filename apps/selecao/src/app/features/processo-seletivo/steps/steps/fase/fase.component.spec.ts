@@ -902,10 +902,9 @@ describe('FaseStepComponent', () => {
         comHabilitacao([FAMILIA]);
         exigirCpfNaFase(ID_RECURSOS);
 
-        expect([...(campoRepetirPor()?.options ?? [])].map((opcao) => opcao.text.trim())).toEqual([
-          'Não repete: um por candidato',
-          'Composição familiar (FAMILIA)',
-        ]);
+        expect(
+          Array.from(campoRepetirPor()?.options ?? []).map((opcao) => opcao.text.trim()),
+        ).toEqual(['Não repete: um por candidato', 'Composição familiar (FAMILIA)']);
         expect(componente.fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual([]);
 
         componente.escolherRepeticao(ID_CPF, 'FAMILIA');
@@ -920,7 +919,9 @@ describe('FaseStepComponent', () => {
         comHabilitacao([FAMILIA]);
         exigirCpfNaFase(ID_AVALIACAO);
 
-        expect([...(campoRepetirPor()?.options ?? [])].map((opcao) => opcao.value)).toEqual(['']);
+        expect(Array.from(campoRepetirPor()?.options ?? []).map((opcao) => opcao.value)).toEqual([
+          '',
+        ]);
         expect(nativo.textContent).toContain('Não oferecidos aqui: “Composição familiar”, respondido na fase Recursos, depois desta.');
       });
 

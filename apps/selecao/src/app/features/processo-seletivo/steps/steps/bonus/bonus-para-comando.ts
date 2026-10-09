@@ -15,14 +15,19 @@ function decimal(texto: string): number | null {
 }
 
 /**
- * Converte o rascunho de bônus no `DefinirBonusRegionalRequest`. Toggle por
- * presença: `ativo === false` grava os cinco campos `null` — é assim que "sem
- * bônus" se declara, não existe rota separada para desligá-lo. CA-04: nenhum
- * default é inventado quando ativo.
+ * Converte o rascunho de bônus no `DefinirBonusRegionalRequest`. A declaração é obrigatória: só
+ * se grava depois de o operador responder se o processo aplica o bônus. `aplica === false` grava
+ * a declaração com os cinco campos `null` — o servidor recusa qualquer campo do bônus nesse
+ * caso. Nenhum default é inventado quando aplica.
  */
 export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusRegionalRequest {
-  if (!bonus.ativo) {
+  if (bonus.aplica === null) {
+    throw new Error('A declaração do bônus regional precisa ser respondida antes de gravar.');
+  }
+
+  if (!bonus.aplica) {
     return {
+      aplica: false,
       regraCodigo: null,
       regraVersao: null,
       fator: null,
@@ -32,6 +37,7 @@ export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusReg
   }
 
   return {
+    aplica: true,
     regraCodigo: naoVazio(bonus.regraCodigo),
     regraVersao: naoVazio(bonus.regraVersao),
     fator: decimal(bonus.fator),

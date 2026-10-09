@@ -10309,7 +10309,8 @@
           "unidadeAdministradoraOrigemId",
           "localidadeCodigoIbge",
           "localidadeNome",
-          "localidadeUf"
+          "localidadeUf",
+          "identificadorLegivel"
         ],
         "type": "object",
         "properties": {
@@ -10559,6 +10560,7 @@
       },
       "DefinirBonusRegionalRequest": {
         "required": [
+          "aplica",
           "regraCodigo",
           "regraVersao",
           "fator",
@@ -10567,6 +10569,9 @@
         ],
         "type": "object",
         "properties": {
+          "aplica": {
+            "type": "boolean"
+          },
           "regraCodigo": {
             "type": [
               "null",
@@ -14693,6 +14698,7 @@
           "ofertaAtendimento",
           "distribuicaoVagas",
           "bonusRegional",
+          "aplicaBonusRegional",
           "cascata",
           "criteriosDesempate",
           "classificacao",
@@ -14767,6 +14773,12 @@
               {
                 "$ref": "#/components/schemas/ConfiguracaoBonusRegionalDto"
               }
+            ]
+          },
+          "aplicaBonusRegional": {
+            "type": [
+              "null",
+              "boolean"
             ]
           },
           "cascata": {

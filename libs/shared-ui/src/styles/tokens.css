@@ -283,18 +283,17 @@
   --radius-circle: 50%;
 
   /* ============================ ELEVATION ============================ */
-  --shadow-1: light-dark(
-    0 1px 2px rgba(7, 29, 65, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.45)
-  );
-  --shadow-2: light-dark(
-    0 4px 12px rgba(7, 29, 65, 0.08),
-    0 4px 12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04)
-  );
-  --shadow-3: light-dark(
-    0 12px 32px rgba(7, 29, 65, 0.12),
-    0 12px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06)
-  );
+  /* light-dark() só aceita cores: com a sombra inteira dentro dele a declaração é inválida e todo
+     box-shadow que usa o token vira `none`. Só a cor varia por tema; a geometria fica fora. */
+  --shadow-1-cor: light-dark(rgba(7, 29, 65, 0.06), rgba(0, 0, 0, 0.45));
+  --shadow-2-cor: light-dark(rgba(7, 29, 65, 0.08), rgba(0, 0, 0, 0.55));
+  --shadow-3-cor: light-dark(rgba(7, 29, 65, 0.12), rgba(0, 0, 0, 0.6));
+  /* O anel de 1 px só existe no escuro, onde a sombra some contra o fundo; no claro é transparente. */
+  --shadow-2-anel: light-dark(transparent, rgba(255, 255, 255, 0.04));
+  --shadow-3-anel: light-dark(transparent, rgba(255, 255, 255, 0.06));
+  --shadow-1: 0 1px 2px var(--shadow-1-cor);
+  --shadow-2: 0 4px 12px var(--shadow-2-cor), 0 0 0 1px var(--shadow-2-anel);
+  --shadow-3: 0 12px 32px var(--shadow-3-cor), 0 0 0 1px var(--shadow-3-anel);
 
   /* ============================ TOUCH TARGETS (WCAG 2.5.5 AAA) ============================ */
   --touch-min:         44px;

@@ -7,7 +7,7 @@ const BASE_LEGAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
 
 function bonus(patch: Partial<WizardDraft['bonus']>): WizardDraft['bonus'] {
   return {
-    ativo: false,
+    aplica: false,
     regraCodigo: '',
     regraVersao: '',
     fator: '',
@@ -18,10 +18,10 @@ function bonus(patch: Partial<WizardDraft['bonus']>): WizardDraft['bonus'] {
 }
 
 describe('comoComandoDeBonus', () => {
-  it('grava os cinco campos null quando o bônus não está ativo (toggle por presença)', () => {
+  it('grava a declaração de que não aplica, com os cinco campos null, quando o bônus não se aplica', () => {
     const comando = comoComandoDeBonus(
       bonus({
-        ativo: false,
+        aplica: false,
         // Resíduo de uma edição anterior — a ausência declarada não pode vazar.
         regraCodigo: 'BONUS-MULTIPLICATIVO',
         fator: '1.2',
@@ -29,6 +29,7 @@ describe('comoComandoDeBonus', () => {
     );
 
     expect(comando).toEqual({
+      aplica: false,
       regraCodigo: null,
       regraVersao: null,
       fator: null,
@@ -37,10 +38,10 @@ describe('comoComandoDeBonus', () => {
     });
   });
 
-  it('converte os campos preenchidos quando ativo', () => {
+  it('converte os campos preenchidos quando aplica', () => {
     const comando = comoComandoDeBonus(
       bonus({
-        ativo: true,
+        aplica: true,
         regraCodigo: 'BONUS-MULTIPLICATIVO',
         regraVersao: '1.0',
         fator: '1,20',
@@ -50,6 +51,7 @@ describe('comoComandoDeBonus', () => {
     );
 
     expect(comando).toEqual({
+      aplica: true,
       regraCodigo: 'BONUS-MULTIPLICATIVO',
       regraVersao: '1.0',
       fator: 1.2,
@@ -61,7 +63,7 @@ describe('comoComandoDeBonus', () => {
   it('teto vazio vai null — sem teto é estado válido', () => {
     const comando = comoComandoDeBonus(
       bonus({
-        ativo: true,
+        aplica: true,
         regraCodigo: 'BONUS-MULTIPLICATIVO',
         regraVersao: '1.0',
         fator: '1.2',
@@ -74,9 +76,20 @@ describe('comoComandoDeBonus', () => {
 
   it('base legal vazia vai null — CA-04, sem default inventado', () => {
     const comando = comoComandoDeBonus(
-      bonus({ ativo: true, regraCodigo: 'BONUS-MULTIPLICATIVO', regraVersao: '1.0', fator: '1.2' }),
+      bonus({
+        aplica: true,
+        regraCodigo: 'BONUS-MULTIPLICATIVO',
+        regraVersao: '1.0',
+        fator: '1.2',
+      }),
     );
 
     expect(comando.baseLegalBonusRegionalId).toBeNull();
+  });
+
+  it('não grava enquanto a declaração não foi respondida', () => {
+    expect(() => comoComandoDeBonus(bonus({ aplica: null }))).toThrow(
+      'A declaração do bônus regional precisa ser respondida',
+    );
   });
 });
