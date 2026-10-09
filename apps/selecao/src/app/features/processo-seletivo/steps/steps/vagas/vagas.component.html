@@ -17,6 +17,13 @@
     <h2 class="form-section__title">Padrão desta distribuição</h2>
     <div class="form-grid">
       <div class="form-field form-grid__full">
+        @if (store.emConsulta()) {
+          <ui-valor-em-consulta
+            rotulo="Regra de distribuição"
+            seVazio="Não declarada"
+            [valor]="padraoLido().regraDeDistribuicao"
+          />
+        } @else {
         <label class="label" for="f-regra">Regra de distribuição</label>
         <select
           class="input"
@@ -37,6 +44,7 @@
           A regra é identificada por código e versão: publicar versão nova do catálogo não muda a
           regra que um processo já publicado aplicou.
         </p>
+        }
 
         @if (regraExplicada(); as regra) {
           <details class="regra-explicada">
@@ -74,10 +82,19 @@
             }
           </details>
 
-          <p class="field__hint">Passa a exigir: {{ exigenciasDaRegra().join('; ') }}.</p>
+          @if (!store.emConsulta()) {
+            <p class="field__hint">Passa a exigir: {{ exigenciasDaRegra().join('; ') }}.</p>
+          }
         }
       </div>
 
+      @if (store.emConsulta()) {
+        <ui-valor-em-consulta
+          rotulo="Percentual de reserva"
+          dica="Entre 0,5 e 1,0 — art. 10, II da Lei 12.711."
+          [valor]="padraoLido().percentualDeReserva"
+        />
+      } @else {
       <div class="form-field">
         <label class="label" for="f-pr">Percentual de reserva</label>
         <input
@@ -90,9 +107,17 @@
         />
         <p class="field__hint">Entre 0,5 e 1,0 — art. 10, II da Lei 12.711.</p>
       </div>
+      }
 
       @if (ehFederal()) {
         <div class="form-field">
+          @if (store.emConsulta()) {
+            <ui-valor-em-consulta
+              rotulo="Regra de ajuste"
+              seVazio="Não declarada"
+              [valor]="padraoLido().regraDeAjuste"
+            />
+          } @else {
           <label class="label" for="f-ajuste">Regra de ajuste</label>
           <select
             class="input"
@@ -111,6 +136,7 @@
             }
           </select>
           <p class="field__hint">Exigida pela Lei 12.711 — art. 11, § único.</p>
+          }
 
           @if (ajusteExplicado(); as ajuste) {
             <details class="regra-explicada">
@@ -136,6 +162,14 @@
           }
         </div>
 
+        @if (store.emConsulta()) {
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Referência de reserva demográfica"
+            seVazio="Não declarada"
+            [valor]="padraoLido().referenciaDemografica"
+          />
+        } @else {
         <div class="form-field form-grid__full">
           <label class="label" for="f-ref">Referência de reserva demográfica</label>
           <select
@@ -155,11 +189,19 @@
             }
           </select>
         </div>
+        }
       }
     </div>
 
-    <h3 class="form-section__title">Modalidades oferecidas</h3>
+    <h3 class="form-section__title" id="f-modalidades-titulo">Modalidades oferecidas</h3>
 
+    @if (store.emConsulta()) {
+      <ui-valor-em-consulta
+        rotuladoPor="f-modalidades-titulo"
+        seVazio="Nenhuma modalidade oferecida"
+        [valor]="padraoLido().modalidades"
+      />
+    } @else {
     @if (rolDaRegraEscolhida(); as rol) {
       <p class="field__hint">
         A regra escolhida determina estas {{ rol.length }} modalidades — não há escolha a fazer
@@ -206,6 +248,7 @@
         </label>
       }
     </div>
+    }
 
     @if (store.concorrenciaDuplaAplicavel()) {
       <p class="alert alert--info" role="status">
@@ -214,7 +257,7 @@
       </p>
     }
 
-    @if (modalidadesCalculadas().length > 0) {
+    @if (modalidadesCalculadas().length > 0 && !store.emConsulta()) {
       <p class="field__hint vagas-calculadas__resumo">{{ resumoDasCalculadas() }}</p>
     }
   </div>
@@ -227,7 +270,7 @@
       </span>
     </div>
 
-    @if (problemasDoPadrao().length > 0) {
+    @if (problemasDoPadrao().length > 0 && !store.emConsulta()) {
       <ul class="field__erro" role="alert">
         @for (problema of problemasDoPadrao(); track problema) {
           <li>{{ problema }}</li>
@@ -235,7 +278,7 @@
       </ul>
     }
 
-    @if (ofertasDisponiveis().length > 0) {
+    @if (ofertasDisponiveis().length > 0 && !store.emConsulta()) {
       <details class="vagas-escolha">
         <summary>Adicionar ofertas ao quadro</summary>
 
@@ -300,8 +343,12 @@
 
     @if (distribuicoes().length === 0) {
       <p class="field__hint">
-        Nenhuma oferta no quadro. Cada oferta participa de no máximo uma distribuição, por isso as
-        já adicionadas saem da lista.
+        @if (store.emConsulta()) {
+          Nenhuma oferta no quadro.
+        } @else {
+          Nenhuma oferta no quadro. Cada oferta participa de no máximo uma distribuição, por isso
+          as já adicionadas saem da lista.
+        }
       </p>
     } @else {
       <div class="table-responsive">
@@ -324,7 +371,9 @@
                 }
                 <th scope="col" class="vagas-table__calculado">Publicado</th>
               }
-              <th scope="col"><span class="sr-only">Ações</span></th>
+              @if (!store.emConsulta()) {
+                <th scope="col"><span class="sr-only">Ações</span></th>
+              }
             </tr>
           </thead>
           <tbody>
@@ -337,6 +386,9 @@
                   }}</span>
                 </th>
                 <td data-label="Total">
+                  @if (store.emConsulta()) {
+                    {{ distribuicao.voBase || '—' }}
+                  } @else {
                   <input
                     class="input input--numero"
                     inputmode="numeric"
@@ -349,9 +401,13 @@
                     (ngModelChange)="alterarVoBase(distribuicao.ofertaCursoId, $event)"
                     [disabled]="!store.aceitaEdicao()"
                   />
+                  }
                 </td>
                 @for (modalidade of colunasDeQuantidade(); track modalidade.id) {
                   <td [attr.data-label]="modalidade.codigo">
+                    @if (store.emConsulta()) {
+                      {{ quantidade(distribuicao, modalidade.id) || '—' }}
+                    } @else {
                     <input
                       class="input input--numero"
                       inputmode="numeric"
@@ -366,6 +422,7 @@
                       "
                       [disabled]="!store.aceitaEdicao()"
                     />
+                    }
                   </td>
                 }
                 @if (simulacao().size > 0) {
@@ -378,6 +435,7 @@
                     {{ calculado(distribuicao)?.totalPublicado ?? '—' }}
                   </td>
                 }
+                @if (!store.emConsulta()) {
                 <td class="vagas-table__acoes">
                   <button
                     class="btn btn--tertiary btn--sm"
@@ -391,6 +449,7 @@
                     Remover
                   </button>
                 </td>
+                }
               </tr>
             }
           </tbody>
@@ -420,12 +479,15 @@
                   {{ totalGeralPublicado() }}
                 </td>
               }
-              <td class="vagas-table__acoes"></td>
+              @if (!store.emConsulta()) {
+                <td class="vagas-table__acoes"></td>
+              }
             </tr>
           </tfoot>
         </table>
       </div>
 
+      @if (!store.emConsulta()) {
       <div class="vagas-simulacao">
         <button
           class="btn btn--outline btn--sm"
@@ -450,6 +512,8 @@
           Falta preencher: {{ pendenciasDoQuadro().join('; ') }}. Os campos pendentes estão
           destacados no quadro.
         </p>
+      }
+
       }
 
       @if (ofertasComEstouro().length > 0) {
@@ -481,11 +545,13 @@
         </div>
       }
 
-      <p class="field__hint">
-        O total publicado, com o que a regra calcula, vem da simulação no servidor.
-      </p>
+      @if (!store.emConsulta()) {
+        <p class="field__hint">
+          O total publicado, com o que a regra calcula, vem da simulação no servidor.
+        </p>
+      }
 
-      @if (ofertasForaDoPadrao().length > 0) {
+      @if (ofertasForaDoPadrao().length > 0 && !store.emConsulta()) {
         <div class="alert alert--warning vagas-divergencia" role="status">
           <div class="alert__body">
             <p class="alert__title">

@@ -10,7 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ConfirmDialogComponent } from '@uniplus/shared-ui/components';
+import { ConfirmDialogComponent, ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import { ModalidadeDto } from '@uniplus/shared-data/configuracao';
 
 import {
@@ -121,7 +121,7 @@ function lista(itens: readonly string[]): string {
  */
 @Component({
   selector: 'sel-step-vagas',
-  imports: [FormsModule, ConfirmDialogComponent, CascataRemanejamentoComponent],
+  imports: [ValorLegivelDirective, ValorEmConsultaComponent, FormsModule, ConfirmDialogComponent, CascataRemanejamentoComponent],
   templateUrl: './vagas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CatalogosDeDistribuicaoService, provePassoDoWizard(VagasStepComponent)],
@@ -303,6 +303,31 @@ export class VagasStepComponent {
         ]
       : ['a quantidade de vagas de cada modalidade, fixada pelo edital'],
   );
+
+  /**
+   * O padrão da distribuição como o processo o gravou, em texto — o que a consulta lê no lugar
+   * dos seletores. Regra sem código é regra não declarada, e o campo diz isso.
+   */
+  readonly padraoLido = computed(() => {
+    const padrao = this.padrao();
+    const regra = (codigo: string | null, versao: string | null): string | null =>
+      codigo ? `${codigo} · versão ${versao ?? ''}` : null;
+    const referencia = this.catalogos
+      .referencias()
+      .find((item) => item.id === padrao.referenciaReservaDemograficaId);
+
+    return {
+      regraDeDistribuicao: regra(padrao.regraDistribuicaoCodigo, padrao.regraDistribuicaoVersao),
+      percentualDeReserva: padrao.pr,
+      regraDeAjuste: regra(padrao.regraAjusteCodigo, padrao.regraAjusteVersao),
+      referenciaDemografica: referencia
+        ? `Censo ${referencia.censoReferencia} — PPI ${referencia.ppiPercentual}% · quilombola ${referencia.quilombolaPercentual}% · PcD ${referencia.pcdPercentual}%`
+        : null,
+      modalidades: this.modalidadesDoPadrao().map(
+        (modalidade) => `${modalidade.codigo} — ${modalidade.descricao}`,
+      ),
+    };
+  });
 
   /** Só as modalidades cuja quantidade o edital fixa viram coluna do quadro. */
   readonly colunasDeQuantidade = computed(() =>
