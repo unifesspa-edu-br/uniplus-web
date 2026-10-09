@@ -19,7 +19,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ProblemI18nService, isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { ProcessoSeletivoDto, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 import { StepValidation } from './steps/processo-seletivo.models';
@@ -47,6 +47,7 @@ import { EliminacaoStepComponent } from './steps/steps/eliminacao/eliminacao.com
 import { AtendimentoStepComponent } from './steps/steps/atendimento/atendimento.component';
 import { RevisaoStepComponent } from './steps/steps/revisao/revisao.component';
 import { classificarDocumentos } from './steps/shared/hidratacao';
+import { passosConcluidosDe } from './steps/shared/passos-concluidos';
 import {
   VERSAO_DO_RASCUNHO,
   blocoDoDocumento,
@@ -420,8 +421,25 @@ export class ProcessoSeletivoPage {
     if (superada()) return;
     await this.restaurarRascunhoDaPublicacao(id, superada);
     if (superada()) return;
+    await this.derivarPassosConcluidos(detalhe.data, superada);
+    if (superada()) return;
 
     this.store.hidratando.set(false);
+  }
+
+  /**
+   * O stepper de um processo retomado mostra o que o servidor tem gravado e conforme, não a
+   * navegação desta sessão — que recomeça vazia a cada abertura. Sem o checklist não há como
+   * afirmar a conformidade, então nenhum passo é dado por concluído: o mesmo estado de antes,
+   * em vez de um verde que a Revisão contradiria.
+   */
+  private async derivarPassosConcluidos(
+    detalhe: ProcessoSeletivoDto,
+    superada: () => boolean,
+  ): Promise<void> {
+    const checklist = await firstValueFrom(this.api.obterConformidade(detalhe.id));
+    if (superada() || !isApiOk(checklist)) return;
+    this.store.syncCompleted(passosConcluidosDe(detalhe, checklist.data.itens));
   }
 
   /**
