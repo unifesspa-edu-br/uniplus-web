@@ -1,17 +1,14 @@
-import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { elementosForaDoCartao } from '../support/limites-do-cartao';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
+import { irAoPasso } from '../support/navega-passo';
+import { instalarPreferencia, temaDoProject } from '../support/tema';
 
 /** Larguras em que a grade dos eixos da exigência tem de três a cinco colunas. */
 const LARGURAS_DA_GRADE_DOS_EIXOS = [1440, 1680, 1920, 2200] as const;
-
-type DsTheme = 'light' | 'dark' | 'contrast';
-
-/** Abaixo desta largura o stepper lateral dá lugar à barra com diálogo. */
-const LARGURA_STEPPER_LATERAL = 768;
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -753,49 +750,9 @@ async function declararConvencaoDeContagem(page: Page): Promise<void> {
   await page.getByLabel('Convenção de contagem').selectOption({ label: ROTULO_CONVENCAO });
 }
 
-/**
- * Abaixo de 768 px o stepper lateral dá lugar à barra de etapas com diálogo, e
- * o caminho até um passo muda com ele.
- */
-async function irAoPasso(page: Page, rotulo: string, testInfo: TestInfo): Promise<void> {
-  const largura = testInfo.project.use.viewport?.width;
-  if (largura === undefined) {
-    throw new Error(`Project ${testInfo.project.name} não declara viewport.`);
-  }
-
-  if (largura >= LARGURA_STEPPER_LATERAL) {
-    await page.getByRole('button', { name: rotulo }).click();
-    return;
-  }
-
-  await page.getByRole('button', { name: 'Abrir lista de etapas' }).click();
-  const dialogo = page.getByRole('dialog', { name: 'Etapas do cadastro' });
-  await expect(dialogo).toBeVisible();
-  await dialogo.getByRole('button', { name: rotulo }).click();
-  await expect(dialogo).toBeHidden();
-}
-
 /** Falhar por id diz qual regra caiu; a coleção crua não. */
 function identificadoresDe(resultado: AxeResults): string[] {
   return resultado.violations.map((violacao) => violacao.id);
-}
-
-async function instalarPreferencia(page: Page, theme: DsTheme): Promise<void> {
-  await page.addInitScript((dsTheme) => {
-    window.localStorage.setItem(
-      'uniplus.a11y',
-      JSON.stringify({
-        theme: dsTheme === 'contrast' ? 'auto' : dsTheme,
-        contrast: dsTheme === 'contrast',
-        fontMode: 'default',
-      }),
-    );
-  }, theme);
-}
-
-function temaDoProject(projectName: string): DsTheme {
-  const parte = projectName.split('-').at(-1);
-  return parte === 'dark' || parte === 'contrast' ? parte : 'light';
 }
 
 /**

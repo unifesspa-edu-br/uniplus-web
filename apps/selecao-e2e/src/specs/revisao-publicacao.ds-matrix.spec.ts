@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
+import { expect, test, type Page, type Route } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import {
@@ -9,11 +9,8 @@ import {
   medirTransbordoHorizontal,
   rolarAteOMeio,
 } from '../support/rolagem-do-editor';
-
-type DsTheme = 'light' | 'dark' | 'contrast';
-
-/** Abaixo desta largura o stepper lateral dá lugar à barra com diálogo. */
-const LARGURA_STEPPER_LATERAL = 768;
+import { irAoPasso } from '../support/navega-passo';
+import { instalarPreferencia, temaDoProject } from '../support/tema';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -454,28 +451,6 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
   });
 });
 
-/**
- * Abaixo de 768 px o stepper lateral dá lugar à barra de etapas com diálogo, e
- * o caminho até um passo muda com ele.
- */
-async function irAoPasso(page: Page, rotulo: string, testInfo: TestInfo): Promise<void> {
-  const largura = testInfo.project.use.viewport?.width;
-  if (largura === undefined) {
-    throw new Error(`Project ${testInfo.project.name} não declara viewport.`);
-  }
-
-  if (largura >= LARGURA_STEPPER_LATERAL) {
-    await page.getByRole('button', { name: rotulo }).click();
-    return;
-  }
-
-  await page.getByRole('button', { name: 'Abrir lista de etapas' }).click();
-  const dialogo = page.getByRole('dialog', { name: 'Etapas do cadastro' });
-  await expect(dialogo).toBeVisible();
-  await dialogo.getByRole('button', { name: rotulo }).click();
-  await expect(dialogo).toBeHidden();
-}
-
 /** Quanto a página e o conteúdo do passo rolam na horizontal, em px. */
 async function medirTransbordo(page: Page): Promise<{ documento: number; scroller: number }> {
   return page.evaluate(() => {
@@ -491,22 +466,4 @@ async function medirTransbordo(page: Page): Promise<{ documento: number; scrolle
 /** Falhar por id diz qual regra caiu; a coleção crua não. */
 function identificadoresDe(resultado: AxeResults): string[] {
   return resultado.violations.map((violacao) => violacao.id);
-}
-
-async function instalarPreferencia(page: Page, theme: DsTheme): Promise<void> {
-  await page.addInitScript((dsTheme) => {
-    window.localStorage.setItem(
-      'uniplus.a11y',
-      JSON.stringify({
-        theme: dsTheme === 'contrast' ? 'auto' : dsTheme,
-        contrast: dsTheme === 'contrast',
-        fontMode: 'default',
-      }),
-    );
-  }, theme);
-}
-
-function temaDoProject(projectName: string): DsTheme {
-  const parte = projectName.split('-').at(-1);
-  return parte === 'dark' || parte === 'contrast' ? parte : 'light';
 }

@@ -3,6 +3,7 @@ import {
   PROCESSO_PUBLICADO_DA_MEDICINA,
   TIPOS_DE_PROCESSO,
 } from '../fixtures/consulta-da-medicina';
+import { responder, responderCom } from '../support/responder';
 
 /**
  * web#1008 — o passo Formulários manda declarar o tipo de deficiência em "Atend. especial", e
@@ -109,10 +110,19 @@ test.describe('Atendimento sem a condição PCD no cadastro (web#1008)', () => {
 
 async function mockarApi(page: Page, catalogo: { condicoes: readonly object[] }): Promise<void> {
   // A rota genérica é registrada primeiro: o Playwright consulta da mais recente à mais antiga.
-  await responder(page, /\/api\//, () => []);
-  await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, () => TIPOS_DE_PROCESSO);
-  await responder(page, /\/api\/configuracao\/condicoes-atendimento(\?.*)?$/, () => catalogo.condicoes);
-  await responder(page, /\/api\/configuracao\/tipos-deficiencia(\?.*)?$/, () => [TIPO_VISUAL]);
+  await responder(page, /\/api\//, () => [], { headers: CORS, });
+  await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, () => TIPOS_DE_PROCESSO, {
+    headers: CORS,
+  });
+  await responder(
+    page,
+    /\/api\/configuracao\/condicoes-atendimento(\?.*)?$/,
+    () => catalogo.condicoes,
+    { headers: CORS },
+  );
+  await responder(page, /\/api\/configuracao\/tipos-deficiencia(\?.*)?$/, () => [TIPO_VISUAL], {
+    headers: CORS,
+  });
 
   const id = PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO.id;
   await page.route(new RegExp(`/api/selecao/processos-seletivos/${id}`), async (route: Route) => {
@@ -122,30 +132,11 @@ async function mockarApi(page: Page, catalogo: { condicoes: readonly object[] })
     }
     const caminho = new URL(route.request().url()).pathname;
     if (caminho.endsWith(id)) {
-      await json(route, PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO);
+      await responderCom(route, PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO, { headers: CORS });
     } else if (caminho.endsWith('/documentos-edital')) {
-      await json(route, []);
+      await responderCom(route, [], { headers: CORS });
     } else {
       await route.fulfill({ status: 404, headers: CORS });
     }
-  });
-}
-
-async function responder(page: Page, rota: RegExp, corpo: () => unknown): Promise<void> {
-  await page.route(rota, async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS });
-      return;
-    }
-    await json(route, corpo());
-  });
-}
-
-async function json(route: Route, corpo: unknown): Promise<void> {
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    headers: CORS,
-    body: JSON.stringify(corpo),
   });
 }

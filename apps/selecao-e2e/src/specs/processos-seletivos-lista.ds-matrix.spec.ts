@@ -1,8 +1,7 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
-
-type DsTheme = 'light' | 'dark' | 'contrast';
+import { instalarPreferencia, temaDoProject } from '../support/tema';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -198,22 +197,4 @@ async function transbordo(page: Page): Promise<boolean> {
 /** Falhar por id diz qual regra caiu; a coleção crua não. */
 function identificadoresDe(resultado: AxeResults): string[] {
   return resultado.violations.map((violacao) => violacao.id);
-}
-
-async function instalarPreferencia(page: Page, theme: DsTheme): Promise<void> {
-  await page.addInitScript((dsTheme) => {
-    window.localStorage.setItem(
-      'uniplus.a11y',
-      JSON.stringify({
-        theme: dsTheme === 'contrast' ? 'auto' : dsTheme,
-        contrast: dsTheme === 'contrast',
-        fontMode: 'default',
-      }),
-    );
-  }, theme);
-}
-
-function temaDoProject(projectName: string): DsTheme {
-  const parte = projectName.split('-').at(-1);
-  return parte === 'dark' || parte === 'contrast' ? parte : 'light';
 }

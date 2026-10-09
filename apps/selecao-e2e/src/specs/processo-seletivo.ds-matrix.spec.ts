@@ -10,8 +10,7 @@ import {
   medirTransbordoHorizontal,
   rolarAteOMeio,
 } from '../support/rolagem-do-editor';
-
-type DsTheme = 'light' | 'dark' | 'contrast';
+import { instalarPreferencia, temaDoProject } from '../support/tema';
 
 /**
  * Fronteiras que estas verificações espelham, cada uma vinda da folha de
@@ -287,24 +286,6 @@ async function abrirPasso(page: Page, rotulo: string): Promise<void> {
     );
     botoes.find((botao) => botao.textContent?.includes(procurado))?.click();
   }, rotulo);
-}
-
-async function instalarPreferencia(page: Page, theme: DsTheme): Promise<void> {
-  await page.addInitScript((dsTheme) => {
-    window.localStorage.setItem(
-      'uniplus.a11y',
-      JSON.stringify({
-        theme: dsTheme === 'contrast' ? 'auto' : dsTheme,
-        contrast: dsTheme === 'contrast',
-        fontMode: 'default',
-      }),
-    );
-  }, theme);
-}
-
-function temaDoProject(projectName: string): DsTheme {
-  const parte = projectName.split('-').at(-1);
-  return parte === 'dark' || parte === 'contrast' ? parte : 'light';
 }
 
 /**
