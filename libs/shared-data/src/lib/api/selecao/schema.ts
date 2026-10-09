@@ -7078,7 +7078,7 @@ export interface components {
             readonly localidadeCodigoIbge: null | string;
             readonly localidadeNome: null | string;
             readonly localidadeUf: null | string;
-            readonly identificadorLegivel?: null | string;
+            readonly identificadorLegivel: null | string;
         };
         readonly CriterioDesempateDto: {
             /** Format: uuid */
