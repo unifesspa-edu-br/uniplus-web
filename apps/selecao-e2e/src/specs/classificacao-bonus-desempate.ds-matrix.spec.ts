@@ -270,7 +270,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
     test('não viola WCAG 2.1 AA com bônus declarado', async ({ page }, testInfo) => {
       await irAoPasso(page, 'Bônus', testInfo);
       await page
-        .getByLabel('Aplicar bônus regional neste processo seletivo?', { exact: true })
+        .getByLabel('Aplica o bônus regional', { exact: true })
         .check();
       await page
         .getByLabel('Regra do bônus', { exact: true })
@@ -287,7 +287,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
     test('não viola WCAG 2.1 AA com a conferência acusando', async ({ page }, testInfo) => {
       await irAoPasso(page, 'Bônus', testInfo);
       await page
-        .getByLabel('Aplicar bônus regional neste processo seletivo?', { exact: true })
+        .getByLabel('Aplica o bônus regional', { exact: true })
         .check();
       await page.getByLabel('Fator', { exact: true }).fill('0');
 
@@ -394,6 +394,7 @@ const DETALHE_PUBLICADO = {
   etapas: [],
   ofertaAtendimento: null,
   distribuicaoVagas: [],
+  aplicaBonusRegional: true,
   bonusRegional: {
     id: '01960000-0000-7000-0000-0000000008b1',
     regra: referencia('BONUS-MULTIPLICATIVO'),

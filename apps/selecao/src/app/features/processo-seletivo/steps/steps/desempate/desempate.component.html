@@ -1,5 +1,10 @@
 <p class="step-subtitle">
   Ordem dos critérios de desempate. O primeiro da lista é avaliado primeiro. Use ↑↓ para reordenar.
+  @if (desempateObrigatorio()) {
+    Com inscrição feita no sistema, ao menos um critério é obrigatório.
+  } @else if (desempateDispensado()) {
+    Com resultado importado, a lista já vem classificada e o desempate não é obrigatório.
+  }
 </p>
 @if (!store.emConsulta() && catalogos.erro(); as erro) {
   <p class="alert alert--danger" role="alert">{{ erro }}</p>

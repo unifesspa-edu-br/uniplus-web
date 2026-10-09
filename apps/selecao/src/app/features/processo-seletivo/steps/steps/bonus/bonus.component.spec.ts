@@ -50,17 +50,28 @@ describe('BonusStepComponent', () => {
 
   afterEach(() => controller.verify());
 
-  it('é válido inativo, sem nenhum campo preenchido (toggle por presença)', () => {
+  it('recusa enquanto a declaração de aplicar ou não o bônus não foi respondida', () => {
+    const resultado = componente.validate();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado).toMatchObject({
+      messages: ['Informe se o processo aplica o bônus regional.'],
+    });
+  });
+
+  it('é válido declarando que não aplica, sem nenhum campo preenchido', () => {
+    componente.escolherAplicacao(false);
+
     expect(componente.validate().valid).toBe(true);
   });
 
   it('recusa ativo sem regra escolhida', () => {
-    componente.alternarAtivo(true);
+    componente.escolherAplicacao(true);
     expect(componente.validate().valid).toBe(false);
   });
 
   it('recusa fator zero ou negativo', () => {
-    componente.alternarAtivo(true);
+    componente.escolherAplicacao(true);
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
     componente.escolherBaseLegal(BASE_LEGAL_ID);
     componente.alterarFator('0');
@@ -69,7 +80,7 @@ describe('BonusStepComponent', () => {
   });
 
   it('recusa ativo sem base legal escolhida', () => {
-    componente.alternarAtivo(true);
+    componente.escolherAplicacao(true);
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
     componente.alterarFator('1.2');
 
@@ -77,7 +88,7 @@ describe('BonusStepComponent', () => {
   });
 
   it('aceita ativo com regra, fator e base legal válidos, sem teto', () => {
-    componente.alternarAtivo(true);
+    componente.escolherAplicacao(true);
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
     componente.alterarFator('1.2');
     componente.escolherBaseLegal(BASE_LEGAL_ID);
@@ -86,7 +97,7 @@ describe('BonusStepComponent', () => {
   });
 
   it('recusa teto informado igual ou menor que zero', () => {
-    componente.alternarAtivo(true);
+    componente.escolherAplicacao(true);
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
     componente.alterarFator('1.2');
     componente.escolherBaseLegal(BASE_LEGAL_ID);
@@ -101,7 +112,7 @@ describe('BonusStepComponent', () => {
    * escreve — e voltava recusado pelo servidor sem que o campo dissesse nada sobre faixa.
    */
   it('recusa o teto acima da precisão com que ele é guardado', () => {
-    componente.alternarAtivo(true);
+    componente.escolherAplicacao(true);
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
     componente.alterarFator('1.2');
     componente.escolherBaseLegal(BASE_LEGAL_ID);
@@ -113,7 +124,7 @@ describe('BonusStepComponent', () => {
   });
 
   it('recusa o fator com mais casas decimais do que o registro guarda', () => {
-    componente.alternarAtivo(true);
+    componente.escolherAplicacao(true);
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
     componente.alterarFator('1.23456');
     componente.escolherBaseLegal(BASE_LEGAL_ID);
@@ -124,7 +135,7 @@ describe('BonusStepComponent', () => {
   });
 
   it('aceita o valor no limite da precisão', () => {
-    componente.alternarAtivo(true);
+    componente.escolherAplicacao(true);
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
     componente.alterarFator('99.9999');
     componente.escolherBaseLegal(BASE_LEGAL_ID);
@@ -133,13 +144,15 @@ describe('BonusStepComponent', () => {
   });
 
   describe('persistir()', () => {
-    it('grava os cinco campos null quando inativo', async () => {
+    it('grava a declaração de que não aplica, com os cinco campos null', async () => {
+      componente.escolherAplicacao(false);
       const gravacao = componente.persistir();
 
       const requisicao = controller.expectOne(ROTA_BONUS);
       expect(requisicao.request.method).toBe('PUT');
       expect(requisicao.request.headers.get('Idempotency-Key')).toBeTruthy();
       expect(requisicao.request.body).toEqual({
+        aplica: false,
         regraCodigo: null,
         regraVersao: null,
         fator: null,
@@ -152,7 +165,7 @@ describe('BonusStepComponent', () => {
     });
 
     it('grava os campos preenchidos quando ativo', async () => {
-      componente.alternarAtivo(true);
+      componente.escolherAplicacao(true);
       componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
       componente.alterarFator('1.2');
       componente.escolherBaseLegal(BASE_LEGAL_ID);
@@ -161,6 +174,7 @@ describe('BonusStepComponent', () => {
 
       const requisicao = controller.expectOne(ROTA_BONUS);
       expect(requisicao.request.body).toEqual({
+        aplica: true,
         regraCodigo: 'BONUS-MULTIPLICATIVO',
         regraVersao: '1.0',
         fator: 1.2,
@@ -173,7 +187,7 @@ describe('BonusStepComponent', () => {
     });
 
     it('não chama a API quando a validação recusa', async () => {
-      componente.alternarAtivo(true);
+      componente.escolherAplicacao(true);
       const resultado = await componente.persistir();
 
       expect(resultado.valid).toBe(false);
@@ -181,7 +195,7 @@ describe('BonusStepComponent', () => {
     });
 
     it('preserva o rascunho quando a API recusa', async () => {
-      componente.alternarAtivo(true);
+      componente.escolherAplicacao(true);
       componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
       componente.alterarFator('1.2');
       componente.escolherBaseLegal(BASE_LEGAL_ID);
@@ -201,24 +215,27 @@ describe('BonusStepComponent', () => {
 
       const resultado = await gravacao;
       expect(resultado.valid).toBe(false);
-      expect(store.draft().bonus.ativo).toBe(true);
+      expect(store.draft().bonus.aplica).toBe(true);
       expect(store.salvando()).toBe(false);
     });
   });
 
   describe('confirmacaoDeGravacao()', () => {
-    it('confirma a ausência de bônus quando inativo', () => {
+    it('confirma que o processo não aplica o bônus', () => {
+      componente.escolherAplicacao(false);
       const confirmacao = componente.confirmacaoDeGravacao();
-      expect(confirmacao?.itens).toEqual([{ rotulo: 'Bônus regional', valor: 'Não configurado' }]);
+      expect(confirmacao?.itens).toEqual([
+        { rotulo: 'Bônus regional', valor: 'Não aplicado neste processo' },
+      ]);
     });
 
     it('devolve null quando ativo mas inválido', () => {
-      componente.alternarAtivo(true);
+      componente.escolherAplicacao(true);
       expect(componente.confirmacaoDeGravacao()).toBeNull();
     });
 
     it('resume os campos quando ativo e válido', () => {
-      componente.alternarAtivo(true);
+      componente.escolherAplicacao(true);
       componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
       componente.alterarFator('1.2');
       componente.escolherBaseLegal(BASE_LEGAL_ID);
@@ -250,7 +267,7 @@ describe('BonusStepComponent', () => {
         },
       ]);
 
-      componente.alternarAtivo(true);
+      componente.escolherAplicacao(true);
       componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
       componente.alterarFator('1.2');
       componente.escolherBaseLegal(BASE_LEGAL_ID);
@@ -311,7 +328,7 @@ describe('BonusStepComponent', () => {
           },
         ]);
 
-      componente.alternarAtivo(true);
+      componente.escolherAplicacao(true);
       componente.escolherBaseLegal(BASE_LEGAL_ID);
       fixture.detectChanges();
 
@@ -341,7 +358,7 @@ describe('BonusStepComponent', () => {
           },
         ]);
 
-      componente.alternarAtivo(true);
+      componente.escolherAplicacao(true);
       componente.escolherBaseLegal(BASE_LEGAL_ID);
       fixture.detectChanges();
 

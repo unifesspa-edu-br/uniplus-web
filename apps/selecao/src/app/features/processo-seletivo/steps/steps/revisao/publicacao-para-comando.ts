@@ -158,6 +158,8 @@ const ROTULO_POR_DIMENSAO: ReadonlyMap<string, string> = new Map<string, string>
   ['classificacao', 'Classificação'],
   ['atendimento_especializado', 'Atendimento especializado'],
   ['coleta_de_fatos', 'Coleta de fatos'],
+  ['bonus_regional', 'Bônus regional'],
+  ['desempate', 'Critérios de desempate'],
 ]);
 
 /**
@@ -212,6 +214,10 @@ const PASSO_POR_DIMENSAO: ReadonlyMap<string, RotuloDePasso> = new Map<string, R
   // referência temporal são declarados. Três itens desta dimensão se resolvem noutro passo, e
   // estão nomeados em DESTINO_POR_ITEM.
   ['coleta_de_fatos', 'Formulários'],
+  // A declaração de aplicar ou não o bônus e os critérios de desempate exigidos com inscrição
+  // própria têm passo próprio.
+  ['bonus_regional', 'Bônus'],
+  ['desempate', 'Desempate'],
 ]);
 
 /**

@@ -204,7 +204,7 @@ export class BonusStepComponent {
       (item) => item.id === bonus.baseLegalBonusRegionalId,
     );
     return {
-      aplicacao: bonus.ativo ? 'Aplicado neste processo' : 'Não aplicado neste processo',
+      aplicacao: aplicacaoEmConsulta(bonus.aplica),
       regra: rotuloDaRegraEscolhida(this.regrasBonus()),
       fator: leituraDoCampoDecimal(bonus.fator),
       teto: leituraDoCampoDecimal(bonus.teto),
@@ -244,8 +244,8 @@ export class BonusStepComponent {
     this.store.patchObjectSection('bonus', { baseLegalBonusRegionalId: id });
   }
 
-  alternarAtivo(ativo: boolean): void {
-    this.store.patchObjectSection('bonus', { ativo });
+  escolherAplicacao(aplica: boolean): void {
+    this.store.patchObjectSection('bonus', { aplica });
   }
 
   alterarFator(fator: string): void {
@@ -264,12 +264,12 @@ export class BonusStepComponent {
     if (!this.validate().valid) return null;
 
     const bonus = this.store.draft().bonus;
-    if (!bonus.ativo) {
+    if (bonus.aplica === false) {
       return {
-        titulo: 'Confirmar a ausência de bônus regional',
-        aviso: 'Nenhum bônus regional será declarado para este processo.',
+        titulo: 'Confirmar que o processo não aplica o bônus regional',
+        aviso: 'O processo será declarado sem bônus regional.',
         rotuloDeConfirmar: 'Confirmar sem bônus',
-        itens: [{ rotulo: 'Bônus regional', valor: 'Não configurado' }],
+        itens: [{ rotulo: 'Bônus regional', valor: 'Não aplicado neste processo' }],
       };
     }
 
@@ -293,8 +293,10 @@ export class BonusStepComponent {
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {
     const bonus = this.store.draft().bonus;
-    if (!bonus.ativo) return { valid: true };
-
+    if (bonus.aplica === null) {
+      return { valid: false, messages: ['Informe se o processo aplica o bônus regional.'] };
+    }
+    if (!bonus.aplica) return { valid: true };
 
     const messages: string[] = [];
 
@@ -323,7 +325,7 @@ export class BonusStepComponent {
     return messages.length ? { valid: false, messages } : { valid: true };
   }
 
-  /** Grava o bônus regional — ativo ou não, o passo sempre grava (CA-04). */
+  /** Grava a declaração do bônus regional — aplica ou não, o passo sempre grava. */
   async persistir(): Promise<StepValidation> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
@@ -374,6 +376,12 @@ export class BonusStepComponent {
         this.basesLegaisCarregando.set(false);
       });
   }
+}
+
+/** A declaração como se lê em consulta; sem resposta, o servidor ainda não a tem. */
+function aplicacaoEmConsulta(aplica: boolean | null): string | null {
+  if (aplica === null) return null;
+  return aplica ? 'Aplicado neste processo' : 'Não aplicado neste processo';
 }
 
 function decimal(texto: string): number | null {

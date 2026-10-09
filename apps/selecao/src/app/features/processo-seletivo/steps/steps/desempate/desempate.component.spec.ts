@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import {
+  OrigemCandidatos,
   ProcessoSeletivoDto,
   SELECAO_BASE_PATH,
   StatusProcesso,
@@ -295,7 +296,24 @@ describe('DesempateStepComponent', () => {
     expect(componente.idosoSemApuracao()).toBe(false);
   });
 
-  it('é válido sem nenhum critério (desempate é opcional)', () => {
+  it('exige ao menos um critério quando a inscrição é feita no sistema', () => {
+    store.patchObjectSection('identificacao', {
+      origemCandidatos: OrigemCandidatos.inscricaoPropria,
+    });
+
+    const resultado = componente.validate();
+
+    expect(resultado.valid).toBe(false);
+    expect(resultado).toMatchObject({
+      messages: [expect.stringContaining('ao menos um critério de desempate')],
+    });
+  });
+
+  it('é válido sem critério quando o resultado é importado: a lista já vem classificada', () => {
+    store.patchObjectSection('identificacao', {
+      origemCandidatos: OrigemCandidatos.importacaoExterna,
+    });
+
     expect(componente.validate().valid).toBe(true);
   });
 

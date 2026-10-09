@@ -181,7 +181,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     it('mostra a regra gravada quando o catálogo chega depois do rascunho', async () => {
       const { fixture, host, store, catalogos } = await montar(BonusStepComponent);
       store.patchObjectSection('bonus', {
-        ativo: true,
+        aplica: true,
         regraCodigo: 'BONUS-REGIONAL',
         regraVersao: '1.0',
       });
@@ -196,7 +196,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     it('com o processo publicado, lê o bônus gravado como texto', async () => {
       const { fixture, host, store, catalogos } = await montar(BonusStepComponent);
       store.patchObjectSection('bonus', {
-        ativo: true,
+        aplica: true,
         regraCodigo: 'BONUS-REGIONAL',
         regraVersao: '1.0',
         fator: '1.2',
@@ -218,7 +218,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
 
     it('com o processo publicado e sem bônus, diz que ele não se aplica', async () => {
       const { fixture, host, store } = await montar(BonusStepComponent);
-      store.patchObjectSection('bonus', { ativo: false });
+      store.patchObjectSection('bonus', { aplica: false });
       publicar(store);
       detectar(fixture);
 
@@ -229,7 +229,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     it('trava os controles enquanto a gravação está em curso', async () => {
       const { fixture, host, store } = await montar(BonusStepComponent);
       store.patchObjectSection('bonus', {
-        ativo: true,
+        aplica: true,
         regraCodigo: 'BONUS-REGIONAL',
         regraVersao: '1.0',
       });
