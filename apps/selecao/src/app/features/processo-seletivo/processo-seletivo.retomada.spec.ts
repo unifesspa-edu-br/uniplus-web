@@ -422,10 +422,9 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const opcao = Array
-      .from(cenario.host.querySelectorAll('#f-unidade option') as NodeListOf<HTMLOptionElement>)
-      .find((o) => o.getAttribute('value') === UNIDADE_ORIGEM_ID,
-    );
+    const opcao = Array.from(
+      cenario.host.querySelectorAll('#f-unidade option') as NodeListOf<HTMLOptionElement>,
+    ).find((o) => o.getAttribute('value') === UNIDADE_ORIGEM_ID);
 
     expect(opcao?.textContent).toContain('IGE');
     expect(opcao?.textContent).toContain('Instituto de Geociências e Engenharias');
@@ -443,9 +442,9 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const opcao = Array
-      .from(cenario.host.querySelectorAll('#f-unidade option') as NodeListOf<HTMLOptionElement>)
-      .find((o) => o.getAttribute('value') === UNIDADE_ORIGEM_ID);
+    const opcao = Array.from(
+      cenario.host.querySelectorAll('#f-unidade option') as NodeListOf<HTMLOptionElement>,
+    ).find((o) => o.getAttribute('value') === UNIDADE_ORIGEM_ID);
 
     expect(opcao?.textContent).toContain('IGE');
     expect(cenario.host.querySelector('.field__erro')).not.toBeNull();
@@ -504,7 +503,9 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
 
     // Cada documento oferece duas ações — usar e abrir para conferir —, então o
     // que identifica a opção é o rótulo da escolha, não a contagem de botões.
-    const rotulos = Array.from(cenario.host.querySelectorAll('.ps-doc-escolha button') as NodeListOf<HTMLButtonElement>)
+    const rotulos = Array.from(
+      cenario.host.querySelectorAll('.ps-doc-escolha button') as NodeListOf<HTMLButtonElement>,
+    )
       .map((b) => b.getAttribute('aria-label'))
       .filter((rotulo): rotulo is string => rotulo?.startsWith('Usar o documento') ?? false);
 
@@ -585,11 +586,9 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const botao = Array
-      .from(cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
-      .find((b) =>
-      b.textContent?.includes('Verificar novamente'),
-    ) as HTMLButtonElement;
+    const botao = Array.from(
+      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Verificar novamente')) as HTMLButtonElement;
     expect(botao).toBeDefined();
 
     botao.click();
@@ -1175,11 +1174,9 @@ describe('ProcessoSeletivoPage — falhas de leitura', () => {
     cenario.fixture.detectChanges();
 
     expect(cenario.store.falhaDeLeitura()?.motivo).toBe('falhaTemporaria');
-    const botao = Array
-      .from(cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
-      .find((b) =>
-      b.textContent?.includes('Tentar novamente'),
-    );
+    const botao = Array.from(
+      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Tentar novamente'));
     expect(botao).toBeDefined();
   });
 
@@ -1191,7 +1188,7 @@ describe('ProcessoSeletivoPage — falhas de leitura', () => {
     cenario.fixture.detectChanges();
 
     const botao = Array.from(
-      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
     ).find((b) => b.textContent?.includes('Tentar novamente'));
     expect(botao).toBeUndefined();
   });
@@ -1227,11 +1224,9 @@ describe('ProcessoSeletivoPage — falhas de leitura', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const botao = Array
-      .from(cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
-      .find((b) =>
-      b.textContent?.includes('Tentar novamente'),
-    ) as HTMLButtonElement;
+    const botao = Array.from(
+      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Tentar novamente')) as HTMLButtonElement;
     botao.click();
     await propagar();
 
@@ -1803,10 +1798,9 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       cenario.store.goTo(cenario.store.totalSteps - 1);
       cenario.fixture.detectChanges();
 
-      const botao = Array
-        .from(cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
-        .find((b) => b.textContent?.trim() === 'Salvar rascunho',
-      );
+      const botao = Array.from(
+        cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+      ).find((b) => b.textContent?.trim() === 'Salvar rascunho');
       expect(botao).toBeUndefined();
       expect(cenario.host.querySelector('.rascunho-publicacao')).toBeNull();
     });

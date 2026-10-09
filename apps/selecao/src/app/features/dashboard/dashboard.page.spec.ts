@@ -53,8 +53,8 @@ describe('DashboardPage', () => {
    * papel levaria direto ao acesso negado.
    */
   it('leva à listagem quem administra a plataforma', () => {
-    const atalho = Array.from(montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
-      .find((a) => a.textContent?.includes('Ver processos seletivos'),
+    const atalho = Array.from(montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).find(
+      (a) => a.textContent?.includes('Ver processos seletivos'),
     );
 
     expect(atalho?.getAttribute('href')).toBe('/processo-seletivo');
@@ -63,9 +63,8 @@ describe('DashboardPage', () => {
   it('esconde o atalho da listagem de quem não administra a plataforma', () => {
     papeis.set(['avaliador']);
 
-    const atalho = Array.from(montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
-      .find((a) =>
-      a.textContent?.includes('Ver processos seletivos'),
+    const atalho = Array.from(montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).find(
+      (a) => a.textContent?.includes('Ver processos seletivos'),
     );
 
     expect(atalho).toBeUndefined();
@@ -73,7 +72,7 @@ describe('DashboardPage', () => {
 
   it('não expõe âncoras sem destino', () => {
     const vazias = Array.from(
-      montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>
+      montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
     ).filter((a) => a.getAttribute('href') === '#');
 
     expect(vazias).toHaveLength(0);
