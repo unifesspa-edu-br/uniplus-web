@@ -1,3 +1,27 @@
+@if (store.emConsulta()) {
+  <div class="step-card upload-section">
+    <p class="label" id="anexo-edital-titulo">Edital de abertura</p>
+    @if (anexo(); as file) {
+      <ui-valor-em-consulta rotuladoPor="anexo-edital-titulo" [valor]="file.name" />
+      @if (file.fase === 'confirmado' && file.documentoEditalId; as documentoId) {
+        <button
+          class="btn btn--tertiary btn--sm"
+          type="button"
+          [disabled]="abrindoDocumento() !== null"
+          [attr.aria-busy]="abrindoDocumento() === documentoId || null"
+          (click)="abrirDocumento(documentoId)"
+        >
+          {{ abrindoDocumento() === documentoId ? 'Abrindo…' : 'Abrir o edital' }}
+        </button>
+      }
+    } @else {
+      <ui-valor-em-consulta rotuladoPor="anexo-edital-titulo" seVazio="Nenhum edital anexado" />
+    }
+    @if (erroDeAbertura(); as erro) {
+      <p class="field__erro" role="alert">{{ erro }}</p>
+    }
+  </div>
+} @else {
 <div class="step-card upload-section">
   <p class="label">Upload do edital de abertura</p>
   @if (uploadError(); as error) {
@@ -182,3 +206,4 @@
     </div>
   </div>
 </div>
+}
