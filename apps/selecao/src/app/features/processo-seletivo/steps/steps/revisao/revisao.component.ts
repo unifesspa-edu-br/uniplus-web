@@ -1,3 +1,4 @@
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -92,7 +93,7 @@ export type AtoPublicado =
 @Component({
   selector: 'sel-step-revisao',
   standalone: true,
-  imports: [AnexoEditalComponent, DateBrPipe, ReactiveFormsModule],
+  imports: [ValorLegivelDirective, ValorEmConsultaComponent, AnexoEditalComponent, DateBrPipe, ReactiveFormsModule],
   templateUrl: './revisao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(RevisaoStepComponent), PreflightDaPublicacaoService],
@@ -129,6 +130,36 @@ export class RevisaoStepComponent {
   readonly jaPublicado = computed(
     () => this.store.remoteSnapshot()?.status === StatusProcesso.publicado,
   );
+
+  /**
+   * A transcrição do ato gravada no rascunho, para o processo que não aceita edição e ainda não
+   * tem ato publicado a mostrar (cancelado, encerrado): os campos do formulário, lidos como texto.
+   */
+  readonly atoDoRascunhoLido = computed(() => {
+    const { publicacao } = this.store.draft();
+    const { ato } = publicacao;
+    const tipo = this.preflight.tiposAto().find((item) => item.codigo === ato.tipoAtoCodigo);
+    return [
+      { rotulo: 'Número do ato', valor: publicacao.numero.trim() || 'Não informado' },
+      { rotulo: 'Tipo de ato', valor: tipo ? `${tipo.nome} (${tipo.codigo})` : ato.tipoAtoCodigo },
+      { rotulo: 'Órgão', valor: ato.orgao },
+      { rotulo: 'Série', valor: ato.serie },
+      { rotulo: 'Ano', valor: ato.ano },
+      {
+        rotulo: 'Data de publicação do ato',
+        valor: ato.dataPublicacao ? this.dataBr.transform(ato.dataPublicacao) : '',
+      },
+      { rotulo: 'Assinante', valor: ato.assinante },
+    ];
+  });
+
+  /** O período de inscrição transcrito, quando o cronograma não tem fase que o derive. */
+  readonly periodoDeInscricaoLido = computed(() => {
+    const { periodoInscricaoInicio, periodoInscricaoFim } = this.store.draft().publicacao;
+    return periodoInscricaoInicio && periodoInscricaoFim
+      ? `${periodoInscricaoInicio} até ${periodoInscricaoFim}`
+      : '';
+  });
 
   /** O ato vigente como pares rótulo e valor, na ordem do formulário que ele substitui. */
   readonly resumoDoAto = computed(() => {

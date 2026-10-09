@@ -1,6 +1,10 @@
 <p class="step-subtitle">
-  Confira o que o servidor exige para publicar — o checklist estrutural, a conformidade legal e o
-  documento e o ato do edital — e informe os dados que faltam antes de publicar.
+  @if (store.emConsulta()) {
+    O checklist estrutural, a conformidade legal e o documento e o ato do edital, como ficaram.
+  } @else {
+    Confira o que o servidor exige para publicar — o checklist estrutural, a conformidade legal e
+    o documento e o ato do edital — e informe os dados que faltam antes de publicar.
+  }
 </p>
 
 @if (store.motivoDeSomenteLeitura(); as motivo) {
@@ -76,6 +80,7 @@
              preflight é determinística por processo+dataReferencia, então
              dois cliques em sequência pedem exatamente a mesma coisa — a
              segunda resposta apenas sobrescreve a primeira sem necessidade. -->
+        @if (!store.emConsulta()) {
         <button
           class="btn btn--sm btn--ghost"
           type="button"
@@ -84,6 +89,7 @@
         >
           {{ preflight.carregando() ? 'Atualizando…' : 'Atualizar checklist' }}
         </button>
+        }
       </div>
 
       @if (estruturalOk()) {
@@ -118,7 +124,7 @@
                       <span class="revisao-item__onde" [id]="orientacao.id">{{ orientacao.texto }}</span>
                     }
                   </div>
-                  @if (item.passo; as passo) {
+                  @if (item.passo; as passo) { @if (!store.emConsulta()) {
                     <!-- O botão é descrito pela pendência que resolve: vários itens podem levar
                          ao mesmo passo, e "Ir para Vagas" sozinho não diz qual. -->
                     @let descritoPor =
@@ -143,7 +149,7 @@
                     >
                       Ir para {{ passo.nome }}
                     </button>
-                  }
+                  } }
                 </li>
               }
             </ul>
@@ -239,9 +245,11 @@
         <p class="alert alert--danger" role="alert">{{ erroDoc }}</p>
       }
 
-      <p class="step-hint">
-        O edital anexado acima é o documento que a publicação referencia — nada a repetir aqui.
-      </p>
+      @if (!store.emConsulta()) {
+        <p class="step-hint">
+          O edital anexado acima é o documento que a publicação referencia — nada a repetir aqui.
+        </p>
+      }
 
       @if (jaPublicado()) {
         @switch (atoPublicado()?.estado) {
@@ -271,6 +279,12 @@
             <p class="step-hint" role="status">Lendo o ato publicado…</p>
           }
         }
+      } @else if (store.emConsulta()) {
+        <div class="form-grid">
+          @for (item of atoDoRascunhoLido(); track item.rotulo) {
+            <ui-valor-em-consulta [rotulo]="item.rotulo" [valor]="item.valor" />
+          }
+        </div>
       } @else {
         <div class="form-grid" [formGroup]="form">
           <div class="form-field">
@@ -348,6 +362,13 @@
             — esta tela não pede o período porque o servidor o deriva do cronograma.
           </span>
         </p>
+      } @else if (store.emConsulta()) {
+        <ui-valor-em-consulta
+          rotulo="Período de inscrição"
+          seVazio="Não informado"
+          dica="O cronograma não tem fase que colete inscrição pelo sistema."
+          [valor]="periodoDeInscricaoLido()"
+        />
       } @else {
         <p class="step-hint">
           O cronograma não tem fase que colete inscrição pelo sistema — informe o período de
