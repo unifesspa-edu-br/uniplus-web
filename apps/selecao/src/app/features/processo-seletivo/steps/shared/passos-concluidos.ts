@@ -15,7 +15,7 @@ type PassoQueGrava = Exclude<RotuloDePasso, 'Revisão e publicação'>;
  *
  * O Bônus conta quando o processo declarou se aplica ou não o bônus (`aplicaBonusRegional`
  * existe, nas duas respostas). O Desempate conta com ao menos um critério, ou quando o resultado
- * é importado: a lista já vem classificada e o passo não se aplica. Fórmula e Eliminação
+ * é importado: a lista já vem classificada e o desempate não é obrigatório. Fórmula e Eliminação
  * compartilham a classificação, gravada junto no passo Eliminação.
  */
 function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolean> {
