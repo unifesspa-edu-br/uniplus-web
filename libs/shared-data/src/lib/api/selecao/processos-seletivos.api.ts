@@ -699,9 +699,10 @@ export class ProcessosSeletivosApi {
   }
 
   /**
-   * PUT `/api/selecao/processos-seletivos/{id}/bonus-regional` — declara o
-   * bônus regional (RN05). Toggle por presença: enviar os cinco campos `null`
-   * é a forma de declarar "sem bônus" — não existe "desmarcar" separado.
+   * PUT `/api/selecao/processos-seletivos/{id}/bonus-regional` — declara se o
+   * processo aplica o bônus regional (RN05). `aplica` é obrigatório: `false`
+   * declara "sem bônus" e vai com os cinco campos `null`; `true` exige a
+   * configuração do bônus.
    *
    * Responde 204 sem corpo.
    */

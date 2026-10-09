@@ -50,6 +50,15 @@ describe('BonusStepComponent', () => {
 
   afterEach(() => controller.verify());
 
+  it('o controle da pergunta acompanha o rascunho hidratado e grava nele ao mudar', () => {
+    store.patchObjectSection('bonus', { aplica: false });
+    fixture.detectChanges();
+    expect(componente.aplica.value).toBe(false);
+
+    componente.aplica.setValue(true);
+    expect(store.draft().bonus.aplica).toBe(true);
+  });
+
   it('recusa enquanto a declaração de aplicar ou não o bônus não foi respondida', () => {
     const resultado = componente.validate();
 
