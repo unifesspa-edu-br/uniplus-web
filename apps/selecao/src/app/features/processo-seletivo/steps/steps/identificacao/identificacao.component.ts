@@ -400,6 +400,9 @@ export class IdentificacaoStepComponent {
     if (!identificacao.unidadeAdministradoraId) faltando.push('unidade administradora');
     if (!identificacao.origemCandidatos) faltando.push('origem dos candidatos');
     if (identificacao.localidade === null) faltando.push('município que rege os prazos');
+    if (normalizarIdentificadorLegivel(identificacao.identificadorLegivel) === '') {
+      faltando.push('identificador legível');
+    }
     return faltando;
   }
 
@@ -427,7 +430,7 @@ export class IdentificacaoStepComponent {
       const identificador = normalizarIdentificadorLegivel(identificacao.identificadorLegivel);
       const resultado = await this.cadastro.criar({
         nome: identificacao.nome.trim(),
-        identificadorLegivel: identificador === '' ? null : identificador,
+        identificadorLegivel: identificador,
         tipoProcessoOrigemId,
         origemCandidatos: identificacao.origemCandidatos as OrigemCandidatos,
         unidadeAdministradoraOrigemId: identificacao.unidadeAdministradoraId,
@@ -452,7 +455,7 @@ export class IdentificacaoStepComponent {
       }
 
       this.store.criacaoIndefinida.set(false);
-      this.identificadorGravado.set(identificador === '' ? null : identificador);
+      this.identificadorGravado.set(identificador);
       this.store.processoSeletivoId.set(resultado.processoSeletivoId);
       return resultado.processoSeletivoId;
     } finally {

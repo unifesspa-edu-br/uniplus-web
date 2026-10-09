@@ -666,8 +666,8 @@ export interface WizardDraft {
     nome: string;
     /**
      * Endereço público do certame, escolhido por quem cadastra — não se deriva do
-     * nome. Opcional na criação e obrigatório para publicar. Enquanto o processo é
-     * rascunho pode ser trocado; depois de publicado com valor, não muda mais.
+     * nome. Obrigatório na criação. Enquanto o processo é rascunho pode ser trocado,
+     * mas não esvaziado; depois de publicado com valor, não muda mais.
      */
     identificadorLegivel: string;
     /**
