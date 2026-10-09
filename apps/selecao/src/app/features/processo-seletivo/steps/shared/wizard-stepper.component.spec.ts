@@ -23,7 +23,7 @@ describe('WizardStepperComponent — semântica', () => {
    */
   it('não sobrescreve o papel do item de lista', () => {
     const { host } = montar();
-    const itens = Array.from(host.querySelectorAll('li.steps__item') as NodeList);
+    const itens = Array.from(host.querySelectorAll('li.steps__item') as NodeListOf<HTMLLIElement>);
 
     expect(itens.length).toBeGreaterThan(0);
     expect(itens.every((item) => item.getAttribute('role') === null)).toBe(true);

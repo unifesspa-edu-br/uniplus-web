@@ -206,13 +206,13 @@ describe('CascataRemanejamentoComponent', () => {
     // A matriz é apresentada como a portaria a publica: origem na linha e a
     // ordem de preferência em colunas numeradas, não como cadeia de setas.
     const cabecalhos = Array.from(
-      elemento.querySelectorAll('.cascata-matriz thead th') as NodeListOf<HTMLTableCellElement>
+      elemento.querySelectorAll('.cascata-matriz thead th') as NodeListOf<HTMLTableCellElement>,
     ).map((th) => th.textContent?.trim());
     expect(cabecalhos).toEqual(['Origem', '1ª', '2ª']);
 
-    const primeiraLinha = Array
-      .from((elemento.querySelector('.cascata-matriz tbody tr')?.querySelectorAll('th, td') ?? []))
-      .map((celula) => celula.textContent?.trim());
+    const primeiraLinha = Array.from(
+      elemento.querySelector('.cascata-matriz tbody tr')?.querySelectorAll('th, td') ?? [],
+    ).map((celula) => celula.textContent?.trim());
     expect(primeiraLinha).toEqual(['LB_PPI', 'LB_Q', 'AC']);
 
     // Até 767 px o design system esconde o `thead` e usa `data-label` como
@@ -220,9 +220,11 @@ describe('CascataRemanejamentoComponent', () => {
     // ordem de preferência — o que a matriz existe para dizer — sumiria. O
     // rótulo é o ordinal do cabeçalho; o texto visível que descreve a matriz
     // diz que o ordinal é de preferência.
-    const rotulos = Array
-      .from(elemento.querySelectorAll('.cascata-matriz tbody tr:first-child td') as NodeListOf<HTMLTableCellElement>)
-      .map((celula) => celula.getAttribute('data-label'));
+    const rotulos = Array.from(
+      elemento.querySelectorAll(
+        '.cascata-matriz tbody tr:first-child td',
+      ) as NodeListOf<HTMLTableCellElement>,
+    ).map((celula) => celula.getAttribute('data-label'));
     expect(rotulos).toEqual(['1ª', '2ª']);
     const leitura = elemento.querySelector(
       `#${elemento.querySelector('.cascata-matriz')?.getAttribute('aria-describedby')}`,

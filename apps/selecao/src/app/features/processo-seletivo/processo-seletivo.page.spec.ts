@@ -1208,8 +1208,8 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     expect(aviso?.getAttribute('role')).toBe('status');
     expect(aviso?.querySelector('.alert__title')?.textContent).toContain('Atenção!');
 
-    const botao = Array.from(host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find((b) =>
-      /Voltar e corrigir/.test(b.textContent ?? ''),
+    const botao = Array.from(host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+      (b) => /Voltar e corrigir/.test(b.textContent ?? ''),
     );
     expect(botao).toBeDefined();
   });
