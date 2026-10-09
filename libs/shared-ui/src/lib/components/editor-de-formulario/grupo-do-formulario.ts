@@ -35,6 +35,7 @@ import {
 import { focarDepois } from './foco';
 import { ItemDoFormularioComponent } from './item-do-formulario';
 import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
 /**
  * Um grupo repetível do formulário (UNI-REQ-0146): o candidato responde os mesmos campos para cada
@@ -45,7 +46,7 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
 @Component({
   selector: 'ui-grupo-do-formulario',
   standalone: true,
-  imports: [EditorDeCondicoesComponent, ItemDoFormularioComponent, TagComponent],
+  imports: [ValorLegivelDirective, EditorDeCondicoesComponent, ItemDoFormularioComponent, TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article class="editor-formulario__item" [attr.aria-labelledby]="idDe('titulo')">

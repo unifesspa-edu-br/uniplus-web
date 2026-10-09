@@ -62,3 +62,4 @@ export { NomeSocialPipe } from './pipes/nome-social.pipe';
 export { CpfMaskDirective } from './directives/cpf-mask.directive';
 export { RoleDirective } from './directives/role.directive';
 export { RolagemFocavelDirective } from './directives/rolagem-focavel.directive';
+export { ValorLegivelDirective } from './components/valor-legivel/valor-legivel.directive';

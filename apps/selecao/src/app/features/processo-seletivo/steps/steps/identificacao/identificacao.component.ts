@@ -23,6 +23,7 @@ import {
   ComboboxComponent,
   ValorEmConsultaComponent,
   type UiComboboxGroup,
+  ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { LocalidadeSelecionada } from '../../processo-seletivo.models';
@@ -60,7 +61,7 @@ export const ORIGENS_CANDIDATOS: readonly {
 @Component({
   selector: 'sel-step-identificacao',
   standalone: true,
-  imports: [ReactiveFormsModule, ComboboxComponent, ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, ReactiveFormsModule, ComboboxComponent, ValorEmConsultaComponent],
   templateUrl: './identificacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(IdentificacaoStepComponent)],

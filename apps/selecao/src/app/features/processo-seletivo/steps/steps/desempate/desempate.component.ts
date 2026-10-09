@@ -14,6 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   CondicaoDeFatoComponent,
   ValorEmConsultaComponent,
+  ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
 import { isApiOk } from '@uniplus/shared-core/http';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
@@ -100,7 +101,7 @@ const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
   selector: 'sel-step-desempate',
   standalone: true,
   templateUrl: './desempate.component.html',
-  imports: [CondicaoDeFatoComponent, ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, CondicaoDeFatoComponent, ValorEmConsultaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(DesempateStepComponent)],
 })

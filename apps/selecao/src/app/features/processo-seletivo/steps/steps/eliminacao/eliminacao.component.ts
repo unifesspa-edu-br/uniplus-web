@@ -12,7 +12,7 @@ import {
   type ProblemDetails,
   type ProblemValidationError,
 } from '@uniplus/shared-core/http';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import {
   EtapaPontuada,
@@ -84,7 +84,7 @@ const REGRA_ELIMINACAO_VAZIA: RegraEliminacaoConfigurada = {
 @Component({
   selector: 'sel-step-eliminacao',
   standalone: true,
-  imports: [ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, ValorEmConsultaComponent],
   templateUrl: './eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(EliminacaoStepComponent)],

@@ -15,6 +15,7 @@ import {
   type CondicaoDeFato,
   type FatoEscolhivel,
 } from './condicoes-de-fatos';
+import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
 /**
  * Uma condição sobre um fato do candidato: o fato, a comparação e o valor.
@@ -36,7 +37,7 @@ import {
 @Component({
   selector: 'ui-condicao-de-fato',
   standalone: true,
-  imports: [ComboboxComponent, ValorDeMunicipioComponent],
+  imports: [ValorLegivelDirective, ComboboxComponent, ValorDeMunicipioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="form-field">
