@@ -5,7 +5,7 @@ import type { FormGroup } from '@angular/forms';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 
@@ -2249,6 +2249,34 @@ describe('CronogramaStepComponent', () => {
       const resultado = componente.validate();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain('saiu do cronograma');
+    });
+  });
+
+  describe('em consulta', () => {
+    function emConsulta(): void {
+      comFases(ID_INSCRICAO);
+      detectar();
+      componente.acrescentarEtapa('COLETA_INSCRICAO');
+      store.remoteSnapshot.set({ status: StatusProcesso.publicado } as unknown as ProcessoSeletivoDto);
+      detectar();
+    }
+
+    /** O processo publicado só se lê: a linha do tempo vira texto, sem campo nem ação de edição. */
+    it('lê fases e etapas como texto, sem campo nem botão', () => {
+      emConsulta();
+
+      expect(nativo.querySelectorAll('select, input, textarea, button')).toHaveLength(0);
+      const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+      expect(leitura).toContain('Etapas desta fase');
+      expect(leitura).toContain('Convenção de contagem de prazo');
+      expect(leitura).not.toContain('Acrescentar');
+    });
+
+    it('lê a janela da fase em dia e hora, não em texto de campo', () => {
+      emConsulta();
+
+      expect(componente.dataHoraLida('2026-03-01T08:00')).toBe('01/03/2026 08:00');
+      expect(componente.dataHoraLida('')).toBe('');
     });
   });
 });

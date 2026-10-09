@@ -12,7 +12,7 @@ import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi, type ConfiguracaoDerivacaoInput } from '@uniplus/shared-data/selecao';
-import { conteudoInicial, FINALIDADE_INSCRICAO, type ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import { conteudoInicial, FINALIDADE_INSCRICAO, type ConteudoDoFormulario, ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import {
   PAPEL_DEFINITIVO,
@@ -142,7 +142,7 @@ interface FaseNaLinhaDoTempo extends DescricaoDaFase {
 
 @Component({
   selector: 'sel-step-cronograma',
-  imports: [FormsModule, ReactiveFormsModule, FaseStepComponent],
+  imports: [ValorLegivelDirective, ValorEmConsultaComponent, FormsModule, ReactiveFormsModule, FaseStepComponent],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(CronogramaStepComponent)],
@@ -843,6 +843,85 @@ export class CronogramaStepComponent {
 
     return marcas;
   }
+
+  /** O que a fase publica, em texto: o ato e o papel dele no ciclo recursal. */
+  produtosLidosDaFase(grupo: FormGroup<FaseForm>): readonly string[] {
+    return this.produtosDaFase(grupo).map((produto) => `${produto.nome} — ${produto.papel}`);
+  }
+
+  /**
+   * Dia e hora como a consulta os lê: `AAAA-MM-DDTHH:mm`, a hora de parede do campo, vira
+   * `DD/MM/AAAA HH:mm`. Vazio fica vazio, para o valor em consulta dizer "Não informado".
+   */
+  dataHoraLida(valor: string): string {
+    const [data = '', hora = ''] = valor.split('T');
+    const [ano, mes, dia] = data.split('-');
+    if (!ano || !mes || !dia) return '';
+    return hora ? `${dia}/${mes}/${ano} ${hora}` : `${dia}/${mes}/${ano}`;
+  }
+
+  /**
+   * A etapa como a consulta a lê: cada declaração em texto, sem o controle que a edita.
+   * Peso e nota mínima só aparecem quando o caráter da etapa os admite, como na edição.
+   */
+  etapaLida(grupo: FormGroup<EtapaForm>) {
+    const rotulosDosAtos = this.catalogos.rotuloDoAto();
+    const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
+    const unidade = (valor: string): string => (valor === 'horas' ? 'horas' : 'dias úteis');
+    const par = (valor: string, un: string): string => (valor === '' ? '' : `${valor} ${unidade(un)}`);
+    const controles = grupo.controls;
+    const carater = this.caracteresPara(grupo).find((opcao) => opcao.valor === controles.carater.value);
+    const janela =
+      controles.inicio.value || controles.fim.value
+        ? `${this.dataHoraLida(controles.inicio.value) || '—'} até ${this.dataHoraLida(controles.fim.value) || '—'}`
+        : '';
+    const nomesDasBancas = this.catalogos.bancas();
+
+    return {
+      nome: this.nomeDaEtapa(grupo),
+      tipo: this.catalogos.rotuloDoTipoEtapa().get(controles.tipoEtapaOrigemId.value) ?? '',
+      carater: carater?.rotulo ?? '',
+      peso: this.etapaComponeNota(grupo) ? controles.peso.value : null,
+      notaMinima: this.etapaElimina(grupo) ? controles.notaMinima.value : null,
+      notaDoEnem: this.etapaDeNotaDoEnem(grupo),
+      janela,
+      parecerIndividual: controles.emiteParecerIndividual.value,
+      bancas: this.bancasDaEtapa(grupo).map(
+        (id) => nomesDasBancas.find((banca) => banca.id === id)?.nome ?? id,
+      ),
+      publicacoes: this.produtosDaEtapa(grupo)
+        .filter((produto) => produto.atoCodigo !== '')
+        .map((produto) => `${nomeDoAto(produto.atoCodigo)} — ${rotuloDoPapel(produto.papel)}`),
+      recursos: this.recursosDaEtapa(grupo).map((recurso) => {
+        const partes = [
+          recurso.ancora === 'atoPublicado'
+            ? `prazo corre da publicação de ${nomeDoAto(recurso.atoAncoraCodigo)}`
+            : 'prazo corre da ciência do candidato',
+          `prazo de ${par(recurso.prazoValor, recurso.prazoUnidade) || 'não informado'}`,
+        ];
+        const primeira = par(
+          recurso.suspensividadePrimeiraInstanciaValor,
+          recurso.suspensividadePrimeiraInstanciaUnidade,
+        );
+        const segunda = par(
+          recurso.suspensividadeSegundaInstanciaValor,
+          recurso.suspensividadeSegundaInstanciaUnidade,
+        );
+        if (primeira) partes.push(`suspensividade da 1ª instância de ${primeira}`);
+        if (segunda) partes.push(`suspensividade da 2ª instância de ${segunda}`);
+        return partes.join('; ');
+      }),
+    };
+  }
+
+  /** A convenção de contagem de prazo declarada, por código e versão. */
+  readonly convencaoDeContagemLida = computed(() => {
+    this.versaoDoFormulario();
+    const { algoritmoContagemCodigo, algoritmoContagemVersao } = this.formulario.controls;
+    return algoritmoContagemCodigo.value === ''
+      ? null
+      : `${algoritmoContagemCodigo.value} · versão ${algoritmoContagemVersao.value}`;
+  });
 
   /**
    * A fase cuja remoção espera confirmação — ninguém perde etapa e documento sem ler antes
