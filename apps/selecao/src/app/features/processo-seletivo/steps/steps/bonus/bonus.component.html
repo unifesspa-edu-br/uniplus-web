@@ -28,18 +28,16 @@
           ><input
             type="radio"
             name="bonus-aplica"
-            [checked]="store.draft().bonus.aplica === true"
-            [disabled]="!store.aceitaEdicao()"
-            (change)="escolherAplicacao(true)"
+            [value]="true"
+            [formControl]="aplica"
           /><span>Aplica o bônus regional</span></label
         >
         <label class="check-item"
           ><input
             type="radio"
             name="bonus-aplica"
-            [checked]="store.draft().bonus.aplica === false"
-            [disabled]="!store.aceitaEdicao()"
-            (change)="escolherAplicacao(false)"
+            [value]="false"
+            [formControl]="aplica"
           /><span>Não aplica o bônus regional</span></label
         >
       </div>

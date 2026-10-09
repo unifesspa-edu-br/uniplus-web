@@ -3,10 +3,12 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ProblemI18nService, coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
 import {
   BaseLegalBonusRegionalApi,
@@ -54,15 +56,15 @@ interface MunicipioBeneficiado {
 }
 
 /**
- * Bônus regional (`PUT …/bonus-regional`) — toggle por presença: não
- * existe "BONUS-NENHUM", a ausência da entidade já significa sem bônus.
- * Reconstrução conforme o contrato: nenhum campo da tela anterior (`tipo`,
+ * Bônus regional (`PUT …/bonus-regional`) — o processo declara se aplica o bônus ou não, e a
+ * ausência da configuração só significa "sem bônus" quando a declaração é falsa. Não existe
+ * "BONUS-NENHUM". Reconstrução conforme o contrato: nenhum campo da tela anterior (`tipo`,
  * `valor`, `criterio`, `modalidades`) tem correspondente aqui.
  */
 @Component({
   selector: 'sel-step-bonus',
   standalone: true,
-  imports: [RolagemFocavelDirective, ValorEmConsultaComponent],
+  imports: [ReactiveFormsModule, RolagemFocavelDirective, ValorEmConsultaComponent],
   templateUrl: './bonus.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(BonusStepComponent)],
@@ -79,7 +81,24 @@ export class BonusStepComponent {
   readonly basesLegaisCarregando = signal(true);
   readonly basesLegaisErro = signal<string | null>(null);
 
+  /**
+   * A resposta de aplicar ou não o bônus. O rascunho do store é a fonte da verdade: o controle
+   * grava nele ao mudar e o acompanha quando o rascunho é hidratado ou a edição é bloqueada.
+   */
+  readonly aplica = new FormControl<boolean | null>(null);
+
   constructor() {
+    this.aplica.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((aplica) => {
+      this.store.patchObjectSection('bonus', { aplica });
+    });
+    effect(() => {
+      const aplica = this.store.draft().bonus.aplica;
+      if (this.aplica.value !== aplica) this.aplica.setValue(aplica, { emitEvent: false });
+      const editavel = this.store.aceitaEdicao();
+      if (editavel && this.aplica.disabled) this.aplica.enable({ emitEvent: false });
+      if (!editavel && this.aplica.enabled) this.aplica.disable({ emitEvent: false });
+    });
+
     this.catalogos.carregar();
     this.carregarBasesLegais();
 
@@ -245,7 +264,7 @@ export class BonusStepComponent {
   }
 
   escolherAplicacao(aplica: boolean): void {
-    this.store.patchObjectSection('bonus', { aplica });
+    this.aplica.setValue(aplica);
   }
 
   alterarFator(fator: string): void {
