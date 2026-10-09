@@ -308,6 +308,7 @@ export const PROCESSO_DA_MEDICINA = {
     },
   ],
   bonusRegional: null,
+  aplicaBonusRegional: false,
   cascata: {
     id: '01a0d636-e945-77cb-9a59-1be57cf7f88f',
     regra: {

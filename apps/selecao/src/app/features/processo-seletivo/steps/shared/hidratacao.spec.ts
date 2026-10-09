@@ -542,11 +542,14 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
     expect(classificacao.regrasEliminacao).toEqual([]);
   });
 
-  it('projeta o bônus regional gravado como ativo', () => {
-    const { bonus } = hidratarDraft(DRAFT, dtoComCronograma({ bonusRegional: BONUS }));
+  it('projeta o bônus regional gravado, com a declaração de que aplica', () => {
+    const { bonus } = hidratarDraft(
+      DRAFT,
+      dtoComCronograma({ bonusRegional: BONUS, aplicaBonusRegional: true }),
+    );
 
     expect(bonus).toEqual({
-      ativo: true,
+      aplica: true,
       regraCodigo: 'BONUS-MULTIPLICATIVO',
       regraVersao: '1.0',
       fator: '1.2',
@@ -555,18 +558,31 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
     });
   });
 
-  /** Ausência é o próprio "sem bônus" — não `ativo: false` com resíduo. */
-  it('trata processo sem bônus regional como ausência declarada', () => {
-    const { bonus } = hidratarDraft(DRAFT, dtoComCronograma({ bonusRegional: null }));
+  /** A declaração vem do servidor; sem configuração, os cinco campos voltam vazios. */
+  it('projeta a declaração de que não aplica o bônus, sem resíduo de configuração', () => {
+    const { bonus } = hidratarDraft(
+      DRAFT,
+      dtoComCronograma({ bonusRegional: null, aplicaBonusRegional: false }),
+    );
 
     expect(bonus).toEqual({
-      ativo: false,
+      aplica: false,
       regraCodigo: '',
       regraVersao: '',
       fator: '',
       teto: '',
       baseLegalBonusRegionalId: '',
     });
+  });
+
+  /** Ausência da configuração não é mais "sem bônus": sem declaração, o passo pergunta. */
+  it('mantém o bônus por declarar quando o servidor ainda não tem a declaração', () => {
+    const { bonus } = hidratarDraft(
+      DRAFT,
+      dtoComCronograma({ bonusRegional: null, aplicaBonusRegional: null }),
+    );
+
+    expect(bonus.aplica).toBeNull();
   });
 
   it('projeta os critérios de desempate na ordem em que o servidor os avalia', () => {

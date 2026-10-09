@@ -308,15 +308,16 @@ function regraEliminacaoDe(
 }
 
 /**
- * Projeta o bônus regional já gravado. Ausente é sem bônus (toggle por
- * presença) — não `ativo: false` com campos residuais de uma configuração
- * antiga, e sim os cinco campos vazios que a criação já usa.
+ * Projeta o bônus regional já gravado. A declaração (`aplicaBonusRegional`) vem do servidor e
+ * `null` é "ainda por declarar": a ausência da configuração só significa "sem bônus" quando a
+ * declaração é falsa. Sem configuração, os cinco campos voltam vazios.
  */
 function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
+  const aplica = dto.aplicaBonusRegional ?? null;
   const bonus = dto.bonusRegional;
   if (bonus === null || bonus === undefined) {
     return {
-      ativo: false,
+      aplica,
       regraCodigo: '',
       regraVersao: '',
       fator: '',
@@ -326,7 +327,7 @@ function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
   }
 
   return {
-    ativo: true,
+    aplica,
     regraCodigo: bonus.regra.codigo,
     regraVersao: bonus.regra.versao,
     fator: comoTexto(bonus.fator),
@@ -545,7 +546,7 @@ function ehFundamentoConhecido(codigo: string): codigo is FundamentoIsencaoCodig
  * "Selecione" e a validação cobra a escolha, em vez de carregar adiante um
  * valor que o servidor recusaria.
  */
-function decodificarOrigemCandidatos(valor: string): OrigemCandidatosSelecionada {
+export function decodificarOrigemCandidatos(valor: string): OrigemCandidatosSelecionada {
   const normalizado = valor.charAt(0).toLowerCase() + valor.slice(1);
   if (normalizado === OrigemCandidatos.inscricaoPropria) {
     return OrigemCandidatos.inscricaoPropria;

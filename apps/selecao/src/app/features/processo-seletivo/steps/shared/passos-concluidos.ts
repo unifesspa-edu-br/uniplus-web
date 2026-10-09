@@ -1,6 +1,8 @@
+import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import type { ItemConformidadeDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import { PASSOS } from '../processo-seletivo.data';
+import { decodificarOrigemCandidatos } from './hidratacao';
 import type { RotuloDePasso } from '../processo-seletivo.data';
 import { passosComPendencia } from '../steps/revisao/publicacao-para-comando';
 
@@ -11,9 +13,10 @@ type PassoQueGrava = Exclude<RotuloDePasso, 'Revisão e publicação'>;
  * O que o servidor já tem gravado em cada passo, lido do detalhe do processo. Mapa exaustivo: um
  * passo novo não compila até ganhar a regra, em vez de ficar sempre pendente depois de recarregar.
  *
- * Bônus e Desempate são opcionais, e o servidor não distingue "nunca gravado" de "gravado vazio":
- * só contam quando há conteúdo. Fórmula e Eliminação compartilham a classificação, gravada junto
- * no passo Eliminação.
+ * O Bônus conta quando o processo declarou se aplica ou não o bônus (`aplicaBonusRegional`
+ * existe, nas duas respostas). O Desempate conta com ao menos um critério, ou quando o resultado
+ * é importado: a lista já vem classificada e o passo não se aplica. Fórmula e Eliminação
+ * compartilham a classificação, gravada junto no passo Eliminação.
  */
 function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolean> {
   const classificacaoGravada = dto.classificacao != null;
@@ -24,8 +27,10 @@ function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolea
     Vagas: (dto.distribuicaoVagas ?? []).length > 0,
     Cronograma: (dto.cronogramaFases ?? []).length > 0,
     'Fórmula e precisão': classificacaoGravada,
-    Bônus: dto.bonusRegional != null,
-    Desempate: (dto.criteriosDesempate ?? []).length > 0,
+    Bônus: dto.aplicaBonusRegional != null,
+    Desempate:
+      (dto.criteriosDesempate ?? []).length > 0 ||
+      decodificarOrigemCandidatos(dto.origemCandidatos) === OrigemCandidatos.importacaoExterna,
     Eliminação: classificacaoGravada,
     'Atend. especial': dto.ofertaAtendimento != null,
     Formulários: (dto.formularios ?? []).length > 0,

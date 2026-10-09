@@ -66,7 +66,7 @@ const INITIAL_DRAFT: WizardDraft = {
     regrasEliminacao: [],
   },
   bonus: {
-    ativo: false,
+    aplica: null,
     regraCodigo: '',
     regraVersao: '',
     fator: '',

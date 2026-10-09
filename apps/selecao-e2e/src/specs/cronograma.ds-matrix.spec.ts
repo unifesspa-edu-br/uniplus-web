@@ -538,6 +538,7 @@ const DETALHE_PUBLICADO = {
   ofertaAtendimento: null,
   distribuicaoVagas: [],
   bonusRegional: null,
+  aplicaBonusRegional: false,
   cascata: null,
   criteriosDesempate: [],
   classificacao: null,

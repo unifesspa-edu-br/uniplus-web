@@ -754,14 +754,14 @@ export interface WizardDraft {
     regrasEliminacao: readonly RegraEliminacaoConfigurada[];
   };
   /**
-   * Bônus regional (`PUT …/bonus-regional`) — toggle por presença: a ausência
-   * da entidade no processo já significa sem bônus, e por isso `ativo ===
-   * false` não impede persistir; grava o corpo com os cinco campos `null`
-   * (CA-04). A base legal referencia um cadastro tipado por id, não mais
-   * município/base legal em texto livre.
+   * Bônus regional (`PUT …/bonus-regional`) — declaração obrigatória, como a cobrança da
+   * taxa: `aplica` é `null` até o operador responder, e só `true` ou `false` permitem gravar.
+   * `false` grava a declaração com os cinco campos `null`; `true` exige a configuração. A
+   * base legal referencia um cadastro tipado por id, não mais município/base legal em texto
+   * livre.
    */
   bonus: {
-    ativo: boolean;
+    aplica: boolean | null;
     regraCodigo: string;
     regraVersao: string;
     fator: string;

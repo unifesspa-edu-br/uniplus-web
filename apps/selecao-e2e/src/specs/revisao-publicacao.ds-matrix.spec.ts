@@ -112,6 +112,7 @@ function processoDto(cronogramaFases: readonly unknown[], status: string) {
     ofertaAtendimento: null,
     distribuicaoVagas: [],
     bonusRegional: null,
+    aplicaBonusRegional: false,
     cascata: null,
     criteriosDesempate: [],
     classificacao: null,
