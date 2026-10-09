@@ -1,8 +1,9 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
+import { responder } from '../support/responder';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -258,36 +259,27 @@ function identificadoresDe(resultado: AxeResults): string[] {
  * onde a tela não precisa da lista, com conteúdo onde ela é o que se exercita.
  */
 async function mockarCatalogos(page: Page): Promise<void> {
-  await responderCatalogo(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_PROCESSO);
-  await responderCatalogo(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS);
-  await responderCatalogo(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, []);
-  await responderCatalogo(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, TIPOS_BANCA);
-  await responderCatalogo(
+  await responder(
+    page,
+    /\/api\/configuracao\/tipos-processo(\?.*)?$/,
+    TIPOS_PROCESSO,
+    CORS_HEADERS,
+  );
+  await responder(
+    page,
+    /\/api\/configuracao\/fases-canonicas(\?.*)?$/,
+    FASES_CANONICAS,
+    CORS_HEADERS,
+  );
+  await responder(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, [], CORS_HEADERS);
+  await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, TIPOS_BANCA, CORS_HEADERS);
+  await responder(
     page,
     /\/api\/configuracao\/categorias-documento(\?.*)?$/,
     CATEGORIAS_DOCUMENTO,
+    CORS_HEADERS,
   );
-  await responderCatalogo(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, []);
-  await responderCatalogo(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO);
-  await responderCatalogo(page, /\/api\/selecao\/regras-catalogo(\?.*)?$/, REGRAS_RECURSO);
-}
-
-async function responderCatalogo(
-  page: Page,
-  rota: RegExp,
-  itens: readonly unknown[],
-): Promise<void> {
-  await page.route(rota, async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: CORS_HEADERS,
-      body: JSON.stringify(itens),
-    });
-  });
+  await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, [], CORS_HEADERS);
+  await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO, CORS_HEADERS);
+  await responder(page, /\/api\/selecao\/regras-catalogo(\?.*)?$/, REGRAS_RECURSO, CORS_HEADERS);
 }

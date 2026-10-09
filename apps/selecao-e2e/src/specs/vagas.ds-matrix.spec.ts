@@ -14,7 +14,7 @@ import {
 import { elementosForaDoCartao } from '../support/limites-do-cartao';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
-import { irAoPasso } from '../support/navega-passo';
+import { irAoPasso, larguraDoProjeto } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { responder, responderCom } from '../support/responder';
 
@@ -143,7 +143,7 @@ test.describe('Vagas — matriz DS @ds', () => {
 
     /** Cartão dentro de cartão não pode deixar o conteúdo mais interno sem largura útil. */
     test('deixa largura útil ao cartão mais interno', async ({ page }, testInfo) => {
-      const largura = larguraDoProject(testInfo);
+      const largura = larguraDoProjeto(testInfo);
       const util = await page
         .locator('.cascata-matriz tbody tr')
         .first()
@@ -183,14 +183,6 @@ async function abrirGarantias(page: Page): Promise<void> {
   });
 }
 
-function larguraDoProject(testInfo: TestInfo): number {
-  const largura = testInfo.project.use.viewport?.width;
-  if (largura === undefined) {
-    throw new Error(`Project ${testInfo.project.name} não declara viewport.`);
-  }
-  return largura;
-}
-
 /** Falhar por id diz qual regra caiu; a coleção crua não. */
 function identificadoresDe(resultado: AxeResults): string[] {
   return resultado.violations.map((violacao) => violacao.id);
@@ -205,19 +197,25 @@ function identificadoresDe(resultado: AxeResults): string[] {
  * recente para a mais antiga.
  */
 async function mockarApi(page: Page, status: Status): Promise<void> {
-  await responder(page, /\/api\//, [], { headers: CORS_HEADERS, },);
-  await responder(page, /\/api\/configuracao\/ofertas-curso(\?.*)?$/, OFERTAS_DA_MEDICINA, {
-    headers: CORS_HEADERS,
-  });
-  await responder(page, /\/api\/configuracao\/cursos(\?.*)?$/, CURSOS_DA_MEDICINA, {
-    headers: CORS_HEADERS,
-  });
-  await responder(page, /\/api\/configuracao\/modalidades(\?.*)?$/, MODALIDADES_DA_MEDICINA, { headers: CORS_HEADERS, },);
+  await responder(page, /\/api\//, [], CORS_HEADERS);
+  await responder(
+    page,
+    /\/api\/configuracao\/ofertas-curso(\?.*)?$/,
+    OFERTAS_DA_MEDICINA,
+    CORS_HEADERS,
+  );
+  await responder(page, /\/api\/configuracao\/cursos(\?.*)?$/, CURSOS_DA_MEDICINA, CORS_HEADERS);
+  await responder(
+    page,
+    /\/api\/configuracao\/modalidades(\?.*)?$/,
+    MODALIDADES_DA_MEDICINA,
+    CORS_HEADERS,
+  );
   await responder(
     page,
     /\/api\/configuracao\/referencias-reserva-demografica(\?.*)?$/,
     REFERENCIAS_DEMOGRAFICAS_DA_MEDICINA,
-    { headers: CORS_HEADERS, },
+    CORS_HEADERS,
   );
   await mockarRegrasCatalogo(page);
 
@@ -231,11 +229,11 @@ async function mockarApi(page: Page, status: Status): Promise<void> {
 
     const caminho = new URL(request.url()).pathname;
     if (caminho.endsWith(PROCESSO_DA_MEDICINA.id)) {
-      await responderCom(route, { ...PROCESSO_DA_MEDICINA, status }, { headers: CORS_HEADERS, },);
+      await responderCom(route, { ...PROCESSO_DA_MEDICINA, status }, CORS_HEADERS);
       return;
     }
     if (caminho.endsWith('/documentos-edital')) {
-      await responderCom(route, [], { headers: CORS_HEADERS });
+      await responderCom(route, [], CORS_HEADERS);
       return;
     }
     await route.fulfill({ status: 404, headers: CORS_HEADERS });
@@ -260,6 +258,6 @@ async function mockarRegrasCatalogo(page: Page): Promise<void> {
     }
 
     const tipo = new URL(route.request().url()).searchParams.get('tipo') ?? '';
-    await responderCom(route, porTipo[tipo] ?? [], { headers: CORS_HEADERS });
+    await responderCom(route, porTipo[tipo] ?? [], CORS_HEADERS);
   });
 }

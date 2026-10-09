@@ -1,8 +1,9 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
+import { responder } from '../support/responder';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -117,26 +118,11 @@ function identificadoresDe(resultado: AxeResults): string[] {
 
 /** Os catálogos que o cadastro inicial consulta: o tipo do processo e as unidades. */
 async function mockarCatalogos(page: Page): Promise<void> {
-  await responderCatalogo(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_PROCESSO);
-  await responderCatalogo(page, /\/api\/organizacao\/unidades(\?.*)?$/, UNIDADES);
-}
-
-async function responderCatalogo(
-  page: Page,
-  rota: RegExp,
-  itens: readonly unknown[],
-): Promise<void> {
-  await page.route(rota, async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: CORS_HEADERS,
-      body: JSON.stringify(itens),
-    });
-  });
+  await responder(
+    page,
+    /\/api\/configuracao\/tipos-processo(\?.*)?$/,
+    TIPOS_PROCESSO,
+    CORS_HEADERS,
+  );
+  await responder(page, /\/api\/organizacao\/unidades(\?.*)?$/, UNIDADES, CORS_HEADERS);
 }
