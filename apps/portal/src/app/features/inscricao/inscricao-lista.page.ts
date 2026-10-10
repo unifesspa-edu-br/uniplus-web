@@ -23,9 +23,12 @@ import {
   UiTagVariant,
 } from '@uniplus/shared-ui/components';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
-import { type Inscricao, InscricaoStatus, } from './inscricao-lista.mock';
+import { SituacaoInscricao } from '@uniplus/shared-data/selecao';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { InscricoesCandidatoMockService } from './inscricao-mock.service';
+import { Router } from '@angular/router';
+import { map } from 'rxjs';
+import { type ItemDaLista, itemDaLista } from './inscricao-lista.model';
+import { MinhasInscricoesService } from './minhas-inscricoes.service';
 
 /** Abaixo desta largura a lista é a forma canônica (decisão do design system). */
 const COMPACT_MEDIA_QUERY = '(max-width: 599.98px)';
@@ -56,28 +59,22 @@ const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
   { value: 'cards', label: 'Cards', icon: 'pi-th-large', },
 ];
 
-const INSCRICAO_STATUS_LABEL: Record<InscricaoStatus, string> = {
-  analise: 'Em análise',
-  rascunho: 'Em rascunho',
-  aprovada: 'Aprovada',
-  reprovada: 'Não aprovada',
+const INSCRICAO_STATUS_LABEL: Record<SituacaoInscricao, string> = {
+  [SituacaoInscricao.rascunho]: 'Em rascunho',
+  [SituacaoInscricao.submetida]: 'Enviada',
 };
-const INSCRICAO_STATUS_VARIANT: Record<InscricaoStatus, UiTagVariant> = {
-  analise: 'info',
-  rascunho: 'warning',
-  aprovada: 'success',
-  reprovada: 'danger',
+const INSCRICAO_STATUS_VARIANT: Record<SituacaoInscricao, UiTagVariant> = {
+  [SituacaoInscricao.rascunho]: 'warning',
+  [SituacaoInscricao.submetida]: 'success',
 };
 
 export interface InscricaoBotaoInfo {
   label: string;
   variant: UiButtonVariant;
 }
-const INSCRICAO_BUTTON_DEFINITION: Record<InscricaoStatus, InscricaoBotaoInfo> = {
-  analise: { label: 'Ver detalhes', variant: 'tertiary' },
-  rascunho: { label: 'Continuar inscrição', variant: 'primary' },
-  aprovada: { label: 'Ver detalhes', variant: 'tertiary' },
-  reprovada: { label: 'Ver detalhes', variant: 'tertiary' },
+const INSCRICAO_BUTTON_DEFINITION: Record<SituacaoInscricao, InscricaoBotaoInfo> = {
+  [SituacaoInscricao.rascunho]: { label: 'Continuar inscrição', variant: 'primary' },
+  [SituacaoInscricao.submetida]: { label: 'Ver comprovante', variant: 'tertiary' },
 };
 
 @Component({
@@ -99,7 +96,8 @@ const INSCRICAO_BUTTON_DEFINITION: Record<InscricaoStatus, InscricaoBotaoInfo> =
 })
 export class InscricaoListaPage {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly inscricoesCandidatoService = inject(InscricoesCandidatoMockService);
+  private readonly minhasInscricoes = inject(MinhasInscricoesService);
+  private readonly router = inject(Router);
   private readonly userContext = inject(UserContextService);
   private readonly paginaTitulo = viewChild<ElementRef<HTMLHeadingElement>>('paginaTitulo');
   protected readonly nomeUsuario = computed(() => this.userContext.displayName() || 'Candidato');
@@ -118,7 +116,15 @@ export class InscricaoListaPage {
     return this.lista();
   });
   private readonly inscricoesResource = rxResource({
-    stream: () => this.inscricoesCandidatoService.listar(),
+    stream: () =>
+      this.minhasInscricoes
+        .listar()
+        .pipe(
+          map((resultado) => {
+            if (!resultado.ok) throw resultado.problem;
+            return resultado.data.map(itemDaLista);
+          }),
+        ),
   });
   protected readonly lista = computed(() => this.inscricoesResource.value() ?? []);
   protected readonly loading = this.inscricoesResource.isLoading;
@@ -142,8 +148,13 @@ export class InscricaoListaPage {
     }
   }
 
-  protected abrirInscricao(_inscricao: Inscricao): void {
-    // navegação implementada na Story de detalhe da inscrição
+  /** O rascunho volta ao formulário; a inscrição enviada abre o comprovante da última submissão. */
+  protected abrirInscricao(inscricao: ItemDaLista): void {
+    const destino =
+      inscricao.situacao === SituacaoInscricao.submetida
+        ? ['/inscricao', inscricao.id, 'comprovante']
+        : ['/inscricao', inscricao.id];
+    void this.router.navigate(destino);
   }
 
   protected limparFiltros(): void {
@@ -171,15 +182,15 @@ export class InscricaoListaPage {
     this.destroyRef.onDestroy(() => mediaQuery.removeEventListener('change', ouvinte));
   }
 
-  protected exibeInscricaoStatusLabel(status: InscricaoStatus): string {
+  protected exibeInscricaoStatusLabel(status: SituacaoInscricao): string {
     return INSCRICAO_STATUS_LABEL[status];
   }
 
-  protected exibeInscricaoStatusVariantLabel(status: InscricaoStatus): UiTagVariant {
+  protected exibeInscricaoStatusVariantLabel(status: SituacaoInscricao): UiTagVariant {
     return INSCRICAO_STATUS_VARIANT[status];
   }
 
-  protected obterBotaoInfo(status: InscricaoStatus): InscricaoBotaoInfo {
+  protected obterBotaoInfo(status: SituacaoInscricao): InscricaoBotaoInfo {
     return INSCRICAO_BUTTON_DEFINITION[status];
   }
 
