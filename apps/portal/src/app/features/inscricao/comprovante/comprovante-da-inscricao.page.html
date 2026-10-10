@@ -37,7 +37,11 @@
     </div>
     <div>
       <dt>CPF</dt>
+      @if (cpf(); as revelavel) {
+      <dd><ui-dado-revelavel rotulo="CPF" [dado]="revelavel" /></dd>
+      } @else {
       <dd>{{ c.comprovante.cpfMascarado }}</dd>
+      }
     </div>
     <div>
       <dt>Enviado em</dt>

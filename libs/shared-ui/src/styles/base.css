@@ -84,11 +84,15 @@ button, input, select, textarea {
 
 /* ---------- 4b. Impressão ----------
  * `.u-no-print` tira do papel o que só serve à tela: cabeçalho, navegação,
- * rodapé, controles flutuantes e botões de ação. Fica no elemento (ou no host
- * do componente) e não depende do encapsulamento de estilo de quem o usa.
+ * rodapé, controles flutuantes e botões de ação. `.u-print-only` é o inverso:
+ * só existe no papel, como o dado sensível que sai mascarado mesmo revelado na
+ * tela. Ficam no elemento (ou no host do componente) e não dependem do
+ * encapsulamento de estilo de quem os usa.
  * ------------------------------------------------------------------------- */
+.u-print-only { display: none !important; }
 @media print {
   .u-no-print { display: none !important; }
+  .u-print-only { display: revert !important; }
 }
 
 /* ---------- 5. Typography utilities ----------

@@ -14,6 +14,7 @@ export {
 } from './components/button/button';
 export { CardComponent } from './components/card/card';
 export { CpfInputComponent } from './components/cpf-input/cpf-input';
+export { DadoRevelavelComponent } from './components/dado-revelavel/dado-revelavel';
 export { DataTableComponent, type UiDataTableColumn } from './components/data-table/data-table';
 export { DialogComponent } from './components/dialog/dialog';
 export { DrawerComponent } from './components/drawer/drawer';

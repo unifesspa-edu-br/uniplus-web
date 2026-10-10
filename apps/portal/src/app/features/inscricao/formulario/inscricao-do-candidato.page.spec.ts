@@ -1,4 +1,5 @@
-import { HttpHeaders } from '@angular/common/http';
+import { HttpHeaders, provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -80,6 +81,8 @@ describe('InscricaoDoCandidatoPage', () => {
       imports: [InscricaoDoCandidatoPage],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: InscricaoDoCandidatoService, useValue: servico },
         { provide: UserContextService, useValue: { user: signal({ cpf: CPF_DA_CONTA }) } },
         { provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) },
@@ -151,6 +154,21 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(tela.querySelector('.formulario-candidato__secao')?.textContent).toContain(
       'Você não envia documentos nesta etapa.',
     );
+  });
+
+  it('o titular revela o CPF da conta para conferir, sem nova consulta', async () => {
+    const tela = await abrir();
+    const consultas = (
+      ['iniciar', 'obter', 'obterFormulario', 'obterOfertas', 'salvar', 'submeter'] as const
+    ).map((metodo) => vi.spyOn(servico, metodo));
+
+    await clicar(
+      tela.querySelector('[data-campo="CPF"] button[aria-label="Mostrar CPF"]') as HTMLElement,
+    );
+
+    expect(campoDe(tela, 'CPF').value).toBe('699.598.363-71');
+    for (const consulta of consultas) expect(consulta).not.toHaveBeenCalled();
+    TestBed.inject(HttpTestingController).verify();
   });
 
   it('a correção depois do envio é um novo envio, com o ETag da inscrição relida', async () => {
@@ -295,7 +313,8 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('o rascunho recusado porque outra janela já enviou a inscrição relê a inscrição e troca o rascunho pela correção', async () => {
     const tela = await abrir();
-    servico.salvar = () => of(problema(422, 'uniplus.selecao.inscricao.rascunho_so_antes_do_envio'));
+    servico.salvar = () =>
+      of(problema(422, 'uniplus.selecao.inscricao.rascunho_so_antes_do_envio'));
     servico.inscricao = inscricao({ situacao: SituacaoInscricao.submetida });
 
     await clicar(botao(tela, 'Salvar rascunho'));
