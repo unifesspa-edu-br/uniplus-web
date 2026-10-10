@@ -3863,8 +3863,9 @@ body.uni-drawer-open {
   box-shadow: var(--focus-ring);
   border-radius: var(--radius-xs, 4px);
 }
+/* Fica dentro do botão: o contrato AAA pede ao menos 14px em texto interativo. */
 .filter-bar__titulo {
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
