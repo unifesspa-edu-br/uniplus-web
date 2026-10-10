@@ -155,11 +155,6 @@ export class FormulaStepComponent {
   );
 
   /**
-   * Em consulta a leitura diz só o nome gravado, sem "(fora do cadastro)" (web#1073). O passo
-   * não lê o cadastro de um processo que não aceita edição, então não há como afirmar que a
-   * resolução saiu dele; e o que vale em consulta é o que foi gravado, que o quadro congelado
-   * do processo registra. O sufixo é diagnóstico de quem ainda vai gravar.
-   *
    * As resoluções do cadastro. A escolha do rascunho que não está na lista continua oferecida —
    * como `regrasEscolhiveis` faz com as regras —, e só é marcada "fora do cadastro" quando a
    * leitura do cadastro permite afirmar isso.

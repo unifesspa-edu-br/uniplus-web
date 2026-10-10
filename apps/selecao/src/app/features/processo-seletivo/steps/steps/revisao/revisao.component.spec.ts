@@ -240,6 +240,18 @@ describe('RevisaoStepComponent', () => {
     await flushMicrotasks();
   }
 
+  it('em consulta, não orienta a anexar o edital nem a concluir a identificação', async () => {
+    store.remoteSnapshot.set(PROCESSO_DTO_MINIMO as never);
+    store.currentStep.set(store.totalSteps - 1);
+    await flushMicrotasks();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(store.emConsulta()).toBe(true);
+    expect(texto).not.toContain('Anexe e confirme o edital');
+    expect(texto).not.toContain('Conclua a identificação');
+  });
+
   describe('validate()', () => {
     it('recusa sem processo criado', () => {
       expect(componente.validate().valid).toBe(false);
