@@ -122,7 +122,7 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(servico.salvos[0].respostas?.['CPF']).toBe(CPF_DA_CONTA);
   });
 
-  it('a correção depois do envio sai com o ETag da inscrição relida', async () => {
+  it('a correção depois do envio é um novo envio, com o ETag da inscrição relida', async () => {
     const tela = await abrir();
     servico.inscricao = inscricao({
       situacao: SituacaoInscricao.submetida,
@@ -131,14 +131,35 @@ describe('InscricaoDoCandidatoPage', () => {
     await clicar(botao(tela, 'Enviar inscrição'));
 
     const eTags: string[] = [];
-    servico.salvar = (_: string, request: InscricaoRequest, eTag?: string) => {
+    servico.submeter = (_: string, request: InscricaoRequest, eTag?: string) => {
       eTags.push(eTag ?? '');
-      servico.salvos.push(request);
-      return ok(servico.inscricao);
+      servico.enviados.push(request);
+      return ok({} as ComprovanteInscricaoDto);
     };
-    await clicar(botao(tela, 'Salvar rascunho'));
+    await clicar(botao(tela, 'Enviar inscrição'));
 
     expect(eTags).toEqual(['"inscricao-1:2"']);
+  });
+
+  it('a inscrição enviada não oferece rascunho: o aviso diz que corrigir é enviar de novo', async () => {
+    servico.inscricao = inscricao({ situacao: SituacaoInscricao.submetida });
+    const tela = await abrir();
+
+    expect(botao(tela, 'Salvar rascunho')).toBeUndefined();
+    const aviso = tela.querySelector('#inscricao-correcao');
+    expect(aviso?.textContent).toContain('envie de novo: cada envio gera um novo comprovante');
+    expect(botao(tela, 'Enviar inscrição').getAttribute('aria-describedby')).toBe(
+      'inscricao-correcao',
+    );
+  });
+
+  it('o rascunho deixa de ser oferecido logo depois do primeiro envio', async () => {
+    const tela = await abrir();
+    expect(botao(tela, 'Salvar rascunho')).toBeDefined();
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(botao(tela, 'Salvar rascunho')).toBeUndefined();
   });
 
   it('a retomada volta com as respostas e os aceites gravados', async () => {
@@ -239,6 +260,17 @@ describe('InscricaoDoCandidatoPage', () => {
 
     expect(tela.textContent).toContain('A inscrição mudou em outra janela');
     expect(campoDe(tela, 'NOME').value).toBe('Fernanda Laura Nicole Drumond');
+  });
+
+  it('o rascunho recusado porque outra janela já enviou a inscrição relê a inscrição e troca o rascunho pela correção', async () => {
+    const tela = await abrir();
+    servico.salvar = () => of(problema(422, 'uniplus.selecao.inscricao.rascunho_so_antes_do_envio'));
+    servico.inscricao = inscricao({ situacao: SituacaoInscricao.submetida });
+
+    await clicar(botao(tela, 'Salvar rascunho'));
+
+    expect(botao(tela, 'Salvar rascunho')).toBeUndefined();
+    expect(tela.querySelector('#inscricao-correcao')).not.toBeNull();
   });
 
   it('o envio que fica sem resposta relê a inscrição, e o reenvio sai com o ETag gravado', async () => {

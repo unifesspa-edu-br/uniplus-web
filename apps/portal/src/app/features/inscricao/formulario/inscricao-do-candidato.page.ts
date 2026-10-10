@@ -17,11 +17,12 @@ import { RouterLink } from '@angular/router';
 import { forkJoin, type Observable } from 'rxjs';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
-import type {
-  ComprovanteInscricaoDto,
-  FormularioRenderizavelDto,
-  InscricaoDto,
-  InscricaoRequest,
+import {
+  type ComprovanteInscricaoDto,
+  type FormularioRenderizavelDto,
+  type InscricaoDto,
+  type InscricaoRequest,
+  SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
 import { isValidCpf, maskCpf } from '@uniplus/shared-data/utils';
 import {
@@ -45,9 +46,12 @@ import { mensagemDaRecusa } from './recusas-da-inscricao';
 type Estado = 'carregando' | 'erro' | 'pronto';
 
 /** As recusas de quem gravou sobre uma revisão que outra janela já mudou. */
+// A inscrição enviada noutra janela também é mudança que esta tela não viu: relê-la troca o rascunho
+// pela correção por novo envio.
 const CONFLITOS: ReadonlySet<string> = new Set([
   'uniplus.selecao.inscricao.precondicao_falhou',
   'uniplus.selecao.inscricao.conflito_de_concorrencia',
+  'uniplus.selecao.inscricao.rascunho_so_antes_do_envio',
 ]);
 
 /** O campo em que o servidor devolve a recusa da oferta de curso. */
@@ -103,6 +107,11 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly conflito = signal<string | null>(null);
   protected readonly aviso = signal('');
   protected readonly comprovante = signal<ComprovanteInscricaoDto | null>(null);
+
+  /** A inscrição enviada só muda por novo envio, que emite novo comprovante: não há rascunho dela. */
+  protected readonly enviada = computed(
+    () => this.comprovante() !== null || this.inscricao()?.situacao === SituacaoInscricao.submetida,
+  );
 
   /** O CPF vem da conta e não se altera aqui: entra na resposta do formulário que o coleta e aparece mascarado. */
   protected readonly respostasFixas = computed<Readonly<Record<string, RespostaFixa>>>(() => {
