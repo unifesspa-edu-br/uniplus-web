@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ApiFailure, IDEMPOTENCY_KEY_TOKEN, ProblemDetails } from '@uniplus/shared-core/http';
+import { ApiFailure, ProblemDetails } from '@uniplus/shared-core/http';
+import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 
 import { ChaveDeSubstituicao } from './chave-de-substituicao';
 

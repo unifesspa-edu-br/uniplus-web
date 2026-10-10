@@ -14,12 +14,11 @@ import {
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
-  idempotencyKey,
   useApiResource,
-  withIdempotencyKey,
   withVendorMime,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
+import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AtualizarInstituicaoCommand,

@@ -37,6 +37,7 @@ const ENTRYPOINTS = {
   '@uniplus/shared-data/utils': 'libs/shared-data/utils',
   '@uniplus/shared-core/dom': 'libs/shared-core/dom',
   '@uniplus/shared-core/http': 'libs/shared-core/http',
+  '@uniplus/shared-core/idempotency': 'libs/shared-core/idempotency',
   '@uniplus/shared-core/interceptors': 'libs/shared-core/interceptors',
   '@uniplus/shared-core/notifications': 'libs/shared-core/notifications',
 } as const;

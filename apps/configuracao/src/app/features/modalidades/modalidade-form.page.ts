@@ -24,11 +24,10 @@ import {
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
-  idempotencyKey,
   lookupCompleto,
-  withIdempotencyKey,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
+import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   ACOES_QUANDO_INDEFERIDO,

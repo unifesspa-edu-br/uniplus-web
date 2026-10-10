@@ -39,6 +39,7 @@
       "@uniplus/shared-data/organizacao": ["libs/shared-data/organizacao/src/index.ts"],
       "@uniplus/shared-data/configuracao": ["libs/shared-data/configuracao/src/index.ts"],
       "@uniplus/shared-core/http": ["libs/shared-core/http/src/index.ts"],
+      "@uniplus/shared-core/idempotency": ["libs/shared-core/idempotency/src/index.ts"],
       "@uniplus/shared-core/interceptors": ["libs/shared-core/interceptors/src/index.ts"],
       "@uniplus/shared-core/dom": ["libs/shared-core/dom/src/index.ts"],
       "@uniplus/shared-core/notifications": ["libs/shared-core/notifications/src/index.ts"],

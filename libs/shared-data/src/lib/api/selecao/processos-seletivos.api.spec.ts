@@ -9,8 +9,8 @@ import {
   buildVendorMimeAccept,
   isApiOk,
   VENDOR_MIME_TOKEN,
-  withIdempotencyKey,
 } from '@uniplus/shared-core/http';
+import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { CaraterEtapa, UnidadePrazo } from './index';
 import {
   ConformidadeLegalProcessoSeletivoDto,

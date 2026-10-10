@@ -1,7 +1,8 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, IDEMPOTENCY_KEY_TOKEN, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import { DefinirTaxaInscricaoRequestFundamentos } from './schema';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';

@@ -6,12 +6,14 @@ import {
   ApiResult,
   ProblemDetails,
   ProblemI18nService,
-  deveRotacionarIdempotencyKey,
-  idempotencyKey,
   useApiResource,
-  withIdempotencyKey,
   withVendorMime,
 } from '@uniplus/shared-core/http';
+import {
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,

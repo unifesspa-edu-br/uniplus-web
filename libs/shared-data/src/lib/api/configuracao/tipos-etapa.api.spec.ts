@@ -8,8 +8,8 @@ import {
   apiResultInterceptor,
   buildVendorMimeAccept,
   isApiOk,
-  withIdempotencyKey,
 } from '@uniplus/shared-core/http';
+import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { TipoEtapaDto, TiposEtapaApi } from './tipos-etapa.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 

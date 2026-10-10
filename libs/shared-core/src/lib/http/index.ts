@@ -15,15 +15,6 @@ export {
   okResult,
 } from './api-result.testing';
 
-export {
-  deveRotacionarIdempotencyKey,
-  IDEMPOTENCY_KEY_TOKEN,
-  IDEMPOTENCY_PROBLEM_CODES,
-  idempotencyKey,
-  isValidIdempotencyKey,
-  withIdempotencyKey,
-} from './idempotency';
-
 export { parseLink } from './link-header';
 export type { ParsedLink } from './link-header';
 
