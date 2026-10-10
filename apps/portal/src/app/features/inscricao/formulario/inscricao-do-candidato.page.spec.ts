@@ -49,6 +49,24 @@ function inscricao(outros: Partial<InscricaoDto> = {}): InscricaoDto {
   };
 }
 
+/** Tudo o que o formulário de teste pede, com os dados da persona: o envio sai sem pendência. */
+const RESPONDIDA: Partial<InscricaoDto> = {
+  respostas: {
+    NOME: 'Fernanda Laura Nicole Drumond',
+    DATA_NASCIMENTO: '1970-02-02',
+    ENDERECO_RESIDENCIAL: {
+      cep: '79096730',
+      logradouro: 'Rua Dario Tomazelli Júnior',
+      numero: '743',
+      bairro: 'Caiobá',
+      cidade: { codigoIbge: '5002704', nome: 'Campo Grande', uf: 'MS' },
+      nivelResolucao: 'logradouro',
+      origem: 'geo-api',
+    },
+  },
+  aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }],
+};
+
 class ServicoDublê extends InscricaoDoCandidatoService {
   inscricao = inscricao();
   formulario: FormularioRenderizavelDto = FORMULARIO_DE_INSCRICAO_MOCK;
@@ -172,8 +190,10 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('a correção depois do envio é um novo envio, com o ETag da inscrição relida', async () => {
+    servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
     servico.inscricao = inscricao({
+      ...RESPONDIDA,
       situacao: SituacaoInscricao.submetida,
       eTag: '"inscricao-1:2"',
     });
@@ -203,6 +223,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('o rascunho deixa de ser oferecido logo depois do primeiro envio', async () => {
+    servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
     expect(botao(tela, 'Salvar rascunho')).toBeDefined();
 
@@ -237,9 +258,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('o aceite leva a versão e o hash do termo da versão fixada', async () => {
-    servico.inscricao = inscricao({
-      aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }],
-    });
+    servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
 
     await clicar(botao(tela, 'Enviar inscrição'));
@@ -251,6 +270,7 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('o envio leva o termo marcado logo antes, sem esperar a próxima emissão do formulário', async () => {
+    servico.inscricao = inscricao({ respostas: RESPONDIDA.respostas });
     const tela = await abrir();
     const secoes = tela.querySelectorAll<HTMLButtonElement>(
       'nav[aria-label="Seções do formulário"] button',
@@ -284,6 +304,7 @@ describe('InscricaoDoCandidatoPage', () => {
       422,
       new HttpHeaders(),
     );
+    servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
 
     await clicar(botao(tela, 'Enviar inscrição'));
@@ -324,9 +345,11 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('o envio que fica sem resposta relê a inscrição, e o reenvio sai com o ETag gravado', async () => {
+    servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
     servico.recusaDoEnvio = problema(0, 'uniplus.client.network_error');
     servico.inscricao = inscricao({
+      ...RESPONDIDA,
       situacao: SituacaoInscricao.submetida,
       eTag: '"inscricao-1:2"',
     });
@@ -382,6 +405,7 @@ describe('InscricaoDoCandidatoPage', () => {
       422,
       new HttpHeaders(),
     );
+    servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
 
     await clicar(botao(tela, 'Enviar inscrição'));
@@ -395,6 +419,7 @@ describe('InscricaoDoCandidatoPage', () => {
   it('a releitura depois de uma falha sem resposta mantém o curso escolhido', async () => {
     servico.ofertas = [MEDICINA, DIREITO];
     servico.recusaDoEnvio = problema(0, 'uniplus.client.network_error');
+    servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
     await escolherCurso(tela, DIREITO.id);
 
@@ -403,6 +428,32 @@ describe('InscricaoDoCandidatoPage', () => {
     await clicar(botao(tela, 'Enviar inscrição'));
 
     expect(servico.enviados.map((r) => r.ofertaCursoId)).toEqual([DIREITO.id, DIREITO.id]);
+  });
+
+  it('a última seção não oferece concluir: a ação final é enviar a inscrição', async () => {
+    const tela = await abrir();
+    const secoes = tela.querySelectorAll<HTMLButtonElement>(
+      'nav[aria-label="Seções do formulário"] button',
+    );
+
+    await clicar(secoes[secoes.length - 1]);
+
+    expect(botao(tela, 'Concluir a seção')).toBeUndefined();
+    expect(botao(tela, 'Seção anterior')).toBeDefined();
+    expect(botao(tela, 'Enviar inscrição')).toBeDefined();
+  });
+
+  it('o envio com pendência não sai: leva o foco ao primeiro campo a corrigir', async () => {
+    servico.inscricao = inscricao({ ...RESPONDIDA, respostas: {} });
+    const tela = await abrir();
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(servico.enviados).toEqual([]);
+    expect(document.activeElement).toBe(campoDe(tela, 'NOME'));
+    expect(tela.querySelector('[data-campo="NOME"] .field__error')?.textContent).toContain(
+      'Responda este campo.',
+    );
   });
 
   it('o rascunho não vai para o armazenamento do navegador', async () => {

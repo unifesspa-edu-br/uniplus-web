@@ -225,6 +225,8 @@ export class InscricaoDoCandidatoPage implements OnInit {
   }
 
   protected enviar(): void {
+    // O envio conclui todas as seções: com pendência, o formulário leva à primeira e nada é enviado.
+    if ((this.formularioDoCandidato()?.concluirTodas() ?? 0) > 0) return;
     this.gravar(
       (request, eTag) => this.servico.submeter(this.processoId(), request, eTag),
       (comprovante) => {

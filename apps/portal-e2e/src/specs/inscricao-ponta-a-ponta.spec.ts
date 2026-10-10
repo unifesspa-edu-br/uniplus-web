@@ -232,11 +232,11 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(page.getByRole('heading', { level: 1, name: 'Inscrição' })).toBeVisible();
     });
 
-    await test.step('o campo obrigatório recusado é anunciado e ligado à mensagem', async () => {
+    await test.step('o envio com obrigatório em branco não sai: anuncia e liga o campo à mensagem', async () => {
       await irParaSecao(page, 'Dados do candidato');
       await campo(page, 'Nome completo').fill('');
       await enviarPeloTeclado(page);
-      await expect(page.locator('[aria-live="polite"]').first()).toContainText(/recusad/);
+      await expect(page.getByText(/^Há (1 item|\d+ itens) a corrigir\./)).toBeAttached();
       await irParaSecao(page, 'Dados do candidato');
       const nome = campo(page, 'Nome completo');
       await expect(nome).toHaveAttribute('aria-invalid', 'true');

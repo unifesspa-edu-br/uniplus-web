@@ -1,5 +1,7 @@
 import type { DadoRevelavel } from '@uniplus/shared-utils';
 
+import { RESOLVIDO, VERDADEIRO } from './interpretador/logica';
+
 import type {
   AvaliacaoDoFormulario,
   CampoAvaliado,
@@ -268,6 +270,50 @@ function termosVisiveis(
       const avaliado = avaliadoPorCodigo.get(termo.codigoNasRegras);
       return avaliado && avaliado.visivel === VISIVEL ? [{ termo, avaliado }] : [];
     });
+}
+
+/** O termo obrigatório ainda sem aceite. */
+export function termoSemAceite(termo: TermoNoPasso, aceitos: ReadonlySet<string>): boolean {
+  return termo.avaliado.obrigatorio === VERDADEIRO && !aceitos.has(termo.termo.codigo);
+}
+
+/**
+ * O que impede de dar o passo como pronto, na ordem da tela, pelo código com que a tela marca o campo,
+ * o grupo, o subitem de uma ocorrência (`grupo.ocorrência.fato`) ou o termo. Lê a avaliação do
+ * interpretador com o passo já concluído: o campo com regra violada ou que impede a inscrição, o
+ * obrigatório que não resolveu, o grupo fora da contagem, sem resposta ou com subitem nessa situação e
+ * o termo obrigatório sem aceite.
+ */
+export function pendenciasDo(passo: PassoDoFormulario, aceitos: ReadonlySet<string>): string[] {
+  return [
+    ...passo.campos.filter((c) => campoPendente(c.avaliado)).map((c) => c.campo.fatoCodigo),
+    ...passo.grupos.flatMap((g) => {
+      const pendencia = pendenciaDoGrupo(g);
+      return pendencia === null ? [] : [pendencia];
+    }),
+    ...passo.termos.filter((t) => termoSemAceite(t, aceitos)).map((t) => t.termo.codigo),
+  ];
+}
+
+function campoPendente(avaliado: CampoAvaliado): boolean {
+  return (
+    avaliado.restricoesVioladas.length > 0 ||
+    avaliado.impedido === VERDADEIRO ||
+    (avaliado.obrigatorio === VERDADEIRO && avaliado.estado !== RESOLVIDO)
+  );
+}
+
+/**
+ * A pendência do grupo, quando há: o próprio grupo na contagem inválida, na ocorrência do candidato
+ * inválida e no obrigatório sem resposta; o primeiro subitem pendente, quando é ele que falta.
+ */
+function pendenciaDoGrupo({ grupo, avaliado }: GrupoNoPasso): string | null {
+  if (!avaliado.contagemValida || !avaliado.ocorrenciaDoCandidatoValida) return grupo.codigo;
+  for (const ocorrencia of avaliado.ocorrencias) {
+    const subitem = ocorrencia.campos.find((c) => c.visivel === VISIVEL && campoPendente(c));
+    if (subitem) return `${grupo.codigo}.${ocorrencia.id}.${subitem.fatoCodigo}`;
+  }
+  return avaliado.obrigatorio === VERDADEIRO && avaliado.estado !== RESOLVIDO ? grupo.codigo : null;
 }
 
 /** A regra de cada campo e subitem, pelo fato. */
