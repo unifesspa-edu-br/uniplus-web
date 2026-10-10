@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -71,5 +73,18 @@ describe('PortalShellComponent — navegação por autenticação', () => {
     const footer = (fixture.nativeElement as HTMLElement).querySelector('.portal-footer');
 
     expect(footer?.textContent).toContain('Minhas inscrições');
+  });
+});
+
+describe('PortalShellComponent — contrato de rolagem', () => {
+  const css = readFileSync(resolve(__dirname, 'portal-shell.css'), 'utf-8').replace(
+    /\/\*[\s\S]*?\*\//gu,
+    '',
+  );
+  const area = css.match(/\.portal-scroll\s*\{[^{}]*\}/u)?.[0] ?? '';
+
+  it('a area de conteudo rola por dentro e ancora o conteudo posicionado, que senao esticaria a pagina', () => {
+    expect(area).toContain('overflow-y: auto');
+    expect(area).toContain('position: relative');
   });
 });

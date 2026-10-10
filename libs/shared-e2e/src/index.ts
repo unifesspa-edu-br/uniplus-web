@@ -3,6 +3,7 @@ export { createGlobalSetup, setupKeycloakAuth } from './lib/keycloak-auth-fixtur
 export type { KeycloakAuthSetupOptions } from './lib/keycloak-auth-fixture';
 export {
   assertAaaVisualContract,
+  assertDocumentoSemRolagemVertical,
   assertReflowContract,
   assertTextSpacingResilience,
   runAxeWcagAA,

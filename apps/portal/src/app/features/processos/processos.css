@@ -141,10 +141,6 @@
 
 /* Sublinhado: link nu no meio de texto não pode depender só da cor (WCAG 1.4.1). */
 .certame-edital-link {
-  /* Âncora do `.sr-only` ("abre em nova aba"): é `position: absolute`, e sem um
-     ancestral posicionado ele ancora na página — abaixo da dobra, estende a
-     altura do documento e aparece uma rolagem vertical da página inteira. */
-  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: var(--touch-min);

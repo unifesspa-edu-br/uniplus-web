@@ -1,5 +1,5 @@
 import { type APIRequestContext, expect, type Locator, type Page, test } from '@playwright/test';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { assertDocumentoSemRolagemVertical, runAxeWcagAA } from '@uniplus/shared-e2e';
 
 import { keycloakLogin } from '../support/keycloak-login';
 
@@ -127,6 +127,11 @@ async function preencherRestante(page: Page): Promise<void> {
   ]) {
     await escolher(page, pergunta, 'Não');
   }
+  // A página rola só pela área de conteúdo: nenhuma opção estica o documento, e o foco pelo
+  // teclado no último controle rola a área, não a janela.
+  await assertDocumentoSemRolagemVertical(page);
+  await page.getByRole('radio').last().focus();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
 
   await irParaSecao(page, 'Revisão e aceite');
   // Na inscrição retomada os termos já vêm aceitos: clicar de novo os desmarcaria.
