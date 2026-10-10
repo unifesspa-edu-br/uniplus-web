@@ -34,6 +34,7 @@ const PERSONA = {
 
 /** Uma das edições que o roteiro da API declara como aceitas pelo processo de validação. */
 const EDICAO_DO_ENEM = 'ENEM 2026';
+const MUNICIPIO_DO_FATOR = 'Marabá/PA';
 
 const campo = (page: Page, rotulo: string): Locator =>
   page.getByRole('textbox', { name: new RegExp(`^${rotulo}`) });
@@ -102,11 +103,19 @@ async function preencherDadosDoCandidato(page: Page): Promise<void> {
 
 async function preencherRestante(page: Page): Promise<void> {
   await irParaSecao(page, 'ENEM');
-  await lista(page, 'Qual edição do ENEM você vai usar').selectOption({ label: EDICAO_DO_ENEM });
+  await escolher(page, 'Qual edição do ENEM você vai usar', EDICAO_DO_ENEM);
 
   await irParaSecao(page, 'Ensino médio');
   await escolher(page, 'Como você concluiu o ensino médio', 'Ensino médio regular');
   await lista(page, 'Onde você cursou o ensino médio').selectOption({ label: 'Escola privada' });
+
+  await irParaSecao(page, 'Fator de Atenuação das Desigualdades de Acesso');
+  const municipioDoFator = lista(page, 'Em qual município da área de abrangência você reside');
+  // A inscrição retomada já traz a resposta anterior: o "Não" fixa o ponto de partida.
+  await escolher(page, 'Deseja solicitar o Fator de Atenuação das Desigualdades de Acesso', 'Não');
+  await expect(municipioDoFator).toHaveCount(0);
+  await escolher(page, 'Deseja solicitar o Fator de Atenuação das Desigualdades de Acesso', 'Sim');
+  await municipioDoFator.selectOption({ label: MUNICIPIO_DO_FATOR });
 
   await irParaSecao(page, 'Reserva de vagas');
   for (const pergunta of [
@@ -118,9 +127,6 @@ async function preencherRestante(page: Page): Promise<void> {
   ]) {
     await escolher(page, pergunta, 'Não');
   }
-
-  await irParaSecao(page, 'Bônus regional');
-  await escolher(page, 'Deseja solicitar o bônus regional', 'Não');
 
   await irParaSecao(page, 'Revisão e aceite');
   // Na inscrição retomada os termos já vêm aceitos: clicar de novo os desmarcaria.
@@ -226,6 +232,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(comprovante(page)).toContainText(`${PERSONA.cidade} — MS`);
       await expect(comprovante(page)).toContainText(`${PERSONA.cidade}/MS`);
       await expect(comprovante(page)).toContainText(EDICAO_DO_ENEM);
+      await expect(comprovante(page)).toContainText(MUNICIPIO_DO_FATOR);
       await expect(comprovante(page)).not.toContainText('Código IBGE');
       await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
     });
