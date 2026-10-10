@@ -39,11 +39,8 @@ import {
   type AtualizarTipoProcessoCommand,
   type CriarTipoProcessoCommand,
 } from '@uniplus/shared-data/configuracao';
-import {
-  CODIGO_CADASTRO_FORMATO,
-  CODIGO_CADASTRO_TAMANHO_MAXIMO,
-  sugerirCodigoDeCadastro,
-} from '@uniplus/shared-utils';
+import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
+import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
 import {
   AlertComponent,
   ConfirmDialogComponent,
@@ -385,9 +382,6 @@ export class TiposProcessoPage {
   protected readonly idempotencyKeyReativar = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
 
-  /** Último código escrito pela sugestão — distingue o que ela pôs do que o operador digitou. */
-  private ultimaSugestaoAplicada = '';
-
   private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
   // Listagem de manutenção (plataforma-admin): traz ativos e desativados
@@ -515,16 +509,12 @@ export class TiposProcessoPage {
       validators: [Validators.maxLength(DESCRICAO_MAX_LENGTH)],
     }),
   });
+  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
+    this.form.controls,
+    () => this.modo() === 'criar',
+  );
 
   constructor() {
-    this.form.controls.nome.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((nome) => this.sincronizarSugestaoDeCodigo(nome));
-
-    this.form.controls.codigo.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((codigo) => this.normalizarCaixaDoCodigo(codigo));
-
     effect(() => {
       const problem = this.lista.problem();
       if (problem && problem.status >= 500) {
@@ -561,7 +551,7 @@ export class TiposProcessoPage {
   protected abrirCadastro(): void {
     this.modo.set('criar');
     this.tipoEmEdicaoId.set(null);
-    this.ultimaSugestaoAplicada = '';
+    this.ligacaoDoCodigo.reiniciar();
     this.form.reset({ codigo: '', nome: '', descricao: '' });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -704,42 +694,6 @@ export class TiposProcessoPage {
       return 'Use caixa alta, começando por letra, com letras, números e sublinhado.';
     }
     return 'Valor inválido.';
-  }
-
-  /**
-   * Mantém a sugestão de código alinhada ao nome. O campo só é escrito na criação
-   * e enquanto o que está nele é obra da própria sugestão — assim ela acompanha o
-   * nome enquanto ele é digitado, mas para no instante em que o operador troca o
-   * código por outro. Na edição nunca escreve: o código vigente é imutável.
-   */
-  private sincronizarSugestaoDeCodigo(nome: string): void {
-    if (this.modo() !== 'criar') {
-      return;
-    }
-    const codigoAtual = this.form.controls.codigo.value;
-    if (codigoAtual !== '' && codigoAtual !== this.ultimaSugestaoAplicada) {
-      return;
-    }
-    const sugestao = sugerirCodigoDeCadastro(nome);
-    this.ultimaSugestaoAplicada = sugestao;
-    this.form.controls.codigo.setValue(sugestao, { emitEvent: false });
-  }
-
-  /**
-   * O backend recebe o código como digitado; a convenção do cadastro é caixa
-   * alta. O modelo é normalizado sem reescrever a view (`emitModelToViewChange:
-   * false`) para não reposicionar o cursor; a apresentação em caixa alta fica
-   * por conta do `text-transform` do campo.
-   */
-  private normalizarCaixaDoCodigo(codigo: string): void {
-    const emCaixaAlta = codigo.toLocaleUpperCase('pt-BR');
-    if (emCaixaAlta === codigo) {
-      return;
-    }
-    this.form.controls.codigo.setValue(emCaixaAlta, {
-      emitEvent: false,
-      emitModelToViewChange: false,
-    });
   }
 
   private montarParams(): HttpParams {
