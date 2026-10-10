@@ -1,0 +1,79 @@
+<ui-page-header
+  heading="Inscrição"
+  description="Responda em passos. Você pode salvar o rascunho e voltar depois para concluir."
+  [level]="1"
+/>
+
+<p class="sr-only" aria-live="polite">{{ aviso() }}</p>
+
+@switch (estado()) { @case ('carregando') {
+<div class="inscricao-carregando" role="status" aria-busy="true">
+  <ui-spinner size="md" /> Carregando a inscrição...
+</div>
+} @case ('erro') {
+<ui-alert variant="danger" heading="Não foi possível abrir a inscrição">
+  {{ erroAoCarregar() }}
+  <p>
+    <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
+      Tentar novamente
+    </button>
+  </p>
+</ui-alert>
+} @case ('pronto') { @if (comprovante(); as enviado) {
+<ui-alert variant="success" heading="Inscrição enviada">
+  Sua inscrição recebeu o número <strong>{{ enviado.numeroInscricao }}</strong>. Você pode
+  corrigi-la até o fim do período de inscrição.
+  <p><a routerLink="/inscricao">Ver minhas inscrições</a></p>
+</ui-alert>
+} @if (recusaGeral(); as recusa) {
+<ui-alert variant="danger" heading="A inscrição não foi gravada">{{ recusa }}</ui-alert>
+} @if (ofertas().length > 1) {
+<div class="field inscricao-oferta">
+  <label class="field__label is-required" for="inscricao-oferta">Curso</label>
+  <select class="select" id="inscricao-oferta" (change)="escolherOferta($event)">
+    <option value="" [selected]="ofertaEscolhida() === null">Selecione</option>
+    @for (oferta of ofertas(); track oferta.id) {
+    <option [value]="oferta.id" [selected]="ofertaEscolhida() === oferta.id">
+      {{ oferta.nome }}
+    </option>
+    }
+  </select>
+</div>
+} @if (formulario(); as renderizavel) {
+<ui-formulario-do-candidato
+  idBase="inscricao"
+  [formulario]="renderizavel"
+  [inicial]="inicial()"
+  [termosAceitosIniciais]="termosAceitosIniciais()"
+  [respostasFixas]="respostasFixas()"
+  [pressupostos]="pressupostos()"
+  [errosDoServidor]="errosDoServidor()"
+  (simulacaoChange)="responder($event)"
+  (termosAceitosChange)="aceitar($event)"
+/>
+} @if (derivados().length > 0) {
+<section class="inscricao-derivados" aria-labelledby="inscricao-derivados-titulo">
+  <h2 id="inscricao-derivados-titulo" class="inscricao-derivados__titulo">
+    Calculado a partir das suas respostas
+  </h2>
+  <dl class="inscricao-derivados__lista">
+    @for (derivado of derivados(); track derivado.fatoCodigo) {
+    <div>
+      <dt>{{ derivado.rotulo }}</dt>
+      <dd>{{ derivado.exibicao }}</dd>
+    </div>
+    }
+  </dl>
+  <p class="field__hint">O sistema confirma estes dados quando a inscrição é enviada.</p>
+</section>
+}
+
+<div class="inscricao-acoes">
+  <button type="button" class="btn btn--secondary" [disabled]="ocupada()" (click)="salvar()">
+    Salvar rascunho
+  </button>
+  <button type="button" class="btn btn--primary" [disabled]="ocupada()" (click)="enviar()">
+    Enviar inscrição
+  </button>
+</div>
+} }

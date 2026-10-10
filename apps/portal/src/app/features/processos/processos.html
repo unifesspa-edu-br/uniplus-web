@@ -22,7 +22,7 @@
         inscrever em etapas curtas e voltar quando quiser para concluir.
       </p>
       <div class="portal-hero__actions">
-        <a class="btn btn--primary btn--lg" routerLink="/inscricao">
+        <a class="btn btn--primary btn--lg" [routerLink]="['/inscricao', certameDestaque.processoSeletivoId]">
           <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
           Inscrever-me agora
         </a>
@@ -161,10 +161,13 @@
                 <span class="sr-only"> — {{ certame.nome }} (abre em nova aba)</span>
               </a>
             }
-            <a class="btn btn--primary" routerLink="/inscricao">
-              <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-              Inscrever-me
-            </a>
+            @if (recebeInscricao(certame)) {
+              <a class="btn btn--primary" [routerLink]="['/inscricao', certame.processoSeletivoId]">
+                <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+                Inscrever-me
+                <span class="sr-only"> em {{ certame.nome }}</span>
+              </a>
+            }
           </div>
           <ptl-certame-documentos
             class="edital-row__documentos"
@@ -212,10 +215,13 @@
           }
           <div class="card__footer">
             <ui-tag variant="neutral">{{ certame.tipoProcesso.nome }}</ui-tag>
-            <a class="btn btn--primary btn--sm" routerLink="/inscricao">
-              <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-              Inscrever-me
-            </a>
+            @if (recebeInscricao(certame)) {
+              <a class="btn btn--primary btn--sm" [routerLink]="['/inscricao', certame.processoSeletivoId]">
+                <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+                Inscrever-me
+                <span class="sr-only"> em {{ certame.nome }}</span>
+              </a>
+            }
           </div>
           <ptl-certame-documentos
             class="edital-row__documentos"
