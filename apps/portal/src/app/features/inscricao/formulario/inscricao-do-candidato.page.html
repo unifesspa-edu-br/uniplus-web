@@ -1,6 +1,10 @@
 <ui-page-header
   heading="Inscrição"
-  description="Responda em passos. Você pode salvar o rascunho e voltar depois para concluir."
+  [description]="
+    enviada()
+      ? 'Revise as respostas e envie de novo para corrigir a inscrição.'
+      : 'Responda em passos. Você pode salvar o rascunho e voltar depois para concluir.'
+  "
   [level]="1"
 />
 
@@ -77,13 +81,24 @@
   </dl>
   <p class="field__hint">O sistema confirma estes dados quando a inscrição é enviada.</p>
 </section>
+} @if (enviada()) {
+<p class="field__hint" id="inscricao-correcao">
+  Sua inscrição já foi enviada. Para corrigi-la, envie de novo: cada envio gera um novo comprovante.
+</p>
 }
-
 <div class="inscricao-acoes">
+  @if (!enviada()) {
   <button type="button" class="btn btn--secondary" [disabled]="ocupada()" (click)="salvar()">
     Salvar rascunho
   </button>
-  <button type="button" class="btn btn--primary" [disabled]="ocupada()" (click)="enviar()">
+  }
+  <button
+    type="button"
+    class="btn btn--primary"
+    [disabled]="ocupada()"
+    [attr.aria-describedby]="enviada() ? 'inscricao-correcao' : null"
+    (click)="enviar()"
+  >
     Enviar inscrição
   </button>
 </div>
