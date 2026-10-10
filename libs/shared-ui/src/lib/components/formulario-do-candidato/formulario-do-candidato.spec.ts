@@ -637,6 +637,21 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(simulacoes.at(-1)?.respostas).toEqual({ CPF: '69959836371' });
   });
 
+  it('escolher a seção em que já está leva o foco ao título na hora, e a renderização seguinte não o tira do campo', () => {
+    const tela = montar(DUAS_SECOES);
+    const titulo = tela.querySelector('h3') as HTMLElement;
+    const input = tela.querySelector('input') as HTMLInputElement;
+
+    // Sem renderizar no clique, como quando a detecção de mudanças agrupa os eventos do quadro.
+    botao(tela, '1').click();
+    expect(document.activeElement).toBe(titulo);
+
+    input.focus();
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(input);
+  });
+
   it('a recusa do servidor leva à seção do campo, põe o foco nele e some quando ele muda', async () => {
     const tela = montar(DUAS_SECOES);
     fixture.componentRef.setInput('errosDoServidor', [
