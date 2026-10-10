@@ -1,12 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map, type Observable, tap } from 'rxjs';
+import { type ApiResult } from '@uniplus/shared-core/http';
 import {
-  type ApiResult,
   deveRotacionarIdempotencyKey,
   idempotencyKey,
   withIdempotencyKey,
-} from '@uniplus/shared-core/http';
+} from '@uniplus/shared-core/idempotency';
 import {
   certamePublicoRequest,
   type CertamePublicadoDto,

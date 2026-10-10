@@ -3,11 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  apiResultInterceptor,
-  buildVendorMimeAccept,
-  withIdempotencyKey,
-} from '@uniplus/shared-core/http';
+import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
+import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 
 import { InscricoesApi } from './inscricoes.api';
 import type { InscricaoRequest } from './inscricoes.contrato';
