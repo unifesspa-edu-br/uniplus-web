@@ -101,6 +101,40 @@ async function preencherDadosDoCandidato(page: Page): Promise<void> {
   await endereco.getByRole('textbox', { name: /^Número/ }).fill(PERSONA.numero);
 }
 
+/**
+ * O pedido de atendimento especializado: com "Sim" aparecem a condição e o recurso, e a condição fora
+ * da lista pede descrição; com "Não" os três somem. A inscrição segue com "Não".
+ */
+async function responderAtendimentoEspecializado(page: Page): Promise<void> {
+  const pedido = 'Você precisa de atendimento especializado em alguma etapa presencial do processo';
+  const condicoes = page.getByRole('group', { name: /^Em quais condições você se enquadra/ });
+  const recursos = page.getByRole('group', {
+    name: /^De quais recursos você vai precisar nas etapas presenciais/,
+  });
+  const descricao = campo(page, 'Descreva a sua condição específica');
+
+  await irParaSecao(page, 'Atendimento especializado');
+  // A inscrição retomada já traz a resposta anterior: o "Não" fixa o ponto de partida.
+  await escolher(page, pedido, 'Não');
+  await expect(condicoes).toHaveCount(0);
+  await expect(recursos).toHaveCount(0);
+
+  await escolher(page, pedido, 'Sim');
+  await expect(condicoes).toBeVisible();
+  await expect(recursos).toBeVisible();
+  const outraCondicao = condicoes.getByRole('checkbox', { name: 'Outra condição específica' });
+  if (!(await outraCondicao.isChecked())) {
+    await condicoes.getByText('Outra condição específica', { exact: true }).click();
+  }
+  await expect(outraCondicao).toBeChecked();
+  await expect(descricao).toBeVisible();
+
+  await escolher(page, pedido, 'Não');
+  await expect(condicoes).toHaveCount(0);
+  await expect(recursos).toHaveCount(0);
+  await expect(descricao).toHaveCount(0);
+}
+
 async function preencherRestante(page: Page): Promise<void> {
   await irParaSecao(page, 'ENEM');
   await escolher(page, 'Qual edição do ENEM você vai usar', EDICAO_DO_ENEM);
@@ -132,6 +166,8 @@ async function preencherRestante(page: Page): Promise<void> {
   await assertDocumentoSemRolagemVertical(page);
   await page.getByRole('radio').last().focus();
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  await responderAtendimentoEspecializado(page);
 
   await irParaSecao(page, 'Revisão e aceite');
   // Na inscrição retomada os termos já vêm aceitos: clicar de novo os desmarcaria.
