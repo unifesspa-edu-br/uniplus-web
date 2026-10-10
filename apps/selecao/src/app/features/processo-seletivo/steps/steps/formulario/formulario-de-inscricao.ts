@@ -68,6 +68,8 @@ export const FATOS_DO_CONJUNTO_BASICO: readonly string[] = [
   'COR_RACA',
   'EMAIL',
   'TELEFONE',
+  'TIPO_ENDERECO',
+  'NOME_COMUNIDADE',
   'ENDERECO_RESIDENCIAL',
 ];
 
