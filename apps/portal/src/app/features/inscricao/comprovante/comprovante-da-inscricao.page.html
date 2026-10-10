@@ -1,0 +1,140 @@
+<ui-page-header
+  heading="Comprovante de inscrição"
+  description="A cópia do que foi enviado nesta submissão. Os comprovantes anteriores continuam disponíveis e não mudam."
+  [level]="1"
+/>
+
+@switch (estado()) { @case ('carregando') {
+<div class="comprovante-carregando" role="status" aria-busy="true">
+  <ui-spinner size="md" /> Carregando o comprovante...
+</div>
+} @case ('erro') {
+<ui-alert variant="danger" heading="Não foi possível abrir o comprovante">
+  {{ erro() }}
+  <p class="comprovante-acoes">
+    <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
+      Tentar novamente
+    </button>
+    <a class="btn btn--tertiary btn--sm" routerLink="/inscricao">Voltar às minhas inscrições</a>
+  </p>
+</ui-alert>
+} @case ('pronto') { @if (carregado(); as c) {
+<article class="comprovante" #conteudo tabindex="-1" aria-labelledby="comprovante-titulo">
+  <h2 class="comprovante__titulo" id="comprovante-titulo">
+    {{ c.processo?.nome ?? 'Processo seletivo' }} @if (c.processo) {
+    <span class="comprovante__edital">{{ c.processo.identificadorLegivel }}</span>
+    }
+  </h2>
+
+  <dl class="comprovante__lista">
+    <div>
+      <dt>Número da inscrição</dt>
+      <dd>{{ c.numerado.comprovante.numeroInscricao }}</dd>
+    </div>
+    <div>
+      <dt>Candidato</dt>
+      <dd>{{ nome() }}</dd>
+    </div>
+    <div>
+      <dt>CPF</dt>
+      <dd>{{ c.numerado.comprovante.cpfMascarado }}</dd>
+    </div>
+    <div>
+      <dt>Enviado em</dt>
+      <dd>
+        <time [attr.datetime]="c.numerado.comprovante.instante"> {{ enviadoEm() }} </time>
+      </dd>
+    </div>
+    <div>
+      <dt>Submissão</dt>
+      <dd>{{ c.numerado.numero }}ª</dd>
+    </div>
+    @if (oferta(); as idDaOferta) {
+    <div>
+      <dt>Curso</dt>
+      <dd>{{ idDaOferta }}</dd>
+    </div>
+    }
+  </dl>
+
+  @for (secao of secoes(); track secao.codigo) {
+  <section class="comprovante__secao" [attr.aria-labelledby]="'secao-' + secao.codigo">
+    <h3 [id]="'secao-' + secao.codigo">{{ secao.titulo }}</h3>
+    @if (secao.respostas.length > 0) {
+    <dl class="comprovante__lista">
+      @for (resposta of secao.respostas; track $index) {
+      <div>
+        <dt>{{ resposta.rotulo }}</dt>
+        <dd>{{ resposta.valor }}</dd>
+      </div>
+      }
+    </dl>
+    } @for (grupo of secao.grupos; track $index) {
+    <h4>{{ grupo.rotulo }}</h4>
+    <ol class="comprovante__ocorrencias">
+      @for (ocorrencia of grupo.ocorrencias; track $index) {
+      <li>
+        <dl class="comprovante__lista">
+          @for (resposta of ocorrencia; track $index) {
+          <div>
+            <dt>{{ resposta.rotulo }}</dt>
+            <dd>{{ resposta.valor }}</dd>
+          </div>
+          }
+        </dl>
+      </li>
+      }
+    </ol>
+    }
+  </section>
+  } @if (derivados().length > 0) {
+  <section class="comprovante__secao" aria-labelledby="secao-derivados">
+    <h3 id="secao-derivados">Calculado pelo sistema</h3>
+    <dl class="comprovante__lista">
+      @for (derivado of derivados(); track $index) {
+      <div>
+        <dt>{{ derivado.rotulo }}</dt>
+        <dd>{{ derivado.valor }}</dd>
+      </div>
+      }
+    </dl>
+  </section>
+  } @if (termos().length > 0) {
+  <section class="comprovante__secao" aria-labelledby="secao-termos">
+    <h3 id="secao-termos">Termos aceitos</h3>
+    <ul>
+      @for (termo of termos(); track $index) {
+      <li>{{ termo }}</li>
+      }
+    </ul>
+  </section>
+  }
+  <section class="comprovante__secao" aria-labelledby="secao-integridade">
+    <h3 id="secao-integridade">Integridade</h3>
+    <p>
+      O código abaixo é o resumo (SHA-256) do que foi enviado. Ele prova que este comprovante não
+      mudou.
+    </p>
+    <code class="comprovante__hash">{{ c.numerado.comprovante.hashIntegridade }}</code>
+  </section>
+</article>
+
+<nav class="comprovante-acoes" aria-label="Comprovantes desta inscrição">
+  @if (c.numerado.numero > 1) {
+  <a
+    class="btn btn--tertiary btn--sm"
+    [routerLink]="['/inscricao', processoId(), 'comprovantes', c.numerado.numero - 1]"
+  >
+    Comprovante anterior
+  </a>
+  } @if (c.temSeguinte) {
+  <a
+    class="btn btn--tertiary btn--sm"
+    [routerLink]="['/inscricao', processoId(), 'comprovantes', c.numerado.numero + 1]"
+  >
+    Comprovante seguinte
+  </a>
+  }
+  <a class="btn btn--secondary btn--sm" routerLink="/inscricao">Voltar às minhas inscrições</a>
+</nav>
+} } }

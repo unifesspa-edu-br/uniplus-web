@@ -9,6 +9,20 @@ import { InscricaoListaPage } from './inscricao-lista.page';
 export const INSCRICAO_ROUTES: Routes = [
   { path: '', component: InscricaoListaPage },
   {
+    path: ':processoId/comprovante',
+    loadComponent: () =>
+      import('./comprovante/comprovante-da-inscricao.page').then(
+        (m) => m.ComprovanteDaInscricaoPage,
+      ),
+  },
+  {
+    path: ':processoId/comprovantes/:numero',
+    loadComponent: () =>
+      import('./comprovante/comprovante-da-inscricao.page').then(
+        (m) => m.ComprovanteDaInscricaoPage,
+      ),
+  },
+  {
     path: ':processoId',
     loadComponent: () =>
       import('./formulario/inscricao-do-candidato.page').then((m) => m.InscricaoDoCandidatoPage),
