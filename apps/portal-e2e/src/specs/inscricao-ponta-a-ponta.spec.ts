@@ -150,6 +150,10 @@ const comprovante = (page: Page): Locator => page.getByRole('article');
 
 test.describe('Inscrição do candidato de ponta a ponta', () => {
   test.skip(!PROCESSO_ID, 'Defina E2E_PROCESSO_ID com o processo que o roteiro da API publicou.');
+  test.skip(
+    ({ browserName }) => browserName !== 'chromium',
+    'A inscrição é única por candidato e processo: dois navegadores em paralelo disputariam a mesma.',
+  );
   test.setTimeout(180_000);
 
   test('entra, se inscreve, corrige e confere os comprovantes e as inscrições', async ({
