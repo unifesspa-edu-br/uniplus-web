@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page, test } from '@playwright/test';
+import { type APIRequestContext, expect, type Locator, type Page, test } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 
 import { keycloakLogin } from '../support/keycloak-login';
@@ -10,6 +10,7 @@ import { keycloakLogin } from '../support/keycloak-login';
  * retomada e corrigida de novo, e cada envio soma um comprovante.
  */
 const PROCESSO_ID = process.env['E2E_PROCESSO_ID'] ?? '';
+const API_URL = process.env['E2E_API_URL'] ?? 'http://localhost:5000';
 
 /** Fernanda Drumond, persona fictícia do portal de documentação, que usa o nome social Ariel. */
 const PERSONA = {
@@ -133,14 +134,27 @@ async function enviarPeloTeclado(page: Page): Promise<void> {
   await page.keyboard.press('Enter');
 }
 
-async function abrirComprovanteNaLista(page: Page): Promise<void> {
-  await page.getByRole('link', { name: 'Ver minhas inscrições' }).click();
-  const item = page
+/** O nome com que o processo de teste foi divulgado, como a lista de inscrições o mostra. */
+async function nomeDivulgado(request: APIRequestContext): Promise<string> {
+  const certame = await request.get(`${API_URL}/api/selecao/certames/${PROCESSO_ID}`, {
+    headers: { Accept: 'application/vnd.uniplus.certame.v1+json' },
+  });
+  expect(certame.ok()).toBe(true);
+  return ((await certame.json()) as { nome: string }).nome;
+}
+
+/** A inscrição do processo de teste na lista: o candidato pode ter inscrições em outros processos. */
+const inscricaoNaLista = (page: Page, processo: string): Locator =>
+  page
     .getByRole('listitem')
-    .filter({ hasText: PERSONA.nomeSocial })
-    .or(page.getByRole('article').filter({ hasText: PERSONA.nomeSocial }));
-  await expect(item.first()).toBeVisible();
-  await item.first().getByRole('button', { name: 'Ver comprovante' }).click();
+    .or(page.getByRole('article'))
+    .filter({ has: page.getByRole('heading', { name: processo, exact: true }) });
+
+async function abrirComprovanteNaLista(page: Page, processo: string): Promise<void> {
+  await page.getByRole('link', { name: 'Ver minhas inscrições' }).click();
+  const item = inscricaoNaLista(page, processo);
+  await expect(item).toBeVisible();
+  await item.getByRole('button', { name: 'Ver comprovante' }).click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Comprovante de inscrição' }),
   ).toBeVisible();
@@ -155,6 +169,11 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     'A inscrição é única por candidato e processo: dois navegadores em paralelo disputariam a mesma.',
   );
   test.setTimeout(180_000);
+
+  let processo = '';
+  test.beforeAll(async ({ request }) => {
+    processo = await nomeDivulgado(request);
+  });
 
   test('entra, se inscreve, corrige e confere os comprovantes e as inscrições', async ({
     page,
@@ -191,12 +210,17 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(page.getByText('Inscrição enviada', { exact: true })).toBeVisible();
     });
 
-    await test.step('o comprovante mostra o nome social e só o CPF mascarado', async () => {
-      await abrirComprovanteNaLista(page);
+    await test.step('o comprovante mostra o nome social, só o CPF mascarado e o município pelo nome', async () => {
+      await abrirComprovanteNaLista(page, processo);
       await expect(comprovante(page)).toContainText(PERSONA.nomeSocial);
       await expect(comprovante(page)).toContainText(PERSONA.cpfMascarado);
       await expect(comprovante(page)).toContainText(PERSONA.celular);
       await expect(comprovante(page)).not.toContainText(PERSONA.rg);
+      // Município pelo nome, e nenhum código de fato ou IBGE cru na tela.
+      await expect(comprovante(page)).toContainText(`${PERSONA.cidade} — MS`);
+      await expect(comprovante(page)).toContainText(`${PERSONA.cidade}/MS`);
+      await expect(comprovante(page)).not.toContainText('Código IBGE');
+      await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
     });
 
     await test.step('corrige o telefone e envia de novo', async () => {
@@ -209,7 +233,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     });
 
     await test.step('o comprovante novo traz a correção e o anterior continua igual', async () => {
-      await abrirComprovanteNaLista(page);
+      await abrirComprovanteNaLista(page, processo);
       await expect(comprovante(page)).toContainText(PERSONA.fixo);
       const anterior = page.getByRole('link', { name: 'Comprovante anterior' });
       const destino = (await anterior.getAttribute('href')) ?? '';
@@ -222,9 +246,9 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
 
     await test.step('minhas inscrições mostra a inscrição com o nome social', async () => {
       await page.getByRole('link', { name: 'Voltar às minhas inscrições' }).first().click();
-      const conteudo = page.getByRole('main');
-      await expect(conteudo.getByText(PERSONA.nomeSocial).first()).toBeVisible();
-      await expect(conteudo.getByText(PERSONA.nome)).toHaveCount(0);
+      const item = inscricaoNaLista(page, processo);
+      await expect(item).toContainText(PERSONA.nomeSocial);
+      await expect(item).not.toContainText(PERSONA.nome);
     });
   });
 });
