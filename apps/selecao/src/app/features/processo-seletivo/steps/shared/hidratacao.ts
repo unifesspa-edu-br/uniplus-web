@@ -326,6 +326,7 @@ function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
       fator: '',
       teto: '',
       baseLegalBonusRegionalId: '',
+      fatoElegibilidadeCodigo: '',
     };
   }
 
@@ -336,6 +337,7 @@ function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
     fator: comoTexto(bonus.fator),
     teto: comoTexto(bonus.teto),
     baseLegalBonusRegionalId: bonus.baseLegalBonusRegionalId,
+    fatoElegibilidadeCodigo: bonus.fatoElegibilidadeCodigo ?? '',
   };
 }
 

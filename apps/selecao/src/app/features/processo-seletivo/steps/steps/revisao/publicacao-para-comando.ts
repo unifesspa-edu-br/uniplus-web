@@ -316,6 +316,14 @@ const DESTINO_POR_ITEM: ReadonlyMap<string, DestinoDoItem> = new Map<string, Des
     },
   ],
   [
+    'bonus_regional_fato_de_elegibilidade',
+    {
+      passo: 'Bônus',
+      orientacao:
+        'Escolha quem recebe o acréscimo: um campo de sim ou não do formulário de inscrição, fora de grupo, ou um fato que o processo deriva como sim ou não, conhecido até a inscrição e sem depender do que só o formulário de isenção coleta.',
+    },
+  ],
+  [
     'formulario_inscricao_sem_edicao_enem',
     {
       passo: 'Formulários',

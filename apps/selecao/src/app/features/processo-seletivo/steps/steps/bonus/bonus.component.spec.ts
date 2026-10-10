@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatos, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -153,7 +153,7 @@ describe('BonusStepComponent', () => {
   });
 
   describe('persistir()', () => {
-    it('grava a declaração de que não aplica, com os cinco campos null', async () => {
+    it('grava a declaração de que não aplica, com os campos null', async () => {
       componente.escolherAplicacao(false);
       const gravacao = componente.persistir();
 
@@ -167,6 +167,7 @@ describe('BonusStepComponent', () => {
         fator: null,
         teto: null,
         baseLegalBonusRegionalId: null,
+        fatoElegibilidadeCodigo: null,
       });
 
       requisicao.flush(null, { status: 204, statusText: 'No Content' });
@@ -189,6 +190,7 @@ describe('BonusStepComponent', () => {
         fator: 1.2,
         teto: null,
         baseLegalBonusRegionalId: BASE_LEGAL_ID,
+        fatoElegibilidadeCodigo: null,
       });
 
       requisicao.flush(null, { status: 204, statusText: 'No Content' });
@@ -385,6 +387,85 @@ describe('BonusStepComponent', () => {
       const legendaId = regiao?.getAttribute('aria-labelledby');
       const legenda = fixture.nativeElement.querySelector(`#${legendaId}`) as HTMLElement;
       expect(legenda?.textContent).toContain('1 município(s) beneficiado(s)');
+    });
+  });
+  describe('quem recebe o acréscimo', () => {
+    function comInscricaoPropriaEFormulario(): void {
+      store.patchObjectSection('identificacao', {
+        origemCandidatos: OrigemCandidatos.inscricaoPropria,
+      });
+      store.patchObjectSection('formulario', {
+        conteudo: {
+          ...store.draft().formulario.conteudo,
+          itens: [
+            {
+              fatoCodigo: 'PEDE_O_ACRESCIMO',
+              ordem: 1,
+              rotulo: 'Deseja solicitar o acréscimo?',
+              tipoRenderizacao: 'BOOLEANO',
+              obrigatoriedade: 'SEMPRE',
+              precondicao: null,
+              pedirConfirmacao: false,
+            },
+          ],
+        },
+      });
+    }
+
+    const seletor = (): HTMLSelectElement | null =>
+      fixture.nativeElement.querySelector('#f-bonus-elegibilidade');
+
+    it('pede o fato só quando o processo aplica o acréscimo e tem inscrição própria', () => {
+      comInscricaoPropriaEFormulario();
+      componente.escolherAplicacao(false);
+      fixture.detectChanges();
+      expect(seletor()).toBeNull();
+
+      componente.escolherAplicacao(true);
+      fixture.detectChanges();
+      const opcoes = Array.from(seletor()?.options ?? []).map((opcao) => opcao.textContent?.trim());
+      expect(opcoes).toContain('Deseja solicitar o acréscimo? (PEDE_O_ACRESCIMO)');
+    });
+
+    it('avisa quando o fato escolhido saiu do formulário de inscrição', () => {
+      comInscricaoPropriaEFormulario();
+      componente.escolherAplicacao(true);
+      componente.escolherFatoDeElegibilidade('FATO_QUE_SAIU');
+      fixture.detectChanges();
+
+      expect(seletor()?.getAttribute('aria-invalid')).toBe('true');
+      const aviso = fixture.nativeElement.querySelector('[role="alert"]') as HTMLElement | null;
+      expect(aviso?.textContent).toContain('O fato FATO_QUE_SAIU não está mais no formulário');
+    });
+
+    it('liga ao campo o motivo do erro, além da ajuda, só quando o fato saiu do formulário', () => {
+      comInscricaoPropriaEFormulario();
+      componente.escolherAplicacao(true);
+      componente.escolherFatoDeElegibilidade('PEDE_O_ACRESCIMO');
+      fixture.detectChanges();
+      expect(seletor()?.getAttribute('aria-describedby')).toBe('f-bonus-elegibilidade-ajuda');
+
+      componente.escolherFatoDeElegibilidade('FATO_QUE_SAIU');
+      fixture.detectChanges();
+      expect(seletor()?.getAttribute('aria-describedby')).toBe(
+        'f-bonus-elegibilidade-ajuda f-bonus-elegibilidade-erro',
+      );
+      expect(
+        fixture.nativeElement.querySelector('#f-bonus-elegibilidade-erro')?.textContent,
+      ).toContain('O fato FATO_QUE_SAIU não está mais no formulário');
+    });
+
+    it('mostra na consulta quem recebe o acréscimo, pelo rótulo do campo', () => {
+      comInscricaoPropriaEFormulario();
+      componente.escolherAplicacao(true);
+      componente.escolherFatoDeElegibilidade('PEDE_O_ACRESCIMO');
+      store.publicacaoNaoConfirmada.set(true);
+      fixture.detectChanges();
+
+      expect(seletor()).toBeNull();
+      const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+      expect(texto).toContain('Quem recebe o acréscimo');
+      expect(texto).toContain('Deseja solicitar o acréscimo? (PEDE_O_ACRESCIMO)');
     });
   });
 });

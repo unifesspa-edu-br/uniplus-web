@@ -73,6 +73,7 @@ const INITIAL_DRAFT: WizardDraft = {
     fator: '',
     teto: '',
     baseLegalBonusRegionalId: '',
+    fatoElegibilidadeCodigo: '',
   },
   desempate: [],
   documentos: initialDocumentos(),
