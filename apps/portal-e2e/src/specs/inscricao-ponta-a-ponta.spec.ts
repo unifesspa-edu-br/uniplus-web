@@ -6,8 +6,8 @@ import { keycloakLogin } from '../support/keycloak-login';
 /**
  * A inscrição do candidato de ponta a ponta, contra a stack local com o processo de teste que o
  * roteiro da API publica (`scripts/roteiro-processo-teste-inscricao.sh`, que imprime o
- * `PROCESSO_ID`). O processo é novo a cada execução do roteiro, e a persona só se inscreve uma vez
- * nele: rode o roteiro antes de cada execução deste teste.
+ * `PROCESSO_ID`). Repetir o teste no mesmo processo continua valendo: a inscrição já enviada é
+ * retomada e corrigida de novo, e cada envio soma um comprovante.
  */
 const PROCESSO_ID = process.env['E2E_PROCESSO_ID'] ?? '';
 
@@ -87,8 +87,11 @@ async function preencherDadosDoCandidato(page: Page): Promise<void> {
   await lista(page, 'Tipo de localidade').selectOption({ label: 'Zona urbana' });
 
   const endereco = page.getByRole('group', { name: /^Endereço residencial/ });
-  await endereco.getByRole('textbox', { name: 'CEP' }).fill(PERSONA.cep);
-  await endereco.getByRole('button', { name: 'Buscar CEP' }).click();
+  // Na inscrição retomada o CEP já resolvido fica travado até "Trocar CEP".
+  if (!(await endereco.getByRole('button', { name: 'Trocar CEP' }).isVisible())) {
+    await endereco.getByRole('textbox', { name: 'CEP' }).fill(PERSONA.cep);
+    await endereco.getByRole('button', { name: 'Buscar CEP' }).click();
+  }
   await expect(endereco.getByRole('textbox', { name: 'Cidade' })).toHaveValue(PERSONA.cidade);
   await endereco.getByRole('textbox', { name: /^Número/ }).fill(PERSONA.numero);
 }
@@ -113,8 +116,12 @@ async function preencherRestante(page: Page): Promise<void> {
   await escolher(page, 'Deseja solicitar o bônus regional', 'Não');
 
   await irParaSecao(page, 'Revisão e aceite');
+  // Na inscrição retomada os termos já vêm aceitos: clicar de novo os desmarcaria.
   for (const termo of await page.getByRole('article').all()) {
-    await termo.getByText('Li e aceito (obrigatório)').click();
+    if (!(await termo.getByRole('checkbox').isChecked())) {
+      await termo.getByText('Li e aceito (obrigatório)').click();
+    }
+    await expect(termo.getByRole('checkbox')).toBeChecked();
   }
 }
 
@@ -134,7 +141,9 @@ async function abrirComprovanteNaLista(page: Page): Promise<void> {
     .or(page.getByRole('article').filter({ hasText: PERSONA.nomeSocial }));
   await expect(item.first()).toBeVisible();
   await item.first().getByRole('button', { name: 'Ver comprovante' }).click();
-  await expect(page.getByRole('heading', { level: 2, name: /comprovante/i })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Comprovante de inscrição' }),
+  ).toBeVisible();
 }
 
 const comprovante = (page: Page): Locator => page.getByRole('article');
@@ -156,6 +165,8 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     });
 
     await test.step('o campo obrigatório recusado é anunciado e ligado à mensagem', async () => {
+      await irParaSecao(page, 'Dados do candidato');
+      await campo(page, 'Nome completo').fill('');
       await enviarPeloTeclado(page);
       await expect(page.locator('[aria-live="polite"]').first()).toContainText(/recusad/);
       await irParaSecao(page, 'Dados do candidato');
@@ -173,7 +184,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await preencherDadosDoCandidato(page);
       await preencherRestante(page);
       await enviarPeloTeclado(page);
-      await expect(page.getByRole('heading', { name: 'Inscrição enviada' })).toBeVisible();
+      await expect(page.getByText('Inscrição enviada', { exact: true })).toBeVisible();
     });
 
     await test.step('o comprovante mostra o nome social e só o CPF mascarado', async () => {
@@ -190,22 +201,26 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(campo(page, 'Telefone')).toHaveValue(PERSONA.celular);
       await campo(page, 'Telefone').fill(PERSONA.fixo);
       await enviarPeloTeclado(page);
-      await expect(page.getByRole('heading', { name: 'Inscrição enviada' })).toBeVisible();
+      await expect(page.getByText('Inscrição enviada', { exact: true })).toBeVisible();
     });
 
     await test.step('o comprovante novo traz a correção e o anterior continua igual', async () => {
       await abrirComprovanteNaLista(page);
       await expect(comprovante(page)).toContainText(PERSONA.fixo);
-      await page.getByRole('link', { name: 'Comprovante anterior' }).click();
-      await expect(page).toHaveURL(new RegExp(`/inscricao/${PROCESSO_ID}/comprovantes/1$`));
+      const anterior = page.getByRole('link', { name: 'Comprovante anterior' });
+      const destino = (await anterior.getAttribute('href')) ?? '';
+      await anterior.click();
+      await expect(page).toHaveURL(new RegExp(`${destino}$`));
+      await expect(page).toHaveURL(new RegExp(`/inscricao/${PROCESSO_ID}/comprovantes/\\d+$`));
       await expect(comprovante(page)).toContainText(PERSONA.celular);
       await expect(comprovante(page)).not.toContainText(PERSONA.fixo);
     });
 
     await test.step('minhas inscrições mostra a inscrição com o nome social', async () => {
       await page.getByRole('link', { name: 'Voltar às minhas inscrições' }).first().click();
-      await expect(page.getByText(PERSONA.nomeSocial).first()).toBeVisible();
-      await expect(page.getByText(PERSONA.nome)).toHaveCount(0);
+      const conteudo = page.getByRole('main');
+      await expect(conteudo.getByText(PERSONA.nomeSocial).first()).toBeVisible();
+      await expect(conteudo.getByText(PERSONA.nome)).toHaveCount(0);
     });
   });
 });
