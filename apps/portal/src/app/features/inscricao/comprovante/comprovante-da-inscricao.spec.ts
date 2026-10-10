@@ -21,7 +21,17 @@ describe('municipiosDoComprovante', () => {
         { ...municipio('UF'), tipoRenderizacao: 'SELECAO_UNICA' },
       ],
       grupos: [{ codigo: 'DEPENDENTES', subitens: [municipio('MUNICIPIO_DO_DEPENDENTE')] }],
-      pressupostos: [{ fatoCodigo: 'MUNICIPIO_RESIDENCIA', tipoRenderizacao: 'MUNICIPIO' }],
+      // O derivado do sistema vem com o rótulo e o tipo que a versão congelou do catálogo.
+      pressupostos: [
+        {
+          fatoCodigo: 'MUNICIPIO_RESIDENCIA',
+          rotulo: 'Município de residência',
+          tipoRenderizacao: 'MUNICIPIO',
+          formato: null,
+          valoresSelecionaveis: null,
+          calculadoDe: ['ENDERECO_RESIDENCIAL'],
+        },
+      ],
     } as unknown as FormularioRenderizavelDto;
     const comprovante = {
       respostas: { NATURALIDADE_MUNICIPIO: '5002704', UF: 'MS' },
