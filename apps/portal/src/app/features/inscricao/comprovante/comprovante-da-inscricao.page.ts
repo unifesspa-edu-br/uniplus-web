@@ -1,20 +1,18 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   type ElementRef,
   Injector,
   afterNextRender,
   computed,
   inject,
   input,
-  type OnInit,
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, map, type Observable, of, switchMap, tap } from 'rxjs';
 import { type ApiFailure, ProblemI18nService } from '@uniplus/shared-core/http';
 import type {
   CertamePublicadoDto,
@@ -56,6 +54,11 @@ interface Carregado {
   readonly vizinhos: Vizinhos;
 }
 
+type Leitura =
+  | { readonly tipo: 'pronto'; readonly carregado: Carregado }
+  | { readonly tipo: 'falha'; readonly falha: ApiFailure }
+  | { readonly tipo: 'nao-encontrado' };
+
 /**
  * O comprovante de uma submissão da inscrição, como foi emitido: sem número de documento, com o CPF
  * mascarado e o hash que prova que não mudou. Sem o número na rota, mostra o da última submissão.
@@ -68,11 +71,11 @@ interface Carregado {
   templateUrl: './comprovante-da-inscricao.page.html',
   styleUrl: './comprovante-da-inscricao.page.css',
 })
-export class ComprovanteDaInscricaoPage implements OnInit {
+export class ComprovanteDaInscricaoPage {
   private readonly servico = inject(MinhasInscricoesService);
   private readonly problemas = inject(ProblemI18nService);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly tentativa = signal(0);
   private readonly conteudo = viewChild<ElementRef<HTMLElement>>('conteudo');
 
   readonly processoId = input.required<string>();
@@ -106,32 +109,46 @@ export class ComprovanteDaInscricaoPage implements OnInit {
     const c = this.carregado();
     return c ? termosAceitos(c.formulario, c.comprovante) : [];
   });
-  /** O curso só aparece quando o processo oferece mais de um, pelo nome congelado na publicação. */
+  /** O curso escolhido, pelo nome congelado na publicação. */
   protected readonly oferta = computed(() => {
     const c = this.carregado();
-    const ofertas = c?.processo?.ofertas ?? [];
-    if (!c || ofertas.length <= 1) return null;
-    const escolhida = ofertas.find((o) => o.ofertaCursoOrigemId === c.comprovante.ofertaCursoId);
+    const escolhida = c?.processo?.ofertas.find(
+      (o) => o.ofertaCursoOrigemId === c.comprovante.ofertaCursoId,
+    );
     return escolhida ? nomeDaOferta(escolhida) : null;
   });
 
-  ngOnInit(): void {
-    this.carregar();
+  constructor() {
+    // A rota reaproveita a página quando só o número muda: a leitura segue os parâmetros.
+    toObservable(
+      computed(() => ({
+        processoId: this.processoId(),
+        numero: this.numero(),
+        tentativa: this.tentativa(),
+      })),
+    )
+      .pipe(
+        tap(() => this.estado.set('carregando')),
+        switchMap(({ processoId, numero }) => this.ler(processoId, numero)),
+        takeUntilDestroyed(),
+      )
+      .subscribe((leitura) => this.mostrar(leitura));
   }
 
   protected carregar(): void {
-    this.estado.set('carregando');
-    const processoId = this.processoId();
-    const pedido = Number(this.numero());
-    forkJoin({
+    this.tentativa.update((n) => n + 1);
+  }
+
+  private ler(processoId: string, numeroPedido: string | undefined): Observable<Leitura> {
+    const pedido = Number(numeroPedido);
+    return forkJoin({
       minhas: this.servico.listar(),
       formulario: this.servico.formulario(processoId),
       processo: this.servico.certame(processoId),
-    })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ minhas, formulario, processo }) => {
-        if (!minhas.ok) return this.falhar(minhas);
-        if (!formulario.ok) return this.falhar(formulario);
+    }).pipe(
+      switchMap(({ minhas, formulario, processo }): Observable<Leitura> => {
+        if (!minhas.ok) return of({ tipo: 'falha', falha: minhas });
+        if (!formulario.ok) return of({ tipo: 'falha', falha: formulario });
         const inscricao = minhas.data.find((i) => i.processoSeletivoId === processoId);
         const numero = inscricao
           ? numeroDoComprovante(
@@ -139,36 +156,41 @@ export class ComprovanteDaInscricaoPage implements OnInit {
               Number.isInteger(pedido) && pedido > 0 ? pedido : null,
             )
           : null;
-        if (!inscricao || numero === null) return this.naoEncontrado();
-        this.servico
-          .comprovante(processoId, numero)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe((comprovante) => {
-            if (!comprovante.ok) return this.falhar(comprovante);
-            this.carregado.set({
-              numero,
-              comprovante: comprovante.data,
-              formulario: formulario.data,
-              inscricao,
-              processo,
-              vizinhos: vizinhos(inscricao.comprovantes, numero),
-            });
-            this.estado.set('pronto');
-            afterNextRender(() => this.conteudo()?.nativeElement.focus(), {
-              injector: this.injector,
-            });
-          });
-      });
+        if (!inscricao || numero === null) return of({ tipo: 'nao-encontrado' });
+        return this.servico.comprovante(processoId, numero).pipe(
+          map(
+            (comprovante): Leitura =>
+              comprovante.ok
+                ? {
+                    tipo: 'pronto',
+                    carregado: {
+                      numero,
+                      comprovante: comprovante.data,
+                      formulario: formulario.data,
+                      inscricao,
+                      processo,
+                      vizinhos: vizinhos(inscricao.comprovantes, numero),
+                    },
+                  }
+                : { tipo: 'falha', falha: comprovante },
+          ),
+        );
+      }),
+    );
   }
 
-  private naoEncontrado(): void {
-    this.erro.set(NAO_ENCONTRADO);
-    this.estado.set('erro');
-  }
-
-  private falhar(falha: ApiFailure): void {
-    if (falha.status === 404) return this.naoEncontrado();
-    this.erro.set(this.problemas.resolve(falha.problem).title);
+  private mostrar(leitura: Leitura): void {
+    if (leitura.tipo === 'pronto') {
+      this.carregado.set(leitura.carregado);
+      this.estado.set('pronto');
+      afterNextRender(() => this.conteudo()?.nativeElement.focus(), { injector: this.injector });
+      return;
+    }
+    if (leitura.tipo === 'nao-encontrado' || leitura.falha.status === 404) {
+      this.erro.set(NAO_ENCONTRADO);
+    } else {
+      this.erro.set(this.problemas.resolve(leitura.falha.problem).title);
+    }
     this.estado.set('erro');
   }
 }

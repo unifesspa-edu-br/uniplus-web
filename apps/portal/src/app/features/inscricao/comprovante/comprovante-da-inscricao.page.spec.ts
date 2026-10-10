@@ -158,7 +158,7 @@ describe('ComprovanteDaInscricaoPage', () => {
     expect(tela.textContent).toContain('Não encontramos este comprovante');
   });
 
-  it('com mais de uma oferta, mostra o curso escolhido pelo nome congelado na publicação', async () => {
+  it('mostra o curso escolhido pelo nome congelado na publicação', async () => {
     ofertas = [OFERTA_MEDICINA, OFERTA_DIREITO];
     const tela = await abrir();
     ofertas = [OFERTA_MEDICINA];
@@ -166,5 +166,36 @@ describe('ComprovanteDaInscricaoPage', () => {
     expect(tela.textContent).toContain(
       'Direito (Bacharelado) — Campus Marabá — Matutino e Vespertino',
     );
+  });
+
+  it('com uma oferta só, o curso também aparece', async () => {
+    ofertas = [OFERTA_DIREITO];
+    const tela = await abrir();
+    ofertas = [OFERTA_MEDICINA];
+
+    expect(tela.textContent).toContain('Direito (Bacharelado)');
+  });
+
+  it('trocar o número na mesma página mostra o outro comprovante (CA-02)', async () => {
+    TestBed.configureTestingModule({
+      imports: [ComprovanteDaInscricaoPage],
+      providers: [provideRouter([]), { provide: MinhasInscricoesService, useValue: servico }],
+    });
+    const fixture = TestBed.createComponent(ComprovanteDaInscricaoPage);
+    fixture.componentRef.setInput('processoId', PROCESSO);
+    fixture.componentRef.setInput('numero', '2');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    fixture.componentRef.setInput('numero', '1');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(links(fixture.nativeElement as HTMLElement)).toEqual([
+      'Comprovante seguinte',
+      'Voltar às minhas inscrições',
+    ]);
   });
 });
