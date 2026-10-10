@@ -1,30 +1,9 @@
-import { HttpHeaders } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { delay, type Observable, of } from 'rxjs';
-import {
-  type ApiResult,
-  apiFailure,
-  apiOk,
-  type ProblemValidationError,
-} from '@uniplus/shared-core/http';
-import {
-  type ComprovanteInscricaoDto,
-  type FormularioRenderizavelDto,
-  type InscricaoDto,
-  type InscricaoRequest,
-  SituacaoInscricao,
-} from '@uniplus/shared-data/selecao';
-import { maskCpf } from '@uniplus/shared-data/utils';
-
-import {
-  InscricaoDoCandidatoService,
-  type OfertaDaInscricao,
-} from './inscricao-do-candidato.service';
+import type { FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
 
 const DADOS = 'Inscricao:DADOS_PESSOAIS';
 const ENDERECO = 'Inscricao:ENDERECO';
 
-/** Um formulário de inscrição no contrato atual, para a tela andar antes da integração com a API. */
+/** Um formulário de inscrição no contrato atual, para os testes da tela. */
 export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
   comprovacaoDocumental: null,
   finalidade: 'INSCRICAO',
@@ -98,127 +77,6 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
   },
 };
 
-const OFERTAS_MOCK: readonly OfertaDaInscricao[] = [
-  { id: '0199e000-0000-7000-8000-0000000000b1', nome: 'Medicina — Marabá (integral)' },
-];
-
-/**
- * A inscrição em memória, no contrato atual: o rascunho nasce no "iniciar", o salvar confere o ETag, e
- * o envio recusa por campo o que o servidor recusaria primeiro — o nome em branco e o termo sem aceite.
- * Nada vai para o navegador além da memória da página.
- */
-@Injectable()
-export class InscricaoDoCandidatoEmMemoria extends InscricaoDoCandidatoService {
-  private readonly inscricoes = new Map<string, InscricaoDto>();
-
-  iniciar(processoId: string): Observable<ApiResult<InscricaoDto>> {
-    const existente = this.inscricoes.get(processoId);
-    return responder(existente ?? this.gravar(processoId, rascunho(processoId)));
-  }
-
-  obter(processoId: string): Observable<ApiResult<InscricaoDto>> {
-    const existente = this.inscricoes.get(processoId);
-    return existente
-      ? responder(existente)
-      : recusar(404, 'uniplus.selecao.inscricao.nao_encontrada');
-  }
-
-  obterFormulario(): Observable<ApiResult<FormularioRenderizavelDto>> {
-    return responder(FORMULARIO_DE_INSCRICAO_MOCK);
-  }
-
-  obterOfertas(): Observable<ApiResult<readonly OfertaDaInscricao[]>> {
-    return responder(OFERTAS_MOCK);
-  }
-
-  salvar(
-    processoId: string,
-    request: InscricaoRequest,
-    eTag: string,
-  ): Observable<ApiResult<InscricaoDto>> {
-    const atual = this.inscricoes.get(processoId);
-    if (!atual || atual.eTag !== eTag)
-      return recusar(412, 'uniplus.selecao.inscricao.precondicao_falhou');
-    return responder(this.gravar(processoId, comRespostas(atual, request)));
-  }
-
-  submeter(
-    processoId: string,
-    request: InscricaoRequest,
-    eTag: string,
-  ): Observable<ApiResult<ComprovanteInscricaoDto>> {
-    const atual = this.inscricoes.get(processoId);
-    if (!atual || atual.eTag !== eTag)
-      return recusar(412, 'uniplus.selecao.inscricao.precondicao_falhou');
-
-    const errors: ProblemValidationError[] = [
-      ...(textoDe(request.respostas?.['NOME']) === ''
-        ? [erro('NOME', 'uniplus.selecao.inscricao.item_obrigatorio_ausente')]
-        : []),
-      ...((request.aceites ?? []).some((a) => a.codigo === 'VERACIDADE')
-        ? []
-        : [erro('VERACIDADE', 'uniplus.selecao.inscricao.termo_nao_aceito')]),
-    ];
-    if (errors.length > 0) return recusar(422, errors[0].code, errors);
-
-    const enviada = this.gravar(processoId, {
-      ...comRespostas(atual, request),
-      situacao: SituacaoInscricao.submetida,
-      numeroInscricao: atual.numeroInscricao ?? '00000001',
-    });
-    return responder<ComprovanteInscricaoDto>({
-      cpfMascarado: maskCpf(textoDe(enviada.respostas['CPF'])),
-      numeroInscricao: enviada.numeroInscricao ?? '',
-      instante: new Date().toISOString(),
-      hashIntegridade: 'sha256-mock',
-      ofertaCursoId: enviada.ofertaCursoId,
-      respostas: enviada.respostas,
-      derivados: enviada.derivados,
-      grupos: enviada.grupos,
-      aceites: enviada.aceites,
-    });
-  }
-
-  private gravar(processoId: string, inscricao: InscricaoDto): InscricaoDto {
-    const revisao = Number(/:(\d+)"$/.exec(inscricao.eTag)?.[1] ?? 0) + 1;
-    const gravada = { ...inscricao, eTag: `"${inscricao.id}:${revisao}"` };
-    this.inscricoes.set(processoId, gravada);
-    return gravada;
-  }
-}
-
-function rascunho(processoId: string): InscricaoDto {
-  return {
-    id: '0199e000-0000-7000-8000-0000000000c1',
-    processoSeletivoId: processoId,
-    situacao: SituacaoInscricao.rascunho,
-    numeroInscricao: null,
-    versaoFormularioId: '0199e000-0000-7000-8000-0000000000c2',
-    ofertaCursoId: null,
-    respostas: {},
-    derivados: {},
-    grupos: {},
-    aceites: [],
-    eTag: '"0199e000-0000-7000-8000-0000000000c1:0"',
-  };
-}
-
-/** Ausência no corpo preserva a resposta gravada; `null` a apaga — como o servidor faz. */
-function comRespostas(atual: InscricaoDto, request: InscricaoRequest): InscricaoDto {
-  const respostas: Record<string, unknown> = { ...atual.respostas };
-  for (const [fato, valor] of Object.entries(request.respostas ?? {})) {
-    if (valor === null) delete respostas[fato];
-    else respostas[fato] = valor;
-  }
-  return {
-    ...atual,
-    ofertaCursoId: request.ofertaCursoId ?? null,
-    respostas,
-    grupos: request.grupos ?? {},
-    aceites: request.aceites ?? [],
-  };
-}
-
 function secao(
   codigo: string,
   codigoNasRegras: string,
@@ -272,30 +130,4 @@ function item(
     oferta: null,
     formato,
   };
-}
-
-function textoDe(valor: unknown): string {
-  return typeof valor === 'string' ? valor.trim() : '';
-}
-
-function erro(field: string, code: string): ProblemValidationError {
-  return { field, code, message: code };
-}
-
-function responder<T>(data: T): Observable<ApiResult<T>> {
-  return of(apiOk(data, 200, new HttpHeaders())).pipe(delay(200));
-}
-
-function recusar<T>(
-  status: number,
-  code: string,
-  errors?: readonly ProblemValidationError[],
-): Observable<ApiResult<T>> {
-  return of(
-    apiFailure(
-      { type: 'about:blank', title: 'Inscrição recusada', status, code, traceId: '', errors },
-      status,
-      new HttpHeaders(),
-    ),
-  ).pipe(delay(200));
 }
