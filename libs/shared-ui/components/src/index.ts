@@ -27,6 +27,10 @@ export {
 export { DialogComponent } from '../../src/lib/components/dialog/dialog';
 export { DrawerComponent } from '../../src/lib/components/drawer/drawer';
 export { EmptyStateComponent } from '../../src/lib/components/empty-state/empty-state';
+export {
+  ListaDeDocumentosComponent,
+  type DocumentoExigido,
+} from '../../src/lib/components/lista-de-documentos/lista-de-documentos';
 export { FileUploadComponent } from '../../src/lib/components/file-upload/file-upload';
 export {
   FilterBarComponent,
@@ -76,10 +80,7 @@ export * from '../../src/lib/components/endereco-geo/endereco-geo.model';
 export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
 export * from '../../src/lib/components/editor-de-formulario/formulario-editavel';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
-export {
-  FormularioDoCandidatoComponent,
-  type DocumentoDoFormulario,
-} from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
+export { FormularioDoCandidatoComponent } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
 export type {
   CampoRenderizavel,
   ErroDoServidor,

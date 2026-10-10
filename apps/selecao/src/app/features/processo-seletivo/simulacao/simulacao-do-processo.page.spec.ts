@@ -64,9 +64,9 @@ describe('SimulacaoDoProcessoPage', () => {
         comprovacaoDocumental: [
           {
             rotulo: 'Histórico escolar',
-            aplicabilidade: 'TODOS',
+            aplicabilidade: 'GERAL',
             obrigatorio: true,
-            formatos: { extensoes: [], tamanhoMaximoMb: 5 },
+            formatos: { qualquer: false, lista: ['PDF'] },
             modelo: null,
           },
         ],

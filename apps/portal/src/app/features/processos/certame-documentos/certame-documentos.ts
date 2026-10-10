@@ -6,10 +6,11 @@ import {
   type CertamePublicadoDto,
   type ExigenciaDocumentalCertameDto,
 } from '@uniplus/shared-data/selecao';
-import { AlertComponent, EmptyStateComponent, SpinnerComponent, TagComponent } from '@uniplus/shared-ui/components';
-
-/** A exigência condicional vale só para quem está na situação que o edital descreve. */
-const APLICABILIDADE_CONDICIONAL = 'CONDICIONAL';
+import {
+  AlertComponent,
+  ListaDeDocumentosComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 
 /**
  * Accordion "Documentos exigidos" de um item de Editais: o que o edital publicado pede ao
@@ -22,7 +23,7 @@ const APLICABILIDADE_CONDICIONAL = 'CONDICIONAL';
 @Component({
   selector: 'ptl-certame-documentos',
   standalone: true,
-  imports: [AlertComponent, EmptyStateComponent, SpinnerComponent, TagComponent],
+  imports: [AlertComponent, ListaDeDocumentosComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './certame-documentos.css',
   templateUrl: './certame-documentos.html',
@@ -57,16 +58,5 @@ export class CertameDocumentosComponent {
   protected alternar(): void {
     this.pedido.set(true);
     this.aberto.update((aberto) => !aberto);
-  }
-
-  protected aQuemSeAplica(exigencia: ExigenciaDocumentalCertameDto): string {
-    return exigencia.aplicabilidade === APLICABILIDADE_CONDICIONAL
-      ? 'Só para quem está na situação descrita no edital'
-      : 'Todo candidato';
-  }
-
-  protected formatos(exigencia: ExigenciaDocumentalCertameDto): string {
-    const lista = exigencia.formatos.lista ?? [];
-    return exigencia.formatos.qualquer || lista.length === 0 ? 'Qualquer formato' : lista.join(', ');
   }
 }

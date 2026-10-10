@@ -834,12 +834,6 @@ ui-editor-de-condicoes {
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
-.formulario-candidato__documentos {
-  margin: 0;
-  padding-inline-start: var(--space-5);
-  display: grid;
-  gap: var(--space-1);
-}
 
 /*
  * Editor de formulário (ui-editor-de-formulario): etapas empilhadas, cada uma com os campos em

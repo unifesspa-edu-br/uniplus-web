@@ -23,7 +23,7 @@ import {
   SimulacaoDeFormularioComponent,
   SpinnerComponent,
   type ConferenciaComOServidor,
-  type DocumentoDoFormulario,
+  type DocumentoExigido,
   type FormularioDoCandidato,
 } from '@uniplus/shared-ui/components';
 
@@ -97,12 +97,8 @@ export class SimulacaoDoProcessoPage {
   /** O renderizável do contrato é o formulário que o candidato vê: o compilador acusa se divergirem. */
   protected readonly formulario = computed<FormularioDoCandidato | null>(() => this.lido());
   /** A lista do bloco de comprovação documental; o rascunho não a tem, porque ela sai da publicação. */
-  protected readonly documentos = computed<readonly DocumentoDoFormulario[] | null>(
-    () =>
-      this.lido()?.comprovacaoDocumental?.map((e) => ({
-        nome: e.rotulo,
-        descricao: e.obrigatorio ? 'Obrigatório' : 'Opcional',
-      })) ?? null,
+  protected readonly documentos = computed<readonly DocumentoExigido[] | null>(
+    () => this.lido()?.comprovacaoDocumental ?? null,
   );
 
   protected readonly conferir: ConferenciaComOServidor = (simulacao) =>

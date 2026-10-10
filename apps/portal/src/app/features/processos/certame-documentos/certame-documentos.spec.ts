@@ -68,6 +68,17 @@ describe('CertameDocumentosComponent', () => {
     controller.expectOne(ROTA_CERTAME).flush({ documentosExigidos: [] });
   });
 
+  /** A lista vazia não quer dizer que o edital não pede documento: ele pode pedir fora desta página. */
+  it('sem documento listado, remete ao edital', async () => {
+    await abrir();
+    controller.expectOne(ROTA_CERTAME).flush({ documentosExigidos: [] });
+    await propagar();
+
+    expect(host.querySelector('[role="region"]')?.textContent?.trim()).toBe(
+      'Esta página não lista documentos para este processo. Consulte o edital.',
+    );
+  });
+
   /**
    * O link é navegação simples ao acervo público — `<a href>` com o `urlDownload`, sem `fetch` —,
    * e só aparece na exigência que oferece modelo.

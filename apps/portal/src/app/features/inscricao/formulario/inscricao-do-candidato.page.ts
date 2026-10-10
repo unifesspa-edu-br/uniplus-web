@@ -88,6 +88,15 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly erroAoCarregar = signal<string | null>(null);
   protected readonly formulario = signal<FormularioRenderizavelDto | null>(null);
   protected readonly ofertas = signal<readonly OfertaDaInscricao[]>([]);
+  /**
+   * O que a fase da inscrição pede para enviar. A lista só é nula no formulário sem o bloco de
+   * comprovação documental, que então não aparece.
+   */
+  protected readonly documentos = computed(() => this.formulario()?.comprovacaoDocumental ?? []);
+  /** Sem a fase publicada de cada exigência, o aviso não diz em qual etapa o edital pede os documentos. */
+  protected readonly semDocumentos =
+    'Você não envia documentos nesta etapa. Os documentos que comprovam o que você declarou podem ser ' +
+    'pedidos em outras etapas do processo seletivo, conforme o edital.';
   /** A inscrição como o servidor a tem: a última lida, salva ou enviada. */
   private readonly inscricao = signal<InscricaoDto | null>(null);
   /** A partida do formulário: as respostas e os aceites da inscrição como chegaram ao abrir a página. */
