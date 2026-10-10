@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   acaoDeAtivacao,
+  CLASSIFICACOES_DE_PROTECAO,
   classificacoesDoDominio,
   fatosDeMembroAgregaveis,
   fatosCitaveisPelaRegra,
@@ -9,6 +10,7 @@ import {
   podeTerRegras,
   podeTerValores,
   resumoDoAgregado,
+  rotuloDe,
 } from './fato-candidato.regras';
 
 const fato = (binding: string, extra: Partial<{ sistema: boolean; dominio: string; fonteValores: string | null }> = {}) => ({
@@ -46,9 +48,18 @@ describe('o que a API recusa e a tela não oferece', () => {
     expect(pessoal).not.toContain('PREVENCAO_A_FRAUDE');
   });
 
-  it('texto, data e endereço são no mínimo dado pessoal', () => {
-    expect(classificacoesDoDominio('TEXTO').map((c) => c.valor)).toEqual(['PESSOAL', 'SENSIVEL']);
-    expect(classificacoesDoDominio('BOOLEANO')).toHaveLength(4);
+  it('texto, data e endereço são no mínimo dado pessoal; só o texto pode ser identificador', () => {
+    const valores = (dominio: string) => classificacoesDoDominio(dominio).map((c) => c.valor);
+    expect(valores('TEXTO')).toEqual(['PESSOAL', 'IDENTIFICADOR', 'SENSIVEL']);
+    expect(valores('DATA')).toEqual(['PESSOAL', 'SENSIVEL']);
+    expect(valores('BOOLEANO')).toEqual(['PUBLICO', 'INTERNO', 'PESSOAL', 'SENSIVEL']);
+  });
+
+  it('o identificador tem rótulo próprio e segue as hipóteses do art. 7º, como o dado pessoal', () => {
+    expect(rotuloDe(CLASSIFICACOES_DE_PROTECAO, 'IDENTIFICADOR')).toBe('Identificador');
+    const identificador = hipotesesDaClassificacao('IDENTIFICADOR').map((h) => h.valor);
+    expect(identificador).toContain('INTERESSE_LEGITIMO');
+    expect(identificador).not.toContain('PREVENCAO_A_FRAUDE');
   });
 
   it('a regra padrão não cita fato desativado, fato de membro nem o próprio derivado', () => {

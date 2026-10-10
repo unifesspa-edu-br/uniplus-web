@@ -64,6 +64,7 @@ export const CLASSIFICACOES_DE_PROTECAO: readonly OpcaoDeVocabulario[] = [
   { valor: 'PUBLICO', rotulo: 'Público' },
   { valor: 'INTERNO', rotulo: 'Interno' },
   { valor: 'PESSOAL', rotulo: 'Pessoal' },
+  { valor: 'IDENTIFICADOR', rotulo: 'Identificador' },
   { valor: 'SENSIVEL', rotulo: 'Pessoal sensível' },
 ];
 
@@ -100,12 +101,16 @@ export function hipotesesDaClassificacao(classificacao: string): readonly OpcaoD
 
 /**
  * As classificações que cabem no domínio: texto, data e endereço identificam ou localizam a pessoa
- * e nunca são menos que dado pessoal.
+ * e nunca são menos que dado pessoal. Identificador é número de documento, que é sempre texto.
  */
 export function classificacoesDoDominio(dominio: string): readonly OpcaoDeVocabulario[] {
-  return ['TEXTO', 'DATA', 'ENDERECO'].includes(dominio)
-    ? CLASSIFICACOES_DE_PROTECAO.filter((c) => ['PESSOAL', 'SENSIVEL'].includes(c.valor))
-    : CLASSIFICACOES_DE_PROTECAO;
+  if (dominio === 'TEXTO') return somente(['PESSOAL', 'IDENTIFICADOR', 'SENSIVEL']);
+  if (dominio === 'DATA' || dominio === 'ENDERECO') return somente(['PESSOAL', 'SENSIVEL']);
+  return CLASSIFICACOES_DE_PROTECAO.filter((c) => c.valor !== 'IDENTIFICADOR');
+}
+
+function somente(valores: readonly string[]): readonly OpcaoDeVocabulario[] {
+  return CLASSIFICACOES_DE_PROTECAO.filter((c) => valores.includes(c.valor));
 }
 
 /** O fato declarado categórico escolhe a fonte dos valores; os demais domínios não têm fonte. */
