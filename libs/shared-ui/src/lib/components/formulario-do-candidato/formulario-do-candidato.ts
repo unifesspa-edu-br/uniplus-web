@@ -255,7 +255,7 @@ export class FormularioDoCandidatoComponent {
   /** Os termos já aceitos, pelo código, como os de uma inscrição retomada; recomeçam com a partida. */
   readonly termosAceitosIniciais = input<readonly string[]>([]);
   /** As respostas que o candidato não altera, pelo fato. Entram na simulação e o campo só as mostra. */
-  readonly respostasFixas = input<Readonly<Record<string, RespostaFixa>>>({});
+  readonly respostasFixas = input<Readonly<Partial<Record<string, RespostaFixa>>>>({});
   /**
    * As recusas do servidor. Cada uma aparece ao lado do que recusou e some quando o candidato o muda;
    * uma lista nova leva à seção da primeira e põe o foco nela.
@@ -324,7 +324,7 @@ export class FormularioDoCandidatoComponent {
   protected readonly respostasComAsFixas = computed<Readonly<Record<string, ValorJson>>>(() => ({
     ...this.respostas(),
     ...Object.fromEntries(
-      Object.entries(this.respostasFixas()).map(([fato, f]) => [fato, f.valor]),
+      Object.entries(this.respostasFixas()).flatMap(([fato, f]) => (f ? [[fato, f.valor]] : [])),
     ),
   }));
 
