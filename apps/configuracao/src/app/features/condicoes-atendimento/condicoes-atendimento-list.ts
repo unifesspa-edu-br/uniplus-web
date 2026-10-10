@@ -17,10 +17,8 @@ import {
   Cursor,
   ProblemI18nService,
   ProblemDetails,
-  idempotencyKey,
   ApiResult,
   ProblemValidationError,
-  withIdempotencyKey,
   useApiResource,
   cursorToString,
   withVendorMime,
@@ -29,6 +27,7 @@ import {
   CursorPagina,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
+import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import {NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AtualizarCondicaoAtendimentoCommand,

@@ -8,7 +8,7 @@ import {
 } from '@angular/common/http';
 import { catchError, map, Observable, of } from 'rxjs';
 import { ApiResult, apiFailure, apiOk } from './api-result';
-import { IDEMPOTENCY_KEY_TOKEN } from './idempotency';
+import { IDEMPOTENCY_KEY_TOKEN } from './idempotency-token';
 import {
   CLIENT_PROBLEM_CODES,
   ProblemDetails,

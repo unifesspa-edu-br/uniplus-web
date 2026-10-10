@@ -19,13 +19,8 @@ import {
   UNIDADES_FEDERATIVAS,
 } from '@uniplus/shared-data/configuracao';
 import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
-import {
-  ApiResult,
-  idempotencyKey,
-  ProblemDetails,
-  STATUS_HTTP,
-  withIdempotencyKey,
-} from '@uniplus/shared-core/http';
+import { ApiResult, ProblemDetails, STATUS_HTTP } from '@uniplus/shared-core/http';
+import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CIDADE_REFERENCIA_CODE_PREFIX,

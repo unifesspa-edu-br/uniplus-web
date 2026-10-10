@@ -5,11 +5,10 @@ import {
   ApiResult,
   ProblemDetails,
   SignedUploadClient,
-  idempotencyKey,
   isApiOk,
-  withIdempotencyKey,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
+import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import {
   AplicacaoDeModeloDto,
   ConfiguracaoDistribuicaoVagasInput,

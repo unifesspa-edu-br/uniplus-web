@@ -16,10 +16,9 @@ import {
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
-  idempotencyKey,
-  withIdempotencyKey,
   CursorPagina,
 } from '@uniplus/shared-core/http';
+import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CalendarioDiasUteisApi,

@@ -19,17 +19,19 @@ import {
   ProblemI18nService,
   ProblemValidationError,
   cursorToString,
-  deveRotacionarIdempotencyKey,
   extractNextCursor,
   extractPrevCursor,
-  IDEMPOTENCY_PROBLEM_CODES,
-  idempotencyKey,
   useApiResource,
-  withIdempotencyKey,
   withVendorMime,
   CursorPagina,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
+import {
+  deveRotacionarIdempotencyKey,
+  IDEMPOTENCY_PROBLEM_CODES,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AtualizarReferenciaReservaDemograficaCommand,

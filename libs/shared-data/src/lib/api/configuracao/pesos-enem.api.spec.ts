@@ -8,8 +8,8 @@ import {
   apiResultInterceptor,
   buildVendorMimeAccept,
   isApiOk,
-  withIdempotencyKey,
 } from '@uniplus/shared-core/http';
+import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import {
   AreaPesoAreaEnemDto,
   AtualizarPesoAreaEnemCommand,

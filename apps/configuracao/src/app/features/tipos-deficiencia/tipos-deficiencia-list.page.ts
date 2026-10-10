@@ -17,19 +17,21 @@ import {
   Cursor,
   CursorPagina,
   cursorToString,
-  deveRotacionarIdempotencyKey,
   extractNextCursor,
   extractPrevCursor,
-  IDEMPOTENCY_PROBLEM_CODES,
-  idempotencyKey,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
   STATUS_HTTP,
   useApiResource,
-  withIdempotencyKey,
   withVendorMime,
 } from '@uniplus/shared-core/http';
+import {
+  deveRotacionarIdempotencyKey,
+  IDEMPOTENCY_PROBLEM_CODES,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import {NotificationService } from "@uniplus/shared-core/notifications";
 import {
   CODIGO_CADASTRO_FORMATO,

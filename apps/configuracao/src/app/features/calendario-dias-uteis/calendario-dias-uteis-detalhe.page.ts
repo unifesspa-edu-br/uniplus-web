@@ -11,15 +11,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import {
   ApiResult,
-  deveRotacionarIdempotencyKey,
-  idempotencyKey,
   ProblemDetails,
   ProblemI18nService,
   STATUS_HTTP,
   useApiResource,
-  withIdempotencyKey,
   withVendorMime,
 } from '@uniplus/shared-core/http';
+import {
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { formatIsoDateBr, formatIsoDateLong } from '@uniplus/shared-data/utils';
 import {
   ABRANGENCIAS,

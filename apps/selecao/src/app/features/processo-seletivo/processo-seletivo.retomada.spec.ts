@@ -1,13 +1,8 @@
 import { HttpContext, HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, provideRouter } from '@angular/router';
-import {
-  IDEMPOTENCY_KEY_TOKEN,
-  apiOk,
-  errorResult,
-  mockProblemDetails,
-  okResult,
-} from '@uniplus/shared-core/http';
+import { apiOk, errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
+import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import {
   ModalidadeDto,
   BaseLegalBonusRegionalApi,
