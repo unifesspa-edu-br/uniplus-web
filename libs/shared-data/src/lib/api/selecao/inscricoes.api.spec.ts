@@ -60,4 +60,20 @@ describe('InscricoesApi', () => {
     req.flush({});
     await promessa;
   });
+  it('lê o comprovante pela ordem da submissão e as inscrições do dono, com o media type de cada um', async () => {
+    const comprovante = firstValueFrom(api.obterComprovante(PROCESSO, 2));
+    const minhas = firstValueFrom(api.minhas());
+
+    const reqComprovante = controller.expectOne(`${ROTA}/comprovantes/2`);
+    expect(reqComprovante.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('comprovante-inscricao', 1),
+    );
+    const reqMinhas = controller.expectOne(`${BASE}/api/selecao/minhas-inscricoes`);
+    expect(reqMinhas.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('minhas-inscricoes', 1),
+    );
+    reqComprovante.flush({});
+    reqMinhas.flush([]);
+    await Promise.all([comprovante, minhas]);
+  });
 });

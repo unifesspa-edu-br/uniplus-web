@@ -7,6 +7,7 @@ import type {
   ComprovanteInscricaoDto,
   InscricaoDto,
   InscricaoRequest,
+  MinhaInscricaoDto,
 } from './inscricoes.contrato';
 import type { FormularioRenderizavelDto } from './processos-seletivos.api';
 import { SELECAO_BASE_PATH } from './tokens';
@@ -74,6 +75,28 @@ export class InscricoesApi {
           context.get(IDEMPOTENCY_KEY_TOKEN),
         ),
       },
+    );
+  }
+
+  /**
+   * GET `…/inscricao/comprovantes/{numero}` — o comprovante da n-ésima submissão, a contar de 1. Os
+   * anteriores continuam acessíveis e não mudam.
+   */
+  obterComprovante(
+    processoSeletivoId: string,
+    numero: number,
+  ): Observable<ApiResult<ComprovanteInscricaoDto>> {
+    return this.http.get<ApiResult<ComprovanteInscricaoDto>>(
+      `${this.url(processoSeletivoId)}/comprovantes/${numero}`,
+      { context: withVendorMime('comprovante-inscricao', 1) },
+    );
+  }
+
+  /** GET `/api/selecao/minhas-inscricoes` — as inscrições do dono do token, em qualquer processo. */
+  minhas(): Observable<ApiResult<readonly MinhaInscricaoDto[]>> {
+    return this.http.get<ApiResult<readonly MinhaInscricaoDto[]>>(
+      `${this.basePath}/api/selecao/minhas-inscricoes`,
+      { context: withVendorMime('minhas-inscricoes', 1) },
     );
   }
 
