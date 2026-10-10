@@ -7,10 +7,10 @@ import type {
   InscricaoRequest,
 } from '@uniplus/shared-data/selecao';
 
-/** Uma oferta de curso que o candidato escolhe na inscrição; o nome falta quando o processo não o publica. */
+/** Uma oferta de curso que o candidato escolhe na inscrição, com o nome congelado na publicação. */
 export interface OfertaDaInscricao {
   readonly id: string;
-  readonly nome: string | null;
+  readonly nome: string;
 }
 
 /**
