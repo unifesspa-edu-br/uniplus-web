@@ -875,4 +875,132 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(orientacao?.textContent).toContain('heteroidentificação');
     expect(opcao(tela, 'Branca').hasAttribute('aria-describedby')).toBe(false);
   });
+
+  it('a última seção conclui por padrão; quem hospeda a ação final tira o botão dela', () => {
+    let tela = montar(DUAS_SECOES);
+    clicar(botao(tela, 'Próxima seção'));
+    expect(botao(tela, 'Concluir a seção')).toBeDefined();
+
+    tela = montar(DUAS_SECOES, { concluirNaUltimaSecao: false });
+    expect(botao(tela, 'Próxima seção')).toBeDefined();
+    clicar(botao(tela, 'Próxima seção'));
+    expect(botao(tela, 'Concluir a seção')).toBeUndefined();
+    expect(botao(tela, 'Seção anterior')).toBeDefined();
+  });
+
+  it('concluir todas leva à seção da primeira pendência, põe o foco nela e anuncia quantas são', () => {
+    const tela = montar(DUAS_SECOES);
+    digitar(tela.querySelector('input') as HTMLInputElement, 'fernanda_laura_drumond@lhp.com.br');
+
+    expect(fixture.componentInstance.concluirTodas()).toBe(1);
+    fixture.detectChanges();
+
+    const input = tela.querySelector('input') as HTMLInputElement;
+    expect(tela.querySelector('h3')?.textContent).toContain('Nome');
+    expect(document.activeElement).toBe(input);
+    expect(tela.querySelector('[data-campo="NOME_SOCIAL"] .field__error')?.textContent).toContain(
+      'Responda este campo.',
+    );
+    expect(tela.querySelector('[aria-live="polite"]')?.textContent).toBe(
+      'Há 1 item a corrigir. O primeiro está na seção Nome.',
+    );
+  });
+
+  it('concluir todas sem pendência dá as seções como concluídas, e o opcional em branco não pende', () => {
+    const tela = montar({
+      ...DUAS_SECOES,
+      regras: {
+        etapas: [
+          { codigo: 'Inscricao:CONTATO', itens: [regra('EMAIL')] },
+          { codigo: 'Inscricao:NOME', itens: [regra('NOME_SOCIAL', { obrigatoriedade: 'NUNCA' })] },
+        ],
+      },
+    });
+    digitar(tela.querySelector('input') as HTMLInputElement, 'fernanda_laura_drumond@lhp.com.br');
+
+    expect(fixture.componentInstance.concluirTodas()).toBe(0);
+    fixture.detectChanges();
+
+    expect(simulacoes.at(-1)?.etapasConcluidas).toEqual(['Inscricao:CONTATO', 'Inscricao:NOME']);
+    expect(tela.querySelector('h3')?.textContent).toContain('Contato');
+  });
+
+  it('concluir todas conta o termo obrigatório sem aceite e leva o foco a ele', () => {
+    const tela = montar(COM_TERMO);
+
+    expect(fixture.componentInstance.concluirTodas()).toBe(1);
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(
+      tela.querySelector('[data-campo="VERACIDADE"] input[type="checkbox"]'),
+    );
+    expect(tela.textContent).toContain('Aceite o termo para concluir.');
+  });
+
+  it('concluir todas conta o grupo obrigatório sem integrante', () => {
+    montar(FAMILIA);
+
+    expect(fixture.componentInstance.concluirTodas()).toBe(1);
+  });
+
+  it('concluir todas leva o foco ao subitem pendente da ocorrência em que ele está', async () => {
+    const tela = montar(FAMILIA, {
+      inicial: {
+        grupos: {
+          FAMILIA: [
+            { id: 'membro-1', respostas: { RENDA: 1200 } },
+            { id: 'membro-2', respostas: {} },
+          ],
+        },
+      },
+    });
+
+    expect(fixture.componentInstance.concluirTodas()).toBe(1);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(
+      tela.querySelector('[data-campo="FAMILIA.membro-2.RENDA"] input'),
+    );
+  });
+
+  it('concluir todas leva o foco ao obrigatório que só aparece com o opcional em branco', async () => {
+    const tela = montar({
+      ...DUAS_SECOES,
+      fatosColetados: [
+        campo('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
+        campo('JUSTIFICATIVA', 'Justificativa', 'TEXTO', { ordem: 1 }),
+      ],
+      regras: {
+        etapas: [
+          {
+            codigo: 'Inscricao:CONTATO',
+            itens: [
+              regra('TEM_BOLSA', { obrigatoriedade: 'NUNCA' }),
+              regra('JUSTIFICATIVA', {
+                exibicao: [[{ fato: 'BOLSISTA', operador: 'IGUAL', valor: false }]],
+              }),
+            ],
+          },
+          { codigo: 'Inscricao:NOME', itens: [] },
+        ],
+        derivacoes: [
+          {
+            fatoCodigo: 'BOLSISTA',
+            booleano: true,
+            regras: [
+              { quando: [[{ fato: 'TEM_BOLSA', operador: 'IGUAL', valor: 'SIM' }]] },
+            ],
+          },
+        ],
+      },
+    });
+    expect(tela.textContent).not.toContain('Justificativa');
+
+    expect(fixture.componentInstance.concluirTodas()).toBe(1);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(tela.querySelector('[data-campo="JUSTIFICATIVA"] input'));
+  });
 });

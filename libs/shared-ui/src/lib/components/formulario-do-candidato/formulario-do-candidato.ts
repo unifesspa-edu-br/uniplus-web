@@ -34,6 +34,8 @@ import {
   type RespostaFixa,
   type TermoNoPasso,
   passosDo,
+  pendenciasDo,
+  termoSemAceite,
 } from './formulario-do-candidato.model';
 import { GrupoDoCandidatoComponent } from './grupo-do-candidato';
 import { interpretarFormulario } from './interpretador/interpretador';
@@ -224,9 +226,15 @@ import type {
               >
                 Seção anterior
               </button>
-              <button type="button" class="btn btn--primary" (click)="avancar()">
-                {{ indice() === passos().length - 1 ? 'Concluir a seção' : 'Próxima seção' }}
-              </button>
+              @if (indice() < passos().length - 1) {
+                <button type="button" class="btn btn--primary" (click)="avancar()">
+                  Próxima seção
+                </button>
+              } @else if (concluirNaUltimaSecao()) {
+                <button type="button" class="btn btn--primary" (click)="avancar()">
+                  Concluir a seção
+                </button>
+              }
             </div>
           }
         }
@@ -256,6 +264,11 @@ export class FormularioDoCandidatoComponent {
    * uma lista nova leva à seção da primeira e põe o foco nela.
    */
   readonly errosDoServidor = input<readonly ErroDoServidor[]>([]);
+  /**
+   * Se a última seção tem o botão que a conclui. Quem hospeda uma ação final própria, como o envio da
+   * inscrição, o desliga e chama `concluirTodas()` nela.
+   */
+  readonly concluirNaUltimaSecao = input(true);
 
   /** A simulação a cada mudança: as respostas, as ocorrências, as seções concluídas e os pressupostos. */
   readonly simulacaoChange = output<SimulacaoDoFormulario>();
@@ -404,15 +417,44 @@ export class FormularioDoCandidatoComponent {
   private irAoErro(erro: ErroDoServidor): void {
     const indice = this.passos().findIndex((passo) => contemOCampo(passo, erro));
     if (indice < 0) return;
-    this.irPara(indice, () => {
-      const partes = Array.from(
-        this.elemento.nativeElement.querySelectorAll<HTMLElement>('[data-campo]'),
-      );
-      const alvo =
-        partes.find((p) => p.dataset['campo'] === erro.campo) ??
-        partes.find((p) => p.dataset['campo'] === erro.campo.split('.')[0]);
-      return alvo?.querySelector<HTMLElement>('input, select, textarea, button') ?? null;
-    });
+    this.irPara(indice, () => this.controleDe(erro.campo));
+  }
+
+  /** O primeiro controle do campo, grupo ou termo; o campo de uma ocorrência cai no grupo dela. */
+  private controleDe(campo: string): HTMLElement | null {
+    const partes = Array.from(
+      this.elemento.nativeElement.querySelectorAll<HTMLElement>('[data-campo]'),
+    );
+    const alvo =
+      partes.find((p) => p.dataset['campo'] === campo) ??
+      partes.find((p) => p.dataset['campo'] === campo.split('.')[0]);
+    return alvo?.querySelector<HTMLElement>('input, select, textarea, button') ?? null;
+  }
+
+  /**
+   * Dá todas as seções como concluídas, como o envio faz, e devolve quantas pendências ficam. Concluir
+   * pode mostrar outra seção — o opcional em branco passa a não informado —, e ela também é concluída.
+   * Com pendência, leva à seção da primeira, põe o foco nela e anuncia quantas são.
+   */
+  concluirTodas(): number {
+    let mudou = false;
+    while (this.concluir(this.passos())) mudou = true;
+
+    const pendentes = this.passos().map((passo) => pendenciasDo(passo, this.aceitos()));
+    const total = pendentes.reduce((soma, codigos) => soma + codigos.length, 0);
+    const indice = pendentes.findIndex((codigos) => codigos.length > 0);
+    if (indice < 0) return 0;
+
+    const [primeira] = pendentes[indice];
+    // O que concluir revelou só existe na tela depois da renderização, mesmo na seção atual.
+    this.irPara(indice, () => this.controleDe(primeira), mudou);
+    // A troca de seção recalcula o anúncio dos campos; o da pendência é escrito depois dela.
+    this.anuncio();
+    this.anuncio.set(
+      `${total === 1 ? 'Há 1 item a corrigir' : `Há ${total} itens a corrigir`}. ` +
+        `O primeiro está na seção ${this.passos()[indice].titulo}.`,
+    );
+    return total;
   }
 
   protected concluido(passo: PassoDoFormulario): boolean {
@@ -423,11 +465,7 @@ export class FormularioDoCandidatoComponent {
 
   /** O termo obrigatório ainda não aceito, depois de a seção ser dada como concluída. */
   protected termoPendente(passo: PassoDoFormulario, termo: TermoNoPasso): boolean {
-    return (
-      this.concluido(passo) &&
-      termo.avaliado.obrigatorio === 'VERDADEIRO' &&
-      !this.aceitos().has(termo.termo.codigo)
-    );
+    return this.concluido(passo) && termoSemAceite(termo, this.aceitos());
   }
 
   protected alternarAceite(codigo: string, evento: Event): void {
@@ -472,29 +510,44 @@ export class FormularioDoCandidatoComponent {
   /** Dá a seção atual como concluída e segue para a próxima; na última, só conclui. */
   protected avancar(): void {
     const passo = this.passoAtual();
-    if (passo) {
-      // A seção já concluída não muda a simulação: o conjunto só é trocado quando ganha etapa nova.
-      if (passo.etapasNasRegras.some((e) => !this.concluidas().has(e))) {
-        this.concluidas.update((atual) => new Set([...atual, ...passo.etapasNasRegras]));
-      }
-      if (passo.etapasNasRegras.length === 0 && !this.blocosConcluidos().has(passo.chave)) {
-        this.blocosConcluidos.update((atual) => new Set([...atual, passo.chave]));
-      }
-    }
+    if (passo) this.concluir([passo]);
     if (this.indice() < this.passos().length - 1) this.irPara(this.indice() + 1);
+  }
+
+  /**
+   * Dá os passos como concluídos — as etapas das regras e, no bloco do sistema, a chave — e diz se algo
+   * mudou. O passo já concluído não muda a simulação: o conjunto só é trocado quando ganha algo novo.
+   */
+  private concluir(passos: readonly PassoDoFormulario[]): boolean {
+    const etapasNovas = passos
+      .flatMap((p) => p.etapasNasRegras)
+      .filter((e) => !this.concluidas().has(e));
+    const blocosNovos = passos
+      .filter((p) => p.etapasNasRegras.length === 0 && !this.blocosConcluidos().has(p.chave))
+      .map((p) => p.chave);
+    if (etapasNovas.length > 0)
+      this.concluidas.update((atual) => new Set([...atual, ...etapasNovas]));
+    if (blocosNovos.length > 0)
+      this.blocosConcluidos.update((atual) => new Set([...atual, ...blocosNovos]));
+    return etapasNovas.length > 0 || blocosNovos.length > 0;
   }
 
   /**
    * Troca de seção e leva o foco ao título dela, para quem navega por teclado ou leitor de tela, ou ao
    * elemento que `foco` indicar depois de a seção aparecer. Na seção em que o candidato já está não há o
-   * que esperar: o foco vai na hora, sem ficar pendente para uma renderização qualquer depois.
+   * que esperar: o foco vai na hora, sem ficar pendente para uma renderização qualquer depois — salvo
+   * quando `depoisDeRenderizar` diz que o alvo ainda vai aparecer.
    */
-  protected irPara(indice: number, foco?: () => HTMLElement | null): void {
+  protected irPara(
+    indice: number,
+    foco?: () => HTMLElement | null,
+    depoisDeRenderizar = false,
+  ): void {
     const destino = Math.max(0, Math.min(indice, this.passos().length - 1));
     const focar = (): void => (foco?.() ?? this.titulo()?.nativeElement)?.focus();
     const mesmaSecao = destino === this.indice();
     this.escolhida.set({ chave: this.passos()[destino]?.chave ?? null, indice: destino });
-    if (mesmaSecao) focar();
+    if (mesmaSecao && !depoisDeRenderizar) focar();
     else afterNextRender(focar, { injector: this.injector });
   }
 
