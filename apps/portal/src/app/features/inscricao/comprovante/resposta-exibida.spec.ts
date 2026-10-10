@@ -34,6 +34,17 @@ describe('respostaExibida', () => {
   });
 });
 
+describe('respostaExibida de município', () => {
+  it('mostra o nome que o Geo devolveu; sem ele, o código com o rótulo', () => {
+    const campo = { tipoRenderizacao: 'MUNICIPIO' };
+
+    expect(respostaExibida(campo, '5002704', new Map([['5002704', 'Campo Grande — MS']]))).toBe(
+      'Campo Grande — MS',
+    );
+    expect(respostaExibida(campo, '5002704', new Map())).toBe('Código IBGE 5002704');
+  });
+});
+
 describe('nomePreferido', () => {
   it('é o nome social quando o candidato o pediu e o preencheu; senão, o civil (CA-01)', () => {
     const civil = 'Fernanda Laura Nicole Drumond';

@@ -20,8 +20,18 @@ interface EnderecoRespondido {
   readonly cidade?: CidadeDoEndereco | null;
 }
 
-/** A resposta como texto, pelo tipo do campo; a opção aparece pelo nome quando o formulário o traz. */
-export function respostaExibida(campo: CampoExibido, valor: unknown): string {
+/** Os municípios pelo código IBGE, como "Nome — UF". */
+export type NomesDosMunicipios = ReadonlyMap<string, string>;
+
+/**
+ * A resposta como texto, pelo tipo do campo; a opção aparece pelo nome quando o formulário o traz, e o
+ * município quando o Geo o devolveu.
+ */
+export function respostaExibida(
+  campo: CampoExibido,
+  valor: unknown,
+  municipios: NomesDosMunicipios = new Map(),
+): string {
   switch (campo.tipoRenderizacao) {
     case 'BOOLEANO':
       return valor === true ? 'Sim' : 'Não';
@@ -35,7 +45,7 @@ export function respostaExibida(campo: CampoExibido, valor: unknown): string {
         .map((c) => opcao(campo, String(c)))
         .join(', ');
     case 'MUNICIPIO':
-      return `Código IBGE ${String(valor)}`;
+      return municipios.get(String(valor)) ?? `Código IBGE ${String(valor)}`;
     case 'ENDERECO':
       return endereco(valor as EnderecoRespondido);
     default:

@@ -41,6 +41,13 @@ const FORMULARIO = {
       tipoRenderizacao: 'TEXTO',
       etapaCodigo: 'DADOS_BASICOS',
     },
+    {
+      fatoCodigo: 'NATURALIDADE_MUNICIPIO',
+      ordem: 3,
+      rotulo: 'Município de nascimento',
+      tipoRenderizacao: 'MUNICIPIO',
+      etapaCodigo: 'DADOS_BASICOS',
+    },
   ],
   grupos: [],
   termos: [{ codigo: 'VERACIDADE', nome: 'Declaração de veracidade' }],
@@ -59,6 +66,7 @@ function comprovante(numeroInscricao: string): ComprovanteInscricaoDto {
       NOME: 'Fernanda Laura Nicole Drumond',
       DESEJA_NOME_SOCIAL: true,
       NOME_SOCIAL: 'Ariel Drumond',
+      NATURALIDADE_MUNICIPIO: '5002704',
     },
     derivados: {},
     grupos: {},
@@ -107,6 +115,8 @@ const servico = {
   comprovante: (_: string, numero: number) =>
     of(numero <= 2 ? apiOk(comprovante('00000042'), 200, SEM_CABECALHOS) : NAO_ENCONTRADO),
   formulario: () => of(apiOk(FORMULARIO, 200, SEM_CABECALHOS)),
+  nomesDosMunicipios: (codigos: readonly string[]) =>
+    of(new Map(codigos.map((c) => [c, c === '5002704' ? 'Campo Grande — MS' : c]))),
   certame: () =>
     of({
       nome: 'Medicina 2027',
@@ -140,6 +150,13 @@ describe('ComprovanteDaInscricaoPage', () => {
     expect(tela.textContent).toContain('***.598.363-**');
     expect(tela.textContent).toContain('Nome completo');
     expect(tela.textContent).toContain('Declaração de veracidade');
+  });
+
+  it('o município de nascimento aparece pelo nome e pela UF, não pelo código (CA-01)', async () => {
+    const tela = await abrir();
+
+    expect(tela.textContent).toContain('Campo Grande — MS');
+    expect(tela.textContent).not.toContain('5002704');
   });
 
   it('sem número, abre o da última submissão; o anterior leva ao seguinte (CA-02)', async () => {

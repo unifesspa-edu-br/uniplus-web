@@ -12,6 +12,8 @@ export type CepResolvidoDto = components['schemas']['CepResolvidoDto'];
 export type LogradouroAlternativoDto = components['schemas']['LogradouroAlternativoDto'];
 /** Cidade no formato resumido do seletor (`GET /api/cidades`). */
 export type CidadeResumoDto = components['schemas']['CidadeResumoDto'];
+/** Cidade com o detalhe do IBGE (`GET /api/cidades/{codigoIbge}`). */
+export type CidadeDetalheDto = components['schemas']['CidadeDetalheDto'];
 
 /** Filtro do seletor de cidade do fluxo "sem CEP" (`GET /api/cidades`). */
 export interface CidadesFiltro {
@@ -75,5 +77,13 @@ export class GeoApi {
       params,
       context: withVendorMime('cidade', 1),
     });
+  }
+
+  /** GET `/api/cidades/{codigoIbge}` — a cidade pelo código IBGE; 404 quando o código não existe. */
+  obterCidade(codigoIbge: string): Observable<ApiResult<CidadeDetalheDto>> {
+    return this.http.get<ApiResult<CidadeDetalheDto>>(
+      `${this.basePath}/api/cidades/${encodeURIComponent(codigoIbge)}`,
+      { context: withVendorMime('cidade', 1) },
+    );
   }
 }

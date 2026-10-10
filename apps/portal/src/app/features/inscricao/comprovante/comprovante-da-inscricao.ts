@@ -4,7 +4,7 @@ import type {
   MinhaInscricaoDto,
 } from '@uniplus/shared-data/selecao';
 
-import { type CampoExibido, respostaExibida } from './resposta-exibida';
+import { type CampoExibido, type NomesDosMunicipios, respostaExibida } from './resposta-exibida';
 
 export interface RespostaDoComprovante {
   readonly rotulo: string;
@@ -31,19 +31,57 @@ interface CampoDoFormulario extends CampoExibido {
 const pelaOrdem = <T extends { readonly ordem: number | string }>(itens: readonly T[]): T[] =>
   [...itens].sort((a, b) => Number(a.ordem) - Number(b.ordem));
 
+const respondido = (respostas: Readonly<Record<string, unknown>>, fato: string): boolean =>
+  respostas[fato] !== undefined && respostas[fato] !== null;
+
 function respondidos(
   campos: readonly CampoDoFormulario[],
   respostas: Readonly<Record<string, unknown>>,
+  municipios: NomesDosMunicipios,
 ): RespostaDoComprovante[] {
   return campos
-    .filter((c) => respostas[c.fatoCodigo] !== undefined && respostas[c.fatoCodigo] !== null)
-    .map((c) => ({ rotulo: c.rotulo, valor: respostaExibida(c, respostas[c.fatoCodigo]) }));
+    .filter((c) => respondido(respostas, c.fatoCodigo))
+    .map((c) => ({
+      rotulo: c.rotulo,
+      valor: respostaExibida(c, respostas[c.fatoCodigo], municipios),
+    }));
+}
+
+/**
+ * Os códigos IBGE distintos que o comprovante mostra como município: os das respostas e dos derivados
+ * cujo campo, no formulário da versão fixada, é de município.
+ */
+export function municipiosDoComprovante(
+  formulario: FormularioRenderizavelDto,
+  comprovante: ComprovanteInscricaoDto,
+): string[] {
+  const deMunicipio = (c: CampoExibido): boolean => c.tipoRenderizacao === 'MUNICIPIO';
+  const codigos = (
+    campos: readonly CampoDoFormulario[],
+    respostas: Readonly<Record<string, unknown>>,
+  ) =>
+    campos
+      .filter((c) => deMunicipio(c) && respondido(respostas, c.fatoCodigo))
+      .map((c) => String(respostas[c.fatoCodigo]));
+  return [
+    ...new Set([
+      ...codigos(formulario.fatosColetados, comprovante.respostas),
+      ...formulario.grupos.flatMap((g) =>
+        (comprovante.grupos[g.codigo] ?? []).flatMap((o) => codigos(g.subitens, o.respostas ?? {})),
+      ),
+      ...codigos(
+        formulario.pressupostos.map((p) => ({ ...p, rotulo: p.rotulo ?? p.fatoCodigo })),
+        comprovante.derivados,
+      ),
+    ]),
+  ];
 }
 
 /** As respostas do comprovante pelas seções do formulário da versão fixada, com os rótulos de lá. */
 export function secoesDoComprovante(
   formulario: FormularioRenderizavelDto,
   comprovante: ComprovanteInscricaoDto,
+  municipios: NomesDosMunicipios = new Map(),
 ): SecaoDoComprovante[] {
   return pelaOrdem(formulario.etapas)
     .map((etapa) => ({
@@ -52,12 +90,13 @@ export function secoesDoComprovante(
       respostas: respondidos(
         pelaOrdem(formulario.fatosColetados.filter((c) => c.etapaCodigo === etapa.codigo)),
         comprovante.respostas,
+        municipios,
       ),
       grupos: pelaOrdem(formulario.grupos.filter((g) => g.etapaCodigo === etapa.codigo))
         .map((grupo) => ({
           rotulo: grupo.rotulo,
           ocorrencias: (comprovante.grupos[grupo.codigo] ?? []).map((o) =>
-            respondidos(pelaOrdem(grupo.subitens), o.respostas ?? {}),
+            respondidos(pelaOrdem(grupo.subitens), o.respostas ?? {}, municipios),
           ),
         }))
         .filter((g) => g.ocorrencias.length > 0),
@@ -69,13 +108,14 @@ export function secoesDoComprovante(
 export function derivadosDoComprovante(
   formulario: FormularioRenderizavelDto,
   comprovante: ComprovanteInscricaoDto,
+  municipios: NomesDosMunicipios = new Map(),
 ): RespostaDoComprovante[] {
   const pressupostos = new Map(formulario.pressupostos.map((p) => [p.fatoCodigo, p]));
   return Object.entries(comprovante.derivados).map(([fato, valor]) => {
     const pressuposto = pressupostos.get(fato);
     return {
       rotulo: pressuposto?.rotulo ?? fato,
-      valor: respostaExibida(pressuposto ?? {}, valor),
+      valor: respostaExibida(pressuposto ?? {}, valor, municipios),
     };
   });
 }
