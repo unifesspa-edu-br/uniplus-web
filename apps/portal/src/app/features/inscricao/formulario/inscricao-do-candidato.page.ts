@@ -41,6 +41,12 @@ import { mensagemDaRecusa } from './recusas-da-inscricao';
 
 type Estado = 'carregando' | 'erro' | 'pronto';
 
+/** As recusas de quem gravou sobre uma revisão que outra janela já mudou. */
+const CONFLITOS: ReadonlySet<string> = new Set([
+  'uniplus.selecao.inscricao.precondicao_falhou',
+  'uniplus.selecao.inscricao.conflito_de_concorrencia',
+]);
+
 /**
  * A inscrição do candidato num processo: o formulário que a inscrição fixou ao nascer, preenchido em
  * passos, salvo como rascunho ou enviado. O rascunho fica só na memória da página e no servidor.
@@ -88,6 +94,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly ocupada = signal(false);
   protected readonly errosDoServidor = signal<readonly ErroDoServidor[]>([]);
   protected readonly recusaGeral = signal<string | null>(null);
+  protected readonly conflito = signal<string | null>(null);
   protected readonly aviso = signal('');
   protected readonly comprovante = signal<ComprovanteInscricaoDto | null>(null);
 
@@ -214,6 +221,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     const inscricao = this.inscricao();
     if (!inscricao || this.ocupada()) return;
     this.ocupada.set(true);
+    this.conflito.set(null);
     this.recusaGeral.set(null);
     this.errosDoServidor.set([]);
     this.aviso.set('');
@@ -256,6 +264,17 @@ export class InscricaoDoCandidatoPage implements OnInit {
   }
 
   private tratarRecusa(falha: ApiFailure): void {
+    if (CONFLITOS.has(falha.problem.code)) {
+      this.conflito.set(
+        'Recarregamos a versão gravada mais recente para você não sobrescrever o que mudou. Revise e grave de novo.',
+      );
+      this.carregar();
+      return;
+    }
+    if (falha.status === 0 || falha.status >= 500) {
+      // A gravação pode ter acontecido sem a resposta chegar: o ETag relido é o que vale para tentar de novo.
+      this.relerAGravada();
+    }
     const porCampo = (falha.problem.errors ?? []).map((e) => ({
       campo: e.field,
       mensagem: mensagemDaRecusa(e.code),
