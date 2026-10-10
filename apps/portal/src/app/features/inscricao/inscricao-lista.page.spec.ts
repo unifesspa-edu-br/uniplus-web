@@ -1,13 +1,48 @@
+import { HttpHeaders } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
 import { Observable, Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
+import { type ApiResult, apiOk } from '@uniplus/shared-core/http';
+import { type CertamePublicadoDto, SituacaoInscricao } from '@uniplus/shared-data/selecao';
 
+import { type ItemDaLista, itemDaLista } from './inscricao-lista.model';
 import { InscricaoListaPage } from './inscricao-lista.page';
-import { InscricoesCandidatoMockService } from './inscricao-mock.service';
-import { type Inscricao, INSCRICOES_MOCK } from './inscricao-lista.mock';
+import { type InscricaoDaLista, MinhasInscricoesService } from './minhas-inscricoes.service';
+
+function processo(nome: string, identificadorLegivel: string): CertamePublicadoDto {
+  return {
+    nome,
+    identificadorLegivel,
+    periodo: { numero: null, inicio: '2026-12-10T00:00:00Z', fim: '2026-12-20T23:59:00Z' },
+  } as CertamePublicadoDto;
+}
+
+/** Fernanda Drumond, persona fictícia do portal de documentação, que prefere o nome social. */
+function inscricao(
+  id: string,
+  situacao: SituacaoInscricao,
+  certame: CertamePublicadoDto | null,
+): InscricaoDaLista {
+  return {
+    processoSeletivoId: id,
+    numeroInscricao: situacao === SituacaoInscricao.submetida ? '00000042' : null,
+    situacao,
+    nomePreferido: 'Ariel Drumond',
+    cpfMascarado: '***.598.363-**',
+    processo: certame,
+  };
+}
+
+const INSCRICOES: readonly InscricaoDaLista[] = [
+  inscricao('p1', SituacaoInscricao.rascunho, processo('Auxílio estudantil 2026', 'Edital 12/2026')),
+  inscricao('p2', SituacaoInscricao.submetida, processo('Bolsa de iniciação científica', 'Edital 08/2025')),
+  inscricao('p3', SituacaoInscricao.submetida, processo('Morada estudantil', 'Edital 01/2025')),
+  inscricao('p4', SituacaoInscricao.rascunho, processo('Auxílio transporte', 'Edital 01/2025')),
+];
 
 function stubMatchMedia(matches: boolean): void {
   window.matchMedia = ((consulta: string) =>
@@ -24,20 +59,20 @@ function stubMatchMedia(matches: boolean): void {
  * `inscricoesResource.reload()` recebe uma nova subscription controlável.
  */
 class StubListagemService {
-  private subjects: Subject<readonly Inscricao[]>[] = [];
+  private subjects: Subject<ApiResult<readonly InscricaoDaLista[]>>[] = [];
 
-  listar(): Observable<readonly Inscricao[]> {
-    const sub = new Subject<readonly Inscricao[]>();
+  listar(): Observable<ApiResult<readonly InscricaoDaLista[]>> {
+    const sub = new Subject<ApiResult<readonly InscricaoDaLista[]>>();
     this.subjects.push(sub);
     return sub.asObservable();
   }
 
-  get ultimo(): Subject<readonly Inscricao[]> {
+  get ultimo(): Subject<ApiResult<readonly InscricaoDaLista[]>> {
     return this.subjects[this.subjects.length - 1];
   }
 
-  flush(inscricoes: readonly Inscricao[] = INSCRICOES_MOCK): void {
-    this.ultimo.next(inscricoes);
+  flush(inscricoes: readonly InscricaoDaLista[] = INSCRICOES): void {
+    this.ultimo.next(apiOk(inscricoes, 200, new HttpHeaders()));
     this.ultimo.complete();
   }
 
@@ -62,7 +97,8 @@ describe('InscricaoListaPage', () => {
     TestBed.configureTestingModule({
       imports: [InscricaoListaPage],
       providers: [
-        { provide: InscricoesCandidatoMockService, useValue: listagemService },
+        provideRouter([]),
+        { provide: MinhasInscricoesService, useValue: listagemService },
         { provide: UserContextService, useValue: { displayName } },
       ],
     });
@@ -144,20 +180,20 @@ describe('InscricaoListaPage', () => {
   // --- lista carregada ---
 
   it('exibe as inscrições após o carregamento', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
     const itens = host().querySelectorAll('li.inscricao-lista-item');
-    expect(itens.length).toBe(INSCRICOES_MOCK.length);
+    expect(itens.length).toBe(INSCRICOES.length);
   });
 
   it('inscrição em rascunho exibe "Continuar inscrição" com variante primary (CA-09, CA-15)', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
-    // INSCRICOES_MOCK[0] tem status 'rascunho'
+    // INSCRICOES[0] está em rascunho
     const item = host().querySelectorAll('li.inscricao-lista-item')[0];
     const btn = item.querySelector('button');
     expect(btn?.textContent?.trim()).toContain('Continuar inscrição');
@@ -165,37 +201,47 @@ describe('InscricaoListaPage', () => {
     expect(btn?.classList.contains('btn--tertiary')).toBe(false);
   });
 
-  it('inscrições em analise, aprovada e reprovada exibem "Ver detalhes" com variante tertiary (CA-10, CA-15)', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+  it('inscrição enviada exibe "Ver comprovante" e abre o comprovante da última submissão', async () => {
+    listagemService.flush(INSCRICOES);
+    await propagate();
+    fixture.detectChanges();
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    const item = host().querySelectorAll('li.inscricao-lista-item')[1];
+    const btn = item.querySelector('button');
+    expect(btn?.textContent?.trim()).toContain('Ver comprovante');
+    btn?.click();
+
+    expect(navegar).toHaveBeenCalledWith(['/inscricao', 'p2', 'comprovante']);
+  });
+
+  it('cada inscrição mostra o nome que o candidato prefere e só o CPF mascarado (CA-01)', async () => {
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
-    // indices 1, 2, 3 = analise, aprovada, reprovada
-    const itens = Array.from(host().querySelectorAll('li.inscricao-lista-item')).slice(1);
-    for (const item of itens) {
-      const btn = item.querySelector('button');
-      expect(btn?.textContent?.trim()).toContain('Ver detalhes');
-      expect(btn?.classList.contains('btn--tertiary')).toBe(true);
-    }
+    const item = host().querySelectorAll('li.inscricao-lista-item')[0];
+    expect(item.textContent).toContain('Ariel Drumond · CPF ***.598.363-**');
   });
 
   it('clique no botão de ação chama abrirInscricao com a inscrição correta (CA-16)', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const spy = vi.spyOn(
-      component as unknown as { abrirInscricao: (i: Inscricao) => void },
+      component as unknown as { abrirInscricao: (i: ItemDaLista) => void },
       'abrirInscricao',
     );
     botao('Continuar inscrição')?.click();
 
     expect(spy).toHaveBeenCalledOnce();
-    expect(spy).toHaveBeenCalledWith(INSCRICOES_MOCK[0]);
+    expect(spy).toHaveBeenCalledWith(itemDaLista(INSCRICOES[0]));
   });
 
   it('títulos de inscrição são h2 (não pula nível de h1)', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
@@ -217,7 +263,7 @@ describe('InscricaoListaPage', () => {
   // --- busca (CA filtro) ---
 
   it('busca sem resultado exibe estado vazio filtrado', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
@@ -229,7 +275,7 @@ describe('InscricaoListaPage', () => {
   });
 
   it('busca normaliza acento: "Auxilio" encontra "Auxílio estudantil 2026"', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
@@ -241,7 +287,7 @@ describe('InscricaoListaPage', () => {
   });
 
   it('busca normaliza maiúscula: "MORADA" encontra "Morada estudantil"', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
@@ -252,7 +298,7 @@ describe('InscricaoListaPage', () => {
   });
 
   it('"Limpar" redefine a busca e exibe todas as inscrições', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
@@ -263,7 +309,7 @@ describe('InscricaoListaPage', () => {
     botao('Limpar')?.click();
     fixture.detectChanges();
 
-    expect(host().querySelectorAll('li.inscricao-lista-item').length).toBe(INSCRICOES_MOCK.length);
+    expect(host().querySelectorAll('li.inscricao-lista-item').length).toBe(INSCRICOES.length);
   });
 
   // --- erro e recarregar (CA-06) ---
@@ -286,25 +332,25 @@ describe('InscricaoListaPage', () => {
     await propagate();
     fixture.detectChanges();
 
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
     expect(host().querySelector('ui-alert')).toBeFalsy();
-    expect(host().querySelectorAll('li.inscricao-lista-item').length).toBe(INSCRICOES_MOCK.length);
+    expect(host().querySelectorAll('li.inscricao-lista-item').length).toBe(INSCRICOES.length);
   });
 
   // --- responsivo ---
 
   it('abaixo de 600px trava a visualização em lista e oculta o controle de alternância', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
     stubMatchMedia(true);
     const fixtureCompacto = TestBed.createComponent(InscricaoListaPage);
     fixtureCompacto.detectChanges();
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixtureCompacto.detectChanges();
 
@@ -320,7 +366,7 @@ describe('InscricaoListaPage', () => {
   // --- localStorage ---
 
   it('lembra a visão escolhida entre visitas (localStorage)', async () => {
-    listagemService.flush(INSCRICOES_MOCK);
+    listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
 
