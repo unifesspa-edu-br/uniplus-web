@@ -7,11 +7,13 @@ import {
   inject,
   Renderer2,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NgControl } from '@angular/forms';
 
 type Campo = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 /**
- * Deixa o valor de um campo em edição legível inteiro (web#905, CA-04). Um `input` ou `select`
+ * Deixa o valor de um campo em edição legível inteiro. Um `input` ou `select`
  * não quebra linha: o que passa da largura do campo fica cortado. Enquanto o valor não cabe, o
  * `title` repete o texto completo — no select, o rótulo da opção escolhida, não o `value`.
  *
@@ -36,6 +38,14 @@ export class ValorLegivelDirective implements DoCheck {
 
   constructor() {
     const destroyRef = inject(DestroyRef);
+
+    // O `ngModel` escreve no campo num microtask, depois do `ngDoCheck`; numa view OnPush
+    // nada volta a checá-la. O `valueChanges` sai depois dessa escrita.
+    inject(NgControl, { self: true, optional: true })
+      ?.valueChanges?.pipe(takeUntilDestroyed(destroyRef))
+      .subscribe(() => {
+        if (this.pronto) this.atualizar();
+      });
 
     afterNextRender(() => {
       this.pronto = true;
