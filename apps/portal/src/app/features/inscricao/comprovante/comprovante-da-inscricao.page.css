@@ -77,3 +77,16 @@
   flex-wrap: wrap;
   gap: var(--space-3);
 }
+
+/* No papel, rótulo e resposta não se separam numa quebra de página, nem o
+   título de seção fica sozinho no pé da página. */
+@media print {
+  .comprovante__lista > div {
+    break-inside: avoid;
+  }
+
+  .comprovante__secao h3,
+  .comprovante__secao h4 {
+    break-after: avoid;
+  }
+}

@@ -88,3 +88,68 @@ describe('PortalShellComponent — contrato de rolagem', () => {
     expect(area).toContain('position: relative');
   });
 });
+
+describe('PortalShellComponent — contrato de impressão', () => {
+  const css = readFileSync(resolve(__dirname, 'portal-shell.css'), 'utf-8').replace(
+    /\/\*[\s\S]*?\*\//gu,
+    '',
+  );
+
+  /** Corpo do `@media print`, com os blocos aninhados. */
+  function blocoDeImpressao(): string {
+    const inicio = css.search(/@media\s+print\s*\{/u);
+    if (inicio < 0) return '';
+    const abertura = css.indexOf('{', inicio);
+    let profundidade = 0;
+    for (let i = abertura; i < css.length; i++) {
+      if (css[i] === '{') profundidade++;
+      else if (css[i] === '}' && --profundidade === 0) return css.slice(abertura + 1, i);
+    }
+    return '';
+  }
+
+  /** Declarações das regras do bloco de impressão que alcançam `seletor`. */
+  function declaracoesNaImpressao(seletor: string): string {
+    return Array.from(blocoDeImpressao().matchAll(/([^{}]+)\{([^{}]*)\}/gu))
+      .filter(([, seletores]) => seletores.split(',').some((s) => s.trim() === seletor))
+      .map(([, , declaracoes]) => declaracoes)
+      .join(';');
+  }
+
+  it.each([':host', '.portal-scroll'])(
+    'no papel, %s solta a altura do viewport e não corta o conteúdo',
+    (seletor) => {
+      const declaracoes = declaracoesNaImpressao(seletor);
+
+      expect(declaracoes).toContain('height: auto');
+      expect(declaracoes).toContain('overflow: visible');
+    },
+  );
+
+  it('cabeçalho, navegação, rodapé e controles flutuantes não vão para o papel', async () => {
+    await TestBed.configureTestingModule({
+      imports: [PortalShellComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: authServiceStub },
+        { provide: UserContextService, useValue: userContextStub },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(PortalShellComponent);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    for (const seletor of [
+      'ui-skip-link',
+      'ui-institutional-bar',
+      'header.portal-topbar',
+      'nav.portal-nav',
+      'footer.portal-footer',
+      'ui-back-to-top',
+      'ui-vlibras-loader',
+    ]) {
+      expect(host.querySelector(seletor)?.classList.contains('u-no-print'), seletor).toBe(true);
+    }
+    expect(host.querySelector('main')?.closest('.u-no-print')).toBeNull();
+  });
+});

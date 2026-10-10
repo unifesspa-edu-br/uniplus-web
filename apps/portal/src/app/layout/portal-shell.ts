@@ -33,7 +33,8 @@ interface PortalFooterGroup {
  * distinto do `ui-app-shell` administrativo por não ter menu lateral. A
  * altura trava no viewport (mesmo contrato do `ui-app-shell`) e só
  * `.portal-scroll` (main + rodapé) rola — a faixa institucional, o topo e a
- * navegação por abas ficam sempre visíveis, sem acompanhar o scroll.
+ * navegação por abas ficam sempre visíveis, sem acompanhar o scroll. Na
+ * impressão o shell volta ao fluxo normal e só o conteúdo vai para o papel.
  */
 @Component({
   selector: 'ptl-portal-shell',
@@ -52,7 +53,7 @@ interface PortalFooterGroup {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './portal-shell.css',
   template: `
-    <ui-skip-link targetId="portal-main" />
+    <ui-skip-link class="u-no-print" targetId="portal-main" />
     <!--
       Decisão (issue #780): os links opcionais de "Mapa do site", "Acessibilidade"
       e "Privacidade" da faixa institucional ficam ocultos por ora — nenhuma
@@ -61,9 +62,9 @@ interface PortalFooterGroup {
       links quando as hrefs não são passadas; assim que as páginas existirem,
       basta preencher siteMapHref/accessibilityHref/privacyHref aqui.
     -->
-    <ui-institutional-bar organization="UNIFESSPA · Sistema Uni+" />
+    <ui-institutional-bar class="u-no-print" organization="UNIFESSPA · Sistema Uni+" />
 
-    <header class="topbar portal-topbar" role="banner">
+    <header class="topbar portal-topbar u-no-print" role="banner">
       <!-- Sem aria-label: o nome acessível vem do texto visível (título + subtítulo),
            satisfazendo WCAG 2.5.3 (Label in Name) por construção — um aria-label
            customizado que não repetisse literalmente o subtítulo seria rejeitado
@@ -81,7 +82,7 @@ interface PortalFooterGroup {
       </div>
     </header>
 
-    <nav class="portal-nav" aria-label="Navegação principal">
+    <nav class="portal-nav u-no-print" aria-label="Navegação principal">
       @for (item of navItems(); track item.label) {
         @if (item.routerLink) {
           <a
@@ -107,7 +108,7 @@ interface PortalFooterGroup {
         <router-outlet />
       </main>
 
-      <footer class="portal-footer">
+      <footer class="portal-footer u-no-print">
         <div class="portal-footer__top">
           <div class="portal-footer__brand">
             <span class="portal-footer__brand-mark" aria-hidden="true">U+</span>
@@ -137,8 +138,8 @@ interface PortalFooterGroup {
       </footer>
     </div>
 
-    <ui-back-to-top [defaultContainer]="portalScroll" />
-    <ui-vlibras-loader />
+    <ui-back-to-top class="u-no-print" [defaultContainer]="portalScroll" />
+    <ui-vlibras-loader class="u-no-print" />
   `,
 })
 export class PortalShellComponent {

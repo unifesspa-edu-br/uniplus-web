@@ -179,6 +179,34 @@ async function abrirComprovanteNaLista(page: Page, processo: string): Promise<vo
 
 const comprovante = (page: Page): Locator => page.getByRole('article');
 
+/**
+ * Ancestrais do comprovante que, na mídia corrente, cortam o que passa da própria altura. Na
+ * impressão o único que pode crescer é o documento: qualquer outro corta o papel na primeira tela.
+ */
+const ancestraisQueCortamOComprovante = (page: Page): Promise<string[]> =>
+  comprovante(page).evaluate((artigo) => {
+    const cortes: string[] = [];
+    for (let el = artigo.parentElement; el && el !== document.body; el = el.parentElement) {
+      const { overflowY } = getComputedStyle(el);
+      if (overflowY !== 'visible' && el.scrollHeight > el.clientHeight + 1) {
+        cortes.push(`${el.tagName.toLowerCase()}.${el.className}`);
+      }
+    }
+    return cortes;
+  });
+
+/** Roda `passo` numa janela de `altura` px e volta à janela de antes para os passos seguintes. */
+async function comJanelaDeAltura(
+  page: Page,
+  altura: number,
+  passo: () => Promise<void>,
+): Promise<void> {
+  const janela = page.viewportSize() ?? { width: 1280, height: 720 };
+  await page.setViewportSize({ width: janela.width, height: altura });
+  await passo();
+  await page.setViewportSize(janela);
+}
+
 test.describe('Inscrição do candidato de ponta a ponta', () => {
   test.skip(!PROCESSO_ID, 'Defina E2E_PROCESSO_ID com o processo que o roteiro da API publicou.');
   test.skip(
@@ -241,6 +269,22 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(comprovante(page)).not.toContainText('Código IBGE');
       await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
     });
+
+    await test.step('o comprovante sai inteiro na impressão, sem cabeçalho nem rodapé', () =>
+      // Janela mais baixa que o comprovante: sem isso o corte na primeira tela não apareceria.
+      comJanelaDeAltura(page, 480, async () => {
+        const altura = await comprovante(page).evaluate((el) => el.getBoundingClientRect().height);
+        expect(altura).toBeGreaterThan(480);
+        expect(await ancestraisQueCortamOComprovante(page)).not.toEqual([]);
+
+        await page.emulateMedia({ media: 'print' });
+        expect(await ancestraisQueCortamOComprovante(page)).toEqual([]);
+        await expect(page.getByRole('banner')).toBeHidden();
+        await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeHidden();
+        await expect(page.getByRole('contentinfo')).toBeHidden();
+        await expect(comprovante(page)).toBeVisible();
+        await page.emulateMedia({ media: null });
+      }));
 
     await test.step('corrige o telefone e envia de novo', async () => {
       await page.goto(`/inscricao/${PROCESSO_ID}`);
