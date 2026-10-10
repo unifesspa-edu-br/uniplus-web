@@ -5,7 +5,9 @@ import {
   type CampoNoPasso,
   comoInteiro,
   fatoDaUf,
+  type ErroDoServidor,
   type GrupoNoPasso,
+  mensagemDosErros,
 } from './formulario-do-candidato.model';
 import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
 
@@ -62,11 +64,18 @@ interface OcorrenciaNaTela {
           </h4>
           @for (campo of ocorrencia.campos; track campo.campo.fatoCodigo) {
             <ui-campo-do-candidato
+              [attr.data-campo]="campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)"
               [noPasso]="campo"
               [id]="id() + '-' + i + '-' + campo.campo.fatoCodigo"
               [resposta]="ocorrencia.respostas[campo.campo.fatoCodigo]"
               [respostaDaUf]="respostaDaUf(campo, ocorrencia.respostas)"
               [mostrarPendencia]="mostrarPendencia()"
+              [erroDoServidor]="
+                mensagemDosErros(
+                  errosDoServidor(),
+                  campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)
+                )
+              "
               (respondida)="responder(i, campo.campo.fatoCodigo, $event)"
             />
           }
@@ -127,6 +136,8 @@ export class GrupoDoCandidatoComponent {
   readonly respostasDoCandidato = input<Readonly<Record<string, ValorJson>>>({});
   readonly id = input.required<string>();
   readonly mostrarPendencia = input<boolean>(false);
+  /** As recusas do servidor dentro do grupo: as do grupo, as de uma ocorrência e as de um campo dela. */
+  readonly errosDoServidor = input<readonly ErroDoServidor[]>([]);
 
   readonly ocorrenciasChange = output<readonly OcorrenciaSimulada[] | undefined>();
 
@@ -228,8 +239,19 @@ export class GrupoDoCandidatoComponent {
         : []),
       ...(avaliado.contagemValida ? [] : [this.limites()]),
       ...(avaliado.ocorrenciaDoCandidatoValida ? [] : ['Inclua você na lista uma única vez.']),
+      // As recusas de um campo de ocorrência ficam ao lado dele; as demais são do grupo.
+      ...this.errosDoServidor()
+        .filter((e) => e.campo.split('.').length < 3)
+        .map((e) => e.mensagem),
     ];
   });
+
+  protected readonly mensagemDosErros = mensagemDosErros;
+
+  /** Como o servidor nomeia o campo de uma ocorrência. */
+  protected campoNoServidor(ocorrencia: string, fato: string): string {
+    return `${this.grupo().codigo}.${ocorrencia}.${fato}`;
+  }
 
   protected readonly descritoPor = computed(() =>
     [`${this.id()}-limites`, ...(this.problemas().length > 0 ? [`${this.id()}-erro`] : [])].join(

@@ -13,6 +13,15 @@ export {
 } from './certames-publicos.request';
 export { RegrasCatalogoApi } from './regras-catalogo.api';
 export type {
+  AceiteDeTermoInput,
+  ComprovanteInscricaoDto,
+  InscricaoDto,
+  InscricaoRequest,
+  MinhaInscricaoDto,
+  OcorrenciaDeGrupoInscricaoInput,
+  RespostasDaInscricao,
+} from './inscricoes.contrato';
+export type {
   AplicacaoDeModeloDto,
   AplicacaoDeModeloInput,
   ParteDescartadaDto,
@@ -86,7 +95,13 @@ export {
   type ProcessosSeletivosQuery,
   type TipoProcessoSnapshotDto,
 } from './processos-seletivos.api';
-export { CaraterEtapa, OrigemCandidatos, StatusProcesso, UnidadePrazo } from './schema';
+export {
+  CaraterEtapa,
+  OrigemCandidatos,
+  SituacaoInscricao,
+  StatusProcesso,
+  UnidadePrazo,
+} from './schema';
 export {
   ObrigatoriedadesLegaisApi,
   type AtualizarObrigatoriedadeLegalCommand,

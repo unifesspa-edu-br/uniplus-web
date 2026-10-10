@@ -1,0 +1,54 @@
+:host {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+
+.inscricao-carregando {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.inscricao-oferta {
+  max-inline-size: 32rem;
+}
+
+.inscricao-derivados {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+}
+
+.inscricao-derivados__titulo {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.inscricao-derivados__lista {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.inscricao-derivados__lista dt {
+  font-weight: var(--weight-semibold);
+}
+
+.inscricao-derivados__lista dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.inscricao-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}

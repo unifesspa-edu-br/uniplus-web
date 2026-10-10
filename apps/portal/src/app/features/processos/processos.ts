@@ -421,6 +421,11 @@ export class ProcessosComponent {
     return SITUACAO_VARIANT[situacao];
   }
 
+  /** Só o certame que ainda recebe inscrição oferece o botão de inscrever-se. */
+  protected recebeInscricao(certame: CertameNaVitrineDto): boolean {
+    return SITUACOES_QUE_RECEBEM_INSCRICAO.includes(certame.situacao);
+  }
+
   protected publicacaoDe(certame: CertameNaVitrineDto): Publicacao | undefined {
     const atual = this.publicacoes();
     return atual.status === 'ok' ? atual.porCertame.get(certame.processoSeletivoId) : undefined;

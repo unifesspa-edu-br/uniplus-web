@@ -233,14 +233,22 @@ describe('ProcessosComponent', () => {
       expect(host().querySelectorAll('.publicacao-timeline')).toHaveLength(1);
     });
 
-    it('o botão de inscrição convida a se inscrever', async () => {
+    it('o botão de inscrição leva à inscrição no certame', async () => {
       await flushLista([sisu], contadoresHeaders);
       fixture.detectChanges();
 
       const cta = Array.from(host().querySelectorAll<HTMLAnchorElement>('.edital-row a.btn')).find(
         (a) => a.textContent?.includes('Inscrever-me'),
       );
-      expect(cta?.getAttribute('href')).toBe('/inscricao');
+      expect(cta?.getAttribute('href')).toBe(`/inscricao/${sisu.processoSeletivoId}`);
+      expect(cta?.textContent).toContain(sisu.nome);
+    });
+
+    it('o certame que não recebe mais inscrição não oferece o botão', async () => {
+      await flushLista([encerrado], contadoresHeaders);
+      fixture.detectChanges();
+
+      expect(host().querySelector('.edital-row')?.textContent).not.toContain('Inscrever-me');
     });
   });
 

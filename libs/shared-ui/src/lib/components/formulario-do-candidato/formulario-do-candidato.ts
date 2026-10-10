@@ -21,9 +21,13 @@ import {
   BLOCO_MODALIDADES_CALCULADAS,
   BLOCO_REVISAO_E_ACEITE,
   type CampoNoPasso,
+  type ErroDoServidor,
+  erroEm,
   fatoDaUf,
   type FormularioDoCandidato,
+  mensagemDosErros,
   type PassoDoFormulario,
+  type RespostaFixa,
   type TermoNoPasso,
   passosDo,
 } from './formulario-do-candidato.model';
@@ -76,6 +80,7 @@ export interface DocumentoDoFormulario {
                   class="formulario-candidato__passo"
                   [class.is-current]="i === indice()"
                   [class.is-done]="concluido(passo)"
+                  [class.is-error]="comErro(passo)"
                   [attr.aria-current]="i === indice() ? 'step' : null"
                   (click)="irPara(i)"
                 >
@@ -83,7 +88,10 @@ export interface DocumentoDoFormulario {
                     i + 1
                   }}</span>
                   {{ passo.titulo }}
-                  @if (concluido(passo)) {
+                  @if (comErro(passo)) {
+                    <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                    <span class="sr-only">(com resposta recusada)</span>
+                  } @else if (concluido(passo)) {
                     <span class="sr-only">(concluída)</span>
                   }
                 </button>
@@ -147,22 +155,27 @@ export interface DocumentoDoFormulario {
 
               @for (campo of passo.campos; track campo.campo.fatoCodigo) {
                 <ui-campo-do-candidato
+                  [attr.data-campo]="campo.campo.fatoCodigo"
                   [noPasso]="campo"
                   [id]="idBase() + '-' + campo.campo.fatoCodigo"
-                  [resposta]="respostas()[campo.campo.fatoCodigo]"
+                  [resposta]="respostasComAsFixas()[campo.campo.fatoCodigo]"
                   [respostaDaUf]="respostaDaUf(campo)"
                   [mostrarPendencia]="concluido(passo)"
+                  [fixa]="respostasFixas()[campo.campo.fatoCodigo] ?? null"
+                  [erroDoServidor]="mensagemDosErros(erros(), campo.campo.fatoCodigo)"
                   (respondida)="responder(campo.campo.fatoCodigo, $event)"
                 />
               }
 
               @for (grupo of passo.grupos; track grupo.grupo.codigo) {
                 <ui-grupo-do-candidato
+                  [attr.data-campo]="grupo.grupo.codigo"
                   [noPasso]="grupo"
                   [id]="idBase() + '-' + grupo.grupo.codigo"
                   [ocorrencias]="grupos()[grupo.grupo.codigo]"
-                  [respostasDoCandidato]="respostas()"
+                  [respostasDoCandidato]="respostasComAsFixas()"
                   [mostrarPendencia]="concluido(passo)"
+                  [errosDoServidor]="errosEm(grupo.grupo.codigo)"
                   (ocorrenciasChange)="responderGrupo(grupo.grupo.codigo, $event)"
                 />
               }
@@ -171,6 +184,7 @@ export interface DocumentoDoFormulario {
                 @for (termo of passo.termos; track termo.termo.codigo) {
                   <article
                     class="formulario-candidato__termo"
+                    [attr.data-campo]="termo.termo.codigo"
                     [attr.aria-labelledby]="idBase() + '-termo-' + termo.termo.codigo"
                   >
                     <h4 [id]="idBase() + '-termo-' + termo.termo.codigo">{{ termo.termo.nome }}</h4>
@@ -180,9 +194,9 @@ export interface DocumentoDoFormulario {
                       <input
                         type="checkbox"
                         [checked]="aceitos().has(termo.termo.codigo)"
-                        [attr.aria-invalid]="termoPendente(passo, termo) ? 'true' : null"
+                        [attr.aria-invalid]="problemaDoTermo(passo, termo) ? 'true' : null"
                         [attr.aria-describedby]="
-                          termoPendente(passo, termo)
+                          problemaDoTermo(passo, termo)
                             ? idBase() + '-termo-' + termo.termo.codigo + '-erro'
                             : null
                         "
@@ -193,12 +207,12 @@ export interface DocumentoDoFormulario {
                         termo.avaliado.obrigatorio === 'VERDADEIRO' ? ' (obrigatório)' : ''
                       }}
                     </label>
-                    @if (termoPendente(passo, termo)) {
+                    @if (problemaDoTermo(passo, termo); as problema) {
                       <span
                         class="field__error"
                         [id]="idBase() + '-termo-' + termo.termo.codigo + '-erro'"
                       >
-                        Aceite o termo para concluir.
+                        {{ problema }}
                       </span>
                     }
                   </article>
@@ -238,9 +252,20 @@ export class FormularioDoCandidatoComponent {
   /** A lista do bloco de comprovação documental; nula quando quem hospeda não a tem. */
   readonly documentos = input<readonly DocumentoDoFormulario[] | null>(null);
   readonly idBase = input<string>('formulario-candidato');
+  /** Os termos já aceitos, pelo código, como os de uma inscrição retomada; recomeçam com a partida. */
+  readonly termosAceitosIniciais = input<readonly string[]>([]);
+  /** As respostas que o candidato não altera, pelo fato. Entram na simulação e o campo só as mostra. */
+  readonly respostasFixas = input<Readonly<Record<string, RespostaFixa>>>({});
+  /**
+   * As recusas do servidor. Cada uma aparece ao lado do que recusou e some quando o candidato o muda;
+   * uma lista nova leva à seção da primeira e põe o foco nela.
+   */
+  readonly errosDoServidor = input<readonly ErroDoServidor[]>([]);
 
   /** A simulação a cada mudança: as respostas, as ocorrências, as seções concluídas e os pressupostos. */
   readonly simulacaoChange = output<SimulacaoDoFormulario>();
+  /** Os termos aceitos, pelo código, a cada mudança. */
+  readonly termosAceitosChange = output<readonly string[]>();
 
   protected readonly BLOCO_MODALIDADES_CALCULADAS = BLOCO_MODALIDADES_CALCULADAS;
   protected readonly BLOCO_COMPROVACAO_DOCUMENTAL = BLOCO_COMPROVACAO_DOCUMENTAL;
@@ -249,6 +274,7 @@ export class FormularioDoCandidatoComponent {
   protected readonly partida = computed(() => ({
     formulario: this.formulario(),
     inicial: this.inicial(),
+    termosAceitos: this.termosAceitosIniciais(),
   }));
   protected readonly respostas = linkedSignal<unknown, Readonly<Record<string, ValorJson>>>({
     source: this.partida,
@@ -284,14 +310,26 @@ export class FormularioDoCandidatoComponent {
     source: this.partida,
     computation: () => new Set(),
   });
-  /** Os termos aceitos na simulação. O aceite não é fato das regras: fica só na tela. */
+  /** Os termos aceitos. O aceite não é fato das regras: não entra na simulação. */
   protected readonly aceitos = linkedSignal<unknown, ReadonlySet<string>>({
     source: this.partida,
-    computation: () => new Set(),
+    computation: () => new Set(this.termosAceitosIniciais()),
+  });
+  /** As recusas do servidor que ainda valem: a resposta mudada leva a dela. */
+  protected readonly erros = linkedSignal<readonly ErroDoServidor[], readonly ErroDoServidor[]>({
+    source: this.errosDoServidor,
+    computation: (erros) => erros,
   });
 
+  protected readonly respostasComAsFixas = computed<Readonly<Record<string, ValorJson>>>(() => ({
+    ...this.respostas(),
+    ...Object.fromEntries(
+      Object.entries(this.respostasFixas()).map(([fato, f]) => [fato, f.valor]),
+    ),
+  }));
+
   readonly simulacao = computed<SimulacaoDoFormulario>(() => ({
-    respostas: this.respostas(),
+    respostas: this.respostasComAsFixas(),
     grupos: this.grupos(),
     etapasConcluidas: [...this.concluidas()],
     pressupostos: this.pressupostos(),
@@ -317,6 +355,7 @@ export class FormularioDoCandidatoComponent {
   protected readonly passoAtual = computed(() => this.passos()[this.indice()] ?? null);
 
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
+  private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /** Os campos que aparecem no passo atual, para anunciar o que aparece e o que some. */
   private readonly camposVisiveis = computed<CamposDoPasso>(() => {
@@ -331,10 +370,51 @@ export class FormularioDoCandidatoComponent {
     computation: (atuais, anterior) => (anterior ? anunciar(anterior.source, atuais) : ''),
   });
 
+  protected readonly mensagemDosErros = mensagemDosErros;
+
   constructor() {
     effect(() => {
       const simulacao = this.simulacao();
       untracked(() => this.simulacaoChange.emit(simulacao));
+    });
+    effect(() => {
+      const aceitos = [...this.aceitos()];
+      untracked(() => this.termosAceitosChange.emit(aceitos));
+    });
+    effect(() => {
+      const [primeiro] = this.errosDoServidor();
+      if (primeiro) untracked(() => this.irAoErro(primeiro));
+    });
+  }
+
+  protected errosEm(codigo: string): readonly ErroDoServidor[] {
+    return this.erros().filter((e) => erroEm(e, codigo));
+  }
+
+  protected comErro(passo: PassoDoFormulario): boolean {
+    return this.erros().some((e) => contemOCampo(passo, e));
+  }
+
+  /** O que dizer ao lado do termo: a recusa do servidor ou, com a seção concluída, a falta do aceite. */
+  protected problemaDoTermo(passo: PassoDoFormulario, termo: TermoNoPasso): string | null {
+    return (
+      mensagemDosErros(this.erros(), termo.termo.codigo) ??
+      (this.termoPendente(passo, termo) ? 'Aceite o termo para concluir.' : null)
+    );
+  }
+
+  /** Vai à seção do erro e põe o foco no primeiro controle do que foi recusado. */
+  private irAoErro(erro: ErroDoServidor): void {
+    const indice = this.passos().findIndex((passo) => contemOCampo(passo, erro));
+    if (indice < 0) return;
+    this.irPara(indice, () => {
+      const partes = Array.from(
+        this.elemento.nativeElement.querySelectorAll<HTMLElement>('[data-campo]'),
+      );
+      const alvo =
+        partes.find((p) => p.dataset['campo'] === erro.campo) ??
+        partes.find((p) => p.dataset['campo'] === erro.campo.split('.')[0]);
+      return alvo?.querySelector<HTMLElement>('input, select, textarea, button') ?? null;
     });
   }
 
@@ -355,6 +435,7 @@ export class FormularioDoCandidatoComponent {
 
   protected alternarAceite(codigo: string, evento: Event): void {
     const aceito = (evento.target as HTMLInputElement).checked;
+    this.descartarErros(codigo);
     this.aceitos.update((atual) => {
       const novos = new Set(atual);
       if (aceito) novos.add(codigo);
@@ -365,10 +446,11 @@ export class FormularioDoCandidatoComponent {
 
   protected respostaDaUf(campo: CampoNoPasso): ValorJson | undefined {
     const fato = fatoDaUf(campo.regra);
-    return fato === null ? undefined : this.respostas()[fato];
+    return fato === null ? undefined : this.respostasComAsFixas()[fato];
   }
 
   protected responder(fato: string, valor: ValorJson | undefined): void {
+    this.descartarErros(fato);
     this.respostas.update((atual) => {
       const novas = { ...atual };
       if (valor === undefined) delete novas[fato];
@@ -381,6 +463,7 @@ export class FormularioDoCandidatoComponent {
     codigo: string,
     ocorrencias: readonly OcorrenciaSimulada[] | undefined,
   ): void {
+    this.descartarErros(codigo);
     this.grupos.update((atual) => {
       const novos = { ...atual };
       if (ocorrencias === undefined) delete novos[codigo];
@@ -404,12 +487,31 @@ export class FormularioDoCandidatoComponent {
     if (this.indice() < this.passos().length - 1) this.irPara(this.indice() + 1);
   }
 
-  /** Troca de seção e leva o foco ao título dela, para quem navega por teclado ou leitor de tela. */
-  protected irPara(indice: number): void {
+  /**
+   * Troca de seção e leva o foco ao título dela, para quem navega por teclado ou leitor de tela, ou ao
+   * elemento que `foco` indicar depois de a seção aparecer.
+   */
+  protected irPara(indice: number, foco?: () => HTMLElement | null): void {
     const destino = Math.max(0, Math.min(indice, this.passos().length - 1));
     this.escolhida.set({ chave: this.passos()[destino]?.chave ?? null, indice: destino });
-    afterNextRender(() => this.titulo()?.nativeElement.focus(), { injector: this.injector });
+    afterNextRender(() => (foco?.() ?? this.titulo()?.nativeElement)?.focus(), {
+      injector: this.injector,
+    });
   }
+
+  private descartarErros(codigo: string): void {
+    if (this.erros().some((e) => erroEm(e, codigo)))
+      this.erros.update((atuais) => atuais.filter((e) => !erroEm(e, codigo)));
+  }
+}
+
+/** O erro é de um campo, grupo ou termo deste passo. */
+function contemOCampo(passo: PassoDoFormulario, erro: ErroDoServidor): boolean {
+  return (
+    passo.campos.some((c) => erro.campo === c.campo.fatoCodigo) ||
+    passo.grupos.some((g) => erroEm(erro, g.grupo.codigo)) ||
+    passo.termos.some((t) => erro.campo === t.termo.codigo)
+  );
 }
 
 interface CamposDoPasso {
