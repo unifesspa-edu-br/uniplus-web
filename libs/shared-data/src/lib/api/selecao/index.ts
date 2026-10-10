@@ -40,6 +40,7 @@ export type {
   DefinirBonusRegionalRequest,
   DefinirCascataRemanejamentoRequest,
   DefinirClassificacaoRequest,
+  DefinirOpcoesDeclaradasRequest,
   DefinirOfertaAtendimentoRequest,
   DestinoRemanejamentoInput,
   EtapaProcessoDto,

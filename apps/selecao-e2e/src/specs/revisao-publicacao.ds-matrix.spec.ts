@@ -119,6 +119,7 @@ function processoDto(cronogramaFases: readonly unknown[], status: string) {
     referenciaTemporalFatos: null,
     regrasDerivacao: [],
     formularios: [],
+    opcoesDeclaradas: [],
     configuracaoDivulgacao: null,
     configuracaoTaxaInscricao: null,
     algoritmoContagemPrazo: null,

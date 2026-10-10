@@ -1,9 +1,9 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatos, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { EtapaPontuada } from '../../processo-seletivo.models';
@@ -28,6 +28,7 @@ function etapaQueCompoeNota(): EtapaPontuada {
 }
 
 describe('FormulaStepComponent', () => {
+  let fixture: ComponentFixture<FormulaStepComponent>;
   let componente: FormulaStepComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
@@ -48,7 +49,7 @@ describe('FormulaStepComponent', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(FormulaStepComponent);
+    fixture = TestBed.createComponent(FormulaStepComponent);
     componente = fixture.componentInstance;
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
@@ -134,6 +135,42 @@ describe('FormulaStepComponent', () => {
       store.patchObjectSection('cronograma', { etapas: [etapaQueCompoeNota()] });
 
       expect(componente.avisoDeDivisorInvalido()).toBe(false);
+    });
+  });
+  describe('edições do ENEM aceitas', () => {
+    function processoDeInscricaoComEnem(edicoesEnem: readonly string[]): void {
+      store.patchObjectSection('identificacao', {
+        origemCandidatos: OrigemCandidatos.inscricaoPropria,
+      });
+      store.patchObjectSection('classificacao', { baseadoEmEnem: true, edicoesEnem });
+      fixture.detectChanges();
+      for (const requisicao of controller.match(() => true)) requisicao.flush([]);
+      fixture.detectChanges();
+    }
+
+    const campoDoAno = (): HTMLInputElement =>
+      (fixture.nativeElement as HTMLElement).querySelector('#f-edicao-enem') as HTMLInputElement;
+
+    it('sem edição escolhida, o passo é recusado e o campo do ano fica marcado como inválido', () => {
+      processoDeInscricaoComEnem([]);
+
+      const validacao = componente.validate();
+      fixture.detectChanges();
+
+      expect(validacao.valid).toBe(false);
+      expect(validacao.messages).toContain('Escolha ao menos uma edição do ENEM aceita.');
+      expect(campoDoAno().getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it('a recusa do servidor às edições aparece junto da lista e descreve o campo do ano', () => {
+      processoDeInscricaoComEnem(['2026']);
+
+      store.recusaDasEdicoesDoEnem.set('A edição informada não é aceita.');
+      fixture.detectChanges();
+
+      const recusa = (fixture.nativeElement as HTMLElement).querySelector('#edicoes-enem-servidor');
+      expect(recusa?.textContent?.trim()).toBe('A edição informada não é aceita.');
+      expect(campoDoAno().getAttribute('aria-describedby')).toContain('edicoes-enem-servidor');
     });
   });
 });

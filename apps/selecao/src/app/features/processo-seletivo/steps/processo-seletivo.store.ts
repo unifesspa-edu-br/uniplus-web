@@ -64,6 +64,7 @@ const INITIAL_DRAFT: WizardDraft = {
     baseadoEmEnem: false,
     resolucaoPesoAreaEnem: '',
     regrasEliminacao: [],
+    edicoesEnem: [],
   },
   bonus: {
     aplica: null,
@@ -217,6 +218,13 @@ export class ProcessoSeletivoStore {
    * ter recusado antes de julgar a resolução.
    */
   readonly recusaDaResolucaoPesoAreaEnem = signal<string | null>(null);
+
+  /**
+   * Recusa do servidor às edições do ENEM, gravadas pela Eliminação logo depois da classificação.
+   * Mostrada no passo da fórmula, onde as edições são escolhidas; some quando a gravação seguinte
+   * dá certo.
+   */
+  readonly recusaDasEdicoesDoEnem = signal<string | null>(null);
 
   /**
    * Recusa do servidor à gravação da classificação por um critério de desempate já gravado que
@@ -547,6 +555,7 @@ export class ProcessoSeletivoStore {
     this.aplicacoesDeModeloEmAberto.set(new Map());
     this.avisoDocumentos.set(null);
     this.recusaDaResolucaoPesoAreaEnem.set(null);
+    this.recusaDasEdicoesDoEnem.set(null);
     this.recusaPeloDesempatePorArea.set(null);
     this.classificacaoGravada.set({ estado: 'nunca-gravada' });
     this.criteriosDesempateGravados.set([]);

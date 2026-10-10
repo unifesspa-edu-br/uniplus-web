@@ -593,6 +593,7 @@ const DETALHE_PUBLICADO = {
   referenciaTemporalFatos: null,
   regrasDerivacao: [],
   formularios: [],
+  opcoesDeclaradas: [],
   configuracaoDivulgacao: null,
   configuracaoTaxaInscricao: null,
   algoritmoContagemPrazo: null,

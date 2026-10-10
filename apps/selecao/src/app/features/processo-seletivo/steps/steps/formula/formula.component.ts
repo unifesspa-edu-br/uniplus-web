@@ -33,6 +33,12 @@ import {
   pendenciaDaResolucao,
 } from '../classificacao/classificacao-para-comando';
 import {
+  anoDaEdicao,
+  comEdicao,
+  declaraEdicoesDoEnem,
+  rotuloDaEdicao,
+} from '../classificacao/edicoes-do-enem';
+import {
   lerChaveDaRegra,
   regrasEscolhiveis,
   rotuloDaRegraEscolhida,
@@ -55,6 +61,7 @@ interface ResolucaoEscolhivel {
 }
 
 const ID_DO_CAMPO_RESOLUCAO = 'f-resolucao-peso-area';
+const ID_DO_CAMPO_EDICAO = 'f-edicao-enem';
 const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 
 /**
@@ -100,6 +107,14 @@ export class FormulaStepComponent {
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
 
   readonly idDoCampoResolucao = ID_DO_CAMPO_RESOLUCAO;
+  readonly idDoCampoEdicao = ID_DO_CAMPO_EDICAO;
+
+  /** O candidato escolhe a edição na inscrição, entre as que o processo aceita. */
+  readonly declaraEdicoes = computed(() => declaraEdicoesDoEnem(this.store.draft()));
+  readonly edicoes = computed(() => this.store.draft().classificacao.edicoesEnem);
+  readonly anoDaNovaEdicao = signal('');
+  readonly recusaDoAno = signal<string | null>(null);
+  readonly rotuloDaEdicao = rotuloDaEdicao;
 
   readonly avisoDaLista = signal<string | null>(null);
 
@@ -373,6 +388,30 @@ export class FormulaStepComponent {
     this.store.patchObjectSection('classificacao', { nOpcoesAlocacao: valor });
   }
 
+  acrescentarEdicao(): void {
+    const lido = anoDaEdicao(this.anoDaNovaEdicao(), this.edicoes(), new Date().getFullYear());
+    if ('recusa' in lido) {
+      this.recusaDoAno.set(lido.recusa);
+      return;
+    }
+    this.store.patchObjectSection('classificacao', {
+      edicoesEnem: comEdicao(this.edicoes(), lido.ano),
+    });
+    this.anoDaNovaEdicao.set('');
+    this.recusaDoAno.set(null);
+    this.store.recusaDasEdicoesDoEnem.set(null);
+  }
+
+  removerEdicao(ano: string): void {
+    this.store.patchObjectSection('classificacao', {
+      edicoesEnem: this.edicoes().filter((e) => e !== ano),
+    });
+    this.store.recusaDasEdicoesDoEnem.set(null);
+    afterNextRender(() => document.getElementById(ID_DO_CAMPO_EDICAO)?.focus(), {
+      injector: this.injector,
+    });
+  }
+
   aoAlternarBaseadoEmEnem(evento: Event): void {
     if (evento.target instanceof HTMLInputElement)
       this.alternarBaseadoEmEnem(evento.target.checked);
@@ -497,13 +536,16 @@ export class FormulaStepComponent {
       invalid.add('resolucaoPesoAreaEnem');
     }
 
+    const semEdicao = this.declaraEdicoes() && classificacao.edicoesEnem.length === 0;
+    if (semEdicao) invalid.add('edicoesEnem');
+
     this.invalidFields.set(invalid);
 
-    const messages = mensagensDeClassificacaoBase(
-      classificacao,
-      this.cadastroDePesos.resolucaoForaDoCadastro,
-    );
-    return messages.length ? { valid: false, messages: [...messages] } : { valid: true };
+    const messages = [
+      ...mensagensDeClassificacaoBase(classificacao, this.cadastroDePesos.resolucaoForaDoCadastro),
+      ...(semEdicao ? ['Escolha ao menos uma edição do ENEM aceita.'] : []),
+    ];
+    return messages.length ? { valid: false, messages } : { valid: true };
   }
 }
 

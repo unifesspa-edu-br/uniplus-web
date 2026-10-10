@@ -752,6 +752,12 @@ export interface WizardDraft {
      */
     resolucaoPesoAreaEnem: string;
     regrasEliminacao: readonly RegraEliminacaoConfigurada[];
+    /**
+     * Os anos das edições do ENEM que o processo aceita, entre as quais o candidato escolhe a
+     * dele na inscrição. Gravados depois da classificação, porque o servidor só os aceita de
+     * processo com classificação baseada em ENEM.
+     */
+    edicoesEnem: readonly string[];
   };
   /**
    * Bônus regional (`PUT …/bonus-regional`) — declaração obrigatória, como a cobrança da

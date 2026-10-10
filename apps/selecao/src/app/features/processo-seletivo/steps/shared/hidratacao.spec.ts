@@ -49,6 +49,7 @@ function dtoCom(distribuicao: unknown): ProcessoSeletivoDto {
     origemCandidatos: 'Interno',
     localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
     distribuicaoVagas: distribuicao,
+    opcoesDeclaradas: [],
   } as unknown as ProcessoSeletivoDto;
 }
 
@@ -497,6 +498,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
           areaCodigo: 'REDACAO',
         },
       ],
+      edicoesEnem: [],
     });
   });
 

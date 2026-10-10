@@ -477,6 +477,24 @@ describe('destino de cada pendência no painel', () => {
       );
     });
 
+    it('leva as edições do ENEM não declaradas à Fórmula, onde se acrescentam', () => {
+      expect(rotuloDoItem('classificacao_edicao_enem_nao_declarada', 'classificacao')).toBe(
+        'Fórmula e precisão',
+      );
+      expect(orientacaoDoItem('classificacao_edicao_enem_nao_declarada', 'classificacao')).toBe(
+        `Acrescente as edições do ENEM aceitas. A lista ${GRAVADA_COM_A_CLASSIFICACAO}`,
+      );
+    });
+
+    it('leva o formulário de inscrição sem o campo da edição do ENEM aos Formulários', () => {
+      expect(rotuloDoItem('formulario_inscricao_sem_edicao_enem', 'coleta_de_fatos')).toBe(
+        'Formulários',
+      );
+      expect(orientacaoDoItem('formulario_inscricao_sem_edicao_enem', 'coleta_de_fatos')).toBe(
+        'Inclua no formulário de inscrição o campo da edição do ENEM, obrigatório para todo candidato e fora de seção ou campo condicional.',
+      );
+    });
+
     /** O botão e a orientação chamam o passo pelo mesmo nome. */
     it('nomeia o passo como o botão do painel', () => {
       expect(pendente(RESOLUCAO, 'classificacao').passo?.nome).toBe(FORMULA);
