@@ -5,13 +5,14 @@ import type { FormGroup } from '@angular/forms';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatos, SELECAO_BASE_PATH, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 
 import type { BancaRequeridaDaFase, ProdutoDaFase } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { MatrizDaModalidadeService } from '../../shared/matriz-da-modalidade.service';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './cronograma.component';
 import type { EtapaForm } from './cronograma-form';
@@ -199,6 +200,7 @@ describe('CronogramaStepComponent', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        MatrizDaModalidadeService,
         CatalogosDoCronogramaService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -1826,6 +1828,104 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
+   * O processo em que o candidato se inscreve deriva a modalidade da inscrição: o cronograma propõe a
+   * matriz mesmo sem exigência que recorte por modalidade, e, sem a fase de inscrição, deixa a
+   * matriz esperar por ela em vez de recusar o cronograma.
+   */
+  describe('matriz da modalidade', () => {
+    const ROTA_NORMATIVAS = `${ROTA_PROCESSO}/regras-derivacao/normativas`;
+    const ROTA_DERIVACAO = `${ROTA_PROCESSO}/regras-derivacao`;
+    const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
+    const FASE = { id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true };
+    const PROPOSTA = [
+      {
+        codigoFato: 'MODALIDADE',
+        regras: [
+          { ordem: 0, contribui: 'AC', quando: null },
+          { ordem: 1, contribui: 'AC_PCD', quando: [[{ fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true }]] },
+        ],
+      },
+    ];
+    const FORMULARIO = {
+      finalidade: 'INSCRICAO',
+      faseId: FASE.id,
+      titulo: null,
+      modeloOrigemId: null,
+      modeloOrigemCodigo: null,
+      etapas: [
+        { codigo: 'DADOS_BASICOS', ordem: 0, tipo: 'SECAO', bloco: null, titulo: 'Dados básicos', descricao: null, aviso: null, exibicao: null },
+        { codigo: 'REVISAO_E_ACEITE', ordem: 1, tipo: 'BLOCO', bloco: 'REVISAO_E_ACEITE', titulo: 'Revisão e aceite', descricao: null, aviso: null, exibicao: null },
+      ],
+      fatosColetados: [
+        {
+          fatoCodigo: 'NOME', ordem: 0, rotulo: 'Nome', tipoRenderizacao: 'TEXTO', obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+          precondicao: null, opcoes: null, etapaCodigo: 'DADOS_BASICOS', formato: null, ajuda: null, pedirConfirmacao: false, restricoes: [], impedimento: null,
+        },
+      ],
+      termos: [],
+      grupos: [],
+    };
+
+    beforeEach(() => {
+      store.patchObjectSection('identificacao', { origemCandidatos: OrigemCandidatos.inscricaoPropria });
+      TestBed.inject(CatalogosDoCronogramaService).fatos.set([
+        {
+          codigo: 'CONCORRER_PCD', nome: 'Concorrer na reserva para pessoa com deficiência', dominio: 'BOOLEANO', origem: 'DECLARADO',
+          cardinalidade: 'UNIVALORADO', binding: 'CAMPO_INSCRICAO:CONCORRER_PCD', escopo: 'CANDIDATO', fonteValores: null, ativo: true,
+          valoresDominio: null,
+        } as unknown as FatoCandidatoView,
+      ]);
+    });
+
+    const gravarExigencias = (): Promise<{ valid: boolean; messages?: string[] }> =>
+      (
+        componente as unknown as { gravarExigenciasDocumentais(processoId: string): Promise<{ valid: boolean; messages?: string[] }> }
+      ).gravarExigenciasDocumentais(PROCESSO_ID);
+
+    it('propõe a matriz ao processo com inscrição própria sem exigência que recorte, e a grava depois da pergunta dela', async () => {
+      const gravacao = gravarExigencias();
+      controller.expectOne(ROTA_PROCESSO).flush({
+        ...PROCESSO_COM_ETAPA_GRAVADA,
+        cronogramaFases: [FASE],
+        formularios: [FORMULARIO],
+        regrasDerivacao: [],
+      });
+      await proximoPasso();
+      controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+      await proximoPasso();
+
+      controller.expectNone(ROTA_DERIVACAO);
+      controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO).flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      const itens = controller.expectOne((r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`);
+      expect(itens.request.body.itens.map((i: { fatoCodigo: string }) => i.fatoCodigo)).toEqual(['CONCORRER_PCD']);
+      itens.flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+
+      const derivacao = controller.expectOne(ROTA_DERIVACAO);
+      expect(derivacao.request.body).toEqual(PROPOSTA);
+      derivacao.flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+
+      controller.expectOne(ROTA_DOCUMENTOS).flush(null, { status: 204, statusText: 'No Content' });
+      await expect(gravacao).resolves.toEqual({ valid: true });
+    });
+
+    it('sem fase de inscrição, grava o cronograma e deixa a matriz esperar pela fase', async () => {
+      const gravacao = gravarExigencias();
+      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_ETAPA_GRAVADA, formularios: [], regrasDerivacao: [] });
+      await proximoPasso();
+      controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+      await proximoPasso();
+
+      controller.expectOne(ROTA_DOCUMENTOS).flush(null, { status: 204, statusText: 'No Content' });
+      await expect(gravacao).resolves.toEqual({ valid: true });
+      controller.expectNone(ROTA_DERIVACAO);
+      controller.expectNone((r) => r.url.startsWith(ROTA_INSCRICAO));
+    });
+  });
+
+  /**
    * O preflight do passo espelha a recusa da publicação sobre a norma da exigência. A
    * conferência em si é função pura e já tinha teste; o que faltava — e por isso a ligação
    * entre o rascunho e ela pôde quebrar em silêncio numa refatoração — era provar que o
@@ -1952,11 +2052,13 @@ describe('CronogramaStepComponent', () => {
       const habilitacao = { ...conteudoInicial(), itens: [{ fatoCodigo: 'RENDA_FAMILIAR', ordem: 0, etapaCodigo: null } as never] };
       store.patchObjectSection('formulario', { outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: habilitacao }] });
 
-      const resultado = await (
-        componente as unknown as { garantirCamposQueAsExigenciasPressupoem(id: string, servidor: unknown, dependencias: readonly string[]): Promise<unknown> }
-      ).garantirCamposQueAsExigenciasPressupoem(PROCESSO_ID, { formularios: [], cronogramaFases: [], regrasDerivacao: [] }, []);
+      const resultado = await TestBed.inject(MatrizDaModalidadeService).garantirCampos(
+        PROCESSO_ID,
+        { formularios: [], cronogramaFases: [], regrasDerivacao: [] } as unknown as ProcessoSeletivoDto,
+        new Set(['RENDA_FAMILIAR']),
+      );
 
-      expect(resultado, 'nada a acrescentar: nenhuma gravação').toBeNull();
+      expect(resultado, 'nada a acrescentar: nenhuma gravação').toEqual({ tipo: 'garantidos' });
     });
 
     /**
@@ -2013,18 +2115,10 @@ describe('CronogramaStepComponent', () => {
       };
       const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
 
-      const garantir = (
-        componente as unknown as {
-          garantirCamposQueAsExigenciasPressupoem(
-            processoId: string,
-            servidor: unknown,
-            dependencias: readonly string[],
-          ): Promise<unknown>;
-        }
-      ).garantirCamposQueAsExigenciasPressupoem(
+      const garantir = TestBed.inject(MatrizDaModalidadeService).garantirCampos(
         PROCESSO_ID,
-        { formularios: [], cronogramaFases: [FASE], regrasDerivacao: [] },
-        [],
+        { formularios: [], cronogramaFases: [FASE], regrasDerivacao: [] } as unknown as ProcessoSeletivoDto,
+        new Set(['RENDA_FAMILIAR']),
       );
 
       const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO);

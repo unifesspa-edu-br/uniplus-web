@@ -3,6 +3,7 @@ import {
   PROCESSO_PUBLICADO_DA_MEDICINA,
   TIPOS_DE_PROCESSO,
 } from '../fixtures/consulta-da-medicina';
+import { CAMPOS_DA_MATRIZ_DA_MEDICINA } from '../fixtures/vagas-da-medicina';
 import { responder, responderCom } from '../support/responder';
 
 /**
@@ -59,6 +60,7 @@ const PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO = {
           rotulo: 'Tipo de deficiência',
           tipoRenderizacao: 'SELECAO_MULTIPLA',
         },
+        ...CAMPOS_DA_MATRIZ_DA_MEDICINA.map((campo) => ({ ...campo, ordem: campo.ordem + 1 })),
       ],
     },
   ],

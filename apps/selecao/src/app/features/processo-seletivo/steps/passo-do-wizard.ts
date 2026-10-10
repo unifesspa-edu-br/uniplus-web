@@ -19,6 +19,15 @@ export interface ItemDeConfirmacao {
   readonly valor: string;
 }
 
+/** Em que circunstância o passo é gravado. */
+export interface GravacaoDoPasso {
+  /**
+   * O operador confirmou o resumo de `confirmacaoDeGravacao()` logo antes. A regravação dos passos
+   * anteriores na publicação não mostra resumo: o que só o resumo avisa não pode acontecer ali.
+   */
+  readonly confirmadaPeloOperador: boolean;
+}
+
 /**
  * O que o wizard espera de um passo. `validate()` é o mínimo; o resto é de quem
  * grava na API.
@@ -30,7 +39,7 @@ export interface PassoDoWizard {
   validate(): StepValidation;
 
   /** Grava na API antes de liberar o avanço. */
-  persistir?(): Promise<StepValidation>;
+  persistir?(gravacao?: GravacaoDoPasso): Promise<StepValidation>;
 
   /** Rótulo do botão de avanço enquanto este passo estiver aberto. */
   rotuloDeAvanco?(): string;

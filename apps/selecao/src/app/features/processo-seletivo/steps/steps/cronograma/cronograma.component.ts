@@ -11,8 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi, type ConfiguracaoDerivacaoInput } from '@uniplus/shared-data/selecao';
-import { conteudoInicial, FINALIDADE_INSCRICAO, type ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 
 import {
   PAPEL_DEFINITIVO,
@@ -24,10 +23,10 @@ import {
 } from '../../processo-seletivo.models';
 import { PAPEIS_ESCOLHIVEIS } from '../fase/configuracao-da-fase';
 import { FaseStepComponent } from '../fase/fase.component';
-import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { MatrizDaModalidadeService } from '../../shared/matriz-da-modalidade.service';
 import {
   ORIENTACAO_DE_PERMUTACAO,
   PERMUTACAO_DE_ORDEM,
@@ -35,7 +34,6 @@ import {
 } from '../../shared/gravacao-do-cronograma';
 import {
   CONSEQUENCIA_REENVIO,
-  FATO_MODALIDADE,
   arvoreDeExigencias,
   comAlcanceDeTodasAsFases,
   exigenciaDecideResultado,
@@ -70,20 +68,7 @@ import {
   type ProducaoDosFatos,
 } from '../../shared/fase-do-fato';
 import { etapasDe } from '../../shared/hidratacao';
-import {
-  comCamposQueAsExigenciasPressupoem,
-  fatosCitadosPelaDerivacao,
-  quemCitaNoProcesso,
-} from '../formulario/formulario-de-inscricao';
-import {
-  conteudoDoFormulario,
-  faseDaInscricao,
-  fatosColetadosPor,
-  fatosDasOutrasFinalidades,
-  formularioDaFinalidade,
-  inscricaoDoServidor,
-  type FormularioParaGravar,
-} from '../formulario/formulario-do-processo';
+import { quemCitaNoProcesso } from '../formulario/formulario-de-inscricao';
 import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
 import {
   inicioDeHojeNoFusoInstitucional,
@@ -153,6 +138,7 @@ export class CronogramaStepComponent {
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly api = inject(ProcessosSeletivosApi);
+  private readonly derivacaoDaModalidade = inject(MatrizDaModalidadeService);
 
   readonly careteres = CARATERES;
   readonly formulario = novoFormularioDoCronograma();
@@ -1429,25 +1415,58 @@ export class CronogramaStepComponent {
     // A matriz de derivação é buscada ANTES de os campos serem gravados: as regras dela
     // perguntam ao candidato se ele quer concorrer a cada cota, e uma regra que cita fato que o
     // processo não coleta é recusada. Os dois comandos gravam em seguida, nessa ordem.
-    const proposta = await this.propostaDeDerivacaoDeModalidade(processoId, detalhe.data);
+    const recorta = todasAsExigencias(this.store.draft().documentos).some(
+      (exigencia) => modalidadesDaExigencia(exigencia) !== null,
+    );
+    const proposta = this.pedeMatriz(recorta)
+      ? await this.derivacaoDaModalidade.proposta(processoId, detalhe.data, 'manter')
+      : ({ tipo: 'nadaAGravar' } as const);
     if (geracao !== this.store.geracao()) return { valid: true };
-    if (!proposta.ok) return proposta.recusa;
+    if (proposta.tipo === 'recusada') {
+      return { valid: false, messages: [`As etapas e o cronograma foram gravados. ${proposta.motivo}`] };
+    }
+    let matriz = proposta.tipo === 'gravar' ? proposta.matriz : [];
 
-    const campos = await this.garantirCamposQueAsExigenciasPressupoem(
+    const draft = this.store.draft();
+    const citadosPelasExigencias = new Set(
+      quemCitaNoProcesso({
+        documentos: draft.documentos,
+        derivacao: detalhe.data.regrasDerivacao ?? [],
+        desempate: draft.desempate,
+      }).keys(),
+    );
+    const campos = await this.derivacaoDaModalidade.garantirCampos(
       processoId,
       detalhe.data,
-      proposta.dependencias,
+      new Set([...citadosPelasExigencias, ...(proposta.tipo === 'gravar' ? proposta.dependencias : [])]),
     );
     if (geracao !== this.store.geracao()) return { valid: true };
-    if (campos !== null) return campos;
+    if (campos.tipo === 'recusados') {
+      return { valid: false, messages: [`As etapas e o cronograma foram gravados. ${campos.motivo}`] };
+    }
+    if (campos.tipo === 'semFaseDeInscricao') {
+      // Sem a fase de inscrição, a matriz espera por ela; a exigência que depende de um dado, não.
+      if (recorta || !this.derivacaoDaModalidade.coletaTudo(detalhe.data, citadosPelasExigencias)) {
+        return {
+          valid: false,
+          messages: [
+            'As etapas e o cronograma foram gravados. Uma exigência documental depende de um dado que o formulário de inscrição precisa coletar, e o cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição.',
+          ],
+        };
+      }
+      matriz = [];
+    }
 
-    const derivacao = await this.gravarDerivacaoDeModalidade(
-      processoId,
-      proposta.matriz,
-      detalhe.data,
-    );
+    const derivacao = matriz.length === 0 ? null : await this.derivacaoDaModalidade.gravar(processoId, matriz, detalhe.data);
     if (geracao !== this.store.geracao()) return { valid: true };
-    if (derivacao !== null) return derivacao;
+    if (derivacao !== null) {
+      return {
+        valid: false,
+        messages: [
+          `As etapas e o cronograma foram gravados, e o formulário de inscrição está com os campos que as regras de modalidade pressupõem. ${derivacao}`,
+        ],
+      };
+    }
 
     const gravacao = await this.cadastro.definirDocumentosExigidos(processoId, raizes);
     if (geracao !== this.store.geracao()) return { valid: true };
@@ -1464,242 +1483,15 @@ export class CronogramaStepComponent {
   }
 
   /**
-   * Põe no formulário de inscrição os campos que as exigências deste cronograma pressupõem, e
-   * grava. Devolve `null` quando deu certo, ou a recusa a ser exibida.
-   *
-   * Parte do estado do SERVIDOR e aplica a ele só o que as exigências e a derivação acrescentam:
-   * as edições ainda não gravadas do passo Formulário são dele, e ir junto aqui as gravaria por um
-   * caminho que o operador não escolheu. Nada é gravado quando não há o que acrescentar.
-   *
-   * Sem formulário de inscrição no servidor, ele é criado pelo cabeçalho — a seção dos outros
-   * dados, a revisão e aceite e a fase que coleta inscrição — e relido: a API o cria com a seção
-   * dos dados básicos, e os itens se conferem contra ela.
+   * A matriz da modalidade é proposta para o processo em que o candidato se inscreve — é a
+   * inscrição que coleta os opt-ins de que ela deriva —, e para o que recorta exigência por
+   * modalidade, que sem ela escreveria uma condição que nunca resolve.
    */
-  private async garantirCamposQueAsExigenciasPressupoem(
-    processoId: string,
-    servidor: ProcessoSeletivoDto,
-    dependenciasDaDerivacao: readonly string[],
-  ): Promise<StepValidation | null> {
-    const geracao = this.store.geracao();
-    const draft = this.store.draft();
-    const citados = new Set([
-      ...quemCitaNoProcesso({
-        documentos: draft.documentos,
-        derivacao: servidor.regrasDerivacao ?? [],
-        desempate: draft.desempate,
-      }).keys(),
-      ...dependenciasDaDerivacao,
-    ]);
-    // As outras finalidades contam também como estão no rascunho: o fato que uma aba ainda não
-    // gravada coleta entraria na inscrição e ficaria em dois formulários.
-    const outras = [
-      ...new Set([
-        ...fatosDasOutrasFinalidades(servidor.formularios ?? [], FINALIDADE_INSCRICAO),
-        ...draft.formulario.outrasFinalidades.flatMap((outra) => fatosColetadosPor(outra.conteudo)),
-      ]),
-    ];
-    const gravado = formularioDaFinalidade(servidor.formularios ?? [], FINALIDADE_INSCRICAO);
-    const conteudoGravado = gravado === null ? conteudoInicial() : conteudoDoFormulario(gravado);
-    // Este caminho só ACRESCENTA — o conjunto de "postos por exigência" vai vazio de propósito.
-    // Quem decide TIRAR campo é o passo do formulário, que sabe distinguir o que entrou por
-    // causa de um gatilho do que foi declarado de propósito.
-    const pressuposto = (conteudo: ConteudoDoFormulario): ConteudoDoFormulario =>
-      comCamposQueAsExigenciasPressupoem(conteudo, citados, this.catalogos.fatos(), new Set(), outras);
-
-    const desejado = pressuposto(conteudoGravado);
-    if (desejado === conteudoGravado) return null;
-
-    const recusa = (motivo: string): StepValidation => ({
-      valid: false,
-      messages: [`As etapas e o cronograma foram gravados. ${motivo}`],
-    });
-    const faseId = gravado?.faseId ?? faseDaInscricao(servidor.cronogramaFases)?.id ?? null;
-    if (faseId === null) {
-      return recusa(
-        'Uma exigência documental depende de um dado que o formulário de inscrição precisa coletar, e o cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição.',
-      );
-    }
-
-    let base: FormularioParaGravar | null = gravado === null ? null : { faseId: gravado.faseId, conteudo: conteudoGravado };
-    let final = desejado;
-    if (gravado === null) {
-      const criacao = await this.cadastro.gravarFormulario(processoId, FINALIDADE_INSCRICAO, null, {
-        faseId,
-        conteudo: { ...desejado, itens: [], grupos: [], termos: [] },
-      });
-      if (geracao !== this.store.geracao()) return null;
-      if (!criacao.ok) return recusa(this.problemI18n.resolve(criacao.problem).title);
-
-      const relido = await firstValueFrom(this.api.obter(processoId));
-      if (geracao !== this.store.geracao()) return null;
-      const criado = isApiOk(relido) ? formularioDaFinalidade(relido.data.formularios, FINALIDADE_INSCRICAO) : null;
-      if (criado === null) {
-        return recusa('O formulário de inscrição foi criado, mas não foi possível relê-lo para acrescentar os campos. Tente gravar de novo.');
-      }
-      base = { faseId: criado.faseId, conteudo: conteudoDoFormulario(criado) };
-      final = pressuposto(base.conteudo);
-    }
-
-    const gravacao = await this.cadastro.gravarFormulario(processoId, FINALIDADE_INSCRICAO, base, { faseId, conteudo: final });
-    if (geracao !== this.store.geracao()) return null;
-    if (!gravacao.ok) return recusa(this.problemI18n.resolve(gravacao.problem).title);
-
-    await this.acompanharNoRascunho(processoId, conteudoGravado, pressuposto);
-    return null;
-  }
-
-  /**
-   * Leva ao rascunho o que entrou no formulário gravado. Sem edição pendente no passo Formulário,
-   * o rascunho passa a ser o que o servidor tem — com a seção dos dados básicos, se o formulário
-   * acabou de nascer. Com edição pendente, ela fica, e só os campos acrescentados entram nela.
-   *
-   * O que entrou aqui entrou SOZINHO, e fica registrado como tal: sem isso, o formulário não
-   * reconhece o campo como posto por exigência e o preserva mesmo depois de o gatilho que o pediu
-   * ser apagado.
-   */
-  private async acompanharNoRascunho(
-    processoId: string,
-    conteudoGravadoAntes: ConteudoDoFormulario,
-    pressuposto: (conteudo: ConteudoDoFormulario) => ConteudoDoFormulario,
-  ): Promise<void> {
-    const geracao = this.store.geracao();
-    const formulario = this.store.draft().formulario;
-    const antes = new Set(fatosColetadosPor(formulario.conteudo));
-    const semEdicaoPendente = JSON.stringify(formulario.conteudo) === JSON.stringify(conteudoGravadoAntes);
-
-    let depois: ConteudoDoFormulario | null = null;
-    if (semEdicaoPendente) {
-      const relido = await firstValueFrom(this.api.obter(processoId));
-      if (geracao !== this.store.geracao()) return;
-      if (isApiOk(relido)) {
-        const servidor = inscricaoDoServidor(relido.data);
-        this.store.projetarSecao('formulario', servidor);
-        depois = servidor.conteudo;
-      }
-    }
-    if (depois === null) {
-      depois = pressuposto(formulario.conteudo);
-      if (depois !== formulario.conteudo) this.store.patchSection('formulario', { ...formulario, conteudo: depois });
-    }
-
-    const acrescentados = fatosColetadosPor(depois).filter((codigo) => !antes.has(codigo));
-    if (acrescentados.length > 0) {
-      this.store.camposPostosPelasExigencias.update((atual) => new Set([...atual, ...acrescentados]));
-    }
-  }
-
-  /**
-   * A matriz de derivação de modalidade a gravar, e os campos de formulário de que ela
-   * depende. Devolve matriz vazia quando não há o que fazer.
-   *
-   * A modalidade não é declarada pelo candidato: ela RESULTA da avaliação dos opt-ins e das
-   * elegibilidades dele contra as regras do certame. Sem essas regras, dizer "este documento é
-   * de quem concorre na cota tal" é escrever uma condição que nunca resolverá — e é por isso
-   * que o servidor recusa a gravação, não porque o recorte esteja errado.
-   *
-   * A matriz vem do próprio servidor, recortada para as modalidades que este processo oferta.
-   * Ela não é escrita aqui de propósito: de que opt-ins e de que elegibilidades cada cota se
-   * compõe é matéria da Lei 12.711/2012, e uma segunda cópia dela no wizard divergiria em
-   * silêncio da que classifica os candidatos.
-   *
-   * As dependências saem daqui junto com a matriz porque as duas coisas se gravam em ordem: as
-   * regras perguntam ao candidato se ele quer concorrer a cada cota e se veio de escola
-   * pública, e uma regra que cite fato que o processo não coleta é recusada. Buscá-las depois
-   * de gravar os campos deixaria o certame com uma matriz que o servidor não aceita.
-   */
-  private async propostaDeDerivacaoDeModalidade(
-    processoId: string,
-    servidor: ProcessoSeletivoDto,
-  ): Promise<
-    | { ok: true; matriz: readonly ConfiguracaoDerivacaoInput[]; dependencias: readonly string[] }
-    | { ok: false; recusa: StepValidation }
-  > {
-    const vazia = { ok: true, matriz: [], dependencias: [] } as const;
-
-    const recorta = todasAsExigencias(this.store.draft().documentos).some(
-      (exigencia) => modalidadesDaExigencia(exigencia) !== null,
+  private pedeMatriz(recorta: boolean): boolean {
+    return (
+      recorta ||
+      this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria
     );
-    if (!recorta) return vazia;
-
-    // Quem já declara como deriva a modalidade não tem a matriz substituída pela proposta a
-    // cada gravação de cronograma: o ajuste que fez é dele.
-    const jaDeriva = (servidor.regrasDerivacao ?? []).some(
-      (config) => config.codigoFato === FATO_MODALIDADE,
-    );
-    if (jaDeriva) return vazia;
-
-    const proposta = await firstValueFrom(this.api.obterRegrasDerivacaoNormativas(processoId));
-    if (!isApiOk(proposta)) {
-      return {
-        ok: false,
-        recusa: {
-          valid: false,
-          messages: [
-            `As etapas e o cronograma foram gravados. ${this.problemI18n.resolve(proposta.problem).title}`,
-          ],
-        },
-      };
-    }
-
-    // Proposta vazia é o processo que ainda não declarou quadro de vagas. A exigência que
-    // recorta modalidade nenhuma já é acusada pela conferência de alcance, com uma mensagem
-    // que fala do quadro de vagas — a que viria daqui falaria de regra de derivação, que é
-    // consequência, não causa.
-    if (proposta.data.length === 0) return vazia;
-
-    return {
-      ok: true,
-      matriz: proposta.data,
-      dependencias: [
-        ...new Set(
-          proposta.data.flatMap((config) => fatosCitadosPelaDerivacao(config.regras)),
-        ),
-      ],
-    };
-  }
-
-  /** Grava a matriz proposta. Devolve `null` quando deu certo, ou a recusa a ser exibida. */
-  private async gravarDerivacaoDeModalidade(
-    processoId: string,
-    matriz: readonly ConfiguracaoDerivacaoInput[],
-    servidor: ProcessoSeletivoDto,
-  ): Promise<StepValidation | null> {
-    if (matriz.length === 0) return null;
-
-    // O comando SUBSTITUI a coleção inteira. Enviar só a matriz de modalidade apagaria a
-    // derivação de qualquer outro fato que o processo já declarasse — hoje não há um segundo
-    // fato derivável no catálogo, e é justamente por isso que o dia em que houver a perda
-    // seria silenciosa.
-    const preservadas = (servidor.regrasDerivacao ?? []).filter(
-      (config) => config.codigoFato !== FATO_MODALIDADE,
-    );
-
-    const gravacao = await this.cadastro.definirRegrasDerivacao(processoId, [
-      ...preservadas,
-      ...matriz,
-    ]);
-    if (!gravacao.ok) {
-      return {
-        valid: false,
-        messages: [
-          `As etapas e o cronograma foram gravados, e o formulário de inscrição está com os campos que as regras de modalidade pressupõem. ${this.problemI18n.resolve(gravacao.problem).title}`,
-        ],
-      };
-    }
-
-    // O rascunho acompanha o que foi gravado — sem isto, os campos que a matriz acabou de
-    // pressupor apareceriam no passo do formulário como campos que nada no certame usa, e a
-    // tela pediria para conferir se ainda há motivo para pedi-los ao candidato.
-    const formulario = this.store.draft().formulario;
-    this.store.patchSection('formulario', {
-      ...formulario,
-      derivacao: [...preservadas, ...matriz].map((config) => ({
-        codigoFato: config.codigoFato,
-        regras: config.regras,
-      })),
-    });
-
-    return null;
   }
 
   /**
