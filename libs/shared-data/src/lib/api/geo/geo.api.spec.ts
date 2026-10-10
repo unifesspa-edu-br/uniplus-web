@@ -121,4 +121,15 @@ describe('GeoApi', () => {
 
     await promise;
   });
+
+  it('obterCidade() faz GET /api/cidades/{codigoIbge} com Accept versionado', async () => {
+    const promise = firstValueFrom(api.obterCidade('5002704'));
+
+    const req = controller.expectOne(`${BASE}/api/cidades/5002704`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('cidade', 1));
+    req.flush({ codigoIbge: '5002704', nome: 'Campo Grande', uf: 'MS' });
+
+    await promise;
+  });
 });

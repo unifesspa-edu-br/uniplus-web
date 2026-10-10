@@ -2,6 +2,7 @@ export { GEO_BASE_PATH } from './tokens';
 export {
   GeoApi,
   type CepResolvidoDto,
+  type CidadeDetalheDto,
   type CidadesFiltro,
   type CidadeResumoDto,
   type LogradouroAlternativoDto,
