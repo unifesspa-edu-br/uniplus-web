@@ -180,6 +180,21 @@ describe('InscricaoDoCandidatoPage', () => {
     ]);
   });
 
+  it('o envio leva o termo marcado logo antes, sem esperar a próxima emissão do formulário', async () => {
+    const tela = await abrir();
+    const secoes = tela.querySelectorAll<HTMLButtonElement>(
+      'nav[aria-label="Seções do formulário"] button',
+    );
+    await clicar(secoes[secoes.length - 1]);
+
+    (
+      tela.querySelector('[data-campo="VERACIDADE"] input[type="checkbox"]') as HTMLInputElement
+    ).click();
+    botao(tela, 'Enviar inscrição').click();
+
+    expect(servico.enviados[0].aceites?.map((a) => a.codigo)).toEqual(['VERACIDADE']);
+  });
+
   it('a recusa por campo do envio aparece no campo, com a mensagem para o candidato', async () => {
     servico.recusaDoEnvio = apiFailure(
       {
