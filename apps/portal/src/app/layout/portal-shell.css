@@ -119,6 +119,19 @@
   }
 }
 
+/* ── Impressão ───────────────────────────────────────────────────── */
+
+/* A trava no viewport cortaria no papel tudo o que passa da primeira tela: o
+   shell volta ao fluxo normal e o conteúdo se reparte em quantas páginas
+   precisar. Cabeçalho, navegação e rodapé saem por `.u-no-print` no template. */
+@media print {
+  :host,
+  .portal-scroll {
+    height: auto;
+    overflow: visible;
+  }
+}
+
 /* ── Rodapé institucional ────────────────────────────────────────── */
 
 .portal-footer {

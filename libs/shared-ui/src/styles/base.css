@@ -82,6 +82,15 @@ button, input, select, textarea {
   overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
 
+/* ---------- 4b. Impressão ----------
+ * `.u-no-print` tira do papel o que só serve à tela: cabeçalho, navegação,
+ * rodapé, controles flutuantes e botões de ação. Fica no elemento (ou no host
+ * do componente) e não depende do encapsulamento de estilo de quem o usa.
+ * ------------------------------------------------------------------------- */
+@media print {
+  .u-no-print { display: none !important; }
+}
+
 /* ---------- 5. Typography utilities ----------
  * Use por classe quando o elemento HTML não combinar com o nível semântico.
  * ------------------------------------------------------------------------- */
