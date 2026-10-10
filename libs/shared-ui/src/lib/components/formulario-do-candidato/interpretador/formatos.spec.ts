@@ -6,11 +6,11 @@ import { atendeAoFormato, ufDoCodigoIbge } from './formatos';
  */
 describe('formatos de texto', () => {
   it.each([
-    ['CPF', '529.982.247-25', true],
-    ['CPF', '529982247-25', true],
+    ['CPF', '163.287.930-14', true],
+    ['CPF', '163287930-14', true],
     ['CPF', '111.222.333-44', false],
     ['CPF', '00000000000', false],
-    ['CPF', '529a982.247-25', false],
+    ['CPF', '163a287.930-14', false],
     ['CPF', '１２３４５６７８９67', false],
     ['TELEFONE', '(94) 3322-1234', true],
     ['TELEFONE', '94 99123-4567', true],

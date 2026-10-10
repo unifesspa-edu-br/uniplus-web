@@ -3,12 +3,12 @@ import { cpfValidator } from './cpf.validator';
 
 describe('cpfValidator', () => {
   it('aceita CPF válido formatado', () => {
-    const control = new FormControl('529.982.247-25', [cpfValidator]);
+    const control = new FormControl('163.287.930-14', [cpfValidator]);
     expect(control.errors).toBeNull();
   });
 
   it('aceita CPF válido sem máscara', () => {
-    const control = new FormControl('52998224725', [cpfValidator]);
+    const control = new FormControl('16328793014', [cpfValidator]);
     expect(control.errors).toBeNull();
   });
 
