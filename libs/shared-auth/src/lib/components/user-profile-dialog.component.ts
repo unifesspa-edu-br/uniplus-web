@@ -13,6 +13,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { ApiResult } from '@uniplus/shared-core/http';
 import { DOMAIN_ROLES, PROFILE_BASE_PATH, ROLE_LABELS } from '@uniplus/shared-auth/bootstrap';
+import { cpfRevelavel, type TrechoMascarado } from '@uniplus/shared-utils';
 
 /** Resposta de `GET /api/profile/me` (`UserProfileResponse` da uniplus-api). */
 interface ProfileResponse {
@@ -45,12 +46,7 @@ type Estado =
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <dialog
-      #dialog
-      class="uni-dialog"
-      aria-labelledby="auth-profile-title"
-      (close)="closed.emit()"
-    >
+    <dialog #dialog class="uni-dialog" aria-labelledby="auth-profile-title" (close)="closed.emit()">
       <div class="uni-dialog__panel">
         <div class="uni-dialog__header">
           <h3 id="auth-profile-title" class="uni-dialog__title">Meu perfil</h3>
@@ -63,78 +59,80 @@ type Estado =
             &times;
           </button>
         </div>
-        <div class="uni-dialog__body" aria-live="polite">
-          @switch (estado().tipo) {
-            @case ('carregando') {
-              <p data-testid="auth-profile-loading">Carregando seus dados…</p>
-            }
-            @case ('erro') {
-              <p role="alert" data-testid="auth-profile-error">
-                Não foi possível carregar o seu perfil. Tente novamente em instantes.
-              </p>
-            }
-            @case ('pronto') {
-              @if (perfil(); as p) {
-                <dl class="auth-profile__list" data-testid="auth-profile-data">
-                  <div>
-                    <dt>Nome</dt>
-                    <dd>{{ p.name || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt>Nome social</dt>
-                    <dd>{{ p.nomeSocial || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt>E-mail</dt>
-                    <dd>{{ p.email || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt>CPF</dt>
-                    <dd class="auth-profile__cpf">
-                      <span data-testid="auth-profile-cpf"
-                        >@for (parte of cpfSegmentos(p.cpf, cpfVisivel()); track $index) {@if (
-                          parte.mascara
-                        ) {<span class="auth-profile__mask">{{ parte.texto }}</span
-                          >} @else {{{ parte.texto }}}}</span
-                      >
-                      @if (cpfValido(p.cpf)) {
-                        <button
-                          type="button"
-                          class="btn btn--tertiary btn--icon-only btn--rect"
-                          data-testid="auth-profile-cpf-toggle"
-                          [attr.aria-label]="cpfVisivel() ? 'Ocultar CPF' : 'Mostrar CPF'"
-                          [attr.aria-pressed]="cpfVisivel()"
-                          (click)="cpfVisivel.set(!cpfVisivel())"
-                        >
-                          <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            aria-hidden="true"
-                          >
-                            @if (cpfVisivel()) {
-                              <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M14.12 14.12a3 3 0 11-4.24-4.24M1 1l22 22" />
-                            } @else {
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                              <circle cx="12" cy="12" r="3" />
-                            }
-                          </svg>
-                        </button>
-                      }
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Perfis de acesso</dt>
-                    <dd>{{ perfisDeAcesso(p.roles) }}</dd>
-                  </div>
-                </dl>
+        <div class="uni-dialog__body">
+          <!-- Só o carregamento e a falha são anunciados: os dados, com o CPF, não são lidos sozinhos. -->
+          <div aria-live="polite" data-testid="auth-profile-status">
+            @switch (estado().tipo) {
+              @case ('carregando') {
+                <p data-testid="auth-profile-loading">Carregando seus dados…</p>
+              }
+              @case ('erro') {
+                <p role="alert" data-testid="auth-profile-error">
+                  Não foi possível carregar o seu perfil. Tente novamente em instantes.
+                </p>
               }
             }
+          </div>
+          @if (perfil(); as p) {
+            <dl class="auth-profile__list" data-testid="auth-profile-data">
+              <div>
+                <dt>Nome</dt>
+                <dd>{{ p.name || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Nome social</dt>
+                <dd>{{ p.nomeSocial || '—' }}</dd>
+              </div>
+              <div>
+                <dt>E-mail</dt>
+                <dd>{{ p.email || '—' }}</dd>
+              </div>
+              <div>
+                <dt>CPF</dt>
+                <dd class="auth-profile__cpf">
+                  <span data-testid="auth-profile-cpf">
+                    @for (parte of cpfSegmentos(p.cpf, cpfVisivel()); track $index) {
+                      <span [class.auth-profile__mask]="parte.oculto">{{ parte.texto }}</span>
+                    }
+                  </span>
+                  @if (cpfValido(p.cpf)) {
+                    <button
+                      type="button"
+                      class="btn btn--tertiary btn--icon-only btn--rect"
+                      data-testid="auth-profile-cpf-toggle"
+                      aria-label="Mostrar CPF"
+                      [attr.aria-pressed]="cpfVisivel()"
+                      (click)="cpfVisivel.set(!cpfVisivel())"
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        @if (cpfVisivel()) {
+                          <path
+                            d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M14.12 14.12a3 3 0 11-4.24-4.24M1 1l22 22"
+                          />
+                        } @else {
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        }
+                      </svg>
+                    </button>
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt>Perfis de acesso</dt>
+                <dd>{{ perfisDeAcesso(p.roles) }}</dd>
+              </div>
+            </dl>
           }
         </div>
         <div class="uni-dialog__footer">
@@ -219,34 +217,14 @@ export class UserProfileDialogComponent {
   }
 
   protected cpfValido(cpf: string | null): boolean {
-    return (cpf?.replace(/\D/g, '').length ?? 0) === 11;
+    return cpfRevelavel(cpf).revelado !== null;
   }
 
-  /**
-   * O CPF na ordem de exibição. Mascarado, segue o padrão do Uni+ (`***.999.999-**`, o da CGU
-   * que a API também aplica): os três primeiros dígitos e os dois verificadores ficam ocultos.
-   * Os trechos `mascara` recebem o ajuste de altura do asterisco.
-   */
-  protected cpfSegmentos(
-    cpf: string | null,
-    visivel: boolean,
-  ): readonly { readonly texto: string; readonly mascara: boolean }[] {
-    if (!cpf) return [{ texto: '—', mascara: false }];
-    const digitos = cpf.replace(/\D/g, '');
-    if (digitos.length !== 11) return [{ texto: '***.***.***-**', mascara: true }];
-    if (visivel) {
-      return [
-        {
-          texto: digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'),
-          mascara: false,
-        },
-      ];
-    }
-    return [
-      { texto: '***', mascara: true },
-      { texto: `.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-`, mascara: false },
-      { texto: '**', mascara: true },
-    ];
+  /** O CPF na ordem de exibição, na máscara única; os trechos ocultos recebem o ajuste do asterisco. */
+  protected cpfSegmentos(cpf: string | null, visivel: boolean): readonly TrechoMascarado[] {
+    if (!cpf) return [{ texto: '—', oculto: false }];
+    const dado = cpfRevelavel(cpf);
+    return visivel && dado.revelado ? [{ texto: dado.revelado, oculto: false }] : dado.mascarado;
   }
 
   protected perfisDeAcesso(roles: readonly string[]): string {

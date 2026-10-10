@@ -6,7 +6,12 @@ export { BackToTopComponent } from './components/back-to-top/back-to-top';
 export { BackToTopContainerDirective } from './components/back-to-top/back-to-top-container.directive';
 export { BackToTopScrollService } from './components/back-to-top/back-to-top.service';
 export { BreadcrumbComponent, type UiBreadcrumbItem } from './components/breadcrumb/breadcrumb';
-export { ButtonComponent, type UiButtonSize, type UiButtonType, type UiButtonVariant } from './components/button/button';
+export {
+  ButtonComponent,
+  type UiButtonSize,
+  type UiButtonType,
+  type UiButtonVariant,
+} from './components/button/button';
 export { CardComponent } from './components/card/card';
 export { CpfInputComponent } from './components/cpf-input/cpf-input';
 export { DataTableComponent, type UiDataTableColumn } from './components/data-table/data-table';
@@ -15,7 +20,10 @@ export { DrawerComponent } from './components/drawer/drawer';
 export { EmptyStateComponent } from './components/empty-state/empty-state';
 export { FileUploadComponent } from './components/file-upload/file-upload';
 export { FilterBarComponent } from './components/filter-bar/filter-bar';
-export { FilterChipsComponent, type UiFilterChipOption } from './components/filter-chips/filter-chips';
+export {
+  FilterChipsComponent,
+  type UiFilterChipOption,
+} from './components/filter-chips/filter-chips';
 export { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog';
 export { FormFieldComponent } from './components/form-field/form-field';
 export { InstitutionalBarComponent } from './components/institutional-bar/institutional-bar';
@@ -42,7 +50,10 @@ export * from './components/editor-de-condicoes/condicoes-de-fatos';
 export { SkeletonComponent } from './components/skeleton/skeleton';
 export { SkipLinkComponent } from './components/skip-link/skip-link';
 export { SpinnerComponent } from './components/spinner/spinner';
-export { StatusBadgeComponent, type UiStatusBadgeStatus } from './components/status-badge/status-badge';
+export {
+  StatusBadgeComponent,
+  type UiStatusBadgeStatus,
+} from './components/status-badge/status-badge';
 export { TagComponent, type UiTagVariant } from './components/tag/tag';
 export { TextInputComponent } from './components/text-input/text-input';
 export { TextareaComponent } from './components/textarea/textarea';
@@ -54,7 +65,6 @@ export {
 export { BulletComponent, type UiBulletVariant } from './components/bullet/bullet';
 
 // Pipes
-export { CpfPipe } from './pipes/cpf.pipe';
 export { DateBrPipe } from './pipes/date-br.pipe';
 export { NomeSocialPipe } from './pipes/nome-social.pipe';
 

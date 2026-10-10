@@ -24,7 +24,7 @@ import {
   type InscricaoRequest,
   SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
-import { isValidCpf, maskCpf } from '@uniplus/shared-data/utils';
+import { isValidCpf } from '@uniplus/shared-data/utils';
 import {
   AlertComponent,
   derivadosDoSistema,
@@ -36,6 +36,7 @@ import {
   SpinnerComponent,
   type ValorJson,
 } from '@uniplus/shared-ui/components';
+import { mascararCpf } from '@uniplus/shared-utils';
 
 import {
   InscricaoDoCandidatoService,
@@ -127,7 +128,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     const cpf = this.usuario.user()?.cpf.replace(/\D/g, '') ?? '';
     const coletaCpf = this.formulario()?.fatosColetados.some((c) => c.fatoCodigo === 'CPF');
     const fixas: Record<string, RespostaFixa> = {};
-    if (coletaCpf && isValidCpf(cpf)) fixas['CPF'] = { valor: cpf, exibicao: maskCpf(cpf) };
+    if (coletaCpf && isValidCpf(cpf)) fixas['CPF'] = { valor: cpf, exibicao: mascararCpf(cpf) };
     return fixas;
   });
 
