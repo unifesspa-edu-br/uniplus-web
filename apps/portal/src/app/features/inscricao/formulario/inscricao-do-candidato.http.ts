@@ -7,7 +7,6 @@ import {
   idempotencyKey,
   withIdempotencyKey,
 } from '@uniplus/shared-core/idempotency';
-import { TURNOS_OFERTA } from '@uniplus/shared-data/configuracao';
 import {
   certamePublicoRequest,
   type CertamePublicadoDto,
@@ -19,6 +18,7 @@ import {
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/selecao';
 
+import { nomeDaOferta } from '../oferta-da-inscricao';
 import {
   InscricaoDoCandidatoService,
   type OfertaDaInscricao,
@@ -82,15 +82,6 @@ export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
   }
 }
 
-const ROTULO_DO_TURNO = new Map(TURNOS_OFERTA.map((t) => [t.value, t.label]));
-
 function ofertasDo(certame: CertamePublicadoDto): readonly OfertaDaInscricao[] {
-  return certame.ofertas.map((o) => ({
-    id: o.ofertaCursoOrigemId,
-    nome: [
-      `${o.cursoNome} (${o.cursoGrau})`,
-      o.unidadeOfertanteNome,
-      o.turnos.map((t) => ROTULO_DO_TURNO.get(t) ?? t).join(' e '),
-    ].join(' — '),
-  }));
+  return certame.ofertas.map((o) => ({ id: o.ofertaCursoOrigemId, nome: nomeDaOferta(o) }));
 }
