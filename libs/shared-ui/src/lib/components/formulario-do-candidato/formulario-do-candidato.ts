@@ -315,6 +315,8 @@ export class FormularioDoCandidatoComponent {
     source: this.partida,
     computation: () => new Set(this.termosAceitosIniciais()),
   });
+  /** Os termos aceitos agora, pelo código — o que se lê para gravar, sem esperar a próxima emissão. */
+  readonly termosAceitos = computed<readonly string[]>(() => [...this.aceitos()]);
   /** As recusas do servidor que ainda valem: a resposta mudada leva a dela. */
   protected readonly erros = linkedSignal<readonly ErroDoServidor[], readonly ErroDoServidor[]>({
     source: this.errosDoServidor,
@@ -378,7 +380,7 @@ export class FormularioDoCandidatoComponent {
       untracked(() => this.simulacaoChange.emit(simulacao));
     });
     effect(() => {
-      const aceitos = [...this.aceitos()];
+      const aceitos = this.termosAceitos();
       untracked(() => this.termosAceitosChange.emit(aceitos));
     });
     effect(() => {

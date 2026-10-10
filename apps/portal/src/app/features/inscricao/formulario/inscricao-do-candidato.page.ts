@@ -91,11 +91,11 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly termosAceitosIniciais = signal<readonly string[]>([]);
 
   private readonly simulacao = signal<SimulacaoDoFormulario>({});
-  private readonly termosAceitos = signal<readonly string[]>([]);
   /** A escolha do candidato: parte da gravada ao carregar e só ele a muda, nem a releitura do ETag. */
   protected readonly ofertaEscolhida = signal<string | null>(null);
   protected readonly erroDaOferta = signal<string | null>(null);
   private readonly selectDaOferta = viewChild<ElementRef<HTMLSelectElement>>('selectDaOferta');
+  private readonly formularioDoCandidato = viewChild(FormularioDoCandidatoComponent);
 
   protected readonly ocupada = signal(false);
   protected readonly errosDoServidor = signal<readonly ErroDoServidor[]>([]);
@@ -184,10 +184,6 @@ export class InscricaoDoCandidatoPage implements OnInit {
     this.simulacao.set(simulacao);
   }
 
-  protected aceitar(termos: readonly string[]): void {
-    this.termosAceitos.set(termos);
-  }
-
   protected escolherOferta(evento: Event): void {
     const valor = (evento.target as HTMLSelectElement).value;
     this.ofertaEscolhida.set(valor === '' ? null : valor);
@@ -230,14 +226,19 @@ export class InscricaoDoCandidatoPage implements OnInit {
     sucesso: (dado: T) => void,
   ): void {
     const inscricao = this.inscricao();
-    if (!inscricao || this.ocupada()) return;
+    const formulario = this.formularioDoCandidato();
+    if (!inscricao || !formulario || this.ocupada()) return;
     this.ocupada.set(true);
     this.conflito.set(null);
     this.recusaGeral.set(null);
     this.errosDoServidor.set([]);
     this.erroDaOferta.set(null);
     this.aviso.set('');
-    chamada(this.request(inscricao), inscricao.eTag)
+    // Lido do formulário no clique: a emissão das mudanças só chega no ciclo seguinte.
+    chamada(
+      this.request(inscricao, formulario.simulacao(), formulario.termosAceitos()),
+      inscricao.eTag,
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.ocupada.set(false);
@@ -253,8 +254,12 @@ export class InscricaoDoCandidatoPage implements OnInit {
    * O corpo do salvar e do envio. A resposta que o candidato apagou vai como `null`: ausente do corpo, o
    * servidor manteria a gravada.
    */
-  private request(inscricao: InscricaoDto): InscricaoRequest {
-    const respostas: Record<string, unknown> = { ...(this.simulacao().respostas ?? {}) };
+  private request(
+    inscricao: InscricaoDto,
+    simulacao: SimulacaoDoFormulario,
+    termosAceitos: readonly string[],
+  ): InscricaoRequest {
+    const respostas: Record<string, unknown> = { ...(simulacao.respostas ?? {}) };
     for (const fato of Object.keys(inscricao.respostas)) {
       if (!(fato in respostas)) respostas[fato] = null;
     }
@@ -263,12 +268,12 @@ export class InscricaoDoCandidatoPage implements OnInit {
       ofertaCursoId: this.ofertaEscolhida(),
       respostas,
       grupos: Object.fromEntries(
-        Object.entries(this.simulacao().grupos ?? {}).map(([codigo, ocorrencias]) => [
+        Object.entries(simulacao.grupos ?? {}).map(([codigo, ocorrencias]) => [
           codigo,
           (ocorrencias ?? []).map((o) => ({ id: o.id, respostas: o.respostas ?? {} })),
         ]),
       ),
-      aceites: this.termosAceitos().flatMap((codigo) => {
+      aceites: termosAceitos.flatMap((codigo) => {
         const termo = termos.get(codigo);
         return termo ? [{ codigo, versaoId: termo.versaoId, hashVersao: termo.hashVersao }] : [];
       }),

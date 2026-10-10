@@ -26,6 +26,31 @@ function stubKeycloak(partial: Partial<Keycloak>): Keycloak {
   } as unknown as Keycloak;
 }
 
+describe('AuthService.login — volta à rota pedida, sob o mount point', () => {
+  it('resolve a rota de volta contra document.baseURI', async () => {
+    const base = document.createElement('base');
+    base.href = 'http://localhost:3000/portal/';
+    document.head.appendChild(base);
+    try {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const service = TestBed.inject(AuthService);
+      const loginSpy = vi.fn(async () => undefined);
+      vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
+        .mockReturnValue(stubKeycloak({ login: loginSpy }));
+
+      await service.init(config);
+      await service.login('/inscricao/processo-1');
+
+      expect(loginSpy).toHaveBeenCalledWith({
+        redirectUri: 'http://localhost:3000/portal/inscricao/processo-1',
+      });
+    } finally {
+      base.remove();
+    }
+  });
+});
+
 describe('AuthService.logout — redireciona ao mount point (Story #447)', () => {
   let service: AuthService;
 
