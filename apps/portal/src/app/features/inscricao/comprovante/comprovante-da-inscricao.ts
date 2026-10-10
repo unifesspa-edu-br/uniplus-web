@@ -34,6 +34,14 @@ const pelaOrdem = <T extends { readonly ordem: number | string }>(itens: readonl
 const respondido = (respostas: Readonly<Record<string, unknown>>, fato: string): boolean =>
   respostas[fato] !== undefined && respostas[fato] !== null;
 
+/**
+ * Os derivados que o formulário descreve: os fatos que as regras do processo citam, com o rótulo e o
+ * tipo congelados na publicação. O que o sistema calcula sem regra que o cite fica no comprovante
+ * gravado, mas não tem como ser apresentado.
+ */
+const derivadosDescritos = (formulario: FormularioRenderizavelDto): CampoDoFormulario[] =>
+  formulario.pressupostos.flatMap((p) => (p.rotulo ? [{ ...p, rotulo: p.rotulo }] : []));
+
 function respondidos(
   campos: readonly CampoDoFormulario[],
   respostas: Readonly<Record<string, unknown>>,
@@ -69,10 +77,7 @@ export function municipiosDoComprovante(
       ...formulario.grupos.flatMap((g) =>
         (comprovante.grupos[g.codigo] ?? []).flatMap((o) => codigos(g.subitens, o.respostas ?? {})),
       ),
-      ...codigos(
-        formulario.pressupostos.map((p) => ({ ...p, rotulo: p.rotulo ?? p.fatoCodigo })),
-        comprovante.derivados,
-      ),
+      ...codigos(derivadosDescritos(formulario), comprovante.derivados),
     ]),
   ];
 }
@@ -104,20 +109,13 @@ export function secoesDoComprovante(
     .filter((s) => s.respostas.length > 0 || s.grupos.length > 0);
 }
 
-/** O que o sistema calculou das respostas, com o rótulo que o formulário dá ao fato. */
+/** O que o sistema calculou das respostas e o formulário descreve, com o rótulo de lá. */
 export function derivadosDoComprovante(
   formulario: FormularioRenderizavelDto,
   comprovante: ComprovanteInscricaoDto,
   municipios: NomesDosMunicipios = new Map(),
 ): RespostaDoComprovante[] {
-  const pressupostos = new Map(formulario.pressupostos.map((p) => [p.fatoCodigo, p]));
-  return Object.entries(comprovante.derivados).map(([fato, valor]) => {
-    const pressuposto = pressupostos.get(fato);
-    return {
-      rotulo: pressuposto?.rotulo ?? fato,
-      valor: respostaExibida(pressuposto ?? {}, valor, municipios),
-    };
-  });
+  return respondidos(derivadosDescritos(formulario), comprovante.derivados, municipios);
 }
 
 /** Os termos aceitos pelo nome que o formulário lhes dá. */

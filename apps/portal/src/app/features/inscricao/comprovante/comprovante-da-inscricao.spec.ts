@@ -4,7 +4,7 @@ import type {
   FormularioRenderizavelDto,
 } from '@uniplus/shared-data/selecao';
 
-import { municipiosDoComprovante } from './comprovante-da-inscricao';
+import { derivadosDoComprovante, municipiosDoComprovante } from './comprovante-da-inscricao';
 
 const municipio = (fatoCodigo: string) => ({
   fatoCodigo,
@@ -48,6 +48,41 @@ describe('municipiosDoComprovante', () => {
       '5002704',
       '3550308',
       '1504208',
+    ]);
+  });
+});
+
+describe('derivadosDoComprovante', () => {
+  const formulario = {
+    pressupostos: [
+      {
+        fatoCodigo: 'MUNICIPIO_RESIDENCIA',
+        rotulo: 'Município de residência',
+        tipoRenderizacao: 'MUNICIPIO',
+        formato: null,
+        valoresSelecionaveis: null,
+        calculadoDe: ['ENDERECO_RESIDENCIAL'],
+      },
+    ],
+  } as unknown as FormularioRenderizavelDto;
+
+  it('mostra o derivado que o formulário descreve, pelo rótulo e com o nome do município', () => {
+    const comprovante = {
+      derivados: { MUNICIPIO_RESIDENCIA: '5002704' },
+    } as unknown as ComprovanteInscricaoDto;
+
+    expect(
+      derivadosDoComprovante(formulario, comprovante, new Map([['5002704', 'Campo Grande — MS']])),
+    ).toEqual([{ rotulo: 'Município de residência', valor: 'Campo Grande — MS' }]);
+  });
+
+  it('não mostra o derivado que nenhuma regra do processo cita, nem pelo código do fato', () => {
+    const comprovante = {
+      derivados: { MUNICIPIO_RESIDENCIA: '5002704', UF_RESIDENCIA: 'MS' },
+    } as unknown as ComprovanteInscricaoDto;
+
+    expect(derivadosDoComprovante(formulario, comprovante).map((d) => d.rotulo)).toEqual([
+      'Município de residência',
     ]);
   });
 });
