@@ -719,6 +719,10 @@ ui-editor-de-condicoes {
 .formulario-candidato__passo.is-done {
   border-color: var(--color-success-solid);
 }
+.formulario-candidato__passo.is-error {
+  border-color: var(--color-danger-solid);
+  color: var(--color-danger-solid);
+}
 .formulario-candidato__passo-numero {
   display: inline-flex;
   align-items: center;

@@ -6,6 +6,7 @@ import type {
   RegrasDoFormulario,
   RestricaoDasRegras,
   TermoAvaliado,
+  ValorJson,
 } from './interpretador/regras-do-formulario';
 
 /**
@@ -99,6 +100,32 @@ export interface FormularioDoCandidato {
   readonly regras: RegrasDoFormulario;
   /** Os fatos citados que o formulário não pergunta; a simulação os informa à parte. */
   readonly pressupostos?: readonly PressupostoDoFormulario[] | null;
+}
+
+/** Uma resposta que o candidato não altera, como o CPF da conta: o valor e como ele aparece. */
+export interface RespostaFixa {
+  readonly valor: ValorJson;
+  readonly exibicao: string;
+}
+
+/**
+ * Uma recusa do servidor ligada a uma parte do formulário. O campo é o código do fato, do grupo ou do
+ * termo; dentro de um grupo, `grupo.ocorrência` ou `grupo.ocorrência.fato`.
+ */
+export interface ErroDoServidor {
+  readonly campo: string;
+  readonly mensagem: string;
+}
+
+/** O campo do erro pertence à parte de código dado: é ela, ou está dentro dela. */
+export function erroEm(erro: ErroDoServidor, codigo: string): boolean {
+  return erro.campo === codigo || erro.campo.startsWith(`${codigo}.`);
+}
+
+/** As mensagens dos erros cujo campo é exatamente este, numa frase só; nula quando não há. */
+export function mensagemDosErros(erros: readonly ErroDoServidor[], campo: string): string | null {
+  const mensagens = erros.filter((e) => e.campo === campo).map((e) => e.mensagem);
+  return mensagens.length === 0 ? null : mensagens.join(' ');
 }
 
 export const BLOCO_MODALIDADES_CALCULADAS = 'MODALIDADES_CALCULADAS';

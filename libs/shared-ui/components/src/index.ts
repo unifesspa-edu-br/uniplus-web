@@ -82,13 +82,19 @@ export {
 } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
 export type {
   CampoRenderizavel,
+  ErroDoServidor,
   FormularioDoCandidato,
   GrupoRenderizavel,
   PressupostoDoFormulario,
+  RespostaFixa,
   SecaoRenderizavel,
   TermoRenderizavel,
   ValorSelecionavel,
 } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato.model';
+export {
+  derivadosDoSistema,
+  type DerivadoDoSistema,
+} from '../../src/lib/components/formulario-do-candidato/derivados-do-sistema';
 export {
   casoDaSimulacao,
   lerArquivoDoFormulario,

@@ -20,6 +20,7 @@ import {
   mensagensDasRestricoes,
   opcoesDoCampo,
   type OpcaoDoCampo,
+  type RespostaFixa,
 } from './formulario-do-candidato.model';
 import { codigosDa, estaVazia } from './interpretador/logica';
 import type { ValorJson } from './interpretador/regras-do-formulario';
@@ -57,6 +58,16 @@ const ENTRADA_DO_FORMATO: Readonly<
   host: { class: 'field' },
   template: `
     @switch (controle()) {
+      @case ('fixa') {
+        <label class="field__label" [for]="id()">{{ campo().rotulo }}</label>
+        <input
+          class="input"
+          readonly
+          [id]="id()"
+          [value]="fixa()?.exibicao"
+          [attr.aria-describedby]="descritoPor()"
+        />
+      }
       @case ('escolha') {
         <fieldset class="formulario-candidato__escolhas" [attr.aria-describedby]="descritoPor()">
           <legend class="field__label" [class.is-required]="obrigatorio()">
@@ -201,6 +212,9 @@ const ENTRADA_DO_FORMATO: Readonly<
     @if (campo().ajuda; as ajuda) {
       <span class="field__hint" [id]="id() + '-ajuda'">{{ ajuda }}</span>
     }
+    @if (controle() === 'fixa') {
+      <span class="field__hint" [id]="id() + '-fixa'">Este dado não pode ser alterado aqui.</span>
+    }
     @if (controle() === 'municipio' && esperaAUf()) {
       <span class="field__hint" [id]="id() + '-uf'"
         >Informe antes a UF para escolher o município.</span
@@ -224,6 +238,10 @@ export class CampoDoCandidatoComponent {
   readonly id = input.required<string>();
   /** A seção foi dada como concluída: o obrigatório sem resposta passa a mostrar a pendência. */
   readonly mostrarPendencia = input<boolean>(false);
+  /** A resposta que o candidato não altera; o campo só a mostra. */
+  readonly fixa = input<RespostaFixa | null>(null);
+  /** A recusa do servidor a esta resposta, até o candidato mudá-la. */
+  readonly erroDoServidor = input<string | null>(null);
 
   readonly respondida = output<ValorJson | undefined>();
 
@@ -259,6 +277,7 @@ export class CampoDoCandidatoComponent {
 
   /** O controle pelo tipo de renderização; a escolha sem valores conhecidos vira entrada de código. */
   protected readonly controle = computed(() => {
+    if (this.fixa()) return 'fixa';
     const tipo = this.campo().tipoRenderizacao;
     switch (tipo) {
       case 'BOOLEANO':
@@ -331,6 +350,7 @@ export class CampoDoCandidatoComponent {
       ...(avaliado.impedido === 'VERDADEIRO'
         ? [regra?.impedimento?.mensagem?.trim() || 'Esta resposta impede a inscrição.']
         : []),
+      ...(this.erroDoServidor() ? [this.erroDoServidor() as string] : []),
     ];
   });
 
@@ -338,6 +358,7 @@ export class CampoDoCandidatoComponent {
     () =>
       [
         this.campo().ajuda ? `${this.id()}-ajuda` : null,
+        this.controle() === 'fixa' ? `${this.id()}-fixa` : null,
         this.controle() === 'municipio' && this.esperaAUf() ? `${this.id()}-uf` : null,
         this.problemas().length > 0 ? `${this.id()}-erro` : null,
       ]

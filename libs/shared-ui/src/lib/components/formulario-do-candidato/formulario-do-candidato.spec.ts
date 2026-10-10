@@ -88,6 +88,94 @@ const RESIDENCIA: FormularioDoCandidato = {
   regras: { etapas: [{ codigo: SECAO, itens: [regra('ENDERECO_RESIDENCIAL')] }] },
 };
 
+const COM_TERMO: FormularioDoCandidato = {
+  ...ENDERECO,
+  fatosColetados: [],
+  etapas: [
+    {
+      codigo: 'REVISAO',
+      codigoNasRegras: null,
+      ordem: 0,
+      tipo: 'BLOCO',
+      bloco: 'REVISAO_E_ACEITE',
+      titulo: 'Revisão e aceite',
+    },
+  ],
+  termos: [
+    {
+      codigo: 'VERACIDADE',
+      codigoNasRegras: 'Inscricao:VERACIDADE',
+      ordem: 0,
+      nome: 'Veracidade',
+      texto: 'Declaro.',
+      baseLegal: 'Lei',
+    },
+  ],
+  regras: {
+    etapas: [],
+    termos: [{ codigo: 'Inscricao:VERACIDADE', obrigatoriedade: 'SEMPRE' }],
+  },
+};
+
+const DUAS_SECOES: FormularioDoCandidato = {
+  finalidade: 'INSCRICAO',
+  etapas: [
+    {
+      codigo: 'CONTATO',
+      codigoNasRegras: 'Inscricao:CONTATO',
+      ordem: 0,
+      tipo: 'SECAO',
+      titulo: 'Contato',
+    },
+    { codigo: 'NOME', codigoNasRegras: 'Inscricao:NOME', ordem: 1, tipo: 'SECAO', titulo: 'Nome' },
+  ],
+  termos: [],
+  grupos: [],
+  fatosColetados: [
+    campo('EMAIL', 'E-mail', 'TEXTO'),
+    campo('NOME_SOCIAL', 'Nome social', 'TEXTO', { ordem: 1 }),
+  ],
+  regras: {
+    etapas: [
+      { codigo: 'Inscricao:CONTATO', itens: [regra('EMAIL')] },
+      { codigo: 'Inscricao:NOME', itens: [regra('NOME_SOCIAL')] },
+    ],
+  },
+};
+
+const FAMILIA: FormularioDoCandidato = {
+  ...ENDERECO,
+  fatosColetados: [],
+  grupos: [
+    {
+      codigo: 'FAMILIA',
+      ordem: 0,
+      rotulo: 'Integrante',
+      minimo: 1,
+      maximo: 2,
+      incluiCandidato: false,
+      subitens: [campo('RENDA', 'Renda', 'NUMERO')],
+    },
+  ],
+  regras: {
+    etapas: [
+      {
+        codigo: SECAO,
+        grupos: [
+          {
+            codigo: 'FAMILIA',
+            obrigatoriedade: 'SEMPRE',
+            minimo: 1,
+            maximo: 2,
+            incluiCandidato: false,
+            subitens: [regra('RENDA')],
+          },
+        ],
+      },
+    ],
+  },
+};
+
 describe('FormularioDoCandidatoComponent', () => {
   let fixture: ComponentFixture<FormularioDoCandidatoComponent>;
   let simulacoes: SimulacaoDoFormulario[];
@@ -101,9 +189,14 @@ describe('FormularioDoCandidatoComponent', () => {
     });
   });
 
-  const montar = (formulario: FormularioDoCandidato): HTMLElement => {
+  const montar = (
+    formulario: FormularioDoCandidato,
+    entradas: Readonly<Record<string, unknown>> = {},
+  ): HTMLElement => {
     fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
     fixture.componentRef.setInput('formulario', formulario);
+    for (const [nome, valor] of Object.entries(entradas))
+      fixture.componentRef.setInput(nome, valor);
     simulacoes = [];
     fixture.componentInstance.simulacaoChange.subscribe((s) => simulacoes.push(s));
     fixture.detectChanges();
@@ -507,40 +600,92 @@ describe('FormularioDoCandidatoComponent', () => {
   });
 
   it('o termo obrigatório não aceito mostra a pendência ao concluir a revisão', () => {
-    const tela = montar({
-      ...ENDERECO,
-      fatosColetados: [],
-      etapas: [
-        {
-          codigo: 'REVISAO',
-          codigoNasRegras: null,
-          ordem: 0,
-          tipo: 'BLOCO',
-          bloco: 'REVISAO_E_ACEITE',
-          titulo: 'Revisão e aceite',
-        },
-      ],
-      termos: [
-        {
-          codigo: 'VERACIDADE',
-          codigoNasRegras: 'Inscricao:VERACIDADE',
-          ordem: 0,
-          nome: 'Veracidade',
-          texto: 'Declaro.',
-          baseLegal: 'Lei',
-        },
-      ],
-      regras: {
-        etapas: [],
-        termos: [{ codigo: 'Inscricao:VERACIDADE', obrigatoriedade: 'SEMPRE' }],
-      },
-    });
+    const tela = montar(COM_TERMO);
 
     clicar(botao(tela, 'Concluir a seção'));
     expect(tela.textContent).toContain('Aceite o termo para concluir.');
 
     clicar(tela.querySelector('.formulario-candidato__termo input') as HTMLInputElement);
     expect(tela.textContent).not.toContain('Aceite o termo para concluir.');
+  });
+
+  it('o termo aceito na retomada volta marcado, e desmarcá-lo emite a lista sem ele', () => {
+    const aceites: (readonly string[])[] = [];
+    const tela = montar(COM_TERMO, { termosAceitosIniciais: ['VERACIDADE'] });
+    fixture.componentInstance.termosAceitosChange.subscribe((a) => aceites.push(a));
+    const termo = tela.querySelector('.formulario-candidato__termo input') as HTMLInputElement;
+    expect(termo.checked).toBe(true);
+
+    clicar(termo);
+
+    expect(aceites.at(-1)).toEqual([]);
+  });
+
+  it('a resposta fixa entra na simulação com o valor, e o campo só mostra a exibição', () => {
+    const tela = montar(
+      {
+        ...ENDERECO,
+        fatosColetados: [campo('CPF', 'CPF', 'TEXTO', { formato: 'CPF' })],
+        regras: { etapas: [{ codigo: SECAO, itens: [regra('CPF')] }] },
+      },
+      { respostasFixas: { CPF: { valor: '69959836371', exibicao: '***.598.363-**' } } },
+    );
+    const input = tela.querySelector('input') as HTMLInputElement;
+
+    expect(input.readOnly).toBe(true);
+    expect(input.value).toBe('***.598.363-**');
+    expect(simulacoes.at(-1)?.respostas).toEqual({ CPF: '69959836371' });
+  });
+
+  it('a recusa do servidor leva à seção do campo, põe o foco nele e some quando ele muda', async () => {
+    const tela = montar(DUAS_SECOES);
+    fixture.componentRef.setInput('errosDoServidor', [
+      { campo: 'NOME_SOCIAL', mensagem: 'Informe nome e sobrenome.' },
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const input = tela.querySelector('input') as HTMLInputElement;
+    expect(tela.querySelector('h3')?.textContent).toContain('Nome');
+    expect(document.activeElement).toBe(input);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(tela.querySelector(`#${input.getAttribute('aria-describedby')}`)?.textContent).toContain(
+      'Informe nome e sobrenome.',
+    );
+    expect(botao(tela, '2').classList).toContain('is-error');
+
+    digitar(input, 'Ariel Drumond');
+
+    expect(tela.textContent).not.toContain('Informe nome e sobrenome.');
+  });
+
+  it('a recusa do servidor a um campo de ocorrência aparece ao lado dele, e a do grupo, no grupo', () => {
+    const tela = montar(FAMILIA, {
+      inicial: { grupos: { FAMILIA: [{ id: 'membro-1', respostas: { RENDA: 100 } }] } },
+    });
+    fixture.componentRef.setInput('errosDoServidor', [
+      { campo: 'FAMILIA.membro-1.RENDA', mensagem: 'Renda acima do teto.' },
+      { campo: 'FAMILIA', mensagem: 'Informe de 1 a 2.' },
+    ]);
+    fixture.detectChanges();
+
+    const renda = tela.querySelector('[data-campo="FAMILIA.membro-1.RENDA"]');
+    expect(renda?.querySelector('.field__error')?.textContent).toContain('Renda acima do teto.');
+    expect(
+      tela.querySelector('fieldset.formulario-candidato__grupo > .field__error')?.textContent,
+    ).toContain('Informe de 1 a 2.');
+  });
+
+  it('a recusa do servidor a um termo aparece no termo', () => {
+    const tela = montar(COM_TERMO);
+    fixture.componentRef.setInput('errosDoServidor', [
+      { campo: 'VERACIDADE', mensagem: 'Aceite a versão vigente do termo.' },
+    ]);
+    fixture.detectChanges();
+
+    expect(tela.querySelector('.formulario-candidato__termo .field__error')?.textContent).toContain(
+      'Aceite a versão vigente do termo.',
+    );
   });
 
   it('o número pela metade, como "1,", não é erro e vale o que já foi escrito', () => {
