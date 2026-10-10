@@ -491,14 +491,16 @@ export class FormularioDoCandidatoComponent {
 
   /**
    * Troca de seção e leva o foco ao título dela, para quem navega por teclado ou leitor de tela, ou ao
-   * elemento que `foco` indicar depois de a seção aparecer.
+   * elemento que `foco` indicar depois de a seção aparecer. Na seção em que o candidato já está não há o
+   * que esperar: o foco vai na hora, sem ficar pendente para uma renderização qualquer depois.
    */
   protected irPara(indice: number, foco?: () => HTMLElement | null): void {
     const destino = Math.max(0, Math.min(indice, this.passos().length - 1));
+    const focar = (): void => (foco?.() ?? this.titulo()?.nativeElement)?.focus();
+    const mesmaSecao = destino === this.indice();
     this.escolhida.set({ chave: this.passos()[destino]?.chave ?? null, indice: destino });
-    afterNextRender(() => (foco?.() ?? this.titulo()?.nativeElement)?.focus(), {
-      injector: this.injector,
-    });
+    if (mesmaSecao) focar();
+    else afterNextRender(focar, { injector: this.injector });
   }
 
   private descartarErros(codigo: string): void {
