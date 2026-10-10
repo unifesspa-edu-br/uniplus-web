@@ -30,13 +30,14 @@ import { MinhasInscricoesService } from '../minhas-inscricoes.service';
 import { nomeDaOferta } from '../oferta-da-inscricao';
 import {
   derivadosDoComprovante,
+  municipiosDoComprovante,
   numeroDoComprovante,
   secoesDoComprovante,
   termosAceitos,
   type Vizinhos,
   vizinhos,
 } from './comprovante-da-inscricao';
-import { nomePreferido } from './resposta-exibida';
+import { type NomesDosMunicipios, nomePreferido } from './resposta-exibida';
 
 type Estado = 'carregando' | 'erro' | 'pronto';
 
@@ -52,6 +53,7 @@ interface Carregado {
   readonly inscricao: MinhaInscricaoDto;
   readonly processo: CertamePublicadoDto | null;
   readonly vizinhos: Vizinhos;
+  readonly municipios: NomesDosMunicipios;
 }
 
 type Leitura =
@@ -99,11 +101,11 @@ export class ComprovanteDaInscricaoPage {
   });
   protected readonly secoes = computed(() => {
     const c = this.carregado();
-    return c ? secoesDoComprovante(c.formulario, c.comprovante) : [];
+    return c ? secoesDoComprovante(c.formulario, c.comprovante, c.municipios) : [];
   });
   protected readonly derivados = computed(() => {
     const c = this.carregado();
-    return c ? derivadosDoComprovante(c.formulario, c.comprovante) : [];
+    return c ? derivadosDoComprovante(c.formulario, c.comprovante, c.municipios) : [];
   });
   protected readonly termos = computed(() => {
     const c = this.carregado();
@@ -158,10 +160,13 @@ export class ComprovanteDaInscricaoPage {
           : null;
         if (!inscricao || numero === null) return of({ tipo: 'nao-encontrado' });
         return this.servico.comprovante(processoId, numero).pipe(
-          map(
-            (comprovante): Leitura =>
-              comprovante.ok
-                ? {
+          switchMap((comprovante): Observable<Leitura> => {
+            if (!comprovante.ok) return of({ tipo: 'falha', falha: comprovante });
+            return this.servico
+              .nomesDosMunicipios(municipiosDoComprovante(formulario.data, comprovante.data))
+              .pipe(
+                map(
+                  (municipios): Leitura => ({
                     tipo: 'pronto',
                     carregado: {
                       numero,
@@ -170,10 +175,12 @@ export class ComprovanteDaInscricaoPage {
                       inscricao,
                       processo,
                       vizinhos: vizinhos(inscricao.comprovantes, numero),
+                      municipios,
                     },
-                  }
-                : { tipo: 'falha', falha: comprovante },
-          ),
+                  }),
+                ),
+              );
+          }),
         );
       }),
     );
