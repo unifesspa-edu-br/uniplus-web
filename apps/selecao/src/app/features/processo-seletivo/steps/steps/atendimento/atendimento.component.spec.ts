@@ -24,7 +24,7 @@ const CONDICOES = [
   { id: OUTRA_CONDICAO_ID, codigo: 'LACTANTE', nome: 'Lactante', descricao: null, criadoEm: '2026-09-01T00:00:00Z' },
 ];
 const RECURSOS = [
-  { id: RECURSO_ID, nome: 'Ledor', descricao: 'Auxílio para leitura', criadoEm: '2026-09-01T00:00:00Z' },
+  { id: RECURSO_ID, codigo: 'LEDOR', nome: 'Ledor', descricao: 'Auxílio para leitura', criadoEm: '2026-09-01T00:00:00Z' },
 ];
 const TIPOS_DEFICIENCIA = [
   {

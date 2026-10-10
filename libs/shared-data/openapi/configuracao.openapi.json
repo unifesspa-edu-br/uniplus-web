@@ -13602,6 +13602,7 @@
       "AtualizarRecursoAcessibilidadeCommand": {
         "required": [
           "id",
+          "codigo",
           "nome"
         ],
         "type": "object",
@@ -13609,6 +13610,12 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "codigo": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "nome": {
             "type": [
@@ -15380,10 +15387,17 @@
       },
       "CriarRecursoAcessibilidadeCommand": {
         "required": [
+          "codigo",
           "nome"
         ],
         "type": "object",
         "properties": {
+          "codigo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "nome": {
             "type": [
               "null",
@@ -17900,6 +17914,7 @@
       "RecursoAcessibilidadeDto": {
         "required": [
           "id",
+          "codigo",
           "nome",
           "descricao",
           "criadoEm"
@@ -17909,6 +17924,9 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
           },
           "nome": {
             "type": "string"

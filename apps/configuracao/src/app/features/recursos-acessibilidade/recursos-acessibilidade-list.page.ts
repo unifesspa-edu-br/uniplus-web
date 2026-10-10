@@ -32,6 +32,7 @@ import {
 } from '@uniplus/shared-core/http';
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from "@uniplus/shared-core/notifications";
+import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from "@uniplus/shared-utils";
 import {
   AtualizarRecursoAcessibilidadeCommand,
   CONFIGURACAO_BASE_PATH,
@@ -50,36 +51,31 @@ import {
   FilterBarComponent,
   IconButtonComponent,
 } from "@uniplus/shared-ui/components";
+import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
+import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
 
 type ModoFormulario = "criar" | "editar";
 
 interface RecursoAcessibilidadeForm {
   nome: FormControl<string>;
+  codigo: FormControl<string>;
   descricao: FormControl<string>;
-}
-
-/** Vendor code do DomainError `RecursoAcessibilidade.NomeJaExiste` (uniplus-api, 409 Conflict). */
-const RECURSO_ACESSIBILIDADE_NOME_JA_EXISTE_CODE = 'uniplus.configuracao.recurso_acessibilidade.nome_ja_existe';
-
-function nullIfBlank(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }
 
 const RECURSO_ACESSIBILIDADE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof RecursoAcessibilidadeForm>([
   'nome',
+  'codigo',
   'descricao',
 ]);
 
-function controlNameFromBackendField(field: string): keyof RecursoAcessibilidadeForm | null {
-  const normalized =
-    field
-      .split('.')
-      .at(-1)
-      ?.replace(/\[\d+\]$/u, '') ?? field;
-  const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
-  return RECURSO_ACESSIBILIDADE_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof RecursoAcessibilidadeForm) : null;
-}
+/**
+ * Conflitos de unicidade (409) que pertencem a um campo do formulário: o corpo não traz
+ * `errors[]`, então só o vendor code diz a qual campo o conflito se refere.
+ */
+const CAMPO_POR_CONFLITO: ReadonlyMap<string, keyof RecursoAcessibilidadeForm> = new Map([
+  ['uniplus.configuracao.recurso_acessibilidade.codigo_ja_existe', 'codigo' as const],
+  ['uniplus.configuracao.recurso_acessibilidade.nome_ja_existe', 'nome' as const],
+]);
 
 /** Tamanho de página ao esgotar o cursor (ADR-0015/0026). */
 const PAGE_SIZE = 50;
@@ -104,7 +100,7 @@ const PAGE_SIZE = 50;
         <h1 class="page-header__title">Recurso de Acessibilidade</h1>
         <p class="page-header__desc">
           Recursos oferecidos no atendimento especializado, independentes da condição — cadastro
-          identificado pelo nome · UNI-REQ-0012.
+          identificado pelo código · UNI-REQ-0012.
         </p>
       </div>
     </div>
@@ -133,7 +129,7 @@ const PAGE_SIZE = 50;
     <div data-scope class="cfg-unidades-scope">
       <ui-filter-bar
         ariaLabel="Filtrar recursos de acessibilidade"
-        searchPlaceholder="Buscar por nome..."
+        searchPlaceholder="Buscar por código ou nome..."
         searchAriaLabel="Buscar recursos de acessibilidade"
         [(searchValue)]="termoBusca"
       >
@@ -165,10 +161,11 @@ const PAGE_SIZE = 50;
           <div class="table-responsive">
             <table>
               <caption class="sr-only">
-                Recursos de acessibilidade, com nome e descrição
+                Recursos de acessibilidade, com código, nome e descrição
               </caption>
               <thead>
                 <tr>
+                  <th scope="col">Código</th>
                   <th scope="col">Nome</th>
                   <th scope="col">Descrição</th>
                   <th scope="col"><span class="sr-only">Ações</span></th>
@@ -180,6 +177,9 @@ const PAGE_SIZE = 50;
                   track recursoAcessibilidade.id
                 ) {
                   <tr>
+                    <td data-label="Código">
+                      <code>{{ recursoAcessibilidade.codigo }}</code>
+                    </td>
                     <td data-label="Nome">
                       <div class="table-responsive__primary">
                         {{ recursoAcessibilidade.nome }}
@@ -280,11 +280,34 @@ const PAGE_SIZE = 50;
                 [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
               />
               <span class="field__hint">
-                Identificador do recurso — único entre os recursos ativos. Impede duplicatas como
+                Rótulo legível do recurso — único entre os recursos ativos. Impede duplicatas como
                 dois "Ledor".
               </span>
               @if (erroDoCampo('nome')) {
                 <span class="field__error">{{ erroDoCampo('nome') }}</span>
+              }
+            </label>
+            @let erroCampoCodigo = erroDoCampo('codigo');
+            <label class="field form-grid__full" [class.is-error]="erroCampoCodigo">
+              <span class="field__label is-required">Código</span>
+              <input
+                class="input"
+                type="text"
+                placeholder="Ex.: LEDOR"
+                formControlName="codigo"
+                style="text-transform: uppercase;"
+                [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
+                [attr.aria-describedby]="
+                  erroCampoCodigo ? 'cfg-ra-codigo-dica cfg-ra-codigo-erro' : 'cfg-ra-codigo-dica'
+                "
+              />
+              <span class="field__hint" id="cfg-ra-codigo-dica">
+                Identidade do recurso, que o candidato escolhe na inscrição: caixa alta, começando
+                por letra, com letras, números e sublinhado, de 2 a 50 caracteres. Único entre os
+                recursos ativos. Sugerido a partir do nome e editável.
+              </span>
+              @if (erroCampoCodigo) {
+                <span class="field__error" id="cfg-ra-codigo-erro">{{ erroCampoCodigo }}</span>
               }
             </label>
             <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
@@ -414,8 +437,10 @@ export class RecursosAcessibilidadeListPage {
     if (termo.length === 0) {
       return this.recursos();
     }
-    return this.recursos().filter((recurso) =>
-      recurso.nome.toLocaleLowerCase('pt-BR').includes(termo),
+    return this.recursos().filter(
+      (recurso) =>
+        recurso.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
+        recurso.nome.toLocaleLowerCase('pt-BR').includes(termo),
     );
   });
   protected readonly errorMessage = computed<string | null>(() => {
@@ -438,11 +463,24 @@ export class RecursosAcessibilidadeListPage {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(2), Validators.maxLength(255)],
     }),
+    codigo: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
+        Validators.pattern(CODIGO_CADASTRO_FORMATO),
+      ],
+    }),
     descricao: new FormControl('', {
       nonNullable: true,
       validators: [Validators.maxLength(1000)],
     }),
   });
+  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
+    this.form.controls,
+    () => this.modo() === 'criar',
+  );
   protected readonly formError = signal<string | null>(null);
   readonly recursosAcessibilidadeEmEdicaoId = signal<string | null>(null);
   protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
@@ -487,8 +525,10 @@ export class RecursosAcessibilidadeListPage {
 
   abrirDrawerCriacao() {
     this.modo.set('criar');
+    this.ligacaoDoCodigo.reiniciar();
     this.form.reset({
       nome: '',
+      codigo: '',
       descricao: '',
     });
     this.formError.set(null);
@@ -504,8 +544,10 @@ export class RecursosAcessibilidadeListPage {
   protected abrirEdicao(recurso: RecursoAcessibilidadeDto): void {
     this.modo.set('editar');
     this.recursosAcessibilidadeEmEdicaoId.set(recurso.id);
+    this.ligacaoDoCodigo.reiniciar();
     this.form.reset({
       nome: recurso.nome,
+      codigo: recurso.codigo,
       descricao: recurso.descricao ?? '',
     });
     this.formError.set(null);
@@ -528,12 +570,15 @@ export class RecursosAcessibilidadeListPage {
     if (control.errors['minlength'])
       return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
     if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
+    if (control.errors['pattern'])
+      return 'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: LEDOR, SALA_DE_FACIL_ACESSO).';
     return 'Valor inválido.';
   }
 
   private criarCommand(): CriarRecursoAcessibilidadeCommand {
     const raw = this.form.getRawValue();
     return {
+      codigo: raw.codigo.trim(),
       nome: nullIfBlank(raw.nome),
       descricao: nullIfBlank(raw.descricao),
     };
@@ -588,7 +633,10 @@ export class RecursosAcessibilidadeListPage {
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     let aplicouAlgum = false;
     for (const erro of errors) {
-      const controlName = controlNameFromBackendField(erro.field);
+      const controlName = controlNameFromBackendField<keyof RecursoAcessibilidadeForm>(
+        erro.field,
+        RECURSO_ACESSIBILIDADE_CONTROL_NAMES,
+      );
       if (controlName === null) continue;
       const control = this.form.controls[controlName];
       control.setErrors({ backend: { code: erro.code, message: erro.message } });
@@ -615,12 +663,14 @@ export class RecursosAcessibilidadeListPage {
       return;
     }
 
-    if (problem.code === RECURSO_ACESSIBILIDADE_NOME_JA_EXISTE_CODE) {
+    const campoDoConflito = CAMPO_POR_CONFLITO.get(problem.code);
+    if (campoDoConflito) {
       this.renovarIdempotencyKey();
-      this.form.controls.nome.setErrors({
+      const control = this.form.controls[campoDoConflito];
+      control.setErrors({
         backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
       });
-      this.form.controls.nome.markAsTouched();
+      control.markAsTouched();
       this.notifications.errorFromProblem(problem);
       return;
     }

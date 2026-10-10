@@ -33,6 +33,7 @@ function condicao(codigo: string, nome = codigo): CondicaoAtendimentoDto {
 function recurso(nome: string): RecursoAcessibilidadeDto {
   return {
     id: `id-${nome}`,
+    codigo: nome.toUpperCase(),
     nome,
     descricao: null,
     criadoEm: '2026-09-01T00:00:00Z',

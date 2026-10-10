@@ -697,7 +697,12 @@ const OFERTA_ATENDIMENTO = {
     },
   ],
   recursos: [
-    { id: 'snapshot-recurso-1', recursoOrigemId: 'recurso-ledor', recursoNome: 'Ledor' },
+    {
+      id: 'snapshot-recurso-1',
+      recursoOrigemId: 'recurso-ledor',
+      recursoCodigo: 'LEDOR',
+      recursoNome: 'Ledor',
+    },
   ],
   tiposDeficiencia: [
     {

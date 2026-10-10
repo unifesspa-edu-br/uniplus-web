@@ -10745,6 +10745,7 @@ export interface components {
         readonly AtualizarRecursoAcessibilidadeCommand: {
             /** Format: uuid */
             readonly id: string;
+            readonly codigo: null | string;
             readonly nome: null | string;
             readonly descricao?: null | string;
         };
@@ -11121,6 +11122,7 @@ export interface components {
             readonly permiteSobreposicao: boolean;
         };
         readonly CriarRecursoAcessibilidadeCommand: {
+            readonly codigo: null | string;
             readonly nome: null | string;
             readonly descricao?: null | string;
         };
@@ -11638,6 +11640,7 @@ export interface components {
         readonly RecursoAcessibilidadeDto: {
             /** Format: uuid */
             readonly id: string;
+            readonly codigo: string;
             readonly nome: string;
             readonly descricao: null | string;
             /** Format: date-time */
