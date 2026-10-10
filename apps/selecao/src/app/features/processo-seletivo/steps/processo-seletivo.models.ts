@@ -773,6 +773,11 @@ export interface WizardDraft {
     fator: string;
     teto: string;
     baseLegalBonusRegionalId: string;
+    /**
+     * O fato de sim ou não que decide quem recebe o acréscimo (ADR-0142): campo do formulário
+     * de inscrição ou derivado do processo. Vazio enquanto não escolhido.
+     */
+    fatoElegibilidadeCodigo: string;
   };
   /**
    * Critérios de desempate (`PUT …/criterios-desempate`), na ordem em que

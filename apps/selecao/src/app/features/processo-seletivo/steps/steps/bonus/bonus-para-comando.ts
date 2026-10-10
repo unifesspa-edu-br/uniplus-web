@@ -17,8 +17,8 @@ function decimal(texto: string): number | null {
 /**
  * Converte o rascunho de bônus no `DefinirBonusRegionalRequest`. A declaração é obrigatória: só
  * se grava depois de o operador responder se o processo aplica o bônus. `aplica === false` grava
- * a declaração com os cinco campos `null` — o servidor recusa qualquer campo do bônus nesse
- * caso. Nenhum default é inventado quando aplica.
+ * a declaração com os campos `null` — o servidor recusa qualquer campo do bônus nesse caso.
+ * Nenhum default é inventado quando aplica.
  */
 export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusRegionalRequest {
   if (bonus.aplica === null) {
@@ -33,6 +33,7 @@ export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusReg
       fator: null,
       teto: null,
       baseLegalBonusRegionalId: null,
+      fatoElegibilidadeCodigo: null,
     };
   }
 
@@ -43,5 +44,6 @@ export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusReg
     fator: decimal(bonus.fator),
     teto: naoVazio(bonus.teto) === null ? null : decimal(bonus.teto),
     baseLegalBonusRegionalId: naoVazio(bonus.baseLegalBonusRegionalId),
+    fatoElegibilidadeCodigo: naoVazio(bonus.fatoElegibilidadeCodigo),
   };
 }

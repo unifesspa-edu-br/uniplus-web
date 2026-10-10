@@ -7553,6 +7553,7 @@ export interface components {
             readonly fator: number | string;
             /** Format: double */
             readonly teto: null | number | string;
+            readonly fatoElegibilidadeCodigo: null | string;
             /** Format: uuid */
             readonly baseLegalBonusRegionalId: string;
             readonly tipoInstrumento: string;
@@ -7744,6 +7745,7 @@ export interface components {
             readonly fator: null | number | string;
             /** Format: double */
             readonly teto: null | number | string;
+            readonly fatoElegibilidadeCodigo: null | string;
             /** Format: uuid */
             readonly baseLegalBonusRegionalId: null | string;
         };

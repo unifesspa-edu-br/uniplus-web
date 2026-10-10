@@ -13,18 +13,20 @@ function bonus(patch: Partial<WizardDraft['bonus']>): WizardDraft['bonus'] {
     fator: '',
     teto: '',
     baseLegalBonusRegionalId: '',
+    fatoElegibilidadeCodigo: '',
     ...patch,
   };
 }
 
 describe('comoComandoDeBonus', () => {
-  it('grava a declaração de que não aplica, com os cinco campos null, quando o bônus não se aplica', () => {
+  it('grava a declaração de que não aplica, com os campos null, quando o bônus não se aplica', () => {
     const comando = comoComandoDeBonus(
       bonus({
         aplica: false,
         // Resíduo de uma edição anterior — a ausência declarada não pode vazar.
         regraCodigo: 'BONUS-MULTIPLICATIVO',
         fator: '1.2',
+        fatoElegibilidadeCodigo: 'SOLICITA_ACRESCIMO',
       }),
     );
 
@@ -35,6 +37,7 @@ describe('comoComandoDeBonus', () => {
       fator: null,
       teto: null,
       baseLegalBonusRegionalId: null,
+      fatoElegibilidadeCodigo: null,
     });
   });
 
@@ -47,6 +50,7 @@ describe('comoComandoDeBonus', () => {
         fator: '1,20',
         teto: '10',
         baseLegalBonusRegionalId: BASE_LEGAL_ID,
+        fatoElegibilidadeCodigo: 'SOLICITA_ACRESCIMO',
       }),
     );
 
@@ -57,6 +61,7 @@ describe('comoComandoDeBonus', () => {
       fator: 1.2,
       teto: 10,
       baseLegalBonusRegionalId: BASE_LEGAL_ID,
+      fatoElegibilidadeCodigo: 'SOLICITA_ACRESCIMO',
     });
   });
 
@@ -85,6 +90,19 @@ describe('comoComandoDeBonus', () => {
     );
 
     expect(comando.baseLegalBonusRegionalId).toBeNull();
+  });
+
+  it('fato de elegibilidade ainda não escolhido vai null — a publicação é que o exige', () => {
+    const comando = comoComandoDeBonus(
+      bonus({
+        aplica: true,
+        regraCodigo: 'BONUS-MULTIPLICATIVO',
+        regraVersao: '1.0',
+        fator: '1.2',
+      }),
+    );
+
+    expect(comando.fatoElegibilidadeCodigo).toBeNull();
   });
 
   it('não grava enquanto a declaração não foi respondida', () => {

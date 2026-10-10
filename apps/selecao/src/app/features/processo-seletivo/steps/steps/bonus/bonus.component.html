@@ -65,6 +65,14 @@
             [valor]="leitura().baseLegal"
             [dica]="descricaoDaBaseLegal() || null"
           />
+          @if (citaElegibilidade()) {
+            <ui-valor-em-consulta
+              class="form-grid__full"
+              rotulo="Quem recebe o acréscimo"
+              seVazio="Ainda não escolhido"
+              [valor]="leitura().fatoElegibilidade"
+            />
+          }
         </div>
       } @else {
         <div class="form-grid form-grid--3">
@@ -161,6 +169,53 @@
             />
           </div>
         </div>
+        @if (citaElegibilidade()) {
+          <div class="form-field" style="margin-top: var(--space-4)">
+            <label class="label" for="f-bonus-elegibilidade">Quem recebe o acréscimo</label
+            ><select
+              class="input"
+              id="f-bonus-elegibilidade"
+              [attr.aria-describedby]="
+                fatoEscolhidoForaDoFormulario() !== null
+                  ? 'f-bonus-elegibilidade-ajuda f-bonus-elegibilidade-erro'
+                  : 'f-bonus-elegibilidade-ajuda'
+              "
+              [attr.aria-invalid]="fatoEscolhidoForaDoFormulario() !== null ? 'true' : null"
+              [disabled]="!store.aceitaEdicao()"
+              (change)="escolherFatoDeElegibilidade($any($event.target).value)"
+            >
+              <option value="" [selected]="store.draft().bonus.fatoElegibilidadeCodigo === ''">
+                — escolher —
+              </option>
+              @for (fato of fatosDeElegibilidade(); track fato.codigo) {
+                <option
+                  [value]="fato.codigo"
+                  [selected]="fato.codigo === store.draft().bonus.fatoElegibilidadeCodigo"
+                >
+                  {{ rotuloDoFatoDeElegibilidade(fato) }}
+                </option>
+              }
+              @if (fatoEscolhidoForaDoFormulario(); as codigo) {
+                <option [value]="codigo" selected>{{ codigo }}</option>
+              }
+            </select>
+            <span class="field__hint" id="f-bonus-elegibilidade-ajuda">
+              O acréscimo vale para o candidato em quem este fato resulta em "sim": um campo de
+              sim ou não do formulário de inscrição, como o pedido do acréscimo, ou um fato que o
+              processo deriva assim, sem depender do que só o formulário de isenção coleta. A
+              publicação exige a escolha.
+              @if (fatosDeElegibilidade().length === 0) {
+                Monte antes o formulário de inscrição no passo Formulários.
+              }
+            </span>
+            @if (fatoEscolhidoForaDoFormulario(); as codigo) {
+              <span class="field__hint" id="f-bonus-elegibilidade-erro" role="alert">
+                O fato {{ codigo }} não está mais no formulário de inscrição como campo de sim ou
+                não, nem é derivado assim pelo processo. Escolha outro ou volte a incluí-lo.
+              </span>
+            }
+          </div>
+        }
       }
       @if (municipiosDaBaseLegalSelecionada().length > 0) {
         <div class="bonus-municipios">

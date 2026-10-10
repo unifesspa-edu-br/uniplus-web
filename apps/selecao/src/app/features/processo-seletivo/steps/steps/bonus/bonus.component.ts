@@ -30,6 +30,11 @@ import {
   rotuloDaRegraEscolhida,
 } from '../classificacao/regra-escolhivel';
 import { comoComandoDeBonus } from './bonus-para-comando';
+import {
+  type FatoDeElegibilidade,
+  citaFatoDeElegibilidade,
+  fatosDeElegibilidade,
+} from './fato-de-elegibilidade';
 
 /** O que o `<select>` de base legal exibe — o mesmo par que `RegraEscolhivel` usa. */
 interface BaseLegalEscolhivel {
@@ -216,6 +221,31 @@ export class BonusStepComponent {
     return `${this.rotuloDoTipo(base.tipoInstrumento)} ${base.identificacao}`.trim();
   }
 
+  /** Se o passo pede o fato que decide quem recebe o acréscimo. */
+  readonly citaElegibilidade = computed(() => citaFatoDeElegibilidade(this.store.draft()));
+
+  /** Os fatos que podem decidir quem recebe o acréscimo, lidos do formulário de inscrição. */
+  readonly fatosDeElegibilidade = computed(() =>
+    fatosDeElegibilidade(this.store.draft().formulario),
+  );
+
+  /**
+   * O fato escolhido que deixou de estar no formulário de inscrição como campo de sim ou não,
+   * nem é mais derivado assim pelo processo. Fica visível para quem configura, em vez de sumir
+   * do seletor.
+   */
+  readonly fatoEscolhidoForaDoFormulario = computed<string | null>(() => {
+    const codigo = this.store.draft().bonus.fatoElegibilidadeCodigo;
+    if (codigo === '') return null;
+    return this.fatosDeElegibilidade().some((fato) => fato.codigo === codigo) ? null : codigo;
+  });
+
+  rotuloDoFatoDeElegibilidade(fato: FatoDeElegibilidade): string {
+    return fato.origem === 'campo'
+      ? `${fato.rotulo} (${fato.codigo})`
+      : `${fato.codigo} (derivado pelo processo)`;
+  }
+
   /** O bônus como se lê em consulta, com o rótulo de cada escolha. */
   readonly leitura = computed(() => {
     const bonus = this.store.draft().bonus;
@@ -228,6 +258,7 @@ export class BonusStepComponent {
       fator: leituraDoCampoDecimal(bonus.fator),
       teto: leituraDoCampoDecimal(bonus.teto),
       baseLegal: base === undefined ? null : this.rotuloDaBaseLegal(base),
+      fatoElegibilidade: this.leituraDoFatoDeElegibilidade(bonus.fatoElegibilidadeCodigo),
     };
   });
 
@@ -257,6 +288,16 @@ export class BonusStepComponent {
   escolherRegra(valor: string): void {
     const { codigo, versao } = lerChaveDaRegra(valor);
     this.store.patchObjectSection('bonus', { regraCodigo: codigo, regraVersao: versao });
+  }
+
+  private leituraDoFatoDeElegibilidade(codigo: string): string | null {
+    if (codigo === '') return null;
+    const fato = this.fatosDeElegibilidade().find((item) => item.codigo === codigo);
+    return fato === undefined ? codigo : this.rotuloDoFatoDeElegibilidade(fato);
+  }
+
+  escolherFatoDeElegibilidade(codigo: string): void {
+    this.store.patchObjectSection('bonus', { fatoElegibilidadeCodigo: codigo });
   }
 
   escolherBaseLegal(id: string): void {
@@ -305,6 +346,14 @@ export class BonusStepComponent {
         { rotulo: 'Fator', valor: bonus.fator },
         { rotulo: 'Teto', valor: bonus.teto === '' ? 'sem teto' : bonus.teto },
         { rotulo: 'Base legal', valor: baseLegal?.identificacao ?? 'não selecionada' },
+        ...(this.citaElegibilidade()
+          ? [
+              {
+                rotulo: 'Quem recebe o acréscimo',
+                valor: this.leitura().fatoElegibilidade ?? 'ainda não escolhido',
+              },
+            ]
+          : []),
       ],
     };
   }

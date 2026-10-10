@@ -54,6 +54,7 @@ function draftVazio(): WizardDraft {
       fator: '',
       teto: '',
       baseLegalBonusRegionalId: '',
+      fatoElegibilidadeCodigo: '',
     },
     desempate: [],
     documentos: {},
@@ -492,6 +493,13 @@ describe('destino de cada pendência no painel', () => {
       );
       expect(orientacaoDoItem('formulario_inscricao_sem_edicao_enem', 'coleta_de_fatos')).toBe(
         'Inclua no formulário de inscrição o campo da edição do ENEM, obrigatório para todo candidato e fora de seção ou campo condicional.',
+      );
+    });
+
+    it('leva o fato que decide quem recebe o acréscimo ao passo Bônus', () => {
+      expect(rotuloDoItem('bonus_regional_fato_de_elegibilidade', 'bonus_regional')).toBe('Bônus');
+      expect(orientacaoDoItem('bonus_regional_fato_de_elegibilidade', 'bonus_regional')).toBe(
+        'Escolha quem recebe o acréscimo: um campo de sim ou não do formulário de inscrição, fora de grupo, ou um fato que o processo deriva como sim ou não, conhecido até a inscrição e sem depender do que só o formulário de isenção coleta.',
       );
     });
 

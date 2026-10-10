@@ -423,6 +423,7 @@ const BONUS = {
   fator: 1.2,
   teto: null,
   baseLegalBonusRegionalId: BASE_LEGAL_ID_SNAPSHOT,
+  fatoElegibilidadeCodigo: 'SOLICITA_ACRESCIMO',
   tipoInstrumento: 'PORTARIA',
   identificacao: 'Portaria Unifesspa nº 2514/2023',
   descricao: 'Institui inclusão regional.',
@@ -557,10 +558,11 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       fator: '1.2',
       teto: '',
       baseLegalBonusRegionalId: BASE_LEGAL_ID_SNAPSHOT,
+      fatoElegibilidadeCodigo: 'SOLICITA_ACRESCIMO',
     });
   });
 
-  /** A declaração vem do servidor; sem configuração, os cinco campos voltam vazios. */
+  /** A declaração vem do servidor; sem configuração, os campos voltam vazios. */
   it('projeta a declaração de que não aplica o bônus, sem resíduo de configuração', () => {
     const { bonus } = hidratarDraft(
       DRAFT,
@@ -574,6 +576,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       fator: '',
       teto: '',
       baseLegalBonusRegionalId: '',
+      fatoElegibilidadeCodigo: '',
     });
   });
 
