@@ -32,6 +32,9 @@ const PERSONA = {
   cidade: 'Campo Grande',
 } as const;
 
+/** Uma das edições que o roteiro da API declara como aceitas pelo processo de validação. */
+const EDICAO_DO_ENEM = 'ENEM 2026';
+
 const campo = (page: Page, rotulo: string): Locator =>
   page.getByRole('textbox', { name: new RegExp(`^${rotulo}`) });
 
@@ -98,6 +101,9 @@ async function preencherDadosDoCandidato(page: Page): Promise<void> {
 }
 
 async function preencherRestante(page: Page): Promise<void> {
+  await irParaSecao(page, 'ENEM');
+  await lista(page, 'Qual edição do ENEM você vai usar').selectOption({ label: EDICAO_DO_ENEM });
+
   await irParaSecao(page, 'Ensino médio');
   await escolher(page, 'Como você concluiu o ensino médio', 'Ensino médio regular');
   await lista(page, 'Onde você cursou o ensino médio').selectOption({ label: 'Escola privada' });
@@ -210,7 +216,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(page.getByText('Inscrição enviada', { exact: true })).toBeVisible();
     });
 
-    await test.step('o comprovante mostra o nome social, só o CPF mascarado e o município pelo nome', async () => {
+    await test.step('o comprovante mostra o nome social, o CPF mascarado, o município e a edição', async () => {
       await abrirComprovanteNaLista(page, processo);
       await expect(comprovante(page)).toContainText(PERSONA.nomeSocial);
       await expect(comprovante(page)).toContainText(PERSONA.cpfMascarado);
@@ -219,6 +225,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       // Município pelo nome, e nenhum código de fato ou IBGE cru na tela.
       await expect(comprovante(page)).toContainText(`${PERSONA.cidade} — MS`);
       await expect(comprovante(page)).toContainText(`${PERSONA.cidade}/MS`);
+      await expect(comprovante(page)).toContainText(EDICAO_DO_ENEM);
       await expect(comprovante(page)).not.toContainText('Código IBGE');
       await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
     });

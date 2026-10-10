@@ -29,6 +29,12 @@ import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import {
+  FATO_DA_EDICAO_DO_ENEM,
+  comoOpcoesDasEdicoes,
+  declaraEdicoesDoEnem,
+  rotuloDaEdicao,
+} from '../classificacao/edicoes-do-enem';
+import {
   classificacaoUsaFormulaLocal,
   comoComandoDeClassificacao,
   divisorDaMediaValido,
@@ -399,6 +405,14 @@ export class EliminacaoStepComponent {
             ? `${classificacao.regrasEliminacao.length} regra(s)`
             : 'nenhuma (classificação importada)',
         },
+        {
+          rotulo: 'Edições do ENEM aceitas',
+          valor: !declaraEdicoesDoEnem(this.store.draft())
+            ? 'não se aplica'
+            : classificacao.edicoesEnem.length > 0
+              ? classificacao.edicoesEnem.map(rotuloDaEdicao).join(', ')
+              : 'nenhuma escolhida',
+        },
         ...criteriosAdiados.map((criterio, indice) => ({
           rotulo: `${indice + 1}º critério de desempate`,
           valor:
@@ -608,10 +622,39 @@ export class EliminacaoStepComponent {
       if (!resultado.ok) {
         return { valid: false, messages: this.mensagensDaRecusa(resultado.problem) };
       }
-      return { valid: true };
+      const edicoes = await this.gravarEdicoesDoEnem(processoId);
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      return edicoes;
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
+  }
+
+  /**
+   * As edições do ENEM escolhidas na fórmula, gravadas depois da classificação: o servidor só as
+   * aceita de processo cuja classificação gravada é baseada em ENEM. Sem edição escolhida não há o
+   * que gravar, e a pendência de publicação diz que falta declará-las.
+   */
+  private async gravarEdicoesDoEnem(processoId: string): Promise<StepValidation> {
+    const draft = this.store.draft();
+    if (!declaraEdicoesDoEnem(draft) || draft.classificacao.edicoesEnem.length === 0) {
+      return { valid: true };
+    }
+
+    const resposta = await this.cadastro.definirOpcoesDeclaradas(
+      processoId,
+      FATO_DA_EDICAO_DO_ENEM,
+      { opcoes: comoOpcoesDasEdicoes(draft.classificacao.edicoesEnem) },
+    );
+    if (resposta.ok) {
+      this.store.recusaDasEdicoesDoEnem.set(null);
+      return { valid: true };
+    }
+
+    const { title, detail } = this.problemI18n.resolve(resposta.problem);
+    const recusa = detail ?? title;
+    this.store.recusaDasEdicoesDoEnem.set(recusa);
+    return { valid: false, messages: [`Edições do ENEM, no passo Fórmula: ${recusa}`] };
   }
 
   /**

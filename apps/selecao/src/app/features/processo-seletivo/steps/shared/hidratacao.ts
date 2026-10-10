@@ -27,6 +27,7 @@ import {
 } from '../steps/vagas/distribuicao-de-vagas';
 import { formulariosDoServidor } from '../steps/formulario/formularios-por-finalidade';
 import { exigenciasDe } from './exigencias-documentais';
+import { edicoesDoEnemDe } from '../steps/classificacao/edicoes-do-enem';
 import { formatarValorEmReais } from './valor-em-reais';
 
 /**
@@ -276,6 +277,7 @@ function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classificacao']
       baseadoEmEnem: false,
       resolucaoPesoAreaEnem: '',
       regrasEliminacao: [],
+      edicoesEnem: [],
     };
   }
 
@@ -291,6 +293,7 @@ function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classificacao']
     baseadoEmEnem: classificacao.baseadoEmEnem,
     resolucaoPesoAreaEnem: classificacao.resolucaoPesoAreaEnem ?? '',
     regrasEliminacao: classificacao.regrasEliminacao.map(regraEliminacaoDe),
+    edicoesEnem: edicoesDoEnemDe(dto),
   };
 }
 

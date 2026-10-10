@@ -664,6 +664,7 @@ export const PROCESSO_DA_MEDICINA = {
   referenciaTemporalFatos: null,
   regrasDerivacao: [],
   formularios: [],
+  opcoesDeclaradas: [],
   configuracaoDivulgacao: null,
   configuracaoTaxaInscricao: null,
   algoritmoContagemPrazo: null,

@@ -18,6 +18,7 @@ import {
   DefinirBonusRegionalRequest,
   DefinirCascataRemanejamentoRequest,
   DefinirClassificacaoRequest,
+  DefinirOpcoesDeclaradasRequest,
   DefinirOfertaAtendimentoRequest,
   DefinirTaxaInscricaoRequest,
   EtapaProcessoInput,
@@ -128,6 +129,7 @@ export class CadastroInicialService {
   private readonly chaveCronograma = new ChaveDeSubstituicao();
   private readonly chaveAlgoritmoContagem = new ChaveDeSubstituicao();
   private readonly chaveClassificacao = new ChaveDeSubstituicao();
+  private readonly chaveOpcoesDeclaradas = new ChaveDeSubstituicao();
   private readonly chaveBonus = new ChaveDeSubstituicao();
   private readonly chaveDesempate = new ChaveDeSubstituicao();
   private readonly chaveAtendimento = new ChaveDeSubstituicao();
@@ -472,6 +474,17 @@ export class CadastroInicialService {
 
     const inconclusiva = this.chaveClassificacao.recusada(result);
     return { ok: false, problem: result.problem, inconclusiva };
+  }
+
+  /** Substitui as opções que o processo declara para um fato de fonte do processo. */
+  async definirOpcoesDeclaradas(
+    processoSeletivoId: string,
+    fatoCodigo: string,
+    request: DefinirOpcoesDeclaradasRequest,
+  ): Promise<ResultadoGravacao> {
+    return this.gravarComChave(this.chaveOpcoesDeclaradas, { fatoCodigo, request }, (contexto) =>
+      this.api.definirOpcoesDeclaradas(processoSeletivoId, fatoCodigo, request, contexto),
+    );
   }
 
   /** Declara como os fatos derivados do certame são calculados a partir dos coletados. */

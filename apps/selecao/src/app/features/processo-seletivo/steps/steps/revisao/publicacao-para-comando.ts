@@ -309,6 +309,21 @@ const DESTINO_POR_ITEM: ReadonlyMap<string, DestinoDoItem> = new Map<string, Des
     },
   ],
   [
+    'classificacao_edicao_enem_nao_declarada',
+    {
+      passo: 'Fórmula e precisão',
+      orientacao: `Acrescente as edições do ENEM aceitas. A lista ${GRAVADA_COM_A_CLASSIFICACAO}.`,
+    },
+  ],
+  [
+    'formulario_inscricao_sem_edicao_enem',
+    {
+      passo: 'Formulários',
+      orientacao:
+        'Inclua no formulário de inscrição o campo da edição do ENEM, obrigatório para todo candidato e fora de seção ou campo condicional.',
+    },
+  ],
+  [
     'classificacao_grupo_area_enem_da_oferta_fora_do_quadro',
     {
       passo: 'Vagas',

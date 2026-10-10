@@ -445,6 +445,7 @@ const DETALHE_PUBLICADO = {
   referenciaTemporalFatos: null,
   regrasDerivacao: [],
   formularios: [],
+  opcoesDeclaradas: [],
   configuracaoDivulgacao: null,
   configuracaoTaxaInscricao: null,
   algoritmoContagemPrazo: null,
@@ -628,6 +629,43 @@ test.describe('Fórmula com quadro de pesos em consulta — matriz DS @ds', () =
     for (const largura of LARGURAS_DE_REFERENCIA) {
       await quadroCabeNaLargura(page, testInfo, largura);
     }
+  });
+});
+
+const PROCESSO_EDICOES_ENEM_ID = '01960000-0000-7000-0000-000000000910';
+
+/**
+ * Rascunho classificado pelo ENEM, com inscrição própria e duas edições já declaradas: a Fórmula
+ * em edição mostra o bloco das edições aceitas, com a lista, o campo do ano e as ações.
+ */
+test.describe('Edições do ENEM aceitas na Fórmula em edição — matriz DS @ds', () => {
+  test('não viola WCAG 2.1 AA no bloco das edições aceitas', async ({ page }, testInfo) => {
+    await mockarCatalogos(page);
+    await mockarProcesso(page, PROCESSO_EDICOES_ENEM_ID, {
+      ...DETALHE_DESEMPATE_POR_AREA,
+      id: PROCESSO_EDICOES_ENEM_ID,
+      status: 'rascunho',
+      opcoesDeclaradas: [
+        {
+          fatoCodigo: 'EDICAO_ENEM',
+          opcoes: [
+            { codigo: '2025', rotulo: 'ENEM 2025', ordem: 0 },
+            { codigo: '2026', rotulo: 'ENEM 2026', ordem: 1 },
+          ],
+        },
+      ],
+    });
+    await instalarPreferencia(page, temaDoProject(testInfo.project.name));
+    await page.goto(`/processo-seletivo/${PROCESSO_EDICOES_ENEM_ID}`);
+    await expect(page.getByText('Carregando o processo seletivo…')).toBeHidden();
+    await irAoPasso(page, 'Fórmula e precisão', testInfo);
+
+    const bloco = page.getByRole('group', { name: 'Edições do ENEM aceitas' });
+    await expect(bloco).toBeVisible();
+    await expect(bloco.getByRole('listitem')).toHaveCount(2);
+
+    const resultado = await runAxeWcagAA(page);
+    expect(identificadoresDe(resultado)).toEqual([]);
   });
 });
 

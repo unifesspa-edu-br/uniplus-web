@@ -87,6 +87,8 @@ export type ConfiguracaoBonusRegionalDto = components['schemas']['ConfiguracaoBo
 export type ConfiguracaoBonusRegionalMunicipioDto =
   components['schemas']['ConfiguracaoBonusRegionalMunicipioDto'];
 export type DefinirBonusRegionalRequest = components['schemas']['DefinirBonusRegionalRequest'];
+export type DefinirOpcoesDeclaradasRequest =
+  components['schemas']['DefinirOpcoesDeclaradasRequest'];
 export type CriterioDesempateDto = components['schemas']['CriterioDesempateDto'];
 export type CriterioDesempateInput = components['schemas']['CriterioDesempateInput'];
 export type SnapshotVigenteDto = components['schemas']['SnapshotVigenteDto'];
@@ -694,6 +696,26 @@ export class ProcessosSeletivosApi {
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/classificacao`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/fatos/{fatoCodigo}/opcoes` — substitui as opções
+   * que o processo declara para um fato cuja fonte de valores é o próprio processo, como as
+   * edições do ENEM aceitas. A lista vem na ordem em que o candidato a vê.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirOpcoesDeclaradas(
+    processoSeletivoId: string,
+    fatoCodigo: string,
+    request: DefinirOpcoesDeclaradasRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/fatos/${encodeURIComponent(fatoCodigo)}/opcoes`,
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );

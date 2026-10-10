@@ -8543,6 +8543,10 @@ export interface components {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly valores: readonly string[];
         };
+        readonly OpcoesDeclaradasDoFatoDto: {
+            readonly fatoCodigo: string;
+            readonly opcoes: readonly components["schemas"]["OpcaoDoProcessoDto"][];
+        };
         readonly OpcoesSimuladasDto: {
             readonly codigos: readonly string[];
             readonly definitivas: boolean;
@@ -8651,6 +8655,7 @@ export interface components {
             readonly referenciaTemporalFatos: null | components["schemas"]["ReferenciaTemporalFatosDto"];
             readonly regrasDerivacao: readonly components["schemas"]["ConfiguracaoDerivacaoDto"][];
             readonly formularios: readonly components["schemas"]["FormularioDto"][];
+            readonly opcoesDeclaradas: readonly components["schemas"]["OpcoesDeclaradasDoFatoDto"][];
             readonly configuracaoDivulgacao: null | components["schemas"]["ConfiguracaoDivulgacaoDto"];
             readonly configuracaoTaxaInscricao: null | components["schemas"]["ConfiguracaoTaxaInscricaoDto"];
             readonly algoritmoContagemPrazo: null | components["schemas"]["ReferenciaRegraDto"];
