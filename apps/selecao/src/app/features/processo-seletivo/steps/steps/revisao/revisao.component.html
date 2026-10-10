@@ -42,14 +42,17 @@
   </div>
 }
 
-@if (precisaEscolherDocumento()) {
-  <p class="alert alert--info" role="status">
-    Há mais de um documento confirmado. Escolha o oficial abaixo antes de publicar.
-  </p>
-} @else if (documentoEditalId() === null) {
-  <p class="alert alert--info" role="status">
-    Anexe e confirme o edital em PDF para publicar o processo.
-  </p>
+<!-- As orientações de preenchimento só valem para quem ainda pode anexar e escolher. -->
+@if (!store.emConsulta()) {
+  @if (precisaEscolherDocumento()) {
+    <p class="alert alert--info" role="status">
+      Há mais de um documento confirmado. Escolha o oficial abaixo antes de publicar.
+    </p>
+  } @else if (documentoEditalId() === null) {
+    <p class="alert alert--info" role="status">
+      Anexe e confirme o edital em PDF para publicar o processo.
+    </p>
+  }
 }
 
 <!-- Fora do gate de `processoSeletivoId()`: o próprio anexo sabe lidar com o
@@ -59,9 +62,11 @@
 <sel-anexo-edital />
 
 @if (store.processoSeletivoId() === null) {
-  <p class="alert alert--info" role="status">
-    Conclua a identificação do processo para revisar a conformidade e publicar.
-  </p>
+  @if (!store.emConsulta()) {
+    <p class="alert alert--info" role="status">
+      Conclua a identificação do processo para revisar a conformidade e publicar.
+    </p>
+  }
 } @else {
   @if (preflight.erro(); as erro) {
     <div class="alert alert--danger" role="alert">
