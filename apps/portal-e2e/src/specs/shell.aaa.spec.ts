@@ -1,5 +1,6 @@
 import {
   assertAaaVisualContract,
+  assertDocumentoSemRolagemVertical,
   assertReflowContract,
   assertTextSpacingResilience,
   runAxeWcagAAAApplicable,
@@ -36,6 +37,7 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
     expect(results.violations).toEqual([]);
     await assertAaaVisualContract(page, { fontMode });
     await assertReflowContract(page);
+    await assertDocumentoSemRolagemVertical(page);
     await assertTextSpacingResilience(page);
   });
 });

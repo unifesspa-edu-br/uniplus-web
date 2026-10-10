@@ -82,6 +82,9 @@
 /* Único contêiner de rolagem do shell — mesmo tratamento de `.page` no
    `ui-app-shell` (scrollbar fina, transparente até passar o mouse). */
 .portal-scroll {
+  /* Ancora o conteúdo posicionado: um `position: absolute` sem ancestral posicionado
+     escapa da área que rola, estica a página e cria uma segunda rolagem. */
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;

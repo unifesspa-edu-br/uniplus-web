@@ -613,6 +613,21 @@ export async function assertReflowContract(page: Page): Promise<void> {
   }
 }
 
+/**
+ * O shell que trava a altura rola o conteúdo por dentro: o documento nunca fica mais alto que a
+ * janela. Um descendente posicionado que escapa da área de rolagem estica a página e cria uma
+ * segunda rolagem.
+ */
+export async function assertDocumentoSemRolagemVertical(page: Page): Promise<void> {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollHeight <= document.documentElement.clientHeight + 1,
+      ),
+    )
+    .toBe(true);
+}
+
 async function waitForFonts(page: Page): Promise<void> {
   await page.evaluate(async () => {
     await Promise.all([

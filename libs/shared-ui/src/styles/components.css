@@ -402,6 +402,8 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
 /* Checkbox + Radio */
 .checkbox,
 .radio {
+  /* Contém o input escondido: sem isso, ele escapa da área que rola e estica a página. */
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -1047,6 +1049,8 @@ ui-secao-do-formulario {
 
 /* Switch (toggle) */
 .switch {
+  /* Contém o input escondido, como em `.checkbox` e `.radio`. */
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);

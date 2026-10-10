@@ -164,6 +164,21 @@ describe('AppShellComponent', () => {
       expect(page).toContain('overscroll-behavior: contain');
     });
 
+    it('a area de conteudo ancora o conteudo posicionado, que senao escaparia da rolagem', () => {
+      expect(rule('.page', 'overflow-y: auto')).toContain('position: relative');
+    });
+
+    it('caixa de marcar, opcao e interruptor contem o input escondido', () => {
+      /** O bloco base do controle: o seletor o lista sozinho, sem descendente. */
+      const base = (controle: string): string =>
+        [...styles.matchAll(/([^{}]+?)\s*\{([^{}]*)\}/gu)].find((m) =>
+          m[1].split(',').some((s) => s.trim() === controle),
+        )?.[2] ?? '';
+      for (const controle of ['.checkbox', '.radio', '.switch']) {
+        expect(base(controle), controle).toContain('position: relative');
+      }
+    });
+
     it('a navegacao lateral tem rolagem vertical propria', () => {
       const nav = rules('.sidebar nav');
       expect(nav).toContain('overflow-y: auto');
