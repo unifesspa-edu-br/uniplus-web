@@ -43,7 +43,7 @@
     <option value="" [selected]="ofertaEscolhida() === null">Selecione</option>
     @for (oferta of ofertas(); track oferta.id) {
     <option [value]="oferta.id" [selected]="ofertaEscolhida() === oferta.id">
-      {{ oferta.nome ?? oferta.id }}
+      {{ oferta.nome }}
     </option>
     }
   </select>

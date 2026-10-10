@@ -7473,7 +7473,7 @@ export interface components {
             readonly localidade: components["schemas"]["LocalidadeCertameDto"];
             readonly unidadeAdministradora: components["schemas"]["UnidadeAdministradoraCertameDto"];
             readonly documentoEdital: components["schemas"]["DocumentoEditalCertameDto"];
-            readonly ofertas: readonly string[];
+            readonly ofertas: readonly components["schemas"]["OfertaDeCursoCertameDto"][];
             readonly modalidadesOfertadas: readonly string[];
             readonly vagas: readonly components["schemas"]["QuadroDeVagasCertameDto"][];
             readonly etapas: readonly components["schemas"]["EtapaCertameDto"][];
@@ -7483,6 +7483,12 @@ export interface components {
             readonly atendimento: components["schemas"]["AtendimentoCertameDto"];
             readonly taxaInscricao: null | components["schemas"]["TaxaInscricaoCertameDto"];
             readonly retificacao: null | components["schemas"]["RetificacaoCertameDto"];
+        };
+        readonly ComprovanteEmitidoDto: {
+            /** Format: int32 */
+            readonly numero: number | string;
+            /** Format: date-time */
+            readonly instante: string;
         };
         readonly ComprovanteInscricaoDto: {
             readonly cpfMascarado: string;
@@ -8344,10 +8350,12 @@ export interface components {
         readonly MinhaInscricaoDto: {
             /** Format: uuid */
             readonly processoSeletivoId: string;
+            readonly nomeDoProcesso: null | string;
             readonly numeroInscricao: null | string;
             readonly situacao: components["schemas"]["SituacaoInscricao"];
             readonly nomePreferido: string;
             readonly cpfMascarado: string;
+            readonly comprovantes: readonly components["schemas"]["ComprovanteEmitidoDto"][];
         };
         readonly ModalidadeSelecionadaDto: {
             /** Format: uuid */
@@ -8494,6 +8502,14 @@ export interface components {
             readonly condicaoOrigemId: string;
             readonly condicaoCodigo: string;
             readonly condicaoNome: string;
+        };
+        readonly OfertaDeCursoCertameDto: {
+            /** Format: uuid */
+            readonly ofertaCursoOrigemId: string;
+            readonly cursoNome: string;
+            readonly cursoGrau: string;
+            readonly unidadeOfertanteNome: string;
+            readonly turnos: readonly string[];
         };
         readonly OfertaRecursoDto: {
             /** Format: uuid */

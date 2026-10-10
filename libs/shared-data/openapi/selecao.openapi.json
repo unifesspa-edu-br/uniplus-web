@@ -10174,8 +10174,7 @@
           "ofertas": {
             "type": "array",
             "items": {
-              "type": "string",
-              "format": "uuid"
+              "$ref": "#/components/schemas/OfertaDeCursoCertameDto"
             }
           },
           "modalidadesOfertadas": {
@@ -10233,6 +10232,27 @@
                 "$ref": "#/components/schemas/RetificacaoCertameDto"
               }
             ]
+          }
+        }
+      },
+      "ComprovanteEmitidoDto": {
+        "required": [
+          "numero",
+          "instante"
+        ],
+        "type": "object",
+        "properties": {
+          "numero": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "instante": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -14277,16 +14297,24 @@
       "MinhaInscricaoDto": {
         "required": [
           "processoSeletivoId",
+          "nomeDoProcesso",
           "numeroInscricao",
           "situacao",
           "nomePreferido",
-          "cpfMascarado"
+          "cpfMascarado",
+          "comprovantes"
         ],
         "type": "object",
         "properties": {
           "processoSeletivoId": {
             "type": "string",
             "format": "uuid"
+          },
+          "nomeDoProcesso": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "numeroInscricao": {
             "type": [
@@ -14302,6 +14330,12 @@
           },
           "cpfMascarado": {
             "type": "string"
+          },
+          "comprovantes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComprovanteEmitidoDto"
+            }
           }
         }
       },
@@ -14950,6 +14984,37 @@
           },
           "condicaoNome": {
             "type": "string"
+          }
+        }
+      },
+      "OfertaDeCursoCertameDto": {
+        "required": [
+          "ofertaCursoOrigemId",
+          "cursoNome",
+          "cursoGrau",
+          "unidadeOfertanteNome",
+          "turnos"
+        ],
+        "type": "object",
+        "properties": {
+          "ofertaCursoOrigemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cursoNome": {
+            "type": "string"
+          },
+          "cursoGrau": {
+            "type": "string"
+          },
+          "unidadeOfertanteNome": {
+            "type": "string"
+          },
+          "turnos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
