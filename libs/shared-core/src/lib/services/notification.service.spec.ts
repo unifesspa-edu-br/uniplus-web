@@ -99,7 +99,7 @@ describe('NotificationService', () => {
 
     it('overrides.title/detail substituem os do problem (LGPD: PII-safe)', () => {
       service.errorFromProblem(
-        montarProblem({ detail: 'CPF 123.456.789-09 não encontrado' }),
+        montarProblem({ detail: 'CPF 163.287.930-14 não encontrado' }),
         { detail: 'Documento não encontrado.' },
       );
       const [n] = service.notifications();

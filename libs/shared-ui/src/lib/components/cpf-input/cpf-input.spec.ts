@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { CpfInputComponent } from './cpf-input';
 
 describe('CpfInputComponent (ControlValueAccessor)', () => {
-  const CPF_RAW = '52998224725';
-  const CPF_FORMATTED = '529.982.247-25';
+  const CPF_RAW = '16328793014';
+  const CPF_FORMATTED = '163.287.930-14';
 
   function setup() {
     TestBed.resetTestingModule();
@@ -43,7 +43,7 @@ describe('CpfInputComponent (ControlValueAccessor)', () => {
 
   it('remove caracteres não numéricos do valor recebido em writeValue', () => {
     const { fixture, component, getInputEl } = setup();
-    component.writeValue('abc529.982.247-25xyz');
+    component.writeValue('abc163.287.930-14xyz');
     fixture.detectChanges();
     expect(getInputEl().value).toBe(CPF_FORMATTED);
   });
@@ -166,8 +166,8 @@ describe('CpfInputComponent (ControlValueAccessor)', () => {
     const { onChangeSpy, component, getInputEl } = setup();
     component.registerOnChange(onChangeSpy);
     const input = getInputEl();
-    input.value = 'abc529982247250000xyz';
+    input.value = 'abc163287930140000xyz';
     input.dispatchEvent(new Event('input'));
-    expect(onChangeSpy).toHaveBeenLastCalledWith('52998224725');
+    expect(onChangeSpy).toHaveBeenLastCalledWith('16328793014');
   });
 });

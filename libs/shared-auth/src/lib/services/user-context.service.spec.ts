@@ -35,7 +35,7 @@ function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
     username: 'usuario',
     email: 'usuario@exemplo.com',
     nomeCivil: 'Maria das Dores',
-    cpf: '52998224725',
+    cpf: '33434225927',
     roles: ['candidato'],
     ...overrides,
   };

@@ -3,7 +3,7 @@ import { isValidCpf } from './cpf.util';
 describe('cpf.util', () => {
   describe('isValidCpf', () => {
     it('should validate a correct CPF', () => {
-      expect(isValidCpf('529.982.247-25')).toBe(true);
+      expect(isValidCpf('163.287.930-14')).toBe(true);
     });
 
     it('should reject all same digits', () => {

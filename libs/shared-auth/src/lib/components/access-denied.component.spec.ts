@@ -14,7 +14,7 @@ describe('AccessDeniedComponent', () => {
     email: 'servidor@teste.unifesspa.edu.br',
     nomeCivil: 'Servidor Sem Papel',
     nomeSocial: null,
-    cpf: '24843803480',
+    cpf: '33257350376',
     roles: [],
   };
 

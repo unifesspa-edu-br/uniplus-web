@@ -26,7 +26,7 @@ describe('formatCpfProgressive', () => {
   });
 
   it('remove caracteres não numéricos antes de formatar', () => {
-    expect(formatCpfProgressive('abc529.982.247-25xyz')).toBe('529.982.247-25');
+    expect(formatCpfProgressive('abc163.287.930-14xyz')).toBe('163.287.930-14');
   });
 });
 
