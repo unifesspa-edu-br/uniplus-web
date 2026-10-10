@@ -15,6 +15,10 @@ import {
 } from '@angular/core';
 
 import { AlertComponent } from '../alert/alert';
+import {
+  type DocumentoExigido,
+  ListaDeDocumentosComponent,
+} from '../lista-de-documentos/lista-de-documentos';
 import { CampoDoCandidatoComponent } from './campo-do-candidato';
 import {
   BLOCO_COMPROVACAO_DOCUMENTAL,
@@ -39,12 +43,6 @@ import type {
   ValorJson,
 } from './interpretador/regras-do-formulario';
 
-/** Um documento que o bloco de comprovação documental lista. */
-export interface DocumentoDoFormulario {
-  readonly nome: string;
-  readonly descricao?: string | null;
-}
-
 /**
  * O formulário como o candidato o vê, seção a seção, interpretando as regras que a API publica: o que
  * aparece, o que é obrigatório, as opções e as mensagens de cada campo vêm do interpretador, a cada
@@ -58,7 +56,12 @@ export interface DocumentoDoFormulario {
 @Component({
   selector: 'ui-formulario-do-candidato',
   standalone: true,
-  imports: [AlertComponent, CampoDoCandidatoComponent, GrupoDoCandidatoComponent],
+  imports: [
+    AlertComponent,
+    CampoDoCandidatoComponent,
+    GrupoDoCandidatoComponent,
+    ListaDeDocumentosComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="formulario-candidato">
@@ -133,20 +136,10 @@ export interface DocumentoDoFormulario {
                 }
                 @case (BLOCO_COMPROVACAO_DOCUMENTAL) {
                   @if (documentos(); as lista) {
-                    @if (lista.length === 0) {
-                      <p>Nenhum documento é exigido nesta fase.</p>
-                    } @else {
-                      <ul class="formulario-candidato__documentos">
-                        @for (documento of lista; track documento.nome) {
-                          <li>
-                            <strong>{{ documento.nome }}</strong>
-                            @if (documento.descricao) {
-                              — {{ documento.descricao }}
-                            }
-                          </li>
-                        }
-                      </ul>
-                    }
+                    <ui-lista-de-documentos
+                      [documentos]="lista"
+                      [semDocumentos]="semDocumentos()"
+                    />
                   } @else {
                     <p>Os documentos exigidos são listados a partir da publicação do processo.</p>
                   }
@@ -250,7 +243,9 @@ export class FormularioDoCandidatoComponent {
   /** Os fatos que vêm de fora do formulário — respostas de outro formulário, valores calculados. */
   readonly pressupostos = input<Readonly<Record<string, ValorJson>>>({});
   /** A lista do bloco de comprovação documental; nula quando quem hospeda não a tem. */
-  readonly documentos = input<readonly DocumentoDoFormulario[] | null>(null);
+  readonly documentos = input<readonly DocumentoExigido[] | null>(null);
+  /** O que o bloco de comprovação documental diz quando a lista é vazia. */
+  readonly semDocumentos = input('Nenhum documento é exigido nesta fase.');
   readonly idBase = input<string>('formulario-candidato');
   /** Os termos já aceitos, pelo código, como os de uma inscrição retomada; recomeçam com a partida. */
   readonly termosAceitosIniciais = input<readonly string[]>([]);

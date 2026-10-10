@@ -122,6 +122,37 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(servico.salvos[0].respostas?.['CPF']).toBe(CPF_DA_CONTA);
   });
 
+  /** O aviso só promete o que o edital diz: a fase em que cada documento é pedido não é publicada. */
+  it('a seção de documentos sem exigência na inscrição diz que nada se envia nesta etapa', async () => {
+    servico.formulario = {
+      ...FORMULARIO_DE_INSCRICAO_MOCK,
+      comprovacaoDocumental: [],
+      etapas: [
+        ...FORMULARIO_DE_INSCRICAO_MOCK.etapas,
+        {
+          codigo: 'DOCUMENTOS',
+          codigoNasRegras: null,
+          ordem: 3,
+          tipo: 'BLOCO',
+          bloco: 'COMPROVACAO_DOCUMENTAL',
+          titulo: 'Documentos',
+          descricao: null,
+          aviso: null,
+        },
+      ],
+    };
+    const tela = await abrir();
+
+    const secao = [...tela.querySelectorAll<HTMLButtonElement>('nav button')].find((b) =>
+      b.textContent?.includes('Documentos'),
+    ) as HTMLButtonElement;
+    await clicar(secao);
+
+    expect(tela.querySelector('.formulario-candidato__secao')?.textContent).toContain(
+      'Você não envia documentos nesta etapa.',
+    );
+  });
+
   it('a correção depois do envio é um novo envio, com o ETag da inscrição relida', async () => {
     const tela = await abrir();
     servico.inscricao = inscricao({

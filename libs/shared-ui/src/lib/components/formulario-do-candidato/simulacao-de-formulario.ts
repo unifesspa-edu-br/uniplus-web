@@ -15,13 +15,11 @@ import { ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
 import type { Observable, Subscription } from 'rxjs';
 
 import { AlertComponent } from '../alert/alert';
+import type { DocumentoExigido } from '../lista-de-documentos/lista-de-documentos';
 import { casoDaSimulacao } from './arquivo-do-formulario';
 import { baixarJson } from './baixar-json';
 import { divergenciasEntre, type Divergencia } from './divergencias';
-import {
-  FormularioDoCandidatoComponent,
-  type DocumentoDoFormulario,
-} from './formulario-do-candidato';
+import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
 import { interpretarFormulario } from './interpretador/interpretador';
 import type {
@@ -179,7 +177,7 @@ export class SimulacaoDeFormularioComponent {
   readonly formulario = input.required<FormularioDoCandidato>();
   /** As respostas de partida, como as de um caso importado. */
   readonly inicial = input<SimulacaoDoFormulario | null>(null);
-  readonly documentos = input<readonly DocumentoDoFormulario[] | null>(null);
+  readonly documentos = input<readonly DocumentoExigido[] | null>(null);
   readonly conferir = input.required<ConferenciaComOServidor>();
   /** O nome do arquivo exportado, sem a extensão. */
   readonly nomeDoArquivo = input<string>('formulario');
