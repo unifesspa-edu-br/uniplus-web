@@ -16,6 +16,7 @@ const BASE = 'http://localhost:5000';
 const RECURSO_ACESSIBILIDADE_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
 const recurso_acessibilidade_seed: RecursoAcessibilidadeDto = {
   'id': RECURSO_ACESSIBILIDADE_ID,
+  codigo: 'LEDOR',
   nome: 'Ledor',
   descricao: 'Leitura da prova em voz alta por fiscal designado.',
   criadoEm: '2026-07-07T13:23:42.707136+00:00',
@@ -153,12 +154,12 @@ describe('RecursosAcessibilidadeListPage', () => {
     component['abrirDrawerCriacao']();
     // `Validators.required` aceita espaços em branco: sem normalizar, o payload
     // levaria '' e o backend responderia sobre formato, não sobre ausência.
-    component['form'].setValue({ nome: '   ', descricao: '  ' });
+    component['form'].setValue({ nome: '   ', codigo: 'LEDOR', descricao: '  ' });
 
     component['salvar']();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/recursos-acessibilidade`);
-    expect(post.request.body).toMatchObject({ nome: null, descricao: null });
+    expect(post.request.body).toMatchObject({ codigo: 'LEDOR', nome: null, descricao: null });
     post.flush('new-id', { status: 201, statusText: 'Created' });
     await propagate();
     await flushLista([]);
@@ -170,6 +171,7 @@ describe('RecursosAcessibilidadeListPage', () => {
       component['abrirDrawerCriacao']();
       component['form'].setValue({
         nome: 'Ledor',
+        codigo: 'LEDOR',
         descricao: 'Leitura da prova em voz alta por fiscal designado.',
       });
       const key = component['idempotencyKeyAtual']();
@@ -180,6 +182,7 @@ describe('RecursosAcessibilidadeListPage', () => {
       expect(post.request.method).toBe('POST');
       expect(post.request.headers.get('Idempotency-Key')).toBe(key);
       expect(post.request.body).toMatchObject({
+        codigo: 'LEDOR',
         nome: 'Ledor',
         descricao: 'Leitura da prova em voz alta por fiscal designado.',
       });
@@ -210,6 +213,7 @@ describe('RecursosAcessibilidadeListPage', () => {
     component['abrirDrawerCriacao']();
     component['form'].setValue({
       nome: 'Ledor',
+      codigo: 'LEDOR',
       descricao: ''
     });
     component['salvar']();
@@ -232,6 +236,102 @@ describe('RecursosAcessibilidadeListPage', () => {
 
     expect(component['formOpen']()).toBe(true);
     expect(component['form'].controls.nome.errors?.['backend']).toBeTruthy();
+  });
+
+  it('a listagem mostra o código e a busca o encontra', async () => {
+    const outro: RecursoAcessibilidadeDto = {
+      ...recurso_acessibilidade_seed,
+      id: '2',
+      codigo: 'SALA_DE_FACIL_ACESSO',
+      nome: 'Sala de fácil acesso',
+    };
+    await flushLista([recurso_acessibilidade_seed, outro]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('td[data-label="Código"] code')?.textContent).toBe(
+      'LEDOR',
+    );
+
+    component['termoBusca'].set('facil_acesso');
+
+    expect(component['recursosFiltrados']().map((r) => r.codigo)).toEqual(['SALA_DE_FACIL_ACESSO']);
+  });
+
+  it('o código é editável: o PUT leva o código trocado', async () => {
+    await flushLista([recurso_acessibilidade_seed]);
+
+    component['abrirEdicao'](recurso_acessibilidade_seed);
+    expect(component['form'].controls.codigo.value).toBe('LEDOR');
+    component['form'].controls.codigo.setValue('LEDOR_DE_PROVA');
+    component['salvar']();
+
+    const put = controller.expectOne(
+      `${BASE}/api/configuracao/admin/recursos-acessibilidade/${RECURSO_ACESSIBILIDADE_ID}`,
+    );
+    expect(put.request.body).toMatchObject({ id: RECURSO_ACESSIBILIDADE_ID, codigo: 'LEDOR_DE_PROVA' });
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await flushRecarregarLista([recurso_acessibilidade_seed]);
+  });
+
+  it('código duplicado (409) é mapeado ao campo Código sem fechar o drawer', async () => {
+    await flushLista([]);
+
+    component['abrirDrawerCriacao']();
+    component['form'].setValue({ nome: 'Ledor', codigo: 'LEDOR', descricao: '' });
+    component['salvar']();
+    controller.expectOne(`${BASE}/api/configuracao/admin/recursos-acessibilidade`).flush(
+      JSON.stringify({
+        type: 'https://uniplus.dev/erros/uniplus.configuracao.recurso_acessibilidade.codigo_ja_existe',
+        title: 'Já existe um recurso de acessibilidade ativo com este código',
+        status: 409,
+        code: 'uniplus.configuracao.recurso_acessibilidade.codigo_ja_existe',
+        traceId: 'test-trace',
+      }),
+      { status: 409, statusText: 'Conflict', headers: { 'content-type': 'application/problem+json' } },
+    );
+    await propagate();
+    fixture.detectChanges();
+
+    expect(component['formOpen']()).toBe(true);
+    expect(component['form'].controls.codigo.errors?.['backend']).toBeTruthy();
+    expect(component['form'].controls.nome.errors).toBeNull();
+    expect(fixture.nativeElement.querySelector('#cfg-ra-codigo-erro')?.textContent).toContain(
+      'Já existe um recurso de acessibilidade ativo com este código',
+    );
+  });
+
+  it('a recusa de formato do código (422) aparece no campo Código', async () => {
+    await flushLista([]);
+
+    component['abrirDrawerCriacao']();
+    component['form'].setValue({ nome: 'Ledor', codigo: 'LEDOR', descricao: '' });
+    component['salvar']();
+    controller.expectOne(`${BASE}/api/configuracao/admin/recursos-acessibilidade`).flush(
+      JSON.stringify({
+        type: 'https://uniplus.dev/erros/uniplus.configuracao.recurso_acessibilidade.codigo_formato_invalido',
+        title: 'O código do recurso de acessibilidade está fora do formato',
+        status: 422,
+        code: 'uniplus.configuracao.recurso_acessibilidade.codigo_formato_invalido',
+        traceId: 'test-trace',
+        errors: [
+          {
+            field: 'Codigo',
+            code: 'uniplus.configuracao.recurso_acessibilidade.codigo_formato_invalido',
+            message: 'O código do recurso de acessibilidade está fora do formato',
+          },
+        ],
+      }),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(component['form'].controls.codigo.errors?.['backend']).toEqual({
+      code: 'uniplus.configuracao.recurso_acessibilidade.codigo_formato_invalido',
+      message: 'O código do recurso de acessibilidade está fora do formato',
+    });
   });
 
   it('filtra a lista client-side por nome', async () => {
@@ -303,7 +403,7 @@ describe('RecursosAcessibilidadeListPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Recursos de acessibilidade, com nome e descrição',
+      'Recursos de acessibilidade, com código, nome e descrição',
     );
   });
   it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
@@ -312,7 +412,7 @@ describe('RecursosAcessibilidadeListPage', () => {
     const cabecalhos = Array.from(
       fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
     ).map((th) => th.textContent?.trim());
-    expect(cabecalhos).toEqual(['Nome', 'Descrição', 'Ações']);
+    expect(cabecalhos).toEqual(['Código', 'Nome', 'Descrição', 'Ações']);
     expect(fixture.nativeElement.querySelector('td[data-label="Status"]')).toBeNull();
   });
 

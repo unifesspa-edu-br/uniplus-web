@@ -38,11 +38,8 @@ import {
   TipoDocumentoDto,
   TiposDocumentoApi,
 } from '@uniplus/shared-data/configuracao';
-import {
-  CODIGO_CADASTRO_FORMATO,
-  CODIGO_CADASTRO_TAMANHO_MAXIMO,
-  sugerirCodigoDeCadastro,
-} from '@uniplus/shared-utils';
+import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
+import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
 import { CatalogoCategoriasDocumento } from '../../shared/categorias-documento';
 import {
   AlertComponent,
@@ -502,8 +499,6 @@ export class TiposDocumentoListPage {
   protected readonly formOpen = signal(false);
   protected readonly formError = signal<string | null>(null);
   protected readonly modo = signal<ModoFormulario>('criar');
-  /** Último código escrito pela sugestão — distingue o que ela pôs do que o operador digitou. */
-  private ultimaSugestaoAplicada = '';
   protected readonly tipoEmEdicaoId = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
@@ -739,6 +734,10 @@ export class TiposDocumentoListPage {
       validators: [Validators.min(TAMANHO_MAXIMO_MB_MINIMO)],
     }),
   });
+  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
+    this.form.controls,
+    () => this.modo() === 'criar',
+  );
 
   // Valor reativo do formulário — só para a checagem de auto-equivalência
   // client-side (§5.2 da issue #392), que precisa reagir a cada tecla/blur
@@ -766,14 +765,6 @@ export class TiposDocumentoListPage {
     // O catálogo é do injector raiz: a primeira tela do cadastro que o pedir
     // paga a requisição, e as demais reaproveitam o que já está em memória.
     this.categorias.garantirCarregado();
-
-    this.form.controls.nome.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((nome) => this.sincronizarSugestaoDeCodigo(nome));
-
-    this.form.controls.codigo.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((codigo) => this.normalizarCaixaDoCodigo(codigo));
 
     effect(() => {
       const problem = this.lista.problem();
@@ -1004,43 +995,6 @@ export class TiposDocumentoListPage {
     if (control.errors['minlength']) return 'Valor abaixo do tamanho mínimo.';
     if (control.errors['min']) return 'Deve ser um inteiro positivo (≥ 1).';
     return 'Valor inválido.';
-  }
-
-  /**
-   * Mantém a sugestão de código alinhada ao nome. O campo só é escrito na criação
-   * e enquanto o que está nele é obra da própria sugestão — assim ela acompanha o
-   * nome enquanto ele é digitado, mas para no instante em que o operador troca o
-   * código por outro. Na edição de um tipo já salvo, nunca escreve: o código
-   * vigente é do registro, e este é o cadastro cujo código vai congelado no
-   * snapshot do edital.
-   */
-  private sincronizarSugestaoDeCodigo(nome: string): void {
-    if (this.modo() !== 'criar') {
-      return;
-    }
-    const codigoAtual = this.form.controls.codigo.value;
-    if (codigoAtual !== '' && codigoAtual !== this.ultimaSugestaoAplicada) {
-      return;
-    }
-    const sugestao = sugerirCodigoDeCadastro(nome);
-    this.ultimaSugestaoAplicada = sugestao;
-    this.form.controls.codigo.setValue(sugestao, { emitEvent: false });
-  }
-
-  /**
-   * O backend só aceita código em caixa alta. O modelo é normalizado sem reescrever
-   * a view (`emitModelToViewChange: false`) para não reposicionar o cursor; a
-   * apresentação em caixa alta fica por conta do `text-transform` do campo.
-   */
-  private normalizarCaixaDoCodigo(codigo: string): void {
-    const emCaixaAlta = codigo.toLocaleUpperCase('pt-BR');
-    if (emCaixaAlta === codigo) {
-      return;
-    }
-    this.form.controls.codigo.setValue(emCaixaAlta, {
-      emitEvent: false,
-      emitModelToViewChange: false,
-    });
   }
 
   private montarParams(): HttpParams {

@@ -8518,6 +8518,7 @@ export interface components {
             readonly id: string;
             /** Format: uuid */
             readonly recursoOrigemId: string;
+            readonly recursoCodigo: string;
             readonly recursoNome: string;
         };
         readonly OfertaTipoDeficienciaDto: {

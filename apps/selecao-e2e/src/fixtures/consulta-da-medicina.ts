@@ -31,8 +31,16 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
       },
     ],
     recursos: [
-      { recursoOrigemId: '01a0d640-0000-7000-8000-000000000011', recursoNome: 'Prova ampliada' },
-      { recursoOrigemId: '01a0d640-0000-7000-8000-000000000012', recursoNome: 'Ledor' },
+      {
+        recursoOrigemId: '01a0d640-0000-7000-8000-000000000011',
+        recursoCodigo: 'PROVA_AMPLIADA',
+        recursoNome: 'Prova ampliada',
+      },
+      {
+        recursoOrigemId: '01a0d640-0000-7000-8000-000000000012',
+        recursoCodigo: 'LEDOR',
+        recursoNome: 'Ledor',
+      },
     ],
     tiposDeficiencia: [
       {

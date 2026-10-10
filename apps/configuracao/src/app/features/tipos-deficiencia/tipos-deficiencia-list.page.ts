@@ -36,8 +36,8 @@ import {NotificationService } from "@uniplus/shared-core/notifications";
 import {
   CODIGO_CADASTRO_FORMATO,
   CODIGO_CADASTRO_TAMANHO_MAXIMO,
-  sugerirCodigoDeCadastro,
 } from "@uniplus/shared-utils";
+import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
 import {
   AtualizarTipoDeficienciaCommand,
   CONFIGURACAO_BASE_PATH,
@@ -504,12 +504,14 @@ export class TiposDeficienciaListPage {
       ],
     }),
   });
+  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
+    this.form.controls,
+    () => this.modo() === 'criar',
+  );
   protected readonly formError = signal<string | null>(null);
   readonly tipoDeficienciaEmEdicaoId = signal<string | null>(null);
   /** Classificação de permanência do registro em edição — lida, não editável aqui. */
   private readonly permanenteEmEdicao = signal<boolean | null>(null);
-  /** Último código escrito pela sugestão — distingue o que ela pôs do que o operador digitou. */
-  private ultimaSugestaoAplicada = '';
   protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
 
   constructor() {
@@ -519,50 +521,6 @@ export class TiposDeficienciaListPage {
         const titulo = this.problemI18n.resolve(problem).title;
         untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
       }
-    });
-
-    this.form.controls.nome.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((nome) => this.sincronizarSugestaoDeCodigo(nome));
-
-    this.form.controls.codigo.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((codigo) => this.normalizarCaixaDoCodigo(codigo));
-  }
-
-  /**
-   * Mantém a sugestão de código alinhada ao nome. O campo só é escrito na criação
-   * e enquanto o que está nele é obra da própria sugestão — assim ela acompanha o
-   * nome enquanto ele é digitado, mas para no instante em que o operador troca o
-   * código por outro. Na edição de um tipo já salvo, nunca escreve: o código
-   * vigente é do registro.
-   */
-  private sincronizarSugestaoDeCodigo(nome: string): void {
-    if (this.modo() !== 'criar') {
-      return;
-    }
-    const codigoAtual = this.form.controls.codigo.value;
-    if (codigoAtual !== '' && codigoAtual !== this.ultimaSugestaoAplicada) {
-      return;
-    }
-    const sugestao = sugerirCodigoDeCadastro(nome);
-    this.ultimaSugestaoAplicada = sugestao;
-    this.form.controls.codigo.setValue(sugestao, { emitEvent: false });
-  }
-
-  /**
-   * O backend só aceita código em caixa alta. O modelo é normalizado sem reescrever
-   * a view (`emitModelToViewChange: false`) para não reposicionar o cursor; a
-   * apresentação em caixa alta fica por conta do `text-transform` do campo.
-   */
-  private normalizarCaixaDoCodigo(codigo: string): void {
-    const emCaixaAlta = codigo.toLocaleUpperCase('pt-BR');
-    if (emCaixaAlta === codigo) {
-      return;
-    }
-    this.form.controls.codigo.setValue(emCaixaAlta, {
-      emitEvent: false,
-      emitModelToViewChange: false,
     });
   }
 
@@ -592,7 +550,7 @@ export class TiposDeficienciaListPage {
 
   abrirDrawerCriacao() {
     this.modo.set('criar');
-    this.ultimaSugestaoAplicada = '';
+    this.ligacaoDoCodigo.reiniciar();
     this.form.reset({
       nome: '',
       descricao: '',
@@ -607,7 +565,7 @@ export class TiposDeficienciaListPage {
     this.modo.set('editar');
     this.tipoDeficienciaEmEdicaoId.set(tipoDeficiencia.id);
     this.permanenteEmEdicao.set(tipoDeficiencia.permanente);
-    this.ultimaSugestaoAplicada = '';
+    this.ligacaoDoCodigo.reiniciar();
     this.form.reset({
       codigo: tipoDeficiencia.codigo,
       nome: tipoDeficiencia.nome,
