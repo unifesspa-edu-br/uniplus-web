@@ -1,4 +1,4 @@
-export { isValidCpf, formatCpf, maskCpf } from './cpf.util';
+export { isValidCpf } from './cpf.util';
 export {
   formatDateBr,
   formatDateTimeBr,

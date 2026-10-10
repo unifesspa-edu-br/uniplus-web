@@ -11,6 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
+import { DadoRevelavelComponent } from '../dado-revelavel/dado-revelavel';
 import { ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-municipio';
 import { EnderecoGeoComponent } from '../endereco-geo/endereco-geo';
 import type { EnderecoEstruturado } from '../endereco-geo/endereco-geo.model';
@@ -53,20 +54,35 @@ const ENTRADA_DO_FORMATO: Readonly<
 @Component({
   selector: 'ui-campo-do-candidato',
   standalone: true,
-  imports: [ValorDeMunicipioComponent, EnderecoGeoComponent, ReactiveFormsModule],
+  imports: [
+    DadoRevelavelComponent,
+    ValorDeMunicipioComponent,
+    EnderecoGeoComponent,
+    ReactiveFormsModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'field' },
   template: `
     @switch (controle()) {
       @case ('fixa') {
         <label class="field__label" [for]="id()">{{ campo().rotulo }}</label>
-        <input
-          class="input"
-          readonly
-          [id]="id()"
-          [value]="fixa()?.exibicao"
-          [attr.aria-describedby]="descritoPor()"
-        />
+        @if (fixa()?.revelavel; as revelavel) {
+          <ui-dado-revelavel
+            aparencia="campo"
+            [rotulo]="campo().rotulo"
+            [dado]="revelavel"
+            [id]="id()"
+            [descritoPor]="descritoPor()"
+          />
+        } @else {
+          <input
+            class="input"
+            readonly
+            [id]="id()"
+            [value]="fixa()?.exibicao"
+            [attr.aria-describedby]="descritoPor()"
+          />
+        }
       }
       @case ('escolha') {
         <fieldset class="formulario-candidato__escolhas" [attr.aria-describedby]="descritoPor()">
@@ -468,7 +484,12 @@ function textoDa(resposta: ValorJson | undefined): string {
 
 /** O endereço que a resposta guarda, na forma de `EnderecoGeoInput`; outra forma é sem endereço. */
 function enderecoDa(resposta: ValorJson | undefined): EnderecoEstruturado | null {
-  if (resposta === undefined || resposta === null || typeof resposta !== 'object' || Array.isArray(resposta))
+  if (
+    resposta === undefined ||
+    resposta === null ||
+    typeof resposta !== 'object' ||
+    Array.isArray(resposta)
+  )
     return null;
   const objeto = resposta as { readonly [chave: string]: ValorJson };
   const cidade = objeto['cidade'];

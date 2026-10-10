@@ -16,7 +16,7 @@ describe('UserHeaderInfoComponent', () => {
     email: 'candidato@teste.unifesspa.edu.br',
     nomeCivil: 'Usuário Candidato',
     nomeSocial: 'Candidato Teste',
-    cpf: '24843803480',
+    cpf: '69959836371',
     roles: ['candidato'],
   };
 
@@ -185,7 +185,7 @@ describe('UserHeaderInfoComponent', () => {
       userId: 'abc-123',
       name: 'Usuário Candidato',
       email: 'candidato@teste.unifesspa.edu.br',
-      cpf: '24843803480',
+      cpf: '69959836371',
       nomeSocial: 'Candidato Teste',
       roles: ['candidato', 'offline_access'],
       timestamp: '2026-10-05T12:00:00Z',
@@ -222,11 +222,26 @@ describe('UserHeaderInfoComponent', () => {
       expect(dados?.textContent).toContain('Candidato Teste');
       expect(dados?.textContent).toContain('candidato@teste.unifesspa.edu.br');
       // CPF abre mascarado no padrão do Uni+ (***.999.999-**): sem os verificadores.
-      expect(dados?.textContent).toContain('***.438.034-**');
-      expect(dados?.textContent).not.toContain('248.');
-      expect(dados?.textContent).not.toContain('-80');
+      expect(dados?.textContent).toContain('***.598.363-**');
+      expect(dados?.textContent).not.toContain('699.');
+      expect(dados?.textContent).not.toContain('-71');
       expect(dados?.textContent).toContain('Candidato');
       expect(dados?.textContent).not.toContain('offline_access');
+    });
+
+    it('anuncia o carregamento, mas não lê os dados do perfil, com o CPF, sozinho', () => {
+      const { fixture, http } = abrirPerfil();
+      const el: HTMLElement = fixture.nativeElement;
+      expect(
+        el.querySelector('[data-testid="auth-profile-loading"]')?.closest('[aria-live]'),
+      ).not.toBeNull();
+
+      http.expectOne('http://api.test/api/profile/me').flush(resposta);
+      fixture.detectChanges();
+
+      expect(
+        el.querySelector('[data-testid="auth-profile-data"]')?.closest('[aria-live]'),
+      ).toBeNull();
     });
 
     it('revela e volta a ocultar o CPF pelo botão de olho', () => {
@@ -242,13 +257,14 @@ describe('UserHeaderInfoComponent', () => {
 
       toggle?.click();
       fixture.detectChanges();
-      expect(cpf()).toBe('248.438.034-80');
-      expect(toggle?.getAttribute('aria-label')).toBe('Ocultar CPF');
+      expect(cpf()).toBe('699.598.363-71');
+      // O nome não muda: o estado é dito só pelo aria-pressed.
+      expect(toggle?.getAttribute('aria-label')).toBe('Mostrar CPF');
       expect(toggle?.getAttribute('aria-pressed')).toBe('true');
 
       toggle?.click();
       fixture.detectChanges();
-      expect(cpf()).toBe('***.438.034-**');
+      expect(cpf()).toBe('***.598.363-**');
     });
 
     it('não oferece o botão de olho quando o CPF não tem 11 dígitos', () => {
@@ -271,7 +287,7 @@ describe('UserHeaderInfoComponent', () => {
       el.querySelector<HTMLButtonElement>('[data-testid="auth-profile-cpf-toggle"]')?.click();
       fixture.detectChanges();
       expect(el.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim()).toBe(
-        '248.438.034-80',
+        '699.598.363-71',
       );
 
       el.querySelector('dialog')?.dispatchEvent(new Event('close'));
@@ -284,7 +300,7 @@ describe('UserHeaderInfoComponent', () => {
       fixture.detectChanges();
 
       expect(el.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim()).toBe(
-        '***.438.034-**',
+        '***.598.363-**',
       );
     });
 

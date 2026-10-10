@@ -24,7 +24,7 @@ import {
   type InscricaoRequest,
   SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
-import { isValidCpf, maskCpf } from '@uniplus/shared-data/utils';
+import { isValidCpf } from '@uniplus/shared-data/utils';
 import {
   AlertComponent,
   derivadosDoSistema,
@@ -36,6 +36,7 @@ import {
   SpinnerComponent,
   type ValorJson,
 } from '@uniplus/shared-ui/components';
+import { cpfRevelavel, mascararCpf } from '@uniplus/shared-utils';
 
 import {
   InscricaoDoCandidatoService,
@@ -122,12 +123,17 @@ export class InscricaoDoCandidatoPage implements OnInit {
     () => this.comprovante() !== null || this.inscricao()?.situacao === SituacaoInscricao.submetida,
   );
 
-  /** O CPF vem da conta e não se altera aqui: entra na resposta do formulário que o coleta e aparece mascarado. */
+  /**
+   * O CPF vem da conta e não se altera aqui: entra na resposta do formulário que o coleta e aparece
+   * mascarado, e o titular o revela a partir do próprio login, sem consulta.
+   */
   protected readonly respostasFixas = computed<Readonly<Record<string, RespostaFixa>>>(() => {
     const cpf = this.usuario.user()?.cpf.replace(/\D/g, '') ?? '';
     const coletaCpf = this.formulario()?.fatosColetados.some((c) => c.fatoCodigo === 'CPF');
     const fixas: Record<string, RespostaFixa> = {};
-    if (coletaCpf && isValidCpf(cpf)) fixas['CPF'] = { valor: cpf, exibicao: maskCpf(cpf) };
+    if (coletaCpf && isValidCpf(cpf)) {
+      fixas['CPF'] = { valor: cpf, exibicao: mascararCpf(cpf), revelavel: cpfRevelavel(cpf) };
+    }
     return fixas;
   });
 

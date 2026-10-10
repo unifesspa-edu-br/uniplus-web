@@ -13,6 +13,7 @@ import {
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { forkJoin, map, type Observable, of, switchMap, tap } from 'rxjs';
+import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { type ApiFailure, ProblemI18nService } from '@uniplus/shared-core/http';
 import type {
   CertamePublicadoDto,
@@ -22,9 +23,11 @@ import type {
 } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
+  DadoRevelavelComponent,
   PageHeaderComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { cpfRevelavel, textoMascarado } from '@uniplus/shared-utils';
 
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
 import { nomeDaOferta } from '../oferta-da-inscricao';
@@ -68,7 +71,13 @@ type Leitura =
 @Component({
   selector: 'ptl-comprovante-da-inscricao-page',
   standalone: true,
-  imports: [AlertComponent, PageHeaderComponent, RouterLink, SpinnerComponent],
+  imports: [
+    AlertComponent,
+    DadoRevelavelComponent,
+    PageHeaderComponent,
+    RouterLink,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './comprovante-da-inscricao.page.html',
   styleUrl: './comprovante-da-inscricao.page.css',
@@ -76,6 +85,7 @@ type Leitura =
 export class ComprovanteDaInscricaoPage {
   private readonly servico = inject(MinhasInscricoesService);
   private readonly problemas = inject(ProblemI18nService);
+  private readonly usuario = inject(UserContextService);
   private readonly injector = inject(Injector);
   private readonly tentativa = signal(0);
   private readonly conteudo = viewChild<ElementRef<HTMLElement>>('conteudo');
@@ -110,6 +120,17 @@ export class ComprovanteDaInscricaoPage {
   protected readonly termos = computed(() => {
     const c = this.carregado();
     return c ? termosAceitos(c.formulario, c.comprovante) : [];
+  });
+  /**
+   * O CPF que o titular revela vem do login, sem consulta; só quando confere com o do comprovante,
+   * que chega mascarado.
+   */
+  protected readonly cpf = computed(() => {
+    const c = this.carregado();
+    const doLogin = cpfRevelavel(this.usuario.user()?.cpf);
+    return c && doLogin.revelado && textoMascarado(doLogin) === c.comprovante.cpfMascarado
+      ? doLogin
+      : null;
   });
   /** O curso escolhido, pelo nome congelado na publicação. */
   protected readonly oferta = computed(() => {

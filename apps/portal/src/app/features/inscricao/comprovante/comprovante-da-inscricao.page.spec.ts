@@ -1,8 +1,10 @@
 import { HttpHeaders } from '@angular/common/http';
-import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { apiFailure, apiOk } from '@uniplus/shared-core/http';
 import type {
   CertamePublicadoDto,
@@ -16,6 +18,10 @@ import { ComprovanteDaInscricaoPage } from './comprovante-da-inscricao.page';
 
 const PROCESSO = '0199e000-0000-7000-8000-0000000000d1';
 const SEM_CABECALHOS = new HttpHeaders();
+/** Fernanda Drumond, persona fictícia do portal de documentação. */
+const CPF_DA_CONTA = '69959836371';
+const cpfDoLogin = signal(CPF_DA_CONTA);
+const usuario = { user: () => ({ cpf: cpfDoLogin() }) };
 
 const FORMULARIO = {
   etapas: [{ codigo: 'DADOS_BASICOS', ordem: 0, tipo: 'SECAO', titulo: 'Dados do candidato' }],
@@ -125,24 +131,62 @@ const servico = {
     } as unknown as CertamePublicadoDto),
 };
 
+let fixture: ComponentFixture<ComprovanteDaInscricaoPage>;
+
 async function abrir(numero?: string): Promise<HTMLElement> {
   TestBed.configureTestingModule({
     imports: [ComprovanteDaInscricaoPage],
-    providers: [provideRouter([]), { provide: MinhasInscricoesService, useValue: servico }],
+    providers: [
+      provideRouter([]),
+      { provide: MinhasInscricoesService, useValue: servico },
+      { provide: UserContextService, useValue: usuario },
+    ],
   });
-  const fixture = TestBed.createComponent(ComprovanteDaInscricaoPage);
+  fixture = TestBed.createComponent(ComprovanteDaInscricaoPage);
   fixture.componentRef.setInput('processoId', PROCESSO);
   if (numero) fixture.componentRef.setInput('numero', numero);
+  await atualizar();
+  return fixture.nativeElement as HTMLElement;
+}
+
+async function atualizar(): Promise<void> {
   fixture.detectChanges();
   await fixture.whenStable();
   fixture.detectChanges();
-  return fixture.nativeElement as HTMLElement;
 }
 
 const links = (tela: HTMLElement): string[] =>
   Array.from(tela.querySelectorAll('nav a')).map((a) => a.textContent?.trim() ?? '');
 
 describe('ComprovanteDaInscricaoPage', () => {
+  afterEach(() => {
+    cpfDoLogin.set(CPF_DA_CONTA);
+    vi.restoreAllMocks();
+  });
+
+  it('o titular revela o CPF do login para conferir, sem nova consulta', async () => {
+    const tela = await abrir();
+    const consultas = (Object.keys(servico) as (keyof typeof servico)[]).map((metodo) =>
+      vi.spyOn(servico, metodo),
+    );
+
+    (tela.querySelector('button[aria-label="Mostrar CPF"]') as HTMLButtonElement).click();
+    await atualizar();
+
+    expect(tela.querySelector('.dado-revelavel__tela')?.textContent?.trim()).toBe('699.598.363-71');
+    for (const consulta of consultas) expect(consulta).not.toHaveBeenCalled();
+  });
+
+  it('sem conferir com o CPF do comprovante, o do login não se revela', async () => {
+    // Kevin Carvalho, outra persona fictícia.
+    cpfDoLogin.set('33257350376');
+    const tela = await abrir();
+
+    expect(tela.querySelector('button[aria-label="Mostrar CPF"]')).toBeNull();
+    expect(tela.textContent).toContain('***.598.363-**');
+    expect(tela.textContent).not.toContain('332.573.503-76');
+  });
+
   it('mostra o nome que o candidato prefere, só o CPF mascarado e as respostas com os rótulos do formulário (CA-01)', async () => {
     const tela = await abrir();
 
@@ -196,9 +240,13 @@ describe('ComprovanteDaInscricaoPage', () => {
   it('trocar o número na mesma página mostra o outro comprovante (CA-02)', async () => {
     TestBed.configureTestingModule({
       imports: [ComprovanteDaInscricaoPage],
-      providers: [provideRouter([]), { provide: MinhasInscricoesService, useValue: servico }],
+      providers: [
+        provideRouter([]),
+        { provide: MinhasInscricoesService, useValue: servico },
+        { provide: UserContextService, useValue: usuario },
+      ],
     });
-    const fixture = TestBed.createComponent(ComprovanteDaInscricaoPage);
+    fixture = TestBed.createComponent(ComprovanteDaInscricaoPage);
     fixture.componentRef.setInput('processoId', PROCESSO);
     fixture.componentRef.setInput('numero', '2');
     fixture.detectChanges();

@@ -1,4 +1,4 @@
-import { isValidCpf, formatCpf, maskCpf } from './cpf.util';
+import { isValidCpf } from './cpf.util';
 
 describe('cpf.util', () => {
   describe('isValidCpf', () => {
@@ -12,22 +12,6 @@ describe('cpf.util', () => {
 
     it('should reject invalid CPF', () => {
       expect(isValidCpf('123.456.789-00')).toBe(false);
-    });
-  });
-
-  describe('formatCpf', () => {
-    it('should format CPF digits', () => {
-      expect(formatCpf('52998224725')).toBe('529.982.247-25');
-    });
-  });
-
-  describe('maskCpf', () => {
-    it('should mask CPF for LGPD', () => {
-      expect(maskCpf('52998224725')).toBe('***.982.247-**');
-    });
-
-    it('retorna um valor padrão quando entrada difere do tamanho 11', () => {
-      expect(maskCpf('529982247256')).toBe('***.***.***-**');
     });
   });
 });

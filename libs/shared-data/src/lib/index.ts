@@ -24,7 +24,7 @@ export {
 } from './api/organizacao/unidades.api';
 
 // Utils
-export { isValidCpf, formatCpf, maskCpf } from './utils/cpf.util';
+export { isValidCpf } from './utils/cpf.util';
 export {
   formatDateBr,
   formatDateTimeBr,

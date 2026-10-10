@@ -34,4 +34,13 @@ describe('base.css — impressão', () => {
     );
     expect(tela).not.toContain('.u-no-print');
   });
+
+  it('.u-print-only só existe no papel', () => {
+    const { impressao, tela } = separarImpressao(css);
+
+    expect(tela.match(/\.u-print-only\s*\{([^{}]*)\}/u)?.[1]).toContain('display: none !important');
+    expect(impressao.match(/\.u-print-only\s*\{([^{}]*)\}/u)?.[1]).toContain(
+      'display: revert !important',
+    );
+  });
 });

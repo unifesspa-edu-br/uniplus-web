@@ -173,7 +173,7 @@ Passo a passo, credenciais e sintomas: [`docs/guia-testar-frontend-com-backend-l
 
 ## Regras criticas
 
-- LGPD: CPF mascarado em logs (`***.***.***-XX`)
+- LGPD: CPF mascarado como `***.999.999-**` (Parecer DPO 002/2026), na tela e em logs; usar `mascararCpf`/`cpfRevelavel` de `@uniplus/shared-utils` e, para o titular conferir, `ui-dado-revelavel`
 - Soft delete: nunca deletar registros fisicamente
 - Acessibilidade: ARIA em componentes interativos, WCAG 2.1 AA
 - Seguranca: tokens JWT via OIDC, nunca em localStorage

@@ -393,7 +393,7 @@ npx nx e2e selecao-e2e -- --grep "accessibility"
 
 ### Obrigatório em toda contribuição
 
-- **Nunca exibir CPF completo** em telas — usar máscara `***.***.***-XX`
+- **CPF mascarado** em telas e logs como `***.999.999-**` (Parecer DPO 002/2026), pelas funções `mascararCpf`/`cpfRevelavel` de `@uniplus/shared-utils`; o titular só revela o próprio CPF por ação explícita, com o `ui-dado-revelavel`
 - **Nunca logar dados pessoais** no console do navegador
 - **XSS:** nunca usar `[innerHTML]` com dados do usuário — usar sanitização do Angular
 - **Tokens:** nunca armazenar tokens em localStorage — usar o fluxo OIDC configurado e manter JWT fora de logs

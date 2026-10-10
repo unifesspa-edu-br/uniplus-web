@@ -20,6 +20,7 @@ export {
   type UiComboboxOption,
 } from '../../src/lib/components/combobox/combobox';
 export { CpfInputComponent } from '../../src/lib/components/cpf-input/cpf-input';
+export { DadoRevelavelComponent } from '../../src/lib/components/dado-revelavel/dado-revelavel';
 export {
   DataTableComponent,
   type UiDataTableColumn,

@@ -1,3 +1,5 @@
+import type { DadoRevelavel } from '@uniplus/shared-utils';
+
 import type {
   AvaliacaoDoFormulario,
   CampoAvaliado,
@@ -106,6 +108,8 @@ export interface FormularioDoCandidato {
 export interface RespostaFixa {
   readonly valor: ValorJson;
   readonly exibicao: string;
+  /** O dado sensível que o titular revela para conferir; presente, aparece no lugar da exibição. */
+  readonly revelavel?: DadoRevelavel;
 }
 
 /**

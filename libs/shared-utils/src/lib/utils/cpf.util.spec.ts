@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCpfProgressive } from './cpf.util';
+import { cpfRevelavel, formatCpfProgressive, mascararCpf } from './cpf.util';
 
 describe('formatCpfProgressive', () => {
   it.each([
@@ -27,5 +27,40 @@ describe('formatCpfProgressive', () => {
 
   it('remove caracteres não numéricos antes de formatar', () => {
     expect(formatCpfProgressive('abc529.982.247-25xyz')).toBe('529.982.247-25');
+  });
+});
+
+describe('mascararCpf', () => {
+  it('oculta os três primeiros dígitos e os verificadores', () => {
+    expect(mascararCpf('699.598.363-71')).toBe('***.598.363-**');
+  });
+
+  it.each([['6995983637'], ['699598363712'], [''], [null], [undefined]])(
+    'oculta tudo, sem completar com zeros, quando "%s" não tem 11 dígitos',
+    (cpf) => {
+      expect(mascararCpf(cpf)).toBe('***.***.***-**');
+    },
+  );
+});
+
+describe('cpfRevelavel', () => {
+  it('separa os trechos ocultos e diz o que a máscara deixa ver', () => {
+    expect(cpfRevelavel('69959836371')).toEqual({
+      mascarado: [
+        { texto: '***', oculto: true },
+        { texto: '.598.363-', oculto: false },
+        { texto: '**', oculto: true },
+      ],
+      visivel: '598.363',
+      revelado: '699.598.363-71',
+    });
+  });
+
+  it('não tem o que revelar quando o CPF não tem 11 dígitos', () => {
+    expect(cpfRevelavel('6995983637')).toEqual({
+      mascarado: [{ texto: '***.***.***-**', oculto: true }],
+      visivel: '',
+      revelado: null,
+    });
   });
 });
