@@ -78,8 +78,17 @@ export class AuthService {
     }
   }
 
-  async login(): Promise<void> {
-    await this.keycloak?.login();
+  /**
+   * Com a rota de volta, o login retorna a ela, resolvida contra `document.baseURI` como no
+   * logout; sem ela, o keycloak-js volta à URL atual, que durante uma navegação bloqueada ainda é
+   * a de origem.
+   */
+  async login(rotaDeVolta?: string): Promise<void> {
+    await this.keycloak?.login(
+      rotaDeVolta
+        ? { redirectUri: new URL(rotaDeVolta.replace(/^\//, ''), document.baseURI).href }
+        : undefined,
+    );
   }
 
   /**

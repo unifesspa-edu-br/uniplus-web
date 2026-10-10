@@ -4,9 +4,9 @@ import { signal } from '@angular/core';
 import { authGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
 
-function runGuard(): boolean | UrlTree {
+function runGuard(url = '/'): boolean | UrlTree {
   return TestBed.runInInjectionContext(() => {
-    const result = authGuard({} as never, {} as RouterStateSnapshot);
+    const result = authGuard({} as never, { url } as RouterStateSnapshot);
     if (typeof result === 'object' && result !== null && 'subscribe' in (result as object)) {
       throw new Error('authGuard should be sync');
     }
@@ -39,5 +39,11 @@ describe('authGuard', () => {
     const { login } = setup(false);
     expect(runGuard()).toBe(false);
     expect(login).toHaveBeenCalledTimes(1);
+  });
+
+  it('o login volta à rota que o guard bloqueou, não à página de onde se partiu', () => {
+    const { login } = setup(false);
+    runGuard('/inscricao/processo-1');
+    expect(login).toHaveBeenCalledWith('/inscricao/processo-1');
   });
 });

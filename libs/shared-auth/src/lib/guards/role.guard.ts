@@ -18,13 +18,13 @@ import { AuthService } from '@uniplus/shared-auth/bootstrap';
  * @param requiredRoles lista de realm roles aceitas (OR lógico).
  */
 export function roleGuard(...requiredRoles: string[]): CanActivateFn {
-  return () => {
+  return (_route, state) => {
     const authService = inject(AuthService);
     const router = inject(Router);
 
     // Cenário 1 — não autenticado: 401.
     if (!authService.authenticated()) {
-      void authService.login();
+      void authService.login(state.url);
       return false;
     }
 
