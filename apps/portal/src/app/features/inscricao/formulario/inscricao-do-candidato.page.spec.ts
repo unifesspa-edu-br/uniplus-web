@@ -257,6 +257,57 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(tela.querySelector('#inscricao-oferta')).not.toBeNull();
   });
 
+  const escolherCurso = async (tela: HTMLElement, id: string): Promise<void> => {
+    const select = tela.querySelector('#inscricao-oferta') as HTMLSelectElement;
+    select.value = id;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+  };
+
+  it('a recusa da oferta aparece no seletor de curso e leva o foco até ele', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.recusaDoEnvio = apiFailure(
+      {
+        type: 'about:blank',
+        title: 'Recusada',
+        status: 422,
+        code: 'uniplus.selecao.inscricao.oferta_obrigatoria',
+        traceId: '',
+        errors: [
+          {
+            field: 'ofertaCursoId',
+            code: 'uniplus.selecao.inscricao.oferta_obrigatoria',
+            message: '',
+          },
+        ],
+      },
+      422,
+      new HttpHeaders(),
+    );
+    const tela = await abrir();
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    const select = tela.querySelector('#inscricao-oferta') as HTMLSelectElement;
+    expect(tela.querySelector('#inscricao-oferta-erro')?.textContent).toContain('Escolha o curso.');
+    expect(select.getAttribute('aria-describedby')).toBe('inscricao-oferta-erro');
+    expect(document.activeElement).toBe(select);
+  });
+
+  it('a releitura depois de uma falha sem resposta mantém o curso escolhido', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.recusaDoEnvio = problema(0, 'uniplus.client.network_error');
+    const tela = await abrir();
+    await escolherCurso(tela, DIREITO.id);
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+    servico.recusaDoEnvio = null;
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(servico.enviados.map((r) => r.ofertaCursoId)).toEqual([DIREITO.id, DIREITO.id]);
+  });
+
   it('o rascunho não vai para o armazenamento do navegador', async () => {
     const gravacao = vi.spyOn(Storage.prototype, 'setItem');
     const tela = await abrir();

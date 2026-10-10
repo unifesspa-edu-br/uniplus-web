@@ -32,7 +32,14 @@
 } @if (ofertas().length > 1) {
 <div class="field inscricao-oferta">
   <label class="field__label is-required" for="inscricao-oferta">Curso</label>
-  <select class="select" id="inscricao-oferta" (change)="escolherOferta($event)">
+  <select
+    #selectDaOferta
+    class="select"
+    id="inscricao-oferta"
+    [attr.aria-invalid]="erroDaOferta() ? 'true' : null"
+    [attr.aria-describedby]="erroDaOferta() ? 'inscricao-oferta-erro' : null"
+    (change)="escolherOferta($event)"
+  >
     <option value="" [selected]="ofertaEscolhida() === null">Selecione</option>
     @for (oferta of ofertas(); track oferta.id) {
     <option [value]="oferta.id" [selected]="ofertaEscolhida() === oferta.id">
@@ -40,6 +47,9 @@
     </option>
     }
   </select>
+  @if (erroDaOferta(); as erro) {
+  <span class="field__error" id="inscricao-oferta-erro">{{ erro }}</span>
+  }
 </div>
 } @if (formulario(); as renderizavel) {
 <ui-formulario-do-candidato
