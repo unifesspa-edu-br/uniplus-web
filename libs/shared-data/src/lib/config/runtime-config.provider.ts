@@ -3,12 +3,14 @@ import { HttpBackend, HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AUTH_CONFIG, AuthService, PROFILE_BASE_PATH } from '@uniplus/shared-auth/bootstrap';
 import type { AuthConfig } from '@uniplus/shared-auth/bootstrap';
-import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
-import { INGRESSO_BASE_PATH } from '@uniplus/shared-data/ingresso';
-import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
-import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  GEO_BASE_PATH,
+  INGRESSO_BASE_PATH,
+  ORGANIZACAO_BASE_PATH,
+  PUBLICACOES_BASE_PATH,
+  SELECAO_BASE_PATH,
+} from '@uniplus/shared-data/tokens';
 import { AppConfigService } from './app-config.service';
 import { resolveOidcConfig, type AppConfig } from './app-config.model';
 
