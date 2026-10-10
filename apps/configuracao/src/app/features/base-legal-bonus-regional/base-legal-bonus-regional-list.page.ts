@@ -29,18 +29,20 @@ import {
   ProblemI18nService,
   ResolucaoDeVinculo,
   cursorToString,
-  deveRotacionarIdempotencyKey,
   ehCursorDePaginacaoObsoleto,
   extractNextCursor,
   extractPrevCursor,
-  idempotencyKey,
   resolverVinculo,
   useApiResource,
-  withIdempotencyKey,
   withVendorMime,
   CursorPagina,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
+import {
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   BaseLegalBonusRegionalApi,

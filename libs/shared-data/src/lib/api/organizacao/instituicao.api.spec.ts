@@ -9,8 +9,8 @@ import {
   buildVendorMimeAccept,
   isApiFailure,
   isApiOk,
-  withIdempotencyKey,
 } from '@uniplus/shared-core/http';
+import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import {
   AtualizarInstituicaoCommand,
   CriarInstituicaoCommand,

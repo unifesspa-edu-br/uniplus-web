@@ -1,13 +1,9 @@
-import { HttpContext, HttpContextToken } from '@angular/common/http';
+import { HttpContext } from '@angular/common/http';
 import { v7 as uuidv7 } from 'uuid';
 
-/**
- * Token consumido pelo `apiResultInterceptor` (ADR-0011/0014). Quando
- * populado, o interceptor anexa `Idempotency-Key: <value>` ao request.
- *
- * Default `null` — endpoints sem idempotência não são tocados.
- */
-export const IDEMPOTENCY_KEY_TOKEN = new HttpContextToken<string | null>(() => null);
+import { IDEMPOTENCY_KEY_TOKEN } from './idempotency-token';
+
+export { IDEMPOTENCY_KEY_TOKEN } from './idempotency-token';
 
 /**
  * Limites canônicos do header conforme draft IETF idempotency-key-header-07:

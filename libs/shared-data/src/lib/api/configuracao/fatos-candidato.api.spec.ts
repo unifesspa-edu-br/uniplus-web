@@ -3,7 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Observable, firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { apiResultInterceptor, withIdempotencyKey } from '@uniplus/shared-core/http';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { FatosCandidatoApi } from './fatos-candidato.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 

@@ -16,3 +16,4 @@ export {
 
 // HTTP — adapter `ApiResult<T>` consolidado (ADR-0011 + ADR-0012)
 export * from './http';
+export * from './http/idempotency';

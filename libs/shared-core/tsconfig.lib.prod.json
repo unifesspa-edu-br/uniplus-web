@@ -3,7 +3,8 @@
   "compilerOptions": {
     "declarationMap": false,
     "paths": {
-      "@uniplus/shared-core/http": ["dist/libs/shared-core/http"]
+      "@uniplus/shared-core/http": ["dist/libs/shared-core/http"],
+      "@uniplus/shared-core/idempotency": ["dist/libs/shared-core/idempotency"]
     }
   },
   "angularCompilerOptions": {}

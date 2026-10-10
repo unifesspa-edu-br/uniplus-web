@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/http';
+import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 

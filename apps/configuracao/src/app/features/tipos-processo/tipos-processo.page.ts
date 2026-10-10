@@ -19,16 +19,18 @@ import {
   ProblemI18nService,
   ProblemValidationError,
   cursorToString,
-  deveRotacionarIdempotencyKey,
   extractNextCursor,
   extractPrevCursor,
-  idempotencyKey,
   useApiResource,
-  withIdempotencyKey,
   withVendorMime,
   CursorPagina,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
+import {
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,

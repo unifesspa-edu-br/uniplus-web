@@ -32,16 +32,15 @@ import {
   ehCursorDePaginacaoExpirado,
   extractNextCursor,
   extractPrevCursor,
-  idempotencyKey,
   lookupCompleto,
   resolverVinculo,
   useApiResource,
   useCursorObsoletoRecovery,
-  withIdempotencyKey,
   withVendorMime,
   CursorPagina,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
+import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AtualizarOfertaCursoCommand,

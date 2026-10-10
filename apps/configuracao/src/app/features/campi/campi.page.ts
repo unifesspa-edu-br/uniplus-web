@@ -21,13 +21,12 @@ import {
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
-  idempotencyKey,
   useApiResource,
-  withIdempotencyKey,
   withVendorMime,
   CursorPagina,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
+import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AtualizarCampusCommand,
