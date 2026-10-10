@@ -2,12 +2,15 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  type ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   inject,
   input,
-  linkedSignal,
   type OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -41,6 +44,15 @@ import { mensagemDaRecusa } from './recusas-da-inscricao';
 
 type Estado = 'carregando' | 'erro' | 'pronto';
 
+/** As recusas de quem gravou sobre uma revisão que outra janela já mudou. */
+const CONFLITOS: ReadonlySet<string> = new Set([
+  'uniplus.selecao.inscricao.precondicao_falhou',
+  'uniplus.selecao.inscricao.conflito_de_concorrencia',
+]);
+
+/** O campo em que o servidor devolve a recusa da oferta de curso. */
+const CAMPO_DA_OFERTA = 'ofertaCursoId';
+
 /**
  * A inscrição do candidato num processo: o formulário que a inscrição fixou ao nascer, preenchido em
  * passos, salvo como rascunho ou enviado. O rascunho fica só na memória da página e no servidor.
@@ -64,6 +76,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
   private readonly usuario = inject(UserContextService);
   private readonly problemas = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   readonly processoId = input.required<string>();
 
@@ -79,15 +92,15 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   private readonly simulacao = signal<SimulacaoDoFormulario>({});
   private readonly termosAceitos = signal<readonly string[]>([]);
-  protected readonly ofertaEscolhida = linkedSignal(
-    () =>
-      this.inscricao()?.ofertaCursoId ??
-      (this.ofertas().length === 1 ? this.ofertas()[0].id : null),
-  );
+  /** A escolha do candidato: parte da gravada ao carregar e só ele a muda, nem a releitura do ETag. */
+  protected readonly ofertaEscolhida = signal<string | null>(null);
+  protected readonly erroDaOferta = signal<string | null>(null);
+  private readonly selectDaOferta = viewChild<ElementRef<HTMLSelectElement>>('selectDaOferta');
 
   protected readonly ocupada = signal(false);
   protected readonly errosDoServidor = signal<readonly ErroDoServidor[]>([]);
   protected readonly recusaGeral = signal<string | null>(null);
+  protected readonly conflito = signal<string | null>(null);
   protected readonly aviso = signal('');
   protected readonly comprovante = signal<ComprovanteInscricaoDto | null>(null);
 
@@ -153,6 +166,10 @@ export class InscricaoDoCandidatoPage implements OnInit {
             this.termosAceitosIniciais.set(inscricao.data.aceites.map((a) => a.codigo));
             this.formulario.set(formulario.data);
             this.ofertas.set(ofertas.data);
+            this.ofertaEscolhida.set(
+              inscricao.data.ofertaCursoId ??
+                (ofertas.data.length === 1 ? ofertas.data[0].id : null),
+            );
             this.estado.set('pronto');
           });
       });
@@ -174,6 +191,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected escolherOferta(evento: Event): void {
     const valor = (evento.target as HTMLSelectElement).value;
     this.ofertaEscolhida.set(valor === '' ? null : valor);
+    this.erroDaOferta.set(null);
   }
 
   protected salvar(): void {
@@ -214,8 +232,10 @@ export class InscricaoDoCandidatoPage implements OnInit {
     const inscricao = this.inscricao();
     if (!inscricao || this.ocupada()) return;
     this.ocupada.set(true);
+    this.conflito.set(null);
     this.recusaGeral.set(null);
     this.errosDoServidor.set([]);
+    this.erroDaOferta.set(null);
     this.aviso.set('');
     chamada(this.request(inscricao), inscricao.eTag)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -256,20 +276,46 @@ export class InscricaoDoCandidatoPage implements OnInit {
   }
 
   private tratarRecusa(falha: ApiFailure): void {
-    const porCampo = (falha.problem.errors ?? []).map((e) => ({
-      campo: e.field,
-      mensagem: mensagemDaRecusa(e.code),
-    }));
-    if (porCampo.length > 0) {
-      this.errosDoServidor.set(porCampo);
+    if (CONFLITOS.has(falha.problem.code)) {
+      this.conflito.set(
+        'Recarregamos a versão gravada mais recente para você não sobrescrever o que mudou. Revise e grave de novo.',
+      );
+      this.carregar();
+      return;
+    }
+    if (falha.status === 0 || falha.status >= 500) {
+      // A gravação pode ter acontecido sem a resposta chegar: o ETag relido é o que vale para tentar de novo.
+      this.relerAGravada();
+    }
+    const recusas = falha.problem.errors ?? [];
+    const daOferta = recusas.find((e) => e.field === CAMPO_DA_OFERTA);
+    const porCampo = recusas
+      .filter((e) => e.field !== CAMPO_DA_OFERTA)
+      .map((e) => ({ campo: e.field, mensagem: mensagemDaRecusa(e.code) }));
+    if (daOferta) this.recusarOferta(mensagemDaRecusa(daOferta.code));
+    if (porCampo.length > 0) this.errosDoServidor.set(porCampo);
+    const total = porCampo.length + (daOferta ? 1 : 0);
+    if (total > 0) {
       this.aviso.set(
-        porCampo.length === 1
+        total === 1
           ? 'Uma resposta foi recusada. Corrija e tente de novo.'
-          : `${porCampo.length} respostas foram recusadas. Corrija e tente de novo.`,
+          : `${total} respostas foram recusadas. Corrija e tente de novo.`,
       );
       return;
     }
     const mensagem = this.problemas.resolve(falha.problem);
     this.recusaGeral.set(mensagem.detail ?? mensagem.title);
+  }
+
+  /** Sem seletor na tela, a recusa da oferta só pode aparecer como recusa geral. */
+  private recusarOferta(mensagem: string): void {
+    if (this.ofertas().length <= 1) {
+      this.recusaGeral.set(mensagem);
+      return;
+    }
+    this.erroDaOferta.set(mensagem);
+    afterNextRender(() => this.selectDaOferta()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 }

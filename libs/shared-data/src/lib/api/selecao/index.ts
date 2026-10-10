@@ -12,6 +12,7 @@ export {
   type TipoCatalogadoCertameDto,
 } from './certames-publicos.request';
 export { RegrasCatalogoApi } from './regras-catalogo.api';
+export { InscricoesApi } from './inscricoes.api';
 export type {
   AceiteDeTermoInput,
   ComprovanteInscricaoDto,

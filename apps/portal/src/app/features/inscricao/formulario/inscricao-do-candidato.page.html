@@ -25,19 +25,31 @@
   corrigi-la até o fim do período de inscrição.
   <p><a routerLink="/inscricao">Ver minhas inscrições</a></p>
 </ui-alert>
+} @if (conflito(); as aviso) {
+<ui-alert variant="warning" heading="A inscrição mudou em outra janela">{{ aviso }}</ui-alert>
 } @if (recusaGeral(); as recusa) {
 <ui-alert variant="danger" heading="A inscrição não foi gravada">{{ recusa }}</ui-alert>
 } @if (ofertas().length > 1) {
 <div class="field inscricao-oferta">
   <label class="field__label is-required" for="inscricao-oferta">Curso</label>
-  <select class="select" id="inscricao-oferta" (change)="escolherOferta($event)">
+  <select
+    #selectDaOferta
+    class="select"
+    id="inscricao-oferta"
+    [attr.aria-invalid]="erroDaOferta() ? 'true' : null"
+    [attr.aria-describedby]="erroDaOferta() ? 'inscricao-oferta-erro' : null"
+    (change)="escolherOferta($event)"
+  >
     <option value="" [selected]="ofertaEscolhida() === null">Selecione</option>
     @for (oferta of ofertas(); track oferta.id) {
     <option [value]="oferta.id" [selected]="ofertaEscolhida() === oferta.id">
-      {{ oferta.nome }}
+      {{ oferta.nome ?? oferta.id }}
     </option>
     }
   </select>
+  @if (erroDaOferta(); as erro) {
+  <span class="field__error" id="inscricao-oferta-erro">{{ erro }}</span>
+  }
 </div>
 } @if (formulario(); as renderizavel) {
 <ui-formulario-do-candidato

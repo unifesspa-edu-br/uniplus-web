@@ -12,6 +12,8 @@ const MENSAGENS: Readonly<Record<string, string>> = {
   'uniplus.selecao.inscricao.grupo_candidato_ausente': 'Inclua você na lista.',
   'uniplus.selecao.inscricao.grupo_id_duplicado': 'Dois itens da lista têm a mesma identificação.',
   'uniplus.selecao.inscricao.data_nascimento_invalida': 'Informe uma data de nascimento válida.',
+  'uniplus.selecao.inscricao.oferta_obrigatoria': 'Escolha o curso.',
+  'uniplus.selecao.inscricao.oferta_fora_do_processo': 'Este curso não é oferecido neste processo.',
   'uniplus.selecao.inscricao.endereco_residencial_invalido':
     'O endereço não foi confirmado. Confira o CEP e a cidade.',
 };

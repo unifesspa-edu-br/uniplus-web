@@ -124,7 +124,10 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('a correção depois do envio sai com o ETag da inscrição relida', async () => {
     const tela = await abrir();
-    servico.inscricao = inscricao({ situacao: SituacaoInscricao.submetida, eTag: '"inscricao-1:2"' });
+    servico.inscricao = inscricao({
+      situacao: SituacaoInscricao.submetida,
+      eTag: '"inscricao-1:2"',
+    });
     await clicar(botao(tela, 'Enviar inscrição'));
 
     const eTags: string[] = [];
@@ -205,6 +208,44 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(tela.textContent).not.toContain("O item 'NOME'");
   });
 
+  const problema = (status: number, code: string) =>
+    apiFailure(
+      { type: 'about:blank', title: 'Recusa', status, code, traceId: '' },
+      status,
+      new HttpHeaders(),
+    );
+
+  it('gravar sobre uma revisão que outra janela mudou recarrega a inscrição e avisa', async () => {
+    const tela = await abrir();
+    servico.salvar = () => of(problema(412, 'uniplus.selecao.inscricao.precondicao_falhou'));
+    servico.inscricao = inscricao({ respostas: { NOME: 'Fernanda Laura Nicole Drumond' } });
+
+    await clicar(botao(tela, 'Salvar rascunho'));
+
+    expect(tela.textContent).toContain('A inscrição mudou em outra janela');
+    expect(campoDe(tela, 'NOME').value).toBe('Fernanda Laura Nicole Drumond');
+  });
+
+  it('o envio que fica sem resposta relê a inscrição, e o reenvio sai com o ETag gravado', async () => {
+    const tela = await abrir();
+    servico.recusaDoEnvio = problema(0, 'uniplus.client.network_error');
+    servico.inscricao = inscricao({
+      situacao: SituacaoInscricao.submetida,
+      eTag: '"inscricao-1:2"',
+    });
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    const eTags: string[] = [];
+    servico.submeter = (_: string, request: InscricaoRequest, eTag?: string) => {
+      eTags.push(eTag ?? '');
+      servico.enviados.push(request);
+      return ok({} as ComprovanteInscricaoDto);
+    };
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(eTags).toEqual(['"inscricao-1:2"']);
+  });
+
   it('o seletor de curso só aparece quando o processo oferece mais de um', async () => {
     let tela = await abrir();
     expect(tela.querySelector('#inscricao-oferta')).toBeNull();
@@ -214,6 +255,57 @@ describe('InscricaoDoCandidatoPage', () => {
     servico.ofertas = [MEDICINA, DIREITO];
     tela = await abrir();
     expect(tela.querySelector('#inscricao-oferta')).not.toBeNull();
+  });
+
+  const escolherCurso = async (tela: HTMLElement, id: string): Promise<void> => {
+    const select = tela.querySelector('#inscricao-oferta') as HTMLSelectElement;
+    select.value = id;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+  };
+
+  it('a recusa da oferta aparece no seletor de curso e leva o foco até ele', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.recusaDoEnvio = apiFailure(
+      {
+        type: 'about:blank',
+        title: 'Recusada',
+        status: 422,
+        code: 'uniplus.selecao.inscricao.oferta_obrigatoria',
+        traceId: '',
+        errors: [
+          {
+            field: 'ofertaCursoId',
+            code: 'uniplus.selecao.inscricao.oferta_obrigatoria',
+            message: '',
+          },
+        ],
+      },
+      422,
+      new HttpHeaders(),
+    );
+    const tela = await abrir();
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    const select = tela.querySelector('#inscricao-oferta') as HTMLSelectElement;
+    expect(tela.querySelector('#inscricao-oferta-erro')?.textContent).toContain('Escolha o curso.');
+    expect(select.getAttribute('aria-describedby')).toBe('inscricao-oferta-erro');
+    expect(document.activeElement).toBe(select);
+  });
+
+  it('a releitura depois de uma falha sem resposta mantém o curso escolhido', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.recusaDoEnvio = problema(0, 'uniplus.client.network_error');
+    const tela = await abrir();
+    await escolherCurso(tela, DIREITO.id);
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+    servico.recusaDoEnvio = null;
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(servico.enviados.map((r) => r.ofertaCursoId)).toEqual([DIREITO.id, DIREITO.id]);
   });
 
   it('o rascunho não vai para o armazenamento do navegador', async () => {
