@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import { ValorLegivelDirective } from './valor-legivel.directive';
 
@@ -16,6 +17,16 @@ import { ValorLegivelDirective } from './valor-legivel.directive';
 })
 class HospedeiroComponent {
   readonly texto = signal('Processo Seletivo de Medicina — ingresso 2027');
+}
+
+@Component({
+  standalone: true,
+  imports: [FormsModule, ValorLegivelDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `<input class="input" id="modelo" [ngModel]="texto()" />`,
+})
+class HospedeiroDeModeloComponent {
+  readonly texto = signal('');
 }
 
 /** jsdom não faz layout: a largura do campo e a do conteúdo são instaladas pelo teste. */
@@ -81,5 +92,19 @@ describe('ValorLegivelDirective', () => {
     fixture.detectChanges();
 
     expect(fixo.getAttribute('title')).toBe('dica do autor');
+  });
+
+  it('com ngModel, mede o valor depois que o modelo o escreve no campo', async () => {
+    const fixture = TestBed.createComponent(HospedeiroDeModeloComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const campo = fixture.nativeElement.querySelector('#modelo') as HTMLInputElement;
+
+    medir(campo, 400, 200);
+    fixture.componentInstance.texto.set('Censo 2022 — referência longa demais para o campo');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(campo.getAttribute('title')).toBe('Censo 2022 — referência longa demais para o campo');
   });
 });
