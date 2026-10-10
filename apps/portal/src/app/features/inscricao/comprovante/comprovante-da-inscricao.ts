@@ -1,6 +1,7 @@
 import type {
   ComprovanteInscricaoDto,
   FormularioRenderizavelDto,
+  MinhaInscricaoDto,
 } from '@uniplus/shared-data/selecao';
 
 import { type CampoExibido, respostaExibida } from './resposta-exibida';
@@ -86,4 +87,28 @@ export function termosAceitos(
 ): string[] {
   const termos = new Map(formulario.termos.map((t) => [t.codigo, t.nome]));
   return comprovante.aceites.map((a) => termos.get(a.codigo) ?? a.codigo);
+}
+
+type ComprovanteEmitido = MinhaInscricaoDto['comprovantes'][number];
+
+export interface Vizinhos {
+  readonly anterior: number | null;
+  readonly seguinte: number | null;
+}
+
+/** O número pedido, se a inscrição o emitiu; sem pedido, o da última submissão. */
+export function numeroDoComprovante(
+  emitidos: readonly ComprovanteEmitido[],
+  pedido: number | null,
+): number | null {
+  const numeros = emitidos.map((e) => Number(e.numero));
+  if (pedido === null) return numeros.at(-1) ?? null;
+  return numeros.includes(pedido) ? pedido : null;
+}
+
+/** O comprovante anterior e o seguinte, na ordem em que foram emitidos. */
+export function vizinhos(emitidos: readonly ComprovanteEmitido[], numero: number): Vizinhos {
+  const numeros = emitidos.map((e) => Number(e.numero));
+  const i = numeros.indexOf(numero);
+  return { anterior: numeros[i - 1] ?? null, seguinte: numeros[i + 1] ?? null };
 }

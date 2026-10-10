@@ -64,9 +64,6 @@
         @for (inscricao of inscricoesFiltradas(); track inscricao.id) {
           <li class="edital-row inscricao-lista-item">
             <div class="inscricao-lista-item__cabecalho">
-              <span class="ptl-meta">
-                {{ inscricao.editalLabel }}
-              </span>
               <ui-tag
                 [dot]="true"
                 [variant]="exibeInscricaoStatusVariantLabel(inscricao.situacao)"
@@ -80,7 +77,6 @@
               <p class="ptl-meta">{{ inscricao.candidato }}</p>
             </div>
             <div class="inscricao-lista-item__rodape">
-              <span class="ptl-meta">{{ inscricao.mensagemPrazo }}</span>
               @let botaoInfo = obterBotaoInfo(inscricao.situacao);
               <ui-button
                 [variant]="botaoInfo.variant"
@@ -105,13 +101,9 @@
               >
                 {{ exibeInscricaoStatusLabel(inscricao.situacao) }}
               </ui-tag>
-              <span class="ptl-meta">
-                {{ inscricao.editalLabel }}
-              </span>
             </div>
             <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
             <span class="ptl-meta">{{ inscricao.candidato }}</span>
-            <span class="ptl-meta">{{ inscricao.mensagemPrazo }}</span>
             <div class="card__footer">
               @let botaoInfo = obterBotaoInfo(inscricao.situacao);
               <ui-button

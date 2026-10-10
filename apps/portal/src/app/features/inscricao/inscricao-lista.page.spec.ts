@@ -7,41 +7,30 @@ import { Observable, Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { type ApiResult, apiOk } from '@uniplus/shared-core/http';
-import { type CertamePublicadoDto, SituacaoInscricao } from '@uniplus/shared-data/selecao';
+import { type MinhaInscricaoDto, SituacaoInscricao } from '@uniplus/shared-data/selecao';
 
 import { type ItemDaLista, itemDaLista } from './inscricao-lista.model';
 import { InscricaoListaPage } from './inscricao-lista.page';
-import { type InscricaoDaLista, MinhasInscricoesService } from './minhas-inscricoes.service';
-
-function processo(nome: string, identificadorLegivel: string): CertamePublicadoDto {
-  return {
-    nome,
-    identificadorLegivel,
-    periodo: { numero: null, inicio: '2026-12-10T00:00:00Z', fim: '2026-12-20T23:59:00Z' },
-  } as CertamePublicadoDto;
-}
+import { MinhasInscricoesService } from './minhas-inscricoes.service';
 
 /** Fernanda Drumond, persona fictícia do portal de documentação, que prefere o nome social. */
-function inscricao(
-  id: string,
-  situacao: SituacaoInscricao,
-  certame: CertamePublicadoDto | null,
-): InscricaoDaLista {
+function inscricao(id: string, situacao: SituacaoInscricao, nomeDoProcesso: string | null): MinhaInscricaoDto {
   return {
     processoSeletivoId: id,
+    nomeDoProcesso,
     numeroInscricao: situacao === SituacaoInscricao.submetida ? '00000042' : null,
     situacao,
     nomePreferido: 'Ariel Drumond',
     cpfMascarado: '***.598.363-**',
-    processo: certame,
+    comprovantes: [],
   };
 }
 
-const INSCRICOES: readonly InscricaoDaLista[] = [
-  inscricao('p1', SituacaoInscricao.rascunho, processo('Auxílio estudantil 2026', 'Edital 12/2026')),
-  inscricao('p2', SituacaoInscricao.submetida, processo('Bolsa de iniciação científica', 'Edital 08/2025')),
-  inscricao('p3', SituacaoInscricao.submetida, processo('Morada estudantil', 'Edital 01/2025')),
-  inscricao('p4', SituacaoInscricao.rascunho, processo('Auxílio transporte', 'Edital 01/2025')),
+const INSCRICOES: readonly MinhaInscricaoDto[] = [
+  inscricao('p1', SituacaoInscricao.rascunho, 'Auxílio estudantil 2026'),
+  inscricao('p2', SituacaoInscricao.submetida, 'Bolsa de iniciação científica'),
+  inscricao('p3', SituacaoInscricao.submetida, 'Morada estudantil'),
+  inscricao('p4', SituacaoInscricao.rascunho, 'Auxílio transporte'),
 ];
 
 function stubMatchMedia(matches: boolean): void {
@@ -59,19 +48,19 @@ function stubMatchMedia(matches: boolean): void {
  * `inscricoesResource.reload()` recebe uma nova subscription controlável.
  */
 class StubListagemService {
-  private subjects: Subject<ApiResult<readonly InscricaoDaLista[]>>[] = [];
+  private subjects: Subject<ApiResult<readonly MinhaInscricaoDto[]>>[] = [];
 
-  listar(): Observable<ApiResult<readonly InscricaoDaLista[]>> {
-    const sub = new Subject<ApiResult<readonly InscricaoDaLista[]>>();
+  listar(): Observable<ApiResult<readonly MinhaInscricaoDto[]>> {
+    const sub = new Subject<ApiResult<readonly MinhaInscricaoDto[]>>();
     this.subjects.push(sub);
     return sub.asObservable();
   }
 
-  get ultimo(): Subject<ApiResult<readonly InscricaoDaLista[]>> {
+  get ultimo(): Subject<ApiResult<readonly MinhaInscricaoDto[]>> {
     return this.subjects[this.subjects.length - 1];
   }
 
-  flush(inscricoes: readonly InscricaoDaLista[] = INSCRICOES): void {
+  flush(inscricoes: readonly MinhaInscricaoDto[] = INSCRICOES): void {
     this.ultimo.next(apiOk(inscricoes, 200, new HttpHeaders()));
     this.ultimo.complete();
   }
@@ -213,6 +202,10 @@ describe('InscricaoListaPage', () => {
     btn?.click();
 
     expect(navegar).toHaveBeenCalledWith(['/inscricao', 'p2', 'comprovante']);
+  });
+
+  it('sem o nome do processo, que deixou de ser público, mostra um texto neutro', () => {
+    expect(itemDaLista(inscricao('p9', SituacaoInscricao.rascunho, null)).nome).toBe('Processo seletivo');
   });
 
   it('cada inscrição mostra o nome que o candidato prefere e só o CPF mascarado (CA-01)', async () => {

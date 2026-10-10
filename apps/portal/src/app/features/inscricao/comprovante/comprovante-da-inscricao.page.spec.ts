@@ -8,6 +8,7 @@ import type {
   CertamePublicadoDto,
   ComprovanteInscricaoDto,
   FormularioRenderizavelDto,
+  MinhaInscricaoDto,
 } from '@uniplus/shared-data/selecao';
 
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
@@ -53,7 +54,7 @@ function comprovante(numeroInscricao: string): ComprovanteInscricaoDto {
     numeroInscricao,
     instante: '2026-12-11T13:30:00Z',
     hashIntegridade: 'a'.repeat(64),
-    ofertaCursoId: null,
+    ofertaCursoId: 'o2',
     respostas: {
       NOME: 'Fernanda Laura Nicole Drumond',
       DESEJA_NOME_SOCIAL: true,
@@ -65,33 +66,53 @@ function comprovante(numeroInscricao: string): ComprovanteInscricaoDto {
   };
 }
 
-const EMITIDOS = 2;
+const OFERTA_MEDICINA = {
+  ofertaCursoOrigemId: 'o1',
+  cursoNome: 'Medicina',
+  cursoGrau: 'Bacharelado',
+  unidadeOfertanteNome: 'Campus Marabá',
+  turnos: ['MATUTINO', 'VESPERTINO'],
+};
+const OFERTA_DIREITO = { ...OFERTA_MEDICINA, ofertaCursoOrigemId: 'o2', cursoNome: 'Direito' };
+
+let ofertas: readonly (typeof OFERTA_MEDICINA)[] = [OFERTA_MEDICINA];
+const NAO_ENCONTRADO = apiFailure(
+  {
+    type: 'about:blank',
+    title: 'Não encontrado',
+    status: 404,
+    code: 'nao_encontrado',
+    traceId: '',
+  },
+  404,
+  SEM_CABECALHOS,
+);
+
+/** Duas submissões: a primeira e a correção. */
+const INSCRICAO = {
+  processoSeletivoId: PROCESSO,
+  nomeDoProcesso: 'Medicina 2027',
+  numeroInscricao: '00000042',
+  situacao: 'submetida',
+  nomePreferido: 'Ariel Drumond',
+  cpfMascarado: '***.598.363-**',
+  comprovantes: [
+    { numero: 1, instante: '2026-12-11T13:30:00Z' },
+    { numero: 2, instante: '2026-12-12T09:00:00Z' },
+  ],
+} as MinhaInscricaoDto;
+
 const servico = {
+  listar: () => of(apiOk([INSCRICAO], 200, SEM_CABECALHOS)),
   comprovante: (_: string, numero: number) =>
-    of(
-      numero <= EMITIDOS
-        ? apiOk({ numero, comprovante: comprovante('00000042') }, 200, SEM_CABECALHOS)
-        : apiFailure(
-            {
-              type: 'about:blank',
-              title: 'Não encontrado',
-              status: 404,
-              code: 'nao_encontrado',
-              traceId: '',
-            },
-            404,
-            SEM_CABECALHOS,
-          ),
-    ),
-  comprovanteMaisRecente: () =>
-    of(apiOk({ numero: EMITIDOS, comprovante: comprovante('00000042') }, 200, SEM_CABECALHOS)),
+    of(numero <= 2 ? apiOk(comprovante('00000042'), 200, SEM_CABECALHOS) : NAO_ENCONTRADO),
   formulario: () => of(apiOk(FORMULARIO, 200, SEM_CABECALHOS)),
   certame: () =>
     of({
       nome: 'Medicina 2027',
       identificadorLegivel: 'Edital 001/2026',
-      ofertas: ['o1'],
-    } as CertamePublicadoDto),
+      ofertas,
+    } as unknown as CertamePublicadoDto),
 };
 
 async function abrir(numero?: string): Promise<HTMLElement> {
@@ -109,7 +130,7 @@ async function abrir(numero?: string): Promise<HTMLElement> {
 }
 
 const links = (tela: HTMLElement): string[] =>
-  [...tela.querySelectorAll('nav a')].map((a) => a.textContent?.trim() ?? '');
+  Array.from(tela.querySelectorAll('nav a')).map((a) => a.textContent?.trim() ?? '');
 
 describe('ComprovanteDaInscricaoPage', () => {
   it('mostra o nome que o candidato prefere, só o CPF mascarado e as respostas com os rótulos do formulário (CA-01)', async () => {
@@ -121,13 +142,29 @@ describe('ComprovanteDaInscricaoPage', () => {
     expect(tela.textContent).toContain('Declaração de veracidade');
   });
 
-  it('o comprovante anterior leva ao seguinte, e o da última submissão leva ao anterior (CA-02)', async () => {
+  it('sem número, abre o da última submissão; o anterior leva ao seguinte (CA-02)', async () => {
+    expect(links(await abrir())).toEqual(['Comprovante anterior', 'Voltar às minhas inscrições']);
+
+    TestBed.resetTestingModule();
     expect(links(await abrir('1'))).toEqual([
       'Comprovante seguinte',
       'Voltar às minhas inscrições',
     ]);
+  });
 
-    TestBed.resetTestingModule();
-    expect(links(await abrir())).toEqual(['Comprovante anterior', 'Voltar às minhas inscrições']);
+  it('um número que a inscrição não emitiu não abre comprovante nenhum', async () => {
+    const tela = await abrir('3');
+
+    expect(tela.textContent).toContain('Não encontramos este comprovante');
+  });
+
+  it('com mais de uma oferta, mostra o curso escolhido pelo nome congelado na publicação', async () => {
+    ofertas = [OFERTA_MEDICINA, OFERTA_DIREITO];
+    const tela = await abrir();
+    ofertas = [OFERTA_MEDICINA];
+
+    expect(tela.textContent).toContain(
+      'Direito (Bacharelado) — Campus Marabá — Matutino e Vespertino',
+    );
   });
 });

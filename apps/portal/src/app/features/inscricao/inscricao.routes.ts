@@ -4,24 +4,15 @@ import { BUSCA_DE_CEP, BUSCA_DE_MUNICIPIOS } from '@uniplus/shared-ui/components
 
 import { InscricaoDoCandidatoHttp } from './formulario/inscricao-do-candidato.http';
 import { InscricaoDoCandidatoService } from './formulario/inscricao-do-candidato.service';
+import { ComprovanteDaInscricaoPage } from './comprovante/comprovante-da-inscricao.page';
 import { InscricaoListaPage } from './inscricao-lista.page';
 
 export const INSCRICAO_ROUTES: Routes = [
   { path: '', component: InscricaoListaPage },
-  {
-    path: ':processoId/comprovante',
-    loadComponent: () =>
-      import('./comprovante/comprovante-da-inscricao.page').then(
-        (m) => m.ComprovanteDaInscricaoPage,
-      ),
-  },
-  {
-    path: ':processoId/comprovantes/:numero',
-    loadComponent: () =>
-      import('./comprovante/comprovante-da-inscricao.page').then(
-        (m) => m.ComprovanteDaInscricaoPage,
-      ),
-  },
+  // O comprovante fica no chunk da feature, como a lista: separado, ele dividiria os tokens que o
+  // carregamento inicial já traz em mais um chunk.
+  { path: ':processoId/comprovante', component: ComprovanteDaInscricaoPage },
+  { path: ':processoId/comprovantes/:numero', component: ComprovanteDaInscricaoPage },
   {
     path: ':processoId',
     loadComponent: () =>

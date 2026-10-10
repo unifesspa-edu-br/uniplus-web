@@ -14,20 +14,29 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { forkJoin, map, type Observable, of } from 'rxjs';
-import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
-import type { CertamePublicadoDto, FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
+import { forkJoin } from 'rxjs';
+import { type ApiFailure, ProblemI18nService } from '@uniplus/shared-core/http';
+import type {
+  CertamePublicadoDto,
+  ComprovanteInscricaoDto,
+  FormularioRenderizavelDto,
+  MinhaInscricaoDto,
+} from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
   PageHeaderComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 
-import { type ComprovanteNumerado, MinhasInscricoesService } from '../minhas-inscricoes.service';
+import { MinhasInscricoesService } from '../minhas-inscricoes.service';
+import { nomeDaOferta } from '../oferta-da-inscricao';
 import {
   derivadosDoComprovante,
+  numeroDoComprovante,
   secoesDoComprovante,
   termosAceitos,
+  type Vizinhos,
+  vizinhos,
 } from './comprovante-da-inscricao';
 import { nomePreferido } from './resposta-exibida';
 
@@ -35,11 +44,16 @@ type Estado = 'carregando' | 'erro' | 'pronto';
 
 const ENVIADO_EM = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
+const NAO_ENCONTRADO =
+  'Não encontramos este comprovante. Confira o endereço ou volte às suas inscrições.';
+
 interface Carregado {
-  readonly numerado: ComprovanteNumerado;
+  readonly numero: number;
+  readonly comprovante: ComprovanteInscricaoDto;
   readonly formulario: FormularioRenderizavelDto;
+  readonly inscricao: MinhaInscricaoDto;
   readonly processo: CertamePublicadoDto | null;
-  readonly temSeguinte: boolean;
+  readonly vizinhos: Vizinhos;
 }
 
 /**
@@ -69,31 +83,36 @@ export class ComprovanteDaInscricaoPage implements OnInit {
   protected readonly erro = signal<string | null>(null);
   protected readonly carregado = signal<Carregado | null>(null);
 
-  protected readonly comprovante = computed(() => this.carregado()?.numerado.comprovante ?? null);
+  protected readonly nomeDoProcesso = computed(
+    () => this.carregado()?.inscricao.nomeDoProcesso ?? 'Processo seletivo',
+  );
   protected readonly nome = computed(() => {
-    const comprovante = this.comprovante();
-    return comprovante ? nomePreferido(comprovante.respostas) : '';
+    const c = this.carregado();
+    return c ? nomePreferido(c.comprovante.respostas) : '';
+  });
+  protected readonly enviadoEm = computed(() => {
+    const c = this.carregado();
+    return c ? ENVIADO_EM.format(new Date(c.comprovante.instante)) : '';
   });
   protected readonly secoes = computed(() => {
     const c = this.carregado();
-    return c ? secoesDoComprovante(c.formulario, c.numerado.comprovante) : [];
+    return c ? secoesDoComprovante(c.formulario, c.comprovante) : [];
   });
   protected readonly derivados = computed(() => {
     const c = this.carregado();
-    return c ? derivadosDoComprovante(c.formulario, c.numerado.comprovante) : [];
+    return c ? derivadosDoComprovante(c.formulario, c.comprovante) : [];
   });
   protected readonly termos = computed(() => {
     const c = this.carregado();
-    return c ? termosAceitos(c.formulario, c.numerado.comprovante) : [];
+    return c ? termosAceitos(c.formulario, c.comprovante) : [];
   });
-  protected readonly enviadoEm = computed(() => {
-    const comprovante = this.comprovante();
-    return comprovante ? ENVIADO_EM.format(new Date(comprovante.instante)) : '';
-  });
-  /** O curso só aparece quando o processo oferece mais de um. */
+  /** O curso só aparece quando o processo oferece mais de um, pelo nome congelado na publicação. */
   protected readonly oferta = computed(() => {
     const c = this.carregado();
-    return c && (c.processo?.ofertas.length ?? 0) > 1 ? c.numerado.comprovante.ofertaCursoId : null;
+    const ofertas = c?.processo?.ofertas ?? [];
+    if (!c || ofertas.length <= 1) return null;
+    const escolhida = ofertas.find((o) => o.ofertaCursoOrigemId === c.comprovante.ofertaCursoId);
+    return escolhida ? nomeDaOferta(escolhida) : null;
   });
 
   ngOnInit(): void {
@@ -103,28 +122,36 @@ export class ComprovanteDaInscricaoPage implements OnInit {
   protected carregar(): void {
     this.estado.set('carregando');
     const processoId = this.processoId();
-    const numero = Number(this.numero());
-    const pedido =
-      Number.isInteger(numero) && numero > 0
-        ? this.servico.comprovante(processoId, numero)
-        : this.servico.comprovanteMaisRecente(processoId);
+    const pedido = Number(this.numero());
     forkJoin({
-      numerado: pedido,
+      minhas: this.servico.listar(),
       formulario: this.servico.formulario(processoId),
       processo: this.servico.certame(processoId),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ numerado, formulario, processo }) => {
-        if (!numerado.ok) return this.falhar(numerado);
+      .subscribe(({ minhas, formulario, processo }) => {
+        if (!minhas.ok) return this.falhar(minhas);
         if (!formulario.ok) return this.falhar(formulario);
-        this.temSeguinte(processoId, numerado.data.numero, !this.numero())
+        const inscricao = minhas.data.find((i) => i.processoSeletivoId === processoId);
+        const numero = inscricao
+          ? numeroDoComprovante(
+              inscricao.comprovantes,
+              Number.isInteger(pedido) && pedido > 0 ? pedido : null,
+            )
+          : null;
+        if (!inscricao || numero === null) return this.naoEncontrado();
+        this.servico
+          .comprovante(processoId, numero)
           .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe((temSeguinte) => {
+          .subscribe((comprovante) => {
+            if (!comprovante.ok) return this.falhar(comprovante);
             this.carregado.set({
-              numerado: numerado.data,
+              numero,
+              comprovante: comprovante.data,
               formulario: formulario.data,
+              inscricao,
               processo,
-              temSeguinte,
+              vizinhos: vizinhos(inscricao.comprovantes, numero),
             });
             this.estado.set('pronto');
             afterNextRender(() => this.conteudo()?.nativeElement.focus(), {
@@ -134,20 +161,14 @@ export class ComprovanteDaInscricaoPage implements OnInit {
       });
   }
 
-  /** O da última submissão não tem seguinte; os anteriores têm. */
-  private temSeguinte(processoId: string, numero: number, eOUltimo: boolean): Observable<boolean> {
-    if (eOUltimo) return of(false);
-    return this.servico
-      .comprovante(processoId, numero + 1)
-      .pipe(map((resultado: ApiResult<ComprovanteNumerado>) => resultado.ok));
+  private naoEncontrado(): void {
+    this.erro.set(NAO_ENCONTRADO);
+    this.estado.set('erro');
   }
 
   private falhar(falha: ApiFailure): void {
-    this.erro.set(
-      falha.status === 404
-        ? 'Não encontramos este comprovante. Confira o endereço ou volte às suas inscrições.'
-        : this.problemas.resolve(falha.problem).title,
-    );
+    if (falha.status === 404) return this.naoEncontrado();
+    this.erro.set(this.problemas.resolve(falha.problem).title);
     this.estado.set('erro');
   }
 }
