@@ -192,8 +192,19 @@ export class InscricaoDoCandidatoPage implements OnInit {
       (comprovante) => {
         this.comprovante.set(comprovante);
         this.aviso.set(`Inscrição enviada. Número ${comprovante.numeroInscricao}.`);
+        this.relerAGravada();
       },
     );
+  }
+
+  /** O envio devolve o comprovante, não a inscrição: sem reler, a próxima correção sairia com o ETag velho. */
+  private relerAGravada(): void {
+    this.servico
+      .obter(this.processoId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultado) => {
+        if (resultado.ok) this.inscricao.set(resultado.data);
+      });
   }
 
   private gravar<T>(

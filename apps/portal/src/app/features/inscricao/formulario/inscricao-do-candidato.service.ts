@@ -20,6 +20,8 @@ export interface OfertaDaInscricao {
 export abstract class InscricaoDoCandidatoService {
   /** A inscrição do candidato no processo: a existente, ou o rascunho que nasce agora. */
   abstract iniciar(processoId: string): Observable<ApiResult<InscricaoDto>>;
+  /** A inscrição como está gravada agora, com o ETag da revisão corrente. */
+  abstract obter(processoId: string): Observable<ApiResult<InscricaoDto>>;
   /** O formulário da versão que a inscrição fixou ao nascer. */
   abstract obterFormulario(processoId: string): Observable<ApiResult<FormularioRenderizavelDto>>;
   abstract obterOfertas(processoId: string): Observable<ApiResult<readonly OfertaDaInscricao[]>>;

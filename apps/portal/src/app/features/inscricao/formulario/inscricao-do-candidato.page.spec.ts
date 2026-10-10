@@ -57,6 +57,7 @@ class ServicoDublê extends InscricaoDoCandidatoService {
   recusaDoEnvio: ApiResult<ComprovanteInscricaoDto> | null = null;
 
   iniciar = () => ok(this.inscricao);
+  obter = () => ok(this.inscricao);
   obterFormulario = () => ok(this.formulario);
   obterOfertas = () => ok(this.ofertas);
   salvar = (_: string, request: InscricaoRequest) => {
@@ -119,6 +120,22 @@ describe('InscricaoDoCandidatoPage', () => {
 
     await clicar(botao(tela, 'Salvar rascunho'));
     expect(servico.salvos[0].respostas?.['CPF']).toBe(CPF_DA_CONTA);
+  });
+
+  it('a correção depois do envio sai com o ETag da inscrição relida', async () => {
+    const tela = await abrir();
+    servico.inscricao = inscricao({ situacao: SituacaoInscricao.submetida, eTag: '"inscricao-1:2"' });
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    const eTags: string[] = [];
+    servico.salvar = (_: string, request: InscricaoRequest, eTag?: string) => {
+      eTags.push(eTag ?? '');
+      servico.salvos.push(request);
+      return ok(servico.inscricao);
+    };
+    await clicar(botao(tela, 'Salvar rascunho'));
+
+    expect(eTags).toEqual(['"inscricao-1:2"']);
   });
 
   it('a retomada volta com as respostas e os aceites gravados', async () => {

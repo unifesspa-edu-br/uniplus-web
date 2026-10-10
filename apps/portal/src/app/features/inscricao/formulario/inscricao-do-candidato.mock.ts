@@ -116,6 +116,13 @@ export class InscricaoDoCandidatoEmMemoria extends InscricaoDoCandidatoService {
     return responder(existente ?? this.gravar(processoId, rascunho(processoId)));
   }
 
+  obter(processoId: string): Observable<ApiResult<InscricaoDto>> {
+    const existente = this.inscricoes.get(processoId);
+    return existente
+      ? responder(existente)
+      : recusar(404, 'uniplus.selecao.inscricao.nao_encontrada');
+  }
+
   obterFormulario(): Observable<ApiResult<FormularioRenderizavelDto>> {
     return responder(FORMULARIO_DE_INSCRICAO_MOCK);
   }
