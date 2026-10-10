@@ -25,8 +25,9 @@ import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 import { StepValidation } from './steps/processo-seletivo.models';
 import { PASSOS } from './steps/processo-seletivo.data';
 import { PASSO_DO_WIZARD, PassoDoWizard } from './steps/passo-do-wizard';
-import type { ConfirmacaoDeGravacao } from './steps/passo-do-wizard';
+import type { ConfirmacaoDeGravacao, GravacaoDoPasso } from './steps/passo-do-wizard';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
+import { MatrizDaModalidadeService } from './steps/shared/matriz-da-modalidade.service';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
 import { OverlayScrollService } from './steps/shared/overlay-scroll.service';
 import { WizardStepperComponent } from './steps/shared/wizard-stepper.component';
@@ -105,6 +106,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     ProcessoSeletivoStore,
     CadastroInicialService,
     CatalogosDoCronogramaService,
+    MatrizDaModalidadeService,
     CatalogosDeClassificacaoService,
     AcompanhamentoDoCadastroDePesos,
     ReleituraDoSnapshot,
@@ -799,7 +801,9 @@ export class ProcessoSeletivoPage {
       // tela; quem passa a mandar no foco é o efeito de troca de passo, que
       // leva ao título do passo novo. Falhando, a tela é a mesma e a
       // restauração continua correta.
-      const sucesso = await this.gravarEAvancar(this.stepValidatorAt(this.store.currentStep()));
+      const sucesso = await this.gravarEAvancar(this.stepValidatorAt(this.store.currentStep()), {
+        confirmadaPeloOperador: true,
+      });
       this.restaurarFocoAoFechar.set(!sucesso);
 
       // `store.next()` não avança a partir do último passo — não há passo
@@ -894,10 +898,13 @@ export class ProcessoSeletivoPage {
    * Conclui o passo depois de a confirmação já ter sido resolvida — seja
    * porque o passo não pedia nenhuma, seja porque o operador confirmou.
    */
-  private async gravarEAvancar(validator: PassoDoWizard | undefined): Promise<boolean> {
+  private async gravarEAvancar(
+    validator: PassoDoWizard | undefined,
+    gravacao: GravacaoDoPasso = { confirmadaPeloOperador: false },
+  ): Promise<boolean> {
     // Passos que persistem expõem `persistir()`; os demais avançam direto.
     if (validator?.persistir) {
-      const commit = await validator.persistir().catch(
+      const commit = await validator.persistir(gravacao).catch(
         (): StepValidation => ({
           valid: false,
           messages: ['Não foi possível concluir a operação. Tente novamente.'],
@@ -1229,7 +1236,7 @@ export class ProcessoSeletivoPage {
 
       if (!validator.persistir) continue;
 
-      const commit = await validator.persistir().catch(
+      const commit = await validator.persistir({ confirmadaPeloOperador: false }).catch(
         (): StepValidation => ({
           valid: false,
           messages: ['Não foi possível concluir a operação. Tente novamente.'],

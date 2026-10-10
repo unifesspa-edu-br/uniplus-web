@@ -7,7 +7,337 @@
  * Só o que o passo lê: o resto do agregado vai vazio.
  */
 
-/** Detalhe do processo, com a distribuição e a cascata. */
+/**
+ * A regra que deriva a modalidade de concorrência do candidato, como a api a propõe para as dez
+ * modalidades do quadro: a ampla concorrência para todos, a reserva de pessoa com deficiência
+ * para quem não optou pelas cotas e cada cota da Lei 12.711 pelas opções do candidato. O egresso
+ * de escola pública vem junto, derivado da escolaridade.
+ */
+export const MATRIZ_DA_MODALIDADE_DA_MEDICINA = [
+  {
+    codigoFato: 'EGRESSO_ESCOLA_PUBLICA',
+    regras: [
+      {
+        ordem: 0,
+        contribui: null,
+        quando: [
+          [
+            {
+              fato: 'ONDE_CURSOU_EM',
+              operador: 'EM',
+              valor: ['SOMENTE_PUBLICA', 'COMUNITARIA_CAMPO', 'PUBLICA_E_COMUNITARIA'],
+            },
+          ],
+          [
+            {
+              fato: 'FORMA_CONCLUSAO_EM',
+              operador: 'EM',
+              valor: ['ENCCEJA', 'PROFICIENCIA', 'ENEM'],
+            },
+            { fato: 'ONDE_CURSOU_EM', operador: 'IGUAL', valor: 'CERTIFICACAO' },
+          ],
+        ],
+      },
+    ],
+  },
+  {
+    codigoFato: 'MODALIDADE',
+    regras: [
+      { ordem: 0, contribui: 'AC', quando: null },
+      {
+        ordem: 1,
+        contribui: 'AC_PCD',
+        quando: [
+          [
+            { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
+            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: false },
+          ],
+          [
+            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: false },
+            { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
+          ],
+        ],
+      },
+      {
+        ordem: 2,
+        contribui: 'LI_PCD',
+        quando: [
+          [
+            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
+            { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
+            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
+          ],
+        ],
+      },
+      {
+        ordem: 3,
+        contribui: 'LB_PCD',
+        quando: [
+          [
+            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
+            { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
+            { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
+            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
+          ],
+        ],
+      },
+      {
+        ordem: 4,
+        contribui: 'LI_EP',
+        quando: [
+          [
+            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
+            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
+          ],
+        ],
+      },
+      {
+        ordem: 5,
+        contribui: 'LB_EP',
+        quando: [
+          [
+            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
+            { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
+            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
+          ],
+        ],
+      },
+      {
+        ordem: 6,
+        contribui: 'LI_PPI',
+        quando: [
+          [
+            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
+            { fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true },
+            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
+          ],
+        ],
+      },
+      {
+        ordem: 7,
+        contribui: 'LB_PPI',
+        quando: [
+          [
+            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
+            { fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true },
+            { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
+            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
+          ],
+        ],
+      },
+      {
+        ordem: 8,
+        contribui: 'LI_Q',
+        quando: [
+          [
+            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
+            { fato: 'CONCORRER_Q', operador: 'IGUAL', valor: true },
+            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
+          ],
+        ],
+      },
+      {
+        ordem: 9,
+        contribui: 'LB_Q',
+        quando: [
+          [
+            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
+            { fato: 'CONCORRER_Q', operador: 'IGUAL', valor: true },
+            { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
+            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
+          ],
+        ],
+      },
+    ],
+  },
+] as const;
+
+/**
+ * As perguntas que a regra da modalidade faz ao candidato, no formulário de inscrição: sem elas o
+ * servidor recusa a regra. Todas aparecem sempre; o processo real as exibe conforme as respostas
+ * anteriores.
+ */
+export const CAMPOS_DA_MATRIZ_DA_MEDICINA = [
+  {
+    fatoCodigo: 'FORMA_CONCLUSAO_EM',
+    ordem: 0,
+    rotulo: 'Como você concluiu o ensino médio?',
+    tipoRenderizacao: 'SELECAO_UNICA',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  },
+  {
+    fatoCodigo: 'ONDE_CURSOU_EM',
+    ordem: 1,
+    rotulo: 'Onde você cursou o ensino médio?',
+    tipoRenderizacao: 'SELECAO_UNICA',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda:
+      'A resposta define se você pode concorrer às vagas para quem cursou o ensino médio em escola pública.',
+    pedirConfirmacao: false,
+    restricoes: [
+      {
+        tipo: 'OPCOES_PERMITIDAS',
+        minimo: null,
+        maximo: null,
+        entradas: [
+          {
+            quando: null,
+            valores: [
+              'COMUNITARIA_CAMPO',
+              'EXTERIOR',
+              'MAIS_DE_UM_FORA_DA_REDE',
+              'PRIVADA',
+              'PRIVADA_BOLSA_INTEGRAL',
+              'PRIVADA_BOLSA_PARCIAL',
+              'PUBLICA_E_COMUNITARIA',
+              'PUBLICA_E_FORA_DA_REDE',
+              'PUBLICA_E_PRIVADA_BOLSA_INTEGRAL',
+              'SISTEMA_S',
+              'SOMENTE_PUBLICA',
+            ],
+          },
+          {
+            quando: [
+              [
+                {
+                  fato: 'FORMA_CONCLUSAO_EM',
+                  operador: 'EM',
+                  valor: ['ENCCEJA', 'PROFICIENCIA', 'ENEM'],
+                },
+              ],
+            ],
+            valores: ['CERTIFICACAO'],
+          },
+        ],
+        fatos: null,
+      },
+    ],
+    impedimento: null,
+  },
+  {
+    fatoCodigo: 'CONCORRER_PCD',
+    ordem: 2,
+    rotulo: 'Deseja concorrer às vagas para pessoas com deficiência?',
+    tipoRenderizacao: 'BOOLEANO',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  },
+  {
+    fatoCodigo: 'CONCORRER_EP',
+    ordem: 3,
+    rotulo: 'Deseja concorrer às vagas para quem cursou o ensino médio em escola pública?',
+    tipoRenderizacao: 'BOOLEANO',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  },
+  {
+    fatoCodigo: 'CONCORRER_PPI',
+    ordem: 4,
+    rotulo: 'Deseja concorrer às vagas para pretos, pardos e indígenas?',
+    tipoRenderizacao: 'BOOLEANO',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda: 'Para quem se autodeclara preto, pardo ou indígena.',
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  },
+  {
+    fatoCodigo: 'CONCORRER_Q',
+    ordem: 5,
+    rotulo: 'Deseja concorrer às vagas para quilombolas?',
+    tipoRenderizacao: 'BOOLEANO',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  },
+  {
+    fatoCodigo: 'CONCORRER_RENDA',
+    ordem: 6,
+    rotulo: 'Deseja concorrer às vagas com critério de renda?',
+    tipoRenderizacao: 'BOOLEANO',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  },
+] as const;
+
+/** O formulário de inscrição com as perguntas que a regra da modalidade faz. */
+export const FORMULARIO_DA_MATRIZ_DA_MEDICINA = {
+  finalidade: 'INSCRICAO',
+  faseId: null,
+  titulo: null,
+  modeloOrigemId: null,
+  modeloOrigemCodigo: null,
+  etapas: [
+    {
+      codigo: 'SECAO_1',
+      ordem: 0,
+      tipo: 'SECAO',
+      bloco: null,
+      titulo: 'Reserva de vagas',
+      descricao: null,
+      aviso: null,
+      exibicao: null,
+    },
+    {
+      codigo: 'REVISAO_E_ACEITE',
+      ordem: 1,
+      tipo: 'BLOCO',
+      bloco: 'REVISAO_E_ACEITE',
+      titulo: 'Revisão e aceite',
+      descricao: null,
+      aviso: null,
+      exibicao: null,
+    },
+  ],
+  fatosColetados: CAMPOS_DA_MATRIZ_DA_MEDICINA,
+  termos: [],
+  grupos: [],
+} as const;
+
+/** Detalhe do processo, com a distribuição, a cascata e a regra da modalidade. */
 export const PROCESSO_DA_MEDICINA = {
   id: '01a0d635-83d6-7a09-b2f6-39b033b686e7',
   nome: 'Processo Seletivo para o Curso de Medicina Unifesspa 2027',
@@ -662,8 +992,8 @@ export const PROCESSO_DA_MEDICINA = {
   documentosExigidos: [],
   raizesExigencia: [],
   referenciaTemporalFatos: null,
-  regrasDerivacao: [],
-  formularios: [],
+  regrasDerivacao: MATRIZ_DA_MODALIDADE_DA_MEDICINA,
+  formularios: [FORMULARIO_DA_MATRIZ_DA_MEDICINA],
   opcoesDeclaradas: [],
   configuracaoDivulgacao: null,
   configuracaoTaxaInscricao: null,

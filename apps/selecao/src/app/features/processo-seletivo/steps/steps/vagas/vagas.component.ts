@@ -22,14 +22,20 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import {
   ConfiguracaoDistribuicaoVagasDto,
+  OrigemCandidatos,
   ProcessosSeletivosApi,
 } from '@uniplus/shared-data/selecao';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { DestroyRef } from '@angular/core';
-import type { ConfirmacaoDeGravacao, ItemDeConfirmacao } from '../../passo-do-wizard';
+import type { ConfirmacaoDeGravacao, GravacaoDoPasso, ItemDeConfirmacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import {
+  codigosContribuidos,
+  matrizDaModalidade,
+  MatrizDaModalidadeService,
+} from '../../shared/matriz-da-modalidade.service';
 import { comandoDaCascata, comandoDeRemocaoDaCascata } from './cascata-de-remanejamento';
 import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
@@ -330,6 +336,7 @@ export class VagasStepComponent {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly derivacaoDaModalidade = inject(MatrizDaModalidadeService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Quadro como a regra o calcula, por oferta. Vazio até simular. */
@@ -1019,8 +1026,49 @@ export class VagasStepComponent {
         ...this.totaisPorModalidade(),
         { rotulo: 'Regra de distribuição', valor: this.rotuloDaRegraDeDistribuicao() },
         ...(cascata === null ? [] : [{ rotulo: 'Regra de remanejamento', valor: cascata }]),
+        ...this.itemDaMatrizDaModalidade(),
       ],
     };
+  }
+
+  /** O candidato se inscreve no processo: é da inscrição que a modalidade dele se deriva. */
+  private readonly derivaAModalidade = computed(
+    () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria,
+  );
+
+  /**
+   * A matriz que o processo grava pode ser trocada pela proposta normativa: ela não contribui
+   * exatamente as modalidades deste quadro. Quem decide se a troca acontece é o servidor, que
+   * sabe quais das ofertadas a norma deriva; o resumo avisa antes, porque a troca leva junto o
+   * que o administrador tiver ajustado nela.
+   */
+  private readonly matrizPodeSerSubstituida = computed(() => {
+    const gravada = matrizDaModalidade(this.store.draft().formulario.derivacao);
+    if (!this.derivaAModalidade() || gravada === undefined) return false;
+
+    const contribuidas = codigosContribuidos(gravada.regras);
+    const ofertadas = new Set(this.store.modalidadesDoProcesso());
+    return (
+      contribuidas.size !== ofertadas.size ||
+      [...contribuidas].some((codigo) => !ofertadas.has(codigo))
+    );
+  });
+
+  private itemDaMatrizDaModalidade(): readonly ItemDeConfirmacao[] {
+    if (!this.derivaAModalidade()) return [];
+
+    const rotulo = 'Modalidade de concorrência do candidato';
+    if (matrizDaModalidade(this.store.draft().formulario.derivacao) === undefined) {
+      return [{
+        rotulo,
+        valor: 'Derivada pela regra que a norma propõe para as modalidades ofertadas, com as perguntas que ela faz no formulário de inscrição.',
+      }];
+    }
+    if (!this.matrizPodeSerSubstituida()) return [];
+    return [{
+      rotulo,
+      valor: 'A regra gravada será substituída pela proposta da norma se não acompanhar as modalidades deste quadro. O que tiver sido ajustado nela se perde.',
+    }];
   }
 
   /** A soma das vagas que as ofertas declaram — a base sobre a qual a regra calcula. */
@@ -1077,7 +1125,7 @@ export class VagasStepComponent {
    * célula transformaria o preenchimento numa sequência de idas ao servidor, e
    * é por isso que o passo acumula e envia uma vez só.
    */
-  async persistir(): Promise<StepValidation> {
+  async persistir(gravacao?: GravacaoDoPasso): Promise<StepValidation> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {
@@ -1120,12 +1168,72 @@ export class VagasStepComponent {
         };
       }
 
-      return { valid: true };
+      if (!this.derivaAModalidade()) return { valid: true };
+      // Avaliado antes de qualquer espera, sobre o rascunho que o resumo mostrou.
+      const substituicaoAvisada =
+        gravacao?.confirmadaPeloOperador === true && this.matrizPodeSerSubstituida();
+      const matriz = await this.persistirMatrizDaModalidade(processoId, substituicaoAvisada);
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      return matriz;
     } finally {
       // Quem destrava é a geração que travou: um editor novo pode ter comando
       // próprio em curso.
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
+  }
+
+  /**
+   * Propõe e grava a matriz que deriva a modalidade do candidato, logo depois do quadro: a
+   * proposta é recortada pelas modalidades que o servidor grava, e só existe depois delas.
+   *
+   * Sem fase de inscrição no cronograma, a matriz que pergunta algo ao candidato espera: o
+   * formulário que coleta as respostas ainda não tem onde existir, e o cronograma a propõe ao
+   * ganhar a fase.
+   */
+  private async persistirMatrizDaModalidade(
+    processoId: string,
+    substituicaoAvisada: boolean,
+  ): Promise<StepValidation> {
+    const geracao = this.store.geracao();
+    const recusa = (motivo: string): StepValidation => ({
+      valid: false,
+      messages: [`A distribuição de vagas foi gravada. ${motivo}`],
+    });
+
+    const detalhe = await firstValueFrom(this.api.obter(processoId));
+    if (geracao !== this.store.geracao()) return { valid: true };
+    if (!isApiOk(detalhe)) {
+      return recusa('Não foi possível reler o processo para propor a regra da modalidade de concorrência. Grave as vagas de novo.');
+    }
+
+    const proposta = await this.derivacaoDaModalidade.proposta(
+      processoId,
+      detalhe.data,
+      substituicaoAvisada ? 'substituirSeDesatualizada' : 'avisarSeDesatualizada',
+    );
+    if (geracao !== this.store.geracao()) return { valid: true };
+    if (proposta.tipo === 'nadaAGravar') return { valid: true };
+    if (proposta.tipo === 'recusada') return recusa(proposta.motivo);
+    if (proposta.tipo === 'desatualizada') {
+      return recusa(
+        'A regra que deriva a modalidade de concorrência do candidato não acompanha as modalidades ofertadas. Grave as vagas de novo e confirme a troca pela regra que a norma propõe.',
+      );
+    }
+
+    const campos = await this.derivacaoDaModalidade.garantirCampos(
+      processoId,
+      detalhe.data,
+      new Set(proposta.dependencias),
+    );
+    if (geracao !== this.store.geracao()) return { valid: true };
+    if (campos.tipo === 'recusados') return recusa(campos.motivo);
+    if (campos.tipo === 'semFaseDeInscricao') return { valid: true };
+
+    const derivacao = await this.derivacaoDaModalidade.gravar(processoId, proposta.matriz, detalhe.data);
+    if (geracao !== this.store.geracao()) return { valid: true };
+    return derivacao === null
+      ? { valid: true }
+      : recusa(`O formulário de inscrição está com as perguntas que a regra da modalidade de concorrência faz. ${derivacao}`);
   }
 
   /**

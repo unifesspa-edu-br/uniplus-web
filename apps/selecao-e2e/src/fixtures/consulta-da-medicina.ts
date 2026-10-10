@@ -1,4 +1,4 @@
-import { PROCESSO_DA_MEDICINA } from './vagas-da-medicina';
+import { CAMPOS_DA_MATRIZ_DA_MEDICINA, PROCESSO_DA_MEDICINA } from './vagas-da-medicina';
 
 /**
  * O processo da Medicina 2027 publicado, com o que os passos lidos como texto mostram: a taxa
@@ -83,6 +83,8 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
           restricoes: [],
           impedimento: null,
         },
+        // As perguntas que a regra da modalidade faz, depois dos dois campos acima.
+        ...CAMPOS_DA_MATRIZ_DA_MEDICINA.map((campo) => ({ ...campo, ordem: campo.ordem + 2 })),
       ],
       termos: [],
       grupos: [],

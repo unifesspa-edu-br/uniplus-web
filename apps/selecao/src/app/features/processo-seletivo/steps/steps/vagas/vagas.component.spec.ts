@@ -2,13 +2,16 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
+import { CONFIGURACAO_BASE_PATH, type FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
+import { OrigemCandidatos, ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { MatrizDaModalidadeService } from '../../shared/matriz-da-modalidade.service';
+import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { VagasStepComponent } from './vagas.component';
 
 const BASE = 'http://localhost:5000';
@@ -103,6 +106,9 @@ describe('VagasStepComponent — remoção de oferta do quadro', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        CatalogosDoCronogramaService,
+        MatrizDaModalidadeService,
+        { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -223,6 +229,9 @@ describe('VagasStepComponent — gravação da distribuição', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        CatalogosDoCronogramaService,
+        MatrizDaModalidadeService,
+        { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -731,6 +740,9 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        CatalogosDoCronogramaService,
+        MatrizDaModalidadeService,
+        { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -1191,6 +1203,9 @@ describe('VagasStepComponent — totais do quadro', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        CatalogosDoCronogramaService,
+        MatrizDaModalidadeService,
+        { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -1296,6 +1311,9 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        CatalogosDoCronogramaService,
+        MatrizDaModalidadeService,
+        { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -1591,6 +1609,9 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        CatalogosDoCronogramaService,
+        MatrizDaModalidadeService,
+        { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -1706,5 +1727,315 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
     // podem produzir "Curso não identificado ·  · IGE".
     expect(componente.nomeDaOferta('oferta-inexistente')).not.toContain('·  ·');
     expect(componente.nomeDaOferta('oferta-inexistente')).not.toMatch(/·\s*$/);
+  });
+});
+
+describe('VagasStepComponent — matriz da modalidade de concorrência', () => {
+  const ROTA_PROCESSO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
+  const ROTA_NORMATIVAS = `${ROTA_PROCESSO}/regras-derivacao/normativas`;
+  const ROTA_DERIVACAO = `${ROTA_PROCESSO}/regras-derivacao`;
+
+  const SO_AC = [{ ordem: 0, contribui: 'AC', quando: null }];
+  const AC_E_AC_PCD = [
+    ...SO_AC,
+    { ordem: 1, contribui: 'AC_PCD', quando: [[{ fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true }]] },
+  ];
+  const AC_PCD_AJUSTADA = [
+    ...SO_AC,
+    {
+      ordem: 1,
+      contribui: 'AC_PCD',
+      quando: [[
+        { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
+        { fato: 'PCD', operador: 'IGUAL', valor: true },
+      ]],
+    },
+  ];
+  const PROPOSTA = [{ codigoFato: 'MODALIDADE', regras: AC_E_AC_PCD }];
+
+  let componente: VagasStepComponent;
+  let store: ProcessoSeletivoStore;
+  let controller: HttpTestingController;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [VagasStepComponent],
+      providers: [
+        ProcessoSeletivoStore,
+        CadastroInicialService,
+        CatalogosDoCronogramaService,
+        MatrizDaModalidadeService,
+        { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(VagasStepComponent);
+    componente = fixture.componentInstance;
+    store = TestBed.inject(ProcessoSeletivoStore);
+    controller = TestBed.inject(HttpTestingController);
+
+    fixture.detectChanges();
+    for (const requisicao of controller.match(() => true)) {
+      const url = requisicao.request.url;
+      if (url.includes('ofertas-curso')) requisicao.flush(OFERTAS);
+      else if (url.includes('cursos')) requisicao.flush(CURSOS);
+      else if (url.includes('modalidades')) requisicao.flush(MODALIDADES);
+      else requisicao.flush([]);
+    }
+    fixture.detectChanges();
+
+    store.processoSeletivoId.set(PROCESSO_ID);
+    store.patchObjectSection('identificacao', { origemCandidatos: OrigemCandidatos.inscricaoPropria });
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicao(OFERTA),
+          modalidades: [
+            { id: MODALIDADE, codigo: 'AC' },
+            { id: SEGUNDA_MODALIDADE, codigo: 'AC_PCD' },
+          ],
+          quadro: [
+            { modalidadeId: MODALIDADE, quantidade: '2' },
+            { modalidadeId: SEGUNDA_MODALIDADE, quantidade: '1' },
+          ],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+    catalogos.fatos.set([
+      {
+        codigo: 'CONCORRER_PCD',
+        nome: 'Concorrer na reserva para pessoa com deficiência',
+        dominio: 'BOOLEANO',
+        origem: 'DECLARADO',
+        cardinalidade: 'UNIVALORADO',
+        binding: 'CAMPO_INSCRICAO:CONCORRER_PCD',
+        escopo: 'CANDIDATO',
+        fonteValores: null,
+        ativo: true,
+        valoresDominio: null,
+      } as unknown as FatoCandidatoView,
+    ]);
+    catalogos.carregando.set(false);
+
+    componente.simular();
+    controller.expectOne(ROTA_SIMULACAO).flush([
+      {
+        ofertaCursoOrigemId: OFERTA,
+        quadro: [
+          { modalidadeOrigemId: MODALIDADE, modalidadeCodigo: 'AC', quantidade: 2 },
+          { modalidadeOrigemId: SEGUNDA_MODALIDADE, modalidadeCodigo: 'AC_PCD', quantidade: 1 },
+        ],
+        totalPublicado: 43,
+      },
+    ]);
+  });
+
+  afterEach(() => controller.verify());
+
+  const proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  const FASE_DE_INSCRICAO = { id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true };
+  const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
+
+  const campo = (fatoCodigo: string, ordem: number, etapaCodigo: string) => ({
+    fatoCodigo,
+    ordem,
+    rotulo: fatoCodigo,
+    tipoRenderizacao: 'BOOLEANO',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo,
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  });
+  const etapa = (codigo: string, ordem: number, bloco: string | null = null) => ({
+    codigo,
+    ordem,
+    tipo: bloco === null ? 'SECAO' : 'BLOCO',
+    bloco,
+    titulo: codigo,
+    descricao: null,
+    aviso: null,
+    exibicao: null,
+  });
+
+  /** O formulário de inscrição gravado, com a seção dos dados básicos que a api acrescenta. */
+  function formularioDeInscricao(coletados: readonly string[]): unknown {
+    return {
+      finalidade: 'INSCRICAO',
+      faseId: FASE_DE_INSCRICAO.id,
+      titulo: null,
+      modeloOrigemId: null,
+      modeloOrigemCodigo: null,
+      etapas: [etapa('DADOS_BASICOS', 0), etapa('REVISAO_E_ACEITE', 1, 'REVISAO_E_ACEITE')],
+      fatosColetados: coletados.map((codigo, ordem) => campo(codigo, ordem, 'DADOS_BASICOS')),
+      termos: [],
+      grupos: [],
+    };
+  }
+
+  /** O processo como o servidor o devolve depois de gravar o quadro. */
+  function processoGravado(
+    regrasDerivacao: readonly unknown[],
+    inscricao: { readonly formularios: readonly unknown[]; readonly cronogramaFases: readonly unknown[] } = {
+      formularios: [formularioDeInscricao(['NOME', 'CONCORRER_PCD'])],
+      cronogramaFases: [FASE_DE_INSCRICAO],
+    },
+  ): unknown {
+    return {
+      id: PROCESSO_ID,
+      distribuicaoVagas: [{ modalidades: [{ codigo: 'AC' }, { codigo: 'AC_PCD' }] }],
+      regrasDerivacao,
+      ...inscricao,
+    };
+  }
+
+  function comMatrizGravada(regras: readonly unknown[]): void {
+    store.patchObjectSection('formulario', { derivacao: [{ codigoFato: 'MODALIDADE', regras }] });
+  }
+
+  /** Grava o quadro e responde o processo relido; o resto da gravação fica com o teste. */
+  async function gravarQuadro(
+    regrasGravadas: readonly unknown[],
+    confirmadaPeloOperador: boolean,
+    processo: unknown = processoGravado(regrasGravadas),
+  ): Promise<{ readonly gravacao: Promise<{ valid: boolean; messages?: readonly string[] }> }> {
+    const gravacao = componente.persistir({ confirmadaPeloOperador });
+    controller.expectOne(ROTA_DISTRIBUICAO).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_PROCESSO).flush(processo);
+    await proximoPasso();
+    return { gravacao };
+  }
+
+  it('propõe a matriz normativa ao ofertar as modalidades, e grava a pergunta dela antes da matriz', async () => {
+    expect(componente.confirmacaoDeGravacao()?.itens).toContainEqual(
+      expect.objectContaining({ rotulo: 'Modalidade de concorrência do candidato' }),
+    );
+
+    const { gravacao } = await gravarQuadro([], true, processoGravado([], {
+      formularios: [formularioDeInscricao(['NOME'])],
+      cronogramaFases: [FASE_DE_INSCRICAO],
+    }));
+    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+    await proximoPasso();
+
+    controller.expectNone(ROTA_DERIVACAO);
+    // A pergunta entra na seção dos outros dados, que o cabeçalho do formulário cria antes dos itens.
+    const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO);
+    expect(cabecalho.request.body.etapas.map((e: { codigo: string }) => e.codigo)).toContain('OUTROS_DADOS_EXIGIDOS');
+    cabecalho.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    controller.expectNone(ROTA_DERIVACAO);
+    const itens = controller.expectOne((r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`);
+    // A seção dos dados básicos é da api e não vai no envio.
+    expect(itens.request.body.itens.map((item: { fatoCodigo: string }) => item.fatoCodigo)).toEqual([
+      'CONCORRER_PCD',
+    ]);
+    itens.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+
+    const derivacao = controller.expectOne(ROTA_DERIVACAO);
+    expect(derivacao.request.method).toBe('PUT');
+    expect(derivacao.request.body).toEqual(PROPOSTA);
+    derivacao.flush(null, { status: 204, statusText: 'No Content' });
+
+    await expect(gravacao).resolves.toEqual({ valid: true });
+    expect(store.draft().formulario.derivacao).toEqual(PROPOSTA);
+  });
+
+  it('sem fase de inscrição, aceita a gravação e deixa a matriz para o cronograma', async () => {
+    const { gravacao } = await gravarQuadro([], true, processoGravado([], { formularios: [], cronogramaFases: [] }));
+    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+
+    await expect(gravacao).resolves.toEqual({ valid: true });
+    controller.expectNone((r) => r.method === 'PUT');
+  });
+
+  it('recusa e pede o catálogo de fatos de novo quando ele falhou, sem gravar a matriz', async () => {
+    const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+    catalogos.fatos.set([]);
+    catalogos.erro.set('Não foi possível carregar os catálogos.');
+
+    const { gravacao } = await gravarQuadro([], true, processoGravado([], {
+      formularios: [formularioDeInscricao(['NOME'])],
+      cronogramaFases: [FASE_DE_INSCRICAO],
+    }));
+    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.[0]).toContain('Grave de novo em instantes');
+    expect(controller.match((r) => r.url.includes('fatos-candidato')).length).toBe(1);
+    controller.match(() => true);
+    controller.expectNone(ROTA_DERIVACAO);
+  });
+
+  it('propõe de novo quando as modalidades ofertadas mudam, depois de avisar no resumo', async () => {
+    comMatrizGravada(SO_AC);
+    const aviso = componente
+      .confirmacaoDeGravacao()
+      ?.itens.find((item) => item.rotulo === 'Modalidade de concorrência do candidato');
+    expect(aviso?.valor).toContain('será substituída');
+
+    const { gravacao } = await gravarQuadro([{ codigoFato: 'MODALIDADE', regras: SO_AC }], true);
+    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+    await proximoPasso();
+
+    const derivacao = controller.expectOne(ROTA_DERIVACAO);
+    expect(derivacao.request.body).toEqual(PROPOSTA);
+    derivacao.flush(null, { status: 204, statusText: 'No Content' });
+    await expect(gravacao).resolves.toEqual({ valid: true });
+  });
+
+  it('não troca a matriz desatualizada sem o operador ter confirmado o aviso', async () => {
+    comMatrizGravada(SO_AC);
+
+    const { gravacao } = await gravarQuadro([{ codigoFato: 'MODALIDADE', regras: SO_AC }], false);
+    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages?.[0]).toContain('confirme a troca');
+    controller.expectNone(ROTA_DERIVACAO);
+  });
+
+  it('preserva a matriz que o administrador ajustou e que acompanha as ofertadas', async () => {
+    comMatrizGravada(AC_PCD_AJUSTADA);
+    expect(
+      componente.confirmacaoDeGravacao()?.itens.map((item) => item.rotulo),
+    ).not.toContain('Modalidade de concorrência do candidato');
+
+    const { gravacao } = await gravarQuadro([{ codigoFato: 'MODALIDADE', regras: AC_PCD_AJUSTADA }], true);
+    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+
+    await expect(gravacao).resolves.toEqual({ valid: true });
+    controller.expectNone(ROTA_DERIVACAO);
+  });
+
+  it('não propõe matriz ao processo que importa o resultado', async () => {
+    store.patchObjectSection('identificacao', { origemCandidatos: OrigemCandidatos.importacaoExterna });
+
+    const gravacao = componente.persistir({ confirmadaPeloOperador: true });
+    controller.expectOne(ROTA_DISTRIBUICAO).flush(null, { status: 204, statusText: 'No Content' });
+
+    await expect(gravacao).resolves.toEqual({ valid: true });
+    controller.expectNone(ROTA_PROCESSO);
+    controller.expectNone(ROTA_NORMATIVAS);
+    expect(componente.confirmacaoDeGravacao()?.itens.map((item) => item.rotulo)).not.toContain(
+      'Modalidade de concorrência do candidato',
+    );
   });
 });
