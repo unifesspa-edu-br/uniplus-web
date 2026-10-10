@@ -2,6 +2,7 @@ import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { appRoutes } from './app.routes';
+import { provideMensagensDoCandidato } from './mensagens-do-candidato';
 import { loadingInterceptor } from '@uniplus/shared-core/interceptors';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { provideRuntimeConfig } from '@uniplus/shared-data/config';
@@ -30,5 +31,6 @@ export const appConfig: ApplicationConfig = {
     // e ingresso, então ambos os BASE_PATHs vêm da mesma apiUrl.
     provideRuntimeConfig(),
     provideAuth(),
+    provideMensagensDoCandidato(),
   ],
 };
