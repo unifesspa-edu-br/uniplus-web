@@ -228,11 +228,13 @@
     </div>
 
     @if (problemasDoPadrao().length > 0) {
-      <ul class="field__erro" role="alert">
-        @for (problema of problemasDoPadrao(); track problema) {
-          <li>{{ problema }}</li>
-        }
-      </ul>
+      <div class="field__erro" role="alert">
+        <ul aria-label="Problemas no padrão da distribuição">
+          @for (problema of problemasDoPadrao(); track problema) {
+            <li>{{ problema }}</li>
+          }
+        </ul>
+      </div>
     }
 
     @if (ofertasDisponiveis().length > 0) {
