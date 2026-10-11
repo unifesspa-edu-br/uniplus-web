@@ -95,8 +95,9 @@ export interface AaaVisualContractOptions {
  *
  * **Antes de chamar:** garantir que a UI sob teste está em estado estável
  * (`waitForLoadState`, `waitFor` em elementos críticos). Axe analisa o DOM
- * no momento da chamada — elementos lazy-loaded ou em transição podem ser
- * perdidos.
+ * no momento da chamada — elementos lazy-loaded podem ser perdidos. As
+ * animações finitas em curso, como a abertura de um diálogo, são esperadas
+ * aqui antes da análise.
  */
 export async function runAxeWcagAA(page: Page, options: RunAxeOptions = {}): Promise<AxeResults> {
   // Tags e regras num único `RunOptions`. Encadear `.withTags()` com
@@ -119,7 +120,26 @@ export async function runAxeWcagAA(page: Page, options: RunAxeOptions = {}): Pro
     builder = builder.exclude(selector);
   }
 
+  await esperarAnimacoesFinitas(page);
   return builder.analyze();
+}
+
+/**
+ * Espera o fim das animações e transições finitas em curso. O axe mede o
+ * contraste pela cor composta no instante da análise: um painel que ainda está
+ * aparecendo por opacidade mistura o texto com o fundo e produz uma violação
+ * que some quando a animação termina. As animações infinitas (indicadores de
+ * carregamento) ficam de fora, porque nunca terminam.
+ */
+async function esperarAnimacoesFinitas(page: Page): Promise<void> {
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animacao) => animacao.effect?.getComputedTiming().iterations !== Infinity)
+        .map((animacao) => animacao.finished.catch(() => undefined)),
+    ),
+  );
 }
 
 export async function runAxeWcagAAAApplicable(
