@@ -102,6 +102,22 @@ describe('ModalidadesListPage', () => {
     expect(texto).toContain('Ampla concorrência');
   });
 
+  it('mostra a composição com a origem sem repetir a preposição do rótulo', async () => {
+    await flushLista([AC, V]);
+    fixture.detectChanges();
+
+    const composicao = (codigo: string) =>
+      (
+        fixture.nativeElement.querySelector(
+          `tr[data-codigo="${codigo}"] td[data-label="Composição de vagas"]`,
+        ) as HTMLElement
+      ).textContent
+        ?.replace(/\s+/g, ' ')
+        .trim();
+    expect(composicao('V')).toBe('Retira de AC');
+    expect(composicao('AC')).toBe('Residual do VO');
+  });
+
   it('resume a regra de aplicabilidade pelos nomes do catálogo, e a regra sem condição como todos', async () => {
     await flushLista([AC, V]);
     fixture.detectChanges();

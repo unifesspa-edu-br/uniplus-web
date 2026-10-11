@@ -203,9 +203,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                     <td data-label="Composição de vagas">
                       {{ composicaoLabel(m.composicaoVagas) }}
                       @if (m.composicaoOrigem) {
-                        <span class="cfg-meta"
-                          >de <code>{{ m.composicaoOrigem }}</code></span
-                        >
+                        <code>{{ m.composicaoOrigem }}</code>
                       }
                     </td>
                     <td data-label="Remanejamento">{{ remanejamentoResumo(m) }}</td>
