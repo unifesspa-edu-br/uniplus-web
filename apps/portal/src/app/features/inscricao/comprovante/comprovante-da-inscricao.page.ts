@@ -38,6 +38,7 @@ import { nomeDaOferta } from '../oferta-da-inscricao';
 import {
   derivadosDoComprovante,
   envioDoComprovante,
+  modalidadesDoComprovante,
   municipiosDoComprovante,
   numeroDoComprovante,
   periodoDeInscricaoAberto,
@@ -154,6 +155,10 @@ export class ComprovanteDaInscricaoPage {
   protected readonly derivados = computed(() => {
     const c = this.carregado();
     return c ? derivadosDoComprovante(c.formulario, c.comprovante, c.municipios) : [];
+  });
+  protected readonly modalidades = computed(() => {
+    const c = this.carregado();
+    return c ? modalidadesDoComprovante(c.comprovante) : null;
   });
   protected readonly termos = computed(() => {
     const c = this.carregado();

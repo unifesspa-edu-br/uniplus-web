@@ -336,6 +336,12 @@ async function abrirComprovanteNaLista(page: Page, processo: string): Promise<vo
 /** O documento do comprovante fica no conteúdo principal da página. */
 const comprovante = (page: Page): Locator => page.getByRole('main');
 
+/** A seção do comprovante com as modalidades em que o envio concorre. */
+const modalidadesDoComprovante = (page: Page): Locator =>
+  comprovante(page).locator('ui-secao-de-documento', {
+    has: page.getByRole('heading', { name: 'Modalidades em que você concorre' }),
+  });
+
 /**
  * Ancestrais do comprovante que, na mídia corrente, cortam o que passa da própria altura. Na
  * impressão o único que pode crescer é o documento: qualquer outro corta o papel na primeira tela.
@@ -429,6 +435,10 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(comprovante(page)).toContainText(ORGAO_EMISSOR);
       await expect(comprovante(page)).not.toContainText('Código IBGE');
       await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
+      // As modalidades que o envio gravou, pelo nome congelado: escola privada concorre só na ampla.
+      await expect(modalidadesDoComprovante(page).getByRole('listitem')).toHaveText([
+        /Ampla concorrência/i,
+      ]);
     });
 
     await test.step('o comprovante sai inteiro na impressão, com o cabeçalho institucional e sem o do portal', () =>
@@ -446,6 +456,11 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
         await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeHidden();
         await expect(page.getByRole('contentinfo')).toBeHidden();
         await expect(comprovante(page)).toBeVisible();
+        // A seção das modalidades não se parte entre folhas: o título não fica sozinho no pé da página.
+        await expect(modalidadesDoComprovante(page).getByRole('listitem')).toHaveText([
+          /Ampla concorrência/i,
+        ]);
+        await expect(modalidadesDoComprovante(page)).toHaveCSS('break-inside', 'avoid');
         await expect(
           page.getByRole('img', {
             name: 'Unifesspa — Universidade Federal do Sul e Sudeste do Pará',

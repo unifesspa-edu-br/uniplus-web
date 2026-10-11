@@ -99,6 +99,7 @@ export {
   CONCORRE,
   FALTA_RESPONDER,
   NAO_CONCORRE,
+  nomesPelaOrdem,
   type AvaliacaoNaTela,
   type ModalidadesAvaliadas,
 } from '../../src/lib/components/formulario-do-candidato/modalidades-avaliadas';
