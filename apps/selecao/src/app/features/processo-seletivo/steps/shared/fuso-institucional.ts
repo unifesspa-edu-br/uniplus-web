@@ -1,6 +1,6 @@
 import {
   deslocamentoDoFusoEmMinutos,
-  FUSO_INSTITUCIONAL,
+  diaNoFuso,
   instanteDaHoraDeParede,
   partesNoFuso,
 } from '@uniplus/shared-utils';
@@ -14,15 +14,7 @@ import {
  * recusaria — ou tiraria da lista, cedo demais, um que ainda vale.
  */
 export function hojeNoFusoInstitucional(agora: Date = new Date()): string {
-  // `en-CA` formata como AAAA-MM-DD, que é a forma comparável com as datas de
-  // vigência do contrato. Montar a string a partir das partes evitaria o
-  // formato, mas repetiria o que o próprio Intl já resolve.
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: FUSO_INSTITUCIONAL,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(agora);
+  return diaNoFuso(agora);
 }
 
 /**

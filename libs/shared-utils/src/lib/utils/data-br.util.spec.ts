@@ -24,6 +24,10 @@ describe('formatarDataBr', () => {
     expect(formatarDataBr(VIRADA_DO_DIA_NO_VERAO, 'datetime')).toBe('30/11/2018, 23:30');
   });
 
+  it('formata só a hora no fuso institucional', () => {
+    expect(formatarDataBr(VIRADA_DO_DIA_NO_VERAO, 'hora')).toBe('23:30');
+  });
+
   it('formata no fuso informado quando o contrato traz outro', () => {
     expect(formatarDataBr(VIRADA_DO_DIA_NO_VERAO, 'datetime', 'America/Sao_Paulo')).toBe(
       '01/12/2018, 00:30',

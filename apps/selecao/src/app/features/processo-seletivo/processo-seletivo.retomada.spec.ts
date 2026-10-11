@@ -713,6 +713,19 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     expect(cenario.componente.rascunhoSalvoEm()).toBe('2026-09-14T14:32:00Z');
   });
 
+  /** A hora do rascunho é a do certame, e não a do relógio de quem o grava. */
+  it('mostra a hora em que o rascunho foi salvo no fuso institucional', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ numero: '07/2027' }) });
+    await propagar();
+
+    cenario.store.goTo(cenario.store.totalSteps - 1);
+    cenario.fixture.detectChanges();
+
+    expect(
+      cenario.host.querySelector('.rascunho-publicacao__carimbo')?.textContent?.trim(),
+    ).toBe('Rascunho salvo às 11:32');
+  });
+
   /**
    * `projetarSecao` é patch raso e a seção tem QUATRO chaves de topo. Repor só `ato` deixaria
    * `numero` e o par de período do processo ANTERIOR em tela — o vazamento entre processos que

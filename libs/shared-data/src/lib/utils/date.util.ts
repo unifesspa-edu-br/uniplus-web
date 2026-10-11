@@ -18,32 +18,12 @@ const MESES_POR_EXTENSO = [
   'dezembro',
 ] as const;
 
-export function formatDateBr(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
-}
-
-export function formatDateTimeBr(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('pt-BR');
-}
-
 /**
  * Parse uma string no formato `dd/mm/yyyy` para `Date` local.
  *
  * Tolera espaços nas bordas. Aceita dia/mês com 1 ou 2 dígitos. Constrói a
- * data com componentes locais (`new Date(ano, mes - 1, dia)`) — de propósito
- * **diferente** de `parseIsoDate`: `formatDateBr`/`formatDateTimeBr`, os
- * formatadores já estabelecidos deste módulo, leem com métodos locais
- * (`toLocaleDateString('pt-BR')`, sem `timeZone: 'UTC'`), então ancorar
- * `parseDate` em UTC quebraria a composição `formatDateBr(parseDate(...))`
- * para qualquer consumidor futuro — a data voltaria um dia em fusos
- * negativos (ex.: America/Sao_Paulo). A troca é aceita conscientemente:
- * `parseDate` mantém o mesmo risco teórico de normalização que
- * `dataGregorianaValida` não cobre sozinho (fusos que suprimem um dia civil
- * numa transição de offset, ex.: `Pacific/Apia` sobre 30/12/2011) — extremo
- * o bastante para não existir no Brasil, e secundário a preservar o
- * contrato local já testado. Retorna `null` para entradas que:
+ * data com componentes locais (`new Date(ano, mes - 1, dia)`), diferente de
+ * `parseIsoDate`, que ancora em UTC. Retorna `null` para entradas que:
  * - não casem com o formato esperado (separador, dígitos, ano com 4 dígitos);
  * - tenham ano fora do intervalo permitido pelo domínio Uni+ ([1900, 2100]);
  * - representem data de calendário inexistente (ex.: 30/02, 31/04, 29/02

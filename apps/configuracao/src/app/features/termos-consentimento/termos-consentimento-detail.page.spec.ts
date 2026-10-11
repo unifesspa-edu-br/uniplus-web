@@ -244,4 +244,28 @@ describe('TermosConsentimentoDetailPage', () => {
       'Versões promovidas deste termo de consentimento',
     );
   });
+
+  /**
+   * Em 01/12/2018, 02:30 UTC ainda era 30/11 em Belém e já era 01/12 em São Paulo, que observava
+   * horário de verão: a data da promoção não pode depender do fuso de quem abre o termo.
+   */
+  it('mostra a data da promoção no fuso institucional', async () => {
+    await carregarTermo(
+      termo({
+        versoes: [
+          {
+            id: '01960000-0000-7000-0000-0000000000a2',
+            texto: 'Declaro que as informações são verdadeiras.',
+            baseLegal: 'Lei nº 13.709/2018',
+            formaAceite: 'A_DEFINIR',
+            hash: 'abc123',
+            promovidaEm: '2018-12-01T02:30:00Z',
+          },
+        ],
+      }),
+    );
+
+    const promovidaEm = fixture.nativeElement.querySelector('td[data-label="Promovida em"]');
+    expect(promovidaEm?.textContent?.trim()).toBe('30/11/2018, 23:30');
+  });
 });

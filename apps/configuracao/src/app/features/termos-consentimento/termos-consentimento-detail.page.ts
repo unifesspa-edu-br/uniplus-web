@@ -34,6 +34,7 @@ import {
   ConfirmDialogComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { formatarDataBr } from '@uniplus/shared-utils';
 
 const NOME_MAX = 200;
 const TEXTO_MAX = 20000;
@@ -58,11 +59,6 @@ interface RascunhoForm {
 function nullIfBlank(value: string): string | null {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
-}
-
-/** Formata um timestamp ISO em data e hora curtas, pt-BR. Sem convenção prévia no projeto para datetime (só há um helper para datas puras em `unidades.page.ts`). */
-function formatarDataHora(value: string): string {
-  return new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function ultimaChaveDoCaminho(field: string): string {
@@ -437,7 +433,7 @@ export class TermosConsentimentoDetailPage {
     const t = this.termo();
     if (t === null) return '';
     return t.revisado && t.revisadoEm
-      ? `Revisado em ${formatarDataHora(t.revisadoEm)}`
+      ? `Revisado em ${formatarDataBr(t.revisadoEm, 'datetime')}`
       : 'Em elaboração';
   });
 
@@ -529,7 +525,7 @@ export class TermosConsentimentoDetailPage {
   }
 
   protected formatarData(value: string): string {
-    return formatarDataHora(value);
+    return formatarDataBr(value, 'datetime');
   }
 
   protected formaAceiteLabel(token: string): string {
