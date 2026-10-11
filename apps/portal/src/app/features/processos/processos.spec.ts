@@ -12,26 +12,40 @@ import {
 import { delay, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { type CertameParaPublicacoes, montarPublicacaoMock } from '../publicacoes/publicacoes.mock';
-import type { Publicacao } from '../publicacoes/publicacoes.model';
-import { PublicacoesRepository } from '../publicacoes/publicacoes.repository';
+import type { PublicacoesDoCertame } from '../publicacoes/publicacoes.model';
+import {
+  type CertameParaPublicacoes,
+  PublicacoesRepository,
+} from '../publicacoes/publicacoes.repository';
 import { ProcessosComponent } from './processos';
 
 const BASE = 'http://localhost:5000';
 const CERTAMES_URL = `${BASE}/api/selecao/certames`;
 const ACERVO = 'http://localhost:9000/uniplus-acervo-publico';
 
-/** As publicações chegam depois da vitrine, cada uma com o PDF do edital do próprio certame. */
+/** As publicações do próprio certame: o edital de abertura, com o PDF dele no acervo. */
+function publicacoesDe(certame: CertameParaPublicacoes): PublicacoesDoCertame {
+  const documentoUrl = `${ACERVO}/${certame.processoSeletivoId}.pdf`;
+  return {
+    documentoEditalUrl: documentoUrl,
+    publicacoes: [
+      {
+        id: `${certame.processoSeletivoId}-abertura`,
+        data: '2026-01-05',
+        titulo: `Edital de abertura de ${certame.identificadorLegivel}`,
+        tipo: 'Edital de abertura',
+        documentoUrl,
+      },
+    ],
+  };
+}
+
+/** As publicações chegam depois da vitrine. */
 const publicacoesComEdital = {
   buscarPorCertames: (certames: readonly CertameParaPublicacoes[]) =>
-    of(
-      new Map(
-        certames.map((certame) => [
-          certame.processoSeletivoId,
-          montarPublicacaoMock(certame, `${ACERVO}/${certame.processoSeletivoId}.pdf`),
-        ]),
-      ),
-    ).pipe(delay(300)),
+    of(new Map(certames.map((certame) => [certame.processoSeletivoId, publicacoesDe(certame)]))).pipe(
+      delay(300),
+    ),
 };
 
 const sisu: CertameNaVitrineDto = {
@@ -190,7 +204,6 @@ describe('ProcessosComponent', () => {
   });
 
   describe('publicações do edital', () => {
-    // As publicações são simuladas para todo certame, a partir dos dados dele.
     async function carregarComPublicacoes(itens: readonly CertameNaVitrineDto[]): Promise<void> {
       await flushLista(itens, contadoresHeaders);
       await sleep(DEBOUNCE_FOLGA_MS);
@@ -241,8 +254,8 @@ describe('ProcessosComponent', () => {
 
       const linha = host().querySelector('.edital-row');
       expect(linha?.querySelector('.publicacao-timeline')).toBeTruthy();
-      expect(linha?.textContent).toContain('Edital publicado');
-      expect(linha?.textContent).toContain('Inscrições abertas');
+      expect(linha?.textContent).toContain(`Edital de abertura de ${sisu.identificadorLegivel}`);
+      expect(linha?.textContent).not.toContain(tecnicoEnfermagem.identificadorLegivel);
       // O segundo item continua fechado, sem linha do tempo no DOM.
       expect(host().querySelectorAll('.publicacao-timeline')).toHaveLength(1);
     });
@@ -559,16 +572,10 @@ describe('ProcessosComponent — sem documento de edital de abertura (CA-14)', (
     totalDeVagas: 10,
   };
 
-  const publicacaoSemDocumento: Publicacao = {
-    id: semDocumento.processoSeletivoId,
-    numeroEdital: semDocumento.numero ?? '',
-    titulo: semDocumento.nome,
-    descricao: '',
-    situacao: 'inscricoesAbertas',
-    dataPublicacao: '2026-01-05T12:00:00Z',
-    // Evento `edital` sem `documentoUrl`: não há o que abrir.
-    historico: [
-      { id: 'evt-edital', categoria: 'edital', data: '2026-01-05T12:00:00Z', titulo: 'Edital publicado' },
+  // Ato sem PDF e sem edital vigente no acervo: não há o que abrir.
+  const publicacaoSemDocumento: PublicacoesDoCertame = {
+    publicacoes: [
+      { id: 'ato-abertura', data: '2026-01-05', titulo: 'Edital de abertura', tipo: 'Edital de abertura' },
     ],
   };
 
@@ -613,6 +620,54 @@ describe('ProcessosComponent — sem documento de edital de abertura (CA-14)', (
 
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('.publicacoes-toggle')).toBeTruthy();
+    expect(host.querySelector('.certame-edital-link')).toBeNull();
+
+    controller.verify();
+  });
+
+  it('o certame cuja consulta das publicações falhou mostra o erro no accordion, sem "Ver edital"', async () => {
+    window.matchMedia = ((consulta: string) =>
+      ({
+        matches: false,
+        media: consulta,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList) as typeof window.matchMedia;
+
+    TestBed.configureTestingModule({
+      imports: [ProcessosComponent],
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        {
+          provide: PublicacoesRepository,
+          useValue: { buscarPorCertames: () => of(new Map([[semDocumento.processoSeletivoId, null]])) },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ProcessosComponent);
+    const controller = TestBed.inject(HttpTestingController);
+    const appRef = TestBed.inject(ApplicationRef);
+    fixture.detectChanges();
+
+    controller.expectOne((r) => r.url === CERTAMES_URL).flush([semDocumento]);
+    await Promise.resolve();
+    appRef.tick();
+    await new Promise((resolve) => setTimeout(resolve, 360));
+    await Promise.resolve();
+    appRef.tick();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLButtonElement>('.publicacoes-toggle')?.click();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.alert--danger')?.textContent).toContain(
+      'Não foi possível carregar as publicações',
+    );
     expect(host.querySelector('.certame-edital-link')).toBeNull();
 
     controller.verify();

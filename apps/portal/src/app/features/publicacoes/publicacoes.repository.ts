@@ -2,51 +2,73 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { type ApiResult } from '@uniplus/shared-core/http';
 import {
-  certamePublicoRequest,
-  type CertamePublicadoDto,
-  SELECAO_BASE_PATH,
-} from '@uniplus/shared-data/selecao';
+  certamePublicoDoPortalRequest,
+  type CertamePublicoResponse,
+  type EventoDaLinhaDoTempoResponse,
+  PORTAL_BASE_PATH,
+} from '@uniplus/shared-data/portal';
+import type { CertameNaVitrineDto } from '@uniplus/shared-data/selecao';
 import { forkJoin, map, type Observable, of } from 'rxjs';
 
-import { type CertameParaPublicacoes, montarPublicacaoMock } from './publicacoes.mock';
-import type { Publicacao } from './publicacoes.model';
+import type { PublicacaoDoCertame, PublicacoesDoCertame } from './publicacoes.model';
 
-export type { CertameParaPublicacoes } from './publicacoes.mock';
+/** O que basta saber de um certame da vitrine para ler as publicações dele. */
+export type CertameParaPublicacoes = Pick<
+  CertameNaVitrineDto,
+  'processoSeletivoId' | 'identificadorLegivel'
+>;
 
 /**
- * Acesso às Publicações — enquanto a consulta pública da linha do tempo não existe
- * (uniplus-api#1497/uniplus-api#1498), a linha do tempo de cada certame é simulada
- * (`publicacoes.mock.ts`), e só o PDF do edital vem do certame publicado. Quando a consulta
- * existir, só este repositório muda, sem tocar em quem o consome.
+ * Publicações lidas da página pública do certame na Portal API. `null` é o certame cuja consulta
+ * falhou: ele mostra o erro sem derrubar os demais.
  */
+export type PublicacoesPorCertame = ReadonlyMap<string, PublicacoesDoCertame | null>;
+
 @Injectable({ providedIn: 'root' })
 export class PublicacoesRepository {
   private readonly http = inject(HttpClient);
-  private readonly basePath = inject(SELECAO_BASE_PATH);
+  private readonly basePath = inject(PORTAL_BASE_PATH);
 
   /**
-   * Publicações dos certames de uma página da vitrine, indexadas por `processoSeletivoId`. O
-   * certame que não responde fica sem o PDF do edital, sem derrubar os demais.
+   * Publicações dos certames de uma página da vitrine, indexadas por `processoSeletivoId`, com uma
+   * consulta à página pública de cada certame.
    */
   buscarPorCertames(
     certames: readonly CertameParaPublicacoes[],
-  ): Observable<ReadonlyMap<string, Publicacao>> {
+  ): Observable<PublicacoesPorCertame> {
     if (certames.length === 0) return of(new Map());
     return forkJoin(
       certames.map((certame) =>
-        this.enderecoDoEdital(certame.processoSeletivoId).pipe(
-          map((documentoUrl) => montarPublicacaoMock(certame, documentoUrl)),
+        this.publicacoesDe(certame.identificadorLegivel).pipe(
+          map((publicacoes) => [certame.processoSeletivoId, publicacoes] as const),
         ),
       ),
-    ).pipe(
-      map((publicacoes) => new Map(publicacoes.map((publicacao) => [publicacao.id, publicacao]))),
-    );
+    ).pipe(map((entradas) => new Map(entradas)));
   }
 
-  private enderecoDoEdital(processoSeletivoId: string): Observable<string | undefined> {
-    const { url, context } = certamePublicoRequest(this.basePath, processoSeletivoId);
-    return this.http.get<ApiResult<CertamePublicadoDto>>(url, { context }).pipe(
-      map((certame) => (certame.ok ? certame.data.documentoEdital?.urlDownload : undefined)),
-    );
+  private publicacoesDe(identificador: string): Observable<PublicacoesDoCertame | null> {
+    const { url, context } = certamePublicoDoPortalRequest(this.basePath, identificador);
+    return this.http
+      .get<ApiResult<CertamePublicoResponse>>(url, { context })
+      .pipe(map((resposta) => (resposta.ok ? paraPublicacoes(resposta.data) : null)));
   }
+}
+
+function paraPublicacoes(certame: CertamePublicoResponse): PublicacoesDoCertame {
+  return {
+    ...(certame.documentoEditalUrl ? { documentoEditalUrl: certame.documentoEditalUrl } : {}),
+    ...(certame.aviso ? { aviso: certame.aviso } : {}),
+    publicacoes: certame.linhaDoTempo.map(paraPublicacao),
+  };
+}
+
+function paraPublicacao(evento: EventoDaLinhaDoTempoResponse): PublicacaoDoCertame {
+  return {
+    id: evento.id,
+    data: evento.data,
+    titulo: evento.titulo,
+    tipo: evento.tipo.nome,
+    ...(evento.descricao ? { descricao: evento.descricao } : {}),
+    ...(evento.documentoUrl ? { documentoUrl: evento.documentoUrl } : {}),
+  };
 }

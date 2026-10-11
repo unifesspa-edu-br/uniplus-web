@@ -37,6 +37,7 @@
         "{projectRoot}/openapi/configuracao.openapi.json",
         "{projectRoot}/openapi/geo.openapi.json",
         "{projectRoot}/openapi/publicacoes.openapi.json",
+        "{projectRoot}/openapi/portal.openapi.json",
         "{projectRoot}/scripts/generate-api-clients.sh"
       ],
       "outputs": [
@@ -45,7 +46,8 @@
         "{projectRoot}/src/lib/api/organizacao/schema.ts",
         "{projectRoot}/src/lib/api/configuracao/schema.ts",
         "{projectRoot}/src/lib/api/geo/schema.ts",
-        "{projectRoot}/src/lib/api/publicacoes/schema.ts"
+        "{projectRoot}/src/lib/api/publicacoes/schema.ts",
+        "{projectRoot}/src/lib/api/portal/schema.ts"
       ]
     },
     "codegen-api-check": {
