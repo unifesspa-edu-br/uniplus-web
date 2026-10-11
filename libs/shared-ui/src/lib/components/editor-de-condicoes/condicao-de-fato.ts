@@ -10,10 +10,12 @@ import {
   comValoresDeLista,
   comparaComLista,
   operadoresDoFato,
+  rotuloDoValor,
   valorEscalarDe,
   valoresDeListaDe,
   type CondicaoDeFato,
   type FatoEscolhivel,
+  type OperadorEscolhivel,
 } from './condicoes-de-fatos';
 
 /**
@@ -157,8 +159,10 @@ import {
             (change)="escolherValor(valorDe($event))"
           >
             <option value="" [selected]="valorEscalar() === ''">Escolha o valor</option>
-            @for (valor of valoresEscolhiveis(); track valor) {
-              <option [value]="valor" [selected]="valor === valorEscalar()">{{ valor }}</option>
+            @for (opcao of valoresEscolhiveis(); track opcao.valor) {
+              <option [value]="opcao.valor" [selected]="opcao.valor === valorEscalar()">
+                {{ opcao.rotulo }}
+              </option>
             }
           </select>
         </div>
@@ -239,7 +243,11 @@ export class CondicaoDeFatoComponent {
     return fato === undefined ? [] : operadoresDoFato(fato);
   });
 
-  protected readonly valoresEscolhiveis = computed(() => this.fatoAtual()?.valores ?? []);
+  protected readonly valoresEscolhiveis = computed<readonly OperadorEscolhivel[]>(() => {
+    const fato = this.fatoAtual();
+    if (fato === undefined) return [];
+    return fato.valores.map((valor) => ({ valor, rotulo: rotuloDoValor(fato, valor) }));
+  });
 
   protected readonly grupos = computed<readonly UiComboboxGroup[]>(() => {
     const fato = this.fatoAtual();
@@ -247,7 +255,7 @@ export class CondicaoDeFatoComponent {
     return [
       {
         label: fato.nome,
-        options: fato.valores.map((valor) => ({ value: valor, label: valor })),
+        options: fato.valores.map((valor) => ({ value: valor, label: rotuloDoValor(fato, valor) })),
       },
     ];
   });

@@ -5,15 +5,19 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { CATALOGO } from './catalogo-de-fatos.fixture';
 import { ModalidadeFormPage } from './modalidade-form.page';
 
 const BASE = 'http://localhost:5000';
 const URL = `${BASE}/api/configuracao/modalidades`;
+const URL_ADMIN = `${BASE}/api/configuracao/admin/modalidades`;
+const URL_CATALOGO = `${BASE}/api/configuracao/fatos-candidato`;
 
 function modalidade(over: Partial<ModalidadeDto>): ModalidadeDto {
   return {
     id: over.id ?? crypto.randomUUID(),
     codigo: 'AC',
+    legalFixa: true,
     descricao: 'Ampla concorrência',
     naturezaLegal: 'AMPLA',
     composicaoVagas: 'RESIDUAL_DO_VO',
@@ -22,7 +26,7 @@ function modalidade(over: Partial<ModalidadeDto>): ModalidadeDto {
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: [],
     acaoQuandoIndeferido: null,
     baseLegal: null,
     criadoEm: '2026-07-03T12:00:00Z',
@@ -38,6 +42,24 @@ const LB_PPI = modalidade({
   naturezaLegal: 'COTA_RESERVADA',
   composicaoVagas: 'DENTRO_DO_VR',
   regraRemanejamento: 'SEGUE_CASCATA',
+  regraDeAplicabilidade: [
+    [{ fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'PARDA', 'INDIGENA'] }],
+  ],
+});
+/** Modalidade institucional: fora do catálogo legal fixo, a regra se edita. */
+const BONUS = modalidade({
+  id: 'id-bonus',
+  codigo: 'AA_REGIONAL',
+  legalFixa: false,
+  descricao: 'Ação afirmativa regional',
+  naturezaLegal: 'ACAO_AFIRMATIVA',
+  composicaoVagas: 'SUPLEMENTAR_AO_TOTAL',
+  regraRemanejamento: 'DESTINO_UNICO',
+  remanejamentoDestino: 'AC',
+  regraDeAplicabilidade: [
+    [{ fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: true }],
+    [{ fato: 'COR_RACA', operador: 'IGUAL', valor: 'INDIGENA' }],
+  ],
 });
 
 describe('ModalidadeFormPage', () => {
@@ -79,6 +101,22 @@ describe('ModalidadeFormPage', () => {
       useValue: { snapshot: { paramMap: convertToParamMap({ id }) } },
     });
   }
+
+  /** Abre em edição a modalidade dada, com o catálogo de fatos carregado. */
+  async function editar(dto: ModalidadeDto): Promise<void> {
+    usarRota(dto.id);
+    montar();
+    controller.expectOne(`${URL}/${dto.id}`).flush(dto);
+    TestBed.tick();
+    controller.expectOne(URL_CATALOGO).flush([...CATALOGO]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  const textoDaRegra = (): string =>
+    (
+      fixture.nativeElement.querySelector('section[aria-labelledby="cfg-mod-regra"]') as HTMLElement
+    ).textContent?.replace(/\s+/g, ' ') ?? '';
 
   const setControl = (nome: string, valor: string): void => {
     component['form'].get(nome)?.setValue(valor);
@@ -292,5 +330,120 @@ describe('ModalidadeFormPage', () => {
     component['salvar']();
     controller.expectNone(`${BASE}/api/configuracao/admin/modalidades`);
     expect(component['form'].controls.codigo.invalid).toBe(true);
+  });
+
+  describe('regra de aplicabilidade', () => {
+    it('lê a regra salva em prosa, pelos nomes do catálogo, sem códigos', async () => {
+      await editar(BONUS);
+
+      const texto = textoDaRegra();
+      expect(texto).toContain('Quem atende a pelo menos uma destas alternativas:');
+      expect(texto).toContain('Cursou o ensino médio em escola pública é sim');
+      expect(texto).toContain('Cor/raça é Indígena');
+      expect(texto).not.toContain('"INDIGENA"');
+    });
+
+    it('lê a regra sem condição como todos os candidatos', async () => {
+      await editar(modalidade({ ...BONUS, regraDeAplicabilidade: [] }));
+
+      expect(textoDaRegra()).toContain('Todos os candidatos.');
+    });
+
+    it('mostra a regra da modalidade legal fixa só para leitura e a reenvia como veio', async () => {
+      await editar(LB_PPI);
+
+      expect(fixture.nativeElement.querySelector('ui-editor-de-condicoes')).toBeNull();
+      expect(textoDaRegra()).toContain('Quem atende: Cor/raça é um de Preta, Parda, Indígena.');
+
+      component['salvar']();
+      const put = controller.expectOne(`${URL_ADMIN}/${LB_PPI.id}`);
+      expect(put.request.body.regraDeAplicabilidade).toEqual(LB_PPI.regraDeAplicabilidade);
+      put.flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('edita a regra da modalidade institucional e envia o que o editor escreveu', async () => {
+      await editar(BONUS);
+      expect(fixture.nativeElement.querySelector('ui-editor-de-condicoes')).not.toBeNull();
+
+      component['trocarRegra']([
+        { clausula: 1, fato: 'COR_RACA', operador: 'NAO_EM', valor: '["PRETA"]' },
+      ]);
+      component['salvar']();
+
+      const put = controller.expectOne(`${URL_ADMIN}/${BONUS.id}`);
+      expect(put.request.body.regraDeAplicabilidade).toEqual([
+        [{ fato: 'COR_RACA', operador: 'NAO_EM', valor: ['PRETA'] }],
+      ]);
+      put.flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('envia a regra sem condição como lista vazia, nunca ausente', async () => {
+      await editar(BONUS);
+
+      component['trocarRegra']([]);
+      component['salvar']();
+
+      const put = controller.expectOne(`${URL_ADMIN}/${BONUS.id}`);
+      expect(put.request.body.regraDeAplicabilidade).toEqual([]);
+      put.flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('não oferece ao editor o fato da própria modalidade', async () => {
+      await editar(BONUS);
+
+      expect(component['fatosDaRegra']().map((fato) => fato.codigo)).toEqual([
+        'ESCOLA_PUBLICA',
+        'COR_RACA',
+      ]);
+    });
+
+    it('recusa enviar a condição sem valor e aponta a condição', async () => {
+      await editar(BONUS);
+
+      component['trocarRegra']([{ clausula: 1, fato: 'COR_RACA', operador: 'IGUAL', valor: '' }]);
+      component['salvar']();
+
+      controller.expectNone(`${URL_ADMIN}/${BONUS.id}`);
+      expect(component['errosDasCondicoes']()).toEqual({ 0: '"Cor/raça" está sem valor' });
+    });
+
+    it('mostra no campo da regra a recusa da API à regra', async () => {
+      await editar(BONUS);
+
+      component['salvar']();
+      controller.expectOne(`${URL_ADMIN}/${BONUS.id}`).flush(
+        {
+          type: 'https://uniplus.unifesspa.edu.br/errors/validacao',
+          title: 'Erro de validação',
+          status: 422,
+          code: 'uniplus.validacao',
+          errors: [
+            {
+              field: 'regraDeAplicabilidade',
+              code: 'uniplus.configuracao.modalidade.regra_cita_fato_desativado',
+              message: "O fato 'ESCOLA_PUBLICA' está desativado e não aceita citação nova.",
+            },
+          ],
+        },
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+      fixture.detectChanges();
+
+      const erro = fixture.nativeElement.querySelector(
+        'section[aria-labelledby="cfg-mod-regra"] [role="alert"]',
+      ) as HTMLElement | null;
+      expect(erro?.tagName).toBe('DIV');
+      const itens = erro?.querySelectorAll(
+        'ul[aria-label="Erros da regra de aplicabilidade"] > li',
+      );
+      expect(Array.from(itens ?? [], (item) => item.textContent?.trim())).toEqual([
+        "O fato 'ESCOLA_PUBLICA' está desativado e não aceita citação nova.",
+      ]);
+      expect(component['formError']()).toBeNull();
+    });
   });
 });

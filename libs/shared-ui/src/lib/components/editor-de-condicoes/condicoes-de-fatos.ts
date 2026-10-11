@@ -36,6 +36,14 @@ export interface FatoDoCatalogo {
   readonly binding: string;
   /** De onde vêm os valores do categórico (`GEO_MUNICIPIO`, `PROCESSO`...); nulo nos demais. */
   readonly fonteValores?: string | null;
+  /** Os valores do categórico com a descrição que o cadastro deu a cada um, quando há. */
+  readonly valoresDominioDeclarados?: readonly ValorDoCatalogo[] | null;
+}
+
+/** Um valor do domínio declarado no catálogo, com a descrição que a tela mostra no lugar do código. */
+export interface ValorDoCatalogo {
+  readonly codigo: string;
+  readonly descricao?: string | null;
 }
 
 /**
@@ -48,6 +56,8 @@ export interface FatoEscolhivel {
   readonly tipoDominio: TipoDeDominio;
   /** Os valores declarados, quando o domínio é categórico estático; vazio nos demais. */
   readonly valores: readonly string[];
+  /** A descrição de cada valor que tem uma, pelo código; o valor sem descrição se mostra pelo código. */
+  readonly rotulos?: ReadonlyMap<string, string>;
   /**
    * Se o fato é perguntado ao candidato no formulário. O derivado — modalidade, faixa
    * etária, renda — resolve por outro caminho e nunca vira campo.
@@ -120,13 +130,25 @@ export function fatoEscolhivel(fato: FatoDoCatalogo): FatoEscolhivel | null {
 
   if (tipoDominio === null) return null;
 
+  const rotulos = new Map<string, string>();
+  for (const valor of fato.valoresDominioDeclarados ?? []) {
+    const descricao = valor.descricao?.trim() ?? '';
+    if (descricao !== '') rotulos.set(valor.codigo, descricao);
+  }
+
   return {
     codigo: fato.codigo,
     nome: fato.nome,
     tipoDominio,
     valores: tipoDominio === 'CATEGORICO_ESTATICO' ? [...(valores ?? [])] : [],
     coletavel: BINDINGS_DE_CAMPO.some((prefixo) => fato.binding.startsWith(prefixo)),
+    ...(rotulos.size > 0 ? { rotulos } : {}),
   };
+}
+
+/** Como a tela mostra um valor do fato: pela descrição do cadastro, ou pelo código quando não há. */
+export function rotuloDoValor(fato: FatoEscolhivel, valor: string): string {
+  return fato.rotulos?.get(valor) ?? valor;
 }
 
 /**
@@ -440,7 +462,7 @@ export function alcanceDaCondicao(condicao: CondicaoDeFato, fato: FatoEscolhivel
     : fato.valores.filter((valor) => escolhidos.includes(valor));
 
   if (alcancados.length === 0) return 'Não alcança valor nenhum do domínio declarado.';
-  return `Alcança ${alcancados.join(', ')}.`;
+  return `Alcança ${alcancados.map((valor) => rotuloDoValor(fato, valor)).join(', ')}.`;
 }
 
 /**

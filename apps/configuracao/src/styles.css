@@ -768,62 +768,6 @@ cfg-pesos-enem-page {
   color: var(--text-secondary);
 }
 
-/* Entrada de critérios cumulativos (chips) */
-
-.cfg-chips-input {
-  display: flex;
-  gap: var(--space-2);
-  align-items: stretch;
-}
-
-.cfg-chips-input .input {
-  flex: 1 1 auto;
-}
-
-.cfg-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  list-style: none;
-  margin: var(--space-2) 0 0;
-  padding: 0;
-}
-
-.cfg-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 2px 6px 2px 10px;
-  border-radius: var(--radius-md);
-  background: var(--surface-subtle);
-  border: 1px solid var(--border-subtle);
-  font-size: var(--text-sm);
-}
-
-.cfg-chip__remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: var(--text-md);
-  line-height: 1;
-}
-
-.cfg-chip__remove:hover {
-  color: var(--color-danger);
-}
-
-.cfg-chip__remove:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
 /* Mapa de condicionais — reflete o efeito das escolhas ao operador */
 
 .cond-diagram {

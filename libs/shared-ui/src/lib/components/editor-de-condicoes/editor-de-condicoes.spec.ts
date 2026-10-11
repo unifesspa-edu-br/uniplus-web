@@ -263,6 +263,27 @@ describe('EditorDeCondicoesComponent', () => {
     expect(raiz.textContent).toContain('Nenhuma condição declarada.');
   });
 
+  it('oferece o valor pela descrição do cadastro, gravando o código', () => {
+    const sexo = fatoEscolhivel({
+      ...CATALOGO[0],
+      valoresDominioDeclarados: [{ codigo: 'FEMININO', descricao: 'Feminino' }],
+    }) as FatoEscolhivel;
+    fixture.componentInstance.fatos.set([sexo]);
+    fixture.componentInstance.condicoes.set([condicao(1, 'SEXO')]);
+    fixture.detectChanges();
+
+    const opcoes = Array.from(
+      raiz.querySelectorAll<HTMLOptionElement>('#teste-0-valor option'),
+      (opcao) => [opcao.value, opcao.textContent?.trim()],
+    );
+    expect(opcoes).toEqual([
+      ['', 'Escolha o valor'],
+      ['FEMININO', 'Feminino'],
+      ['MASCULINO', 'MASCULINO'],
+      ['INTERSEXO', 'INTERSEXO'],
+    ]);
+  });
+
   it('sem catálogo, avisa e não deixa acrescentar', () => {
     fixture.componentInstance.fatos.set([]);
     fixture.detectChanges();

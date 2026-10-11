@@ -13449,13 +13449,16 @@
               "string"
             ]
           },
-          "criteriosCumulativos": {
+          "regraDeAplicabilidade": {
             "type": [
               "null",
               "array"
             ],
             "items": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoDoPredicadoInput"
+              }
             }
           },
           "acaoQuandoIndeferido": {
@@ -14469,6 +14472,44 @@
           }
         }
       },
+      "CondicaoDoPredicadoDto": {
+        "required": [
+          "fato",
+          "operador",
+          "valor"
+        ],
+        "type": "object",
+        "properties": {
+          "fato": {
+            "type": "string"
+          },
+          "operador": {
+            "type": "string"
+          },
+          "valor": {
+            "$ref": "#/components/schemas/JsonElement"
+          }
+        }
+      },
+      "CondicaoDoPredicadoInput": {
+        "required": [
+          "fato",
+          "operador",
+          "valor"
+        ],
+        "type": "object",
+        "properties": {
+          "fato": {
+            "type": "string"
+          },
+          "operador": {
+            "type": "string"
+          },
+          "valor": {
+            "$ref": "#/components/schemas/JsonElement"
+          }
+        }
+      },
       "CondicaoPrecondicaoInput": {
         "required": [
           "fato",
@@ -15173,13 +15214,16 @@
               "string"
             ]
           },
-          "criteriosCumulativos": {
+          "regraDeAplicabilidade": {
             "type": [
               "null",
               "array"
             ],
             "items": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoDoPredicadoInput"
+              }
             }
           },
           "acaoQuandoIndeferido": {
@@ -17298,6 +17342,7 @@
         "required": [
           "id",
           "codigo",
+          "legalFixa",
           "descricao",
           "naturezaLegal",
           "composicaoVagas",
@@ -17306,7 +17351,7 @@
           "remanejamentoDestino",
           "remanejamentoPar",
           "remanejamentoFallback",
-          "criteriosCumulativos",
+          "regraDeAplicabilidade",
           "acaoQuandoIndeferido",
           "baseLegal",
           "criadoEm"
@@ -17319,6 +17364,9 @@
           },
           "codigo": {
             "type": "string"
+          },
+          "legalFixa": {
+            "type": "boolean"
           },
           "descricao": {
             "type": [
@@ -17362,10 +17410,13 @@
               "string"
             ]
           },
-          "criteriosCumulativos": {
+          "regraDeAplicabilidade": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/CondicaoDoPredicadoDto"
+              }
             }
           },
           "acaoQuandoIndeferido": {

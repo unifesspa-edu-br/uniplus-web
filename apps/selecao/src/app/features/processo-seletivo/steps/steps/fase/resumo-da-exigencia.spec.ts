@@ -16,7 +16,6 @@ import {
 import {
   alcancaOPublico,
   composicaoResumida,
-  descreverCondicao,
   descreverCondicaoDeModalidade,
   descreverNorma,
   descreverPublico,
@@ -247,15 +246,6 @@ describe('resumo da exigência documental', () => {
   it('diz que ninguém entrega a exigência condicional sem condição', () => {
     expect(descreverPublico(publicoDaExigencia(condicional([]), FATOS))).toBe(
       'Ninguém: nenhuma condição declarada',
-    );
-  });
-
-  it('nomeia o fato que saiu do catálogo e a condição ainda sem valor', () => {
-    expect(descreverCondicao({ fato: 'RENDA', operador: 'IGUAL', valor: '1' }, undefined)).toBe(
-      'RENDA — fora do catálogo',
-    );
-    expect(descreverCondicao({ fato: 'COR_RACA', operador: 'IGUAL', valor: '' }, COR_RACA)).toBe(
-      'Cor/raça é (valor não escolhido)',
     );
   });
 

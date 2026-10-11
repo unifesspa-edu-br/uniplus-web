@@ -21,6 +21,7 @@ const V_ID = '01960000-0000-7000-0000-0000000000b1';
 const acSeed = {
   id: AC_ID,
   codigo: 'AC',
+  legalFixa: true,
   descricao: 'Ampla concorrência',
   naturezaLegal: 'AMPLA',
   composicaoVagas: 'RESIDUAL_DO_VO',
@@ -29,7 +30,7 @@ const acSeed = {
   remanejamentoDestino: null,
   remanejamentoPar: null,
   remanejamentoFallback: null,
-  criteriosCumulativos: [],
+  regraDeAplicabilidade: [],
   acaoQuandoIndeferido: null,
   baseLegal: null,
   criadoEm: '2026-07-03T12:00:00Z',
@@ -40,14 +41,34 @@ const vSeed = {
   ...acSeed,
   id: V_ID,
   codigo: 'V',
+  legalFixa: false,
   descricao: 'PcD ampla concorrência',
   naturezaLegal: 'ACAO_AFIRMATIVA',
   composicaoVagas: 'RETIRA_DE',
   composicaoOrigem: 'AC',
   regraRemanejamento: 'DESTINO_UNICO',
   remanejamentoDestino: 'AC',
-  criteriosCumulativos: ['laudo'],
+  regraDeAplicabilidade: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]],
 };
+
+const catalogoDeFatos = [
+  {
+    id: '01960000-0000-7000-0000-0000000000f1',
+    codigo: 'PCD',
+    nome: 'Pessoa com deficiência',
+    descricao: null,
+    dominio: 'BOOLEANO',
+    origem: 'DECLARADO',
+    cardinalidade: 'ESCALAR',
+    valoresDominio: null,
+    pontoResolucao: 'INSCRICAO',
+    binding: 'CAMPO_INSCRICAO:PCD',
+    valoresDominioDeclarados: null,
+    fonteValores: null,
+    ativo: true,
+    escopo: 'CANDIDATO',
+  },
+];
 
 async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {
   if (route.request().method() === 'OPTIONS') {
@@ -123,6 +144,8 @@ async function mockApi(
     return jsonRoute(route, alvo);
   });
   await page.route(/\/api\/configuracao\/modalidades(\?.*)?$/, (route) => jsonRoute(route, lista));
+  // O catálogo de fatos com que a regra de aplicabilidade se lê e se escreve.
+  await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, (route) => jsonRoute(route, catalogoDeFatos));
 }
 
 async function abrirLista(page: Page): Promise<void> {

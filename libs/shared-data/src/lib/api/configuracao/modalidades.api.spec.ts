@@ -19,6 +19,7 @@ const ID = '01960000-0000-7000-0000-0000000000a1';
 const modalidadeSeed: ModalidadeDto = {
   id: ID,
   codigo: 'LB_PPI',
+  legalFixa: true,
   descricao: 'Cota PPI baixa renda',
   naturezaLegal: 'COTA_RESERVADA',
   composicaoVagas: 'DENTRO_DO_VR',
@@ -27,7 +28,9 @@ const modalidadeSeed: ModalidadeDto = {
   remanejamentoDestino: null,
   remanejamentoPar: null,
   remanejamentoFallback: null,
-  criteriosCumulativos: ['escola pública', 'renda ≤ 1 SM'],
+  regraDeAplicabilidade: [
+    [{ fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'PARDA', 'INDIGENA'] }],
+  ],
   acaoQuandoIndeferido: 'RECLASSIFICAR_AC',
   baseLegal: 'Lei 12.711/2012, art. 1º',
   criadoEm: '2026-07-03T12:00:00Z',
@@ -43,7 +46,7 @@ const criarCommand: CriarModalidadeCommand = {
   remanejamentoDestino: 'AC',
   remanejamentoPar: null,
   remanejamentoFallback: null,
-  criteriosCumulativos: ['laudo'],
+  regraDeAplicabilidade: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]],
   acaoQuandoIndeferido: 'RECLASSIFICAR_AC',
   baseLegal: 'Lei 14.723/2023',
 };
@@ -123,7 +126,9 @@ describe('ModalidadesApi', () => {
           remanejamentoDestino: null,
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: ['escola pública'],
+          regraDeAplicabilidade: [
+            [{ fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'PARDA', 'INDIGENA'] }],
+          ],
           acaoQuandoIndeferido: 'RECLASSIFICAR_AC',
           baseLegal: 'Lei 12.711/2012',
         },
