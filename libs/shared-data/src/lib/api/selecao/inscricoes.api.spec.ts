@@ -45,6 +45,20 @@ describe('InscricoesApi', () => {
     await promessa;
   });
 
+  it('consulta a avaliação por POST, sem If-Match nem Idempotency-Key, no media type dela', async () => {
+    const promessa = firstValueFrom(api.avaliar(PROCESSO, { respostas: {}, grupos: null }));
+
+    const req = controller.expectOne(`${ROTA}/avaliacoes`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.has('If-Match')).toBe(false);
+    expect(req.request.headers.has('Idempotency-Key')).toBe(false);
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('avaliacao-da-inscricao', 1),
+    );
+    req.flush({});
+    await promessa;
+  });
+
   it('envia com o If-Match, a Idempotency-Key de quem chama e o media type do comprovante', async () => {
     const promessa = firstValueFrom(
       api.submeter(PROCESSO, REQUEST, ETAG, withIdempotencyKey('envio-1')),

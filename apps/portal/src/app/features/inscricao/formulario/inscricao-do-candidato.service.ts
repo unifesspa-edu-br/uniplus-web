@@ -1,6 +1,8 @@
 import type { Observable } from 'rxjs';
 import type { ApiResult } from '@uniplus/shared-core/http';
 import type {
+  AvaliacaoDaInscricaoDto,
+  AvaliacaoDaInscricaoRequest,
   ComprovanteInscricaoDto,
   FormularioRenderizavelDto,
   InscricaoDto,
@@ -30,6 +32,11 @@ export abstract class InscricaoDoCandidatoService {
     request: InscricaoRequest,
     eTag: string,
   ): Observable<ApiResult<InscricaoDto>>;
+  /** O que as respostas determinam agora, sem gravar: as do corpo valem sobre as gravadas. */
+  abstract avaliar(
+    processoId: string,
+    request: AvaliacaoDaInscricaoRequest,
+  ): Observable<ApiResult<AvaliacaoDaInscricaoDto>>;
   abstract submeter(
     processoId: string,
     request: InscricaoRequest,

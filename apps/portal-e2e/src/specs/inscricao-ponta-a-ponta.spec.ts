@@ -186,7 +186,17 @@ async function preencherRestante(page: Page): Promise<void> {
 
   await responderAtendimentoEspecializado(page);
 
+  // Quem cursou o ensino médio em escola privada concorre só na ampla concorrência: a lista é a que a
+  // API calcula das respostas, já gravadas ou ainda na tela.
+  await irParaSecao(page, 'Modalidades de concorrência');
+  const modalidades = page.locator('ui-modalidades-da-inscricao');
+  await expect(modalidades.getByRole('listitem')).toHaveText([/Ampla concorrência/i]);
+  await expect(modalidades).toHaveAttribute('aria-busy', 'false', { timeout: 10_000 });
+
   await irParaSecao(page, 'Revisão e aceite');
+  await expect(page.locator('ui-modalidades-da-inscricao').getByRole('listitem')).toHaveText([
+    /Ampla concorrência/i,
+  ]);
   // Na inscrição retomada os termos já vêm aceitos: clicar de novo os desmarcaria.
   for (const termo of await page.getByRole('article').all()) {
     if (!(await termo.getByRole('checkbox').isChecked())) {

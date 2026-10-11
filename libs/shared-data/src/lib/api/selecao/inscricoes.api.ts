@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import type {
+  AvaliacaoDaInscricaoDto,
+  AvaliacaoDaInscricaoRequest,
   ComprovanteInscricaoDto,
   InscricaoDto,
   InscricaoRequest,
@@ -53,6 +55,21 @@ export class InscricoesApi {
       headers: { 'If-Match': eTag },
       context: withVendorMime('inscricao', 1),
     });
+  }
+
+  /**
+   * POST `…/inscricao/avaliacoes` — o que as respostas determinam, sem gravar nada: as respostas do
+   * corpo são mescladas ao rascunho só para a conta.
+   */
+  avaliar(
+    processoSeletivoId: string,
+    request: AvaliacaoDaInscricaoRequest,
+  ): Observable<ApiResult<AvaliacaoDaInscricaoDto>> {
+    return this.http.post<ApiResult<AvaliacaoDaInscricaoDto>>(
+      `${this.url(processoSeletivoId)}/avaliacoes`,
+      request,
+      { context: withVendorMime('avaliacao-da-inscricao', 1) },
+    );
   }
 
   /**

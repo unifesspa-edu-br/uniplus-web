@@ -15,10 +15,13 @@ export { RegrasCatalogoApi } from './regras-catalogo.api';
 export { InscricoesApi } from './inscricoes.api';
 export type {
   AceiteDeTermoInput,
+  AvaliacaoDaInscricaoDto,
+  AvaliacaoDaInscricaoRequest,
   ComprovanteInscricaoDto,
   InscricaoDto,
   InscricaoRequest,
   MinhaInscricaoDto,
+  ModalidadesDaInscricaoDto,
   OcorrenciaDeGrupoInscricaoInput,
   RespostasDaInscricao,
 } from './inscricoes.contrato';

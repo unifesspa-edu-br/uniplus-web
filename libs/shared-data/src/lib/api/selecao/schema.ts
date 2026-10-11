@@ -1605,6 +1605,103 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/processos-seletivos/{id}/inscricao/avaliacoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["AvaliacaoDaInscricaoRequest"];
+                    readonly "text/json": components["schemas"]["AvaliacaoDaInscricaoRequest"];
+                    readonly "application/*+json": components["schemas"]["AvaliacaoDaInscricaoRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.avaliacao-da-inscricao.v1+json": components["schemas"]["AvaliacaoDaInscricaoDto"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/selecao/processos-seletivos/{id}/inscricao/submissao": {
         readonly parameters: {
             readonly query?: never;
@@ -7376,6 +7473,15 @@ export interface components {
             /** Format: date-time */
             readonly timestamp: string;
         };
+        readonly AvaliacaoDaInscricaoDto: {
+            readonly modalidades: components["schemas"]["ModalidadesDaInscricaoDto"];
+        };
+        readonly AvaliacaoDaInscricaoRequest: {
+            readonly respostas: null | Record<string, never>;
+            readonly grupos: null | {
+                readonly [key: string]: readonly components["schemas"]["OcorrenciaDeGrupoInscricaoInput"][];
+            };
+        };
         readonly BancaDaEtapaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -7817,6 +7923,10 @@ export interface components {
         readonly DefinirTermosDoFormularioRequest: {
             readonly termos: readonly components["schemas"]["TermoExigidoInput"][];
         };
+        readonly DependenciasDaAvaliacaoDto: {
+            readonly fatos: readonly string[];
+            readonly grupos: readonly string[];
+        };
         readonly DerivacaoPortavel: {
             readonly fatoCodigo: string;
             readonly booleano: boolean;
@@ -8115,6 +8225,7 @@ export interface components {
         };
         readonly FormularioRenderizavelDto: {
             readonly comprovacaoDocumental: null | readonly components["schemas"]["ExigenciaDocumentalCertameDto"][];
+            readonly dependenciasDaAvaliacao: null | components["schemas"]["DependenciasDaAvaliacaoDto"];
             readonly finalidade: string;
             readonly titulo: null | string;
             readonly etapas: readonly components["schemas"]["SecaoRenderizavel"][];
@@ -8286,6 +8397,7 @@ export interface components {
             };
             readonly aceites: readonly components["schemas"]["AceiteDeTermoInput"][];
             readonly eTag: string;
+            readonly avaliacao: components["schemas"]["AvaliacaoDaInscricaoDto"];
         };
         readonly InscricaoRequest: {
             /** Format: uuid */
@@ -8382,6 +8494,18 @@ export interface components {
             readonly nomePreferido: string;
             readonly cpfMascarado: string;
             readonly comprovantes: readonly components["schemas"]["ComprovanteEmitidoDto"][];
+        };
+        readonly ModalidadeDaInscricaoDto: {
+            readonly codigo: string;
+            readonly nome: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+        };
+        readonly ModalidadesDaInscricaoDto: {
+            readonly derivada: boolean;
+            readonly situacao: null | string;
+            readonly itens: readonly components["schemas"]["ModalidadeDaInscricaoDto"][];
+            readonly pendencias: readonly components["schemas"]["PendenciaDaAvaliacaoDto"][];
         };
         readonly ModalidadeSelecionadaDto: {
             /** Format: uuid */
@@ -8584,6 +8708,11 @@ export interface components {
             readonly parte: string;
             readonly codigo: string;
             readonly motivo: string;
+        };
+        readonly PendenciaDaAvaliacaoDto: {
+            readonly fatoCodigo: string;
+            readonly rotulo: string;
+            readonly secaoCodigo: null | string;
         };
         readonly PeriodoInscricaoCertameDto: {
             readonly numero: null | string;

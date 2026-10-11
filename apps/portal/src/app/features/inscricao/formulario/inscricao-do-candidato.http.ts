@@ -8,6 +8,8 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core/idempotency';
 import {
+  type AvaliacaoDaInscricaoDto,
+  type AvaliacaoDaInscricaoRequest,
   certamePublicoRequest,
   type CertamePublicadoDto,
   type ComprovanteInscricaoDto,
@@ -64,6 +66,13 @@ export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
     eTag: string,
   ): Observable<ApiResult<InscricaoDto>> {
     return this.api.salvar(processoId, request, eTag);
+  }
+
+  avaliar(
+    processoId: string,
+    request: AvaliacaoDaInscricaoRequest,
+  ): Observable<ApiResult<AvaliacaoDaInscricaoDto>> {
+    return this.api.avaliar(processoId, request);
   }
 
   submeter(
