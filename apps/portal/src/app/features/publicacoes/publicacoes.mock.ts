@@ -33,7 +33,14 @@ function instanteIso(instante: string, dias = 0): string {
   return Number.isNaN(ms) ? instante : new Date(ms + dias * MS_POR_DIA).toISOString();
 }
 
-export function montarPublicacaoMock(certame: CertameParaPublicacoes): Publicacao {
+/**
+ * A linha do tempo simulada do certame. Só o PDF do edital é real: `documentoUrl` é o endereço que
+ * o certame publicado traz, e sem ele o evento do edital fica sem documento.
+ */
+export function montarPublicacaoMock(
+  certame: CertameParaPublicacoes,
+  documentoUrl?: string,
+): Publicacao {
   const { processoSeletivoId: id } = certame;
   const historico: EventoHistoricoPublicacao[] = [
     {
@@ -42,7 +49,7 @@ export function montarPublicacaoMock(certame: CertameParaPublicacoes): Publicaca
       data: instanteIso(certame.inscricoesDe, -ANTECEDENCIA_DO_EDITAL_DIAS),
       titulo: 'Edital publicado',
       descricao: `${certame.numero ?? 'Edital'} publicado no Diário Oficial e no site da Unifesspa.`,
-      documentoArquivo: `edital-${id.slice(-8)}.pdf`,
+      ...(documentoUrl ? { documentoUrl } : {}),
     },
   ];
 
@@ -77,31 +84,4 @@ export function montarPublicacaoMock(certame: CertameParaPublicacoes): Publicaca
     dataPublicacao: historico[historico.length - 1].data,
     historico,
   };
-}
-
-/**
- * O documento de um evento abre numa aba nova, que nasce sem memória do app —
- * por isso o que o mock gerou fica também no `localStorage` (só dado público
- * simulado, nada de credencial).
- */
-const CHAVE_STORAGE = 'uniplus.portal.publicacoes-mock';
-
-export function lerPublicacoesMock(): Publicacao[] {
-  try {
-    const bruto = localStorage.getItem(CHAVE_STORAGE);
-    const lido: unknown = bruto ? JSON.parse(bruto) : [];
-    return Array.isArray(lido) ? (lido as Publicacao[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function gravarPublicacoesMock(publicacoes: readonly Publicacao[]): void {
-  try {
-    const porId = new Map(lerPublicacoesMock().map((item) => [item.id, item]));
-    publicacoes.forEach((item) => porId.set(item.id, item));
-    localStorage.setItem(CHAVE_STORAGE, JSON.stringify([...porId.values()]));
-  } catch {
-    // Storage indisponível (navegação privada): o documento só abre na mesma aba.
-  }
 }

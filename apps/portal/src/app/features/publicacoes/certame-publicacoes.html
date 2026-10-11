@@ -41,15 +41,15 @@
                 @if (evento.descricao) {
                   <p class="publicacao-timeline__evento-desc">{{ evento.descricao }}</p>
                 }
-                @if (evento.documentoArquivo) {
+                @if (evento.documentoUrl; as documentoUrl) {
                   <a
                     class="publicacao-timeline__link"
-                    [routerLink]="['/publicacoes', item.id, 'eventos', evento.id, 'documento']"
+                    [href]="documentoUrl"
                     target="_blank"
                     rel="noopener"
                   >
                     <i class="pi pi-file-pdf" aria-hidden="true"></i>
-                    Ver documento (PDF) — {{ evento.documentoArquivo }}
+                    Ver documento (PDF)
                     <span class="sr-only">(abre em nova aba)</span>
                   </a>
                 }

@@ -47,11 +47,7 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { CertamePublicacoesComponent } from '../publicacoes/certame-publicacoes';
 import { CertameDocumentosComponent } from './certame-documentos/certame-documentos';
-import {
-  eventoDoEditalDeAbertura,
-  type EventoHistoricoPublicacao,
-  type Publicacao,
-} from '../publicacoes/publicacoes.model';
+import { eventoDoEditalDeAbertura, type Publicacao } from '../publicacoes/publicacoes.model';
 import { PublicacoesRepository } from '../publicacoes/publicacoes.repository';
 
 type VisaoCertames = 'lista' | 'cards';
@@ -315,8 +311,9 @@ export class ProcessosComponent {
 
   /**
    * Publicações (linha do tempo do accordion "Ver publicações" e link do edital
-   * de abertura) dos certames da página, numa única consulta por página. Uma
-   * falha aqui não derruba a vitrine: só o accordion avisa, ao ser aberto.
+   * de abertura) dos certames da página, com uma consulta ao certame publicado
+   * para cada um. O certame cuja consulta falha fica sem o PDF, e uma falha aqui
+   * não derruba a vitrine: só o accordion avisa, ao ser aberto.
    */
   private readonly publicacoes = toSignal<PublicacoesDaPagina, PublicacoesDaPagina>(
     toObservable(this.certames).pipe(
@@ -432,12 +429,9 @@ export class ProcessosComponent {
   }
 
   /** Alvo do link "Ver edital" — ausente até a publicação chegar ou se não houver edital. */
-  protected editalDe(
-    certame: CertameNaVitrineDto,
-  ): { readonly publicacaoId: string; readonly evento: EventoHistoricoPublicacao } | null {
-    const publicacao = this.publicacaoDe(certame);
-    const evento = eventoDoEditalDeAbertura(publicacao);
-    return publicacao && evento ? { publicacaoId: publicacao.id, evento } : null;
+  protected editalDe(certame: CertameNaVitrineDto): { readonly documentoUrl: string } | null {
+    const documentoUrl = eventoDoEditalDeAbertura(this.publicacaoDe(certame))?.documentoUrl;
+    return documentoUrl ? { documentoUrl } : null;
   }
 
   /** `totalDeVagas` chega como `number | string` (contrato usa `pattern` no int32). */

@@ -393,6 +393,17 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
   test('entra, se inscreve, corrige e confere os comprovantes e as inscrições', async ({
     page,
   }) => {
+    await test.step('a vitrine leva ao PDF do edital no acervo público, que abre sem credencial', async () => {
+      await page.goto('/processos');
+      const verEdital = page
+        .getByRole('link', { name: `Ver edital — ${processo} (abre em nova aba)` })
+        .first();
+      await expect(verEdital).toHaveAttribute('href', /\/editais\/.+\.pdf$/);
+      const pdf = await page.request.get((await verEdital.getAttribute('href')) ?? '');
+      expect(pdf.ok()).toBe(true);
+      expect(pdf.headers()['content-type']).toBe('application/pdf');
+    });
+
     await test.step('entra pela vitrine e volta à inscrição escolhida', async () => {
       await page.goto('/processos');
       await page.locator(`a[href="/inscricao/${PROCESSO_ID}"]`).first().click();

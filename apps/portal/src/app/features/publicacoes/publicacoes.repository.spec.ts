@@ -1,9 +1,16 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { SituacaoDoCertame } from '@uniplus/shared-data/selecao';
-import { firstValueFrom } from 'rxjs';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { SELECAO_BASE_PATH, SituacaoDoCertame } from '@uniplus/shared-data/selecao';
+import { firstValueFrom, type Observable } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import type { Publicacao } from './publicacoes.model';
 import { type CertameParaPublicacoes, PublicacoesRepository } from './publicacoes.repository';
+
+const BASE = 'http://localhost:5000';
+const ACERVO = 'http://localhost:9000/uniplus-acervo-publico/editais';
 
 const emBreve: CertameParaPublicacoes = {
   processoSeletivoId: '01960000-0000-7000-0000-0000000000a1',
@@ -29,15 +36,53 @@ const encerrado: CertameParaPublicacoes = {
 
 describe('PublicacoesRepository', () => {
   let repositorio: PublicacoesRepository;
+  let controller: HttpTestingController;
 
   beforeEach(() => {
-    localStorage.clear();
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+      ],
+    });
     repositorio = TestBed.inject(PublicacoesRepository);
+    controller = TestBed.inject(HttpTestingController);
   });
 
-  it('buscarPorCertames simula publicações para todo certame, indexadas pelo id dele', async () => {
-    const porCertame = await firstValueFrom(repositorio.buscarPorCertames([emBreve, aberto, encerrado]));
+  afterEach(() => controller.verify());
+
+  function urlDoCertame(certame: CertameParaPublicacoes): string {
+    return `${BASE}/api/selecao/certames/${certame.processoSeletivoId}`;
+  }
+
+  /** Cada certame responde com o PDF do próprio edital no acervo. */
+  function responderComEdital(certames: readonly CertameParaPublicacoes[]): void {
+    for (const certame of certames) {
+      controller.expectOne(urlDoCertame(certame)).flush({
+        processoSeletivoId: certame.processoSeletivoId,
+        documentoEdital: {
+          documentoEditalId: '01960000-0000-7000-0000-0000000000f1',
+          hashSha256: 'ab12',
+          urlDownload: `${ACERVO}/${certame.processoSeletivoId}.pdf`,
+        },
+      });
+    }
+  }
+
+  async function buscar(
+    certames: readonly CertameParaPublicacoes[],
+    responder: () => void = () => responderComEdital(certames),
+  ): Promise<ReadonlyMap<string, Publicacao>> {
+    const resultado: Observable<ReadonlyMap<string, Publicacao>> =
+      repositorio.buscarPorCertames(certames);
+    const promessa = firstValueFrom(resultado);
+    responder();
+    return promessa;
+  }
+
+  it('monta a publicação de todo certame, indexada pelo id dele', async () => {
+    const porCertame = await buscar([emBreve, aberto, encerrado]);
 
     expect([...porCertame.keys()]).toEqual([
       emBreve.processoSeletivoId,
@@ -48,13 +93,17 @@ describe('PublicacoesRepository', () => {
   });
 
   it('a linha do tempo acompanha a situação do certame e as datas de inscrição dele', async () => {
-    const porCertame = await firstValueFrom(repositorio.buscarPorCertames([emBreve, aberto, encerrado]));
+    const porCertame = await buscar([emBreve, aberto, encerrado]);
     const titulos = (certame: CertameParaPublicacoes) =>
       porCertame.get(certame.processoSeletivoId)?.historico.map((evento) => evento.titulo);
 
     expect(titulos(emBreve)).toEqual(['Edital publicado']);
     expect(titulos(aberto)).toEqual(['Edital publicado', 'Inscrições abertas']);
-    expect(titulos(encerrado)).toEqual(['Edital publicado', 'Inscrições abertas', 'Inscrições encerradas']);
+    expect(titulos(encerrado)).toEqual([
+      'Edital publicado',
+      'Inscrições abertas',
+      'Inscrições encerradas',
+    ]);
 
     const historico = porCertame.get(encerrado.processoSeletivoId)?.historico ?? [];
     // Instante completo preservado (15 dias antes de `inscricoesDe` para o
@@ -67,47 +116,39 @@ describe('PublicacoesRepository', () => {
     ]);
   });
 
-  it('só o edital publicado tem documento, e o id do evento é único dentro do certame', async () => {
-    const porCertame = await firstValueFrom(repositorio.buscarPorCertames([encerrado]));
+  it('o edital publicado leva o endereço do PDF que o certame publicado traz, e só ele tem documento', async () => {
+    const porCertame = await buscar([encerrado]);
     const historico = porCertame.get(encerrado.processoSeletivoId)?.historico ?? [];
 
-    expect(historico.filter((evento) => evento.documentoArquivo).map((evento) => evento.categoria)).toEqual([
-      'edital',
-    ]);
+    expect(
+      historico.filter((evento) => evento.documentoUrl).map((evento) => evento.documentoUrl),
+    ).toEqual([`${ACERVO}/${encerrado.processoSeletivoId}.pdf`]);
+    expect(historico.find((evento) => evento.documentoUrl)?.categoria).toBe('edital');
     expect(new Set(historico.map((evento) => evento.id)).size).toBe(historico.length);
   });
 
-  it('simula latência de rede — não emite no mesmo tick da inscrição', () => {
-    let emitiu = false;
-    repositorio.buscarPorCertames([emBreve]).subscribe(() => {
-      emitiu = true;
+  it('o certame sem documento do edital fica sem PDF, sem afetar os demais', async () => {
+    const porCertame = await buscar([emBreve, aberto], () => {
+      controller
+        .expectOne(urlDoCertame(emBreve))
+        .flush({ processoSeletivoId: emBreve.processoSeletivoId });
+      controller
+        .expectOne(urlDoCertame(aberto))
+        .flush({ title: 'Falha' }, { status: 500, statusText: 'Erro' });
     });
 
-    expect(emitiu).toBe(false);
+    expect(
+      porCertame.get(emBreve.processoSeletivoId)?.historico.some((evento) => evento.documentoUrl),
+    ).toBe(false);
+    expect(
+      porCertame.get(aberto.processoSeletivoId)?.historico.some((evento) => evento.documentoUrl),
+    ).toBe(false);
+    expect(porCertame.get(aberto.processoSeletivoId)?.titulo).toBe(aberto.nome);
   });
 
-  it('buscarPorId acha a publicação já gerada na mesma sessão', async () => {
-    await firstValueFrom(repositorio.buscarPorCertames([aberto]));
+  it('página sem certames não consulta nada', async () => {
+    const porCertame = await buscar([], () => undefined);
 
-    const publicacao = await firstValueFrom(repositorio.buscarPorId(aberto.processoSeletivoId));
-
-    expect(publicacao?.id).toBe(aberto.processoSeletivoId);
-  });
-
-  it('buscarPorId acha a publicação numa aba nova, que nasce com o repositório vazio', async () => {
-    await firstValueFrom(repositorio.buscarPorCertames([aberto]));
-
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({});
-    const repositorioDaOutraAba = TestBed.inject(PublicacoesRepository);
-    const publicacao = await firstValueFrom(repositorioDaOutraAba.buscarPorId(aberto.processoSeletivoId));
-
-    expect(publicacao?.titulo).toBe(aberto.nome);
-  });
-
-  it('buscarPorId devolve undefined para um id que não existe', async () => {
-    const publicacao = await firstValueFrom(repositorio.buscarPorId('id-que-nao-existe'));
-
-    expect(publicacao).toBeUndefined();
+    expect(porCertame.size).toBe(0);
   });
 });
