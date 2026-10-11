@@ -103,6 +103,7 @@ export {
   type AvaliacaoNaTela,
   type ModalidadesAvaliadas,
 } from '../../src/lib/components/formulario-do-candidato/modalidades-avaliadas';
+export { type DocumentosAvaliados } from '../../src/lib/components/formulario-do-candidato/documentos-avaliados';
 export {
   derivadosDoSistema,
   type DerivadoDoSistema,

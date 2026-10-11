@@ -87,6 +87,7 @@ const naTela = (
   outros: Partial<AvaliacaoNaTela> = {},
 ): AvaliacaoNaTela => ({
   modalidades: m,
+  documentos: null,
   calculando: false,
   erro: null,
   ...outros,

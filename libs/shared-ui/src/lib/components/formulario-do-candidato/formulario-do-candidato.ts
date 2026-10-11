@@ -38,12 +38,20 @@ import {
   pendenciasDo,
   termoSemAceite,
 } from './formulario-do-candidato.model';
+import {
+  anunciarMudancaDosDocumentos,
+  arvoreDeDocumentos,
+  documentosDoFormulario,
+  type NoDeDocumentos,
+} from './documentos-avaliados';
+import { DocumentosDaInscricaoComponent } from './documentos-da-inscricao';
 import { GrupoDoCandidatoComponent } from './grupo-do-candidato';
 import {
   anunciarMudancaDasModalidades,
   type AvaliacaoNaTela,
   conhecidas,
   type ModalidadesAvaliadas,
+  type PendenciaDaAvaliacao,
   secoesQueDefinemAsModalidades,
 } from './modalidades-avaliadas';
 import { ModalidadesDaInscricaoComponent } from './modalidades-da-inscricao';
@@ -71,6 +79,7 @@ import type {
   imports: [
     AlertComponent,
     CampoDoCandidatoComponent,
+    DocumentosDaInscricaoComponent,
     GrupoDoCandidatoComponent,
     ListaDeDocumentosComponent,
     ModalidadesDaInscricaoComponent,
@@ -79,8 +88,8 @@ import type {
   template: `
     <div class="formulario-candidato">
       <p class="sr-only" aria-live="polite">{{ anuncio() }}</p>
-      <!-- Fora da seção delas: a resposta que muda as modalidades é dada em outra seção. -->
-      <p class="sr-only" aria-live="polite">{{ anuncioDasModalidades() }}</p>
+      <!-- Fora da seção dela: a resposta que muda a avaliação é dada em outra seção. -->
+      <p class="sr-only" aria-live="polite">{{ anuncioDaAvaliacao() }}</p>
 
       @if (recusa(); as erro) {
         <ui-alert variant="danger" heading="As regras do formulário não podem ser interpretadas">
@@ -160,7 +169,16 @@ import type {
                   }
                 }
                 @case (BLOCO_COMPROVACAO_DOCUMENTAL) {
-                  @if (documentos(); as lista) {
+                  @if (avaliacao(); as avaliacao) {
+                    <ui-documentos-da-inscricao
+                      [avaliacao]="avaliacao"
+                      [arvore]="documentosDaAvaliacao()?.arvore ?? null"
+                      [pendencias]="documentosDaAvaliacao()?.pendencias ?? []"
+                      [semDocumentos]="semDocumentos()"
+                      (irAoCampo)="irAoCampo($event)"
+                      (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
+                    />
+                  } @else if (documentos(); as lista) {
                     <ui-lista-de-documentos
                       [documentos]="lista"
                       [semDocumentos]="semDocumentos()"
@@ -285,7 +303,10 @@ export class FormularioDoCandidatoComponent {
   readonly inicial = input<SimulacaoDoFormulario | null>(null);
   /** Os fatos que vêm de fora do formulário — respostas de outro formulário, valores calculados. */
   readonly pressupostos = input<Readonly<Record<string, ValorJson>>>({});
-  /** A lista do bloco de comprovação documental; nula quando quem hospeda não a tem. */
+  /**
+   * A lista do bloco de comprovação documental, como o certame a publica; nula quando quem hospeda não a
+   * tem. Com avaliação, o bloco mostra os documentos que ela calcula.
+   */
   readonly documentos = input<readonly DocumentoExigido[] | null>(null);
   /** O que o bloco de comprovação documental diz quando a lista é vazia. */
   readonly semDocumentos = input('Nenhum documento é exigido nesta fase.');
@@ -319,7 +340,7 @@ export class FormularioDoCandidatoComponent {
   readonly simulacaoChange = output<SimulacaoDoFormulario>();
   /** Os termos aceitos, pelo código, a cada mudança. */
   readonly termosAceitosChange = output<readonly string[]>();
-  /** O candidato pediu para calcular de novo as modalidades depois de uma falha. */
+  /** O candidato pediu para calcular de novo a avaliação depois de uma falha. */
   readonly tentarAvaliarDeNovo = output<void>();
 
   protected readonly BLOCO_MODALIDADES_CALCULADAS = BLOCO_MODALIDADES_CALCULADAS;
@@ -442,10 +463,61 @@ export class FormularioDoCandidatoComponent {
     source: computed(() => this.avaliacao()?.modalidades ?? null),
     computation: (atuais, anterior) => (conhecidas(atuais) ? atuais : (anterior?.value ?? null)),
   });
-  protected readonly anuncioDasModalidades = linkedSignal<ModalidadesAvaliadas | null, string>({
-    source: this.conjuntoConhecido,
-    computation: (atuais, anterior) =>
-      anterior ? anunciarMudancaDasModalidades(anterior.source, atuais) : '',
+  /**
+   * Os documentos que a avaliação pede no próprio formulário: a árvore da escolha e o que falta
+   * responder; nulos antes da primeira avaliação dos documentos.
+   */
+  protected readonly documentosDaAvaliacao = computed<{
+    readonly arvore: readonly NoDeDocumentos[];
+    readonly pendencias: readonly PendenciaDaAvaliacao[];
+  } | null>(
+    () => {
+      const avaliados = this.avaliacao()?.documentos ?? null;
+      if (avaliados === null) return null;
+      const formulario = this.formulario();
+      const { documentos, pendencias } = documentosDoFormulario(
+        avaliados,
+        formulario.faseId,
+        formulario.finalidade,
+      );
+      return {
+        arvore: arvoreDeDocumentos(documentos, formulario.grupos, this.grupos()),
+        pendencias,
+      };
+    },
+    { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+  );
+  /**
+   * A mesma resposta pode mudar as modalidades e os documentos: os dois vão no mesmo anúncio, e só o que
+   * mudou desta vez entra nele — o anúncio de antes não volta a ser lido.
+   */
+  protected readonly anuncioDaAvaliacao = linkedSignal<
+    {
+      readonly modalidades: ModalidadesAvaliadas | null;
+      readonly documentos: readonly NoDeDocumentos[] | null;
+      readonly integrantes: ReadonlySet<string>;
+    },
+    string
+  >({
+    source: computed(() => ({
+      modalidades: this.conjuntoConhecido(),
+      documentos: this.documentosDaAvaliacao()?.arvore ?? null,
+      integrantes: new Set(Object.values(this.grupos()).flatMap((lista) => lista.map((o) => o.id))),
+    })),
+    computation: (atual, anterior) => {
+      if (!anterior) return '';
+      const antes = anterior.source;
+      return [
+        atual.modalidades === antes.modalidades
+          ? ''
+          : anunciarMudancaDasModalidades(antes.modalidades, atual.modalidades),
+        atual.documentos === antes.documentos
+          ? ''
+          : anunciarMudancaDosDocumentos(antes.documentos, atual.documentos, atual.integrantes),
+      ]
+        .filter((parte) => parte)
+        .join(' ');
+    },
   });
 
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');

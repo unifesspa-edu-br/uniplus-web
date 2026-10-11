@@ -1,3 +1,4 @@
+import type { DocumentosAvaliados } from './documentos-avaliados';
 import {
   comoInteiro,
   type DependenciasDaAvaliacao,
@@ -19,8 +20,8 @@ export interface ModalidadeAvaliada {
   readonly ordem: Inteiro;
 }
 
-/** Uma pergunta visível sem resposta de que o cálculo das modalidades depende. */
-export interface PendenciaDasModalidades {
+/** Uma pergunta visível sem resposta de que a avaliação depende. */
+export interface PendenciaDaAvaliacao {
   readonly fatoCodigo: string;
   readonly rotulo: string;
   readonly secaoCodigo?: string | null;
@@ -34,7 +35,7 @@ export interface ModalidadesAvaliadas {
   readonly derivada: boolean;
   readonly situacao: string | null;
   readonly itens: readonly ModalidadeAvaliada[];
-  readonly pendencias: readonly PendenciaDasModalidades[];
+  readonly pendencias: readonly PendenciaDaAvaliacao[];
 }
 
 /**
@@ -43,6 +44,7 @@ export interface ModalidadesAvaliadas {
  */
 export interface AvaliacaoNaTela {
   readonly modalidades: ModalidadesAvaliadas | null;
+  readonly documentos: DocumentosAvaliados | null;
   readonly calculando: boolean;
   readonly erro: string | null;
 }

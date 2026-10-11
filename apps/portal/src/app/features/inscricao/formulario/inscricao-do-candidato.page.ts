@@ -102,11 +102,6 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly erroAoCarregar = signal<string | null>(null);
   protected readonly formulario = signal<FormularioRenderizavelDto | null>(null);
   protected readonly ofertas = signal<readonly OfertaDaInscricao[]>([]);
-  /**
-   * O que a fase da inscrição pede para enviar. A lista só é nula no formulário sem o bloco de
-   * comprovação documental, que então não aparece.
-   */
-  protected readonly documentos = computed(() => this.formulario()?.comprovacaoDocumental ?? []);
   private readonly relogio = inject(RELOGIO);
   private readonly documento = inject(DOCUMENT);
   /**
@@ -123,7 +118,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     return fuso ? { instante: this.instanteDoEnvio().toISOString(), fuso } : null;
   });
   private viradaDoDia: ReturnType<typeof setTimeout> | null = null;
-  /** Sem a fase publicada de cada exigência, o aviso não diz em qual etapa o edital pede os documentos. */
+  /** O aviso do bloco de documentos quando as respostas não pedem nada nesta fase. */
   protected readonly semDocumentos =
     'Você não envia documentos nesta etapa. Os documentos que comprovam o que você declarou podem ser ' +
     'pedidos em outras etapas do processo seletivo, conforme o edital.';

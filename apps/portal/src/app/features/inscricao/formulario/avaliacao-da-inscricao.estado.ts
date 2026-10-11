@@ -9,6 +9,7 @@ import type {
 import type {
   AvaliacaoNaTela,
   DependenciasDaAvaliacao,
+  DocumentosAvaliados,
   ModalidadesAvaliadas,
   SimulacaoDoFormulario,
 } from '@uniplus/shared-ui/components';
@@ -37,14 +38,17 @@ export class AvaliacaoDaInscricaoEstado {
   private readonly problemas = inject(ProblemI18nService);
 
   private readonly modalidades = signal<ModalidadesAvaliadas | null>(null);
+  private readonly documentos = signal<DocumentosAvaliados | null>(null);
   private readonly calculando = signal(false);
   private readonly erro = signal<string | null>(null);
 
   /** O estado que os blocos mostram; nulo antes da primeira avaliação. */
   readonly naTela = computed<AvaliacaoNaTela | null>(() => {
     const modalidades = this.modalidades();
-    if (modalidades === null && !this.calculando() && this.erro() === null) return null;
-    return { modalidades, calculando: this.calculando(), erro: this.erro() };
+    const documentos = this.documentos();
+    const vazia = modalidades === null && documentos === null;
+    if (vazia && !this.calculando() && this.erro() === null) return null;
+    return { modalidades, documentos, calculando: this.calculando(), erro: this.erro() };
   });
 
   private processoId = '';
@@ -141,6 +145,7 @@ export class AvaliacaoDaInscricaoEstado {
   private aplicar(avaliacao: AvaliacaoDaInscricaoDto): void {
     this.erro.set(null);
     this.modalidades.set(avaliacao.modalidades);
+    this.documentos.set(avaliacao.documentos);
   }
 }
 

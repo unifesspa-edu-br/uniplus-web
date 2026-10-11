@@ -283,6 +283,13 @@ async function preencherRestante(page: Page): Promise<void> {
   ).toHaveText([/Ampla concorrência/i]);
   await expect(modalidades).toHaveAttribute('aria-busy', 'false', { timeout: 10_000 });
 
+  // O processo de validação só pede documentos na habilitação: nesta fase a avaliação não pede nada.
+  await irParaSecao(page, 'Documentos');
+  const documentos = page.locator('ui-documentos-da-inscricao');
+  await expect(documentos).toHaveAttribute('aria-busy', 'false', { timeout: 10_000 });
+  await expect(documentos).toContainText('Você não envia documentos nesta etapa.');
+  await expect(documentos.getByRole('heading', { level: 4 })).toHaveCount(0);
+
   await irParaSecao(page, 'Revisão e aceite');
   await expect(
     page

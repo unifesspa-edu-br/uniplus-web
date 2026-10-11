@@ -1616,7 +1616,9 @@ export interface paths {
         readonly put?: never;
         readonly post: {
             readonly parameters: {
-                readonly query?: never;
+                readonly query?: {
+                    readonly faseId?: string;
+                };
                 readonly header?: never;
                 readonly path: {
                     readonly id: string;
@@ -7402,6 +7404,7 @@ export interface components {
         };
         readonly AvaliacaoDaInscricaoDto: {
             readonly modalidades: components["schemas"]["ModalidadesDaInscricaoDto"];
+            readonly documentos: components["schemas"]["DocumentosDaInscricaoDto"];
         };
         readonly AvaliacaoDaInscricaoRequest: {
             readonly respostas: null | Record<string, never>;
@@ -7874,6 +7877,23 @@ export interface components {
             readonly ordem: number | string;
             readonly modalidadeDestinoCodigo: null | string;
         };
+        readonly DocumentoDaInscricaoDto: {
+            /** Format: uuid */
+            readonly exigenciaId: string;
+            readonly tipoDocumentoCodigo: string;
+            readonly nome: string;
+            readonly obrigatorio: boolean;
+            readonly finalidade: null | string;
+            /** Format: uuid */
+            readonly etapaId: null | string;
+            readonly formatos: components["schemas"]["FormatosAceitosCertameDto"];
+            readonly modelo: null | components["schemas"]["ModeloDocumentalCertameDto"];
+            readonly situacao: string;
+            readonly grupoCodigo: null | string;
+            readonly ocorrenciaId: null | string;
+            readonly grupos: readonly components["schemas"]["GrupoDaArvoreDto"][];
+            readonly repetePorEntidade: null | string;
+        };
         readonly DocumentoEditalCertameDto: {
             /** Format: uuid */
             readonly documentoEditalId: string;
@@ -7918,6 +7938,9 @@ export interface components {
             readonly exigidoNaEtapaId: null | string;
             readonly modelo: null | components["schemas"]["ModeloDaExigenciaDto"];
             readonly finalidade: null | string;
+        };
+        readonly DocumentosDaInscricaoDto: {
+            readonly fases: readonly components["schemas"]["FaseDosDocumentosDto"][];
         };
         readonly DocumentoSimuladoDto: {
             /** Format: uuid */
@@ -8086,6 +8109,15 @@ export interface components {
             readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaInput"][];
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseInput"];
         };
+        readonly FaseDosDocumentosDto: {
+            /** Format: uuid */
+            readonly faseId: string;
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+            readonly documentos: readonly components["schemas"]["DocumentoDaInscricaoDto"][];
+            readonly pendencias: readonly components["schemas"]["PendenciaDaAvaliacaoDto"][];
+        };
         readonly FatoColetadoDto: {
             readonly fatoCodigo: string;
             /** Format: int32 */
@@ -8154,6 +8186,8 @@ export interface components {
         readonly FormularioRenderizavelDto: {
             readonly comprovacaoDocumental: null | readonly components["schemas"]["ExigenciaDocumentalCertameDto"][];
             readonly dependenciasDaAvaliacao: null | components["schemas"]["DependenciasDaAvaliacaoDto"];
+            /** Format: uuid */
+            readonly faseId: null | string;
             readonly finalidade: string;
             readonly titulo: null | string;
             readonly etapas: readonly components["schemas"]["SecaoRenderizavel"][];
@@ -8217,6 +8251,14 @@ export interface components {
             readonly subitens: readonly components["schemas"]["FatoColetadoInput"][];
             /** @default false */
             readonly incluiCandidato: boolean;
+        };
+        readonly GrupoDaArvoreDto: {
+            /** Format: uuid */
+            readonly grupoId: string;
+            readonly tipo: string;
+            /** Format: int32 */
+            readonly minimo: null | number | string;
+            readonly repetePorEntidade: null | string;
         };
         readonly GrupoPesoAreaEnemCongeladoDto: {
             readonly grupoAreaEnem: components["schemas"]["GrupoAreaEnemSnapshotDto"];

@@ -36,6 +36,28 @@ const DIREITO: OfertaDaInscricao = { id: 'oferta-2', nome: 'Direito — Marabá'
 
 const ok = <T>(data: T): Observable<ApiResult<T>> => of(apiOk(data, 200, new HttpHeaders()));
 
+const SEM_DOCUMENTOS: AvaliacaoDaInscricaoDto['documentos'] = { fases: [] };
+
+/** Uma exigência da fase da inscrição na avaliação, na finalidade dada. */
+const documento = (
+  nome: string,
+  finalidade: string,
+): AvaliacaoDaInscricaoDto['documentos']['fases'][number]['documentos'][number] => ({
+  exigenciaId: `exigencia-${nome}`,
+  tipoDocumentoCodigo: 'DOCUMENTO',
+  nome,
+  obrigatorio: true,
+  finalidade,
+  etapaId: null,
+  formatos: { qualquer: true, lista: null },
+  modelo: null,
+  situacao: 'EXIGIDO',
+  grupoCodigo: null,
+  ocorrenciaId: null,
+  grupos: [],
+  repetePorEntidade: null,
+});
+
 /** A avaliação em que o candidato concorre nas modalidades de nome dado. */
 const concorrendoEm = (...nomes: string[]): AvaliacaoDaInscricaoDto => ({
   modalidades: {
@@ -44,9 +66,11 @@ const concorrendoEm = (...nomes: string[]): AvaliacaoDaInscricaoDto => ({
     itens: nomes.map((nome, ordem) => ({ codigo: `M${ordem}`, nome, ordem })),
     pendencias: [],
   },
+  documentos: SEM_DOCUMENTOS,
 });
 const SEM_DERIVACAO: AvaliacaoDaInscricaoDto = {
   modalidades: { derivada: false, situacao: null, itens: [], pendencias: [] },
+  documentos: SEM_DOCUMENTOS,
 };
 
 /** O formulário de teste com o bloco das modalidades, que dependem do nome. */
@@ -194,35 +218,79 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(servico.salvos[0].respostas?.['CPF']).toBe(CPF_DA_CONTA);
   });
 
-  /** O aviso só promete o que o edital diz: a fase em que cada documento é pedido não é publicada. */
-  it('a seção de documentos sem exigência na inscrição diz que nada se envia nesta etapa', async () => {
-    servico.formulario = {
-      ...FORMULARIO_DE_INSCRICAO_MOCK,
-      comprovacaoDocumental: [],
-      etapas: [
-        ...FORMULARIO_DE_INSCRICAO_MOCK.etapas,
-        {
-          codigo: 'DOCUMENTOS',
-          codigoNasRegras: null,
-          ordem: 3,
-          tipo: 'BLOCO',
-          bloco: 'COMPROVACAO_DOCUMENTAL',
-          titulo: 'Documentos',
-          descricao: null,
-          aviso: null,
-        },
-      ],
-    };
+  /** O formulário de teste com o bloco de comprovação documental. */
+  const COM_DOCUMENTOS: FormularioRenderizavelDto = {
+    ...FORMULARIO_DE_INSCRICAO_MOCK,
+    etapas: [
+      ...FORMULARIO_DE_INSCRICAO_MOCK.etapas,
+      {
+        codigo: 'DOCUMENTOS',
+        codigoNasRegras: null,
+        ordem: 3,
+        tipo: 'BLOCO',
+        bloco: 'COMPROVACAO_DOCUMENTAL',
+        titulo: 'Documentos',
+        descricao: null,
+        aviso: null,
+      },
+    ],
+  };
+  const irAosDocumentos = async (tela: HTMLElement): Promise<HTMLElement> => {
+    await clicar(
+      [...tela.querySelectorAll<HTMLButtonElement>('nav button')].find((b) =>
+        b.textContent?.includes('Documentos'),
+      ) as HTMLButtonElement,
+    );
+    return tela.querySelector('.formulario-candidato__secao') as HTMLElement;
+  };
+
+  it('a seção de documentos sem exigência nesta fase diz que nada se envia nesta etapa', async () => {
+    servico.formulario = COM_DOCUMENTOS;
     const tela = await abrir();
 
-    const secao = [...tela.querySelectorAll<HTMLButtonElement>('nav button')].find((b) =>
-      b.textContent?.includes('Documentos'),
-    ) as HTMLButtonElement;
-    await clicar(secao);
-
-    expect(tela.querySelector('.formulario-candidato__secao')?.textContent).toContain(
+    expect((await irAosDocumentos(tela)).textContent).toContain(
       'Você não envia documentos nesta etapa.',
     );
+  });
+
+  /**
+   * O documento da isenção é pedido no formulário da isenção, e o de outra fase no formulário dela,
+   * mesmo que tenha a mesma finalidade.
+   */
+  it('a seção de documentos lista o que a avaliação pede no formulário da inscrição', async () => {
+    servico.formulario = COM_DOCUMENTOS;
+    servico.inscricao = inscricao({
+      avaliacao: {
+        ...SEM_DERIVACAO,
+        documentos: {
+          fases: [
+            {
+              faseId: FORMULARIO_DE_INSCRICAO_MOCK.faseId ?? '',
+              codigo: 'INSCRICAO',
+              ordem: 1,
+              documentos: [
+                documento('Histórico escolar', 'INSCRICAO'),
+                documento('Comprovante de renda para a isenção', 'ISENCAO_TAXA'),
+              ],
+              pendencias: [],
+            },
+            {
+              faseId: 'outra-fase',
+              codigo: 'HABILITACAO',
+              ordem: 2,
+              documentos: [documento('Diploma', 'INSCRICAO')],
+              pendencias: [],
+            },
+          ],
+        },
+      },
+    });
+    const tela = await abrir();
+
+    const secao = await irAosDocumentos(tela);
+    const nomes = [...secao.querySelectorAll('h4')].map((h) => h.textContent?.trim());
+    expect(nomes).toEqual(['Histórico escolar']);
+    expect(secao.textContent).toContain('Exigido pelas suas respostas');
   });
 
   const irAsModalidades = async (tela: HTMLElement): Promise<void> =>

@@ -22,6 +22,19 @@ const avaliacao = (...nomes: string[]): AvaliacaoDaInscricaoDto => ({
     itens: nomes.map((nome, ordem) => ({ codigo: nome, nome, ordem })),
     pendencias: [],
   },
+  documentos: {
+    fases: [
+      {
+        faseId: 'fase-1',
+        codigo: 'INSCRICAO',
+        ordem: 1,
+        documentos: [],
+        pendencias: [
+          { fatoCodigo: 'RENDA', rotulo: `Renda de ${nomes.join(', ')}`, secaoCodigo: null },
+        ],
+      },
+    ],
+  },
 });
 const ok = (dado: AvaliacaoDaInscricaoDto): ApiResult<AvaliacaoDaInscricaoDto> =>
   apiOk(dado, 200, new HttpHeaders());
@@ -68,6 +81,9 @@ describe('AvaliacaoDaInscricaoEstado', () => {
 
   it('abre com a avaliação que veio com a inscrição, sem consultar', () => {
     expect(nomes()).toEqual(['Ampla concorrência']);
+    expect(estado.naTela()?.documentos?.fases[0].pendencias.map((p) => p.rotulo)).toEqual([
+      'Renda de Ampla concorrência',
+    ]);
     expect(servico.consultas).toHaveLength(0);
   });
 
