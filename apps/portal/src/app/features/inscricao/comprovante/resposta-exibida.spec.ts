@@ -34,6 +34,16 @@ describe('respostaExibida', () => {
   });
 });
 
+describe('respostaExibida de telefone', () => {
+  it('mostra o telefone com a máscara, e o que não é telefone como foi gravado', () => {
+    const campo = { tipoRenderizacao: 'TEXTO', formato: 'TELEFONE' };
+
+    expect(respostaExibida(campo, '61981951555')).toBe('(61) 98195-1555');
+    expect(respostaExibida(campo, '6133334444')).toBe('(61) 3333-4444');
+    expect(respostaExibida(campo, '619819')).toBe('619819');
+  });
+});
+
 describe('respostaExibida de município', () => {
   it('mostra o nome que o Geo devolveu; sem ele, o código com o rótulo', () => {
     const campo = { tipoRenderizacao: 'MUNICIPIO' };

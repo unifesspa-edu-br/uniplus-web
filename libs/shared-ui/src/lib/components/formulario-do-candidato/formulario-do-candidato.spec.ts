@@ -735,6 +735,43 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(simulacoes.at(-1)?.respostas).toEqual({ CPF: '69959836371' });
   });
 
+  const TELEFONE: FormularioDoCandidato = {
+    ...ENDERECO,
+    fatosColetados: [campo('TELEFONE', 'Telefone', 'TEXTO', { formato: 'TELEFONE' })],
+    regras: { etapas: [{ codigo: SECAO, itens: [regra('TELEFONE')] }] },
+  };
+
+  it('o telefone vai à resposta só com os dígitos e ganha a máscara ao sair do campo', () => {
+    const tela = montar(TELEFONE);
+    const input = tela.querySelector('input') as HTMLInputElement;
+
+    digitar(input, '61981951555');
+    expect(simulacoes.at(-1)?.respostas).toEqual({ TELEFONE: '61981951555' });
+
+    input.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    expect(input.value).toBe('(61) 98195-1555');
+
+    digitar(input, '(94) 3322-1234');
+    expect(simulacoes.at(-1)?.respostas).toEqual({ TELEFONE: '9433221234' });
+    input.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    expect(input.value).toBe('(94) 3322-1234');
+    expect(simulacoes.at(-1)?.respostas).toEqual({ TELEFONE: '9433221234' });
+  });
+
+  it('o telefone gravado aparece com a máscara, e o que não é telefone fica como foi digitado', () => {
+    const tela = montar(TELEFONE, { inicial: { respostas: { TELEFONE: '61981951555' } } });
+    const input = tela.querySelector('input') as HTMLInputElement;
+    expect(input.value).toBe('(61) 98195-1555');
+
+    digitar(input, '619819');
+    input.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    expect(input.value).toBe('619819');
+    expect(simulacoes.at(-1)?.respostas).toEqual({ TELEFONE: '619819' });
+  });
+
   it('escolher a seção em que já está leva o foco ao título na hora, e a renderização seguinte não o tira do campo', () => {
     const tela = montar(DUAS_SECOES);
     const titulo = tela.querySelector('h3') as HTMLElement;

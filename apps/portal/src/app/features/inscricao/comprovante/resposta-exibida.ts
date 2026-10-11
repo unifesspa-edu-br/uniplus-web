@@ -1,9 +1,11 @@
 import type { RespostasDaInscricao } from '@uniplus/shared-data/selecao';
-import { formatarDataBr } from '@uniplus/shared-utils';
+import { formatarDataBr, formatarTelefone } from '@uniplus/shared-utils';
 
 /** O que o comprovante precisa saber do campo para mostrar a resposta. */
 export interface CampoExibido {
   readonly tipoRenderizacao?: string | null;
+  /** O formato de texto do catálogo, como TELEFONE. */
+  readonly formato?: string | null;
   readonly valoresSelecionaveis?: readonly { codigo: string; descricao?: string | null }[] | null;
 }
 
@@ -50,7 +52,7 @@ export function respostaExibida(
     case 'ENDERECO':
       return endereco(valor as EnderecoRespondido);
     default:
-      return String(valor);
+      return campo.formato === 'TELEFONE' ? formatarTelefone(String(valor)) : String(valor);
   }
 }
 
