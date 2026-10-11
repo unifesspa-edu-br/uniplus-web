@@ -1,11 +1,9 @@
-/**
- * Fuso em que o dia civil do certame começa e termina.
- *
- * Não é preferência de exibição: é o fuso que a versão publicada congela e no
- * qual todo prazo do processo é contado (`UNI-REQ-0111`). O sistema o aplica —
- * não é perguntado a quem configura.
- */
-export const FUSO_INSTITUCIONAL = 'America/Belem';
+import {
+  deslocamentoDoFusoEmMinutos,
+  FUSO_INSTITUCIONAL,
+  instanteDaHoraDeParede,
+  partesNoFuso,
+} from '@uniplus/shared-utils';
 
 /**
  * O dia de hoje no fuso institucional, em `AAAA-MM-DD`.
@@ -49,13 +47,15 @@ export function instanteDoCampo(valorLocal: string): string | null {
   if (partes === null) return null;
 
   const [, ano, mes, dia, hora, minuto, segundo] = partes.map(Number);
-  const comoSeFosseUtc = Date.UTC(ano, mes - 1, dia, hora, minuto, Number.isNaN(segundo) ? 0 : segundo);
-
-  // Duas passagens: a primeira estima o deslocamento pela data lida como se
-  // fosse UTC, a segunda o confirma no instante já corrigido — o bastante para
-  // uma virada de regra de fuso que caia entre as duas leituras.
-  const estimado = deslocamentoEmMinutos(new Date(comoSeFosseUtc));
-  const deslocamento = deslocamentoEmMinutos(new Date(comoSeFosseUtc - estimado * 60_000));
+  const instante = instanteDaHoraDeParede({
+    ano,
+    mes,
+    dia,
+    hora,
+    minuto,
+    segundo: Number.isNaN(segundo) ? 0 : segundo,
+  });
+  const deslocamento = deslocamentoDoFusoEmMinutos(instante);
 
   const relogio = `${partes[4]}:${partes[5]}:${Number.isNaN(segundo) ? '00' : partes[6]}`;
   return `${partes[1]}-${partes[2]}-${partes[3]}T${relogio}${sufixoDoDeslocamento(deslocamento)}`;
@@ -136,54 +136,4 @@ function sufixoDoDeslocamento(minutos: number): string {
   const horas = String(Math.floor(absoluto / 60)).padStart(2, '0');
   const resto = String(absoluto % 60).padStart(2, '0');
   return `${sinal}${horas}:${resto}`;
-}
-
-/** Deslocamento do fuso institucional, em minutos, no instante dado. */
-function deslocamentoEmMinutos(instante: Date): number {
-  const partes = partesNoFuso(instante);
-  const comoSeFosseUtc = Date.UTC(
-    Number(partes.ano),
-    Number(partes.mes) - 1,
-    Number(partes.dia),
-    Number(partes.hora),
-    Number(partes.minuto),
-    Number(partes.segundo),
-  );
-  return Math.round((comoSeFosseUtc - instante.getTime()) / 60_000);
-}
-
-interface PartesDoInstante {
-  readonly ano: string;
-  readonly mes: string;
-  readonly dia: string;
-  readonly hora: string;
-  readonly minuto: string;
-  readonly segundo: string;
-}
-
-function partesNoFuso(instante: Date): PartesDoInstante {
-  const formatador = new Intl.DateTimeFormat('en-CA', {
-    timeZone: FUSO_INSTITUCIONAL,
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-
-  const encontradas = new Map(
-    formatador.formatToParts(instante).map((parte) => [parte.type, parte.value]),
-  );
-
-  return {
-    ano: encontradas.get('year') ?? '0000',
-    mes: encontradas.get('month') ?? '01',
-    dia: encontradas.get('day') ?? '01',
-    // `hour12: false` produz 24 para a meia-noite em alguns motores.
-    hora: (encontradas.get('hour') ?? '00') === '24' ? '00' : (encontradas.get('hour') ?? '00'),
-    minuto: encontradas.get('minute') ?? '00',
-    segundo: encontradas.get('second') ?? '00',
-  };
 }

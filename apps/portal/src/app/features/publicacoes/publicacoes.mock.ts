@@ -25,7 +25,7 @@ const ANTECEDENCIA_DO_EDITAL_DIAS = 15;
 /**
  * Instante ISO 8601 completo (o que o `dateBr: 'datetime'` lê), deslocado em
  * `dias`. Preserva hora e fuso do instante original — nada de truncar para
- * `AAAA-MM-DD` em UTC, que descasa do dia civil exibido em America/Sao_Paulo
+ * `AAAA-MM-DD` em UTC, que descasa do dia civil exibido no fuso institucional (America/Belem)
  * perto da virada da meia-noite.
  */
 function instanteIso(instante: string, dias = 0): string {

@@ -6,6 +6,7 @@ import type {
   DocumentoEditalDto,
   ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
+import { formatarDataBr } from '@uniplus/shared-utils';
 import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
 import {
   AtendimentoCondicaoSelecionada,
@@ -624,20 +625,8 @@ export function formatarTamanho(bytes: number | string | null): string {
  * indiferente.
  */
 export function descreverDocumento(documento: DocumentoEditalDto): string {
-  const quando = documento.confirmadoEm === null ? null : new Date(documento.confirmadoEm);
   const instante =
-    quando === null || Number.isNaN(quando.getTime())
-      ? 'instante indisponível'
-      : quando.toLocaleString('pt-BR', {
-          timeZone: 'America/Sao_Paulo',
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        });
+    formatarDataBr(documento.confirmadoEm, 'datetimeSeconds') || 'instante indisponível';
 
   const hash =
     documento.hashSha256 === null
