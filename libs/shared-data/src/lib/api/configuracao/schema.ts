@@ -10712,7 +10712,7 @@ export interface components {
             readonly remanejamentoDestino?: null | string;
             readonly remanejamentoPar?: null | string;
             readonly remanejamentoFallback?: null | string;
-            readonly criteriosCumulativos?: null | readonly string[];
+            readonly regraDeAplicabilidade?: null | readonly (readonly components["schemas"]["CondicaoDoPredicadoInput"][])[];
             readonly acaoQuandoIndeferido?: null | string;
             readonly baseLegal?: null | string;
         };
@@ -10942,6 +10942,16 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly CondicaoDoPredicadoDto: {
+            readonly fato: string;
+            readonly operador: string;
+            readonly valor: components["schemas"]["JsonElement"];
+        };
+        readonly CondicaoDoPredicadoInput: {
+            readonly fato: string;
+            readonly operador: string;
+            readonly valor: components["schemas"]["JsonElement"];
+        };
         readonly CondicaoPrecondicaoInput: {
             readonly fato: string;
             readonly operador: string;
@@ -11079,7 +11089,7 @@ export interface components {
             readonly remanejamentoDestino?: null | string;
             readonly remanejamentoPar?: null | string;
             readonly remanejamentoFallback?: null | string;
-            readonly criteriosCumulativos?: null | readonly string[];
+            readonly regraDeAplicabilidade?: null | readonly (readonly components["schemas"]["CondicaoDoPredicadoInput"][])[];
             readonly acaoQuandoIndeferido?: null | string;
             readonly baseLegal?: null | string;
         };
@@ -11502,6 +11512,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly codigo: string;
+            readonly legalFixa: boolean;
             readonly descricao: null | string;
             readonly naturezaLegal: string;
             readonly composicaoVagas: string;
@@ -11510,7 +11521,7 @@ export interface components {
             readonly remanejamentoDestino: null | string;
             readonly remanejamentoPar: null | string;
             readonly remanejamentoFallback: null | string;
-            readonly criteriosCumulativos: readonly string[];
+            readonly regraDeAplicabilidade: readonly (readonly components["schemas"]["CondicaoDoPredicadoDto"][])[];
             readonly acaoQuandoIndeferido: null | string;
             readonly baseLegal: null | string;
             /** Format: date-time */

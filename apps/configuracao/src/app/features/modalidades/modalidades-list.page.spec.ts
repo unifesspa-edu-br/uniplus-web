@@ -6,15 +6,18 @@ import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { CATALOGO } from './catalogo-de-fatos.fixture';
 import { ModalidadesListPage } from './modalidades-list.page';
 
 const BASE = 'http://localhost:5000';
 const URL = `${BASE}/api/configuracao/modalidades`;
+const URL_CATALOGO = `${BASE}/api/configuracao/fatos-candidato`;
 
 function modalidade(over: Partial<ModalidadeDto>): ModalidadeDto {
   return {
     id: over.id ?? crypto.randomUUID(),
     codigo: 'AC',
+    legalFixa: true,
     descricao: 'Ampla concorrência',
     naturezaLegal: 'AMPLA',
     composicaoVagas: 'RESIDUAL_DO_VO',
@@ -23,7 +26,7 @@ function modalidade(over: Partial<ModalidadeDto>): ModalidadeDto {
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: [],
     acaoQuandoIndeferido: null,
     baseLegal: null,
     criadoEm: '2026-07-03T12:00:00Z',
@@ -36,12 +39,20 @@ const AC = modalidade({ id: 'id-ac', codigo: 'AC' });
 const V = modalidade({
   id: 'id-v',
   codigo: 'V',
+  legalFixa: false,
   descricao: 'PcD ampla concorrência',
   naturezaLegal: 'ACAO_AFIRMATIVA',
   composicaoVagas: 'RETIRA_DE',
   composicaoOrigem: 'AC',
   regraRemanejamento: 'DESTINO_UNICO',
   remanejamentoDestino: 'AC',
+  regraDeAplicabilidade: [
+    [
+      { fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
+      { fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'INDIGENA'] },
+    ],
+    [{ fato: 'COR_RACA', operador: 'IGUAL', valor: 'PARDA' }],
+  ],
 });
 
 describe('ModalidadesListPage', () => {
@@ -78,6 +89,7 @@ describe('ModalidadesListPage', () => {
     const req = controller.expectOne((r) => r.url === URL);
     expect(req.request.params.get('limit')).toBe('100');
     req.flush(itens);
+    for (const catalogo of controller.match(URL_CATALOGO)) catalogo.flush(CATALOGO);
     await propagate();
   }
 
@@ -88,6 +100,22 @@ describe('ModalidadesListPage', () => {
     expect(component['modalidadesFiltradas']()).toHaveLength(2);
     expect(texto).toContain('AC');
     expect(texto).toContain('Ampla concorrência');
+  });
+
+  it('resume a regra de aplicabilidade pelos nomes do catálogo, e a regra sem condição como todos', async () => {
+    await flushLista([AC, V]);
+    fixture.detectChanges();
+
+    const quemConcorre = (codigo: string) =>
+      (
+        fixture.nativeElement.querySelector(
+          `tr[data-codigo="${codigo}"] td[data-label="Quem concorre"]`,
+        ) as HTMLElement
+      ).textContent?.trim();
+    expect(quemConcorre('AC')).toBe('Todos os candidatos');
+    expect(quemConcorre('V')).toBe(
+      'Cursou o ensino médio em escola pública é sim e Cor/raça é um de Preta, Indígena; ou Cor/raça é Parda',
+    );
   });
 
   it('CA-01: chips de natureza contam por token e filtram client-side', async () => {
@@ -176,7 +204,7 @@ describe('ModalidadesListPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Modalidades de concorrência, com natureza, composição de vagas, remanejamento e modalidades que a referenciam',
+      'Modalidades de concorrência, com quem concorre em cada uma, natureza, composição de vagas, remanejamento e modalidades que a referenciam',
     );
   });
 
@@ -188,6 +216,7 @@ describe('ModalidadesListPage', () => {
     ).map((th) => th.textContent?.trim());
     expect(cabecalhos).toEqual([
       'Código',
+      'Quem concorre',
       'Natureza',
       'Composição de vagas',
       'Remanejamento',

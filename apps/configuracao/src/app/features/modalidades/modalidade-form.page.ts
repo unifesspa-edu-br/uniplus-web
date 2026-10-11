@@ -26,6 +26,8 @@ import {
   ProblemValidationError,
   lookupCompleto,
   STATUS_HTTP,
+  useApiResource,
+  withVendorMime,
 } from '@uniplus/shared-core/http';
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -33,11 +35,13 @@ import {
   ACOES_QUANDO_INDEFERIDO,
   AcaoQuandoIndeferidoToken,
   AtualizarModalidadeCommand,
+  CONFIGURACAO_BASE_PATH,
   COMPOSICAO_RETIRA_DE,
   COMPOSICAO_VAGAS_DEFAULT,
   COMPOSICOES_VAGAS,
   ComposicaoVagasToken,
   CriarModalidadeCommand,
+  FatoCandidatoView,
   ModalidadeDto,
   ModalidadesApi,
   NATUREZA_LEGAL_DEFAULT,
@@ -46,7 +50,23 @@ import {
   REGRAS_REMANEJAMENTO,
   RegraRemanejamentoToken,
 } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertComponent,
+  DialogComponent,
+  EditorDeCondicoesComponent,
+  SpinnerComponent,
+  deClausulasDoWire,
+  descreverAlternativas,
+  paraClausulasDoWire,
+  problemaDaCondicao,
+  type CondicaoEmClausula,
+} from '@uniplus/shared-ui/components';
+
+import {
+  TODOS_OS_CANDIDATOS,
+  fatosDaRegraDeAplicabilidade,
+  fatosParaLeitura,
+} from './regra-de-aplicabilidade';
 
 const CODIGO_REGEX = /^[A-Z0-9_]+$/u;
 const DESCRICAO_MAX = 300;
@@ -73,7 +93,14 @@ interface ModalidadeForm {
 @Component({
   selector: 'cfg-modalidade-form-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, AlertComponent, DialogComponent, SpinnerComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    AlertComponent,
+    DialogComponent,
+    EditorDeCondicoesComponent,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-header page-header--form">
@@ -287,48 +314,68 @@ interface ModalidadeForm {
           </section>
         }
 
-        <section aria-labelledby="cfg-mod-criterios" class="form-section">
-          <h2 id="cfg-mod-criterios" class="form-section__title">Critérios e enquadramento</h2>
-          <div class="form-grid">
-            <div class="field form-grid__full">
-              <span class="field__label" id="cfg-mod-criterios-label">Critérios cumulativos</span>
-              <div class="cfg-chips-input">
-                <input
-                  #criterioInput
-                  class="input"
-                  type="text"
-                  placeholder="Ex.: escola pública"
-                  aria-labelledby="cfg-mod-criterios-label"
-                  (keydown.enter)="adicionarCriterio(criterioInput); $event.preventDefault()"
-                />
-                <button
-                  type="button"
-                  class="btn btn--secondary btn--sm btn--rect"
-                  (click)="adicionarCriterio(criterioInput)"
-                >
-                  Adicionar
-                </button>
+        <section aria-labelledby="cfg-mod-regra" class="form-section">
+          <h2 id="cfg-mod-regra" class="form-section__title">Quem concorre nesta modalidade</h2>
+          <div class="field form-grid__full" [class.is-error]="errosDaRegra().length > 0">
+            @if (catalogoComErro()) {
+              <ui-alert variant="warning" heading="Catálogo de fatos não carregado">
+                Sem o catálogo, a regra de aplicabilidade não pode ser lida nem escrita.
+                <div class="cfg-list__retry">
+                  <button type="button" class="btn btn--secondary btn--sm" (click)="catalogo.reload()">
+                    Tentar novamente
+                  </button>
+                </div>
+              </ui-alert>
+            } @else if (catalogo.data() === null) {
+              <p class="field__hint" role="status">Carregando o catálogo de fatos...</p>
+            } @else {
+              <div>
+                @if (leituraDaRegra().length === 0) {
+                  <p>{{ todosOsCandidatos }}.</p>
+                } @else if (leituraDaRegra().length === 1) {
+                  <p>Quem atende: {{ leituraDaRegra()[0] }}.</p>
+                } @else {
+                  <p>Quem atende a pelo menos uma destas alternativas:</p>
+                  <ul>
+                    @for (alternativa of leituraDaRegra(); track $index) {
+                      <li>{{ alternativa }}</li>
+                    }
+                  </ul>
+                }
               </div>
-              @if (criterios().length > 0) {
-                <ul class="cfg-chips" aria-label="Critérios cumulativos adicionados">
-                  @for (criterio of criterios(); track criterio) {
-                    <li class="cfg-chip">
-                      <span>{{ criterio }}</span>
-                      <button
-                        type="button"
-                        class="cfg-chip__remove"
-                        [attr.aria-label]="'Remover critério ' + criterio"
-                        (click)="removerCriterio(criterio)"
-                      >
-                        &times;
-                      </button>
-                    </li>
+
+              @if (regraFixadaEmLei()) {
+                <span class="field__hint">
+                  Modalidade do catálogo legal fixo: a regra é definida em lei e não se edita aqui.
+                </span>
+              } @else {
+                <ui-editor-de-condicoes
+                  [condicoes]="regraDeAplicabilidade()"
+                  [fatos]="fatosDaRegra()"
+                  idBase="cfg-mod-regra"
+                  legenda="Condições da regra"
+                  textoSemCondicao="Sem condição: todos os candidatos concorrem nesta modalidade."
+                  [disabled]="salvando()"
+                  [erros]="errosDasCondicoes()"
+                  (condicoesChange)="trocarRegra($event)"
+                />
+              }
+            }
+            @if (errosDaRegra().length > 0) {
+              <div class="field__error" role="alert">
+                <ul aria-label="Erros da regra de aplicabilidade">
+                  @for (erro of errosDaRegra(); track $index) {
+                    <li>{{ erro }}</li>
                   }
                 </ul>
-              }
-              <span class="field__hint">Lista aberta (renda, autodeclaração, laudo, etc.).</span>
-            </div>
+              </div>
+            }
+          </div>
+        </section>
 
+        <section aria-labelledby="cfg-mod-enquadramento" class="form-section">
+          <h2 id="cfg-mod-enquadramento" class="form-section__title">Enquadramento</h2>
+          <div class="form-grid">
             <label class="field form-grid__full">
               <span class="field__label">Ação quando indeferido</span>
               <select class="select" formControlName="acaoQuandoIndeferido">
@@ -404,12 +451,14 @@ export class ModalidadeFormPage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
   protected readonly naturezas = NATUREZAS_LEGAIS;
   protected readonly composicoes = COMPOSICOES_VAGAS;
   protected readonly regras = REGRAS_REMANEJAMENTO;
   protected readonly acoes = ACOES_QUANDO_INDEFERIDO;
   protected readonly descricaoMax = DESCRICAO_MAX;
+  protected readonly todosOsCandidatos = TODOS_OS_CANDIDATOS;
 
   private readonly tituloPagina = viewChild<ElementRef<HTMLHeadingElement>>('tituloPagina');
 
@@ -425,7 +474,34 @@ export class ModalidadeFormPage {
   protected readonly formError = signal<string | null>(null);
   protected readonly tentouSalvar = signal(false);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
-  protected readonly criterios = signal<readonly string[]>([]);
+
+  /** O catálogo de fatos que a regra de aplicabilidade cita. */
+  protected readonly catalogo = useApiResource<readonly FatoCandidatoView[]>(() => ({
+    url: `${this.basePath}/api/configuracao/fatos-candidato`,
+    context: withVendorMime('fato-candidato', 1),
+  }));
+  protected readonly catalogoComErro = computed(
+    () => this.catalogo.problem() !== null || this.catalogo.error() !== undefined,
+  );
+
+  /** A regra de aplicabilidade em edição; sem condição, a modalidade vale para todos os candidatos. */
+  protected readonly regraDeAplicabilidade = signal<readonly CondicaoEmClausula[]>([]);
+  /** Os fatos que a regra salva cita, que o editor continua oferecendo mesmo desativados. */
+  private readonly fatosJaCitados = signal<ReadonlySet<string>>(new Set());
+  /** O que impede cada condição de ser gravada, pela posição dela na regra. */
+  protected readonly errosDasCondicoes = signal<Readonly<Record<number, string>>>({});
+  /** As recusas da API à regra, no campo dela. */
+  protected readonly errosDaRegra = signal<readonly string[]>([]);
+
+  /** A modalidade do catálogo legal fixo tem a regra fixada em lei. */
+  protected readonly regraFixadaEmLei = signal(false);
+  protected readonly fatosDaRegra = computed(() =>
+    fatosDaRegraDeAplicabilidade(this.catalogo.data() ?? [], this.fatosJaCitados()),
+  );
+  private readonly fatosPorCodigo = computed(() => fatosParaLeitura(this.catalogo.data() ?? []));
+  protected readonly leituraDaRegra = computed(() =>
+    descreverAlternativas(this.regraDeAplicabilidade(), this.fatosPorCodigo()),
+  );
 
   /** Modalidades vivas para os selects de referência (origem/destino/par/fallback). */
   private readonly modalidades = lookupCompleto(
@@ -632,18 +708,10 @@ export class ModalidadeFormPage {
     }
   }
 
-  protected adicionarCriterio(input: HTMLInputElement): void {
-    const valor = input.value.trim();
-    if (valor.length === 0) return;
-    if (!this.criterios().some((c) => c.toLocaleLowerCase('pt-BR') === valor.toLocaleLowerCase('pt-BR'))) {
-      this.criterios.update((lista) => [...lista, valor]);
-    }
-    input.value = '';
-    input.focus();
-  }
-
-  protected removerCriterio(criterio: string): void {
-    this.criterios.update((lista) => lista.filter((c) => c !== criterio));
+  protected trocarRegra(condicoes: readonly CondicaoEmClausula[]): void {
+    this.regraDeAplicabilidade.set(condicoes);
+    this.errosDasCondicoes.set({});
+    this.errosDaRegra.set([]);
   }
 
   protected erroDoCampo(nome: keyof ModalidadeForm): string | null {
@@ -667,13 +735,15 @@ export class ModalidadeFormPage {
     if (this.salvando()) return;
     this.tentouSalvar.set(true);
     this.verificarCodigoDuplicado();
-    if (this.form.invalid) {
+    const regraValida = this.conferirRegra();
+    if (this.form.invalid || !regraValida) {
       this.form.markAllAsTouched();
       this.focarPrimeiroErro();
       return;
     }
     this.salvando.set(true);
     this.formError.set(null);
+    this.errosDaRegra.set([]);
 
     if (this.modoEdicao()) {
       this.api
@@ -687,6 +757,24 @@ export class ModalidadeFormPage {
       .criar(this.montarComandoCriar(), withIdempotencyKey(this.idempotencyKeyAtual()))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => this.tratarResultado(result));
+  }
+
+  /**
+   * Confere cada condição antes de enviar, como o editor de regras padrão: a API recusaria a
+   * condição sem valor ou fora do domínio, e a recusa no campo da regra não diria qual delas.
+   * A regra fixada em lei não passa pelo editor e segue como veio; sem o catálogo, a tela não
+   * tem contra o que conferir e a palavra fica com a API.
+   */
+  private conferirRegra(): boolean {
+    if (this.regraFixadaEmLei() || this.catalogo.data() === null) return true;
+    const fatos = new Map(this.fatosDaRegra().map((fato) => [fato.codigo, fato]));
+    const erros: Record<number, string> = {};
+    this.regraDeAplicabilidade().forEach((condicao, indice) => {
+      const problema = problemaDaCondicao(condicao, fatos);
+      if (problema !== null) erros[indice] = problema;
+    });
+    this.errosDasCondicoes.set(erros);
+    return Object.keys(erros).length === 0;
   }
 
   private aplicarNatureza(nova: NaturezaLegalToken): void {
@@ -811,7 +899,10 @@ export class ModalidadeFormPage {
       },
       { emitEvent: false },
     );
-    this.criterios.set([...dto.criteriosCumulativos]);
+    const regra = deClausulasDoWire(dto.regraDeAplicabilidade);
+    this.regraDeAplicabilidade.set(regra);
+    this.regraFixadaEmLei.set(dto.legalFixa);
+    this.fatosJaCitados.set(new Set(regra.map((condicao) => condicao.fato)));
     // Código é imutável na edição.
     this.form.controls.codigo.disable({ emitEvent: false });
     this.natureza.set(natureza);
@@ -874,7 +965,13 @@ export class ModalidadeFormPage {
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     let aplicouAlgum = false;
+    const errosDaRegra: string[] = [];
     for (const erro of errors) {
+      if (ehDaRegra(erro.field)) {
+        errosDaRegra.push(erro.message);
+        aplicouAlgum = true;
+        continue;
+      }
       const controlName = controlNameFromBackendField(erro.field);
       if (controlName === null) continue;
       const control = this.form.controls[controlName];
@@ -882,6 +979,7 @@ export class ModalidadeFormPage {
       control.markAsTouched();
       aplicouAlgum = true;
     }
+    this.errosDaRegra.set(errosDaRegra);
     this.formError.set(
       aplicouAlgum ? null : 'Não foi possível mapear os erros de validação. Revise os campos.',
     );
@@ -907,7 +1005,7 @@ export class ModalidadeFormPage {
       remanejamentoDestino: regra === 'DESTINO_UNICO' ? normalizarOpcional(raw.remanejamentoDestino) : null,
       remanejamentoPar: regra === 'CRUZADO' ? normalizarOpcional(raw.remanejamentoPar) : null,
       remanejamentoFallback: regra === 'CRUZADO' ? normalizarOpcional(raw.remanejamentoFallback) : null,
-      criteriosCumulativos: this.criterios().length > 0 ? [...this.criterios()] : null,
+      regraDeAplicabilidade: paraClausulasDoWire(this.regraDeAplicabilidade()),
       acaoQuandoIndeferido: normalizarOpcional(raw.acaoQuandoIndeferido),
       baseLegal: normalizarOpcional(raw.baseLegal),
     };
@@ -951,12 +1049,21 @@ const MODALIDADE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof ModalidadeFo
   'baseLegal',
 ]);
 
+/** A regra de aplicabilidade não é controle do formulário: o editor a escreve fora dele. */
+const CAMPO_DA_REGRA = 'regraDeAplicabilidade';
+
+/** Um trecho do caminho da recusa em camelCase, sem os índices de lista. */
+function emCamelCase(trecho: string): string {
+  const semIndices = trecho.replace(/(\[\d+\])+$/u, '');
+  return semIndices.charAt(0).toLocaleLowerCase('pt-BR') + semIndices.slice(1);
+}
+
+/** A recusa é da regra quando o caminho passa por ela, até a condição (`regraDeAplicabilidade[0][1].valor`). */
+function ehDaRegra(field: string): boolean {
+  return field.split('.').some((trecho) => emCamelCase(trecho) === CAMPO_DA_REGRA);
+}
+
 function controlNameFromBackendField(field: string): keyof ModalidadeForm | null {
-  const normalized =
-    field
-      .split('.')
-      .at(-1)
-      ?.replace(/\[\d+\]$/u, '') ?? field;
-  const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
-  return MODALIDADE_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof ModalidadeForm) : null;
+  const campo = emCamelCase(field.split('.').at(-1) ?? field);
+  return MODALIDADE_CONTROL_NAMES.has(campo) ? (campo as keyof ModalidadeForm) : null;
 }

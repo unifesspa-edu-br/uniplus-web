@@ -1,3 +1,5 @@
+import { descreverCondicao } from '@uniplus/shared-ui/components';
+
 import type { BaseLegalConfig, ExigenciaDeDocumento } from '../../processo-seletivo.models';
 import {
   ABRANGENCIAS_ESCOLHIVEIS,
@@ -13,10 +15,7 @@ import {
   OPERADOR_DIFERENTE,
   OPERADOR_EM,
   OPERADOR_NAO_EM,
-  VALOR_FALSO,
-  VALOR_VERDADEIRO,
   comparaComLista,
-  operadoresDoFato,
   podeAlcancarModalidade,
   recorteUniforme,
   valorEscalarDe,
@@ -110,33 +109,6 @@ export function descreverCondicaoDeModalidade(condicao: CondicaoDeFato): string 
 
   if (nega) return `Modalidades exceto ${lista}`;
   return codigos.length > 1 ? `Modalidades ${lista}` : `Modalidade ${lista}`;
-}
-
-/** A condição como frase: o fato, a comparação que o editor oferece e o valor escolhido. */
-export function descreverCondicao(
-  condicao: CondicaoDeFato,
-  fato: FatoEscolhivel | undefined,
-): string {
-  if (fato === undefined) return `${condicao.fato} — fora do catálogo`;
-
-  const operador =
-    operadoresDoFato(fato).find((opcao) => opcao.valor === condicao.operador)?.rotulo ??
-    condicao.operador;
-  return `${fato.nome} ${operador} ${valorDescrito(condicao, fato)}`;
-}
-
-function valorDescrito(condicao: CondicaoDeFato, fato: FatoEscolhivel): string {
-  if (comparaComLista(condicao.operador)) {
-    const valores = valoresDeListaDe(condicao);
-    return valores.length > 0 ? valores.join(', ') : '(valor não escolhido)';
-  }
-
-  const valor = valorEscalarDe(condicao);
-  if (fato.tipoDominio === 'BOOLEANO') {
-    if (valor === VALOR_VERDADEIRO) return 'sim';
-    if (valor === VALOR_FALSO) return 'não';
-  }
-  return valor !== '' ? valor : '(valor não escolhido)';
 }
 
 /**

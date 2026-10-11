@@ -28,6 +28,7 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   COMPOSICOES_VAGAS,
   CONFIGURACAO_BASE_PATH,
+  FatoCandidatoView,
   ModalidadeDto,
   ModalidadesApi,
   NATUREZAS_LEGAIS,
@@ -46,7 +47,10 @@ import {
   TagComponent,
   type UiFilterChipOption,
   type UiTagVariant,
+  deClausulasDoWire,
 } from '@uniplus/shared-ui/components';
+
+import { fatosParaLeitura, resumoDaRegra } from './regra-de-aplicabilidade';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026/0089). */
 const PAGE_SIZE = 100;
@@ -167,12 +171,13 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
           <div class="table-responsive">
             <table>
               <caption class="sr-only">
-                Modalidades de concorrência, com natureza, composição de vagas, remanejamento e
-                modalidades que a referenciam
+                Modalidades de concorrência, com quem concorre em cada uma, natureza, composição de
+                vagas, remanejamento e modalidades que a referenciam
               </caption>
               <thead>
                 <tr>
                   <th scope="col">Código</th>
+                  <th scope="col">Quem concorre</th>
                   <th scope="col">Natureza</th>
                   <th scope="col">Composição de vagas</th>
                   <th scope="col">Remanejamento</th>
@@ -189,6 +194,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                         <span class="cfg-meta">{{ m.descricao }}</span>
                       }
                     </td>
+                    <td data-label="Quem concorre">{{ quemConcorre().get(m.id) }}</td>
                     <td data-label="Natureza">
                       <ui-tag [variant]="naturezaVariante(m.naturezaLegal)">
                         {{ naturezaLabel(m.naturezaLegal) }}
@@ -467,6 +473,28 @@ export class ModalidadesListPage {
       const casaNatureza = natureza === null || m.naturezaLegal === natureza;
       return casaBusca && casaNatureza;
     });
+  });
+
+  /** O catálogo de fatos com que a regra de aplicabilidade de cada modalidade se lê. */
+  private readonly catalogo = useApiResource<readonly FatoCandidatoView[]>(() => ({
+    url: `${this.basePath}/api/configuracao/fatos-candidato`,
+    context: withVendorMime('fato-candidato', 1),
+  }));
+
+  /**
+   * A regra de aplicabilidade de cada modalidade numa linha. Sem o catálogo, a regra com condição
+   * não se lê pelos nomes dos fatos, e a coluna diz só que ela existe.
+   */
+  protected readonly quemConcorre = computed<ReadonlyMap<string, string>>(() => {
+    const catalogo = this.catalogo.data();
+    const fatos = catalogo === null ? null : fatosParaLeitura(catalogo);
+    return new Map(
+      this.modalidadesFiltradas().map((m) => {
+        const regra = deClausulasDoWire(m.regraDeAplicabilidade);
+        if (fatos === null && regra.length > 0) return [m.id, 'Quem atende às condições da regra'];
+        return [m.id, resumoDaRegra(regra, fatos ?? new Map())];
+      }),
+    );
   });
 
   protected readonly temFiltroAtivo = computed(
