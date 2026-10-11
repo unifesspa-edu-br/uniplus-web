@@ -140,5 +140,7 @@ export {
   ValorEmConsultaComponent,
   type UiValorEmConsulta,
 } from '../../src/lib/components/valor-em-consulta/valor-em-consulta';
+export { MarcaInstitucionalComponent } from '../../src/lib/components/marca-institucional/marca-institucional';
+export { titulosDasOcorrencias } from '../../src/lib/components/formulario-do-candidato/interpretador/ocorrencia-do-candidato';
 export { titulosDasOcorrencias } from '../../src/lib/components/formulario-do-candidato/interpretador/ocorrencia-do-candidato';
 export { BulletComponent, type UiBulletVariant } from '../../src/lib/components/bullet/bullet';

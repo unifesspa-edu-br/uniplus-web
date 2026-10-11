@@ -63,6 +63,7 @@ export {
   ValorEmConsultaComponent,
   type UiValorEmConsulta,
 } from './components/valor-em-consulta/valor-em-consulta';
+export { MarcaInstitucionalComponent } from './components/marca-institucional/marca-institucional';
 export { BulletComponent, type UiBulletVariant } from './components/bullet/bullet';
 
 // Pipes

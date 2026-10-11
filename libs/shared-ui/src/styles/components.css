@@ -4492,3 +4492,26 @@ body.uni-drawer-open {
     transition: none;
   }
 }
+
+/* ============================================================================
+ * MARCA INSTITUCIONAL — a marca oficial da Unifesspa (<ui-marca-institucional>)
+ * A imagem guarda a proporção pelas dimensões declaradas. A área de proteção é de um módulo,
+ * a altura do "S" da marca (manual, p. 18–20): no arquivo de 180 px de altura, o "S" tem 89 px,
+ * e o módulo acompanha a altura em que a marca sai.
+ * ========================================================================== */
+.marca-institucional {
+  --marca-altura: 3rem;
+  --marca-protecao: calc(var(--marca-altura) * 89 / 180);
+  display: inline-block;
+  padding: var(--marca-protecao);
+}
+.marca-institucional__imagem {
+  display: block;
+  inline-size: auto;
+  block-size: var(--marca-altura);
+}
+@media print {
+  .marca-institucional {
+    --marca-altura: 15mm;
+  }
+}
