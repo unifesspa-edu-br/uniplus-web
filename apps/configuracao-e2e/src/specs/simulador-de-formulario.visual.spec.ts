@@ -156,9 +156,13 @@ test.describe('Simulador de formulário — temas, larguras e acessibilidade (we
     await page.locator('label', { hasText: 'Aldeia indígena' }).click();
 
     await expect(page.getByLabel('Nome da aldeia')).toBeVisible();
-    await expect(page.locator('.formulario-candidato > [aria-live="polite"]')).toContainText(
-      'Apareceu: Nome da aldeia.',
-    );
+    // O formulário anuncia em duas regiões vivas, uma para os campos e outra para as modalidades,
+    // para que um anúncio não apague o outro quando a mesma resposta muda os dois.
+    await expect(
+      page
+        .locator('.formulario-candidato > [aria-live="polite"]')
+        .filter({ hasText: 'Apareceu: Nome da aldeia.' }),
+    ).toHaveCount(1);
   });
 
   test('não há violação de WCAG 2.1 AA na seção e no grupo repetível', async ({ page }) => {
