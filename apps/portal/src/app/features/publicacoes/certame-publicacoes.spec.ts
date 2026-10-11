@@ -1,39 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { CertamePublicacoesComponent } from './certame-publicacoes';
-import type { Publicacao } from './publicacoes.model';
+import type { PublicacoesDoCertame } from './publicacoes.model';
 
-const medicina: Publicacao = {
-  id: 'medicina-2027',
-  numeroEdital: '012/2026',
-  titulo: 'Medicina 2027',
-  descricao: 'Lista de classificação final.',
-  situacao: 'resultadoDivulgado',
-  dataPublicacao: '2026-04-16',
-  historico: [
+const medicina: PublicacoesDoCertame = {
+  documentoEditalUrl: 'https://acervo.example/editais/2026/retificacao.pdf',
+  publicacoes: [
     {
-      id: 'evt-1',
-      categoria: 'edital',
-      data: '2026-01-05',
-      titulo: 'Edital publicado',
-      documentoUrl: 'https://acervo.example/editais/2026/edital.pdf',
+      id: 'ato-2',
+      data: '2026-10-20',
+      titulo: 'Retificação nº YY/2026',
+      tipo: 'Retificação',
+      descricao: 'Corrige o cronograma.',
+      documentoUrl: 'https://acervo.example/editais/2026/retificacao.pdf',
     },
-    {
-      id: 'evt-2',
-      categoria: 'inscricoes',
-      data: '2026-01-20',
-      titulo: 'Inscrições abertas',
-      descricao: 'Período de inscrições até 10 de março.',
-    },
-    {
-      id: 'evt-3',
-      categoria: 'resultado',
-      data: '2026-04-16',
-      titulo: 'Resultado final divulgado',
-      documentoUrl: 'https://acervo.example/editais/2026/resultado-final.pdf',
-    },
+    { id: 'ato-1', data: '2026-10-11', titulo: 'Edital de abertura nº XX/2026', tipo: 'Edital de abertura' },
   ],
 };
 
@@ -41,7 +23,7 @@ describe('CertamePublicacoesComponent', () => {
   let fixture: ComponentFixture<CertamePublicacoesComponent>;
 
   function criar(entradas: {
-    publicacao?: Publicacao;
+    publicacoes?: PublicacoesDoCertame;
     carregando?: boolean;
     erro?: boolean;
     certameNome?: string;
@@ -49,7 +31,7 @@ describe('CertamePublicacoesComponent', () => {
     fixture = TestBed.createComponent(CertamePublicacoesComponent);
     fixture.componentRef.setInput('certameId', 'certame-1');
     fixture.componentRef.setInput('certameNome', entradas.certameNome ?? '');
-    fixture.componentRef.setInput('publicacao', entradas.publicacao);
+    fixture.componentRef.setInput('publicacoes', entradas.publicacoes);
     fixture.componentRef.setInput('carregando', entradas.carregando ?? false);
     fixture.componentRef.setInput('erro', entradas.erro ?? false);
     fixture.detectChanges();
@@ -75,12 +57,11 @@ describe('CertamePublicacoesComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [CertamePublicacoesComponent],
-      providers: [provideRouter([])],
     });
   });
 
   it('nasce fechado: botão com aria-expanded=false e painel oculto, sem a linha do tempo no DOM', () => {
-    criar({ publicacao: medicina });
+    criar({ publicacoes: medicina });
 
     expect(botao().textContent).toContain('Ver publicações');
     expect(botao().getAttribute('aria-expanded')).toBe('false');
@@ -89,20 +70,20 @@ describe('CertamePublicacoesComponent', () => {
   });
 
   it('com certameNome, o botão ganha nome acessível distinto por edital (WCAG 2.4.9)', () => {
-    criar({ publicacao: medicina, certameNome: 'Medicina 2027' });
+    criar({ publicacoes: medicina, certameNome: 'Medicina 2027' });
 
     expect(botao().textContent).toContain('Ver publicações');
     expect(botao().textContent).toContain('Medicina 2027');
   });
 
   it('sem certameNome, o botão não ganha sufixo (compatível com uso sem o input)', () => {
-    criar({ publicacao: medicina });
+    criar({ publicacoes: medicina });
 
     expect(botao().textContent?.trim()).toBe('Ver publicações');
   });
 
   it('o botão aponta para o painel, e o painel se nomeia pelo botão', () => {
-    criar({ publicacao: medicina });
+    criar({ publicacoes: medicina });
 
     expect(botao().getAttribute('aria-controls')).toBe(painel().id);
     expect(painel().getAttribute('aria-labelledby')).toBe(botao().id);
@@ -110,7 +91,7 @@ describe('CertamePublicacoesComponent', () => {
   });
 
   it('abre e fecha a cada clique', () => {
-    criar({ publicacao: medicina });
+    criar({ publicacoes: medicina });
 
     abrir();
     expect(botao().getAttribute('aria-expanded')).toBe('true');
@@ -121,51 +102,66 @@ describe('CertamePublicacoesComponent', () => {
     expect(painel().hidden).toBe(true);
   });
 
-  it('aberto, mostra a linha do tempo com o evento mais recente no topo e marcado como atual', () => {
-    criar({ publicacao: medicina });
+  it('aberto, mostra os atos na ordem recebida, com o motivo da retificação', () => {
+    criar({ publicacoes: medicina });
     abrir();
 
     const titulos = Array.from(host().querySelectorAll('.publicacao-timeline__evento-titulo')).map(
       (el) => el.textContent?.trim(),
     );
-    expect(titulos).toEqual(['Resultado final divulgado', 'Inscrições abertas', 'Edital publicado']);
-    const cartoes = host().querySelectorAll('.publicacao-timeline__card');
-    expect(cartoes[0].classList.contains('is-current')).toBe(true);
-    expect(cartoes[1].classList.contains('is-current')).toBe(false);
+    expect(titulos).toEqual(['Retificação nº YY/2026', 'Edital de abertura nº XX/2026']);
+    expect(host().querySelector('.publicacao-timeline__evento-desc')?.textContent).toContain(
+      'Corrige o cronograma.',
+    );
   });
 
-  it('só eventos com PDF ganham link, apontando para o PDF no acervo público, em nova aba', () => {
-    criar({ publicacao: medicina });
+  it('só o primeiro ato da lista, o mais recente, é marcado como atual', () => {
+    criar({ publicacoes: medicina });
+    abrir();
+
+    const atuais = Array.from(host().querySelectorAll('.publicacao-timeline__card')).map((cartao) =>
+      cartao.classList.contains('is-current'),
+    );
+    expect(atuais).toEqual([true, false]);
+    expect(host().querySelector('.publicacao-timeline__card.is-current')?.textContent).toContain(
+      'Retificação nº YY/2026',
+    );
+  });
+
+  it('só o ato com PDF ganha link, em nova aba e com nome acessível próprio', () => {
+    criar({ publicacoes: medicina });
     abrir();
 
     const links = Array.from(host().querySelectorAll<HTMLAnchorElement>('.publicacao-timeline__link'));
     expect(links.map((a) => a.getAttribute('href'))).toEqual([
-      'https://acervo.example/editais/2026/resultado-final.pdf',
-      'https://acervo.example/editais/2026/edital.pdf',
+      'https://acervo.example/editais/2026/retificacao.pdf',
     ]);
-    expect(links.every((a) => a.target === '_blank' && a.rel.includes('noopener'))).toBe(true);
-    expect(links[0].textContent).toContain('abre em nova aba');
+    expect(links[0].target).toBe('_blank');
+    expect(links[0].rel).toContain('noopener');
+    expect(links[0].textContent).toContain('Retificação nº YY/2026 (abre em nova aba)');
   });
 
-  it('evento com ação relacionada mostra o link da ação, além do documento', () => {
-    const comAcao: Publicacao = {
-      ...medicina,
-      historico: [
-        {
-          id: 'evt-inscricoes',
-          categoria: 'inscricoes',
-          data: '2026-01-20T12:00:00Z',
-          titulo: 'Inscrições abertas',
-          acao: { rotulo: 'Inscrever-se', routerLink: '/inscricao' },
-        },
-      ],
-    };
-    criar({ publicacao: comAcao });
+  it('a linha do tempo não oferece inscrição', () => {
+    criar({ publicacoes: medicina });
     abrir();
 
-    const link = host().querySelector<HTMLAnchorElement>('.publicacao-timeline__link');
-    expect(link?.textContent).toContain('Inscrever-se');
-    expect(link?.getAttribute('href')).toBe('/inscricao');
+    expect(host().textContent).not.toContain('Inscrever');
+  });
+
+  it('a linha do tempo incompleta mostra o aviso junto da lista', () => {
+    criar({ publicacoes: { ...medicina, aviso: 'Pode estar incompleta.' } });
+    abrir();
+
+    expect(host().querySelector('.alert--warning')?.textContent).toContain('Pode estar incompleta.');
+    expect(host().querySelectorAll('.publicacao-timeline__item')).toHaveLength(2);
+  });
+
+  it('com o aviso e sem nenhum ato, não diz que não há publicações', () => {
+    criar({ publicacoes: { publicacoes: [], aviso: 'Pode estar incompleta.' } });
+    abrir();
+
+    expect(host().querySelector('.alert--warning')).not.toBeNull();
+    expect(host().querySelector('.empty-state')).toBeNull();
   });
 
   it('enquanto as publicações carregam, avisa numa região viva', () => {
@@ -192,10 +188,10 @@ describe('CertamePublicacoesComponent', () => {
     expect(host().querySelector('.empty-state')?.textContent).toContain('Nenhuma publicação ainda');
   });
 
-  it('publicação sem eventos mostra estado vazio da linha do tempo', () => {
-    criar({ publicacao: { ...medicina, historico: [] } });
+  it('sem nenhum ato, mostra o estado vazio', () => {
+    criar({ publicacoes: { publicacoes: [] } });
     abrir();
 
-    expect(host().querySelector('.empty-state')?.textContent).toContain('Nenhum evento registrado');
+    expect(host().querySelector('.empty-state')?.textContent).toContain('Nenhuma publicação ainda');
   });
 });

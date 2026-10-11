@@ -8,6 +8,7 @@ import {
   GEO_BASE_PATH,
   INGRESSO_BASE_PATH,
   ORGANIZACAO_BASE_PATH,
+  PORTAL_BASE_PATH,
   PUBLICACOES_BASE_PATH,
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/tokens';
@@ -55,7 +56,7 @@ export function resolveGeoBasePath(store: AppConfigService): string {
  *      URLs reais já carregadas.
  *
  * `AUTH_CONFIG`, `SELECAO_BASE_PATH`, `INGRESSO_BASE_PATH`,
- * `ORGANIZACAO_BASE_PATH`, `CONFIGURACAO_BASE_PATH`, `PUBLICACOES_BASE_PATH` e
+ * `ORGANIZACAO_BASE_PATH`, `CONFIGURACAO_BASE_PATH`, `PUBLICACOES_BASE_PATH`, `PORTAL_BASE_PATH` e
  * `GEO_BASE_PATH` continuam
  * provedidos como factories síncronas que leem do store. São injetados
  * lazy (ex.: `tokenInterceptor` lê `AUTH_ALLOWED_URLS` no primeiro HTTP
@@ -115,6 +116,11 @@ export function provideRuntimeConfig(): EnvironmentProviders {
     },
     {
       provide: PUBLICACOES_BASE_PATH,
+      useFactory: (store: AppConfigService) => store.get().apiUrl,
+      deps: [AppConfigService],
+    },
+    {
+      provide: PORTAL_BASE_PATH,
       useFactory: (store: AppConfigService) => store.get().apiUrl,
       deps: [AppConfigService],
     },

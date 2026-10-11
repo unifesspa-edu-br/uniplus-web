@@ -6,5 +6,6 @@ export { CONFIGURACAO_BASE_PATH } from './configuracao/tokens';
 export { GEO_BASE_PATH } from './geo/tokens';
 export { INGRESSO_BASE_PATH } from './ingresso/tokens';
 export { ORGANIZACAO_BASE_PATH } from './organizacao/tokens';
+export { PORTAL_BASE_PATH } from './portal/tokens';
 export { PUBLICACOES_BASE_PATH } from './publicacoes/tokens';
 export { SELECAO_BASE_PATH } from './selecao/tokens';

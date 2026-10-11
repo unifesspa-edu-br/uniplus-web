@@ -1,90 +1,27 @@
-import type { UiTagVariant } from '@uniplus/shared-ui/components';
-
 /**
- * Contrato de Publicações compartilhado pelo accordion "Ver publicações" de
- * cada edital e pelo link "Ver edital" (em /processos). Fica quando a
- * consulta pública da API chegar; só o dado simulado (`publicacoes.mock.ts`)
- * e o repositório mudam.
+ * Publicações de um certame, como o accordion "Ver publicações" e o link "Ver edital" (em
+ * /processos) as mostram: só os atos publicados, cada um com o PDF no acervo público quando houver.
+ * Marcos do cronograma, como a abertura das inscrições, não entram (decisão registrada na
+ * uniplus-api#1648).
  */
-export type SituacaoPublicacao =
-  | 'inscricoesAbertas'
-  | 'emHomologacao'
-  | 'resultadoPreliminar'
-  | 'resultadoDivulgado'
-  | 'encerrado';
-
-/** Categoria do evento na linha do tempo — vira a etiqueta colorida do cartão. */
-export type CategoriaEvento =
-  | 'edital'
-  | 'inscricoes'
-  | 'homologacao'
-  | 'resultadoPreliminar'
-  | 'recursos'
-  | 'resultado'
-  | 'encerramento';
-
-export const CATEGORIA_EVENTO_LABEL: Record<CategoriaEvento, string> = {
-  edital: 'Edital',
-  inscricoes: 'Inscrições',
-  homologacao: 'Homologação',
-  resultadoPreliminar: 'Resultado preliminar',
-  recursos: 'Recursos',
-  resultado: 'Resultado',
-  encerramento: 'Encerramento',
-};
-
-export const CATEGORIA_EVENTO_VARIANT: Record<CategoriaEvento, UiTagVariant> = {
-  edital: 'primary',
-  inscricoes: 'info',
-  homologacao: 'neutral',
-  resultadoPreliminar: 'warning',
-  recursos: 'danger',
-  resultado: 'success',
-  encerramento: 'neutral',
-};
-
-/** Ação específica de um evento (ex.: "Inscrever-se"), quando houver uma. */
-export interface AcaoEvento {
-  readonly rotulo: string;
-  readonly routerLink: string;
-}
-
-export interface EventoHistoricoPublicacao {
+export interface PublicacaoDoCertame {
   readonly id: string;
-  readonly categoria: CategoriaEvento;
-  /** Instante ISO 8601 completo (data e hora, com fuso) — lido por `dateBr: 'datetime'`. */
+  /** Data de publicação do ato (AAAA-MM-DD), uma data de calendário sem fuso. */
   readonly data: string;
   readonly titulo: string;
+  /** Nome do tipo do ato — vira a etiqueta do cartão. */
+  readonly tipo: string;
+  /** Motivo da retificação; os demais atos não têm descrição. */
   readonly descricao?: string;
-  /**
-   * Endereço público do PDF do evento, no acervo público. Nem todo evento tem documento — uma
-   * mudança de situação pode não ter um PDF associado.
-   */
+  /** Endereço público do PDF do ato, quando o acervo já o tem. */
   readonly documentoUrl?: string;
-  /** Ação relacionada ao evento (ex.: "Inscrever-se" no evento de abertura das inscrições). Nem todo evento tem uma. */
-  readonly acao?: AcaoEvento;
 }
 
-export interface Publicacao {
-  readonly id: string;
-  readonly numeroEdital: string;
-  readonly titulo: string;
-  readonly descricao: string;
-  readonly situacao: SituacaoPublicacao;
-  /** Data do evento mais recente do histórico. */
-  readonly dataPublicacao: string;
-  readonly historico: readonly EventoHistoricoPublicacao[];
-}
-
-/**
- * Evento do edital de abertura — o mais antigo de categoria `edital` que tem
- * documento. É o alvo do link "Ver edital" de cada item de Editais;
- * retificações posteriores também são `edital`, mas não abrem a publicação.
- */
-export function eventoDoEditalDeAbertura(
-  publicacao: Publicacao | undefined,
-): EventoHistoricoPublicacao | undefined {
-  return publicacao?.historico
-    .filter((evento) => evento.categoria === 'edital' && evento.documentoUrl)
-    .sort((a, b) => a.data.localeCompare(b.data))[0];
+export interface PublicacoesDoCertame {
+  /** Endereço público do edital vigente — o alvo do "Ver edital". */
+  readonly documentoEditalUrl?: string;
+  /** Presente quando a linha do tempo pode estar incompleta; a lista vem assim mesmo. */
+  readonly aviso?: string;
+  /** Mais recente primeiro, na ordem do contrato. */
+  readonly publicacoes: readonly PublicacaoDoCertame[];
 }

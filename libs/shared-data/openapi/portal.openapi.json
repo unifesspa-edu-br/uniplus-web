@@ -1,0 +1,529 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Uni\u002B \u2014 M\u00F3dulo Portal",
+    "description": "API REST do Sistema Unificado Unifesspa (Uni\u002B). Contrato can\u00F4nico V1 \u2014 ProblemDetails RFC 9457, pagina\u00E7\u00E3o cursor opaco, vendor MIME versioning. Toda string user-facing em pt-BR (ADR-0022).",
+    "contact": {
+      "name": "CTIC Unifesspa",
+      "url": "https://developers.uniplus.unifesspa.edu.br",
+      "email": "ctic@unifesspa.edu.br"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.uniplus.unifesspa.edu.br",
+      "description": "Produ\u00E7\u00E3o"
+    },
+    {
+      "url": "https://api.hml.uniplus.unifesspa.edu.br",
+      "description": "Homologa\u00E7\u00E3o"
+    }
+  ],
+  "paths": {
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Retorna o usu\u00E1rio autenticado",
+        "description": "Retorna informa\u00E7\u00F5es do usu\u00E1rio extra\u00EDdas do access token. Requer autentica\u00E7\u00E3o.",
+        "operationId": "GetAuthenticatedUser",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/profile/me": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Retorna o perfil do usu\u00E1rio autenticado",
+        "description": "Retorna atributos de identidade e institucionais (CPF, NomeSocial) extra\u00EDdos do access token. Requer autentica\u00E7\u00E3o.",
+        "operationId": "GetAuthenticatedUserProfile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/portal/certames/{identificador}": {
+      "get": {
+        "tags": [
+          "CertamePublico"
+        ],
+        "parameters": [
+          {
+            "name": "identificador",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ETag": {
+                "description": "Selo da p\u00E1gina composta. Devolva-o no If-None-Match da pr\u00F3xima leitura: a resposta \u00E9 de revalida\u00E7\u00E3o obrigat\u00F3ria (Cache-Control: no-cache), e o selo permite receber 304 em vez da p\u00E1gina inteira. Ausente quando a linha do tempo est\u00E1 incompleta, porque essa resposta n\u00E3o \u00E9 guardada.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/vnd.uniplus.certame-publico.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertamePublicoResponse"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified",
+            "headers": {
+              "ETag": {
+                "description": "Selo da p\u00E1gina composta. Devolva-o no If-None-Match da pr\u00F3xima leitura: a resposta \u00E9 de revalida\u00E7\u00E3o obrigat\u00F3ria (Cache-Control: no-cache), e o selo permite receber 304 em vez da p\u00E1gina inteira. Ausente quando a linha do tempo est\u00E1 incompleta, porque essa resposta n\u00E3o \u00E9 guardada.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "headers": {
+              "Retry-After": {
+                "description": "Em quantos segundos vale tentar de novo. Presente quando os dados do certame est\u00E3o temporariamente indispon\u00EDveis.",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/portal/ping": {
+      "get": {
+        "tags": [
+          "Ping"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PingResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PingResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PingResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuthenticatedUserResponse": {
+        "required": [
+          "userId",
+          "name",
+          "email",
+          "roles",
+          "timestamp"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CertamePublicoResponse": {
+        "required": [
+          "identificador",
+          "nome",
+          "numeroEdital",
+          "documentoEditalUrl",
+          "dataPublicacao",
+          "linhaDoTempo",
+          "aviso"
+        ],
+        "type": "object",
+        "properties": {
+          "identificador": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "numeroEdital": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "documentoEditalUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uri"
+          },
+          "dataPublicacao": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "linhaDoTempo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventoDaLinhaDoTempoResponse"
+            }
+          },
+          "aviso": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "EventoDaLinhaDoTempoResponse": {
+        "required": [
+          "id",
+          "data",
+          "titulo",
+          "numero",
+          "ano",
+          "tipo",
+          "descricao",
+          "documentoUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "data": {
+            "type": "string",
+            "format": "date"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "numero": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ano": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDoEventoResponse"
+          },
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "documentoUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uri"
+          }
+        }
+      },
+      "PingResponse": {
+        "required": [
+          "pong",
+          "timestamp"
+        ],
+        "type": "object",
+        "properties": {
+          "pong": {
+            "type": "boolean"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "retryable": {
+            "type": "boolean",
+            "description": "Presente e \u0060true\u0060 quando o conflito descreve uma corrida que j\u00E1 passou: a mesma requisi\u00E7\u00E3o, repetida sem altera\u00E7\u00E3o, pode agora ser aceita. A aus\u00EAncia \u00E9 o default conservador do servidor \u2014 diz que o conflito n\u00E3o foi declarado retent\u00E1vel, n\u00E3o que repetir esteja descartado; nesse caso vale a descri\u00E7\u00E3o da pr\u00F3pria resposta."
+          }
+        }
+      },
+      "TipoDoEventoResponse": {
+        "required": [
+          "codigo",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      },
+      "UserProfileResponse": {
+        "required": [
+          "userId",
+          "name",
+          "email",
+          "cpf",
+          "nomeSocial",
+          "roles",
+          "timestamp"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cpf": {
+            "pattern": "^\\d{11}$",
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "CPF (apenas d\u00EDgitos, sem formata\u00E7\u00E3o). PII \u2014 sempre mascarar em logs (\u0027***.999.999-**\u0027, ADR-0011)."
+          },
+          "nomeSocial": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "Token JWT emitido pelo provedor de identidade institucional (Keycloak). Cole apenas o token: o prefixo \u0022Bearer\u0022 \u00E9 acrescentado ao cabe\u00E7alho Authorization automaticamente. As rotas administrativas exigem, al\u00E9m da autentica\u00E7\u00E3o, a role plataforma-admin no token.",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Profile"
+    },
+    {
+      "name": "CertamePublico"
+    },
+    {
+      "name": "Ping"
+    }
+  ]
+}

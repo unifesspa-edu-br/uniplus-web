@@ -178,9 +178,9 @@
             class="edital-row__publicacoes"
             [certameId]="certame.processoSeletivoId"
             [certameNome]="certame.nome"
-            [publicacao]="publicacaoDe(certame)"
+            [publicacoes]="publicacoesDe(certame)"
             [carregando]="publicacoesCarregando()"
-            [erro]="publicacoesComErro()"
+            [erro]="publicacoesComErroDe(certame)"
           />
         </li>
       }
@@ -232,9 +232,9 @@
             class="edital-row__publicacoes"
             [certameId]="certame.processoSeletivoId"
             [certameNome]="certame.nome"
-            [publicacao]="publicacaoDe(certame)"
+            [publicacoes]="publicacoesDe(certame)"
             [carregando]="publicacoesCarregando()"
-            [erro]="publicacoesComErro()"
+            [erro]="publicacoesComErroDe(certame)"
           />
         </article>
       }

@@ -9,71 +9,63 @@
   <i class="pi pi-caret-down publicacoes-toggle__icon" aria-hidden="true"></i>
   <span class="publicacoes-toggle__label">Ver publicações</span>
   @if (certameNome()) {
-    <span class="sr-only"> — {{ certameNome() }}</span>
+  <span class="sr-only"> — {{ certameNome() }}</span>
   }
 </button>
 
-<div class="publicacoes-painel" [id]="painelId()" role="region" [attr.aria-labelledby]="botaoId()" [hidden]="!aberto()">
-  @if (aberto()) {
-    @if (erro()) {
-      <ui-alert variant="danger" heading="Não foi possível carregar as publicações">
-        Recarregue a página para tentar outra vez.
-      </ui-alert>
-    } @else if (carregando()) {
-      <div class="publicacoes-loading" role="status">
-        <ui-spinner spinnerSize="sm" accessibleName="Carregando publicações" />
-        Carregando publicações…
+<div
+  class="publicacoes-painel"
+  [id]="painelId()"
+  role="region"
+  [attr.aria-labelledby]="botaoId()"
+  [hidden]="!aberto()"
+>
+  @if (aberto()) { @if (erro()) {
+  <ui-alert variant="danger" heading="Não foi possível carregar as publicações">
+    Recarregue a página para tentar outra vez.
+  </ui-alert>
+  } @else if (carregando()) {
+  <div class="publicacoes-loading" role="status">
+    <ui-spinner spinnerSize="sm" accessibleName="Carregando publicações" />
+    Carregando publicações…
+  </div>
+  } @else if (publicacoes(); as item) { @if (item.aviso; as aviso) {
+  <ui-alert variant="warning" [dynamic]="false">{{ aviso }}</ui-alert>
+  } @if (item.publicacoes.length > 0) {
+  <ol class="publicacao-timeline" role="list">
+    @for (publicacao of item.publicacoes; track publicacao.id; let primeiro = $first) {
+    <li class="publicacao-timeline__item">
+      <span class="publicacao-timeline__marker" [class.is-current]="primeiro" aria-hidden="true">
+        <i class="pi pi-check"></i>
+      </span>
+      <div class="publicacao-timeline__card" [class.is-current]="primeiro">
+        <div class="publicacao-timeline__head">
+          <span class="publicacao-timeline__data">{{ publicacao.data | dateBr: 'short' }}</span>
+          <ui-tag variant="primary">{{ publicacao.tipo }}</ui-tag>
+        </div>
+        <h4 class="publicacao-timeline__evento-titulo">{{ publicacao.titulo }}</h4>
+        @if (publicacao.descricao) {
+        <p class="publicacao-timeline__evento-desc">{{ publicacao.descricao }}</p>
+        } @if (publicacao.documentoUrl; as documentoUrl) {
+        <a class="publicacao-timeline__link" [href]="documentoUrl" target="_blank" rel="noopener">
+          <i class="pi pi-file-pdf" aria-hidden="true"></i>
+          Ver documento (PDF)
+          <span class="sr-only"> — {{ publicacao.titulo }} (abre em nova aba)</span>
+        </a>
+        }
       </div>
-    } @else if (publicacao(); as item) {
-      @if (historico().length > 0) {
-        <ol class="publicacao-timeline" role="list">
-          @for (evento of historico(); track evento.id; let primeiro = $first) {
-            <li class="publicacao-timeline__item">
-              <span class="publicacao-timeline__marker" [class.is-current]="primeiro" aria-hidden="true">
-                <i class="pi pi-check"></i>
-              </span>
-              <div class="publicacao-timeline__card" [class.is-current]="primeiro">
-                <div class="publicacao-timeline__head">
-                  <span class="publicacao-timeline__data">{{ evento.data | dateBr: 'datetime' }}</span>
-                  <ui-tag [variant]="categoriaVariant(evento.categoria)">{{ categoriaLabel(evento.categoria) }}</ui-tag>
-                </div>
-                <h4 class="publicacao-timeline__evento-titulo">{{ evento.titulo }}</h4>
-                @if (evento.descricao) {
-                  <p class="publicacao-timeline__evento-desc">{{ evento.descricao }}</p>
-                }
-                @if (evento.documentoUrl; as documentoUrl) {
-                  <a
-                    class="publicacao-timeline__link"
-                    [href]="documentoUrl"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    <i class="pi pi-file-pdf" aria-hidden="true"></i>
-                    Ver documento (PDF)
-                    <span class="sr-only">(abre em nova aba)</span>
-                  </a>
-                }
-                @if (evento.acao; as acao) {
-                  <a class="publicacao-timeline__link" [routerLink]="acao.routerLink">
-                    <i class="pi pi-arrow-right" aria-hidden="true"></i>
-                    {{ acao.rotulo }}
-                  </a>
-                }
-              </div>
-            </li>
-          }
-        </ol>
-      } @else {
-        <ui-empty-state
-          heading="Nenhum evento registrado"
-          description="Ainda não há eventos na linha do tempo deste processo seletivo."
-        />
-      }
-    } @else {
-      <ui-empty-state
-        heading="Nenhuma publicação ainda"
-        description="As publicações deste edital aparecem aqui assim que forem registradas."
-      />
+    </li>
     }
-  }
+  </ol>
+  } @else if (!item.aviso) {
+  <ui-empty-state
+    heading="Nenhuma publicação ainda"
+    description="As publicações deste edital aparecem aqui assim que forem registradas."
+  />
+  } } @else {
+  <ui-empty-state
+    heading="Nenhuma publicação ainda"
+    description="As publicações deste edital aparecem aqui assim que forem registradas."
+  />
+  } }
 </div>

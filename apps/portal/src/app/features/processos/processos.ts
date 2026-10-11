@@ -47,8 +47,11 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { CertamePublicacoesComponent } from '../publicacoes/certame-publicacoes';
 import { CertameDocumentosComponent } from './certame-documentos/certame-documentos';
-import { eventoDoEditalDeAbertura, type Publicacao } from '../publicacoes/publicacoes.model';
-import { PublicacoesRepository } from '../publicacoes/publicacoes.repository';
+import type { PublicacoesDoCertame } from '../publicacoes/publicacoes.model';
+import {
+  type PublicacoesPorCertame,
+  PublicacoesRepository,
+} from '../publicacoes/publicacoes.repository';
 
 type VisaoCertames = 'lista' | 'cards';
 
@@ -126,7 +129,7 @@ interface ContadoresSituacao {
 type PublicacoesDaPagina =
   | { readonly status: 'carregando' }
   | { readonly status: 'erro' }
-  | { readonly status: 'ok'; readonly porCertame: ReadonlyMap<string, Publicacao> };
+  | { readonly status: 'ok'; readonly porCertame: PublicacoesPorCertame };
 
 const VIEW_OPTIONS: readonly UiSegmentedOption<VisaoCertames>[] = [
   { value: 'lista', label: 'Lista', icon: 'pi-list' },
@@ -171,9 +174,10 @@ function numeroDoHeader(
 }
 
 /**
- * Vitrine pública de certames (issue #779) — consome `GET /api/selecao/certames`
- * do módulo Seleção (ADR-0131/ADR-0133 da `uniplus-api`; anônimo, sem passar
- * pela `portal-api`, que ainda é esqueleto). Busca e situação viram parâmetros
+ * Vitrine pública de certames (issue #779) — a lista vem de `GET /api/selecao/certames`,
+ * do módulo Seleção (ADR-0131/ADR-0133 da `uniplus-api`; anônimo), e as publicações e o
+ * "Ver edital" de cada certame vêm da página pública dele na Portal API
+ * (`GET /api/portal/certames/{identificador}`). Busca e situação viram parâmetros
  * de request; contadores dos chips vêm dos headers `X-Certames-*`; paginação é
  * por cursor opaco (Anterior/Próximo, sem "Página X de Y" — o contrato não
  * expõe total). Abaixo de 600px a lista é a forma canônica: o controle de
@@ -311,9 +315,9 @@ export class ProcessosComponent {
 
   /**
    * Publicações (linha do tempo do accordion "Ver publicações" e link do edital
-   * de abertura) dos certames da página, com uma consulta ao certame publicado
-   * para cada um. O certame cuja consulta falha fica sem o PDF, e uma falha aqui
-   * não derruba a vitrine: só o accordion avisa, ao ser aberto.
+   * vigente) dos certames da página, com uma consulta à página pública de cada
+   * um. O certame cuja consulta falha fica sem o PDF e com o erro no accordion, e
+   * uma falha aqui não derruba a vitrine: só o accordion avisa, ao ser aberto.
    */
   private readonly publicacoes = toSignal<PublicacoesDaPagina, PublicacoesDaPagina>(
     toObservable(this.certames).pipe(
@@ -331,7 +335,6 @@ export class ProcessosComponent {
   protected readonly publicacoesCarregando = computed(
     () => this.publicacoes().status === 'carregando',
   );
-  protected readonly publicacoesComErro = computed(() => this.publicacoes().status === 'erro');
 
   protected readonly statusChips = computed<readonly UiFilterChipOption[]>(() => {
     const contadores = this.contadores();
@@ -423,14 +426,23 @@ export class ProcessosComponent {
     return SITUACOES_QUE_RECEBEM_INSCRICAO.includes(certame.situacao);
   }
 
-  protected publicacaoDe(certame: CertameNaVitrineDto): Publicacao | undefined {
+  protected publicacoesDe(certame: CertameNaVitrineDto): PublicacoesDoCertame | undefined {
     const atual = this.publicacoes();
-    return atual.status === 'ok' ? atual.porCertame.get(certame.processoSeletivoId) : undefined;
+    return atual.status === 'ok' ? (atual.porCertame.get(certame.processoSeletivoId) ?? undefined) : undefined;
   }
 
-  /** Alvo do link "Ver edital" — ausente até a publicação chegar ou se não houver edital. */
+  /** A consulta da página toda falhou, ou só a deste certame. */
+  protected publicacoesComErroDe(certame: CertameNaVitrineDto): boolean {
+    const atual = this.publicacoes();
+    return (
+      atual.status === 'erro' ||
+      (atual.status === 'ok' && atual.porCertame.get(certame.processoSeletivoId) === null)
+    );
+  }
+
+  /** Alvo do link "Ver edital" — ausente até as publicações chegarem ou se não houver edital. */
   protected editalDe(certame: CertameNaVitrineDto): { readonly documentoUrl: string } | null {
-    const documentoUrl = eventoDoEditalDeAbertura(this.publicacaoDe(certame))?.documentoUrl;
+    const documentoUrl = this.publicacoesDe(certame)?.documentoEditalUrl;
     return documentoUrl ? { documentoUrl } : null;
   }
 

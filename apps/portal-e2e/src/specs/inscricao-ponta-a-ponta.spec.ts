@@ -404,6 +404,26 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       expect(pdf.headers()['content-type']).toBe('application/pdf');
     });
 
+    await test.step('"Ver publicações" lista os atos do certame, com o PDF, e não oferece inscrição', async () => {
+      await page.goto('/processos');
+      await page
+        .getByRole('button', { name: `Ver publicações — ${processo}` })
+        .first()
+        .click();
+      const painel = page.getByRole('region', { name: `Ver publicações — ${processo}` }).first();
+      await expect(
+        painel.getByRole('heading', { level: 4, name: /^Edital de abertura/ }),
+      ).toBeVisible();
+      const verDocumento = painel.getByRole('link', {
+        name: /^Ver documento \(PDF\) — Edital de abertura/,
+      });
+      await expect(verDocumento).toHaveAttribute('href', /\/editais\/.+\.pdf$/);
+      const pdf = await page.request.get((await verDocumento.getAttribute('href')) ?? '');
+      expect(pdf.ok()).toBe(true);
+      expect(pdf.headers()['content-type']).toBe('application/pdf');
+      await expect(painel.getByText(/Inscri(ções abertas|ver-se)/)).toHaveCount(0);
+    });
+
     await test.step('entra pela vitrine e volta à inscrição escolhida', async () => {
       await page.goto('/processos');
       await page.locator(`a[href="/inscricao/${PROCESSO_ID}"]`).first().click();
