@@ -159,6 +159,73 @@ async function responderAtendimentoEspecializado(page: Page): Promise<void> {
   await expect(descricao).toHaveCount(0);
 }
 
+const pergunta = (page: Page, rotulo: string): Locator =>
+  page.getByRole('group', { name: new RegExp(`^${rotulo}`) });
+
+function perguntasDaReserva(page: Page) {
+  return {
+    escolaPublica: pergunta(
+      page,
+      'Deseja concorrer às vagas para quem cursou o ensino médio em escola pública',
+    ),
+    pertencimentoIndigena: pergunta(page, 'Você pertence a um povo indígena'),
+    quilombola: pergunta(page, 'Você se autodeclara quilombola'),
+    ppi: pergunta(page, 'Deseja concorrer às vagas para pretos, pardos e indígenas'),
+    renda: pergunta(page, 'A renda da sua família é de até um salário mínimo por pessoa'),
+  };
+}
+
+async function declararCor(page: Page, cor: string): Promise<void> {
+  await irParaSecao(page, 'Dados do candidato');
+  await escolher(page, 'Cor ou raça', cor);
+}
+
+async function declararOndeCursou(page: Page, onde: string): Promise<void> {
+  await irParaSecao(page, 'Ensino médio');
+  await lista(page, 'Onde você cursou o ensino médio').selectOption({ label: onde });
+}
+
+/**
+ * As perguntas das cotas da lei só se fazem a quem optou por elas, e a da PPI só a quem tem cor ou
+ * pertencimento que dá acesso a ela. Sem enviar, a mesma inscrição passa por egressa de escola
+ * pública Branca, Parda e Indígena, e volta ao estado de partida: escola privada e Branca. Cada
+ * ausência é conferida depois de uma pergunta que a mesma resposta faz aparecer.
+ */
+async function conferirReservaPelaElegibilidade(page: Page): Promise<void> {
+  const reserva = perguntasDaReserva(page);
+
+  await declararOndeCursou(page, 'Somente em escola pública');
+  await irParaSecao(page, 'Reserva de vagas');
+  await escolher(page, 'Você é pessoa com deficiência', 'Não');
+  await escolher(
+    page,
+    'Deseja concorrer às vagas para quem cursou o ensino médio em escola pública',
+    'Sim',
+  );
+  // Branca que optou pelas cotas responde quilombola e renda, mas não a PPI nem o pertencimento.
+  await expect(reserva.quilombola).toBeVisible();
+  await expect(reserva.renda).toBeVisible();
+  await expect(reserva.ppi).toHaveCount(0);
+  await expect(reserva.pertencimentoIndigena).toHaveCount(0);
+
+  await declararCor(page, 'Parda');
+  await irParaSecao(page, 'Reserva de vagas');
+  await expect(reserva.ppi).toBeVisible();
+  await expect(reserva.pertencimentoIndigena).toHaveCount(0);
+
+  // Indígena confirma o pertencimento antes de a PPI aparecer.
+  await declararCor(page, 'Indígena');
+  await irParaSecao(page, 'Reserva de vagas');
+  await escolher(page, 'Você pertence a um povo indígena', 'Não');
+  await expect(reserva.pertencimentoIndigena).toBeVisible();
+  await expect(reserva.ppi).toHaveCount(0);
+  await escolher(page, 'Você pertence a um povo indígena', 'Sim');
+  await expect(reserva.ppi).toBeVisible();
+
+  await declararCor(page, 'Branca');
+  await declararOndeCursou(page, 'Escola privada');
+}
+
 async function preencherRestante(page: Page): Promise<void> {
   await irParaSecao(page, 'ENEM');
   await escolher(page, 'Qual edição do ENEM você vai usar', EDICAO_DO_ENEM);
@@ -186,15 +253,16 @@ async function preencherRestante(page: Page): Promise<void> {
   await expect(caminhoDoFator).toHaveCount(0);
   await municipioDoFator.selectOption({ label: MUNICIPIO_DO_FATOR });
 
+  await conferirReservaPelaElegibilidade(page);
+
+  // De volta à escola privada, nenhuma pergunta de cota da lei se faz. O formulário calcula a
+  // exibição no navegador, junto com o desenho da seção: aberta a seção, a ausência das perguntas
+  // de cota já é a definitiva.
   await irParaSecao(page, 'Reserva de vagas');
-  for (const pergunta of [
-    'Você é pessoa com deficiência',
-    'Deseja concorrer às vagas para pretos, pardos e indígenas',
-    'Você se autodeclara indígena',
-    'Você se autodeclara quilombola',
-    'A renda da sua família é de até um salário mínimo por pessoa',
-  ]) {
-    await escolher(page, pergunta, 'Não');
+  const reserva = perguntasDaReserva(page);
+  await escolher(page, 'Você é pessoa com deficiência', 'Não');
+  for (const ausente of [reserva.escolaPublica, reserva.quilombola, reserva.ppi, reserva.renda]) {
+    await expect(ausente).toHaveCount(0);
   }
   // A página rola só pela área de conteúdo: nenhuma opção estica o documento, e o foco pelo
   // teclado no último controle rola a área, não a janela.
