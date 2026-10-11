@@ -354,6 +354,7 @@ async function mockarCatalogos(page: Page): Promise<void> {
   );
   await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, TIPOS_ETAPA, CORS);
   await responder(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, TIPOS_DOCUMENTO, CORS);
+  await responder(page, /\/api\/configuracao\/fatos-candidato(\?.*)?$/, [], CORS);
   await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO, CORS);
 
   await page.route(/\/api\/selecao\/regras-catalogo(\?.*)?$/, async (route: Route) => {

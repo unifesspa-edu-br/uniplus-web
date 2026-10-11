@@ -280,6 +280,8 @@ async function mockarCatalogos(page: Page): Promise<void> {
     CORS_HEADERS,
   );
   await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, [], CORS_HEADERS);
+  await responder(page, /\/api\/configuracao\/tipos-documento(\?.*)?$/, [], CORS_HEADERS);
+  await responder(page, /\/api\/configuracao\/fatos-candidato(\?.*)?$/, [], CORS_HEADERS);
   await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO, CORS_HEADERS);
   await responder(page, /\/api\/selecao\/regras-catalogo(\?.*)?$/, REGRAS_RECURSO, CORS_HEADERS);
 }

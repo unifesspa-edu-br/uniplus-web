@@ -788,6 +788,7 @@ async function mockarCatalogos(page: Page): Promise<void> {
     CORS_HEADERS,
   );
   await responder(page, /\/api\/configuracao\/tipos-etapa(\?.*)?$/, [], CORS_HEADERS);
+  await responder(page, /\/api\/configuracao\/fatos-candidato(\?.*)?$/, [], CORS_HEADERS);
   await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, [], CORS_HEADERS);
   await mockarRegrasCatalogo(page);
 }
