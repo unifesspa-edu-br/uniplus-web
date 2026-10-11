@@ -317,26 +317,48 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
 }
 
 /* ============================================================================
- * VALOR EM CONSULTA — o campo lido, não preenchido (<ui-valor-em-consulta>)
- * O rótulo repete o do campo em edição, em cor secundária; o valor fica no texto
- * primário e quebra linha em vez de ser cortado pela largura do campo.
+ * LISTA DE DADOS — pares lidos (<ui-lista-de-dados> com um <ng-template uiDado> por par,
+ * renderizados como dl > div > dt + dd)
+ * O rótulo em cor secundária e o valor no texto primário, quebrando linha em vez de ser
+ * cortado. Com duas colunas, os pares ficam lado a lado quando a lista tem ao menos 32rem; em
+ * destaque, o valor sai grande e com algarismos tabulares, para número e situação de um
+ * documento.
  * ========================================================================== */
-.valor-em-consulta {
+ui-lista-de-dados {
   display: block;
   min-width: 0;
+  container-type: inline-size;
 }
-.valor-em-consulta__par {
+.lista-de-dados {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+}
+/* As duas colunas dependem da largura da lista, não da janela: num cartão estreito, uma só. */
+@container (min-width: 32rem) {
+  .lista-de-dados--duas-colunas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-6);
+  }
+}
+.lista-de-dados--destaque {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-8);
+}
+.dado {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  margin: 0;
+  min-width: 0;
 }
-.valor-em-consulta__rotulo {
+.dado__rotulo {
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-secondary);
 }
-.valor-em-consulta__valor {
+.dado__valor {
   margin: 0;
   font-size: var(--text-base);
   line-height: var(--leading-normal);
@@ -344,7 +366,13 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
   overflow-wrap: anywhere;
   white-space: pre-line;
 }
-.valor-em-consulta__lista {
+.lista-de-dados--destaque .dado__valor {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+}
+.valor-apresentado__lista {
   display: grid;
   gap: var(--space-1);
   margin: 0;
@@ -352,12 +380,25 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
   list-style: disc;
   white-space: normal;
 }
-.valor-em-consulta__lista--ordenada {
+.valor-apresentado__lista--ordenada {
   list-style: decimal;
 }
-.valor-em-consulta__vazio {
+.valor-apresentado__vazio {
   color: var(--text-secondary);
   font-style: italic;
+}
+@media print {
+  .dado {
+    break-inside: avoid;
+  }
+}
+
+/* ============================================================================
+ * VALOR EM CONSULTA — o campo lido, não preenchido (<ui-valor-em-consulta>)
+ * ========================================================================== */
+.valor-em-consulta {
+  display: block;
+  min-width: 0;
 }
 .valor-em-consulta > .field__hint {
   margin: var(--space-1) 0 0;
@@ -758,8 +799,14 @@ ui-editor-de-condicoes {
 .formulario-candidato__secao > ui-campo-do-candidato:has(> .formulario-candidato__escolhas) {
   max-inline-size: 60rem;
 }
-.formulario-candidato__titulo:focus-visible {
-  box-shadow: var(--focus-ring);
+/*
+ * O título só recebe foco programático, ao chegar na página ou na seção, para o leitor de tela
+ * anunciá-la: não entra na ordem de tabulação e não é controle, então não leva anel. O anel continua
+ * em tudo o que se alcança pelo teclado.
+ */
+.formulario-candidato__titulo:focus-visible,
+.page-header__title:focus-visible {
+  box-shadow: none;
   outline: none;
 }
 .formulario-candidato__descricao {
@@ -4513,5 +4560,249 @@ body.uni-drawer-open {
 @media print {
   .marca-institucional {
     --marca-altura: 15mm;
+  }
+}
+
+/* ============================================================================
+ * DOCUMENTO — o que o titular guarda ou imprime (<ui-documento>)
+ * Na tela, o cabeçalho da página e as seções em grade; no papel, A4 em fundo branco, com o
+ * cabeçalho institucional e sem nada que seja de tela, seja qual for o tema.
+ * ========================================================================== */
+.documento {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+/* O título do documento tem a largura toda; as ações e a orientação vêm logo abaixo dele. */
+.documento .page-header {
+  flex-direction: column;
+  align-items: stretch;
+}
+.documento .page-header__actions {
+  justify-content: flex-start;
+}
+.documento .page-header__title {
+  inline-size: fit-content;
+  max-inline-size: 100%;
+}
+.documento__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.documento__corpo,
+.secao-de-documento__corpo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+  min-inline-size: 0;
+}
+/* No corpo do documento, as seções curtas dividem a linha em duas, sem sobrar coluna vazia. */
+.documento__corpo {
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, max(20rem, calc(50% - var(--space-4)))), 1fr)
+  );
+}
+.documento__corpo > :not(.secao-de-documento),
+.secao-de-documento__corpo > :not(.secao-de-documento),
+.secao-de-documento--inteira {
+  grid-column: 1 / -1;
+}
+.documento__corpo > .btn,
+.secao-de-documento__corpo > .btn {
+  justify-self: start;
+}
+
+.secao-de-documento {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+}
+.secao-de-documento--num-cartao {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: transparent;
+}
+.secao-de-documento--interna {
+  padding: var(--space-3) 0 0;
+  border: 0;
+  border-block-start: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
+}
+.secao-de-documento__titulo {
+  margin: 0;
+  color: var(--text-heading);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-snug);
+}
+h2.secao-de-documento__titulo {
+  font-size: var(--text-xl);
+}
+h3.secao-de-documento__titulo {
+  font-size: var(--text-lg);
+}
+h4.secao-de-documento__titulo,
+h5.secao-de-documento__titulo {
+  font-size: var(--text-base);
+}
+
+.codigo-de-verificacao {
+  display: grid;
+  gap: var(--space-3);
+}
+/* Os grupos são caixas em linha, e não itens flex: a seleção copia o código sem quebras de linha. */
+.codigo-de-verificacao__codigo {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+}
+.codigo-de-verificacao__grupo {
+  display: inline-block;
+  margin-inline-end: var(--space-3);
+}
+.codigo-de-verificacao__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.codigo-de-verificacao__aviso {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+/*
+ * Página nomeada: só a página com um documento sai em A4 com estas margens; a impressão dos demais
+ * apps não muda. A página vale para a raiz, e não para o documento: num descendente, os ancestrais
+ * ficariam na página padrão e o navegador abriria uma folha antes do documento.
+ */
+:root:has(.documento) {
+  page: documento;
+}
+@page documento {
+  size: A4;
+  margin: 15mm 12mm;
+}
+@media print {
+  :root:has(.documento) {
+    color-scheme: light;
+    --surface-page: #ffffff;
+    --surface-card: #ffffff;
+    --surface-subtle: #ffffff;
+    --border-subtle: #9ca3af;
+    --border-default: #6b7280;
+    --text-primary: #111111;
+    --text-secondary: #333333;
+    --text-muted: #333333;
+    --text-heading: #000000;
+    /* As cores de feedback, de primário e de link voltam às do tema claro: as do tema de
+       contraste são feitas para fundo escuro e somem no papel branco. */
+    --color-primary-50: #f0f5ff;
+    --color-primary-100: #d6e4ff;
+    --color-primary-600: #1351b4;
+    --color-primary-700: #0c4194;
+    --color-primary: #1351b4;
+    --color-success-50: #e7f4e9;
+    --color-success-700: #0a5a16;
+    --color-warning-50: #fef0c8;
+    --color-warning-700: #5a3e08;
+    --color-danger-50: #fcf0ee;
+    --color-danger-700: #7f1d1d;
+    --color-info-50: #eff6ff;
+    --color-info-700: #0c326f;
+    --text-link: #1351b4;
+    background: #ffffff;
+    color: #111111;
+  }
+  .documento {
+    gap: 4mm;
+    font-size: 10pt;
+  }
+  .documento__papel {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6mm;
+    padding-block-end: 3mm;
+    border-block-end: 1px solid #6b7280;
+  }
+  .documento__papel-identificacao {
+    text-align: end;
+  }
+  .documento__papel-identificacao p {
+    margin: 0;
+  }
+  .documento__papel-titulo {
+    font-size: 14pt;
+    font-weight: var(--weight-bold);
+  }
+  .documento__papel-sistema {
+    font-size: 8pt;
+  }
+  /*
+   * No papel o corpo é fluxo de blocos, e não grade: a grade não se parte bem entre páginas.
+   * Só a seção sem seção dentro fica inteira numa página; a que agrupa outras se parte entre elas.
+   */
+  .documento__corpo,
+  .secao-de-documento__corpo {
+    display: block;
+  }
+  .documento__corpo > * + *,
+  .secao-de-documento__corpo > * + * {
+    margin-block-start: 3mm;
+  }
+  .secao-de-documento {
+    padding: 3mm;
+    border-color: #9ca3af;
+    border-radius: 0;
+    background: transparent;
+  }
+  .secao-de-documento:not(:has(.secao-de-documento)) {
+    break-inside: avoid;
+  }
+  .secao-de-documento--interna {
+    padding: 2mm 0 0;
+  }
+  .secao-de-documento__titulo {
+    break-after: avoid;
+  }
+  /* Tipografia de papel, em pontos: a da tela gastaria o dobro de folhas. */
+  h2.secao-de-documento__titulo {
+    font-size: 13pt;
+  }
+  h3.secao-de-documento__titulo {
+    font-size: 11pt;
+  }
+  h4.secao-de-documento__titulo,
+  h5.secao-de-documento__titulo {
+    font-size: 10pt;
+  }
+  .documento .lista-de-dados {
+    gap: 2mm;
+  }
+  .documento .dado {
+    gap: 0.5mm;
+  }
+  .documento .dado__rotulo {
+    font-size: 8pt;
+  }
+  .documento .dado__valor {
+    font-size: 10pt;
+    line-height: 1.3;
+  }
+  .documento .lista-de-dados--destaque .dado__valor {
+    font-size: 13pt;
+  }
+  .documento .u-body-sm {
+    font-size: 9pt;
   }
 }

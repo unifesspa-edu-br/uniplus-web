@@ -140,7 +140,18 @@ export {
   ValorEmConsultaComponent,
   type UiValorEmConsulta,
 } from '../../src/lib/components/valor-em-consulta/valor-em-consulta';
+export { DadoDirective } from '../../src/lib/components/lista-de-dados/dado';
+export {
+  ListaDeDadosComponent,
+  type UiVarianteDaListaDeDados,
+} from '../../src/lib/components/lista-de-dados/lista-de-dados';
+export { DocumentoComponent } from '../../src/lib/components/documento/documento';
+export {
+  SecaoDeDocumentoComponent,
+  type UiLarguraDaSecao,
+  type UiNivelDaSecao,
+} from '../../src/lib/components/documento/secao-de-documento';
+export { CodigoDeVerificacaoComponent } from '../../src/lib/components/codigo-de-verificacao/codigo-de-verificacao';
 export { MarcaInstitucionalComponent } from '../../src/lib/components/marca-institucional/marca-institucional';
-export { titulosDasOcorrencias } from '../../src/lib/components/formulario-do-candidato/interpretador/ocorrencia-do-candidato';
 export { titulosDasOcorrencias } from '../../src/lib/components/formulario-do-candidato/interpretador/ocorrencia-do-candidato';
 export { BulletComponent, type UiBulletVariant } from '../../src/lib/components/bullet/bullet';

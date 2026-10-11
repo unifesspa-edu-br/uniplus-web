@@ -53,14 +53,14 @@ describe('ValorEmConsultaComponent', () => {
     (valor) => {
       const host = render({ rotulo: 'Campo', valor });
 
-      expect(textoDo(host, '.valor-em-consulta__vazio')).toBe('Não informado');
+      expect(textoDo(host, 'dd')).toBe('Não informado');
     },
   );
 
   it('usa o texto de vazio que a tela declara', () => {
     const host = render({ rotulo: 'Fundamentos', valor: [], seVazio: 'Nenhum fundamento' });
 
-    expect(textoDo(host, '.valor-em-consulta__vazio')).toBe('Nenhum fundamento');
+    expect(textoDo(host, 'dd')).toBe('Nenhum fundamento');
   });
 
   it('lista cada item de um valor com várias escolhas', () => {
