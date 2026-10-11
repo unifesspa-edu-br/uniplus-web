@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { digitosDoTelefone, formatarTelefone } from '@uniplus/shared-utils';
 
 import { DadoRevelavelComponent } from '../dado-revelavel/dado-revelavel';
 import { ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-municipio';
@@ -205,7 +206,7 @@ const ENTRADA_DO_FORMATO: Readonly<
           [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
           [attr.aria-describedby]="descritoPor()"
           (input)="digitar(valorDe($event))"
-          (blur)="saiu.set(true)"
+          (blur)="sair()"
         />
       }
     }
@@ -283,6 +284,8 @@ export class CampoDoCandidatoComponent {
     () => this.campo().tipoRenderizacao === 'SELECAO_MULTIPLA',
   );
   protected readonly vazia = computed(() => estaVazia(this.resposta()));
+  /** O telefone vai à API só com os dígitos e aparece com a máscara (formato do catálogo). */
+  private readonly deTelefone = computed(() => this.campo().formato === 'TELEFONE');
   protected readonly entrada = computed(
     () =>
       ENTRADA_DO_FORMATO[this.campo().formato ?? ''] ?? {
@@ -340,7 +343,7 @@ export class CampoDoCandidatoComponent {
       anterior !== undefined &&
       JSON.stringify(this.respostaDoTexto(anterior.value)) === JSON.stringify(resposta)
         ? anterior.value
-        : textoDa(resposta),
+        : this.textoDaResposta(resposta),
   });
   /** O número digitado que não se reconhece: não vira resposta. */
   private readonly numeroInvalido = signal(false);
@@ -348,7 +351,9 @@ export class CampoDoCandidatoComponent {
   /** O endereço do campo de endereço: composto no Geo, pelo CEP ou pela cidade. */
   protected readonly endereco = new FormControl<EnderecoEstruturado | null>(null);
   protected readonly confirmacaoDiverge = computed(
-    () => this.confirmacao() !== '' && this.confirmacao() !== textoDa(this.resposta()),
+    () =>
+      this.confirmacao() !== '' &&
+      JSON.stringify(this.respostaDoTexto(this.confirmacao())) !== JSON.stringify(this.resposta()),
   );
 
   protected readonly uf = computed(() => {
@@ -504,7 +509,23 @@ export class CampoDoCandidatoComponent {
         return codigos.length === 0 ? undefined : codigos;
       }
       default:
-        return texto;
+        return this.deTelefone() ? (digitosDoTelefone(texto) ?? texto) : texto;
+    }
+  }
+
+  /** O texto que a resposta mostra no campo: o telefone, com a máscara. */
+  private textoDaResposta(resposta: ValorJson | undefined): string {
+    return this.deTelefone() && typeof resposta === 'string'
+      ? formatarTelefone(resposta)
+      : textoDa(resposta);
+  }
+
+  /** Ao sair do campo, a data fora da faixa vira erro e o telefone válido ganha a máscara. */
+  protected sair(): void {
+    this.saiu.set(true);
+    const resposta = this.resposta();
+    if (this.deTelefone() && typeof resposta === 'string' && digitosDoTelefone(resposta) !== null) {
+      this.texto.set(formatarTelefone(resposta));
     }
   }
 

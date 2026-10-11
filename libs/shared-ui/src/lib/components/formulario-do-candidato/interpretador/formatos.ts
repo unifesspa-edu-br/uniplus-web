@@ -1,3 +1,5 @@
+import { digitosDoTelefone } from '@uniplus/shared-utils';
+
 /**
  * Os formatos de texto do catálogo de fatos e a conferência de cada um, idêntica à dos tipos de valor
  * da API: o interpretador não pode ser mais rígido nem mais frouxo que o servidor.
@@ -46,12 +48,7 @@ function ehEmail(texto: string): boolean {
 }
 
 function ehTelefone(texto: string): boolean {
-  if (emBranco(texto) || !soComCaracteres(texto, /[ ()\-.]/)) return false;
-  const digitos = soDigitos(texto);
-  const fixo = digitos.length === 10;
-  const celular = digitos.length === 11 && digitos[2] === '9';
-  const dddValido = digitos.length >= 2 && digitos[0] !== '0' && digitos[1] !== '0';
-  return (fixo || celular) && dddValido;
+  return digitosDoTelefone(texto) !== null;
 }
 
 function ehCep(texto: string): boolean {
