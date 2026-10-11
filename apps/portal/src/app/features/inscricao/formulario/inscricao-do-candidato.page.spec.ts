@@ -9,6 +9,8 @@ import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
 import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
 import {
+  type AvaliacaoDaInscricaoDto,
+  type AvaliacaoDaInscricaoRequest,
   type ComprovanteInscricaoDto,
   type FormularioRenderizavelDto,
   type InscricaoDto,
@@ -17,6 +19,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { BUSCA_DE_CEP, BUSCA_DE_MUNICIPIOS } from '@uniplus/shared-ui/components';
 
+import { ESPERA_DA_CONSULTA_MS } from './avaliacao-da-inscricao.estado';
 import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.mock';
 import { InscricaoDoCandidatoPage } from './inscricao-do-candidato.page';
 import {
@@ -33,6 +36,38 @@ const DIREITO: OfertaDaInscricao = { id: 'oferta-2', nome: 'Direito — Marabá'
 
 const ok = <T>(data: T): Observable<ApiResult<T>> => of(apiOk(data, 200, new HttpHeaders()));
 
+/** A avaliação em que o candidato concorre nas modalidades de nome dado. */
+const concorrendoEm = (...nomes: string[]): AvaliacaoDaInscricaoDto => ({
+  modalidades: {
+    derivada: true,
+    situacao: 'CONCORRE',
+    itens: nomes.map((nome, ordem) => ({ codigo: `M${ordem}`, nome, ordem })),
+    pendencias: [],
+  },
+});
+const SEM_DERIVACAO: AvaliacaoDaInscricaoDto = {
+  modalidades: { derivada: false, situacao: null, itens: [], pendencias: [] },
+};
+
+/** O formulário de teste com o bloco das modalidades, que dependem do nome. */
+const COM_MODALIDADES: FormularioRenderizavelDto = {
+  ...FORMULARIO_DE_INSCRICAO_MOCK,
+  dependenciasDaAvaliacao: { fatos: ['NOME'], grupos: [] },
+  etapas: [
+    ...FORMULARIO_DE_INSCRICAO_MOCK.etapas,
+    {
+      codigo: 'MODALIDADES',
+      codigoNasRegras: null,
+      ordem: 3,
+      tipo: 'BLOCO',
+      bloco: 'MODALIDADES_CALCULADAS',
+      titulo: 'Modalidades de concorrência',
+      descricao: null,
+      aviso: null,
+    },
+  ],
+};
+
 function inscricao(outros: Partial<InscricaoDto> = {}): InscricaoDto {
   return {
     id: 'inscricao-1',
@@ -46,6 +81,7 @@ function inscricao(outros: Partial<InscricaoDto> = {}): InscricaoDto {
     grupos: {},
     aceites: [],
     eTag: '"inscricao-1:1"',
+    avaliacao: SEM_DERIVACAO,
     ...outros,
   };
 }
@@ -74,6 +110,7 @@ class ServicoDublê extends InscricaoDoCandidatoService {
   ofertas: readonly OfertaDaInscricao[] = [MEDICINA];
   readonly salvos: InscricaoRequest[] = [];
   readonly enviados: InscricaoRequest[] = [];
+  readonly avaliacoes: AvaliacaoDaInscricaoRequest[] = [];
   recusaDoEnvio: ApiResult<ComprovanteInscricaoDto> | null = null;
 
   iniciar = () => ok(this.inscricao);
@@ -83,6 +120,10 @@ class ServicoDublê extends InscricaoDoCandidatoService {
   salvar = (_: string, request: InscricaoRequest) => {
     this.salvos.push(request);
     return ok(this.inscricao);
+  };
+  avaliar = (_: string, request: AvaliacaoDaInscricaoRequest) => {
+    this.avaliacoes.push(request);
+    return ok(concorrendoEm('Ampla concorrência'));
   };
   submeter = (_: string, request: InscricaoRequest) => {
     this.enviados.push(request);
@@ -182,6 +223,52 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(tela.querySelector('.formulario-candidato__secao')?.textContent).toContain(
       'Você não envia documentos nesta etapa.',
     );
+  });
+
+  const irAsModalidades = async (tela: HTMLElement): Promise<void> =>
+    clicar(
+      [...tela.querySelectorAll<HTMLButtonElement>('nav button')].find((b) =>
+        b.textContent?.includes('Modalidades de concorrência'),
+      ) as HTMLButtonElement,
+    );
+
+  it('mostra as modalidades que vieram com a inscrição, sem consultar a API ao abrir', async () => {
+    servico.formulario = COM_MODALIDADES;
+    servico.inscricao = inscricao({ avaliacao: concorrendoEm('Ampla concorrência') });
+    const tela = await abrir();
+    await irAsModalidades(tela);
+
+    expect(tela.querySelector('ui-modalidades-da-inscricao')?.textContent).toContain(
+      'Ampla concorrência',
+    );
+    expect(servico.avaliacoes).toHaveLength(0);
+  });
+
+  it('responder o que decide as modalidades consulta a avaliação com as respostas da tela', async () => {
+    // A espera da consulta corre no agendador do RxJS, que usa `setInterval`, e não `setTimeout`.
+    vi.useRealTimers();
+    servico.formulario = COM_MODALIDADES;
+    const tela = await abrir();
+
+    const nome = campoDe(tela, 'NOME');
+    nome.value = 'Ariel Drumond';
+    nome.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));
+
+    expect(servico.avaliacoes.map((a) => a.respostas?.['NOME'])).toEqual(['Ariel Drumond']);
+  });
+
+  it('a avaliação que volta do rascunho salvo passa a ser a mostrada', async () => {
+    servico.formulario = COM_MODALIDADES;
+    servico.inscricao = inscricao({ avaliacao: concorrendoEm('Ampla concorrência') });
+    const tela = await abrir();
+    servico.inscricao = inscricao({ avaliacao: concorrendoEm('Ampla concorrência', 'Cotas') });
+
+    await clicar(botao(tela, 'Salvar rascunho'));
+    await irAsModalidades(tela);
+
+    expect(tela.querySelector('ui-modalidades-da-inscricao')?.textContent).toContain('Cotas');
   });
 
   it('o titular revela o CPF da conta para conferir, sem nova consulta', async () => {

@@ -6,6 +6,7 @@ const ENDERECO = 'Inscricao:ENDERECO';
 /** Um formulário de inscrição no contrato atual, para os testes da tela. */
 export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
   comprovacaoDocumental: null,
+  dependenciasDaAvaliacao: null,
   finalidade: 'INSCRICAO',
   titulo: 'Inscrição',
   dataReferenciaFatos: '2026-12-10',

@@ -68,7 +68,9 @@
   [errosDoServidor]="errosDoServidor()"
   [concluirNaUltimaSecao]="false"
   [envio]="envio()"
+  [avaliacao]="avaliacao.naTela()"
   (simulacaoChange)="responder($event)"
+  (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
 />
 } @if (derivados().length > 0) {
 <section class="inscricao-derivados" aria-labelledby="inscricao-derivados-titulo">

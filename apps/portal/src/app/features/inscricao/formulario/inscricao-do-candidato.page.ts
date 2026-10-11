@@ -20,6 +20,7 @@ import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
 import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
 import {
+  type AvaliacaoDaInscricaoRequest,
   type ComprovanteInscricaoDto,
   type FormularioRenderizavelDto,
   type InscricaoDto,
@@ -47,6 +48,7 @@ import {
   mascararCpf,
 } from '@uniplus/shared-utils';
 
+import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
 import {
   InscricaoDoCandidatoService,
   type OfertaDaInscricao,
@@ -82,6 +84,7 @@ const CAMPO_DA_OFERTA = 'ofertaCursoId';
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [AvaliacaoDaInscricaoEstado],
   templateUrl: './inscricao-do-candidato.page.html',
   styleUrl: './inscricao-do-candidato.page.css',
 })
@@ -91,6 +94,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
   private readonly problemas = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  protected readonly avaliacao = inject(AvaliacaoDaInscricaoEstado);
 
   readonly processoId = input.required<string>();
 
@@ -217,10 +221,17 @@ export class InscricaoDoCandidatoPage implements OnInit {
             if (!ofertas.ok) return this.falharAoCarregar(ofertas);
             this.inscricao.set(inscricao.data);
             // As respostas chegam em JSON: são os valores que o formulário lê.
-            this.inicial.set({
+            const inicial: SimulacaoDoFormulario = {
               respostas: inscricao.data.respostas as Readonly<Record<string, ValorJson>>,
               grupos: inscricao.data.grupos as SimulacaoDoFormulario['grupos'],
-            });
+            };
+            this.inicial.set(inicial);
+            this.avaliacao.iniciar(
+              processoId,
+              inscricao.data.avaliacao,
+              formulario.data.dependenciasDaAvaliacao,
+              inicial,
+            );
             this.termosAceitosIniciais.set(inscricao.data.aceites.map((a) => a.codigo));
             this.instanteDoEnvio.set(this.relogio());
             this.formulario.set(formulario.data);
@@ -271,6 +282,9 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   protected responder(simulacao: SimulacaoDoFormulario): void {
     this.simulacao.set(simulacao);
+    const inscricao = this.inscricao();
+    if (inscricao)
+      this.avaliacao.respostasMudaram(simulacao, () => this.respostasDoCorpo(inscricao, simulacao));
   }
 
   protected escolherOferta(evento: Event): void {
@@ -280,10 +294,12 @@ export class InscricaoDoCandidatoPage implements OnInit {
   }
 
   protected salvar(): void {
+    const revisao = this.avaliacao.revisao();
     this.gravar(
       (request, eTag) => this.servico.salvar(this.processoId(), request, eTag),
       (inscricao) => {
         this.inscricao.set(inscricao);
+        this.avaliacao.aplicarDaGravacao(inscricao.avaliacao, revisao);
         this.aviso.set('Rascunho salvo.');
       },
     );
@@ -304,11 +320,14 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   /** O envio devolve o comprovante, não a inscrição: sem reler, a próxima correção sairia com o ETag velho. */
   private relerAGravada(): void {
+    const revisao = this.avaliacao.revisao();
     this.servico
       .obter(this.processoId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
-        if (resultado.ok) this.inscricao.set(resultado.data);
+        if (!resultado.ok) return;
+        this.inscricao.set(resultado.data);
+        this.avaliacao.aplicarDaGravacao(resultado.data.avaliacao, revisao);
       });
   }
 
@@ -341,22 +360,36 @@ export class InscricaoDoCandidatoPage implements OnInit {
       });
   }
 
-  /**
-   * O corpo do salvar e do envio. A resposta que o candidato apagou vai como `null`: ausente do corpo, o
-   * servidor manteria a gravada.
-   */
+  /** O corpo do salvar e do envio: as respostas, a oferta escolhida e os termos aceitos. */
   private request(
     inscricao: InscricaoDto,
     simulacao: SimulacaoDoFormulario,
     termosAceitos: readonly string[],
   ): InscricaoRequest {
+    const termos = new Map((this.formulario()?.termos ?? []).map((t) => [t.codigo, t]));
+    return {
+      ofertaCursoId: this.ofertaEscolhida(),
+      ...this.respostasDoCorpo(inscricao, simulacao),
+      aceites: termosAceitos.flatMap((codigo) => {
+        const termo = termos.get(codigo);
+        return termo ? [{ codigo, versaoId: termo.versaoId, hashVersao: termo.hashVersao }] : [];
+      }),
+    };
+  }
+
+  /**
+   * As respostas e as ocorrências como o servidor as mescla ao gravado. A resposta que o candidato
+   * apagou vai como `null`: ausente do corpo, o servidor manteria a gravada.
+   */
+  private respostasDoCorpo(
+    inscricao: InscricaoDto,
+    simulacao: SimulacaoDoFormulario,
+  ): AvaliacaoDaInscricaoRequest {
     const respostas: Record<string, unknown> = { ...(simulacao.respostas ?? {}) };
     for (const fato of Object.keys(inscricao.respostas)) {
       if (!(fato in respostas)) respostas[fato] = null;
     }
-    const termos = new Map((this.formulario()?.termos ?? []).map((t) => [t.codigo, t]));
     return {
-      ofertaCursoId: this.ofertaEscolhida(),
       respostas,
       grupos: Object.fromEntries(
         Object.entries(simulacao.grupos ?? {}).map(([codigo, ocorrencias]) => [
@@ -364,10 +397,6 @@ export class InscricaoDoCandidatoPage implements OnInit {
           (ocorrencias ?? []).map((o) => ({ id: o.id, respostas: o.respostas ?? {} })),
         ]),
       ),
-      aceites: termosAceitos.flatMap((codigo) => {
-        const termo = termos.get(codigo);
-        return termo ? [{ codigo, versaoId: termo.versaoId, hashVersao: termo.hashVersao }] : [];
-      }),
     };
   }
 

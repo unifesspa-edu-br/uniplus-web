@@ -24,6 +24,7 @@ import {
   BLOCO_COMPROVACAO_DOCUMENTAL,
   BLOCO_MODALIDADES_CALCULADAS,
   BLOCO_REVISAO_E_ACEITE,
+  campoEm,
   type CampoNoPasso,
   type ErroDoServidor,
   erroEm,
@@ -38,6 +39,14 @@ import {
   termoSemAceite,
 } from './formulario-do-candidato.model';
 import { GrupoDoCandidatoComponent } from './grupo-do-candidato';
+import {
+  anunciarMudancaDasModalidades,
+  type AvaliacaoNaTela,
+  conhecidas,
+  type ModalidadesAvaliadas,
+  secoesQueDefinemAsModalidades,
+} from './modalidades-avaliadas';
+import { ModalidadesDaInscricaoComponent } from './modalidades-da-inscricao';
 import { interpretarFormulario, lerEnvio } from './interpretador/interpretador';
 import type {
   EnvioDasRespostas,
@@ -64,11 +73,14 @@ import type {
     CampoDoCandidatoComponent,
     GrupoDoCandidatoComponent,
     ListaDeDocumentosComponent,
+    ModalidadesDaInscricaoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="formulario-candidato">
       <p class="sr-only" aria-live="polite">{{ anuncio() }}</p>
+      <!-- Fora da seção delas: a resposta que muda as modalidades é dada em outra seção. -->
+      <p class="sr-only" aria-live="polite">{{ anuncioDasModalidades() }}</p>
 
       @if (recusa(); as erro) {
         <ui-alert variant="danger" heading="As regras do formulário não podem ser interpretadas">
@@ -132,10 +144,20 @@ import type {
 
               @switch (passo.bloco) {
                 @case (BLOCO_MODALIDADES_CALCULADAS) {
-                  <p>
-                    As modalidades em que o candidato concorre são calculadas pelo sistema a partir
-                    das respostas dadas.
-                  </p>
+                  @if (avaliacao(); as avaliacao) {
+                    <ui-modalidades-da-inscricao
+                      [avaliacao]="avaliacao"
+                      [secoes]="secoesQueDefinem()"
+                      (irAoCampo)="irAoCampo($event)"
+                      (irASecao)="irASecao($event)"
+                      (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
+                    />
+                  } @else {
+                    <p>
+                      As modalidades em que o candidato concorre são calculadas pelo sistema a
+                      partir das respostas dadas.
+                    </p>
+                  }
                 }
                 @case (BLOCO_COMPROVACAO_DOCUMENTAL) {
                   @if (documentos(); as lista) {
@@ -179,6 +201,16 @@ import type {
               }
 
               @if (passo.bloco === BLOCO_REVISAO_E_ACEITE) {
+                @if (avaliacaoDerivada(); as avaliacao) {
+                  <ui-modalidades-da-inscricao
+                    [avaliacao]="avaliacao"
+                    [secoes]="secoesQueDefinem()"
+                    [resumo]="true"
+                    (irAoCampo)="irAoCampo($event)"
+                    (irASecao)="irASecao($event)"
+                    (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
+                  />
+                }
                 @for (termo of passo.termos; track termo.termo.codigo) {
                   <article
                     class="formulario-candidato__termo"
@@ -277,11 +309,18 @@ export class FormularioDoCandidatoComponent {
    * que o formulário publica. Sem ele, o limite contado do envio fica indeterminado.
    */
   readonly envio = input<EnvioDasRespostas | null>(null);
+  /**
+   * O que a API calculou das respostas (ADR-0143). Nula, o bloco de modalidades só explica o cálculo —
+   * como no simulador, que não consulta a API. Sem derivação, o bloco de modalidades não aparece.
+   */
+  readonly avaliacao = input<AvaliacaoNaTela | null>(null);
 
   /** A simulação a cada mudança: as respostas, as ocorrências, as seções concluídas e os pressupostos. */
   readonly simulacaoChange = output<SimulacaoDoFormulario>();
   /** Os termos aceitos, pelo código, a cada mudança. */
   readonly termosAceitosChange = output<readonly string[]>();
+  /** O candidato pediu para calcular de novo as modalidades depois de uma falha. */
+  readonly tentarAvaliarDeNovo = output<void>();
 
   protected readonly BLOCO_MODALIDADES_CALCULADAS = BLOCO_MODALIDADES_CALCULADAS;
   protected readonly BLOCO_COMPROVACAO_DOCUMENTAL = BLOCO_COMPROVACAO_DOCUMENTAL;
@@ -368,8 +407,14 @@ export class FormularioDoCandidatoComponent {
   });
   protected readonly passos = computed<readonly PassoDoFormulario[]>(() => {
     const interpretacao = this.interpretacao();
-    return interpretacao.valida ? passosDo(this.formulario(), interpretacao.avaliacao) : [];
+    if (!interpretacao.valida) return [];
+    const passos = passosDo(this.formulario(), interpretacao.avaliacao);
+    return this.semDerivacao()
+      ? passos.filter((p) => p.bloco !== BLOCO_MODALIDADES_CALCULADAS)
+      : passos;
   });
+  /** O processo que não define pela inscrição as modalidades não tem o que mostrar no bloco delas. */
+  private readonly semDerivacao = computed(() => this.avaliacao()?.modalidades?.derivada === false);
   protected readonly indice = computed(() => {
     const { chave, indice } = this.escolhida();
     const passos = this.passos();
@@ -377,6 +422,31 @@ export class FormularioDoCandidatoComponent {
     return achado >= 0 ? achado : Math.max(0, Math.min(indice, passos.length - 1));
   });
   protected readonly passoAtual = computed(() => this.passos()[this.indice()] ?? null);
+
+  /** A avaliação com modalidades derivadas: só ela tem resumo na Revisão. */
+  protected readonly avaliacaoDerivada = computed(() => {
+    const avaliacao = this.avaliacao();
+    return avaliacao?.modalidades?.derivada ? avaliacao : null;
+  });
+  protected readonly secoesQueDefinem = computed(() =>
+    secoesQueDefinemAsModalidades(this.passos(), this.formulario().dependenciasDaAvaliacao),
+  );
+  /**
+   * O último conjunto decidido das modalidades. Enquanto falta responder, ele fica: o conjunto que vier
+   * depois é comparado com o que o candidato tinha antes de abrir a pendência.
+   */
+  private readonly conjuntoConhecido = linkedSignal<
+    ModalidadesAvaliadas | null,
+    ModalidadesAvaliadas | null
+  >({
+    source: computed(() => this.avaliacao()?.modalidades ?? null),
+    computation: (atuais, anterior) => (conhecidas(atuais) ? atuais : (anterior?.value ?? null)),
+  });
+  protected readonly anuncioDasModalidades = linkedSignal<ModalidadesAvaliadas | null, string>({
+    source: this.conjuntoConhecido,
+    computation: (atuais, anterior) =>
+      anterior ? anunciarMudancaDasModalidades(anterior.source, atuais) : '',
+  });
 
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
   private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -407,7 +477,7 @@ export class FormularioDoCandidatoComponent {
     });
     effect(() => {
       const [primeiro] = this.errosDoServidor();
-      if (primeiro) untracked(() => this.irAoErro(primeiro));
+      if (primeiro) untracked(() => this.irAoCampo(primeiro.campo));
     });
   }
 
@@ -416,7 +486,7 @@ export class FormularioDoCandidatoComponent {
   }
 
   protected comErro(passo: PassoDoFormulario): boolean {
-    return this.erros().some((e) => contemOCampo(passo, e));
+    return this.erros().some((e) => contemOCampo(passo, e.campo));
   }
 
   /** O que dizer ao lado do termo: a recusa do servidor ou, com a seção concluída, a falta do aceite. */
@@ -427,11 +497,19 @@ export class FormularioDoCandidatoComponent {
     );
   }
 
-  /** Vai à seção do erro e põe o foco no primeiro controle do que foi recusado. */
-  private irAoErro(erro: ErroDoServidor): void {
-    const indice = this.passos().findIndex((passo) => contemOCampo(passo, erro));
+  /**
+   * Vai à seção do campo, grupo ou termo e põe o foco no primeiro controle dele — o recusado pelo
+   * servidor ou a pergunta que falta para calcular as modalidades.
+   */
+  protected irAoCampo(campo: string): void {
+    const indice = this.passos().findIndex((passo) => contemOCampo(passo, campo));
     if (indice < 0) return;
-    this.irPara(indice, () => this.controleDe(erro.campo));
+    this.irPara(indice, () => this.controleDe(campo));
+  }
+
+  protected irASecao(chave: string): void {
+    const indice = this.passos().findIndex((passo) => passo.chave === chave);
+    if (indice >= 0) this.irPara(indice);
   }
 
   /** O primeiro controle do campo, grupo ou termo; o campo de uma ocorrência cai no grupo dela. */
@@ -571,12 +649,12 @@ export class FormularioDoCandidatoComponent {
   }
 }
 
-/** O erro é de um campo, grupo ou termo deste passo. */
-function contemOCampo(passo: PassoDoFormulario, erro: ErroDoServidor): boolean {
+/** O campo — o código de um campo, grupo ou termo, ou de dentro de um grupo — é deste passo. */
+function contemOCampo(passo: PassoDoFormulario, campo: string): boolean {
   return (
-    passo.campos.some((c) => erro.campo === c.campo.fatoCodigo) ||
-    passo.grupos.some((g) => erroEm(erro, g.grupo.codigo)) ||
-    passo.termos.some((t) => erro.campo === t.termo.codigo)
+    passo.campos.some((c) => campo === c.campo.fatoCodigo) ||
+    passo.grupos.some((g) => campoEm(campo, g.grupo.codigo)) ||
+    passo.termos.some((t) => campo === t.termo.codigo)
   );
 }
 
