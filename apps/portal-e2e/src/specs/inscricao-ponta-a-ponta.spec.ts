@@ -161,11 +161,22 @@ async function preencherRestante(page: Page): Promise<void> {
   await lista(page, 'Onde você cursou o ensino médio').selectOption({ label: 'Escola privada' });
 
   await irParaSecao(page, 'Fator de Atenuação das Desigualdades de Acesso');
-  const municipioDoFator = lista(page, 'Em qual município da área de abrangência você reside');
+  // Quem concluiu o ensino médio regular informa o município em que o cursou, sem escolher caminho.
+  const municipioDoFator = lista(
+    page,
+    'Em qual município da área de influência você cursou o ensino médio',
+  );
+  const caminhoDoFator = page.getByRole('group', {
+    name: /^Por qual vínculo com a área você solicita o Fator/,
+  });
   // A inscrição retomada já traz a resposta anterior: o "Não" fixa o ponto de partida.
   await escolher(page, 'Deseja solicitar o Fator de Atenuação das Desigualdades de Acesso', 'Não');
   await expect(municipioDoFator).toHaveCount(0);
   await escolher(page, 'Deseja solicitar o Fator de Atenuação das Desigualdades de Acesso', 'Sim');
+  // O município e o caminho dependem da mesma resposta: com o município à vista, a ausência do
+  // caminho já é a definitiva.
+  await expect(municipioDoFator).toBeVisible();
+  await expect(caminhoDoFator).toHaveCount(0);
   await municipioDoFator.selectOption({ label: MUNICIPIO_DO_FATOR });
 
   await irParaSecao(page, 'Reserva de vagas');
