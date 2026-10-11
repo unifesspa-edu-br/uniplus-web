@@ -35,6 +35,7 @@ const PERSONA = {
 /** Uma das edições que o roteiro da API declara como aceitas pelo processo de validação. */
 const EDICAO_DO_ENEM = 'ENEM 2026';
 const MUNICIPIO_DO_FATOR = 'Marabá/PA';
+const ORGAO_EMISSOR = 'Secretaria de Segurança Pública (SSP)';
 
 const campo = (page: Page, rotulo: string): Locator =>
   page.getByRole('textbox', { name: new RegExp(`^${rotulo}`) });
@@ -91,7 +92,13 @@ async function preencherDadosDoCandidato(page: Page): Promise<void> {
   await escolher(page, 'Nacionalidade', 'Brasileiro nato');
   await expect(campo(page, 'CPF')).toHaveValue(PERSONA.cpfMascarado);
   await campo(page, 'Número do RG').fill(PERSONA.rg);
-  await campo(page, 'Órgão emissor do RG').fill('SSP');
+  // Só o "Outro" pede o nome do órgão; com um órgão da lista, o campo sai de novo.
+  const orgaoEmissor = lista(page, 'Órgão emissor do RG');
+  const nomeDoOrgao = campo(page, 'Nome do órgão emissor');
+  await orgaoEmissor.selectOption({ label: 'Outro' });
+  await expect(nomeDoOrgao).toBeVisible();
+  await orgaoEmissor.selectOption({ label: ORGAO_EMISSOR });
+  await expect(nomeDoOrgao).toHaveCount(0);
   await lista(page, 'UF de emissão do RG').selectOption({ label: PERSONA.uf });
   await campo(page, 'Data de emissão do RG').fill('1990-05-10');
   await recusarNascimentoNoFuturo(page);
@@ -351,6 +358,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(comprovante(page)).toContainText(`${PERSONA.cidade}/MS`);
       await expect(comprovante(page)).toContainText(EDICAO_DO_ENEM);
       await expect(comprovante(page)).toContainText(MUNICIPIO_DO_FATOR);
+      await expect(comprovante(page)).toContainText(ORGAO_EMISSOR);
       await expect(comprovante(page)).not.toContainText('Código IBGE');
       await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
     });

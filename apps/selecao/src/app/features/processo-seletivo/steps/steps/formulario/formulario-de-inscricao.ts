@@ -54,6 +54,7 @@ export const FATOS_DO_CONJUNTO_BASICO: readonly string[] = [
   'CPF',
   'RG_NUMERO',
   'RG_ORGAO_EMISSOR',
+  'RG_ORGAO_EMISSOR_OUTRO',
   'RG_UF',
   'RG_DATA_EMISSAO',
   'PASSAPORTE_NUMERO',
