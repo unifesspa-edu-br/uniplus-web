@@ -62,8 +62,22 @@ const FORMULARIO = {
   pressupostos: [],
 } as unknown as FormularioRenderizavelDto;
 
+type ModalidadesDoComprovante = ComprovanteInscricaoDto['modalidades'];
+
+/** O primeiro envio concorre em duas modalidades, gravadas fora da ordem; a correção, em uma. */
+const MODALIDADES_POR_ENVIO: Record<number, ModalidadesDoComprovante> = {
+  1: [
+    { codigo: 'LI_EP', nome: 'Escola pública, independente de renda', ordem: 1 },
+    { codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 },
+  ],
+  2: [{ codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 }],
+};
+/** Nulo quando o processo não define pela inscrição as modalidades de concorrência. */
+let modalidadesDoEnvio = (numero: number): ModalidadesDoComprovante =>
+  MODALIDADES_POR_ENVIO[numero];
+
 /** Fernanda Drumond, persona fictícia do portal de documentação, que prefere o nome social. */
-function comprovante(numeroInscricao: string): ComprovanteInscricaoDto {
+function comprovante(numeroInscricao: string, numero: number): ComprovanteInscricaoDto {
   return {
     cpfMascarado: '***.598.363-**',
     numeroInscricao,
@@ -80,6 +94,7 @@ function comprovante(numeroInscricao: string): ComprovanteInscricaoDto {
     derivados: {},
     grupos: {},
     aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }],
+    modalidades: modalidadesDoEnvio(numero),
   };
 }
 
@@ -124,7 +139,7 @@ const INSCRICAO = {
 const servico = {
   listar: () => of(apiOk([INSCRICAO], 200, SEM_CABECALHOS)),
   comprovante: (_: string, numero: number) =>
-    of(numero <= 2 ? apiOk(comprovante('00000042'), 200, SEM_CABECALHOS) : NAO_ENCONTRADO),
+    of(numero <= 2 ? apiOk(comprovante('00000042', numero), 200, SEM_CABECALHOS) : NAO_ENCONTRADO),
   formulario: () => of(apiOk(FORMULARIO, 200, SEM_CABECALHOS)),
   nomesDosMunicipios: (codigos: readonly string[]) =>
     of(new Map(codigos.map((c) => [c, c === '5002704' ? 'Campo Grande — MS' : c]))),
@@ -166,6 +181,17 @@ async function atualizar(): Promise<void> {
 const links = (tela: HTMLElement): string[] =>
   Array.from(tela.querySelectorAll('nav a')).map((a) => a.textContent?.trim() ?? '');
 
+/** A seção do comprovante pelo título dela. */
+const secao = (tela: HTMLElement, titulo: string): HTMLElement | null =>
+  (Array.from(tela.querySelectorAll('ui-secao-de-documento')).find(
+    (s) => s.querySelector('.secao-de-documento__titulo')?.textContent?.trim() === titulo,
+  ) as HTMLElement | undefined) ?? null;
+
+const modalidadesNaTela = (tela: HTMLElement): string[] =>
+  Array.from(
+    secao(tela, 'Modalidades em que você concorre')?.querySelectorAll('ul > li') ?? [],
+  ).map((li) => li.textContent?.trim() ?? '');
+
 const dado = (tela: HTMLElement, rotulo: string): string | null => {
   const par = Array.from(tela.querySelectorAll('dl > div')).find(
     (d) => d.querySelector('dt')?.textContent?.trim() === rotulo,
@@ -177,6 +203,7 @@ describe('ComprovanteDaInscricaoPage', () => {
   afterEach(() => {
     cpfDoLogin.set(CPF_DA_CONTA);
     fimDoPeriodo = '2999-12-31T02:59:00Z';
+    modalidadesDoEnvio = (numero) => MODALIDADES_POR_ENVIO[numero];
     vi.restoreAllMocks();
   });
 
@@ -289,5 +316,34 @@ describe('ComprovanteDaInscricaoPage', () => {
 
     expect(tela.textContent).toContain('Envio 1 de 2');
     expect(links(tela)).toEqual(['Envio seguinte ›']);
+  });
+
+  it('lista as modalidades do envio pelo nome congelado, na ordem gravada, sem o código', async () => {
+    const tela = await abrir('1');
+
+    expect(modalidadesNaTela(tela)).toEqual([
+      'Ampla concorrência',
+      'Escola pública, independente de renda',
+    ]);
+    const texto = secao(tela, 'Modalidades em que você concorre')?.textContent ?? '';
+    expect(texto).not.toContain('LI_EP');
+    expect(texto).not.toMatch(/\bAC\b/);
+  });
+
+  it('o comprovante da correção mostra as modalidades que ela recalculou', async () => {
+    const tela = await abrir();
+
+    expect(modalidadesNaTela(tela)).toEqual(['Ampla concorrência']);
+  });
+
+  it('o processo que não define as modalidades pela inscrição diz isso, sem lista', async () => {
+    modalidadesDoEnvio = () => null;
+    const tela = await abrir();
+
+    const modalidades = secao(tela, 'Modalidades em que você concorre');
+    expect(modalidades?.querySelector('ul')).toBeNull();
+    expect(modalidades?.textContent?.replace(/\s+/g, ' ')).toContain(
+      'Este processo seletivo não define pela inscrição as modalidades de concorrência. Consulte o edital.',
+    );
   });
 });

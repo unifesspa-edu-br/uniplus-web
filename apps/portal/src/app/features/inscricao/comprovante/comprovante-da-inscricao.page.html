@@ -98,6 +98,21 @@
   </ui-secao-de-documento>
   }
 
+  <ui-secao-de-documento titulo="Modalidades em que você concorre" largura="inteira">
+    @if (modalidades(); as nomes) {
+    <ul>
+      @for (nome of nomes; track nome) {
+      <li>{{ nome }}</li>
+      }
+    </ul>
+    } @else {
+    <p>
+      Este processo seletivo não define pela inscrição as modalidades de concorrência. Consulte o
+      edital.
+    </p>
+    }
+  </ui-secao-de-documento>
+
   <ui-secao-de-documento titulo="Candidato">
     <ui-lista-de-dados>
       @if (nomes(); as nomes) { @if (nomes.social; as social) {

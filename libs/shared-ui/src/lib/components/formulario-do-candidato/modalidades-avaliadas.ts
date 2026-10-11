@@ -50,9 +50,12 @@ export interface AvaliacaoNaTela {
 /** Os nomes das modalidades na ordem da oferta. */
 export function nomesNaOrdem(modalidades: ModalidadesAvaliadas | null): readonly string[] {
   if (modalidades?.situacao !== CONCORRE) return [];
-  return [...modalidades.itens]
-    .sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem))
-    .map((m) => m.nome);
+  return nomesPelaOrdem(modalidades.itens);
+}
+
+/** Os nomes de um conjunto de modalidades, na ordem da oferta: o código nunca vai à tela. */
+export function nomesPelaOrdem(itens: readonly ModalidadeAvaliada[]): readonly string[] {
+  return [...itens].sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem)).map((m) => m.nome);
 }
 
 /**

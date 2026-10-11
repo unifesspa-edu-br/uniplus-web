@@ -3,7 +3,7 @@ import type {
   FormularioRenderizavelDto,
   MinhaInscricaoDto,
 } from '@uniplus/shared-data/selecao';
-import { titulosDasOcorrencias } from '@uniplus/shared-ui/components';
+import { nomesPelaOrdem, titulosDasOcorrencias } from '@uniplus/shared-ui/components';
 
 import { type CampoExibido, type NomesDosMunicipios, respostaExibida } from './resposta-exibida';
 
@@ -142,6 +142,17 @@ export function derivadosDoComprovante(
   municipios: NomesDosMunicipios = new Map(),
 ): RespostaDoComprovante[] {
   return respondidos(derivadosDescritos(formulario), comprovante.derivados, municipios);
+}
+
+/**
+ * Os nomes das modalidades em que o envio concorre, como o comprovante os congelou. Nulo quando o
+ * processo não define pela inscrição as modalidades de concorrência. Nunca vem vazio: o envio que não
+ * dá nenhuma modalidade é recusado e não gera comprovante.
+ */
+export function modalidadesDoComprovante(
+  comprovante: ComprovanteInscricaoDto,
+): readonly string[] | null {
+  return comprovante.modalidades ? nomesPelaOrdem(comprovante.modalidades) : null;
 }
 
 /** Os termos aceitos pelo nome que o formulário lhes dá. */

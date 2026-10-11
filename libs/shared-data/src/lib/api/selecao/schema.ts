@@ -7538,6 +7538,7 @@ export interface components {
                 readonly [key: string]: readonly components["schemas"]["OcorrenciaDeGrupoInscricaoInput"][];
             };
             readonly aceites: readonly components["schemas"]["AceiteDeTermoInput"][];
+            readonly modalidades: null | readonly components["schemas"]["ModalidadeDaInscricaoDto"][];
         };
         readonly CondicaoAtendimentoCertameDto: {
             readonly codigo: string;
