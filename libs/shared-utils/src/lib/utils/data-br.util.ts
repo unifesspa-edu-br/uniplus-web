@@ -96,6 +96,47 @@ export function lerDataIso(texto: string): Date | null {
 }
 
 /**
+ * O dia de calendário do contrato: o texto exatamente `AAAA-MM-DD`, sem espaços, de um dia que existe,
+ * como o `DiaDoCalendario.Ler` da API lê a resposta e o limite de data. Nulo em qualquer outra forma.
+ */
+export function diaDoCalendario(texto: string): string | null {
+  const partes = DATA_ISO.exec(texto);
+  if (!partes) return null;
+  const [ano, mes, dia] = partes.slice(1, 4).map(Number);
+  return dataGregorianaValida(ano, mes, dia) ? texto : null;
+}
+
+/** O dia de calendário `AAAA-MM-DD` em que o instante cai no fuso dado. */
+export function diaNoFuso(instante: Date, fuso: string = FUSO_INSTITUCIONAL): string {
+  const { ano, mes, dia } = partesNoFuso(instante, fuso);
+  return `${ano}-${mes}-${dia}`;
+}
+
+/**
+ * O dia `AAAA-MM-DD` deslocado em anos e depois em dias, a mesma conta de `DateOnly.AddYears` e
+ * `AddDays` da API: o 29 de fevereiro que cai em ano sem ele vira 28. Nulo quando o dia não é uma
+ * data válida ou o resultado sai do calendário de quatro dígitos.
+ */
+export function deslocarDia(dia: string, anos: number, dias: number): string | null {
+  const data = lerDataIso(dia);
+  if (!data) return null;
+  const ano = data.getUTCFullYear() + anos;
+  const mes = data.getUTCMonth() + 1;
+  const ultimoDia = dataGregorianaValida(ano, mes, data.getUTCDate()) ? data.getUTCDate() : 28;
+  const deslocada = dataPura(ano, mes, ultimoDia);
+  if (!deslocada) return null;
+  deslocada.setUTCDate(deslocada.getUTCDate() + dias);
+  const resultado = deslocada.getUTCFullYear();
+  return resultado < 1 || resultado > 9999 ? null : diaIso(deslocada);
+}
+
+function diaIso(data: Date): string {
+  const ano = String(data.getUTCFullYear()).padStart(4, '0');
+  const mes = String(data.getUTCMonth() + 1).padStart(2, '0');
+  return `${ano}-${mes}-${String(data.getUTCDate()).padStart(2, '0')}`;
+}
+
+/**
  * Valida ano, mês e dia por aritmética de calendário gregoriano, sem construir `Date`: um
  * round-trip por `new Date(...)` com getters locais rejeitaria uma data real nos fusos que
  * suprimem um dia civil numa transição (`Pacific/Apia` pulou 30/12/2011), conforme o fuso de

@@ -6,6 +6,7 @@ import { provideRouter } from '@angular/router';
 import { of, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
+import { RELOGIO } from '@uniplus/shared-core/relogio';
 import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
 import {
   type ComprovanteInscricaoDto,
@@ -93,7 +94,12 @@ describe('InscricaoDoCandidatoPage', () => {
   let fixture: ComponentFixture<InscricaoDoCandidatoPage>;
   let servico: ServicoDublê;
 
+  /** O instante que o relógio da página devolve. */
+  let agora = new Date('2026-12-11T13:30:00Z');
+
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    agora = new Date('2026-12-11T13:30:00Z');
     servico = new ServicoDublê();
     TestBed.configureTestingModule({
       imports: [InscricaoDoCandidatoPage],
@@ -105,11 +111,15 @@ describe('InscricaoDoCandidatoPage', () => {
         { provide: UserContextService, useValue: { user: signal({ cpf: CPF_DA_CONTA }) } },
         { provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) },
         { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },
+        { provide: RELOGIO, useValue: () => agora },
       ],
     });
   });
 
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
 
   const abrir = async (): Promise<HTMLElement> => {
     fixture = TestBed.createComponent(InscricaoDoCandidatoPage);
@@ -428,6 +438,60 @@ describe('InscricaoDoCandidatoPage', () => {
     await clicar(botao(tela, 'Enviar inscrição'));
 
     expect(servico.enviados.map((r) => r.ofertaCursoId)).toEqual([DIREITO.id, DIREITO.id]);
+  });
+
+  /** A data de nascimento até o dia do envio, como o conjunto básico a declara. */
+  const comNascimentoAteOEnvio = (): FormularioRenderizavelDto => ({
+    ...FORMULARIO_DE_INSCRICAO_MOCK,
+    regras: {
+      ...FORMULARIO_DE_INSCRICAO_MOCK.regras,
+      etapas: FORMULARIO_DE_INSCRICAO_MOCK.regras.etapas.map((etapa) => ({
+        ...etapa,
+        itens: etapa.itens.map((item) =>
+          item.fatoCodigo === 'DATA_NASCIMENTO'
+            ? {
+                ...item,
+                restricoes: [
+                  {
+                    tipo: 'FAIXA_DE_DATA',
+                    minimo: null,
+                    maximo: null,
+                    entradas: null,
+                    fatos: null,
+                    dataMinima: null,
+                    dataMaxima: { ancora: 'ENVIO', data: null, anos: 0, dias: 0 },
+                  },
+                ],
+              }
+            : item,
+        ),
+      })),
+    },
+  });
+
+  it('o limite contado do envio anda um dia quando a meia-noite do fuso do envio passa', async () => {
+    agora = new Date('2026-12-12T02:50:00Z'); // 23h50 de 11/12 em Belém
+    servico.formulario = comNascimentoAteOEnvio();
+    const tela = await abrir();
+    expect(campoDe(tela, 'DATA_NASCIMENTO').getAttribute('max')).toBe('2026-12-11');
+
+    agora = new Date('2026-12-12T03:00:01Z'); // 00h00 de 12/12 em Belém
+    vi.advanceTimersByTime(10 * 60 * 1_000 + 1_000);
+    fixture.detectChanges();
+
+    expect(campoDe(tela, 'DATA_NASCIMENTO').getAttribute('max')).toBe('2026-12-12');
+  });
+
+  it('a aba que volta ao primeiro plano confere o dia, mesmo com o timer atrasado', async () => {
+    agora = new Date('2026-12-12T02:50:00Z');
+    servico.formulario = comNascimentoAteOEnvio();
+    const tela = await abrir();
+
+    agora = new Date('2026-12-12T09:00:00Z');
+    document.dispatchEvent(new Event('visibilitychange'));
+    fixture.detectChanges();
+
+    expect(campoDe(tela, 'DATA_NASCIMENTO').getAttribute('max')).toBe('2026-12-12');
   });
 
   it('a última seção não oferece concluir: a ação final é enviar a inscrição', async () => {

@@ -121,6 +121,7 @@ export type { RegrasInvalidas } from '../../src/lib/components/formulario-do-can
 export type {
   AvaliacaoDoFormulario,
   CampoAvaliado,
+  EnvioDasRespostas,
   RegrasDoFormulario,
   SimulacaoDoFormulario,
   ValorJson,

@@ -1,6 +1,8 @@
-import type { DadoRevelavel } from '@uniplus/shared-utils';
+import { type DadoRevelavel, formatarDataBr } from '@uniplus/shared-utils';
 
+import { lerLimiteDeData } from './interpretador/leitura';
 import { RESOLVIDO, VERDADEIRO } from './interpretador/logica';
+import { diaDoLimite, FAIXA_DE_DATA } from './interpretador/restricoes';
 
 import type {
   AvaliacaoDoFormulario,
@@ -373,10 +375,44 @@ export function fatoDaUf(regra: ItemDasRegras | null): string | null {
 
 const numeroBr = (valor: number): string => valor.toLocaleString('pt-BR');
 
+/** Os dias `AAAA-MM-DD` que a faixa de data admite no dia do envio; o limite que não se sabe é nulo. */
+export interface LimitesDeData {
+  readonly minimo: string | null;
+  readonly maximo: string | null;
+}
+
+/**
+ * Os limites da faixa de data declarada no campo, resolvidos no dia do envio pela mesma conta que o
+ * interpretador faz; nulo quando o campo não declara a faixa.
+ */
+export function limitesDaFaixaDeData(
+  regra: ItemDasRegras | null,
+  diaDoEnvio: string | null,
+): LimitesDeData | null {
+  const faixa = regra?.restricoes?.find((r) => r.tipo === FAIXA_DE_DATA);
+  if (!faixa) return null;
+  const resolver = (limite: RestricaoDasRegras['dataMinima']): string | null => {
+    const lido = lerLimiteDeData(limite, '');
+    return lido === null ? null : diaDoLimite(lido, diaDoEnvio);
+  };
+  return { minimo: resolver(faixa.dataMinima), maximo: resolver(faixa.dataMaxima) };
+}
+
+/** O que dizer ao candidato sobre os limites de data, com os dias em dd/mm/aaaa; nulo sem limite sabido. */
+export function textoDosLimitesDeData(limites: LimitesDeData | null): string | null {
+  const dia = (iso: string): string => formatarDataBr(iso, 'short');
+  if (limites?.minimo && limites.maximo)
+    return `Informe uma data entre ${dia(limites.minimo)} e ${dia(limites.maximo)}.`;
+  if (limites?.maximo) return `Informe uma data até ${dia(limites.maximo)}.`;
+  if (limites?.minimo) return `Informe uma data a partir de ${dia(limites.minimo)}.`;
+  return null;
+}
+
 /** A mensagem de cada restrição que a resposta viola, montada com os limites que a regra declara. */
 export function mensagensDasRestricoes(
   avaliado: CampoAvaliado,
   regra: ItemDasRegras | null,
+  diaDoEnvio: string | null,
 ): string[] {
   const declarada = (tipo: string): RestricaoDasRegras | undefined =>
     regra?.restricoes?.find((r) => r.tipo === tipo);
@@ -408,6 +444,11 @@ export function mensagensDasRestricoes(
         return 'Escolha uma das opções oferecidas.';
       case 'MUNICIPIOS_DA_UF':
         return 'Escolha um município da UF informada.';
+      case FAIXA_DE_DATA:
+        return (
+          textoDosLimitesDeData(limitesDaFaixaDeData(regra, diaDoEnvio)) ??
+          'A data não está dentro dos limites do campo.'
+        );
       case 'FORMATO_TEXTO':
         return (
           MENSAGEM_DO_FORMATO[regra?.formato ?? ''] ?? 'A resposta não está no formato esperado.'

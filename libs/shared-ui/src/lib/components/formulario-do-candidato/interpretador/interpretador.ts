@@ -1,3 +1,5 @@
+import { deslocarDia, diaNoFuso } from '@uniplus/shared-utils';
+
 import { avaliar, type ItemAvaliado, type OcorrenciaRespondida } from './avaliador';
 import { lerRegras, type RegrasInvalidas } from './leitura';
 import {
@@ -12,11 +14,13 @@ import {
 import type {
   AvaliacaoDoFormulario,
   CampoAvaliado,
+  EnvioDasRespostas,
   OcorrenciaSimulada,
   RegrasDoFormulario,
   SimulacaoDoFormulario,
   ValorJson,
 } from './regras-do-formulario';
+import { TETO_DE_ANOS, TETO_DE_DIAS } from './restricoes';
 
 export type InterpretacaoDoFormulario =
   | { readonly valida: true; readonly avaliacao: AvaliacaoDoFormulario }
@@ -36,6 +40,9 @@ export function interpretarFormulario(
 ): InterpretacaoDoFormulario {
   const grupos = lerOcorrencias(simulacao.grupos);
   if ('caminho' in grupos) return { valida: false, erro: grupos };
+  const diaDoEnvio = lerEnvio(simulacao.envio);
+  if (diaDoEnvio !== null && typeof diaDoEnvio !== 'string')
+    return { valida: false, erro: diaDoEnvio };
 
   const leitura = lerRegras(regras);
   if (!leitura.valida) return leitura;
@@ -66,6 +73,7 @@ export function interpretarFormulario(
     ),
     etapasConcluidas: new Set(simulacao.etapasConcluidas ?? []),
     fatosConhecidos: comoFatosConhecidos(simulacao.pressupostos),
+    diaDoEnvio,
   });
 
   return {
@@ -125,6 +133,46 @@ function lerOcorrencias(
     lidas.set(grupo, respondidas);
   }
   return lidas;
+}
+
+const INSTANTE_COM_ZONA = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+
+/**
+ * O dia do envio no fuso do envio, com as mesmas recusas da API: o instante com zona, o fuso
+ * reconhecido e um dia que ainda comporta os maiores deslocamentos da faixa de data. Sem envio, nulo.
+ */
+export function lerEnvio(
+  envio: EnvioDasRespostas | null | undefined,
+): string | null | RegrasInvalidas {
+  if (envio === null || envio === undefined) return null;
+  const instante =
+    typeof envio.instante === 'string' && INSTANTE_COM_ZONA.test(envio.instante)
+      ? new Date(envio.instante)
+      : null;
+  if (instante === null || Number.isNaN(instante.getTime()))
+    return {
+      caminho: 'envio.instante',
+      mensagem: 'O instante do envio é uma data e hora com fuso.',
+    };
+  let dia: string;
+  try {
+    dia = diaNoFuso(instante, envio.fuso);
+  } catch {
+    return { caminho: 'envio.fuso', mensagem: 'A zona do envio simulado não é reconhecida.' };
+  }
+  return comportaOsDeslocamentos(dia)
+    ? dia
+    : {
+        caminho: 'envio.instante',
+        mensagem: 'O dia do envio não comporta os deslocamentos da faixa de data.',
+      };
+}
+
+/** O dia do qual o maior deslocamento, para os dois lados, ainda cai no calendário, como na API. */
+function comportaOsDeslocamentos(dia: string): boolean {
+  const primeiro = deslocarDia('0001-01-01', TETO_DE_ANOS, TETO_DE_DIAS);
+  const ultimo = deslocarDia('9999-12-31', -TETO_DE_ANOS, -TETO_DE_DIAS);
+  return primeiro !== null && ultimo !== null && dia >= primeiro && dia <= ultimo;
 }
 
 /** Os pressupostos: o valor dado resolve o fato, e o valor em branco é não informado. */

@@ -12,10 +12,12 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { forkJoin, type Observable } from 'rxjs';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
+import { RELOGIO } from '@uniplus/shared-core/relogio';
 import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
 import {
   type ComprovanteInscricaoDto,
@@ -28,6 +30,7 @@ import { isValidCpf } from '@uniplus/shared-data/utils';
 import {
   AlertComponent,
   derivadosDoSistema,
+  type EnvioDasRespostas,
   type ErroDoServidor,
   FormularioDoCandidatoComponent,
   PageHeaderComponent,
@@ -36,7 +39,13 @@ import {
   SpinnerComponent,
   type ValorJson,
 } from '@uniplus/shared-ui/components';
-import { cpfRevelavel, mascararCpf } from '@uniplus/shared-utils';
+import {
+  cpfRevelavel,
+  deslocarDia,
+  diaNoFuso,
+  instanteDaHoraDeParede,
+  mascararCpf,
+} from '@uniplus/shared-utils';
 
 import {
   InscricaoDoCandidatoService,
@@ -94,6 +103,22 @@ export class InscricaoDoCandidatoPage implements OnInit {
    * comprovação documental, que então não aparece.
    */
   protected readonly documentos = computed(() => this.formulario()?.comprovacaoDocumental ?? []);
+  private readonly relogio = inject(RELOGIO);
+  private readonly documento = inject(DOCUMENT);
+  /**
+   * O instante contra o qual a tela confere os limites de data. Só muda quando o dia do envio vira, para
+   * as regras não se reavaliarem a cada tique do relógio.
+   */
+  private readonly instanteDoEnvio = signal(this.relogio());
+  /**
+   * O envio que a tela supõe para os limites de data: o dia de agora, no fuso que o formulário publica.
+   * O servidor confere de novo com o instante real de cada gravação.
+   */
+  protected readonly envio = computed<EnvioDasRespostas | null>(() => {
+    const fuso = this.formulario()?.fusoDoEnvio;
+    return fuso ? { instante: this.instanteDoEnvio().toISOString(), fuso } : null;
+  });
+  private viradaDoDia: ReturnType<typeof setTimeout> | null = null;
   /** Sem a fase publicada de cada exigência, o aviso não diz em qual etapa o edital pede os documentos. */
   protected readonly semDocumentos =
     'Você não envia documentos nesta etapa. Os documentos que comprovam o que você declarou podem ser ' +
@@ -158,6 +183,15 @@ export class InscricaoDoCandidatoPage implements OnInit {
   );
 
   ngOnInit(): void {
+    const conferirODia = (): void => this.acompanharODiaDoEnvio();
+    const janela = this.documento.defaultView;
+    this.documento.addEventListener('visibilitychange', conferirODia);
+    janela?.addEventListener('focus', conferirODia);
+    this.destroyRef.onDestroy(() => {
+      this.documento.removeEventListener('visibilitychange', conferirODia);
+      janela?.removeEventListener('focus', conferirODia);
+      if (this.viradaDoDia !== null) clearTimeout(this.viradaDoDia);
+    });
     this.carregar();
   }
 
@@ -188,7 +222,9 @@ export class InscricaoDoCandidatoPage implements OnInit {
               grupos: inscricao.data.grupos as SimulacaoDoFormulario['grupos'],
             });
             this.termosAceitosIniciais.set(inscricao.data.aceites.map((a) => a.codigo));
+            this.instanteDoEnvio.set(this.relogio());
             this.formulario.set(formulario.data);
+            this.acompanharODiaDoEnvio();
             this.ofertas.set(ofertas.data);
             this.ofertaEscolhida.set(
               inscricao.data.ofertaCursoId ??
@@ -197,6 +233,35 @@ export class InscricaoDoCandidatoPage implements OnInit {
             this.estado.set('pronto');
           });
       });
+  }
+
+  /**
+   * Mantém o dia do envio em dia: troca o instante quando o dia virou no fuso do envio e agenda a
+   * próxima virada. A aba em segundo plano pode atrasar o timer, então a volta dela também confere.
+   */
+  private acompanharODiaDoEnvio(): void {
+    const fuso = this.formulario()?.fusoDoEnvio;
+    if (!fuso) return;
+    const agora = this.relogio();
+    if (diaNoFuso(agora, fuso) !== diaNoFuso(this.instanteDoEnvio(), fuso))
+      this.instanteDoEnvio.set(agora);
+    this.agendarAViradaDoDia(agora, fuso);
+  }
+
+  private agendarAViradaDoDia(agora: Date, fuso: string): void {
+    if (this.viradaDoDia !== null) clearTimeout(this.viradaDoDia);
+    this.viradaDoDia = null;
+    const amanha = deslocarDia(diaNoFuso(agora, fuso), 0, 1);
+    if (amanha === null) return;
+    const [ano, mes, dia] = amanha.split('-').map(Number);
+    const meiaNoite = instanteDaHoraDeParede(
+      { ano, mes, dia, hora: 0, minuto: 0, segundo: 0 },
+      fuso,
+    );
+    this.viradaDoDia = setTimeout(
+      () => this.acompanharODiaDoEnvio(),
+      Math.max(0, meiaNoite.getTime() - agora.getTime()),
+    );
   }
 
   private falharAoCarregar(falha: ApiFailure): void {

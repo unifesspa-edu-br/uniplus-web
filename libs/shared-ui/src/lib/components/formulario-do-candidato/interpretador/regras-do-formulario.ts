@@ -43,12 +43,25 @@ export interface OpcoesCondicionadasDasRegras {
  */
 export type NumeroDoContrato = number | string;
 
+/**
+ * Um limite da faixa de data: `DATA_FIXA` com a data `AAAA-MM-DD`, ou `ENVIO` com os anos e os dias
+ * somados ao dia do envio — o que falta vale zero.
+ */
+export interface LimiteDeDataDasRegras {
+  readonly ancora: string;
+  readonly data?: string | null;
+  readonly anos?: NumeroDoContrato | null;
+  readonly dias?: NumeroDoContrato | null;
+}
+
 export interface RestricaoDasRegras {
   readonly tipo: string;
   readonly minimo?: NumeroDoContrato | null;
   readonly maximo?: NumeroDoContrato | null;
   readonly entradas?: readonly OpcoesCondicionadasDasRegras[] | null;
   readonly fatos?: readonly string[] | null;
+  readonly dataMinima?: LimiteDeDataDasRegras | null;
+  readonly dataMaxima?: LimiteDeDataDasRegras | null;
 }
 
 export interface ImpedimentoDasRegras {
@@ -134,6 +147,14 @@ export interface SimulacaoDoFormulario {
   readonly grupos?: Readonly<Record<string, readonly OcorrenciaSimulada[] | null>> | null;
   readonly etapasConcluidas?: readonly string[] | null;
   readonly pressupostos?: Readonly<Record<string, ValorJson>> | null;
+  /** O envio contra o qual contam os limites de data; sem ele, o limite contado do envio fica indeterminado. */
+  readonly envio?: EnvioDasRespostas | null;
+}
+
+/** O instante do envio e o fuso em que ele vira o dia do envio, como na avaliação sem cadastro da API. */
+export interface EnvioDasRespostas {
+  readonly instante: string;
+  readonly fuso: string;
 }
 
 /** As opções que o campo de escolha permite; definitivas quando nenhuma resposta pendente pode mudá-las. */

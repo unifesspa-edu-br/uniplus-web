@@ -280,6 +280,104 @@ describe('FormularioDoCandidatoComponent', () => {
     );
   });
 
+  describe('faixa de data', () => {
+    /** O nascimento de até 120 anos antes do envio até o envio, a regra do conjunto básico. */
+    const NASCIMENTO: FormularioDoCandidato = {
+      ...ENDERECO,
+      fatosColetados: [campo('DATA_NASCIMENTO', 'Data de nascimento', 'DATA')],
+      regras: {
+        etapas: [
+          {
+            codigo: SECAO,
+            itens: [
+              regra('DATA_NASCIMENTO', {
+                restricoes: [
+                  {
+                    tipo: 'FAIXA_DE_DATA',
+                    dataMinima: { ancora: 'ENVIO', anos: -120, dias: 0 },
+                    dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 },
+                  },
+                ],
+              }),
+            ],
+          },
+        ],
+      },
+    };
+    /** 23h30 de 11/10/2026 em Belém, já 12/10 em UTC: o dia do envio é 11/10. */
+    const ENVIO = { instante: '2026-10-12T02:30:00Z', fuso: 'America/Belem' };
+    const dataDe = (tela: HTMLElement): HTMLInputElement =>
+      tela.querySelector('input[type="date"]') as HTMLInputElement;
+    const sair = (input: HTMLInputElement): void => {
+      input.dispatchEvent(new Event('blur'));
+      fixture.detectChanges();
+    };
+
+    it('o calendário vai dos limites contados do dia do envio no fuso dele', () => {
+      const input = dataDe(montar(NASCIMENTO, { envio: ENVIO }));
+
+      expect(input.getAttribute('min')).toBe('1906-10-11');
+      expect(input.getAttribute('max')).toBe('2026-10-11');
+    });
+
+    it('sem faixa, o calendário ainda prende o ano em quatro dígitos', () => {
+      const input = dataDe(
+        montar({
+          ...NASCIMENTO,
+          regras: { etapas: [{ codigo: SECAO, itens: [regra('DATA_NASCIMENTO')] }] },
+        }),
+      );
+
+      expect(input.getAttribute('max')).toBe('9999-12-31');
+    });
+
+    it('a dica dos limites, em dd/mm/aaaa, descreve o campo antes de qualquer erro', () => {
+      const tela = montar(NASCIMENTO, { envio: ENVIO });
+      const input = dataDe(tela);
+      const dica = tela.querySelector('.field__hint');
+
+      expect(dica?.textContent?.trim()).toBe('Informe uma data entre 11/10/1906 e 11/10/2026.');
+      expect(input.getAttribute('aria-describedby')?.split(' ')).toContain(dica?.id);
+      expect(tela.querySelector('.field__error')).toBeNull();
+    });
+
+    it('a data fora dos limites só vira erro quando o candidato sai do campo', () => {
+      const tela = montar(NASCIMENTO, { envio: ENVIO });
+      const input = dataDe(tela);
+
+      digitar(input, '2027-01-10');
+      expect(tela.querySelector('.field__error')).toBeNull();
+      expect(input.getAttribute('aria-invalid')).toBeNull();
+
+      sair(input);
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      expect(tela.querySelector('.field__error')?.textContent).toContain(
+        'Informe uma data entre 11/10/1906 e 11/10/2026.',
+      );
+
+      digitar(input, '2027-01-11');
+      expect(tela.querySelector('.field__error')).toBeNull();
+    });
+
+    it('concluir a seção mostra a data fora dos limites sem esperar o candidato sair do campo', () => {
+      const tela = montar(NASCIMENTO, { envio: ENVIO });
+
+      digitar(dataDe(tela), '2027-01-10');
+      clicar(botao(tela, 'Concluir a seção'));
+
+      expect(tela.querySelector('.field__error')?.textContent).toContain(
+        'Informe uma data entre 11/10/1906 e 11/10/2026.',
+      );
+    });
+
+    it('sem envio, o limite contado dele não tem dica, e a simulação não leva envio', () => {
+      const tela = montar(NASCIMENTO);
+
+      expect(tela.querySelector('.field__hint')).toBeNull();
+      expect(simulacoes.at(-1)?.envio).toBeNull();
+    });
+  });
+
   it('o grupo acrescenta ocorrências até o máximo e volta a permitir ao remover', () => {
     const tela = montar({
       ...ENDERECO,
