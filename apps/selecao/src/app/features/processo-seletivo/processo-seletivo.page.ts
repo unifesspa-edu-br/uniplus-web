@@ -14,13 +14,13 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ProblemI18nService, isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { ProcessoSeletivoDto, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 import { StepValidation } from './steps/processo-seletivo.models';
 import { PASSOS } from './steps/processo-seletivo.data';
@@ -83,7 +83,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
   standalone: true,
   host: { class: 'sel-processo', '(window:beforeunload)': 'aoFecharAJanela($event)' },
   imports: [
-    DatePipe,
+    DateBrPipe,
     RouterLink,
     AlertComponent,
     DialogComponent,

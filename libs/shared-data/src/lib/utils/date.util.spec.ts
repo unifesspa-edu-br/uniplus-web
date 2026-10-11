@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  formatDateBr,
-  formatDateTimeBr,
   formatIsoDateBr,
   formatIsoDateLong,
   parseDate,
@@ -9,46 +7,7 @@ import {
 } from './date.util';
 
 describe('Date Util', () => {
-  const VALID_RAW_DATE = '2026-02-14T12:00:00';
-  const INVALID_RAW_DATE = '2026-02-14T25:00:00';
-  const DATE = new Date(VALID_RAW_DATE);
   const PLACEHOLDER_DATA_INVALIDA = '—';
-
-  describe('formatDateBr()', () => {
-    it('formata uma entrada de data em texto bruto para a localidade pt-br', () => {
-      expect(formatDateBr(VALID_RAW_DATE)).toBe('14/02/2026');
-    });
-
-    it('formata uma entrada de data para a localidade pt-br', () => {
-      expect(formatDateBr(DATE)).toBe('14/02/2026');
-    });
-
-    it('retorna um "—" quando a entrada de data e hora em texto bruto é inválida', () => {
-      expect(formatDateBr(INVALID_RAW_DATE)).toBe(PLACEHOLDER_DATA_INVALIDA);
-    });
-
-    it('retorna um "—" quando a entrada de um objeto de data e hora é inválida', () => {
-      expect(formatDateBr(new Date(INVALID_RAW_DATE))).toBe(PLACEHOLDER_DATA_INVALIDA);
-    });
-  });
-
-  describe('formatDateTimeBr()', () => {
-    it('formata uma entrada de texto bruto de data e hora para o formato de data e hora na localidade pt-br', () => {
-      expect(formatDateTimeBr(VALID_RAW_DATE)).toBe('14/02/2026, 12:00:00');
-    });
-
-    it('formata uma entrada de data e hora para o formato de data e hora na localidade pt-br', () => {
-      expect(formatDateTimeBr(DATE)).toBe('14/02/2026, 12:00:00');
-    });
-
-    it('retorna um "—" quando a entrada de um texto bruto de data e hora é inválida', () => {
-      expect(formatDateTimeBr(INVALID_RAW_DATE)).toBe(PLACEHOLDER_DATA_INVALIDA);
-    });
-
-    it('retorna um "—" quando a entrada de um objeto de data e hora é inválida', () => {
-      expect(formatDateTimeBr(new Date(INVALID_RAW_DATE))).toBe(PLACEHOLDER_DATA_INVALIDA);
-    });
-  });
 
   describe('parseDate()', () => {
     describe('entradas válidas', () => {
@@ -69,12 +28,6 @@ describe('Date Util', () => {
       it('limites do intervalo de ano são aceitos (1900 e 2100)', () => {
         expect(parseDate('01/01/1900')).toEqual(new Date(1900, 0, 1));
         expect(parseDate('31/12/2100')).toEqual(new Date(2100, 11, 31));
-      });
-
-      it('compõe com formatDateBr preservando o dia civil no fuso local (contrato estabelecido)', () => {
-        const date = parseDate('14/02/2025');
-        expect(date).not.toBeNull();
-        expect(formatDateBr(date as Date)).toBe('14/02/2025');
       });
     });
 

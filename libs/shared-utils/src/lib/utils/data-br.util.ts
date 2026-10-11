@@ -4,7 +4,13 @@
  */
 export const FUSO_INSTITUCIONAL = 'America/Belem';
 
-export type FormatoDataBr = 'short' | 'long' | 'datetime' | 'datetimeSeconds' | 'shortMonth';
+export type FormatoDataBr =
+  | 'short'
+  | 'long'
+  | 'datetime'
+  | 'datetimeSeconds'
+  | 'shortMonth'
+  | 'hora';
 export type EntradaDataBr = Date | string | null | undefined;
 
 /** A hora de parede num fuso: o que um campo de data e hora entrega, sem deslocamento. */
@@ -35,6 +41,7 @@ const OPCOES_POR_FORMATO: Record<FormatoDataBr, Intl.DateTimeFormatOptions> = {
   long: { day: '2-digit', month: 'long', year: 'numeric' },
   datetime: { ...DATA, ...HORA },
   datetimeSeconds: { ...DATA, ...HORA, second: '2-digit' },
+  hora: HORA,
 };
 
 /**

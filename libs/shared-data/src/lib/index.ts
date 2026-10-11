@@ -25,14 +25,7 @@ export {
 
 // Utils
 export { isValidCpf } from './utils/cpf.util';
-export {
-  formatDateBr,
-  formatDateTimeBr,
-  formatIsoDateBr,
-  formatIsoDateLong,
-  parseDate,
-  parseIsoDate,
-} from './utils/date.util';
+export { formatIsoDateBr, formatIsoDateLong, parseDate, parseIsoDate } from './utils/date.util';
 
 // Validators
 export { cpfValidator } from './validators/cpf.validator';

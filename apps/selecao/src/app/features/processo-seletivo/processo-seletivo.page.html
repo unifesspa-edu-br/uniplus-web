@@ -204,7 +204,7 @@
         </button>
         @if (rascunhoSalvoEm(); as salvoEm) {
         <span class="rascunho-publicacao__carimbo">
-          Rascunho salvo às {{ salvoEm | date: 'HH:mm' }}
+          Rascunho salvo às {{ salvoEm | dateBr: 'hora' }}
         </span>
         <button
           class="btn btn--tertiary"
