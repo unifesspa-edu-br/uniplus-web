@@ -48,9 +48,9 @@ import {
   type UiFilterChipOption,
   type UiTagVariant,
   deClausulasDoWire,
+  fatosParaLeitura,
+  resumoDaRegra,
 } from '@uniplus/shared-ui/components';
-
-import { fatosParaLeitura, resumoDaRegra } from './regra-de-aplicabilidade';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026/0089). */
 const PAGE_SIZE = 100;
@@ -479,19 +479,15 @@ export class ModalidadesListPage {
     context: withVendorMime('fato-candidato', 1),
   }));
 
-  /**
-   * A regra de aplicabilidade de cada modalidade numa linha. Sem o catálogo, a regra com condição
-   * não se lê pelos nomes dos fatos, e a coluna diz só que ela existe.
-   */
+  /** A regra de aplicabilidade de cada modalidade numa linha. */
   protected readonly quemConcorre = computed<ReadonlyMap<string, string>>(() => {
     const catalogo = this.catalogo.data();
     const fatos = catalogo === null ? null : fatosParaLeitura(catalogo);
     return new Map(
-      this.modalidadesFiltradas().map((m) => {
-        const regra = deClausulasDoWire(m.regraDeAplicabilidade);
-        if (fatos === null && regra.length > 0) return [m.id, 'Quem atende às condições da regra'];
-        return [m.id, resumoDaRegra(regra, fatos ?? new Map())];
-      }),
+      this.modalidadesFiltradas().map((m) => [
+        m.id,
+        resumoDaRegra(deClausulasDoWire(m.regraDeAplicabilidade), fatos),
+      ]),
     );
   });
 

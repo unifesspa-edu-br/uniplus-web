@@ -56,17 +56,15 @@ import {
   EditorDeCondicoesComponent,
   SpinnerComponent,
   deClausulasDoWire,
+  TODOS_OS_CANDIDATOS,
   descreverAlternativas,
+  fatosParaLeitura,
   paraClausulasDoWire,
   problemaDaCondicao,
   type CondicaoEmClausula,
 } from '@uniplus/shared-ui/components';
 
-import {
-  TODOS_OS_CANDIDATOS,
-  fatosDaRegraDeAplicabilidade,
-  fatosParaLeitura,
-} from './regra-de-aplicabilidade';
+import { fatosDaRegraDeAplicabilidade } from './regra-de-aplicabilidade';
 
 const CODIGO_REGEX = /^[A-Z0-9_]+$/u;
 const DESCRICAO_MAX = 300;
