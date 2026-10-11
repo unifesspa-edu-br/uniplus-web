@@ -106,6 +106,16 @@ export interface FormularioDoCandidato {
   readonly regras: RegrasDoFormulario;
   /** Os fatos citados que o formulário não pergunta; a simulação os informa à parte. */
   readonly pressupostos?: readonly PressupostoDoFormulario[] | null;
+  /**
+   * As respostas de que a avaliação da API depende, só pelos códigos (ADR-0143): os fatos — o subitem
+   * de grupo como `GRUPO.FATO` — e os grupos cujas ocorrências contam.
+   */
+  readonly dependenciasDaAvaliacao?: DependenciasDaAvaliacao | null;
+}
+
+export interface DependenciasDaAvaliacao {
+  readonly fatos: readonly string[];
+  readonly grupos: readonly string[];
 }
 
 /** Uma resposta que o candidato não altera, como o CPF da conta: o valor e como ele aparece. */
@@ -125,9 +135,14 @@ export interface ErroDoServidor {
   readonly mensagem: string;
 }
 
+/** O campo pertence à parte de código dado: é ela, ou está dentro dela, como `grupo.ocorrência.fato`. */
+export function campoEm(campo: string, codigo: string): boolean {
+  return campo === codigo || campo.startsWith(`${codigo}.`);
+}
+
 /** O campo do erro pertence à parte de código dado: é ela, ou está dentro dela. */
 export function erroEm(erro: ErroDoServidor, codigo: string): boolean {
-  return erro.campo === codigo || erro.campo.startsWith(`${codigo}.`);
+  return campoEm(erro.campo, codigo);
 }
 
 /** As mensagens dos erros cujo campo é exatamente este, numa frase só; nula quando não há. */

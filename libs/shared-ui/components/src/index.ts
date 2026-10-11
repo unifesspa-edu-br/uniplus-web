@@ -84,6 +84,7 @@ export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis'
 export { FormularioDoCandidatoComponent } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
 export type {
   CampoRenderizavel,
+  DependenciasDaAvaliacao,
   ErroDoServidor,
   FormularioDoCandidato,
   GrupoRenderizavel,
@@ -93,6 +94,13 @@ export type {
   TermoRenderizavel,
   ValorSelecionavel,
 } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato.model';
+export {
+  CONCORRE,
+  FALTA_RESPONDER,
+  NAO_CONCORRE,
+  type AvaliacaoNaTela,
+  type ModalidadesAvaliadas,
+} from '../../src/lib/components/formulario-do-candidato/modalidades-avaliadas';
 export {
   derivadosDoSistema,
   type DerivadoDoSistema,
