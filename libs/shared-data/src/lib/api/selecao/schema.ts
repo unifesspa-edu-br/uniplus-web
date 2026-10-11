@@ -7898,6 +7898,8 @@ export interface components {
             /** Format: uuid */
             readonly documentoEditalId: string;
             readonly hashSha256: string;
+            /** Format: uri */
+            readonly urlDownload: string;
         };
         readonly DocumentoEditalDto: {
             /** Format: uuid */

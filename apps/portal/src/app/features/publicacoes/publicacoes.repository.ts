@@ -1,56 +1,52 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
-
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { type ApiResult } from '@uniplus/shared-core/http';
 import {
-  type CertameParaPublicacoes,
-  gravarPublicacoesMock,
-  lerPublicacoesMock,
-  montarPublicacaoMock,
-} from './publicacoes.mock';
+  certamePublicoRequest,
+  type CertamePublicadoDto,
+  SELECAO_BASE_PATH,
+} from '@uniplus/shared-data/selecao';
+import { forkJoin, map, type Observable, of } from 'rxjs';
+
+import { type CertameParaPublicacoes, montarPublicacaoMock } from './publicacoes.mock';
 import type { Publicacao } from './publicacoes.model';
 
 export type { CertameParaPublicacoes } from './publicacoes.mock';
 
-/** Só para os estados de carregamento terem algo a mostrar antes da API existir. */
-const LATENCIA_SIMULADA_MS = 300;
-
 /**
- * Acesso às Publicações — hoje simula, para todo certame, uma linha do tempo
- * montada a partir dos dados dele (`publicacoes.mock.ts`, via
- * `of(...).pipe(delay(...))`); quando a consulta pública existir
- * (uniplus-api#1497/uniplus-api#1498), só os métodos abaixo mudam, sem tocar
- * em quem os consome (dado simulado fica isolado nesta camada, não nos
- * componentes).
+ * Acesso às Publicações — enquanto a consulta pública da linha do tempo não existe
+ * (uniplus-api#1497/uniplus-api#1498), a linha do tempo de cada certame é simulada
+ * (`publicacoes.mock.ts`), e só o PDF do edital vem do certame publicado. Quando a consulta
+ * existir, só este repositório muda, sem tocar em quem o consome.
  */
 @Injectable({ providedIn: 'root' })
 export class PublicacoesRepository {
-  private readonly geradas = new Map<string, Publicacao>();
+  private readonly http = inject(HttpClient);
+  private readonly basePath = inject(SELECAO_BASE_PATH);
 
   /**
-   * Publicações dos certames de uma página da vitrine, numa só consulta —
-   * indexadas por `processoSeletivoId`.
+   * Publicações dos certames de uma página da vitrine, indexadas por `processoSeletivoId`. O
+   * certame que não responde fica sem o PDF do edital, sem derrubar os demais.
    */
   buscarPorCertames(
     certames: readonly CertameParaPublicacoes[],
   ): Observable<ReadonlyMap<string, Publicacao>> {
-    const porCertame = new Map<string, Publicacao>();
-    for (const certame of certames) {
-      const publicacao = montarPublicacaoMock(certame);
-      this.geradas.set(publicacao.id, publicacao);
-      porCertame.set(certame.processoSeletivoId, publicacao);
-    }
-    gravarPublicacoesMock([...porCertame.values()]);
-    return of<ReadonlyMap<string, Publicacao>>(porCertame).pipe(delay(LATENCIA_SIMULADA_MS));
+    if (certames.length === 0) return of(new Map());
+    return forkJoin(
+      certames.map((certame) =>
+        this.enderecoDoEdital(certame.processoSeletivoId).pipe(
+          map((documentoUrl) => montarPublicacaoMock(certame, documentoUrl)),
+        ),
+      ),
+    ).pipe(
+      map((publicacoes) => new Map(publicacoes.map((publicacao) => [publicacao.id, publicacao]))),
+    );
   }
 
-  /**
-   * Uma publicação por id, para a página do documento de um evento. `undefined`
-   * quando o id não corresponde a nenhuma publicação.
-   */
-  buscarPorId(id: string): Observable<Publicacao | undefined> {
-    const publicacao =
-      this.geradas.get(id) ?? lerPublicacoesMock().find((item) => item.id === id);
-    return of(publicacao).pipe(delay(LATENCIA_SIMULADA_MS));
+  private enderecoDoEdital(processoSeletivoId: string): Observable<string | undefined> {
+    const { url, context } = certamePublicoRequest(this.basePath, processoSeletivoId);
+    return this.http.get<ApiResult<CertamePublicadoDto>>(url, { context }).pipe(
+      map((certame) => (certame.ok ? certame.data.documentoEdital?.urlDownload : undefined)),
+    );
   }
 }

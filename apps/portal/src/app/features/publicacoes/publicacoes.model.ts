@@ -2,7 +2,7 @@ import type { UiTagVariant } from '@uniplus/shared-ui/components';
 
 /**
  * Contrato de Publicações compartilhado pelo accordion "Ver publicações" de
- * cada edital (em /processos) e pela página do documento. Fica quando a
+ * cada edital e pelo link "Ver edital" (em /processos). Fica quando a
  * consulta pública da API chegar; só o dado simulado (`publicacoes.mock.ts`)
  * e o repositório mudam.
  */
@@ -56,8 +56,11 @@ export interface EventoHistoricoPublicacao {
   readonly data: string;
   readonly titulo: string;
   readonly descricao?: string;
-  /** Nome do PDF relacionado. Nem todo evento tem documento — uma mudança de situação pode não ter um PDF associado. */
-  readonly documentoArquivo?: string;
+  /**
+   * Endereço público do PDF do evento, no acervo público. Nem todo evento tem documento — uma
+   * mudança de situação pode não ter um PDF associado.
+   */
+  readonly documentoUrl?: string;
   /** Ação relacionada ao evento (ex.: "Inscrever-se" no evento de abertura das inscrições). Nem todo evento tem uma. */
   readonly acao?: AcaoEvento;
 }
@@ -82,6 +85,6 @@ export function eventoDoEditalDeAbertura(
   publicacao: Publicacao | undefined,
 ): EventoHistoricoPublicacao | undefined {
   return publicacao?.historico
-    .filter((evento) => evento.categoria === 'edital' && evento.documentoArquivo)
+    .filter((evento) => evento.categoria === 'edital' && evento.documentoUrl)
     .sort((a, b) => a.data.localeCompare(b.data))[0];
 }

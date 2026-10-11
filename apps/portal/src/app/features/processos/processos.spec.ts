@@ -9,15 +9,30 @@ import {
   SELECAO_BASE_PATH,
   SituacaoDoCertame,
 } from '@uniplus/shared-data/selecao';
-import { of } from 'rxjs';
+import { delay, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { PublicacoesRepository } from '../publicacoes/publicacoes.repository';
+import { type CertameParaPublicacoes, montarPublicacaoMock } from '../publicacoes/publicacoes.mock';
 import type { Publicacao } from '../publicacoes/publicacoes.model';
+import { PublicacoesRepository } from '../publicacoes/publicacoes.repository';
 import { ProcessosComponent } from './processos';
 
 const BASE = 'http://localhost:5000';
 const CERTAMES_URL = `${BASE}/api/selecao/certames`;
+const ACERVO = 'http://localhost:9000/uniplus-acervo-publico';
+
+/** As publicações chegam depois da vitrine, cada uma com o PDF do edital do próprio certame. */
+const publicacoesComEdital = {
+  buscarPorCertames: (certames: readonly CertameParaPublicacoes[]) =>
+    of(
+      new Map(
+        certames.map((certame) => [
+          certame.processoSeletivoId,
+          montarPublicacaoMock(certame, `${ACERVO}/${certame.processoSeletivoId}.pdf`),
+        ]),
+      ),
+    ).pipe(delay(300)),
+};
 
 const sisu: CertameNaVitrineDto = {
   processoSeletivoId: '01960000-0000-7000-0000-0000000000e1',
@@ -86,6 +101,7 @@ describe('ProcessosComponent', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: PublicacoesRepository, useValue: publicacoesComEdital },
       ],
     });
 
@@ -202,7 +218,7 @@ describe('ProcessosComponent', () => {
       expect(host().querySelectorAll('.card .publicacoes-toggle')).toHaveLength(2);
     });
 
-    it('todo certame ganha o link "Ver edital", só depois que as publicações chegam', async () => {
+    it('todo certame ganha o link "Ver edital" para o PDF no acervo, só depois que as publicações chegam', async () => {
       await flushLista([sisu, encerrado], contadoresHeaders);
       expect(host().querySelector('.certame-edital-link')).toBeNull();
 
@@ -213,9 +229,7 @@ describe('ProcessosComponent', () => {
       const links = host().querySelectorAll<HTMLAnchorElement>('.certame-edital-link');
       expect(links).toHaveLength(2);
       expect(links[0].textContent).toContain('Ver edital');
-      expect(links[0].getAttribute('href')).toBe(
-        `/publicacoes/${sisu.processoSeletivoId}/eventos/${sisu.processoSeletivoId}-edital/documento`,
-      );
+      expect(links[0].getAttribute('href')).toBe(`${ACERVO}/${sisu.processoSeletivoId}.pdf`);
       expect(links[0].target).toBe('_blank');
     });
 
@@ -552,7 +566,7 @@ describe('ProcessosComponent — sem documento de edital de abertura (CA-14)', (
     descricao: '',
     situacao: 'inscricoesAbertas',
     dataPublicacao: '2026-01-05T12:00:00Z',
-    // Evento `edital` sem `documentoArquivo`: não há o que abrir.
+    // Evento `edital` sem `documentoUrl`: não há o que abrir.
     historico: [
       { id: 'evt-edital', categoria: 'edital', data: '2026-01-05T12:00:00Z', titulo: 'Edital publicado' },
     ],

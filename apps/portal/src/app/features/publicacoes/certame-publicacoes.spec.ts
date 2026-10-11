@@ -18,7 +18,7 @@ const medicina: Publicacao = {
       categoria: 'edital',
       data: '2026-01-05',
       titulo: 'Edital publicado',
-      documentoArquivo: 'edital-012-2026.pdf',
+      documentoUrl: 'https://acervo.example/editais/2026/edital.pdf',
     },
     {
       id: 'evt-2',
@@ -32,7 +32,7 @@ const medicina: Publicacao = {
       categoria: 'resultado',
       data: '2026-04-16',
       titulo: 'Resultado final divulgado',
-      documentoArquivo: 'resultado-final.pdf',
+      documentoUrl: 'https://acervo.example/editais/2026/resultado-final.pdf',
     },
   ],
 };
@@ -134,14 +134,14 @@ describe('CertamePublicacoesComponent', () => {
     expect(cartoes[1].classList.contains('is-current')).toBe(false);
   });
 
-  it('só eventos com PDF ganham link, apontando para o documento do evento, em nova aba', () => {
+  it('só eventos com PDF ganham link, apontando para o PDF no acervo público, em nova aba', () => {
     criar({ publicacao: medicina });
     abrir();
 
     const links = Array.from(host().querySelectorAll<HTMLAnchorElement>('.publicacao-timeline__link'));
     expect(links.map((a) => a.getAttribute('href'))).toEqual([
-      '/publicacoes/medicina-2027/eventos/evt-3/documento',
-      '/publicacoes/medicina-2027/eventos/evt-1/documento',
+      'https://acervo.example/editais/2026/resultado-final.pdf',
+      'https://acervo.example/editais/2026/edital.pdf',
     ]);
     expect(links.every((a) => a.target === '_blank' && a.rel.includes('noopener'))).toBe(true);
     expect(links[0].textContent).toContain('abre em nova aba');

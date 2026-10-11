@@ -37,14 +37,14 @@ describe('eventoDoEditalDeAbertura', () => {
           categoria: 'edital',
           data: '2026-01-10T12:00:00Z',
           titulo: 'Retificação do edital',
-          documentoArquivo: 'retificacao.pdf',
+          documentoUrl: 'https://acervo.example/retificacao.pdf',
         },
         {
           id: 'evt-abertura',
           categoria: 'edital',
           data: '2026-01-05T12:00:00Z',
           titulo: 'Edital publicado',
-          documentoArquivo: 'edital.pdf',
+          documentoUrl: 'https://acervo.example/edital.pdf',
         },
       ],
     };
