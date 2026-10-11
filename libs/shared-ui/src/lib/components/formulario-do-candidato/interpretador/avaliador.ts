@@ -47,6 +47,8 @@ export interface EntradaDaAvaliacao {
   readonly grupos: ReadonlyMap<string, readonly OcorrenciaRespondida[]>;
   readonly etapasConcluidas: ReadonlySet<string>;
   readonly fatosConhecidos: Fatos;
+  /** O dia do envio, `AAAA-MM-DD`; nulo quando o envio não se sabe. */
+  readonly diaDoEnvio: string | null;
 }
 
 export interface ItemAvaliado {
@@ -181,6 +183,7 @@ export function avaliar(
       item,
       entrada.respostas.get(item.fatoCodigo),
       entrada.etapasConcluidas.has(etapa.codigo),
+      entrada.diaDoEnvio,
       fatos,
     );
     fatos.set(codigo, avaliado.fato);
@@ -317,7 +320,7 @@ function avaliarGrupo(
   if (!respondidas) return avaliacao(semResposta, []);
 
   const ocorrencias = respondidas.map((o) =>
-    avaliarOcorrencia(etapa.codigo, grupo, o, etapaConcluida, fatos),
+    avaliarOcorrencia(etapa.codigo, grupo, o, etapaConcluida, entrada.diaDoEnvio, fatos),
   );
   const quantas = ocorrencias.length;
   const contagemValida =
@@ -357,6 +360,7 @@ function avaliarOcorrencia(
   grupo: DefinicaoGrupo,
   ocorrencia: OcorrenciaRespondida,
   etapaConcluida: boolean,
+  diaDoEnvio: string | null,
   fatos: Fatos,
 ): OcorrenciaAvaliadaInterna {
   const contexto = new Map(fatos);
@@ -369,6 +373,7 @@ function avaliarOcorrencia(
       subitem,
       ocorrencia.respostas.get(subitem.fatoCodigo),
       etapaConcluida,
+      diaDoEnvio,
       contexto,
     );
     contexto.set(subitem.fatoCodigo, fato);
@@ -388,6 +393,7 @@ function avaliarItem(
   item: DefinicaoItem,
   resposta: ValorJson | undefined,
   etapaConcluida: boolean,
+  diaDoEnvio: string | null,
   fatos: Fatos,
 ): { fato: FatoResolvido; avaliacao: ItemAvaliado } {
   const visivel = e(visivelDoContentor, avaliarOuVerdadeiro(item.exibicao, fatos));
@@ -431,7 +437,7 @@ function avaliarItem(
   if (resposta !== undefined && !estaVazia(resposta)) {
     let algumaIndeterminada = false;
     for (const restricao of item.restricoesDaResposta) {
-      const atende = restricao.avaliar(resposta, fatos);
+      const atende = restricao.avaliar(resposta, { fatos, diaDoEnvio });
       if (atende === FALSO) violadas.push(restricao);
       else if (atende === INDETERMINADO) algumaIndeterminada = true;
     }

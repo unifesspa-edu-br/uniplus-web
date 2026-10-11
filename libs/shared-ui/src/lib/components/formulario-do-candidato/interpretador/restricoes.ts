@@ -1,3 +1,5 @@
+import { deslocarDia, diaDoCalendario } from '@uniplus/shared-utils';
+
 import { atendeAoFormato, ufDoCodigoIbge } from './formatos';
 import {
   codigosDa,
@@ -26,6 +28,16 @@ export const OPCOES_DAS_RESPOSTAS = 'OPCOES_DAS_RESPOSTAS';
 export const MUNICIPIOS_DA_UF = 'MUNICIPIOS_DA_UF';
 /** O formato do campo de texto, que a avaliação confere junto das restrições declaradas. */
 export const FORMATO_TEXTO = 'FORMATO_TEXTO';
+export const FAIXA_DE_DATA = 'FAIXA_DE_DATA';
+
+/**
+ * O que a restrição consulta além da resposta: os fatos já resolvidos e o dia do envio, `AAAA-MM-DD` no
+ * fuso do envio, ou nulo quando o envio não se sabe. O dia vem de fora: o avaliador não lê relógio.
+ */
+export interface ContextoDaResposta {
+  readonly fatos: Fatos;
+  readonly diaDoEnvio: string | null;
+}
 
 /**
  * Uma restrição sobre o valor respondido: se a resposta, já sabida não vazia, a atende — verdadeiro,
@@ -35,7 +47,7 @@ export const FORMATO_TEXTO = 'FORMATO_TEXTO';
 export interface Restricao {
   readonly tipo: string;
   readonly fatosCitados: readonly string[];
-  avaliar(resposta: ValorJson, fatos: Fatos): Ternario;
+  avaliar(resposta: ValorJson, contexto: ContextoDaResposta): Ternario;
   opcoes(fatos: Fatos): OpcoesDaRestricao | null;
 }
 
@@ -107,7 +119,7 @@ export function opcoesPermitidas(entradas: readonly OpcoesCondicionadas[]): Rest
   return {
     tipo: OPCOES_PERMITIDAS,
     fatosCitados: [...new Set(entradas.flatMap((e) => fatosCitadosPor(e.quando)))],
-    avaliar: (resposta, fatos) => {
+    avaliar: (resposta, { fatos }) => {
       const { vigentes: certas, talvez } = vigentes(fatos);
       return escolheSoEntre(resposta, certas, talvez);
     },
@@ -141,7 +153,7 @@ export function opcoesDasRespostas(fatosDeOrigem: readonly string[]): Restricao 
   return {
     tipo: OPCOES_DAS_RESPOSTAS,
     fatosCitados: ordenados,
-    avaliar: (resposta, fatos) => {
+    avaliar: (resposta, { fatos }) => {
       const vigentes = opcoes(fatos);
       const resultado = escolheSoEntre(resposta, new Set(vigentes.codigos), new Set());
       // Uma resposta ainda desconhecida pode trazer qualquer opção: o que não está entre as conhecidas
@@ -159,7 +171,7 @@ export function municipiosDaUf(fatoUf: string): Restricao {
   return {
     tipo: MUNICIPIOS_DA_UF,
     fatosCitados: [fatoUf],
-    avaliar: (resposta, fatos) => {
+    avaliar: (resposta, { fatos }) => {
       const uf = fatos.get(fatoUf);
       if (!uf || uf.estado === INDETERMINADO) return INDETERMINADO;
       return comoTernario(
@@ -168,6 +180,62 @@ export function municipiosDaUf(fatoUf: string): Restricao {
           typeof resposta === 'string' &&
           ufDoCodigoIbge(resposta) === uf.valor,
       );
+    },
+    opcoes: semOpcoes,
+  };
+}
+
+/** O maior deslocamento do dia do envio, em anos e em dias, para mais ou para menos, como na API. */
+export const TETO_DE_ANOS = 150;
+export const TETO_DE_DIAS = TETO_DE_ANOS * 366;
+
+/** Um limite da faixa de data: uma data fixa, ou o dia do envio deslocado em anos e depois em dias. */
+export type LimiteDeData =
+  | { readonly ancora: 'DATA_FIXA'; readonly data: string }
+  | { readonly ancora: 'ENVIO'; readonly anos: number; readonly dias: number };
+
+/** O dia do limite; nulo quando ele conta do envio e o dia do envio não se sabe. */
+export function diaDoLimite(limite: LimiteDeData, diaDoEnvio: string | null): string | null {
+  if (limite.ancora === 'DATA_FIXA') return limite.data;
+  return diaDoEnvio === null ? null : deslocarDia(diaDoEnvio, limite.anos, limite.dias);
+}
+
+/**
+ * Se a mínima cai depois da máxima seja qual for o dia do envio, como a API recusa: entre duas datas
+ * fixas, pela data; entre dois limites contados do envio, quando a mínima desloca ao menos tanto nos
+ * anos e nos dias, e mais em um deles, porque somar anos e depois dias nunca recua o dia. A ordem que
+ * depende do dia do envio não é recusada.
+ */
+export function minimaDepoisDaMaxima(minima: LimiteDeData, maxima: LimiteDeData): boolean {
+  if (minima.ancora === 'DATA_FIXA' && maxima.ancora === 'DATA_FIXA')
+    return minima.data > maxima.data;
+  if (minima.ancora === 'ENVIO' && maxima.ancora === 'ENVIO')
+    return (
+      minima.anos >= maxima.anos &&
+      minima.dias >= maxima.dias &&
+      (minima.anos > maxima.anos || minima.dias > maxima.dias)
+    );
+  return false;
+}
+
+/**
+ * A resposta de data dentro dos limites no dia do envio. O dia é comparado como `AAAA-MM-DD`, que
+ * ordena como o calendário. A data fora de um limite conhecido viola em definitivo; dentro dos
+ * conhecidos, com um limite contado do envio que não se sabe, fica indeterminada.
+ */
+export function faixaDeData(minima: LimiteDeData | null, maxima: LimiteDeData | null): Restricao {
+  return {
+    tipo: FAIXA_DE_DATA,
+    fatosCitados: [],
+    avaliar: (resposta, { diaDoEnvio }) => {
+      const data = typeof resposta === 'string' ? diaDoCalendario(resposta) : null;
+      if (data === null) return FALSO;
+      const inicio = minima === null ? null : diaDoLimite(minima, diaDoEnvio);
+      const fim = maxima === null ? null : diaDoLimite(maxima, diaDoEnvio);
+      if ((inicio !== null && data < inicio) || (fim !== null && data > fim)) return FALSO;
+      return (minima !== null && inicio === null) || (maxima !== null && fim === null)
+        ? INDETERMINADO
+        : VERDADEIRO;
     },
     opcoes: semOpcoes,
   };

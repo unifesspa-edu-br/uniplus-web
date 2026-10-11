@@ -8125,6 +8125,7 @@ export interface components {
             readonly pressupostos: readonly components["schemas"]["PressupostoRenderizavel"][];
             /** Format: date */
             readonly dataReferenciaFatos: null | string;
+            readonly fusoDoEnvio: null | string;
         };
         readonly FormularioSimuladoDto: {
             readonly finalidade: string;
@@ -8343,6 +8344,24 @@ export interface components {
         };
         readonly JsonElement: unknown;
         readonly JsonNode: unknown;
+        readonly LimiteDeDataDto: {
+            readonly ancora: string;
+            /** Format: date */
+            readonly data: null | string;
+            /** Format: int32 */
+            readonly anos: null | number | string;
+            /** Format: int32 */
+            readonly dias: null | number | string;
+        };
+        readonly LimiteDeDataInput: {
+            readonly ancora: string;
+            /** Format: date */
+            readonly data?: null | string;
+            /** Format: int32 */
+            readonly anos?: null | number | string;
+            /** Format: int32 */
+            readonly dias?: null | number | string;
+        };
         readonly LocalidadeCertameDto: {
             readonly codigoIbge: string;
             readonly nome: string;
@@ -8882,6 +8901,8 @@ export interface components {
             readonly maximo: null | number | string;
             readonly entradas: null | readonly components["schemas"]["OpcoesCondicionadasDto"][];
             readonly fatos: null | readonly string[];
+            readonly dataMinima: null | components["schemas"]["LimiteDeDataDto"];
+            readonly dataMaxima: null | components["schemas"]["LimiteDeDataDto"];
         };
         readonly RestricaoValorInput: {
             readonly tipo: string;
@@ -8891,6 +8912,8 @@ export interface components {
             readonly maximo?: null | number | string;
             readonly entradas?: null | readonly components["schemas"]["OpcoesCondicionadasInput"][];
             readonly fatos?: null | readonly string[];
+            readonly dataMinima?: null | components["schemas"]["LimiteDeDataInput"];
+            readonly dataMaxima?: null | components["schemas"]["LimiteDeDataInput"];
         };
         readonly RetificacaoCertameDto: {
             /** Format: uuid */

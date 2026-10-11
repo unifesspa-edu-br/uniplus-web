@@ -34,6 +34,93 @@ describe('interpretador do formulário — corpus compartilhado com a API', () =
   });
 });
 
+const FAIXA_DE_NASCIMENTO = (
+  dataMinima: unknown,
+  dataMaxima: unknown,
+): Parameters<typeof interpretarFormulario>[0] =>
+  ({
+    etapas: [
+      {
+        codigo: 'DADOS',
+        itens: [
+          {
+            fatoCodigo: 'NASCIMENTO',
+            obrigatoriedade: 'SEMPRE',
+            restricoes: [{ tipo: 'FAIXA_DE_DATA', dataMinima, dataMaxima }],
+          },
+        ],
+      },
+    ],
+  }) as Parameters<typeof interpretarFormulario>[0];
+
+describe('interpretador do formulário — faixa de data', () => {
+  it('recusa a mínima que fica depois da máxima seja qual for o dia do envio', () => {
+    const resultado = interpretarFormulario(
+      FAIXA_DE_NASCIMENTO(
+        { ancora: 'ENVIO', anos: 1, dias: 1 },
+        { ancora: 'ENVIO', anos: 0, dias: 0 },
+      ),
+      {},
+    );
+
+    expect(resultado).toEqual({
+      valida: false,
+      erro: {
+        caminho: 'etapas[0].itens[0].restricoes[0]',
+        mensagem: expect.stringContaining('mínima'),
+      },
+    });
+  });
+
+  it('aceita os limites cuja ordem depende do dia do envio', () => {
+    const resultado = interpretarFormulario(
+      FAIXA_DE_NASCIMENTO(
+        { ancora: 'ENVIO', anos: 1, dias: -400 },
+        { ancora: 'ENVIO', anos: 0, dias: 0 },
+      ),
+      {},
+    );
+
+    expect(resultado.valida).toBe(true);
+  });
+
+  it('recusa a data fixa com deslocamento e o limite do envio com data', () => {
+    expect(
+      interpretarFormulario(
+        FAIXA_DE_NASCIMENTO({ ancora: 'DATA_FIXA', data: '2000-01-01', anos: 1 }, null),
+        {},
+      ),
+    ).toMatchObject({
+      valida: false,
+      erro: { caminho: 'etapas[0].itens[0].restricoes[0].dataMinima' },
+    });
+    expect(
+      interpretarFormulario(
+        FAIXA_DE_NASCIMENTO(null, { ancora: 'ENVIO', data: '2000-01-01', anos: 0 }),
+        {},
+      ),
+    ).toMatchObject({
+      valida: false,
+      erro: { caminho: 'etapas[0].itens[0].restricoes[0].dataMaxima.data' },
+    });
+  });
+
+  it('recusa o envio de fuso desconhecido e o de instante fora do calendário', () => {
+    const regras = FAIXA_DE_NASCIMENTO(null, { ancora: 'ENVIO', anos: 0, dias: 0 });
+
+    expect(
+      interpretarFormulario(regras, {
+        envio: { instante: '2026-10-11T12:00:00Z', fuso: 'Marte/Olimpo' },
+      }),
+    ).toMatchObject({ valida: false, erro: { caminho: 'envio.fuso' } });
+    expect(
+      interpretarFormulario(regras, {
+        envio: { instante: '0001-01-01T00:00:00Z', fuso: 'America/Belem' },
+      }),
+    ).toMatchObject({ valida: false, erro: { caminho: 'envio.instante' } });
+  });
+});
+
 describe('interpretador do formulário — recusas', () => {
   it('recusa as regras fora da forma com o caminho do problema', () => {
     const resultado = interpretarFormulario(

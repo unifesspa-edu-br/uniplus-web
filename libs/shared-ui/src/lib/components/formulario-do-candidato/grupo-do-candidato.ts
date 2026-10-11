@@ -72,6 +72,7 @@ interface OcorrenciaNaTela {
               [resposta]="ocorrencia.respostas[campo.campo.fatoCodigo]"
               [respostaDaUf]="respostaDaUf(campo, ocorrencia.respostas)"
               [mostrarPendencia]="mostrarPendencia()"
+              [diaDoEnvio]="diaDoEnvio()"
               [erroDoServidor]="
                 mensagemDosErros(
                   errosDoServidor(),
@@ -138,6 +139,8 @@ export class GrupoDoCandidatoComponent {
   readonly respostasDoCandidato = input<Readonly<Record<string, ValorJson>>>({});
   readonly id = input.required<string>();
   readonly mostrarPendencia = input<boolean>(false);
+  /** O dia do envio, `AAAA-MM-DD`, que os campos de data usam para dizer os limites. */
+  readonly diaDoEnvio = input<string | null>(null);
   /** As recusas do servidor dentro do grupo: as do grupo, as de uma ocorrência e as de um campo dela. */
   readonly errosDoServidor = input<readonly ErroDoServidor[]>([]);
 

@@ -10824,6 +10824,7 @@ export interface components {
             };
             readonly etapasConcluidas: null | readonly string[];
             readonly pressupostos: null | Record<string, never>;
+            readonly envio?: null | components["schemas"]["EnvioSimuladoInput"];
         };
         readonly BaseLegalBonusRegionalDto: {
             /** Format: uuid */
@@ -11400,6 +11401,7 @@ export interface components {
             readonly pressupostos: readonly components["schemas"]["PressupostoRenderizavel"][];
             /** Format: date */
             readonly dataReferenciaFatos: null | string;
+            readonly fusoDoEnvio: null | string;
         };
         readonly GrupoAreaEnemDto: {
             readonly codigo: string;
@@ -11689,6 +11691,8 @@ export interface components {
             readonly maximo?: null | number | string;
             readonly entradas?: null | readonly components["schemas"]["OpcoesCondicionadasInput"][];
             readonly fatos?: null | readonly string[];
+            readonly dataMinima?: null | components["schemas"]["LimiteDeDataInput"];
+            readonly dataMaxima?: null | components["schemas"]["LimiteDeDataInput"];
         };
         readonly SecaoRenderizavel: {
             readonly codigo: string;
@@ -11897,6 +11901,20 @@ export interface components {
             /** Format: int32 */
             readonly ordem: number | string;
             readonly orientacao?: null | string;
+        };
+        readonly EnvioSimuladoInput: {
+            /** Format: date-time */
+            readonly instante: string;
+            readonly fuso: string;
+        };
+        readonly LimiteDeDataInput: {
+            readonly ancora: string;
+            /** Format: date */
+            readonly data?: null | string;
+            /** Format: int32 */
+            readonly anos?: null | number | string;
+            /** Format: int32 */
+            readonly dias?: null | number | string;
         };
     };
     responses: never;

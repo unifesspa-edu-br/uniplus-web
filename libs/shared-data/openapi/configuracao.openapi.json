@@ -125,7 +125,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -141,7 +141,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -604,7 +604,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -620,7 +620,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -1229,7 +1229,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -1245,7 +1245,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -2119,7 +2119,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -2135,7 +2135,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -2624,7 +2624,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -2640,7 +2640,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -3113,7 +3113,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -3129,7 +3129,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -3687,7 +3687,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -3703,7 +3703,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -5060,7 +5060,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -5076,7 +5076,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -5549,7 +5549,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -5565,7 +5565,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -6059,7 +6059,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -6075,7 +6075,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -7015,7 +7015,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -7031,7 +7031,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -7501,7 +7501,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -7517,7 +7517,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -8012,7 +8012,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -8028,7 +8028,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -8491,7 +8491,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -8507,7 +8507,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -8970,7 +8970,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -8986,7 +8986,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -9457,7 +9457,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -9473,7 +9473,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -10156,7 +10156,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -10172,7 +10172,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -10635,7 +10635,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -10651,7 +10651,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -11114,7 +11114,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -11130,7 +11130,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -11593,7 +11593,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -11609,7 +11609,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -12082,7 +12082,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -12098,7 +12098,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -12250,7 +12250,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -12266,7 +12266,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -13996,6 +13996,16 @@
             "type": [
               "null",
               "object"
+            ]
+          },
+          "envio": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EnvioSimuladoInput"
+              }
             ]
           }
         }
@@ -16735,7 +16745,8 @@
           "grupos",
           "regras",
           "pressupostos",
-          "dataReferenciaFatos"
+          "dataReferenciaFatos",
+          "fusoDoEnvio"
         ],
         "type": "object",
         "properties": {
@@ -16787,6 +16798,12 @@
               "string"
             ],
             "format": "date"
+          },
+          "fusoDoEnvio": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -18146,6 +18163,26 @@
             "items": {
               "type": "string"
             }
+          },
+          "dataMinima": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LimiteDeDataInput"
+              }
+            ]
+          },
+          "dataMaxima": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LimiteDeDataInput"
+              }
+            ]
           }
         }
       },
@@ -18991,12 +19028,64 @@
             ]
           }
         }
+      },
+      "EnvioSimuladoInput": {
+        "required": [
+          "instante",
+          "fuso"
+        ],
+        "type": "object",
+        "properties": {
+          "instante": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fuso": {
+            "type": "string"
+          }
+        }
+      },
+      "LimiteDeDataInput": {
+        "required": [
+          "ancora"
+        ],
+        "type": "object",
+        "properties": {
+          "ancora": {
+            "type": "string"
+          },
+          "data": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "anos": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "dias": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
       }
     },
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
-        "description": "Token JWT emitido pelo provedor de identidade institucional (Keycloak). Cole apenas o token: o prefixo \u0022Bearer\u0022 \u00E9 acrescentado ao cabe\u00E7alho Authorization automaticamente. As rotas administrativas exigem, al\u00E9m da autentica\u00E7\u00E3o, a role plataforma-admin no token.",
+        "description": "Token JWT emitido pelo provedor de identidade institucional (Keycloak). Cole apenas o token: o prefixo \"Bearer\" \u00E9 acrescentado ao cabe\u00E7alho Authorization automaticamente. As rotas administrativas exigem, al\u00E9m da autentica\u00E7\u00E3o, a role plataforma-admin no token.",
         "scheme": "bearer",
         "bearerFormat": "JWT"
       }

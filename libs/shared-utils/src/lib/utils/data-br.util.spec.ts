@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   deslocamentoDoFusoEmMinutos,
+  deslocarDia,
+  diaDoCalendario,
+  diaNoFuso,
   formatarDataBr,
   FUSO_INSTITUCIONAL,
   instanteDaHoraDeParede,
@@ -88,5 +91,38 @@ describe('deslocamentoDoFusoEmMinutos', () => {
 
     expect(deslocamentoDoFusoEmMinutos(instante)).toBe(-180);
     expect(deslocamentoDoFusoEmMinutos(instante, 'America/Sao_Paulo')).toBe(-120);
+  });
+});
+
+describe('diaNoFuso', () => {
+  it('dá o dia civil do instante no fuso, não em UTC', () => {
+    expect(diaNoFuso(new Date(VIRADA_DO_DIA_NO_VERAO))).toBe('2018-11-30');
+    expect(diaNoFuso(new Date(VIRADA_DO_DIA_NO_VERAO), 'America/Sao_Paulo')).toBe('2018-12-01');
+  });
+});
+
+describe('deslocarDia', () => {
+  it('soma os anos e depois os dias, como a API', () => {
+    expect(deslocarDia('2026-10-11', -120, 0)).toBe('1906-10-11');
+    expect(deslocarDia('2026-12-31', 0, 1)).toBe('2027-01-01');
+  });
+
+  it('leva o 29 de fevereiro de ano sem ele a 28 antes de somar os dias', () => {
+    expect(deslocarDia('2028-02-29', -1, -1)).toBe('2027-02-27');
+    expect(deslocarDia('2028-02-29', 1, 0)).toBe('2029-02-28');
+  });
+
+  it('recusa o dia que não é do calendário e o resultado fora dos quatro dígitos', () => {
+    expect(deslocarDia('2026-02-29', 0, 0)).toBeNull();
+    expect(deslocarDia('0001-01-01', 0, -1)).toBeNull();
+  });
+});
+
+describe('diaDoCalendario', () => {
+  it('aceita só o dia exato do contrato, como a API: sem espaços e existente', () => {
+    expect(diaDoCalendario('2028-02-29')).toBe('2028-02-29');
+    expect(diaDoCalendario(' 2026-10-11 ')).toBeNull();
+    expect(diaDoCalendario('2026-02-29')).toBeNull();
+    expect(diaDoCalendario('11/10/2026')).toBeNull();
   });
 });

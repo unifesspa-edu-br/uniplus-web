@@ -9,6 +9,7 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
   finalidade: 'INSCRICAO',
   titulo: 'Inscrição',
   dataReferenciaFatos: '2026-12-10',
+  fusoDoEnvio: 'America/Belem',
   etapas: [
     secao('DADOS_PESSOAIS', DADOS, 0, 'Dados pessoais'),
     secao('ENDERECO', ENDERECO, 1, 'Endereço'),

@@ -38,8 +38,9 @@ import {
   termoSemAceite,
 } from './formulario-do-candidato.model';
 import { GrupoDoCandidatoComponent } from './grupo-do-candidato';
-import { interpretarFormulario } from './interpretador/interpretador';
+import { interpretarFormulario, lerEnvio } from './interpretador/interpretador';
 import type {
+  EnvioDasRespostas,
   OcorrenciaSimulada,
   SimulacaoDoFormulario,
   ValorJson,
@@ -158,6 +159,7 @@ import type {
                   [mostrarPendencia]="concluido(passo)"
                   [fixa]="respostasFixas()[campo.campo.fatoCodigo] ?? null"
                   [erroDoServidor]="mensagemDosErros(erros(), campo.campo.fatoCodigo)"
+                  [diaDoEnvio]="diaDoEnvio()"
                   (respondida)="responder(campo.campo.fatoCodigo, $event)"
                 />
               }
@@ -171,6 +173,7 @@ import type {
                   [respostasDoCandidato]="respostasComAsFixas()"
                   [mostrarPendencia]="concluido(passo)"
                   [errosDoServidor]="errosEm(grupo.grupo.codigo)"
+                  [diaDoEnvio]="diaDoEnvio()"
                   (ocorrenciasChange)="responderGrupo(grupo.grupo.codigo, $event)"
                 />
               }
@@ -269,6 +272,11 @@ export class FormularioDoCandidatoComponent {
    * inscrição, o desliga e chama `concluirTodas()` nela.
    */
   readonly concluirNaUltimaSecao = input(true);
+  /**
+   * O envio contra o qual contam os limites de data: o instante que quem hospeda considera e o fuso
+   * que o formulário publica. Sem ele, o limite contado do envio fica indeterminado.
+   */
+  readonly envio = input<EnvioDasRespostas | null>(null);
 
   /** A simulação a cada mudança: as respostas, as ocorrências, as seções concluídas e os pressupostos. */
   readonly simulacaoChange = output<SimulacaoDoFormulario>();
@@ -343,7 +351,13 @@ export class FormularioDoCandidatoComponent {
     grupos: this.grupos(),
     etapasConcluidas: [...this.concluidas()],
     pressupostos: this.pressupostos(),
+    envio: this.envio(),
   }));
+  /** O dia do envio, que os campos de data usam para dizer os limites; nulo sem envio que valha. */
+  protected readonly diaDoEnvio = computed(() => {
+    const dia = lerEnvio(this.envio());
+    return typeof dia === 'string' ? dia : null;
+  });
 
   private readonly interpretacao = computed(() =>
     interpretarFormulario(this.formulario().regras, this.simulacao()),

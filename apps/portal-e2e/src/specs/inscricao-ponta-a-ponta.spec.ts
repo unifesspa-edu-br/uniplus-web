@@ -68,6 +68,21 @@ async function municipio(page: Page, rotulo: string, nome: string): Promise<void
     .click();
 }
 
+/**
+ * O nascimento depois do dia do envio é recusado ao sair do campo, com a dica dos limites em dd/mm/aaaa,
+ * e o calendário não passa do dia do envio.
+ */
+async function recusarNascimentoNoFuturo(page: Page): Promise<void> {
+  const nascimento = campo(page, 'Data de nascimento');
+  await nascimento.fill(`${new Date().getFullYear() + 1}-01-10`);
+  await nascimento.blur();
+  await expect(nascimento).toHaveAttribute('aria-invalid', 'true');
+  await expect(nascimento).toHaveAccessibleDescription(
+    /Informe uma data entre \d{2}\/\d{2}\/\d{4} e \d{2}\/\d{2}\/\d{4}\./,
+  );
+  await expect(nascimento).toHaveAttribute('max', /^\d{4}-\d{2}-\d{2}$/);
+}
+
 async function preencherDadosDoCandidato(page: Page): Promise<void> {
   await irParaSecao(page, 'Dados do candidato');
   await campo(page, 'Nome completo').fill(PERSONA.nome);
@@ -79,7 +94,9 @@ async function preencherDadosDoCandidato(page: Page): Promise<void> {
   await campo(page, 'Órgão emissor do RG').fill('SSP');
   await lista(page, 'UF de emissão do RG').selectOption({ label: PERSONA.uf });
   await campo(page, 'Data de emissão do RG').fill('1990-05-10');
+  await recusarNascimentoNoFuturo(page);
   await campo(page, 'Data de nascimento').fill(PERSONA.nascimento);
+  await expect(campo(page, 'Data de nascimento')).not.toHaveAttribute('aria-invalid', 'true');
   await lista(page, 'UF de nascimento').selectOption({ label: PERSONA.uf });
   await municipio(page, 'Município de nascimento', PERSONA.cidade);
   await campo(page, 'Nome da mãe').fill(PERSONA.mae);

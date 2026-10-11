@@ -18,11 +18,14 @@ import type { EnderecoEstruturado } from '../endereco-geo/endereco-geo.model';
 import {
   type CampoNoPasso,
   fatoDaUf,
+  limitesDaFaixaDeData,
   mensagensDasRestricoes,
   opcoesDoCampo,
   type OpcaoDoCampo,
   type RespostaFixa,
+  textoDosLimitesDeData,
 } from './formulario-do-candidato.model';
+import { FAIXA_DE_DATA } from './interpretador/restricoes';
 import { codigosDa, estaVazia } from './interpretador/logica';
 import type { ValorJson } from './interpretador/regras-do-formulario';
 
@@ -197,9 +200,12 @@ const ENTRADA_DO_FORMATO: Readonly<
           [attr.inputmode]="entrada().inputmode"
           [attr.autocomplete]="entrada().autocomplete"
           [value]="texto()"
+          [attr.min]="controle() === 'data' ? calendario().minimo : null"
+          [attr.max]="controle() === 'data' ? calendario().maximo : null"
           [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
           [attr.aria-describedby]="descritoPor()"
           (input)="digitar(valorDe($event))"
+          (blur)="saiu.set(true)"
         />
       }
     }
@@ -236,6 +242,9 @@ const ENTRADA_DO_FORMATO: Readonly<
         >Informe antes a UF para escolher o município.</span
       >
     }
+    @if (dicaDaData(); as dica) {
+      <span class="field__hint" [id]="id() + '-faixa'">{{ dica }}</span>
+    }
     @if (problemas().length > 0) {
       <span class="field__error" [id]="id() + '-erro'">
         @for (problema of problemas(); track problema) {
@@ -258,6 +267,8 @@ export class CampoDoCandidatoComponent {
   readonly fixa = input<RespostaFixa | null>(null);
   /** A recusa do servidor a esta resposta, até o candidato mudá-la. */
   readonly erroDoServidor = input<string | null>(null);
+  /** O dia do envio, `AAAA-MM-DD`, contra o qual contam os limites de data; nulo quando não se sabe. */
+  readonly diaDoEnvio = input<string | null>(null);
 
   readonly respondida = output<ValorJson | undefined>();
 
@@ -354,15 +365,45 @@ export class CampoDoCandidatoComponent {
     typeof this.resposta() === 'string' ? [this.resposta() as string] : [],
   );
 
+  /** Os limites da faixa de data do campo no dia do envio, quando ele a declara. */
+  private readonly limitesDeData = computed(() =>
+    limitesDaFaixaDeData(this.noPasso().regra, this.diaDoEnvio()),
+  );
+  /**
+   * O que o calendário admite: os limites da faixa, e sempre um ano de quatro dígitos, que o controle
+   * nativo deixaria passar.
+   */
+  protected readonly calendario = computed(() => ({
+    minimo: this.limitesDeData()?.minimo ?? '0001-01-01',
+    maximo: this.limitesDeData()?.maximo ?? '9999-12-31',
+  }));
+  /** A dica dos limites, que aparece antes de qualquer erro. */
+  protected readonly dicaDaData = computed(() =>
+    this.controle() === 'data' ? textoDosLimitesDeData(this.limitesDeData()) : null,
+  );
+  /**
+   * O candidato saiu do campo de data depois de escrever: só então a data fora dos limites é erro, para
+   * a mensagem não piscar enquanto o ano está sendo digitado.
+   */
+  protected readonly saiu = signal(false);
+
   /** As mensagens ao lado do campo: pendência, número não reconhecido, regras violadas e impedimento. */
   protected readonly problemas = computed(() => {
     const { avaliado, regra } = this.noPasso();
+    const dataConferida = this.saiu() || this.mostrarPendencia();
+    const violadas = avaliado.restricoesVioladas.filter(
+      (tipo) => tipo !== FAIXA_DE_DATA || dataConferida,
+    );
     return [
       ...(this.mostrarPendencia() && this.obrigatorio() && this.vazia() && !this.numeroInvalido()
         ? ['Responda este campo.']
         : []),
       ...(this.numeroInvalido() ? ['Escreva um número, com vírgula para as casas decimais.'] : []),
-      ...mensagensDasRestricoes(avaliado, regra),
+      ...mensagensDasRestricoes(
+        { ...avaliado, restricoesVioladas: violadas },
+        regra,
+        this.diaDoEnvio(),
+      ),
       ...(avaliado.impedido === 'VERDADEIRO'
         ? [regra?.impedimento?.mensagem?.trim() || 'Esta resposta impede a inscrição.']
         : []),
@@ -376,6 +417,7 @@ export class CampoDoCandidatoComponent {
         this.campo().ajuda ? `${this.id()}-ajuda` : null,
         this.controle() === 'fixa' ? `${this.id()}-fixa` : null,
         this.controle() === 'municipio' && this.esperaAUf() ? `${this.id()}-uf` : null,
+        this.dicaDaData() ? `${this.id()}-faixa` : null,
         this.problemas().length > 0 ? `${this.id()}-erro` : null,
       ]
         .filter((id) => id !== null)
@@ -435,6 +477,7 @@ export class CampoDoCandidatoComponent {
 
   protected digitar(texto: string): void {
     this.texto.set(texto);
+    this.saiu.set(false);
     const limpo = texto.trim();
     this.numeroInvalido.set(
       this.controle() === 'numero' &&

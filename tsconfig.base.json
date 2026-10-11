@@ -43,6 +43,7 @@
       "@uniplus/shared-core/interceptors": ["libs/shared-core/interceptors/src/index.ts"],
       "@uniplus/shared-core/dom": ["libs/shared-core/dom/src/index.ts"],
       "@uniplus/shared-core/notifications": ["libs/shared-core/notifications/src/index.ts"],
+      "@uniplus/shared-core/relogio": ["libs/shared-core/relogio/src/index.ts"],
       "@uniplus/shared-data/ingresso": ["libs/shared-data/ingresso/src/index.ts"],
       "@uniplus/shared-data/geo": ["libs/shared-data/geo/src/index.ts"],
       "@uniplus/shared-data/publicacoes": ["libs/shared-data/publicacoes/src/index.ts"],

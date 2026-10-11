@@ -40,6 +40,7 @@ const ENTRYPOINTS = {
   '@uniplus/shared-core/idempotency': 'libs/shared-core/idempotency',
   '@uniplus/shared-core/interceptors': 'libs/shared-core/interceptors',
   '@uniplus/shared-core/notifications': 'libs/shared-core/notifications',
+  '@uniplus/shared-core/relogio': 'libs/shared-core/relogio',
 } as const;
 
 const ROOT_BARRELS = new Set([

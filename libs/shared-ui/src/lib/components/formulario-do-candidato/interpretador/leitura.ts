@@ -14,15 +14,24 @@ import type {
   GrupoDasRegras,
   ImpedimentoDasRegras,
   ItemDasRegras,
+  LimiteDeDataDasRegras,
   PredicadoDasRegras,
   RegrasDoFormulario,
   RestricaoDasRegras,
   TermoDasRegras,
   ValorJson,
 } from './regras-do-formulario';
+import { diaDoCalendario } from '@uniplus/shared-utils';
+
 import {
+  FAIXA_DE_DATA,
   FAIXA_NUMERICA,
+  faixaDeData,
   faixaNumerica,
+  type LimiteDeData,
+  minimaDepoisDaMaxima,
+  TETO_DE_ANOS,
+  TETO_DE_DIAS,
   formatoDeTexto,
   MUNICIPIOS_DA_UF,
   municipiosDaUf,
@@ -419,12 +428,64 @@ function lerRestricao(restricao: RestricaoDasRegras, caminho: string): Restricao
         );
       return municipiosDaUf(fatos[0]);
     }
+    case FAIXA_DE_DATA: {
+      const minima = lerLimiteDeData(restricao.dataMinima, `${caminho}.dataMinima`);
+      const maxima = lerLimiteDeData(restricao.dataMaxima, `${caminho}.dataMaxima`);
+      if (minima === null && maxima === null)
+        throw new Recusa(caminho, 'A faixa de data precisa de ao menos um limite.');
+      if (minima !== null && maxima !== null && minimaDepoisDaMaxima(minima, maxima))
+        throw new Recusa(caminho, 'A data mínima fica depois da data máxima.');
+      return faixaDeData(minima, maxima);
+    }
     default:
       throw new Recusa(
         `${caminho}.tipo`,
-        'O tipo da restrição é FAIXA_NUMERICA, TAMANHO_TEXTO, OPCOES_PERMITIDAS, OPCOES_DAS_RESPOSTAS ou MUNICIPIOS_DA_UF.',
+        'O tipo da restrição é FAIXA_NUMERICA, TAMANHO_TEXTO, OPCOES_PERMITIDAS, OPCOES_DAS_RESPOSTAS, MUNICIPIOS_DA_UF ou FAIXA_DE_DATA.',
       );
   }
+}
+
+/**
+ * Um limite da faixa de data, com as mesmas recusas da API: a data fixa é um dia do calendário sem
+ * deslocamento, e o limite do envio é o deslocamento inteiro, dentro do teto, sem data.
+ */
+export function lerLimiteDeData(
+  limite: LimiteDeDataDasRegras | null | undefined,
+  caminho: string,
+): LimiteDeData | null {
+  if (limite === null || limite === undefined) return null;
+  const anos = numero(limite.anos, `${caminho}.anos`);
+  const dias = numero(limite.dias, `${caminho}.dias`);
+  if (limite.ancora === 'DATA_FIXA') {
+    const data = limite.data;
+    if (typeof data !== 'string' || diaDoCalendario(data) === null)
+      throw new Recusa(
+        `${caminho}.data`,
+        'A data fixa do limite é um dia do calendário, AAAA-MM-DD.',
+      );
+    if (data === '0001-01-01')
+      throw new Recusa(`${caminho}.data`, 'A data fixa do limite não pode ser 01/01/0001.');
+    if ((anos ?? 0) !== 0 || (dias ?? 0) !== 0)
+      throw new Recusa(caminho, 'O limite de data fixa não tem deslocamento.');
+    return { ancora: 'DATA_FIXA', data };
+  }
+  if (limite.ancora === 'ENVIO') {
+    if (limite.data !== null && limite.data !== undefined)
+      throw new Recusa(`${caminho}.data`, 'O limite contado do envio não tem data.');
+    const deslocamento = { anos: anos ?? 0, dias: dias ?? 0 };
+    if (!Number.isInteger(deslocamento.anos) || !Number.isInteger(deslocamento.dias))
+      throw new Recusa(
+        caminho,
+        'O deslocamento do dia do envio é um número inteiro de anos e de dias.',
+      );
+    if (Math.abs(deslocamento.anos) > TETO_DE_ANOS || Math.abs(deslocamento.dias) > TETO_DE_DIAS)
+      throw new Recusa(
+        caminho,
+        `O deslocamento do dia do envio vai até ${TETO_DE_ANOS} anos ou ${TETO_DE_DIAS} dias, para mais ou para menos.`,
+      );
+    return { ancora: 'ENVIO', ...deslocamento };
+  }
+  throw new Recusa(`${caminho}.ancora`, 'A âncora do limite de data é DATA_FIXA ou ENVIO.');
 }
 
 /** O predicado da exibição e da obrigatoriedade: nulo é sem condição; a lista vazia, o predicado sem cláusula. */

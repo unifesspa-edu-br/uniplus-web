@@ -15,6 +15,9 @@ export {
 export {
   dataGregorianaValida,
   deslocamentoDoFusoEmMinutos,
+  deslocarDia,
+  diaDoCalendario,
+  diaNoFuso,
   type EntradaDataBr,
   formatarDataBr,
   type FormatoDataBr,
