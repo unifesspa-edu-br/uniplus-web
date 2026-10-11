@@ -8,8 +8,13 @@ const APLICABILIDADE_CONDICIONAL = 'CONDICIONAL';
 /** Um documento que o processo exige, como o certame publicado o descreve. */
 export interface DocumentoExigido {
   readonly rotulo: string;
-  /** `GERAL` ou `CONDICIONAL`. */
-  readonly aplicabilidade: string;
+  /** `GERAL` ou `CONDICIONAL`, como o certame publica a exigência. */
+  readonly aplicabilidade?: string;
+  /**
+   * Como a exigência vale para o candidato, quando as respostas dele já foram avaliadas: no lugar de
+   * dizer a quem ela se aplica.
+   */
+  readonly situacao?: string;
   readonly obrigatorio: boolean;
   readonly formatos: { readonly qualquer: boolean; readonly lista: readonly string[] | null };
   readonly modelo: {
@@ -130,6 +135,7 @@ export class ListaDeDocumentosComponent {
   readonly contexto = input('');
 
   protected aQuemSeAplica(documento: DocumentoExigido): string {
+    if (documento.situacao) return documento.situacao;
     return documento.aplicabilidade === APLICABILIDADE_CONDICIONAL
       ? 'Só para quem está na situação descrita no edital'
       : 'Todo candidato';

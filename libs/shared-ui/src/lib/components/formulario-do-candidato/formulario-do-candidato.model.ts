@@ -98,6 +98,8 @@ export interface PressupostoDoFormulario {
 
 export interface FormularioDoCandidato {
   readonly finalidade: string;
+  /** A fase do cronograma que o formulário responde; nula fora de um processo, como no simulador. */
+  readonly faseId?: string | null;
   readonly titulo?: string | null;
   readonly etapas: readonly SecaoRenderizavel[];
   readonly termos: readonly TermoRenderizavel[];
