@@ -63,7 +63,12 @@ async function mockApi(page: Page, capturado: { post?: unknown }): Promise<void>
   await page.route(/\/api\/cidades(\?.*)?$/, (route) => jsonRoute(route, CIDADES));
   await page.route(/\/api\/configuracao\/admin\/campi$/, async (route) => {
     capturado.post = route.request().postDataJSON();
-    await route.fulfill({ status: 201, contentType: 'application/json', headers: CORS_HEADERS, body: '"new-id"' });
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      headers: CORS_HEADERS,
+      body: '"new-id"',
+    });
   });
 }
 
@@ -71,6 +76,17 @@ async function abrirCadastroCampus(page: Page): Promise<void> {
   await page.goto('/campi');
   await page.getByRole('button', { name: 'Novo campus' }).first().click();
   await expect(page.locator('#cfg-campus-form')).toBeVisible();
+}
+
+/** Com o CEP resolvido, a UF e a cidade vêm do CEP, em campos só de leitura. */
+async function conferirCidadeDoCep(page: Page): Promise<void> {
+  const form = page.locator('#cfg-campus-form');
+  const uf = form.getByRole('textbox', { name: 'UF', exact: true });
+  const cidade = form.getByRole('textbox', { name: 'Cidade', exact: true });
+  await expect(uf).toHaveValue('PA');
+  await expect(uf).toHaveAttribute('readonly', '');
+  await expect(cidade).toHaveValue('Marabá');
+  await expect(cidade).toHaveAttribute('readonly', '');
 }
 
 test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
@@ -88,20 +104,33 @@ test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
     await expect(page.locator('#campus-endereco-logradouro')).toHaveValue('Rua Folha 31, Quadra 7');
     await expect(page.locator('#campus-endereco-logradouro')).toHaveAttribute('readonly', '');
     await expect(page.locator('#campus-endereco-numero')).not.toHaveAttribute('readonly', '');
-    await expect(page.getByText('Marabá — PA')).toBeVisible();
+    await conferirCidadeDoCep(page);
   });
 
-  test('CA-02: fluxo sem CEP seleciona a cidade pelo seletor', async ({ page }) => {
+  test('CA-02: fluxo sem CEP escolhe a UF e busca a cidade no campo de município', async ({
+    page,
+  }) => {
     await mockApi(page, {});
     await abrirCadastroCampus(page);
 
     await page.getByRole('button', { name: 'preencher sem CEP' }).click();
-    await page.getByLabel('Cidade').last().selectOption('1504208');
+    const form = page.locator('#cfg-campus-form');
+    const cidade = form.getByRole('combobox', { name: /^Cidade\b/ });
+    // A cidade só se busca depois da UF, que limita a busca.
+    await expect(cidade).toBeDisabled();
+    await form.getByRole('combobox', { name: /^UF\b/ }).selectOption('PA');
+    await expect(cidade).toBeEnabled();
 
-    await expect(page.getByText('Cidade selecionada: Marabá — PA')).toBeVisible();
+    await cidade.fill('Mara');
+    await page.getByRole('option', { name: 'Marabá (PA)' }).click();
+
+    await expect(cidade).toHaveValue('Marabá (PA)');
+    await expect(form.getByRole('button', { name: 'Limpar cidade' })).toBeVisible();
   });
 
-  test('CA-06: CEP inexistente exibe erro inline e oculta os campos de endereço', async ({ page }) => {
+  test('CA-06: CEP inexistente exibe erro inline e oculta os campos de endereço', async ({
+    page,
+  }) => {
     await mockApi(page, {});
     await abrirCadastroCampus(page);
 
@@ -122,16 +151,18 @@ test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
     await page.locator('[formControlName="nome"]').fill('Campus de Marabá');
     await page.locator('#campus-endereco-cep').fill('68507590');
     await page.getByRole('button', { name: 'Buscar CEP' }).click();
-    await expect(page.getByText('Marabá — PA')).toBeVisible();
+    await conferirCidadeDoCep(page);
 
     await page.getByRole('button', { name: 'Criar campus' }).click();
 
-    await expect.poll(() => capturado.post).toMatchObject({
-      sigla: 'MARABA',
-      nome: 'Campus de Marabá',
-      cidadeCodigoIbge: '1504208',
-      cidadeUf: 'PA',
-      endereco: { cep: '68507590', nivelResolucao: 'logradouro' },
-    });
+    await expect
+      .poll(() => capturado.post)
+      .toMatchObject({
+        sigla: 'MARABA',
+        nome: 'Campus de Marabá',
+        cidadeCodigoIbge: '1504208',
+        cidadeUf: 'PA',
+        endereco: { cep: '68507590', nivelResolucao: 'logradouro' },
+      });
   });
 });
