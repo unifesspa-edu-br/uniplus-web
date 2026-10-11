@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { fatoEscolhivel, type CondicaoEmClausula, type FatoEscolhivel } from './condicoes-de-fatos';
-import { descreverAlternativas, descreverCondicao } from './leitura-de-condicoes';
+import {
+  QUEM_ATENDE_AS_CONDICOES,
+  TODOS_OS_CANDIDATOS,
+  descreverAlternativas,
+  descreverCondicao,
+  resumoDaRegra,
+} from './leitura-de-condicoes';
 
 const COR_RACA = fatoEscolhivel({
   codigo: 'COR_RACA',
@@ -54,5 +60,18 @@ describe('leitura das condições', () => {
       'Cursou o ensino médio em escola pública é sim e Cor/raça não é Parda',
       'Cor/raça é Indígena',
     ]);
+  });
+
+  it('resume a regra numa linha: sem condição vale para todos, e sem o catálogo a com condição só se anuncia', () => {
+    const condicoes: CondicaoEmClausula[] = [
+      { clausula: 1, fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: 'true' },
+      { clausula: 2, fato: 'COR_RACA', operador: 'IGUAL', valor: '"INDIGENA"' },
+    ];
+
+    expect(resumoDaRegra([], null)).toBe(TODOS_OS_CANDIDATOS);
+    expect(resumoDaRegra(condicoes, null)).toBe(QUEM_ATENDE_AS_CONDICOES);
+    expect(resumoDaRegra(condicoes, FATOS)).toBe(
+      'Cursou o ensino médio em escola pública é sim; ou Cor/raça é Indígena',
+    );
   });
 });

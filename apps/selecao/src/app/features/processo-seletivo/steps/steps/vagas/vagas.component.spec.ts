@@ -1,16 +1,16 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, type FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { OrigemCandidatos, ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { MatrizDaModalidadeService } from '../../shared/matriz-da-modalidade.service';
+import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { VagasStepComponent } from './vagas.component';
 
@@ -94,6 +94,24 @@ function distribuicao(ofertaCursoId: string): DistribuicaoDeVagas {
   };
 }
 
+const ROTA_PROCESSO_LIDO = new RegExp(`^${BASE}/api/selecao/processos-seletivos/[^/]+$`);
+
+/**
+ * Espera a gravação do passo respondendo a releitura do processo que segue a gravação do quadro:
+ * é dela que saem as regras congeladas das modalidades.
+ */
+async function comReleitura<T>(controller: HttpTestingController, gravacao: Promise<T>): Promise<T> {
+  let terminou = false;
+  void gravacao.finally(() => (terminou = true)).catch(() => undefined);
+  for (let volta = 0; !terminou && volta < 20; volta++) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    for (const releitura of controller.match((r) => r.method === 'GET' && ROTA_PROCESSO_LIDO.test(r.url))) {
+      releitura.flush({ distribuicaoVagas: [], regrasDerivacao: [] });
+    }
+  }
+  return gravacao;
+}
+
 describe('VagasStepComponent — remoção de oferta do quadro', () => {
   let componente: VagasStepComponent;
   let store: ProcessoSeletivoStore;
@@ -107,7 +125,7 @@ describe('VagasStepComponent — remoção de oferta do quadro', () => {
         ProcessoSeletivoStore,
         CadastroInicialService,
         CatalogosDoCronogramaService,
-        MatrizDaModalidadeService,
+        CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -230,7 +248,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
         ProcessoSeletivoStore,
         CadastroInicialService,
         CatalogosDoCronogramaService,
-        MatrizDaModalidadeService,
+        CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -301,7 +319,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
     });
 
     requisicao.flush(null, { status: 204, statusText: 'No Content' });
-    await expect(gravacao).resolves.toEqual({ valid: true });
+    await expect(comReleitura(controller, gravacao)).resolves.toEqual({ valid: true });
   });
 
   /** ADR-0027: comando de escrita viaja com Idempotency-Key. */
@@ -314,7 +332,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
     expect(requisicao.request.headers.get('Idempotency-Key')).toBeTruthy();
 
     requisicao.flush(null, { status: 204, statusText: 'No Content' });
-    await gravacao;
+    await comReleitura(controller, gravacao);
   });
 
   /**
@@ -337,7 +355,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
       { status: 422, statusText: 'Unprocessable Entity' },
     );
 
-    const resultado = await gravacao;
+    const resultado = await comReleitura(controller, gravacao);
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toBeTruthy();
     expect(store.draft().vagas.ofertas).toHaveLength(2);
@@ -349,7 +367,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
    * depois da simulação: gravar sem ela é declarar um quadro que ninguém viu.
    */
   it('recusa gravar antes de simular o quadro', async () => {
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('Simule o quadro'))).toBe(true);
@@ -373,7 +391,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
    * gravação falhava num passo que o operador não tinha aberto.
    */
   it('recusa gravar sem simular o quadro', async () => {
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('Simule o quadro'))).toBe(true);
@@ -466,7 +484,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
     expect(componente.simulando()).toBe(false);
     expect(componente.simulacaoCobreOQuadro()).toBe(false);
 
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('Simule o quadro'))).toBe(true);
     controller.expectNone(ROTA_DISTRIBUICAO);
@@ -533,7 +551,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
 
     expect(componente.ofertasForaDoPadrao()).toHaveLength(1);
 
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('diferentes do padrão'))).toBe(true);
     controller.expectNone(ROTA_DISTRIBUICAO);
@@ -586,7 +604,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
   it('recusa gravar antes de o processo existir', async () => {
     store.processoSeletivoId.set(null);
 
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
     controller.expectNone(ROTA_DISTRIBUICAO);
@@ -601,7 +619,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
       ofertas: [{ ...distribuicao(OFERTA), voBase: '' }],
     });
 
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
     controller.expectNone(ROTA_DISTRIBUICAO);
@@ -741,7 +759,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
         ProcessoSeletivoStore,
         CadastroInicialService,
         CatalogosDoCronogramaService,
-        MatrizDaModalidadeService,
+        CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -829,7 +847,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     expect(cascataReq.request.headers.get('Idempotency-Key')).toBeTruthy();
 
     cascataReq.flush(null, { status: 204, statusText: 'No Content' });
-    await expect(gravacao).resolves.toEqual({ valid: true });
+    await expect(comReleitura(controller, gravacao)).resolves.toEqual({ valid: true });
   });
 
   it('não envia cascata quando nenhuma oferta a exige', async () => {
@@ -857,7 +875,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     await tick();
 
     controller.expectNone(ROTA_CASCATA_TESTE);
-    await expect(gravacao).resolves.toEqual({ valid: true });
+    await expect(comReleitura(controller, gravacao)).resolves.toEqual({ valid: true });
   });
 
   /**
@@ -872,7 +890,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     detectar();
     simularEConferirDistribuicao();
 
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('cascata'))).toBe(true);
@@ -913,7 +931,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     escolherRegraCascataNaTela('REMANEJ-CASCATA-SEM-MATRIZ|v1');
     detectar();
 
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('não declara uma matriz'))).toBe(true);
@@ -945,7 +963,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
       );
     detectar();
 
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('não foi encontrada no catálogo'))).toBe(
@@ -977,7 +995,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
       );
     detectar();
 
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('a consulta falhou'))).toBe(true);
@@ -1006,7 +1024,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     });
     detectar();
 
-    const resultado = await componente.persistir();
+    const resultado = await comReleitura(controller, componente.persistir());
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('fora do ramo federal'))).toBe(true);
@@ -1033,7 +1051,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
       { status: 422, statusText: 'Unprocessable Entity' },
     );
 
-    const resultado = await gravacao;
+    const resultado = await comReleitura(controller, gravacao);
     expect(resultado.valid).toBe(false);
     controller.expectNone(ROTA_CASCATA_TESTE);
   });
@@ -1062,7 +1080,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
       { status: 422, statusText: 'Unprocessable Entity' },
     );
 
-    const resultado = await gravacao;
+    const resultado = await comReleitura(controller, gravacao);
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('distribuição de vagas foi gravada');
   });
@@ -1097,7 +1115,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
       },
       { status: 503, statusText: 'Service Unavailable' },
     );
-    expect((await primeiraGravacao).valid).toBe(false);
+    expect((await comReleitura(controller, primeiraGravacao)).valid).toBe(false);
 
     // A oferta deixa de exigir cascata — se o 5xx acima aplicou o comando no
     // servidor, pular a remoção deixaria a cascata órfã.
@@ -1137,7 +1155,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
       destinos: null,
     });
     remocao.flush(null, { status: 204, statusText: 'No Content' });
-    await expect(segundaGravacao).resolves.toEqual({ valid: true });
+    await expect(comReleitura(controller, segundaGravacao)).resolves.toEqual({ valid: true });
   });
 
   it('envia a remoção quando a cascata deixou de se aplicar mas havia escolha anterior', async () => {
@@ -1188,7 +1206,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     });
     cascataReq.flush(null, { status: 204, statusText: 'No Content' });
 
-    await expect(gravacao).resolves.toEqual({ valid: true });
+    await expect(comReleitura(controller, gravacao)).resolves.toEqual({ valid: true });
   });
 });
 
@@ -1204,7 +1222,7 @@ describe('VagasStepComponent — totais do quadro', () => {
         ProcessoSeletivoStore,
         CadastroInicialService,
         CatalogosDoCronogramaService,
-        MatrizDaModalidadeService,
+        CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -1312,7 +1330,7 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
         ProcessoSeletivoStore,
         CadastroInicialService,
         CatalogosDoCronogramaService,
-        MatrizDaModalidadeService,
+        CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -1625,7 +1643,7 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
         ProcessoSeletivoStore,
         CadastroInicialService,
         CatalogosDoCronogramaService,
-        MatrizDaModalidadeService,
+        CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -1745,30 +1763,14 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
   });
 });
 
-describe('VagasStepComponent — matriz da modalidade de concorrência', () => {
+describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
   const ROTA_PROCESSO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
-  const ROTA_NORMATIVAS = `${ROTA_PROCESSO}/regras-derivacao/normativas`;
   const ROTA_DERIVACAO = `${ROTA_PROCESSO}/regras-derivacao`;
 
-  const SO_AC = [{ ordem: 0, contribui: 'AC', quando: null }];
-  const AC_E_AC_PCD = [
-    ...SO_AC,
-    { ordem: 1, contribui: 'AC_PCD', quando: [[{ fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true }]] },
-  ];
-  const AC_PCD_AJUSTADA = [
-    ...SO_AC,
-    {
-      ordem: 1,
-      contribui: 'AC_PCD',
-      quando: [[
-        { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
-        { fato: 'PCD', operador: 'IGUAL', valor: true },
-      ]],
-    },
-  ];
-  const PROPOSTA = [{ codigoFato: 'MODALIDADE', regras: AC_E_AC_PCD }];
+  const QUEM_CONCORRE_PCD = [[{ fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true }]];
 
   let componente: VagasStepComponent;
+  let fixture: ComponentFixture<VagasStepComponent>;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 
@@ -1779,7 +1781,7 @@ describe('VagasStepComponent — matriz da modalidade de concorrência', () => {
         ProcessoSeletivoStore,
         CadastroInicialService,
         CatalogosDoCronogramaService,
-        MatrizDaModalidadeService,
+        CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -1788,7 +1790,7 @@ describe('VagasStepComponent — matriz da modalidade de concorrência', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(VagasStepComponent);
+    fixture = TestBed.createComponent(VagasStepComponent);
     componente = fixture.componentInstance;
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
@@ -1822,7 +1824,10 @@ describe('VagasStepComponent — matriz da modalidade de concorrência', () => {
     });
     fixture.detectChanges();
 
+    // O catálogo do cronograma já carregado: a seção das regras o pede ao aparecer.
     const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+    catalogos.carregar();
+    for (const requisicao of controller.match(() => true)) requisicao.flush([]);
     catalogos.fatos.set([
       {
         codigo: 'CONCORRER_PCD',
@@ -1900,9 +1905,8 @@ describe('VagasStepComponent — matriz da modalidade de concorrência', () => {
     };
   }
 
-  /** O processo como o servidor o devolve depois de gravar o quadro. */
+  /** O processo como o servidor o devolve depois de gravar o quadro, com as regras congeladas. */
   function processoGravado(
-    regrasDerivacao: readonly unknown[],
     inscricao: { readonly formularios: readonly unknown[]; readonly cronogramaFases: readonly unknown[] } = {
       formularios: [formularioDeInscricao(['NOME', 'CONCORRER_PCD'])],
       cronogramaFases: [FASE_DE_INSCRICAO],
@@ -1910,23 +1914,24 @@ describe('VagasStepComponent — matriz da modalidade de concorrência', () => {
   ): unknown {
     return {
       id: PROCESSO_ID,
-      distribuicaoVagas: [{ modalidades: [{ codigo: 'AC' }, { codigo: 'AC_PCD' }] }],
-      regrasDerivacao,
+      distribuicaoVagas: [
+        {
+          modalidades: [
+            { codigo: 'AC', descricao: 'Ampla concorrência', regraDeAplicabilidade: [] },
+            { codigo: 'AC_PCD', descricao: 'Pessoa com deficiência', regraDeAplicabilidade: QUEM_CONCORRE_PCD },
+          ],
+        },
+      ],
+      regrasDerivacao: [],
       ...inscricao,
     };
   }
 
-  function comMatrizGravada(regras: readonly unknown[]): void {
-    store.patchObjectSection('formulario', { derivacao: [{ codigoFato: 'MODALIDADE', regras }] });
-  }
-
   /** Grava o quadro e responde o processo relido; o resto da gravação fica com o teste. */
   async function gravarQuadro(
-    regrasGravadas: readonly unknown[],
-    confirmadaPeloOperador: boolean,
-    processo: unknown = processoGravado(regrasGravadas),
+    processo: unknown = processoGravado(),
   ): Promise<{ readonly gravacao: Promise<{ valid: boolean; messages?: readonly string[] }> }> {
-    const gravacao = componente.persistir({ confirmadaPeloOperador });
+    const gravacao = componente.persistir();
     controller.expectOne(ROTA_DISTRIBUICAO).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
     controller.expectOne(ROTA_PROCESSO).flush(processo);
@@ -1934,26 +1939,17 @@ describe('VagasStepComponent — matriz da modalidade de concorrência', () => {
     return { gravacao };
   }
 
-  it('propõe a matriz normativa ao ofertar as modalidades, e grava a pergunta dela antes da matriz', async () => {
-    expect(componente.confirmacaoDeGravacao()?.itens).toContainEqual(
-      expect.objectContaining({ rotulo: 'Modalidade de concorrência do candidato' }),
+  it('põe no formulário de inscrição a pergunta que a regra congelada cita, sem gravar derivação', async () => {
+    const { gravacao } = await gravarQuadro(
+      processoGravado({ formularios: [formularioDeInscricao(['NOME'])], cronogramaFases: [FASE_DE_INSCRICAO] }),
     );
 
-    const { gravacao } = await gravarQuadro([], true, processoGravado([], {
-      formularios: [formularioDeInscricao(['NOME'])],
-      cronogramaFases: [FASE_DE_INSCRICAO],
-    }));
-    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
-    await proximoPasso();
-
-    controller.expectNone(ROTA_DERIVACAO);
     // A pergunta entra na seção dos outros dados, que o cabeçalho do formulário cria antes dos itens.
     const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO);
     expect(cabecalho.request.body.etapas.map((e: { codigo: string }) => e.codigo)).toContain('OUTROS_DADOS_EXIGIDOS');
     cabecalho.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
 
-    controller.expectNone(ROTA_DERIVACAO);
     const itens = controller.expectOne((r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`);
     // A seção dos dados básicos é da api e não vai no envio.
     expect(itens.request.body.itens.map((item: { fatoCodigo: string }) => item.fatoCodigo)).toEqual([
@@ -1961,96 +1957,68 @@ describe('VagasStepComponent — matriz da modalidade de concorrência', () => {
     ]);
     itens.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
-
-    const derivacao = controller.expectOne(ROTA_DERIVACAO);
-    expect(derivacao.request.method).toBe('PUT');
-    expect(derivacao.request.body).toEqual(PROPOSTA);
-    derivacao.flush(null, { status: 204, statusText: 'No Content' });
+    controller.match((r) => r.method === 'GET' && r.url === ROTA_PROCESSO);
 
     await expect(gravacao).resolves.toEqual({ valid: true });
-    expect(store.draft().formulario.derivacao).toEqual(PROPOSTA);
+    controller.expectNone((r) => r.url.startsWith(ROTA_DERIVACAO));
   });
 
-  it('sem fase de inscrição, aceita a gravação e deixa a matriz para o cronograma', async () => {
-    const { gravacao } = await gravarQuadro([], true, processoGravado([], { formularios: [], cronogramaFases: [] }));
-    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+  it('não grava nada além do quadro quando o formulário já coleta o que as regras citam', async () => {
+    const { gravacao } = await gravarQuadro();
 
     await expect(gravacao).resolves.toEqual({ valid: true });
     controller.expectNone((r) => r.method === 'PUT');
   });
 
-  it('recusa e pede o catálogo de fatos de novo quando ele falhou, sem gravar a matriz', async () => {
+  it('sem fase de inscrição, aceita a gravação e deixa as perguntas para o cronograma', async () => {
+    const { gravacao } = await gravarQuadro(processoGravado({ formularios: [], cronogramaFases: [] }));
+
+    await expect(gravacao).resolves.toEqual({ valid: true });
+    controller.expectNone((r) => r.method === 'PUT');
+  });
+
+  it('recusa e pede o catálogo de fatos de novo quando ele falhou', async () => {
     const catalogos = TestBed.inject(CatalogosDoCronogramaService);
     catalogos.fatos.set([]);
     catalogos.erro.set('Não foi possível carregar os catálogos.');
+    const carregar = vi.spyOn(catalogos, 'carregar');
 
-    const { gravacao } = await gravarQuadro([], true, processoGravado([], {
-      formularios: [formularioDeInscricao(['NOME'])],
-      cronogramaFases: [FASE_DE_INSCRICAO],
-    }));
-    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+    const { gravacao } = await gravarQuadro(
+      processoGravado({ formularios: [formularioDeInscricao(['NOME'])], cronogramaFases: [FASE_DE_INSCRICAO] }),
+    );
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('Grave de novo em instantes');
-    expect(controller.match((r) => r.url.includes('fatos-candidato')).length).toBe(1);
-    controller.match(() => true);
-    controller.expectNone(ROTA_DERIVACAO);
+    expect(carregar).toHaveBeenCalled();
+    controller.expectNone((r) => r.method === 'PUT');
   });
 
-  it('propõe de novo quando as modalidades ofertadas mudam, depois de avisar no resumo', async () => {
-    comMatrizGravada(SO_AC);
-    const aviso = componente
-      .confirmacaoDeGravacao()
-      ?.itens.find((item) => item.rotulo === 'Modalidade de concorrência do candidato');
-    expect(aviso?.valor).toContain('será substituída');
-
-    const { gravacao } = await gravarQuadro([{ codigoFato: 'MODALIDADE', regras: SO_AC }], true);
-    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
-    await proximoPasso();
-
-    const derivacao = controller.expectOne(ROTA_DERIVACAO);
-    expect(derivacao.request.body).toEqual(PROPOSTA);
-    derivacao.flush(null, { status: 204, statusText: 'No Content' });
-    await expect(gravacao).resolves.toEqual({ valid: true });
-  });
-
-  it('não troca a matriz desatualizada sem o operador ter confirmado o aviso', async () => {
-    comMatrizGravada(SO_AC);
-
-    const { gravacao } = await gravarQuadro([{ codigoFato: 'MODALIDADE', regras: SO_AC }], false);
-    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
-
-    const resultado = await gravacao;
-    expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.[0]).toContain('confirme a troca');
-    controller.expectNone(ROTA_DERIVACAO);
-  });
-
-  it('preserva a matriz que o administrador ajustou e que acompanha as ofertadas', async () => {
-    comMatrizGravada(AC_PCD_AJUSTADA);
-    expect(
-      componente.confirmacaoDeGravacao()?.itens.map((item) => item.rotulo),
-    ).not.toContain('Modalidade de concorrência do candidato');
-
-    const { gravacao } = await gravarQuadro([{ codigoFato: 'MODALIDADE', regras: AC_PCD_AJUSTADA }], true);
-    controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
-
-    await expect(gravacao).resolves.toEqual({ valid: true });
-    controller.expectNone(ROTA_DERIVACAO);
-  });
-
-  it('não propõe matriz ao processo que importa o resultado', async () => {
+  it('no processo que importa o resultado, relê só para mostrar as regras, sem pôr perguntas', async () => {
     store.patchObjectSection('identificacao', { origemCandidatos: OrigemCandidatos.importacaoExterna });
 
-    const gravacao = componente.persistir({ confirmadaPeloOperador: true });
-    controller.expectOne(ROTA_DISTRIBUICAO).flush(null, { status: 204, statusText: 'No Content' });
+    const { gravacao } = await gravarQuadro(
+      processoGravado({ formularios: [formularioDeInscricao(['NOME'])], cronogramaFases: [FASE_DE_INSCRICAO] }),
+    );
 
     await expect(gravacao).resolves.toEqual({ valid: true });
-    controller.expectNone(ROTA_PROCESSO);
-    controller.expectNone(ROTA_NORMATIVAS);
-    expect(componente.confirmacaoDeGravacao()?.itens.map((item) => item.rotulo)).not.toContain(
-      'Modalidade de concorrência do candidato',
+    controller.expectNone((r) => r.method === 'PUT');
+    expect(store.regrasDasModalidades().map((modalidade) => modalidade.codigo)).toEqual(['AC', 'AC_PCD']);
+  });
+
+  it('mostra, depois de gravar o quadro, quem concorre em cada modalidade pela regra congelada', async () => {
+    const { gravacao } = await gravarQuadro();
+    await expect(gravacao).resolves.toEqual({ valid: true });
+    fixture.detectChanges();
+
+    const secao = fixture.nativeElement.querySelector('sel-regras-das-modalidades') as HTMLElement;
+    expect(secao.textContent).toContain('Quem concorre em cada modalidade');
+    const linhas = [...secao.querySelectorAll('dl > div')].map((linha) =>
+      (linha.textContent ?? '').replace(/\s+/g, ' ').trim(),
     );
+    expect(linhas).toEqual([
+      'AC — Ampla concorrência Todos os candidatos',
+      'AC_PCD — Pessoa com deficiência Concorrer na reserva para pessoa com deficiência é sim',
+    ]);
   });
 });

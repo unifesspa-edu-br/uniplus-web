@@ -396,6 +396,8 @@ export class FormularioStepComponent {
     ...fatosColetadosPelaInscricao(this.conteudo()),
   ]);
 
+  private readonly regrasDasModalidades = this.store.regrasDasModalidades;
+
   /** Quem, no processo, cita cada fato — a fonte única do que entra sozinho e do que não sai. */
   readonly citantes = computed(() => {
     const draft = this.store.draft();
@@ -407,6 +409,7 @@ export class FormularioStepComponent {
         derivacao: draft.formulario.derivacao,
         desempate: draft.desempate,
         outrasFinalidades: draft.formulario.outrasFinalidades,
+        modalidades: this.regrasDasModalidades(),
       },
       {
         documento: (id) => tipoDocumento.get(id)?.nome ?? id,
@@ -951,9 +954,12 @@ export class FormularioStepComponent {
    */
   readonly camposSemUso = computed(() => {
     const draft = this.store.draft();
-    return camposSemUsoDeclarado(draft.formulario, draft.documentos, draft.desempate).map(
-      (campo) => (campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo),
-    );
+    return camposSemUsoDeclarado(
+      draft.formulario,
+      draft.documentos,
+      draft.desempate,
+      this.regrasDasModalidades(),
+    ).map((campo) => (campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo));
   });
 
   escreverReferencia(patch: Partial<{ tipo: string; data: string; faseCodigo: string }>): void {

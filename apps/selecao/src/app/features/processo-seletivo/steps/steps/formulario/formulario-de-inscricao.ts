@@ -25,6 +25,7 @@ import type {
   WizardDraft,
 } from '../../processo-seletivo.models';
 import { todasAsExigencias } from '../../shared/exigencias-documentais';
+import type { RegraDaModalidadeOfertada } from '../../shared/regras-das-modalidades';
 import {
   desempateUsaDataDeNascimento,
   FATO_DATA_NASCIMENTO,
@@ -124,6 +125,8 @@ export interface CitantesNoProcesso {
   readonly derivacao: readonly DerivacaoDeFato[];
   readonly desempate: readonly CriterioDesempateConfigurado[];
   readonly outrasFinalidades?: readonly FormularioDaFinalidade[];
+  /** As regras de aplicabilidade das modalidades ofertadas, como o servidor as congelou. */
+  readonly modalidades?: readonly RegraDaModalidadeOfertada[];
 }
 
 /** Como a frase de recusa nomeia o documento e o fato. */
@@ -161,6 +164,11 @@ export function quemCitaNoProcesso(
     for (const fato of fatosCitadosPelaDerivacao(config.regras)) {
       if (fato !== config.codigoFato)
         citar(fato, `as regras que calculam “${nomes.fato(config.codigoFato)}”`);
+    }
+  }
+  for (const modalidade of processo.modalidades ?? []) {
+    for (const fato of fatosCitadosPeloPredicado(modalidade.regra)) {
+      citar(fato, `a regra de quem concorre em ${modalidade.codigo}`);
     }
   }
   if (desempateUsaDataDeNascimento(processo.desempate))
@@ -358,7 +366,7 @@ export function problemasDoFormulario(
 
 /**
  * Os campos que o formulário coleta e nada no certame usa: nenhuma exigência os cita, nenhuma
- * regra de derivação depende deles, o desempate não os usa e nenhuma regra do próprio formulário
+ * regra de derivação nem regra de modalidade ofertada depende deles, o desempate não os usa e nenhuma regra do próprio formulário
  * nem dos formulários das outras finalidades os cita. Os dados básicos ficam de fora: a API os
  * coleta em toda inscrição.
  *
@@ -371,6 +379,7 @@ export function camposSemUsoDeclarado(
   formulario: FormularioDeInscricao,
   exigencias: ExigenciasDoRascunho,
   desempate: readonly CriterioDesempateConfigurado[] = [],
+  modalidades: readonly RegraDaModalidadeOfertada[] = [],
 ): readonly ItemDoFormulario[] {
   const usados = new Set([
     ...quemCitaNoProcesso({
@@ -378,6 +387,7 @@ export function camposSemUsoDeclarado(
       derivacao: formulario.derivacao,
       desempate,
       outrasFinalidades: formulario.outrasFinalidades,
+      modalidades,
     }).keys(),
     ...fatosCitadosPeloConteudo(formulario.conteudo),
   ]);
@@ -404,7 +414,7 @@ export function fatosCitadosPelaDerivacao(regras: unknown): readonly string[] {
  * Os fatos citados num predicado em forma normal disjuntiva — a lista de cláusulas, cada uma com
  * as suas condições. O `quando` de uma regra de derivação chega ao rascunho como valor opaco.
  */
-function fatosCitadosPeloPredicado(predicado: unknown): readonly string[] {
+export function fatosCitadosPeloPredicado(predicado: unknown): readonly string[] {
   if (!Array.isArray(predicado)) return [];
   return predicado.flatMap((clausula: unknown) =>
     Array.isArray(clausula)

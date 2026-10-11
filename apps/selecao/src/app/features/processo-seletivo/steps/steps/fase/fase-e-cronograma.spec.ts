@@ -9,7 +9,7 @@ import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { MatrizDaModalidadeService } from '../../shared/matriz-da-modalidade.service';
+import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from '../cronograma/cronograma.component';
 import { FaseStepComponent } from './fase.component';
@@ -177,7 +177,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
-        MatrizDaModalidadeService,
+        CamposPressupostosService,
         CatalogosDoCronogramaService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),

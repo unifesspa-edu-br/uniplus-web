@@ -249,50 +249,6 @@ export class ProcessosSeletivosApi {
   }
 
   /**
-   * PUT `/api/selecao/processos-seletivos/{id}/regras-derivacao` — declara como os fatos
-   * derivados do certame são calculados a partir dos coletados.
-   *
-   * É o que faz a modalidade de concorrência existir para um candidato: sem regra declarada,
-   * um gatilho que cita modalidade não resolve. `quando: null` é a regra âncora incondicional
-   * — nunca lista vazia, que diria "sob nenhuma condição".
-   *
-   * Substitui a coleção inteira. Responde 204 sem corpo.
-   */
-  definirRegrasDerivacao(
-    processoSeletivoId: string,
-    regras: readonly ConfiguracaoDerivacaoInput[],
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/regras-derivacao`,
-      regras,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * GET `/api/selecao/processos-seletivos/{id}/regras-derivacao/normativas` — a matriz de
-   * derivação de modalidade do ramo da Lei 12.711/2012, recortada para o que este processo
-   * oferta.
-   *
-   * É **proposta**, não configuração: nada fica gravado por esta leitura, e o cliente a envia
-   * de volta pelo `PUT` acima sem transformação nenhuma. Vem do servidor porque é lá que vive
-   * a lei — de que opt-ins e de que elegibilidades cada cota se compõe —, e uma segunda cópia
-   * escrita aqui divergiria em silêncio, aparecendo só na classificação de um candidato real.
-   *
-   * Lista vazia é resposta legítima: processo sem quadro de vagas declarado não tem o que
-   * propor.
-   */
-  obterRegrasDerivacaoNormativas(
-    processoSeletivoId: string,
-  ): Observable<ApiResult<readonly ConfiguracaoDerivacaoInput[]>> {
-    return this.http.get<ApiResult<readonly ConfiguracaoDerivacaoInput[]>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/regras-derivacao/normativas`,
-      { context: withVendorMime('regras-derivacao-normativas', 1) },
-    );
-  }
-
-  /**
    * PUT `/api/selecao/processos-seletivos/{id}/referencia-temporal-fatos` — declara o instante
    * contra o qual a idade do candidato é apurada.
    *

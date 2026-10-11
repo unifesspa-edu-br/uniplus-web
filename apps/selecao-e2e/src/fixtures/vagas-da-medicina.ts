@@ -8,12 +8,96 @@
  */
 
 /**
- * A regra que deriva a modalidade de concorrência do candidato, como a api a propõe para as dez
- * modalidades do quadro: a ampla concorrência para todos, a reserva de pessoa com deficiência
- * para quem não optou pelas cotas e cada cota da Lei 12.711 pelas opções do candidato. O egresso
- * de escola pública vem junto, derivado da escolaridade.
+ * A regra de aplicabilidade de cada modalidade, como a api a congela na oferta: a ampla
+ * concorrência para todos, cada cota da Lei 12.711 pela opção pelas cotas e pelas condições da
+ * própria cota, e a reserva de pessoa com deficiência para quem não optou pelas cotas.
  */
-export const MATRIZ_DA_MODALIDADE_DA_MEDICINA = [
+const REGRAS_DE_APLICABILIDADE = {
+  AC: [],
+  LI_EP: [[{ fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true }]],
+  LB_EP: [
+    [
+      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
+      { fato: 'BAIXA_RENDA', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
+    ],
+  ],
+  LI_PPI: [
+    [
+      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
+      { fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'PARDA'] },
+      { fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true },
+    ],
+    [
+      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
+      { fato: 'COR_RACA', operador: 'IGUAL', valor: 'INDIGENA' },
+      { fato: 'INDIGENA', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true },
+    ],
+  ],
+  LB_PPI: [
+    [
+      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
+      { fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'PARDA'] },
+      { fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true },
+      { fato: 'BAIXA_RENDA', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
+    ],
+    [
+      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
+      { fato: 'COR_RACA', operador: 'IGUAL', valor: 'INDIGENA' },
+      { fato: 'INDIGENA', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true },
+      { fato: 'BAIXA_RENDA', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
+    ],
+  ],
+  LI_Q: [
+    [
+      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
+      { fato: 'QUILOMBOLA', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_Q', operador: 'IGUAL', valor: true },
+    ],
+  ],
+  LB_Q: [
+    [
+      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
+      { fato: 'QUILOMBOLA', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_Q', operador: 'IGUAL', valor: true },
+      { fato: 'BAIXA_RENDA', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
+    ],
+  ],
+  LI_PCD: [
+    [
+      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
+      { fato: 'PCD', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
+    ],
+  ],
+  LB_PCD: [
+    [
+      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: true },
+      { fato: 'PCD', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
+      { fato: 'BAIXA_RENDA', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
+    ],
+  ],
+  AC_PCD: [
+    [
+      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: false },
+      { fato: 'PCD', operador: 'IGUAL', valor: true },
+      { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
+    ],
+  ],
+} as const;
+
+/**
+ * O que o processo ainda configura de derivação: o egresso de escola pública, da escolaridade. A
+ * modalidade do candidato e a opção pelas cotas a api deriva das modalidades ofertadas.
+ */
+export const DERIVACOES_DA_MEDICINA = [
   {
     codigoFato: 'EGRESSO_ESCOLA_PUBLICA',
     regras: [
@@ -40,124 +124,14 @@ export const MATRIZ_DA_MODALIDADE_DA_MEDICINA = [
       },
     ],
   },
-  {
-    codigoFato: 'MODALIDADE',
-    regras: [
-      { ordem: 0, contribui: 'AC', quando: null },
-      {
-        ordem: 1,
-        contribui: 'AC_PCD',
-        quando: [
-          [
-            { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
-            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: false },
-          ],
-          [
-            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: false },
-            { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
-          ],
-        ],
-      },
-      {
-        ordem: 2,
-        contribui: 'LI_PCD',
-        quando: [
-          [
-            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
-            { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
-            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
-          ],
-        ],
-      },
-      {
-        ordem: 3,
-        contribui: 'LB_PCD',
-        quando: [
-          [
-            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
-            { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
-            { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
-            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
-          ],
-        ],
-      },
-      {
-        ordem: 4,
-        contribui: 'LI_EP',
-        quando: [
-          [
-            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
-            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
-          ],
-        ],
-      },
-      {
-        ordem: 5,
-        contribui: 'LB_EP',
-        quando: [
-          [
-            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
-            { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
-            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
-          ],
-        ],
-      },
-      {
-        ordem: 6,
-        contribui: 'LI_PPI',
-        quando: [
-          [
-            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
-            { fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true },
-            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
-          ],
-        ],
-      },
-      {
-        ordem: 7,
-        contribui: 'LB_PPI',
-        quando: [
-          [
-            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
-            { fato: 'CONCORRER_PPI', operador: 'IGUAL', valor: true },
-            { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
-            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
-          ],
-        ],
-      },
-      {
-        ordem: 8,
-        contribui: 'LI_Q',
-        quando: [
-          [
-            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
-            { fato: 'CONCORRER_Q', operador: 'IGUAL', valor: true },
-            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
-          ],
-        ],
-      },
-      {
-        ordem: 9,
-        contribui: 'LB_Q',
-        quando: [
-          [
-            { fato: 'CONCORRER_EP', operador: 'IGUAL', valor: true },
-            { fato: 'CONCORRER_Q', operador: 'IGUAL', valor: true },
-            { fato: 'CONCORRER_RENDA', operador: 'IGUAL', valor: true },
-            { fato: 'EGRESSO_ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
-          ],
-        ],
-      },
-    ],
-  },
 ] as const;
 
 /**
- * As perguntas que a regra da modalidade faz ao candidato, no formulário de inscrição: sem elas o
- * servidor recusa a regra. Todas aparecem sempre; o processo real as exibe conforme as respostas
- * anteriores.
+ * As perguntas que as regras das modalidades ofertadas citam, no formulário de inscrição, com as
+ * que a derivação do egresso e a opção pelas cotas da lei pedem: sem elas a publicação recusa a
+ * regra. Todas aparecem sempre; o processo real as exibe conforme as respostas anteriores.
  */
-export const CAMPOS_DA_MATRIZ_DA_MEDICINA = [
+export const CAMPOS_DAS_MODALIDADES_DA_MEDICINA = [
   {
     fatoCodigo: 'FORMA_CONCLUSAO_EM',
     ordem: 0,
@@ -301,10 +275,70 @@ export const CAMPOS_DA_MATRIZ_DA_MEDICINA = [
     restricoes: [],
     impedimento: null,
   },
+  {
+    fatoCodigo: 'PCD',
+    ordem: 7,
+    rotulo: 'Você é pessoa com deficiência?',
+    tipoRenderizacao: 'BOOLEANO',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  },
+  {
+    fatoCodigo: 'INDIGENA',
+    ordem: 8,
+    rotulo: 'Você pertence a um povo indígena?',
+    tipoRenderizacao: 'BOOLEANO',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  },
+  {
+    fatoCodigo: 'QUILOMBOLA',
+    ordem: 9,
+    rotulo: 'Você se autodeclara quilombola?',
+    tipoRenderizacao: 'BOOLEANO',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  },
+  {
+    fatoCodigo: 'BAIXA_RENDA',
+    ordem: 10,
+    rotulo: 'Sua renda familiar bruta mensal por pessoa é de até um salário mínimo?',
+    tipoRenderizacao: 'BOOLEANO',
+    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+    precondicao: null,
+    opcoes: null,
+    etapaCodigo: 'SECAO_1',
+    formato: null,
+    ajuda: null,
+    pedirConfirmacao: false,
+    restricoes: [],
+    impedimento: null,
+  },
 ] as const;
 
-/** O formulário de inscrição com as perguntas que a regra da modalidade faz. */
-export const FORMULARIO_DA_MATRIZ_DA_MEDICINA = {
+/** O formulário de inscrição com as perguntas que as regras das modalidades fazem. */
+export const FORMULARIO_DAS_MODALIDADES_DA_MEDICINA = {
   finalidade: 'INSCRICAO',
   faseId: null,
   titulo: null,
@@ -332,12 +366,12 @@ export const FORMULARIO_DA_MATRIZ_DA_MEDICINA = {
       exibicao: null,
     },
   ],
-  fatosColetados: CAMPOS_DA_MATRIZ_DA_MEDICINA,
+  fatosColetados: CAMPOS_DAS_MODALIDADES_DA_MEDICINA,
   termos: [],
   grupos: [],
 } as const;
 
-/** Detalhe do processo, com a distribuição, a cascata e a regra da modalidade. */
+/** Detalhe do processo, com a distribuição, a cascata e as regras congeladas das modalidades. */
 export const PROCESSO_DA_MEDICINA = {
   id: '01a0d635-83d6-7a09-b2f6-39b033b686e7',
   nome: 'Processo Seletivo para o Curso de Medicina Unifesspa 2027',
@@ -408,7 +442,7 @@ export const PROCESSO_DA_MEDICINA = {
           remanejamentoDestino: null,
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: [],
+          regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.AC,
           acaoQuandoIndeferido: null,
           baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
           quantidadeDeclarada: null,
@@ -425,7 +459,7 @@ export const PROCESSO_DA_MEDICINA = {
           remanejamentoDestino: null,
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: [],
+          regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LB_Q,
           acaoQuandoIndeferido: null,
           baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
           quantidadeDeclarada: null,
@@ -442,7 +476,7 @@ export const PROCESSO_DA_MEDICINA = {
           remanejamentoDestino: null,
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: [],
+          regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LB_PPI,
           acaoQuandoIndeferido: null,
           baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
           quantidadeDeclarada: null,
@@ -459,7 +493,7 @@ export const PROCESSO_DA_MEDICINA = {
           remanejamentoDestino: null,
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: [],
+          regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LI_Q,
           acaoQuandoIndeferido: null,
           baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
           quantidadeDeclarada: null,
@@ -476,7 +510,7 @@ export const PROCESSO_DA_MEDICINA = {
           remanejamentoDestino: null,
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: [],
+          regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LI_PCD,
           acaoQuandoIndeferido: null,
           baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
           quantidadeDeclarada: null,
@@ -493,7 +527,7 @@ export const PROCESSO_DA_MEDICINA = {
           remanejamentoDestino: null,
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: [],
+          regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LI_EP,
           acaoQuandoIndeferido: null,
           baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
           quantidadeDeclarada: null,
@@ -510,7 +544,7 @@ export const PROCESSO_DA_MEDICINA = {
           remanejamentoDestino: 'AC',
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: [],
+          regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.AC_PCD,
           acaoQuandoIndeferido: null,
           baseLegal:
             'Res. Unifesspa 532/2021, art. 1º (reserva de vaga para pessoa com deficiência)',
@@ -528,7 +562,7 @@ export const PROCESSO_DA_MEDICINA = {
           remanejamentoDestino: null,
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: [],
+          regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LI_PPI,
           acaoQuandoIndeferido: null,
           baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
           quantidadeDeclarada: null,
@@ -545,7 +579,7 @@ export const PROCESSO_DA_MEDICINA = {
           remanejamentoDestino: null,
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: [],
+          regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LB_PCD,
           acaoQuandoIndeferido: null,
           baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
           quantidadeDeclarada: null,
@@ -562,7 +596,7 @@ export const PROCESSO_DA_MEDICINA = {
           remanejamentoDestino: null,
           remanejamentoPar: null,
           remanejamentoFallback: null,
-          criteriosCumulativos: [],
+          regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LB_EP,
           acaoQuandoIndeferido: null,
           baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
           quantidadeDeclarada: null,
@@ -992,8 +1026,8 @@ export const PROCESSO_DA_MEDICINA = {
   documentosExigidos: [],
   raizesExigencia: [],
   referenciaTemporalFatos: null,
-  regrasDerivacao: MATRIZ_DA_MODALIDADE_DA_MEDICINA,
-  formularios: [FORMULARIO_DA_MATRIZ_DA_MEDICINA],
+  regrasDerivacao: DERIVACOES_DA_MEDICINA,
+  formularios: [FORMULARIO_DAS_MODALIDADES_DA_MEDICINA],
   opcoesDeclaradas: [],
   configuracaoDivulgacao: null,
   configuracaoTaxaInscricao: null,
@@ -1056,7 +1090,7 @@ export const MODALIDADES_DA_MEDICINA = [
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.AC,
     acaoQuandoIndeferido: null,
     baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
     criadoEm: '2026-01-01T00:00:00+00:00',
@@ -1072,7 +1106,7 @@ export const MODALIDADES_DA_MEDICINA = [
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LB_PPI,
     acaoQuandoIndeferido: null,
     baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
     criadoEm: '2026-01-01T00:00:00+00:00',
@@ -1088,7 +1122,7 @@ export const MODALIDADES_DA_MEDICINA = [
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LB_Q,
     acaoQuandoIndeferido: null,
     baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
     criadoEm: '2026-01-01T00:00:00+00:00',
@@ -1104,7 +1138,7 @@ export const MODALIDADES_DA_MEDICINA = [
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LB_PCD,
     acaoQuandoIndeferido: null,
     baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
     criadoEm: '2026-01-01T00:00:00+00:00',
@@ -1120,7 +1154,7 @@ export const MODALIDADES_DA_MEDICINA = [
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LB_EP,
     acaoQuandoIndeferido: null,
     baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
     criadoEm: '2026-01-01T00:00:00+00:00',
@@ -1136,7 +1170,7 @@ export const MODALIDADES_DA_MEDICINA = [
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LI_PPI,
     acaoQuandoIndeferido: null,
     baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
     criadoEm: '2026-01-01T00:00:00+00:00',
@@ -1152,7 +1186,7 @@ export const MODALIDADES_DA_MEDICINA = [
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LI_Q,
     acaoQuandoIndeferido: null,
     baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
     criadoEm: '2026-01-01T00:00:00+00:00',
@@ -1168,7 +1202,7 @@ export const MODALIDADES_DA_MEDICINA = [
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LI_PCD,
     acaoQuandoIndeferido: null,
     baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
     criadoEm: '2026-01-01T00:00:00+00:00',
@@ -1184,7 +1218,7 @@ export const MODALIDADES_DA_MEDICINA = [
     remanejamentoDestino: null,
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.LI_EP,
     acaoQuandoIndeferido: null,
     baseLegal: 'Lei 12.711/2012 (red. Lei 14.723/2023)',
     criadoEm: '2026-01-01T00:00:00+00:00',
@@ -1200,7 +1234,7 @@ export const MODALIDADES_DA_MEDICINA = [
     remanejamentoDestino: 'AC',
     remanejamentoPar: null,
     remanejamentoFallback: null,
-    criteriosCumulativos: [],
+    regraDeAplicabilidade: REGRAS_DE_APLICABILIDADE.AC_PCD,
     acaoQuandoIndeferido: null,
     baseLegal: 'Res. Unifesspa 532/2021, art. 1º (reserva de vaga para pessoa com deficiência)',
     criadoEm: '2026-01-01T00:00:00+00:00',

@@ -26,7 +26,10 @@ import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { MatrizDaModalidadeService } from '../../shared/matriz-da-modalidade.service';
+import {
+  CamposPressupostosService,
+  fatosCitadosPelasModalidadesOfertadas,
+} from '../../shared/campos-pressupostos.service';
 import {
   ORIENTACAO_DE_PERMUTACAO,
   PERMUTACAO_DE_ORDEM,
@@ -138,7 +141,7 @@ export class CronogramaStepComponent {
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly api = inject(ProcessosSeletivosApi);
-  private readonly derivacaoDaModalidade = inject(MatrizDaModalidadeService);
+  private readonly camposPressupostos = inject(CamposPressupostosService);
 
   readonly careteres = CARATERES;
   readonly formulario = novoFormularioDoCronograma();
@@ -1412,20 +1415,14 @@ export class CronogramaStepComponent {
     // exigência condicionada a um fato só se resolve se o certame coletar aquele fato. Quem
     // declara a condição é este passo, então é ele que garante o campo — o operador não
     // deveria precisar lembrar que decidir de quem o documento é cobrado mexe no formulário.
-    // A matriz de derivação é buscada ANTES de os campos serem gravados: as regras dela
-    // perguntam ao candidato se ele quer concorrer a cada cota, e uma regra que cita fato que o
-    // processo não coleta é recusada. Os dois comandos gravam em seguida, nessa ordem.
+    // A exigência recortada por modalidade depende também das perguntas que as regras das
+    // modalidades ofertadas fazem: é delas que a modalidade do candidato se deriva.
     const recorta = todasAsExigencias(this.store.draft().documentos).some(
       (exigencia) => modalidadesDaExigencia(exigencia) !== null,
     );
-    const proposta = this.pedeMatriz(recorta)
-      ? await this.derivacaoDaModalidade.proposta(processoId, detalhe.data, 'manter')
-      : ({ tipo: 'nadaAGravar' } as const);
-    if (geracao !== this.store.geracao()) return { valid: true };
-    if (proposta.tipo === 'recusada') {
-      return { valid: false, messages: [`As etapas e o cronograma foram gravados. ${proposta.motivo}`] };
-    }
-    let matriz = proposta.tipo === 'gravar' ? proposta.matriz : [];
+    const citadosPelasModalidades = this.pedePerguntasDasModalidades(recorta)
+      ? fatosCitadosPelasModalidadesOfertadas(detalhe.data)
+      : new Set<string>();
 
     const draft = this.store.draft();
     const citadosPelasExigencias = new Set(
@@ -1435,35 +1432,25 @@ export class CronogramaStepComponent {
         desempate: draft.desempate,
       }).keys(),
     );
-    const campos = await this.derivacaoDaModalidade.garantirCampos(
+    const campos = await this.camposPressupostos.garantirCampos(
       processoId,
       detalhe.data,
-      new Set([...citadosPelasExigencias, ...(proposta.tipo === 'gravar' ? proposta.dependencias : [])]),
+      new Set([...citadosPelasExigencias, ...citadosPelasModalidades]),
     );
     if (geracao !== this.store.geracao()) return { valid: true };
     if (campos.tipo === 'recusados') {
       return { valid: false, messages: [`As etapas e o cronograma foram gravados. ${campos.motivo}`] };
     }
-    if (campos.tipo === 'semFaseDeInscricao') {
-      // Sem a fase de inscrição, a matriz espera por ela; a exigência que depende de um dado, não.
-      if (recorta || !this.derivacaoDaModalidade.coletaTudo(detalhe.data, citadosPelasExigencias)) {
-        return {
-          valid: false,
-          messages: [
-            'As etapas e o cronograma foram gravados. Uma exigência documental depende de um dado que o formulário de inscrição precisa coletar, e o cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição.',
-          ],
-        };
-      }
-      matriz = [];
-    }
-
-    const derivacao = matriz.length === 0 ? null : await this.derivacaoDaModalidade.gravar(processoId, matriz, detalhe.data);
-    if (geracao !== this.store.geracao()) return { valid: true };
-    if (derivacao !== null) {
+    if (
+      campos.tipo === 'semFaseDeInscricao' &&
+      (recorta || !this.camposPressupostos.coletaTudo(detalhe.data, citadosPelasExigencias))
+    ) {
+      // Sem a fase de inscrição, as perguntas das modalidades esperam por ela; a exigência que
+      // depende de um dado, não.
       return {
         valid: false,
         messages: [
-          `As etapas e o cronograma foram gravados, e o formulário de inscrição está com os campos que as regras de modalidade pressupõem. ${derivacao}`,
+          'As etapas e o cronograma foram gravados. Uma exigência documental depende de um dado que o formulário de inscrição precisa coletar, e o cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição.',
         ],
       };
     }
@@ -1474,7 +1461,7 @@ export class CronogramaStepComponent {
       return {
         valid: false,
         messages: [
-          `As etapas, o cronograma, o formulário de inscrição e as regras de modalidade foram gravados. ${recusaDaExigenciaDoServidor(gravacao.problem) ?? this.problemI18n.resolve(gravacao.problem).title}`,
+          `As etapas, o cronograma e o formulário de inscrição foram gravados. ${recusaDaExigenciaDoServidor(gravacao.problem) ?? this.problemI18n.resolve(gravacao.problem).title}`,
         ],
       };
     }
@@ -1483,11 +1470,11 @@ export class CronogramaStepComponent {
   }
 
   /**
-   * A matriz da modalidade é proposta para o processo em que o candidato se inscreve — é a
-   * inscrição que coleta os opt-ins de que ela deriva —, e para o que recorta exigência por
-   * modalidade, que sem ela escreveria uma condição que nunca resolve.
+   * As perguntas das modalidades vão ao formulário do processo em que o candidato se inscreve — é
+   * a inscrição que coleta as respostas de que a modalidade dele se deriva —, e ao do que recorta
+   * exigência por modalidade, que sem elas escreveria uma condição que nunca resolve.
    */
-  private pedeMatriz(recorta: boolean): boolean {
+  private pedePerguntasDasModalidades(recorta: boolean): boolean {
     return (
       recorta ||
       this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria

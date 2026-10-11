@@ -8,12 +8,14 @@ import {
   VALOR_VERDADEIRO,
   clausulasDe,
   comparaComLista,
+  fatoEscolhivel,
   operadoresDoFato,
   rotuloDoValor,
   valorEscalarDe,
   valoresDeListaDe,
   type CondicaoDeFato,
   type CondicaoEmClausula,
+  type FatoDoCatalogo,
   type FatoEscolhivel,
 } from './condicoes-de-fatos';
 
@@ -43,6 +45,38 @@ export function descreverAlternativas(
       .map(({ condicao }) => descreverCondicao(condicao, fatosPorCodigo.get(condicao.fato)))
       .join(' e '),
   );
+}
+
+/** Todo fato do catálogo pelo código, para ler a regra salva mesmo quando ela cita fato que o editor não oferece. */
+export function fatosParaLeitura(
+  catalogo: readonly FatoDoCatalogo[],
+): ReadonlyMap<string, FatoEscolhivel> {
+  const porCodigo = new Map<string, FatoEscolhivel>();
+  for (const view of catalogo) {
+    const fato = fatoEscolhivel(view);
+    if (fato !== null) porCodigo.set(fato.codigo, fato);
+  }
+  return porCodigo;
+}
+
+/** A leitura da regra sem condição: a modalidade vale para todo candidato. */
+export const TODOS_OS_CANDIDATOS = 'Todos os candidatos';
+
+/** A leitura da regra com condição quando o catálogo de fatos não está à mão para nomeá-las. */
+export const QUEM_ATENDE_AS_CONDICOES = 'Quem atende às condições da regra';
+
+/**
+ * A regra numa linha: a regra sem condição vale para todos; as alternativas se ligam por "ou".
+ * Sem o catálogo, a regra com condição não se lê pelos nomes dos fatos, e a linha diz só que ela
+ * existe.
+ */
+export function resumoDaRegra(
+  regra: readonly CondicaoEmClausula[],
+  fatos: ReadonlyMap<string, FatoEscolhivel> | null,
+): string {
+  if (fatos === null && regra.length > 0) return QUEM_ATENDE_AS_CONDICOES;
+  const alternativas = descreverAlternativas(regra, fatos ?? new Map());
+  return alternativas.length === 0 ? TODOS_OS_CANDIDATOS : alternativas.join('; ou ');
 }
 
 function valorDescrito(condicao: CondicaoDeFato, fato: FatoEscolhivel): string {

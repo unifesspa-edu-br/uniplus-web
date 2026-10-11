@@ -12,7 +12,7 @@ import { conteudoInicial } from '@uniplus/shared-ui/components';
 import type { BancaRequeridaDaFase, ProdutoDaFase } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { MatrizDaModalidadeService } from '../../shared/matriz-da-modalidade.service';
+import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './cronograma.component';
 import type { EtapaForm } from './cronograma-form';
@@ -200,7 +200,7 @@ describe('CronogramaStepComponent', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
-        MatrizDaModalidadeService,
+        CamposPressupostosService,
         CatalogosDoCronogramaService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -1828,21 +1828,24 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
-   * O processo em que o candidato se inscreve deriva a modalidade da inscrição: o cronograma propõe a
-   * matriz mesmo sem exigência que recorte por modalidade, e, sem a fase de inscrição, deixa a
-   * matriz esperar por ela em vez de recusar o cronograma.
+   * O processo em que o candidato se inscreve deriva a modalidade da inscrição: o cronograma põe no
+   * formulário as perguntas que as regras das modalidades ofertadas citam, mesmo sem exigência que
+   * recorte por modalidade, e, sem a fase de inscrição, as deixa esperar por ela em vez de recusar
+   * o cronograma.
    */
-  describe('matriz da modalidade', () => {
-    const ROTA_NORMATIVAS = `${ROTA_PROCESSO}/regras-derivacao/normativas`;
+  describe('perguntas das modalidades ofertadas', () => {
     const ROTA_DERIVACAO = `${ROTA_PROCESSO}/regras-derivacao`;
     const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
     const FASE = { id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true };
-    const PROPOSTA = [
+    const DISTRIBUICAO = [
       {
-        codigoFato: 'MODALIDADE',
-        regras: [
-          { ordem: 0, contribui: 'AC', quando: null },
-          { ordem: 1, contribui: 'AC_PCD', quando: [[{ fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true }]] },
+        modalidades: [
+          { codigo: 'AC', descricao: 'Ampla concorrência', regraDeAplicabilidade: [] },
+          {
+            codigo: 'AC_PCD',
+            descricao: 'Pessoa com deficiência',
+            regraDeAplicabilidade: [[{ fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true }]],
+          },
         ],
       },
     ];
@@ -1882,45 +1885,40 @@ describe('CronogramaStepComponent', () => {
         componente as unknown as { gravarExigenciasDocumentais(processoId: string): Promise<{ valid: boolean; messages?: string[] }> }
       ).gravarExigenciasDocumentais(PROCESSO_ID);
 
-    it('propõe a matriz ao processo com inscrição própria sem exigência que recorte, e a grava depois da pergunta dela', async () => {
+    it('põe a pergunta das regras congeladas no processo com inscrição própria, sem exigência que recorte', async () => {
       const gravacao = gravarExigencias();
       controller.expectOne(ROTA_PROCESSO).flush({
         ...PROCESSO_COM_ETAPA_GRAVADA,
         cronogramaFases: [FASE],
         formularios: [FORMULARIO],
+        distribuicaoVagas: DISTRIBUICAO,
         regrasDerivacao: [],
       });
       await proximoPasso();
-      controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
-      await proximoPasso();
 
-      controller.expectNone(ROTA_DERIVACAO);
       controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO).flush(null, { status: 204, statusText: 'No Content' });
       await proximoPasso();
       const itens = controller.expectOne((r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`);
       expect(itens.request.body.itens.map((i: { fatoCodigo: string }) => i.fatoCodigo)).toEqual(['CONCORRER_PCD']);
       itens.flush(null, { status: 204, statusText: 'No Content' });
       await proximoPasso();
-
-      const derivacao = controller.expectOne(ROTA_DERIVACAO);
-      expect(derivacao.request.body).toEqual(PROPOSTA);
-      derivacao.flush(null, { status: 204, statusText: 'No Content' });
+      controller.match((r) => r.method === 'GET' && r.url === ROTA_PROCESSO);
       await proximoPasso();
 
       controller.expectOne(ROTA_DOCUMENTOS).flush(null, { status: 204, statusText: 'No Content' });
       await expect(gravacao).resolves.toEqual({ valid: true });
+      controller.expectNone((r) => r.url.startsWith(ROTA_DERIVACAO));
     });
 
-    it('sem fase de inscrição, grava o cronograma e deixa a matriz esperar pela fase', async () => {
+    it('sem fase de inscrição, grava o cronograma e deixa as perguntas esperarem pela fase', async () => {
       const gravacao = gravarExigencias();
-      controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_ETAPA_GRAVADA, formularios: [], regrasDerivacao: [] });
-      await proximoPasso();
-      controller.expectOne(ROTA_NORMATIVAS).flush(PROPOSTA);
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush({ ...PROCESSO_COM_ETAPA_GRAVADA, formularios: [], distribuicaoVagas: DISTRIBUICAO, regrasDerivacao: [] });
       await proximoPasso();
 
       controller.expectOne(ROTA_DOCUMENTOS).flush(null, { status: 204, statusText: 'No Content' });
       await expect(gravacao).resolves.toEqual({ valid: true });
-      controller.expectNone(ROTA_DERIVACAO);
       controller.expectNone((r) => r.url.startsWith(ROTA_INSCRICAO));
     });
   });
@@ -2052,7 +2050,7 @@ describe('CronogramaStepComponent', () => {
       const habilitacao = { ...conteudoInicial(), itens: [{ fatoCodigo: 'RENDA_FAMILIAR', ordem: 0, etapaCodigo: null } as never] };
       store.patchObjectSection('formulario', { outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: habilitacao }] });
 
-      const resultado = await TestBed.inject(MatrizDaModalidadeService).garantirCampos(
+      const resultado = await TestBed.inject(CamposPressupostosService).garantirCampos(
         PROCESSO_ID,
         { formularios: [], cronogramaFases: [], regrasDerivacao: [] } as unknown as ProcessoSeletivoDto,
         new Set(['RENDA_FAMILIAR']),
@@ -2115,7 +2113,7 @@ describe('CronogramaStepComponent', () => {
       };
       const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
 
-      const garantir = TestBed.inject(MatrizDaModalidadeService).garantirCampos(
+      const garantir = TestBed.inject(CamposPressupostosService).garantirCampos(
         PROCESSO_ID,
         { formularios: [], cronogramaFases: [FASE], regrasDerivacao: [] } as unknown as ProcessoSeletivoDto,
         new Set(['RENDA_FAMILIAR']),

@@ -69,6 +69,13 @@
   } @else if (preflight.carregando() && gruposEstruturais() === null) {
     <p class="alert alert--info" role="status">Carregando o checklist de conformidade…</p>
   } @else {
+    @if (regrasDasModalidades().length > 0) {
+      <section class="step-section" aria-labelledby="revisao-modalidades-titulo">
+        <h2 id="revisao-modalidades-titulo" class="step-section__title">Modalidades ofertadas</h2>
+        <sel-regras-das-modalidades [modalidades]="regrasDasModalidades()" />
+      </section>
+    }
+
     <section class="step-section" aria-labelledby="revisao-estrutural-titulo">
       <div class="step-section__header">
         <h2 id="revisao-estrutural-titulo">Checklist estrutural</h2>

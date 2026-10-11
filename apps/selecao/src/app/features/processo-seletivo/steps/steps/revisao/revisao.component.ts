@@ -23,6 +23,7 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { instanteLegivel } from '../../shared/fuso-institucional';
+import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
 import {
@@ -92,7 +93,7 @@ export type AtoPublicado =
 @Component({
   selector: 'sel-step-revisao',
   standalone: true,
-  imports: [AnexoEditalComponent, DateBrPipe, ReactiveFormsModule],
+  imports: [AnexoEditalComponent, DateBrPipe, ReactiveFormsModule, RegrasDasModalidadesComponent],
   templateUrl: './revisao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(RevisaoStepComponent), PreflightDaPublicacaoService],
@@ -100,6 +101,9 @@ export type AtoPublicado =
 export class RevisaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly preflight = inject(PreflightDaPublicacaoService);
+
+  /** Quem concorre em cada modalidade ofertada, pela regra que o processo congelou. */
+  protected readonly regrasDasModalidades = this.store.regrasDasModalidades;
   private readonly cadastro = inject(CadastroInicialService);
   private readonly atos = inject(AtosApi);
   private readonly dataBr = new DateBrPipe();

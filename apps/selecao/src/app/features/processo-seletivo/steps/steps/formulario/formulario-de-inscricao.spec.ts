@@ -206,6 +206,23 @@ describe('quem cita cada fato no processo', () => {
     expect(remocoesTravadasPor(citantes).get('PCD')).toContain('dependem deste dado');
   });
 
+  it('trava o fato que a regra de uma modalidade ofertada cita, nomeando a modalidade', () => {
+    const citantes = quemCitaNoProcesso({
+      documentos: NENHUMA_EXIGENCIA,
+      derivacao: [],
+      desempate: [],
+      modalidades: [
+        {
+          codigo: 'AC_PCD',
+          descricao: null,
+          regra: [[{ fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true }]],
+        },
+      ],
+    });
+
+    expect(citantes.get('CONCORRER_PCD')).toEqual(['a regra de quem concorre em AC_PCD']);
+  });
+
   it('trava na inscrição o fato que outra finalidade cita, nomeando a finalidade; o que ela cita dos próprios campos fica de fora', () => {
     const habilitacao = conteudoInicial();
     const citaPcd = [[{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }]];

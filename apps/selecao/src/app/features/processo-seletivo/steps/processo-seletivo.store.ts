@@ -4,6 +4,10 @@ import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-da
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { STEP_LABELS } from './processo-seletivo.data';
 import { exigenciasVazias } from './shared/exigencias-documentais';
+import {
+  regrasDasModalidadesOfertadas,
+  type RegraDaModalidadeOfertada,
+} from './shared/regras-das-modalidades';
 import { desempateDe, hidratarDraft } from './shared/hidratacao';
 import type { MotivoDaReleitura } from './shared/motivo-da-releitura';
 import type { AplicacaoEmAberto } from './steps/formulario/modelo-de-formulario';
@@ -164,6 +168,12 @@ export class ProcessoSeletivoStore {
    * perderia silenciosamente o resto do agregado.
    */
   readonly remoteSnapshot = signal<ProcessoSeletivoDto | null>(null);
+  /**
+   * As modalidades ofertadas com a regra de aplicabilidade que o servidor congelou ao gravar o
+   * quadro de vagas. Acompanha cada leitura do servidor, inclusive a que segue a gravação do
+   * quadro, que não mexe no `remoteSnapshot`.
+   */
+  readonly regrasDasModalidades = signal<readonly RegraDaModalidadeOfertada[]>([]);
 
   /** Leitura do detalhe em curso — a tela não mostra wizard nem erro ainda. */
   readonly hidratando = signal(false);
@@ -549,6 +559,7 @@ export class ProcessoSeletivoStore {
     this.criacaoIndefinida.set(false);
     this.publicacaoNaoConfirmada.set(false);
     this.remoteSnapshot.set(null);
+    this.regrasDasModalidades.set([]);
     this.hidratando.set(false);
     this.falhaDeLeitura.set(null);
     this.documentosParaEscolha.set([]);
@@ -625,12 +636,19 @@ export class ProcessoSeletivoStore {
   }
 
   /**
-   * O que o servidor tem e contra o que as gravações são conferidas: a classificação e os critérios
-   * de desempate, lidos do detalhe. Só isso — a releitura depois de gravar não mexe no rascunho.
+   * O que o servidor tem e contra o que as gravações são conferidas: a classificação, os critérios
+   * de desempate e as regras congeladas das modalidades, lidos do detalhe. Só isso — a releitura
+   * depois de gravar não mexe no rascunho.
    */
   registrarGravadoLido(dto: ProcessoSeletivoDto): void {
     this.registrarClassificacaoLida(dto.classificacao);
     this.criteriosDesempateGravados.set(desempateDe(dto));
+    this.registrarRegrasDasModalidades(dto);
+  }
+
+  /** As regras que o servidor congelou nas modalidades ofertadas, lidas do detalhe. */
+  registrarRegrasDasModalidades(dto: ProcessoSeletivoDto): void {
+    this.regrasDasModalidades.set(regrasDasModalidadesOfertadas(dto));
   }
 }
 
