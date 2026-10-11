@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 import { assertSemViolacoesGraves } from '../support/a11y';
+import { abrirFiltros } from '../support/filtros';
 
 /**
  * E2E funcional do cadastro de Tipo de Documento (issue #392). Convenção do
@@ -165,6 +166,7 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     await expect(page.getByText('Laudo médico — PcD')).toBeVisible();
 
     // Filtro por categoria (chip "Saúde 1" — ui-filter-chips inclui o contador no nome acessível)
+    await abrirFiltros(page);
     await chipLocator(page, 'Saúde').click();
     await expect(page.locator('table tbody tr')).toHaveCount(1);
     await expect(page.getByText('Laudo médico — PcD')).toBeVisible();
