@@ -9,11 +9,13 @@ import {
   type GrupoNoPasso,
   mensagemDosErros,
 } from './formulario-do-candidato.model';
+import {
+  FATO_PARENTESCO,
+  indiceDaOcorrenciaDoCandidato,
+  PROPRIO_CANDIDATO,
+  titulosDasOcorrencias,
+} from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
-
-/** O parentesco que identifica a ocorrência do próprio candidato no grupo que o inclui. */
-const FATO_PARENTESCO = 'PARENTESCO';
-const PROPRIO_CANDIDATO = 'PROPRIO_CANDIDATO';
 
 interface OcorrenciaNaTela {
   readonly id: string;
@@ -160,11 +162,12 @@ export class GrupoDoCandidatoComponent {
    * A ocorrência do candidato: a primeira com o parentesco de próprio candidato, no grupo que o inclui.
    * Outra com o mesmo parentesco é um integrante como os demais, que se corrige ou remove.
    */
-  private readonly indiceDoCandidato = computed(() => {
-    if (!this.grupo().incluiCandidato) return null;
-    const indice = this.lista().findIndex(ehDoCandidato);
-    return indice < 0 ? null : indice;
-  });
+  private readonly indiceDoCandidato = computed(() =>
+    indiceDaOcorrenciaDoCandidato(
+      this.grupo().incluiCandidato,
+      this.lista().map((o) => o.respostas),
+    ),
+  );
   protected readonly temOcorrenciaDoCandidato = computed(() => this.indiceDoCandidato() !== null);
 
   protected readonly limites = computed(() => {
@@ -182,16 +185,18 @@ export class GrupoDoCandidatoComponent {
       (a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem),
     );
     const indiceDoCandidato = this.indiceDoCandidato();
-    let integrante = 0;
+    const titulos = titulosDasOcorrencias(
+      grupo.incluiCandidato,
+      this.lista().map((o) => o.respostas),
+    );
     return this.lista().map((ocorrencia, i) => {
       const doCandidato = i === indiceDoCandidato;
-      if (!doCandidato) integrante++;
       const avaliados = new Map(
         (avaliado.ocorrencias[i]?.campos ?? []).map((c) => [c.fatoCodigo, c]),
       );
       return {
         id: ocorrencia.id,
-        titulo: doCandidato ? 'Você (candidato)' : `${grupo.rotulo} ${integrante}`,
+        titulo: titulos[i],
         doCandidato,
         respostas: ocorrencia.respostas ?? {},
         campos: subitens.flatMap((campo): CampoNoPasso[] => {
@@ -292,8 +297,4 @@ export class GrupoDoCandidatoComponent {
       }),
     );
   }
-}
-
-function ehDoCandidato(ocorrencia: OcorrenciaSimulada): boolean {
-  return ocorrencia.respostas?.[FATO_PARENTESCO] === PROPRIO_CANDIDATO;
 }

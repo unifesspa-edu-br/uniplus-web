@@ -213,16 +213,17 @@ async function abrirComprovanteNaLista(page: Page, processo: string): Promise<vo
   ).toBeVisible();
 }
 
-const comprovante = (page: Page): Locator => page.getByRole('article');
+/** O documento do comprovante fica no conteúdo principal da página. */
+const comprovante = (page: Page): Locator => page.getByRole('main');
 
 /**
  * Ancestrais do comprovante que, na mídia corrente, cortam o que passa da própria altura. Na
  * impressão o único que pode crescer é o documento: qualquer outro corta o papel na primeira tela.
  */
 const ancestraisQueCortamOComprovante = (page: Page): Promise<string[]> =>
-  comprovante(page).evaluate((artigo) => {
+  comprovante(page).evaluate((documento) => {
     const cortes: string[] = [];
-    for (let el = artigo.parentElement; el && el !== document.body; el = el.parentElement) {
+    for (let el = documento.parentElement; el && el !== document.body; el = el.parentElement) {
       const { overflowY } = getComputedStyle(el);
       if (overflowY !== 'visible' && el.scrollHeight > el.clientHeight + 1) {
         cortes.push(`${el.tagName.toLowerCase()}.${el.className}`);
@@ -293,7 +294,10 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
 
     await test.step('o comprovante mostra o nome social, o CPF mascarado, o município e a edição', async () => {
       await abrirComprovanteNaLista(page, processo);
+      await expect(comprovante(page)).toContainText('É o que vale');
+      await expect(comprovante(page)).toContainText('horário de Belém (PA)');
       await expect(comprovante(page)).toContainText(PERSONA.nomeSocial);
+      await expect(comprovante(page)).toContainText(PERSONA.nome);
       await expect(comprovante(page)).toContainText(PERSONA.cpfMascarado);
       await expect(comprovante(page)).toContainText(PERSONA.celular);
       await expect(comprovante(page)).not.toContainText(PERSONA.rg);
@@ -306,19 +310,51 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
     });
 
-    await test.step('o comprovante sai inteiro na impressão, sem cabeçalho nem rodapé', () =>
+    await test.step('o comprovante sai inteiro na impressão, com o cabeçalho institucional e sem o do portal', () =>
       // Janela mais baixa que o comprovante: sem isso o corte na primeira tela não apareceria.
       comJanelaDeAltura(page, 480, async () => {
         const altura = await comprovante(page).evaluate((el) => el.getBoundingClientRect().height);
         expect(altura).toBeGreaterThan(480);
         expect(await ancestraisQueCortamOComprovante(page)).not.toEqual([]);
 
+        // O navegador avisa o beforeprint antes de montar o papel; a emulação da mídia, não.
+        await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
         await page.emulateMedia({ media: 'print' });
         expect(await ancestraisQueCortamOComprovante(page)).toEqual([]);
         await expect(page.getByRole('banner')).toBeHidden();
         await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeHidden();
         await expect(page.getByRole('contentinfo')).toBeHidden();
         await expect(comprovante(page)).toBeVisible();
+        await expect(
+          page.getByRole('img', {
+            name: 'Unifesspa — Universidade Federal do Sul e Sudeste do Pará',
+          }),
+        ).toBeVisible();
+        await expect(
+          page.getByText(/^Impresso em \d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}$/u),
+        ).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Imprimir comprovante' })).toBeHidden();
+        // No tema de contraste, a etiqueta da situação tem de continuar legível no papel branco.
+        const temaAnterior = await page.evaluate(() => {
+          const anterior = document.documentElement.dataset['theme'] ?? '';
+          document.documentElement.dataset['theme'] = 'contrast';
+          return anterior;
+        });
+        await expect(page.locator('.tag', { hasText: 'É o que vale' })).toHaveCSS(
+          'color',
+          'rgb(10, 90, 22)',
+        );
+        await page.evaluate((tema) => {
+          document.documentElement.dataset['theme'] = tema;
+        }, temaAnterior);
+        // A emulação da mídia não pagina: só o PDF mostra folha em branco ou páginas a mais.
+        const comoTexto = async (pageRanges?: string): Promise<string> =>
+          (await page.pdf({ preferCSSPageSize: true, pageRanges })).toString('latin1');
+        const paginas = (await comoTexto()).match(/\/Type\s*\/Page[^s]/gu) ?? [];
+        expect(paginas.length).toBeGreaterThanOrEqual(1);
+        expect(paginas.length).toBeLessThanOrEqual(3);
+        // A marca é a única imagem do comprovante: na primeira folha, ela prova que a folha não saiu em branco.
+        expect(await comoTexto('1')).toMatch(/\/Subtype\s*\/Image/u);
         await page.emulateMedia({ media: null });
       }));
 
@@ -334,13 +370,15 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     await test.step('o comprovante novo traz a correção e o anterior continua igual', async () => {
       await abrirComprovanteNaLista(page, processo);
       await expect(comprovante(page)).toContainText(PERSONA.fixo);
-      const anterior = page.getByRole('link', { name: 'Comprovante anterior' });
+      const anterior = page.getByRole('link', { name: '‹ Envio anterior' });
       const destino = (await anterior.getAttribute('href')) ?? '';
       await anterior.click();
       await expect(page).toHaveURL(new RegExp(`${destino}$`));
       await expect(page).toHaveURL(new RegExp(`/inscricao/${PROCESSO_ID}/comprovantes/\\d+$`));
       await expect(comprovante(page)).toContainText(PERSONA.celular);
       await expect(comprovante(page)).not.toContainText(PERSONA.fixo);
+      await expect(comprovante(page)).toContainText('Substituído');
+      await expect(page.getByRole('link', { name: 'Ver o envio mais recente' })).toBeVisible();
     });
 
     await test.step('minhas inscrições mostra a inscrição com o nome social', async () => {

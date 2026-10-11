@@ -7495,6 +7495,7 @@ export interface components {
             readonly numeroInscricao: string;
             /** Format: date-time */
             readonly instante: string;
+            readonly fusoHorario: components["schemas"]["FusoHorarioDto"];
             readonly hashIntegridade: string;
             /** Format: uuid */
             readonly ofertaCursoId: null | string;
@@ -8137,6 +8138,10 @@ export interface components {
             readonly nome: string;
             readonly descricao: string;
         };
+        readonly FusoHorarioDto: {
+            readonly id: string;
+            readonly nome: string;
+        };
         readonly GrupoAreaEnemSnapshotDto: {
             readonly codigo: string;
             readonly rotulo: string;
@@ -8342,7 +8347,7 @@ export interface components {
             readonly codigoIbge: string;
             readonly nome: string;
             readonly uf: string;
-            readonly fusoHorario: string;
+            readonly fusoHorario: components["schemas"]["FusoHorarioDto"];
         };
         readonly LocalidadeRegenteDto: {
             readonly codigoIbge: string;

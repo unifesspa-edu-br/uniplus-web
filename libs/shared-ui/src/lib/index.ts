@@ -63,6 +63,19 @@ export {
   ValorEmConsultaComponent,
   type UiValorEmConsulta,
 } from './components/valor-em-consulta/valor-em-consulta';
+export { DadoDirective } from './components/lista-de-dados/dado';
+export {
+  ListaDeDadosComponent,
+  type UiVarianteDaListaDeDados,
+} from './components/lista-de-dados/lista-de-dados';
+export { DocumentoComponent } from './components/documento/documento';
+export {
+  SecaoDeDocumentoComponent,
+  type UiLarguraDaSecao,
+  type UiNivelDaSecao,
+} from './components/documento/secao-de-documento';
+export { CodigoDeVerificacaoComponent } from './components/codigo-de-verificacao/codigo-de-verificacao';
+export { MarcaInstitucionalComponent } from './components/marca-institucional/marca-institucional';
 export { BulletComponent, type UiBulletVariant } from './components/bullet/bullet';
 
 // Pipes

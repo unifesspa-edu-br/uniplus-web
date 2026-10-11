@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { nomePreferido, respostaExibida } from './resposta-exibida';
+import { nomesDoCandidato, respostaExibida } from './resposta-exibida';
 
 describe('respostaExibida', () => {
   it('mostra a opção escolhida pelo nome que o formulário dá, e o código quando não o dá', () => {
@@ -45,16 +45,22 @@ describe('respostaExibida de município', () => {
   });
 });
 
-describe('nomePreferido', () => {
-  it('é o nome social quando o candidato o pediu e o preencheu; senão, o civil (CA-01)', () => {
-    const civil = 'Fernanda Laura Nicole Drumond';
+describe('nomesDoCandidato', () => {
+  const civil = 'Fernanda Laura Nicole Drumond';
 
+  it('traz o nome social quando o candidato o pediu e o preencheu, sempre com o civil', () => {
     expect(
-      nomePreferido({ NOME: civil, DESEJA_NOME_SOCIAL: true, NOME_SOCIAL: 'Ariel Drumond' }),
-    ).toBe('Ariel Drumond');
+      nomesDoCandidato({ NOME: civil, DESEJA_NOME_SOCIAL: true, NOME_SOCIAL: 'Ariel Drumond' }),
+    ).toEqual({ social: 'Ariel Drumond', civil });
+  });
+
+  it('não traz nome social que o candidato não pediu ou deixou em branco', () => {
     expect(
-      nomePreferido({ NOME: civil, DESEJA_NOME_SOCIAL: false, NOME_SOCIAL: 'Ariel Drumond' }),
-    ).toBe(civil);
-    expect(nomePreferido({ NOME: civil, DESEJA_NOME_SOCIAL: true, NOME_SOCIAL: '' })).toBe(civil);
+      nomesDoCandidato({ NOME: civil, DESEJA_NOME_SOCIAL: false, NOME_SOCIAL: 'Ariel Drumond' }),
+    ).toEqual({ social: null, civil });
+    expect(nomesDoCandidato({ NOME: civil, DESEJA_NOME_SOCIAL: true, NOME_SOCIAL: '' })).toEqual({
+      social: null,
+      civil,
+    });
   });
 });

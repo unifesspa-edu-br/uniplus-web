@@ -1,144 +1,189 @@
-<ui-page-header
-  heading="Comprovante de inscrição"
-  description="A cópia do que foi enviado nesta submissão. Os comprovantes anteriores continuam disponíveis e não mudam."
-  [level]="1"
-/>
+<ui-documento
+  titulo="Comprovante de inscrição"
+  descricao="Guarde este comprovante. Ele registra o que você enviou nesta inscrição."
+>
+  @if (estado() === 'pronto') {
+  <button uiDocumentoAcoes type="button" class="btn btn--primary" (click)="imprimir()">
+    Imprimir comprovante
+  </button>
+  }
+  <a uiDocumentoAcoes class="btn btn--tertiary" routerLink="/inscricao">
+    Voltar às minhas inscrições
+  </a>
+  @if (estado() === 'pronto') {
+  <p uiDocumentoAcoes class="u-body-sm">
+    Para guardar em PDF, escolha salvar em PDF na janela de impressão.
+  </p>
+  }
 
-@switch (estado()) { @case ('carregando') {
-<div class="comprovante-carregando" role="status" aria-busy="true">
-  <ui-spinner size="md" /> Carregando o comprovante...
-</div>
-} @case ('erro') {
-<ui-alert variant="danger" heading="Não foi possível abrir o comprovante">
-  {{ erro() }}
-  <p class="comprovante-acoes">
+  <!-- A região fica sempre na página: trocar de envio só troca o conteúdo dela, e a troca é anunciada. -->
+  <div aria-live="polite">
+    @if (substituido(); as envio) {
+    <ui-alert variant="info" [dynamic]="false">
+      Este envio foi substituído por um mais recente. A inscrição que vale é a última enviada.
+      <a [routerLink]="['/inscricao', processoId(), 'comprovantes', envio.maisRecente]">
+        Ver o envio mais recente
+      </a>
+    </ui-alert>
+    }
+  </div>
+
+  @switch (estado()) { @case ('carregando') {
+  <div role="status" aria-busy="true">
+    <span class="sr-only">Carregando o comprovante…</span>
+    <ui-skeleton skeletonKind="card" blockSize="10rem" />
+  </div>
+  } @case ('erro') {
+  <ui-alert variant="danger" heading="Não foi possível abrir o comprovante">
+    {{ erro() }}
     <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
       Tentar novamente
     </button>
-    <a class="btn btn--tertiary btn--sm" routerLink="/inscricao">Voltar às minhas inscrições</a>
-  </p>
-</ui-alert>
-} @case ('pronto') { @if (carregado(); as c) {
-<article class="comprovante" #conteudo tabindex="-1" aria-labelledby="comprovante-titulo">
-  <h2 class="comprovante__titulo" id="comprovante-titulo">
-    {{ nomeDoProcesso() }} @if (c.processo) {
-    <span class="comprovante__edital">{{ c.processo.identificadorLegivel }}</span>
+  </ui-alert>
+  } @case ('pronto') { @if (carregado(); as c) {
+  <ui-secao-de-documento [titulo]="nomeDoProcesso()" largura="inteira">
+    <p class="u-body-sm u-no-print">Universidade Federal do Sul e Sudeste do Pará</p>
+    @if (c.processo; as processo) {
+    <p class="u-body-sm">
+      Processo {{ processo.identificadorLegivel }} · {{ processo.unidadeAdministradora.nome }}
+    </p>
     }
-  </h2>
+    <ui-lista-de-dados variante="destaque">
+      <ng-template
+        uiDado
+        rotulo="Número da inscrição"
+        [valor]="c.comprovante.numeroInscricao"
+      ></ng-template>
+      @if (envio(); as envio) {
+      <ng-template uiDado rotulo="Situação">
+        @if (envio.ehOQueVale) {
+        <ui-tag variant="success" [dot]="true">É o que vale</ui-tag>
+        } @else {
+        <ui-tag variant="neutral" [dot]="true">Substituído</ui-tag>
+        }
+      </ng-template>
+      }
+      <ng-template uiDado rotulo="Enviado em">
+        <time [attr.datetime]="c.comprovante.instante">{{ enviadoEm() }}</time>
+      </ng-template>
+    </ui-lista-de-dados>
+    @if (envio(); as envio) {
+    <nav aria-label="Envios desta inscrição">
+      <p class="u-body-sm">
+        Envio {{ envio.ordem }} de {{ envio.total }} @if (c.vizinhos.anterior; as anterior) {
+        <span class="u-no-print">
+          ·
+          <a [routerLink]="['/inscricao', processoId(), 'comprovantes', anterior]"
+            >‹ Envio anterior</a
+          >
+        </span>
+        } @if (c.vizinhos.seguinte; as seguinte) {
+        <span class="u-no-print">
+          ·
+          <a [routerLink]="['/inscricao', processoId(), 'comprovantes', seguinte]"
+            >Envio seguinte ›</a
+          >
+        </span>
+        }
+      </p>
+    </nav>
+    }
+  </ui-secao-de-documento>
 
-  <dl class="comprovante__lista">
-    <div>
-      <dt>Número da inscrição</dt>
-      <dd>{{ c.comprovante.numeroInscricao }}</dd>
-    </div>
-    <div>
-      <dt>Candidato</dt>
-      <dd>{{ nome() }}</dd>
-    </div>
-    <div>
-      <dt>CPF</dt>
-      @if (cpf(); as revelavel) {
-      <dd><ui-dado-revelavel rotulo="CPF" [dado]="revelavel" /></dd>
+  @if (oferta(); as nomeDaOferta) {
+  <ui-secao-de-documento titulo="Sua inscrição">
+    <ui-lista-de-dados>
+      <ng-template uiDado rotulo="Curso" [valor]="nomeDaOferta"></ng-template>
+    </ui-lista-de-dados>
+  </ui-secao-de-documento>
+  }
+
+  <ui-secao-de-documento titulo="Candidato">
+    <ui-lista-de-dados>
+      @if (nomes(); as nomes) { @if (nomes.social; as social) {
+      <ng-template uiDado rotulo="Nome social" [valor]="social"></ng-template>
+      <ng-template uiDado rotulo="Nome civil" [valor]="nomes.civil"></ng-template>
       } @else {
-      <dd>{{ c.comprovante.cpfMascarado }}</dd>
-      }
-    </div>
-    <div>
-      <dt>Enviado em</dt>
-      <dd>
-        <time [attr.datetime]="c.comprovante.instante"> {{ enviadoEm() }} </time>
-      </dd>
-    </div>
-    <div>
-      <dt>Submissão</dt>
-      <dd>{{ c.numero }}ª</dd>
-    </div>
-    @if (oferta(); as nomeDaOferta) {
-    <div>
-      <dt>Curso</dt>
-      <dd>{{ nomeDaOferta }}</dd>
-    </div>
-    }
-  </dl>
+      <ng-template uiDado rotulo="Nome" [valor]="nomes.civil"></ng-template>
+      } }
+      <ng-template uiDado rotulo="CPF">
+        @if (cpf(); as revelavel) {
+        <ui-dado-revelavel rotulo="CPF" [dado]="revelavel" />
+        } @else { {{ c.comprovante.cpfMascarado }} }
+      </ng-template>
+    </ui-lista-de-dados>
+  </ui-secao-de-documento>
 
-  @for (secao of secoes(); track secao.codigo) {
-  <section class="comprovante__secao" [attr.aria-labelledby]="'secao-' + secao.codigo">
-    <h3 [id]="'secao-' + secao.codigo">{{ secao.titulo }}</h3>
-    @if (secao.respostas.length > 0) {
-    <dl class="comprovante__lista">
-      @for (resposta of secao.respostas; track $index) {
-      <div>
-        <dt>{{ resposta.rotulo }}</dt>
-        <dd>{{ resposta.valor }}</dd>
-      </div>
+  @if (secoes().length > 0 || derivados().length > 0) {
+  <ui-secao-de-documento titulo="Respostas da inscrição">
+    @for (secao of secoes(); track secao.codigo) {
+    <ui-secao-de-documento [titulo]="secao.titulo" [nivel]="3">
+      @if (secao.respostas.length > 0) {
+      <ui-lista-de-dados [colunas]="2">
+        @for (resposta of secao.respostas; track $index) {
+        <ng-template uiDado [rotulo]="resposta.rotulo" [valor]="resposta.valor"></ng-template>
+        }
+      </ui-lista-de-dados>
+      } @for (grupo of secao.grupos; track $index) {
+      <ui-secao-de-documento [titulo]="grupo.rotulo" [nivel]="4" largura="inteira">
+        @for (ocorrencia of grupo.ocorrencias; track $index) {
+        <ui-secao-de-documento [titulo]="ocorrencia.titulo" [nivel]="5">
+          <ui-lista-de-dados>
+            @for (resposta of ocorrencia.respostas; track $index) {
+            <ng-template uiDado [rotulo]="resposta.rotulo" [valor]="resposta.valor"></ng-template>
+            }
+          </ui-lista-de-dados>
+        </ui-secao-de-documento>
+        }
+      </ui-secao-de-documento>
       }
-    </dl>
-    } @for (grupo of secao.grupos; track $index) {
-    <h4>{{ grupo.rotulo }}</h4>
-    <ol class="comprovante__ocorrencias">
-      @for (ocorrencia of grupo.ocorrencias; track $index) {
-      <li>
-        <dl class="comprovante__lista">
-          @for (resposta of ocorrencia; track $index) {
-          <div>
-            <dt>{{ resposta.rotulo }}</dt>
-            <dd>{{ resposta.valor }}</dd>
-          </div>
-          }
-        </dl>
-      </li>
-      }
-    </ol>
+    </ui-secao-de-documento>
+    } @if (derivados().length > 0) {
+    <ui-secao-de-documento titulo="Calculado pelo sistema" [nivel]="3">
+      <ui-lista-de-dados [colunas]="2">
+        @for (derivado of derivados(); track $index) {
+        <ng-template uiDado [rotulo]="derivado.rotulo" [valor]="derivado.valor"></ng-template>
+        }
+      </ui-lista-de-dados>
+    </ui-secao-de-documento>
     }
-  </section>
-  } @if (derivados().length > 0) {
-  <section class="comprovante__secao" aria-labelledby="secao-derivados">
-    <h3 id="secao-derivados">Calculado pelo sistema</h3>
-    <dl class="comprovante__lista">
-      @for (derivado of derivados(); track $index) {
-      <div>
-        <dt>{{ derivado.rotulo }}</dt>
-        <dd>{{ derivado.valor }}</dd>
-      </div>
-      }
-    </dl>
-  </section>
+  </ui-secao-de-documento>
   } @if (termos().length > 0) {
-  <section class="comprovante__secao" aria-labelledby="secao-termos">
-    <h3 id="secao-termos">Termos aceitos</h3>
+  <ui-secao-de-documento titulo="Termos aceitos" largura="inteira">
     <ul>
       @for (termo of termos(); track $index) {
       <li>{{ termo }}</li>
       }
     </ul>
-  </section>
+    <p class="u-body-sm">Aceitos no envio de {{ aceitosEm() }}.</p>
+  </ui-secao-de-documento>
   }
-  <section class="comprovante__secao" aria-labelledby="secao-integridade">
-    <h3 id="secao-integridade">Integridade</h3>
-    <p>
-      O código abaixo é o resumo (SHA-256) do que foi enviado. Ele prova que este comprovante não
-      mudou.
-    </p>
-    <code class="comprovante__hash">{{ c.comprovante.hashIntegridade }}</code>
-  </section>
-</article>
 
-<nav class="comprovante-acoes u-no-print" aria-label="Comprovantes desta inscrição">
-  @if (c.vizinhos.anterior; as anterior) {
-  <a
-    class="btn btn--tertiary btn--sm"
-    [routerLink]="['/inscricao', processoId(), 'comprovantes', anterior]"
-  >
-    Comprovante anterior
-  </a>
-  } @if (c.vizinhos.seguinte; as seguinte) {
-  <a
-    class="btn btn--tertiary btn--sm"
-    [routerLink]="['/inscricao', processoId(), 'comprovantes', seguinte]"
-  >
-    Comprovante seguinte
-  </a>
-  }
-  <a class="btn btn--secondary btn--sm" routerLink="/inscricao">Voltar às minhas inscrições</a>
-</nav>
-} } }
+  <ui-secao-de-documento titulo="Código de verificação" largura="inteira">
+    <ui-codigo-de-verificacao [codigo]="c.comprovante.hashIntegridade" />
+    <p class="u-body-sm">
+      Este código identifica exatamente o conteúdo deste comprovante. Qualquer alteração no que foi
+      enviado gera um código diferente.
+    </p>
+  </ui-secao-de-documento>
+
+  @if (prazo(); as prazo) {
+  <ui-secao-de-documento titulo="Próximos passos" largura="inteira">
+    @if (prazo.aberto) {
+    <p>
+      Você pode corrigir a inscrição até
+      <time [attr.datetime]="prazo.fimIso">{{ prazo.fim }}</time>. A inscrição que vale é a última
+      enviada.
+    </p>
+    <a class="btn btn--secondary u-no-print" [routerLink]="['/inscricao', processoId()]">
+      Corrigir inscrição
+    </a>
+    } @else {
+    <p>
+      O período de inscrição terminou em
+      <time [attr.datetime]="prazo.fimIso">{{ prazo.fim }}</time>.
+    </p>
+    }
+  </ui-secao-de-documento>
+  } } } }
+</ui-documento>
