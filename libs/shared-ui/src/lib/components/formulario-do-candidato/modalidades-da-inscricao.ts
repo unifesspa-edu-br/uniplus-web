@@ -58,7 +58,7 @@ import {
       @switch (situacao()) {
         @case (CONCORRE) {
           <p>Com as respostas dadas até agora, você concorre em:</p>
-          <ul class="modalidades-da-inscricao__lista">
+          <ul class="modalidades-da-inscricao__lista" aria-label="Modalidades em que você concorre">
             @for (nome of nomes(); track nome) {
               <li>{{ nome }}</li>
             }
