@@ -140,4 +140,5 @@ export {
   ValorEmConsultaComponent,
   type UiValorEmConsulta,
 } from '../../src/lib/components/valor-em-consulta/valor-em-consulta';
+export { titulosDasOcorrencias } from '../../src/lib/components/formulario-do-candidato/interpretador/ocorrencia-do-candidato';
 export { BulletComponent, type UiBulletVariant } from '../../src/lib/components/bullet/bullet';

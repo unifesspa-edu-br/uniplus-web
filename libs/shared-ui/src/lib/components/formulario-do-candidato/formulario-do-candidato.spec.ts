@@ -396,7 +396,7 @@ describe('FormularioDoCandidatoComponent', () => {
     });
 
     clicar(botao(tela, 'Acrescentar'));
-    clicar(botao(tela, 'Remover Bem 1'));
+    clicar(botao(tela, 'Remover Integrante 1'));
 
     expect(simulacoes.at(-1)?.grupos).toEqual({});
   });

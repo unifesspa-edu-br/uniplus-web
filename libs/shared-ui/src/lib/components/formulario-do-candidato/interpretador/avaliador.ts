@@ -27,6 +27,7 @@ import {
   VERDADEIRO,
 } from './logica';
 import { avaliarOuVerdadeiro, avaliarPredicado, fatosCitadosPor } from './predicado';
+import { ehParentescoDoCandidato, FATO_PARENTESCO } from './ocorrencia-do-candidato';
 import type { ValorJson } from './regras-do-formulario';
 import {
   compararOrdinal,
@@ -34,10 +35,6 @@ import {
   type OpcoesDaRestricao,
   type Restricao,
 } from './restricoes';
-
-/** O fato do parentesco, que identifica a ocorrência do próprio candidato no grupo que o inclui. */
-const FATO_PARENTESCO = 'PARENTESCO';
-const PROPRIO_CANDIDATO = 'PROPRIO_CANDIDATO';
 
 export interface OcorrenciaRespondida {
   readonly id: string;
@@ -349,7 +346,8 @@ function avaliarGrupo(
 
 function temUmaOcorrenciaDoCandidato(ocorrencias: readonly OcorrenciaRespondida[]): boolean {
   return (
-    ocorrencias.filter((o) => o.respostas.get(FATO_PARENTESCO) === PROPRIO_CANDIDATO).length === 1
+    ocorrencias.filter((o) => ehParentescoDoCandidato(o.respostas.get(FATO_PARENTESCO))).length ===
+    1
   );
 }
 

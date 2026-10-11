@@ -6,6 +6,10 @@ import {
   type FatoDoCatalogo,
   type FatoEscolhivel,
 } from '../editor-de-condicoes/condicoes-de-fatos';
+import {
+  FATO_PARENTESCO,
+  PROPRIO_CANDIDATO,
+} from '../formulario-do-candidato/interpretador/ocorrencia-do-candidato';
 
 /**
  * O conteúdo de um formulário — o do modelo, na Configuração, e o do processo, na Seleção — na
@@ -859,9 +863,7 @@ export function quantidadeNoTeto(conteudo: ConteudoDoFormulario): number {
   );
 }
 
-/** O campo de membro que diz o parentesco de cada ocorrência, e a resposta que identifica a ocorrência do próprio candidato. */
-export const FATO_PARENTESCO = 'PARENTESCO';
-export const PROPRIO_CANDIDATO = 'PROPRIO_CANDIDATO';
+export { FATO_PARENTESCO, PROPRIO_CANDIDATO };
 
 /** O teto de campos de cada ocorrência de um grupo (`FormaDoGrupo.MaximoDeSubitens`). */
 export const MAXIMO_DE_CAMPOS_DO_GRUPO = 30;
