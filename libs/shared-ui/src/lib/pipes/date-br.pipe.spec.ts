@@ -68,6 +68,12 @@ describe('DateBrPipe', () => {
     expect(pipe.transform('2026-08-11T00:00:00Z', 'datetime')).toBe('10/08/2026, 21:00');
   });
 
+  it('aplica o fuso passado ao pipe, e o institucional quando nenhum é passado', () => {
+    // No horário de verão de 2018, 02:30Z era 30/11 em Belém e 01/12 em São Paulo.
+    expect(pipe.transform('2018-12-01T02:30:00Z', 'short')).toBe('30/11/2018');
+    expect(pipe.transform('2018-12-01T02:30:00Z', 'short', 'America/Sao_Paulo')).toBe('01/12/2018');
+  });
+
   it('não desloca o dia em data pura', () => {
     expect(pipe.transform('2026-06-05', 'short')).toBe('05/06/2026');
   });

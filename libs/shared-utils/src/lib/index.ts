@@ -12,5 +12,18 @@ export {
   textoMascarado,
   type TrechoMascarado,
 } from './utils/cpf.util';
+export {
+  dataGregorianaValida,
+  deslocamentoDoFusoEmMinutos,
+  type EntradaDataBr,
+  formatarDataBr,
+  type FormatoDataBr,
+  FUSO_INSTITUCIONAL,
+  type HoraDeParede,
+  instanteDaHoraDeParede,
+  lerDataIso,
+  type PartesDoInstante,
+  partesNoFuso,
+} from './utils/data-br.util';
 export { formatarNumeroPtBr, numeroDaApi, numeroOuNuloDaApi } from './utils/numero.util';
 export { UNIDADES_FEDERATIVAS, type UnidadeFederativa } from './utils/unidades-federativas';
