@@ -1344,6 +1344,21 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
 
   afterEach(() => controller.verify());
 
+  /** A região viva que anuncia os problemas do padrão não pode tirar da lista o papel de lista. */
+  it('anuncia os problemas do padrão numa região viva que envolve a lista', () => {
+    store.patchObjectSection('vagas', { ofertas: [{ ...distribuicao(OFERTA), pr: '2' }] });
+    detectar();
+
+    const regiao = elementoRaiz.querySelector<HTMLElement>('[role="alert"]');
+    expect(regiao?.tagName).toBe('DIV');
+    const itens = regiao?.querySelectorAll(
+      ':scope > ul[aria-label="Problemas no padrão da distribuição"] > li',
+    );
+    expect(Array.from(itens ?? [], (item) => item.textContent?.trim())).toContain(
+      'O percentual de reserva fica entre 0,5 e 1,0 (art. 10, II da Lei 12.711).',
+    );
+  });
+
   it('rol aberto (Institucional) oferece o catálogo inteiro para seleção livre', () => {
     expect(componente.rolDaRegraEscolhida()).toBeNull();
     expect(componente.modalidadesOferecidas().map((m) => m.codigo)).toEqual(['AC_I', 'AC_Q']);
