@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  type ElementRef,
   Injector,
   afterNextRender,
   computed,
@@ -23,28 +22,33 @@ import type {
 } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
+  CodigoDeVerificacaoComponent,
+  DadoDirective,
   DadoRevelavelComponent,
-  PageHeaderComponent,
-  SpinnerComponent,
+  DocumentoComponent,
+  ListaDeDadosComponent,
+  SecaoDeDocumentoComponent,
+  SkeletonComponent,
+  TagComponent,
 } from '@uniplus/shared-ui/components';
-import { cpfRevelavel, textoMascarado } from '@uniplus/shared-utils';
+import { cpfRevelavel, formatarDataBr, textoMascarado } from '@uniplus/shared-utils';
 
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
 import { nomeDaOferta } from '../oferta-da-inscricao';
 import {
   derivadosDoComprovante,
+  envioDoComprovante,
   municipiosDoComprovante,
   numeroDoComprovante,
+  periodoDeInscricaoAberto,
   secoesDoComprovante,
   termosAceitos,
   type Vizinhos,
   vizinhos,
 } from './comprovante-da-inscricao';
-import { type NomesDosMunicipios, nomePreferido } from './resposta-exibida';
+import { type NomesDosMunicipios, nomesDoCandidato } from './resposta-exibida';
 
 type Estado = 'carregando' | 'erro' | 'pronto';
-
-const ENVIADO_EM = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
 const NAO_ENCONTRADO =
   'Não encontramos este comprovante. Confira o endereço ou volte às suas inscrições.';
@@ -64,23 +68,33 @@ type Leitura =
   | { readonly tipo: 'falha'; readonly falha: ApiFailure }
   | { readonly tipo: 'nao-encontrado' };
 
+/** Um instante em pt-BR, no fuso que a API projeta, com o nome dele: "10/10/2026, 19:36, horário de Belém (PA)". */
+function noFuso(instante: string, fuso: ComprovanteInscricaoDto['fusoHorario']): string {
+  return `${formatarDataBr(instante, 'datetime', fuso.id)}, horário de ${fuso.nome}`;
+}
+
 /**
- * O comprovante de uma submissão da inscrição, como foi emitido: sem número de documento, com o CPF
- * mascarado e o hash que prova que não mudou. Sem o número na rota, mostra o da última submissão.
+ * O comprovante de um envio da inscrição, como foi emitido: sem número de documento, com o CPF
+ * mascarado e o código que prova que não mudou. Sem o número na rota, mostra o do último envio, que é
+ * o que vale.
  */
 @Component({
   selector: 'ptl-comprovante-da-inscricao-page',
   standalone: true,
   imports: [
     AlertComponent,
+    CodigoDeVerificacaoComponent,
+    DadoDirective,
     DadoRevelavelComponent,
-    PageHeaderComponent,
+    DocumentoComponent,
+    ListaDeDadosComponent,
     RouterLink,
-    SpinnerComponent,
+    SecaoDeDocumentoComponent,
+    SkeletonComponent,
+    TagComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './comprovante-da-inscricao.page.html',
-  styleUrl: './comprovante-da-inscricao.page.css',
 })
 export class ComprovanteDaInscricaoPage {
   private readonly servico = inject(MinhasInscricoesService);
@@ -88,7 +102,7 @@ export class ComprovanteDaInscricaoPage {
   private readonly usuario = inject(UserContextService);
   private readonly injector = inject(Injector);
   private readonly tentativa = signal(0);
-  private readonly conteudo = viewChild<ElementRef<HTMLElement>>('conteudo');
+  private readonly documento = viewChild.required(DocumentoComponent);
 
   readonly processoId = input.required<string>();
   /** A ordem da submissão, a contar de 1; ausente, a última. */
@@ -101,13 +115,37 @@ export class ComprovanteDaInscricaoPage {
   protected readonly nomeDoProcesso = computed(
     () => this.carregado()?.inscricao.nomeDoProcesso ?? 'Processo seletivo',
   );
-  protected readonly nome = computed(() => {
+  protected readonly nomes = computed(() => {
     const c = this.carregado();
-    return c ? nomePreferido(c.comprovante.respostas) : '';
+    return c ? nomesDoCandidato(c.comprovante.respostas) : null;
   });
   protected readonly enviadoEm = computed(() => {
     const c = this.carregado();
-    return c ? ENVIADO_EM.format(new Date(c.comprovante.instante)) : '';
+    return c ? noFuso(c.comprovante.instante, c.comprovante.fusoHorario) : '';
+  });
+  protected readonly aceitosEm = computed(() => {
+    const c = this.carregado();
+    return c ? formatarDataBr(c.comprovante.instante, 'short', c.comprovante.fusoHorario.id) : '';
+  });
+  protected readonly envio = computed(() => {
+    const c = this.carregado();
+    return c ? envioDoComprovante(c.inscricao.comprovantes, c.numero) : null;
+  });
+  /** O envio substituído, enquanto ele está na tela: o que vale é o mais recente. */
+  protected readonly substituido = computed(() => {
+    const envio = this.envio();
+    return this.estado() === 'pronto' && envio && !envio.ehOQueVale ? envio : null;
+  });
+  /** Até quando corrigir, só no envio que vale: o substituído aponta para o mais recente. */
+  protected readonly prazo = computed(() => {
+    const c = this.carregado();
+    if (!c?.processo || !this.envio()?.ehOQueVale) return null;
+    const { fim } = c.processo.periodo;
+    return {
+      aberto: periodoDeInscricaoAberto(fim, new Date()),
+      fim: noFuso(fim, c.processo.localidade.fusoHorario),
+      fimIso: fim,
+    };
   });
   protected readonly secoes = computed(() => {
     const c = this.carregado();
@@ -156,6 +194,10 @@ export class ComprovanteDaInscricaoPage {
         takeUntilDestroyed(),
       )
       .subscribe((leitura) => this.mostrar(leitura));
+  }
+
+  protected imprimir(): void {
+    this.documento().imprimir();
   }
 
   protected carregar(): void {
@@ -211,7 +253,7 @@ export class ComprovanteDaInscricaoPage {
     if (leitura.tipo === 'pronto') {
       this.carregado.set(leitura.carregado);
       this.estado.set('pronto');
-      afterNextRender(() => this.conteudo()?.nativeElement.focus(), { injector: this.injector });
+      afterNextRender(() => this.documento().focar(), { injector: this.injector });
       return;
     }
     if (leitura.tipo === 'nao-encontrado' || leitura.falha.status === 404) {

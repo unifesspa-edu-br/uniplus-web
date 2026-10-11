@@ -1,4 +1,5 @@
 import type { RespostasDaInscricao } from '@uniplus/shared-data/selecao';
+import { formatarDataBr } from '@uniplus/shared-utils';
 
 /** O que o comprovante precisa saber do campo para mostrar a resposta. */
 export interface CampoExibido {
@@ -36,7 +37,7 @@ export function respostaExibida(
     case 'BOOLEANO':
       return valor === true ? 'Sim' : 'Não';
     case 'DATA':
-      return dataBr(String(valor));
+      return formatarDataBr(String(valor)) || String(valor);
     case 'NUMERO':
       return Number(valor).toLocaleString('pt-BR');
     case 'SELECAO_UNICA':
@@ -53,22 +54,27 @@ export function respostaExibida(
   }
 }
 
-/** O nome social prevalece quando o candidato o pediu e o preencheu (UNI-REQ-0032); senão, o nome civil. */
-export function nomePreferido(respostas: RespostasDaInscricao): string {
+/** Os nomes que o comprovante mostra do candidato. */
+export interface NomesDoCandidato {
+  /** O nome social, quando o candidato o pediu e o preencheu (UNI-REQ-0032); senão, nulo. */
+  readonly social: string | null;
+  readonly civil: string;
+}
+
+export function nomesDoCandidato(respostas: RespostasDaInscricao): NomesDoCandidato {
   const social = respostas['NOME_SOCIAL'];
-  if (respostas['DESEJA_NOME_SOCIAL'] === true && typeof social === 'string' && social !== '') {
-    return social;
-  }
-  return typeof respostas['NOME'] === 'string' ? respostas['NOME'] : '';
+  const civil = respostas['NOME'];
+  return {
+    social:
+      respostas['DESEJA_NOME_SOCIAL'] === true && typeof social === 'string' && social !== ''
+        ? social
+        : null,
+    civil: typeof civil === 'string' ? civil : '',
+  };
 }
 
 function opcao(campo: CampoExibido, codigo: string): string {
   return campo.valoresSelecionaveis?.find((v) => v.codigo === codigo)?.descricao ?? codigo;
-}
-
-function dataBr(iso: string): string {
-  const [ano, mes, dia] = iso.split('-');
-  return dia && mes && ano ? `${dia}/${mes}/${ano}` : iso;
 }
 
 function endereco(e: EnderecoRespondido): string {

@@ -4,7 +4,12 @@ import type {
   FormularioRenderizavelDto,
 } from '@uniplus/shared-data/selecao';
 
-import { derivadosDoComprovante, municipiosDoComprovante } from './comprovante-da-inscricao';
+import {
+  derivadosDoComprovante,
+  envioDoComprovante,
+  municipiosDoComprovante,
+  secoesDoComprovante,
+} from './comprovante-da-inscricao';
 
 const municipio = (fatoCodigo: string) => ({
   fatoCodigo,
@@ -84,5 +89,74 @@ describe('derivadosDoComprovante', () => {
     expect(derivadosDoComprovante(formulario, comprovante).map((d) => d.rotulo)).toEqual([
       'Município de residência',
     ]);
+  });
+});
+
+describe('secoesDoComprovante', () => {
+  const formulario = {
+    etapas: [{ codigo: 'DADOS', ordem: 0, titulo: 'Dados do candidato' }],
+    fatosColetados: [
+      { fatoCodigo: 'NOME', ordem: 0, rotulo: 'Nome completo', etapaCodigo: 'DADOS' },
+      { fatoCodigo: 'CPF', ordem: 1, rotulo: 'CPF', etapaCodigo: 'DADOS' },
+      { fatoCodigo: 'SEXO', ordem: 2, rotulo: 'Sexo', etapaCodigo: 'DADOS' },
+    ],
+    grupos: [
+      {
+        codigo: 'FAMILIA',
+        ordem: 0,
+        rotulo: 'Composição familiar',
+        etapaCodigo: 'DADOS',
+        incluiCandidato: true,
+        subitens: [{ fatoCodigo: 'RENDA', ordem: 0, rotulo: 'Renda', tipoRenderizacao: 'NUMERO' }],
+      },
+    ],
+    pressupostos: [],
+  } as unknown as FormularioRenderizavelDto;
+  const comprovante = {
+    respostas: { NOME: 'Fernanda Laura Nicole Drumond', CPF: '***.598.363-**', SEXO: 'F' },
+    grupos: {
+      FAMILIA: [
+        { id: 'a', respostas: { PARENTESCO: 'FILHO', RENDA: 100 } },
+        { id: 'b', respostas: { PARENTESCO: 'PROPRIO_CANDIDATO', RENDA: 200 } },
+      ],
+    },
+    derivados: {},
+  } as unknown as ComprovanteInscricaoDto;
+
+  it('não repete nas respostas o nome e o CPF, que o cartão do candidato já mostra', () => {
+    const [secao] = secoesDoComprovante(formulario, comprovante);
+
+    expect(secao.respostas.map((r) => r.rotulo)).toEqual(['Sexo']);
+  });
+
+  it('dá a cada ocorrência de grupo o título do formulário', () => {
+    const [secao] = secoesDoComprovante(formulario, comprovante);
+
+    expect(secao.grupos[0].ocorrencias.map((o) => o.titulo)).toEqual([
+      'Integrante 1',
+      'Você (candidato)',
+    ]);
+  });
+});
+
+describe('envioDoComprovante', () => {
+  const emitidos = [
+    { numero: 1, instante: '2026-12-11T13:30:00Z' },
+    { numero: 2, instante: '2026-12-12T09:00:00Z' },
+  ];
+
+  it('o último envio é o que vale; o anterior foi substituído pelo mais recente', () => {
+    expect(envioDoComprovante(emitidos, 2)).toEqual({
+      ordem: 2,
+      total: 2,
+      ehOQueVale: true,
+      maisRecente: 2,
+    });
+    expect(envioDoComprovante(emitidos, 1)).toEqual({
+      ordem: 1,
+      total: 2,
+      ehOQueVale: false,
+      maisRecente: 2,
+    });
   });
 });
