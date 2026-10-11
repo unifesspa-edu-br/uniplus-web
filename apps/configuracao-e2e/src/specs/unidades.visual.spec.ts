@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
+import { abrirFiltros } from '../support/filtros';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
@@ -154,6 +155,7 @@ test.describe('Unidade — cobertura visual DS', () => {
 
     await page.getByRole('button', { name: 'Limpar', exact: true }).click();
 
+    await abrirFiltros(page);
     await page.getByRole('button', { name: 'Centro', exact: true }).click();
 
     await expect(tree.getByText('Centro de Processos Seletivos')).toBeVisible();

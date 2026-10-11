@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 import { assertSemViolacoesGraves } from '../support/a11y';
+import { abrirFiltros } from '../support/filtros';
 
 /**
  * E2E funcional do cadastro de Modalidade de concorrência (issue #390, Piloto B).
@@ -174,6 +175,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
 
+    await abrirFiltros(page);
     await page.getByRole('button', { name: /Ação afirmativa/ }).click();
     await expect(page.locator('tbody tr')).toHaveCount(1);
     await expect(page.locator('tbody')).toContainText('PcD ampla concorrência');
