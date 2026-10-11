@@ -27,7 +27,6 @@ import {
   NoExigenciaInput,
   ProcessosSeletivosApi,
   PublicarProcessoSeletivoRequest,
-  ConfiguracaoDerivacaoInput,
   DefinirIdentificadorLegivelRequest,
   DefinirReferenciaTemporalFatosRequest,
 } from '@uniplus/shared-data/selecao';
@@ -140,7 +139,6 @@ export class CadastroInicialService {
   private readonly chaveItensDoFormulario = new ChaveDeSubstituicao();
   private readonly chaveTermosDoFormulario = new ChaveDeSubstituicao();
   private readonly chaveAplicacaoDeModelo = new ChaveDeSubstituicao();
-  private readonly chaveRegrasDerivacao = new ChaveDeSubstituicao();
   private readonly chaveReferenciaTemporal = new ChaveDeSubstituicao();
   private readonly chaveIdentificadorLegivel = new ChaveDeSubstituicao();
 
@@ -485,31 +483,6 @@ export class CadastroInicialService {
     return this.gravarComChave(this.chaveOpcoesDeclaradas, { fatoCodigo, request }, (contexto) =>
       this.api.definirOpcoesDeclaradas(processoSeletivoId, fatoCodigo, request, contexto),
     );
-  }
-
-  /** Declara como os fatos derivados do certame são calculados a partir dos coletados. */
-  async definirRegrasDerivacao(
-    processoSeletivoId: string,
-    regras: readonly ConfiguracaoDerivacaoInput[],
-  ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirRegrasDerivacao(
-        processoSeletivoId,
-        regras,
-        this.chaveRegrasDerivacao.contextoPara(regras),
-      ),
-    );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveRegrasDerivacao.renovar();
-      return { ok: true };
-    }
-
-    this.chaveRegrasDerivacao.recusada(result);
-    return { ok: false, problem: result.problem };
   }
 
   /** Declara o instante contra o qual a idade do candidato é apurada. */

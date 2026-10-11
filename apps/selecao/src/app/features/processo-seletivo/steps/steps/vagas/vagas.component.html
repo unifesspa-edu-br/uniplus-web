@@ -217,6 +217,10 @@
     @if (modalidadesCalculadas().length > 0) {
       <p class="field__hint vagas-calculadas__resumo">{{ resumoDasCalculadas() }}</p>
     }
+
+    @if (regrasDasModalidades().length > 0) {
+      <sel-regras-das-modalidades [modalidades]="regrasDasModalidades()" />
+    }
   </div>
 
   <div class="step-card">

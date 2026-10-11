@@ -1,11 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
-import {
-  ProcessosSeletivosApi,
-  type ConfiguracaoDerivacaoInput,
-  type ProcessoSeletivoDto,
-} from '@uniplus/shared-data/selecao';
+import { ProcessosSeletivosApi, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import {
   conteudoInicial,
   FINALIDADE_INSCRICAO,
@@ -17,6 +13,7 @@ import { CatalogosDoCronogramaService } from '../steps/cronograma/catalogos-do-c
 import {
   comCamposQueAsExigenciasPressupoem,
   fatosCitadosPelaDerivacao,
+  fatosCitadosPeloPredicado,
 } from '../steps/formulario/formulario-de-inscricao';
 import {
   conteudoDoFormulario,
@@ -28,162 +25,52 @@ import {
   type FormularioParaGravar,
 } from '../steps/formulario/formulario-do-processo';
 import { CadastroInicialService } from './cadastro-inicial.service';
-import { FATO_MODALIDADE } from './exigencias-documentais';
-
-/**
- * O que fazer com a matriz que o processo já grava.
- *
- * - `manter`: a matriz gravada é do processo, e a proposta só entra onde não há nenhuma.
- * - `avisarSeDesatualizada`: a que não acompanha as modalidades ofertadas é acusada, sem troca.
- * - `substituirSeDesatualizada`: o operador confirmou a troca da que não acompanha as ofertadas.
- */
-export type SeHaMatrizGravada = 'manter' | 'avisarSeDesatualizada' | 'substituirSeDesatualizada';
-
-export type PropostaDaMatriz =
-  | { readonly tipo: 'nadaAGravar' }
-  | {
-      readonly tipo: 'gravar';
-      readonly matriz: readonly ConfiguracaoDerivacaoInput[];
-      readonly dependencias: readonly string[];
-    }
-  | { readonly tipo: 'desatualizada' }
-  | { readonly tipo: 'recusada'; readonly motivo: string };
+import { regrasDasModalidadesOfertadas } from './regras-das-modalidades';
 
 export type CamposPressupostos =
   | { readonly tipo: 'garantidos' }
   | { readonly tipo: 'semFaseDeInscricao' }
   | { readonly tipo: 'recusados'; readonly motivo: string };
 
-/** A configuração de derivação da modalidade, quando o processo a declara. */
-export function matrizDaModalidade<T extends { readonly codigoFato: string }>(
-  derivacoes: readonly T[] | null | undefined,
-): T | undefined {
-  return (derivacoes ?? []).find((config) => config.codigoFato === FATO_MODALIDADE);
-}
-
-/** Os códigos que as regras contribuem. As regras chegam ao rascunho como valor opaco. */
-export function codigosContribuidos(regras: unknown): ReadonlySet<string> {
-  if (!Array.isArray(regras)) return new Set();
-  return new Set(
-    regras.flatMap((regra: unknown) => {
-      const contribui =
-        typeof regra === 'object' && regra !== null && 'contribui' in regra
-          ? (regra as { contribui: unknown }).contribui
-          : null;
-      return typeof contribui === 'string' ? [contribui] : [];
-    }),
-  );
-}
-
 /**
- * A matriz gravada não acompanha as modalidades ofertadas: contribui modalidade que o quadro não
- * oferta mais, ou deixa sem regra uma que a proposta normativa deriva. Nos dois casos o candidato
- * não seria posto na modalidade certa.
+ * Os fatos que as regras de aplicabilidade das modalidades ofertadas citam, com os que citam as
+ * derivações que o processo configura para os fatos citados.
+ *
+ * A modalidade do candidato e a opção pelas cotas da lei saem das modalidades ofertadas, no
+ * servidor, e as regras delas não chegam ao assistente: o que elas citam vem com o modelo de
+ * inscrição, e a publicação recusa a regra que cita o que o processo não coleta nem deriva.
  */
-function desatualizada(
-  gravada: unknown,
-  proposta: unknown,
-  ofertadas: ReadonlySet<string>,
-): boolean {
-  const contribuidas = codigosContribuidos(gravada);
-  return (
-    [...contribuidas].some((codigo) => !ofertadas.has(codigo)) ||
-    [...codigosContribuidos(proposta)].some((codigo) => !contribuidas.has(codigo))
+export function fatosCitadosPelasModalidadesOfertadas(
+  servidor: ProcessoSeletivoDto,
+): ReadonlySet<string> {
+  const derivacoes = new Map(
+    (servidor.regrasDerivacao ?? []).map((config) => [config.codigoFato, config.regras]),
   );
-}
-
-interface RegraNaOrdem {
-  readonly ordem: number | string;
-  readonly contribui?: string | null;
-  readonly quando?: unknown;
-}
-
-/** As mesmas regras, na mesma ordem. */
-function mesmasRegras(
-  gravadas: readonly RegraNaOrdem[],
-  propostas: readonly RegraNaOrdem[],
-): boolean {
-  const forma = (regras: readonly RegraNaOrdem[]): string =>
-    JSON.stringify(
-      [...regras]
-        .sort((a, b) => Number(a.ordem) - Number(b.ordem))
-        .map((regra) => [regra.contribui ?? null, regra.quando ?? null]),
-    );
-  return forma(gravadas) === forma(propostas);
+  const citados = new Set<string>();
+  const pendentes = regrasDasModalidadesOfertadas(servidor).flatMap((modalidade) =>
+    fatosCitadosPeloPredicado(modalidade.regra),
+  );
+  for (let fato = pendentes.pop(); fato !== undefined; fato = pendentes.pop()) {
+    if (citados.has(fato)) continue;
+    citados.add(fato);
+    pendentes.push(...fatosCitadosPelaDerivacao(derivacoes.get(fato)));
+  }
+  return citados;
 }
 
 /**
- * A matriz de derivação da modalidade e os campos do formulário de inscrição que ela pressupõe.
- *
- * A modalidade não é declarada pelo candidato: ela RESULTA da avaliação dos opt-ins e das
- * elegibilidades dele contra as regras do certame. A matriz vem do próprio servidor, recortada para
- * as modalidades que o processo oferta, e não é escrita no assistente: de que opt-ins e de que
- * elegibilidades cada cota se compõe é matéria da Lei 12.711/2012, e uma segunda cópia dela aqui
- * divergiria em silêncio da que classifica os candidatos.
- *
- * As três operações se fazem nessa ordem: a proposta diz de que fatos a matriz depende, os campos
- * que os coletam entram no formulário, e só então a matriz é gravada — o servidor recusa a regra
- * que cita fato que o processo não coleta.
+ * Os campos do formulário de inscrição que o processo pressupõe: os que coletam os fatos que as
+ * exigências e as regras das modalidades ofertadas citam. O servidor recusa a regra que cita fato
+ * que o processo não coleta; este serviço põe os campos antes, para o operador não precisar
+ * lembrar que decidir quem concorre ou de quem o documento é cobrado mexe no formulário.
  */
 @Injectable()
-export class MatrizDaModalidadeService {
+export class CamposPressupostosService {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly catalogos = inject(CatalogosDoCronogramaService);
-
-  /** A matriz a gravar, e os fatos de que ela depende, conforme o que o processo já grava. */
-  async proposta(
-    processoId: string,
-    servidor: ProcessoSeletivoDto,
-    seHaMatrizGravada: SeHaMatrizGravada,
-  ): Promise<PropostaDaMatriz> {
-    const gravada = matrizDaModalidade(servidor.regrasDerivacao);
-    if (gravada !== undefined && seHaMatrizGravada === 'manter') return { tipo: 'nadaAGravar' };
-
-    const resposta = await firstValueFrom(this.api.obterRegrasDerivacaoNormativas(processoId));
-    if (!isApiOk(resposta)) {
-      return { tipo: 'recusada', motivo: this.problemI18n.resolve(resposta.problem).title };
-    }
-
-    // Proposta vazia é o processo que ainda não declarou quadro de vagas, ou que oferta só
-    // modalidade de outro ramo: a norma não tem o que propor.
-    const proposta = matrizDaModalidade(resposta.data);
-    if (proposta === undefined) return { tipo: 'nadaAGravar' };
-
-    const gravar = {
-      tipo: 'gravar',
-      matriz: resposta.data,
-      dependencias: [
-        ...new Set(resposta.data.flatMap((config) => fatosCitadosPelaDerivacao(config.regras))),
-      ],
-    } as const;
-    if (gravada === undefined) return gravar;
-    if (mesmasRegras(gravada.regras, proposta.regras)) return { tipo: 'nadaAGravar' };
-
-    // A matriz que acompanha as ofertadas e difere da proposta foi ajustada pelo administrador.
-    const ofertadas = new Set(
-      (servidor.distribuicaoVagas ?? []).flatMap((distribuicao) =>
-        distribuicao.modalidades.map((modalidade) => modalidade.codigo),
-      ),
-    );
-    if (!desatualizada(gravada.regras, proposta.regras, ofertadas)) return { tipo: 'nadaAGravar' };
-
-    if (seHaMatrizGravada === 'substituirSeDesatualizada') return gravar;
-
-    // O rascunho passa a ter a matriz que o servidor grava, para a confirmação seguinte avisar
-    // da troca.
-    const formulario = this.store.draft().formulario;
-    this.store.patchSection('formulario', {
-      ...formulario,
-      derivacao: (servidor.regrasDerivacao ?? []).map((config) => ({
-        codigoFato: config.codigoFato,
-        regras: config.regras,
-      })),
-    });
-    return { tipo: 'desatualizada' };
-  }
 
   /** O formulário de inscrição gravado já coleta todos os fatos citados. */
   coletaTudo(servidor: ProcessoSeletivoDto, citados: ReadonlySet<string>): boolean {
@@ -260,40 +147,6 @@ export class MatrizDaModalidadeService {
 
     await this.acompanharNoRascunho(processoId, conteudoGravado, pressuposto);
     return { tipo: 'garantidos' };
-  }
-
-  /** Grava a matriz proposta. Devolve o motivo da recusa, ou `null` quando deu certo. */
-  async gravar(
-    processoId: string,
-    matriz: readonly ConfiguracaoDerivacaoInput[],
-    servidor: ProcessoSeletivoDto,
-  ): Promise<string | null> {
-    // O comando SUBSTITUI a coleção inteira. Enviar só a matriz de modalidade apagaria a
-    // derivação de qualquer outro fato que o processo já declarasse. A proposta traz os
-    // derivados que ela cita e o processo ainda não deriva; os que ele já deriva ficam.
-    const propostos = new Set(matriz.map((config) => config.codigoFato));
-    const preservadas = (servidor.regrasDerivacao ?? []).filter(
-      (config) => !propostos.has(config.codigoFato),
-    );
-
-    const gravacao = await this.cadastro.definirRegrasDerivacao(processoId, [
-      ...preservadas,
-      ...matriz,
-    ]);
-    if (!gravacao.ok) return this.problemI18n.resolve(gravacao.problem).title;
-
-    // O rascunho acompanha o que foi gravado — sem isto, os campos que a matriz acabou de
-    // pressupor apareceriam no passo do formulário como campos que nada no certame usa, e a
-    // tela pediria para conferir se ainda há motivo para pedi-los ao candidato.
-    const formulario = this.store.draft().formulario;
-    this.store.patchSection('formulario', {
-      ...formulario,
-      derivacao: [...preservadas, ...matriz].map((config) => ({
-        codigoFato: config.codigoFato,
-        regras: config.regras,
-      })),
-    });
-    return null;
   }
 
   /**

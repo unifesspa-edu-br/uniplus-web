@@ -28,14 +28,14 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, Subscription } from 'rxjs';
 import { DestroyRef } from '@angular/core';
-import type { ConfirmacaoDeGravacao, GravacaoDoPasso, ItemDeConfirmacao } from '../../passo-do-wizard';
+import type { ConfirmacaoDeGravacao, ItemDeConfirmacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import {
-  codigosContribuidos,
-  matrizDaModalidade,
-  MatrizDaModalidadeService,
-} from '../../shared/matriz-da-modalidade.service';
+  CamposPressupostosService,
+  fatosCitadosPelasModalidadesOfertadas,
+} from '../../shared/campos-pressupostos.service';
+import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
 import { comandoDaCascata, comandoDeRemocaoDaCascata } from './cascata-de-remanejamento';
 import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
@@ -127,7 +127,12 @@ function lista(itens: readonly string[]): string {
  */
 @Component({
   selector: 'sel-step-vagas',
-  imports: [FormsModule, ConfirmDialogComponent, CascataRemanejamentoComponent],
+  imports: [
+    FormsModule,
+    ConfirmDialogComponent,
+    CascataRemanejamentoComponent,
+    RegrasDasModalidadesComponent,
+  ],
   templateUrl: './vagas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CatalogosDeDistribuicaoService, provePassoDoWizard(VagasStepComponent)],
@@ -336,7 +341,7 @@ export class VagasStepComponent {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
-  private readonly derivacaoDaModalidade = inject(MatrizDaModalidadeService);
+  private readonly camposPressupostos = inject(CamposPressupostosService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Quadro como a regra o calcula, por oferta. Vazio até simular. */
@@ -1026,50 +1031,17 @@ export class VagasStepComponent {
         ...this.totaisPorModalidade(),
         { rotulo: 'Regra de distribuição', valor: this.rotuloDaRegraDeDistribuicao() },
         ...(cascata === null ? [] : [{ rotulo: 'Regra de remanejamento', valor: cascata }]),
-        ...this.itemDaMatrizDaModalidade(),
       ],
     };
   }
+
+  /** Quem concorre em cada modalidade ofertada, pela regra que o processo congelou. */
+  protected readonly regrasDasModalidades = this.store.regrasDasModalidades;
 
   /** O candidato se inscreve no processo: é da inscrição que a modalidade dele se deriva. */
   private readonly derivaAModalidade = computed(
     () => this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria,
   );
-
-  /**
-   * A matriz que o processo grava pode ser trocada pela proposta normativa: ela não contribui
-   * exatamente as modalidades deste quadro. Quem decide se a troca acontece é o servidor, que
-   * sabe quais das ofertadas a norma deriva; o resumo avisa antes, porque a troca leva junto o
-   * que o administrador tiver ajustado nela.
-   */
-  private readonly matrizPodeSerSubstituida = computed(() => {
-    const gravada = matrizDaModalidade(this.store.draft().formulario.derivacao);
-    if (!this.derivaAModalidade() || gravada === undefined) return false;
-
-    const contribuidas = codigosContribuidos(gravada.regras);
-    const ofertadas = new Set(this.store.modalidadesDoProcesso());
-    return (
-      contribuidas.size !== ofertadas.size ||
-      [...contribuidas].some((codigo) => !ofertadas.has(codigo))
-    );
-  });
-
-  private itemDaMatrizDaModalidade(): readonly ItemDeConfirmacao[] {
-    if (!this.derivaAModalidade()) return [];
-
-    const rotulo = 'Modalidade de concorrência do candidato';
-    if (matrizDaModalidade(this.store.draft().formulario.derivacao) === undefined) {
-      return [{
-        rotulo,
-        valor: 'Derivada pela regra que a norma propõe para as modalidades ofertadas, com as perguntas que ela faz no formulário de inscrição.',
-      }];
-    }
-    if (!this.matrizPodeSerSubstituida()) return [];
-    return [{
-      rotulo,
-      valor: 'A regra gravada será substituída pela proposta da norma se não acompanhar as modalidades deste quadro. O que tiver sido ajustado nela se perde.',
-    }];
-  }
 
   /** A soma das vagas que as ofertas declaram — a base sobre a qual a regra calcula. */
   private totalDeVagasOfertadas(): number {
@@ -1125,7 +1097,7 @@ export class VagasStepComponent {
    * célula transformaria o preenchimento numa sequência de idas ao servidor, e
    * é por isso que o passo acumula e envia uma vez só.
    */
-  async persistir(gravacao?: GravacaoDoPasso): Promise<StepValidation> {
+  async persistir(): Promise<StepValidation> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {
@@ -1168,13 +1140,9 @@ export class VagasStepComponent {
         };
       }
 
-      if (!this.derivaAModalidade()) return { valid: true };
-      // Avaliado antes de qualquer espera, sobre o rascunho que o resumo mostrou.
-      const substituicaoAvisada =
-        gravacao?.confirmadaPeloOperador === true && this.matrizPodeSerSubstituida();
-      const matriz = await this.persistirMatrizDaModalidade(processoId, substituicaoAvisada);
+      const perguntas = await this.acompanharAsRegrasDasModalidades(processoId);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      return matriz;
+      return perguntas;
     } finally {
       // Quem destrava é a geração que travou: um editor novo pode ter comando
       // próprio em curso.
@@ -1183,17 +1151,14 @@ export class VagasStepComponent {
   }
 
   /**
-   * Propõe e grava a matriz que deriva a modalidade do candidato, logo depois do quadro: a
-   * proposta é recortada pelas modalidades que o servidor grava, e só existe depois delas.
+   * Relê o processo depois de gravar o quadro: as regras que o servidor congelou nas modalidades
+   * ofertadas passam a valer para a tela, e o formulário de inscrição recebe as perguntas que elas
+   * citam quando é da inscrição que a modalidade do candidato se deriva.
    *
-   * Sem fase de inscrição no cronograma, a matriz que pergunta algo ao candidato espera: o
-   * formulário que coleta as respostas ainda não tem onde existir, e o cronograma a propõe ao
-   * ganhar a fase.
+   * Sem fase de inscrição no cronograma, as perguntas esperam: o formulário que as coleta ainda
+   * não tem onde existir, e o cronograma as põe ao ganhar a fase.
    */
-  private async persistirMatrizDaModalidade(
-    processoId: string,
-    substituicaoAvisada: boolean,
-  ): Promise<StepValidation> {
+  private async acompanharAsRegrasDasModalidades(processoId: string): Promise<StepValidation> {
     const geracao = this.store.geracao();
     const recusa = (motivo: string): StepValidation => ({
       valid: false,
@@ -1203,37 +1168,22 @@ export class VagasStepComponent {
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return { valid: true };
     if (!isApiOk(detalhe)) {
-      return recusa('Não foi possível reler o processo para propor a regra da modalidade de concorrência. Grave as vagas de novo.');
+      return this.derivaAModalidade()
+        ? recusa(
+            'Não foi possível reler o processo para pôr no formulário de inscrição as perguntas que as modalidades fazem. Grave as vagas de novo.',
+          )
+        : { valid: true };
     }
+    this.store.registrarRegrasDasModalidades(detalhe.data);
+    if (!this.derivaAModalidade()) return { valid: true };
 
-    const proposta = await this.derivacaoDaModalidade.proposta(
+    const campos = await this.camposPressupostos.garantirCampos(
       processoId,
       detalhe.data,
-      substituicaoAvisada ? 'substituirSeDesatualizada' : 'avisarSeDesatualizada',
+      fatosCitadosPelasModalidadesOfertadas(detalhe.data),
     );
     if (geracao !== this.store.geracao()) return { valid: true };
-    if (proposta.tipo === 'nadaAGravar') return { valid: true };
-    if (proposta.tipo === 'recusada') return recusa(proposta.motivo);
-    if (proposta.tipo === 'desatualizada') {
-      return recusa(
-        'A regra que deriva a modalidade de concorrência do candidato não acompanha as modalidades ofertadas. Grave as vagas de novo e confirme a troca pela regra que a norma propõe.',
-      );
-    }
-
-    const campos = await this.derivacaoDaModalidade.garantirCampos(
-      processoId,
-      detalhe.data,
-      new Set(proposta.dependencias),
-    );
-    if (geracao !== this.store.geracao()) return { valid: true };
-    if (campos.tipo === 'recusados') return recusa(campos.motivo);
-    if (campos.tipo === 'semFaseDeInscricao') return { valid: true };
-
-    const derivacao = await this.derivacaoDaModalidade.gravar(processoId, proposta.matriz, detalhe.data);
-    if (geracao !== this.store.geracao()) return { valid: true };
-    return derivacao === null
-      ? { valid: true }
-      : recusa(`O formulário de inscrição está com as perguntas que a regra da modalidade de concorrência faz. ${derivacao}`);
+    return campos.tipo === 'recusados' ? recusa(campos.motivo) : { valid: true };
   }
 
   /**

@@ -6559,79 +6559,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{id}/regras-derivacao/normativas": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.regras-derivacao-normativas.v1+json": readonly components["schemas"]["ConfiguracaoDerivacaoDto"][];
-                    };
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/selecao/processos-seletivos/{id}/conformidade": {
         readonly parameters: {
             readonly query?: never;
@@ -8521,7 +8448,7 @@ export interface components {
             readonly remanejamentoDestino: null | string;
             readonly remanejamentoPar: null | string;
             readonly remanejamentoFallback: null | string;
-            readonly criteriosCumulativos: readonly string[];
+            readonly regraDeAplicabilidade: readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
             readonly acaoQuandoIndeferido: null | string;
             readonly baseLegal: string;
             /** Format: int32 */

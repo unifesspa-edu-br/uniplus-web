@@ -6,7 +6,11 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { SELECAO_BASE_PATH, type FormularioDto } from '@uniplus/shared-data/selecao';
+import {
+  SELECAO_BASE_PATH,
+  type FormularioDto,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -252,6 +256,27 @@ describe('FormularioStepComponent', () => {
       /^Não pode sair: o documento/,
     );
     expect(host.textContent).toContain('Não pode sair: o documento');
+  });
+
+  it('o campo que a regra de uma modalidade ofertada cita não sai depois de gravar o quadro', () => {
+    store.registrarRegrasDasModalidades({
+      distribuicaoVagas: [
+        {
+          modalidades: [
+            {
+              codigo: 'AC_PCD',
+              descricao: 'Pessoa com deficiência',
+              regraDeAplicabilidade: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]],
+            },
+          ],
+        },
+      ],
+    } as unknown as ProcessoSeletivoDto);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.remocoesTravadas().get('PCD')).toBe(
+      'Não pode sair: a regra de quem concorre em AC_PCD depende deste dado. Desfaça a dependência antes de remover o campo.',
+    );
   });
 
   it('grava só o que mudou, seguindo o plano, e envia os itens sem os dados básicos', async () => {

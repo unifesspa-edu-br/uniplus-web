@@ -27,7 +27,7 @@ import { PASSOS } from './steps/processo-seletivo.data';
 import { PASSO_DO_WIZARD, PassoDoWizard } from './steps/passo-do-wizard';
 import type { ConfirmacaoDeGravacao, GravacaoDoPasso } from './steps/passo-do-wizard';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
-import { MatrizDaModalidadeService } from './steps/shared/matriz-da-modalidade.service';
+import { CamposPressupostosService } from './steps/shared/campos-pressupostos.service';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
 import { OverlayScrollService } from './steps/shared/overlay-scroll.service';
 import { WizardStepperComponent } from './steps/shared/wizard-stepper.component';
@@ -106,7 +106,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     ProcessoSeletivoStore,
     CadastroInicialService,
     CatalogosDoCronogramaService,
-    MatrizDaModalidadeService,
+    CamposPressupostosService,
     CatalogosDeClassificacaoService,
     AcompanhamentoDoCadastroDePesos,
     ReleituraDoSnapshot,
