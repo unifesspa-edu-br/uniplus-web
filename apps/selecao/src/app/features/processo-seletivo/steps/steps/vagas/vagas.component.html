@@ -3,9 +3,9 @@
   declara o que varia entre elas.
 </p>
 
-@if (catalogos.carregando()) {
+@if (carregandoParaEditar()) {
   <p class="field__hint" role="status">Carregando ofertas, modalidades e regras…</p>
-} @else if (catalogos.erro(); as erro) {
+} @else if (erroParaEditar(); as erro) {
   <div class="field__erro" role="alert">
     <p>{{ erro }}</p>
     <button class="btn btn--tertiary" type="button" (click)="catalogos.carregar()">
@@ -15,6 +15,17 @@
 } @else {
   <div class="step-card">
     <h2 class="form-section__title">Padrão desta distribuição</h2>
+    @if (catalogoCarregandoEmConsulta()) {
+      <p class="field__hint" role="status">
+        Carregando ofertas, modalidades e regras. O que o processo gravou aparece abaixo; os nomes
+        e as descrições entram quando chegarem.
+      </p>
+    } @else if (catalogoFalhouEmConsulta()) {
+      <p class="field__hint">
+        Os catálogos de ofertas, modalidades e regras não foram lidos. O que o processo gravou
+        aparece abaixo; nomes de ofertas e descrições de modalidades ficam como não lidos.
+      </p>
+    }
     <div class="form-grid">
       <div class="form-field form-grid__full">
         @if (store.emConsulta()) {
@@ -270,7 +281,10 @@
     <div class="vagas-oferta__cabecalho">
       <h2 class="form-section__title">Quadro de vagas</h2>
       <span class="field__hint">
-        {{ distribuicoes().length }} no quadro · {{ ofertasDisponiveis().length }} disponíveis
+        {{ distribuicoes().length }} no quadro
+        @if (!store.emConsulta()) {
+          · {{ ofertasDisponiveis().length }} disponíveis
+        }
       </span>
     </div>
 
@@ -366,8 +380,8 @@
             <tr>
               <th scope="col">Oferta</th>
               <th scope="col">Total</th>
-              @for (modalidade of colunasDeQuantidade(); track modalidade.id) {
-                <th scope="col" [title]="modalidade.descricao">{{ modalidade.codigo }}</th>
+              @for (modalidade of colunasDoQuadro(); track modalidade.id) {
+                <th scope="col" [title]="modalidade.descricao || null">{{ modalidade.codigo }}</th>
               }
               @if (simulacao().size > 0) {
                 @for (modalidade of modalidadesCalculadas(); track modalidade.id) {
@@ -409,7 +423,7 @@
                   />
                   }
                 </td>
-                @for (modalidade of colunasDeQuantidade(); track modalidade.id) {
+                @for (modalidade of colunasDoQuadro(); track modalidade.id) {
                   <td [attr.data-label]="modalidade.codigo">
                     @if (store.emConsulta()) {
                       {{ quantidade(distribuicao, modalidade.id) || '—' }}
@@ -470,7 +484,7 @@
                 }}
               </th>
               <td data-label="Total">{{ totalGeralDeVagas() }}</td>
-              @for (modalidade of colunasDeQuantidade(); track modalidade.id) {
+              @for (modalidade of colunasDoQuadro(); track modalidade.id) {
                 <td [attr.data-label]="modalidade.codigo">
                   {{ totalDeclaradoDe(modalidade.id) }}
                 </td>

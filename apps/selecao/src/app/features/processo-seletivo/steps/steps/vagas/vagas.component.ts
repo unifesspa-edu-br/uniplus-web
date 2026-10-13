@@ -323,6 +323,8 @@ export class VagasStepComponent {
    */
   readonly padraoLido = computed(() => {
     const padrao = this.padrao();
+    const situacao = this.catalogos.situacao();
+    const motivo = this.catalogos.motivoDaAusencia();
     const regra = (codigo: string | null, versao: string | null): string | null =>
       codigo ? `${codigo} · versão ${versao ?? ''}` : null;
     const referencia = this.catalogos
@@ -335,12 +337,61 @@ export class VagasStepComponent {
       regraDeAjuste: regra(padrao.regraAjusteCodigo, padrao.regraAjusteVersao),
       referenciaDemografica: referencia
         ? `Censo ${referencia.censoReferencia} — PPI ${referencia.ppiPercentual}% · quilombola ${referencia.quilombolaPercentual}% · PcD ${referencia.pcdPercentual}%`
-        : null,
-      modalidades: this.modalidadesDoPadrao().map(
-        (modalidade) => `${modalidade.codigo} — ${modalidade.descricao}`,
-      ),
+        : !padrao.referenciaReservaDemograficaId
+          ? null
+          : situacao === 'lido'
+            ? 'Referência gravada fora do catálogo'
+            : `Referência gravada, mas o catálogo ${motivo}`,
+      modalidades:
+        situacao === 'lido'
+          ? this.modalidadesDoPadrao().map(
+              (modalidade) => `${modalidade.codigo} — ${modalidade.descricao}`,
+            )
+          : padrao.modalidades.map(
+              (modalidade) => `${modalidade.codigo} — descrição: o catálogo ${motivo}`,
+            ),
     };
   });
+
+  /**
+   * Em consulta o passo lê o que o processo gravou e não espera pelos catálogos; o que só o
+   * catálogo sabe dizer (nome da oferta, descrição da modalidade) é lido como não lido, e nunca
+   * como ausente. Carregando e falhou são estados distintos: o primeiro passa, o segundo fica.
+   */
+  readonly catalogoCarregandoEmConsulta = computed(
+    () => this.store.emConsulta() && this.catalogos.situacao() === 'carregando',
+  );
+  readonly catalogoFalhouEmConsulta = computed(
+    () => this.store.emConsulta() && this.catalogos.situacao() === 'falhou',
+  );
+
+  /**
+   * Com o catálogo ausente em consulta, o quadro monta as colunas pelo que o processo gravou:
+   * as modalidades do padrão com quantidade gravada em alguma oferta, na ordem do padrão.
+   */
+  readonly colunasDoQuadro = computed<
+    readonly Pick<ModalidadeDto, 'id' | 'codigo' | 'descricao'>[]
+  >(() => {
+    if (!this.store.emConsulta() || this.catalogos.situacao() === 'lido') {
+      return this.colunasDeQuantidade();
+    }
+    // No regime federal a regra calcula várias modalidades e o rascunho não guarda quantidade
+    // delas: coluna só para quem tem quantidade gravada, senão o rodapé leria "0" vagas.
+    const comQuantidade = new Set(
+      this.distribuicoes().flatMap((item) => item.quadro.map((q) => q.modalidadeId)),
+    );
+    return this.padrao()
+      .modalidades.filter((modalidade) => comQuantidade.has(modalidade.id))
+      .map((modalidade) => ({ id: modalidade.id, codigo: modalidade.codigo, descricao: '' }));
+  });
+
+  /** Carregando e erro só servem a quem edita: a consulta lê o gravado e diz o que não leu. */
+  readonly carregandoParaEditar = computed(
+    () => !this.store.emConsulta() && this.catalogos.carregando(),
+  );
+  readonly erroParaEditar = computed(() =>
+    this.store.emConsulta() ? null : this.catalogos.erro(),
+  );
 
   /** Só as modalidades cuja quantidade o edital fixa viram coluna do quadro. */
   readonly colunasDeQuantidade = computed(() =>
@@ -476,12 +527,16 @@ export class VagasStepComponent {
    * some da lista de escolha, mas não do que já foi configurado.
    */
   rotuloDaOferta(ofertaCursoId: string): string {
-    return this.catalogos.rotuloDaOferta().get(ofertaCursoId) ?? 'Oferta fora do catálogo';
+    return (
+      this.catalogos.rotuloDaOferta().get(ofertaCursoId) ?? this.catalogos.textoDaOfertaSemNome()
+    );
   }
 
   /** Curso e unidade — o que a linha destaca. */
   nomeDaOferta(ofertaCursoId: string): string {
-    return this.catalogos.nomeDaOferta().get(ofertaCursoId) ?? 'Oferta fora do catálogo';
+    return (
+      this.catalogos.nomeDaOferta().get(ofertaCursoId) ?? this.catalogos.textoDaOfertaSemNome()
+    );
   }
 
   /** Regime, turnos e o que mais distinga esta oferta das outras do curso. */

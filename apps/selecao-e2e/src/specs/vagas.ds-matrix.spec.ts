@@ -19,6 +19,7 @@ import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { responder, responderCom } from '../support/responder';
 
 type Status = 'rascunho' | 'publicado';
+type Catalogos = 'ok' | 'falha';
 
 /** Abaixo desta largura os cartões aninhados perdem o recuo de cada nível. */
 const LARGURA_CARTAO_ANINHADO_ENXUTO = 480;
@@ -162,15 +163,74 @@ test.describe('Vagas — matriz DS @ds', () => {
       ).toBe(true);
     });
   });
+
+  /**
+   * Em consulta o passo lê o que o processo gravou e não espera pelos catálogos. Com eles em
+   * falha, a leitura diz o que falta (nome da oferta, descrição da modalidade) e não oferece
+   * nova tentativa: o botão e o alerta de erro são de quem edita.
+   */
+  test.describe('consulta com o catálogo em falha', () => {
+    test.beforeEach(async ({ page }, testInfo) => {
+      await abrirVagas(page, testInfo, 'publicado', 'falha');
+    });
+
+    test('lê o gravado e diz o que não leu, sem controle nem ação de edição', async ({ page }) => {
+      await expect(
+        page
+          .locator('.wiz-content')
+          .getByText(/Os catálogos de ofertas, modalidades e regras não foram lidos/),
+      ).toBeVisible();
+      await expect(
+        page.locator('.wiz-content').getByText('Oferta sem nome: catálogo não foi lido').first(),
+      ).toBeVisible();
+      await expect(page.locator('.wiz-content').getByText('Oferta fora do catálogo')).toHaveCount(
+        0,
+      );
+
+      const controles = await page
+        .locator('.wiz-content')
+        .locator('input, select, textarea, button, [role="alert"]')
+        .evaluateAll((elementos) =>
+          elementos
+            .filter((elemento) => elemento.checkVisibility())
+            .map((elemento) => elemento.outerHTML.slice(0, 120)),
+        );
+      expect(controles).toEqual([]);
+    });
+
+    test('não viola WCAG 2.1 AA', async ({ page }) => {
+      expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+    });
+
+    test('não transborda na horizontal e separa título, alerta e dica do bloco vizinho', async ({
+      page,
+    }) => {
+      const transbordo = await medirTransbordoHorizontal(page);
+
+      expect(transbordo.documento).toBeLessThanOrEqual(1);
+      expect(transbordo.areaDeTrabalho).toBeLessThanOrEqual(1);
+      expect(await blocosColados(page)).toEqual([]);
+    });
+  });
 });
 
-async function abrirVagas(page: Page, testInfo: TestInfo, status: Status): Promise<void> {
-  await mockarApi(page, status);
+async function abrirVagas(
+  page: Page,
+  testInfo: TestInfo,
+  status: Status,
+  catalogos: Catalogos = 'ok',
+): Promise<void> {
+  await mockarApi(page, status, catalogos);
   await instalarPreferencia(page, temaDoProject(testInfo.project.name));
   await page.goto(`/processo-seletivo/${PROCESSO_DA_MEDICINA.id}`);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   await irAoPasso(page, 'Vagas', testInfo);
+  if (catalogos === 'falha') {
+    // Sem as regras do catálogo a matriz da cascata não se monta: o que há para ler é o padrão.
+    await expect(page.getByRole('heading', { name: 'Padrão desta distribuição' })).toBeVisible();
+    return;
+  }
   await expect(page.getByRole('heading', { name: 'Cascata de remanejamento' })).toBeVisible();
   await expect(page.locator('.cascata-matriz tbody tr')).toHaveCount(8);
 }
@@ -196,7 +256,7 @@ function identificadoresDe(resultado: AxeResults): string[] {
  * A rota genérica é registrada primeiro porque o Playwright consulta as rotas da mais
  * recente para a mais antiga.
  */
-async function mockarApi(page: Page, status: Status): Promise<void> {
+async function mockarApi(page: Page, status: Status, catalogos: Catalogos): Promise<void> {
   await responder(page, /\/api\//, [], CORS_HEADERS);
   await responder(
     page,
@@ -218,6 +278,7 @@ async function mockarApi(page: Page, status: Status): Promise<void> {
     CORS_HEADERS,
   );
   await mockarRegrasCatalogo(page);
+  if (catalogos === 'falha') await falharCatalogos(page);
 
   const processo = new RegExp(`/api/selecao/processos-seletivos/${PROCESSO_DA_MEDICINA.id}`);
   await page.route(processo, async (route: Route) => {
@@ -259,5 +320,23 @@ async function mockarRegrasCatalogo(page: Page): Promise<void> {
 
     const tipo = new URL(route.request().url()).searchParams.get('tipo') ?? '';
     await responderCom(route, porTipo[tipo] ?? [], CORS_HEADERS);
+  });
+}
+
+/** Registrada depois das rotas dos catálogos, porque o Playwright consulta da mais recente. */
+async function falharCatalogos(page: Page): Promise<void> {
+  const catalogos =
+    /\/api\/(configuracao\/(ofertas-curso|cursos|modalidades|referencias-reserva-demografica)|selecao\/regras-catalogo)(\/.*|\?.*)?$/;
+  await page.route(catalogos, async (route: Route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: CORS_HEADERS });
+      return;
+    }
+    await route.fulfill({
+      status: 503,
+      headers: CORS_HEADERS,
+      contentType: 'application/json',
+      body: '{}',
+    });
   });
 }
