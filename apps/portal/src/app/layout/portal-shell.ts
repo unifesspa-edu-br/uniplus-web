@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
@@ -35,6 +43,10 @@ interface PortalFooterGroup {
  * `.portal-scroll` (main + rodapé) rola — a faixa institucional, o topo e a
  * navegação por abas ficam sempre visíveis, sem acompanhar o scroll. Na
  * impressão o shell volta ao fluxo normal e só o conteúdo vai para o papel.
+ *
+ * Exceção: em janela baixa (`max-height: 500px`, p.ex. zoom alto) o cabeçalho
+ * deixa de ser fixo e a página rola inteira — ver `portal-shell.css` e
+ * `docs/modelo-de-rolagem-dos-shells.md`.
  */
 @Component({
   selector: 'ptl-portal-shell',
@@ -138,12 +150,32 @@ interface PortalFooterGroup {
       </footer>
     </div>
 
-    <ui-back-to-top class="u-no-print" [defaultContainer]="portalScroll" />
+    <ui-back-to-top
+      class="u-no-print"
+      [defaultContainer]="rolaPelaPagina() ? paginaRaiz : portalScroll"
+    />
     <ui-vlibras-loader class="u-no-print" />
   `,
 })
 export class PortalShellComponent {
   private readonly userContext = inject(UserContextService);
+  private readonly document = inject(DOCUMENT);
+
+  /** Mesmo limiar do `@media (max-height)` em portal-shell.css. */
+  private static readonly ALTURA_JANELA_BAIXA = '(max-height: 500px)';
+
+  protected readonly paginaRaiz = this.document.documentElement;
+  protected readonly rolaPelaPagina = signal(false);
+
+  constructor() {
+    const janela = this.document.defaultView;
+    if (typeof janela?.matchMedia !== 'function') return;
+    const consulta = janela.matchMedia(PortalShellComponent.ALTURA_JANELA_BAIXA);
+    this.rolaPelaPagina.set(consulta.matches);
+    const aoMudar = (e: MediaQueryListEvent): void => this.rolaPelaPagina.set(e.matches);
+    consulta.addEventListener('change', aoMudar);
+    inject(DestroyRef).onDestroy(() => consulta.removeEventListener('change', aoMudar));
+  }
 
   // "Meu perfil" vive no menu do avatar (auth-user-header-info), não aqui.
   // "Documentos" fica de fora enquanto for placeholder vazio — pô-lo no menu

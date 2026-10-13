@@ -2,7 +2,8 @@
 
 /* Trava a altura no viewport — mesmo contrato do `.ui-app-shell` admin — pra
    que só `.portal-scroll` role. Sem isso a faixa institucional, o topo e a
-   navegação por abas rolariam junto com o resto da página. */
+   navegação por abas rolariam junto com o resto da página. Em janela baixa a
+   trava é desfeita (ver "Janela baixa ou zoom alto"). */
 :host {
   display: flex;
   flex-direction: column;
@@ -79,8 +80,10 @@
 
 /* ── Rolagem de conteúdo (main + rodapé) ─────────────────────────── */
 
-/* Único contêiner de rolagem do shell — mesmo tratamento de `.page` no
-   `ui-app-shell` (scrollbar fina, transparente até passar o mouse). */
+/* Único contêiner de rolagem do shell em janela alta — mesmo tratamento de
+   `.page` no `ui-app-shell` (scrollbar fina, transparente até passar o mouse).
+   Em janela baixa ele deixa de rolar e a página assume; a scrollbar e o
+   `overscroll-behavior` ficam sem efeito ali. */
 .portal-scroll {
   /* Ancora o conteúdo posicionado: um `position: absolute` sem ancestral posicionado
      escapa da área que rola, estica a página e cria uma segunda rolagem. */
@@ -119,6 +122,32 @@
   }
 }
 
+/* ── Janela baixa ou zoom alto ───────────────────────────────────── */
+
+/* Abaixo de 500px de altura útil (ex.: 720x465 a 200% e 320x256 a 400%, o caso
+   de referência da WCAG 1.4.10) a faixa institucional, o topo e as abas
+   ocupariam a maior parte da tela. Aqui o shell deixa de travar no viewport e a
+   página rola inteira, cabeçalho junto — a rolagem passa a ser a do documento
+   (o `ui-back-to-top` acompanha por `rolaPelaPagina`, em portal-shell.ts). */
+@media (max-height: 500px) {
+  /* Só o eixo y é liberado: o corte horizontal segue valendo, senão o
+     transbordo de um filho largo vira rolagem horizontal da página. */
+  :host {
+    height: auto;
+    min-height: 100vh; /* fallback para navegadores sem dvh */
+    min-height: 100dvh;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+  /* `1 0 auto`: cresce até preencher o min-height do host (o rodapé fica no
+     fim da tela em página curta) sem encolher abaixo do conteúdo. */
+  .portal-scroll {
+    flex: 1 0 auto;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}
+
 /* ── Impressão ───────────────────────────────────────────────────── */
 
 /* A trava no viewport cortaria no papel tudo o que passa da primeira tela: o
@@ -129,6 +158,14 @@
   .portal-scroll {
     height: auto;
     overflow: visible;
+  }
+  /* Desfaz o que a janela baixa acrescenta: uma página impressa baixa não herda
+     a altura mínima do viewport nem o crescimento do conteúdo. */
+  :host {
+    min-height: auto;
+  }
+  .portal-scroll {
+    flex: none;
   }
 }
 

@@ -87,6 +87,46 @@ describe('PortalShellComponent — contrato de rolagem', () => {
     expect(area).toContain('overflow-y: auto');
     expect(area).toContain('position: relative');
   });
+
+  /** Corpo do `@media (max-height: 500px)`, sem as chaves externas. */
+  function blocoDeJanelaBaixa(): string {
+    const inicio = css.search(/@media\s*\(max-height:\s*500px\)\s*\{/u);
+    if (inicio < 0) return '';
+    const abertura = css.indexOf('{', inicio);
+    let profundidade = 0;
+    for (let i = abertura; i < css.length; i++) {
+      if (css[i] === '{') profundidade++;
+      else if (css[i] === '}' && --profundidade === 0) return css.slice(abertura + 1, i);
+    }
+    return '';
+  }
+
+  it('a regra de janela baixa vem depois da regra base, que senão a anularia na cascata', () => {
+    const janelaBaixa = css.search(/@media\s*\(max-height:\s*500px\)\s*\{/u);
+
+    expect(janelaBaixa).toBeGreaterThan(css.search(/\.portal-scroll\s*\{/u));
+  });
+
+  it('em janela baixa, o conteúdo preenche o min-height do host sem encolher', () => {
+    const regra = blocoDeJanelaBaixa()
+      .split('}')
+      .find((r) => r.split('{')[0].trim() === '.portal-scroll');
+
+    expect(regra).toMatch(/flex:\s*1 0 auto/u);
+  });
+
+  it.each([':host', '.portal-scroll'])(
+    'em janela baixa, %s libera só o eixo y e mantém o corte horizontal',
+    (seletor) => {
+      const regra = blocoDeJanelaBaixa()
+        .split('}')
+        .find((r) => r.split('{')[0].trim() === seletor);
+
+      expect(regra, seletor).toBeDefined();
+      expect(regra).toMatch(/overflow-y:\s*visible/u);
+      expect(regra).toMatch(/overflow-x:\s*(clip|hidden)/u);
+    },
+  );
 });
 
 describe('PortalShellComponent — contrato de impressão', () => {
@@ -125,6 +165,14 @@ describe('PortalShellComponent — contrato de impressão', () => {
       expect(declaracoes).toContain('overflow: visible');
     },
   );
+
+  it('no papel, vem depois da janela baixa e desfaz a altura mínima e o crescimento do conteúdo', () => {
+    const janelaBaixa = css.search(/@media\s*\(max-height:\s*500px\)\s*\{/u);
+
+    expect(css.search(/@media\s+print\s*\{/u)).toBeGreaterThan(janelaBaixa);
+    expect(declaracoesNaImpressao(':host')).toMatch(/min-height:\s*auto/u);
+    expect(declaracoesNaImpressao('.portal-scroll')).toMatch(/flex:\s*none/u);
+  });
 
   it('cabeçalho, navegação, rodapé e controles flutuantes não vão para o papel', async () => {
     await TestBed.configureTestingModule({
