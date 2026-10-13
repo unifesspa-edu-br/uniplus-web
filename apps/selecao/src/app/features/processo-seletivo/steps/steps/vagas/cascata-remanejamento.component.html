@@ -23,10 +23,16 @@
   </div>
 }
 
-@if (precisaExibir()) {
+@if (exibirSecao()) {
   <div class="step-card">
     <h2 class="form-section__title">Cascata de remanejamento</h2>
-    @if (store.emConsulta()) {
+    @if (secaoSemConfirmacao()) {
+      <p class="step-subtitle">
+        A regra gravada é mostrada porque, sem o catálogo de modalidades, não foi possível
+        confirmar se a cascata se aplica a este processo. A ordem de destinos e o destino final
+        vêm congelados na regra gravada.
+      </p>
+    } @else if (store.emConsulta()) {
       <p class="step-subtitle">
         Ao menos uma oferta desta distribuição tem modalidade que segue a cascata única do
         processo. A ordem de destinos e o destino final vêm congelados na regra gravada.
@@ -87,26 +93,42 @@
     </div>
 
     @if (esquemaNaoReconhecido()) {
-      <div class="field__erro" role="alert">
-        <p>
-          A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha
-          outra versão ou avise o suporte.
-        </p>
+      <div class="field__erro" [attr.role]="store.emConsulta() ? null : 'alert'">
+        @if (store.emConsulta()) {
+          <p>A regra gravada não declara uma matriz de remanejamento no formato esperado.</p>
+        } @else {
+          <p>
+            A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha
+            outra versão ou avise o suporte.
+          </p>
+        }
       </div>
     }
 
     @if (regraNaoEncontrada()) {
-      <div class="field__erro" role="alert">
-        <p>A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.</p>
+      <div class="field__erro" [attr.role]="store.emConsulta() ? null : 'alert'">
+        @if (store.emConsulta()) {
+          <p>A regra gravada não foi encontrada no catálogo, e a matriz dela não pode ser lida.</p>
+        } @else {
+          <p>
+            A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o
+            suporte.
+          </p>
+        }
       </div>
     }
 
     @if (falhaAoConsultarRegra()) {
-      <div class="field__erro" role="alert">
-        <p>Não foi possível confirmar a regra selecionada — a consulta falhou, não a regra.</p>
-        <button class="btn btn--tertiary" type="button" (click)="tentarNovamenteRegra()">
-          Tentar novamente
-        </button>
+      <div class="field__erro" [attr.role]="store.emConsulta() ? null : 'alert'">
+        <p>
+          Não foi possível confirmar a regra {{ store.emConsulta() ? 'gravada' : 'selecionada' }} —
+          a consulta falhou, não a regra.
+        </p>
+        @if (!store.emConsulta()) {
+          <button class="btn btn--tertiary" type="button" (click)="tentarNovamenteRegra()">
+            Tentar novamente
+          </button>
+        }
       </div>
     }
 

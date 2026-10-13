@@ -52,6 +52,31 @@ export class CatalogosDeDistribuicaoService {
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
 
+  /**
+   * O que a leitura pode afirmar do catálogo. O estado vem da ausência dos dados, e não da flag
+   * de erro: uma nova tentativa que falha depois de uma carga boa não invalida o que já chegou.
+   */
+  readonly situacao = computed<'lido' | 'carregando' | 'falhou'>(() => {
+    if (this.ofertas().length > 0 || this.modalidades().length > 0) return 'lido';
+    if (this.carregando()) return 'carregando';
+    return this.erro() !== null ? 'falhou' : 'lido';
+  });
+
+  /** Por que o catálogo não deu a informação, dito do mesmo jeito em todo lugar que a lê. */
+  readonly motivoDaAusencia = computed(() =>
+    this.situacao() === 'carregando' ? 'ainda carrega' : 'não foi lido',
+  );
+
+  /**
+   * O que a leitura diz de uma oferta sem nome. "Fora do catálogo" é uma conclusão, e só vale
+   * com o catálogo lido; sem ele, a leitura diz o que falta.
+   */
+  readonly textoDaOfertaSemNome = computed(() =>
+    this.situacao() === 'lido'
+      ? 'Oferta fora do catálogo'
+      : `Oferta sem nome: catálogo ${this.motivoDaAusencia()}`,
+  );
+
   /** Modalidade por id, na forma que a validação consome. */
   readonly modalidadePorId = computed<ReadonlyMap<string, ModalidadeDoCatalogo>>(
     () =>

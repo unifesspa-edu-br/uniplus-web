@@ -2086,3 +2086,182 @@ describe('VagasStepComponent — consulta', () => {
     expect(Array.from(tabela.querySelectorAll('thead th')).map((th) => th.textContent?.trim())).not.toContain('Ações');
   });
 });
+
+describe('VagasStepComponent — consulta com o catálogo em falha', () => {
+  let store: ProcessoSeletivoStore;
+  let controller: HttpTestingController;
+  let fixture: ComponentFixture<VagasStepComponent>;
+  let tela: HTMLElement;
+
+  /** Toda requisição pendente falha: nenhum catálogo chega. */
+  const falharPendentes = () => {
+    for (const requisicao of controller.match(() => true)) {
+      requisicao.flush(null, { status: 500, statusText: 'Erro interno' });
+    }
+    fixture.detectChanges();
+  };
+
+  const leitura = () => (tela.textContent ?? '').replace(/\s+/g, ' ');
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [VagasStepComponent],
+      providers: [
+        ProcessoSeletivoStore,
+        CadastroInicialService,
+        CatalogosDoCronogramaService,
+        CamposPressupostosService,
+        { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(VagasStepComponent);
+    store = TestBed.inject(ProcessoSeletivoStore);
+    controller = TestBed.inject(HttpTestingController);
+    tela = fixture.nativeElement as HTMLElement;
+
+    store.patchObjectSection('vagas', {
+      ofertas: [{ ...distribuicaoComCascata(), referenciaReservaDemograficaId: 'ref-1' }],
+    });
+    store.remoteSnapshot.set({
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
+    fixture.detectChanges();
+    falharPendentes();
+  });
+
+  afterEach(() => controller.verify());
+
+  it('lê o gravado, sem botão para tentar de novo nem aviso de carregamento ou de erro', () => {
+    expect(store.emConsulta()).toBe(true);
+    expect(tela.querySelectorAll('.step-card button')).toHaveLength(0);
+    expect(tela.querySelector('.step-card [role="alert"]')).toBeNull();
+    expect(leitura()).not.toContain('Carregando');
+    expect(leitura()).not.toContain('Tentar novamente');
+    expect(leitura()).toContain('DISTRIB-VAGAS-LEI-12711 · versão v1');
+    expect(leitura()).toContain('AJUSTE-PADRAO · versão v1');
+  });
+
+  it('diz o que o catálogo não deu, sem concluir que a oferta ou a modalidade não existem', () => {
+    expect(leitura()).toContain('Os catálogos de ofertas, modalidades e regras não foram lidos');
+    expect(leitura()).toContain('Oferta sem nome: catálogo não foi lido');
+    expect(leitura()).toContain('LB_PPI — descrição: o catálogo não foi lido');
+    expect(leitura()).toContain('Referência gravada, mas o catálogo não foi lido');
+    expect(leitura()).not.toContain('Oferta fora do catálogo');
+    expect(leitura()).not.toContain('Nenhuma modalidade oferecida');
+  });
+
+  it('não conta ofertas disponíveis, que dependem do catálogo e só servem a quem edita', () => {
+    expect(leitura()).toContain('1 no quadro');
+    expect(leitura()).not.toContain('disponíveis');
+  });
+
+  it('no regime federal, só a modalidade com quantidade gravada vira coluna, na ordem do padrão', () => {
+    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicaoComCascata(),
+          quadro: [
+            { modalidadeId: AC_CASCATA, quantidade: '80' },
+            { modalidadeId: LB_PPI, quantidade: '10' },
+          ],
+        },
+      ],
+    });
+    store.remoteSnapshot.set({
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
+    fixture.detectChanges();
+
+    const nomes = ['LB_PPI', 'LB_Q', 'AC'];
+    const cabecalhos = Array.from(tela.querySelectorAll('.vagas-table thead th')).map((th) =>
+      th.textContent?.trim(),
+    );
+    expect(cabecalhos.filter((c) => nomes.includes(c ?? ''))).toEqual(['LB_PPI', 'AC']);
+    const celulas = Array.from(tela.querySelectorAll('.vagas-table td[data-label]')).map(
+      (td) => `${td.getAttribute('data-label')}=${td.textContent?.trim()}`,
+    );
+    expect(celulas).toEqual(expect.arrayContaining(['LB_PPI=10', 'AC=80']));
+    expect(celulas.filter((c) => c.startsWith('LB_Q='))).toEqual([]);
+    expect(celulas).not.toContain('LB_Q=0');
+  });
+
+  it('padrão sem modalidades diz que nenhuma é oferecida, e não que não leu', () => {
+    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.patchObjectSection('vagas', {
+      ofertas: [{ ...distribuicaoComCascata(), modalidades: [], quadro: [] }],
+    });
+    store.remoteSnapshot.set({
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
+    fixture.detectChanges();
+
+    expect(leitura()).toContain('Nenhuma modalidade oferecida');
+    expect(leitura()).not.toContain('descrição: o catálogo');
+  });
+
+  it('enquanto os catálogos carregam, avisa que carrega e não diz que não leu', () => {
+    const catalogos = fixture.componentInstance.catalogos;
+    catalogos.erro.set(null);
+    catalogos.carregando.set(true);
+    fixture.detectChanges();
+
+    expect(tela.querySelector('[role="status"]')?.textContent).toContain('Carregando');
+    expect(leitura()).toContain('LB_PPI — descrição: o catálogo ainda carrega');
+    expect(leitura()).not.toContain('não foi lido');
+    expect(tela.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('nova tentativa que falha depois de uma carga boa mantém o que já foi lido', () => {
+    const catalogos = fixture.componentInstance.catalogos;
+    catalogos.modalidades.set([{ id: LB_PPI, codigo: 'LB_PPI', descricao: 'Ampla PPI' } as never]);
+    fixture.detectChanges();
+
+    expect(catalogos.erro()).not.toBeNull();
+    expect(leitura()).toContain('LB_PPI — Ampla PPI');
+    expect(leitura()).not.toContain(
+      'Os catálogos de ofertas, modalidades e regras não foram lidos',
+    );
+  });
+
+  it('diz "Não declarada" para a regra de ajuste que o processo não gravou', () => {
+    // O store não aceita mutação em consulta: grava como rascunho e volta a publicado.
+    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicaoComCascata(),
+          regraAjusteCodigo: null,
+          regraAjusteVersao: null,
+          referenciaReservaDemograficaId: null,
+        },
+      ],
+    });
+    store.remoteSnapshot.set({
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
+    fixture.detectChanges();
+
+    const regraDeAjuste = Array.from(tela.querySelectorAll('.dado')).find((par) =>
+      par.textContent?.includes('Regra de ajuste'),
+    );
+    expect(regraDeAjuste?.textContent).toContain('Não declarada');
+    expect(leitura()).not.toContain('Referência gravada');
+  });
+
+  it('em edição, a falha dos catálogos continua pedindo nova tentativa', () => {
+    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    fixture.detectChanges();
+
+    expect(store.emConsulta()).toBe(false);
+    expect(tela.querySelector('[role="alert"]')?.textContent).toContain(
+      'Não foi possível carregar',
+    );
+    expect(tela.querySelector('button')?.textContent).toContain('Tentar novamente');
+  });
+});

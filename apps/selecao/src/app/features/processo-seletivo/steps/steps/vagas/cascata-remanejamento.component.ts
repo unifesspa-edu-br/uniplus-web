@@ -69,6 +69,23 @@ export class CascataRemanejamentoComponent {
     precisaExibirSecaoDaCascata(this.ofertas(), this.catalogos.modalidadePorId()),
   );
 
+  /** A seção só aparece porque o catálogo falhou: o texto não pode afirmar que a cascata se aplica. */
+  readonly secaoSemConfirmacao = computed(() => this.exibirSecao() && !this.precisaExibir());
+
+  /**
+   * Em consulta a regra gravada é o que se lê. Sem o catálogo de modalidades a seção não sabe
+   * dizer se a cascata se aplica, e sumir seria concluir que não; com o catálogo lido, vale
+   * `precisaExibir`. Durante o carregamento a exceção não vale: a seção apareceria e sumiria
+   * quando o catálogo chegasse. Só o template usa: validação e gravação seguem `precisaExibir`.
+   */
+  readonly exibirSecao = computed(
+    () =>
+      this.precisaExibir() ||
+      (this.store.emConsulta() &&
+        this.catalogos.situacao() === 'falhou' &&
+        this.cascata() !== null),
+  );
+
   /**
    * Ofertas que exigiriam cascata mas usam regra de distribuição fora do
    * ramo federal — item `cascata_modalidade_fora_do_regime_federal`. A
