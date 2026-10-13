@@ -41,6 +41,12 @@ export default [
     },
   },
   {
+    // O seletor desta diretiva é de elemento e classe de propósito: o campo do DS (`.input`) ganha
+    // o `title` sem que cada um dos campos dos editores precise declarar um atributo.
+    files: ['**/valor-legivel.directive.ts'],
+    rules: { '@angular-eslint/directive-selector': 'off' },
+  },
+  {
     files: ['**/*.html'],
     // Override or add rules here
     rules: {},

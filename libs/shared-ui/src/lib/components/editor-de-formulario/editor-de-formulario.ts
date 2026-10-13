@@ -79,6 +79,7 @@ import { GrupoDoFormularioComponent } from './grupo-do-formulario';
 import { ItemDoFormularioComponent } from './item-do-formulario';
 import { SecaoDoFormularioComponent } from './secao-do-formulario';
 import { TermoDoFormularioComponent } from './termo-do-formulario';
+import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
 const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
   [BLOCO_COMPROVACAO_DOCUMENTAL]: 'O candidato envia os documentos que o processo exige nesta fase.',
@@ -103,7 +104,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
 @Component({
   selector: 'ui-editor-de-formulario',
   standalone: true,
-  imports: [GrupoDoFormularioComponent, ItemDoFormularioComponent, SecaoDoFormularioComponent, TagComponent, TermoDoFormularioComponent],
+  imports: [ValorLegivelDirective, GrupoDoFormularioComponent, ItemDoFormularioComponent, SecaoDoFormularioComponent, TagComponent, TermoDoFormularioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'editor-formulario' },
   template: `

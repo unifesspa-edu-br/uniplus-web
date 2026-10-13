@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { normalizarParaBusca } from '@uniplus/shared-utils';
+import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
 /** Uma escolha da lista. `value` é o que sai; `label` é o que a pessoa lê. */
 export interface UiComboboxOption {
@@ -44,6 +45,7 @@ let comboboxIdSeed = 0;
 @Component({
   selector: 'ui-combobox',
   standalone: true,
+  imports: [ValorLegivelDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:mousedown)': 'aoClicarNoDocumento($event.target)' },
   template: `

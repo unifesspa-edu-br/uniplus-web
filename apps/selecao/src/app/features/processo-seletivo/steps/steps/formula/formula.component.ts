@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { AuthService } from '@uniplus/shared-auth/bootstrap';
 import { AppConfigService, resolveConfiguracaoWebUrl } from '@uniplus/shared-data/config';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { formatarNumeroPtBr } from '@uniplus/shared-utils';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
@@ -87,7 +87,7 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 @Component({
   selector: 'sel-step-formula',
   standalone: true,
-  imports: [ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, ValorEmConsultaComponent],
   templateUrl: './formula.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FormulaStepComponent)],

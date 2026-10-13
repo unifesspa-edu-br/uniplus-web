@@ -82,7 +82,16 @@
 
       <!-- Publicações -->
       <div class="step-card">
-        <h3 class="form-section__title">O que esta fase publica</h3>
+        <h3 class="form-section__title" [attr.id]="idDaFase('publica-titulo')">O que esta fase publica</h3>
+        @if (store.emConsulta()) {
+          @if (faseLida(); as leitura) {
+            <ui-valor-em-consulta
+              [rotuladoPor]="idDaFase('publica-titulo')"
+              seVazio="Esta fase não declara nenhuma publicação"
+              [valor]="leitura.publicacoes"
+            />
+          }
+        } @else {
         <p class="field__hint" [attr.id]="idDaFase('produtos-ajuda')">
           Cada publicação é um tipo de ato do catálogo. O papel só existe em ato que o catálogo
           marca como resultado: é ele que abre o ciclo recursal (preliminar) e o encerra
@@ -158,11 +167,34 @@
         @if (erroDoCampo('produtos'); as erro) {
           <p class="field__erro" [attr.id]="idDaFase('produtos-erro')" role="alert">{{ erro }}</p>
         }
+        }
       </div>
 
       <!-- Conclusão do ciclo recursal e parecer -->
       <div class="step-card">
         <h3 class="form-section__title">Ciclo recursal da matéria</h3>
+        @if (store.emConsulta()) {
+          @if (faseLida(); as leitura) {
+            <div class="form-grid">
+              @if (leitura.publicaPreliminar) {
+                <ui-valor-em-consulta
+                  class="form-grid__full"
+                  rotulo="Fase que conclui o ciclo"
+                  [valor]="leitura.faseQueConclui"
+                />
+              } @else {
+                <p class="field__hint form-grid__full">
+                  Esta fase não publica resultado preliminar: não há ciclo recursal a concluir.
+                </p>
+              }
+              <ui-valor-em-consulta
+                class="form-grid__full"
+                rotulo="Emite parecer individual"
+                [valor]="leitura.parecerIndividual"
+              />
+            </div>
+          }
+        } @else {
         <div class="form-grid">
           @if (publicaPreliminar()) {
             <div class="form-field form-grid__full">
@@ -229,11 +261,45 @@
             }
           </div>
         </div>
+        }
       </div>
 
       <!-- Regra de recurso -->
       <div class="step-card">
         <h3 class="form-section__title">Recurso contra o que esta fase publica</h3>
+        @if (store.emConsulta()) {
+          @if (faseLida(); as leitura) {
+            <div class="form-grid">
+              <ui-valor-em-consulta
+                class="form-grid__full"
+                rotulo="Cabe recurso do que esta fase publica"
+                [valor]="leitura.admiteRecurso"
+              />
+              @if (leitura.admiteRecurso) {
+                <ui-valor-em-consulta
+                  class="form-grid__full"
+                  rotulo="Regra de contagem"
+                  [valor]="leitura.regraDeRecurso"
+                />
+                <ui-valor-em-consulta rotulo="Prazo de interposição" [valor]="leitura.prazo" />
+                <ui-valor-em-consulta
+                  rotulo="Publicação de que o prazo corre"
+                  [valor]="leitura.publicacaoDoPrazo"
+                />
+                <ui-valor-em-consulta
+                  rotulo="Suspensividade da 1ª instância"
+                  seVazio="Sem suspensividade"
+                  [valor]="leitura.suspensividadePrimeiraInstancia"
+                />
+                <ui-valor-em-consulta
+                  rotulo="Suspensividade da 2ª instância"
+                  seVazio="Sem suspensividade"
+                  [valor]="leitura.suspensividadeSegundaInstancia"
+                />
+              }
+            </div>
+          }
+        } @else {
 
         <label class="checkbox" [attr.for]="idDaFase('admite-recurso')">
           <input
@@ -436,11 +502,21 @@
             }
           </div>
         }
+        }
       </div>
 
       <!-- Bancas requeridas -->
       <div class="step-card">
-        <h3 class="form-section__title">Bancas que esta fase requer</h3>
+        <h3 class="form-section__title" [attr.id]="idDaFase('bancas-titulo')">Bancas que esta fase requer</h3>
+        @if (store.emConsulta()) {
+          @if (faseLida(); as leitura) {
+            <ui-valor-em-consulta
+              [rotuladoPor]="idDaFase('bancas-titulo')"
+              seVazio="Esta fase não requer banca alguma"
+              [valor]="leitura.bancas"
+            />
+          }
+        } @else {
         <p class="field__hint" [attr.id]="idDaFase('bancas-ajuda')">
           O recorte de competência diz que categorias de documento cada banca julga. Com uma banca
           de cada tipo ele é dispensável — a banca julga tudo o que a fase exige. Com duas do mesmo
@@ -537,11 +613,13 @@
         @if (erroDoCampo('bancasRequeridas'); as erro) {
           <p class="field__erro" [attr.id]="idDaFase('bancas-erro')" role="alert">{{ erro }}</p>
         }
+        }
       </div>
 
       <!-- Exigências documentais -->
       <div class="step-card">
         <h3 class="form-section__title">Documentos exigidos nesta fase</h3>
+        @if (!store.emConsulta()) {
         <p class="field__hint">
           Acrescente o que o candidato precisa entregar em {{ nomeDaFaseAberta() }}. As modalidades
           que devem entregar acompanham o quadro de vagas, e podem ser recortadas por documento.
@@ -582,13 +660,16 @@
             <p class="sr-only" role="status">{{ avisoDaRemocao() }}</p>
           </div>
         </div>
+        }
 
         @if (resumos().length > 0) {
           <!--
             A conferência lê a fase inteira pelo resumo: o que decide cada exigência fica à vista,
             e os campos abrem por documento. O filtro responde "o que este candidato entrega".
           -->
-          <div class="form-field doc-conferencia__filtro">
+          <!-- Em consulta o filtro não tem o que mostrar: sai da vista, mas fica no DOM porque a
+               edição devolve o foco a ele (`#seletorDoPublico`). -->
+          <div class="form-field doc-conferencia__filtro" [hidden]="store.emConsulta()">
             <label class="label" [attr.for]="idDaFase('doc-filtro')"
               >Conferir os documentos de</label
             >
@@ -660,6 +741,9 @@
                         por linha tomaria a largura de uma coluna da conferência. Em consulta também abre:
                         o detalhe (a descrição do tipo, os formatos que a exigência não declara) só está lá.
                       -->
+                        @if (store.emConsulta()) {
+                          <span>{{ resumo.nome }}</span>
+                        } @else {
                         <button
                           class="doc-conferencia__alternar"
                           type="button"
@@ -670,6 +754,7 @@
                           <span class="etapa-resumo__seta" aria-hidden="true"></span>
                           <span>{{ resumo.nome }}</span>
                         </button>
+                        }
                         @if (resumo.repetido !== '') {
                           <span class="doc-conferencia__meta">{{ resumo.repetido }}</span>
                         }
@@ -705,7 +790,24 @@
                         </td>
                       }
                     </tr>
-                    @if (emEdicao(resumo.id)) {
+                    @if (store.emConsulta()) {
+                      @let detalhe = detalheLidoDoDocumento(resumo.id);
+                      <tr class="doc-conferencia__campos">
+                        <td [attr.colspan]="colunasDaConferencia()">
+                          <div class="form-grid" role="group" [attr.aria-label]="'Detalhe de ' + resumo.nome">
+                            @if (detalhe.formulario !== null) {
+                              <ui-valor-em-consulta rotulo="Formulário" [valor]="detalhe.formulario" />
+                            }
+                            <ui-valor-em-consulta rotulo="Exigido em" [valor]="detalhe.exigidoEm" />
+                            <ui-valor-em-consulta
+                              rotulo="Modelo para o candidato preencher"
+                              seVazio="Sem modelo"
+                              [valor]="detalhe.modelo"
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    } @else if (emEdicao(resumo.id)) {
                       <tr
                         class="doc-conferencia__campos"
                         [attr.id]="idDaFase('doc-campos-' + resumo.id)"

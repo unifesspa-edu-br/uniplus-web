@@ -240,6 +240,18 @@ describe('RevisaoStepComponent', () => {
     await flushMicrotasks();
   }
 
+  it('em consulta, não orienta a anexar o edital nem a concluir a identificação', async () => {
+    store.remoteSnapshot.set(PROCESSO_DTO_MINIMO as never);
+    store.currentStep.set(store.totalSteps - 1);
+    await flushMicrotasks();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(store.emConsulta()).toBe(true);
+    expect(texto).not.toContain('Anexe e confirme o edital');
+    expect(texto).not.toContain('Conclua a identificação');
+  });
+
   describe('validate()', () => {
     it('recusa sem processo criado', () => {
       expect(componente.validate().valid).toBe(false);
@@ -950,7 +962,7 @@ describe('RevisaoStepComponent', () => {
     // Cancelado e encerrado não dizem se houve publicação: um rascunho cancelado não tem
     // snapshot vigente, e a transcrição que ele guarda precisa continuar na tela.
     it.each([StatusProcesso.rascunho, StatusProcesso.cancelado, StatusProcesso.encerrado])(
-      'em %s não lê ato nenhum e mantém o formulário',
+      'em %s não lê ato nenhum e mantém a transcrição',
       async (status) => {
         store.remoteSnapshot.set({ ...PROCESSO_DTO_MINIMO, status } as never);
         await criarProcesso();
@@ -959,7 +971,12 @@ describe('RevisaoStepComponent', () => {
 
         controller.expectNone(ROTA_SNAPSHOT);
         expect(atosLidos).toEqual([]);
-        expect((fixture.nativeElement as HTMLElement).querySelector('#rev-numero')).not.toBeNull();
+        const tela = fixture.nativeElement as HTMLElement;
+        // Rascunho a edita; cancelado e encerrado a leem como texto, sem campo.
+        expect(tela.querySelector('#rev-numero') !== null).toBe(status === StatusProcesso.rascunho);
+        if (status !== StatusProcesso.rascunho) {
+          expect(tela.textContent).toContain('Número do ato');
+        }
       },
     );
   });

@@ -1360,10 +1360,10 @@ describe('FaseStepComponent', () => {
       });
 
       /**
-       * Processo publicado só se consulta: o resumo mostra as regras, e o detalhe continua ao
-       * alcance — os campos abrem pelo nome, desabilitados.
+       * Processo publicado só se consulta: o resumo mostra as regras e o detalhe fica à vista como
+       * texto, sem botão que abra campo nenhum.
        */
-      it('em consulta, abre os campos do documento desabilitados', () => {
+      it('em consulta, lê o detalhe do documento como texto, sem campo nem botão', () => {
         componente.alternarExigencia(ID_CPF, true);
         store.remoteSnapshot.set({
           status: StatusProcesso.publicado,
@@ -1371,13 +1371,12 @@ describe('FaseStepComponent', () => {
         detectar();
 
         expect(linhas()).toHaveLength(1);
-        expect(botaoDeEdicao()?.getAttribute('aria-expanded')).toBe('false');
+        expect(botaoDeEdicao()).toBeNull();
         expect(campoDeEntrega()).toBeNull();
-
-        botaoDeEdicao()?.click();
-        detectar();
-        expect(botaoDeEdicao()?.getAttribute('aria-expanded')).toBe('true');
-        expect((campoDeEntrega() as HTMLSelectElement | null)?.disabled).toBe(true);
+        const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+        expect(leitura).toContain('Exigido em');
+        expect(leitura).toContain('Sem modelo');
+        expect(nativo.querySelector('tbody select, tbody input, tbody button')).toBeNull();
       });
 
       /** A gravação suspende a edição por um instante, e os campos abertos não somem com ela. */

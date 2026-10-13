@@ -18,7 +18,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 
 import { ProblemI18nService } from '@uniplus/shared-core/http';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { StepValidation, WizardDraft } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -41,7 +41,7 @@ import {
 @Component({
   selector: 'sel-step-pagamento',
   standalone: true,
-  imports: [ReactiveFormsModule, ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, ReactiveFormsModule, ValorEmConsultaComponent],
   templateUrl: './pagamento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(PagamentoStepComponent)],

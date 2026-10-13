@@ -12,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
-import { RolagemFocavelDirective } from '@uniplus/shared-ui/components';
+import { RolagemFocavelDirective, ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import { Subscription } from 'rxjs';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -47,7 +47,7 @@ import { explicarRegra, RegraExplicada } from './regra-em-linguagem-clara';
 @Component({
   selector: 'sel-cascata-remanejamento',
   standalone: true,
-  imports: [ReactiveFormsModule, RolagemFocavelDirective],
+  imports: [ValorLegivelDirective, ValorEmConsultaComponent, ReactiveFormsModule, RolagemFocavelDirective],
   templateUrl: './cascata-remanejamento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -82,6 +82,12 @@ export class CascataRemanejamentoComponent {
   readonly valorDoSelect = computed(() => {
     const selecao = this.cascata();
     return selecao === null ? '|' : `${selecao.regraCodigo}|${selecao.regraVersao}`;
+  });
+
+  /** A regra de remanejamento que o processo gravou, em texto — o que a consulta lê. */
+  readonly regraLida = computed(() => {
+    const selecao = this.cascata();
+    return selecao === null ? null : `${selecao.regraCodigo} · versão ${selecao.regraVersao}`;
   });
 
   /**

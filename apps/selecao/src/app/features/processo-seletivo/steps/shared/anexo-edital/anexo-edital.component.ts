@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
 import { DocumentoEditalDto, IniciarUploadDocumentoEditalDto } from '@uniplus/shared-data/selecao';
 
@@ -35,6 +36,7 @@ const CONTENT_TYPE_PDF = 'application/pdf';
 @Component({
   selector: 'sel-anexo-edital',
   standalone: true,
+  imports: [ValorEmConsultaComponent],
   templateUrl: './anexo-edital.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

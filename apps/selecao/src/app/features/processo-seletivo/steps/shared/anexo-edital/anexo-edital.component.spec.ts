@@ -2,7 +2,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -268,6 +268,20 @@ describe('AnexoEditalComponent', () => {
 
     expect(componente.uploadError()).toContain('não pode ser substituído');
     expect(componente.anexo()?.name).toBe('edital.pdf');
+  });
+
+  /** Processo publicado só se lê: o nome do edital vira texto, e sobra a ação de abri-lo. */
+  it('em consulta, lê o nome do edital inteiro, sem área de envio nem remoção', async () => {
+    await anexarComSucesso(pdf('edital-de-abertura-do-processo-seletivo-de-medicina-2027.pdf'));
+
+    store.remoteSnapshot.set({ status: StatusProcesso.publicado } as unknown as ProcessoSeletivoDto);
+    detectar();
+
+    expect(host.textContent).toContain('edital-de-abertura-do-processo-seletivo-de-medicina-2027.pdf');
+    expect(host.querySelector('input, .upload-zone, .file-delete, [role="progressbar"]')).toBeNull();
+    expect(Array.from(host.querySelectorAll('button')).map((b) => b.textContent?.trim())).toEqual([
+      'Abrir o edital',
+    ]);
   });
 
   it('não remove o anexo já confirmado', async () => {

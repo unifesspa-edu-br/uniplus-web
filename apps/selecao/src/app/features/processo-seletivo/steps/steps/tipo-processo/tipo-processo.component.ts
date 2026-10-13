@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
 import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { TypeCardComponent } from '../../../components/type-card/type-card.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation, TipoProcessoOption } from '../../processo-seletivo.models';
@@ -18,7 +18,7 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 @Component({
   selector: 'sel-step-tipo-processo',
   standalone: true,
-  imports: [TypeCardComponent, ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, TypeCardComponent, ValorEmConsultaComponent],
   templateUrl: './tipo-processo.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(TipoProcessoStepComponent)],

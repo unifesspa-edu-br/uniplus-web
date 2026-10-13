@@ -45,6 +45,7 @@ import {
   type ConteudoDoFormulario,
   type RecusasDoConteudo,
   type TermoDisponivel,
+  ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
@@ -126,6 +127,7 @@ interface FormularioParaEnvio {
   selector: 'sel-step-formulario',
   standalone: true,
   imports: [
+    ValorLegivelDirective,
     ConfirmDialogComponent,
     DateBrPipe,
     EditorDeFormularioComponent,

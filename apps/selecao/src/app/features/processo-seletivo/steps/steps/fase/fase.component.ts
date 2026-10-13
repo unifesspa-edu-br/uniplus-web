@@ -68,6 +68,8 @@ import {
   ComboboxComponent,
   EditorDeCondicoesComponent,
   type UiComboboxGroup,
+  ValorEmConsultaComponent,
+  ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
 import { Subscription } from 'rxjs';
 
@@ -164,6 +166,8 @@ interface FaseNoSeletor {
 @Component({
   selector: 'sel-step-fase',
   imports: [
+    ValorLegivelDirective,
+    ValorEmConsultaComponent,
     ComboboxComponent,
     EditorDeCondicoesComponent,
     FormsModule,
@@ -522,6 +526,78 @@ export class FaseStepComponent {
     if (!abreCicloRecursal && formulario.controls.faseConcluinteCodigo.value !== '') {
       formulario.controls.faseConcluinteCodigo.setValue('');
     }
+  }
+
+  /**
+   * A configuração da fase como a consulta a lê: cada declaração em texto, sem o controle que a
+   * edita. `null` enquanto a fase não foi espelhada no formulário.
+   */
+  faseLida() {
+    const form = this.formulario();
+    if (form === null) return null;
+    this.versaoDoFormulario();
+
+    const rotulosDosAtos = this.catalogos.rotuloDoAto();
+    const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
+    const papel = (valor: string | null): string =>
+      PAPEIS_ESCOLHIVEIS.find((opcao) => opcao.valor === (valor ?? ''))?.rotulo ?? (valor ?? '');
+    const par = (valor: string, unidade: string): string =>
+      valor === '' ? '' : `${valor} ${UNIDADES.find((u) => u.valor === unidade)?.rotulo ?? unidade}`;
+    const categorias = this.categorias();
+    const recurso = form.controls.recurso.controls;
+    const concluinte = form.controls.faseConcluinteCodigo.value;
+    const faseConcluinte = this.fasesNoSeletor().find((fase) => fase.codigo === concluinte);
+
+    return {
+      publicacoes: this.produtos.map((produto) => `${nomeDoAto(produto.atoCodigo)} — ${papel(produto.papel)}`),
+      publicaPreliminar: this.publicaPreliminar(),
+      faseQueConclui:
+        concluinte === ''
+          ? 'Esta fase conclui a si mesma'
+          : faseConcluinte
+            ? `${faseConcluinte.ordem}. ${faseConcluinte.nome}`
+            : concluinte,
+      parecerIndividual: form.controls.emiteParecerIndividual.value,
+      admiteRecurso: form.controls.admiteRecurso.value,
+      regraDeRecurso: recurso.regraCodigo.value
+        ? `${recurso.regraCodigo.value} · versão ${recurso.regraVersao.value}`
+        : null,
+      prazo: par(recurso.prazoValor.value, recurso.prazoUnidade.value) || null,
+      publicacaoDoPrazo: recurso.atoAncoraCodigo.value ? nomeDoAto(recurso.atoAncoraCodigo.value) : null,
+      suspensividadePrimeiraInstancia:
+        par(
+          recurso.suspensividadePrimeiraInstanciaValor.value,
+          recurso.suspensividadePrimeiraInstanciaUnidade.value,
+        ) || null,
+      suspensividadeSegundaInstancia:
+        par(
+          recurso.suspensividadeSegundaInstanciaValor.value,
+          recurso.suspensividadeSegundaInstanciaUnidade.value,
+        ) || null,
+      bancas: this.bancas.map((banca) => {
+        const nomes = banca.categoriasDocumentoIds.map(
+          (id) => categorias.find((categoria) => categoria.id === id)?.nome ?? id,
+        );
+        return nomes.length === 0
+          ? this.nomeDaBanca(banca.tipoBancaId)
+          : `${this.nomeDaBanca(banca.tipoBancaId)} — julga ${nomes.join(', ')}`;
+      }),
+    };
+  }
+
+  /** O que a consulta lê de um documento além do que a conferência já resume. */
+  detalheLidoDoDocumento(id: string) {
+    const modelo = this.modeloDoDocumento(id);
+    const finalidade = this.finalidadeDoDocumento(id);
+    return {
+      formulario: this.mostraFormulario(id)
+        ? (this.formulariosEscolhiveis().find((opcao) => opcao.valor === finalidade)?.rotulo ?? null)
+        : null,
+      exigidoEm: this.valeEmTodasAsFases(id)
+        ? 'Todas as fases do edital'
+        : `Só em ${this.nomeDaFaseAberta()}`,
+      modelo: modelo === null ? null : `${modelo.nomeArquivo} (${modelo.formato})`,
+    };
   }
 
   // ─── Bancas requeridas e o recorte de competência ───────────────────────

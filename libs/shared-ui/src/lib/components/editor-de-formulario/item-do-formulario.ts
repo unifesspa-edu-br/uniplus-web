@@ -15,6 +15,7 @@ import {
 import { ImpedimentoDoCampoComponent } from './impedimento-do-campo';
 import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
 import { RestricoesDoCampoComponent } from './restricoes-do-campo';
+import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
 /** Como o candidato responde, pelo tipo de campo. */
 const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
@@ -38,7 +39,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
 @Component({
   selector: 'ui-item-do-formulario',
   standalone: true,
-  imports: [EditorDeCondicoesComponent, ImpedimentoDoCampoComponent, RestricoesDoCampoComponent, TagComponent],
+  imports: [ValorLegivelDirective, EditorDeCondicoesComponent, ImpedimentoDoCampoComponent, RestricoesDoCampoComponent, TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article class="editor-formulario__item" [attr.aria-labelledby]="idDe('titulo')">

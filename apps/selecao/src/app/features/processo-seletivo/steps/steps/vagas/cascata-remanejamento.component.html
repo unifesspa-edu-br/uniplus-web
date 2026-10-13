@@ -1,4 +1,4 @@
-@if (ofertasForaDoRegime().length > 0) {
+@if (ofertasForaDoRegime().length > 0 && !store.emConsulta()) {
   <div class="alert alert--warning" role="status">
     <div class="alert__body">
       <p class="alert__title">
@@ -26,13 +26,27 @@
 @if (precisaExibir()) {
   <div class="step-card">
     <h2 class="form-section__title">Cascata de remanejamento</h2>
+    @if (store.emConsulta()) {
+      <p class="step-subtitle">
+        Ao menos uma oferta desta distribuição tem modalidade que segue a cascata única do
+        processo. A ordem de destinos e o destino final vêm congelados na regra gravada.
+      </p>
+    } @else {
     <p class="step-subtitle">
       Ao menos uma oferta desta distribuição tem modalidade que segue a cascata única do processo.
       Escolha a regra: a ordem de destinos e o destino final vêm congelados na regra, e esta tela não os
       compõe — apenas apresenta o que a regra declara para confirmação.
     </p>
+    }
 
     <div class="form-field form-grid__full">
+      @if (store.emConsulta()) {
+        <ui-valor-em-consulta
+          rotulo="Regra de remanejamento"
+          seVazio="Não declarada"
+          [valor]="regraLida()"
+        />
+      } @else {
       <label class="label" for="c-regra-cascata">Regra de remanejamento</label>
       <select class="input" id="c-regra-cascata" [formControl]="regraControl">
         <option value="|">Selecione a regra…</option>
@@ -46,6 +60,7 @@
         O sistema não propõe uma cascata institucional por padrão: a ausência de escolha é estado
         válido enquanto rascunho.
       </p>
+      }
 
       <!-- Dentro do campo, como nas regras do padrão da distribuição: detalha a regra escolhida
            logo acima, e não é bloco à parte. -->
@@ -152,7 +167,7 @@
         (<strong>{{ matrizDaRegra.fallbackCodigo }}</strong>).
       </p>
 
-      @if (problemas().length > 0) {
+      @if (problemas().length > 0 && !store.emConsulta()) {
         <div class="field__erro" role="alert">
           <p>A matriz desta regra não se encaixa no quadro de vagas configurado acima:</p>
           <ul>
