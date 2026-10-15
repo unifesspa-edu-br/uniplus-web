@@ -29,6 +29,11 @@
   corrigi-la até o fim do período de inscrição.
   <p><a routerLink="/inscricao">Ver minhas inscrições</a></p>
 </ui-alert>
+} @if (precisaRecarregar()) {
+<ui-alert variant="warning" heading="Recarregue a página para corrigir a inscrição">
+  Sua inscrição foi enviada, mas não conseguimos atualizar a tela. Recarregue a página antes de
+  corrigir qualquer resposta.
+</ui-alert>
 } @if (conflito(); as aviso) {
 <ui-alert variant="warning" heading="A inscrição mudou em outra janela">{{ aviso }}</ui-alert>
 } @if (recusaGeral(); as recusa) {
@@ -93,14 +98,14 @@
 }
 <div class="inscricao-acoes">
   @if (!enviada()) {
-  <button type="button" class="btn btn--secondary" [disabled]="ocupada()" (click)="salvar()">
+  <button type="button" class="btn btn--secondary" [disabled]="bloqueada()" (click)="salvar()">
     Salvar rascunho
   </button>
   }
   <button
     type="button"
     class="btn btn--primary"
-    [disabled]="ocupada()"
+    [disabled]="bloqueada()"
     [attr.aria-describedby]="enviada() ? 'inscricao-correcao' : null"
     (click)="enviar()"
   >

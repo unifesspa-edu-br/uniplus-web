@@ -34,10 +34,12 @@ export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
   private readonly basePath = inject(SELECAO_BASE_PATH);
 
   /**
-   * A chave do envio em curso. Repetida enquanto o resultado não chega, para o reenvio não gerar outro
-   * comprovante; trocada quando a regra de idempotência pede.
+   * O envio em curso: a chave e a assinatura do corpo que ela acompanha. A chave se repete enquanto o
+   * resultado não chega, para o reenvio não gerar outro comprovante, mas só vale para o mesmo corpo: a
+   * API recusa a mesma chave com outro corpo (`body_mismatch`). Trocada também quando a regra de
+   * idempotência pede.
    */
-  private chaveDoEnvio: string | null = null;
+  private envioEmCurso: { readonly chave: string; readonly assinatura: string } | null = null;
 
   iniciar(processoId: string): Observable<ApiResult<InscricaoDto>> {
     return this.api.iniciar(processoId);
@@ -80,15 +82,28 @@ export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
     request: InscricaoRequest,
     eTag: string,
   ): Observable<ApiResult<ComprovanteInscricaoDto>> {
-    this.chaveDoEnvio ??= idempotencyKey.create();
-    return this.api.submeter(processoId, request, eTag, withIdempotencyKey(this.chaveDoEnvio)).pipe(
-      tap((resultado) => {
-        if (resultado.ok || deveRotacionarIdempotencyKey(resultado.problem)) {
-          this.chaveDoEnvio = null;
-        }
-      }),
-    );
+    const assinatura = assinaturaDoEnvio(processoId, request);
+    if (this.envioEmCurso?.assinatura !== assinatura) {
+      this.envioEmCurso = { chave: idempotencyKey.create(), assinatura };
+    }
+    return this.api
+      .submeter(processoId, request, eTag, withIdempotencyKey(this.envioEmCurso.chave))
+      .pipe(
+        tap((resultado) => {
+          if (resultado.ok || deveRotacionarIdempotencyKey(resultado.problem)) {
+            this.envioEmCurso = null;
+          }
+        }),
+      );
   }
+}
+
+/**
+ * O processo e o corpo do envio no mesmo texto que vai na requisição: a API compara o hash dos bytes do
+ * corpo, então a mesma chave só pode acompanhar o mesmo texto — inclusive na ordem das chaves.
+ */
+function assinaturaDoEnvio(processoId: string, request: InscricaoRequest): string {
+  return JSON.stringify([processoId, request]);
 }
 
 function ofertasDo(certame: CertamePublicadoDto): readonly OfertaDaInscricao[] {

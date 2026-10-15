@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of, type Observable } from 'rxjs';
+import { of, Subject, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
@@ -587,6 +587,36 @@ describe('InscricaoDoCandidatoPage', () => {
     await clicar(botao(tela, 'Enviar inscrição'));
 
     expect(eTags).toEqual(['"inscricao-1:2"']);
+  });
+
+  it('depois do envio, o formulário segue ocupado até a releitura do ETag terminar', async () => {
+    servico.inscricao = inscricao(RESPONDIDA);
+    const tela = await abrir();
+    const releitura = new Subject<ApiResult<InscricaoDto>>();
+    servico.obter = () => releitura;
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+
+    releitura.next(
+      apiOk(inscricao({ ...RESPONDIDA, eTag: '"inscricao-1:2"' }), 200, new HttpHeaders()),
+    );
+    fixture.detectChanges();
+
+    expect(botao(tela, 'Enviar inscrição').disabled).toBe(false);
+  });
+
+  it('a releitura que falha depois do envio manda recarregar a página e não deixa enviar com o ETag velho', async () => {
+    servico.inscricao = inscricao(RESPONDIDA);
+    const tela = await abrir();
+    servico.obter = () => of(problema(503, 'uniplus.teste'));
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(tela.textContent).toContain('Recarregue a página antes de corrigir');
+    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+    botao(tela, 'Enviar inscrição').click();
+    expect(servico.enviados).toHaveLength(1);
   });
 
   it('o seletor de curso só aparece quando o processo oferece mais de um', async () => {
