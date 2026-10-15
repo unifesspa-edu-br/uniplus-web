@@ -11,7 +11,10 @@ export async function irAoPasso(page: Page, rotulo: string, testInfo: TestInfo):
   const largura = larguraDoProjeto(testInfo);
 
   if (largura >= LARGURA_STEPPER_LATERAL) {
-    await page.locator('.wiz-nav').getByRole('button', { name: rotulo }).click();
+    await page
+      .getByRole('navigation', { name: 'Etapas do cadastro' })
+      .getByRole('button', { name: rotulo })
+      .click();
     return;
   }
 

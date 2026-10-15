@@ -108,7 +108,10 @@ const PAGE_PROVIDERS = [
   { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
   { provide: TiposInstrumentoNormativoApi, useValue: catalogoVazioStub },
   // O passo da fórmula carrega o cadastro de Peso por Área, de onde sai a resolução do ENEM.
-  { provide: PesosEnemApi, useValue: { ...catalogoVazioStub, listarAreas: catalogoVazioStub.listar } },
+  {
+    provide: PesosEnemApi,
+    useValue: { ...catalogoVazioStub, listarAreas: catalogoVazioStub.listar },
+  },
   // O passo do cronograma carrega os sete catálogos ao montar; esta suíte não
   // exercita a linha do tempo, e o grafo de injeção precisa fechar sem HTTP.
   { provide: FasesCanonicasApi, useValue: catalogoVazioStub },
@@ -300,6 +303,50 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
 
     expect(showModal).toHaveBeenCalledTimes(1);
     expect(page.stepsOverlayOpen()).toBe(true);
+  });
+
+  it('mantém o passo atual como ativo mesmo já concluído, para o aria-current não sumir', () => {
+    const { fixture } = montar();
+    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
+
+    store.syncCompleted([1]);
+    store.goTo(1);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const atuais = host.querySelectorAll(
+      'nav[aria-label="Etapas do cadastro"] li button[aria-current="step"]',
+    );
+    expect(atuais.length).toBe(1);
+    expect(atuais[0].textContent).toContain(store.labels[1]);
+    expect(atuais[0].textContent).toContain('(concluída)');
+  });
+
+  it('o passo acionado na coluna lateral vai para o store, sem fechar a lista', () => {
+    const { fixture, page, dialog } = montar();
+    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
+    instrumentar(dialog);
+    page.openStepsOverlay();
+
+    const botoes = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+      'nav[aria-label="Etapas do cadastro"] li button',
+    );
+    botoes[2].click();
+
+    expect(store.currentStep()).toBe(2);
+    expect(page.stepsOverlayOpen()).toBe(true);
+  });
+
+  it('o passo acionado na lista em diálogo vai para o store e fecha a lista', () => {
+    const { fixture, page, dialog } = montar();
+    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
+    instrumentar(dialog);
+    page.openStepsOverlay();
+
+    dialog.querySelectorAll<HTMLButtonElement>('ui-steps li button')[3].click();
+
+    expect(store.currentStep()).toBe(3);
+    expect(page.stepsOverlayOpen()).toBe(false);
   });
 
   it('sincroniza o estado quando o diálogo fecha', () => {
@@ -1399,7 +1446,9 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
   it('desistir da confirmação não traz o erro corrigido de volta', async () => {
     const { page, store, fixture } = cenario();
 
-    store.setStepError(['O identificador legível não pode ter a forma de um identificador técnico (Guid).']);
+    store.setStepError([
+      'O identificador legível não pode ter a forma de um identificador técnico (Guid).',
+    ]);
     fixture.detectChanges();
     await page.nextOrPublish();
     fixture.detectChanges();

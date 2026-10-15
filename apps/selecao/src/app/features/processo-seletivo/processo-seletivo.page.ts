@@ -19,7 +19,13 @@ import { firstValueFrom } from 'rxjs';
 
 import { ProblemI18nService, isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { ProcessoSeletivoDto, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
-import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertComponent,
+  DialogComponent,
+  SpinnerComponent,
+  StepsComponent,
+  type StepItem,
+} from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 import { StepValidation } from './steps/processo-seletivo.models';
@@ -30,7 +36,6 @@ import { CadastroInicialService } from './steps/shared/cadastro-inicial.service'
 import { CamposPressupostosService } from './steps/shared/campos-pressupostos.service';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
 import { OverlayScrollService } from './steps/shared/overlay-scroll.service';
-import { WizardStepperComponent } from './steps/shared/wizard-stepper.component';
 import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-processo.component';
 import { IdentificacaoStepComponent } from './steps/steps/identificacao/identificacao.component';
 import { PagamentoStepComponent } from './steps/steps/pagamento/pagamento.component';
@@ -88,7 +93,6 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     AlertComponent,
     DialogComponent,
     SpinnerComponent,
-    WizardStepperComponent,
     TipoProcessoStepComponent,
     IdentificacaoStepComponent,
     PagamentoStepComponent,
@@ -101,6 +105,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     EliminacaoStepComponent,
     AtendimentoStepComponent,
     RevisaoStepComponent,
+    StepsComponent,
   ],
   providers: [
     ProcessoSeletivoStore,
@@ -181,6 +186,14 @@ export class ProcessoSeletivoPage {
   private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
+
+  protected readonly itensDosPassos = computed<StepItem[]>(() =>
+    this.store.labels.map((rotulo, index) => ({
+      rotulo,
+      status: this.store.status(index),
+      concluido: this.store.completedSteps().has(index),
+    })),
+  );
 
   /** Steps do wizard — cada um expõe validate(): StepValidation. */
 
@@ -1262,6 +1275,15 @@ export class ProcessoSeletivoPage {
     }
 
     return pendencias;
+  }
+
+  protected irParaPasso(index: number): void {
+    this.store.goTo(index);
+  }
+
+  protected irParaPassoFechandoLista(index: number): void {
+    this.store.goTo(index);
+    this.closeStepsOverlay();
   }
 }
 

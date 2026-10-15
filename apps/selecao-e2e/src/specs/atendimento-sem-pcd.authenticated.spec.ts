@@ -76,7 +76,10 @@ test.describe('Atendimento sem a condição PCD no cadastro (web#1008)', () => {
 
     await page.goto(`/processo-seletivo/${PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO.id}`);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await page.locator('.wiz-nav').getByRole('button', { name: 'Atend. especial' }).click();
+    await page
+      .getByRole('navigation', { name: 'Etapas do cadastro' })
+      .getByRole('button', { name: 'Atend. especial' })
+      .click();
 
     // CA-01: a seção existe e diz o que falta e onde cadastrar.
     const secao = page.locator('.wiz-content').getByRole('heading', {
@@ -96,7 +99,10 @@ test.describe('Atendimento sem a condição PCD no cadastro (web#1008)', () => {
     catalogo.condicoes = [PCD, SURDEZ];
     await page.reload();
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await page.locator('.wiz-nav').getByRole('button', { name: 'Atend. especial' }).click();
+    await page
+      .getByRole('navigation', { name: 'Etapas do cadastro' })
+      .getByRole('button', { name: 'Atend. especial' })
+      .click();
 
     // CA-02: com a PCD cadastrada e desmarcada, a seção manda marcá-la.
     await expect(page.locator('#atend-aviso-sem-pcd')).toHaveCount(0);
