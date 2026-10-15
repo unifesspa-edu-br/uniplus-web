@@ -585,21 +585,6 @@ export class FaseStepComponent {
     };
   }
 
-  /** O que a consulta lê de um documento além do que a conferência já resume. */
-  detalheLidoDoDocumento(id: string) {
-    const modelo = this.modeloDoDocumento(id);
-    const finalidade = this.finalidadeDoDocumento(id);
-    return {
-      formulario: this.mostraFormulario(id)
-        ? (this.formulariosEscolhiveis().find((opcao) => opcao.valor === finalidade)?.rotulo ?? null)
-        : null,
-      exigidoEm: this.valeEmTodasAsFases(id)
-        ? 'Todas as fases do edital'
-        : `Só em ${this.nomeDaFaseAberta()}`,
-      modelo: modelo === null ? null : `${modelo.nomeArquivo} (${modelo.formato})`,
-    };
-  }
-
   // ─── Bancas requeridas e o recorte de competência ───────────────────────
 
   get bancas(): readonly BancaRequeridaDaFase[] {
@@ -788,10 +773,16 @@ export class FaseStepComponent {
       (exigencia) => exigencia.tipoDocumentoId === tipoDocumentoId,
     );
 
+    const situacao =
+      'Este tipo saiu do cadastro depois de ser exigido aqui. Continua valendo enquanto estiver na lista.';
+
     return {
       id: tipoDocumentoId,
       nome: declarada?.tipoDocumentoNome ?? 'Documento fora do cadastro ativo',
-      desc: 'Este tipo saiu do cadastro depois de ser exigido aqui. Continua valendo enquanto estiver na lista — remova-o se não for mais pedido.',
+      descricao: null,
+      formatos: null,
+      orientacao: `${situacao} Remova-o se não for mais pedido.`,
+      situacao,
     };
   }
 
@@ -914,9 +905,31 @@ export class FaseStepComponent {
         faltaNorma: this.faltaNormaResolvida(doc.id),
         repetido: this.declaradoMaisDeUmaVez(doc.id),
         finalidade: this.finalidadeDoDocumento(doc.id),
+        orientacao: doc.orientacao,
+        avisoDeFormatos: this.avisoDeFormatos(doc.id),
+        detalhe: this.store.emConsulta() ? this.detalheLidoDoDocumento(doc) : null,
       };
     }),
   );
+
+  /** O que a consulta lê de um documento além do que a conferência já resume. */
+  private detalheLidoDoDocumento(doc: DocumentoDefinicao): DetalheLidoDoDocumento {
+    const id = doc.id;
+    const modelo = this.modeloDoDocumento(id);
+    const finalidade = this.finalidadeDoDocumento(id);
+    return {
+      descricao: doc.descricao,
+      formatos: doc.formatos,
+      situacao: doc.situacao,
+      formulario: this.mostraFormulario(id)
+        ? (this.formulariosEscolhiveis().find((opcao) => opcao.valor === finalidade)?.rotulo ?? null)
+        : null,
+      exigidoEm: this.valeEmTodasAsFases(id)
+        ? 'Todas as fases do edital'
+        : `Só em ${this.nomeDaFaseAberta()}`,
+      modelo: modelo === null ? null : `${modelo.nomeArquivo} (${modelo.formato})`,
+    };
+  }
 
   /**
    * A conferência por formulário: na fase que divide inscrição e isenção, o candidato apresenta
@@ -1262,6 +1275,14 @@ export class FaseStepComponent {
   formatosForaDoContrato(id: string): readonly string[] {
     const tipo = this.catalogos.tipoDocumentoPorId().get(id);
     return formatosDeclarados(tipo?.formatosAceitos).naoExpressos;
+  }
+
+  /** O aviso desses formatos, pronto: edição e consulta dizem a mesma coisa, de uma só origem. */
+  avisoDeFormatos(id: string): string | null {
+    const foraDoContrato = this.formatosForaDoContrato(id);
+    return foraDoContrato.length === 0
+      ? null
+      : `O cadastro aceita ${foraDoContrato.join(', ')}, que a exigência não sabe declarar — o candidato só poderá entregar os demais.`;
   }
 
   /**
@@ -1982,6 +2003,16 @@ const SEM_REPETICAO: RepeticaoDoDocumento = {
   erro: null,
 };
 
+/** O que a consulta lê de um documento, como texto. */
+interface DetalheLidoDoDocumento {
+  readonly descricao: string | null;
+  readonly formatos: string | null;
+  readonly situacao: string | null;
+  readonly formulario: string | null;
+  readonly exigidoEm: string;
+  readonly modelo: string | null;
+}
+
 /** O que a conferência mostra de um documento exigido. */
 interface ResumoDoDocumento {
   readonly id: string;
@@ -2002,6 +2033,12 @@ interface ResumoDoDocumento {
   readonly repetido: string;
   /** O formulário em que o documento é apresentado; `null` enquanto a fase dividida pede a escolha. */
   readonly finalidade: string | null;
+  /** O que orienta quem edita, já completo. */
+  readonly orientacao: string | null;
+  /** O aviso dos formatos do cadastro que a exigência não declara; `null` quando não há. */
+  readonly avisoDeFormatos: string | null;
+  /** Só existe em consulta, único modo que o lê. */
+  readonly detalhe: DetalheLidoDoDocumento | null;
 }
 
 /** Um público que a conferência oferece, com o valor que o seletor guarda. */

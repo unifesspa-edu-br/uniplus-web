@@ -388,7 +388,14 @@ export interface CriterioDesempateConfigurado {
 export interface DocumentoDefinicao {
   id: string;
   nome: string;
-  desc: string;
+  /** A descrição do tipo no cadastro; `null` quando ele não tem. */
+  descricao: string | null;
+  /** Os formatos aceitos e o tamanho máximo do cadastro, como texto; `null` quando não há. */
+  formatos: string | null;
+  /** O texto que a edição mostra sob o nome do documento, completo; `null` quando não há. */
+  orientacao: string | null;
+  /** Que o tipo saiu do cadastro e continua valendo; `null` quando ele ainda está nele. */
+  situacao: string | null;
 }
 
 export interface DocumentoGrupo {

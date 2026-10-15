@@ -86,11 +86,16 @@ export class CatalogosDoCronogramaService {
     for (const tipo of this.tiposDocumento()) {
       const chave = tipo.categoria ?? 'OUTROS';
       const lista = porCategoria.get(chave) ?? [];
+      const descricao = tipo.descricao?.trim() || null;
+      const formatos = formatosDe(tipo);
       lista.push({
         id: tipo.id,
         nome: tipo.nome,
-        // O cadastro traz a descrição opcional; sem ela, o que orienta é o formato aceito.
-        desc: tipo.descricao ?? formatosDe(tipo),
+        descricao: descricao,
+        formatos: formatos,
+        // Sem descrição, o que orienta quem edita é o formato aceito.
+        orientacao: descricao ?? formatos,
+        situacao: null,
       });
       porCategoria.set(chave, lista);
     }
@@ -365,11 +370,13 @@ export class CatalogosDoCronogramaService {
   }
 }
 
-/** O que orienta o candidato quando o cadastro não traz descrição. */
-function formatosDe(tipo: TipoDocumentoDto): string {
-  const formatos = tipo.formatosAceitos ?? '';
-  const tamanho = tipo.tamanhoMaximoMb;
-  if (formatos === '' && tamanho === null) return '';
-  if (tamanho === null) return `Formatos aceitos: ${formatos}.`;
-  return `Formatos aceitos: ${formatos}. Até ${tamanho} MB.`;
+/** Os formatos e o tamanho que o cadastro declara, só com as partes presentes; `null` sem nenhuma. */
+function formatosDe(tipo: TipoDocumentoDto): string | null {
+  const formatos = tipo.formatosAceitos?.trim() ?? '';
+  const tamanho = Number(tipo.tamanhoMaximoMb);
+  const partes = [
+    formatos === '' ? null : `Formatos aceitos: ${formatos}.`,
+    Number.isFinite(tamanho) && tamanho > 0 ? `Até ${tamanho.toLocaleString('pt-BR')} MB.` : null,
+  ].filter((parte) => parte !== null);
+  return partes.length === 0 ? null : partes.join(' ');
 }

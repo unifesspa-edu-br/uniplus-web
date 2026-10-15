@@ -1374,9 +1374,66 @@ describe('FaseStepComponent', () => {
         expect(botaoDeEdicao()).toBeNull();
         expect(campoDeEntrega()).toBeNull();
         const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+        expect(leitura).toContain('Sobre o documento');
         expect(leitura).toContain('Exigido em');
         expect(leitura).toContain('Sem modelo');
+        expect(leitura).not.toContain('O cadastro aceita');
         expect(nativo.querySelector('tbody select, tbody input, tbody button')).toBeNull();
+      });
+
+      /** O aviso de formatos é do detalhe: em consulta continua alcançável, como texto. */
+      it('em consulta, lê o aviso dos formatos que a exigência não declara', () => {
+        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+          { ...TIPOS_DOCUMENTO[0], formatosAceitos: 'pdf,tiff' },
+        ]);
+        componente.alternarExigencia(ID_CPF, true);
+        store.remoteSnapshot.set({
+          status: StatusProcesso.publicado,
+        } as unknown as ProcessoSeletivoDto);
+        detectar();
+
+        const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+        expect(leitura).toContain('O cadastro aceita tiff, que a exigência não sabe declarar');
+      });
+
+      /**
+       * Sem descrição, a edição se orienta pelos formatos do cadastro; a consulta diz que não há
+       * descrição e lê os formatos e o limite como dado próprio, sem perdê-los.
+       */
+      it('em consulta, lê os formatos e o limite do cadastro à parte da descrição ausente', () => {
+        componente.alternarExigencia(ID_CPF, true);
+        store.remoteSnapshot.set({
+          status: StatusProcesso.publicado,
+        } as unknown as ProcessoSeletivoDto);
+        detectar();
+
+        const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+        expect(leitura).toContain('Sem descrição');
+        expect(leitura).toContain('Arquivo aceito pelo cadastro');
+        expect(leitura).toContain('Formatos aceitos: pdf,jpg. Até 10 MB.');
+      });
+
+      /**
+       * O tipo inativado depois da publicação continua valendo: a consulta diz isso fora da
+       * descrição e sem a orientação de remover, que só a edição tem como cumprir.
+       */
+      it('em consulta, não manda remover o documento cujo tipo saiu do cadastro', () => {
+        comCronograma(fase({}));
+        componente.escolherDocumento(ID_CPF);
+        componente.acrescentarDocumento();
+        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([]);
+        detectar();
+        expect(componente.resumos()[0].orientacao).toContain('Remova-o');
+
+        store.remoteSnapshot.set({
+          status: StatusProcesso.publicado,
+        } as unknown as ProcessoSeletivoDto);
+        detectar();
+
+        const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+        expect(leitura).toContain('saiu do cadastro');
+        expect(leitura).toContain('Sem descrição');
+        expect(leitura).not.toMatch(/remova-o/i);
       });
 
       /** A gravação suspende a edição por um instante, e os campos abertos não somem com ela. */
