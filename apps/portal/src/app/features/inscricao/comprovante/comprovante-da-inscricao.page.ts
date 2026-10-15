@@ -210,7 +210,12 @@ export class ComprovanteDaInscricaoPage {
   }
 
   private ler(processoId: string, numeroPedido: string | undefined): Observable<Leitura> {
-    const pedido = Number(numeroPedido);
+    // Sem parâmetro na rota, vale o comprovante mais recente. Com parâmetro que não é um inteiro
+    // positivo, não há comprovante a abrir: `null` aqui seria lido como "sem número pedido".
+    const pedido = numeroPedido === undefined ? null : Number(numeroPedido);
+    if (pedido !== null && !(Number.isInteger(pedido) && pedido > 0)) {
+      return of({ tipo: 'nao-encontrado' });
+    }
     return forkJoin({
       minhas: this.servico.listar(),
       formulario: this.servico.formulario(processoId),
@@ -220,12 +225,7 @@ export class ComprovanteDaInscricaoPage {
         if (!minhas.ok) return of({ tipo: 'falha', falha: minhas });
         if (!formulario.ok) return of({ tipo: 'falha', falha: formulario });
         const inscricao = minhas.data.find((i) => i.processoSeletivoId === processoId);
-        const numero = inscricao
-          ? numeroDoComprovante(
-              inscricao.comprovantes,
-              Number.isInteger(pedido) && pedido > 0 ? pedido : null,
-            )
-          : null;
+        const numero = inscricao ? numeroDoComprovante(inscricao.comprovantes, pedido) : null;
         if (!inscricao || numero === null) return of({ tipo: 'nao-encontrado' });
         return this.servico.comprovante(processoId, numero).pipe(
           switchMap((comprovante): Observable<Leitura> => {

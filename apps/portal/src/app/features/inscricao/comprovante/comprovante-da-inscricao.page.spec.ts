@@ -298,6 +298,18 @@ describe('ComprovanteDaInscricaoPage', () => {
     expect(tela.textContent).not.toContain('Imprimir comprovante');
   });
 
+  it.each(['foo', '0'])(
+    'o número %s, que não é de comprovante, não abre o mais recente nem o pede ao serviço',
+    async (numero) => {
+      const pedir = vi.spyOn(servico, 'comprovante');
+
+      const tela = await abrir(numero);
+
+      expect(tela.textContent).toContain('Não encontramos este comprovante');
+      expect(pedir).not.toHaveBeenCalled();
+    },
+  );
+
   it('mostra o curso escolhido pelo nome congelado na publicação', async () => {
     ofertas = [OFERTA_MEDICINA, OFERTA_DIREITO];
     const tela = await abrir();
