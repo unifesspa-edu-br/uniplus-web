@@ -437,12 +437,11 @@ export class FormularioDoCandidatoComponent {
     return typeof dia === 'string' ? dia : null;
   });
 
-  /** As confirmações que faltam ou não conferem, pelo código da tela; as gravadas e intocadas não entram. */
+  /** As confirmações que faltam ou não conferem, pelo código da tela. */
   protected readonly problemasDaConfirmacao = computed(() =>
     avaliarConfirmacoes(this.passos(), {
       respostas: this.respostasComAsFixas(),
       grupos: this.grupos(),
-      gravadas: this.inicial(),
       confirmacoes: this.confirmacoes(),
       fixas: this.respostasFixas(),
     }),
