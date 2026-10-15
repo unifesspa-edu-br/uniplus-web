@@ -136,6 +136,12 @@ export class InscricaoDoCandidatoPage implements OnInit {
   private readonly formularioDoCandidato = viewChild(FormularioDoCandidatoComponent);
 
   protected readonly ocupada = signal(false);
+  /**
+   * O envio deu certo, mas a releitura da inscrição falhou: o ETag da tela é o velho. Enquanto a página
+   * não for recarregada, nada mais é gravado a partir dela.
+   */
+  protected readonly precisaRecarregar = signal(false);
+  protected readonly bloqueada = computed(() => this.ocupada() || this.precisaRecarregar());
   protected readonly errosDoServidor = signal<readonly ErroDoServidor[]>([]);
   protected readonly recusaGeral = signal<string | null>(null);
   protected readonly conflito = signal<string | null>(null);
@@ -296,6 +302,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
         this.inscricao.set(inscricao);
         this.avaliacao.aplicarDaGravacao(inscricao.avaliacao, revisao);
         this.aviso.set('Rascunho salvo.');
+        this.ocupada.set(false);
       },
     );
   }
@@ -308,21 +315,30 @@ export class InscricaoDoCandidatoPage implements OnInit {
       (comprovante) => {
         this.comprovante.set(comprovante);
         this.aviso.set(`Inscrição enviada. Número ${comprovante.numeroInscricao}.`);
-        this.relerAGravada();
+        // O formulário só se libera com o ETag novo: antes disso, uma correção sairia com o velho.
+        this.relerAGravada((lida) => {
+          this.ocupada.set(false);
+          if (!lida) this.precisaRecarregar.set(true);
+        });
       },
     );
   }
 
-  /** O envio devolve o comprovante, não a inscrição: sem reler, a próxima correção sairia com o ETag velho. */
-  private relerAGravada(): void {
+  /**
+   * O envio devolve o comprovante, não a inscrição: sem reler, a próxima correção sairia com o ETag velho.
+   * `aoTerminar` diz se a releitura trouxe a inscrição.
+   */
+  private relerAGravada(aoTerminar?: (lida: boolean) => void): void {
     const revisao = this.avaliacao.revisao();
     this.servico
       .obter(this.processoId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
-        if (!resultado.ok) return;
-        this.inscricao.set(resultado.data);
-        this.avaliacao.aplicarDaGravacao(resultado.data.avaliacao, revisao);
+        if (resultado.ok) {
+          this.inscricao.set(resultado.data);
+          this.avaliacao.aplicarDaGravacao(resultado.data.avaliacao, revisao);
+        }
+        aoTerminar?.(resultado.ok);
       });
   }
 
@@ -332,7 +348,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
   ): void {
     const inscricao = this.inscricao();
     const formulario = this.formularioDoCandidato();
-    if (!inscricao || !formulario || this.ocupada()) return;
+    if (!inscricao || !formulario || this.bloqueada()) return;
     this.ocupada.set(true);
     this.conflito.set(null);
     this.recusaGeral.set(null);
@@ -346,11 +362,12 @@ export class InscricaoDoCandidatoPage implements OnInit {
     )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
-        this.ocupada.set(false);
         if (resultado.ok) {
+          // Quem trata o sucesso libera o formulário: o envio espera a releitura do ETag.
           sucesso(resultado.data);
           return;
         }
+        this.ocupada.set(false);
         this.tratarRecusa(resultado);
       });
   }

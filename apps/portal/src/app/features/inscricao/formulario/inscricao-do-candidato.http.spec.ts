@@ -33,8 +33,11 @@ describe('InscricaoDoCandidatoHttp', () => {
   afterEach(() => controller.verify());
 
   /** Envia, responde com o status pedido e devolve a Idempotency-Key que o envio usou. */
-  const enviarERecebe = async (status: number): Promise<string> => {
-    const resultado = firstValueFrom(servico.submeter(PROCESSO, REQUEST, '"i:1"'));
+  const enviarERecebe = async (
+    status: number,
+    request: InscricaoRequest = REQUEST,
+  ): Promise<string> => {
+    const resultado = firstValueFrom(servico.submeter(PROCESSO, request, '"i:1"'));
     const req = controller.expectOne(SUBMISSAO);
     const chave = req.request.headers.get('Idempotency-Key') ?? '';
     if (status === 0) {
@@ -90,5 +93,17 @@ describe('InscricaoDoCandidatoHttp', () => {
     const corrigida = await enviarERecebe(200);
 
     expect(corrigida).not.toBe(recusada);
+  });
+
+  it('a chave repetida vale só para o mesmo corpo: o candidato que muda uma resposta antes de reenviar recebe outra', async () => {
+    const original = await enviarERecebe(503, { ...REQUEST, respostas: { NOME: 'Fernanda' } });
+    const mesmoCorpo = await enviarERecebe(503, { ...REQUEST, respostas: { NOME: 'Fernanda' } });
+    const corpoCorrigido = await enviarERecebe(503, {
+      ...REQUEST,
+      respostas: { NOME: 'Fernanda Laura' },
+    });
+
+    expect(mesmoCorpo).toBe(original);
+    expect(corpoCorrigido).not.toBe(original);
   });
 });
