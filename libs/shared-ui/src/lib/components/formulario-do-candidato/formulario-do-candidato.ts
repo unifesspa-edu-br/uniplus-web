@@ -15,6 +15,7 @@ import {
 } from '@angular/core';
 
 import { AlertComponent } from '../alert/alert';
+import { type StepItem, StepsComponent } from '../steps/steps.component';
 import {
   type DocumentoExigido,
   ListaDeDocumentosComponent,
@@ -84,6 +85,7 @@ import type {
     GrupoDoCandidatoComponent,
     ListaDeDocumentosComponent,
     ModalidadesDaInscricaoComponent,
+    StepsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -99,34 +101,12 @@ import type {
       } @else if (passos().length === 0) {
         <ui-alert variant="info" [dynamic]="false">O formulário não tem seção a mostrar.</ui-alert>
       } @else {
-        <nav class="formulario-candidato__navegacao" aria-label="Seções do formulário">
-          <ol class="formulario-candidato__passos">
-            @for (passo of passos(); track passo.chave; let i = $index) {
-              <li>
-                <button
-                  type="button"
-                  class="formulario-candidato__passo"
-                  [class.is-current]="i === indice()"
-                  [class.is-done]="concluido(passo)"
-                  [class.is-error]="comErro(passo)"
-                  [attr.aria-current]="i === indice() ? 'step' : null"
-                  (click)="irPara(i)"
-                >
-                  <span class="formulario-candidato__passo-numero" aria-hidden="true">{{
-                    i + 1
-                  }}</span>
-                  {{ passo.titulo }}
-                  @if (comErro(passo)) {
-                    <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
-                    <span class="sr-only">(com resposta recusada)</span>
-                  } @else if (concluido(passo)) {
-                    <span class="sr-only">(concluída)</span>
-                  }
-                </button>
-              </li>
-            }
-          </ol>
-        </nav>
+        <ui-steps
+          variante="chips"
+          rotuloDaNavegacao="Seções do formulário"
+          [items]="itensDosPassos()"
+          (selecionado)="irPara($event)"
+        />
 
         <!-- Cada partida nova — outro formulário, outra simulação inicial — recria os campos: o que
              se digitou pela metade e a confirmação não passam de uma partida para outra. -->
@@ -470,6 +450,18 @@ export class FormularioDoCandidatoComponent {
     const achado = chave === null ? -1 : passos.findIndex((p) => p.chave === chave);
     return achado >= 0 ? achado : Math.max(0, Math.min(indice, passos.length - 1));
   });
+  protected readonly itensDosPassos = computed<StepItem[]>(() =>
+    this.passos().map((passo, i) => {
+      const concluido = this.concluido(passo);
+      return {
+        chave: passo.chave,
+        rotulo: passo.titulo,
+        status: i === this.indice() ? 'active' : concluido ? 'done' : 'unvisited',
+        concluido,
+        comErro: this.comErro(passo),
+      };
+    }),
+  );
   protected readonly passoAtual = computed(() => this.passos()[this.indice()] ?? null);
 
   /** A avaliação com modalidades derivadas: só ela tem resumo na Revisão. */

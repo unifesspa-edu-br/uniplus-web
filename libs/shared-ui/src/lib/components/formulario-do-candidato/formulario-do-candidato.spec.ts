@@ -274,6 +274,9 @@ describe('FormularioDoCandidatoComponent', () => {
     [...tela.querySelectorAll('button')].find((b) =>
       b.textContent?.trim().startsWith(texto),
     ) as HTMLButtonElement;
+  /** O estado do passo mora no item da lista, que contém o botão. */
+  const itemDoPasso = (tela: HTMLElement, texto: string): HTMLElement =>
+    botao(tela, texto).closest('li') as HTMLElement;
   const digitar = (input: HTMLInputElement, texto: string): void => {
     input.value = texto;
     input.dispatchEvent(new Event('input'));
@@ -862,7 +865,7 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(tela.querySelector(`#${input.getAttribute('aria-describedby')}`)?.textContent).toContain(
       'Informe nome e sobrenome.',
     );
-    expect(botao(tela, '2').classList).toContain('is-error');
+    expect(itemDoPasso(tela, '2').classList).toContain('is-error');
 
     digitar(input, 'Ariel Drumond');
 
@@ -929,13 +932,13 @@ describe('FormularioDoCandidatoComponent', () => {
       { campo: 'FAMILIA.membro-2.RENDA', mensagem: 'Renda do segundo acima do teto.' },
     ]);
     fixture.detectChanges();
-    expect(botao(tela, '1').classList).toContain('is-error');
+    expect(itemDoPasso(tela, '1').classList).toContain('is-error');
 
     clicar(botao(tela, 'Remover Integrante 2'));
-    expect(botao(tela, '1').classList).not.toContain('is-error');
+    expect(itemDoPasso(tela, '1').classList).not.toContain('is-error');
 
     clicar(botao(tela, 'Acrescentar'));
-    expect(botao(tela, '1').classList).not.toContain('is-error');
+    expect(itemDoPasso(tela, '1').classList).not.toContain('is-error');
     expect(tela.textContent).not.toContain('Renda do segundo acima do teto.');
   });
 

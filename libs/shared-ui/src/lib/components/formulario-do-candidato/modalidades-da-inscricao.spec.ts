@@ -121,7 +121,7 @@ describe('Bloco de modalidades da inscrição', () => {
     fixture.detectChanges();
   };
   const passos = (tela: HTMLElement): string[] =>
-    [...tela.querySelectorAll('.formulario-candidato__passo')].map((b) =>
+    [...tela.querySelectorAll('ui-steps .ui-steps__botao')].map((b) =>
       (b.textContent ?? '').replace(/^\s*\d+/, '').trim(),
     );
   const bloco = (tela: HTMLElement): HTMLElement =>
