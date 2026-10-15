@@ -2,10 +2,10 @@ import { HttpHeaders } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { type Observable, of } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
-import { apiFailure, apiOk } from '@uniplus/shared-core/http';
+import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
 import type {
   CertamePublicadoDto,
   ComprovanteInscricaoDto,
@@ -143,15 +143,21 @@ const servico = {
   formulario: () => of(apiOk(FORMULARIO, 200, SEM_CABECALHOS)),
   nomesDosMunicipios: (codigos: readonly string[]) =>
     of(new Map(codigos.map((c) => [c, c === '5002704' ? 'Campo Grande — MS' : c]))),
-  certame: () =>
-    of({
-      nome: 'Medicina 2027',
-      identificadorLegivel: 'Edital 001/2026',
-      unidadeAdministradora: { nome: 'Centro de Processos Seletivos' },
-      periodo: { inicio: '2026-12-01T03:00:00Z', fim: fimDoPeriodo },
-      localidade: { fusoHorario: FUSO },
-      ofertas,
-    } as unknown as CertamePublicadoDto),
+  certame: (): Observable<ApiResult<CertamePublicadoDto | null>> =>
+    of(
+      apiOk(
+        {
+          nome: 'Medicina 2027',
+          identificadorLegivel: 'Edital 001/2026',
+          unidadeAdministradora: { nome: 'Centro de Processos Seletivos' },
+          periodo: { inicio: '2026-12-01T03:00:00Z', fim: fimDoPeriodo },
+          localidade: { fusoHorario: FUSO },
+          ofertas,
+        } as unknown as CertamePublicadoDto,
+        200,
+        SEM_CABECALHOS,
+      ),
+    ),
 };
 
 let fixture: ComponentFixture<ComprovanteDaInscricaoPage>;
@@ -289,6 +295,29 @@ describe('ComprovanteDaInscricaoPage', () => {
     const tela = await abrir();
 
     expect(document.activeElement).toBe(tela.querySelector('h1'));
+  });
+
+  it('a falha transitória ao ler o certame leva ao erro com nova tentativa, não ao comprovante sem prazo', async () => {
+    vi.spyOn(servico, 'certame').mockReturnValue(
+      of(
+        apiFailure(
+          {
+            type: 'about:blank',
+            title: 'Serviço indisponível',
+            status: 503,
+            code: 'indisponivel',
+            traceId: '',
+          },
+          503,
+          SEM_CABECALHOS,
+        ),
+      ),
+    );
+
+    const tela = await abrir();
+
+    expect(tela.textContent).not.toContain('Imprimir comprovante');
+    expect(tela.textContent).toContain('Tentar novamente');
   });
 
   it('um número que a inscrição não emitiu não abre comprovante nenhum', async () => {

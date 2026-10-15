@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { forkJoin, map, type Observable, of } from 'rxjs';
-import { type ApiResult } from '@uniplus/shared-core/http';
+import { type ApiResult, apiOk } from '@uniplus/shared-core/http';
 import { GeoApi } from '@uniplus/shared-data/geo';
 import {
   certamePublicoRequest,
@@ -26,12 +26,21 @@ export class MinhasInscricoesService {
     return this.api.minhas();
   }
 
-  /** O certame publicado do processo; nulo quando não está publicado. */
-  certame(processoId: string): Observable<CertamePublicadoDto | null> {
+  /**
+   * O certame publicado do processo; nulo quando não está publicado (404). As demais falhas seguem
+   * como falha: tomá-las por "não publicado" esconderia o curso e o prazo sem oferecer nova tentativa.
+   */
+  certame(processoId: string): Observable<ApiResult<CertamePublicadoDto | null>> {
     const { url, context } = certamePublicoRequest(this.basePath, processoId);
     return this.http
       .get<ApiResult<CertamePublicadoDto>>(url, { context })
-      .pipe(map((certame) => (certame.ok ? certame.data : null)));
+      .pipe(
+        map((certame) =>
+          !certame.ok && certame.status === 404
+            ? apiOk(null, certame.status, certame.headers)
+            : certame,
+        ),
+      );
   }
 
   /** O formulário da versão que a inscrição fixou: dá os rótulos do que o comprovante mostra. */

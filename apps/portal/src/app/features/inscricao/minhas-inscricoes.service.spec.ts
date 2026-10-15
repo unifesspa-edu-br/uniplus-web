@@ -1,4 +1,4 @@
-import { HttpHeaders, provideHttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { describe, expect, it } from 'vitest';
@@ -45,5 +45,38 @@ describe('MinhasInscricoesService.nomesDosMunicipios', () => {
 
     expect(lidos).toEqual(['5002704', '9999999']);
     expect([...nomes]).toEqual([['5002704', 'Campo Grande — MS']]);
+  });
+});
+
+describe('MinhasInscricoesService.certame', () => {
+  const falha = (status: number) =>
+    apiFailure(
+      { type: 'about:blank', title: 'Falha', status, code: 'falha', traceId: '' },
+      status,
+      new HttpHeaders(),
+    );
+
+  function certameCom(resposta: ReturnType<typeof falha>) {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: HttpClient, useValue: { get: () => of(resposta) } },
+        { provide: GeoApi, useValue: {} },
+        { provide: SELECAO_BASE_PATH, useValue: 'http://localhost:5000' },
+      ],
+    });
+    return firstValueFrom(TestBed.inject(MinhasInscricoesService).certame('processo-1'));
+  }
+
+  it('o certame não publicado (404) vem como nulo', async () => {
+    const certame = await certameCom(falha(404));
+
+    expect(certame.ok && certame.data).toBeNull();
+  });
+
+  it('a falha transitória segue como falha, não como certame não publicado', async () => {
+    const certame = await certameCom(falha(503));
+
+    expect(certame.ok).toBe(false);
+    expect(certame.status).toBe(503);
   });
 });
