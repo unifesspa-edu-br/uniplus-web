@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { elementosForaDoCartao } from '../support/limites-do-cartao';
@@ -433,20 +433,7 @@ test.describe('Cronograma — matriz DS @ds', () => {
     await expect(fases).toHaveCount(2);
     await exigirDocumento(page, fases.nth(1));
 
-    const problemas = await page.evaluate(() => {
-      const ids = Array.from(document.querySelectorAll('[id]'), (elemento) => elemento.id);
-      const repetidos = ids.filter((id, posicao) => ids.indexOf(id) !== posicao);
-      const orfas = Array.from(document.querySelectorAll('sel-step-fase')).flatMap((fase) =>
-        Array.from(fase.querySelectorAll('[for], [aria-describedby], [aria-controls]'))
-          .flatMap((elemento) =>
-            ['for', 'aria-describedby', 'aria-controls'].flatMap(
-              (atributo) => elemento.getAttribute(atributo)?.split(/\s+/) ?? [],
-            ),
-          )
-          .filter((id) => id.startsWith('fase-') && fase.querySelector(`[id="${id}"]`) === null),
-      );
-      return { repetidos, orfas };
-    });
+    const problemas = await problemasDeIds(page);
 
     expect(problemas.repetidos, 'ids duplicados na página').toEqual([]);
     expect(problemas.orfas, 'referências que saem da própria fase').toEqual([]);
@@ -601,6 +588,38 @@ const DETALHE_PUBLICADO = {
 };
 
 /**
+ * O mesmo processo com uma segunda fase que exige o mesmo tipo de documento: a consulta monta um
+ * `sel-step-fase` por fase, e o que cada um nomeia com id não pode repetir-se no vizinho.
+ */
+const FASE_PUBLICADA_2_ID = '01960000-0000-7000-0000-000000000a03';
+const DETALHE_DUAS_FASES = {
+  ...DETALHE_PUBLICADO,
+  cronogramaFases: [
+    ...DETALHE_PUBLICADO.cronogramaFases,
+    {
+      ...DETALHE_PUBLICADO.cronogramaFases[0],
+      id: FASE_PUBLICADA_2_ID,
+      ordem: 2,
+      faseCanonicaOrigemId: FASES_CANONICAS[1].id,
+      codigo: FASES_CANONICAS[1].codigo,
+      coletaInscricao: false,
+    },
+  ],
+  raizesExigencia: [
+    ...DETALHE_PUBLICADO.raizesExigencia,
+    folha('01960000-0000-7000-0000-000000000a21', {
+      exigidoNaFaseId: FASE_PUBLICADA_2_ID,
+      tipoDocumentoOrigemId: TIPOS_DOCUMENTO[0].id,
+      tipoDocumentoCodigo: TIPOS_DOCUMENTO[0].codigo,
+      tipoDocumentoNome: NOME_DOCUMENTO,
+      aplicabilidade: 'GERAL',
+      obrigatorio: true,
+      consequenciaIndeferimento: 'ELIMINA',
+    }),
+  ],
+};
+
+/**
  * Conferência dos documentos de uma fase publicada (web#902, web#905): o resumo mostra todas as
  * regras com os campos recolhidos — cada documento com a quem se aplica, a entrega, a
  * consequência e a coleta, a norma comum uma vez — e, abaixo de cada um, o detalhe lido como
@@ -608,14 +627,7 @@ const DETALHE_PUBLICADO = {
  */
 test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
   test.beforeEach(async ({ page }, testInfo) => {
-    await mockarCatalogos(page);
-    await mockarProcessoPublicado(page);
-    await instalarPreferencia(page, temaDoProject(testInfo.project.name));
-    await page.goto(`/processo-seletivo/${PROCESSO_PUBLICADO_ID}`);
-    await expect(page.getByText('Carregando o processo seletivo…')).toBeHidden();
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-
-    await irAoPasso(page, 'Cronograma', testInfo);
+    await abrirCronogramaPublicado(page, testInfo, DETALHE_PUBLICADO);
     await expect(
       page.getByRole('heading', { name: 'Documentos exigidos nesta fase' }),
     ).toBeVisible();
@@ -653,6 +665,7 @@ test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
     const detalhe = page.getByRole('group', { name: 'Detalhe de Autodeclaração étnico-racial' });
 
     await expect(detalhe).toBeVisible();
+    await expect(detalhe.getByText('Sobre o documento')).toBeVisible();
     await expect(detalhe.getByText('Exigido em')).toBeVisible();
     await expect(detalhe.getByText('Só em Inscrição')).toBeVisible();
     await expect(detalhe.getByText('Sem modelo')).toBeVisible();
@@ -688,6 +701,109 @@ test.describe('Documentos da fase em consulta — matriz DS @ds', () => {
     expect(problemas).toEqual([]);
   });
 });
+
+/**
+ * Duas fases lidas ao mesmo tempo (web#905, CA-03): o Cronograma em consulta monta um passo da
+ * fase por fase, todos à vista. Nenhum id se repete, nenhuma referência sai da própria fase, e
+ * o detalhe de cada documento (a descrição do tipo, inclusive) continua alcançável.
+ */
+test.describe('Cronograma em consulta com duas fases — matriz DS @ds', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    await abrirCronogramaPublicado(page, testInfo, DETALHE_DUAS_FASES);
+    await expect(page.locator('sel-step-fase')).toHaveCount(2);
+  });
+
+  test('não repete id nem aponta para a fase vizinha', async ({ page }) => {
+    const problemas = await problemasDeIds(page);
+
+    expect(problemas.repetidos, 'ids duplicados na página').toEqual([]);
+    expect(problemas.orfas, 'referências que saem da própria fase').toEqual([]);
+    expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+  });
+
+  test('lê o detalhe do documento de cada fase, com a descrição do tipo', async ({ page }) => {
+    const detalhes = page.getByRole('group', { name: `Detalhe de ${NOME_DOCUMENTO}` });
+
+    await expect(detalhes).toHaveCount(2);
+    for (const detalhe of await detalhes.all()) {
+      await expect(detalhe).toContainText(TIPOS_DOCUMENTO[0].descricao);
+      await expect(detalhe.locator('select, input, textarea, button')).toHaveCount(0);
+    }
+    // O wizard mantém os outros passos montados e ocultos: só conta o que está à vista.
+    const controles = await page
+      .locator('.wiz-content')
+      .locator('select, input, textarea, button')
+      .evaluateAll((itens) => itens.filter((item) => item.checkVisibility()).length);
+    expect(controles).toBe(0);
+
+    const transbordo = await medirTransbordoHorizontal(page);
+    expect(transbordo.documento).toBeLessThanOrEqual(1);
+    expect(transbordo.areaDeTrabalho).toBeLessThanOrEqual(1);
+  });
+
+  /**
+   * A varredura só vale se enxergar o que procura: um id copiado de outra fase e uma
+   * referência que aponta para fora da própria têm de ser acusados.
+   */
+  test('falha quando um id se repete ou uma referência sai da fase', async ({ page }) => {
+    expect(await problemasDeIds(page)).toEqual({ repetidos: [], orfas: [] });
+
+    const idCopiado = await page.evaluate(() => {
+      const [primeira, segunda] = Array.from(document.querySelectorAll('sel-step-fase'));
+      const id = primeira.querySelector('[id^="fase-"]')?.id ?? '';
+      // Sem um id real, a cópia vazia não repetiria nada e a sabotagem passaria em vácuo.
+      if (id !== '') {
+        segunda.insertAdjacentHTML(
+          'beforeend',
+          `<span id="${id}"></span><label for="fase-sabotagem-sem-alvo">x</label>`,
+        );
+      }
+      return id;
+    });
+    expect(idCopiado).not.toBe('');
+
+    const problemas = await problemasDeIds(page);
+    expect(problemas.repetidos.length).toBeGreaterThan(0);
+    expect(problemas.orfas).toEqual(['fase-sabotagem-sem-alvo']);
+  });
+});
+
+async function abrirCronogramaPublicado(
+  page: Page,
+  testInfo: TestInfo,
+  detalhe: typeof DETALHE_PUBLICADO,
+): Promise<void> {
+  await mockarCatalogos(page);
+  await mockarProcessoPublicado(page, detalhe);
+  await instalarPreferencia(page, temaDoProject(testInfo.project.name));
+  await page.goto(`/processo-seletivo/${PROCESSO_PUBLICADO_ID}`);
+  await expect(page.getByText('Carregando o processo seletivo…')).toBeHidden();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  await irAoPasso(page, 'Cronograma', testInfo);
+}
+
+/**
+ * Os ids que se repetem na página e as referências (`for`, `aria-describedby`, `aria-controls`)
+ * de uma fase que apontam para fora dela. Cada `sel-step-fase` embute o passo da fase (web#923),
+ * e o que nasce de um deles não pode colidir com o do vizinho.
+ */
+async function problemasDeIds(page: Page): Promise<{ repetidos: string[]; orfas: string[] }> {
+  return page.evaluate(() => {
+    const ids = Array.from(document.querySelectorAll('[id]'), (elemento) => elemento.id);
+    const repetidos = ids.filter((id, posicao) => ids.indexOf(id) !== posicao);
+    const orfas = Array.from(document.querySelectorAll('sel-step-fase')).flatMap((fase) =>
+      Array.from(fase.querySelectorAll('[for], [aria-describedby], [aria-controls]'))
+        .flatMap((elemento) =>
+          ['for', 'aria-describedby', 'aria-controls'].flatMap(
+            (atributo) => elemento.getAttribute(atributo)?.split(/\s+/) ?? [],
+          ),
+        )
+        .filter((id) => id.startsWith('fase-') && fase.querySelector(`[id="${id}"]`) === null),
+    );
+    return { repetidos, orfas };
+  });
+}
 
 /** Acrescenta uma fase do catálogo (Inscrição, por padrão) à linha do tempo. */
 async function acrescentarFase(page: Page, nome = 'Inscrição'): Promise<void> {
@@ -779,7 +895,10 @@ async function mockarCatalogos(page: Page): Promise<void> {
 }
 
 /** O detalhe e o que mora sob o prefixo do processo publicado da consulta. */
-async function mockarProcessoPublicado(page: Page): Promise<void> {
+async function mockarProcessoPublicado(
+  page: Page,
+  detalhe: typeof DETALHE_PUBLICADO = DETALHE_PUBLICADO,
+): Promise<void> {
   await page.route(
     new RegExp(`/api/selecao/processos-seletivos/${PROCESSO_PUBLICADO_ID}(/.*)?(\\?.*)?$`),
     async (route: Route) => {
@@ -790,7 +909,7 @@ async function mockarProcessoPublicado(page: Page): Promise<void> {
 
       const caminho = new URL(route.request().url()).pathname;
       const corpo = caminho.endsWith(PROCESSO_PUBLICADO_ID)
-        ? DETALHE_PUBLICADO
+        ? detalhe
         : caminho.endsWith('/conformidade')
           ? { processoSeletivoId: PROCESSO_PUBLICADO_ID, itens: [] }
           : [];

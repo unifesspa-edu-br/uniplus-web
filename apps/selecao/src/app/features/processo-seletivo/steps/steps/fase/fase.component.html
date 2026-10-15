@@ -738,8 +738,9 @@
                       <th scope="row">
                         <!--
                         O nome abre os campos do documento, como o nome da fase abre a fase: um botão a mais
-                        por linha tomaria a largura de uma coluna da conferência. Em consulta também abre:
-                        o detalhe (a descrição do tipo, os formatos que a exigência não declara) só está lá.
+                        por linha tomaria a largura de uma coluna da conferência. Em consulta é texto: o
+                        detalhe (a descrição do tipo, os formatos que a exigência não declara) fica sempre
+                        à vista sob a linha, sem botão que o abra.
                       -->
                         @if (store.emConsulta()) {
                           <span>{{ resumo.nome }}</span>
@@ -790,11 +791,25 @@
                         </td>
                       }
                     </tr>
-                    @if (store.emConsulta()) {
-                      @let detalhe = detalheLidoDoDocumento(resumo.id);
+                    @if (resumo.detalhe; as detalhe) {
                       <tr class="doc-conferencia__campos">
                         <td [attr.colspan]="colunasDaConferencia()">
                           <div class="form-grid" role="group" [attr.aria-label]="'Detalhe de ' + resumo.nome">
+                            <ui-valor-em-consulta
+                              class="form-grid__full"
+                              rotulo="Sobre o documento"
+                              seVazio="Sem descrição"
+                              [valor]="detalhe.descricao"
+                              [dica]="detalhe.situacao"
+                            />
+                            @if (detalhe.formatos; as formatos) {
+                              <ui-valor-em-consulta
+                                class="form-grid__full"
+                                rotulo="Arquivo aceito pelo cadastro"
+                                [valor]="formatos"
+                                [dica]="resumo.avisoDeFormatos"
+                              />
+                            }
                             @if (detalhe.formulario !== null) {
                               <ui-valor-em-consulta rotulo="Formulário" [valor]="detalhe.formulario" />
                             }
@@ -818,7 +833,9 @@
                             <div class="doc-item__row">
                               <div class="doc-item__info">
                                 <span class="doc-item__name">{{ doc.nome }}</span>
-                                <span class="doc-item__desc">{{ doc.desc }}</span>
+                                @if (resumo.orientacao; as orientacao) {
+                                  <span class="doc-item__desc">{{ orientacao }}</span>
+                                }
                                 <!-- Folha dentro de um grupo não é exigida por si: basta satisfazer o grupo.
                                    Sem dizê-lo, ela parecia uma exigência solta como qualquer outra. -->
                                 @if (posicaoNaArvore(doc.id) !== '') {
@@ -1180,12 +1197,8 @@
                                     </option>
                                   }
                                 </select>
-                                @if (formatosForaDoContrato(doc.id).length > 0) {
-                                  <span class="field__hint">
-                                    O cadastro aceita
-                                    {{ formatosForaDoContrato(doc.id).join(', ') }}, que a exigência
-                                    não sabe declarar — o candidato só poderá entregar os demais.
-                                  </span>
+                                @if (resumo.avisoDeFormatos; as aviso) {
+                                  <span class="field__hint">{{ aviso }}</span>
                                 }
                               </div>
 
