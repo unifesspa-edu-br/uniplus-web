@@ -65,10 +65,11 @@ function definirMetricas(
 @Component({
   standalone: true,
   imports: [BackToTopComponent],
-  template: `<ui-back-to-top [defaultContainer]="container" />`,
+  template: `<ui-back-to-top [defaultContainer]="container" [focoAoTopo]="focoAoTopo" />`,
 })
 class HostComponent {
   container: HTMLElement | null = null;
+  focoAoTopo: HTMLElement | null = null;
 }
 
 const microtask = (): Promise<void> => Promise.resolve();
@@ -188,6 +189,75 @@ describe('BackToTopComponent', () => {
 
     botao.click();
     expect(foco).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  it('leva o foco ao alvo informado quando o contêiner não é focável', async () => {
+    const semFoco = scrollerFake({ scrollHeight: 1000, clientHeight: 300, scrollTop: 800 });
+    const alvoDoFoco = scrollerFake({ scrollHeight: 1, clientHeight: 1, tabindex: true });
+    const focoContainer = vi.spyOn(semFoco, 'focus');
+    const focoAlvo = vi.spyOn(alvoDoFoco, 'focus');
+    await TestBed.configureTestingModule({
+      imports: [HostComponent],
+      providers: [provideRouter([{ path: '**', children: [] }])],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.container = semFoco;
+    fixture.componentInstance.focoAoTopo = alvoDoFoco;
+    fixture.detectChanges();
+    await estabilizar(fixture);
+
+    (fixture.nativeElement.querySelector('.uni-back-to-top') as HTMLButtonElement).click();
+
+    expect(focoAlvo).toHaveBeenCalledWith({ preventScroll: true });
+    expect(focoContainer).not.toHaveBeenCalled();
+  });
+
+  it('não usa como alvo de foco um elemento sem tabindex, que deixaria o foco no botão', async () => {
+    const padrao = scrollerFake({ scrollHeight: 1000, clientHeight: 300, scrollTop: 800 });
+    const alvoSemFoco = scrollerFake({ scrollHeight: 1, clientHeight: 1 });
+    const focoAlvo = vi.spyOn(alvoSemFoco, 'focus');
+    await TestBed.configureTestingModule({
+      imports: [HostComponent],
+      providers: [provideRouter([{ path: '**', children: [] }])],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.container = padrao;
+    fixture.componentInstance.focoAoTopo = alvoSemFoco;
+    fixture.detectChanges();
+    await estabilizar(fixture);
+
+    (fixture.nativeElement.querySelector('.uni-back-to-top') as HTMLButtonElement).click();
+
+    expect(focoAlvo).not.toHaveBeenCalled();
+  });
+
+  it('foca o contêiner registrado por uma rota, não o alvo de foco do shell', async () => {
+    const padrao = scrollerFake({ scrollHeight: 1000, clientHeight: 300, scrollTop: 800 });
+    const alvoDoShell = scrollerFake({ scrollHeight: 1, clientHeight: 1, tabindex: true });
+    const interno = scrollerFake({
+      scrollHeight: 2000,
+      clientHeight: 400,
+      scrollTop: 1500,
+      tabindex: true,
+    });
+    const focoShell = vi.spyOn(alvoDoShell, 'focus');
+    const focoInterno = vi.spyOn(interno, 'focus');
+    await TestBed.configureTestingModule({
+      imports: [HostComponent],
+      providers: [provideRouter([{ path: '**', children: [] }])],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.container = padrao;
+    fixture.componentInstance.focoAoTopo = alvoDoShell;
+    fixture.detectChanges();
+    await estabilizar(fixture);
+    TestBed.inject(BackToTopScrollService).registrar(interno);
+    await estabilizar(fixture);
+
+    (fixture.nativeElement.querySelector('.uni-back-to-top') as HTMLButtonElement).click();
+
+    expect(focoInterno).toHaveBeenCalledWith({ preventScroll: true });
+    expect(focoShell).not.toHaveBeenCalled();
   });
 
   it('não tenta focar um contêiner sem tabindex ao acionar (CA-06)', async () => {

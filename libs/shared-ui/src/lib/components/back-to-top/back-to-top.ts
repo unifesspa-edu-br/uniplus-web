@@ -59,6 +59,13 @@ export class BackToTopComponent {
    */
   readonly defaultContainer = input<HTMLElement | null>(null);
 
+  /**
+   * Alvo do foco ao voltar ao topo, para quando o contêiner de rolagem não pode
+   * recebê-lo (ex.: `<html>`, que não tem `tabindex`). Sem ele, vale o próprio
+   * contêiner se declarar `tabindex`.
+   */
+  readonly focoAoTopo = input<HTMLElement | null>(null);
+
   private readonly scrollService = inject(BackToTopScrollService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -146,9 +153,17 @@ export class BackToTopComponent {
     if (alvo === null) return;
     alvo.scrollTo({ top: 0, behavior: this.movimentoReduzido() ? 'auto' : 'smooth' });
     // Leva o foco ao topo do contêiner para dar ao leitor de tela um ponto de
-    // chegada. Exige `tabindex` no contêiner — `main.page` já tem `-1`; contratos
-    // internos (`uiBackToTopContainer`) devem declarar o seu (ver `.wiz-content`).
-    if (alvo.hasAttribute('tabindex')) alvo.focus({ preventScroll: true });
+    // chegada. O contêiner precisa de `tabindex` (`main.page` já tem `-1`;
+    // contratos internos via `uiBackToTopContainer` declaram o seu — ver
+    // `.wiz-content`). `focoAoTopo` substitui o contêiner só quando ele é o
+    // padrão do shell, que pode não ser focável (o `<html>`); o contêiner
+    // registrado por uma rota é sempre o próprio alvo do foco.
+    // O substituto segue a mesma invariante do contêiner: sem `tabindex`, o
+    // foco não se move e o botão, ao se esconder, ficaria com ele.
+    const candidato = alvo === this.defaultContainer() ? this.focoAoTopo() : null;
+    const focoSubstituto = candidato?.hasAttribute('tabindex') ? candidato : null;
+    const foco = focoSubstituto ?? (alvo.hasAttribute('tabindex') ? alvo : null);
+    foco?.focus({ preventScroll: true });
   }
 
   private religar(alvo: HTMLElement | null): void {
