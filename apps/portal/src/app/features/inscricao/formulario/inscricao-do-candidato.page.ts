@@ -348,15 +348,17 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   /**
    * O envio devolve o comprovante, não a inscrição: sem reler, a próxima correção sairia com o ETag velho.
-   * `aoTerminar` diz se a releitura trouxe a inscrição.
+   * `aoTerminar` diz se a releitura trouxe a inscrição. Com `eTagDaTentativa`, a releitura só substitui
+   * a inscrição e a avaliação da tela se o ETag mudou: com o mesmo, nada foi gravado, e a avaliação
+   * gravada descreve respostas mais antigas que as da tela.
    */
-  private relerAGravada(aoTerminar?: (lida: boolean) => void): void {
+  private relerAGravada(aoTerminar?: (lida: boolean) => void, eTagDaTentativa?: string): void {
     const revisao = this.avaliacao.revisao();
     this.servico
       .obter(this.processoId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
-        if (resultado.ok) {
+        if (resultado.ok && resultado.data.eTag !== eTagDaTentativa) {
           this.inscricao.set(resultado.data);
           this.avaliacao.aplicarDaGravacao(resultado.data.avaliacao, revisao);
         }
@@ -483,7 +485,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
           this.aviso.set(confirmacaoDaGravacao(relida));
         }
       }
-    });
+    }, eTagDaTentativa);
   }
 
   /** Mostra a recusa no campo, na oferta ou, sem onde apontar, como recusa geral. */
