@@ -168,3 +168,9 @@ export { CodigoDeVerificacaoComponent } from '../../src/lib/components/codigo-de
 export { MarcaInstitucionalComponent } from '../../src/lib/components/marca-institucional/marca-institucional';
 export { titulosDasOcorrencias } from '../../src/lib/components/formulario-do-candidato/interpretador/ocorrencia-do-candidato';
 export { BulletComponent, type UiBulletVariant } from '../../src/lib/components/bullet/bullet';
+export {
+  StepsComponent,
+  type StepItem,
+  type StepStatus,
+  type StepsVariant,
+} from '../../src/lib/components/steps/steps.component';
