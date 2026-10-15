@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import { BackToTopComponent } from '@uniplus/shared-ui/components';
 import { PortalShellComponent } from './portal-shell';
 
 const isAuthenticated = signal(false);
@@ -199,5 +201,89 @@ describe('PortalShellComponent — contrato de impressão', () => {
       expect(host.querySelector(seletor)?.classList.contains('u-no-print'), seletor).toBe(true);
     }
     expect(host.querySelector('main')?.closest('.u-no-print')).toBeNull();
+  });
+});
+
+/**
+ * Em janela baixa (`max-height: 500px`) a página rola inteira — o
+ * `ui-back-to-top` tem de observar o `<html>`, não o `.portal-scroll`.
+ */
+describe('PortalShellComponent — contêiner de rolagem do "Voltar ao topo"', () => {
+  const matchMediaOriginal = window.matchMedia;
+  let ouvintes: ((e: MediaQueryListEvent) => void)[] = [];
+  let removidos: ((e: MediaQueryListEvent) => void)[] = [];
+
+  function stubMatchMedia(matches: boolean): void {
+    ouvintes = [];
+    removidos = [];
+    window.matchMedia = ((consulta: string) => ({
+      matches,
+      media: consulta,
+      addEventListener: (_: string, ouvinte: (e: MediaQueryListEvent) => void) =>
+        ouvintes.push(ouvinte),
+      removeEventListener: (_: string, ouvinte: (e: MediaQueryListEvent) => void) =>
+        removidos.push(ouvinte),
+    })) as unknown as typeof window.matchMedia;
+  }
+
+  async function montar(): Promise<ComponentFixture<PortalShellComponent>> {
+    await TestBed.configureTestingModule({
+      imports: [PortalShellComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: authServiceStub },
+        { provide: UserContextService, useValue: userContextStub },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(PortalShellComponent);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  function containerObservado(fixture: ComponentFixture<PortalShellComponent>): HTMLElement {
+    const voltarAoTopo = fixture.debugElement.query(By.directive(BackToTopComponent));
+    return (voltarAoTopo.componentInstance as BackToTopComponent).defaultContainer() as HTMLElement;
+  }
+
+  afterEach(() => {
+    document.documentElement.scrollTop = 0;
+    window.matchMedia = matchMediaOriginal;
+  });
+
+  it('observa o <html> em janela baixa', async () => {
+    stubMatchMedia(true);
+
+    expect(containerObservado(await montar())).toBe(document.documentElement);
+  });
+
+  it('observa o .portal-scroll em janela alta', async () => {
+    stubMatchMedia(false);
+
+    const container = containerObservado(await montar());
+
+    expect(container.classList.contains('portal-scroll')).toBe(true);
+  });
+
+  it('troca o contêiner observado quando a altura da janela cruza o limiar', async () => {
+    stubMatchMedia(false);
+    const fixture = await montar();
+
+    ouvintes.forEach((o) => o({ matches: true } as MediaQueryListEvent));
+    fixture.detectChanges();
+    expect(containerObservado(fixture)).toBe(document.documentElement);
+
+    ouvintes.forEach((o) => o({ matches: false } as MediaQueryListEvent));
+    fixture.detectChanges();
+    expect(containerObservado(fixture).classList.contains('portal-scroll')).toBe(true);
+  });
+
+  it('remove o ouvinte da media query ao destruir o shell', async () => {
+    stubMatchMedia(false);
+    const fixture = await montar();
+
+    fixture.destroy();
+
+    expect(ouvintes).toHaveLength(1);
+    expect(removidos).toEqual(ouvintes);
   });
 });

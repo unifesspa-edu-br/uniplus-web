@@ -153,6 +153,7 @@ interface PortalFooterGroup {
     <ui-back-to-top
       class="u-no-print"
       [defaultContainer]="rolaPelaPagina() ? paginaRaiz : portalScroll"
+      [focoAoTopo]="portalScroll"
     />
     <ui-vlibras-loader class="u-no-print" />
   `,
