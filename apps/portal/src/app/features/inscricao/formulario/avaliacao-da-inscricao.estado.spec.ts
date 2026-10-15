@@ -67,7 +67,7 @@ describe('AvaliacaoDaInscricaoEstado', () => {
       ],
     });
     estado = TestBed.inject(AvaliacaoDaInscricaoEstado);
-    estado.iniciar(PROCESSO, avaliacao('Ampla concorrência'), DEPENDENCIAS, {});
+    estado.iniciar(PROCESSO, avaliacao('Ampla concorrência'), DEPENDENCIAS, {}, null);
   });
 
   afterEach(() => vi.useRealTimers());
@@ -149,6 +149,36 @@ describe('AvaliacaoDaInscricaoEstado', () => {
 
     estado.aplicarDaGravacao(avaliacao('Escola pública'), estado.revisao());
     expect(nomes()).toEqual(['Escola pública']);
+  });
+
+  it('trocar a oferta consulta de novo, mesmo sem mudar resposta, e repetir a mesma não consulta', () => {
+    estado.ofertaMudou('oferta-2', () => ({
+      respostas: {},
+      grupos: null,
+      ofertaCursoId: 'oferta-2',
+    }));
+    vi.advanceTimersByTime(ESPERA_DA_CONSULTA_MS);
+    estado.ofertaMudou('oferta-2', () => ({
+      respostas: {},
+      grupos: null,
+      ofertaCursoId: 'oferta-2',
+    }));
+    vi.advanceTimersByTime(ESPERA_DA_CONSULTA_MS);
+
+    expect(servico.consultas.map((c) => c.corpo.ofertaCursoId)).toEqual(['oferta-2']);
+  });
+
+  it('a avaliação que volta do salvar com a oferta anterior é descartada depois da troca', () => {
+    const revisaoDoSalvar = estado.revisao();
+    estado.ofertaMudou('oferta-2', () => ({
+      respostas: {},
+      grupos: null,
+      ofertaCursoId: 'oferta-2',
+    }));
+
+    estado.aplicarDaGravacao(avaliacao('Escola pública'), revisaoDoSalvar);
+
+    expect(nomes()).toEqual(['Ampla concorrência']);
   });
 
   it('a falha mantém a última lista, diz que não atualizou e tentar de novo repete a consulta', () => {

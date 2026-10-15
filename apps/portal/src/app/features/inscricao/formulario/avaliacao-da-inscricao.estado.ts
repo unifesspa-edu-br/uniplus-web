@@ -54,6 +54,7 @@ export class AvaliacaoDaInscricaoEstado {
   private processoId = '';
   private dependencias: DependenciasDaAvaliacao | null = null;
   private impressao: string | null = null;
+  private oferta: string | null = null;
   private ultimoCorpo: AvaliacaoDaInscricaoRequest | null = null;
   private revisaoAtual = 0;
   private readonly consultas = new Subject<Consulta>();
@@ -90,8 +91,10 @@ export class AvaliacaoDaInscricaoEstado {
     avaliacao: AvaliacaoDaInscricaoDto,
     dependencias: DependenciasDaAvaliacao | null | undefined,
     simulacao: SimulacaoDoFormulario,
+    oferta: string | null,
   ): void {
     this.processoId = processoId;
+    this.oferta = oferta;
     this.dependencias = dependencias ?? null;
     this.impressao = impressaoDasDependencias(simulacao, this.dependencias);
     this.ultimoCorpo = null;
@@ -112,6 +115,18 @@ export class AvaliacaoDaInscricaoEstado {
     const impressao = impressaoDasDependencias(simulacao, this.dependencias);
     if (impressao === this.impressao) return;
     this.impressao = impressao;
+    this.revisaoAtual++;
+    this.consultar(corpo());
+  }
+
+  /**
+   * O candidato trocou a oferta na tela, sem gravar. Cada oferta tem as próprias modalidades e
+   * documentos, então a avaliação mostrada deixa de valer e a consulta sai com a oferta nova — mesmo
+   * que nenhuma resposta tenha mudado. O corpo é montado só quando a oferta de fato mudou.
+   */
+  ofertaMudou(oferta: string | null, corpo: () => AvaliacaoDaInscricaoRequest): void {
+    if (oferta === this.oferta) return;
+    this.oferta = oferta;
     this.revisaoAtual++;
     this.consultar(corpo());
   }
