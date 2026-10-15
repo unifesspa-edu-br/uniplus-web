@@ -567,6 +567,38 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(tela.querySelector('#inscricao-correcao')).not.toBeNull();
   });
 
+  it('a falha sem resposta cujo envio o servidor gravou não diz que a inscrição não foi gravada', async () => {
+    servico.inscricao = inscricao(RESPONDIDA);
+    const tela = await abrir();
+    servico.recusaDoEnvio = problema(503, 'uniplus.teste');
+    servico.inscricao = inscricao({
+      ...RESPONDIDA,
+      situacao: SituacaoInscricao.submetida,
+      numeroInscricao: '2027-000001',
+      eTag: '"inscricao-1:2"',
+    });
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(tela.querySelector('[aria-live]')?.textContent).toBe(
+      'Inscrição enviada. Número 2027-000001.',
+    );
+    expect(tela.textContent).toContain('Sua inscrição já foi enviada');
+    expect(tela.textContent).not.toContain('não foi gravada');
+    expect(tela.textContent).not.toContain('Não conseguimos confirmar a gravação');
+  });
+
+  it('o rascunho que o servidor gravou apesar da falha sem resposta é confirmado no aviso', async () => {
+    const tela = await abrir();
+    servico.salvar = () => of(problema(503, 'uniplus.teste'));
+    servico.inscricao = inscricao({ eTag: '"inscricao-1:2"' });
+
+    await clicar(botao(tela, 'Salvar rascunho'));
+
+    expect(tela.querySelector('[aria-live]')?.textContent).toBe('Rascunho salvo.');
+    expect(tela.textContent).not.toContain('Não conseguimos confirmar a gravação');
+  });
+
   it('o envio que fica sem resposta relê a inscrição, e o reenvio sai com o ETag gravado', async () => {
     servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
@@ -617,6 +649,38 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
     botao(tela, 'Enviar inscrição').click();
     expect(servico.enviados).toHaveLength(1);
+  });
+
+  it('a falha sem resposta mantém o formulário ocupado até a releitura do ETag terminar', async () => {
+    servico.inscricao = inscricao(RESPONDIDA);
+    const tela = await abrir();
+    servico.recusaDoEnvio = problema(0, 'uniplus.client.network_error');
+    const releitura = new Subject<ApiResult<InscricaoDto>>();
+    servico.obter = () => releitura;
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+
+    releitura.next(
+      apiOk(inscricao({ ...RESPONDIDA, eTag: '"inscricao-1:2"' }), 200, new HttpHeaders()),
+    );
+    fixture.detectChanges();
+
+    expect(botao(tela, 'Enviar inscrição').disabled).toBe(false);
+  });
+
+  it('a releitura que falha depois de uma falha sem resposta manda recarregar a página', async () => {
+    servico.inscricao = inscricao(RESPONDIDA);
+    const tela = await abrir();
+    servico.recusaDoEnvio = problema(503, 'uniplus.teste');
+    servico.obter = () => of(problema(503, 'uniplus.teste'));
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(tela.textContent).toContain('Não conseguimos confirmar se a inscrição foi gravada');
+    expect(tela.textContent).not.toContain('foi enviada');
+    expect(tela.textContent).not.toContain('A inscrição não foi gravada');
+    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
   });
 
   it('o seletor de curso só aparece quando o processo oferece mais de um', async () => {

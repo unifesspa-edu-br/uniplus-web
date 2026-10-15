@@ -176,6 +176,33 @@ const FAMILIA: FormularioDoCandidato = {
   },
 };
 
+const FAMILIA_DE_DOIS_SUBCAMPOS: FormularioDoCandidato = {
+  ...FAMILIA,
+  grupos: [
+    {
+      ...FAMILIA.grupos[0],
+      subitens: [campo('RENDA', 'Renda', 'NUMERO'), campo('PROFISSAO', 'Profissão', 'TEXTO')],
+    },
+  ],
+  regras: {
+    etapas: [
+      {
+        codigo: SECAO,
+        grupos: [
+          {
+            codigo: 'FAMILIA',
+            obrigatoriedade: 'SEMPRE',
+            minimo: 1,
+            maximo: 2,
+            incluiCandidato: false,
+            subitens: [regra('RENDA'), regra('PROFISSAO')],
+          },
+        ],
+      },
+    ],
+  },
+};
+
 describe('FormularioDoCandidatoComponent', () => {
   let fixture: ComponentFixture<FormularioDoCandidatoComponent>;
   let simulacoes: SimulacaoDoFormulario[];
@@ -826,6 +853,77 @@ describe('FormularioDoCandidatoComponent', () => {
     ).toContain('Informe de 1 a 2.');
   });
 
+  it('editar um subcampo do grupo descarta só a recusa dele e preserva a de outro subcampo e a de outra ocorrência', () => {
+    const tela = montar(FAMILIA_DE_DOIS_SUBCAMPOS, {
+      inicial: {
+        grupos: {
+          FAMILIA: [
+            { id: 'membro-1', respostas: { RENDA: 100, PROFISSAO: 'Agricultora' } },
+            { id: 'membro-2', respostas: { RENDA: 200 } },
+          ],
+        },
+      },
+    });
+    fixture.componentRef.setInput('errosDoServidor', [
+      { campo: 'FAMILIA.membro-1.RENDA', mensagem: 'Renda acima do teto.' },
+      { campo: 'FAMILIA.membro-1.PROFISSAO', mensagem: 'Profissão não aceita.' },
+      { campo: 'FAMILIA.membro-2.RENDA', mensagem: 'Renda do segundo acima do teto.' },
+    ]);
+    fixture.detectChanges();
+
+    digitar(
+      tela.querySelector('[data-campo="FAMILIA.membro-1.RENDA"] input') as HTMLInputElement,
+      '90',
+    );
+
+    expect(tela.textContent).not.toContain('Renda acima do teto.');
+    expect(tela.textContent).toContain('Profissão não aceita.');
+    expect(tela.textContent).toContain('Renda do segundo acima do teto.');
+  });
+
+  it('remover a ocorrência que a API recusou tira a marcação de erro da seção, e a mensagem não volta', () => {
+    const tela = montar(FAMILIA_DE_DOIS_SUBCAMPOS, {
+      inicial: {
+        grupos: {
+          FAMILIA: [
+            { id: 'membro-1', respostas: { RENDA: 100 } },
+            { id: 'membro-2', respostas: { RENDA: 200 } },
+          ],
+        },
+      },
+    });
+    fixture.componentRef.setInput('errosDoServidor', [
+      { campo: 'FAMILIA.membro-2.RENDA', mensagem: 'Renda do segundo acima do teto.' },
+    ]);
+    fixture.detectChanges();
+    expect(botao(tela, '1').classList).toContain('is-error');
+
+    clicar(botao(tela, 'Remover Integrante 2'));
+    expect(botao(tela, '1').classList).not.toContain('is-error');
+
+    clicar(botao(tela, 'Acrescentar'));
+    expect(botao(tela, '1').classList).not.toContain('is-error');
+    expect(tela.textContent).not.toContain('Renda do segundo acima do teto.');
+  });
+
+  it('editar um subcampo descarta a recusa do próprio grupo, como a de cardinalidade', () => {
+    const tela = montar(FAMILIA_DE_DOIS_SUBCAMPOS, {
+      inicial: { grupos: { FAMILIA: [{ id: 'membro-1', respostas: { RENDA: 100 } }] } },
+    });
+    fixture.componentRef.setInput('errosDoServidor', [
+      { campo: 'FAMILIA', mensagem: 'Quantidade de integrantes recusada.' },
+    ]);
+    fixture.detectChanges();
+    expect(tela.textContent).toContain('Quantidade de integrantes recusada.');
+
+    digitar(
+      tela.querySelector('[data-campo="FAMILIA.membro-1.RENDA"] input') as HTMLInputElement,
+      '90',
+    );
+
+    expect(tela.textContent).not.toContain('Quantidade de integrantes recusada.');
+  });
+
   it('a recusa do servidor a um termo aparece no termo', () => {
     const tela = montar(COM_TERMO);
     fixture.componentRef.setInput('errosDoServidor', [
@@ -997,7 +1095,8 @@ describe('FormularioDoCandidatoComponent', () => {
               codigo: 'PRETA',
               descricao: 'Preta',
               ordem: 1,
-              orientacao: 'Quem concorre às vagas para pretos e pardos passa pela heteroidentificação.',
+              orientacao:
+                'Quem concorre às vagas para pretos e pardos passa pela heteroidentificação.',
             },
           ],
         }),
@@ -1123,9 +1222,7 @@ describe('FormularioDoCandidatoComponent', () => {
           {
             fatoCodigo: 'BOLSISTA',
             booleano: true,
-            regras: [
-              { quando: [[{ fato: 'TEM_BOLSA', operador: 'IGUAL', valor: 'SIM' }]] },
-            ],
+            regras: [{ quando: [[{ fato: 'TEM_BOLSA', operador: 'IGUAL', valor: 'SIM' }]] }],
           },
         ],
       },

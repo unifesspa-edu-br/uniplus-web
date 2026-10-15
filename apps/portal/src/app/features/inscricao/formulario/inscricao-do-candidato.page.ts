@@ -68,6 +68,15 @@ const CONFLITOS: ReadonlySet<string> = new Set([
 
 /** O campo em que o servidor devolve a recusa da oferta de curso. */
 const CAMPO_DA_OFERTA = 'ofertaCursoId';
+/** O que o leitor de tela ouve quando a releitura mostra que a gravação aconteceu. */
+function confirmacaoDaGravacao(inscricao: InscricaoDto): string {
+  if (inscricao.situacao !== SituacaoInscricao.submetida) return 'Rascunho salvo.';
+  return inscricao.numeroInscricao
+    ? `Inscrição enviada. Número ${inscricao.numeroInscricao}.`
+    : 'Inscrição enviada.';
+}
+
+const TITULO_DA_RECUSA = 'A inscrição não foi gravada';
 
 /**
  * A inscrição do candidato num processo: o formulário que a inscrição fixou ao nascer, preenchido em
@@ -137,13 +146,17 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   protected readonly ocupada = signal(false);
   /**
-   * O envio deu certo, mas a releitura da inscrição falhou: o ETag da tela é o velho. Enquanto a página
-   * não for recarregada, nada mais é gravado a partir dela.
+   * Por que a página precisa ser recarregada, quando precisa: `envio` — o envio deu certo, mas a
+   * releitura da inscrição falhou; `incerta` — a gravação falhou sem resposta ou com erro do servidor e a
+   * releitura também falhou, então não se sabe se ela aconteceu. Nos dois casos o ETag da tela é o velho
+   * e nada mais é gravado a partir dela.
    */
-  protected readonly precisaRecarregar = signal(false);
+  protected readonly motivoDoRecarregar = signal<'envio' | 'incerta' | null>(null);
+  protected readonly precisaRecarregar = computed(() => this.motivoDoRecarregar() !== null);
   protected readonly bloqueada = computed(() => this.ocupada() || this.precisaRecarregar());
   protected readonly errosDoServidor = signal<readonly ErroDoServidor[]>([]);
-  protected readonly recusaGeral = signal<string | null>(null);
+  /** A recusa sem campo para apontar: o título diz o que aconteceu e o texto, o que fazer. */
+  protected readonly recusaGeral = signal<{ titulo: string; texto: string } | null>(null);
   protected readonly conflito = signal<string | null>(null);
   protected readonly aviso = signal('');
   protected readonly comprovante = signal<ComprovanteInscricaoDto | null>(null);
@@ -318,7 +331,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
         // O formulário só se libera com o ETag novo: antes disso, uma correção sairia com o velho.
         this.relerAGravada((lida) => {
           this.ocupada.set(false);
-          if (!lida) this.precisaRecarregar.set(true);
+          if (!lida) this.motivoDoRecarregar.set('envio');
         });
       },
     );
@@ -367,7 +380,6 @@ export class InscricaoDoCandidatoPage implements OnInit {
           sucesso(resultado.data);
           return;
         }
-        this.ocupada.set(false);
         this.tratarRecusa(resultado);
       });
   }
@@ -416,18 +428,46 @@ export class InscricaoDoCandidatoPage implements OnInit {
     return { respostas, grupos };
   }
 
+  /** Libera o formulário ao fim, exceto na falha ambígua, que só o libera quando a releitura termina. */
   private tratarRecusa(falha: ApiFailure): void {
     if (CONFLITOS.has(falha.problem.code)) {
+      this.ocupada.set(false);
       this.conflito.set(
         'Recarregamos a versão gravada mais recente para você não sobrescrever o que mudou. Revise e grave de novo.',
       );
       this.carregar();
       return;
     }
-    if (falha.status === 0 || falha.status >= 500) {
-      // A gravação pode ter acontecido sem a resposta chegar: o ETag relido é o que vale para tentar de novo.
-      this.relerAGravada();
-    }
+    const ambigua = falha.status === 0 || falha.status >= 500;
+    this.exibirRecusa(falha, ambigua);
+    if (ambigua) this.confirmarGravacao();
+    else this.ocupada.set(false);
+  }
+
+  /**
+   * A gravação pode ter acontecido sem a resposta chegar: o formulário só se libera com o ETag relido.
+   * Se o ETag mudou, a gravação aconteceu e a tela passa a mostrar o estado do servidor, sem a recusa
+   * neutra, e o aviso confirma o que foi gravado; se a releitura falha, quem fala é o aviso de recarregar.
+   */
+  private confirmarGravacao(): void {
+    const eTagDaTentativa = this.inscricao()?.eTag;
+    this.relerAGravada((lida) => {
+      this.ocupada.set(false);
+      if (!lida) {
+        this.motivoDoRecarregar.set('incerta');
+        this.recusaGeral.set(null);
+      } else {
+        const relida = this.inscricao();
+        if (relida && relida.eTag !== eTagDaTentativa) {
+          this.recusaGeral.set(null);
+          this.aviso.set(confirmacaoDaGravacao(relida));
+        }
+      }
+    });
+  }
+
+  /** Mostra a recusa no campo, na oferta ou, sem onde apontar, como recusa geral. */
+  private exibirRecusa(falha: ApiFailure, ambigua: boolean): void {
     const recusas = falha.problem.errors ?? [];
     const daOferta = recusas.find((e) => e.field === CAMPO_DA_OFERTA);
     const porCampo = recusas
@@ -444,14 +484,24 @@ export class InscricaoDoCandidatoPage implements OnInit {
       );
       return;
     }
+    if (ambigua) {
+      this.recusaGeral.set({
+        titulo: 'Não conseguimos confirmar a gravação',
+        texto: 'Confira as respostas e tente de novo.',
+      });
+      return;
+    }
     const mensagem = this.problemas.resolve(falha.problem);
-    this.recusaGeral.set(mensagem.detail ?? mensagem.title);
+    this.recusaGeral.set({
+      titulo: TITULO_DA_RECUSA,
+      texto: mensagem.detail ?? mensagem.title,
+    });
   }
 
   /** Sem seletor na tela, a recusa da oferta só pode aparecer como recusa geral. */
   private recusarOferta(mensagem: string): void {
     if (this.ofertas().length <= 1) {
-      this.recusaGeral.set(mensagem);
+      this.recusaGeral.set({ titulo: TITULO_DA_RECUSA, texto: mensagem });
       return;
     }
     this.erroDaOferta.set(mensagem);

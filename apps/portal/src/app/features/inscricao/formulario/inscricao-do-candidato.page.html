@@ -29,15 +29,19 @@
   corrigi-la até o fim do período de inscrição.
   <p><a routerLink="/inscricao">Ver minhas inscrições</a></p>
 </ui-alert>
-} @if (precisaRecarregar()) {
+} @switch (motivoDoRecarregar()) { @case ('envio') {
 <ui-alert variant="warning" heading="Recarregue a página para corrigir a inscrição">
   Sua inscrição foi enviada, mas não conseguimos atualizar a tela. Recarregue a página antes de
   corrigir qualquer resposta.
 </ui-alert>
-} @if (conflito(); as aviso) {
+} @case ('incerta') {
+<ui-alert variant="warning" heading="Recarregue a página para continuar">
+  Não conseguimos confirmar se a inscrição foi gravada. Recarregue a página antes de continuar.
+</ui-alert>
+} } @if (conflito(); as aviso) {
 <ui-alert variant="warning" heading="A inscrição mudou em outra janela">{{ aviso }}</ui-alert>
 } @if (recusaGeral(); as recusa) {
-<ui-alert variant="danger" heading="A inscrição não foi gravada">{{ recusa }}</ui-alert>
+<ui-alert variant="danger" [heading]="recusa.titulo">{{ recusa.texto }}</ui-alert>
 } @if (ofertas().length > 1) {
 <div class="field inscricao-oferta">
   <label class="field__label is-required" for="inscricao-oferta">Curso</label>
