@@ -224,6 +224,7 @@ export class ComprovanteDaInscricaoPage {
       switchMap(({ minhas, formulario, processo }): Observable<Leitura> => {
         if (!minhas.ok) return of({ tipo: 'falha', falha: minhas });
         if (!formulario.ok) return of({ tipo: 'falha', falha: formulario });
+        if (!processo.ok) return of({ tipo: 'falha', falha: processo });
         const inscricao = minhas.data.find((i) => i.processoSeletivoId === processoId);
         const numero = inscricao ? numeroDoComprovante(inscricao.comprovantes, pedido) : null;
         if (!inscricao || numero === null) return of({ tipo: 'nao-encontrado' });
@@ -241,7 +242,7 @@ export class ComprovanteDaInscricaoPage {
                       comprovante: comprovante.data,
                       formulario: formulario.data,
                       inscricao,
-                      processo,
+                      processo: processo.data,
                       vizinhos: vizinhos(inscricao.comprovantes, numero),
                       municipios,
                     },
