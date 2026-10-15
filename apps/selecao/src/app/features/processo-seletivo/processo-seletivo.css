@@ -20,6 +20,18 @@
   flex-direction: row;
 }
 
+/* A coluna de etapas só existe a partir de 768 px; abaixo, a barra de etapas abre a lista em
+   diálogo. Esconder o host leva junto o nav interno, sem deixar landmark vazio. */
+.wiz-etapas {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .wiz-etapas {
+    display: contents;
+  }
+}
+
 /* Step bar mobile */
 .step-bar {
   display: none;
@@ -112,229 +124,6 @@
 /* Nenhuma regra esconde este diálogo por largura: `<dialog>` sem `open` já é
    `display: none`. Escondê-lo por media query só teria efeito com ele aberto —
    e faria o conteúdo sumir da tela sem fechar, mantendo o scroll travado. */
-
-/* Stepper nav (desktop) */
-.wiz-nav {
-  width: 224px;
-  flex-shrink: 0;
-  border-right: 1px solid var(--border-subtle);
-  background: var(--surface-card);
-  padding: var(--space-6) 0;
-  overflow-y: auto;
-  display: none;
-}
-
-@media (min-width: 768px) {
-  /* Fica parado ao lado do passo enquanto o `.page` rola, com a altura visível dele. */
-  .wiz-nav {
-    display: block;
-    position: sticky;
-    top: 0;
-    align-self: flex-start;
-    height: 100cqh;
-  }
-}
-
-/* Steps list — estrutura compartilhada */
-.steps {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-/* O item guarda o posicionamento das linhas conectoras; o botão é o alvo
-   clicável e leva o padding, para a área de toque cobrir a linha inteira. */
-.steps__item {
-  position: relative;
-}
-
-.steps__botao {
-  display: flex;
-  width: 100%;
-  align-items: flex-start;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-/* Desktop */
-.wiz-nav .steps__botao {
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-5);
-  min-height: 36px;
-}
-
-/* padding superior → borda do círculo */
-.wiz-nav .steps__item + .steps__item::before {
-  content: '';
-  position: absolute;
-  left: calc(var(--space-5) + 9px);
-  top: 0;
-  height: var(--space-2);
-  width: 2px;
-  background: var(--border-default);
-}
-
-/* borda inferior do círculo → fim do item (adapta à altura) */
-.wiz-nav .steps__item:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: calc(var(--space-5) + 9px);
-  top: calc(var(--space-2) + 20px);
-  bottom: 0;
-  width: 2px;
-  background: var(--border-default);
-}
-
-.wiz-nav .steps__num {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid var(--border-default);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: var(--weight-bold);
-  color: var(--text-muted);
-  background: var(--surface-card);
-  flex-shrink: 0;
-}
-
-.wiz-nav .steps__label {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-  line-height: 1.3;
-}
-
-/* Badge icons: hidden by default, shown via state classes */
-.steps__num .num-icon {
-  display: none;
-  width: 0.9em;
-  height: 0.9em;
-  flex-shrink: 0;
-}
-
-.wiz-nav .steps__item.is-active .steps__num {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--text-on-inverse);
-}
-.wiz-nav .steps__item.is-active .steps__num .num-text {
-  display: none;
-}
-.wiz-nav .steps__item.is-active .steps__num .num-hourglass {
-  display: block;
-}
-
-.wiz-nav .steps__item.is-active .steps__label {
-  color: var(--color-primary);
-  font-weight: var(--weight-semibold);
-}
-
-.wiz-nav .steps__item.is-done .steps__num {
-  background: var(--color-success-600);
-  border-color: var(--color-success-600);
-  color: var(--text-on-inverse);
-}
-.wiz-nav .steps__item.is-done .steps__num .num-text {
-  display: none;
-}
-.wiz-nav .steps__item.is-done .steps__num .num-check {
-  display: block;
-}
-
-.wiz-nav .steps__item.is-done .steps__label {
-  color: var(--text-primary);
-}
-
-.wiz-nav .steps__item.is-pending .steps__num {
-  background: var(--color-warning-500);
-  border-color: var(--color-warning-500);
-  color: var(--text-on-inverse);
-}
-.wiz-nav .steps__item.is-pending .steps__num .num-text {
-  display: none;
-}
-.wiz-nav .steps__item.is-pending .steps__num .num-hourglass {
-  display: block;
-}
-
-.wiz-nav .steps__item.is-pending .steps__label {
-  color: var(--text-secondary);
-}
-
-/* Mobile overlay steps */
-.steps-overlay .steps__botao {
-  gap: var(--space-4);
-  padding: var(--space-2) 0;
-  min-height: var(--touch-min);
-}
-
-/* padding superior → borda do círculo */
-.steps-overlay .steps__item + .steps__item::before {
-  content: '';
-  position: absolute;
-  left: 19px;
-  top: 0;
-  height: var(--space-2);
-  width: 2px;
-  background: color-mix(in srgb, var(--text-on-inverse) 20%, transparent);
-}
-
-/* borda inferior do círculo → fim do item (adapta à altura) */
-.steps-overlay .steps__item:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 19px;
-  top: calc(var(--space-2) + 40px);
-  bottom: 0;
-  width: 2px;
-  background: color-mix(in srgb, var(--text-on-inverse) 20%, transparent);
-}
-
-.steps-overlay .steps__num {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--text-on-inverse) 28%, transparent);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
-  color: color-mix(in srgb, var(--text-on-inverse) 55%, transparent);
-  flex-shrink: 0;
-  background: transparent;
-}
-
-.steps-overlay .steps__label {
-  font-size: var(--text-md);
-  color: color-mix(in srgb, var(--text-on-inverse) 55%, transparent);
-  padding-top: 10px;
-}
-
-.steps-overlay .steps__item.is-active .steps__num {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--text-on-inverse);
-}
-.steps-overlay .steps__item.is-active .steps__num .num-text {
-  display: none;
-}
-.steps-overlay .steps__item.is-active .steps__num .num-hourglass {
-  display: block;
-}
-
-.steps-overlay .steps__item.is-active .steps__label {
-  color: var(--text-on-inverse);
-  font-weight: var(--weight-semibold);
-}
 
 /* Wizard body */
 .wiz-body {
@@ -1765,40 +1554,6 @@
 
 .steps-overlay__close:hover {
   background: color-mix(in srgb, var(--text-on-inverse) 18%, transparent);
-}
-
-/* Overlay — is-done */
-.steps-overlay .steps__item.is-done .steps__num {
-  background: var(--color-success-600);
-  border-color: var(--color-success-600);
-  color: var(--text-on-inverse);
-}
-.steps-overlay .steps__item.is-done .steps__num .num-text {
-  display: none;
-}
-.steps-overlay .steps__item.is-done .steps__num .num-check {
-  display: block;
-}
-
-.steps-overlay .steps__item.is-done .steps__label {
-  color: color-mix(in srgb, var(--text-on-inverse) 80%, transparent);
-}
-
-/* Overlay — is-pending */
-.steps-overlay .steps__item.is-pending .steps__num {
-  background: var(--color-warning-500);
-  border-color: var(--color-warning-500);
-  color: var(--text-on-inverse);
-}
-.steps-overlay .steps__item.is-pending .steps__num .num-text {
-  display: none;
-}
-.steps-overlay .steps__item.is-pending .steps__num .num-hourglass {
-  display: block;
-}
-
-.steps-overlay .steps__item.is-pending .steps__label {
-  color: color-mix(in srgb, var(--text-on-inverse) 60%, transparent);
 }
 
 /* ---- Step 4: Vagas ---- */

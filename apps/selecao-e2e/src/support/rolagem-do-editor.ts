@@ -79,7 +79,10 @@ export async function encurtarJanela(page: Page): Promise<void> {
  */
 export async function conferirRolagemPorRodaForaDoConteudo(page: Page): Promise<void> {
   const largura = page.viewportSize()?.width ?? 0;
-  const regioes = [largura >= LARGURA_STEPPER_LATERAL ? '.wiz-nav' : '.step-bar', '.wiz-footer'];
+  const regioes = [
+    largura >= LARGURA_STEPPER_LATERAL ? 'nav[aria-label="Etapas do cadastro"]' : '.step-bar',
+    '.wiz-footer',
+  ];
 
   for (const regiao of regioes) {
     await voltarAoTopo(page);
@@ -246,7 +249,7 @@ export async function conferirStepperNaAlturaDaArea(page: Page): Promise<void> {
       () =>
         page.evaluate(() => {
           const area = document.querySelector('main.page');
-          const stepper = document.querySelector('.wiz-nav');
+          const stepper = document.querySelector('nav[aria-label="Etapas do cadastro"]');
           if (!(area instanceof HTMLElement) || !(stepper instanceof HTMLElement)) {
             return Number.POSITIVE_INFINITY;
           }

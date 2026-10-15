@@ -2,8 +2,6 @@ import { CaraterEtapa, OrigemCandidatos, UnidadePrazo } from '@uniplus/shared-da
 import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
 
-export type StepStatus = 'active' | 'done' | 'pending' | 'unvisited';
-
 /**
  * Origem dos candidatos no rascunho: `''` representa "ainda não escolhida".
  * `OrigemCandidatos.nenhuma` existe no contrato mas é recusada pela criação do

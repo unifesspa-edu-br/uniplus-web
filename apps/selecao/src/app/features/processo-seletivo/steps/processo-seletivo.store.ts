@@ -1,7 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
-import { conteudoInicial } from '@uniplus/shared-ui/components';
+import { conteudoInicial, type StepStatus } from '@uniplus/shared-ui/components';
 import { STEP_LABELS } from './processo-seletivo.data';
 import { exigenciasVazias } from './shared/exigencias-documentais';
 import {
@@ -21,7 +21,6 @@ import {
   CriterioDesempateConfigurado,
   ExigenciasDoRascunho,
   FalhaDeLeitura,
-  StepStatus,
   WizardDraft,
 } from './processo-seletivo.models';
 

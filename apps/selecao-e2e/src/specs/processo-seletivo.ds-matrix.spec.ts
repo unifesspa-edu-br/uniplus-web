@@ -25,7 +25,6 @@ import { instalarPreferencia, temaDoProject } from '../support/tema';
  */
 const LARGURA_MENU_AMPLO = 1024;
 
-
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, OPTIONS',
@@ -83,11 +82,15 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
    * demais, que ficam montados mas ocultos por `[hidden]`.
    */
   test('não transborda horizontalmente em nenhum passo', async ({ page }) => {
-    const total = await page.locator('li.steps__item').count();
+    const total = await page
+      .locator('nav[aria-label="Etapas do cadastro"] li.ui-steps__item')
+      .count();
 
     for (let passo = 0; passo < total; passo += 1) {
       await page.evaluate((indice) => {
-        const botoes = document.querySelectorAll<HTMLButtonElement>('li.steps__item button');
+        const botoes = document.querySelectorAll<HTMLButtonElement>(
+          'nav[aria-label="Etapas do cadastro"] li.ui-steps__item button',
+        );
         botoes[indice]?.click();
       }, passo);
 
@@ -112,10 +115,18 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
    * na matriz do próprio passo.
    */
   test('mantém o ritmo vertical entre título, alerta e dica', async ({ page }) => {
-    for (const passo of ['Tipo do processo', 'Identificação', 'Pagamento', 'Vagas', 'Formulários']) {
+    for (const passo of [
+      'Tipo do processo',
+      'Identificação',
+      'Pagamento',
+      'Vagas',
+      'Formulários',
+    ]) {
       const posicao = await page.evaluate((rotulo) => {
         const botoes = Array.from(
-          document.querySelectorAll<HTMLButtonElement>('li.steps__item button'),
+          document.querySelectorAll<HTMLButtonElement>(
+            'nav[aria-label="Etapas do cadastro"] li.ui-steps__item button',
+          ),
         );
         const indice = botoes.findIndex((botao) => botao.textContent?.includes(rotulo));
         botoes[indice]?.click();
@@ -275,7 +286,9 @@ function navegacaoDePassos(page: Page, largura: number): () => Promise<void> {
 async function abrirPasso(page: Page, rotulo: string): Promise<void> {
   await page.evaluate((procurado) => {
     const botoes = Array.from(
-      document.querySelectorAll<HTMLButtonElement>('li.steps__item button'),
+      document.querySelectorAll<HTMLButtonElement>(
+        'nav[aria-label="Etapas do cadastro"] li.ui-steps__item button',
+      ),
     );
     botoes.find((botao) => botao.textContent?.includes(procurado))?.click();
   }, rotulo);

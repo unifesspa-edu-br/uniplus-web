@@ -87,13 +87,20 @@
       </svg>
     </button>
   </div>
-  <sel-wizard-stepper (stepSelected)="closeStepsOverlay()"></sel-wizard-stepper>
+  <ui-steps
+    variante="sobreposicao"
+    [items]="itensDosPassos()"
+    (selecionado)="irParaPassoFechandoLista($event)"
+  />
 </dialog>
 
 <div class="wiz-shell">
-  <nav class="wiz-nav" aria-label="Etapas do cadastro">
-    <sel-wizard-stepper></sel-wizard-stepper>
-  </nav>
+  <ui-steps
+    class="wiz-etapas"
+    rotuloDaNavegacao="Etapas do cadastro"
+    [items]="itensDosPassos()"
+    (selecionado)="irParaPasso($event)"
+  />
   <div class="wiz-body">
     <div class="wiz-content">
       <div aria-live="polite" aria-atomic="true">
