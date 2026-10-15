@@ -27,7 +27,7 @@ export interface DocumentoExigido {
 /**
  * A lista dos documentos que o processo exige: o nome, se é obrigatório, a quem se aplica, os formatos
  * aceitos e o modelo para baixar, quando a exigência oferece um. O nome de cada documento é um `h4`: a
- * lista fica sempre sob um `h3` — a seção do formulário ou o item de Editais.
+ * lista fica sempre sob um `h3` — a seção do formulário.
  */
 @Component({
   selector: 'ui-lista-de-documentos',
@@ -116,7 +116,7 @@ export interface DocumentoExigido {
                 <i class="pi pi-download" aria-hidden="true"></i>
                 Baixar o modelo ({{ modelo.formato }})
                 <span class="sr-only">
-                  de {{ documento.rotulo }}{{ contexto() ? ' — ' + contexto() : '' }}:
+                  de {{ documento.rotulo }}:
                   {{ modelo.nomeArquivo }}
                 </span>
               </a>
@@ -131,8 +131,6 @@ export class ListaDeDocumentosComponent {
   readonly documentos = input.required<readonly DocumentoExigido[]>();
   /** O que dizer quando a lista é vazia: só quem hospeda sabe o que a ausência significa ali. */
   readonly semDocumentos = input.required<string>();
-  /** O que distingue esta lista de outra na mesma página, no nome acessível do link do modelo (WCAG 2.4.9). */
-  readonly contexto = input('');
 
   protected aQuemSeAplica(documento: DocumentoExigido): string {
     if (documento.situacao) return documento.situacao;
