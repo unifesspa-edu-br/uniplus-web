@@ -422,6 +422,64 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(servico.salvos[0].respostas).toHaveProperty('NOME', null);
   });
 
+  it('o grupo que o candidato removeu vai como lista vazia, para o servidor não manter as ocorrências gravadas', async () => {
+    servico.formulario = {
+      ...FORMULARIO_DE_INSCRICAO_MOCK,
+      grupos: [
+        {
+          codigo: 'FAMILIA',
+          ordem: 0,
+          rotulo: 'Integrante',
+          minimo: 0,
+          maximo: null,
+          incluiCandidato: false,
+          subitens: [
+            {
+              fatoCodigo: 'RENDA',
+              ordem: 0,
+              rotulo: 'Renda',
+              tipoRenderizacao: 'NUMERO',
+              valoresSelecionaveis: null,
+              etapaCodigo: 'Inscricao:DADOS_PESSOAIS',
+              formato: null,
+              ajuda: null,
+              pedirConfirmacao: false,
+            },
+          ],
+        },
+      ],
+      regras: {
+        ...FORMULARIO_DE_INSCRICAO_MOCK.regras,
+        etapas: FORMULARIO_DE_INSCRICAO_MOCK.regras.etapas.map((etapa, i) =>
+          i > 0
+            ? etapa
+            : {
+                ...etapa,
+                grupos: [
+                  {
+                    codigo: 'FAMILIA',
+                    obrigatoriedade: 'SEMPRE',
+                    minimo: 0,
+                    maximo: null,
+                    incluiCandidato: false,
+                    subitens: [{ ...etapa.itens[0], fatoCodigo: 'RENDA', formato: null }],
+                  },
+                ],
+              },
+        ),
+      },
+    };
+    servico.inscricao = inscricao({
+      grupos: { FAMILIA: [{ id: 'ocorrencia-1', respostas: { RENDA: 1500 } }] },
+    });
+    const tela = await abrir();
+    await clicar(botao(tela, 'Remover'));
+
+    await clicar(botao(tela, 'Salvar rascunho'));
+
+    expect(servico.salvos[0].grupos).toHaveProperty('FAMILIA', []);
+  });
+
   it('o aceite leva a versão e o hash do termo da versão fixada', async () => {
     servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();

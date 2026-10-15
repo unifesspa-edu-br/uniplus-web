@@ -374,7 +374,9 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   /**
    * As respostas e as ocorrências como o servidor as mescla ao gravado. A resposta que o candidato
-   * apagou vai como `null`: ausente do corpo, o servidor manteria a gravada.
+   * apagou vai como `null`: ausente do corpo, o servidor manteria a gravada. O grupo que o candidato
+   * removeu vai como lista vazia, pelo mesmo motivo: ausente do corpo, o servidor manteria as
+   * ocorrências gravadas; enviado, ele as substitui.
    */
   private respostasDoCorpo(
     inscricao: InscricaoDto,
@@ -384,15 +386,17 @@ export class InscricaoDoCandidatoPage implements OnInit {
     for (const fato of Object.keys(inscricao.respostas)) {
       if (!(fato in respostas)) respostas[fato] = null;
     }
-    return {
-      respostas,
-      grupos: Object.fromEntries(
+    const grupos: Record<string, { id: string; respostas: Record<string, unknown> }[]> =
+      Object.fromEntries(
         Object.entries(simulacao.grupos ?? {}).map(([codigo, ocorrencias]) => [
           codigo,
           (ocorrencias ?? []).map((o) => ({ id: o.id, respostas: o.respostas ?? {} })),
         ]),
-      ),
-    };
+      );
+    for (const codigo of Object.keys(inscricao.grupos)) {
+      if (simulacao.grupos?.[codigo] == null) grupos[codigo] = [];
+    }
+    return { respostas, grupos };
   }
 
   private tratarRecusa(falha: ApiFailure): void {
