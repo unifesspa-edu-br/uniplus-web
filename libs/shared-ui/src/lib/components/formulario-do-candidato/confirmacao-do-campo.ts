@@ -8,11 +8,7 @@ import {
   type RespostaFixa,
 } from './formulario-do-candidato.model';
 import { estaVazia, VERDADEIRO } from './interpretador/logica';
-import type {
-  OcorrenciaSimulada,
-  SimulacaoDoFormulario,
-  ValorJson,
-} from './interpretador/regras-do-formulario';
+import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
 
 /**
  * A confirmação é a segunda digitação de um campo de texto, para o candidato conferir o que escreveu. Ela
@@ -37,20 +33,19 @@ export function respostaDoTextoLivre(
 }
 
 /**
- * O que há de errado na confirmação, dadas a resposta e a confirmação digitada. A confirmação que não
- * confere com a resposta dada vale sempre; a em branco só quando a resposta foi digitada ou alterada
- * nesta sessão — a já gravada e não alterada não exige confirmar de novo. Sem resposta, não há o que
+ * O que há de errado na confirmação, dadas a resposta e a confirmação digitada: a que não confere com a
+ * resposta ou a que falta. Vale para toda resposta dada, gravada ou digitada nesta sessão: a confirmação
+ * não vai à API, então nada prova que a da resposta gravada foi feita. Sem resposta, não há o que
  * confirmar.
  */
 export function problemaDaConfirmacao(
   campo: CampoRenderizavel,
   resposta: ValorJson | undefined,
   confirmacao: string,
-  respostaAlterada: boolean,
 ): ProblemaDaConfirmacao | null {
   if (estaVazia(resposta)) return null;
   const confirmada = respostaDoTextoLivre(campo, confirmacao);
-  if (confirmada === undefined) return respostaAlterada ? 'em-branco' : null;
+  if (confirmada === undefined) return 'em-branco';
   return mesmoValor(confirmada, resposta) ? null : 'diverge';
 }
 
@@ -59,8 +54,6 @@ export interface EntradaDasConfirmacoes {
   /** As respostas atuais, com as fixas. */
   readonly respostas: Readonly<Record<string, ValorJson>>;
   readonly grupos: Readonly<Record<string, readonly OcorrenciaSimulada[]>>;
-  /** As respostas de partida: o que já estava gravado antes desta sessão. */
-  readonly gravadas: SimulacaoDoFormulario | null;
   /** A confirmação digitada, pelo código da tela: o fato ou `grupo.ocorrência.fato`. */
   readonly confirmacoes: Readonly<Record<string, string>>;
   readonly fixas: Readonly<Partial<Record<string, RespostaFixa>>>;
@@ -80,46 +73,25 @@ export function avaliarConfirmacoes(
     campo: CampoRenderizavel,
     fixa: boolean,
     resposta: ValorJson | undefined,
-    gravada: ValorJson | undefined,
   ): void => {
     if (!pedeConfirmacao(campo, fixa)) return;
-    const problema = problemaDaConfirmacao(
-      campo,
-      resposta,
-      entrada.confirmacoes[caminho] ?? '',
-      !mesmoValor(resposta, gravada),
-    );
+    const problema = problemaDaConfirmacao(campo, resposta, entrada.confirmacoes[caminho] ?? '');
     if (problema) problemas.set(caminho, problema);
   };
 
   for (const passo of passos) {
     for (const { campo } of passo.campos) {
       const fato = campo.fatoCodigo;
-      conferir(
-        fato,
-        campo,
-        !!entrada.fixas[fato],
-        entrada.respostas[fato],
-        entrada.gravadas?.respostas?.[fato],
-      );
+      conferir(fato, campo, !!entrada.fixas[fato], entrada.respostas[fato]);
     }
     for (const { grupo, avaliado } of passo.grupos) {
       for (const ocorrencia of avaliado.ocorrencias) {
         const atuais = entrada.grupos[grupo.codigo]?.find((o) => o.id === ocorrencia.id)?.respostas;
-        const gravadas = entrada.gravadas?.grupos?.[grupo.codigo]?.find(
-          (o) => o.id === ocorrencia.id,
-        )?.respostas;
         for (const avaliadoDoSubitem of ocorrencia.campos) {
           const subitem = grupo.subitens.find((s) => s.fatoCodigo === avaliadoDoSubitem.fatoCodigo);
           if (!subitem || avaliadoDoSubitem.visivel !== VERDADEIRO) continue;
           const fato = subitem.fatoCodigo;
-          conferir(
-            `${grupo.codigo}.${ocorrencia.id}.${fato}`,
-            subitem,
-            false,
-            atuais?.[fato],
-            gravadas?.[fato],
-          );
+          conferir(`${grupo.codigo}.${ocorrencia.id}.${fato}`, subitem, false, atuais?.[fato]);
         }
       }
     }

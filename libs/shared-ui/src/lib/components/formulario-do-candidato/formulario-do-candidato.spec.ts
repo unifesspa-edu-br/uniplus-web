@@ -1310,17 +1310,17 @@ describe('FormularioDoCandidatoComponent', () => {
       ).toContain('Confirme E-mail digitando o mesmo valor.');
     });
 
-    it('a resposta gravada e não alterada nesta sessão não exige confirmar de novo', () => {
+    it('a resposta gravada sem confirmação também bloqueia o envio, como a digitada', () => {
       montar(COM_CONFIRMACAO, { inicial: { respostas: { EMAIL } } });
 
-      expect(fixture.componentInstance.concluirTodas()).toBe(0);
+      expect(fixture.componentInstance.concluirTodas()).toBe(1);
     });
 
-    it('a resposta gravada e alterada nesta sessão volta a exigir a confirmação', () => {
+    it('a resposta gravada deixa enviar quando a confirmação confere', () => {
       const tela = montar(COM_CONFIRMACAO, { inicial: { respostas: { EMAIL } } });
-      digitar(entradas(tela).resposta, 'outro_valor@lhp.com.br');
+      digitar(entradas(tela).confirmacao, EMAIL);
 
-      expect(fixture.componentInstance.concluirTodas()).toBe(1);
+      expect(fixture.componentInstance.concluirTodas()).toBe(0);
     });
 
     it('a confirmação que confere deixa enviar, e vale depois de trocar de seção', () => {

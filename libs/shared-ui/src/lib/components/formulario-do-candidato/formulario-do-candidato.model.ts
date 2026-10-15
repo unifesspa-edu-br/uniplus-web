@@ -351,7 +351,7 @@ export function termoSemAceite(termo: TermoNoPasso, aceitos: ReadonlySet<string>
 
 /**
  * O que a confirmação digitada de um campo que pede confirmação tem de errado: a que não confere com a
- * resposta ou a que falta, quando a resposta foi dada nesta sessão.
+ * resposta ou a que falta, para toda resposta dada — gravada ou digitada nesta sessão.
  */
 export type ProblemaDaConfirmacao = 'diverge' | 'em-branco';
 
