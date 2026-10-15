@@ -119,9 +119,9 @@ describe('Bloco de documentos da inscrição', () => {
     fixture.componentRef.setInput('avaliacao', avaliacao);
     fixture.detectChanges();
     const tela = fixture.nativeElement as HTMLElement;
-    const passo = [
-      ...tela.querySelectorAll<HTMLButtonElement>('.formulario-candidato__passo'),
-    ].find((b) => b.textContent?.includes('Documentos')) as HTMLButtonElement;
+    const passo = [...tela.querySelectorAll<HTMLButtonElement>('ui-steps .ui-steps__botao')].find(
+      (b) => b.textContent?.includes('Documentos'),
+    ) as HTMLButtonElement;
     passo.click();
     fixture.detectChanges();
     return tela;
