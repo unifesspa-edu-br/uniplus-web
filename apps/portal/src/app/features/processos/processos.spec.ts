@@ -203,6 +203,40 @@ describe('ProcessosComponent', () => {
     expect(status?.textContent).toContain('2 certames nesta página');
   });
 
+  describe('itens sem a seção "Documentos exigidos"', () => {
+    const textoDosItens = (seletor: string): string[] =>
+      Array.from(host().querySelectorAll(seletor)).map((item) => item.textContent ?? '');
+
+    it('nem a lista nem os cards oferecem a seção em nenhum item', async () => {
+      await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
+      fixture.detectChanges();
+      const itensDaLista = textoDosItens('.edital-row');
+      expect(itensDaLista).toHaveLength(2);
+      itensDaLista.forEach((texto) => expect(texto).not.toContain('Documentos exigidos'));
+
+      component['setVisao']('cards');
+      fixture.detectChanges();
+      const cards = textoDosItens('.certames-grid .card');
+      expect(cards).toHaveLength(2);
+      cards.forEach((texto) => expect(texto).not.toContain('Documentos exigidos'));
+    });
+
+    it('abrir os acionadores dos itens não lê o certame publicado de cada um', async () => {
+      const certames = [sisu, tecnicoEnfermagem];
+      await flushLista(certames, contadoresHeaders);
+      fixture.detectChanges();
+
+      const acionadores = host().querySelectorAll<HTMLButtonElement>('.edital-row button');
+      expect(acionadores.length).toBeGreaterThan(0);
+      acionadores.forEach((acionador) => acionador.click());
+      await propagate();
+
+      certames.forEach((certame) =>
+        controller.expectNone(`${CERTAMES_URL}/${certame.processoSeletivoId}`),
+      );
+    });
+  });
+
   describe('publicações do edital', () => {
     async function carregarComPublicacoes(itens: readonly CertameNaVitrineDto[]): Promise<void> {
       await flushLista(itens, contadoresHeaders);

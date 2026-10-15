@@ -46,7 +46,6 @@ import {
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { CertamePublicacoesComponent } from '../publicacoes/certame-publicacoes';
-import { CertameDocumentosComponent } from './certame-documentos/certame-documentos';
 import type { PublicacoesDoCertame } from '../publicacoes/publicacoes.model';
 import {
   type PublicacoesPorCertame,
@@ -191,7 +190,6 @@ function numeroDoHeader(
     RouterOutlet,
     DateBrPipe,
     AlertComponent,
-    CertameDocumentosComponent,
     CertamePublicacoesComponent,
     EmptyStateComponent,
     FilterBarComponent,
@@ -306,7 +304,10 @@ export class ProcessosComponent {
       const headers = untracked(() => this.lista.headers());
       return {
         [SituacaoDoCertame.emBreve]: numeroDoHeader(headers, 'X-Certames-Em-Breve'),
-        [SituacaoDoCertame.inscricoesAbertas]: numeroDoHeader(headers, 'X-Certames-Inscricoes-Abertas'),
+        [SituacaoDoCertame.inscricoesAbertas]: numeroDoHeader(
+          headers,
+          'X-Certames-Inscricoes-Abertas',
+        ),
         [SituacaoDoCertame.ultimosDias]: numeroDoHeader(headers, 'X-Certames-Ultimos-Dias'),
         [SituacaoDoCertame.encerradas]: numeroDoHeader(headers, 'X-Certames-Encerrados'),
       };
