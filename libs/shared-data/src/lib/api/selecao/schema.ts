@@ -7411,6 +7411,8 @@ export interface components {
             readonly grupos: null | {
                 readonly [key: string]: readonly components["schemas"]["OcorrenciaDeGrupoInscricaoInput"][];
             };
+            /** Format: uuid */
+            readonly ofertaCursoId?: null | string;
         };
         readonly BancaDaEtapaDto: {
             /** Format: uuid */

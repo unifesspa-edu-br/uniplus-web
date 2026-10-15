@@ -240,21 +240,22 @@ export class InscricaoDoCandidatoPage implements OnInit {
               grupos: inscricao.data.grupos as SimulacaoDoFormulario['grupos'],
             };
             this.inicial.set(inicial);
+            const oferta =
+              inscricao.data.ofertaCursoId ??
+              (ofertas.data.length === 1 ? ofertas.data[0].id : null);
             this.avaliacao.iniciar(
               processoId,
               inscricao.data.avaliacao,
               formulario.data.dependenciasDaAvaliacao,
               inicial,
+              oferta,
             );
             this.termosAceitosIniciais.set(inscricao.data.aceites.map((a) => a.codigo));
             this.instanteDoEnvio.set(this.relogio());
             this.formulario.set(formulario.data);
             this.acompanharODiaDoEnvio();
             this.ofertas.set(ofertas.data);
-            this.ofertaEscolhida.set(
-              inscricao.data.ofertaCursoId ??
-                (ofertas.data.length === 1 ? ofertas.data[0].id : null),
-            );
+            this.ofertaEscolhida.set(oferta);
             this.estado.set('pronto');
           });
       });
@@ -298,13 +299,21 @@ export class InscricaoDoCandidatoPage implements OnInit {
     this.simulacao.set(simulacao);
     const inscricao = this.inscricao();
     if (inscricao)
-      this.avaliacao.respostasMudaram(simulacao, () => this.respostasDoCorpo(inscricao, simulacao));
+      this.avaliacao.respostasMudaram(simulacao, () => this.corpoDaAvaliacao(inscricao, simulacao));
   }
 
   protected escolherOferta(evento: Event): void {
     const valor = (evento.target as HTMLSelectElement).value;
-    this.ofertaEscolhida.set(valor === '' ? null : valor);
+    const oferta = valor === '' ? null : valor;
+    this.ofertaEscolhida.set(oferta);
     this.erroDaOferta.set(null);
+    // Lido do formulário na troca: a emissão das mudanças só chega no ciclo seguinte.
+    const inscricao = this.inscricao();
+    const formulario = this.formularioDoCandidato();
+    if (inscricao && formulario)
+      this.avaliacao.ofertaMudou(oferta, () =>
+        this.corpoDaAvaliacao(inscricao, formulario.simulacao()),
+      );
   }
 
   protected salvar(): void {
@@ -401,6 +410,17 @@ export class InscricaoDoCandidatoPage implements OnInit {
     };
   }
 
+  /** O corpo da consulta de avaliação: as respostas da tela e a oferta escolhida nela, ou `null`. */
+  private corpoDaAvaliacao(
+    inscricao: InscricaoDto,
+    simulacao: SimulacaoDoFormulario,
+  ): AvaliacaoDaInscricaoRequest {
+    return {
+      ...this.respostasDoCorpo(inscricao, simulacao),
+      ofertaCursoId: this.ofertaEscolhida(),
+    };
+  }
+
   /**
    * As respostas e as ocorrências como o servidor as mescla ao gravado. A resposta que o candidato
    * apagou vai como `null`: ausente do corpo, o servidor manteria a gravada. O grupo que o candidato
@@ -410,7 +430,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
   private respostasDoCorpo(
     inscricao: InscricaoDto,
     simulacao: SimulacaoDoFormulario,
-  ): AvaliacaoDaInscricaoRequest {
+  ): Pick<AvaliacaoDaInscricaoRequest, 'respostas' | 'grupos'> {
     const respostas: Record<string, unknown> = { ...(simulacao.respostas ?? {}) };
     for (const fato of Object.keys(inscricao.respostas)) {
       if (!(fato in respostas)) respostas[fato] = null;

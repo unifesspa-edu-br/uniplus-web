@@ -327,6 +327,47 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(servico.avaliacoes.map((a) => a.respostas?.['NOME'])).toEqual(['Ariel Drumond']);
   });
 
+  it('a consulta de avaliação leva a oferta escolhida na tela, ou null quando não há escolha', async () => {
+    // A espera da consulta corre no agendador do RxJS, que usa `setInterval`, e não `setTimeout`.
+    vi.useRealTimers();
+    servico.formulario = COM_MODALIDADES;
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.inscricao = inscricao({ ofertaCursoId: DIREITO.id });
+    const tela = await abrir();
+    const digitar = async (nome: string): Promise<void> => {
+      const campo = campoDe(tela, 'NOME');
+      campo.value = nome;
+      campo.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));
+    };
+
+    await digitar('Ariel Drumond');
+    await escolherCurso(tela, '');
+    await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));
+    await digitar('Ariel Drumond Nunes');
+
+    expect(servico.avaliacoes.map((a) => a.ofertaCursoId)).toEqual([DIREITO.id, null, null]);
+  });
+
+  it('trocar a oferta no seletor consulta a avaliação de novo com a oferta nova e as respostas gravadas', async () => {
+    vi.useRealTimers();
+    servico.formulario = COM_MODALIDADES;
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.inscricao = inscricao({
+      ofertaCursoId: MEDICINA.id,
+      respostas: { NOME: 'Ariel Drumond' },
+    });
+    const tela = await abrir();
+
+    await escolherCurso(tela, DIREITO.id);
+    await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));
+
+    expect(servico.avaliacoes).toHaveLength(1);
+    expect(servico.avaliacoes[0].ofertaCursoId).toBe(DIREITO.id);
+    expect(servico.avaliacoes[0].respostas?.['NOME']).toBe('Ariel Drumond');
+  });
+
   it('a avaliação que volta do rascunho salvo passa a ser a mostrada', async () => {
     servico.formulario = COM_MODALIDADES;
     servico.inscricao = inscricao({ avaliacao: concorrendoEm('Ampla concorrência') });
