@@ -6,10 +6,15 @@ function folha(nome: string): string {
   return readFileSync(resolve(__dirname, nome), 'utf-8').replace(/\/\*[\s\S]*?\*\//gu, '');
 }
 
+/** O texto como literal de expressão regular: todo metacaractere escapado. */
+function escaparRegex(texto: string): string {
+  return texto.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
 /** O tamanho de fonte da regra, em rem, resolvendo o token do DS quando a regra o cita. */
 function tamanhoEmRem(seletor: string): number {
   const regra = folha('components.css').match(
-    new RegExp(`${seletor.replace(/[.]/gu, '\\.')}\\s*\\{([^{}]*)\\}`, 'u'),
+    new RegExp(`${escaparRegex(seletor)}\\s*\\{([^{}]*)\\}`, 'u'),
   )?.[1];
   const valor = regra?.match(/font-size:\s*([^;]+);/u)?.[1].trim() ?? '';
   const token = valor.match(/^var\((--[\w-]+)\)$/u)?.[1];
