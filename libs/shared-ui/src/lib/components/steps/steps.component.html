@@ -1,0 +1,67 @@
+<ng-template #lista>
+  <ol class="ui-steps__lista">
+    @for (item of items(); track item.chave ?? $index) {
+      <li
+        class="ui-steps__item"
+        [class.is-active]="item.status === 'active'"
+        [class.is-done]="marcaConcluido(item)"
+        [class.is-pending]="item.status === 'pending'"
+        [class.is-error]="item.comErro"
+      >
+        <button
+          class="ui-steps__botao"
+          type="button"
+          [attr.aria-current]="item.status === 'active' ? 'step' : null"
+          (click)="selecionado.emit($index)"
+        >
+          <span class="ui-steps__num" aria-hidden="true">
+            <span class="ui-steps__texto">{{ $index + 1 }}</span>
+            <svg
+              class="ui-steps__icone ui-steps__check"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <svg
+              class="ui-steps__icone ui-steps__ampulheta"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"
+              />
+            </svg>
+          </span>
+          <span class="ui-steps__rotulo">{{ item.rotulo }}</span>
+          @if (item.comErro) {
+            <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+            <span class="sr-only">(com resposta recusada)</span>
+          } @else if (concluido(item)) {
+            <span class="sr-only">(concluída)</span>
+          } @else if (item.status === 'pending') {
+            <span class="sr-only">(pendente)</span>
+          }
+        </button>
+      </li>
+    }
+  </ol>
+</ng-template>
+
+@if (rotuloDaNavegacao(); as rotulo) {
+  <nav [class]="classe()" [attr.aria-label]="rotulo">
+    <ng-container [ngTemplateOutlet]="lista" />
+  </nav>
+} @else {
+  <div [class]="classe()">
+    <ng-container [ngTemplateOutlet]="lista" />
+  </div>
+}

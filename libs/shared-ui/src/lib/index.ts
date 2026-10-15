@@ -77,6 +77,12 @@ export {
 export { CodigoDeVerificacaoComponent } from './components/codigo-de-verificacao/codigo-de-verificacao';
 export { MarcaInstitucionalComponent } from './components/marca-institucional/marca-institucional';
 export { BulletComponent, type UiBulletVariant } from './components/bullet/bullet';
+export {
+  StepsComponent,
+  type StepItem,
+  type StepStatus,
+  type StepsVariant,
+} from './components/steps/steps.component';
 
 // Pipes
 export { DateBrPipe } from './pipes/date-br.pipe';

@@ -4811,3 +4811,269 @@ h5.secao-de-documento__titulo {
     font-size: 9pt;
   }
 }
+
+/* =============================================================================
+   Passos (ui-steps) — variantes lateral, sobreposição e chips
+   ============================================================================= */
+
+/* O host não gera caixa: o contêiner de dentro participa direto do layout do consumidor. */
+ui-steps {
+  display: contents;
+}
+
+.ui-steps__lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* O item guarda as linhas conectoras; o botão é o alvo clicável e leva o padding,
+   para a área de toque cobrir a linha inteira. */
+.ui-steps__item {
+  position: relative;
+}
+
+.ui-steps__botao {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ui-steps__num .ui-steps__icone {
+  display: none;
+  width: 0.9em;
+  height: 0.9em;
+  flex-shrink: 0;
+}
+
+/* Variantes lateral e sobreposição: a mesma coluna, medidas e cores por variável. */
+.ui-steps--lateral,
+.ui-steps--sobreposicao {
+  --ui-steps-gap: var(--space-3);
+  --ui-steps-pad: var(--space-2) var(--space-5);
+  --ui-steps-min: 36px;
+  --ui-steps-num: 20px;
+  --ui-steps-num-fs: 10px;
+  --ui-steps-num-bg: var(--surface-card);
+  --ui-steps-num-border: var(--border-default);
+  --ui-steps-num-color: var(--text-muted);
+  --ui-steps-linha: var(--border-default);
+  --ui-steps-linha-x: calc(var(--space-5) + 9px);
+  --ui-steps-rotulo-fs: var(--text-sm);
+  --ui-steps-rotulo-pad: 0;
+  --ui-steps-rotulo: var(--text-muted);
+  --ui-steps-rotulo-ativo: var(--color-primary);
+  --ui-steps-rotulo-feito: var(--text-primary);
+  --ui-steps-rotulo-pendente: var(--text-secondary);
+  --ui-steps-pendente-icone: var(--text-primary);
+}
+
+.ui-steps--sobreposicao {
+  --ui-steps-gap: var(--space-4);
+  --ui-steps-pad: var(--space-2) 0;
+  --ui-steps-min: var(--touch-min);
+  --ui-steps-num: 40px;
+  --ui-steps-num-fs: var(--text-sm);
+  --ui-steps-num-bg: transparent;
+  --ui-steps-num-border: color-mix(in srgb, var(--text-on-inverse) 28%, transparent);
+  --ui-steps-num-color: color-mix(in srgb, var(--text-on-inverse) 55%, transparent);
+  --ui-steps-linha: color-mix(in srgb, var(--text-on-inverse) 20%, transparent);
+  --ui-steps-linha-x: 19px;
+  --ui-steps-rotulo-fs: var(--text-md);
+  --ui-steps-rotulo-pad: 10px;
+  --ui-steps-rotulo: color-mix(in srgb, var(--text-on-inverse) 55%, transparent);
+  --ui-steps-rotulo-ativo: var(--text-on-inverse);
+  --ui-steps-rotulo-feito: color-mix(in srgb, var(--text-on-inverse) 80%, transparent);
+  --ui-steps-rotulo-pendente: color-mix(in srgb, var(--text-on-inverse) 60%, transparent);
+  --ui-steps-pendente-icone: var(--text-on-inverse);
+}
+
+/* Quando a coluna aparece (e em que largura) é do consumidor: ele mostra ou esconde o host. */
+.ui-steps--lateral {
+  width: 224px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--surface-card);
+  padding: var(--space-6) 0;
+  overflow-y: auto;
+  /* Fica parado ao lado do passo enquanto o consumidor rola, com a altura visível dele. */
+  display: block;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100cqh;
+}
+
+.ui-steps--lateral .ui-steps__rotulo {
+  line-height: 1.3;
+}
+
+.ui-steps--lateral .ui-steps__botao,
+.ui-steps--sobreposicao .ui-steps__botao {
+  gap: var(--ui-steps-gap);
+  padding: var(--ui-steps-pad);
+  min-height: var(--ui-steps-min);
+}
+
+/* padding superior → borda do círculo */
+.ui-steps--lateral .ui-steps__item + .ui-steps__item::before,
+.ui-steps--sobreposicao .ui-steps__item + .ui-steps__item::before {
+  content: '';
+  position: absolute;
+  left: var(--ui-steps-linha-x);
+  top: 0;
+  height: var(--space-2);
+  width: 2px;
+  background: var(--ui-steps-linha);
+}
+
+/* borda inferior do círculo → fim do item (adapta à altura) */
+.ui-steps--lateral .ui-steps__item:not(:last-child)::after,
+.ui-steps--sobreposicao .ui-steps__item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: var(--ui-steps-linha-x);
+  top: calc(var(--space-2) + var(--ui-steps-num));
+  bottom: 0;
+  width: 2px;
+  background: var(--ui-steps-linha);
+}
+
+.ui-steps--lateral .ui-steps__num,
+.ui-steps--sobreposicao .ui-steps__num {
+  width: var(--ui-steps-num);
+  height: var(--ui-steps-num);
+  border-radius: 50%;
+  border: 2px solid var(--ui-steps-num-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ui-steps-num-fs);
+  font-weight: var(--weight-bold);
+  color: var(--ui-steps-num-color);
+  background: var(--ui-steps-num-bg);
+  flex-shrink: 0;
+}
+
+.ui-steps--lateral .ui-steps__rotulo,
+.ui-steps--sobreposicao .ui-steps__rotulo {
+  font-size: var(--ui-steps-rotulo-fs);
+  padding-top: var(--ui-steps-rotulo-pad);
+  color: var(--ui-steps-rotulo);
+}
+
+/* O ícone escuro sobre o preenchimento e o contorno âmbar do pendente mantêm o contraste nos três temas. */
+.ui-steps--lateral .is-active .ui-steps__num,
+.ui-steps--sobreposicao .is-active .ui-steps__num {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--text-on-primary);
+}
+
+.ui-steps--lateral .is-done .ui-steps__num,
+.ui-steps--sobreposicao .is-done .ui-steps__num {
+  background: var(--color-success-600);
+  border-color: var(--color-success-600);
+  color: var(--text-on-primary);
+}
+
+.ui-steps--lateral .is-pending .ui-steps__num,
+.ui-steps--sobreposicao .is-pending .ui-steps__num {
+  background: transparent;
+  border-color: var(--color-warning-600);
+  color: var(--ui-steps-pendente-icone);
+}
+
+.ui-steps--lateral .is-active .ui-steps__num .ui-steps__texto,
+.ui-steps--lateral .is-done .ui-steps__num .ui-steps__texto,
+.ui-steps--lateral .is-pending .ui-steps__num .ui-steps__texto,
+.ui-steps--sobreposicao .is-active .ui-steps__num .ui-steps__texto,
+.ui-steps--sobreposicao .is-done .ui-steps__num .ui-steps__texto,
+.ui-steps--sobreposicao .is-pending .ui-steps__num .ui-steps__texto {
+  display: none;
+}
+
+.ui-steps--lateral .is-active .ui-steps__ampulheta,
+.ui-steps--lateral .is-pending .ui-steps__ampulheta,
+.ui-steps--lateral .is-done .ui-steps__check,
+.ui-steps--sobreposicao .is-active .ui-steps__ampulheta,
+.ui-steps--sobreposicao .is-pending .ui-steps__ampulheta,
+.ui-steps--sobreposicao .is-done .ui-steps__check {
+  display: block;
+}
+
+.ui-steps--lateral .is-active .ui-steps__rotulo,
+.ui-steps--sobreposicao .is-active .ui-steps__rotulo {
+  color: var(--ui-steps-rotulo-ativo);
+  font-weight: var(--weight-semibold);
+}
+
+.ui-steps--lateral .is-done .ui-steps__rotulo,
+.ui-steps--sobreposicao .is-done .ui-steps__rotulo {
+  color: var(--ui-steps-rotulo-feito);
+}
+
+.ui-steps--lateral .is-pending .ui-steps__rotulo,
+.ui-steps--sobreposicao .is-pending .ui-steps__rotulo {
+  color: var(--ui-steps-rotulo-pendente);
+}
+
+/* Variante chips: botões em linha, com o número em círculo e sem ícones de estado. */
+.ui-steps--chips .ui-steps__lista {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ui-steps--chips .ui-steps__botao {
+  display: inline-flex;
+  width: auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.ui-steps--chips .ui-steps__botao:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.ui-steps--chips .ui-steps__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-circle);
+  background: var(--surface-subtle);
+  flex-shrink: 0;
+}
+
+.ui-steps--chips .is-active .ui-steps__botao {
+  border-color: var(--color-primary);
+  color: var(--text-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.ui-steps--chips .is-done .ui-steps__botao {
+  border-color: var(--color-success-solid);
+}
+
+.ui-steps--chips .is-error .ui-steps__botao {
+  border-color: var(--color-danger-solid);
+  color: var(--color-danger-solid);
+}

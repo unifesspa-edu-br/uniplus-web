@@ -20,10 +20,7 @@ export { DrawerComponent } from './drawer/drawer';
 export { EmptyStateComponent } from './empty-state/empty-state';
 export { FileUploadComponent } from './file-upload/file-upload';
 export { FilterBarComponent } from './filter-bar/filter-bar';
-export {
-  FilterChipsComponent,
-  type UiFilterChipOption,
-} from './filter-chips/filter-chips';
+export { FilterChipsComponent, type UiFilterChipOption } from './filter-chips/filter-chips';
 export { FormFieldComponent } from './form-field/form-field';
 export { IconButtonComponent, type UiTooltipPosition } from './icon-button/icon-button';
 export { InstitutionalBarComponent } from './institutional-bar/institutional-bar';
@@ -54,3 +51,9 @@ export { TagComponent, type UiTagVariant } from './tag/tag';
 export { TextareaComponent } from './textarea/textarea';
 export { TextInputComponent } from './text-input/text-input';
 export { VlibrasLoaderComponent } from './vlibras-loader/vlibras-loader';
+export {
+  StepsComponent,
+  type StepItem,
+  type StepStatus,
+  type StepsVariant,
+} from './steps/steps.component';
