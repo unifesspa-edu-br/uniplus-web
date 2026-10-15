@@ -8,6 +8,7 @@ import {
   type ErroDoServidor,
   type GrupoNoPasso,
   mensagemDosErros,
+  type ProblemaDaConfirmacao,
 } from './formulario-do-candidato.model';
 import {
   FATO_PARENTESCO,
@@ -79,7 +80,21 @@ interface OcorrenciaNaTela {
                   campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)
                 )
               "
+              [confirmacao]="
+                confirmacoes()[campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)] ?? ''
+              "
+              [problemaDaConfirmacao]="
+                problemasDaConfirmacao().get(
+                  campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)
+                ) ?? null
+              "
               (respondida)="responder(i, campo.campo.fatoCodigo, $event)"
+              (confirmada)="
+                confirmada.emit({
+                  campo: campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo),
+                  texto: $event,
+                })
+              "
             />
           }
           @if (!ocorrencia.doCandidato) {
@@ -144,7 +159,14 @@ export class GrupoDoCandidatoComponent {
   /** As recusas do servidor dentro do grupo: as do grupo, as de uma ocorrência e as de um campo dela. */
   readonly errosDoServidor = input<readonly ErroDoServidor[]>([]);
 
+  /** A confirmação digitada de cada subitem, pelo código com que o servidor o nomeia. */
+  readonly confirmacoes = input<Readonly<Record<string, string>>>({});
+  /** O problema da confirmação de cada subitem, pelo mesmo código. */
+  readonly problemasDaConfirmacao = input<ReadonlyMap<string, ProblemaDaConfirmacao>>(new Map());
+
   readonly ocorrenciasChange = output<readonly OcorrenciaSimulada[] | undefined>();
+  /** O candidato digitou a confirmação de um subitem; o grupo não a guarda. */
+  readonly confirmada = output<{ readonly campo: string; readonly texto: string }>();
 
   protected readonly grupo = computed(() => this.noPasso().grupo);
   protected readonly obrigatorio = computed(
