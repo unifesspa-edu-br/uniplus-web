@@ -20,6 +20,7 @@ import {
   ListaDeDocumentosComponent,
 } from '../lista-de-documentos/lista-de-documentos';
 import { CampoDoCandidatoComponent } from './campo-do-candidato';
+import { avaliarConfirmacoes } from './confirmacao-do-campo';
 import {
   BLOCO_COMPROVACAO_DOCUMENTAL,
   BLOCO_MODALIDADES_CALCULADAS,
@@ -200,7 +201,12 @@ import type {
                   [fixa]="respostasFixas()[campo.campo.fatoCodigo] ?? null"
                   [erroDoServidor]="mensagemDosErros(erros(), campo.campo.fatoCodigo)"
                   [diaDoEnvio]="diaDoEnvio()"
+                  [confirmacao]="confirmacoes()[campo.campo.fatoCodigo] ?? ''"
+                  [problemaDaConfirmacao]="
+                    problemasDaConfirmacao().get(campo.campo.fatoCodigo) ?? null
+                  "
                   (respondida)="responder(campo.campo.fatoCodigo, $event)"
+                  (confirmada)="confirmar(campo.campo.fatoCodigo, $event)"
                 />
               }
 
@@ -214,7 +220,10 @@ import type {
                   [mostrarPendencia]="concluido(passo)"
                   [errosDoServidor]="errosEm(grupo.grupo.codigo)"
                   [diaDoEnvio]="diaDoEnvio()"
+                  [confirmacoes]="confirmacoes()"
+                  [problemasDaConfirmacao]="problemasDaConfirmacao()"
                   (ocorrenciasChange)="responderGrupo(grupo.grupo.codigo, $event)"
+                  (confirmada)="confirmar($event.campo, $event.texto)"
                 />
               }
 
@@ -369,6 +378,15 @@ export class FormularioDoCandidatoComponent {
         ]),
       ),
   });
+  /**
+   * A confirmação digitada de cada campo que a pede, pelo código da tela: o fato ou `grupo.ocorrência.fato`.
+   * Mora aqui, e não no campo, porque o envio confere também as seções que não estão na tela e porque a
+   * seção trocada recria o campo, que perderia o que se digitou.
+   */
+  protected readonly confirmacoes = linkedSignal<unknown, Readonly<Record<string, string>>>({
+    source: this.partida,
+    computation: () => ({}),
+  });
   private readonly concluidas = linkedSignal<unknown, ReadonlySet<string>>({
     source: this.partida,
     computation: () => new Set(this.inicial()?.etapasConcluidas ?? []),
@@ -418,6 +436,17 @@ export class FormularioDoCandidatoComponent {
     const dia = lerEnvio(this.envio());
     return typeof dia === 'string' ? dia : null;
   });
+
+  /** As confirmações que faltam ou não conferem, pelo código da tela; as gravadas e intocadas não entram. */
+  protected readonly problemasDaConfirmacao = computed(() =>
+    avaliarConfirmacoes(this.passos(), {
+      respostas: this.respostasComAsFixas(),
+      grupos: this.grupos(),
+      gravadas: this.inicial(),
+      confirmacoes: this.confirmacoes(),
+      fixas: this.respostasFixas(),
+    }),
+  );
 
   private readonly interpretacao = computed(() =>
     interpretarFormulario(this.formulario().regras, this.simulacao()),
@@ -576,7 +605,7 @@ export class FormularioDoCandidatoComponent {
   protected irAoCampo(campo: string): void {
     const indice = this.passos().findIndex((passo) => contemOCampo(passo, campo));
     if (indice < 0) return;
-    this.irPara(indice, () => this.controleDe(campo));
+    this.irPara(indice, () => this.controleDe(campo, false));
   }
 
   protected irASecao(chave: string): void {
@@ -584,15 +613,22 @@ export class FormularioDoCandidatoComponent {
     if (indice >= 0) this.irPara(indice);
   }
 
-  /** O primeiro controle do campo, grupo ou termo; o campo de uma ocorrência cai no grupo dela. */
-  private controleDe(campo: string): HTMLElement | null {
+  /**
+   * O primeiro controle do campo, grupo ou termo, ou o da confirmação do campo; o campo de uma
+   * ocorrência cai no grupo dela.
+   */
+  private controleDe(campo: string, naConfirmacao: boolean): HTMLElement | null {
     const partes = Array.from(
       this.elemento.nativeElement.querySelectorAll<HTMLElement>('[data-campo]'),
     );
     const alvo =
       partes.find((p) => p.dataset['campo'] === campo) ??
       partes.find((p) => p.dataset['campo'] === campo.split('.')[0]);
-    return alvo?.querySelector<HTMLElement>('input, select, textarea, button') ?? null;
+    return (
+      alvo?.querySelector<HTMLElement>(
+        naConfirmacao ? 'input[id$="-confirmacao"]' : 'input, select, textarea, button',
+      ) ?? null
+    );
   }
 
   /**
@@ -604,14 +640,16 @@ export class FormularioDoCandidatoComponent {
     let mudou = false;
     while (this.concluir(this.passos())) mudou = true;
 
-    const pendentes = this.passos().map((passo) => pendenciasDo(passo, this.aceitos()));
+    const pendentes = this.passos().map((passo) =>
+      pendenciasDo(passo, this.aceitos(), this.problemasDaConfirmacao()),
+    );
     const total = pendentes.reduce((soma, codigos) => soma + codigos.length, 0);
     const indice = pendentes.findIndex((codigos) => codigos.length > 0);
     if (indice < 0) return 0;
 
     const [primeira] = pendentes[indice];
     // O que concluir revelou só existe na tela depois da renderização, mesmo na seção atual.
-    this.irPara(indice, () => this.controleDe(primeira), mudou);
+    this.irPara(indice, () => this.controleDe(primeira.campo, primeira.naConfirmacao), mudou);
     // A troca de seção recalcula o anúncio dos campos; o da pendência é escrito depois dela.
     this.anuncio();
     this.anuncio.set(
@@ -646,6 +684,10 @@ export class FormularioDoCandidatoComponent {
   protected respostaDaUf(campo: CampoNoPasso): ValorJson | undefined {
     const fato = fatoDaUf(campo.regra);
     return fato === null ? undefined : this.respostasComAsFixas()[fato];
+  }
+
+  protected confirmar(caminho: string, texto: string): void {
+    this.confirmacoes.update((atuais) => ({ ...atuais, [caminho]: texto }));
   }
 
   protected responder(fato: string, valor: ValorJson | undefined): void {

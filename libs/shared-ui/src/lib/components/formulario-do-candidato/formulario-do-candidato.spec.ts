@@ -203,6 +203,39 @@ const FAMILIA_DE_DOIS_SUBCAMPOS: FormularioDoCandidato = {
   },
 };
 
+const COM_CONFIRMACAO: FormularioDoCandidato = {
+  ...DUAS_SECOES,
+  fatosColetados: [campo('EMAIL', 'E-mail', 'TEXTO', { pedirConfirmacao: true })],
+  regras: { etapas: [{ codigo: 'Inscricao:CONTATO', itens: [regra('EMAIL')] }] },
+};
+
+const FAMILIA_COM_CONFIRMACAO: FormularioDoCandidato = {
+  ...FAMILIA,
+  grupos: [
+    {
+      ...FAMILIA.grupos[0],
+      subitens: [campo('EMAIL', 'E-mail', 'TEXTO', { pedirConfirmacao: true })],
+    },
+  ],
+  regras: {
+    etapas: [
+      {
+        codigo: SECAO,
+        grupos: [
+          {
+            codigo: 'FAMILIA',
+            obrigatoriedade: 'SEMPRE',
+            minimo: 1,
+            maximo: 2,
+            incluiCandidato: false,
+            subitens: [regra('EMAIL')],
+          },
+        ],
+      },
+    ],
+  },
+};
+
 describe('FormularioDoCandidatoComponent', () => {
   let fixture: ComponentFixture<FormularioDoCandidatoComponent>;
   let simulacoes: SimulacaoDoFormulario[];
@@ -1234,5 +1267,88 @@ describe('FormularioDoCandidatoComponent', () => {
     await fixture.whenStable();
 
     expect(document.activeElement).toBe(tela.querySelector('[data-campo="JUSTIFICATIVA"] input'));
+  });
+  describe('confirmação pedida no campo', () => {
+    const EMAIL = 'fernanda_laura_drumond@lhp.com.br';
+    const entradas = (
+      tela: HTMLElement,
+    ): { resposta: HTMLInputElement; confirmacao: HTMLInputElement } => ({
+      resposta: tela.querySelector('[data-campo="EMAIL"] input') as HTMLInputElement,
+      confirmacao: tela.querySelector('input[id$="-confirmacao"]') as HTMLInputElement,
+    });
+
+    it('a confirmação que não confere com a resposta bloqueia o envio e leva o foco a ela', async () => {
+      const tela = montar(COM_CONFIRMACAO);
+      const { resposta, confirmacao } = entradas(tela);
+      digitar(resposta, EMAIL);
+      digitar(confirmacao, 'outro_valor@lhp.com.br');
+
+      expect(fixture.componentInstance.concluirTodas()).toBe(1);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(document.activeElement).toBe(confirmacao);
+      expect(confirmacao.getAttribute('aria-invalid')).toBe('true');
+      expect(
+        tela.querySelector(`#${confirmacao.getAttribute('aria-describedby')}`)?.textContent,
+      ).toContain('A confirmação não confere com a resposta.');
+    });
+
+    it('a confirmação em branco depois de digitar a resposta bloqueia o envio e pede para confirmar', async () => {
+      const tela = montar(COM_CONFIRMACAO);
+      const { resposta, confirmacao } = entradas(tela);
+      digitar(resposta, EMAIL);
+
+      expect(fixture.componentInstance.concluirTodas()).toBe(1);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(document.activeElement).toBe(confirmacao);
+      expect(confirmacao.getAttribute('aria-invalid')).toBe('true');
+      expect(
+        tela.querySelector(`#${confirmacao.getAttribute('aria-describedby')}`)?.textContent,
+      ).toContain('Confirme E-mail digitando o mesmo valor.');
+    });
+
+    it('a resposta gravada e não alterada nesta sessão não exige confirmar de novo', () => {
+      montar(COM_CONFIRMACAO, { inicial: { respostas: { EMAIL } } });
+
+      expect(fixture.componentInstance.concluirTodas()).toBe(0);
+    });
+
+    it('a resposta gravada e alterada nesta sessão volta a exigir a confirmação', () => {
+      const tela = montar(COM_CONFIRMACAO, { inicial: { respostas: { EMAIL } } });
+      digitar(entradas(tela).resposta, 'outro_valor@lhp.com.br');
+
+      expect(fixture.componentInstance.concluirTodas()).toBe(1);
+    });
+
+    it('a confirmação que confere deixa enviar, e vale depois de trocar de seção', () => {
+      const tela = montar(COM_CONFIRMACAO);
+      const { resposta, confirmacao } = entradas(tela);
+      digitar(resposta, EMAIL);
+      digitar(confirmacao, EMAIL);
+      clicar(botao(tela, 'Próxima seção'));
+
+      expect(fixture.componentInstance.concluirTodas()).toBe(0);
+    });
+
+    it('a confirmação do campo de uma ocorrência do grupo também bloqueia o envio', async () => {
+      const tela = montar(FAMILIA_COM_CONFIRMACAO, {
+        inicial: { grupos: { FAMILIA: [{ id: 'membro-1', respostas: {} }] } },
+      });
+      digitar(
+        tela.querySelector('[data-campo="FAMILIA.membro-1.EMAIL"] input') as HTMLInputElement,
+        EMAIL,
+      );
+
+      expect(fixture.componentInstance.concluirTodas()).toBe(1);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(document.activeElement).toBe(
+        tela.querySelector('[data-campo="FAMILIA.membro-1.EMAIL"] input[id$="-confirmacao"]'),
+      );
+    });
   });
 });

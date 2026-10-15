@@ -16,13 +16,17 @@ import { DadoRevelavelComponent } from '../dado-revelavel/dado-revelavel';
 import { ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-municipio';
 import { EnderecoGeoComponent } from '../endereco-geo/endereco-geo';
 import type { EnderecoEstruturado } from '../endereco-geo/endereco-geo.model';
+import { pedeConfirmacao, respostaDoTextoLivre } from './confirmacao-do-campo';
 import {
   type CampoNoPasso,
+  type ControleDoCampo,
+  controleDoTipo,
   fatoDaUf,
   limitesDaFaixaDeData,
   mensagensDasRestricoes,
   opcoesDoCampo,
   type OpcaoDoCampo,
+  type ProblemaDaConfirmacao,
   type RespostaFixa,
   textoDosLimitesDeData,
 } from './formulario-do-candidato.model';
@@ -30,8 +34,6 @@ import { FAIXA_DE_DATA } from './interpretador/restricoes';
 import { codigosDa, estaVazia } from './interpretador/logica';
 import type { ValorJson } from './interpretador/regras-do-formulario';
 
-/** Acima disto, a escolha única vira lista suspensa em vez de botões de opção. */
-const MAXIMO_DE_OPCOES_EM_BOTOES = 6;
 /** O número como se escreve em pt-BR: vírgula decimal, sem separador de milhar. */
 const NUMERO_BR = /^-?[0-9]+(,[0-9]+)?$/;
 /**
@@ -211,7 +213,7 @@ const ENTRADA_DO_FORMATO: Readonly<
       }
     }
 
-    @if (campo().pedirConfirmacao && controle() === 'texto') {
+    @if (confirmando()) {
       <label class="field__label" [for]="id() + '-confirmacao'"
         >Confirme {{ campo().rotulo }}</label
       >
@@ -221,14 +223,13 @@ const ENTRADA_DO_FORMATO: Readonly<
         [id]="id() + '-confirmacao'"
         [type]="entrada().tipo"
         [attr.inputmode]="entrada().inputmode"
-        [attr.aria-invalid]="confirmacaoDiverge() ? 'true' : null"
-        [attr.aria-describedby]="confirmacaoDiverge() ? id() + '-confirmacao-erro' : null"
-        (input)="confirmacao.set(valorDe($event))"
+        [value]="confirmacao()"
+        [attr.aria-invalid]="erroDaConfirmacao() ? 'true' : null"
+        [attr.aria-describedby]="erroDaConfirmacao() ? id() + '-confirmacao-erro' : null"
+        (input)="confirmada.emit(valorDe($event))"
       />
-      @if (confirmacaoDiverge()) {
-        <span class="field__error" [id]="id() + '-confirmacao-erro'"
-          >A confirmação não confere com a resposta.</span
-        >
+      @if (erroDaConfirmacao(); as erro) {
+        <span class="field__error" [id]="id() + '-confirmacao-erro'">{{ erro }}</span>
       }
     }
 
@@ -271,7 +272,13 @@ export class CampoDoCandidatoComponent {
   /** O dia do envio, `AAAA-MM-DD`, contra o qual contam os limites de data; nulo quando não se sabe. */
   readonly diaDoEnvio = input<string | null>(null);
 
+  /** O que o candidato digitou na confirmação, quando o campo a pede; quem hospeda a guarda. */
+  readonly confirmacao = input<string>('');
+  /** O que há de errado na confirmação, segundo quem hospeda; nulo quando está certa ou não é exigida. */
+  readonly problemaDaConfirmacao = input<ProblemaDaConfirmacao | null>(null);
+
   readonly respondida = output<ValorJson | undefined>();
+  readonly confirmada = output<string>();
 
   protected readonly campo = computed(() => this.noPasso().campo);
   protected readonly obrigatorio = computed(
@@ -306,32 +313,14 @@ export class CampoDoCandidatoComponent {
   );
 
   /** O controle pelo tipo de renderização; a escolha sem valores conhecidos vira entrada de código. */
-  protected readonly controle = computed(() => {
-    if (this.fixa()) return 'fixa';
-    const tipo = this.campo().tipoRenderizacao;
-    switch (tipo) {
-      case 'BOOLEANO':
-        return 'booleano';
-      case 'NUMERO':
-        return 'numero';
-      case 'DATA':
-        return 'data';
-      case 'MUNICIPIO':
-        return 'municipio';
-      case 'ENDERECO':
-        return 'endereco';
-      case 'SELECAO_UNICA':
-        return this.semValoresConhecidos()
-          ? 'codigo'
-          : this.opcoes().length > MAXIMO_DE_OPCOES_EM_BOTOES
-            ? 'lista'
-            : 'escolha';
-      case 'SELECAO_MULTIPLA':
-        return this.semValoresConhecidos() ? 'codigos' : 'escolha';
-      default:
-        return 'texto';
-    }
-  });
+  protected readonly controle = computed<ControleDoCampo>(() =>
+    this.fixa()
+      ? 'fixa'
+      : controleDoTipo(this.campo().tipoRenderizacao, {
+          semValoresConhecidos: this.semValoresConhecidos(),
+          opcoes: this.opcoes().length,
+        }),
+  );
 
   /**
    * O que o controle de texto mostra: o que se digitou enquanto ele corresponde à resposta — o número
@@ -347,14 +336,27 @@ export class CampoDoCandidatoComponent {
   });
   /** O número digitado que não se reconhece: não vira resposta. */
   private readonly numeroInvalido = signal(false);
-  protected readonly confirmacao = signal('');
   /** O endereço do campo de endereço: composto no Geo, pelo CEP ou pela cidade. */
   protected readonly endereco = new FormControl<EnderecoEstruturado | null>(null);
-  protected readonly confirmacaoDiverge = computed(
-    () =>
-      this.confirmacao() !== '' &&
-      JSON.stringify(this.respostaDoTexto(this.confirmacao())) !== JSON.stringify(this.resposta()),
+  protected readonly confirmando = computed(() =>
+    pedeConfirmacao(this.campo(), this.fixa() !== null),
   );
+  /**
+   * A mensagem da confirmação. A que não confere aparece na hora; a que falta, só depois de a seção ser
+   * dada como concluída, como a pendência da resposta.
+   */
+  protected readonly erroDaConfirmacao = computed(() => {
+    switch (this.problemaDaConfirmacao()) {
+      case 'diverge':
+        return 'A confirmação não confere com a resposta.';
+      case 'em-branco':
+        return this.mostrarPendencia()
+          ? `Confirme ${this.campo().rotulo} digitando o mesmo valor.`
+          : null;
+      default:
+        return null;
+    }
+  });
 
   protected readonly uf = computed(() => {
     const uf = this.respostaDaUf();
@@ -509,7 +511,7 @@ export class CampoDoCandidatoComponent {
         return codigos.length === 0 ? undefined : codigos;
       }
       default:
-        return this.deTelefone() ? (digitosDoTelefone(texto) ?? texto) : texto;
+        return respostaDoTextoLivre(this.campo(), texto);
     }
   }
 

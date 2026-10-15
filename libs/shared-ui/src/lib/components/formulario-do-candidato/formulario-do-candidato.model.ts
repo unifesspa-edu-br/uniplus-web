@@ -157,6 +157,59 @@ export const BLOCO_MODALIDADES_CALCULADAS = 'MODALIDADES_CALCULADAS';
 export const BLOCO_COMPROVACAO_DOCUMENTAL = 'COMPROVACAO_DOCUMENTAL';
 export const BLOCO_REVISAO_E_ACEITE = 'REVISAO_E_ACEITE';
 
+/** Acima disto, a escolha única vira lista suspensa em vez de botões de opção. */
+const MAXIMO_DE_OPCOES_EM_BOTOES = 6;
+
+/** O controle com que o campo aparece para o candidato. */
+export type ControleDoCampo =
+  | 'fixa'
+  | 'texto'
+  | 'numero'
+  | 'data'
+  | 'booleano'
+  | 'municipio'
+  | 'endereco'
+  | 'escolha'
+  | 'lista'
+  | 'codigo'
+  | 'codigos';
+
+/**
+ * O controle pelo tipo de renderização, fonte única do campo na tela e das regras que dependem de ele
+ * ser de texto digitado, como a confirmação. A escolha sem valores conhecidos vira entrada de código; a
+ * única com muitas opções, lista suspensa. Os dois dados da escolha só importam a ela.
+ */
+export function controleDoTipo(
+  tipoRenderizacao: string,
+  escolha: { readonly semValoresConhecidos: boolean; readonly opcoes: number } = {
+    semValoresConhecidos: false,
+    opcoes: 0,
+  },
+): Exclude<ControleDoCampo, 'fixa'> {
+  switch (tipoRenderizacao) {
+    case 'BOOLEANO':
+      return 'booleano';
+    case 'NUMERO':
+      return 'numero';
+    case 'DATA':
+      return 'data';
+    case 'MUNICIPIO':
+      return 'municipio';
+    case 'ENDERECO':
+      return 'endereco';
+    case 'SELECAO_UNICA':
+      return escolha.semValoresConhecidos
+        ? 'codigo'
+        : escolha.opcoes > MAXIMO_DE_OPCOES_EM_BOTOES
+          ? 'lista'
+          : 'escolha';
+    case 'SELECAO_MULTIPLA':
+      return escolha.semValoresConhecidos ? 'codigos' : 'escolha';
+    default:
+      return 'texto';
+  }
+}
+
 /** Um campo do passo, com a avaliação dele e a regra que o descreve. */
 export interface CampoNoPasso {
   readonly campo: CampoRenderizavel;
@@ -297,20 +350,49 @@ export function termoSemAceite(termo: TermoNoPasso, aceitos: ReadonlySet<string>
 }
 
 /**
+ * O que a confirmação digitada de um campo que pede confirmação tem de errado: a que não confere com a
+ * resposta ou a que falta, quando a resposta foi dada nesta sessão.
+ */
+export type ProblemaDaConfirmacao = 'diverge' | 'em-branco';
+
+/** Uma pendência do passo: o código com que a tela marca o que falta e, se for o caso, que é a confirmação. */
+export interface PendenciaDoPasso {
+  readonly campo: string;
+  /** O que falta é a confirmação do campo, não a resposta dele. */
+  readonly naConfirmacao: boolean;
+}
+
+function daResposta(campo: string): PendenciaDoPasso {
+  return { campo, naConfirmacao: false };
+}
+
+/**
  * O que impede de dar o passo como pronto, na ordem da tela, pelo código com que a tela marca o campo,
  * o grupo, o subitem de uma ocorrência (`grupo.ocorrência.fato`) ou o termo. Lê a avaliação do
  * interpretador com o passo já concluído: o campo com regra violada ou que impede a inscrição, o
  * obrigatório que não resolveu, o grupo fora da contagem, sem resposta ou com subitem nessa situação e
- * o termo obrigatório sem aceite.
+ * o termo obrigatório sem aceite. A confirmação que falta ou não confere, dada pelo mesmo código, vem
+ * logo depois da resposta do campo.
  */
-export function pendenciasDo(passo: PassoDoFormulario, aceitos: ReadonlySet<string>): string[] {
+export function pendenciasDo(
+  passo: PassoDoFormulario,
+  aceitos: ReadonlySet<string>,
+  confirmacoes: ReadonlyMap<string, ProblemaDaConfirmacao>,
+): PendenciaDoPasso[] {
   return [
-    ...passo.campos.filter((c) => campoPendente(c.avaliado)).map((c) => c.campo.fatoCodigo),
+    ...passo.campos.flatMap((c) => [
+      ...(campoPendente(c.avaliado) ? [daResposta(c.campo.fatoCodigo)] : []),
+      ...(confirmacoes.has(c.campo.fatoCodigo)
+        ? [{ campo: c.campo.fatoCodigo, naConfirmacao: true }]
+        : []),
+    ]),
     ...passo.grupos.flatMap((g) => {
-      const pendencia = pendenciaDoGrupo(g);
+      const pendencia = pendenciaDoGrupo(g, confirmacoes);
       return pendencia === null ? [] : [pendencia];
     }),
-    ...passo.termos.filter((t) => termoSemAceite(t, aceitos)).map((t) => t.termo.codigo),
+    ...passo.termos
+      .filter((t) => termoSemAceite(t, aceitos))
+      .map((t) => daResposta(t.termo.codigo)),
   ];
 }
 
@@ -324,15 +406,26 @@ function campoPendente(avaliado: CampoAvaliado): boolean {
 
 /**
  * A pendência do grupo, quando há: o próprio grupo na contagem inválida, na ocorrência do candidato
- * inválida e no obrigatório sem resposta; o primeiro subitem pendente, quando é ele que falta.
+ * inválida e no obrigatório sem resposta; o primeiro subitem pendente, na resposta ou na confirmação,
+ * quando é ele que falta.
  */
-function pendenciaDoGrupo({ grupo, avaliado }: GrupoNoPasso): string | null {
-  if (!avaliado.contagemValida || !avaliado.ocorrenciaDoCandidatoValida) return grupo.codigo;
+function pendenciaDoGrupo(
+  { grupo, avaliado }: GrupoNoPasso,
+  confirmacoes: ReadonlyMap<string, ProblemaDaConfirmacao>,
+): PendenciaDoPasso | null {
+  if (!avaliado.contagemValida || !avaliado.ocorrenciaDoCandidatoValida)
+    return daResposta(grupo.codigo);
   for (const ocorrencia of avaliado.ocorrencias) {
-    const subitem = ocorrencia.campos.find((c) => c.visivel === VISIVEL && campoPendente(c));
-    if (subitem) return `${grupo.codigo}.${ocorrencia.id}.${subitem.fatoCodigo}`;
+    for (const subitem of ocorrencia.campos) {
+      if (subitem.visivel !== VISIVEL) continue;
+      const caminho = `${grupo.codigo}.${ocorrencia.id}.${subitem.fatoCodigo}`;
+      if (campoPendente(subitem)) return daResposta(caminho);
+      if (confirmacoes.has(caminho)) return { campo: caminho, naConfirmacao: true };
+    }
   }
-  return avaliado.obrigatorio === VERDADEIRO && avaliado.estado !== RESOLVIDO ? grupo.codigo : null;
+  return avaliado.obrigatorio === VERDADEIRO && avaliado.estado !== RESOLVIDO
+    ? daResposta(grupo.codigo)
+    : null;
 }
 
 /** A regra de cada campo e subitem, pelo fato. */
