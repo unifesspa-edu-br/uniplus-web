@@ -640,6 +640,30 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(tela.textContent).not.toContain('Não conseguimos confirmar a gravação');
   });
 
+  it('a releitura sem gravação, depois da falha sem resposta, mantém a avaliação das respostas da tela', async () => {
+    // A espera da consulta corre no agendador do RxJS, que usa `setInterval`, e não `setTimeout`.
+    vi.useRealTimers();
+    servico.formulario = COM_MODALIDADES;
+    servico.inscricao = inscricao({ avaliacao: concorrendoEm('Ampla concorrência') });
+    servico.avaliar = () => ok(concorrendoEm('Cotas da tela'));
+    const tela = await abrir();
+    const nome = campoDe(tela, 'NOME');
+    nome.value = 'Ariel Drumond';
+    nome.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));
+    servico.salvar = () => of(problema(503, 'uniplus.teste'));
+    servico.inscricao = inscricao({ avaliacao: concorrendoEm('Gravada antiga') });
+
+    await clicar(botao(tela, 'Salvar rascunho'));
+    await irAsModalidades(tela);
+
+    const modalidades = tela.querySelector('ui-modalidades-da-inscricao')?.textContent;
+    expect(modalidades).toContain('Cotas da tela');
+    expect(modalidades).not.toContain('Gravada antiga');
+    expect(tela.textContent).toContain('Não conseguimos confirmar a gravação');
+  });
+
   it('o envio que fica sem resposta relê a inscrição, e o reenvio sai com o ETag gravado', async () => {
     servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
