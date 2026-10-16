@@ -485,10 +485,11 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     });
 
     await test.step('o comprovante sai inteiro na impressão, com o cabeçalho institucional e sem o do portal', () =>
-      // Janela mais baixa que o comprovante: sem isso o corte na primeira tela não apareceria.
-      comJanelaDeAltura(page, 480, async () => {
+      // Janela mais baixa que o comprovante, mas acima de 500 px: abaixo disso o shell libera a
+      // rolagem da página (janela baixa) e nenhum ancestral corta, então a precondição ficaria vazia.
+      comJanelaDeAltura(page, 600, async () => {
         const altura = await comprovante(page).evaluate((el) => el.getBoundingClientRect().height);
-        expect(altura).toBeGreaterThan(480);
+        expect(altura).toBeGreaterThan(600);
         expect(await ancestraisQueCortamOComprovante(page)).not.toEqual([]);
 
         // O navegador avisa o beforeprint antes de montar o papel; a emulação da mídia, não.
