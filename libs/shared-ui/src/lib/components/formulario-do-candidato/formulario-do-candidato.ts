@@ -47,6 +47,9 @@ import {
   type NoDeDocumentos,
 } from './documentos-avaliados';
 import { DocumentosDaInscricaoComponent } from './documentos-da-inscricao';
+import { FatorDeAtenuacaoDaInscricaoComponent } from './fator-de-atenuacao-da-inscricao';
+import { resumoDoFator } from './fator-de-atenuacao';
+import { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
 import { GrupoDoCandidatoComponent } from './grupo-do-candidato';
 import {
   anunciarMudancaDasModalidades,
@@ -85,6 +88,7 @@ import type {
     GrupoDoCandidatoComponent,
     ListaDeDocumentosComponent,
     ModalidadesDaInscricaoComponent,
+    FatorDeAtenuacaoDaInscricaoComponent,
     StepsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -218,6 +222,13 @@ import type {
                     (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
                   />
                 }
+                @if (fatorNaRevisao(); as resumo) {
+                  <ui-fator-de-atenuacao-da-inscricao
+                    [resumo]="resumo"
+                    [idBase]="idBase() + '-fator'"
+                    (irASecao)="irASecao($event)"
+                  />
+                }
                 @for (termo of passo.termos; track termo.termo.codigo) {
                   <article
                     class="formulario-candidato__termo"
@@ -286,6 +297,7 @@ import type {
 })
 export class FormularioDoCandidatoComponent {
   private readonly injector = inject(Injector);
+  private readonly municipios = inject(NomesDeMunicipios);
 
   readonly formulario = input.required<FormularioDoCandidato>();
   /** As respostas de partida, como as de um caso importado; recomeça quando muda. */
@@ -469,6 +481,14 @@ export class FormularioDoCandidatoComponent {
     const avaliacao = this.avaliacao();
     return avaliacao?.modalidades?.derivada ? avaliacao : null;
   });
+  protected readonly fatorNaRevisao = computed(() =>
+    resumoDoFator(
+      this.passos(),
+      this.respostasComAsFixas(),
+      this.municipios,
+      this.formulario().dependenciasDoFator,
+    ),
+  );
   protected readonly secoesQueDefinem = computed(() =>
     secoesQueDefinemAsModalidades(this.passos(), this.formulario().dependenciasDaAvaliacao),
   );

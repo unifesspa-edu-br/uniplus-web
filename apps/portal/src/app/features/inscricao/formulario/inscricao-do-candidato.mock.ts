@@ -7,6 +7,7 @@ const ENDERECO = 'Inscricao:ENDERECO';
 export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
   comprovacaoDocumental: null,
   dependenciasDaAvaliacao: null,
+  dependenciasDoFator: null,
   faseId: 'fase-da-inscricao',
   finalidade: 'INSCRICAO',
   titulo: 'Inscrição',

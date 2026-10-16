@@ -8190,6 +8190,7 @@ export interface components {
         readonly FormularioRenderizavelDto: {
             readonly comprovacaoDocumental: null | readonly components["schemas"]["ExigenciaDocumentalCertameDto"][];
             readonly dependenciasDaAvaliacao: null | components["schemas"]["DependenciasDaAvaliacaoDto"];
+            readonly dependenciasDoFator: null | components["schemas"]["DependenciasDaAvaliacaoDto"];
             /** Format: uuid */
             readonly faseId: null | string;
             readonly finalidade: string;

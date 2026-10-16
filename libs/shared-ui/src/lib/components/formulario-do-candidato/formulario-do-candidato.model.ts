@@ -113,6 +113,12 @@ export interface FormularioDoCandidato {
    * de grupo como `GRUPO.FATO` — e os grupos cujas ocorrências contam.
    */
   readonly dependenciasDaAvaliacao?: DependenciasDaAvaliacao | null;
+  /**
+   * As respostas do Fator de Atenuação, só pelos códigos, com a mesma forma das dependências da
+   * avaliação: o fato do pedido e os campos que o completam. Nulo fora da finalidade que o tem; vazio
+   * quando o processo não tem Fator.
+   */
+  readonly dependenciasDoFator?: DependenciasDaAvaliacao | null;
 }
 
 export interface DependenciasDaAvaliacao {

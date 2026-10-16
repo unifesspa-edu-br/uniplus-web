@@ -78,6 +78,7 @@ const SEM_DERIVACAO: AvaliacaoDaInscricaoDto = {
 const COM_MODALIDADES: FormularioRenderizavelDto = {
   ...FORMULARIO_DE_INSCRICAO_MOCK,
   dependenciasDaAvaliacao: { fatos: ['NOME'], grupos: [] },
+  dependenciasDoFator: null,
   etapas: [
     ...FORMULARIO_DE_INSCRICAO_MOCK.etapas,
     {
