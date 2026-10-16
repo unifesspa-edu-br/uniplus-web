@@ -15,6 +15,8 @@ const MUNICIPIO = 'CIDADE_BENEFICIO_X';
 const FORA_DO_FATOR = 'OUTRA_PERGUNTA';
 const NUMERO = 'MESES_NA_AREA';
 const MULTIPLA = 'ATIVIDADES_NA_AREA';
+const DATA = 'DATA_INICIO_NA_AREA';
+const TELEFONE = 'TELEFONE_DO_CONTATO';
 
 const campos: CampoRenderizavel[] = [
   {
@@ -50,6 +52,14 @@ const campos: CampoRenderizavel[] = [
       { codigo: 'PESCA', descricao: 'Pesca artesanal', ordem: 0 },
       { codigo: 'ROCA', descricao: 'Roça de subsistência', ordem: 1 },
     ],
+  },
+  { fatoCodigo: DATA, ordem: 6, rotulo: 'Início na área', tipoRenderizacao: 'DATA' },
+  {
+    fatoCodigo: TELEFONE,
+    ordem: 7,
+    rotulo: 'Telefone de contato',
+    tipoRenderizacao: 'TEXTO',
+    formato: 'TELEFONE',
   },
 ];
 
@@ -102,7 +112,7 @@ const formulario = (
       {
         codigo: 'Inscricao:FATOR',
         itens: (comFator
-          ? [SOLICITA, CAMINHO, MUNICIPIO, FORA_DO_FATOR, NUMERO, MULTIPLA]
+          ? [SOLICITA, CAMINHO, MUNICIPIO, FORA_DO_FATOR, NUMERO, MULTIPLA, DATA, TELEFONE]
           : ['EMAIL']
         ).map((fatoCodigo) => ({
           fatoCodigo,
@@ -320,6 +330,19 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
     expect(texto).not.toContain('Maria');
     expect(texto).not.toContain('Nome');
     expect(texto).not.toContain('Bônus');
+  });
+
+  it('a data aparece no formato brasileiro e o telefone com a máscara, como no comprovante', () => {
+    const tela = naRevisao(
+      true,
+      { [DATA]: '2001-03-09', [TELEFONE]: '61981951555' },
+      { fatos: [DATA, TELEFONE], grupos: [] },
+    );
+
+    const itens = [...(resumo(tela)?.querySelectorAll('dd') ?? [])].map((e) =>
+      e.textContent?.trim(),
+    );
+    expect(itens).toEqual(['09/03/2001', '(61) 98195-1555']);
   });
 
   it('o número aparece formatado e a seleção múltipla pelas descrições, separadas por vírgula', () => {

@@ -3,9 +3,13 @@ import type {
   FormularioRenderizavelDto,
   MinhaInscricaoDto,
 } from '@uniplus/shared-data/selecao';
-import { nomesPelaOrdem, titulosDasOcorrencias } from '@uniplus/shared-ui/components';
-
-import { type CampoExibido, type NomesDosMunicipios, respostaExibida } from './resposta-exibida';
+import {
+  type CampoExibido,
+  type NomesDosMunicipios,
+  nomesPelaOrdem,
+  respostaExibida,
+  titulosDasOcorrencias,
+} from '@uniplus/shared-ui/components';
 
 export interface RespostaDoComprovante {
   readonly rotulo: string;

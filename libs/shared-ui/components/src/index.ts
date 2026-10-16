@@ -120,6 +120,11 @@ export {
   type SimulacaoParaConferir,
 } from '../../src/lib/components/formulario-do-candidato/simulacao-de-formulario';
 export { PressupostosDaSimulacaoComponent } from '../../src/lib/components/formulario-do-candidato/pressupostos-da-simulacao';
+export {
+  type CampoExibido,
+  type NomesDosMunicipios,
+  respostaExibida,
+} from '../../src/lib/components/formulario-do-candidato/resposta-exibida';
 export { baixarJson } from '../../src/lib/components/formulario-do-candidato/baixar-json';
 export {
   divergenciasEntre,

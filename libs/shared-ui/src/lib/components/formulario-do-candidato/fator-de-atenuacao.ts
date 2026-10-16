@@ -7,6 +7,7 @@ import type {
 } from './formulario-do-candidato.model';
 import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
+import { respostaExibida } from './resposta-exibida';
 
 export interface LinhaDoFator {
   readonly rotulo: string;
@@ -77,22 +78,9 @@ function textoDa(
   valor: ValorJson | undefined,
   municipios: NomesDeMunicipios,
 ): string | null {
-  if (typeof valor === 'boolean') return valor ? 'Sim' : 'Não';
-  if (typeof valor === 'number') return valor.toLocaleString('pt-BR', { maximumFractionDigits: 10 });
-  if (Array.isArray(valor)) {
-    const textos = valor.flatMap((v) => {
-      const texto = typeof v === 'string' ? descricaoDe(campo, v) : null;
-      return texto === null ? [] : [texto];
-    });
-    return textos.length > 0 ? textos.join(', ') : null;
-  }
-  if (typeof valor !== 'string' || valor === '') return null;
-  if (campo.tipoRenderizacao === 'MUNICIPIO') return municipios.rotulo(valor);
-  return descricaoDe(campo, valor);
-}
-
-function descricaoDe(campo: CampoRenderizavel, codigo: string): string | null {
-  if (codigo === '') return null;
-  const opcao = campo.valoresSelecionaveis?.find((v) => v.codigo === codigo);
-  return opcao?.descricao?.trim() || codigo;
+  if (valor === undefined || valor === null || valor === '') return null;
+  if (Array.isArray(valor) && valor.length === 0) return null;
+  if (typeof valor === 'string' && campo.tipoRenderizacao === 'MUNICIPIO')
+    return municipios.rotulo(valor);
+  return respostaExibida(campo, valor);
 }
