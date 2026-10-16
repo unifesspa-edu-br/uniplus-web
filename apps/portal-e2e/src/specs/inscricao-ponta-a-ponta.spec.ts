@@ -35,6 +35,7 @@ const PERSONA = {
 /** Uma das edições que o roteiro da API declara como aceitas pelo processo de validação. */
 const EDICAO_DO_ENEM = 'ENEM 2026';
 const MUNICIPIO_DO_FATOR = 'Marabá/PA';
+const MUNICIPIO_DE_RESIDENCIA_DO_FATOR = 'Imperatriz/MA';
 const ORGAO_EMISSOR = 'Secretaria de Segurança Pública (SSP)';
 
 const campo = (page: Page, rotulo: string): Locator =>
@@ -243,6 +244,7 @@ async function preencherRestante(page: Page): Promise<void> {
   const caminhoDoFator = page.getByRole('group', {
     name: /^Por qual vínculo com a área você solicita o Fator/,
   });
+  const residenciaDoFator = lista(page, 'Em qual município da área de abrangência você residiu');
   // A inscrição retomada já traz a resposta anterior: o "Não" fixa o ponto de partida.
   await escolher(page, 'Deseja solicitar o Fator de Atenuação das Desigualdades de Acesso', 'Não');
   await expect(municipioDoFator).toHaveCount(0);
@@ -251,6 +253,7 @@ async function preencherRestante(page: Page): Promise<void> {
   // caminho já é a definitiva.
   await expect(municipioDoFator).toBeVisible();
   await expect(caminhoDoFator).toHaveCount(0);
+  await expect(residenciaDoFator).toHaveCount(0);
   await municipioDoFator.selectOption({ label: MUNICIPIO_DO_FATOR });
 
   await conferirReservaPelaElegibilidade(page);
@@ -384,6 +387,8 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     'A inscrição é única por candidato e processo: dois navegadores em paralelo disputariam a mesma.',
   );
   test.setTimeout(180_000);
+  // Os dois testes usam a mesma persona e a mesma inscrição: um depois do outro.
+  test.describe.configure({ mode: 'serial' });
 
   let processo = '';
   test.beforeAll(async ({ request }) => {
@@ -560,6 +565,75 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       const item = inscricaoNaLista(page, processo);
       await expect(item).toContainText(PERSONA.nomeSocial);
       await expect(item).not.toContainText(PERSONA.nome);
+    });
+  });
+
+  test('quem concluiu por certificação escolhe o caminho do Fator e responde o município dele', async ({
+    page,
+  }) => {
+    const pedido = 'Deseja solicitar o Fator de Atenuação das Desigualdades de Acesso';
+    const caminho = pergunta(page, 'Por qual vínculo com a área você solicita o Fator');
+    const municipioDoEnsinoMedio = lista(
+      page,
+      'Em qual município da área de influência você cursou o ensino médio',
+    );
+    const municipioDeResidencia = lista(
+      page,
+      'Em qual município da área de abrangência você residiu',
+    );
+
+    await test.step('entra na inscrição e declara a conclusão por certificação', async () => {
+      await page.goto(`/inscricao/${PROCESSO_ID}`);
+      await keycloakLogin(page, PERSONA.usuario, PERSONA.senha, {
+        expectRedirectTo: new RegExp(`/inscricao/${PROCESSO_ID}`),
+      });
+      await irParaSecao(page, 'Ensino médio');
+      await escolher(page, 'Como você concluiu o ensino médio', 'Certificação pelo ENCCEJA');
+      await lista(page, 'Onde você cursou o ensino médio').selectOption({
+        label: 'Concluí por certificação',
+      });
+    });
+
+    await test.step('a escolha do caminho só aparece com o pedido do Fator, e cada caminho pergunta o seu município', async () => {
+      await irParaSecao(page, 'Fator de Atenuação das Desigualdades de Acesso');
+      // A inscrição retomada já traz a resposta anterior: o "Não" fixa o ponto de partida.
+      await escolher(page, pedido, 'Não');
+      await expect(caminho).toHaveCount(0);
+      await escolher(page, pedido, 'Sim');
+      await expect(caminho).toBeVisible();
+
+      await escolher(
+        page,
+        'Por qual vínculo com a área você solicita o Fator',
+        'Cursei pelo menos um ano do ensino médio na área',
+      );
+      await expect(municipioDoEnsinoMedio).toBeVisible();
+      await expect(municipioDeResidencia).toHaveCount(0);
+
+      await escolher(
+        page,
+        'Por qual vínculo com a área você solicita o Fator',
+        'Residi na área no período do edital',
+      );
+      await expect(municipioDeResidencia).toBeVisible();
+      await expect(municipioDoEnsinoMedio).toHaveCount(0);
+      await municipioDeResidencia.selectOption({ label: MUNICIPIO_DE_RESIDENCIA_DO_FATOR });
+    });
+
+    await test.step('o envio sai e o comprovante mostra as respostas do Fator', async () => {
+      // Egressa por certificação passa a ser perguntada sobre as cotas da lei: segue sem optar por elas.
+      await irParaSecao(page, 'Reserva de vagas');
+      await escolher(
+        page,
+        'Deseja concorrer às vagas para quem cursou o ensino médio em escola pública',
+        'Não',
+      );
+      await enviarPeloTeclado(page);
+      await expect(page.getByText('Inscrição enviada', { exact: true })).toBeVisible();
+      await abrirComprovanteNaLista(page, processo);
+      await expect(comprovante(page)).toContainText('Residi na área no período do edital');
+      await expect(comprovante(page)).toContainText(MUNICIPIO_DE_RESIDENCIA_DO_FATOR);
+      await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
     });
   });
 });
