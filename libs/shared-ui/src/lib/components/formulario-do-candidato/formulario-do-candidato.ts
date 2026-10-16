@@ -487,6 +487,7 @@ export class FormularioDoCandidatoComponent {
       this.respostasComAsFixas(),
       this.municipios,
       this.formulario().dependenciasDoFator,
+      this.grupos(),
     ),
   );
   protected readonly secoesQueDefinem = computed(() =>

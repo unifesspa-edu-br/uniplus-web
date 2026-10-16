@@ -13,6 +13,8 @@ const SOLICITA = 'PEDE_BENEFICIO_X';
 const CAMINHO = 'VINCULO_BENEFICIO_X';
 const MUNICIPIO = 'CIDADE_BENEFICIO_X';
 const FORA_DO_FATOR = 'OUTRA_PERGUNTA';
+const NUMERO = 'MESES_NA_AREA';
+const MULTIPLA = 'ATIVIDADES_NA_AREA';
 
 const campos: CampoRenderizavel[] = [
   {
@@ -37,6 +39,17 @@ const campos: CampoRenderizavel[] = [
     rotulo: 'Em qual município você residiu?',
     tipoRenderizacao: 'SELECAO_UNICA',
     valoresSelecionaveis: [{ codigo: '2105302', descricao: 'Imperatriz — MA', ordem: 0 }],
+  },
+  { fatoCodigo: NUMERO, ordem: 4, rotulo: 'Meses na área', tipoRenderizacao: 'NUMERO' },
+  {
+    fatoCodigo: MULTIPLA,
+    ordem: 5,
+    rotulo: 'Atividades na área',
+    tipoRenderizacao: 'SELECAO_MULTIPLA',
+    valoresSelecionaveis: [
+      { codigo: 'PESCA', descricao: 'Pesca artesanal', ordem: 0 },
+      { codigo: 'ROCA', descricao: 'Roça de subsistência', ordem: 1 },
+    ],
   },
 ];
 
@@ -88,16 +101,64 @@ const formulario = (
     etapas: [
       {
         codigo: 'Inscricao:FATOR',
-        itens: (comFator ? [SOLICITA, CAMINHO, MUNICIPIO, FORA_DO_FATOR] : ['EMAIL']).map(
-          (fatoCodigo) => ({
-            fatoCodigo,
+        itens: (comFator
+          ? [SOLICITA, CAMINHO, MUNICIPIO, FORA_DO_FATOR, NUMERO, MULTIPLA]
+          : ['EMAIL']
+        ).map((fatoCodigo) => ({
+          fatoCodigo,
+          obrigatoriedade: 'SEMPRE',
+          restricoes: [],
+          ...(fatoCodigo === CAMINHO || fatoCodigo === MUNICIPIO
+            ? { exibicao: [[{ fato: SOLICITA, operador: 'IGUAL', valor: true }]] }
+            : {}),
+        })),
+      },
+    ],
+  },
+});
+
+/** Acrescenta ao formulário um grupo de integrantes, na seção do Fator, com um subitem numérico. */
+const comOGrupo = (base: FormularioDoCandidato): FormularioDoCandidato => ({
+  ...base,
+  grupos: [
+    {
+      codigo: 'FAMILIA',
+      ordem: 0,
+      rotulo: 'Integrante da família',
+      minimo: 0,
+      maximo: 3,
+      incluiCandidato: false,
+      subitens: [
+        { fatoCodigo: 'RENDA', ordem: 0, rotulo: 'Renda', tipoRenderizacao: 'NUMERO' },
+        { fatoCodigo: 'NOME', ordem: 1, rotulo: 'Nome', tipoRenderizacao: 'TEXTO' },
+        { fatoCodigo: 'BONUS', ordem: 2, rotulo: 'Bônus', tipoRenderizacao: 'NUMERO' },
+      ],
+    },
+  ],
+  regras: {
+    etapas: [
+      {
+        codigo: 'Inscricao:FATOR',
+        itens: base.regras.etapas?.[0]?.itens ?? [],
+        grupos: [
+          {
+            codigo: 'FAMILIA',
             obrigatoriedade: 'SEMPRE',
-            restricoes: [],
-            ...(fatoCodigo === CAMINHO || fatoCodigo === MUNICIPIO
-              ? { exibicao: [[{ fato: SOLICITA, operador: 'IGUAL', valor: true }]] }
-              : {}),
-          }),
-        ),
+            minimo: 0,
+            maximo: 3,
+            incluiCandidato: false,
+            subitens: [
+              { fatoCodigo: 'RENDA', obrigatoriedade: 'SEMPRE', restricoes: [] },
+              { fatoCodigo: 'NOME', obrigatoriedade: 'SEMPRE', restricoes: [] },
+              {
+                fatoCodigo: 'BONUS',
+                obrigatoriedade: 'SEMPRE',
+                restricoes: [],
+                exibicao: [[{ fato: 'RENDA', operador: 'IGUAL', valor: 999 }]],
+              },
+            ],
+          },
+        ],
       },
     ],
   },
@@ -120,17 +181,18 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
     respostas: Record<string, ValorJson>,
     dependencias?: FormularioDoCandidato['dependenciasDoFator'],
     municipioPorBusca = false,
+    grupos: Record<string, { id: string; respostas: Record<string, ValorJson> }[]> = {},
+    comGrupo = false,
   ): HTMLElement => {
     fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
-    fixture.componentRef.setInput(
-      'formulario',
+    const base =
       dependencias === undefined
         ? formulario(comFator, undefined, municipioPorBusca)
-        : formulario(comFator, dependencias, municipioPorBusca),
-    );
+        : formulario(comFator, dependencias, municipioPorBusca);
+    fixture.componentRef.setInput('formulario', comGrupo ? comOGrupo(base) : base);
     fixture.componentRef.setInput('inicial', {
       respostas,
-      grupos: {},
+      grupos,
       etapasConcluidas: [],
       pressupostos: {},
       envio: {},
@@ -227,5 +289,48 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
     const tela = naRevisao(false, { EMAIL: 'a@b.c' });
 
     expect(resumo(tela)).toBeNull();
+  });
+
+  it('os campos de grupo que o Fator lista aparecem por ocorrência respondida, com o título dela', () => {
+    const tela = naRevisao(
+      true,
+      {},
+      { fatos: ['FAMILIA.BONUS', 'FAMILIA.RENDA'], grupos: ['FAMILIA'] },
+      false,
+      {
+        FAMILIA: [
+          { id: 'a', respostas: { RENDA: 1500.5, NOME: 'Maria', BONUS: 7 } },
+          { id: 'b', respostas: { RENDA: 800, NOME: 'João', BONUS: 9 } },
+        ],
+      },
+      true,
+    );
+
+    const itens = [...(resumo(tela)?.querySelectorAll('dt, dd') ?? [])].map((e) =>
+      e.textContent?.trim(),
+    );
+    expect(itens).toEqual([
+      'Integrante da família (Integrante 1): Renda',
+      '1.500,5',
+      'Integrante da família (Integrante 2): Renda',
+      '800',
+    ]);
+    // NOME não está nas dependências; BONUS está, mas a regra o oculta nas duas ocorrências.
+    const texto = resumo(tela)?.textContent ?? '';
+    expect(texto).not.toContain('Maria');
+    expect(texto).not.toContain('Nome');
+    expect(texto).not.toContain('Bônus');
+  });
+
+  it('o número aparece formatado e a seleção múltipla pelas descrições, separadas por vírgula', () => {
+    const tela = naRevisao(
+      true,
+      { [NUMERO]: 1234.5, [MULTIPLA]: ['PESCA', 'ROCA'] },
+      { fatos: [NUMERO, MULTIPLA], grupos: [] },
+    );
+
+    const texto = resumo(tela)?.textContent ?? '';
+    expect(texto).toContain('1.234,5');
+    expect(texto).toContain('Pesca artesanal, Roça de subsistência');
   });
 });
