@@ -232,7 +232,7 @@ import type {
                         [fixa]="respostasFixas()[campo.campo.fatoCodigo] ?? null"
                         [erroDoServidor]="mensagemDosErros(erros(), campo.campo.fatoCodigo)"
                         [diaDoEnvio]="diaDoEnvio()"
-                        [confirmacao]="confirmacoes()[campo.campo.fatoCodigo] ?? ''"
+                        [confirmacao]="confirmacoes()[campo.campo.fatoCodigo]"
                         [problemaDaConfirmacao]="
                           problemasDaConfirmacao().get(campo.campo.fatoCodigo) ?? null
                         "

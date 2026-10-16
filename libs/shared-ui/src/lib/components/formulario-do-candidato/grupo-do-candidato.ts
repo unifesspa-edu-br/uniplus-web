@@ -81,7 +81,7 @@ interface OcorrenciaNaTela {
                 )
               "
               [confirmacao]="
-                confirmacoes()[campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)] ?? ''
+                confirmacoes()[campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)]
               "
               [problemaDaConfirmacao]="
                 problemasDaConfirmacao().get(
