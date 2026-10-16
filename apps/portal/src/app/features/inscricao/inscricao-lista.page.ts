@@ -24,6 +24,7 @@ import {
   type UiSegmentedOption,
   UiTagVariant,
 } from '@uniplus/shared-ui/components';
+import { mediaQuerySignal } from '@uniplus/shared-utils';
 import { FormsModule } from '@angular/forms';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
@@ -125,8 +126,8 @@ export class InscricaoListaPage {
   private readonly userContext = inject(UserContextService);
   private readonly paginaTitulo = viewChild<ElementRef<HTMLHeadingElement>>('paginaTitulo');
   protected readonly nomeUsuario = computed(() => this.userContext.displayName() || 'Candidato');
-  /** Detecta a largura em que a lista é a forma canônica (<600px), via `matchMedia`. */
-  protected readonly isCompacto = signal(this.mediaCompacta()?.matches ?? false);
+  /** Detecta a largura em que a lista é a forma canônica (<600px). */
+  protected readonly isCompacto = mediaQuerySignal(COMPACT_MEDIA_QUERY);
   /** Abaixo de 600px a visão fica travada em lista, mesmo com "cards" salvo. */
   protected readonly visaoEfetiva = computed<VisaoCertames>(() =>
     this.isCompacto() ? 'lista' : this.visao(),
@@ -174,7 +175,6 @@ export class InscricaoListaPage {
   private foiConcluida = false;
 
   constructor() {
-    this.escutarBreakpoint();
     effect(() => writeVisao(this.visao()));
   }
 
@@ -275,21 +275,6 @@ export class InscricaoListaPage {
     if (visao !== null) {
       this.visao.set(visao);
     }
-  }
-
-  private mediaCompacta(): MediaQueryList | null {
-    return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-      ? window.matchMedia(COMPACT_MEDIA_QUERY)
-      : null;
-  }
-
-  private escutarBreakpoint(): void {
-    const mediaQuery = this.mediaCompacta();
-    if (mediaQuery === null) return;
-
-    const ouvinte = (evento: MediaQueryListEvent) => this.isCompacto.set(evento.matches);
-    mediaQuery.addEventListener('change', ouvinte);
-    this.destroyRef.onDestroy(() => mediaQuery.removeEventListener('change', ouvinte));
   }
 
   protected exibeInscricaoStatusLabel(status: SituacaoInscricao): string {
