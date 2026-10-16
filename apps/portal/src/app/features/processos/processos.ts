@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   computed,
   effect,
   inject,
@@ -45,7 +44,7 @@ import {
   type UiTagVariant,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
-import { diaNoFuso, formatarDataBr } from '@uniplus/shared-utils';
+import { diaNoFuso, formatarDataBr, mediaQuerySignal } from '@uniplus/shared-utils';
 
 import { CertamePublicacoesComponent } from '../publicacoes/certame-publicacoes';
 import type { PublicacoesDoCertame } from '../publicacoes/publicacoes.model';
@@ -209,7 +208,6 @@ function numeroDoHeader(
 export class ProcessosComponent {
   private readonly relogio = inject(RELOGIO);
 
-  private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(SELECAO_BASE_PATH);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly publicacoesRepository = inject(PublicacoesRepository);
@@ -382,7 +380,7 @@ export class ProcessosComponent {
   });
 
   /** Detecta a largura em que a lista é a forma canônica (<600px), via `matchMedia`. */
-  protected readonly isCompacto = signal(this.mediaCompacta()?.matches ?? false);
+  protected readonly isCompacto = mediaQuerySignal(COMPACT_MEDIA_QUERY);
 
   /** Abaixo de 600px a visão fica travada em lista, mesmo com "cards" salvo. */
   protected readonly visaoEfetiva = computed<VisaoCertames>(() =>
@@ -414,7 +412,6 @@ export class ProcessosComponent {
   });
 
   constructor() {
-    this.escutarBreakpoint();
     effect(() => writeVisao(this.visao()));
   }
 
@@ -455,7 +452,9 @@ export class ProcessosComponent {
 
   protected publicacoesDe(certame: CertameNaVitrineDto): PublicacoesDoCertame | undefined {
     const atual = this.publicacoes();
-    return atual.status === 'ok' ? (atual.porCertame.get(certame.processoSeletivoId) ?? undefined) : undefined;
+    return atual.status === 'ok'
+      ? (atual.porCertame.get(certame.processoSeletivoId) ?? undefined)
+      : undefined;
   }
 
   /** A consulta da página toda falhou, ou só a deste certame. */
@@ -513,20 +512,5 @@ export class ProcessosComponent {
     if (!this.carregando()) {
       this.lista.reload();
     }
-  }
-
-  private mediaCompacta(): MediaQueryList | null {
-    return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-      ? window.matchMedia(COMPACT_MEDIA_QUERY)
-      : null;
-  }
-
-  private escutarBreakpoint(): void {
-    const mediaQuery = this.mediaCompacta();
-    if (mediaQuery === null) return;
-
-    const ouvinte = (evento: MediaQueryListEvent) => this.isCompacto.set(evento.matches);
-    mediaQuery.addEventListener('change', ouvinte);
-    this.destroyRef.onDestroy(() => mediaQuery.removeEventListener('change', ouvinte));
   }
 }
