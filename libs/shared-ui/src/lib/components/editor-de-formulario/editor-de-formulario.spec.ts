@@ -59,6 +59,26 @@ describe('EditorDeFormularioComponent', () => {
   const tela = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const status = (): string => tela().querySelector('[role="status"]')?.textContent?.trim() ?? '';
   const clicar = (id: string): void => (tela().querySelector(`#${id}`) as HTMLButtonElement).click();
+  /** Abre a busca de fatos, filtrada pelo termo quando há um, e devolve os nomes que ela oferece. */
+  const ofertadosEm = (id: string, termo = ''): string[] => {
+    const campo = tela().querySelector(`#${id} [role="combobox"]`) as HTMLInputElement;
+    campo.dispatchEvent(new Event('focus'));
+    if (termo !== '') {
+      campo.value = termo;
+      campo.dispatchEvent(new Event('input'));
+    }
+    fixture.detectChanges();
+    return [...tela().querySelectorAll(`#${id} [role="option"]`)].map((opcao) => opcao.textContent?.trim() ?? '');
+  };
+  const escolherEm = (id: string, nome: string, termo = ''): void => {
+    ofertadosEm(id, termo);
+    [...tela().querySelectorAll(`#${id} [role="option"]`)].find((opcao) => opcao.textContent?.trim() === nome)?.dispatchEvent(new MouseEvent('mousedown'));
+    fixture.detectChanges();
+  };
+  const acrescentarCampo = (): void => {
+    ([...tela().querySelectorAll('button')].find((b) => b.textContent?.includes('Acrescentar campo')) as HTMLButtonElement).click();
+    fixture.detectChanges();
+  };
 
   it('mostra na região de status a recusa do movimento que quebraria uma condição, sem mexer no conteúdo', () => {
     clicar('f-item-B-subir');
@@ -217,17 +237,45 @@ describe('EditorDeFormularioComponent', () => {
   it('recusa acrescentar município sem campo de UF antes, dizendo o que fazer', () => {
     fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), { ...fato('MUNICIPIO'), dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' }]);
     fixture.detectChanges();
-    const combo = tela().querySelector('#f-etapa-S1-acrescentar') as HTMLSelectElement;
-    combo.value = 'MUNICIPIO';
-    combo.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
-
-    const botao = [...tela().querySelectorAll('button')].find((b) => b.textContent?.includes('Acrescentar campo')) as HTMLButtonElement;
-    botao.click();
-    fixture.detectChanges();
+    escolherEm('f-etapa-S1-acrescentar', 'MUNICIPIO');
+    acrescentarCampo();
 
     expect(emitidos).toEqual([]);
     expect(status()).toContain('Acrescente antes o campo de UF');
+  });
+
+  it('acrescenta o campo escolhido pela busca, que só oferece os fatos cujo nome casa com o termo', () => {
+    fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), fato('RENDA_FAMILIAR'), fato('RENDA_PROPRIA'), fato('ESCOLA')]);
+    fixture.detectChanges();
+
+    expect(ofertadosEm('f-etapa-S1-acrescentar', 'renda')).toEqual(['RENDA_FAMILIAR', 'RENDA_PROPRIA']);
+    expect(ofertadosEm('f-etapa-S1-acrescentar', 'inexistente')).toEqual([]);
+    expect(tela().querySelector('#f-etapa-S1-acrescentar')?.textContent).toContain('Nenhum fato do candidato casa com o que você digitou.');
+
+    escolherEm('f-etapa-S1-acrescentar', 'RENDA_PROPRIA', 'propria');
+    acrescentarCampo();
+
+    expect(emitidos.at(-1)?.itens?.map((i) => i.fatoCodigo)).toEqual(['A', 'B', 'C', 'RENDA_PROPRIA']);
+    expect(status()).toBe('Campo “RENDA_PROPRIA” acrescentado ao fim de Escolaridade.');
+  });
+
+  it('o pressuposto é escolhido pela busca, entre os fatos que podem ser pressupostos, e o foco volta ao campo', async () => {
+    fixture.componentRef.setInput('finalidade', 'ISENCAO');
+    fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), fato('DE_OUTRA'), fato('LIVRE'), { ...fato('INATIVO'), ativo: false }]);
+    fixture.componentRef.setInput('fatosIndisponiveis', ['DE_OUTRA']);
+    fixture.detectChanges();
+
+    // O fato de outra finalidade não vira campo aqui, mas pode vir do formulário anterior.
+    expect(ofertadosEm('f-pressuposto')).toEqual(['DE_OUTRA', 'LIVRE']);
+    expect(ofertadosEm('f-etapa-S1-acrescentar')).toEqual(['LIVRE']);
+
+    escolherEm('f-pressuposto', 'LIVRE', 'liv');
+    ([...tela().querySelectorAll('button')].find((b) => b.textContent?.includes('Acrescentar pressuposto')) as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(emitidos.at(-1)?.pressupostos).toEqual(['LIVRE']);
+    expect(document.activeElement, 'o foco vai ao campo de texto, não ao hospedeiro do combobox').toBe(tela().querySelector('#f-pressuposto [role="combobox"]'));
   });
 
   it('cria o grupo pela seção e, ao incluir o candidato, põe o parentesco primeiro e o mínimo em um', () => {
@@ -295,8 +343,7 @@ describe('EditorDeFormularioComponent', () => {
       expect(editado?.itens?.find((i) => i.fatoCodigo === 'A')?.precondicao?.[0]?.[0]?.fato).toBe('DA_INSCRICAO');
       expect(editado?.pressupostos ?? [], 'o fato da inscrição não é gravado').toEqual([]);
       expect(tela().textContent).not.toContain('Fatos pressupostos');
-      const ofertados = [...(tela().querySelector('#f-etapa-S1-acrescentar') as HTMLSelectElement).options].map((o) => o.value);
-      expect(ofertados, 'o fato que a inscrição coleta não é oferecido como campo').not.toContain('DA_INSCRICAO');
+      expect(ofertadosEm('f-etapa-S1-acrescentar'), 'o fato que a inscrição coleta não é oferecido como campo').not.toContain('DA_INSCRICAO');
     });
 
     it('o campo de membro de um grupo da inscrição não é citável nas outras finalidades', () => {
@@ -338,7 +385,7 @@ describe('EditorDeFormularioComponent', () => {
       fixture.componentRef.setInput('remocoesTravadas', new Map([['A', 'Uma exigência documental cita este campo.']]));
       fixture.detectChanges();
 
-      const ofertados = [...(tela().querySelector('#f-etapa-S1-acrescentar') as HTMLSelectElement).options].map((o) => o.value);
+      const ofertados = ofertadosEm('f-etapa-S1-acrescentar');
       expect(ofertados).toContain('LIVRE');
       expect(ofertados).not.toContain('DE_OUTRA');
 

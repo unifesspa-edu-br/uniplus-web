@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 
 import { fatosEscolhiveis, nomesDoCatalogo, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import { ComboboxComponent, type UiComboboxGroup } from '../combobox/combobox';
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { TagComponent } from '../tag/tag';
 import {
@@ -81,6 +82,11 @@ import { SecaoDoFormularioComponent } from './secao-do-formulario';
 import { TermoDoFormularioComponent } from './termo-do-formulario';
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
+/** Os fatos sob um título só: o catálogo não os classifica, e a busca do campo é pelo nome. */
+function emGrupo(fatos: readonly FatoDoFormulario[]): readonly UiComboboxGroup[] {
+  return [{ label: 'Fatos do candidato', options: fatos.map((fato) => ({ value: fato.codigo, label: fato.nome })) }];
+}
+
 const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
   [BLOCO_COMPROVACAO_DOCUMENTAL]: 'O candidato envia os documentos que o processo exige nesta fase.',
   [BLOCO_MODALIDADES_CALCULADAS]: 'O candidato vê as modalidades a que concorre, calculadas das respostas dele.',
@@ -104,7 +110,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
 @Component({
   selector: 'ui-editor-de-formulario',
   standalone: true,
-  imports: [ValorLegivelDirective, GrupoDoFormularioComponent, ItemDoFormularioComponent, SecaoDoFormularioComponent, TagComponent, TermoDoFormularioComponent],
+  imports: [ValorLegivelDirective, ComboboxComponent, GrupoDoFormularioComponent, ItemDoFormularioComponent, SecaoDoFormularioComponent, TagComponent, TermoDoFormularioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'editor-formulario' },
   template: `
@@ -154,18 +160,19 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
         }
         <div class="editor-formulario__acrescentar">
           <div class="field">
-            <label class="field__label" [for]="idBase() + '-pressuposto'">Fato a pressupor</label>
-            <select
-              class="select"
+            <label class="field__label" [attr.for]="campoDoPressuposto.campoId">Fato a pressupor</label>
+            <ui-combobox
+              #campoDoPressuposto
               [id]="idBase() + '-pressuposto'"
+              rotulo="Fatos do candidato"
+              placeholder="Escolha o fato do candidato"
+              [textoSemResultado]="semFatoQueCase"
+              [contagemVisivel]="false"
+              [grupos]="gruposDosPressupostos()"
+              [value]="escolhaDePressuposto()"
               [disabled]="disabled() || pressupostosPossiveis().length === 0"
-              (change)="escolher(chavePressuposto, $event)"
-            >
-              <option value="" [selected]="escolhaDePressuposto() === ''">Escolha o fato do candidato</option>
-              @for (fato of pressupostosPossiveis(); track fato.codigo) {
-                <option [value]="fato.codigo" [selected]="escolhaDePressuposto() === fato.codigo">{{ fato.nome }}</option>
-              }
-            </select>
+              (valueChange)="escolherValor(chavePressuposto, $event)"
+            />
           </div>
           <button
             class="btn btn--secondary btn--sm"
@@ -384,19 +391,20 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
 
             <div class="editor-formulario__acrescentar">
               <div class="field">
-                <label class="field__label" [for]="idDaEtapa(etapa) + '-acrescentar'">Campo a acrescentar</label>
-                <select
-                  class="select"
+                <label class="field__label" [attr.for]="campoAAcrescentar.campoId">Campo a acrescentar</label>
+                <ui-combobox
+                  #campoAAcrescentar
                   [id]="idDaEtapa(etapa) + '-acrescentar'"
+                  rotulo="Fatos do candidato"
+                  placeholder="Escolha o fato do candidato"
+                  [textoSemResultado]="semFatoQueCase"
+                  [contagemVisivel]="false"
+                  [grupos]="gruposParaAcrescentar()"
+                  [value]="escolhaDe(etapa.codigo)"
                   [disabled]="disabled() || noTeto() || paraAcrescentar().length === 0"
-                  [attr.aria-describedby]="noTeto() ? idBase() + '-teto' : null"
-                  (change)="escolher(etapa.codigo, $event)"
-                >
-                  <option value="" [selected]="escolhaDe(etapa.codigo) === ''">Escolha o fato do candidato</option>
-                  @for (fato of paraAcrescentar(); track fato.codigo) {
-                    <option [value]="fato.codigo" [selected]="escolhaDe(etapa.codigo) === fato.codigo">{{ fato.nome }}</option>
-                  }
-                </select>
+                  [descritoPor]="noTeto() ? idBase() + '-teto' : null"
+                  (valueChange)="escolherValor(etapa.codigo, $event)"
+                />
               </div>
               <button
                 class="btn btn--secondary btn--sm"
@@ -629,6 +637,9 @@ export class EditorDeFormularioComponent {
   protected readonly pressupostosPossiveis = computed(() =>
     this.fatosDaInscricao() === null ? pressupostosParaAcrescentar(this.conteudo(), this.catalogo(), this.finalidade()) : [],
   );
+  protected readonly gruposDosPressupostos = computed(() => emGrupo(this.pressupostosPossiveis()));
+  protected readonly gruposParaAcrescentar = computed(() => emGrupo(this.paraAcrescentar()));
+  protected readonly semFatoQueCase = 'Nenhum fato do candidato casa com o que você digitou.';
 
   protected nomeDoFato(codigo: string): string {
     return this.nomes().get(codigo) ?? codigo;
@@ -801,8 +812,11 @@ export class EditorDeFormularioComponent {
   }
 
   protected escolher(etapaCodigo: string, evento: Event): void {
-    const valor = (evento.target as HTMLSelectElement).value;
-    this.escolhas.update((escolhas) => new Map(escolhas).set(etapaCodigo, valor));
+    this.escolherValor(etapaCodigo, (evento.target as HTMLSelectElement).value);
+  }
+
+  protected escolherValor(chave: string, valor: string): void {
+    this.escolhas.update((escolhas) => new Map(escolhas).set(chave, valor));
   }
 
   protected emitir(conteudo: ConteudoDoFormulario): void {
