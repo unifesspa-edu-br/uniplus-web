@@ -1,9 +1,11 @@
 import type { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
 
-import type {
-  CampoRenderizavel,
-  DependenciasDaAvaliacao,
-  PassoDoFormulario,
+import {
+  comoInteiro,
+  type CampoRenderizavel,
+  type DependenciasDaAvaliacao,
+  type PassoDoFormulario,
+  type RespostaFixa,
 } from './formulario-do-candidato.model';
 import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
@@ -33,6 +35,7 @@ export function resumoDoFator(
   municipios: NomesDeMunicipios,
   dependencias: DependenciasDaAvaliacao | null | undefined,
   ocorrencias: Readonly<Record<string, readonly OcorrenciaSimulada[]>> = {},
+  fixas: Readonly<Partial<Record<string, RespostaFixa>>> = {},
 ): ResumoDoFator | null {
   if (!dependencias || (dependencias.fatos.length === 0 && dependencias.grupos.length === 0))
     return null;
@@ -43,7 +46,11 @@ export function resumoDoFator(
     const antes = linhas.length;
     for (const campo of passo.campos) {
       if (!fatos.has(campo.campo.fatoCodigo)) continue;
-      const valor = textoDa(campo.campo, respostas[campo.campo.fatoCodigo], municipios);
+      const fixa = fixas[campo.campo.fatoCodigo];
+      // A resposta fixa aparece como o campo a mostra (o CPF mascarado), nunca pelo valor.
+      const valor = fixa
+        ? fixa.exibicao || null
+        : textoDa(campo.campo, respostas[campo.campo.fatoCodigo], municipios);
       if (valor !== null) linhas.push({ rotulo: campo.campo.rotulo, valor });
     }
     for (const { grupo, avaliado } of passo.grupos) {
@@ -52,13 +59,18 @@ export function resumoDoFator(
         grupo.incluiCandidato,
         lista.map((o) => o.respostas),
       );
+      const subitensNaOrdem = [...grupo.subitens].sort(
+        (a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem),
+      );
       for (const ocorrencia of avaliado.ocorrencias) {
         const indice = lista.findIndex((o) => o.id === ocorrencia.id);
         if (indice < 0) continue;
-        for (const avaliadoDoSubitem of ocorrencia.campos) {
-          if (avaliadoDoSubitem.visivel !== 'VERDADEIRO') continue;
-          const subitem = grupo.subitens.find((s) => s.fatoCodigo === avaliadoDoSubitem.fatoCodigo);
-          if (!subitem || !fatos.has(`${grupo.codigo}.${subitem.fatoCodigo}`)) continue;
+        for (const subitem of subitensNaOrdem) {
+          const avaliadoDoSubitem = ocorrencia.campos.find(
+            (c) => c.fatoCodigo === subitem.fatoCodigo,
+          );
+          if (avaliadoDoSubitem?.visivel !== 'VERDADEIRO') continue;
+          if (!fatos.has(`${grupo.codigo}.${subitem.fatoCodigo}`)) continue;
           const valor = textoDa(subitem, lista[indice].respostas?.[subitem.fatoCodigo], municipios);
           if (valor !== null)
             linhas.push({
