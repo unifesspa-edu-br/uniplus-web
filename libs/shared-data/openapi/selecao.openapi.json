@@ -13452,6 +13452,7 @@
         "required": [
           "comprovacaoDocumental",
           "dependenciasDaAvaliacao",
+          "dependenciasDoFator",
           "faseId",
           "finalidade",
           "titulo",
@@ -13476,6 +13477,16 @@
             }
           },
           "dependenciasDaAvaliacao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DependenciasDaAvaliacaoDto"
+              }
+            ]
+          },
+          "dependenciasDoFator": {
             "oneOf": [
               {
                 "type": "null"
