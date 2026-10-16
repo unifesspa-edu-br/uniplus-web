@@ -27,6 +27,7 @@ import {
   DadoRevelavelComponent,
   DocumentoComponent,
   ListaDeDadosComponent,
+  type NomesDosMunicipios,
   SecaoDeDocumentoComponent,
   SkeletonComponent,
   TagComponent,
@@ -47,7 +48,7 @@ import {
   type Vizinhos,
   vizinhos,
 } from './comprovante-da-inscricao';
-import { type NomesDosMunicipios, nomesDoCandidato } from './resposta-exibida';
+import { nomesDoCandidato } from './resposta-exibida';
 
 type Estado = 'carregando' | 'erro' | 'pronto';
 
