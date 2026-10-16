@@ -29,6 +29,7 @@ import {
 
 /** Fernanda Drumond, persona fictícia do portal de documentação. */
 const CPF_DA_CONTA = '69959836371';
+const NOME_DA_CONTA = 'Fernanda Laura Nicole Drumond';
 const PROCESSO = '0199e000-0000-7000-8000-0000000000d1';
 
 const MEDICINA: OfertaDaInscricao = { id: 'oferta-1', nome: 'Medicina — Marabá' };
@@ -158,6 +159,7 @@ class ServicoDublê extends InscricaoDoCandidatoService {
 describe('InscricaoDoCandidatoPage', () => {
   let fixture: ComponentFixture<InscricaoDoCandidatoPage>;
   let servico: ServicoDublê;
+  const conta = signal<Record<string, string | undefined>>({});
 
   /** O instante que o relógio da página devolve. */
   let agora = new Date('2026-12-11T13:30:00Z');
@@ -166,6 +168,7 @@ describe('InscricaoDoCandidatoPage', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     agora = new Date('2026-12-11T13:30:00Z');
     servico = new ServicoDublê();
+    conta.set({ cpf: CPF_DA_CONTA });
     TestBed.configureTestingModule({
       imports: [InscricaoDoCandidatoPage],
       providers: [
@@ -173,7 +176,7 @@ describe('InscricaoDoCandidatoPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: InscricaoDoCandidatoService, useValue: servico },
-        { provide: UserContextService, useValue: { user: signal({ cpf: CPF_DA_CONTA }) } },
+        { provide: UserContextService, useValue: { user: conta } },
         { provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) },
         { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },
         { provide: RELOGIO, useValue: () => agora },
@@ -216,6 +219,91 @@ describe('InscricaoDoCandidatoPage', () => {
 
     await clicar(botao(tela, 'Salvar rascunho'));
     expect(servico.salvos[0].respostas?.['CPF']).toBe(CPF_DA_CONTA);
+  });
+
+  /** O formulário de teste que também coleta o nome social. */
+  const COM_NOME_SOCIAL: FormularioRenderizavelDto = {
+    ...FORMULARIO_DE_INSCRICAO_MOCK,
+    fatosColetados: [
+      ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados,
+      {
+        ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados[0],
+        fatoCodigo: 'DESEJA_NOME_SOCIAL',
+        ordem: 8,
+        rotulo: 'Deseja usar nome social',
+        tipoRenderizacao: 'BOOLEANO',
+        formato: null,
+      },
+      {
+        ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados[0],
+        fatoCodigo: 'NOME_SOCIAL',
+        ordem: 9,
+        rotulo: 'Nome social',
+        formato: null,
+      },
+    ],
+    regras: {
+      ...FORMULARIO_DE_INSCRICAO_MOCK.regras,
+      etapas: FORMULARIO_DE_INSCRICAO_MOCK.regras.etapas.map((e, i) =>
+        i === 0
+          ? {
+              ...e,
+              itens: [
+                ...e.itens,
+                { ...e.itens[0], fatoCodigo: 'DESEJA_NOME_SOCIAL', formato: null },
+                { ...e.itens[0], fatoCodigo: 'NOME_SOCIAL', formato: null },
+              ],
+            }
+          : e,
+      ),
+    },
+  };
+
+  it('o nome da conta entra na resposta e não se edita', async () => {
+    conta.update((c) => ({ ...c, nomeCivil: NOME_DA_CONTA }));
+    const tela = await abrir();
+
+    const nome = campoDe(tela, 'NOME');
+    expect(nome.readOnly).toBe(true);
+    expect(nome.value).toBe(NOME_DA_CONTA);
+
+    await clicar(botao(tela, 'Salvar rascunho'));
+    expect(servico.salvos[0].respostas?.['NOME']).toBe(NOME_DA_CONTA);
+  });
+
+  it('o nome social da conta preenche os campos, que seguem editáveis', async () => {
+    conta.update((c) => ({ ...c, nomeSocial: 'Ariel Drumond' }));
+    servico.formulario = COM_NOME_SOCIAL;
+    const tela = await abrir();
+
+    const social = campoDe(tela, 'NOME_SOCIAL');
+    expect(social.readOnly).toBe(false);
+    expect(social.value).toBe('Ariel Drumond');
+    await clicar(botao(tela, 'Salvar rascunho'));
+    expect(servico.salvos[0].respostas?.['DESEJA_NOME_SOCIAL']).toBe(true);
+  });
+
+  it('a conta sem nome social deixa os campos sem preenchimento', async () => {
+    servico.formulario = COM_NOME_SOCIAL;
+    const tela = await abrir();
+
+    expect(campoDe(tela, 'NOME_SOCIAL').value).toBe('');
+    await clicar(botao(tela, 'Salvar rascunho'));
+    expect(servico.salvos[0].respostas?.['DESEJA_NOME_SOCIAL']).toBeUndefined();
+  });
+
+  it('o nome social gravado prevalece sobre o da conta', async () => {
+    conta.update((c) => ({ ...c, nomeSocial: 'Ariel Drumond' }));
+    servico.formulario = COM_NOME_SOCIAL;
+    servico.inscricao = inscricao({
+      respostas: { DESEJA_NOME_SOCIAL: false },
+    });
+    const tela = await abrir();
+
+    expect(campoDe(tela, 'NOME_SOCIAL')?.value ?? '').toBe('');
+    await clicar(botao(tela, 'Salvar rascunho'));
+    expect(servico.salvos[0].respostas?.['DESEJA_NOME_SOCIAL']).toBe(false);
+    expect(servico.salvos[0].respostas?.['NOME_SOCIAL']).toBeUndefined();
   });
 
   /** O formulário de teste com o bloco de comprovação documental. */

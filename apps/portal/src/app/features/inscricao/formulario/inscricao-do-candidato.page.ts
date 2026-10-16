@@ -167,18 +167,39 @@ export class InscricaoDoCandidatoPage implements OnInit {
   );
 
   /**
-   * O CPF vem da conta e não se altera aqui: entra na resposta do formulário que o coleta e aparece
-   * mascarado, e o titular o revela a partir do próprio login, sem consulta.
+   * O nome civil e o CPF vêm da conta e não se alteram aqui: entram na resposta do formulário que os
+   * coleta. Só o CPF aparece mascarado, e o titular o revela a partir do próprio login, sem consulta.
    */
   protected readonly respostasFixas = computed<Readonly<Record<string, RespostaFixa>>>(() => {
     const cpf = this.usuario.user()?.cpf.replace(/\D/g, '') ?? '';
     const coletaCpf = this.formulario()?.fatosColetados.some((c) => c.fatoCodigo === 'CPF');
     const fixas: Record<string, RespostaFixa> = {};
+    const nome = this.usuario.user()?.nomeCivil?.trim() ?? '';
+    const coletaNome = this.formulario()?.fatosColetados.some((c) => c.fatoCodigo === 'NOME');
+    if (coletaNome && nome !== '') fixas['NOME'] = { valor: nome, exibicao: nome };
     if (coletaCpf && isValidCpf(cpf)) {
       fixas['CPF'] = { valor: cpf, exibicao: mascararCpf(cpf), revelavel: cpfRevelavel(cpf) };
     }
     return fixas;
   });
+
+  /**
+   * O nome social da conta preenche, de início, os campos que o formulário coleta, mas continua
+   * editável. O que já está gravado prevalece, inclusive a desistência de usá-lo.
+   */
+  private respostasDoNomeSocial(
+    gravadas: Readonly<Record<string, ValorJson>>,
+    formulario: FormularioRenderizavelDto,
+  ): Record<string, ValorJson> {
+    const social = this.usuario.user()?.nomeSocial?.trim() ?? '';
+    if (social === '' || 'NOME_SOCIAL' in gravadas || 'DESEJA_NOME_SOCIAL' in gravadas) return {};
+    const coleta = (fato: string): boolean =>
+      formulario.fatosColetados.some((c) => c.fatoCodigo === fato);
+    return {
+      ...(coleta('DESEJA_NOME_SOCIAL') ? { DESEJA_NOME_SOCIAL: true } : {}),
+      ...(coleta('NOME_SOCIAL') ? { NOME_SOCIAL: social } : {}),
+    };
+  }
 
   /**
    * Os fatos que o sistema calcula das respostas e que o formulário cita, com o rótulo de lá. Voltam ao
@@ -236,7 +257,13 @@ export class InscricaoDoCandidatoPage implements OnInit {
             this.inscricao.set(inscricao.data);
             // As respostas chegam em JSON: são os valores que o formulário lê.
             const inicial: SimulacaoDoFormulario = {
-              respostas: inscricao.data.respostas as Readonly<Record<string, ValorJson>>,
+              respostas: {
+                ...this.respostasDoNomeSocial(
+                  inscricao.data.respostas as Readonly<Record<string, ValorJson>>,
+                  formulario.data,
+                ),
+                ...(inscricao.data.respostas as Readonly<Record<string, ValorJson>>),
+              },
               grupos: inscricao.data.grupos as SimulacaoDoFormulario['grupos'],
             };
             this.inicial.set(inicial);

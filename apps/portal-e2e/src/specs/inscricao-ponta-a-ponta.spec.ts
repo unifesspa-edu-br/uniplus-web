@@ -87,7 +87,10 @@ async function recusarNascimentoNoFuturo(page: Page): Promise<void> {
 
 async function preencherDadosDoCandidato(page: Page): Promise<void> {
   await irParaSecao(page, 'Dados do candidato');
-  await campo(page, 'Nome completo').fill(PERSONA.nome);
+  // O nome civil vem da conta e não se edita.
+  const nome = campo(page, 'Nome completo');
+  await expect(nome).toHaveValue(PERSONA.nome);
+  await expect(nome).not.toBeEditable();
   await escolher(page, 'Deseja usar nome social', 'Sim');
   await campo(page, 'Nome social').fill(PERSONA.nomeSocial);
   await escolher(page, 'Nacionalidade', 'Brasileiro nato');
