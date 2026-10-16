@@ -5,7 +5,11 @@ import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { BUSCA_DE_CEP } from '../endereco-geo/endereco-geo.model';
 
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
-import type { CampoRenderizavel, FormularioDoCandidato } from './formulario-do-candidato.model';
+import type {
+  CampoRenderizavel,
+  FormularioDoCandidato,
+  RespostaFixa,
+} from './formulario-do-candidato.model';
 import type { ValorJson } from './interpretador/regras-do-formulario';
 
 /** A Revisão e aceite resume o pedido do Fator de Atenuação (UNI-REQ-0150) com os rótulos do formulário. */
@@ -193,13 +197,16 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
     municipioPorBusca = false,
     grupos: Record<string, { id: string; respostas: Record<string, ValorJson> }[]> = {},
     comGrupo = false,
+    fixas: Record<string, RespostaFixa> = {},
+    ajuste: (f: FormularioDoCandidato) => FormularioDoCandidato = (f) => f,
   ): HTMLElement => {
     fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
     const base =
       dependencias === undefined
         ? formulario(comFator, undefined, municipioPorBusca)
         : formulario(comFator, dependencias, municipioPorBusca);
-    fixture.componentRef.setInput('formulario', comGrupo ? comOGrupo(base) : base);
+    fixture.componentRef.setInput('formulario', ajuste(comGrupo ? comOGrupo(base) : base));
+    fixture.componentRef.setInput('respostasFixas', fixas);
     fixture.componentRef.setInput('inicial', {
       respostas,
       grupos,
@@ -330,6 +337,44 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
     expect(texto).not.toContain('Maria');
     expect(texto).not.toContain('Nome');
     expect(texto).not.toContain('Bônus');
+  });
+
+  it('a resposta fixa aparece pela exibição mascarada, nunca pelo valor', () => {
+    const tela = naRevisao(true, {}, { fatos: [TELEFONE], grupos: [] }, false, {}, false, {
+      [TELEFONE]: { valor: '61981951555', exibicao: '(**) *****-1555' },
+    });
+
+    const texto = resumo(tela)?.textContent ?? '';
+    expect(texto).toContain('(**) *****-1555');
+    expect(texto).not.toContain('61981951555');
+    expect(texto).not.toContain('98195-1555');
+  });
+
+  it('os subitens do grupo seguem a ordem do grupo, não a da regra', () => {
+    const tela = naRevisao(
+      true,
+      {},
+      { fatos: ['FAMILIA.RENDA', 'FAMILIA.NOME'], grupos: ['FAMILIA'] },
+      false,
+      { FAMILIA: [{ id: 'a', respostas: { RENDA: 10, NOME: 'Maria' } }] },
+      true,
+      {},
+      (f) => ({
+        ...f,
+        grupos: f.grupos?.map((g) => ({
+          ...g,
+          subitens: g.subitens.map((s) => (s.fatoCodigo === 'RENDA' ? { ...s, ordem: 5 } : s)),
+        })),
+      }),
+    );
+
+    const rotulos = [...(resumo(tela)?.querySelectorAll('dt') ?? [])].map((e) =>
+      e.textContent?.trim(),
+    );
+    expect(rotulos).toEqual([
+      'Integrante da família (Integrante 1): Nome',
+      'Integrante da família (Integrante 1): Renda',
+    ]);
   });
 
   it('a data aparece no formato brasileiro e o telefone com a máscara, como no comprovante', () => {
