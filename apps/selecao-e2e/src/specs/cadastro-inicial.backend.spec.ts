@@ -126,7 +126,7 @@ test.describe('Cadastro inicial do processo seletivo', () => {
   test('recusa arquivo que não é PDF antes de qualquer requisição', async ({ page }) => {
     const requisicoesDeDocumento: string[] = [];
     page.on('request', (req) => {
-      if (req.method() === 'POST' && req.url().includes('/documentos-edital')) {
+      if (req.method() === 'POST' && req.url().includes('/documentos-a-publicar')) {
         requisicoesDeDocumento.push(req.url());
       }
     });

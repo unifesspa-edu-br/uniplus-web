@@ -3,7 +3,7 @@
     <p class="label" id="anexo-edital-titulo">Edital de abertura</p>
     @if (anexo(); as file) {
       <ui-valor-em-consulta rotuladoPor="anexo-edital-titulo" [valor]="file.name" />
-      @if (file.fase === 'confirmado' && file.documentoEditalId; as documentoId) {
+      @if (file.fase === 'confirmado' && file.documentoAPublicarId; as documentoId) {
         <button
           class="btn btn--tertiary btn--sm"
           type="button"
@@ -23,7 +23,6 @@
   </div>
 } @else {
 <div class="step-card upload-section">
-  <p class="label">Upload do edital de abertura</p>
   @if (store.avisoDocumentos(); as aviso) {
     <div class="alert alert--warning" role="alert">
       <div class="alert__body">
@@ -84,6 +83,7 @@
 
   <ui-file-upload
     idDoCampo="f-file"
+    fieldLabel="Upload do edital de abertura"
     acceptedFileTypes=".pdf"
     acceptLabel="Somente PDF"
     [validarSoPelaExtensao]="true"
@@ -96,7 +96,7 @@
     (tentarDeNovo)="retomarUpload()"
   />
   @if (anexo(); as file) {
-    @if (file.fase === 'confirmado' && file.documentoEditalId; as documentoId) {
+    @if (file.fase === 'confirmado' && file.documentoAPublicarId; as documentoId) {
       <button
         class="btn btn--tertiary btn--sm"
         type="button"

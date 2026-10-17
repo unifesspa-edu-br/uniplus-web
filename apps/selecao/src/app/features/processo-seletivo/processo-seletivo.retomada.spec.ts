@@ -31,7 +31,7 @@ import { GeoApi } from '@uniplus/shared-data/geo';
 import { AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
-  DocumentoEditalDto,
+  DocumentoAPublicarDto,
   ItemConformidadeDto,
   OrigemCandidatos,
   RegrasCatalogoApi,
@@ -118,7 +118,7 @@ function detalhe(overrides: Partial<ProcessoSeletivoDto> = {}): ProcessoSeletivo
   } as ProcessoSeletivoDto;
 }
 
-function documento(overrides: Partial<DocumentoEditalDto> = {}): DocumentoEditalDto {
+function documento(overrides: Partial<DocumentoAPublicarDto> = {}): DocumentoAPublicarDto {
   return {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b030',
     processoSeletivoId: PROCESSO_ID,
@@ -212,7 +212,7 @@ function montar(opts: CenarioOpts = {}) {
         useValue: {
           obter,
           obterConformidade,
-          listarDocumentosEdital: listarDocumentos,
+          listarDocumentosAPublicar: listarDocumentos,
           obterRascunhoDaPublicacao: obterRascunho,
           // A Revisão de processo publicado lê o ato vigente; esta suíte não exercita o ato.
           obterSnapshotVigente: () => NEVER,
@@ -405,7 +405,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
 
     const uploads = cenario.store.draft().identificacao.uploads;
     expect(uploads).toHaveLength(1);
-    expect(uploads[0].documentoEditalId).toBe('019f41cf-69fd-759a-ac6d-09acabc1b030');
+    expect(uploads[0].documentoAPublicarId).toBe('019f41cf-69fd-759a-ac6d-09acabc1b030');
     expect(cenario.store.documentosParaEscolha()).toHaveLength(0);
   });
 

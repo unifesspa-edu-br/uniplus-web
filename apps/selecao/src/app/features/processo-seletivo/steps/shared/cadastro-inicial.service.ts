@@ -24,7 +24,7 @@ import {
   DefinirTaxaInscricaoRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
-  IniciarUploadDocumentoEditalDto,
+  IniciarEnvioDoDocumentoAPublicarDto,
   NoExigenciaInput,
   ProcessosSeletivosApi,
   PublicarProcessoSeletivoRequest,
@@ -75,8 +75,11 @@ export type ResultadoGravacaoComInconclusiva =
 
 export type ResultadoGravacaoCascata = ResultadoGravacaoComInconclusiva;
 
+/** O edital é sempre um PDF; o tipo declarado no início do envio é o que a API confere depois. */
+const TIPO_DE_MIDIA_DO_EDITAL = 'application/pdf';
+
 export type ResultadoIniciacao =
-  | { readonly ok: true; readonly iniciacao: IniciarUploadDocumentoEditalDto }
+  | { readonly ok: true; readonly iniciacao: IniciarEnvioDoDocumentoAPublicarDto }
   | FalhaOperacao;
 
 /**
@@ -218,7 +221,7 @@ export class CadastroInicialService {
    * tem como saber se o processo já tem edital antes de enviar outro.
    */
   listarDocumentos(processoSeletivoId: string) {
-    return firstValueFrom(this.api.listarDocumentosEdital(processoSeletivoId));
+    return firstValueFrom(this.api.listarDocumentosAPublicar(processoSeletivoId));
   }
 
   /**
@@ -228,9 +231,9 @@ export class CadastroInicialService {
    * novo, e é por isso que o servidor a emite por pedido em vez de distribuí-la
    * na listagem.
    */
-  obterAcessoAoDocumento(processoSeletivoId: string, documentoEditalId: string) {
+  obterAcessoAoDocumento(processoSeletivoId: string, documentoAPublicarId: string) {
     return firstValueFrom(
-      this.api.obterAcessoDocumentoEdital(processoSeletivoId, documentoEditalId),
+      this.api.obterAcessoDocumentoAPublicar(processoSeletivoId, documentoAPublicarId),
     );
   }
 
@@ -813,10 +816,14 @@ export class CadastroInicialService {
     return firstValueFrom(this.api.obterSnapshotVigente(processoSeletivoId));
   }
   /** Passo 1 do anexo: registro pendente + URL pré-assinada. */
-  async iniciarUpload(processoSeletivoId: string): Promise<ResultadoIniciacao> {
+  async iniciarUpload(processoSeletivoId: string, nomeArquivo: string): Promise<ResultadoIniciacao> {
     const geracao = this.geracao;
     const result = await firstValueFrom(
-      this.api.iniciarUploadDocumentoEdital(processoSeletivoId, contextoCom(this.chaveIniciacao)),
+      this.api.iniciarEnvioDocumentoAPublicar(
+        processoSeletivoId,
+        { nomeArquivo, tipoDeMidia: TIPO_DE_MIDIA_DO_EDITAL },
+        contextoCom(this.chaveIniciacao),
+      ),
     );
 
     if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
@@ -832,7 +839,7 @@ export class CadastroInicialService {
 
   /** Passo 2: envia o arquivo direto ao storage (`enviarAoStorage`). */
   enviarArquivo(
-    iniciacao: IniciarUploadDocumentoEditalDto,
+    iniciacao: IniciarEnvioDoDocumentoAPublicarDto,
     arquivo: File,
     onProgresso: (percentual: number) => void,
   ): Promise<ResultadoEnvio> {
@@ -856,13 +863,13 @@ export class CadastroInicialService {
   /** Passo 3: a API valida o objeto no storage e sela o documento. */
   async confirmarUpload(
     processoSeletivoId: string,
-    documentoEditalId: string,
+    documentoAPublicarId: string,
   ): Promise<ResultadoGravacao> {
     const geracao = this.geracao;
     const result = await firstValueFrom(
-      this.api.confirmarUploadDocumentoEdital(
+      this.api.confirmarEnvioDocumentoAPublicar(
         processoSeletivoId,
-        documentoEditalId,
+        documentoAPublicarId,
         contextoCom(this.chaveConfirmacao),
       ),
     );

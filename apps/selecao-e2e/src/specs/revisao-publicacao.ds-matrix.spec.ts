@@ -150,7 +150,7 @@ async function mockarProcesso(page: Page, opcoes: MockarProcessoOpcoes = {}): Pr
       const url = new URL(request.url());
       const caminho = url.pathname;
 
-      if (caminho.endsWith('/documentos-edital')) {
+      if (caminho.endsWith('/documentos-a-publicar')) {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',

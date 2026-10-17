@@ -407,7 +407,7 @@ export class RevisaoStepComponent {
    */
   readonly documentoEditalId = computed(() => {
     const upload = this.store.draft().identificacao.uploads[0];
-    return upload && upload.fase === 'confirmado' ? (upload.documentoEditalId ?? null) : null;
+    return upload && upload.fase === 'confirmado' ? (upload.documentoAPublicarId ?? null) : null;
   });
 
   /** Mais de um documento confirmado aguardando escolha explícita — resolvida na Identificação (CA-02). */

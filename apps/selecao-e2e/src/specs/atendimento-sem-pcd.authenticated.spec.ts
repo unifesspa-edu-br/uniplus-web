@@ -150,7 +150,7 @@ async function mockarApi(page: Page, catalogo: { condicoes: readonly object[] })
     const caminho = new URL(route.request().url()).pathname;
     if (caminho.endsWith(id)) {
       await responderCom(route, PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO, CORS);
-    } else if (caminho.endsWith('/documentos-edital')) {
+    } else if (caminho.endsWith('/documentos-a-publicar')) {
       await responderCom(route, [], CORS);
     } else {
       await route.fulfill({ status: 404, headers: CORS });

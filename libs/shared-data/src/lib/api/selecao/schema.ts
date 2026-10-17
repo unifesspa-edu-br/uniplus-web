@@ -222,7 +222,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/documentos-edital": {
+    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/documentos-a-publicar": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -246,7 +246,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "application/vnd.uniplus.documento-edital.v1+json": readonly components["schemas"]["DocumentoEditalDto"][];
+                        readonly "application/vnd.uniplus.documento-a-publicar.v1+json": readonly components["schemas"]["DocumentoAPublicarDto"][];
                     };
                 };
                 /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
@@ -300,7 +300,13 @@ export interface paths {
                 };
                 readonly cookie?: never;
             };
-            readonly requestBody?: never;
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["IniciarEnvioDoDocumentoAPublicarRequest"];
+                    readonly "text/json": components["schemas"]["IniciarEnvioDoDocumentoAPublicarRequest"];
+                    readonly "application/*+json": components["schemas"]["IniciarEnvioDoDocumentoAPublicarRequest"];
+                };
+            };
             readonly responses: {
                 /** @description Created */
                 readonly 201: {
@@ -308,9 +314,9 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["IniciarUploadDocumentoEditalDto"];
-                        readonly "application/json": components["schemas"]["IniciarUploadDocumentoEditalDto"];
-                        readonly "text/json": components["schemas"]["IniciarUploadDocumentoEditalDto"];
+                        readonly "text/plain": components["schemas"]["IniciarEnvioDoDocumentoAPublicarDto"];
+                        readonly "application/json": components["schemas"]["IniciarEnvioDoDocumentoAPublicarDto"];
+                        readonly "text/json": components["schemas"]["IniciarEnvioDoDocumentoAPublicarDto"];
                     };
                 };
                 /** @description Bad Request */
@@ -384,7 +390,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/documentos-edital/{documentoEditalId}/confirmacao": {
+    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/documentos-a-publicar/{documentoAPublicarId}/confirmacao": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -402,7 +408,7 @@ export interface paths {
                 };
                 readonly path: {
                     readonly processoSeletivoId: string;
-                    readonly documentoEditalId: string;
+                    readonly documentoAPublicarId: string;
                 };
                 readonly cookie?: never;
             };
@@ -414,9 +420,9 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": components["schemas"]["DocumentoEditalDto"];
-                        readonly "application/json": components["schemas"]["DocumentoEditalDto"];
-                        readonly "text/json": components["schemas"]["DocumentoEditalDto"];
+                        readonly "text/plain": components["schemas"]["DocumentoAPublicarDto"];
+                        readonly "application/json": components["schemas"]["DocumentoAPublicarDto"];
+                        readonly "text/json": components["schemas"]["DocumentoAPublicarDto"];
                     };
                 };
                 /** @description Bad Request */
@@ -490,7 +496,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/documentos-edital/{documentoEditalId}/acesso": {
+    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/documentos-a-publicar/{documentoAPublicarId}/acesso": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -503,7 +509,7 @@ export interface paths {
                 readonly header?: never;
                 readonly path: {
                     readonly processoSeletivoId: string;
-                    readonly documentoEditalId: string;
+                    readonly documentoAPublicarId: string;
                 };
                 readonly cookie?: never;
             };
@@ -515,7 +521,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "application/vnd.uniplus.acesso-documento-edital.v1+json": components["schemas"]["AcessoDocumentoEditalDto"];
+                        readonly "application/vnd.uniplus.acesso-documento-a-publicar.v1+json": components["schemas"]["AcessoDocumentoAPublicarDto"];
                     };
                 };
                 /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
@@ -7425,7 +7431,7 @@ export interface components {
             readonly versaoId: string;
             readonly hashVersao: string;
         };
-        readonly AcessoDocumentoEditalDto: {
+        readonly AcessoDocumentoAPublicarDto: {
             /** Format: uri */
             readonly url: string;
             /** Format: date-time */
@@ -8009,6 +8015,24 @@ export interface components {
             readonly ordem: number | string;
             readonly modalidadeDestinoCodigo: null | string;
         };
+        readonly DocumentoAPublicarDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly processoSeletivoId: string;
+            readonly nomeArquivo: string;
+            readonly tipoDeMidia: string;
+            readonly status: string;
+            /** Format: date-time */
+            readonly criadoEm: string;
+            /** Format: date-time */
+            readonly expiraEm: string;
+            /** Format: int64 */
+            readonly tamanhoBytes: null | number | string;
+            readonly hashSha256: null | string;
+            /** Format: date-time */
+            readonly confirmadoEm: null | string;
+        };
         readonly DocumentoDaInscricaoDto: {
             /** Format: uuid */
             readonly exigenciaId: string;
@@ -8032,22 +8056,6 @@ export interface components {
             readonly hashSha256: string;
             /** Format: uri */
             readonly urlDownload: string;
-        };
-        readonly DocumentoEditalDto: {
-            /** Format: uuid */
-            readonly id: string;
-            /** Format: uuid */
-            readonly processoSeletivoId: string;
-            readonly status: string;
-            /** Format: date-time */
-            readonly criadoEm: string;
-            /** Format: date-time */
-            readonly expiraEm: string;
-            /** Format: int64 */
-            readonly tamanhoBytes: null | number | string;
-            readonly hashSha256: null | string;
-            /** Format: date-time */
-            readonly confirmadoEm: null | string;
         };
         readonly DocumentoExigidoDto: {
             /** Format: uuid */
@@ -8468,6 +8476,19 @@ export interface components {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly mensagem: null | string;
         };
+        readonly IniciarEnvioDoDocumentoAPublicarDto: {
+            /** Format: uuid */
+            readonly documentoAPublicarId: string;
+            /** Format: uri */
+            readonly urlUpload: string;
+            readonly contentTypeExigido: string;
+            /** Format: date-time */
+            readonly expiraEm: string;
+        };
+        readonly IniciarEnvioDoDocumentoAPublicarRequest: {
+            readonly nomeArquivo: null | string;
+            readonly tipoDeMidia: null | string;
+        };
         readonly IniciarEnvioDoModeloDeDocumentoDto: {
             /** Format: uuid */
             readonly modeloDeDocumentoId: string;
@@ -8480,15 +8501,6 @@ export interface components {
         readonly IniciarEnvioDoModeloDeDocumentoRequest: {
             readonly nomeArquivo: null | string;
             readonly formato: null | string;
-        };
-        readonly IniciarUploadDocumentoEditalDto: {
-            /** Format: uuid */
-            readonly documentoEditalId: string;
-            /** Format: uri */
-            readonly urlUpload: string;
-            readonly contentTypeExigido: string;
-            /** Format: date-time */
-            readonly expiraEm: string;
         };
         readonly InscricaoDto: {
             /** Format: uuid */
