@@ -110,7 +110,7 @@ export class ModeloDaExigenciaComponent {
         podeTentarDeNovo: envio.retomavel,
         // Com a confirmação sem resposta o modelo pode já estar selado: abandonar o envio agora
         // esconderia isso de quem decide.
-        podeRetirar: envio.fase === 'erro' && !this.confirmacaoIndefinida(),
+        podeRetirar: envio.fase === 'erro' && !this.bloqueado(),
       },
     ];
   });
@@ -138,7 +138,7 @@ export class ModeloDaExigenciaComponent {
 
   /** Abandona o envio que falhou, para escolher outro arquivo sem o resto da tentativa anterior. */
   descartar(): void {
-    if (this.emCurso() || this.confirmacaoIndefinida()) return;
+    if (this.bloqueado()) return;
     this.envio.set(null);
     this.recusa.set(null);
     this.arquivo = null;

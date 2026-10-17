@@ -575,4 +575,50 @@ describe('FileUploadComponent no modo controlado', () => {
     expect(zona?.getAttribute('aria-describedby')).toMatch(/^aviso-1 ui-file-upload-\d+-error$/);
     expect(host.querySelector('[role="alert"]')?.textContent).toContain('Antes, conclua o cadastro.');
   });
+
+  it('aplica o limite de arquivos também no modo de um arquivo', () => {
+    const { host, escolhidos, escolher } = setup({ multiple: false, maxFiles: 1, itens: [item()] });
+
+    escolher(pdf('a.pdf'));
+
+    expect(escolhidos).toHaveLength(0);
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain(
+      'a.pdf: o limite de 1 arquivo foi atingido.',
+    );
+  });
+
+  it('trata o arquivo solto fora da zona, na lista ou nas mensagens', () => {
+    const { host, fixture, escolhidos } = setup({ itens: [item()] });
+    const evento = new Event('drop', { cancelable: true, bubbles: true }) as DragEvent;
+    Object.defineProperty(evento, 'dataTransfer', { value: { files: [pdf('solto.pdf')] } });
+
+    host.querySelector('.uni-uploader__list')?.dispatchEvent(evento);
+    fixture.detectChanges();
+
+    expect(escolhidos[0].map((f) => f.name)).toEqual(['solto.pdf']);
+  });
+
+  it('não processa duas vezes o drop recebido pela zona', () => {
+    const { host, escolhidos } = setup();
+    const evento = new Event('drop', { cancelable: true, bubbles: true }) as DragEvent;
+    Object.defineProperty(evento, 'dataTransfer', { value: { files: [pdf('a.pdf')] } });
+
+    host.querySelector('.uni-uploader__drop')?.dispatchEvent(evento);
+
+    expect(escolhidos).toHaveLength(1);
+  });
+
+  it('identifica a lista e as ações pelo contexto informado pelo consumidor', () => {
+    const { host } = setup({
+      fieldLabel: 'Enviar o modelo',
+      nomeDaLista: 'Modelo de RG',
+      itens: [item({ fase: 'erro', mensagem: 'Falhou.' })],
+    });
+
+    expect(host.querySelector('ul')?.getAttribute('aria-label')).toBe('Arquivos: Modelo de RG');
+    expect(host.querySelector('button[aria-label="Remover edital.pdf — Modelo de RG"]')).not.toBeNull();
+    expect(
+      host.querySelector('button[aria-label="Tentar enviar novamente edital.pdf — Modelo de RG"]'),
+    ).not.toBeNull();
+  });
 });

@@ -274,7 +274,6 @@ describe('AnexoEditalComponent', () => {
     expect(componente.anexo()?.mensagemErro).toBeTruthy();
   });
 
-  /** Cada anexo confirmado vira um documento imutável a mais no processo. */
   it('não oferece nova tentativa para anexo em erro sem o arquivo na memória', () => {
     store.patchObjectSection('identificacao', {
       uploads: [{ id: 'x', name: 'edital.pdf', extension: 'pdf', progress: 40, fase: 'erro', mensagemErro: 'Falhou.' }],
@@ -282,6 +281,35 @@ describe('AnexoEditalComponent', () => {
     detectar();
 
     expect(host.textContent).not.toContain('Tentar novamente');
+  });
+
+  it('oferece a nova tentativa sem o arquivo quando só falta confirmar', async () => {
+    store.patchObjectSection('identificacao', {
+      uploads: [
+        {
+          id: 'x',
+          name: 'edital.pdf',
+          extension: 'pdf',
+          progress: 100,
+          fase: 'erro',
+          mensagemErro: 'Sem resposta.',
+          enviado: true,
+          documentoEditalId: DOCUMENTO_ID,
+          confirmacaoIndefinida: true,
+        },
+      ],
+    });
+    detectar();
+    expect(host.textContent).toContain('Tentar novamente');
+
+    void componente.retomarUpload();
+    await tick();
+
+    controller
+      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/confirmacao`)
+      .flush({ id: DOCUMENTO_ID }, { status: 200, statusText: 'OK' });
+    await tick();
+    expect(componente.anexo()?.fase).toBe('confirmado');
   });
 
   it('limpa a recusa anterior ao remover o anexo', async () => {
@@ -297,6 +325,7 @@ describe('AnexoEditalComponent', () => {
     expect(componente.anexo()).toBeUndefined();
   });
 
+  /** Cada anexo confirmado vira um documento imutável a mais no processo. */
   it('recusa substituir um edital já confirmado', async () => {
     await anexarComSucesso();
 

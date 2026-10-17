@@ -67,6 +67,7 @@
       [acceptedFileTypes]="extensoesEditaveis"
       acceptLabel="DOCX ou ODT"
       [idDoCampo]="idBase() + '-arquivo'"
+      [nomeDaLista]="'Modelo de ' + nomeDoDocumento()"
       [fieldLabel]="modelo() === null ? 'Enviar o modelo' : 'Trocar por outro modelo'"
       [validarSoPelaExtensao]="true"
       [maxSizeMb]="tamanhoMaximoMb"

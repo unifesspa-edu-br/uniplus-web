@@ -106,9 +106,7 @@ export class AnexoEditalComponent {
         fase: item.fase,
         progresso: item.progress,
         mensagem: item.mensagemErro,
-        // A retomada precisa do arquivo na memória e do processo: após recarregar a página o anexo
-        // em erro vem do servidor sem os bytes, e repetir não teria o que enviar.
-        podeTentarDeNovo: this.arquivoSelecionado() !== null && !this.semProcesso(),
+        podeTentarDeNovo: this.podeRetomar(item),
         podeRetirar: !this.anexoBloqueado(),
       },
     ];
@@ -173,12 +171,25 @@ export class AnexoEditalComponent {
     }
   }
 
+  /**
+   * A retomada precisa do processo e de algo a repetir: o arquivo na memória, ou o PUT já feito
+   * (só falta confirmar, o que dispensa os bytes). Após recarregar a página um anexo em erro vem do
+   * servidor sem arquivo e sem envio concluído, e repetir não teria o que enviar.
+   */
+  private podeRetomar(item: UploadItem): boolean {
+    return (
+      !this.semProcesso() && (this.arquivoSelecionado() !== null || soFaltaConfirmar(item))
+    );
+  }
+
   /** Retoma da fase que falhou, sem repetir o que já concluiu. */
   async retomarUpload(): Promise<void> {
     if (this.operacaoEmCurso) return;
     const arquivo = this.arquivoSelecionado();
     const processoId = this.store.processoSeletivoId();
-    if (arquivo === null || processoId === null) return;
+    const atual = this.anexo();
+    if (processoId === null || atual === undefined) return;
+    if (arquivo === null && !soFaltaConfirmar(atual)) return;
 
     this.operacaoEmCurso = true;
     try {
@@ -199,17 +210,18 @@ export class AnexoEditalComponent {
     this.store.patchObjectSection('identificacao', { uploads: [item] });
   }
 
-  private async executarUpload(processoId: string, arquivo: File): Promise<void> {
+  private async executarUpload(processoId: string, arquivo: File | null): Promise<void> {
     const atual = this.anexo();
     if (atual === undefined) return;
 
     // O arquivo já chegou ao storage numa tentativa anterior: repetir o PUT
     // seria desperdício e esbarraria numa URL possivelmente expirada. Só a
     // confirmação falta, e repeti-la com a mesma chave recupera o replay.
-    if (atual.enviado === true && atual.documentoEditalId !== undefined) {
+    if (soFaltaConfirmar(atual) && atual.documentoEditalId !== undefined) {
       await this.confirmar(processoId, atual.documentoEditalId);
       return;
     }
+    if (arquivo === null) return;
 
     let iniciacao = this.iniciacaoAtual;
     if (iniciacao === null || destinoExpirado(iniciacao)) {
@@ -369,4 +381,9 @@ export class AnexoEditalComponent {
   }
 
   protected readonly aguardandoCadastro = this.semProcesso;
+}
+
+/** O arquivo já chegou ao storage: da tentativa só resta a confirmação, que não usa os bytes. */
+function soFaltaConfirmar(item: UploadItem): boolean {
+  return item.enviado === true && item.documentoEditalId !== undefined;
 }
