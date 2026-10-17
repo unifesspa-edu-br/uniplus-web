@@ -440,7 +440,11 @@ export class FormularioDoCandidatoComponent {
   );
 
   private readonly interpretacao = computed(() =>
-    interpretarFormulario(this.formulario().regras, this.simulacao()),
+    interpretarFormulario(
+      this.formulario().regras,
+      this.simulacao(),
+      new Set(Object.keys(this.respostasFixas())),
+    ),
   );
   protected readonly recusa = computed(() => {
     const interpretacao = this.interpretacao();

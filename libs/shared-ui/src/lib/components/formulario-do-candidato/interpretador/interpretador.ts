@@ -32,11 +32,12 @@ export type InterpretacaoDoFormulario =
  * regras, e a API, que revalida tudo, é a palavra final.
  *
  * As regras que não formam formulário, e a ocorrência de grupo sem identidade própria, são recusadas
- * com o caminho do problema. A resposta fora da oferta do campo não vale e é descartada antes.
+ * com o caminho do problema. O fato de resposta fixa, que vem da conta, não passa pelas restrições. A resposta fora da oferta do campo não vale e é descartada antes.
  */
 export function interpretarFormulario(
   regras: RegrasDoFormulario | null | undefined,
   simulacao: SimulacaoDoFormulario,
+  fatosFixos: ReadonlySet<string> = new Set(),
 ): InterpretacaoDoFormulario {
   const grupos = lerOcorrencias(simulacao.grupos);
   if ('caminho' in grupos) return { valida: false, erro: grupos };
@@ -74,6 +75,7 @@ export function interpretarFormulario(
     etapasConcluidas: new Set(simulacao.etapasConcluidas ?? []),
     fatosConhecidos: comoFatosConhecidos(simulacao.pressupostos),
     diaDoEnvio,
+    fatosFixos,
   });
 
   return {
