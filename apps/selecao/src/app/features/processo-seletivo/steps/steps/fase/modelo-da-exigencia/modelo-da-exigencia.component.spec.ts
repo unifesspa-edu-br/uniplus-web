@@ -153,11 +153,28 @@ describe('ModeloDaExigenciaComponent', () => {
 
     fixture.componentRef.setInput('desabilitado', true);
     fixture.detectChanges();
-    componente.descartar();
     fixture.detectChanges();
 
     expect(host.querySelector('button[aria-label^="Remover autodeclaracao"]')).toBeNull();
     expect(componente.envio()).not.toBeNull();
+  });
+
+  it('trata o reenvio de um arquivo de mesmo nome como outro item da lista', async () => {
+    const falhar = async () => {
+      escolher(docx());
+      await tick();
+      const { body, opts } = problema(422, 'uniplus.selecao.modelo_de_documento.invalido', 'Inválido', 'Inválido.');
+      controller.expectOne(ROTA_MODELOS).flush(body, opts);
+      await tick();
+      fixture.detectChanges();
+      return componente.envio()?.id;
+    };
+    const primeiro = await falhar();
+
+    const segundo = await falhar();
+
+    expect(primeiro).toBeDefined();
+    expect(segundo).not.toBe(primeiro);
   });
 
   it('envia, confirma e vincula o modelo com nome, formato e hash', async () => {

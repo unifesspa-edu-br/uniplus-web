@@ -1,3 +1,4 @@
+import { Component, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -494,7 +495,7 @@ describe('FileUploadComponent no modo controlado', () => {
     });
 
     const metas = Array.from(host.querySelectorAll('.uni-uploader__item-meta')).map((m) => m.textContent);
-    expect(metas).toContain('512 KB');
+    expect(metas).toContain('512,0 KB');
     expect(metas).toContain('1,3 MB');
   });
 
@@ -658,5 +659,37 @@ describe('FileUploadComponent no modo controlado', () => {
     host.querySelector('.uni-uploader')?.dispatchEvent(evento);
 
     expect(dataTransfer.dropEffect).toBe('none');
+  });
+});
+
+describe('FileUploadComponent com host que reage aos eventos', () => {
+  @Component({
+    imports: [FileUploadComponent],
+    template: `<ui-file-upload
+      [itens]="itens"
+      [disabled]="travado()"
+      (tentarDeNovo)="travado.set(true)"
+    />`,
+  })
+  class HostComponent {
+    readonly travado = signal(false);
+    readonly itens: readonly ArquivoEmEnvio[] = [
+      { id: 'a1', nome: 'edital.pdf', fase: 'erro', progresso: 40, mensagem: 'Falhou.' },
+    ];
+  }
+
+  it('manda o foco para a lista quando o host desabilita a zona em resposta à nova tentativa', async () => {
+    const fixture = TestBed.configureTestingModule({ imports: [HostComponent] }).createComponent(HostComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    host.querySelector<HTMLButtonElement>('button[aria-label^="Tentar enviar"]')?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(host.querySelector<HTMLButtonElement>('.uni-uploader__drop')?.disabled).toBe(true);
+    expect(document.activeElement).toBe(host.querySelector('ul'));
+    fixture.nativeElement.remove();
   });
 });

@@ -6,7 +6,7 @@ import type {
   DocumentoEditalDto,
   ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
-import { formatarDataBr } from '@uniplus/shared-utils';
+import { formatarDataBr, formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
 import {
   AtendimentoCondicaoSelecionada,
@@ -603,15 +603,6 @@ export function classificarDocumentos(
   return { vinculo: null, escolha: confirmados };
 }
 
-/** Tamanho legível — distinguir dois PDFs pelo byte cru não ajuda ninguém. */
-export function formatarTamanho(bytes: number | string | null): string {
-  const valor = typeof bytes === 'string' ? Number(bytes) : bytes;
-  if (valor === null || !Number.isFinite(valor)) return 'tamanho indisponível';
-  if (valor < 1024) return `${valor} B`;
-  if (valor < 1024 * 1024) return `${(valor / 1024).toFixed(1).replace('.', ',')} KB`;
-  return `${(valor / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`;
-}
-
 /**
  * Como apresentar um documento confirmado na escolha do oficial (CA-06).
  *
@@ -632,5 +623,5 @@ export function descreverDocumento(documento: DocumentoEditalDto): string {
       ? 'hash indisponível'
       : `hash ${documento.hashSha256.slice(0, 12)}`;
 
-  return `${instante} · ${formatarTamanho(documento.tamanhoBytes)} · ${hash}`;
+  return `${instante} · ${formatarTamanhoDeArquivo(documento.tamanhoBytes)} · ${hash}`;
 }
