@@ -159,6 +159,8 @@ async function mockarProcesso(page: Page, opcoes: MockarProcessoOpcoes = {}): Pr
             {
               id: DOCUMENTO_ID,
               processoSeletivoId: PROCESSO_ID,
+              nomeArquivo: 'edital.pdf',
+              tipoDeMidia: 'application/pdf',
               status: 'Confirmado',
               criadoEm: '2027-01-01T00:00:00Z',
               expiraEm: '2027-01-01T01:00:00Z',
