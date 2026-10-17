@@ -513,7 +513,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     await propagar();
     cenario.fixture.detectChanges();
 
-    const zona = cenario.host.querySelector('.upload-zone');
+    const zona = cenario.host.querySelector('.uni-uploader__drop');
     expect(zona?.getAttribute('aria-disabled')).toBe('true');
 
     // O input é visualmente oculto mas focável: bloquear só a zona deixaria a
@@ -623,7 +623,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
 
     const input = cenario.host.querySelector<HTMLInputElement>('input[type=file]');
     expect(input?.disabled).toBe(true);
-    expect(cenario.host.querySelector('.upload-zone')?.getAttribute('aria-disabled')).toBe('true');
+    expect(cenario.host.querySelector('.uni-uploader__drop')?.getAttribute('aria-disabled')).toBe('true');
   });
 
   /** Travar sem saída deixaria o operador preso: o aviso oferece refazer. */

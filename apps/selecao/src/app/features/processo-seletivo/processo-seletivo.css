@@ -1241,14 +1241,9 @@
 
 /* Campo inválido — borda vermelha para ajudar a identificar o item vazio */
 .sel-processo .input.is-invalid,
-.sel-processo select.input.is-invalid,
-.sel-processo .upload-zone.is-invalid {
+.sel-processo select.input.is-invalid {
   border-color: var(--color-danger-500);
   background: var(--color-danger-50);
-}
-
-.upload-zone.is-invalid {
-  background: color-mix(in srgb, var(--color-danger-500) 6%, var(--surface-subtle));
 }
 
 .input[type='date']::-webkit-calendar-picker-indicator {
@@ -1265,173 +1260,10 @@
   margin-bottom: var(--space-3);
 }
 
-.upload-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-  align-items: start;
-}
-
 @media (max-width: 767px) {
   .upload-section {
     margin-top: 0;
   }
-
-  .upload-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-.upload-zone {
-  border: 2px dashed var(--border-default);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5) var(--space-4);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  text-align: center;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  background: var(--surface-subtle);
-  min-height: 120px;
-  cursor: pointer;
-  transition:
-    border-color var(--duration-fast) ease,
-    background var(--duration-fast) ease;
-}
-
-.upload-zone:hover,
-.upload-zone.is-dragover {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 6%, var(--surface-subtle));
-}
-
-.upload-zone a,
-.upload-zone__link {
-  color: var(--color-primary);
-  font-weight: var(--weight-semibold);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-/* Erro de formato no upload */
-.upload-error {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-danger-500);
-  border-radius: var(--radius-md);
-  background: var(--color-danger-50);
-  color: var(--color-danger-700);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-}
-
-.upload-error i {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.file-list-empty {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-  padding: var(--space-2) 0;
-}
-
-.upload-zone__hint {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-}
-
-.file-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.file-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-
-.file-badge {
-  font-size: 9px;
-  font-weight: var(--weight-bold);
-  padding: 2px 5px;
-  border-radius: 3px;
-  flex-shrink: 0;
-  letter-spacing: 0.04em;
-  border: 1px solid;
-}
-
-.file-badge--pdf {
-  color: var(--color-warning-700);
-  border-color: color-mix(in srgb, var(--color-warning-500) 50%, transparent);
-  background: color-mix(in srgb, var(--color-warning-500) 12%, var(--surface-card));
-}
-
-.file-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-/* As ações do arquivo ficam alinhadas ao nome dele: esticadas na coluna, o link centralizava
-   e se descolava do resto do bloco. */
-.file-info > .btn {
-  align-self: flex-start;
-}
-
-.file-name {
-  min-width: 0;
-  max-width: 100%;
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.file-progress {
-  height: 4px;
-  background: var(--border-subtle);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-
-.file-progress__bar {
-  height: 100%;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary);
-  transition: width var(--duration-fast) var(--ease-standard);
-}
-
-.file-progress__bar.is-complete {
-  background: var(--color-success-600);
-}
-
-.file-delete {
-  background: transparent;
-  border: 0;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: var(--space-1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-}
-
-.file-delete:hover {
-  color: var(--color-danger-600);
 }
 
 /* ---- Step 4: Vagas ---- */
