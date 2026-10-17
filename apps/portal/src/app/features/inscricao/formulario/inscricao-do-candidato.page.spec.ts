@@ -272,28 +272,66 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(servico.salvos[0].respostas?.['NOME']).toBe(NOME_DA_CONTA);
   });
 
-  it('o nome social da conta preenche os campos, que seguem editáveis', async () => {
+  const desejaDe = (tela: HTMLElement): HTMLInputElement[] =>
+    Array.from(tela.querySelectorAll<HTMLInputElement>('[data-campo="DESEJA_NOME_SOCIAL"] input'));
+
+  it('o nome social da conta entra na resposta e não se edita', async () => {
+    conta.update((c) => ({ ...c, nomeSocial: 'Ariel Drumond' }));
+    servico.formulario = COM_NOME_SOCIAL;
+    servico.inscricao = inscricao({ respostas: { DESEJA_NOME_SOCIAL: true } });
+    const tela = await abrir();
+
+    const social = campoDe(tela, 'NOME_SOCIAL');
+    expect(social.readOnly).toBe(true);
+    expect(social.value).toBe('Ariel Drumond');
+    await clicar(botao(tela, 'Salvar rascunho'));
+    expect(servico.salvos[0].respostas?.['NOME_SOCIAL']).toBe('Ariel Drumond');
+  });
+
+  it('a conta sem nome social deixa o campo vazio e travado, sem enviar valor', async () => {
+    servico.formulario = COM_NOME_SOCIAL;
+    servico.inscricao = inscricao({ respostas: { DESEJA_NOME_SOCIAL: true } });
+    const tela = await abrir();
+
+    const social = campoDe(tela, 'NOME_SOCIAL');
+    expect(social.readOnly).toBe(true);
+    expect(social.value).toBe('');
+    await clicar(botao(tela, 'Salvar rascunho'));
+    expect(servico.salvos[0].respostas?.['NOME_SOCIAL']).toBeNull();
+  });
+
+  it('na inscrição retomada, o nome social da conta substitui o gravado no rascunho', async () => {
+    conta.update((c) => ({ ...c, nomeSocial: 'Ariel Drumond' }));
+    servico.formulario = COM_NOME_SOCIAL;
+    servico.inscricao = inscricao({
+      respostas: { DESEJA_NOME_SOCIAL: true, NOME_SOCIAL: 'Outro Nome Gravado' },
+    });
+    const tela = await abrir();
+
+    expect(campoDe(tela, 'NOME_SOCIAL').value).toBe('Ariel Drumond');
+    await clicar(botao(tela, 'Salvar rascunho'));
+    expect(servico.salvos[0].respostas?.['NOME_SOCIAL']).toBe('Ariel Drumond');
+  });
+
+  it('a conta com nome social abre "deseja usar nome social" como sim quando nada foi gravado', async () => {
     conta.update((c) => ({ ...c, nomeSocial: 'Ariel Drumond' }));
     servico.formulario = COM_NOME_SOCIAL;
     const tela = await abrir();
 
-    const social = campoDe(tela, 'NOME_SOCIAL');
-    expect(social.readOnly).toBe(false);
-    expect(social.value).toBe('Ariel Drumond');
     await clicar(botao(tela, 'Salvar rascunho'));
     expect(servico.salvos[0].respostas?.['DESEJA_NOME_SOCIAL']).toBe(true);
+    expect(desejaDe(tela).some((r) => r.checked)).toBe(true);
   });
 
-  it('a conta sem nome social deixa os campos sem preenchimento', async () => {
+  it('a conta sem nome social não marca "deseja usar nome social"', async () => {
     servico.formulario = COM_NOME_SOCIAL;
     const tela = await abrir();
 
-    expect(campoDe(tela, 'NOME_SOCIAL').value).toBe('');
     await clicar(botao(tela, 'Salvar rascunho'));
     expect(servico.salvos[0].respostas?.['DESEJA_NOME_SOCIAL']).toBeUndefined();
   });
 
-  it('o nome social gravado prevalece sobre o da conta', async () => {
+  it('a desistência do nome social gravada prevalece sobre o da conta, e o nome da conta não vai', async () => {
     conta.update((c) => ({ ...c, nomeSocial: 'Ariel Drumond' }));
     servico.formulario = COM_NOME_SOCIAL;
     servico.inscricao = inscricao({
@@ -301,10 +339,53 @@ describe('InscricaoDoCandidatoPage', () => {
     });
     const tela = await abrir();
 
-    expect(campoDe(tela, 'NOME_SOCIAL')?.value ?? '').toBe('');
     await clicar(botao(tela, 'Salvar rascunho'));
     expect(servico.salvos[0].respostas?.['DESEJA_NOME_SOCIAL']).toBe(false);
-    expect(servico.salvos[0].respostas?.['NOME_SOCIAL']).toBeUndefined();
+    expect(servico.salvos[0].respostas?.['NOME_SOCIAL']).toBeNull();
+  });
+
+  it('a recusa do envio sem nome social na conta aparece no campo travado, com a orientação', async () => {
+    const mensagem =
+      'Você marcou que deseja usar nome social, mas sua conta não tem nome social cadastrado. Cadastre o nome social em Meu perfil ou desmarque a opção.';
+    servico.formulario = {
+      ...COM_NOME_SOCIAL,
+      fatosColetados: COM_NOME_SOCIAL.fatosColetados.map((c) =>
+        c.fatoCodigo === 'NOME_SOCIAL'
+          ? { ...c, ajuda: 'Cadastre o nome social em Meu perfil.' }
+          : c,
+      ),
+    };
+    servico.recusaDoEnvio = apiFailure(
+      {
+        type: 'about:blank',
+        title: 'Recusada',
+        status: 422,
+        code: 'uniplus.selecao.inscricao.nome_social_ausente_na_conta',
+        traceId: '',
+        errors: [
+          {
+            field: 'NOME_SOCIAL',
+            code: 'uniplus.selecao.inscricao.nome_social_ausente_na_conta',
+            message: mensagem,
+          },
+        ],
+      },
+      422,
+      new HttpHeaders(),
+    );
+    servico.inscricao = inscricao({
+      ...RESPONDIDA,
+      respostas: { ...RESPONDIDA.respostas, DESEJA_NOME_SOCIAL: true },
+    });
+    const tela = await abrir();
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    const social = tela.querySelector('[data-campo="NOME_SOCIAL"]');
+    expect(social?.querySelector('.field__error')?.textContent).toContain(mensagem);
+    expect(social?.querySelector('.field__error')?.textContent).not.toContain('Responda');
+    expect(social?.querySelector('.field__hint')?.textContent).toContain('Meu perfil');
+    expect(campoDe(tela, 'NOME_SOCIAL').readOnly).toBe(true);
   });
 
   /** O formulário de teste com o bloco de comprovação documental. */
