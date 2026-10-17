@@ -2,7 +2,12 @@ import type { RespostasDaInscricao } from '@uniplus/shared-data/selecao';
 
 /** Os nomes que o comprovante mostra do candidato. */
 export interface NomesDoCandidato {
-  /** O nome social, quando o candidato o pediu e o preencheu (UNI-REQ-0032); senão, nulo. */
+  /**
+   * A escolha de usar o nome social, que o comprovante registra; nula quando o formulário não a
+   * coleta.
+   */
+  readonly usoDoNomeSocial: boolean | null;
+  /** O nome social, só quando o candidato escolheu usá-lo e a conta o tem (UNI-REQ-0032); senão, nulo. */
   readonly social: string | null;
   readonly civil: string;
 }
@@ -10,11 +15,10 @@ export interface NomesDoCandidato {
 export function nomesDoCandidato(respostas: RespostasDaInscricao): NomesDoCandidato {
   const social = respostas['NOME_SOCIAL'];
   const civil = respostas['NOME'];
+  const deseja = respostas['DESEJA_NOME_SOCIAL'];
   return {
-    social:
-      respostas['DESEJA_NOME_SOCIAL'] === true && typeof social === 'string' && social !== ''
-        ? social
-        : null,
+    usoDoNomeSocial: typeof deseja === 'boolean' ? deseja : null,
+    social: deseja === true && typeof social === 'string' && social !== '' ? social : null,
     civil: typeof civil === 'string' ? civil : '',
   };
 }

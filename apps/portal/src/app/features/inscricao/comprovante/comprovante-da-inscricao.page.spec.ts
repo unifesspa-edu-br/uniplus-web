@@ -18,6 +18,9 @@ import { ComprovanteDaInscricaoPage } from './comprovante-da-inscricao.page';
 
 const PROCESSO = '0199e000-0000-7000-8000-0000000000d1';
 const SEM_CABECALHOS = new HttpHeaders();
+/** O que o teste muda nas respostas do comprovante. */
+let respostasAlteradas: Record<string, unknown> = {};
+
 /** Fernanda Drumond, persona fictícia do portal de documentação. */
 const CPF_DA_CONTA = '69959836371';
 const cpfDoLogin = signal(CPF_DA_CONTA);
@@ -90,6 +93,7 @@ function comprovante(numeroInscricao: string, numero: number): ComprovanteInscri
       DESEJA_NOME_SOCIAL: true,
       NOME_SOCIAL: 'Ariel Drumond',
       NATURALIDADE_MUNICIPIO: '5002704',
+      ...respostasAlteradas,
     },
     derivados: {},
     grupos: {},
@@ -210,6 +214,7 @@ describe('ComprovanteDaInscricaoPage', () => {
     cpfDoLogin.set(CPF_DA_CONTA);
     fimDoPeriodo = '2999-12-31T02:59:00Z';
     modalidadesDoEnvio = (numero) => MODALIDADES_POR_ENVIO[numero];
+    respostasAlteradas = {};
     vi.restoreAllMocks();
   });
 
@@ -239,11 +244,30 @@ describe('ComprovanteDaInscricaoPage', () => {
   it('com nome social, ele vem em destaque e o nome civil em seguida, sem se repetirem nas respostas', async () => {
     const tela = await abrir();
 
+    expect(dado(tela, 'Uso do nome social')).toBe('Sim');
     expect(dado(tela, 'Nome social')).toBe('Ariel Drumond');
     expect(dado(tela, 'Nome civil')).toBe('Fernanda Laura Nicole Drumond');
     expect(dado(tela, 'Nome')).toBeNull();
     expect(dado(tela, 'Nome completo')).toBeNull();
     expect(dado(tela, 'Deseja usar nome social?')).toBeNull();
+  });
+
+  it('sem uso do nome social, o comprovante registra "Não" e não mostra nome social algum', async () => {
+    respostasAlteradas = { DESEJA_NOME_SOCIAL: false };
+    const tela = await abrir();
+
+    expect(dado(tela, 'Uso do nome social')).toBe('Não');
+    expect(dado(tela, 'Nome')).toBe('Fernanda Laura Nicole Drumond');
+    expect(dado(tela, 'Nome social')).toBeNull();
+    expect(tela.textContent).not.toContain('Ariel Drumond');
+  });
+
+  it('quando o formulário não coleta o uso do nome social, o comprovante não registra o dado', async () => {
+    respostasAlteradas = { DESEJA_NOME_SOCIAL: undefined, NOME_SOCIAL: undefined };
+    const tela = await abrir();
+
+    expect(dado(tela, 'Uso do nome social')).toBeNull();
+    expect(dado(tela, 'Nome')).toBe('Fernanda Laura Nicole Drumond');
   });
 
   it('o município de nascimento aparece pelo nome e pela UF, não pelo código', async () => {
