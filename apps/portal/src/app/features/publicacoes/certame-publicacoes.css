@@ -64,20 +64,31 @@
   font-size: var(--text-sm);
 }
 
+/* O painel é o container da linha do tempo: a mesma lista aparece na largura
+   total do item e dentro dos cards estreitos do modo grade, então o layout
+   responde à largura do painel, não à da janela. */
+.publicacoes-painel {
+  container-type: inline-size;
+}
+
 /* Linha do tempo: mesmo padrão do wizard (step-rail) — marcador verde nos passos
    concluídos, azul + fundo tingido no atual (o evento mais recente). */
 .publicacao-timeline {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-width: 68ch;
 }
 
 .publicacao-timeline__item {
+  /* Marcador menor em painéis estreitos para sobrar largura ao cartão (reflow em
+     320px); volta a 32px a partir de 30rem de painel. */
+  --timeline-marker: 24px;
+  /* Folga entre o topo do item e o marcador; o conector parte do mesmo ponto. */
+  --timeline-marker-offset: var(--space-3);
   position: relative;
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
-  gap: var(--space-4);
+  grid-template-columns: var(--timeline-marker) minmax(0, 1fr);
+  gap: var(--space-3);
   padding-bottom: var(--space-4);
 }
 
@@ -85,13 +96,13 @@
   padding-bottom: 0;
 }
 
-/* Conector vertical contínuo, centralizado no marcador (32px → meia = 16px). */
+/* Conector vertical contínuo, centralizado no marcador (2px de largura). */
 .publicacao-timeline__item::before {
   content: '';
   position: absolute;
-  inset-inline-start: 15px;
-  top: calc(var(--space-3) + 16px);
-  bottom: calc(var(--space-3) * -1);
+  inset-inline-start: calc(var(--timeline-marker) / 2 - 1px);
+  top: calc(var(--timeline-marker-offset) + var(--timeline-marker) / 2);
+  bottom: calc(var(--timeline-marker-offset) * -1);
   width: 2px;
   background: var(--color-success-solid);
 }
@@ -103,9 +114,9 @@
 .publicacao-timeline__marker {
   position: relative;
   z-index: 1;
-  width: 32px;
-  height: 32px;
-  margin-top: var(--space-3);
+  width: var(--timeline-marker);
+  height: var(--timeline-marker);
+  margin-top: var(--timeline-marker-offset);
   border-radius: 50%;
   border: 2px solid var(--color-success-solid);
   background: var(--color-success-solid);
@@ -113,7 +124,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
 }
 
 .publicacao-timeline__marker.is-current {
@@ -131,7 +142,7 @@
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
-  padding: var(--space-4);
+  padding: var(--space-3);
   background: var(--surface-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -146,8 +157,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-2);
 }
 
 .publicacao-timeline__data {
@@ -162,6 +172,8 @@
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   color: var(--text-heading);
+  overflow-wrap: anywhere;
+  max-width: var(--measure-prose);
 }
 
 .publicacao-timeline__evento-desc {
@@ -169,6 +181,10 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
   line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+  /* Mede só o texto: o cartão segue a largura do painel, a descrição não vira
+     linha longa demais em telas muito largas. */
+  max-width: var(--measure-prose);
 }
 
 .publicacao-timeline__link {
@@ -190,4 +206,19 @@
 .publicacao-timeline__link:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
+}
+
+@container (min-width: 30rem) {
+  .publicacao-timeline__item {
+    --timeline-marker: 32px;
+    gap: var(--space-4);
+  }
+
+  .publicacao-timeline__marker {
+    font-size: var(--text-sm);
+  }
+
+  .publicacao-timeline__card {
+    padding: var(--space-4);
+  }
 }
