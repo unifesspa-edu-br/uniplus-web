@@ -405,7 +405,7 @@ export class RevisaoStepComponent {
    * (Story #478). `null` enquanto não há um só documento confirmado
    * vinculado: sem escolha explícita (CA-02) ou sem upload nenhum ainda.
    */
-  readonly documentoEditalId = computed(() => {
+  readonly documentoAPublicarId = computed(() => {
     const upload = this.store.draft().identificacao.uploads[0];
     return upload && upload.fase === 'confirmado' ? (upload.documentoAPublicarId ?? null) : null;
   });
@@ -609,7 +609,7 @@ export class RevisaoStepComponent {
     messages.push(
       ...mensagensDePublicacao(
         this.store.draft(),
-        this.documentoEditalId(),
+        this.documentoAPublicarId(),
         this.catalogosDoCronograma.fasePorId(),
       ),
     );
@@ -635,8 +635,8 @@ export class RevisaoStepComponent {
     const conferencia = this.validate();
     if (!conferencia.valid) return conferencia;
 
-    const documentoEditalId = this.documentoEditalId();
-    if (documentoEditalId === null) {
+    const documentoAPublicarId = this.documentoAPublicarId();
+    if (documentoAPublicarId === null) {
       // `validate()` já cobre este caso via `mensagensDePublicacao`; a
       // checagem aqui só estreita o tipo para `comoComandoDePublicacao`.
       return { valid: false, messages: [] };
@@ -644,7 +644,7 @@ export class RevisaoStepComponent {
 
     const comando = comoComandoDePublicacao(
       this.store.draft(),
-      documentoEditalId,
+      documentoAPublicarId,
       this.catalogosDoCronograma.fasePorId(),
     );
     const geracao = this.store.geracao();

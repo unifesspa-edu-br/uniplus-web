@@ -758,7 +758,7 @@ describe('ProcessosSeletivosApi', () => {
       numero: '001/2027',
       periodoInscricaoInicio: null,
       periodoInscricaoFim: null,
-      documentoAPublicarId: '01960000-0000-7000-0000-000000000518',
+      documentoEditalId: '01960000-0000-7000-0000-000000000518',
       ato,
     };
 
@@ -792,7 +792,7 @@ describe('ProcessosSeletivosApi', () => {
       numero: '001/2027',
       periodoInscricaoInicio: null,
       periodoInscricaoFim: null,
-      documentoAPublicarId: '01960000-0000-7000-0000-000000000518',
+      documentoEditalId: '01960000-0000-7000-0000-000000000518',
       ato,
     };
 
