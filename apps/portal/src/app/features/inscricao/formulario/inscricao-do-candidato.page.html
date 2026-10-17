@@ -42,31 +42,16 @@
 <ui-alert variant="warning" heading="A inscrição mudou em outra janela">{{ aviso }}</ui-alert>
 } @if (recusaGeral(); as recusa) {
 <ui-alert variant="danger" [heading]="recusa.titulo">{{ recusa.texto }}</ui-alert>
-} @if (ofertas().length > 1) {
-<div class="field inscricao-oferta">
-  <label class="field__label is-required" for="inscricao-oferta">Curso</label>
-  <select
-    #selectDaOferta
-    class="select"
-    id="inscricao-oferta"
-    [attr.aria-invalid]="erroDaOferta() ? 'true' : null"
-    [attr.aria-describedby]="erroDaOferta() ? 'inscricao-oferta-erro' : null"
-    (change)="escolherOferta($event)"
-  >
-    <option value="" [selected]="ofertaEscolhida() === null">Selecione</option>
-    @for (oferta of ofertas(); track oferta.id) {
-    <option [value]="oferta.id" [selected]="ofertaEscolhida() === oferta.id">
-      {{ oferta.nome }}
-    </option>
-    }
-  </select>
-  @if (erroDaOferta(); as erro) {
-  <span class="field__error" id="inscricao-oferta-erro">{{ erro }}</span>
-  }
-</div>
+} @if (ofertas().length === 1) {
+<p class="inscricao-curso">
+  <span class="inscricao-curso__rotulo">Curso:</span> {{ ofertas()[0].nome }}
+</p>
 } @if (formulario(); as renderizavel) {
 <ui-formulario-do-candidato
+  #formDoCandidato
   idBase="inscricao"
+  apresentacaoDosPassos="lateral"
+  [passosPrefixados]="passosPrefixados()"
   [formulario]="renderizavel"
   [inicial]="inicial()"
   [termosAceitosIniciais]="termosAceitosIniciais()"
@@ -74,12 +59,39 @@
   [pressupostos]="pressupostos()"
   [semDocumentos]="semDocumentos"
   [errosDoServidor]="errosDoServidor()"
+  [passoDaRecusa]="erroDaOferta() ? PASSO_DO_CURSO : null"
   [concluirNaUltimaSecao]="false"
   [envio]="envio()"
   [avaliacao]="avaliacao.naTela()"
   (simulacaoChange)="responder($event)"
   (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
-/>
+>
+  @if (formDoCandidato.passoPrefixadoAtual() === PASSO_DO_CURSO) {
+  <div class="field inscricao-oferta">
+    <label class="field__label is-required" for="inscricao-oferta"
+      >Curso em que você se inscreve</label
+    >
+    <select
+      #selectDaOferta
+      class="select"
+      id="inscricao-oferta"
+      [attr.aria-invalid]="erroDaOferta() ? 'true' : null"
+      [attr.aria-describedby]="erroDaOferta() ? 'inscricao-oferta-erro' : null"
+      (change)="escolherOferta($event)"
+    >
+      <option value="" [selected]="ofertaEscolhida() === null">Selecione</option>
+      @for (oferta of ofertas(); track oferta.id) {
+      <option [value]="oferta.id" [selected]="ofertaEscolhida() === oferta.id">
+        {{ oferta.nome }}
+      </option>
+      }
+    </select>
+    @if (erroDaOferta(); as erro) {
+    <span class="field__error" id="inscricao-oferta-erro">{{ erro }}</span>
+    }
+  </div>
+  }
+</ui-formulario-do-candidato>
 } @if (derivados().length > 0) {
 <section class="inscricao-derivados" aria-labelledby="inscricao-derivados-titulo">
   <h2 id="inscricao-derivados-titulo" class="inscricao-derivados__titulo">
