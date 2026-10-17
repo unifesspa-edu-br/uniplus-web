@@ -428,6 +428,21 @@ describe('FileUploadComponent no modo controlado', () => {
     expect(host.querySelector('[role="alert"]')).toBeNull();
   });
 
+  it('limpa as recusas antigas ao tentar de novo', () => {
+    const { host, fixture, escolher } = setup({
+      itens: [item({ fase: 'erro', mensagem: 'Falhou.' })],
+    });
+    escolher(new File(['x'], 'foto.gif', { type: 'image/gif' }));
+    expect(host.querySelector('[role="alert"]')).not.toBeNull();
+
+    host
+      .querySelector<HTMLButtonElement>('button[aria-label="Tentar enviar novamente edital.pdf"]')
+      ?.click();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.uni-uploader > [role="alert"]')).toBeNull();
+  });
+
   it('na falha anuncia só o alerta, sem região de status', () => {
     const { host } = setup({ itens: [item({ fase: 'erro', mensagem: 'Falhou.' })] });
 
