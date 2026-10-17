@@ -124,7 +124,7 @@ const RESPONDIDA: Partial<InscricaoDto> = {
       bairro: 'Caiobá',
       cidade: { codigoIbge: '5002704', nome: 'Campo Grande', uf: 'MS' },
       nivelResolucao: 'logradouro',
-      origem: 'geo-api',
+      origem: 'logradouro',
     },
   },
   aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }],
