@@ -203,6 +203,8 @@ export type {
   RegraPadraoDto,
   RegrasPadraoInput,
   ValorDominioInput,
+  CorrecaoDeValorDominioInput,
+  OrdemDosValoresInput,
 } from './fatos-candidato.api';
 
 export { AvaliacoesDeFormularioApi } from './avaliacoes-de-formulario.api';

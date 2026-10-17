@@ -16,6 +16,8 @@ export type CriarFatoAgregadoCommand = components['schemas']['CriarFatoAgregadoC
 export type DescritivoDoFatoInput = components['schemas']['DescritivoDoFatoInput'];
 export type RegrasPadraoInput = components['schemas']['RegrasPadraoInput'];
 export type ValorDominioInput = components['schemas']['ValorDominioInput'];
+export type CorrecaoDeValorDominioInput = components['schemas']['CorrecaoDeValorDominioInput'];
+export type OrdemDosValoresInput = components['schemas']['OrdemDosValoresInput'];
 
 /**
  * Cliente do catálogo de fatos do candidato — o vocabulário que formulários, exigências
@@ -118,6 +120,25 @@ export class FatosCandidatoApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.post<ApiResult<void>>(this.admin(id, 'valores'), input, { context });
+  }
+
+  /** PUT `/api/configuracao/admin/fatos-candidato/{id}/valores/{codigo}` — corrige a descrição e a orientação de um valor. */
+  corrigirValor(
+    id: string,
+    codigo: string,
+    input: CorrecaoDeValorDominioInput,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(this.admin(id, 'valores', codigo), input, { context });
+  }
+
+  /** PUT `/api/configuracao/admin/fatos-candidato/{id}/ordem-dos-valores` — define a ordem da lista completa de valores. */
+  reordenarValores(
+    id: string,
+    input: OrdemDosValoresInput,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(this.admin(id, 'ordem-dos-valores'), input, { context });
   }
 
   /** DELETE `/api/configuracao/admin/fatos-candidato/{id}/valores/{codigo}` — desativa um valor de domínio. */

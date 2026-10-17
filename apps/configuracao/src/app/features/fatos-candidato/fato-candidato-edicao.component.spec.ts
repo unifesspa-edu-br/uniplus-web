@@ -277,4 +277,100 @@ describe('FatoCandidatoEdicaoComponent', () => {
 
     expect(componente.errosDasCondicoes()[0], 'a condição que sobrou não herda o erro da removida').toBeUndefined();
   });
+  describe('correção e ordem dos valores', () => {
+    const URL_FATO = `${BASE}/api/configuracao/admin/fatos-candidato/${ID}`;
+    const tresValores = (): FatoCandidatoDto => ({
+      ...corRaca(false),
+      valores: [
+        { codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true },
+        { codigo: 'PARDA', descricao: 'Parda', ordem: 1, ativo: false },
+        { codigo: 'BRANCA', descricao: 'Branca', ordem: 2, ativo: true },
+      ],
+    });
+    const botao = (tela: HTMLElement, codigo: string, acao: string): HTMLButtonElement =>
+      tela.querySelector<HTMLButtonElement>(`#cfg-fato-valor-${codigo}-${acao}`) as HTMLButtonElement;
+    async function assentar(): Promise<void> {
+      await Promise.resolve();
+      TestBed.inject(ApplicationRef).tick();
+      fixture.detectChanges();
+    }
+
+    it('editar envia a descrição e a orientação sem as pontas e põe a recusa de campo no campo da linha', async () => {
+      const tela = await carregar(tresValores());
+      botao(tela, 'PRETA', 'editar').click();
+      fixture.detectChanges();
+      const campos = fixture.componentInstance as unknown as { edicaoDoValor: { setValue(v: { descricao: string; orientacao: string }): void } };
+      campos.edicaoDoValor.setValue({ descricao: '  Preta (autodeclarada)  ', orientacao: '   ' });
+      (tela.querySelector('#cfg-fato-valor-PRETA-form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+
+      const put = controller.expectOne(`${URL_FATO}/valores/PRETA`);
+      expect(put.request.method).toBe('PUT');
+      expect(put.request.headers.has('Idempotency-Key')).toBe(true);
+      expect(put.request.body).toEqual({ descricao: 'Preta (autodeclarada)', orientacao: null });
+      put.flush(
+        JSON.stringify({ status: 422, title: 'Inválido', code: 'uniplus.validacao', errors: [{ field: 'Descricao', code: 'uniplus.validacao.tamanho', message: 'Descrição acima do limite.' }] }),
+        { status: 422, statusText: 'Unprocessable Entity', headers: { 'content-type': 'application/problem+json' } },
+      );
+      await assentar();
+
+      expect(tela.querySelector('#cfg-fato-valor-PRETA-descricao-erro')?.textContent).toContain('Descrição acima do limite.');
+    });
+
+    it('subir e descer enviam a lista completa, desativados inclusive, com o valor trocado de lugar', async () => {
+      const tela = await carregar(tresValores());
+      expect(botao(tela, 'PRETA', 'subir').disabled, 'o primeiro não sobe').toBe(true);
+      expect(botao(tela, 'BRANCA', 'descer').disabled, 'o último não desce').toBe(true);
+
+      botao(tela, 'BRANCA', 'subir').click();
+      const put = controller.expectOne(`${URL_FATO}/ordem-dos-valores`);
+      expect(put.request.method).toBe('PUT');
+      expect(put.request.headers.has('Idempotency-Key')).toBe(true);
+      expect(put.request.body).toEqual({ codigos: ['PRETA', 'BRANCA', 'PARDA'] });
+      put.flush(null, { status: 204, statusText: 'No Content' });
+      await assentar();
+      controller.expectOne(URL_FATO).flush(tresValores());
+    });
+
+    it('o botão de mover cita o valor no nome acessível, e o foco volta a ele depois da recarga', async () => {
+      const tela = await carregar(tresValores());
+      expect(botao(tela, 'BRANCA', 'subir').textContent).toContain('Subir o valor BRANCA');
+
+      botao(tela, 'PARDA', 'descer').click();
+      controller.expectOne(`${URL_FATO}/ordem-dos-valores`).flush(null, { status: 204, statusText: 'No Content' });
+      await assentar();
+      const depois = tresValores();
+      controller.expectOne(URL_FATO).flush({ ...depois, valores: [depois.valores[0], depois.valores[2], depois.valores[1]] });
+      await assentar();
+
+      // Foi para a última posição: o "Descer" ficou desabilitado e o foco vai ao "Subir".
+      expect(document.activeElement?.id).toBe('cfg-fato-valor-PARDA-subir');
+    });
+
+    it('o fato de sistema mostra os valores sem Editar, Subir nem Descer', async () => {
+      const tela = await carregar({ ...tresValores(), sistema: true });
+      expect(tela.textContent).toContain('BRANCA');
+      for (const texto of ['Editar', 'Subir', 'Descer']) expect(tela.textContent).not.toContain(texto);
+    });
+
+    it('o agregado herda os valores: aparecem sem Editar, Subir nem Descer', async () => {
+      const tela = await carregar({ ...tresValores(), binding: 'AGREGACAO_GRUPO:GRUPO.CAMPO' });
+      expect(tela.textContent).toContain('BRANCA');
+      for (const texto of ['Editar', 'Subir', 'Descer']) expect(tela.textContent).not.toContain(texto);
+    });
+
+    it('o conflito de concorrência manda recarregar o fato', async () => {
+      const tela = await carregar(tresValores());
+      botao(tela, 'BRANCA', 'subir').click();
+      controller
+        .expectOne(`${URL_FATO}/ordem-dos-valores`)
+        .flush(JSON.stringify({ status: 409, title: 'Conflito', code: 'uniplus.concorrencia.conflito' }), {
+          status: 409,
+          statusText: 'Conflict',
+          headers: { 'content-type': 'application/problem+json' },
+        });
+      await assentar();
+
+      expect(tela.textContent).toContain('Feche e abra o fato de novo');
+    });
+  });
 });
