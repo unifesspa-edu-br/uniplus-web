@@ -12,6 +12,26 @@ import { keycloakLogin } from '../support/keycloak-login';
 const PROCESSO_ID = process.env['E2E_PROCESSO_ID'] ?? '';
 const API_URL = process.env['E2E_API_URL'] ?? 'http://localhost:5000';
 
+/** Os dados de uma persona fictícia do portal de documentação, como a inscrição os pede. */
+interface Persona {
+  readonly usuario: string;
+  readonly senha: string;
+  readonly nome: string;
+  /** O nome social da conta; nulo quando a conta não tem. */
+  readonly nomeSocial: string | null;
+  readonly cpfMascarado: string;
+  readonly nascimento: string;
+  readonly rg: string;
+  readonly mae: string;
+  readonly pai: string;
+  readonly email: string;
+  readonly celular: string;
+  readonly cep: string;
+  readonly numero: string;
+  readonly uf: string;
+  readonly cidade: string;
+}
+
 /** Fernanda Drumond, persona fictícia do portal de documentação, que usa o nome social Ariel. */
 const PERSONA = {
   usuario: 'fernanda.drumond',
@@ -30,7 +50,29 @@ const PERSONA = {
   numero: '743',
   uf: 'Mato Grosso do Sul',
   cidade: 'Campo Grande',
-} as const;
+} as const satisfies Persona;
+
+/** Helena Rezende, persona fictícia do portal de documentação, cuja conta começa sem nome social. */
+const HELENA: Persona = {
+  usuario: 'helena.rezende',
+  senha: process.env['E2E_SENHA_PERSONAS'] ?? 'Uni+Teste26',
+  nome: 'Helena Bianca Sueli Rezende',
+  nomeSocial: null,
+  cpfMascarado: '***.287.930-**',
+  nascimento: '1954-05-12',
+  rg: '19.377.269-3',
+  mae: 'Jéssica Tatiane',
+  pai: 'Thomas Felipe Marcos Vinicius Rezende',
+  email: 'helena_bianca_rezende@paginacom.com.br',
+  celular: '(51) 98703-7357',
+  cep: '90840510',
+  numero: '336',
+  uf: 'Rio Grande do Sul',
+  cidade: 'Porto Alegre',
+};
+
+/** O nome social que a Helena cadastra em Meu perfil durante o teste e remove ao final. */
+const NOME_SOCIAL_DA_HELENA = 'Helena Rezende';
 
 /** Uma das edições que o roteiro da API declara como aceitas pelo processo de validação. */
 const EDICAO_DO_ENEM = 'ENEM 2026';
@@ -87,20 +129,21 @@ async function recusarNascimentoNoFuturo(page: Page): Promise<void> {
   await expect(nascimento).toHaveAttribute('max', /^\d{4}-\d{2}-\d{2}$/);
 }
 
-async function preencherDadosDoCandidato(page: Page): Promise<void> {
+async function preencherDadosDoCandidato(page: Page, persona: Persona = PERSONA): Promise<void> {
   await irParaSecao(page, 'Dados do candidato');
   // O nome civil vem da conta e não se edita.
   const nome = campo(page, 'Nome completo');
-  await expect(nome).toHaveValue(PERSONA.nome);
+  await expect(nome).toHaveValue(persona.nome);
   await expect(nome).not.toBeEditable();
   // O nome social também vem da conta: só a escolha de usá-lo é do candidato.
   await escolher(page, 'Deseja usar nome social', 'Sim');
   const nomeSocial = campo(page, 'Nome social');
-  await expect(nomeSocial).toHaveValue(PERSONA.nomeSocial);
+  await expect(nomeSocial).toHaveValue(persona.nomeSocial ?? '');
   await expect(nomeSocial).not.toBeEditable();
+  await expect(page.getByText(/^Vem da sua conta e não pode ser alterado aqui\./)).toBeVisible();
   await escolher(page, 'Nacionalidade', 'Brasileiro nato');
-  await expect(campo(page, 'CPF')).toHaveValue(PERSONA.cpfMascarado);
-  await campo(page, 'Número do RG').fill(PERSONA.rg);
+  await expect(campo(page, 'CPF')).toHaveValue(persona.cpfMascarado);
+  await campo(page, 'Número do RG').fill(persona.rg);
   // Só o "Outro" pede o nome do órgão; com um órgão da lista, o campo sai de novo.
   const orgaoEmissor = lista(page, 'Órgão emissor do RG');
   const nomeDoOrgao = campo(page, 'Nome do órgão emissor');
@@ -108,31 +151,31 @@ async function preencherDadosDoCandidato(page: Page): Promise<void> {
   await expect(nomeDoOrgao).toBeVisible();
   await orgaoEmissor.selectOption({ label: ORGAO_EMISSOR });
   await expect(nomeDoOrgao).toHaveCount(0);
-  await lista(page, 'UF de emissão do RG').selectOption({ label: PERSONA.uf });
+  await lista(page, 'UF de emissão do RG').selectOption({ label: persona.uf });
   await campo(page, 'Data de emissão do RG').fill('1990-05-10');
   await recusarNascimentoNoFuturo(page);
-  await campo(page, 'Data de nascimento').fill(PERSONA.nascimento);
+  await campo(page, 'Data de nascimento').fill(persona.nascimento);
   await expect(campo(page, 'Data de nascimento')).not.toHaveAttribute('aria-invalid', 'true');
-  await lista(page, 'UF de nascimento').selectOption({ label: PERSONA.uf });
-  await municipio(page, 'Município de nascimento', PERSONA.cidade);
-  await campo(page, 'Nome da mãe').fill(PERSONA.mae);
-  await campo(page, 'Nome do pai').fill(PERSONA.pai);
+  await lista(page, 'UF de nascimento').selectOption({ label: persona.uf });
+  await municipio(page, 'Município de nascimento', persona.cidade);
+  await campo(page, 'Nome da mãe').fill(persona.mae);
+  await campo(page, 'Nome do pai').fill(persona.pai);
   await escolher(page, 'Estado civil', 'Solteiro(a)');
   // "Sexo civil" também começa por "Sexo": o nome do grupo é conferido inteiro.
   await escolher(page, /^Sexo \*?$/, 'Feminino');
   await escolher(page, 'Cor ou raça', 'Branca');
-  await campo(page, 'E-mail').fill(PERSONA.email);
-  await campo(page, 'Telefone').fill(PERSONA.celular);
+  await campo(page, 'E-mail').fill(persona.email);
+  await campo(page, 'Telefone').fill(persona.celular);
   await lista(page, 'Tipo de localidade').selectOption({ label: 'Zona urbana' });
 
   const endereco = page.getByRole('group', { name: /^Endereço residencial/ });
   // Na inscrição retomada o CEP já resolvido fica travado até "Trocar CEP".
   if (!(await endereco.getByRole('button', { name: 'Trocar CEP' }).isVisible())) {
-    await endereco.getByRole('textbox', { name: 'CEP' }).fill(PERSONA.cep);
+    await endereco.getByRole('textbox', { name: 'CEP' }).fill(persona.cep);
     await endereco.getByRole('button', { name: 'Buscar CEP' }).click();
   }
-  await expect(endereco.getByRole('textbox', { name: 'Cidade' })).toHaveValue(PERSONA.cidade);
-  await endereco.getByRole('textbox', { name: /^Número/ }).fill(PERSONA.numero);
+  await expect(endereco.getByRole('textbox', { name: 'Cidade' })).toHaveValue(persona.cidade);
+  await endereco.getByRole('textbox', { name: /^Número/ }).fill(persona.numero);
   await escolher(page, 'Sexo civil', 'Feminino');
   await escolher(page, 'Identidade de gênero', 'Prefiro não informar');
   await escolher(page, 'Orientação sexual', 'Prefiro não informar');
@@ -648,6 +691,92 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(comprovante(page)).toContainText('Residi na área no período do edital');
       await expect(comprovante(page)).toContainText(MUNICIPIO_DE_RESIDENCIA_DO_FATOR);
       await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
+    });
+  });
+
+  test('quem não tem nome social na conta é orientado, cadastra em Meu perfil e a inscrição passa a usá-lo', async ({
+    page,
+    request,
+  }) => {
+    const processo = await nomeDivulgado(request);
+    const recusa =
+      'Você marcou que deseja usar nome social, mas sua conta não tem nome social cadastrado.';
+
+    /** A atualização de perfil do Keycloak, aberta a partir de Meu perfil, e a volta ao portal. */
+    async function gravarNomeSocialNaConta(valor: string): Promise<void> {
+      const acao = page.getByTestId('auth-profile-nome-social-acao');
+      if (!(await acao.isVisible())) {
+        await page.getByRole('button', { name: /^Abrir menu da conta de / }).click();
+        await page.getByTestId('auth-user-profile-item').click();
+      }
+      await acao.click();
+      const nomeSocial = page.getByLabel('Nome social');
+      await expect(nomeSocial).toBeVisible();
+      // Na conta, o titular edita só o nome social: o nome civil e o e-mail ficam travados.
+      await expect(page.locator('input[name="firstName"]')).not.toBeEditable();
+      await expect(page.locator('input[name="email"]')).not.toBeEditable();
+      await nomeSocial.fill(valor);
+      await page.locator('[type="submit"]').first().click();
+      await expect(page).toHaveURL(new RegExp(`/inscricao/${PROCESSO_ID}`));
+    }
+
+    await test.step('entra sem nome social na conta e escolhe usá-lo: o campo fica vazio e travado, com a orientação', async () => {
+      await page.goto(`/inscricao/${PROCESSO_ID}`);
+      await keycloakLogin(page, HELENA.usuario, HELENA.senha, {
+        expectRedirectTo: new RegExp(`/inscricao/${PROCESSO_ID}`),
+      });
+      // Uma rodada anterior interrompida pode ter deixado o nome social na conta: o cenário parte
+      // da conta sem ele.
+      await page.getByRole('button', { name: /^Abrir menu da conta de / }).click();
+      await page.getByTestId('auth-user-profile-item').click();
+      const acao = page.getByTestId('auth-profile-nome-social-acao');
+      if ((await acao.textContent())?.includes('Alterar')) {
+        await gravarNomeSocialNaConta('');
+      } else {
+        await page.keyboard.press('Escape');
+        await expect(acao).toBeHidden();
+      }
+      await preencherDadosDoCandidato(page, HELENA);
+      await preencherRestante(page);
+    });
+
+    await test.step('o envio é recusado no campo "Nome social", com o caminho para resolver', async () => {
+      await enviarPeloTeclado(page);
+      await irParaSecao(page, 'Dados do candidato');
+      await expect(page.getByText(recusa)).toBeVisible();
+      // Só o rascunho se salva: a inscrição já enviada muda apenas por um novo envio.
+      const salvar = page.getByRole('button', { name: 'Salvar rascunho' });
+      if (await salvar.isVisible()) {
+        await salvar.click();
+        await expect(page.getByText(/rascunho/i).first()).toBeVisible();
+      }
+    });
+
+    await test.step('cadastra o nome social em Meu perfil e volta à inscrição com ele, sem novo login', async () => {
+      await gravarNomeSocialNaConta(NOME_SOCIAL_DA_HELENA);
+      await irParaSecao(page, 'Dados do candidato');
+      const nomeSocial = campo(page, 'Nome social');
+      await expect(nomeSocial).toHaveValue(NOME_SOCIAL_DA_HELENA);
+      await expect(nomeSocial).not.toBeEditable();
+    });
+
+    await test.step('o envio sai, e o comprovante registra o uso do nome social da conta', async () => {
+      await enviarPeloTeclado(page);
+      await expect(page.getByText('Inscrição enviada', { exact: true })).toBeVisible();
+      await abrirComprovanteNaLista(page, processo);
+      await expect(comprovante(page)).toContainText('Uso do nome social');
+      await expect(comprovante(page)).toContainText(NOME_SOCIAL_DA_HELENA);
+      await expect(comprovante(page)).toContainText(HELENA.nome);
+    });
+
+    await test.step('remove o nome social da conta, para o teste valer de novo', async () => {
+      await page.goto(`/inscricao/${PROCESSO_ID}`);
+      await gravarNomeSocialNaConta('');
+      await page.getByRole('button', { name: /^Abrir menu da conta de / }).click();
+      await page.getByTestId('auth-user-profile-item').click();
+      await expect(page.getByTestId('auth-profile-nome-social-acao')).toHaveText(
+        /Cadastrar nome social/,
+      );
     });
   });
 });
