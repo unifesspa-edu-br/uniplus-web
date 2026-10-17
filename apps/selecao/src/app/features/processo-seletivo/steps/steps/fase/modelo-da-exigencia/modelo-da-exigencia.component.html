@@ -63,35 +63,24 @@
   }
 
   <div class="form-field">
-    <label class="label" [attr.for]="idBase() + '-arquivo'">
-      {{ modelo() === null ? 'Enviar o modelo' : 'Trocar por outro modelo' }}
-    </label>
-    <input
-      class="input"
-      type="file"
-      accept=".docx,.odt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text"
-      [id]="idBase() + '-arquivo'"
+    <ui-file-upload
+      [acceptedFileTypes]="extensoesEditaveis"
+      acceptLabel="DOCX ou ODT"
+      [idDoCampo]="idBase() + '-arquivo'"
+      [fieldLabel]="modelo() === null ? 'Enviar o modelo' : 'Trocar por outro modelo'"
+      [allowedMimeTypes]="tiposMimeEditaveis"
+      [mimeOpcional]="true"
+      [maxSizeMb]="tamanhoMaximoMb"
       [disabled]="bloqueado()"
-      [attr.aria-describedby]="idBase() + '-aviso ' + idBase() + '-formatos'"
-      [attr.aria-invalid]="recusa() !== null || envio()?.erro ? 'true' : null"
-      (change)="onArquivo($event)"
+      [descritoPor]="idBase() + '-aviso ' + idBase() + '-formatos'"
+      [itens]="itens()"
+      [mensagemExterna]="recusa()"
+      (arquivosEscolhidos)="onArquivos($event)"
+      (itemRetirado)="descartar()"
+      (tentarDeNovo)="retomar()"
     />
     <p class="field__hint" [id]="idBase() + '-formatos'">
-      DOCX ou ODT, até 10 MB. PDF e imagem não servem: o candidato precisa editar o documento.
+      DOCX ou ODT, até {{ tamanhoMaximoMb }} MB. PDF e imagem não servem: o candidato precisa editar o documento.
     </p>
-    @if (recusa(); as mensagem) {
-      <p class="field__erro" role="alert">{{ mensagem }}</p>
-    }
-    @if (envio(); as atual) {
-      <p class="field__hint" role="status">{{ descricao(atual) }}</p>
-      @if (atual.erro; as erro) {
-        <p class="field__erro" role="alert">{{ erro }}</p>
-        @if (atual.retomavel) {
-          <button class="btn btn--tertiary btn--sm" type="button" (click)="retomar()">
-            Tentar novamente
-          </button>
-        }
-      }
-    }
   </div>
 </fieldset>
