@@ -14,7 +14,7 @@ const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
 const DOCUMENTO_ID = '01960000-0000-7000-0000-0000000005dd';
 const URL_ASSINADA = 'http://localhost:9000/uniplus-selecao/editais/edital.pdf?X-Amz-Signature=abc';
 
-const ROTA_DOCUMENTOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-edital`;
+const ROTA_DOCUMENTOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-a-publicar`;
 const URL_LEITURA =
   'http://localhost:9000/uniplus-selecao/editais/confirmado.pdf?X-Amz-Signature=leitura';
 
@@ -61,7 +61,7 @@ function problema(status: number, code: string, title: string) {
 
 function iniciacao(expiraEmMs = Date.now() + 900_000) {
   return {
-    documentoEditalId: DOCUMENTO_ID,
+    documentoAPublicarId: DOCUMENTO_ID,
     urlUpload: URL_ASSINADA,
     contentTypeExigido: 'application/pdf',
     expiraEm: new Date(expiraEmMs).toISOString(),
@@ -109,7 +109,7 @@ describe('AnexoEditalComponent', () => {
     fixture.detectChanges();
 
     // O anexo pressupõe o processo já criado — a rota do documento é
-    // `/{id}/documentos-edital`. Quem o cria é a conclusão da identificação.
+    // `/{id}/documentos-a-publicar`. Quem o cria é a conclusão da identificação.
     store.processoSeletivoId.set(PROCESSO_ID);
   });
 
@@ -132,7 +132,12 @@ describe('AnexoEditalComponent', () => {
     void componente['anexar'](arquivo);
     await tick();
 
-    controller.expectOne(ROTA_DOCUMENTOS).flush(iniciacao(), {
+    const inicio = controller.expectOne(ROTA_DOCUMENTOS);
+    expect(inicio.request.body).toEqual({
+      nomeArquivo: arquivo.name,
+      tipoDeMidia: 'application/pdf',
+    });
+    inicio.flush(iniciacao(), {
       status: 201,
       statusText: 'Created',
     });
@@ -175,7 +180,7 @@ describe('AnexoEditalComponent', () => {
 
     expect(componente.anexo()?.fase).toBe('confirmado');
     expect(componente.anexo()?.progress).toBe(100);
-    expect(componente.anexo()?.documentoEditalId).toBe(DOCUMENTO_ID);
+    expect(componente.anexo()?.documentoAPublicarId).toBe(DOCUMENTO_ID);
   });
 
   /**
@@ -196,7 +201,7 @@ describe('AnexoEditalComponent', () => {
     await tick();
 
     expect(componente.anexo()?.fase).toBe('erro');
-    expect(componente.anexo()?.documentoEditalId).toBeUndefined();
+    expect(componente.anexo()?.documentoAPublicarId).toBeUndefined();
   });
 
   /**
@@ -294,7 +299,7 @@ describe('AnexoEditalComponent', () => {
           fase: 'erro',
           mensagemErro: 'Sem resposta.',
           enviado: true,
-          documentoEditalId: DOCUMENTO_ID,
+          documentoAPublicarId: DOCUMENTO_ID,
           confirmacaoIndefinida: true,
         },
       ],
@@ -320,7 +325,7 @@ describe('AnexoEditalComponent', () => {
     fase: 'erro' as const,
     mensagemErro: 'Sem resposta.',
     enviado: true,
-    documentoEditalId: DOCUMENTO_ID,
+    documentoAPublicarId: DOCUMENTO_ID,
     confirmacaoIndefinida: true,
   };
 

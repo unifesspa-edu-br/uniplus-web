@@ -457,7 +457,7 @@ export class ProcessoSeletivoPage {
     processoSeletivoId: string,
     superada: () => boolean,
   ): Promise<void> {
-    const resultado = await firstValueFrom(this.api.listarDocumentosEdital(processoSeletivoId));
+    const resultado = await firstValueFrom(this.api.listarDocumentosAPublicar(processoSeletivoId));
     if (superada()) return;
 
     if (!isApiOk(resultado)) {

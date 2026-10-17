@@ -39,7 +39,7 @@ function edital(fase: FaseUpload): UploadItem {
     extension: 'pdf',
     progress: 100,
     fase,
-    documentoEditalId: fase === 'confirmado' ? DOCUMENTO_ID : undefined,
+    documentoAPublicarId: fase === 'confirmado' ? DOCUMENTO_ID : undefined,
   };
 }
 

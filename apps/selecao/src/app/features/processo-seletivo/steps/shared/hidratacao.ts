@@ -3,7 +3,7 @@ import { FundamentoIsencao, OrigemCandidatos } from '@uniplus/shared-data/seleca
 import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
 import type {
   ConfiguracaoClassificacaoDto,
-  DocumentoEditalDto,
+  DocumentoAPublicarDto,
   ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 import { formatarDataBr, formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
@@ -564,18 +564,16 @@ export function decodificarOrigemCandidatos(valor: string): OrigemCandidatosSele
 
 /**
  * Projeta o readback de um documento confirmado no shape que o passo 2 já
- * sabe exibir. O contrato não devolve o nome original do arquivo
- * (uniplus-api#1180 o exclui de propósito — metadado de storage), daí o
- * rótulo genérico.
+ * sabe exibir, com o rótulo genérico do edital anexado.
  */
-export function uploadItemDe(documento: DocumentoEditalDto): UploadItem {
+export function uploadItemDe(documento: DocumentoAPublicarDto): UploadItem {
   return {
     id: documento.id,
     name: 'Edital anexado.pdf',
     extension: 'pdf',
     progress: 100,
     fase: 'confirmado',
-    documentoEditalId: documento.id,
+    documentoAPublicarId: documento.id,
     enviado: true,
   };
 }
@@ -584,7 +582,7 @@ export interface ReadbackDocumentos {
   /** Documento confirmado único — vínculo restaurável sem decisão. */
   readonly vinculo: UploadItem | null;
   /** Confirmados que exigem escolha explícita do administrador (CA-06). */
-  readonly escolha: readonly DocumentoEditalDto[];
+  readonly escolha: readonly DocumentoAPublicarDto[];
 }
 
 /**
@@ -594,7 +592,7 @@ export interface ReadbackDocumentos {
  * não contam: só confirmado tem hash e selo de imutabilidade.
  */
 export function classificarDocumentos(
-  documentos: readonly DocumentoEditalDto[],
+  documentos: readonly DocumentoAPublicarDto[],
 ): ReadbackDocumentos {
   const confirmados = documentos.filter((documento) => documento.confirmadoEm !== null);
 
@@ -614,7 +612,7 @@ export function classificarDocumentos(
  * arquivo — hashes iguais significam o mesmo conteúdo, e aí a escolha é
  * indiferente.
  */
-export function descreverDocumento(documento: DocumentoEditalDto): string {
+export function descreverDocumento(documento: DocumentoAPublicarDto): string {
   const instante =
     formatarDataBr(documento.confirmadoEm, 'datetimeSeconds') || 'instante indisponível';
 

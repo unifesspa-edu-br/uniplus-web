@@ -5,7 +5,10 @@ import {
   type ArquivoEmEnvio,
 } from '@uniplus/shared-ui/components';
 import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
-import { DocumentoEditalDto, IniciarUploadDocumentoEditalDto } from '@uniplus/shared-data/selecao';
+import {
+  DocumentoAPublicarDto,
+  IniciarEnvioDoDocumentoAPublicarDto,
+} from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { UploadItem } from '../../processo-seletivo.models';
@@ -63,7 +66,7 @@ export class AnexoEditalComponent {
       ? emMemoria.arquivo
       : null;
   });
-  private iniciacaoAtual: IniciarUploadDocumentoEditalDto | null = null;
+  private iniciacaoAtual: IniciarEnvioDoDocumentoAPublicarDto | null = null;
 
   /** Geração do editor quando o anexo em curso começou. */
   private geracaoDoAnexo: number | null = null;
@@ -108,7 +111,7 @@ export class AnexoEditalComponent {
       this.store.avisoDocumentos() !== null,
   );
 
-  /** O anexo exige o processo já criado: a rota é `/{id}/documentos-edital`. */
+  /** O anexo exige o processo já criado: a rota é `/{id}/documentos-a-publicar`. */
   private readonly semProcesso = computed(() => this.store.processoSeletivoId() === null);
 
   /** O anexo na forma que a lista do `ui-file-upload` exibe. */
@@ -236,8 +239,8 @@ export class AnexoEditalComponent {
     // O arquivo já chegou ao storage numa tentativa anterior: repetir o PUT
     // seria desperdício e esbarraria numa URL possivelmente expirada. Só a
     // confirmação falta, e repeti-la com a mesma chave recupera o replay.
-    if (soFaltaConfirmar(atual) && atual.documentoEditalId !== undefined) {
-      await this.confirmar(processoId, atual.documentoEditalId);
+    if (soFaltaConfirmar(atual) && atual.documentoAPublicarId !== undefined) {
+      await this.confirmar(processoId, atual.documentoAPublicarId);
       return;
     }
     if (arquivo === null) return;
@@ -245,7 +248,7 @@ export class AnexoEditalComponent {
     let iniciacao = this.iniciacaoAtual;
     if (iniciacao === null || destinoExpirado(iniciacao)) {
       this.atualizarAnexo({ fase: 'iniciando', progress: 0, mensagemErro: undefined });
-      const inicio = await this.cadastro.iniciarUpload(processoId);
+      const inicio = await this.cadastro.iniciarUpload(processoId, arquivo.name);
       if (!inicio.ok) {
         this.falharAnexo(this.problemI18n.resolve(inicio.problem).title);
         return;
@@ -253,7 +256,7 @@ export class AnexoEditalComponent {
       iniciacao = inicio.iniciacao;
       this.iniciacaoAtual = iniciacao;
       this.atualizarAnexo({
-        documentoEditalId: iniciacao.documentoEditalId,
+        documentoAPublicarId: iniciacao.documentoAPublicarId,
         expiraEm: iniciacao.expiraEm,
       });
     }
@@ -268,7 +271,7 @@ export class AnexoEditalComponent {
       // pedir outra URL, então a iniciação é descartada.
       if (envio.expirada) {
         this.iniciacaoAtual = null;
-        this.atualizarAnexo({ documentoEditalId: undefined, expiraEm: undefined });
+        this.atualizarAnexo({ documentoAPublicarId: undefined, expiraEm: undefined });
         this.falharAnexo(
           'O endereço de envio não é mais válido. Tente novamente para obter um novo.',
         );
@@ -281,12 +284,12 @@ export class AnexoEditalComponent {
     this.atualizarAnexo({ enviado: true, progress: 100 });
     // A URL cumpriu o papel; some da memória para não ficar credencial viva à toa.
     this.iniciacaoAtual = null;
-    await this.confirmar(processoId, iniciacao.documentoEditalId);
+    await this.confirmar(processoId, iniciacao.documentoAPublicarId);
   }
 
-  private async confirmar(processoId: string, documentoEditalId: string): Promise<void> {
+  private async confirmar(processoId: string, documentoAPublicarId: string): Promise<void> {
     this.atualizarAnexo({ fase: 'confirmando', progress: 100 });
-    const confirmacao = await this.cadastro.confirmarUpload(processoId, documentoEditalId);
+    const confirmacao = await this.cadastro.confirmarUpload(processoId, documentoAPublicarId);
     if (!confirmacao.ok) {
       const indefinida = this.cadastro.temConfirmacaoPendente();
       this.atualizarAnexo({ confirmacaoIndefinida: indefinida });
@@ -334,7 +337,7 @@ export class AnexoEditalComponent {
   }
 
   /** Metadados que distinguem um confirmado do outro na escolha do oficial. */
-  protected descrever(documento: DocumentoEditalDto): string {
+  protected descrever(documento: DocumentoAPublicarDto): string {
     return descreverDocumento(documento);
   }
 
@@ -342,16 +345,16 @@ export class AnexoEditalComponent {
    * Abre o PDF de um documento confirmado numa aba nova, pedindo o acesso à API no clique
    * (`abrirAcessoEmNovaAba`, que explica por que a URL não fica guardada).
    */
-  async abrirDocumento(documentoEditalId: string): Promise<void> {
+  async abrirDocumento(documentoAPublicarId: string): Promise<void> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null || this.abrindoDocumento() !== null) return;
 
     const geracao = this.store.geracao();
-    this.abrindoDocumento.set(documentoEditalId);
+    this.abrindoDocumento.set(documentoAPublicarId);
     this.erroDeAbertura.set(null);
     try {
       const desfecho = await abrirAcessoEmNovaAba(
-        () => this.cadastro.obterAcessoAoDocumento(processoId, documentoEditalId),
+        () => this.cadastro.obterAcessoAoDocumento(processoId, documentoAPublicarId),
         () => geracao === this.store.geracao(),
       );
       if (desfecho.situacao === 'bloqueada') {
@@ -394,7 +397,7 @@ export class AnexoEditalComponent {
    * sozinho: adotar o mais recente trocaria o edital do certame sem o operador
    * perceber.
    */
-  escolherDocumentoConfirmado(documento: DocumentoEditalDto): void {
+  escolherDocumentoConfirmado(documento: DocumentoAPublicarDto): void {
     this.store.projetarSecao('identificacao', { uploads: [uploadItemDe(documento)] });
     this.store.documentosParaEscolha.set([]);
   }
@@ -404,5 +407,5 @@ export class AnexoEditalComponent {
 
 /** O arquivo já chegou ao storage: da tentativa só resta a confirmação, que não usa os bytes. */
 function soFaltaConfirmar(item: UploadItem): boolean {
-  return item.enviado === true && item.documentoEditalId !== undefined;
+  return item.enviado === true && item.documentoAPublicarId !== undefined;
 }

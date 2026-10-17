@@ -337,7 +337,7 @@ async function mockarApi(page: Page, status: Status): Promise<void> {
     const caminho = new URL(request.url()).pathname;
     if (caminho.endsWith(ID_DO_PROCESSO_COMPLETO)) {
       await responderCom(route, { ...PROCESSO_PUBLICADO_COMPLETO, status });
-    } else if (caminho.endsWith('/documentos-edital')) {
+    } else if (caminho.endsWith('/documentos-a-publicar')) {
       await responderCom(route, [DOCUMENTO_DO_EDITAL]);
     } else if (caminho.endsWith('/snapshot-vigente')) {
       await responderCom(route, SNAPSHOT_VIGENTE);

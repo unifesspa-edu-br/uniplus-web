@@ -21,8 +21,8 @@ import {
   DefinirOfertaAtendimentoRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
-  DocumentoEditalDto,
-  IniciarUploadDocumentoEditalDto,
+  DocumentoAPublicarDto,
+  IniciarEnvioDoDocumentoAPublicarDto,
   ProcessoSeletivoDto,
   ProcessoSeletivoResumoDto,
   ProcessosSeletivosApi,
@@ -54,16 +54,18 @@ const resumoSeed: ProcessoSeletivoResumoDto = {
   criadoEm: '2026-08-11T12:00:00Z',
 };
 
-const iniciacaoSeed: IniciarUploadDocumentoEditalDto = {
-  documentoEditalId: DOCUMENTO_ID,
+const iniciacaoSeed: IniciarEnvioDoDocumentoAPublicarDto = {
+  documentoAPublicarId: DOCUMENTO_ID,
   urlUpload: URL_ASSINADA,
   contentTypeExigido: 'application/pdf',
   expiraEm: '2026-08-13T12:15:00Z',
 };
 
-const documentoSeed: DocumentoEditalDto = {
+const documentoSeed: DocumentoAPublicarDto = {
   id: DOCUMENTO_ID,
   processoSeletivoId: ID,
+  nomeArquivo: 'edital.pdf',
+  tipoDeMidia: 'application/pdf',
   status: 'Confirmado',
   criadoEm: '2026-08-13T12:00:00Z',
   expiraEm: '2026-08-13T12:15:00Z',
@@ -72,9 +74,11 @@ const documentoSeed: DocumentoEditalDto = {
   confirmadoEm: '2026-08-13T12:05:00Z',
 };
 
-const documentoPendenteSeed: DocumentoEditalDto = {
+const documentoPendenteSeed: DocumentoAPublicarDto = {
   id: '01960000-0000-7000-0000-000000000519',
   processoSeletivoId: ID,
+  nomeArquivo: 'edital.pdf',
+  tipoDeMidia: 'application/pdf',
   status: 'Pendente',
   criadoEm: '2026-08-13T12:10:00Z',
   expiraEm: '2026-08-13T12:25:00Z',
@@ -151,17 +155,19 @@ describe('ProcessosSeletivosApi', () => {
     expect(isApiOk(result)).toBe(true);
   });
 
-  it('listarDocumentosEdital() lê a coleção do processo pelo vendor MIME do documento', async () => {
-    const promise = firstValueFrom(api.listarDocumentosEdital(ID));
+  it('listarDocumentosAPublicar() lê a coleção do processo pelo vendor MIME do documento', async () => {
+    const promise = firstValueFrom(api.listarDocumentosAPublicar(ID));
     const req = controller.expectOne(
-      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-edital`,
+      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-a-publicar`,
     );
 
     expect(req.request.method).toBe('GET');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('documento-edital', 1));
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('documento-a-publicar', 1),
+    );
     req.flush([documentoSeed, documentoPendenteSeed]);
 
-    const result = (await promise) as ApiResult<readonly DocumentoEditalDto[]>;
+    const result = (await promise) as ApiResult<readonly DocumentoAPublicarDto[]>;
     expect(isApiOk(result)).toBe(true);
     if (result.ok) {
       expect(result.data).toHaveLength(2);
@@ -173,55 +179,56 @@ describe('ProcessosSeletivosApi', () => {
    * O id vai na rota; um valor com caractere reservado não pode escapar para o
    * path sem codificação.
    */
-  it('listarDocumentosEdital() codifica o id na rota', async () => {
-    const promise = firstValueFrom(api.listarDocumentosEdital('a/b'));
+  it('listarDocumentosAPublicar() codifica o id na rota', async () => {
+    const promise = firstValueFrom(api.listarDocumentosAPublicar('a/b'));
     const req = controller.expectOne(
-      `${BASE}/api/selecao/processos-seletivos/a%2Fb/documentos-edital`,
+      `${BASE}/api/selecao/processos-seletivos/a%2Fb/documentos-a-publicar`,
     );
 
     req.flush([]);
     await promise;
   });
 
-  it('listarDocumentosEdital() devolve a coleção vazia de um processo sem anexo', async () => {
-    const promise = firstValueFrom(api.listarDocumentosEdital(ID));
+  it('listarDocumentosAPublicar() devolve a coleção vazia de um processo sem anexo', async () => {
+    const promise = firstValueFrom(api.listarDocumentosAPublicar(ID));
     controller
-      .expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/documentos-edital`)
+      .expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/documentos-a-publicar`)
       .flush([]);
 
-    const result = (await promise) as ApiResult<readonly DocumentoEditalDto[]>;
+    const result = (await promise) as ApiResult<readonly DocumentoAPublicarDto[]>;
     expect(isApiOk(result)).toBe(true);
     if (result.ok) expect(result.data).toEqual([]);
   });
 
-  it('iniciarUploadDocumentoEdital() posta sem corpo e devolve a URL assinada', async () => {
+  it('iniciarEnvioDocumentoAPublicar() posta nome e tipo de mídia e devolve a URL assinada', async () => {
+    const request = { nomeArquivo: 'edital.pdf', tipoDeMidia: 'application/pdf' };
     const promise = firstValueFrom(
-      api.iniciarUploadDocumentoEdital(ID, withIdempotencyKey('documento-init-key')),
+      api.iniciarEnvioDocumentoAPublicar(ID, request, withIdempotencyKey('documento-init-key')),
     );
     const req = controller.expectOne(
-      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-edital`,
+      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-a-publicar`,
     );
 
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toBeNull();
+    expect(req.request.body).toEqual(request);
     expect(req.request.headers.get('Idempotency-Key')).toBe('documento-init-key');
     req.flush(iniciacaoSeed, { status: 201, statusText: 'Created' });
 
-    const result = (await promise) as ApiResult<IniciarUploadDocumentoEditalDto>;
+    const result = (await promise) as ApiResult<IniciarEnvioDoDocumentoAPublicarDto>;
     expect(isApiOk(result)).toBe(true);
     if (result.ok) expect(result.data.contentTypeExigido).toBe('application/pdf');
   });
 
-  it('confirmarUploadDocumentoEdital() usa os dois ids na rota de confirmação', async () => {
+  it('confirmarEnvioDocumentoAPublicar() usa os dois ids na rota de confirmação', async () => {
     const promise = firstValueFrom(
-      api.confirmarUploadDocumentoEdital(
+      api.confirmarEnvioDocumentoAPublicar(
         ID,
         DOCUMENTO_ID,
         withIdempotencyKey('documento-conf-key'),
       ),
     );
     const req = controller.expectOne(
-      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-edital/${DOCUMENTO_ID}/confirmacao`,
+      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-a-publicar/${DOCUMENTO_ID}/confirmacao`,
     );
 
     expect(req.request.method).toBe('POST');
@@ -229,7 +236,7 @@ describe('ProcessosSeletivosApi', () => {
     expect(req.request.headers.get('Idempotency-Key')).toBe('documento-conf-key');
     req.flush(documentoSeed);
 
-    const result = (await promise) as ApiResult<DocumentoEditalDto>;
+    const result = (await promise) as ApiResult<DocumentoAPublicarDto>;
     expect(isApiOk(result)).toBe(true);
     if (result.ok) expect(result.data.status).toBe('Confirmado');
   });
@@ -751,7 +758,7 @@ describe('ProcessosSeletivosApi', () => {
       numero: '001/2027',
       periodoInscricaoInicio: null,
       periodoInscricaoFim: null,
-      documentoEditalId: '01960000-0000-7000-0000-000000000518',
+      documentoAPublicarId: '01960000-0000-7000-0000-000000000518',
       ato,
     };
 
@@ -785,7 +792,7 @@ describe('ProcessosSeletivosApi', () => {
       numero: '001/2027',
       periodoInscricaoInicio: null,
       periodoInscricaoFim: null,
-      documentoEditalId: '01960000-0000-7000-0000-000000000518',
+      documentoAPublicarId: '01960000-0000-7000-0000-000000000518',
       ato,
     };
 

@@ -293,7 +293,7 @@ async function mockarApi(page: Page, status: Status, catalogos: Catalogos): Prom
       await responderCom(route, { ...PROCESSO_DA_MEDICINA, status }, CORS_HEADERS);
       return;
     }
-    if (caminho.endsWith('/documentos-edital')) {
+    if (caminho.endsWith('/documentos-a-publicar')) {
       await responderCom(route, [], CORS_HEADERS);
       return;
     }

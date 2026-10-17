@@ -56,7 +56,7 @@ export interface UploadItem {
   progress: number;
   fase: FaseUpload;
   /** Id do registro criado na iniciação — necessário para confirmar. */
-  documentoEditalId?: string;
+  documentoAPublicarId?: string;
   /** Instante em que a URL pré-assinada deixa de valer. */
   expiraEm?: string;
   /**

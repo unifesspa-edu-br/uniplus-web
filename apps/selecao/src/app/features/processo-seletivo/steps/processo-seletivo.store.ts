@@ -1,6 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { StatusProcesso } from '@uniplus/shared-data/selecao';
-import type { DocumentoEditalDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { conteudoInicial, type StepStatus } from '@uniplus/shared-ui/components';
 import { STEP_LABELS } from './processo-seletivo.data';
 import { exigenciasVazias } from './shared/exigencias-documentais';
@@ -217,7 +217,7 @@ export class ProcessoSeletivoStore {
    */
   readonly aplicacoesDeModeloEmAberto = signal<ReadonlyMap<string, AplicacaoEmAberto>>(new Map());
 
-  readonly documentosParaEscolha = signal<readonly DocumentoEditalDto[]>([]);
+  readonly documentosParaEscolha = signal<readonly DocumentoAPublicarDto[]>([]);
 
   /**
    * A leitura dos documentos falhou, mas o processo foi lido: o editor segue

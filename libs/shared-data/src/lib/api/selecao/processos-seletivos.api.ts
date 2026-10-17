@@ -12,10 +12,12 @@ export type ProcessoSeletivoDto = components['schemas']['ProcessoSeletivoDto'];
 export type FormularioRenderizavelDto = components['schemas']['FormularioRenderizavelDto'];
 export type ProcessoSeletivoResumoDto = components['schemas']['ProcessoSeletivoResumoDto'];
 export type TipoProcessoSnapshotDto = components['schemas']['TipoProcessoSnapshotDto'];
-export type IniciarUploadDocumentoEditalDto =
-  components['schemas']['IniciarUploadDocumentoEditalDto'];
-export type DocumentoEditalDto = components['schemas']['DocumentoEditalDto'];
-export type AcessoDocumentoEditalDto = components['schemas']['AcessoDocumentoEditalDto'];
+export type IniciarEnvioDoDocumentoAPublicarRequest =
+  components['schemas']['IniciarEnvioDoDocumentoAPublicarRequest'];
+export type IniciarEnvioDoDocumentoAPublicarDto =
+  components['schemas']['IniciarEnvioDoDocumentoAPublicarDto'];
+export type DocumentoAPublicarDto = components['schemas']['DocumentoAPublicarDto'];
+export type AcessoDocumentoAPublicarDto = components['schemas']['AcessoDocumentoAPublicarDto'];
 export type IniciarEnvioDoModeloDeDocumentoRequest =
   components['schemas']['IniciarEnvioDoModeloDeDocumentoRequest'];
 export type IniciarEnvioDoModeloDeDocumentoDto =
@@ -758,23 +760,23 @@ export class ProcessosSeletivosApi {
   }
 
   /**
-   * GET `/api/selecao/processos-seletivos/{id}/documentos-edital` — todos os
-   * documentos do edital registrados no processo, pendentes e confirmados.
+   * GET `/api/selecao/processos-seletivos/{id}/documentos-a-publicar` — todos os
+   * documentos a publicar registrados no processo, pendentes e confirmados.
    *
    * É a leitura que permite retomar o anexo depois de um refresh: o cliente
-   * não guarda o `documentoEditalId` nem a URL assinada, então é daqui que o
+   * não guarda o `documentoAPublicarId` nem a URL assinada, então é daqui que o
    * editor descobre o que já existe. Havendo mais de um documento confirmado,
    * a escolha do oficial é do administrador — `criadoEm` e `confirmadoEm`
    * servem para apresentá-los, não para o frontend eleger o mais recente.
    *
    * A coleção não é paginada: um processo tem poucos documentos por natureza.
    */
-  listarDocumentosEdital(
+  listarDocumentosAPublicar(
     processoSeletivoId: string,
-  ): Observable<ApiResult<readonly DocumentoEditalDto[]>> {
-    return this.http.get<ApiResult<readonly DocumentoEditalDto[]>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital`,
-      { context: withVendorMime('documento-edital', 1) },
+  ): Observable<ApiResult<readonly DocumentoAPublicarDto[]>> {
+    return this.http.get<ApiResult<readonly DocumentoAPublicarDto[]>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-a-publicar`,
+      { context: withVendorMime('documento-a-publicar', 1) },
     );
   }
 
@@ -816,7 +818,7 @@ export class ProcessosSeletivosApi {
   }
 
   /**
-   * GET `/api/selecao/processos-seletivos/{id}/documentos-edital/{docId}/acesso`
+   * GET `/api/selecao/processos-seletivos/{id}/documentos-a-publicar/{docId}/acesso`
    * — pede o acesso de leitura a um documento confirmado, para conferir o PDF
    * anexado.
    *
@@ -825,29 +827,31 @@ export class ProcessosSeletivosApi {
    * quando o acesso é pedido. Pelo mesmo motivo ela não é guardada aqui — quem
    * a tem abre o arquivo sem passar por autorização de novo.
    */
-  obterAcessoDocumentoEdital(
+  obterAcessoDocumentoAPublicar(
     processoSeletivoId: string,
-    documentoEditalId: string,
-  ): Observable<ApiResult<AcessoDocumentoEditalDto>> {
-    return this.http.get<ApiResult<AcessoDocumentoEditalDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital/${encodeURIComponent(documentoEditalId)}/acesso`,
-      { context: withVendorMime('acesso-documento-edital', 1) },
+    documentoAPublicarId: string,
+  ): Observable<ApiResult<AcessoDocumentoAPublicarDto>> {
+    return this.http.get<ApiResult<AcessoDocumentoAPublicarDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-a-publicar/${encodeURIComponent(documentoAPublicarId)}/acesso`,
+      { context: withVendorMime('acesso-documento-a-publicar', 1) },
     );
   }
 
   /**
-   * POST `/api/selecao/processos-seletivos/{id}/documentos-edital` — primeiro
-   * dos três passos do anexo do edital: cria o registro pendente e devolve a
+   * POST `/api/selecao/processos-seletivos/{id}/documentos-a-publicar` — primeiro
+   * dos três passos do envio de um documento a publicar: cria o registro
+   * pendente com o nome do arquivo e o tipo de mídia declarados e devolve a
    * URL pré-assinada de PUT, o content type que a assinatura exige e o
-   * instante em que ela expira. O endpoint não recebe corpo.
+   * instante em que ela expira.
    */
-  iniciarUploadDocumentoEdital(
+  iniciarEnvioDocumentoAPublicar(
     processoSeletivoId: string,
+    request: IniciarEnvioDoDocumentoAPublicarRequest,
     context: HttpContext,
-  ): Observable<ApiResult<IniciarUploadDocumentoEditalDto>> {
-    return this.http.post<ApiResult<IniciarUploadDocumentoEditalDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital`,
-      null,
+  ): Observable<ApiResult<IniciarEnvioDoDocumentoAPublicarDto>> {
+    return this.http.post<ApiResult<IniciarEnvioDoDocumentoAPublicarDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-a-publicar`,
+      request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
@@ -860,13 +864,13 @@ export class ProcessosSeletivosApi {
    * O segundo passo — o PUT na URL pré-assinada — não é rota do Uni+ e não
    * devolve `ApiResult`: fica no `SignedUploadClient` de `shared-core/http`.
    */
-  confirmarUploadDocumentoEdital(
+  confirmarEnvioDocumentoAPublicar(
     processoSeletivoId: string,
-    documentoEditalId: string,
+    documentoAPublicarId: string,
     context: HttpContext,
-  ): Observable<ApiResult<DocumentoEditalDto>> {
-    return this.http.post<ApiResult<DocumentoEditalDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-edital/${encodeURIComponent(documentoEditalId)}/confirmacao`,
+  ): Observable<ApiResult<DocumentoAPublicarDto>> {
+    return this.http.post<ApiResult<DocumentoAPublicarDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-a-publicar/${encodeURIComponent(documentoAPublicarId)}/confirmacao`,
       null,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
