@@ -48,9 +48,9 @@ const FORMATO_TAMANHO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- O contêiner engole dragover e drop mesmo com a zona desabilitada: um botão desabilitado
-         não recebe esses eventos e o navegador abriria o arquivo solto. -->
-    <div class="uni-uploader" (dragover)="$event.preventDefault()" (drop)="$event.preventDefault()">
+    <!-- O contêiner trata o drop que a zona não recebeu (lista, mensagens, ou a zona desabilitada,
+         que não recebe eventos): sem isso o navegador abriria o arquivo solto. -->
+    <div class="uni-uploader" (dragover)="$event.preventDefault()" (drop)="aoSoltarForaDaZona($event)">
       @if (fieldLabel()) {
         <label [id]="labelId" [attr.for]="inputId" class="field__label">{{ fieldLabel() }}</label>
       }
@@ -106,7 +106,7 @@ const FORMATO_TAMANHO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 
           </div>
         }
       } @else if (lista.length > 0) {
-        <ul class="uni-uploader__list" aria-label="Arquivos">
+        <ul class="uni-uploader__list" [attr.aria-label]="listaAccessibleName()">
           @for (arquivo of lista; track arquivo.id) {
             <li
               class="uni-uploader__item"
@@ -144,7 +144,7 @@ const FORMATO_TAMANHO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 
                   <button
                     type="button"
                     class="btn btn--tertiary btn--sm"
-                    [attr.aria-label]="'Tentar enviar novamente ' + arquivo.nome"
+                    [attr.aria-label]="'Tentar enviar novamente ' + arquivo.nome + sufixoDoContexto()"
                     (click)="tentarDeNovo.emit(arquivo.id)"
                   >
                     Tentar novamente
@@ -154,7 +154,7 @@ const FORMATO_TAMANHO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 
                   <button
                     type="button"
                     class="btn btn--tertiary btn--sm"
-                    [attr.aria-label]="'Remover ' + arquivo.nome"
+                    [attr.aria-label]="'Remover ' + arquivo.nome + sufixoDoContexto()"
                     (click)="retirar(arquivo.id)"
                   >
                     Remover
@@ -192,6 +192,11 @@ export class FileUploadComponent {
   protected readonly dropTextId = `${this.instanceId}-drop`;
 
   readonly fieldLabel = input<string>('');
+  /**
+   * Distingue esta lista das outras da tela no nome da lista e das ações de cada arquivo. Sem
+   * valor, vale o `fieldLabel`.
+   */
+  readonly nomeDaLista = input<string | null>(null);
   readonly acceptedFileTypes = input<string>('.pdf,.jpg,.jpeg,.png');
   readonly allowedMimeTypes = input<readonly string[]>([
     'application/pdf',
@@ -253,6 +258,15 @@ export class FileUploadComponent {
     const quantidade = this.modoMultiplo() && limite !== null ? ` - até ${limite} arquivos` : '';
     return `${this.acceptLabel()} - tamanho máximo: ${this.maxSizeMb()}MB${quantidade}`;
   });
+  private readonly contexto = computed(() => this.nomeDaLista() || this.fieldLabel() || null);
+  protected readonly listaAccessibleName = computed(() => {
+    const contexto = this.contexto();
+    return contexto ? `Arquivos: ${contexto}` : 'Arquivos';
+  });
+  protected readonly sufixoDoContexto = computed(() => {
+    const contexto = this.contexto();
+    return contexto ? ` — ${contexto}` : '';
+  });
   readonly describedBy = computed(() => {
     const ids = [
       this.descritoPor(),
@@ -291,6 +305,13 @@ export class FileUploadComponent {
     this.isDragging.set(false);
     if (this.disabled()) return;
     this.handleFiles(Array.from(files ?? []));
+  }
+
+  protected aoSoltarForaDaZona(evento: DragEvent): void {
+    // A zona já tratou (e marcou como tratado) o drop que recebeu.
+    if (evento.defaultPrevented) return;
+    evento.preventDefault();
+    this.onDrop(evento.dataTransfer?.files);
   }
 
   onFilesPicked(input: HTMLInputElement): void {
@@ -378,13 +399,13 @@ export class FileUploadComponent {
     const recusas: string[] = [];
     const aprovados: File[] = [];
     const limite = this.maxFiles();
-    let vagas = limite === null ? Infinity : limite - (this.itens()?.length ?? 0);
+    let vagas = this.vagasRestantes();
     for (const file of files) {
       const result = this.validate(file);
       if (!result.ok) {
         recusas.push(`${file.name}: ${result.reason}`);
       } else if (vagas <= 0) {
-        recusas.push(`${file.name}: o limite de ${limite} arquivos foi atingido.`);
+        recusas.push(`${file.name}: ${this.mensagemDoLimite(limite)}`);
       } else {
         aprovados.push(file);
         vagas--;
@@ -394,7 +415,20 @@ export class FileUploadComponent {
     if (aprovados.length > 0) this.arquivosEscolhidos.emit(aprovados);
   }
 
+  private vagasRestantes(): number {
+    const limite = this.maxFiles();
+    return limite === null ? Infinity : limite - (this.itens()?.length ?? 0);
+  }
+
+  private mensagemDoLimite(limite: number | null): string {
+    return `o limite de ${limite} ${limite === 1 ? 'arquivo' : 'arquivos'} foi atingido.`;
+  }
+
   private handleSingle(file: File): void {
+    if (this.itens() !== null && this.vagasRestantes() <= 0) {
+      this.errors.set([`${file.name}: ${this.mensagemDoLimite(this.maxFiles())}`]);
+      return;
+    }
     const result = this.validate(file);
     if (!result.ok) {
       this.errors.set([result.reason]);

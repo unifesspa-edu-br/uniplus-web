@@ -142,6 +142,24 @@ describe('ModeloDaExigenciaComponent', () => {
     controller.expectOne(URL_ASSINADA);
   });
 
+  it('não deixa retirar o envio que falhou quando a exigência está desabilitada', async () => {
+    await enviarAteAConfirmacao();
+    const { body, opts } = problema(422, 'uniplus.selecao.modelo_de_documento.contem_macro', 'Macro', 'Sem macro.');
+    controller.expectOne(`${ROTA_MODELOS}/${MODELO_ID}/confirmacao`).flush(body, opts);
+    await tick();
+    const host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    expect(host.querySelector('button[aria-label^="Remover autodeclaracao"]')).not.toBeNull();
+
+    fixture.componentRef.setInput('desabilitado', true);
+    fixture.detectChanges();
+    componente.descartar();
+    fixture.detectChanges();
+
+    expect(host.querySelector('button[aria-label^="Remover autodeclaracao"]')).toBeNull();
+    expect(componente.envio()).not.toBeNull();
+  });
+
   it('envia, confirma e vincula o modelo com nome, formato e hash', async () => {
     escolher(docx());
     await tick();
