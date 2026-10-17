@@ -123,7 +123,7 @@ interface EnderecoFormControls {
       </legend>
 
       <div class="form-grid">
-        <div class="field" [class.is-error]="cepErro() !== null || cepPendente()">
+        <div class="field form-grid__full" [class.is-error]="cepErro() !== null || cepPendente()">
           <label [for]="id('cep')" class="field__label">CEP</label>
           <div class="input-group">
             <input
@@ -291,6 +291,55 @@ interface EnderecoFormControls {
         <!-- Detalhes do endereço só quando há CEP resolvido: sem resolução o
              backend não persiste endereço estruturado (só a cidade). #412 -->
         @if (mostrarDetalheEndereco()) {
+        @if (!semValorDoCep('bairro')) {
+        <div class="field" [class.form-grid__full]="semValorDoCep('distrito')">
+          <label
+            [for]="id('bairro')"
+            class="field__label"
+            [class.is-required]="logradouroBairroObrigatorios()"
+            >Bairro</label
+          >
+          <input
+            [id]="id('bairro')"
+            class="input"
+            type="text"
+            autocomplete="address-level3"
+            [formControl]="form.controls.bairro"
+            [readonly]="ehAncorado('bairro')"
+            [attr.aria-readonly]="ehAncorado('bairro') ? 'true' : null"
+            [attr.aria-required]="logradouroBairroObrigatorios() ? 'true' : null"
+            [attr.aria-invalid]="faltaPreencher('bairro') ? 'true' : null"
+            [attr.aria-describedby]="faltaPreencher('bairro') ? id('bairro') + '-error' : null"
+          />
+          @if (ehAncorado('bairro')) {
+            <span class="field__hint">Preenchido pelo CEP.</span>
+          }
+          @if (faltaPreencher('bairro')) {
+            <span [id]="id('bairro') + '-error'" class="field__error" role="alert">
+              Informe o bairro.
+            </span>
+          }
+        </div>
+        }
+
+        @if (!semValorDoCep('distrito')) {
+        <div class="field">
+          <label [for]="id('distrito')" class="field__label">Distrito</label>
+          <input
+            [id]="id('distrito')"
+            class="input"
+            type="text"
+            autocomplete="off"
+            [formControl]="form.controls.distrito"
+            [readonly]="ehAncorado('distrito')"
+            [attr.aria-readonly]="ehAncorado('distrito') ? 'true' : null"
+          />
+          @if (ehAncorado('distrito')) {
+            <span class="field__hint">Preenchido pelo CEP.</span>
+          }
+        </div>
+        }
+
         <div class="field form-grid__full">
           <label
             [for]="id('logradouro')"
@@ -363,55 +412,6 @@ interface EnderecoFormControls {
             [formControl]="form.controls.complemento"
           />
           <span class="field__hint">Dado próprio — sempre editável.</span>
-        </div>
-        }
-
-        @if (!semValorDoCep('bairro')) {
-        <div class="field">
-          <label
-            [for]="id('bairro')"
-            class="field__label"
-            [class.is-required]="logradouroBairroObrigatorios()"
-            >Bairro</label
-          >
-          <input
-            [id]="id('bairro')"
-            class="input"
-            type="text"
-            autocomplete="address-level3"
-            [formControl]="form.controls.bairro"
-            [readonly]="ehAncorado('bairro')"
-            [attr.aria-readonly]="ehAncorado('bairro') ? 'true' : null"
-            [attr.aria-required]="logradouroBairroObrigatorios() ? 'true' : null"
-            [attr.aria-invalid]="faltaPreencher('bairro') ? 'true' : null"
-            [attr.aria-describedby]="faltaPreencher('bairro') ? id('bairro') + '-error' : null"
-          />
-          @if (ehAncorado('bairro')) {
-            <span class="field__hint">Preenchido pelo CEP.</span>
-          }
-          @if (faltaPreencher('bairro')) {
-            <span [id]="id('bairro') + '-error'" class="field__error" role="alert">
-              Informe o bairro.
-            </span>
-          }
-        </div>
-        }
-
-        @if (!semValorDoCep('distrito')) {
-        <div class="field">
-          <label [for]="id('distrito')" class="field__label">Distrito</label>
-          <input
-            [id]="id('distrito')"
-            class="input"
-            type="text"
-            autocomplete="off"
-            [formControl]="form.controls.distrito"
-            [readonly]="ehAncorado('distrito')"
-            [attr.aria-readonly]="ehAncorado('distrito') ? 'true' : null"
-          />
-          @if (ehAncorado('distrito')) {
-            <span class="field__hint">Preenchido pelo CEP.</span>
-          }
         </div>
         }
         }

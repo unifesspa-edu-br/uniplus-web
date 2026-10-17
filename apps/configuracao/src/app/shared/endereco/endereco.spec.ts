@@ -283,6 +283,30 @@ describe('EnderecoGeoComponent com o Geo', () => {
     expect(numero.readOnly).toBe(false);
   });
 
+  it('exibe os campos do geral para o específico, na mesma ordem do DOM', () => {
+    setInput(fixture, 't-cep', '68507-590');
+    botaoPorTexto(fixture, 'Buscar CEP').click();
+    controller
+      .expectOne(`${BASE}/api/cep/68507590`)
+      .flush({ ...cepLogradouro, distrito: 'Distrito Industrial' });
+    fixture.detectChanges();
+
+    const rotulos = Array.from(
+      fixture.nativeElement.querySelectorAll('fieldset label'),
+    ).map((l) => (l as HTMLElement).textContent?.trim());
+
+    expect(rotulos).toEqual([
+      'CEP',
+      'UF',
+      'Cidade',
+      'Bairro',
+      'Distrito',
+      'Logradouro',
+      'Número',
+      'Complemento',
+    ]);
+  });
+
   it('CA-01: "Trocar CEP" destrava o campo sem descartar o restante do endereço resolvido — #438', () => {
     setInput(fixture, 't-cep', '68507590');
     botaoPorTexto(fixture, 'Buscar CEP').click();
