@@ -620,5 +620,7 @@ export function descreverDocumento(documento: DocumentoAPublicarDto): string {
       ? 'hash indisponível'
       : `hash ${documento.hashSha256.slice(0, 12)}`;
 
-  return `${documento.nomeArquivo} · ${instante} · ${formatarTamanhoDeArquivo(documento.tamanhoBytes)} · ${hash}`;
+  const nome = documento.nomeArquivo.trim() || 'nome indisponível';
+
+  return `${nome} · ${instante} · ${formatarTamanhoDeArquivo(documento.tamanhoBytes)} · ${hash}`;
 }

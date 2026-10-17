@@ -72,6 +72,8 @@ function documentoConfirmado(id: string, hash: string, confirmadoEm: string) {
   return {
     id,
     processoSeletivoId: PROCESSO_ID,
+    nomeArquivo: 'edital.pdf',
+    tipoDeMidia: 'application/pdf',
     status: 'Confirmado',
     criadoEm: '2026-08-20T12:00:00Z',
     expiraEm: '2026-08-20T12:15:00Z',
@@ -377,6 +379,50 @@ describe('AnexoEditalComponent', () => {
     controller.expectNone(ROTA_DOCUMENTOS);
   });
 
+  it('repete a chave do início após falha de rede e gira a chave quando o arquivo muda', async () => {
+    const chaveDoInicio = (): string => {
+      const requisicao = controller.expectOne(ROTA_DOCUMENTOS);
+      const chave = requisicao.request.headers.get('Idempotency-Key') ?? '';
+      requisicao.error(new ProgressEvent('error'));
+      return chave;
+    };
+
+    void componente['anexar'](pdf('primeiro.pdf'));
+    await tick();
+    const primeira = chaveDoInicio();
+    await tick();
+
+    void componente.retomarUpload();
+    await tick();
+    const repetida = chaveDoInicio();
+    await tick();
+
+    void componente['anexar'](pdf('segundo.pdf'));
+    await tick();
+    const outroArquivo = chaveDoInicio();
+    await tick();
+
+    expect(primeira).not.toBe('');
+    expect(repetida).toBe(primeira);
+    expect(outroArquivo).not.toBe(primeira);
+  });
+
+  it('limpa a recusa anterior ao retomar o envio', async () => {
+    void componente['anexar'](pdf());
+    await tick();
+    controller
+      .expectOne(ROTA_DOCUMENTOS)
+      .flush(problema(503, 'uniplus.client.network_error', 'Indisponível').body, problema(503, 'uniplus.client.network_error', 'Indisponível').opts);
+    await tick();
+    componente.uploadError.set('Recusa antiga.');
+
+    void componente.retomarUpload();
+    await tick();
+
+    expect(componente.uploadError()).toBeNull();
+    controller.expectOne(ROTA_DOCUMENTOS);
+  });
+
   it('limpa a recusa anterior ao remover o anexo', async () => {
     void componente['anexar'](pdf('primeiro.pdf'));
     await tick();
@@ -561,7 +607,7 @@ describe('AnexoEditalComponent', () => {
 
     const recusa = problema(
       422,
-      'uniplus.selecao.documento_edital.nao_confirmado',
+      'uniplus.selecao.documento_a_publicar.nao_confirmado',
       'Documento não confirmado',
     );
     controller
@@ -627,7 +673,7 @@ describe('AnexoEditalComponent', () => {
 
     const recusa = problema(
       422,
-      'uniplus.selecao.documento_edital.nao_confirmado',
+      'uniplus.selecao.documento_a_publicar.nao_confirmado',
       'Documento não confirmado',
     );
     controller

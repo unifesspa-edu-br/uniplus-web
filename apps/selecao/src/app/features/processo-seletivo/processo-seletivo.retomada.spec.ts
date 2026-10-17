@@ -122,7 +122,7 @@ function documento(overrides: Partial<DocumentoAPublicarDto> = {}): DocumentoAPu
   return {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b030',
     processoSeletivoId: PROCESSO_ID,
-    nomeArquivo: 'edital.pdf',
+    nomeArquivo: 'edital-de-abertura.pdf',
     tipoDeMidia: 'application/pdf',
     status: 'Confirmado',
     criadoEm: '2026-08-20T12:00:00Z',
@@ -408,6 +408,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     const uploads = cenario.store.draft().identificacao.uploads;
     expect(uploads).toHaveLength(1);
     expect(uploads[0].documentoAPublicarId).toBe('019f41cf-69fd-759a-ac6d-09acabc1b030');
+    expect(uploads[0].name).toBe('edital-de-abertura.pdf');
     expect(cenario.store.documentosParaEscolha()).toHaveLength(0);
   });
 
