@@ -16,6 +16,8 @@ const MENSAGENS: Readonly<Record<string, string>> = {
   'uniplus.selecao.inscricao.oferta_fora_do_processo': 'Este curso não é oferecido neste processo.',
   'uniplus.selecao.inscricao.endereco_residencial_invalido':
     'O endereço não foi confirmado. Confira o CEP e a cidade.',
+  'uniplus.selecao.inscricao.nome_social_ausente_na_conta':
+    'Você marcou que deseja usar nome social, mas sua conta não tem nome social cadastrado. Cadastre o nome social em Meu perfil ou desmarque a opção.',
 };
 
 export function mensagemDaRecusa(codigo: string): string {

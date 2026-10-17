@@ -91,8 +91,11 @@ async function preencherDadosDoCandidato(page: Page): Promise<void> {
   const nome = campo(page, 'Nome completo');
   await expect(nome).toHaveValue(PERSONA.nome);
   await expect(nome).not.toBeEditable();
+  // O nome social também vem da conta: só a escolha de usá-lo é do candidato.
   await escolher(page, 'Deseja usar nome social', 'Sim');
-  await campo(page, 'Nome social').fill(PERSONA.nomeSocial);
+  const nomeSocial = campo(page, 'Nome social');
+  await expect(nomeSocial).toHaveValue(PERSONA.nomeSocial);
+  await expect(nomeSocial).not.toBeEditable();
   await escolher(page, 'Nacionalidade', 'Brasileiro nato');
   await expect(campo(page, 'CPF')).toHaveValue(PERSONA.cpfMascarado);
   await campo(page, 'Número do RG').fill(PERSONA.rg);
@@ -468,6 +471,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await abrirComprovanteNaLista(page, processo);
       await expect(comprovante(page)).toContainText('É o que vale');
       await expect(comprovante(page)).toContainText('horário de Belém (PA)');
+      await expect(comprovante(page)).toContainText('Uso do nome social');
       await expect(comprovante(page)).toContainText(PERSONA.nomeSocial);
       await expect(comprovante(page)).toContainText(PERSONA.nome);
       await expect(comprovante(page)).toContainText(PERSONA.cpfMascarado);

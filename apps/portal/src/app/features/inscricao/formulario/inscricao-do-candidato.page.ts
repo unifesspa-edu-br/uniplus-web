@@ -76,6 +76,11 @@ function confirmacaoDaGravacao(inscricao: InscricaoDto): string {
     : 'Inscrição enviada.';
 }
 
+/** Se o formulário coleta o fato. */
+function coletaO(formulario: FormularioRenderizavelDto, fato: string): boolean {
+  return formulario.fatosColetados.some((c) => c.fatoCodigo === fato);
+}
+
 const TITULO_DA_RECUSA = 'A inscrição não foi gravada';
 
 /**
@@ -167,38 +172,47 @@ export class InscricaoDoCandidatoPage implements OnInit {
   );
 
   /**
-   * O nome civil e o CPF vêm da conta e não se alteram aqui: entram na resposta do formulário que os
-   * coleta. Só o CPF aparece mascarado, e o titular o revela a partir do próprio login, sem consulta.
+   * O nome civil, o nome social e o CPF vêm da conta e não se alteram aqui: entram na resposta do
+   * formulário que os coleta. Quem muda o nome social é o titular, em Meu perfil; sem nome social na
+   * conta o campo fica vazio e travado, e a resposta vai como nula para não manter um nome gravado que
+   * a conta não tem. Só o CPF aparece mascarado, e o titular o revela a partir do próprio login.
    */
   protected readonly respostasFixas = computed<Readonly<Record<string, RespostaFixa>>>(() => {
     const cpf = this.usuario.user()?.cpf.replace(/\D/g, '') ?? '';
-    const coletaCpf = this.formulario()?.fatosColetados.some((c) => c.fatoCodigo === 'CPF');
+    const formulario = this.formulario();
+    const coleta = (fato: string): boolean => formulario !== null && coletaO(formulario, fato);
     const fixas: Record<string, RespostaFixa> = {};
     const nome = this.usuario.user()?.nomeCivil?.trim() ?? '';
-    const coletaNome = this.formulario()?.fatosColetados.some((c) => c.fatoCodigo === 'NOME');
-    if (coletaNome && nome !== '') fixas['NOME'] = { valor: nome, exibicao: nome };
-    if (coletaCpf && isValidCpf(cpf)) {
+    if (coleta('NOME') && nome !== '') fixas['NOME'] = { valor: nome, exibicao: nome };
+    if (coleta('NOME_SOCIAL')) {
+      const social = this.nomeSocialDaConta();
+      fixas['NOME_SOCIAL'] =
+        social === '' ? { valor: null, exibicao: '' } : { valor: social, exibicao: social };
+    }
+    if (coleta('CPF') && isValidCpf(cpf)) {
       fixas['CPF'] = { valor: cpf, exibicao: mascararCpf(cpf), revelavel: cpfRevelavel(cpf) };
     }
     return fixas;
   });
 
   /**
-   * O nome social da conta preenche, de início, os campos que o formulário coleta, mas continua
-   * editável. O que já está gravado prevalece, inclusive a desistência de usá-lo.
+   * A conta com nome social já abre o "deseja usar nome social?" como sim, mas a escolha continua do
+   * candidato: o que já está gravado prevalece, inclusive a desistência de usá-lo.
    */
   private respostasDoNomeSocial(
     gravadas: Readonly<Record<string, ValorJson>>,
     formulario: FormularioRenderizavelDto,
   ): Record<string, ValorJson> {
-    const social = this.usuario.user()?.nomeSocial?.trim() ?? '';
-    if (social === '' || 'NOME_SOCIAL' in gravadas || 'DESEJA_NOME_SOCIAL' in gravadas) return {};
-    const coleta = (fato: string): boolean =>
-      formulario.fatosColetados.some((c) => c.fatoCodigo === fato);
-    return {
-      ...(coleta('DESEJA_NOME_SOCIAL') ? { DESEJA_NOME_SOCIAL: true } : {}),
-      ...(coleta('NOME_SOCIAL') ? { NOME_SOCIAL: social } : {}),
-    };
+    const coletaDeseja = coletaO(formulario, 'DESEJA_NOME_SOCIAL');
+    if (this.nomeSocialDaConta() === '' || !coletaDeseja || 'DESEJA_NOME_SOCIAL' in gravadas) {
+      return {};
+    }
+    return { DESEJA_NOME_SOCIAL: true };
+  }
+
+  /** O nome social da conta, vazio quando ela não tem. */
+  private nomeSocialDaConta(): string {
+    return this.usuario.user()?.nomeSocial?.trim() ?? '';
   }
 
   /**
@@ -454,7 +468,9 @@ export class InscricaoDoCandidatoPage implements OnInit {
    * As respostas e as ocorrências como o servidor as mescla ao gravado. A resposta que o candidato
    * apagou vai como `null`: ausente do corpo, o servidor manteria a gravada. O grupo que o candidato
    * removeu vai como lista vazia, pelo mesmo motivo: ausente do corpo, o servidor manteria as
-   * ocorrências gravadas; enviado, ele as substitui.
+   * ocorrências gravadas; enviado, ele as substitui. O nome social da conta só vai quando o candidato
+   * escolhe usá-lo: com a recusa, a resposta vai nula, e a inscrição não guarda um nome que ele não
+   * quis usar.
    */
   private respostasDoCorpo(
     inscricao: InscricaoDto,
@@ -463,6 +479,9 @@ export class InscricaoDoCandidatoPage implements OnInit {
     const respostas: Record<string, unknown> = { ...(simulacao.respostas ?? {}) };
     for (const fato of Object.keys(inscricao.respostas)) {
       if (!(fato in respostas)) respostas[fato] = null;
+    }
+    if ('NOME_SOCIAL' in respostas && respostas['DESEJA_NOME_SOCIAL'] !== true) {
+      respostas['NOME_SOCIAL'] = null;
     }
     const grupos: Record<string, { id: string; respostas: Record<string, unknown> }[]> =
       Object.fromEntries(
