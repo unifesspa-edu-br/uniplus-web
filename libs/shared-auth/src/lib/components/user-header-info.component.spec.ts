@@ -23,6 +23,7 @@ describe('UserHeaderInfoComponent', () => {
   function setup(profile: UserProfile | null = profileData) {
     const logout = vi.fn();
     const login = vi.fn();
+    const atualizarPerfil = vi.fn();
 
     const authServiceMock = {
       userProfile: signal(profile).asReadonly(),
@@ -30,6 +31,7 @@ describe('UserHeaderInfoComponent', () => {
       hasRole: vi.fn((role: string) => profile?.roles.includes(role) ?? false),
       logout,
       login,
+      atualizarPerfil,
     } as unknown as AuthService;
 
     const userContextMock = {
@@ -60,7 +62,7 @@ describe('UserHeaderInfoComponent', () => {
     const fixture: ComponentFixture<UserHeaderInfoComponent> =
       TestBed.createComponent(UserHeaderInfoComponent);
     fixture.detectChanges();
-    return { fixture, logout, login };
+    return { fixture, logout, login, atualizarPerfil };
   }
 
   it('exibe apenas o primeiro nome social + avatar no chip (sem username/perfil)', () => {
@@ -227,6 +229,30 @@ describe('UserHeaderInfoComponent', () => {
       expect(dados?.textContent).not.toContain('-71');
       expect(dados?.textContent).toContain('Candidato');
       expect(dados?.textContent).not.toContain('offline_access');
+    });
+
+    it('oferece "Alterar nome social" quando a conta tem nome social e abre a atualização do perfil', () => {
+      const { fixture, http, atualizarPerfil } = abrirPerfil();
+      http.expectOne('http://api.test/api/profile/me').flush(resposta);
+      fixture.detectChanges();
+
+      const acao = fixture.nativeElement.querySelector(
+        '[data-testid="auth-profile-nome-social-acao"]',
+      ) as HTMLButtonElement;
+      expect(acao.textContent?.trim()).toBe('Alterar nome social');
+      acao.click();
+      expect(atualizarPerfil).toHaveBeenCalledTimes(1);
+    });
+
+    it('oferece "Cadastrar nome social" quando a conta não tem nome social', () => {
+      const { fixture, http } = abrirPerfil();
+      http.expectOne('http://api.test/api/profile/me').flush({ ...resposta, nomeSocial: null });
+      fixture.detectChanges();
+
+      const acao = fixture.nativeElement.querySelector(
+        '[data-testid="auth-profile-nome-social-acao"]',
+      );
+      expect(acao?.textContent?.trim()).toBe('Cadastrar nome social');
     });
 
     it('anuncia o carregamento, mas não lê os dados do perfil, com o CPF, sozinho', () => {

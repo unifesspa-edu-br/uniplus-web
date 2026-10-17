@@ -50,7 +50,10 @@ export class AuthService {
 
       const authenticated = await this.keycloak.init({
         onLoad: 'check-sso',
-        silentCheckSsoRedirectUri: new URL('assets/silent-check-sso.html', document.baseURI).toString(),
+        silentCheckSsoRedirectUri: new URL(
+          'assets/silent-check-sso.html',
+          document.baseURI,
+        ).toString(),
         checkLoginIframe: false,
       });
 
@@ -89,6 +92,16 @@ export class AuthService {
         ? { redirectUri: new URL(rotaDeVolta.replace(/^\//, ''), document.baseURI).href }
         : undefined,
     );
+  }
+
+  /**
+   * Abre a atualização de perfil do provedor (ação iniciada pela aplicação), onde o titular edita o
+   * que o realm permite, como o nome social. Ao concluir, o provedor devolve o usuário à página de
+   * origem e o `init` troca o código por tokens novos, de onde `loadProfile` repopula o usuário sem
+   * novo login.
+   */
+  async atualizarPerfil(): Promise<void> {
+    await this.keycloak?.login({ action: 'UPDATE_PROFILE' });
   }
 
   /**

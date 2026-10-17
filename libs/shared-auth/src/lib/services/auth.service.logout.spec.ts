@@ -36,8 +36,10 @@ describe('AuthService.login — volta à rota pedida, sob o mount point', () => 
       TestBed.configureTestingModule({});
       const service = TestBed.inject(AuthService);
       const loginSpy = vi.fn(async () => undefined);
-      vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
-        .mockReturnValue(stubKeycloak({ login: loginSpy }));
+      vi.spyOn(
+        service as unknown as { createKeycloak: () => Keycloak },
+        'createKeycloak',
+      ).mockReturnValue(stubKeycloak({ login: loginSpy }));
 
       await service.init(config);
       await service.login('/inscricao/processo-1');
@@ -48,6 +50,24 @@ describe('AuthService.login — volta à rota pedida, sob o mount point', () => 
     } finally {
       base.remove();
     }
+  });
+});
+
+describe('AuthService.atualizarPerfil — abre a atualização de perfil do provedor', () => {
+  it('pede a ação UPDATE_PROFILE e deixa o provedor voltar à página atual', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({});
+    const service = TestBed.inject(AuthService);
+    const loginSpy = vi.fn(async () => undefined);
+    vi.spyOn(
+      service as unknown as { createKeycloak: () => Keycloak },
+      'createKeycloak',
+    ).mockReturnValue(stubKeycloak({ login: loginSpy }));
+
+    await service.init(config);
+    await service.atualizarPerfil();
+
+    expect(loginSpy).toHaveBeenCalledWith({ action: 'UPDATE_PROFILE' });
   });
 });
 
@@ -62,8 +82,10 @@ describe('AuthService.logout — redireciona ao mount point (Story #447)', () =>
 
   it('redireciona pra document.baseURI (raiz) em standalone-compact/lab', async () => {
     const logoutSpy = vi.fn(async () => undefined);
-    vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
-      .mockReturnValue(stubKeycloak({ logout: logoutSpy }));
+    vi.spyOn(
+      service as unknown as { createKeycloak: () => Keycloak },
+      'createKeycloak',
+    ).mockReturnValue(stubKeycloak({ logout: logoutSpy }));
 
     await service.init(config);
     await service.logout();
@@ -79,8 +101,10 @@ describe('AuthService.logout — redireciona ao mount point (Story #447)', () =>
     document.head.appendChild(base);
     try {
       const logoutSpy = vi.fn(async () => undefined);
-      vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
-        .mockReturnValue(stubKeycloak({ logout: logoutSpy }));
+      vi.spyOn(
+        service as unknown as { createKeycloak: () => Keycloak },
+        'createKeycloak',
+      ).mockReturnValue(stubKeycloak({ logout: logoutSpy }));
 
       await service.init(config);
       await service.logout();
