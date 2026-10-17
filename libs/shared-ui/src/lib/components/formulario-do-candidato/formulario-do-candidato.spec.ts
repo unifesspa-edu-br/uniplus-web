@@ -83,7 +83,7 @@ const CEP_DE_MARABA: CepEncontrado = {
   latitude: null,
   longitude: null,
   nivelResolucao: 'logradouro',
-  origem: 'geo-api',
+  origem: 'logradouro',
 };
 const RESIDENCIA: FormularioDoCandidato = {
   ...ENDERECO,
@@ -1070,7 +1070,7 @@ describe('FormularioDoCandidatoComponent', () => {
       latitude: null,
       longitude: null,
       nivelResolucao: 'logradouro',
-      origem: 'geo-api',
+      origem: 'logradouro',
     });
   });
 
@@ -1104,42 +1104,6 @@ describe('FormularioDoCandidatoComponent', () => {
     );
   });
 
-  it('o CEP geral da cidade deixa logradouro e bairro vazios, editáveis e obrigatórios', () => {
-    resultadoDoCep = () =>
-      of({
-        ok: true,
-        data: {
-          ...CEP_DE_MARABA,
-          logradouro: null,
-          tipo: null,
-          bairro: null,
-          nivelResolucao: 'cidade',
-        },
-      });
-    const tela = montar(RESIDENCIA);
-
-    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
-    clicar(botao(tela, 'Buscar CEP'));
-
-    const logradouro = tela.querySelector('input[id$="-logradouro"]') as HTMLInputElement;
-    const bairro = tela.querySelector('input[id$="-bairro"]') as HTMLInputElement;
-    expect([logradouro.value, bairro.value]).toEqual(['', '']);
-    expect([logradouro.readOnly, bairro.readOnly]).toEqual([false, false]);
-    expect([
-      logradouro.getAttribute('aria-required'),
-      bairro.getAttribute('aria-required'),
-    ]).toEqual(['true', 'true']);
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
-
-    digitar(logradouro, 'Rua do Centro');
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
-    digitar(bairro, 'Centro');
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
-      logradouro: 'Rua do Centro',
-      bairro: 'Centro',
-    });
-  });
-
   const buscarCepComOrigem = (origem: string): HTMLElement => {
     resultadoDoCep = () =>
       of({
@@ -1158,6 +1122,54 @@ describe('FormularioDoCandidatoComponent', () => {
     clicar(botao(tela, 'Buscar CEP'));
     return tela;
   };
+
+  it('o CEP de grande usuário não exige bairro nem logradouro, mesmo no nível da cidade', () => {
+    resultadoDoCep = () =>
+      of({
+        ok: true,
+        data: {
+          ...CEP_DE_MARABA,
+          logradouro: null,
+          tipo: null,
+          bairro: null,
+          nivelResolucao: 'cidade',
+          origem: 'grande-usuario',
+        },
+      });
+    const tela = montar(RESIDENCIA);
+
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
+    clicar(botao(tela, 'Buscar CEP'));
+
+    const bairro = tela.querySelector('input[id$="-bairro"]') as HTMLInputElement;
+    expect(bairro.getAttribute('aria-required')).toBeNull();
+    expect(bairro.readOnly).toBe(false);
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
+      cep: '68507590',
+      origem: 'grande-usuario',
+    });
+  });
+
+  it('a origem desconhecida do Geo exige a confirmação do CEP, como a faixa', () => {
+    const tela = buscarCepComOrigem('origem-nova');
+
+    expect(tela.querySelector('[id$="-cep-faixa"]')).not.toBeNull();
+    expect(tela.querySelector('[id$="-cep-confirmacao"]')?.getAttribute('role')).toBe('alert');
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+  });
+
+  it('o aviso do CEP geral descreve o campo CEP para o leitor de tela', () => {
+    resultadoDoCep = () =>
+      of({ ok: true, data: { ...CEP_DE_MARABA, bairro: null, origem: 'cep-geral' } });
+    const tela = montar(RESIDENCIA);
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
+    clicar(botao(tela, 'Buscar CEP'));
+
+    const aviso = tela.querySelector('[id$="-cep-geral"]') as HTMLElement;
+    expect(
+      tela.querySelector('input[id$="-cep"]')?.getAttribute('aria-describedby'),
+    ).toContain(aviso.id);
+  });
 
   it('o CEP geral oficial mostra de qual cidade é e exige logradouro e bairro', () => {
     resultadoDoCep = () =>
@@ -1263,7 +1275,7 @@ describe('FormularioDoCandidatoComponent', () => {
           logradouro: 'Rua Folha 31',
           cidade: MARABA,
           nivelResolucao: 'logradouro',
-          origem: 'geo-api',
+          origem: 'logradouro',
         },
       },
     });

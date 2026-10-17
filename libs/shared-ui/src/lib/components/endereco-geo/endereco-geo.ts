@@ -39,9 +39,9 @@ import {
 
 const URL_BUSCA_DE_CEP_DOS_CORREIOS = 'https://buscacepinter.correios.com.br';
 const LIMITE_DO_COMPLEMENTO = 300;
-/** Origens do Geo: o CEP cai numa faixa (`faixa-cidade`, `faixa-bairro`, `faixa-distrito`) ou é o CEP geral. */
-const PREFIXO_ORIGEM_FAIXA = 'faixa-';
+/** Origens do Geo aceitas sem confirmação; as demais (`faixa-cidade`, `faixa-bairro`, `faixa-distrito`...) a exigem. */
 const ORIGEM_CEP_GERAL = 'cep-geral';
+const ORIGENS_SEM_CONFIRMACAO: readonly string[] = ['logradouro', 'grande-usuario', ORIGEM_CEP_GERAL];
 /** Sentinela do erro de CEP inexistente quando o endereço exige CEP (mensagem com link). */
 const CEP_SEM_REGISTRO = 'CEP_SEM_REGISTRO';
 
@@ -138,7 +138,7 @@ interface EnderecoFormControls {
               [readonly]="(ehAncorado('cep') && !editandoCep()) || resolvendoCep()"
               [attr.aria-readonly]="(ehAncorado('cep') && !editandoCep()) || resolvendoCep() ? 'true' : null"
               [attr.aria-invalid]="cepErro() !== null ? 'true' : null"
-              [attr.aria-describedby]="cepErro() !== null ? id('cep') + '-hint ' + id('cep') + '-error' : id('cep') + '-hint'"
+              [attr.aria-describedby]="descricaoDoCep()"
               (blur)="aoSairDoCep()"
             />
             @if (ehAncorado('cep') && !editandoCep()) {
@@ -483,16 +483,29 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   /** CEP geral da cidade em endereço que exige CEP: o DNE não traz logradouro nem bairro. */
   protected readonly logradouroBairroObrigatorios = computed(
     () =>
-      this.exigeCep() &&
-      (this.cepGeral() || (this.cepEmFaixa() ? this.cepConfirmado() : this.nivel() === 'cidade')),
+      this.exigeCep() && (this.cepGeral() || (this.cepEmFaixa() && this.cepConfirmado())),
   );
-  /** O CEP resolvido só cai numa faixa (cidade, bairro ou distrito), sem rua cadastrada. */
-  protected readonly cepEmFaixa = computed(
-    () => this.exigeCep() && (this.origem() ?? '').startsWith(PREFIXO_ORIGEM_FAIXA),
-  );
+  /**
+   * O CEP resolvido não tem rua cadastrada: qualquer origem do Geo fora das aceitas sem
+   * confirmação (`faixa-*` ou uma origem desconhecida) pede a confirmação do candidato.
+   */
+  protected readonly cepEmFaixa = computed(() => {
+    const origem = this.origem();
+    return this.exigeCep() && origem !== null && !ORIGENS_SEM_CONFIRMACAO.includes(origem);
+  });
   /** O CEP geral oficial de uma cidade ou distrito. */
   protected readonly cepGeral = computed(
     () => this.exigeCep() && this.origem() === ORIGEM_CEP_GERAL,
+  );
+  /** Ids que descrevem o CEP: a ajuda, o aviso do CEP geral e o erro. */
+  protected readonly descricaoDoCep = computed(() =>
+    [
+      this.id('cep') + '-hint',
+      this.cepGeral() ? this.id('cep') + '-geral' : null,
+      this.cepErro() !== null ? this.id('cep') + '-error' : null,
+    ]
+      .filter((id) => id !== null)
+      .join(' '),
   );
   /** O candidato confirmou que usa o CEP de faixa no endereço (`cepConfirmado` na resposta). */
   protected readonly cepConfirmado = signal(false);
@@ -512,7 +525,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   protected readonly mostrarDetalheEndereco = computed(
     () => this.nivel() !== null && !this.cepDeFaixaSemConfirmacao(),
   );
-  /** Proveniência do endereço (`geo-api` quando do CEP, `manual` sem CEP). */
+  /** Origem do CEP segundo o Geo (`logradouro`, `grande-usuario`, `cep-geral`, `faixa-*`), ou `manual` sem CEP. */
   private readonly origem = signal<string | null>(null);
   /**
    * Conjunto de campos ancorados (read-only) pelo `nivelResolucao` corrente.
