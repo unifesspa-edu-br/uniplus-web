@@ -358,6 +358,7 @@ export class FileUploadComponent {
   }
 
   protected repetir(id: string): void {
+    this.errors.set([]);
     this.tentarDeNovo.emit(id);
     this.focarZona();
   }
