@@ -47,9 +47,11 @@ const PASSO_ANUNCIADO = 25;
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="uni-uploader">
+    <!-- O contêiner engole dragover e drop mesmo com a zona desabilitada: um botão desabilitado
+         não recebe esses eventos e o navegador abriria o arquivo solto. -->
+    <div class="uni-uploader" (dragover)="$event.preventDefault()" (drop)="$event.preventDefault()">
       @if (fieldLabel()) {
-        <label [attr.for]="inputId" class="field__label">{{ fieldLabel() }}</label>
+        <label [id]="labelId" [attr.for]="inputId" class="field__label">{{ fieldLabel() }}</label>
       }
       <button
         #dropZone
@@ -58,7 +60,7 @@ const PASSO_ANUNCIADO = 25;
         [class.is-dragging]="isDragging()"
         [disabled]="disabled()"
         [attr.aria-disabled]="disabled() ? 'true' : null"
-        [attr.aria-label]="dropZoneAccessibleName()"
+        [attr.aria-labelledby]="fieldLabel() ? labelId + ' ' + dropTextId : null"
         [attr.aria-describedby]="describedBy()"
         (click)="openFilePicker()"
         (dragover)="$event.preventDefault(); onDragOver()"
@@ -66,8 +68,10 @@ const PASSO_ANUNCIADO = 25;
         (drop)="$event.preventDefault(); onDrop($event.dataTransfer?.files)"
       >
         <span class="uni-uploader__icon" aria-hidden="true">↑</span>
-        <p class="uni-uploader__title">{{ dropTitle() }}</p>
-        <p class="uni-uploader__hint">{{ dropHint() }}</p>
+        <span [id]="dropTextId" class="uni-uploader__text">
+          <span class="uni-uploader__title">{{ dropTitle() }}</span>
+          <span class="uni-uploader__hint">{{ dropHint() }}</span>
+        </span>
       </button>
       <input
         #fileInput
@@ -100,7 +104,7 @@ const PASSO_ANUNCIADO = 25;
           </div>
         }
       } @else if (lista.length > 0) {
-        <ul class="uni-uploader__list" [attr.aria-label]="listaAccessibleName()">
+        <ul class="uni-uploader__list" aria-label="Arquivos">
           @for (arquivo of lista; track arquivo.id) {
             <li
               class="uni-uploader__item"
@@ -124,9 +128,13 @@ const PASSO_ANUNCIADO = 25;
                   <div [style.width.%]="arquivo.progresso"></div>
                 </div>
                 <div class="uni-uploader__item-meta" aria-hidden="true">{{ textoDaFase(arquivo) }}</div>
-                <div class="sr-only" role="status" aria-live="polite">{{ anuncioDaFase(arquivo) }}</div>
-                @if (arquivo.fase === 'erro' && arquivo.mensagem) {
-                  <small class="field__error" role="alert">{{ arquivo.mensagem }}</small>
+                @if (arquivo.fase === 'erro') {
+                  <small class="field__error" role="alert"
+                    ><span class="sr-only">{{ arquivo.nome }}: </span
+                    >{{ arquivo.mensagem || 'O envio não foi concluído.' }}</small
+                  >
+                } @else {
+                  <div class="sr-only" role="status" aria-live="polite">{{ anuncioDaFase(arquivo) }}</div>
                 }
               </div>
               <div class="uni-uploader__item-actions">
@@ -157,7 +165,7 @@ const PASSO_ANUNCIADO = 25;
       }
       @for (message of messages(); track $index) {
         <small
-          [id]="$index === 0 ? errorId : null"
+          [attr.id]="$index === 0 ? errorId : null"
           class="field__error"
           role="alert"
         >{{ message }}</small>
@@ -178,6 +186,8 @@ export class FileUploadComponent {
     return this.idDoCampo() ?? `${this.instanceId}-input`;
   }
   readonly errorId = `${this.instanceId}-error`;
+  protected readonly labelId = `${this.instanceId}-label`;
+  protected readonly dropTextId = `${this.instanceId}-drop`;
 
   readonly fieldLabel = input<string>('');
   readonly acceptedFileTypes = input<string>('.pdf,.jpg,.jpeg,.png');
@@ -195,10 +205,11 @@ export class FileUploadComponent {
   /** Teto de arquivos na lista, contando os já presentes; sem valor, não há teto. */
   readonly maxFiles = input<number | null>(null);
   /**
-   * Alguns sistemas não informam o tipo MIME de formatos como ODT. Com isto, tipo vazio passa pela
-   * extensão; tipo informado continua tendo de estar em `allowedMimeTypes`.
+   * Sistemas diferentes informam tipos MIME diferentes para o mesmo DOCX ou ODT (vazio, `zip`,
+   * `octet-stream`). Com isto a extensão decide e `allowedMimeTypes` não é consultado; o conteúdo
+   * é conferido pelo servidor.
    */
-  readonly mimeOpcional = input(false);
+  readonly validarSoPelaExtensao = input(false);
   readonly disabled = input(false);
   /** Ids de elementos que descrevem o campo, lidos junto do nome pelo leitor de tela. */
   readonly descritoPor = input<string | null>(null);
@@ -225,10 +236,6 @@ export class FileUploadComponent {
   readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
   private readonly dropZone = viewChild.required<ElementRef<HTMLButtonElement>>('dropZone');
 
-  readonly dropZoneAccessibleName = computed(() => {
-    const alvo = this.multiple() ? 'arquivos' : 'arquivo';
-    return `Área de upload de ${alvo}. ${this.acceptLabel()}. Tamanho máximo ${this.maxSizeMb()}MB.`;
-  });
   readonly dropTitle = computed(() =>
     this.multiple()
       ? 'Arraste arquivos aqui ou selecione do computador'
@@ -239,7 +246,6 @@ export class FileUploadComponent {
     const quantidade = this.multiple() && limite !== null ? ` - até ${limite} arquivos` : '';
     return `${this.acceptLabel()} - tamanho máximo: ${this.maxSizeMb()}MB${quantidade}`;
   });
-  readonly listaAccessibleName = computed(() => 'Arquivos enviados');
   readonly describedBy = computed(() => {
     const ids = [this.descritoPor(), this.messages().length > 0 ? this.errorId : null].filter(
       (id): id is string => !!id,
@@ -265,6 +271,7 @@ export class FileUploadComponent {
   );
 
   onDragOver(): void {
+    if (this.disabled()) return;
     this.isDragging.set(true);
   }
 
@@ -297,6 +304,7 @@ export class FileUploadComponent {
   }
 
   protected retirar(id: string): void {
+    this.errors.set([]);
     this.itemRetirado.emit(id);
     this.focarZona();
   }
@@ -346,6 +354,10 @@ export class FileUploadComponent {
     if (files.length === 0) return;
 
     if (this.itens() === null || !this.multiple()) {
+      if (files.length > 1) {
+        this.errors.set(['Envie um arquivo por vez.']);
+        return;
+      }
       this.handleSingle(files[0]);
       return;
     }
@@ -394,7 +406,7 @@ export class FileUploadComponent {
   }
 
   private isMimeAllowed(file: File): boolean {
-    if (file.type === '' && this.mimeOpcional()) return true;
+    if (this.validarSoPelaExtensao()) return true;
     return this.normalizedMimeTypes().includes(file.type.toLowerCase());
   }
 
