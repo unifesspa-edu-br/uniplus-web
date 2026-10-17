@@ -50,11 +50,19 @@ import {
   rotuloDe,
 } from './fato-candidato.regras';
 
+type AcaoComChave = 'descritivo' | 'valor' | 'regras' | 'reativacao' | 'correcao' | 'ordem';
+
 /** Uma regra padrão em edição: o valor que contribui (nulo no booleano) e o predicado na forma do editor. */
 interface RegraEmEdicao {
   readonly contribui: string | null;
   readonly condicoes: readonly CondicaoEmClausula[];
 }
+
+/** Os `code` que a API emite quando a escrita perde para outra: o global e o do fato do catálogo. */
+const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
+  'uniplus.concorrencia.conflito',
+  'uniplus.configuracao.fato_candidato.conflito_de_concorrencia',
+];
 
 /**
  * A edição de um fato do catálogo: nome e descrição sempre; os valores de domínio e as regras
@@ -163,7 +171,7 @@ interface RegraEmEdicao {
                           <form class="cfg-fato-valor-edicao" [formGroup]="edicaoDoValor" [id]="idDoValor(valor.codigo, 'form')" (ngSubmit)="salvarEdicaoDoValor(valor.codigo)" novalidate>
                             <label class="field" [class.is-error]="erroEdicao('descricao')">
                               <span class="field__label" [class.is-required]="f.origem === 'DECLARADO'">Descrição<span class="sr-only"> do valor {{ valor.codigo }}</span></span>
-                              <input class="input" type="text" formControlName="descricao" [attr.aria-invalid]="erroEdicao('descricao') ? 'true' : null" [attr.aria-describedby]="erroEdicao('descricao') ? idDoValor(valor.codigo, 'aviso') + ' ' + idDoValor(valor.codigo, 'descricao-erro') : idDoValor(valor.codigo, 'aviso')" />
+                              <input class="input" type="text" formControlName="descricao" [id]="idDoValor(valor.codigo, 'descricao')" [attr.aria-invalid]="erroEdicao('descricao') ? 'true' : null" [attr.aria-describedby]="erroEdicao('descricao') ? idDoValor(valor.codigo, 'aviso') + ' ' + idDoValor(valor.codigo, 'descricao-erro') : idDoValor(valor.codigo, 'aviso')" />
                               @if (erroEdicao('descricao')) {
                                 <span class="field__error" [id]="idDoValor(valor.codigo, 'descricao-erro')">{{ erroEdicao('descricao') }}</span>
                               }
@@ -193,29 +201,29 @@ interface RegraEmEdicao {
                       <td class="table-responsive__actions" data-label="Ações">
                         @if (temValores() && !somenteLeitura()) {
                           @if (editando() === valor.codigo) {
-                            <button type="submit" class="btn btn--primary btn--sm" [attr.form]="idDoValor(valor.codigo, 'form')" [disabled]="ocupado()">
+                            <button type="submit" class="btn btn--primary btn--sm" [attr.form]="idDoValor(valor.codigo, 'form')" [disabled]="bloqueado()">
                               Salvar<span class="sr-only"> a correção do valor {{ valor.codigo }}</span>
                             </button>
                             <button type="button" class="btn btn--tertiary btn--sm" [disabled]="ocupado()" (click)="cancelarEdicaoDoValor(valor.codigo)">
                               Cancelar<span class="sr-only"> a correção do valor {{ valor.codigo }}</span>
                             </button>
                           } @else {
-                            <button type="button" class="btn btn--tertiary btn--sm" [id]="idDoValor(valor.codigo, 'editar')" [disabled]="ocupado()" (click)="editarValor(valor.codigo)">
+                            <button type="button" class="btn btn--tertiary btn--sm" [id]="idDoValor(valor.codigo, 'editar')" [disabled]="bloqueado() || editando() !== null" (click)="editarValor(valor.codigo)">
                               Editar<span class="sr-only"> o valor {{ valor.codigo }}</span>
                             </button>
                           }
-                          <button type="button" class="btn btn--tertiary btn--sm" [id]="idDoValor(valor.codigo, 'subir')" [disabled]="ocupado() || $first" (click)="moverValor(valor.codigo, -1)">
+                          <button type="button" class="btn btn--tertiary btn--sm" [id]="idDoValor(valor.codigo, 'subir')" [disabled]="bloqueado() || editando() !== null || $first" (click)="moverValor(valor.codigo, -1)">
                             Subir<span class="sr-only"> o valor {{ valor.codigo }}</span>
                           </button>
-                          <button type="button" class="btn btn--tertiary btn--sm" [id]="idDoValor(valor.codigo, 'descer')" [disabled]="ocupado() || $last" (click)="moverValor(valor.codigo, 1)">
+                          <button type="button" class="btn btn--tertiary btn--sm" [id]="idDoValor(valor.codigo, 'descer')" [disabled]="bloqueado() || editando() !== null || $last" (click)="moverValor(valor.codigo, 1)">
                             Descer<span class="sr-only"> o valor {{ valor.codigo }}</span>
                           </button>
                           @if (valor.ativo) {
-                            <button type="button" class="btn btn--tertiary btn--sm" [id]="idDaAcaoDoValor(valor.codigo)" [disabled]="ocupado()" (click)="desativarValor(valor.codigo)">
+                            <button type="button" class="btn btn--tertiary btn--sm" [id]="idDaAcaoDoValor(valor.codigo)" [disabled]="bloqueado() || editando() !== null" (click)="desativarValor(valor.codigo)">
                               Desativar<span class="sr-only"> o valor {{ valor.codigo }}</span>
                             </button>
                           } @else {
-                            <button type="button" class="btn btn--tertiary btn--sm" [id]="idDaAcaoDoValor(valor.codigo)" [disabled]="ocupado()" (click)="reativarValor(valor.codigo)">
+                            <button type="button" class="btn btn--tertiary btn--sm" [id]="idDaAcaoDoValor(valor.codigo)" [disabled]="bloqueado() || editando() !== null" (click)="reativarValor(valor.codigo)">
                               Reativar<span class="sr-only"> o valor {{ valor.codigo }}</span>
                             </button>
                           }
@@ -257,7 +265,7 @@ interface RegraEmEdicao {
               </label>
             </div>
             <div class="cfg-form-actions">
-              <button type="submit" class="btn btn--secondary btn--sm" [disabled]="ocupado()">Acrescentar valor</button>
+              <button type="submit" class="btn btn--secondary btn--sm" [disabled]="bloqueado()">Acrescentar valor</button>
             </div>
           </form>
           }
@@ -424,6 +432,12 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected readonly ocupado = signal(false);
+  /**
+   * Uma escrita deu certo e o fato recarregado ainda não chegou: a lista na tela é a antiga, e
+   * reordenar ou corrigir a partir dela reenviaria a ordem velha.
+   */
+  private readonly aguardandoRecarga = signal(false);
+  protected readonly bloqueado = computed(() => this.ocupado() || this.aguardandoRecarga());
   protected readonly erro = signal<string | null>(null);
   protected readonly regras = signal<readonly RegraEmEdicao[]>([]);
   protected readonly errosDasRegras = signal<Readonly<Record<number, string>>>({});
@@ -432,12 +446,35 @@ export class FatoCandidatoEdicaoComponent {
   /** O problema de cada condição, por regra, para o editor marcar a condição certa. */
   protected readonly errosDasCondicoes = signal<Readonly<Partial<Record<number, Readonly<Record<number, string>>>>>>({});
 
-  private chaveDescritivo = idempotencyKey.create();
-  private chaveValor = idempotencyKey.create();
-  private chaveRegras = idempotencyKey.create();
-  private chaveReativacaoDeValor = idempotencyKey.create();
-  private chaveCorrecaoDeValor = idempotencyKey.create();
-  private chaveOrdemDosValores = idempotencyKey.create();
+  /** Uma Idempotency-Key por ação; a de correção e a de ordem ainda variam com a intenção (alvo e corpo). */
+  private readonly chaves: Record<AcaoComChave, string> = {
+    descritivo: idempotencyKey.create(),
+    valor: idempotencyKey.create(),
+    regras: idempotencyKey.create(),
+    reativacao: idempotencyKey.create(),
+    correcao: idempotencyKey.create(),
+    ordem: idempotencyKey.create(),
+  };
+  private readonly intencoes: Partial<Record<AcaoComChave, string>> = {};
+
+  /**
+   * A chave da ação para esta intenção: a repetição exata da tentativa (erro de rede, 5xx) reusa a
+   * chave; outro alvo ou outro corpo ganha chave nova, senão a API devolveria a resposta guardada
+   * da tentativa anterior ou body_mismatch.
+   */
+  private chaveDe(acao: AcaoComChave, intencao = ''): string {
+    if (this.intencoes[acao] !== intencao) {
+      this.chaves[acao] = idempotencyKey.create();
+      this.intencoes[acao] = intencao;
+    }
+    return this.chaves[acao];
+  }
+
+  private rotacionar(acao: AcaoComChave): void {
+    this.chaves[acao] = idempotencyKey.create();
+    delete this.intencoes[acao];
+  }
+
   /**
    * O botão que recebe o foco quando o fato recarregado chegar: desativar ou reativar um valor
    * troca o botão da linha, e o foco iria para o corpo da página.
@@ -476,9 +513,16 @@ export class FatoCandidatoEdicaoComponent {
   constructor() {
     effect(() => {
       const fato = this.fato();
+      // A recarga falhou: não há lista nova a esperar.
+      if (this.recurso.problem() !== null || this.recurso.error() !== undefined) untracked(() => this.aguardandoRecarga.set(false));
       if (fato === null) return;
       untracked(() => {
+        this.aguardandoRecarga.set(false);
         const outroFato = this.secoesCopiadasDe !== fato.id;
+        if (outroFato) {
+          this.editando.set(null);
+          this.edicaoDoValor.reset();
+        }
         if (outroFato || this.recopiarDescritivo) {
           this.descritivo.reset({ nome: fato.nome, descricao: fato.descricao ?? '' });
         }
@@ -505,10 +549,10 @@ export class FatoCandidatoEdicaoComponent {
     }
     const { nome, descricao } = this.descritivo.getRawValue();
     this.executar(
-      this.api.atualizarDescritivo(this.id(), { nome: nome.trim(), descricao: descricao.trim() || null }, withIdempotencyKey(this.chaveDescritivo)),
+      this.api.atualizarDescritivo(this.id(), { nome: nome.trim(), descricao: descricao.trim() || null }, withIdempotencyKey(this.chaveDe('descritivo'))),
       'Nome e descrição salvos',
       () => {
-        this.chaveDescritivo = idempotencyKey.create();
+        this.rotacionar('descritivo');
         this.recopiarDescritivo = true;
       },
       (problem) => this.aplicarErrosNoFormulario(this.descritivo, problem),
@@ -516,13 +560,10 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected acrescentarValor(): void {
-    if (this.somenteLeitura()) return;
+    // A ordem sai do total de valores: com o fato recarregado ainda a caminho, o total está velho.
+    if (this.somenteLeitura() || this.bloqueado()) return;
     // A descrição do valor é obrigatória no fato declarado: é o nome da opção que o candidato lê.
-    const controleDaDescricao = this.novoValor.controls.descricao;
-    if (this.fato()?.origem === 'DECLARADO' && controleDaDescricao.value.trim() === '') {
-      controleDaDescricao.setErrors({ required: true });
-      controleDaDescricao.markAsTouched();
-    }
+    this.exigirDescricaoDoDeclarado(this.novoValor.controls.descricao);
     if (this.novoValor.invalid) {
       this.novoValor.markAllAsTouched();
       return;
@@ -538,19 +579,27 @@ export class FatoCandidatoEdicaoComponent {
           ordem,
           orientacao: orientacao.trim() || null,
         },
-        withIdempotencyKey(this.chaveValor),
+        withIdempotencyKey(this.chaveDe('valor')),
       ),
       'Valor acrescentado',
       () => {
-        this.chaveValor = idempotencyKey.create();
+        this.rotacionar('valor');
         this.novoValor.reset();
       },
       (problem) => this.aplicarErrosNoFormulario(this.novoValor, problem),
     );
   }
 
+  /** Descrição só com espaços não é descrição: no fato declarado vale como vazia. */
+  private exigirDescricaoDoDeclarado(controle: FormControl<string>): void {
+    if (this.fato()?.origem === 'DECLARADO' && controle.value.trim() === '') {
+      controle.setErrors({ required: true });
+      controle.markAsTouched();
+    }
+  }
+
   protected desativarValor(codigo: string): void {
-    if (this.somenteLeitura()) return;
+    if (this.somenteLeitura() || this.bloqueado() || this.editando() !== null) return;
     this.executar(this.api.desativarValor(this.id(), codigo), `Valor ${codigo} desativado`, () => {
       this.focoAposRecarga = this.idDaAcaoDoValor(codigo);
     });
@@ -558,12 +607,12 @@ export class FatoCandidatoEdicaoComponent {
 
   /** Reativa um valor desativado: condições novas voltam a poder citá-lo. */
   protected reativarValor(codigo: string): void {
-    if (this.somenteLeitura()) return;
+    if (this.somenteLeitura() || this.bloqueado() || this.editando() !== null) return;
     this.executar(
-      this.api.reativarValor(this.id(), codigo, withIdempotencyKey(this.chaveReativacaoDeValor)),
+      this.api.reativarValor(this.id(), codigo, withIdempotencyKey(this.chaveDe('reativacao', codigo))),
       `Valor ${codigo} reativado`,
       () => {
-        this.chaveReativacaoDeValor = idempotencyKey.create();
+        this.rotacionar('reativacao');
         this.focoAposRecarga = this.idDaAcaoDoValor(codigo);
       },
     );
@@ -571,40 +620,35 @@ export class FatoCandidatoEdicaoComponent {
 
   protected editarValor(codigo: string): void {
     const valor = this.fato()?.valores.find((item) => item.codigo === codigo);
-    if (this.somenteLeitura() || valor === undefined) return;
-    const { descricao } = this.edicaoDoValor.controls;
-    // No fato declarado a descrição é o nome da opção que o candidato lê.
-    descricao.setValidators(
-      this.fato()?.origem === 'DECLARADO' ? [Validators.required, Validators.maxLength(500)] : [Validators.maxLength(500)],
-    );
+    if (this.somenteLeitura() || valor === undefined || this.bloqueado() || this.editando() !== null) return;
     this.edicaoDoValor.reset({ descricao: valor.descricao ?? '', orientacao: valor.orientacao ?? '' });
     this.erro.set(null);
     this.editando.set(codigo);
+    // O botão Editar sai do DOM: o foco vai para o campo, senão cairia no corpo da página.
+    afterNextRender(() => document.getElementById(this.idDoValor(codigo, 'descricao'))?.focus(), { injector: this.injector });
   }
 
   protected cancelarEdicaoDoValor(codigo: string): void {
     this.editando.set(null);
+    this.erro.set(null);
     this.focoAposRecarga = this.idDoValor(codigo, 'editar');
     this.focarAposRecarga();
   }
 
   protected salvarEdicaoDoValor(codigo: string): void {
-    if (this.somenteLeitura()) return;
+    if (this.somenteLeitura() || this.bloqueado()) return;
+    this.exigirDescricaoDoDeclarado(this.edicaoDoValor.controls.descricao);
     if (this.edicaoDoValor.invalid) {
       this.edicaoDoValor.markAllAsTouched();
       return;
     }
     const { descricao, orientacao } = this.edicaoDoValor.getRawValue();
+    const corpo = { descricao: descricao.trim() || null, orientacao: orientacao.trim() || null };
     this.executar(
-      this.api.corrigirValor(
-        this.id(),
-        codigo,
-        { descricao: descricao.trim() || null, orientacao: orientacao.trim() || null },
-        withIdempotencyKey(this.chaveCorrecaoDeValor),
-      ),
+      this.api.corrigirValor(this.id(), codigo, corpo, withIdempotencyKey(this.chaveDe('correcao', JSON.stringify([codigo, corpo])))),
       `Valor ${codigo} corrigido`,
       () => {
-        this.chaveCorrecaoDeValor = idempotencyKey.create();
+        this.rotacionar('correcao');
         this.editando.set(null);
         this.focoAposRecarga = this.idDoValor(codigo, 'editar');
       },
@@ -617,7 +661,7 @@ export class FatoCandidatoEdicaoComponent {
    * desativados inclusive, porque a ordem é do fato e não só do que aparece para o candidato.
    */
   protected moverValor(codigo: string, sentido: -1 | 1): void {
-    if (this.somenteLeitura()) return;
+    if (this.somenteLeitura() || this.bloqueado() || this.editando() !== null) return;
     const codigos = (this.fato()?.valores ?? []).map((valor) => valor.codigo);
     const de = codigos.indexOf(codigo);
     const para = de + sentido;
@@ -627,20 +671,30 @@ export class FatoCandidatoEdicaoComponent {
     const ponta = para === 0 || para === codigos.length - 1;
     const botao = ponta ? (sentido === -1 ? 'descer' : 'subir') : sentido === -1 ? 'subir' : 'descer';
     this.executar(
-      this.api.reordenarValores(this.id(), { codigos }, withIdempotencyKey(this.chaveOrdemDosValores)),
+      this.api.reordenarValores(this.id(), { codigos }, withIdempotencyKey(this.chaveDe('ordem', codigos.join(',')))),
       `Valor ${codigo} movido`,
       () => {
-        this.chaveOrdemDosValores = idempotencyKey.create();
+        this.rotacionar('ordem');
         this.focoAposRecarga = this.idDoValor(codigo, botao);
       },
       (problem) => this.avisarConflito(problem),
     );
   }
 
-  /** A escrita perdeu para outra: a tela mostra o fato antigo, e só recarregar o corrige. */
+  /**
+   * A escrita perdeu para outra: recarrega o fato e fecha a edição em linha, para refazer a
+   * alteração sobre a versão atual. Só os códigos de concorrência valem: qualquer outro 409
+   * (idempotência em curso, código repetido) segue com a mensagem da API e mantém a edição aberta.
+   */
   private avisarConflito(problem: ProblemDetails): boolean {
-    if (problem.status !== 409) return false;
-    this.erro.set('Outra pessoa alterou este fato enquanto você editava. Feche e abra o fato de novo para ver a versão atual e refaça a alteração.');
+    if (problem.status !== 409 || !CODIGOS_DE_CONCORRENCIA.includes(problem.code)) return false;
+    // Fechar a edição tira do DOM o botão que tinha o foco: ele volta ao Editar da mesma linha.
+    const emEdicao = this.editando();
+    if (emEdicao !== null) this.focoAposRecarga = this.idDoValor(emEdicao, 'editar');
+    this.editando.set(null);
+    this.aguardandoRecarga.set(true);
+    this.recurso.reload();
+    this.erro.set('Outra pessoa alterou este fato enquanto você editava. A versão atual foi carregada: refaça a alteração.');
     return true;
   }
 
@@ -649,7 +703,7 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected idDaAcaoDoValor(codigo: string): string {
-    return `cfg-fato-valor-${codigo}-acao`;
+    return this.idDoValor(codigo, 'acao');
   }
 
   private focarAposRecarga(): void {
@@ -731,10 +785,10 @@ export class FatoCandidatoEdicaoComponent {
       quando: paraClausulasDoWire(regra.condicoes),
     }));
     this.executar(
-      this.api.definirRegrasPadrao(this.id(), { regras }, withIdempotencyKey(this.chaveRegras)),
+      this.api.definirRegrasPadrao(this.id(), { regras }, withIdempotencyKey(this.chaveDe('regras'))),
       'Regras padrão salvas',
       () => {
-        this.chaveRegras = idempotencyKey.create();
+        this.rotacionar('regras');
         this.recopiarRegras = true;
       },
       (problem) => this.aplicarErrosDasRegras(problem),
@@ -773,6 +827,7 @@ export class FatoCandidatoEdicaoComponent {
     escrita.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((resultado: ApiResult<void>) => {
       this.ocupado.set(false);
       if (resultado.ok) {
+        this.aguardandoRecarga.set(true);
         aoSalvar();
         this.notifications.success(mensagemDeSucesso);
         this.recurso.reload();
@@ -780,12 +835,7 @@ export class FatoCandidatoEdicaoComponent {
         return;
       }
       if (deveRotacionarIdempotencyKey(resultado.problem)) {
-        this.chaveDescritivo = idempotencyKey.create();
-        this.chaveValor = idempotencyKey.create();
-        this.chaveRegras = idempotencyKey.create();
-        this.chaveReativacaoDeValor = idempotencyKey.create();
-        this.chaveCorrecaoDeValor = idempotencyKey.create();
-        this.chaveOrdemDosValores = idempotencyKey.create();
+        for (const acao of Object.keys(this.chaves) as AcaoComChave[]) this.rotacionar(acao);
       }
       if (!aoRecusar(resultado.problem)) {
         this.erro.set(this.problemI18n.resolve(resultado.problem).title);
