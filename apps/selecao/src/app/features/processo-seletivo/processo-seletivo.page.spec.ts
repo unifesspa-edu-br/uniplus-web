@@ -458,7 +458,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(document.activeElement).toBe(alerta);
   });
 
-  it('ao bloquear o avanço, leva o foco ao primeiro campo inválido do passo em tela', async () => {
+  it('ao bloquear o avanço de um passo com campo inválido, o foco vai ao aviso de pendências', async () => {
     const { fixture, page, store } = montar();
 
     store.goTo(1);
@@ -467,9 +467,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve));
 
-    const campo = (fixture.nativeElement as HTMLElement).querySelector('.step-pane:not([hidden]) [aria-invalid="true"]');
-    expect(campo).not.toBeNull();
-    expect(document.activeElement).toBe(campo);
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.step-pane:not([hidden]) [aria-invalid="true"]')).not.toBeNull();
+    expect(document.activeElement).toBe(raiz.querySelector('.step-error'));
   });
 
   it('identifica cada pendência pelo passo de origem', async () => {
