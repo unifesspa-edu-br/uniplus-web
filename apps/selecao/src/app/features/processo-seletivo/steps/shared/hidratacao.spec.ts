@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import { WizardDraft } from '../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
-import { hidratarDraft } from './hidratacao';
+import { descreverDocumento, hidratarDraft } from './hidratacao';
 
 /** Só o que `hidratarDraft` lê; o resto do rascunho não participa. */
 const DRAFT = { identificacao: {} } as unknown as WizardDraft;
@@ -734,10 +734,7 @@ describe('hidratarDraft — oferta de atendimento especializado', () => {
   });
 
   it('trata processo sem oferta de atendimento como as três listas vazias', () => {
-    const { atendimento } = hidratarDraft(
-      DRAFT,
-      dtoComCronograma({ ofertaAtendimento: null }),
-    );
+    const { atendimento } = hidratarDraft(DRAFT, dtoComCronograma({ ofertaAtendimento: null }));
 
     expect(atendimento).toEqual({ condicoes: [], recursos: [], tiposDeficiencia: [] });
   });
@@ -775,7 +772,16 @@ describe('hidratarDraft — formulário de inscrição', () => {
     restricoes: [],
     impedimento: null,
   });
-  const etapa = (codigo: string, ordem: number) => ({ codigo, ordem, tipo: 'SECAO', bloco: null, titulo: codigo, descricao: null, aviso: null, exibicao: null });
+  const etapa = (codigo: string, ordem: number) => ({
+    codigo,
+    ordem,
+    tipo: 'SECAO',
+    bloco: null,
+    titulo: codigo,
+    descricao: null,
+    aviso: null,
+    exibicao: null,
+  });
   const formulario = (finalidade: string, extra: Record<string, unknown> = {}) => ({
     finalidade,
     faseId: ID_INSCRICAO,
@@ -790,11 +796,16 @@ describe('hidratarDraft — formulário de inscrição', () => {
   });
 
   it('lê o formulário de inscrição no conteúdo do editor, com a fase pelo código', () => {
-    const draft = hidratarDraft(DRAFT, dtoComFormulario({ formularios: [formulario('INSCRICAO')] }));
+    const draft = hidratarDraft(
+      DRAFT,
+      dtoComFormulario({ formularios: [formulario('INSCRICAO')] }),
+    );
 
     expect(draft.formulario.faseCodigo).toBe('INSCRICAO');
     expect(draft.formulario.conteudo.titulo).toBe('Inscrição 2027');
-    expect(draft.formulario.conteudo.itens?.map((item) => [item.fatoCodigo, item.obrigatoriedade])).toEqual([
+    expect(
+      draft.formulario.conteudo.itens?.map((item) => [item.fatoCodigo, item.obrigatoriedade]),
+    ).toEqual([
       ['NOME', 'SEMPRE'],
       ['SEXO', 'SEMPRE'],
     ]);
@@ -806,14 +817,20 @@ describe('hidratarDraft — formulário de inscrição', () => {
       dtoComFormulario({
         formularios: [
           formulario('INSCRICAO'),
-          formulario('ISENCAO_TAXA', { etapas: [etapa('S1', 0)], fatosColetados: [campo('RENDA', 0, 'S1')] }),
+          formulario('ISENCAO_TAXA', {
+            etapas: [etapa('S1', 0)],
+            fatosColetados: [campo('RENDA', 0, 'S1')],
+          }),
         ],
       }),
     );
 
-    expect(draft.formulario.outrasFinalidades.map((outra) => [outra.finalidade, outra.conteudo.itens?.map((item) => item.fatoCodigo)])).toEqual([
-      ['ISENCAO_TAXA', ['RENDA']],
-    ]);
+    expect(
+      draft.formulario.outrasFinalidades.map((outra) => [
+        outra.finalidade,
+        outra.conteudo.itens?.map((item) => item.fatoCodigo),
+      ]),
+    ).toEqual([['ISENCAO_TAXA', ['RENDA']]]);
     expect(draft.formulario.conteudo.itens?.map((item) => item.fatoCodigo)).not.toContain('RENDA');
   });
 
@@ -822,8 +839,16 @@ describe('hidratarDraft — formulário de inscrição', () => {
       DRAFT,
       dtoComFormulario({
         formularios: [
-          formulario('INSCRICAO', { modeloOrigemId: 'm1', modeloOrigemCodigo: 'MEDICINA-INSCRICAO' }),
-          formulario('ISENCAO_TAXA', { etapas: [etapa('S1', 0)], fatosColetados: [], modeloOrigemId: 'm2', modeloOrigemCodigo: 'ISENCAO-PADRAO' }),
+          formulario('INSCRICAO', {
+            modeloOrigemId: 'm1',
+            modeloOrigemCodigo: 'MEDICINA-INSCRICAO',
+          }),
+          formulario('ISENCAO_TAXA', {
+            etapas: [etapa('S1', 0)],
+            fatosColetados: [],
+            modeloOrigemId: 'm2',
+            modeloOrigemCodigo: 'ISENCAO-PADRAO',
+          }),
         ],
       }),
     );
@@ -929,5 +954,30 @@ describe('ProcessoSeletivoStore.hidratar — quadro de Peso por Área congelado'
     expect(store.copiaCongeladaEmVigor()?.grupos.map((grupo) => grupo.codigo)).toEqual(
       QUADRO.map((grupo) => grupo.grupoAreaEnem.codigo).sort(),
     );
+  });
+});
+
+describe('descreverDocumento', () => {
+  const documento: DocumentoAPublicarDto = {
+    id: '019f41cf-69fd-759a-ac6d-09acabc1b030',
+    processoSeletivoId: '019f41cf-69fd-759a-ac6d-09acabc1b031',
+    nomeArquivo: 'edital-de-abertura.pdf',
+    tipoDeMidia: 'application/pdf',
+    status: 'Confirmado',
+    criadoEm: '2026-08-20T12:00:00Z',
+    expiraEm: '2026-08-20T12:15:00Z',
+    tamanhoBytes: 2048,
+    hashSha256: 'a'.repeat(64),
+    confirmadoEm: '2026-08-20T12:05:00Z',
+  };
+
+  it('começa pelo nome do arquivo', () => {
+    expect(descreverDocumento(documento).startsWith('edital-de-abertura.pdf · ')).toBe(true);
+  });
+
+  it('usa o texto de reserva quando o nome vem vazio', () => {
+    expect(
+      descreverDocumento({ ...documento, nomeArquivo: '  ' }).startsWith('nome indisponível · '),
+    ).toBe(true);
   });
 });

@@ -213,6 +213,7 @@ export class AnexoEditalComponent {
 
     // A resposta de uma retomada iniciada aqui só escreve enquanto o editor tratar deste processo.
     this.geracaoDoAnexo = this.store.geracao();
+    this.uploadError.set(null);
     this.operacaoEmCurso = true;
     try {
       await this.executarUpload(processoId, arquivo);
