@@ -34,6 +34,8 @@ type FaseDoEnvio = 'iniciando' | 'enviando' | 'confirmando' | 'erro';
  * definitiva do servidor, que pede outro arquivo.
  */
 interface EnvioEmCurso {
+  /** Identifica a tentativa; reenviar um arquivo de mesmo nome é outro envio na lista. */
+  readonly id: string;
   readonly nome: string;
   readonly fase: FaseDoEnvio;
   readonly progresso: number;
@@ -102,7 +104,7 @@ export class ModeloDaExigenciaComponent {
     if (envio === null) return [];
     return [
       {
-        id: envio.nome,
+        id: envio.id,
         nome: envio.nome,
         fase: envio.fase,
         progresso: envio.progresso,
@@ -161,7 +163,7 @@ export class ModeloDaExigenciaComponent {
     this.destino = null;
     this.modeloEnviadoId = null;
     this.geracaoDoEnvio = this.store.geracao();
-    this.envio.set({ nome: arquivo.name, fase: 'iniciando', progresso: 0, erro: null, retomavel: false });
+    this.envio.set({ id: crypto.randomUUID(), nome: arquivo.name, fase: 'iniciando', progresso: 0, erro: null, retomavel: false });
     await this.executar();
   }
 

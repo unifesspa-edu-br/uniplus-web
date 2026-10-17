@@ -208,7 +208,6 @@ export class AnexoEditalComponent {
     const atual = this.anexo();
     if (processoId === null || atual === undefined || !this.podeRetomar(atual)) return;
 
-    if (this.arquivoEmMemoria() !== null && arquivo === null) this.arquivoEmMemoria.set(null);
     // A resposta de uma retomada iniciada aqui só escreve enquanto o editor tratar deste processo.
     this.geracaoDoAnexo = this.store.geracao();
     this.operacaoEmCurso = true;

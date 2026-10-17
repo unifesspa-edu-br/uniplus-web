@@ -29,5 +29,6 @@ export {
   partesNoFuso,
 } from './utils/data-br.util';
 export { formatarNumeroPtBr, numeroDaApi, numeroOuNuloDaApi } from './utils/numero.util';
+export { formatarTamanhoDeArquivo } from './utils/tamanho-de-arquivo.util';
 export { digitosDoTelefone, formatarTelefone } from './utils/telefone.util';
 export { UNIDADES_FEDERATIVAS, type UnidadeFederativa } from './utils/unidades-federativas';

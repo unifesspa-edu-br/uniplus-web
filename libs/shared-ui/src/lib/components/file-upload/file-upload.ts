@@ -2,13 +2,17 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Injector,
+  afterNextRender,
   computed,
+  inject,
   input,
   model,
   output,
   signal,
   viewChild,
 } from '@angular/core';
+import { formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 
 type ValidationResult = { ok: true } | { ok: false; reason: string };
 
@@ -33,7 +37,6 @@ export interface ArquivoEmEnvio {
 
 const BYTES_POR_MB = 1024 * 1024;
 const PASSO_ANUNCIADO = 25;
-const FORMATO_TAMANHO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 
 /**
  * Zona de soltar arquivos com validação de tipo e tamanho no cliente.
@@ -179,6 +182,7 @@ export class FileUploadComponent {
   // Garante IDs únicos por instância para isolar `for`/`aria-describedby`
   // quando há múltiplos `<ui-file-upload>` na mesma página.
   private static instanceCount = 0;
+  private readonly injector = inject(Injector);
   private readonly instanceId = `ui-file-upload-${++FileUploadComponent.instanceCount}`;
 
   /** Id do campo de arquivo; o consumidor pode fixá-lo quando algo externo o referencia. */
@@ -360,10 +364,7 @@ export class FileUploadComponent {
 
   protected tamanhoDe(arquivo: ArquivoEmEnvio): string | null {
     const bytes = arquivo.tamanhoBytes;
-    if (bytes === undefined) return null;
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < BYTES_POR_MB) return `${FORMATO_TAMANHO.format(bytes / 1024)} KB`;
-    return `${FORMATO_TAMANHO.format(bytes / BYTES_POR_MB)} MB`;
+    return bytes === undefined ? null : formatarTamanhoDeArquivo(bytes);
   }
 
   protected textoDaFase(arquivo: ArquivoEmEnvio): string {
@@ -392,14 +393,21 @@ export class FileUploadComponent {
 
   // Depois de retirar um arquivo o botão que tinha o foco some; devolver o foco à zona evita
   // que a navegação por teclado recomece do topo da página.
-  // Com a zona desabilitada o foco não cabe nela e cairia no <body>; a lista o recebe.
+  // O consumidor pode desabilitar a zona em resposta ao próprio evento; o destino do foco é
+  // decidido depois da renderização, e com a zona desabilitada a lista o recebe, para o foco não
+  // cair no <body>.
   private focarZona(): void {
-    const zona = this.dropZone().nativeElement;
-    if (!zona.disabled) {
-      zona.focus();
-      return;
-    }
-    this.lista()?.nativeElement.focus();
+    afterNextRender(
+      () => {
+        const zona = this.dropZone().nativeElement;
+        if (!zona.disabled) {
+          zona.focus();
+          return;
+        }
+        this.lista()?.nativeElement.focus();
+      },
+      { injector: this.injector },
+    );
   }
 
   // Validação client-side é UX/anti-engano. A fronteira real de segurança
