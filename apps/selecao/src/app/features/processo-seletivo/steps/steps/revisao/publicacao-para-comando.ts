@@ -466,6 +466,7 @@ export function comoGruposDaRevisao(
 const CODIGOS_DE_DOCUMENTO_OU_ATO = new Set<string>([
   'uniplus.selecao.processo_seletivo.documento_nao_encontrado',
   'uniplus.selecao.processo_seletivo.documento_nao_confirmado',
+  'uniplus.selecao.processo_seletivo.documento_do_edital_nao_e_pdf',
   'uniplus.selecao.processo_seletivo.tipo_de_ato_sem_versao_vigente',
   'uniplus.selecao.processo_seletivo.tipo_de_ato_nao_congela_configuracao',
   'uniplus.selecao.processo_seletivo.objeto_ja_tem_ato_vivo_do_tipo',

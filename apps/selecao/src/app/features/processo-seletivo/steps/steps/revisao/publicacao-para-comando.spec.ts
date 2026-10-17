@@ -706,6 +706,9 @@ describe('eErroDeDocumentoOuAto', () => {
       eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.documento_nao_confirmado'),
     ).toBe(true);
     expect(
+      eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.documento_do_edital_nao_e_pdf'),
+    ).toBe(true);
+    expect(
       eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.tipo_de_ato_sem_versao_vigente'),
     ).toBe(true);
   });
