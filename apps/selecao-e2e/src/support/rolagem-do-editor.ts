@@ -204,11 +204,13 @@ async function conferirFocoEmCampoSobAFaixa(page: Page, faixa: Faixa): Promise<v
     }
     const caixa = elemento.getBoundingClientRect();
     if (lado === 'topo') {
-      const topoLivre = Math.max(
-        area.getBoundingClientRect().top,
-        barra.getBoundingClientRect().bottom,
-      );
-      return topoLivre - caixa.top;
+      const topoDaArea = area.getBoundingClientRect().top;
+      const caixaDaBarra = barra.getBoundingClientRect();
+      // A barra visível fica presa ao topo da área rolada: fora dele, ela deixou de ser fixa.
+      if (caixaDaBarra.height > 0 && Math.abs(caixaDaBarra.top - topoDaArea) > 1) {
+        throw new Error('A barra de etapas saiu do topo da área de trabalho.');
+      }
+      return Math.max(topoDaArea, caixaDaBarra.bottom) - caixa.top;
     }
     return caixa.bottom - rodape.getBoundingClientRect().top;
   }, faixa);

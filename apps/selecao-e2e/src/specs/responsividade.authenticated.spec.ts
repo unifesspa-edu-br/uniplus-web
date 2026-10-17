@@ -28,7 +28,7 @@ test.describe('Seleção — comportamento por largura', () => {
 
     // O bloqueio é liberado no evento `close`, que chega depois do clique.
     await expect
-      .poll(() => page.evaluate(() => document.body.classList.contains('sel-overlay-open')))
+      .poll(() => page.evaluate(() => document.body.classList.contains('ui-overlay-open')))
       .toBe(false);
   });
 

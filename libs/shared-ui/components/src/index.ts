@@ -91,6 +91,7 @@ export type {
   FormularioDoCandidato,
   GrupoRenderizavel,
   PressupostoDoFormulario,
+  PassoPrefixado,
   RespostaFixa,
   SecaoRenderizavel,
   TermoRenderizavel,
@@ -179,3 +180,4 @@ export {
   type StepStatus,
   type StepsVariant,
 } from '../../src/lib/components/steps/steps.component';
+export { StepsResponsivoComponent } from '../../src/lib/components/steps-responsivo/steps-responsivo.component';

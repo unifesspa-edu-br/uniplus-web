@@ -51,12 +51,6 @@ body {
   background: var(--surface-page);
 }
 
-/* `body.uni-drawer-open` (trava-scroll do menu) vem do DS; aqui fica só o
-   overlay de etapas, que é específico da Seleção. */
-body.sel-overlay-open {
-  overflow: hidden;
-}
-
 sel-root,
 sel-layout {
   display: flex;
