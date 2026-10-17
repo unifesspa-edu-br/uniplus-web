@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
   computed,
   effect,
@@ -29,6 +28,7 @@ import { Router } from '@angular/router';
 import { map } from 'rxjs';
 import { type ItemDaLista, itemDaLista } from './inscricao-lista.model';
 import { MinhasInscricoesService } from './minhas-inscricoes.service';
+import { mediaQuerySignal } from '@uniplus/shared-utils';
 
 /** Abaixo desta largura a lista é a forma canônica (decisão do design system). */
 const COMPACT_MEDIA_QUERY = '(max-width: 599.98px)';
@@ -95,14 +95,13 @@ const INSCRICAO_BUTTON_DEFINITION: Record<SituacaoInscricao, InscricaoBotaoInfo>
   host: { class: 'ptl-page' },
 })
 export class InscricaoListaPage {
-  private readonly destroyRef = inject(DestroyRef);
   private readonly minhasInscricoes = inject(MinhasInscricoesService);
   private readonly router = inject(Router);
   private readonly userContext = inject(UserContextService);
   private readonly paginaTitulo = viewChild<ElementRef<HTMLHeadingElement>>('paginaTitulo');
   protected readonly nomeUsuario = computed(() => this.userContext.displayName() || 'Candidato');
-  /** Detecta a largura em que a lista é a forma canônica (<600px), via `matchMedia`. */
-  protected readonly isCompacto = signal(this.mediaCompacta()?.matches ?? false);
+  /** Detecta a largura em que a lista é a forma canônica (<600px). */
+  protected readonly isCompacto = mediaQuerySignal(COMPACT_MEDIA_QUERY);
   /** Abaixo de 600px a visão fica travada em lista, mesmo com "cards" salvo. */
   protected readonly visaoEfetiva = computed<VisaoCertames>(() =>
     this.isCompacto() ? 'lista' : this.visao(),
@@ -137,7 +136,6 @@ export class InscricaoListaPage {
   protected readonly visao = signal<VisaoCertames>(readVisao());
 
   constructor() {
-    this.escutarBreakpoint();
     effect(() => writeVisao(this.visao()));
   }
 
@@ -165,21 +163,6 @@ export class InscricaoListaPage {
     if (visao !== null) {
       this.visao.set(visao);
     }
-  }
-
-  private mediaCompacta(): MediaQueryList | null {
-    return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-      ? window.matchMedia(COMPACT_MEDIA_QUERY)
-      : null;
-  }
-
-  private escutarBreakpoint(): void {
-    const mediaQuery = this.mediaCompacta();
-    if (mediaQuery === null) return;
-
-    const ouvinte = (evento: MediaQueryListEvent) => this.isCompacto.set(evento.matches);
-    mediaQuery.addEventListener('change', ouvinte);
-    this.destroyRef.onDestroy(() => mediaQuery.removeEventListener('change', ouvinte));
   }
 
   protected exibeInscricaoStatusLabel(status: SituacaoInscricao): string {

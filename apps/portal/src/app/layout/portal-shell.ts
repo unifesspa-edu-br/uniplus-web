@@ -2,10 +2,8 @@ import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   computed,
   inject,
-  signal,
 } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
@@ -17,6 +15,7 @@ import {
   SkipLinkComponent,
   VlibrasLoaderComponent,
 } from '@uniplus/shared-ui/components';
+import { mediaQuerySignal } from '@uniplus/shared-utils';
 
 interface PortalNavItem {
   readonly label: string;
@@ -166,17 +165,7 @@ export class PortalShellComponent {
   private static readonly ALTURA_JANELA_BAIXA = '(max-height: 500px)';
 
   protected readonly paginaRaiz = this.document.documentElement;
-  protected readonly rolaPelaPagina = signal(false);
-
-  constructor() {
-    const janela = this.document.defaultView;
-    if (typeof janela?.matchMedia !== 'function') return;
-    const consulta = janela.matchMedia(PortalShellComponent.ALTURA_JANELA_BAIXA);
-    this.rolaPelaPagina.set(consulta.matches);
-    const aoMudar = (e: MediaQueryListEvent): void => this.rolaPelaPagina.set(e.matches);
-    consulta.addEventListener('change', aoMudar);
-    inject(DestroyRef).onDestroy(() => consulta.removeEventListener('change', aoMudar));
-  }
+  protected readonly rolaPelaPagina = mediaQuerySignal(PortalShellComponent.ALTURA_JANELA_BAIXA);
 
   // "Meu perfil" vive no menu do avatar (auth-user-header-info), não aqui.
   // "Documentos" fica de fora enquanto for placeholder vazio — pô-lo no menu
@@ -222,9 +211,7 @@ export class PortalShellComponent {
   protected readonly footerGroups = computed(() =>
     this.allFooterGroups.map((group) => ({
       ...group,
-      links: group.links.filter(
-        (link) => !link.requiresAuth || this.userContext.isAuthenticated(),
-      ),
+      links: group.links.filter((link) => !link.requiresAuth || this.userContext.isAuthenticated()),
     })),
   );
 }
