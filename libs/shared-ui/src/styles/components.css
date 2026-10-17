@@ -870,7 +870,7 @@ ui-editor-de-condicoes {
   .formulario-candidato__layout--lateral .ui-steps--lateral {
     /* A coluna acompanha a seção até o fim da página, com a altura visível da janela. */
     height: auto;
-    max-height: 100vh;
+    max-height: var(--ui-steps-area-altura, 100vh);
     width: 15rem;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);

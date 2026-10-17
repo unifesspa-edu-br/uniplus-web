@@ -1,3 +1,4 @@
+import { ApplicationRef } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -92,10 +93,41 @@ describe('StepsResponsivoComponent', () => {
 
     fixture.detectChanges();
     expect(area.style.scrollPaddingTop).toBe('56px');
+    expect(area.style.getPropertyValue('--ui-steps-area-altura')).not.toBe('');
 
     fixture.destroy();
     expect(area.style.scrollPaddingTop).toBe('');
+    expect(area.style.getPropertyValue('--ui-steps-area-altura')).toBe('');
     area.remove();
     vi.unstubAllGlobals();
+  });
+
+  it('devolve o foco à barra quando ninguém o leva a outro lugar depois da escolha na lista', async () => {
+    const { fixture, tela } = montar();
+    document.body.append(tela);
+    fixture.componentInstance.abrir();
+    await Promise.resolve();
+    // O diálogo fechado leva o foco do botão clicado; quem consome não o move para outro lugar.
+    fixture.componentInstance.selecionado.subscribe(() =>
+      (document.activeElement as HTMLElement | null)?.blur(),
+    );
+
+    tela.querySelectorAll<HTMLButtonElement>('dialog li button')[1].click();
+    TestBed.inject(ApplicationRef).tick();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(tela.querySelector('.step-bar'));
+    tela.remove();
+  });
+
+  it('avisa quando o passo atual é escolhido de novo na lista em diálogo', () => {
+    const { fixture, tela } = montar();
+    const atuais: number[] = [];
+    fixture.componentInstance.atualEscolhido.subscribe((i) => atuais.push(i));
+    fixture.componentInstance.abrir();
+
+    tela.querySelectorAll<HTMLButtonElement>('dialog li button')[0].click();
+
+    expect(atuais).toEqual([0]);
   });
 });

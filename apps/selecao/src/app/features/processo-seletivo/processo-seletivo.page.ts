@@ -1225,11 +1225,15 @@ export class ProcessoSeletivoPage {
   }
 
   protected irParaPasso(index: number): void {
-    const atual = this.store.currentStep();
     this.store.goTo(index);
-    // Trocar de passo já leva o foco ao título, pelo efeito de `currentStep`. Só o passo em que já se
-    // está não o dispara, e a lista em diálogo, ao fechar, não devolve o foco a lugar nenhum.
-    if (index === atual) queueMicrotask(() => this.focarTituloDoPasso());
+  }
+
+  /**
+   * O passo atual escolhido de novo na lista em diálogo não troca o passo, e o diálogo, ao fechar, não
+   * devolve o foco a lugar nenhum: o foco vai ao título. Na coluna lateral nada disso acontece.
+   */
+  protected focarTituloAposAEscolha(): void {
+    queueMicrotask(() => this.focarTituloDoPasso());
   }
 }
 
