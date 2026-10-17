@@ -45,9 +45,11 @@ const lista = (page: Page, rotulo: string): Locator =>
   page.getByRole('combobox', { name: new RegExp(`^${rotulo}`) });
 
 /** O rádio tem um marcador visual sobre o input: escolhe-se pelo rótulo, como o candidato. */
-async function escolher(page: Page, pergunta: string, opcao: string): Promise<void> {
+async function escolher(page: Page, pergunta: string | RegExp, opcao: string): Promise<void> {
   await page
-    .getByRole('group', { name: new RegExp(`^${pergunta}`) })
+    .getByRole('group', {
+      name: typeof pergunta === 'string' ? new RegExp(`^${pergunta}`) : pergunta,
+    })
     .getByText(opcao, { exact: true })
     .click();
 }
@@ -116,7 +118,8 @@ async function preencherDadosDoCandidato(page: Page): Promise<void> {
   await campo(page, 'Nome da mãe').fill(PERSONA.mae);
   await campo(page, 'Nome do pai').fill(PERSONA.pai);
   await escolher(page, 'Estado civil', 'Solteiro(a)');
-  await escolher(page, 'Sexo', 'Feminino');
+  // "Sexo civil" também começa por "Sexo": o nome do grupo é conferido inteiro.
+  await escolher(page, /^Sexo \*?$/, 'Feminino');
   await escolher(page, 'Cor ou raça', 'Branca');
   await campo(page, 'E-mail').fill(PERSONA.email);
   await campo(page, 'Telefone').fill(PERSONA.celular);
@@ -130,6 +133,9 @@ async function preencherDadosDoCandidato(page: Page): Promise<void> {
   }
   await expect(endereco.getByRole('textbox', { name: 'Cidade' })).toHaveValue(PERSONA.cidade);
   await endereco.getByRole('textbox', { name: /^Número/ }).fill(PERSONA.numero);
+  await escolher(page, 'Sexo civil', 'Feminino');
+  await escolher(page, 'Identidade de gênero', 'Prefiro não informar');
+  await escolher(page, 'Orientação sexual', 'Prefiro não informar');
 }
 
 /**
@@ -446,13 +452,13 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
 
     await test.step('o envio com obrigatório em branco não sai: anuncia e liga o campo à mensagem', async () => {
       await irParaSecao(page, 'Dados do candidato');
-      await campo(page, 'Nome completo').fill('');
+      await campo(page, 'Nome da mãe').fill('');
       await enviarPeloTeclado(page);
       await expect(page.getByText(/^Há (1 item|\d+ itens) a corrigir\./)).toBeAttached();
       await irParaSecao(page, 'Dados do candidato');
-      const nome = campo(page, 'Nome completo');
-      await expect(nome).toHaveAttribute('aria-invalid', 'true');
-      await expect(nome).toHaveAccessibleDescription(/Responda este campo\./);
+      const mae = campo(page, 'Nome da mãe');
+      await expect(mae).toHaveAttribute('aria-invalid', 'true');
+      await expect(mae).toHaveAccessibleDescription(/Responda este campo\./);
     });
 
     await test.step('o formulário não tem violação de WCAG 2.1 AA', async () => {
