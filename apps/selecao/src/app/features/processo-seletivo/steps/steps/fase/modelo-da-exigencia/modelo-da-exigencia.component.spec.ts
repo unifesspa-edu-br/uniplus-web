@@ -105,6 +105,10 @@ describe('ModeloDaExigenciaComponent', () => {
     input.dispatchEvent(new Event('change'));
   }
 
+  function alerta(): string {
+    return (fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')?.textContent ?? '';
+  }
+
   /** Iniciação e PUT bem-sucedidos; a confirmação fica para o teste responder. */
   async function enviarAteAConfirmacao(): Promise<void> {
     escolher(docx());
@@ -117,14 +121,16 @@ describe('ModeloDaExigenciaComponent', () => {
 
   it('recusa arquivo que não é editável sem chamar a API', () => {
     escolher(new File(['%PDF'], 'autodeclaracao.pdf', { type: 'application/pdf' }));
+    fixture.detectChanges();
 
-    expect(componente.recusa()).toContain('DOCX ou ODT');
+    expect(alerta()).toContain('Tipo de arquivo não permitido');
   });
 
   it('recusa modelo acima de 10 MB sem chamar a API', () => {
     escolher(docx('grande.docx', 10 * 1024 * 1024 + 1));
+    fixture.detectChanges();
 
-    expect(componente.recusa()).toContain('10 MB');
+    expect(alerta()).toContain('10MB');
   });
 
   it('envia, confirma e vincula o modelo com nome, formato e hash', async () => {

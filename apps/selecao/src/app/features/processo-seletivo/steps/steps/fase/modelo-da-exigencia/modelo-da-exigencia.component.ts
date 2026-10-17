@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { ProblemI18nService, isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
+import { FileUploadComponent, type ArquivoEmEnvio } from '@uniplus/shared-ui/components';
 import type { IniciarEnvioDoModeloDeDocumentoDto } from '@uniplus/shared-data/selecao';
 
 import type { ModeloDaExigencia } from '../../../processo-seletivo.models';
@@ -17,7 +18,13 @@ import { abrirAcessoEmNovaAba, destinoExpirado } from '../../../shared/envio-pre
 import { EnvioDoModeloService } from './envio-do-modelo.service';
 
 /** O teto do modelo no domínio: 10 MB. */
-const TAMANHO_MAXIMO_BYTES = 10 * 1024 * 1024;
+const TAMANHO_MAXIMO_MB = 10;
+
+/** Os tipos MIME dos formatos editáveis; a extensão é o que decide quando o sistema não os informa. */
+const TIPOS_MIME_EDITAVEIS = [
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.oasis.opendocument.text',
+];
 
 /** Os formatos editáveis que o contrato aceita, pela extensão do arquivo escolhido. */
 const FORMATO_POR_EXTENSAO = new Map([
@@ -52,6 +59,7 @@ interface EnvioEmCurso {
 @Component({
   selector: 'sel-modelo-da-exigencia',
   standalone: true,
+  imports: [FileUploadComponent],
   templateUrl: './modelo-da-exigencia.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [EnvioDoModeloService],
@@ -74,6 +82,9 @@ export class ModeloDaExigenciaComponent {
 
   readonly envio = signal<EnvioEmCurso | null>(null);
   readonly recusa = signal<string | null>(null);
+  readonly tamanhoMaximoMb = TAMANHO_MAXIMO_MB;
+  readonly tiposMimeEditaveis = TIPOS_MIME_EDITAVEIS;
+  readonly extensoesEditaveis = [...FORMATO_POR_EXTENSAO.keys()].map((e) => `.${e}`).join(',');
   readonly abrindo = signal(false);
   readonly erroDeAbertura = signal<string | null>(null);
 
@@ -92,6 +103,25 @@ export class ModeloDaExigenciaComponent {
 
   private readonly confirmacaoIndefinida = signal(false);
 
+  /** O envio em tela na forma que a lista do `ui-file-upload` exibe. */
+  readonly itens = computed<readonly ArquivoEmEnvio[]>(() => {
+    const envio = this.envio();
+    if (envio === null) return [];
+    return [
+      {
+        id: envio.nome,
+        nome: envio.nome,
+        fase: envio.fase,
+        progresso: envio.progresso,
+        mensagem: envio.erro,
+        podeTentarDeNovo: envio.retomavel,
+        // Com a confirmação sem resposta o modelo pode já estar selado: abandonar o envio agora
+        // esconderia isso de quem decide.
+        podeRetirar: envio.fase === 'erro' && !this.confirmacaoIndefinida(),
+      },
+    ];
+  });
+
   /** Impede que uma segunda escolha atropele o envio em andamento. */
   private operacaoEmCurso = false;
   private arquivo: File | null = null;
@@ -107,21 +137,25 @@ export class ModeloDaExigenciaComponent {
     inject(DestroyRef).onDestroy(() => (this.vivo = false));
   }
 
-  onArquivo(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const arquivo = input.files?.[0];
-    input.value = '';
+  /** O `ui-file-upload` só entrega arquivo que passou na validação de formato e tamanho. */
+  onArquivos(arquivos: readonly File[]): void {
+    const arquivo = arquivos[0];
     if (arquivo !== undefined && !this.bloqueado()) void this.enviar(arquivo);
+  }
+
+  /** Abandona o envio que falhou, para escolher outro arquivo sem o resto da tentativa anterior. */
+  descartar(): void {
+    if (this.emCurso() || this.confirmacaoIndefinida()) return;
+    this.envio.set(null);
+    this.recusa.set(null);
+    this.arquivo = null;
+    this.destino = null;
+    this.modeloEnviadoId = null;
   }
 
   private async enviar(arquivo: File): Promise<void> {
     if (this.operacaoEmCurso) return;
 
-    const recusa = recusarArquivo(arquivo);
-    if (recusa !== null) {
-      this.recusa.set(recusa);
-      return;
-    }
     if (this.store.processoSeletivoId() === null) {
       this.recusa.set(
         'O cadastro do processo precisa estar concluído antes de enviar o modelo. Volte à identificação e avance.',
@@ -261,20 +295,6 @@ export class ModeloDaExigenciaComponent {
     }
   }
 
-  /** Rótulo da fase, para o leitor de tela acompanhar o andamento. */
-  descricao(envio: EnvioEmCurso): string {
-    switch (envio.fase) {
-      case 'iniciando':
-        return `Preparando o envio de ${envio.nome}`;
-      case 'enviando':
-        return `Enviando ${envio.nome}: ${envio.progresso}%`;
-      case 'confirmando':
-        return `Validando ${envio.nome}`;
-      case 'erro':
-        return `O envio de ${envio.nome} não foi concluído.`;
-    }
-  }
-
   /**
    * A recusa do servidor como o operador a lê: os erros de campo, quando há, e senão a explicação
    * da recusa — é ali que vêm o formato que não é texto, a macro e o tamanho.
@@ -309,14 +329,4 @@ export class ModeloDaExigenciaComponent {
 function formatoDoArquivo(nome: string): string | null {
   const extensao = nome.split('.').pop()?.toLowerCase() ?? '';
   return FORMATO_POR_EXTENSAO.get(extensao) ?? null;
-}
-
-/** Recusa no cliente o que o servidor recusaria de todo modo. */
-function recusarArquivo(arquivo: File): string | null {
-  if (formatoDoArquivo(arquivo.name) === null) {
-    return `Formato não permitido: "${arquivo.name}". O modelo precisa ser um documento editável, DOCX ou ODT, para o candidato preenchê-lo.`;
-  }
-  if (arquivo.size > TAMANHO_MAXIMO_BYTES) return 'O modelo excede o tamanho máximo permitido de 10 MB.';
-  if (arquivo.size === 0) return 'O arquivo está vazio.';
-  return null;
 }
