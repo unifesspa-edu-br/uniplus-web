@@ -32,7 +32,7 @@ export {
   ListaDeDocumentosComponent,
   type DocumentoExigido,
 } from '../../src/lib/components/lista-de-documentos/lista-de-documentos';
-export { FileUploadComponent } from '../../src/lib/components/file-upload/file-upload';
+export { FileUploadComponent, type ArquivoEmEnvio, type FaseDoArquivo } from '../../src/lib/components/file-upload/file-upload';
 export {
   FilterBarComponent,
   type UiFiltroAtivo,

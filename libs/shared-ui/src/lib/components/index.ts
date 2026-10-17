@@ -18,7 +18,7 @@ export { DataTableComponent, type UiDataTableColumn } from './data-table/data-ta
 export { DialogComponent } from './dialog/dialog';
 export { DrawerComponent } from './drawer/drawer';
 export { EmptyStateComponent } from './empty-state/empty-state';
-export { FileUploadComponent } from './file-upload/file-upload';
+export { FileUploadComponent, type ArquivoEmEnvio, type FaseDoArquivo } from './file-upload/file-upload';
 export { FilterBarComponent } from './filter-bar/filter-bar';
 export { FilterChipsComponent, type UiFilterChipOption } from './filter-chips/filter-chips';
 export { FormFieldComponent } from './form-field/form-field';

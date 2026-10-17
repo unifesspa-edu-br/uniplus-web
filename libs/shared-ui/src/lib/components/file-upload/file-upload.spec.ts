@@ -1,7 +1,7 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { FileUploadComponent } from './file-upload';
+import { FileUploadComponent, type ArquivoEmEnvio } from './file-upload';
 
 describe('FileUploadComponent', () => {
   beforeEach(() => {
@@ -312,5 +312,183 @@ describe('FileUploadComponent', () => {
 
     expect(labelEl.htmlFor).toBe(inputEl.id);
     expect(labelEl.htmlFor).toMatch(/^ui-file-upload-\d+-input$/);
+  });
+});
+
+describe('FileUploadComponent no modo controlado', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [FileUploadComponent] });
+  });
+
+  function setup(entradas: Record<string, unknown> = {}) {
+    const fixture = TestBed.createComponent(FileUploadComponent);
+    fixture.componentRef.setInput('itens', []);
+    fixture.componentRef.setInput('multiple', true);
+    for (const [nome, valor] of Object.entries(entradas)) fixture.componentRef.setInput(nome, valor);
+    const escolhidos: (readonly File[])[] = [];
+    const retirados: string[] = [];
+    const repetidos: string[] = [];
+    fixture.componentInstance.arquivosEscolhidos.subscribe((f) => escolhidos.push(f));
+    fixture.componentInstance.itemRetirado.subscribe((id) => retirados.push(id));
+    fixture.componentInstance.tentarDeNovo.subscribe((id) => repetidos.push(id));
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    const escolher = (...arquivos: File[]) => {
+      const input = host.querySelector<HTMLInputElement>('input[type="file"]') as HTMLInputElement;
+      Object.defineProperty(input, 'files', { value: arquivos, configurable: true });
+      input.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+    };
+    return { fixture, host, escolhidos, retirados, repetidos, escolher };
+  }
+
+  const pdf = (nome: string, bytes = 1024) =>
+    new File([new ArrayBuffer(bytes)], nome, { type: 'application/pdf' });
+  const item = (extra: Partial<ArquivoEmEnvio> = {}): ArquivoEmEnvio => ({
+    id: 'a1',
+    nome: 'edital.pdf',
+    fase: 'enviando',
+    progresso: 40,
+    ...extra,
+  });
+
+  it('entrega vários arquivos aprovados de uma só vez', () => {
+    const { escolhidos, escolher } = setup();
+
+    escolher(pdf('a.pdf'), pdf('b.pdf'));
+
+    expect(escolhidos).toHaveLength(1);
+    expect(escolhidos[0].map((f) => f.name)).toEqual(['a.pdf', 'b.pdf']);
+  });
+
+  it('recusa só o arquivo inválido e aponta qual foi', () => {
+    const { host, escolhidos, escolher } = setup();
+
+    escolher(pdf('a.pdf'), new File(['x'], 'foto.gif', { type: 'image/gif' }), pdf('grande.pdf', 11 * 1024 * 1024));
+
+    expect(escolhidos[0].map((f) => f.name)).toEqual(['a.pdf']);
+    const alertas = Array.from(host.querySelectorAll('[role="alert"]')).map((a) => a.textContent);
+    expect(alertas[0]).toContain('foto.gif: Tipo de arquivo não permitido');
+    expect(alertas[1]).toContain('grande.pdf: Arquivo excede o tamanho máximo de 10MB.');
+  });
+
+  it('recusa arquivo vazio antes do envio', () => {
+    const { host, escolhidos, escolher } = setup();
+
+    escolher(new File([], 'vazio.pdf', { type: 'application/pdf' }));
+
+    expect(escolhidos).toHaveLength(0);
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('vazio.pdf: O arquivo está vazio.');
+  });
+
+  it('respeita o limite de arquivos contando os que já estão na lista', () => {
+    const { host, escolhidos, escolher } = setup({
+      maxFiles: 2,
+      itens: [item({ fase: 'confirmado', progresso: 100 })],
+    });
+
+    escolher(pdf('a.pdf'), pdf('b.pdf'));
+
+    expect(escolhidos[0].map((f) => f.name)).toEqual(['a.pdf']);
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('b.pdf: o limite de 2 arquivos foi atingido.');
+  });
+
+  it('aceita tipo MIME vazio pela extensão só quando configurado', () => {
+    const semMime = new File(['x'], 'modelo.pdf', { type: '' });
+    const estrito = setup();
+    estrito.escolher(semMime);
+    expect(estrito.escolhidos).toHaveLength(0);
+
+    const flexivel = setup({ mimeOpcional: true });
+    flexivel.escolher(semMime);
+    expect(flexivel.escolhidos).toHaveLength(1);
+  });
+
+  it('não aceita arquivo escolhido com o componente desabilitado', () => {
+    const { escolhidos, escolher } = setup({ disabled: true });
+
+    escolher(pdf('a.pdf'));
+
+    expect(escolhidos).toHaveLength(0);
+  });
+
+  it('mostra a fase e o progresso de cada arquivo com nome acessível', () => {
+    const { host } = setup({
+      itens: [
+        item(),
+        item({ id: 'a2', nome: 'ata.pdf', fase: 'confirmando', progresso: 100 }),
+        item({ id: 'a3', nome: 'ok.pdf', fase: 'confirmado', progresso: 100, tamanhoBytes: 2 * 1024 * 1024 }),
+      ],
+    });
+
+    const barras = Array.from(host.querySelectorAll('[role="progressbar"]'));
+    expect(barras.map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Progresso do envio de edital.pdf',
+      'Progresso do envio de ata.pdf',
+      'Progresso do envio de ok.pdf',
+    ]);
+    expect(barras[0].getAttribute('aria-valuenow')).toBe('40');
+    expect(barras[0].getAttribute('aria-valuetext')).toBe('Enviando: 40%');
+    expect(barras[1].getAttribute('aria-valuetext')).toBe('Validando o arquivo');
+    expect(host.textContent).toContain('2,0 MB');
+    expect(host.querySelectorAll('.uni-uploader__item.is-success')).toHaveLength(1);
+  });
+
+  it('anuncia o envio em passos para não interromper o leitor de tela', () => {
+    const { host } = setup({ itens: [item({ progresso: 49 })] });
+
+    expect(host.querySelector('[role="status"]')?.textContent).toBe('edital.pdf: enviando, 25%');
+  });
+
+  it('na falha mostra a mensagem e emite a nova tentativa', () => {
+    const { host, repetidos, fixture } = setup({
+      itens: [item({ fase: 'erro', mensagem: 'Falha ao enviar o arquivo.' })],
+    });
+
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('Falha ao enviar o arquivo.');
+    const botao = host.querySelector<HTMLButtonElement>('button[aria-label="Tentar enviar novamente edital.pdf"]');
+    botao?.click();
+    fixture.detectChanges();
+
+    expect(repetidos).toEqual(['a1']);
+  });
+
+  it('oculta a nova tentativa quando repetir não adianta e a remoção quando o arquivo é definitivo', () => {
+    const { host } = setup({
+      itens: [item({ fase: 'erro', mensagem: 'Recusado.', podeTentarDeNovo: false, podeRetirar: false })],
+    });
+
+    expect(host.textContent).not.toContain('Tentar novamente');
+    expect(host.querySelector('button[aria-label^="Remover"]')).toBeNull();
+  });
+
+  it('emite a retirada do arquivo e devolve o foco à zona de soltar', () => {
+    const { host, retirados, fixture } = setup({ itens: [item()] });
+
+    host.querySelector<HTMLButtonElement>('button[aria-label="Remover edital.pdf"]')?.click();
+    fixture.detectChanges();
+
+    expect(retirados).toEqual(['a1']);
+    expect(document.activeElement).toBe(host.querySelector('.uni-uploader__drop'));
+  });
+
+  it('mantém ações de arquivo e nome do campo mesmo com a zona desabilitada', () => {
+    const { host } = setup({
+      disabled: true,
+      idDoCampo: 'campo-fixo',
+      itens: [item({ fase: 'erro', mensagem: 'Falhou.' })],
+    });
+
+    expect(host.querySelector('input[type="file"]')?.id).toBe('campo-fixo');
+    expect(host.querySelector<HTMLButtonElement>('button[aria-label^="Tentar"]')?.disabled).toBe(false);
+  });
+
+  it('liga ao campo as descrições externas e a mensagem do consumidor', () => {
+    const { host } = setup({ descritoPor: 'aviso-1', mensagemExterna: 'Antes, conclua o cadastro.' });
+
+    const zona = host.querySelector('.uni-uploader__drop');
+    expect(zona?.getAttribute('aria-describedby')).toMatch(/^aviso-1 ui-file-upload-\d+-error$/);
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('Antes, conclua o cadastro.');
   });
 });

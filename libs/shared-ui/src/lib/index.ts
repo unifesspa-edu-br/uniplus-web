@@ -19,7 +19,7 @@ export { DataTableComponent, type UiDataTableColumn } from './components/data-ta
 export { DialogComponent } from './components/dialog/dialog';
 export { DrawerComponent } from './components/drawer/drawer';
 export { EmptyStateComponent } from './components/empty-state/empty-state';
-export { FileUploadComponent } from './components/file-upload/file-upload';
+export { FileUploadComponent, type ArquivoEmEnvio, type FaseDoArquivo } from './components/file-upload/file-upload';
 export { FilterBarComponent } from './components/filter-bar/filter-bar';
 export {
   FilterChipsComponent,
