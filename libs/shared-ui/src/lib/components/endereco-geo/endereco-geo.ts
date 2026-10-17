@@ -194,7 +194,11 @@ interface EnderecoFormControls {
                 type="checkbox"
                 [checked]="cepConfirmado()"
                 [attr.aria-invalid]="cepDeFaixaSemConfirmacao() ? 'true' : null"
-                [attr.aria-describedby]="id('cep') + '-faixa'"
+                [attr.aria-describedby]="
+                  cepDeFaixaSemConfirmacao()
+                    ? id('cep') + '-faixa ' + id('cep') + '-confirmacao'
+                    : id('cep') + '-faixa'
+                "
                 [disabled]="disabled()"
                 (change)="confirmarCep($event)"
               />
