@@ -115,7 +115,13 @@
 
   <ui-secao-de-documento titulo="Candidato">
     <ui-lista-de-dados>
-      @if (nomes(); as nomes) { @if (nomes.social; as social) {
+      @if (nomes(); as nomes) { @if (nomes.usoDoNomeSocial !== null) {
+      <ng-template
+        uiDado
+        rotulo="Uso do nome social"
+        [valor]="nomes.usoDoNomeSocial ? 'Sim' : 'Não'"
+      ></ng-template>
+      } @if (nomes.social; as social) {
       <ng-template uiDado rotulo="Nome social" [valor]="social"></ng-template>
       <ng-template uiDado rotulo="Nome civil" [valor]="nomes.civil"></ng-template>
       } @else {
