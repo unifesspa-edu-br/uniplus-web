@@ -587,6 +587,7 @@ function enderecoDa(resposta: ValorJson | undefined): EnderecoEstruturado | null
     longitude: textoOuNulo(objeto['longitude']),
     nivelResolucao: textoOuNulo(objeto['nivelResolucao']),
     origem: textoOuNulo(objeto['origem']),
+    ...(objeto['cepConfirmado'] === true ? { cepConfirmado: true } : {}),
   };
 }
 

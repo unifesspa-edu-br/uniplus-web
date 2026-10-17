@@ -41,6 +41,8 @@ export interface EnderecoEstruturado {
   readonly longitude: string | null;
   readonly nivelResolucao: string | null;
   readonly origem: string | null;
+  /** O candidato confirmou o CEP que só cai numa faixa de CEPs; só existe quando `true`. */
+  readonly cepConfirmado?: boolean;
 }
 
 /** Campos de logradouro do DNE que o `nivelResolucao` pode ancorar. */

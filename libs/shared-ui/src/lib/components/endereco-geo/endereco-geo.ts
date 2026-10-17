@@ -39,6 +39,9 @@ import {
 
 const URL_BUSCA_DE_CEP_DOS_CORREIOS = 'https://buscacepinter.correios.com.br';
 const LIMITE_DO_COMPLEMENTO = 300;
+/** Origens do Geo: o CEP cai numa faixa (`faixa-cidade`, `faixa-bairro`, `faixa-distrito`) ou é o CEP geral. */
+const PREFIXO_ORIGEM_FAIXA = 'faixa-';
+const ORIGEM_CEP_GERAL = 'cep-geral';
 /** Sentinela do erro de CEP inexistente quando o endereço exige CEP (mensagem com link). */
 const CEP_SEM_REGISTRO = 'CEP_SEM_REGISTRO';
 
@@ -174,6 +177,35 @@ interface EnderecoFormControls {
               </button>
               .
             </span>
+          }
+          @if (cepGeral() && cidade(); as c) {
+            <span [id]="id('cep') + '-geral'" class="field__hint">
+              Este é o CEP geral de {{ c.nome }}/{{ c.uf }}
+            </span>
+          }
+          @if (cepEmFaixa() && cidade(); as c) {
+            <p [id]="id('cep') + '-faixa'" class="field__error" role="alert">
+              O CEP {{ form.controls.cep.value }} não corresponde a uma rua cadastrada nos Correios.
+              Ele fica na faixa de CEPs de {{ c.nome }}/{{ c.uf }}. Se você digitou errado, corrija;
+              se o seu endereço usa o CEP geral da cidade ou do bairro, confirme abaixo.
+            </p>
+            <label class="checkbox">
+              <input
+                type="checkbox"
+                [checked]="cepConfirmado()"
+                [attr.aria-invalid]="cepDeFaixaSemConfirmacao() ? 'true' : null"
+                [attr.aria-describedby]="id('cep') + '-faixa'"
+                [disabled]="disabled()"
+                (change)="confirmarCep($event)"
+              />
+              <span class="checkbox__box" aria-hidden="true"></span>
+              Confirmo que este é o CEP que uso no meu endereço
+            </label>
+            @if (cepDeFaixaSemConfirmacao()) {
+              <span [id]="id('cep') + '-confirmacao'" class="field__error" role="alert">
+                Confirme o CEP ou corrija-o para continuar.
+              </span>
+            }
           }
           @if (cepSemRegistro()) {
             <span [id]="id('cep') + '-error'" class="field__error" role="alert">
@@ -450,7 +482,22 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   protected readonly cepSemRegistro = computed(() => this.cepErro() === CEP_SEM_REGISTRO);
   /** CEP geral da cidade em endereço que exige CEP: o DNE não traz logradouro nem bairro. */
   protected readonly logradouroBairroObrigatorios = computed(
-    () => this.exigeCep() && this.nivel() === 'cidade',
+    () =>
+      this.exigeCep() &&
+      (this.cepGeral() || (this.cepEmFaixa() ? this.cepConfirmado() : this.nivel() === 'cidade')),
+  );
+  /** O CEP resolvido só cai numa faixa (cidade, bairro ou distrito), sem rua cadastrada. */
+  protected readonly cepEmFaixa = computed(
+    () => this.exigeCep() && (this.origem() ?? '').startsWith(PREFIXO_ORIGEM_FAIXA),
+  );
+  /** O CEP geral oficial de uma cidade ou distrito. */
+  protected readonly cepGeral = computed(
+    () => this.exigeCep() && this.origem() === ORIGEM_CEP_GERAL,
+  );
+  /** O candidato confirmou que usa o CEP de faixa no endereço (`cepConfirmado` na resposta). */
+  protected readonly cepConfirmado = signal(false);
+  protected readonly cepDeFaixaSemConfirmacao = computed(
+    () => this.cepEmFaixa() && !this.cepConfirmado(),
   );
 
   /** Nível de resolução vigente — governa os campos ancorados (read-only). */
@@ -462,7 +509,9 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
    * backend exige CEP no endereço), então exibi-los editáveis descartaria a
    * digitação em silêncio. #412.
    */
-  protected readonly mostrarDetalheEndereco = computed(() => this.nivel() !== null);
+  protected readonly mostrarDetalheEndereco = computed(
+    () => this.nivel() !== null && !this.cepDeFaixaSemConfirmacao(),
+  );
   /** Proveniência do endereço (`geo-api` quando do CEP, `manual` sem CEP). */
   private readonly origem = signal<string | null>(null);
   /**
@@ -526,6 +575,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
       this.ufEscolhida.set('');
       this.nivel.set(null);
       this.origem.set(null);
+      this.cepConfirmado.set(false);
       this.modoManual.set(false);
       this.cepErro.set(null);
       this.editandoCep.set(false);
@@ -559,6 +609,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     const nivel = normalizarNivel(value.nivelResolucao);
     this.nivel.set(nivel);
     this.origem.set(value.origem);
+    this.cepConfirmado.set(value.cepConfirmado === true);
     const cepDigitos = (value.cep ?? '').replace(/\D/g, '');
     this.cepResolvido.set(cepDigitos);
     this.cepAtual.set(cepDigitos);
@@ -589,6 +640,9 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   validate(): ValidationErrors | null {
     if (this.cepPendente()) {
       return { cepNaoResolvido: true };
+    }
+    if (this.cepDeFaixaSemConfirmacao()) {
+      return { cepNaoConfirmado: true };
     }
     if (this.exigeCep() && this.cidade() !== null && this.cepResolvido().length !== 8) {
       return { cepObrigatorio: true };
@@ -715,17 +769,26 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     this.municipios.lembrar([cidade]);
     this.nivel.set(normalizarNivel(dto.nivelResolucao));
     this.origem.set(dto.origem ?? ORIGEM_GEO);
+    this.cepConfirmado.set(false);
+    // Faixa de CEP: o Geo não tem a rua, então nada além de cidade e UF é preenchido.
+    const preenche = !this.cepEmFaixa();
     this.form.patchValue(
       {
         cep: dto.cep,
-        logradouro: logradouroCompleto(dto.tipo ?? null, dto.logradouro ?? null),
-        bairro: dto.bairro ?? '',
-        distrito: dto.distrito ?? '',
-        latitude: textoDeCoordenada(dto.latitude),
-        longitude: textoDeCoordenada(dto.longitude),
+        logradouro: preenche ? logradouroCompleto(dto.tipo ?? null, dto.logradouro ?? null) : '',
+        bairro: preenche ? (dto.bairro ?? '') : '',
+        distrito: preenche ? (dto.distrito ?? '') : '',
+        latitude: preenche ? textoDeCoordenada(dto.latitude) : '',
+        longitude: preenche ? textoDeCoordenada(dto.longitude) : '',
       },
       { emitEvent: false },
     );
+    this.emitir();
+  }
+
+  protected confirmarCep(evento: Event): void {
+    this.cepConfirmado.set((evento.target as HTMLInputElement).checked);
+    this.onTouched();
     this.emitir();
   }
 
@@ -825,6 +888,10 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     // `endereco`: o mapeamento trataria os 8 dígitos como endereço válido e
     // submeteria um CEP que o usuário não conseguiu validar. #412.
     this.tamanhoDoComplemento.set(raw.complemento.length);
+    if (cepDigitos !== this.cepResolvido()) {
+      // Trocar o CEP desfaz a confirmação.
+      this.cepConfirmado.set(false);
+    }
     this.cepAtual.set(cepDigitos);
     this.cepTextoAtual.set(raw.cep.trim());
     const cepCorrespondeAoResolvido = cepDigitos.length > 0 && cepDigitos === this.cepResolvido();
@@ -862,6 +929,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
       longitude: vazioParaNulo(raw.longitude),
       nivelResolucao: this.nivel(),
       origem: this.origem(),
+      ...(this.cepConfirmado() ? { cepConfirmado: true } : {}),
     });
   }
 }

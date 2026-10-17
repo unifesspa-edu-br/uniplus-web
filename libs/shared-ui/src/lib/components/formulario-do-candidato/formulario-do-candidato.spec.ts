@@ -1132,11 +1132,94 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
 
     digitar(logradouro, 'Rua do Centro');
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
     digitar(bairro, 'Centro');
     expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
       logradouro: 'Rua do Centro',
       bairro: 'Centro',
     });
+  });
+
+  const buscarCepComOrigem = (origem: string): HTMLElement => {
+    resultadoDoCep = () =>
+      of({
+        ok: true,
+        data: {
+          ...CEP_DE_MARABA,
+          logradouro: null,
+          tipo: null,
+          bairro: 'Nova Marabá',
+          nivelResolucao: 'cidade',
+          origem,
+        },
+      });
+    const tela = montar(RESIDENCIA);
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
+    clicar(botao(tela, 'Buscar CEP'));
+    return tela;
+  };
+
+  it('o CEP geral oficial mostra de qual cidade é e exige logradouro e bairro', () => {
+    resultadoDoCep = () =>
+      of({
+        ok: true,
+        data: { ...CEP_DE_MARABA, logradouro: null, tipo: null, bairro: null, origem: 'cep-geral' },
+      });
+    const tela = montar(RESIDENCIA);
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
+    clicar(botao(tela, 'Buscar CEP'));
+
+    expect(tela.textContent).toContain('Este é o CEP geral de Marabá/PA');
+    expect(
+      tela.querySelector('input[id$="-bairro"]')?.getAttribute('aria-required'),
+    ).toBe('true');
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+  });
+
+  it('o CEP que só cai numa faixa avisa, não preenche além da cidade e não vale sem confirmação', () => {
+    const tela = buscarCepComOrigem('faixa-bairro');
+
+    const aviso = tela.querySelector('[id$="-cep-faixa"]') as HTMLElement;
+    expect(aviso.getAttribute('role')).toBe('alert');
+    expect(aviso.textContent).toContain('O CEP 68507590 não corresponde a uma rua cadastrada');
+    expect(aviso.textContent).toContain('faixa de CEPs de Marabá/PA');
+    expect(tela.querySelector('input[id$="-bairro"]')).toBeNull();
+    expect(tela.textContent).toContain('Confirmo que este é o CEP que uso no meu endereço');
+    expect(tela.querySelector('[id$="-cep-confirmacao"]')?.getAttribute('role')).toBe('alert');
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+  });
+
+  it('confirmado o CEP de faixa, logradouro e bairro são obrigatórios e a resposta leva cepConfirmado', () => {
+    const tela = buscarCepComOrigem('faixa-cidade');
+
+    clicar(tela.querySelector('input[type="checkbox"]') as HTMLElement);
+    const logradouro = tela.querySelector('input[id$="-logradouro"]') as HTMLInputElement;
+    const bairro = tela.querySelector('input[id$="-bairro"]') as HTMLInputElement;
+    expect([logradouro.value, bairro.value]).toEqual(['', '']);
+    expect(logradouro.getAttribute('aria-required')).toBe('true');
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+
+    digitar(logradouro, 'Rua do Centro');
+    digitar(bairro, 'Centro');
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
+      cepConfirmado: true,
+      origem: 'faixa-cidade',
+    });
+  });
+
+  it('trocar o CEP desfaz a confirmação', () => {
+    const tela = buscarCepComOrigem('faixa-distrito');
+    const caixa = tela.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    clicar(caixa);
+    expect(caixa.checked).toBe(true);
+
+    clicar(botao(tela, 'Trocar CEP'));
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507');
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
+    clicar(botao(tela, 'Buscar CEP'));
+
+    expect((tela.querySelector('input[type="checkbox"]') as HTMLInputElement).checked).toBe(false);
   });
 
   it('logradouro e bairro vindos do CEP continuam editáveis', () => {
