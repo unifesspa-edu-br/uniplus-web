@@ -1046,7 +1046,19 @@ export class ProcessoSeletivoPage {
       if (alerta === null) return;
 
       alerta.setAttribute('tabindex', '-1');
-      // Quem rola é o `.page` do shell. O `scrollTo` ignora o `scroll-padding`, então a
+
+      // Com campo inválido no passo em tela, o foco vai a ele e a rolagem o traz para a vista:
+      // foco fora da tela não é foco visível. O aviso segue anunciado pela região aria-live.
+      const campo = this.root.nativeElement.querySelector<HTMLElement>(
+        '.step-pane:not([hidden]) [aria-invalid="true"]',
+      );
+      if (campo !== null) {
+        campo.scrollIntoView?.({ block: 'center' });
+        campo.focus({ preventScroll: true });
+        if (document.activeElement === campo) return;
+      }
+
+      // Sem campo inválido: quem rola é o `.page` do shell. O `scrollTo` ignora o `scroll-padding`, então a
       // reserva do topo (a barra de etapas do celular, que cobriria o aviso) entra à mão.
       const scroller = this.root.nativeElement.closest<HTMLElement>('.page');
       if (scroller) {
@@ -1062,8 +1074,6 @@ export class ProcessoSeletivoPage {
           // jsdom não implementa scrollTo(options); o foco não pode ser bloqueado.
         }
       }
-      // O aviso lista as pendências do passo e é o que o foco e a rolagem alcançam; cada campo
-      // inválido segue ligado ao seu erro por `aria-invalid` e `aria-describedby`.
       alerta.focus({ preventScroll: true });
     });
   }

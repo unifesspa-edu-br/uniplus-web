@@ -458,8 +458,10 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(document.activeElement).toBe(alerta);
   });
 
-  it('ao bloquear o avanço de um passo com campo inválido, o foco vai ao aviso de pendências', async () => {
+  it('ao bloquear o avanço com campo inválido, rola o campo para a vista e o foca', async () => {
     const { fixture, page, store } = montar();
+    const rolagem = vi.fn();
+    HTMLElement.prototype.scrollIntoView = rolagem;
 
     store.goTo(1);
     fixture.detectChanges();
@@ -467,9 +469,12 @@ describe('ProcessoSeletivoPage — publicação', () => {
     fixture.detectChanges();
     await new Promise((resolve) => setTimeout(resolve));
 
-    const raiz = fixture.nativeElement as HTMLElement;
-    expect(raiz.querySelector('.step-pane:not([hidden]) [aria-invalid="true"]')).not.toBeNull();
-    expect(document.activeElement).toBe(raiz.querySelector('.step-error'));
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(
+      '.step-pane:not([hidden]) [aria-invalid="true"]',
+    );
+    expect(campo).not.toBeNull();
+    expect(rolagem).toHaveBeenCalledWith({ block: 'center' });
+    expect(document.activeElement).toBe(campo);
   });
 
   it('identifica cada pendência pelo passo de origem', async () => {
