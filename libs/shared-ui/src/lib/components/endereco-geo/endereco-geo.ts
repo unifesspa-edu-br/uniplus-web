@@ -491,11 +491,18 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
    */
   protected readonly cepEmFaixa = computed(() => {
     const origem = this.origem();
-    return this.exigeCep() && origem !== null && !ORIGENS_SEM_CONFIRMACAO.includes(origem);
+    return this.exigeCep() && this.cepVigente() && origem !== null && !ORIGENS_SEM_CONFIRMACAO.includes(origem);
   });
   /** O CEP geral oficial de uma cidade ou distrito. */
   protected readonly cepGeral = computed(
-    () => this.exigeCep() && this.origem() === ORIGEM_CEP_GERAL,
+    () => this.exigeCep() && this.cepVigente() && this.origem() === ORIGEM_CEP_GERAL,
+  );
+  /**
+   * O CEP digitado é o resolvido pelo Geo. Os avisos, a confirmação e as exigências que vêm da
+   * origem da resolução só valem assim; durante a troca do CEP o endereço fica pendente.
+   */
+  protected readonly cepVigente = computed(
+    () => this.cepResolvido().length === 8 && this.cepAtual() === this.cepResolvido(),
   );
   /** Ids que descrevem o CEP: a ajuda, o aviso do CEP geral e o erro. */
   protected readonly descricaoDoCep = computed(() =>
