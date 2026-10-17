@@ -43,6 +43,7 @@ export type {
   DefinirBonusRegionalRequest,
   DefinirCascataRemanejamentoRequest,
   DefinirClassificacaoRequest,
+  DefinirOpcoesDeCursoRequest,
   DefinirOpcoesDeclaradasRequest,
   DefinirOfertaAtendimentoRequest,
   DestinoRemanejamentoInput,

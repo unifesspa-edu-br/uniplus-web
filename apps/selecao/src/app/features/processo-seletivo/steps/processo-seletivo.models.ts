@@ -667,6 +667,14 @@ export interface WizardDraft {
     valor: string;
     fundamentos: FundamentoIsencaoCodigo[];
   };
+  /**
+   * Quantos cursos o candidato escolhe na inscrição: `'1'`, `'2'` ou vazio enquanto o
+   * administrador não declarou. É dimensão do processo, gravada junto das vagas porque a
+   * quantidade de cursos cadastrados limita o número.
+   */
+  opcoesDeCurso: {
+    numero: string;
+  };
   identificacao: {
     nome: string;
     /**
@@ -741,7 +749,6 @@ export interface WizardDraft {
     casasArredondamento: string;
     regraOrdemAlocacaoCodigo: string;
     regraOrdemAlocacaoVersao: string;
-    nOpcoesAlocacao: string;
     /**
      * Único booleano do corpo — condiciona se `ELIM-CORTE-EM-AREA` e
      * `ELIM-ZERO-EM-AREA` são aceitas em `regrasEliminacao`
@@ -869,6 +876,7 @@ export const SECOES_DO_RASCUNHO = [
   'tipoProcesso',
   'pagamento',
   'identificacao',
+  'opcoesDeCurso',
   'vagas',
   'cronograma',
   'classificacao',

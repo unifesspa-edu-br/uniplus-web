@@ -70,7 +70,6 @@ describe('FormulaStepComponent', () => {
     store.patchObjectSection('classificacao', {
       regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
-      nOpcoesAlocacao: '2',
     });
 
     expect(componente.validate().valid).toBe(true);
@@ -81,7 +80,6 @@ describe('FormulaStepComponent', () => {
     store.patchObjectSection('classificacao', {
       regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
-      nOpcoesAlocacao: '2',
     });
 
     expect(componente.validate().valid).toBe(false);
@@ -90,17 +88,6 @@ describe('FormulaStepComponent', () => {
     componente.alterarCasasArredondamento('2');
 
     expect(componente.validate().valid).toBe(true);
-  });
-
-  it('recusa número de opções de alocação diferente de 1 ou 2', () => {
-    componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
-    store.patchObjectSection('classificacao', {
-      regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
-      regraOrdemAlocacaoVersao: '1.0',
-      nOpcoesAlocacao: '3',
-    });
-
-    expect(componente.validate().valid).toBe(false);
   });
 
   /**

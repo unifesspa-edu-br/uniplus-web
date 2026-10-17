@@ -126,7 +126,6 @@ describe('EliminacaoStepComponent', () => {
       casasArredondamento: '2',
       regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
-      nOpcoesAlocacao: '2',
       baseadoEmEnem: false,
       regrasEliminacao: [],
     });
@@ -136,7 +135,7 @@ describe('EliminacaoStepComponent', () => {
     expect(componente.validate().valid).toBe(false);
   });
 
-  it('sob classificação importada, ainda exige ordem de alocação e número de opções', () => {
+  it('sob classificação importada, ainda exige a ordem de alocação', () => {
     store.patchObjectSection('classificacao', {
       regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
       regraCalculoVersao: '1.0',
@@ -153,7 +152,6 @@ describe('EliminacaoStepComponent', () => {
       regraCalculoVersao: '1.0',
       regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
-      nOpcoesAlocacao: '2',
     });
 
     expect(componente.validate().valid).toBe(true);
@@ -169,15 +167,6 @@ describe('EliminacaoStepComponent', () => {
     const resultado = componente.validate();
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.join(' ')).toContain('ordem de alocação');
-  });
-
-  it('recusa quando a Fórmula não declarou o número de opções de curso', () => {
-    prepararClassificacaoLocal();
-    store.patchObjectSection('classificacao', { nOpcoesAlocacao: '' });
-
-    const resultado = componente.validate();
-    expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.join(' ')).toContain('número de opções');
   });
 
   it('recusa sob fórmula local sem nenhuma etapa que componha a nota', () => {
@@ -1377,7 +1366,7 @@ describe('EliminacaoStepComponent', () => {
       it('com outro erro junto, mantém o título da raiz para ele', async () => {
         const resultado = await recusar(SEM_QUADRO, [
           { field: 'baseadoEmEnem', code: SEM_QUADRO, message: 'Critério 1.' },
-          { field: 'nOpcoesAlocacao', code: 'outro', message: 'Outro.' },
+          { field: 'regraOrdemAlocacaoCodigo', code: 'outro', message: 'Outro.' },
         ]);
 
         expect(resultado.messages).toEqual([TEXTO_SEM_QUADRO, 'Título genérico da raiz.']);
@@ -1761,7 +1750,6 @@ describe('EliminacaoStepComponent', () => {
         regraCalculoVersao: '1.0',
         regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
         regraOrdemAlocacaoVersao: '1.0',
-        nOpcoesAlocacao: '1',
         baseadoEmEnem: true,
         edicoesEnem: ['2025', '2026'],
       });

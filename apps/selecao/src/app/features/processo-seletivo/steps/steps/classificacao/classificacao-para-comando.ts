@@ -139,7 +139,6 @@ export function comoComandoDeClassificacao(
     casasArredondamento: local ? inteiro(classificacao.casasArredondamento) : null,
     regraOrdemAlocacaoCodigo: classificacao.regraOrdemAlocacaoCodigo,
     regraOrdemAlocacaoVersao: classificacao.regraOrdemAlocacaoVersao,
-    nOpcoesAlocacao: inteiro(classificacao.nOpcoesAlocacao) ?? 0,
     regrasEliminacao: local ? classificacao.regrasEliminacao.map(comoComandoDeRegraEliminacao) : [],
     baseadoEmEnem: classificacao.baseadoEmEnem,
     resolucaoPesoAreaEnem: exigeResolucaoPesoAreaEnem(classificacao)
@@ -188,14 +187,14 @@ export function pendenciaDaResolucao(
 
 /**
  * Mensagens de recusa dos campos que o passo Fórmula coleta — regra de
- * cálculo, ordem de alocação, número de opções, sob fórmula local o
+ * cálculo, ordem de alocação, sob fórmula local o
  * arredondamento e, quando a classificação a exige, a resolução de Peso por
  * Área. Compartilhada entre `FormulaStepComponent.validate()` e
  * `EliminacaoStepComponent.validate()`: a navegação do wizard é livre, então
  * a Eliminação — que grava o comando de classificação inteiro — não pode
  * supor que o operador passou pela Fórmula antes de chegar aqui. Sem esta
  * checagem também na Eliminação, um `PUT /classificacao` sairia com
- * `regraOrdemAlocacaoCodigo: ''` ou `nOpcoesAlocacao: 0` sempre que o
+ * `regraOrdemAlocacaoCodigo: ''` sempre que o
  * operador pulasse direto para o último passo.
  */
 export function mensagensDeClassificacaoBase(
@@ -222,11 +221,6 @@ export function mensagensDeClassificacaoBase(
 
   if (!classificacao.regraOrdemAlocacaoCodigo) {
     messages.push('Selecione a regra de ordem de alocação, no passo Fórmula.');
-  }
-
-  const nOpcoes = inteiro(classificacao.nOpcoesAlocacao);
-  if (nOpcoes !== 1 && nOpcoes !== 2) {
-    messages.push('Informe o número de opções de curso (1 ou 2), no passo Fórmula.');
   }
 
   // Por último porque é o último campo da tela: o resumo segue a ordem em que o operador os vê.

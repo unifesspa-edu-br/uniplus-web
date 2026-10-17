@@ -80,6 +80,7 @@ export type PublicarProcessoSeletivoRequest =
 export type DadosDoAtoRequest = components['schemas']['DadosDoAtoRequest'];
 export type ReferenciaRegraDto = components['schemas']['ReferenciaRegraDto'];
 export type ConfiguracaoClassificacaoDto = components['schemas']['ConfiguracaoClassificacaoDto'];
+export type DefinirOpcoesDeCursoRequest = components['schemas']['DefinirOpcoesDeCursoRequest'];
 export type DefinirClassificacaoRequest = components['schemas']['DefinirClassificacaoRequest'];
 export type RegraEliminacaoDto = components['schemas']['RegraEliminacaoDto'];
 export type RegraEliminacaoInput = components['schemas']['RegraEliminacaoInput'];
@@ -163,6 +164,25 @@ export class ProcessosSeletivosApi {
     return this.http.put<ApiResult<void>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/distribuicao-vagas`,
       distribuicoes,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * PUT `/api/selecao/processos-seletivos/{id}/opcoes-de-curso` — declara quantos cursos o
+   * candidato escolhe na inscrição (1 ou 2). Com a distribuição de vagas já gravada, o número
+   * não pode passar da quantidade de ofertas: a recusa vem como 422 no campo `numero`.
+   *
+   * Responde 204 sem corpo.
+   */
+  definirOpcoesDeCurso(
+    processoSeletivoId: string,
+    request: DefinirOpcoesDeCursoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/opcoes-de-curso`,
+      request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }

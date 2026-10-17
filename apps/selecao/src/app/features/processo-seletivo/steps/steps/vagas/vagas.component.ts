@@ -19,7 +19,7 @@ import {
   StepValidation,
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
+import { isApiOk, ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
 import {
   ConfiguracaoDistribuicaoVagasDto,
   OrigemCandidatos,
@@ -51,6 +51,15 @@ import {
   seguemOMesmoPadrao,
 } from './distribuicao-de-vagas';
 import { comoComando } from './distribuicao-para-comando';
+import {
+  AJUDA_DAS_OPCOES,
+  erroDasOpcoes,
+  numeroDeOpcoesPrimeiro,
+  OPCOES_DE_CURSO,
+  recusadoPorOpcoesAcimaDasOfertas,
+  rotuloDasOpcoes,
+  TEXTO_OPCOES_ACIMA_DAS_OFERTAS,
+} from './opcoes-de-curso';
 import { explicarRegra } from './regra-em-linguagem-clara';
 
 /** O que o edital declara uma vez e vale para todas as ofertas. */
@@ -171,6 +180,38 @@ export class VagasStepComponent {
       pr: primeira.pr,
     };
   });
+
+  protected readonly opcoesDeCurso = OPCOES_DE_CURSO;
+  protected readonly ajudaDasOpcoes = AJUDA_DAS_OPCOES;
+
+  /** O número escolhido, como a consulta o lê. */
+  readonly opcoesLidas = computed(() => rotuloDasOpcoes(this.store.draft().opcoesDeCurso.numero));
+
+  /**
+   * O erro só aparece depois de uma tentativa de avançar (ou de uma recusa da API): com o número
+   * escolhido antes dos cursos, avisar de imediato acusaria um passo que o operador ainda não
+   * terminou. Depois disso acompanha o estado, e some assim que o campo ou o quadro o corrige.
+   */
+  private readonly opcoesConferidas = signal(false);
+  /** O estado em que a API recusou: o erro vale enquanto o número e o quadro continuam os mesmos. */
+  private readonly recusaDaApiNasOpcoes = signal<{ numero: string; ofertas: number } | null>(null);
+
+  readonly erroDasOpcoes = computed<string | null>(() => {
+    const recusa = this.recusaDaApiNasOpcoes();
+    if (
+      recusa !== null &&
+      recusa.numero === this.store.draft().opcoesDeCurso.numero &&
+      recusa.ofertas === this.distribuicoes().length
+    ) {
+      return TEXTO_OPCOES_ACIMA_DAS_OFERTAS;
+    }
+    if (!this.opcoesConferidas()) return null;
+    return erroDasOpcoes(this.store.draft().opcoesDeCurso.numero, this.distribuicoes().length);
+  });
+
+  alterarOpcoesDeCurso(numero: string): void {
+    this.store.patchObjectSection('opcoesDeCurso', { numero });
+  }
 
   /** Enquanto não há oferta, o padrão declarado fica aqui. */
   private readonly padraoPendente = signal<PadraoDaDistribuicao>(PADRAO_VAZIO);
@@ -518,6 +559,8 @@ export class VagasStepComponent {
     this.remocaoPendente.set(null);
     this.trocaDeRegraPendente.set(null);
     this.reaplicarRolPendente.set(false);
+    this.opcoesConferidas.set(false);
+    this.recusaDaApiNasOpcoes.set(null);
   }
 
   /**
@@ -1097,6 +1140,10 @@ export class VagasStepComponent {
         'Este é o quadro de vagas que o edital publica. Boa parte dele vem do cálculo da regra — confira os totais antes de gravar.',
       rotuloDeConfirmar: 'Gravar quadro de vagas',
       itens: [
+        {
+          rotulo: 'Número de opções de curso',
+          valor: rotuloDasOpcoes(this.store.draft().opcoesDeCurso.numero) ?? '',
+        },
         { rotulo: 'Ofertas de curso no quadro', valor: String(ofertas.length) },
         // Os dois totais, nomeados pelo que cada um é. Sob a Lei 12.711 a suplementar ACRESCE
         // ao total da oferta, então o que o edital publica pode ser maior que a soma das vagas
@@ -1197,23 +1244,19 @@ export class VagasStepComponent {
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
-      const resultado = await this.cadastro.definirDistribuicaoVagas(
-        processoId,
-        this.distribuicoes().map(comoComando),
-      );
+      this.recusaDaApiNasOpcoes.set(null);
+      const recusa = await this.gravarOpcoesEDistribuicao(processoId, geracao);
+      if (recusa !== null) return recusa;
 
       // O editor pode ter passado a outro processo enquanto o comando corria.
       // A resposta descreve o processo anterior, e concluir o passo agora
       // avançaria o rascunho de outro cadastro.
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
 
-      if (!resultado.ok) {
-        return { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
-      }
-
       const cascata = await this.persistirCascata(processoId);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!cascata.valid) {
+        this.store.vagasGravadasDefasadas.set(true);
         return {
           valid: false,
           messages: [
@@ -1230,6 +1273,80 @@ export class VagasStepComponent {
       // próprio em curso.
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
+  }
+
+  /**
+   * Grava o número de opções e a distribuição, sempre os dois, na ordem que o servidor aceita:
+   * ver {@link numeroDeOpcoesPrimeiro}. O número gravado vem da leitura mais recente do
+   * processo; depois de uma resposta inconclusiva ele pode ter mudado sem que a tela saiba, e a
+   * releitura vem antes de decidir a ordem. `null` quando as duas gravações deram certo.
+   */
+  private async gravarOpcoesEDistribuicao(
+    processoId: string,
+    geracao: number,
+  ): Promise<StepValidation | null> {
+    if (this.store.vagasGravadasDefasadas()) {
+      const detalhe = await firstValueFrom(this.api.obter(processoId));
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      if (!isApiOk(detalhe)) {
+        return {
+          valid: false,
+          messages: ['Não foi possível reler o processo antes de gravar as vagas. Tente novamente.'],
+        };
+      }
+      this.store.registrarVagasGravadas(detalhe.data);
+    }
+
+    const numero = Number(this.store.draft().opcoesDeCurso.numero);
+    const comandos = this.distribuicoes().map(comoComando);
+    const etapas = [
+      {
+        gravada: 'O número de opções de curso foi gravado.',
+        gravar: async () => {
+          const resultado = await this.cadastro.definirOpcoesDeCurso(processoId, { numero });
+          if (resultado.ok && geracao === this.store.geracao()) {
+            this.store.opcoesDeCursoGravadas.set(numero);
+          }
+          return resultado;
+        },
+      },
+      {
+        gravada: 'A distribuição de vagas foi gravada.',
+        gravar: () => this.cadastro.definirDistribuicaoVagas(processoId, comandos),
+      },
+    ];
+    if (!numeroDeOpcoesPrimeiro(this.store.opcoesDeCursoGravadas(), comandos.length)) {
+      etapas.reverse();
+    }
+
+    let jaGravada: string | null = null;
+    for (const etapa of etapas) {
+      const resultado = await etapa.gravar();
+      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      if (!resultado.ok) {
+        // Sem resposta conclusiva o servidor pode ter aplicado o comando: o que ele tem só uma
+        // releitura diz. A mesma regra da chave de idempotência, vinda do serviço.
+        if (resultado.inconclusiva) this.store.vagasGravadasDefasadas.set(true);
+        return this.recusaDaGravacao(resultado.problem, jaGravada);
+      }
+      jaGravada = etapa.gravada;
+    }
+    return null;
+  }
+
+  /** A recusa por número acima das ofertas é do campo; as demais seguem a mensagem da API. */
+  private recusaDaGravacao(problem: ProblemDetails, jaGravada: string | null): StepValidation {
+    const dizendoOQueGravou = (mensagem: string): string =>
+      jaGravada === null ? mensagem : `${jaGravada} ${mensagem}`;
+
+    if (recusadoPorOpcoesAcimaDasOfertas(problem)) {
+      this.recusaDaApiNasOpcoes.set({
+        numero: this.store.draft().opcoesDeCurso.numero,
+        ofertas: this.distribuicoes().length,
+      });
+      return { valid: false, messages: [dizendoOQueGravou(TEXTO_OPCOES_ACIMA_DAS_OFERTAS)] };
+    }
+    return { valid: false, messages: [dizendoOQueGravou(this.problemI18n.resolve(problem).title)] };
   }
 
   /**
@@ -1250,6 +1367,7 @@ export class VagasStepComponent {
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return { valid: true };
     if (!isApiOk(detalhe)) {
+      this.store.vagasGravadasDefasadas.set(true);
       return this.derivaAModalidade()
         ? recusa(
             'Não foi possível reler o processo para pôr no formulário de inscrição as perguntas que as modalidades fazem. Grave as vagas de novo.',
@@ -1257,6 +1375,7 @@ export class VagasStepComponent {
         : { valid: true };
     }
     this.store.registrarRegrasDasModalidades(detalhe.data);
+    this.store.registrarVagasGravadas(detalhe.data);
     if (!this.derivaAModalidade()) return { valid: true };
 
     const campos = await this.camposPressupostos.garantirCampos(
@@ -1344,13 +1463,18 @@ export class VagasStepComponent {
    */
   private readonly pendenciasQueImpedemGravar = computed<readonly string[]>(() => {
     const distribuicoes = this.distribuicoes();
+    const opcoes = erroDasOpcoes(this.store.draft().opcoesDeCurso.numero, distribuicoes.length);
     if (distribuicoes.length === 0) {
-      return ['Configure a distribuição de vagas de ao menos uma oferta de curso.'];
+      return [
+        ...(opcoes === null ? [] : [opcoes]),
+        'Configure a distribuição de vagas de ao menos uma oferta de curso.',
+      ];
     }
 
     const foraDoPadrao = this.ofertasForaDoPadrao().length;
 
     return [
+      ...(opcoes === null ? [] : [opcoes]),
       ...(foraDoPadrao === 0
         ? []
         : [
@@ -1427,6 +1551,9 @@ export class VagasStepComponent {
       ...this.pendenciasQueImpedemGravar(),
       ...this.pendenciasDaCascata(),
     ];
+
+    // A tentativa de avançar é o que faz o erro aparecer no campo.
+    this.opcoesConferidas.set(true);
 
     return mensagens.length > 0 ? { valid: false, messages: mensagens } : { valid: true };
   }

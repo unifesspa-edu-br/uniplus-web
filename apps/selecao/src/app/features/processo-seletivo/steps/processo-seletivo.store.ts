@@ -46,6 +46,7 @@ const INITIAL_DRAFT: WizardDraft = {
     uploads: [],
   },
   pagamento: { cobra: null, valor: '', fundamentos: [] },
+  opcoesDeCurso: { numero: '' },
   vagas: { ofertas: [], cascata: null },
   // Cronograma e etapas nascem vazios: quais fases o certame tem é decisão de
   // quem configura, e processo com classificação importada não tem etapa
@@ -63,7 +64,6 @@ const INITIAL_DRAFT: WizardDraft = {
     casasArredondamento: '',
     regraOrdemAlocacaoCodigo: '',
     regraOrdemAlocacaoVersao: '',
-    nOpcoesAlocacao: '',
     baseadoEmEnem: false,
     resolucaoPesoAreaEnem: '',
     regrasEliminacao: [],
@@ -173,6 +173,15 @@ export class ProcessoSeletivoStore {
    * quadro, que não mexe no `remoteSnapshot`.
    */
   readonly regrasDasModalidades = signal<readonly RegraDaModalidadeOfertada[]>([]);
+
+  /**
+   * O número de opções de curso como o servidor o tem, na leitura mais recente do processo. Dele
+   * sai a ordem das gravações do passo Vagas: o servidor recusa a distribuição com menos ofertas
+   * que o número gravado. `null` é "nunca declarado".
+   */
+  readonly opcoesDeCursoGravadas = signal<number | null>(null);
+  /** Uma gravação ficou sem resposta conclusiva: o que o servidor tem só uma releitura diz. */
+  readonly vagasGravadasDefasadas = signal(false);
 
   /** Leitura do detalhe em curso — a tela não mostra wizard nem erro ainda. */
   readonly hidratando = signal(false);
@@ -559,6 +568,8 @@ export class ProcessoSeletivoStore {
     this.publicacaoNaoConfirmada.set(false);
     this.remoteSnapshot.set(null);
     this.regrasDasModalidades.set([]);
+    this.opcoesDeCursoGravadas.set(null);
+    this.vagasGravadasDefasadas.set(false);
     this.hidratando.set(false);
     this.falhaDeLeitura.set(null);
     this.documentosParaEscolha.set([]);
@@ -643,6 +654,14 @@ export class ProcessoSeletivoStore {
     this.registrarClassificacaoLida(dto.classificacao);
     this.criteriosDesempateGravados.set(desempateDe(dto));
     this.registrarRegrasDasModalidades(dto);
+    this.registrarVagasGravadas(dto);
+  }
+
+  /** O número de opções de curso, lido do detalhe. */
+  registrarVagasGravadas(dto: ProcessoSeletivoDto): void {
+    const numero = dto.opcoesDeCurso?.numero;
+    this.opcoesDeCursoGravadas.set(numero === undefined || numero === null ? null : Number(numero));
+    this.vagasGravadasDefasadas.set(false);
   }
 
   /** As regras que o servidor congelou nas modalidades ofertadas, lidas do detalhe. */

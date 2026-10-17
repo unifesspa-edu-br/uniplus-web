@@ -168,7 +168,7 @@ export interface paths {
                 /** @description OK */
                 readonly 200: {
                     headers: {
-                        /** @description Selo da representação servida, no formato "{versaoDaProjecao}:{hashDaConfiguracao}". Devolva-o no If-None-Match da próxima leitura: a resposta é de revalidação obrigatória (Cache-Control: no-cache), e o selo é o que permite receber 304 em vez do documento inteiro. Esta rota é somente leitura e não aceita If-Match. */
+                        /** @description Selo da representação servida, no formato "{versaoDaProjecao}:{hashDaConfiguracao}:{situacao}:{resumoDosEditais}". Devolva-o no If-None-Match da próxima leitura: a resposta é de revalidação obrigatória (Cache-Control: no-cache), e o selo é o que permite receber 304 em vez do documento inteiro. Esta rota é somente leitura e não aceita If-Match. */
                         readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
@@ -179,7 +179,7 @@ export interface paths {
                 /** @description Not Modified */
                 readonly 304: {
                     headers: {
-                        /** @description Selo da representação servida, no formato "{versaoDaProjecao}:{hashDaConfiguracao}". Devolva-o no If-None-Match da próxima leitura: a resposta é de revalidação obrigatória (Cache-Control: no-cache), e o selo é o que permite receber 304 em vez do documento inteiro. Esta rota é somente leitura e não aceita If-Match. */
+                        /** @description Selo da representação servida, no formato "{versaoDaProjecao}:{hashDaConfiguracao}:{situacao}:{resumoDosEditais}". Devolva-o no If-None-Match da próxima leitura: a resposta é de revalidação obrigatória (Cache-Control: no-cache), e o selo é o que permite receber 304 em vez do documento inteiro. Esta rota é somente leitura e não aceita If-Match. */
                         readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
@@ -4422,6 +4422,134 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/processos-seletivos/{id}/opcoes-de-curso": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    readonly "If-Match"?: string;
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DefinirOpcoesDeCursoRequest"];
+                    readonly "text/json": components["schemas"]["DefinirOpcoesDeCursoRequest"];
+                    readonly "application/*+json": components["schemas"]["DefinirOpcoesDeCursoRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
+                        readonly ETag?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Failed */
+                readonly 412: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Required */
+                readonly 428: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/selecao/processos-seletivos/{id}/taxa-inscricao": {
         readonly parameters: {
             readonly query?: never;
@@ -7521,6 +7649,8 @@ export interface components {
             readonly atendimento: components["schemas"]["AtendimentoCertameDto"];
             readonly taxaInscricao: null | components["schemas"]["TaxaInscricaoCertameDto"];
             readonly retificacao: null | components["schemas"]["RetificacaoCertameDto"];
+            readonly situacao?: null | components["schemas"]["SituacaoDoCertame"];
+            readonly editaisPublicados?: null | readonly components["schemas"]["EditalPublicadoCertameDto"][];
         };
         readonly ComprovanteEmitidoDto: {
             /** Format: int32 */
@@ -7621,8 +7751,6 @@ export interface components {
             /** Format: int32 */
             readonly casasArredondamento: null | number | string;
             readonly regraOrdemAlocacao: components["schemas"]["ReferenciaRegraDto"];
-            /** Format: int32 */
-            readonly nOpcoesAlocacao: number | string;
             readonly regrasEliminacao: readonly components["schemas"]["RegraEliminacaoDto"][];
             readonly concorrenciaDuplaAplicavel: boolean;
             readonly baseadoEmEnem: boolean;
@@ -7804,8 +7932,6 @@ export interface components {
             readonly casasArredondamento: null | number | string;
             readonly regraOrdemAlocacaoCodigo: string;
             readonly regraOrdemAlocacaoVersao: string;
-            /** Format: int32 */
-            readonly nOpcoesAlocacao: number | string;
             readonly regrasEliminacao: readonly components["schemas"]["RegraEliminacaoInput"][];
             readonly baseadoEmEnem: boolean;
             readonly resolucaoPesoAreaEnem?: null | string;
@@ -7839,6 +7965,10 @@ export interface components {
         };
         readonly DefinirOpcoesDeclaradasRequest: {
             readonly opcoes: readonly components["schemas"]["OpcaoDeclaradaRequest"][];
+        };
+        readonly DefinirOpcoesDeCursoRequest: {
+            /** Format: int32 */
+            readonly numero: number | string;
         };
         readonly DefinirReferenciaTemporalFatosRequest: {
             readonly tipo: null | string;
@@ -7960,6 +8090,12 @@ export interface components {
             readonly situacao: string;
             readonly entidadeId: null | string;
             readonly alternativas: readonly components["schemas"]["AlternativasSimuladasDto"][];
+        };
+        readonly EditalPublicadoCertameDto: {
+            /** Format: uuid */
+            readonly atoId: string;
+            /** Format: uri */
+            readonly urlDownload: string;
         };
         readonly EtapaCertameDto: {
             readonly nome: string;
@@ -8673,6 +8809,10 @@ export interface components {
             readonly fatoCodigo: string;
             readonly opcoes: readonly components["schemas"]["OpcaoDoProcessoDto"][];
         };
+        readonly OpcoesDeCursoDto: {
+            /** Format: int32 */
+            readonly numero: number | string;
+        };
         readonly OpcoesSimuladasDto: {
             readonly codigos: readonly string[];
             readonly definitivas: boolean;
@@ -8777,6 +8917,7 @@ export interface components {
             readonly distribuicaoVagas: readonly components["schemas"]["ConfiguracaoDistribuicaoVagasDto"][];
             readonly bonusRegional: null | components["schemas"]["ConfiguracaoBonusRegionalDto"];
             readonly aplicaBonusRegional: null | boolean;
+            readonly opcoesDeCurso: null | components["schemas"]["OpcoesDeCursoDto"];
             readonly cascata: null | components["schemas"]["ConfiguracaoCascataRemanejamentoDto"];
             readonly criteriosDesempate: readonly components["schemas"]["CriterioDesempateDto"][];
             readonly classificacao: null | components["schemas"]["ConfiguracaoClassificacaoDto"];

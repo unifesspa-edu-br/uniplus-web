@@ -390,7 +390,6 @@ const CLASSIFICACAO = {
   regraArredondamento: { codigo: 'ARRED-TRUNCAR', versao: '1.0' },
   casasArredondamento: 2,
   regraOrdemAlocacao: { codigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', versao: '1.0' },
-  nOpcoesAlocacao: 2,
   baseadoEmEnem: false,
   concorrenciaDuplaAplicavel: false,
   resolucaoPesoAreaEnem: null,
@@ -467,6 +466,14 @@ const CRITERIOS_DESEMPATE = [
 ];
 
 describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)', () => {
+  it('projeta o número de opções de curso, e o deixa vazio quando o processo não o declarou', () => {
+    const declarado = dtoComCronograma({ opcoesDeCurso: { numero: 2 } });
+    const semDeclarar = dtoComCronograma({ opcoesDeCurso: null });
+
+    expect(hidratarDraft(DRAFT, declarado).opcoesDeCurso).toEqual({ numero: '2' });
+    expect(hidratarDraft(DRAFT, semDeclarar).opcoesDeCurso).toEqual({ numero: '' });
+  });
+
   it('projeta a classificação inteira, inclusive as regras de eliminação', () => {
     const dto = dtoComCronograma({ classificacao: CLASSIFICACAO });
 
@@ -478,7 +485,6 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       casasArredondamento: '2',
       regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
-      nOpcoesAlocacao: '2',
       baseadoEmEnem: false,
       resolucaoPesoAreaEnem: '',
       regrasEliminacao: [

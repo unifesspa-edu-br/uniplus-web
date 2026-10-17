@@ -12,6 +12,7 @@ import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempot
 import {
   AplicacaoDeModeloDto,
   ConfiguracaoDistribuicaoVagasInput,
+  DefinirOpcoesDeCursoRequest,
   CriarProcessoSeletivoCommand,
   CriterioDesempateInput,
   DefinirAlgoritmoContagemPrazoRequest,
@@ -121,6 +122,7 @@ export class CadastroInicialService {
 
   private readonly chaveTaxa = new ChaveDeSubstituicao();
   private readonly chaveDistribuicao = new ChaveDeSubstituicao();
+  private readonly chaveOpcoesDeCurso = new ChaveDeSubstituicao();
   private readonly chaveCascata = new ChaveDeSubstituicao();
   private readonly chaveEtapas = new ChaveDeSubstituicao();
 
@@ -267,7 +269,7 @@ export class CadastroInicialService {
   async definirDistribuicaoVagas(
     processoSeletivoId: string,
     distribuicoes: readonly ConfiguracaoDistribuicaoVagasInput[],
-  ): Promise<ResultadoGravacao> {
+  ): Promise<ResultadoGravacaoComInconclusiva> {
     const geracao = this.geracao;
     const result = await firstValueFrom(
       this.api.definirDistribuicaoVagas(
@@ -277,15 +279,43 @@ export class CadastroInicialService {
       ),
     );
 
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
 
     if (isApiOk(result)) {
       this.chaveDistribuicao.renovar();
       return { ok: true };
     }
 
-    this.chaveDistribuicao.recusada(result);
-    return { ok: false, problem: result.problem };
+    const inconclusiva = this.chaveDistribuicao.recusada(result);
+    return { ok: false, problem: result.problem, inconclusiva };
+  }
+
+  /**
+   * Declara quantos cursos o candidato escolhe na inscrição. Chave própria: é gravado junto da
+   * distribuição, no mesmo passo, e a recusa de um não pode invalidar a chave do outro.
+   */
+  async definirOpcoesDeCurso(
+    processoSeletivoId: string,
+    request: DefinirOpcoesDeCursoRequest,
+  ): Promise<ResultadoGravacaoComInconclusiva> {
+    const geracao = this.geracao;
+    const result = await firstValueFrom(
+      this.api.definirOpcoesDeCurso(
+        processoSeletivoId,
+        request,
+        this.chaveOpcoesDeCurso.contextoPara(request),
+      ),
+    );
+
+    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
+
+    if (isApiOk(result)) {
+      this.chaveOpcoesDeCurso.renovar();
+      return { ok: true };
+    }
+
+    const inconclusiva = this.chaveOpcoesDeCurso.recusada(result);
+    return { ok: false, problem: result.problem, inconclusiva };
   }
 
   /**
