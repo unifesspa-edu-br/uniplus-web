@@ -17,6 +17,15 @@
   max-inline-size: 32rem;
 }
 
+.inscricao-curso {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.inscricao-curso__rotulo {
+  font-weight: var(--weight-semibold);
+}
+
 .inscricao-derivados {
   display: grid;
   gap: var(--space-2);

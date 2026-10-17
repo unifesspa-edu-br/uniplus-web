@@ -208,6 +208,13 @@ describe('InscricaoDoCandidatoPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
   };
+  const passos = (tela: HTMLElement): HTMLButtonElement[] => [
+    ...tela.querySelectorAll<HTMLButtonElement>(
+      'nav[aria-label="Passos da inscrição"] button, nav[aria-label="Seções do formulário"] button',
+    ),
+  ];
+  const irAoPasso = async (tela: HTMLElement, nome: string): Promise<void> =>
+    clicar(passos(tela).find((b) => b.textContent?.includes(nome)) as HTMLElement);
   const campoDe = (tela: HTMLElement, fato: string): HTMLInputElement =>
     tela.querySelector(`[data-campo="${fato}"] input`) as HTMLInputElement;
 
@@ -512,9 +519,12 @@ describe('InscricaoDoCandidatoPage', () => {
       await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));
     };
 
+    await irAoPasso(tela, 'Dados pessoais');
     await digitar('Ariel Drumond');
+    await irAoPasso(tela, 'Curso');
     await escolherCurso(tela, '');
     await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));
+    await irAoPasso(tela, 'Dados pessoais');
     await digitar('Ariel Drumond Nunes');
 
     expect(servico.avaliacoes.map((a) => a.ofertaCursoId)).toEqual([DIREITO.id, null, null]);
@@ -937,19 +947,69 @@ describe('InscricaoDoCandidatoPage', () => {
     await fixture.whenStable();
   };
 
-  it('a recusa da oferta aparece no seletor de curso e leva o foco até ele', async () => {
+  const recusaDaOferta = (codigo: string) =>
+    apiFailure(
+      {
+        type: 'about:blank',
+        title: 'Recusada',
+        status: 422,
+        code: codigo,
+        traceId: '',
+        errors: [{ field: 'ofertaCursoId', code: codigo, message: '' }],
+      },
+      422,
+      new HttpHeaders(),
+    );
+
+  it('a recusa da oferta pela API marca o passo Curso, mostra a mensagem no campo e leva o foco até ele', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.recusaDoEnvio = recusaDaOferta('uniplus.selecao.inscricao.oferta_fora_do_processo');
+    servico.inscricao = inscricao(RESPONDIDA);
+    const tela = await abrir();
+    await escolherCurso(tela, DIREITO.id);
+    await irAoPasso(tela, 'Dados pessoais');
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    const select = tela.querySelector('#inscricao-oferta') as HTMLSelectElement;
+    expect(tela.querySelector('#inscricao-oferta-erro')?.textContent).toContain(
+      'Este curso não é oferecido neste processo.',
+    );
+    expect(select.getAttribute('aria-describedby')).toBe('inscricao-oferta-erro');
+    expect(document.activeElement).toBe(select);
+    expect(passos(tela)[0].textContent).toContain('(com resposta recusada)');
+  });
+
+  it('enviar sem escolher o curso não envia e aponta o passo Curso', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.inscricao = inscricao(RESPONDIDA);
+    const tela = await abrir();
+    await irAoPasso(tela, 'Dados pessoais');
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(servico.enviados).toHaveLength(0);
+    expect(tela.querySelector('#inscricao-oferta-erro')?.textContent).toContain(
+      'Escolha a oferta de curso para enviar a inscrição.',
+    );
+    expect(passos(tela)[0].textContent).toContain('(com resposta recusada)');
+    expect(passos(tela)[0].getAttribute('aria-current')).toBe('step');
+  });
+
+  it('a recusa do curso junto de outro campo mantém o candidato no passo Curso, com o foco no seletor', async () => {
     servico.ofertas = [MEDICINA, DIREITO];
     servico.recusaDoEnvio = apiFailure(
       {
         type: 'about:blank',
         title: 'Recusada',
         status: 422,
-        code: 'uniplus.selecao.inscricao.oferta_obrigatoria',
+        code: 'uniplus.selecao.inscricao.oferta_fora_do_processo',
         traceId: '',
         errors: [
+          { field: 'NOME', code: 'uniplus.selecao.inscricao.resposta_invalida', message: '' },
           {
             field: 'ofertaCursoId',
-            code: 'uniplus.selecao.inscricao.oferta_obrigatoria',
+            code: 'uniplus.selecao.inscricao.oferta_fora_do_processo',
             message: '',
           },
         ],
@@ -959,13 +1019,116 @@ describe('InscricaoDoCandidatoPage', () => {
     );
     servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
+    await escolherCurso(tela, DIREITO.id);
+    await irAoPasso(tela, 'Dados pessoais');
 
     await clicar(botao(tela, 'Enviar inscrição'));
 
     const select = tela.querySelector('#inscricao-oferta') as HTMLSelectElement;
-    expect(tela.querySelector('#inscricao-oferta-erro')?.textContent).toContain('Escolha o curso.');
-    expect(select.getAttribute('aria-describedby')).toBe('inscricao-oferta-erro');
+    expect(select).not.toBeNull();
+    expect(tela.querySelector('#inscricao-oferta-erro')).not.toBeNull();
     expect(document.activeElement).toBe(select);
+    expect(passos(tela)[0].getAttribute('aria-current')).toBe('step');
+    expect(passos(tela)[1].textContent).toContain('(com resposta recusada)');
+  });
+
+  it('o curso gravado que saiu das ofertas do processo não vale: o envio é barrado no passo Curso', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.inscricao = inscricao({ ...RESPONDIDA, ofertaCursoId: 'oferta-que-saiu' });
+    const tela = await abrir();
+    await irAoPasso(tela, 'Dados pessoais');
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(servico.enviados).toHaveLength(0);
+    expect(tela.querySelector('#inscricao-oferta-erro')).not.toBeNull();
+  });
+
+  it('o rascunho salvo não leva o curso gravado que saiu das ofertas do processo', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.inscricao = inscricao({ ofertaCursoId: 'oferta-que-saiu' });
+    const tela = await abrir();
+
+    await clicar(botao(tela, 'Salvar rascunho'));
+
+    expect(servico.salvos[0].ofertaCursoId).toBeNull();
+  });
+
+  it('enviar sem curso conta também as pendências das seções e deixa o foco no curso', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    const tela = await abrir();
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+    await fixture.whenStable();
+
+    expect(servico.enviados).toHaveLength(0);
+    expect(tela.querySelector('p.sr-only[aria-live="polite"]')?.textContent).toContain(
+      'a corrigir nas seções',
+    );
+    expect(passos(tela)[0].getAttribute('aria-current')).toBe('step');
+    expect(document.activeElement).toBe(tela.querySelector('#inscricao-oferta'));
+  });
+
+  it('o aviso de curso é anunciado de novo a cada tentativa de envio', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.inscricao = inscricao(RESPONDIDA);
+    const tela = await abrir();
+    const avisos: string[] = [];
+    const vivo = tela.querySelector('p.sr-only[aria-live="polite"]') as HTMLElement;
+    new MutationObserver(() => avisos.push(vivo.textContent ?? '')).observe(vivo, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+    await clicar(botao(tela, 'Enviar inscrição'));
+    await fixture.whenStable();
+
+    expect(avisos.filter((a) => a.includes('Escolha a oferta')).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('o curso é o primeiro passo quando há mais de uma oferta e não há seletor fora do indicador', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    const tela = await abrir();
+
+    expect(passos(tela)[0].textContent).toContain('Curso');
+    expect(passos(tela)[1].textContent).toContain('Dados pessoais');
+    expect(passos(tela)[0].getAttribute('aria-current')).toBe('step');
+    expect(tela.querySelector('ui-formulario-do-candidato #inscricao-oferta')).not.toBeNull();
+    expect(tela.querySelector('ui-page-header ~ #inscricao-oferta')).toBeNull();
+  });
+
+  it('com uma oferta só, o curso gravado que saiu do processo cede lugar à oferta que resta', async () => {
+    servico.inscricao = inscricao({ ...RESPONDIDA, ofertaCursoId: 'oferta-que-saiu' });
+    const tela = await abrir();
+
+    expect(tela.querySelector('.inscricao-curso')?.textContent).toContain(MEDICINA.nome);
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(servico.enviados[0].ofertaCursoId).toBe(MEDICINA.id);
+  });
+
+  it('com uma oferta só não há passo Curso e o cabeçalho informa o curso', async () => {
+    const tela = await abrir();
+
+    expect(passos(tela)[0].textContent).toContain('Dados pessoais');
+    expect(passos(tela).some((b) => b.textContent?.includes('Curso'))).toBe(false);
+    expect(tela.querySelector('.inscricao-curso')?.textContent).toContain(MEDICINA.nome);
+  });
+
+  it('a revisão mostra o curso escolhido e volta ao passo Curso', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    servico.inscricao = inscricao({ ofertaCursoId: DIREITO.id });
+    const tela = await abrir();
+    await clicar(passos(tela)[passos(tela).length - 1]);
+
+    const revisao = tela.querySelector('.formulario-candidato__resumo') as HTMLElement;
+    expect(revisao.textContent).toContain(DIREITO.nome);
+    await clicar(revisao.querySelector('button') as HTMLElement);
+
+    expect(passos(tela)[0].getAttribute('aria-current')).toBe('step');
+    expect(document.activeElement?.textContent).toContain('Curso');
   });
 
   it('a releitura depois de uma falha sem resposta mantém o curso escolhido', async () => {
