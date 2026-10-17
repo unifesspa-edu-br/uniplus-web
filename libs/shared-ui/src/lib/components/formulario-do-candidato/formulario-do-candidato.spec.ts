@@ -1166,9 +1166,9 @@ describe('FormularioDoCandidatoComponent', () => {
     clicar(botao(tela, 'Buscar CEP'));
 
     const aviso = tela.querySelector('[id$="-cep-geral"]') as HTMLElement;
-    expect(
-      tela.querySelector('input[id$="-cep"]')?.getAttribute('aria-describedby'),
-    ).toContain(aviso.id);
+    expect(tela.querySelector('input[id$="-cep"]')?.getAttribute('aria-describedby')).toContain(
+      aviso.id,
+    );
   });
 
   it('o CEP geral oficial mostra de qual cidade é e exige logradouro e bairro', () => {
@@ -1182,9 +1182,7 @@ describe('FormularioDoCandidatoComponent', () => {
     clicar(botao(tela, 'Buscar CEP'));
 
     expect(tela.textContent).toContain('Este é o CEP geral de Marabá/PA');
-    expect(
-      tela.querySelector('input[id$="-bairro"]')?.getAttribute('aria-required'),
-    ).toBe('true');
+    expect(tela.querySelector('input[id$="-bairro"]')?.getAttribute('aria-required')).toBe('true');
     expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
 
@@ -1199,7 +1197,9 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(tela.textContent).toContain('Confirmo que este é o CEP que uso no meu endereço');
     const erro = tela.querySelector('[id$="-cep-confirmacao"]') as HTMLElement;
     expect(erro.getAttribute('role')).toBe('alert');
-    const descricao = tela.querySelector('input[type="checkbox"]')?.getAttribute('aria-describedby');
+    const descricao = tela
+      .querySelector('input[type="checkbox"]')
+      ?.getAttribute('aria-describedby');
     expect(descricao).toContain(erro.id);
     expect(descricao).toContain(aviso.id);
     expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
@@ -1233,9 +1233,7 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(tela.querySelector('[id$="-cep-faixa"]')).toBeNull();
     expect(tela.querySelector('input[type="checkbox"]')).toBeNull();
     expect(tela.querySelector('[id$="-cep-geral"]')).toBeNull();
-    expect(
-      tela.querySelector('input[id$="-bairro"]')?.getAttribute('aria-required'),
-    ).toBeNull();
+    expect(tela.querySelector('input[id$="-bairro"]')?.getAttribute('aria-required')).toBeNull();
     expect(tela.textContent).toContain('Valide o CEP em "Buscar CEP"');
     expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
@@ -1557,6 +1555,122 @@ describe('FormularioDoCandidatoComponent', () => {
       expect(document.activeElement).toBe(
         tela.querySelector('[data-campo="FAMILIA.membro-1.EMAIL"] input[id$="-confirmacao"]'),
       );
+    });
+  });
+  describe('passos prefixados', () => {
+    const CURSO = { chave: 'curso', titulo: 'Curso', concluido: false };
+
+    it('vêm antes das seções, no indicador e na contagem, e abrem o formulário', () => {
+      const tela = montar(DUAS_SECOES, { passosPrefixados: [CURSO] });
+
+      const passos = [...tela.querySelectorAll('nav[aria-label="Passos da inscrição"] li')];
+      expect(passos[0].textContent).toContain('Curso');
+      expect(passos).toHaveLength(3);
+      expect(passos[0].querySelector('button')?.getAttribute('aria-current')).toBe('step');
+      expect(tela.querySelector('h3')?.textContent).toContain('passo 1 de 3');
+      expect(botao(tela, 'Passo anterior').disabled).toBe(true);
+    });
+
+    it('a seção seguinte ao passo prefixado é a primeira do formulário e o recusado aparece com erro', () => {
+      const tela = montar(DUAS_SECOES, { passosPrefixados: [{ ...CURSO, comErro: true }] });
+      expect(tela.querySelector('nav li')?.classList.contains('is-error')).toBe(true);
+
+      clicar(botao(tela, 'Próximo passo'));
+
+      expect(fixture.componentInstance.passoPrefixadoAtual()).toBeNull();
+      expect(tela.querySelector('h3')?.textContent).toContain('passo 2 de 3');
+    });
+
+    it('"Próxima seção" vale até o último passo, contando os prefixados', () => {
+      const tela = montar(DUAS_SECOES, { passosPrefixados: [CURSO] });
+      clicar(botao(tela, 'Próximo passo'));
+
+      expect(botao(tela, 'Próxima seção')).toBeDefined();
+      clicar(botao(tela, 'Próxima seção'));
+
+      expect(tela.querySelector('h3')?.textContent).toContain('passo 3 de 3');
+      expect(botao(tela, 'Próxima seção')).toBeUndefined();
+    });
+
+    it('a recusa que o host apontou no passo prefixado não tira o candidato de lá', () => {
+      const tela = montar(DUAS_SECOES, {
+        passosPrefixados: [{ ...CURSO, comErro: true }],
+        passoDaRecusa: 'curso',
+      });
+
+      fixture.componentRef.setInput('errosDoServidor', [
+        { campo: 'NOME_SOCIAL', mensagem: 'Recusado.' },
+      ]);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.passoPrefixadoAtual()).toBe('curso');
+      expect(tela.querySelector('nav li.is-active')?.textContent).toContain('Curso');
+    });
+
+    it('sem recusa do host, a lista nova leva à seção da primeira, e limpar a do host não move ninguém', () => {
+      montar(DUAS_SECOES, { passosPrefixados: [CURSO], passoDaRecusa: 'curso' });
+      fixture.componentRef.setInput('errosDoServidor', [
+        { campo: 'NOME_SOCIAL', mensagem: 'Recusado.' },
+      ]);
+      fixture.detectChanges();
+      fixture.componentRef.setInput('passoDaRecusa', null);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.passoPrefixadoAtual()).toBe('curso');
+
+      fixture.componentRef.setInput('errosDoServidor', [
+        { campo: 'NOME_SOCIAL', mensagem: 'Outra.' },
+      ]);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.passoPrefixadoAtual()).toBeNull();
+    });
+
+    it('os botões chamam de passo o que antecede as seções e de seção as seções', () => {
+      const tela = montar(DUAS_SECOES, { passosPrefixados: [CURSO] });
+      expect(botao(tela, 'Passo anterior')).toBeDefined();
+
+      clicar(botao(tela, 'Próximo passo'));
+      expect(botao(tela, 'Passo anterior')).toBeDefined();
+      expect(botao(tela, 'Próxima seção')).toBeDefined();
+
+      clicar(botao(tela, 'Próxima seção'));
+      expect(botao(tela, 'Seção anterior')).toBeDefined();
+    });
+
+    it('o formulário sem seções ainda mostra o passo prefixado', () => {
+      const semSecoes: FormularioDoCandidato = { ...DUAS_SECOES, etapas: [], fatosColetados: [] };
+      const tela = montar(semSecoes, { passosPrefixados: [CURSO] });
+
+      expect(tela.querySelector('nav[aria-label="Passos da inscrição"]')?.textContent).toContain(
+        'Curso',
+      );
+      expect(tela.textContent).not.toContain('não tem seção a mostrar');
+    });
+
+    it('concluirTodas sem navegar conta as pendências e deixa o candidato onde está', () => {
+      const tela = montar(DUAS_SECOES, { passosPrefixados: [CURSO] });
+
+      expect(fixture.componentInstance.concluirTodas(false)).toBe(2);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.passoPrefixadoAtual()).toBe('curso');
+      expect(tela.textContent).not.toContain('itens a corrigir');
+    });
+
+    it('sem passos prefixados o título e a barra dizem seção, e a lista é das seções', () => {
+      const tela = montar(DUAS_SECOES, { apresentacaoDosPassos: 'lateral' });
+
+      expect(tela.querySelector('h3')?.textContent).toContain('seção 1 de 2');
+      expect(tela.querySelector('.step-bar__meta')?.textContent).toContain('Seção 1 de 2');
+      expect(tela.querySelector('nav[aria-label="Seções do formulário"]')).not.toBeNull();
+    });
+
+    it('a apresentação lateral troca os chips pela coluna e traz o diálogo de seções', () => {
+      const tela = montar(DUAS_SECOES, { apresentacaoDosPassos: 'lateral' });
+
+      expect(tela.querySelector('.ui-steps--chips')).toBeNull();
+      expect(tela.querySelector('nav.ui-steps--lateral')).not.toBeNull();
+      expect(tela.querySelector('dialog .ui-steps--sobreposicao')).not.toBeNull();
     });
   });
 });

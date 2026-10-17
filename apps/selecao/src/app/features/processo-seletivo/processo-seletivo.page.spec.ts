@@ -1,5 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { StepsResponsivoComponent } from '@uniplus/shared-ui/components';
 import { Router, provideRouter } from '@angular/router';
 import { NEVER, Subject, of } from 'rxjs';
 import { apiFailure, apiOk } from '@uniplus/shared-core/http';
@@ -286,7 +288,9 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
     if (dialog === null) {
       throw new Error('A lista de etapas precisa ser um <dialog> para conter o foco.');
     }
-    return { fixture, page: fixture.componentInstance, dialog };
+    const etapas = fixture.debugElement.query(By.directive(StepsResponsivoComponent))
+      .componentInstance as StepsResponsivoComponent;
+    return { fixture, page: fixture.componentInstance, dialog, etapas };
   }
 
   function instrumentar(dialog: HTMLDialogElement) {
@@ -297,12 +301,12 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
   }
 
   it('abre a lista de etapas como diálogo modal', () => {
-    const { page, dialog } = montar();
+    const { dialog, etapas } = montar();
     const showModal = instrumentar(dialog);
-    page.openStepsOverlay();
+    etapas.abrir();
 
     expect(showModal).toHaveBeenCalledTimes(1);
-    expect(page.stepsOverlayOpen()).toBe(true);
+    expect(etapas.aberto()).toBe(true);
   });
 
   it('mantém o passo atual como ativo mesmo já concluído, para o aria-current não sumir', () => {
@@ -323,10 +327,10 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
   });
 
   it('o passo acionado na coluna lateral vai para o store, sem fechar a lista', () => {
-    const { fixture, page, dialog } = montar();
+    const { fixture, dialog, etapas } = montar();
     const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
     instrumentar(dialog);
-    page.openStepsOverlay();
+    etapas.abrir();
 
     const botoes = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
       'nav[aria-label="Etapas do cadastro"] li button',
@@ -334,29 +338,47 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
     botoes[2].click();
 
     expect(store.currentStep()).toBe(2);
-    expect(page.stepsOverlayOpen()).toBe(true);
+    expect(etapas.aberto()).toBe(true);
   });
 
   it('o passo acionado na lista em diálogo vai para o store e fecha a lista', () => {
-    const { fixture, page, dialog } = montar();
+    const { fixture, dialog, etapas } = montar();
     const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
     instrumentar(dialog);
-    page.openStepsOverlay();
+    etapas.abrir();
 
     dialog.querySelectorAll<HTMLButtonElement>('ui-steps li button')[3].click();
 
     expect(store.currentStep()).toBe(3);
-    expect(page.stepsOverlayOpen()).toBe(false);
+    expect(etapas.aberto()).toBe(false);
+  });
+
+  it('escolher na lista em diálogo o passo em que já se está leva o foco ao título dele', async () => {
+    const { fixture, dialog, etapas } = montar();
+    const store = fixture.debugElement.injector.get(ProcessoSeletivoStore);
+    instrumentar(dialog);
+    etapas.abrir();
+    const titulo = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '.step-head h1',
+    );
+    if (titulo === null) throw new Error('Título do passo ausente.');
+    document.body.append(fixture.nativeElement);
+
+    dialog.querySelectorAll<HTMLButtonElement>('ui-steps li button')[store.currentStep()].click();
+    await Promise.resolve();
+
+    expect(document.activeElement).toBe(titulo);
+    fixture.nativeElement.remove();
   });
 
   it('sincroniza o estado quando o diálogo fecha', () => {
-    const { page, dialog } = montar();
+    const { dialog, etapas } = montar();
     instrumentar(dialog);
 
-    page.openStepsOverlay();
-    page.closeStepsOverlay();
+    etapas.abrir();
+    etapas.fechar();
 
-    expect(page.stepsOverlayOpen()).toBe(false);
+    expect(etapas.aberto()).toBe(false);
   });
 });
 
@@ -377,11 +399,12 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
     if (dialog === null) throw new Error('Diálogo de etapas ausente.');
     dialog.showModal = vi.fn();
 
-    fixture.componentInstance.openStepsOverlay();
-    expect(document.body.classList.contains('sel-overlay-open')).toBe(true);
+    fixture.debugElement.query(By.directive(StepsResponsivoComponent)).componentInstance.abrir();
+    fixture.detectChanges();
+    expect(document.body.classList.contains('ui-overlay-open')).toBe(true);
 
     fixture.destroy();
-    expect(document.body.classList.contains('sel-overlay-open')).toBe(false);
+    expect(document.body.classList.contains('ui-overlay-open')).toBe(false);
   });
 });
 

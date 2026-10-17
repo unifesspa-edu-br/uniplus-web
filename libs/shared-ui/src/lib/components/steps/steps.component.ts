@@ -11,8 +11,8 @@ export interface StepItem {
   /** Passo concluído que também é o atual: `status` fica `active`, mas o nome acessível diz "concluída". */
   readonly concluido?: boolean;
   /**
-   * Passo com resposta recusada: o nome acessível diz que há recusa em qualquer variante, mas o
-   * destaque de erro (borda e cor) só tem apresentação na variante `chips`.
+   * Passo com resposta recusada: o nome acessível diz que há recusa em qualquer variante, e o destaque
+   * de erro (borda e cor) aparece nas três.
    */
   readonly comErro?: boolean;
 }

@@ -5,8 +5,6 @@ import {
   DestroyRef,
   computed,
   ElementRef,
-  HostListener,
-  ViewChild,
   effect,
   inject,
   signal,
@@ -23,7 +21,7 @@ import {
   AlertComponent,
   DialogComponent,
   SpinnerComponent,
-  StepsComponent,
+  StepsResponsivoComponent,
   type StepItem,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
@@ -35,7 +33,6 @@ import type { ConfirmacaoDeGravacao, GravacaoDoPasso } from './steps/passo-do-wi
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { CamposPressupostosService } from './steps/shared/campos-pressupostos.service';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
-import { OverlayScrollService } from './steps/shared/overlay-scroll.service';
 import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-processo.component';
 import { IdentificacaoStepComponent } from './steps/steps/identificacao/identificacao.component';
 import { PagamentoStepComponent } from './steps/steps/pagamento/pagamento.component';
@@ -105,7 +102,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     EliminacaoStepComponent,
     AtendimentoStepComponent,
     RevisaoStepComponent,
-    StepsComponent,
+    StepsResponsivoComponent,
   ],
   providers: [
     ProcessoSeletivoStore,
@@ -175,7 +172,6 @@ export class ProcessoSeletivoPage {
 
   readonly store = inject(ProcessoSeletivoStore);
   private readonly root = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly overlayScroll = inject(OverlayScrollService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -233,20 +229,10 @@ export class ProcessoSeletivoPage {
   /** No último passo o avanço só publica, e publicar exige rascunho. */
   readonly ofereceAvanco = computed(() => this.store.edicaoPermitida() || !this.store.isLast());
 
-  readonly stepsOverlayOpen = signal(false);
-  @ViewChild('stepBarButton') private stepBarButton?: ElementRef<HTMLButtonElement>;
-  @ViewChild('stepsOverlayClose') private stepsOverlayClose?: ElementRef<HTMLButtonElement>;
-  @ViewChild('stepsOverlay') private stepsOverlay?: ElementRef<HTMLDialogElement>;
-  private readonly barraDeEtapas = viewChild<ElementRef<HTMLElement>>('stepBarButton');
+  private readonly etapas = viewChild(StepsResponsivoComponent);
   private readonly rodape = viewChild<ElementRef<HTMLElement>>('wizFooter');
 
   constructor() {
-    // Navegar com o overlay ou a sidebar abertos destruía a página sem liberar
-    // o lock, e a rota seguinte ficava sem scroll.
-    this.destroyRef.onDestroy(() => {
-      if (this.stepsOverlayOpen()) this.overlayScroll.unlock();
-    });
-
     // Um resumo aberto vale para o passo que o produziu. Trocar de passo — pelo
     // stepper, pelo histórico do navegador ou por uma troca de processo, já que
     // a rota reusa esta página — o torna obsoleto, e confirmá-lo depois
@@ -270,7 +256,7 @@ export class ProcessoSeletivoPage {
     // `scroll-padding` do `.page` (em `styles.css`), que recebe daqui a altura medida de
     // cada um: ela muda com a largura, com o modo de fonte e com os botões do passo.
     effect((onCleanup) => {
-      const barra = this.barraDeEtapas()?.nativeElement;
+      const barra = this.etapas()?.barra()?.nativeElement;
       const rodape = this.rodape()?.nativeElement;
       const area = this.root.nativeElement.closest<HTMLElement>('.page');
       const raiz = this.root.nativeElement.ownerDocument.documentElement;
@@ -701,45 +687,6 @@ export class ProcessoSeletivoPage {
   protected tentarNovamente(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id !== null && !this.store.hidratando()) void this.retomar(id);
-  }
-
-  @HostListener('document:keydown.escape') onEscape(): void {
-    if (this.stepsOverlayOpen()) this.closeStepsOverlay();
-  }
-
-  /**
-   * Abre a lista de etapas como diálogo modal. `showModal()` põe o elemento no
-   * top layer e o navegador contém o foco; com um `<div>` sob `inert` parcial,
-   * o Tab escapava para a topbar e a sidebar do layout, que não são
-   * descendentes desta rota.
-   */
-  openStepsOverlay(): void {
-    if (this.stepsOverlayOpen()) return;
-
-    this.stepsOverlay?.nativeElement.showModal();
-    this.stepsOverlayOpen.set(true);
-    this.overlayScroll.lock();
-    queueMicrotask(() => this.stepsOverlayClose?.nativeElement.focus());
-  }
-
-  closeStepsOverlay(): void {
-    if (!this.stepsOverlayOpen()) return;
-    // O estado é sincronizado em `onStepsOverlayClose`, que também atende ao
-    // fechamento por Esc — tratado pelo próprio elemento.
-    this.stepsOverlay?.nativeElement.close();
-  }
-
-  /** Esc no diálogo: deixa o elemento fechar e sincroniza pelo evento `close`. */
-  onStepsOverlayCancel(event: Event): void {
-    event.preventDefault();
-    this.stepsOverlay?.nativeElement.close();
-  }
-
-  onStepsOverlayClose(): void {
-    if (!this.stepsOverlayOpen()) return;
-    this.stepsOverlayOpen.set(false);
-    this.overlayScroll.unlock();
-    queueMicrotask(() => this.stepBarButton?.nativeElement.focus());
   }
 
   previous(): void {
@@ -1278,12 +1225,11 @@ export class ProcessoSeletivoPage {
   }
 
   protected irParaPasso(index: number): void {
+    const atual = this.store.currentStep();
     this.store.goTo(index);
-  }
-
-  protected irParaPassoFechandoLista(index: number): void {
-    this.store.goTo(index);
-    this.closeStepsOverlay();
+    // Trocar de passo já leva o foco ao título, pelo efeito de `currentStep`. Só o passo em que já se
+    // está não o dispara, e a lista em diálogo, ao fechar, não devolve o foco a lugar nenhum.
+    if (index === atual) queueMicrotask(() => this.focarTituloDoPasso());
   }
 }
 

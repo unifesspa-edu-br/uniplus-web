@@ -348,7 +348,9 @@ describe('anunciarMudancaDosDocumentos', () => {
     });
 
   it('a primeira avaliação não é mudança', () => {
-    expect(anunciarMudancaDosDocumentos(null, arvore([documento('Histórico')]), new Set())).toBe('');
+    expect(anunciarMudancaDosDocumentos(null, arvore([documento('Histórico')]), new Set())).toBe(
+      '',
+    );
   });
 
   it('cada documento que passou a ser ou deixou de ser exigido tem a sua frase', () => {

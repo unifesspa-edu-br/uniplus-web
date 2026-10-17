@@ -719,6 +719,184 @@ ui-editor-de-condicoes {
   margin-block-end: var(--space-4);
 }
 
+/* A coluna só existe a partir de 768 px; abaixo, a barra abre a lista em
+   diálogo. Esconder o host leva junto o nav interno, sem deixar landmark vazio. */
+.ui-steps-responsivo__coluna {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .ui-steps-responsivo__coluna {
+    display: contents;
+  }
+}
+
+/* Barra do passo atual, só em tela estreita. */
+.step-bar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .step-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    background: var(--surface-inverse);
+    color: var(--text-on-inverse);
+    padding: var(--space-3) var(--space-4);
+    border: 0;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    flex-shrink: 0;
+  }
+
+  .step-bar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: var(--color-primary);
+    /* A proporção concluída chega pelo host; sem ela a faixa não aparece. */
+    width: var(--ui-steps-progresso, 0%);
+    transition: width var(--duration-base) var(--ease-standard);
+  }
+}
+
+.step-bar__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.step-bar__heading {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+}
+
+.step-bar__meta {
+  font-size: var(--text-xs);
+  opacity: 0.75;
+}
+
+.step-bar__chevron {
+  flex-shrink: 0;
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.step-bar[aria-expanded='true'] .step-bar__chevron {
+  transform: rotate(180deg);
+}
+
+/* Mobile steps overlay — `<dialog>` aberto por `showModal()`: fica no top
+   layer (dispensa z-index) e o navegador contém o foco. Os estilos abaixo
+   apenas desfazem o padrão do elemento, que vem centrado e com borda. */
+.steps-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border: 0;
+  margin: 0;
+  color: var(--text-on-inverse);
+  background: var(--surface-inverse);
+  overflow-y: auto;
+  padding: calc(56px + var(--space-5)) var(--space-5) var(--space-8);
+}
+
+.steps-overlay::backdrop {
+  background: var(--surface-overlay);
+}
+
+/* Nenhuma regra esconde este diálogo por largura: `<dialog>` sem `open` já é
+   `display: none`. Escondê-lo por media query só teria efeito com ele aberto —
+   e faria o conteúdo sumir da tela sem fechar, mantendo o scroll travado. */
+
+/* Overlay — botão X */
+.steps-overlay__header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-4);
+}
+
+.steps-overlay__close {
+  background: color-mix(in srgb, var(--text-on-inverse) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-on-inverse) 20%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--text-on-inverse);
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.steps-overlay__close:hover {
+  background: color-mix(in srgb, var(--text-on-inverse) 18%, transparent);
+}
+
+/*
+ * Formulário do candidato com os passos em coluna (apresentacaoDosPassos="lateral"): a partir de 768 px
+ * a coluna do ui-steps fica ao lado da seção; abaixo, ela some e a barra da seção atual abre o diálogo.
+ */
+.formulario-candidato__layout {
+  display: grid;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+@media (min-width: 768px) {
+  .formulario-candidato__layout--lateral {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-6);
+  }
+}
+.formulario-candidato__corpo {
+  display: grid;
+  gap: var(--space-4);
+  min-inline-size: 0;
+  flex: 1 1 auto;
+}
+@media (min-width: 768px) {
+  .formulario-candidato__layout--lateral .ui-steps--lateral {
+    /* A coluna acompanha a seção até o fim da página, com a altura visível da janela. */
+    height: auto;
+    max-height: 100vh;
+    width: 15rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+  }
+}
+.formulario-candidato__resumo {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+  justify-items: start;
+}
+.formulario-candidato__resumo h4,
+.formulario-candidato__resumo dl,
+.formulario-candidato__resumo dd {
+  margin: 0;
+}
+.formulario-candidato__resumo dt {
+  font-weight: var(--weight-semibold);
+}
+.formulario-candidato__resumo dd {
+  overflow-wrap: anywhere;
+}
+
 /*
  * Formulário do candidato (ui-formulario-do-candidato): os campos em coluna,
  * os grupos repetíveis com cada ocorrência em cartão. Sem largura mínima: cabe em 320 px.
@@ -2935,7 +3113,8 @@ ui-icon-button {
 /* `DrawerComponent` põe esta classe no <body> enquanto a gaveta está aberta. O
    trava-scroll do fundo é do DS (todo app que usa <ui-drawer> herda) — não uma
    regra corretiva repetida por app. */
-body.uni-drawer-open {
+body.uni-drawer-open,
+body.ui-overlay-open {
   overflow: hidden;
 }
 
@@ -4769,7 +4948,8 @@ h5.secao-de-documento__titulo {
    ============================================================================= */
 
 /* O host não gera caixa: o contêiner de dentro participa direto do layout do consumidor. */
-ui-steps {
+ui-steps,
+ui-steps-responsivo {
   display: contents;
 }
 
@@ -5025,6 +5205,17 @@ ui-steps {
   border-color: var(--color-success-solid);
 }
 
+/* Passo com recusa nas colunas: o círculo e o rótulo em vermelho, além do aviso lido pelo leitor de tela. */
+.ui-steps--lateral .is-error .ui-steps__num,
+.ui-steps--sobreposicao .is-error .ui-steps__num {
+  border-color: var(--color-danger-solid);
+}
+.ui-steps--lateral .is-error .ui-steps__rotulo {
+  color: var(--color-danger-solid);
+}
+.ui-steps--sobreposicao .is-error .ui-steps__rotulo {
+  text-decoration: underline wavy var(--color-danger-solid);
+}
 .ui-steps--chips .is-error .ui-steps__botao {
   border-color: var(--color-danger-solid);
   color: var(--color-danger-solid);

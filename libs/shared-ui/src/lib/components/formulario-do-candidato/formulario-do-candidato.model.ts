@@ -135,6 +135,20 @@ export interface RespostaFixa {
 }
 
 /**
+ * Um passo que quem hospeda o formulário preenche antes das seções, como a escolha do curso na
+ * inscrição. O formulário o mostra no indicador de passos e no título; o conteúdo é de quem hospeda.
+ */
+export interface PassoPrefixado {
+  readonly chave: string;
+  readonly titulo: string;
+  readonly descricao?: string | null;
+  readonly concluido?: boolean;
+  readonly comErro?: boolean;
+  /** O que a Revisão mostra do passo, com a volta a ele; sem linhas, a Revisão não o cita. */
+  readonly resumo?: readonly { readonly rotulo: string; readonly valor: string }[];
+}
+
+/**
  * Uma recusa do servidor ligada a uma parte do formulário. O campo é o código do fato, do grupo ou do
  * termo; dentro de um grupo, `grupo.ocorrência` ou `grupo.ocorrência.fato`.
  */

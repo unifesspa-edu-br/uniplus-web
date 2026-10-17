@@ -30,74 +30,13 @@
   <p>Carregando o processo seletivo…</p>
 </div>
 } @else {
-<button
-  #stepBarButton
-  class="step-bar"
-  type="button"
-  [attr.aria-expanded]="stepsOverlayOpen()"
-  aria-controls="steps-overlay"
-  [style.--step-progress]="store.progress() + '%'"
-  (click)="openStepsOverlay()"
->
-  <!-- A ação nomeia o botão por texto dentro dele, e não por `aria-label`: o
-       rótulo que reescreve o conteúdo visível deixa quem usa comando de voz
-       dizendo o que lê na tela sem ativar nada (WCAG 2.1, SC 2.5.3). -->
-  <span class="sr-only">Abrir lista de etapas.</span>
-  <div class="step-bar__info">
-    <span class="step-bar__heading">Cadastro do processo seletivo</span
-    ><span class="step-bar__meta">{{ store.currentMeta() }}</span>
-  </div>
-  <svg
-    class="step-bar__chevron"
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2.5"
-  >
-    <path d="M19 9l-7 7-7-7" />
-  </svg>
-</button>
-<dialog
-  #stepsOverlay
-  class="steps-overlay"
-  id="steps-overlay"
-  aria-label="Etapas do cadastro"
-  (cancel)="onStepsOverlayCancel($event)"
-  (close)="onStepsOverlayClose()"
->
-  <div class="steps-overlay__header">
-    <button
-      #stepsOverlayClose
-      class="steps-overlay__close"
-      type="button"
-      aria-label="Fechar lista de etapas"
-      (click)="closeStepsOverlay()"
-    >
-      <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-      >
-        <path d="M18 6L6 18M6 6l12 12" />
-      </svg>
-    </button>
-  </div>
-  <ui-steps
-    variante="sobreposicao"
-    [items]="itensDosPassos()"
-    (selecionado)="irParaPassoFechandoLista($event)"
-  />
-</dialog>
-
 <div class="wiz-shell">
-  <ui-steps
-    class="wiz-etapas"
+  <ui-steps-responsivo
     rotuloDaNavegacao="Etapas do cadastro"
+    titulo="Cadastro do processo seletivo"
+    [meta]="store.currentMeta()"
+    [progresso]="store.progress()"
+    [reservarRolagem]="false"
     [items]="itensDosPassos()"
     (selecionado)="irParaPasso($event)"
   />

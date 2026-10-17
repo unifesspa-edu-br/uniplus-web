@@ -2,16 +2,16 @@ import { DOCUMENT } from '@angular/common';
 import { inject, Injectable } from '@angular/core';
 
 /**
- * Trava o scroll do documento enquanto houver overlay aberto no wizard.
+ * Trava o scroll do documento enquanto houver overlay aberto de qualquer app.
  *
- * Usa classe própria, e não `uni-drawer-open`: o `DrawerComponent` de
- * shared-ui mantém o próprio contador, e compartilhar a classe faria um
- * liberar o scroll ainda com o overlay do outro aberto. Cada `lock()` exige um
+ * Usa classe própria, e não `uni-drawer-open`: o `DrawerComponent` mantém o
+ * próprio contador, e compartilhar a classe faria um liberar o scroll ainda
+ * com o overlay do outro aberto. Cada `lock()` exige um
  * `unlock()` — inclusive quando o dono é destruído com o overlay aberto.
  */
 @Injectable({ providedIn: 'root' })
 export class OverlayScrollService {
-  private static readonly CLASSE = 'sel-overlay-open';
+  private static readonly CLASSE = 'ui-overlay-open';
 
   private readonly document = inject<Document>(DOCUMENT);
   private locks = 0;
