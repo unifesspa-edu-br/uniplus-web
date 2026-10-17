@@ -12,7 +12,12 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { ApiResult } from '@uniplus/shared-core/http';
-import { DOMAIN_ROLES, PROFILE_BASE_PATH, ROLE_LABELS } from '@uniplus/shared-auth/bootstrap';
+import {
+  AuthService,
+  DOMAIN_ROLES,
+  PROFILE_BASE_PATH,
+  ROLE_LABELS,
+} from '@uniplus/shared-auth/bootstrap';
 import { cpfRevelavel, type TrechoMascarado } from '@uniplus/shared-utils';
 
 /** Resposta de `GET /api/profile/me` (`UserProfileResponse` da uniplus-api). */
@@ -81,7 +86,17 @@ type Estado =
               </div>
               <div>
                 <dt>Nome social</dt>
-                <dd>{{ p.nomeSocial || '—' }}</dd>
+                <dd class="auth-profile__acao">
+                  <span data-testid="auth-profile-nome-social">{{ p.nomeSocial || '—' }}</span>
+                  <button
+                    type="button"
+                    class="btn btn--tertiary btn--sm"
+                    data-testid="auth-profile-nome-social-acao"
+                    (click)="atualizarPerfil()"
+                  >
+                    {{ p.nomeSocial ? 'Alterar nome social' : 'Cadastrar nome social' }}
+                  </button>
+                </dd>
               </div>
               <div>
                 <dt>E-mail</dt>
@@ -159,8 +174,10 @@ type Estado =
       display: inline-block;
       transform: translateY(0.3em);
     }
-    .auth-profile__cpf {
+    .auth-profile__cpf,
+    .auth-profile__acao {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: var(--space-2);
     }
@@ -174,6 +191,7 @@ type Estado =
 export class UserProfileDialogComponent {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly auth = inject(AuthService);
   private readonly basePath = inject(PROFILE_BASE_PATH);
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
@@ -214,6 +232,14 @@ export class UserProfileDialogComponent {
       dialog.removeAttribute('open');
       this.closed.emit();
     }
+  }
+
+  /**
+   * O nome social é dado da conta: quem o cadastra ou altera é o provedor de identidade, que devolve
+   * o titular a esta página já com o token novo.
+   */
+  protected atualizarPerfil(): void {
+    void this.auth.atualizarPerfil();
   }
 
   protected cpfValido(cpf: string | null): boolean {
