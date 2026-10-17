@@ -267,6 +267,8 @@ export const SNAPSHOT_VIGENTE = {
 export const DOCUMENTO_DO_EDITAL = {
   id: '01a0d640-0000-7000-8000-0000000000ac',
   processoSeletivoId: ID_DO_PROCESSO_COMPLETO,
+  nomeArquivo: 'edital.pdf',
+  tipoDeMidia: 'application/pdf',
   status: 'Confirmado',
   criadoEm: '2027-01-01T00:00:00Z',
   expiraEm: '2027-01-01T01:00:00Z',
