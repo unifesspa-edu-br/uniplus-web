@@ -20,12 +20,6 @@ import { EnvioDoModeloService } from './envio-do-modelo.service';
 /** O teto do modelo no domínio: 10 MB. */
 const TAMANHO_MAXIMO_MB = 10;
 
-/** Os tipos MIME dos formatos editáveis; a extensão é o que decide quando o sistema não os informa. */
-const TIPOS_MIME_EDITAVEIS = [
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.oasis.opendocument.text',
-];
-
 /** Os formatos editáveis que o contrato aceita, pela extensão do arquivo escolhido. */
 const FORMATO_POR_EXTENSAO = new Map([
   ['docx', 'DOCX'],
@@ -83,7 +77,6 @@ export class ModeloDaExigenciaComponent {
   readonly envio = signal<EnvioEmCurso | null>(null);
   readonly recusa = signal<string | null>(null);
   readonly tamanhoMaximoMb = TAMANHO_MAXIMO_MB;
-  readonly tiposMimeEditaveis = TIPOS_MIME_EDITAVEIS;
   readonly extensoesEditaveis = [...FORMATO_POR_EXTENSAO.keys()].map((e) => `.${e}`).join(',');
   readonly abrindo = signal(false);
   readonly erroDeAbertura = signal<string | null>(null);
