@@ -23,6 +23,7 @@
   </div>
 } @else {
 <div class="step-card upload-section">
+  <p class="label" id="anexo-edital-upload-titulo">Upload do edital de abertura</p>
   @if (store.avisoDocumentos(); as aviso) {
     <div class="alert alert--warning" role="alert">
       <div class="alert__body">
@@ -83,7 +84,8 @@
 
   <ui-file-upload
     idDoCampo="f-file"
-    fieldLabel="Upload do edital de abertura"
+    nomeDaLista="Upload do edital de abertura"
+    descritoPor="anexo-edital-upload-titulo"
     acceptedFileTypes=".pdf"
     acceptLabel="Somente PDF"
     [validarSoPelaExtensao]="true"

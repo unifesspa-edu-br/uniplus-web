@@ -122,6 +122,8 @@ function documento(overrides: Partial<DocumentoAPublicarDto> = {}): DocumentoAPu
   return {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b030',
     processoSeletivoId: PROCESSO_ID,
+    nomeArquivo: 'edital.pdf',
+    tipoDeMidia: 'application/pdf',
     status: 'Confirmado',
     criadoEm: '2026-08-20T12:00:00Z',
     expiraEm: '2026-08-20T12:15:00Z',
