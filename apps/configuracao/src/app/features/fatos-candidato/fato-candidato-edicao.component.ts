@@ -77,6 +77,8 @@ interface RegraEmEdicao {
     '.cfg-fato-definicao { padding: 0; grid-template-columns: minmax(8rem, max-content) 1fr; }',
     '.cfg-fato-definicao dd { overflow-wrap: anywhere; }',
     '.cfg-fato-descritivo { display: grid; gap: var(--space-4); }',
+    // Cada valor tem até cinco ações: em 320 px e com zoom de 200% elas quebram linha em vez de vazar.
+    '.table-responsive__actions { flex-wrap: wrap; }',
   ],
   template: `
     <div class="cfg-form">
@@ -157,9 +159,32 @@ interface RegraEmEdicao {
                     <tr>
                       <td data-label="Código"><code>{{ valor.codigo }}</code></td>
                       <td data-label="Descrição">
-                        {{ valor.descricao || '—' }}
-                        @if (valor.orientacao) {
-                          <p class="cfg-muted">{{ valor.orientacao }}</p>
+                        @if (editando() === valor.codigo) {
+                          <form class="cfg-fato-valor-edicao" [formGroup]="edicaoDoValor" [id]="idDoValor(valor.codigo, 'form')" (ngSubmit)="salvarEdicaoDoValor(valor.codigo)" novalidate>
+                            <label class="field" [class.is-error]="erroEdicao('descricao')">
+                              <span class="field__label" [class.is-required]="f.origem === 'DECLARADO'">Descrição<span class="sr-only"> do valor {{ valor.codigo }}</span></span>
+                              <input class="input" type="text" formControlName="descricao" [attr.aria-invalid]="erroEdicao('descricao') ? 'true' : null" [attr.aria-describedby]="erroEdicao('descricao') ? idDoValor(valor.codigo, 'aviso') + ' ' + idDoValor(valor.codigo, 'descricao-erro') : idDoValor(valor.codigo, 'aviso')" />
+                              @if (erroEdicao('descricao')) {
+                                <span class="field__error" [id]="idDoValor(valor.codigo, 'descricao-erro')">{{ erroEdicao('descricao') }}</span>
+                              }
+                            </label>
+                            <label class="field" [class.is-error]="erroEdicao('orientacao')">
+                              <span class="field__label">Orientação ao candidato<span class="sr-only"> do valor {{ valor.codigo }}</span></span>
+                              <textarea class="textarea" rows="2" formControlName="orientacao" [attr.aria-invalid]="erroEdicao('orientacao') ? 'true' : null" [attr.aria-describedby]="erroEdicao('orientacao') ? idDoValor(valor.codigo, 'orientacao-erro') : null"></textarea>
+                              @if (erroEdicao('orientacao')) {
+                                <span class="field__error" [id]="idDoValor(valor.codigo, 'orientacao-erro')">{{ erroEdicao('orientacao') }}</span>
+                              }
+                            </label>
+                            <p class="field__hint" [id]="idDoValor(valor.codigo, 'aviso')">
+                              A descrição é texto de catálogo: corrija a redação, não o sentido da opção. Para mudar o sentido, desative este valor e acrescente um valor novo.
+                              A correção vale para os rascunhos e para a próxima retificação dos processos publicados.
+                            </p>
+                          </form>
+                        } @else {
+                          {{ valor.descricao || '—' }}
+                          @if (valor.orientacao) {
+                            <p class="cfg-muted">{{ valor.orientacao }}</p>
+                          }
                         }
                       </td>
                       <td data-label="Situação">
@@ -167,6 +192,24 @@ interface RegraEmEdicao {
                       </td>
                       <td class="table-responsive__actions" data-label="Ações">
                         @if (temValores() && !somenteLeitura()) {
+                          @if (editando() === valor.codigo) {
+                            <button type="submit" class="btn btn--primary btn--sm" [attr.form]="idDoValor(valor.codigo, 'form')" [disabled]="ocupado()">
+                              Salvar<span class="sr-only"> a correção do valor {{ valor.codigo }}</span>
+                            </button>
+                            <button type="button" class="btn btn--tertiary btn--sm" [disabled]="ocupado()" (click)="cancelarEdicaoDoValor(valor.codigo)">
+                              Cancelar<span class="sr-only"> a correção do valor {{ valor.codigo }}</span>
+                            </button>
+                          } @else {
+                            <button type="button" class="btn btn--tertiary btn--sm" [id]="idDoValor(valor.codigo, 'editar')" [disabled]="ocupado()" (click)="editarValor(valor.codigo)">
+                              Editar<span class="sr-only"> o valor {{ valor.codigo }}</span>
+                            </button>
+                          }
+                          <button type="button" class="btn btn--tertiary btn--sm" [id]="idDoValor(valor.codigo, 'subir')" [disabled]="ocupado() || $first" (click)="moverValor(valor.codigo, -1)">
+                            Subir<span class="sr-only"> o valor {{ valor.codigo }}</span>
+                          </button>
+                          <button type="button" class="btn btn--tertiary btn--sm" [id]="idDoValor(valor.codigo, 'descer')" [disabled]="ocupado() || $last" (click)="moverValor(valor.codigo, 1)">
+                            Descer<span class="sr-only"> o valor {{ valor.codigo }}</span>
+                          </button>
                           @if (valor.ativo) {
                             <button type="button" class="btn btn--tertiary btn--sm" [id]="idDaAcaoDoValor(valor.codigo)" [disabled]="ocupado()" (click)="desativarValor(valor.codigo)">
                               Desativar<span class="sr-only"> o valor {{ valor.codigo }}</span>
@@ -393,6 +436,8 @@ export class FatoCandidatoEdicaoComponent {
   private chaveValor = idempotencyKey.create();
   private chaveRegras = idempotencyKey.create();
   private chaveReativacaoDeValor = idempotencyKey.create();
+  private chaveCorrecaoDeValor = idempotencyKey.create();
+  private chaveOrdemDosValores = idempotencyKey.create();
   /**
    * O botão que recebe o foco quando o fato recarregado chegar: desativar ou reativar um valor
    * troca o botão da linha, e o foco iria para o corpo da página.
@@ -402,6 +447,14 @@ export class FatoCandidatoEdicaoComponent {
   protected readonly descritivo = new FormGroup({
     nome: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
     descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
+  });
+
+  /** O valor cuja descrição e orientação estão em edição na própria linha. */
+  protected readonly editando = signal<string | null>(null);
+
+  protected readonly edicaoDoValor = new FormGroup({
+    descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
+    orientacao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
   });
 
   protected readonly novoValor = new FormGroup({
@@ -516,6 +569,85 @@ export class FatoCandidatoEdicaoComponent {
     );
   }
 
+  protected editarValor(codigo: string): void {
+    const valor = this.fato()?.valores.find((item) => item.codigo === codigo);
+    if (this.somenteLeitura() || valor === undefined) return;
+    const { descricao } = this.edicaoDoValor.controls;
+    // No fato declarado a descrição é o nome da opção que o candidato lê.
+    descricao.setValidators(
+      this.fato()?.origem === 'DECLARADO' ? [Validators.required, Validators.maxLength(500)] : [Validators.maxLength(500)],
+    );
+    this.edicaoDoValor.reset({ descricao: valor.descricao ?? '', orientacao: valor.orientacao ?? '' });
+    this.erro.set(null);
+    this.editando.set(codigo);
+  }
+
+  protected cancelarEdicaoDoValor(codigo: string): void {
+    this.editando.set(null);
+    this.focoAposRecarga = this.idDoValor(codigo, 'editar');
+    this.focarAposRecarga();
+  }
+
+  protected salvarEdicaoDoValor(codigo: string): void {
+    if (this.somenteLeitura()) return;
+    if (this.edicaoDoValor.invalid) {
+      this.edicaoDoValor.markAllAsTouched();
+      return;
+    }
+    const { descricao, orientacao } = this.edicaoDoValor.getRawValue();
+    this.executar(
+      this.api.corrigirValor(
+        this.id(),
+        codigo,
+        { descricao: descricao.trim() || null, orientacao: orientacao.trim() || null },
+        withIdempotencyKey(this.chaveCorrecaoDeValor),
+      ),
+      `Valor ${codigo} corrigido`,
+      () => {
+        this.chaveCorrecaoDeValor = idempotencyKey.create();
+        this.editando.set(null);
+        this.focoAposRecarga = this.idDoValor(codigo, 'editar');
+      },
+      (problem) => this.aplicarErrosNoFormulario(this.edicaoDoValor, problem) || this.avisarConflito(problem),
+    );
+  }
+
+  /**
+   * Troca o valor de lugar com o vizinho e envia a lista completa — a API exige todos os códigos,
+   * desativados inclusive, porque a ordem é do fato e não só do que aparece para o candidato.
+   */
+  protected moverValor(codigo: string, sentido: -1 | 1): void {
+    if (this.somenteLeitura()) return;
+    const codigos = (this.fato()?.valores ?? []).map((valor) => valor.codigo);
+    const de = codigos.indexOf(codigo);
+    const para = de + sentido;
+    if (de < 0 || para < 0 || para >= codigos.length) return;
+    [codigos[de], codigos[para]] = [codigos[para], codigos[de]];
+    // Chegando à ponta o botão que moveu fica desabilitado; o foco vai para o oposto, que continua valendo.
+    const ponta = para === 0 || para === codigos.length - 1;
+    const botao = ponta ? (sentido === -1 ? 'descer' : 'subir') : sentido === -1 ? 'subir' : 'descer';
+    this.executar(
+      this.api.reordenarValores(this.id(), { codigos }, withIdempotencyKey(this.chaveOrdemDosValores)),
+      `Valor ${codigo} movido`,
+      () => {
+        this.chaveOrdemDosValores = idempotencyKey.create();
+        this.focoAposRecarga = this.idDoValor(codigo, botao);
+      },
+      (problem) => this.avisarConflito(problem),
+    );
+  }
+
+  /** A escrita perdeu para outra: a tela mostra o fato antigo, e só recarregar o corrige. */
+  private avisarConflito(problem: ProblemDetails): boolean {
+    if (problem.status !== 409) return false;
+    this.erro.set('Outra pessoa alterou este fato enquanto você editava. Feche e abra o fato de novo para ver a versão atual e refaça a alteração.');
+    return true;
+  }
+
+  protected idDoValor(codigo: string, parte: string): string {
+    return `cfg-fato-valor-${codigo}-${parte}`;
+  }
+
   protected idDaAcaoDoValor(codigo: string): string {
     return `cfg-fato-valor-${codigo}-acao`;
   }
@@ -613,6 +745,10 @@ export class FatoCandidatoEdicaoComponent {
     return mensagemDoControle(this.descritivo.controls[campo]);
   }
 
+  protected erroEdicao(campo: 'descricao' | 'orientacao'): string | null {
+    return mensagemDoControle(this.edicaoDoValor.controls[campo]);
+  }
+
   protected erroNovoValor(campo: 'codigo' | 'descricao' | 'orientacao'): string | null {
     return mensagemDoControle(this.novoValor.controls[campo]);
   }
@@ -648,6 +784,8 @@ export class FatoCandidatoEdicaoComponent {
         this.chaveValor = idempotencyKey.create();
         this.chaveRegras = idempotencyKey.create();
         this.chaveReativacaoDeValor = idempotencyKey.create();
+        this.chaveCorrecaoDeValor = idempotencyKey.create();
+        this.chaveOrdemDosValores = idempotencyKey.create();
       }
       if (!aoRecusar(resultado.problem)) {
         this.erro.set(this.problemI18n.resolve(resultado.problem).title);

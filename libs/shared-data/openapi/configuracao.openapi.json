@@ -141,7 +141,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -620,7 +620,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -1245,7 +1245,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -2135,7 +2135,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -2640,7 +2640,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -3129,7 +3129,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -3703,7 +3703,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -4949,6 +4949,143 @@
       }
     },
     "/api/configuracao/admin/fatos-candidato/{id}/valores/{codigo}": {
+      "put": {
+        "tags": [
+          "FatosCandidato"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrecaoDeValorDominioInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrecaoDeValorDominioInput"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrecaoDeValorDominioInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      },
       "delete": {
         "tags": [
           "FatosCandidato"
@@ -5076,7 +5213,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -5565,7 +5702,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -6075,7 +6212,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -7031,7 +7168,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -7044,7 +7181,7 @@
                 }
               },
               "X-Total-Count": {
-                "description": "Total de registros que atendem \u00E0 consulta \u2014 filtros e busca inclusive, nunca a tabela inteira. Presente apenas na resposta de quem pediu \u0060include_total=true\u0060; ausente nas demais (ADR-0026).",
+                "description": "Total de registros que atendem \u00E0 consulta \u2014 filtros e busca inclusive, nunca a tabela inteira. Presente apenas na resposta de quem pediu `include_total=true`; ausente nas demais (ADR-0026).",
                 "schema": {
                   "type": "integer",
                   "format": "int32"
@@ -7517,7 +7654,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -8028,7 +8165,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -8507,7 +8644,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -8986,7 +9123,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -9473,7 +9610,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -10172,7 +10309,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -10651,7 +10788,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -11130,7 +11267,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -11609,7 +11746,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -12098,7 +12235,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -12266,7 +12403,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -13000,6 +13137,137 @@
             }
           }
         }
+      }
+    },
+    "/api/configuracao/admin/fatos-candidato/{id}/ordem-dos-valores": {
+      "put": {
+        "tags": [
+          "FatosCandidato"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrdemDosValoresInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrdemDosValoresInput"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/OrdemDosValoresInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
       }
     }
   },
@@ -17975,7 +18243,7 @@
           },
           "retryable": {
             "type": "boolean",
-            "description": "Presente e \u0060true\u0060 quando o conflito descreve uma corrida que j\u00E1 passou: a mesma requisi\u00E7\u00E3o, repetida sem altera\u00E7\u00E3o, pode agora ser aceita. A aus\u00EAncia \u00E9 o default conservador do servidor \u2014 diz que o conflito n\u00E3o foi declarado retent\u00E1vel, n\u00E3o que repetir esteja descartado; nesse caso vale a descri\u00E7\u00E3o da pr\u00F3pria resposta."
+            "description": "Presente e `true` quando o conflito descreve uma corrida que j\u00E1 passou: a mesma requisi\u00E7\u00E3o, repetida sem altera\u00E7\u00E3o, pode agora ser aceita. A aus\u00EAncia \u00E9 o default conservador do servidor \u2014 diz que o conflito n\u00E3o foi declarado retent\u00E1vel, n\u00E3o que repetir esteja descartado; nesse caso vale a descri\u00E7\u00E3o da pr\u00F3pria resposta."
           }
         }
       },
@@ -19129,6 +19397,41 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "CorrecaoDeValorDominioInput": {
+        "required": [
+          "descricao",
+          "orientacao"
+        ],
+        "type": "object",
+        "properties": {
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "orientacao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "OrdemDosValoresInput": {
+        "required": [
+          "codigos"
+        ],
+        "type": "object",
+        "properties": {
+          "codigos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
