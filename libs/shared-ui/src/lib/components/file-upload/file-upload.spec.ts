@@ -621,4 +621,42 @@ describe('FileUploadComponent no modo controlado', () => {
       host.querySelector('button[aria-label="Tentar enviar novamente edital.pdf — Modelo de RG"]'),
     ).not.toBeNull();
   });
+
+  it('marca o input como inválido quando um arquivo está em erro', () => {
+    const { host } = setup({ itens: [item({ fase: 'erro', mensagem: 'Falhou.' })] });
+
+    expect(host.querySelector('input[type="file"]')?.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('devolve o foco à zona depois de pedir nova tentativa', () => {
+    const { host, fixture } = setup({ itens: [item({ fase: 'erro', mensagem: 'Falhou.' })] });
+
+    host.querySelector<HTMLButtonElement>('button[aria-label^="Tentar enviar"]')?.click();
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(host.querySelector('.uni-uploader__drop'));
+  });
+
+  it('com a zona desabilitada, o foco da nova tentativa vai para a lista', () => {
+    const { host, fixture } = setup({
+      disabled: true,
+      itens: [item({ fase: 'erro', mensagem: 'Falhou.' })],
+    });
+
+    host.querySelector<HTMLButtonElement>('button[aria-label^="Tentar enviar"]')?.click();
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(host.querySelector('ul'));
+  });
+
+  it('com a zona desabilitada, o arrastar sobre o contêiner não sugere soltar', () => {
+    const { host } = setup({ disabled: true });
+    const dataTransfer = { dropEffect: 'copy' };
+    const evento = new Event('dragover', { cancelable: true, bubbles: true });
+    Object.defineProperty(evento, 'dataTransfer', { value: dataTransfer });
+
+    host.querySelector('.uni-uploader')?.dispatchEvent(evento);
+
+    expect(dataTransfer.dropEffect).toBe('none');
+  });
 });

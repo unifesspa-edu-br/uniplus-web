@@ -2699,10 +2699,20 @@ ui-icon-button {
     border-color var(--duration-fast) var(--ease-standard),
     background var(--duration-fast) var(--ease-standard);
 }
-.uni-uploader__drop:hover,
+.uni-uploader__drop:hover:not(:disabled),
 .uni-uploader__drop.is-dragging {
   border-color: var(--color-primary);
   background: var(--color-primary-50);
+}
+.uni-uploader__drop:disabled {
+  cursor: default;
+  background: var(--surface-disabled);
+  border-color: var(--border-default);
+  color: var(--text-disabled);
+}
+.uni-uploader__drop:disabled .uni-uploader__title,
+.uni-uploader__drop:disabled .uni-uploader__hint {
+  color: var(--text-disabled);
 }
 .uni-uploader__drop:focus-within {
   border-color: var(--color-primary);
