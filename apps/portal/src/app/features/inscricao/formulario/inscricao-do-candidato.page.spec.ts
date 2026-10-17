@@ -209,9 +209,7 @@ describe('InscricaoDoCandidatoPage', () => {
     fixture.detectChanges();
   };
   const passos = (tela: HTMLElement): HTMLButtonElement[] => [
-    ...tela.querySelectorAll<HTMLButtonElement>(
-      'nav[aria-label="Passos da inscrição"] button, nav[aria-label="Seções do formulário"] button',
-    ),
+    ...tela.querySelectorAll<HTMLButtonElement>('ui-formulario-do-candidato nav button'),
   ];
   const irAoPasso = async (tela: HTMLElement, nome: string): Promise<void> =>
     clicar(passos(tela).find((b) => b.textContent?.includes(nome)) as HTMLElement);
@@ -1092,6 +1090,7 @@ describe('InscricaoDoCandidatoPage', () => {
     servico.ofertas = [MEDICINA, DIREITO];
     const tela = await abrir();
 
+    expect(tela.querySelector('nav[aria-label="Passos da inscrição"]')).not.toBeNull();
     expect(passos(tela)[0].textContent).toContain('Curso');
     expect(passos(tela)[1].textContent).toContain('Dados pessoais');
     expect(passos(tela)[0].getAttribute('aria-current')).toBe('step');
@@ -1112,6 +1111,7 @@ describe('InscricaoDoCandidatoPage', () => {
   it('com uma oferta só não há passo Curso e o cabeçalho informa o curso', async () => {
     const tela = await abrir();
 
+    expect(tela.querySelector('nav[aria-label="Seções do formulário"]')).not.toBeNull();
     expect(passos(tela)[0].textContent).toContain('Dados pessoais');
     expect(passos(tela).some((b) => b.textContent?.includes('Curso'))).toBe(false);
     expect(tela.querySelector('.inscricao-curso')?.textContent).toContain(MEDICINA.nome);

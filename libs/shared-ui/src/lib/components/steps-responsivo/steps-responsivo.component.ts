@@ -1,7 +1,10 @@
+import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   type ElementRef,
+  Injector,
+  afterNextRender,
   effect,
   inject,
   input,
@@ -14,6 +17,9 @@ import { type StepItem, StepsComponent } from '../steps/steps.component';
 import { OverlayScrollService } from './overlay-scroll.service';
 
 let proximoId = 0;
+
+/** A altura visível do contêiner que rola, que a coluna lateral usa como teto. */
+const ALTURA_DA_AREA = '--ui-steps-area-altura';
 
 /**
  * A apresentação padrão dos passos: a coluna `lateral` do `ui-steps` em tela larga e, abaixo de 768 px,
@@ -123,25 +129,58 @@ export class StepsResponsivoComponent {
 
   /** O passo escolhido, na coluna ou no diálogo; o diálogo já fechou quando a escolha sai dele. */
   readonly selecionado = output<number>();
+  /** O passo atual foi escolhido de novo na lista em diálogo: nada muda, e o foco é de quem consome. */
+  readonly atualEscolhido = output<number>();
 
   readonly aberto = signal(false);
   private readonly rolagem = inject(OverlayScrollService);
+  private readonly injector = inject(Injector);
+  private readonly documento = inject(DOCUMENT);
 
   constructor() {
     effect((aoLimpar) => {
       const barra = this.barra()?.nativeElement;
-      if (!barra || !this.reservarRolagem() || typeof ResizeObserver === 'undefined') return;
-      const area = areaQueRola(barra);
-      const anterior = area.style.scrollPaddingTop;
-      const medir = (): void => {
-        area.style.scrollPaddingTop = barra.offsetHeight > 0 ? `${barra.offsetHeight}px` : anterior;
+      if (!barra || typeof ResizeObserver === 'undefined') return;
+      const reservar = this.reservarRolagem();
+      let area: HTMLElement | null = null;
+      let paddingAnterior = '';
+      let alturaAnterior = '';
+      const observador = new ResizeObserver(() => aplicar());
+      const largar = (): void => {
+        if (!area) return;
+        area.style.scrollPaddingTop = paddingAnterior;
+        if (alturaAnterior === '') area.style.removeProperty(ALTURA_DA_AREA);
+        else area.style.setProperty(ALTURA_DA_AREA, alturaAnterior);
+        area = null;
       };
-      const observador = new ResizeObserver(medir);
-      observador.observe(barra);
-      medir();
+      // O contêiner que rola muda com a largura da janela (o shell deixa de rolar em janela baixa), então
+      // é achado de novo a cada medida, e o anterior volta ao que era.
+      const aplicar = (): void => {
+        const nova = areaQueRola(barra);
+        if (nova !== area) {
+          largar();
+          area = nova;
+          paddingAnterior = nova.style.scrollPaddingTop;
+          alturaAnterior = nova.style.getPropertyValue(ALTURA_DA_AREA);
+          observador.disconnect();
+          observador.observe(barra);
+          observador.observe(nova);
+        }
+        // O campo focado por teclado não pode ficar sob a barra fixa (WCAG 2.4.11).
+        if (reservar) {
+          area.style.scrollPaddingTop =
+            barra.offsetHeight > 0 ? `${barra.offsetHeight}px` : paddingAnterior;
+        }
+        // A coluna lateral não passa da altura visível da área que rola.
+        area.style.setProperty(ALTURA_DA_AREA, `${area.clientHeight}px`);
+      };
+      const janela = barra.ownerDocument.defaultView;
+      janela?.addEventListener('resize', aplicar);
+      aplicar();
       aoLimpar(() => {
         observador.disconnect();
-        area.style.scrollPaddingTop = anterior;
+        janela?.removeEventListener('resize', aplicar);
+        largar();
       });
     });
 
@@ -194,7 +233,16 @@ export class StepsResponsivoComponent {
   protected escolherNoDialogo(indice: number): void {
     this.focoComQuemConsome = true;
     this.fechar();
+    if (this.items()[indice]?.status === 'active') this.atualEscolhido.emit(indice);
     this.selecionado.emit(indice);
+    // Se ninguém levou o foco a outro lugar, ele não pode ficar perdido no documento.
+    afterNextRender(
+      () => {
+        const ativo = this.documento.activeElement;
+        if (!ativo || ativo === this.documento.body) this.barra()?.nativeElement.focus();
+      },
+      { injector: this.injector },
+    );
   }
 }
 
