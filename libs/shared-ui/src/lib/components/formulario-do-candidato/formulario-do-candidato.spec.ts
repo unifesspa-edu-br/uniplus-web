@@ -798,6 +798,23 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(simulacoes.at(-1)?.respostas).toEqual({ CPF: '69959836371' });
   });
 
+  it('a resposta fixa fora do formato não mostra erro no campo', () => {
+    const tela = montar(
+      {
+        ...ENDERECO,
+        fatosColetados: [campo('NOME', 'Nome completo', 'TEXTO', { formato: 'NOME_PESSOA' })],
+        regras: {
+          etapas: [{ codigo: SECAO, itens: [regra('NOME', { formato: 'NOME_PESSOA' })] }],
+        },
+      },
+      { respostasFixas: { NOME: { valor: 'Maria S. Silva', exibicao: 'Maria S. Silva' } } },
+    );
+    const input = tela.querySelector('input') as HTMLInputElement;
+
+    expect(input.value).toBe('Maria S. Silva');
+    expect(tela.querySelector('.field__error')).toBeNull();
+  });
+
   const TELEFONE: FormularioDoCandidato = {
     ...ENDERECO,
     fatosColetados: [campo('TELEFONE', 'Telefone', 'TEXTO', { formato: 'TELEFONE' })],

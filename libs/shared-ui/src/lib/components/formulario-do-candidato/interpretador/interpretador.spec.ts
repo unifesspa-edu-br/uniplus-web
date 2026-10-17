@@ -173,3 +173,40 @@ function divergencias(
 function ehObjeto(valor: ValorJson | undefined): valor is { readonly [chave: string]: ValorJson } {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
 }
+
+const NOME_CIVIL = {
+  etapas: [
+    {
+      codigo: 'DADOS',
+      itens: [{ fatoCodigo: 'NOME', obrigatoriedade: 'SEMPRE', formato: 'NOME_PESSOA' }],
+    },
+  ],
+} as Parameters<typeof interpretarFormulario>[0];
+
+function campoNome(
+  nome: string,
+  fixos: ReadonlySet<string>,
+): { estado: string; restricoesVioladas: readonly string[] } {
+  const resultado = interpretarFormulario(NOME_CIVIL, { respostas: { NOME: nome } }, fixos);
+  if (!resultado.valida) throw new Error(JSON.stringify(resultado.erro));
+  return resultado.avaliacao.campos?.[0] as {
+    estado: string;
+    restricoesVioladas: readonly string[];
+  };
+}
+
+describe('interpretador do formulário — resposta fixa', () => {
+  it.each(['Maria S. Silva', 'Fernanda', 'Fernanda Drumond 2'])(
+    'a resposta fixa "%s" não passa pela conferência do formato e resolve o fato',
+    (nome) => {
+      const campo = campoNome(nome, new Set(['NOME']));
+
+      expect(campo.restricoesVioladas).toEqual([]);
+      expect(campo.estado).toBe('RESOLVIDO');
+    },
+  );
+
+  it('a mesma resposta digitada pelo candidato continua recusada pelo formato', () => {
+    expect(campoNome('Maria S. Silva', new Set()).restricoesVioladas).toEqual(['FORMATO_TEXTO']);
+  });
+});

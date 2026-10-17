@@ -49,6 +49,11 @@ export interface EntradaDaAvaliacao {
   readonly fatosConhecidos: Fatos;
   /** O dia do envio, `AAAA-MM-DD`; nulo quando o envio não se sabe. */
   readonly diaDoEnvio: string | null;
+  /**
+   * Os fatos de resposta fixa, que vêm da conta: valem como estão, sem conferência das restrições
+   * (formato, tamanho), porque o candidato não tem como corrigi-los.
+   */
+  readonly fatosFixos?: ReadonlySet<string>;
 }
 
 export interface ItemAvaliado {
@@ -185,6 +190,7 @@ export function avaliar(
       entrada.etapasConcluidas.has(etapa.codigo),
       entrada.diaDoEnvio,
       fatos,
+      entrada.fatosFixos?.has(item.fatoCodigo) ?? false,
     );
     fatos.set(codigo, avaliado.fato);
     avaliacaoPorFato.set(codigo, avaliado.avaliacao);
@@ -395,6 +401,7 @@ function avaliarItem(
   etapaConcluida: boolean,
   diaDoEnvio: string | null,
   fatos: Fatos,
+  fixo = false,
 ): { fato: FatoResolvido; avaliacao: ItemAvaliado } {
   const visivel = e(visivelDoContentor, avaliarOuVerdadeiro(item.exibicao, fatos));
   const obrigatorio = obrigatorioSeVisivel(visivel, item.obrigatoriedade, fatos);
@@ -436,7 +443,7 @@ function avaliarItem(
   const violadas: Restricao[] = [];
   if (resposta !== undefined && !estaVazia(resposta)) {
     let algumaIndeterminada = false;
-    for (const restricao of item.restricoesDaResposta) {
+    for (const restricao of fixo ? [] : item.restricoesDaResposta) {
       const atende = restricao.avaliar(resposta, { fatos, diaDoEnvio });
       if (atende === FALSO) violadas.push(restricao);
       else if (atende === INDETERMINADO) algumaIndeterminada = true;
