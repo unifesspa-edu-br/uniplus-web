@@ -60,7 +60,7 @@ describe('FileUploadComponent', () => {
   it('inicializa com estado vazio', () => {
     const { component } = setup();
     expect(component.selectedFile()).toBeNull();
-    expect(component.error()).toBeNull();
+    expect(component.errors()).toEqual([]);
     expect(component.isDragging()).toBe(false);
   });
 
@@ -71,7 +71,7 @@ describe('FileUploadComponent', () => {
     pickFile(fixture, file);
 
     expect(component.selectedFile()).toBe(file);
-    expect(component.error()).toBeNull();
+    expect(component.errors()).toEqual([]);
   });
 
   it('limpa o valor do input após cada seleção para permitir re-selecionar o mesmo arquivo', () => {
@@ -110,7 +110,7 @@ describe('FileUploadComponent', () => {
     dropFile(fixture, null);
 
     expect(component.selectedFile()).toBeNull();
-    expect(component.error()).toBeNull();
+    expect(component.errors()).toEqual([]);
   });
 
   it('rejeita arquivo maior que o tamanho máximo configurado', () => {
@@ -119,7 +119,7 @@ describe('FileUploadComponent', () => {
     pickFile(fixture, OVERSIZED_PDF());
 
     expect(component.selectedFile()).toBeNull();
-    expect(component.error()).toBe('Arquivo excede o tamanho máximo de 10MB.');
+    expect(component.errors()[0]).toBe('Arquivo excede o tamanho máximo de 10MB.');
     expect(errorMessage().nativeElement.textContent).toContain('10MB');
   });
 
@@ -129,7 +129,7 @@ describe('FileUploadComponent', () => {
     pickFile(fixture, MIME_SPOOFED());
 
     expect(component.selectedFile()).toBeNull();
-    expect(component.error()).toContain('Tipo de arquivo não permitido');
+    expect(component.errors()[0]).toContain('Tipo de arquivo não permitido');
   });
 
   it('rejeita arquivo cuja extensão não está em accept (mesmo com MIME válido)', () => {
@@ -138,7 +138,7 @@ describe('FileUploadComponent', () => {
     pickFile(fixture, PNG_WITH_GIF_EXTENSION());
 
     expect(component.selectedFile()).toBeNull();
-    expect(component.error()).toContain('Tipo de arquivo não permitido');
+    expect(component.errors()[0]).toContain('Tipo de arquivo não permitido');
   });
 
   it('rejeita arquivo sem nenhuma extensão', () => {
@@ -147,7 +147,7 @@ describe('FileUploadComponent', () => {
     pickFile(fixture, NO_EXTENSION());
 
     expect(component.selectedFile()).toBeNull();
-    expect(component.error()).toContain('Tipo de arquivo não permitido');
+    expect(component.errors()[0]).toContain('Tipo de arquivo não permitido');
   });
 
   it('aceita arquivo com extensão em maiúsculas (case-insensitive)', () => {
@@ -157,7 +157,7 @@ describe('FileUploadComponent', () => {
     pickFile(fixture, file);
 
     expect(component.selectedFile()).toBe(file);
-    expect(component.error()).toBeNull();
+    expect(component.errors()).toEqual([]);
   });
 
   it('rejeita GIF independentemente de extensão e MIME', () => {
@@ -166,7 +166,7 @@ describe('FileUploadComponent', () => {
     pickFile(fixture, GIF_FILE());
 
     expect(component.selectedFile()).toBeNull();
-    expect(component.error()).toContain('Tipo de arquivo não permitido');
+    expect(component.errors()[0]).toContain('Tipo de arquivo não permitido');
   });
 
   it('respeita o accept configurado pelo consumidor (.pdf apenas)', () => {
@@ -178,7 +178,7 @@ describe('FileUploadComponent', () => {
     pickFile(fixture, makeFile({ name: 'foto.png', type: 'image/png', sizeBytes: 1024 }));
 
     expect(component.selectedFile()).toBeNull();
-    expect(component.error()).toBe('Tipo de arquivo não permitido. Envie arquivos nos formatos: .pdf');
+    expect(component.errors()[0]).toBe('Tipo de arquivo não permitido. Envie arquivos nos formatos: .pdf');
   });
 
   it('respeita o maxSizeMb configurado pelo consumidor', () => {
@@ -189,21 +189,21 @@ describe('FileUploadComponent', () => {
     pickFile(fixture, makeFile({ name: 'doc.pdf', type: 'application/pdf', sizeBytes: 1024 * 1024 + 1 }));
 
     expect(component.selectedFile()).toBeNull();
-    expect(component.error()).toBe('Arquivo excede o tamanho máximo de 1MB.');
+    expect(component.errors()[0]).toBe('Arquivo excede o tamanho máximo de 1MB.');
   });
 
   it('atualiza a mensagem de tipo não permitido quando accept muda em runtime', () => {
     const { fixture, component } = setup();
 
     pickFile(fixture, GIF_FILE());
-    expect(component.error()).toContain('.pdf,.jpg,.jpeg,.png');
+    expect(component.errors()[0]).toContain('.pdf,.jpg,.jpeg,.png');
 
     fixture.componentRef.setInput('acceptedFileTypes', '.pdf');
     fixture.componentRef.setInput('allowedMimeTypes', ['application/pdf']);
     fixture.detectChanges();
     pickFile(fixture, GIF_FILE());
 
-    expect(component.error()).toBe('Tipo de arquivo não permitido. Envie arquivos nos formatos: .pdf');
+    expect(component.errors()[0]).toBe('Tipo de arquivo não permitido. Envie arquivos nos formatos: .pdf');
   });
 
   it('limpa estado quando o usuário clica em Remover', () => {
@@ -214,7 +214,7 @@ describe('FileUploadComponent', () => {
     fixture.detectChanges();
 
     expect(component.selectedFile()).toBeNull();
-    expect(component.error()).toBeNull();
+    expect(component.errors()).toEqual([]);
   });
 
   it('abre o seletor de arquivo nativo ao clicar na área de drop', () => {
@@ -257,10 +257,10 @@ describe('FileUploadComponent', () => {
     const { fixture, component } = setup();
 
     pickFile(fixture, OVERSIZED_PDF());
-    expect(component.error()).not.toBeNull();
+    expect(component.errors()).not.toEqual([]);
 
     pickFile(fixture, VALID_PDF());
-    expect(component.error()).toBeNull();
+    expect(component.errors()).toEqual([]);
   });
 
   it('rejeita drop com arquivo inválido sem alterar selectedFile prévio', () => {
@@ -271,7 +271,7 @@ describe('FileUploadComponent', () => {
     dropFile(fixture, GIF_FILE());
 
     expect(component.selectedFile()).toBe(valid);
-    expect(component.error()).toContain('Tipo de arquivo não permitido');
+    expect(component.errors()[0]).toContain('Tipo de arquivo não permitido');
   });
 
   it('gera IDs únicos por instância para isolar `for`/`aria-describedby` em multi-upload', () => {
@@ -468,7 +468,7 @@ describe('FileUploadComponent no modo controlado', () => {
       itens: [
         item(),
         item({ id: 'a2', nome: 'ata.pdf', fase: 'confirmando', progresso: 100 }),
-        item({ id: 'a3', nome: 'ok.pdf', fase: 'confirmado', progresso: 100, tamanhoBytes: 2 * 1024 * 1024 }),
+        item({ id: 'a3', nome: 'ok.pdf', fase: 'confirmado', progresso: 100, tamanhoBytes: 2.5 * 1024 * 1024 }),
       ],
     });
 
@@ -481,8 +481,42 @@ describe('FileUploadComponent no modo controlado', () => {
     expect(barras[0].getAttribute('aria-valuenow')).toBe('40');
     expect(barras[0].getAttribute('aria-valuetext')).toBe('Enviando: 40%');
     expect(barras[1].getAttribute('aria-valuetext')).toBe('Validando o arquivo');
-    expect(host.textContent).toContain('2,0 MB');
+    expect(host.textContent).toContain('2,5 MB');
     expect(host.querySelectorAll('.uni-uploader__item.is-success')).toHaveLength(1);
+  });
+
+  it('mostra o tamanho em pt-BR, com vírgula em KB e MB', () => {
+    const { host } = setup({
+      itens: [
+        item({ id: 'k', nome: 'k.pdf', tamanhoBytes: 512 * 1024 }),
+        item({ id: 'm', nome: 'm.pdf', tamanhoBytes: 1.25 * 1024 * 1024 }),
+      ],
+    });
+
+    const metas = Array.from(host.querySelectorAll('.uni-uploader__item-meta')).map((m) => m.textContent);
+    expect(metas).toContain('512 KB');
+    expect(metas).toContain('1,3 MB');
+  });
+
+  it('dá id a cada mensagem, lista todas no aria-describedby e marca só o input como inválido', () => {
+    const { host, escolher } = setup({ mensagemExterna: 'Antes, conclua o cadastro.' });
+    escolher(new File(['x'], 'a.gif', { type: 'image/gif' }), new File(['x'], 'b.gif', { type: 'image/gif' }));
+
+    const alertas = Array.from(host.querySelectorAll('[role="alert"]'));
+    const ids = alertas.map((a) => a.id);
+    expect(ids).toHaveLength(3);
+    expect(new Set(ids).size).toBe(3);
+    const zona = host.querySelector('.uni-uploader__drop');
+    expect(zona?.getAttribute('aria-describedby')?.split(' ')).toEqual(ids);
+    expect(zona?.hasAttribute('aria-invalid')).toBe(false);
+    expect(host.querySelector('input[type="file"]')?.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('no modo simples não habilita seleção múltipla nem usa o plural', () => {
+    const { host } = setup({ multiple: true, itens: null });
+
+    expect(host.querySelector<HTMLInputElement>('input[type="file"]')?.multiple).toBe(false);
+    expect(host.textContent).toContain('Arraste um arquivo aqui');
   });
 
   it('anuncia o envio em passos para não interromper o leitor de tela', () => {

@@ -33,6 +33,7 @@ export interface ArquivoEmEnvio {
 
 const BYTES_POR_MB = 1024 * 1024;
 const PASSO_ANUNCIADO = 25;
+const FORMATO_TAMANHO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 
 /**
  * Zona de soltar arquivos com validação de tipo e tamanho no cliente.
@@ -79,9 +80,10 @@ const PASSO_ANUNCIADO = 25;
         type="file"
         class="hidden"
         [accept]="acceptedFileTypes()"
-        [multiple]="multiple()"
+        [multiple]="modoMultiplo()"
         [disabled]="disabled()"
         [attr.aria-describedby]="describedBy()"
+        [attr.aria-invalid]="messages().length > 0 ? 'true' : null"
         (change)="onFilesPicked(fileInput)"
       />
       @let lista = itens();
@@ -165,7 +167,7 @@ const PASSO_ANUNCIADO = 25;
       }
       @for (message of messages(); track $index) {
         <small
-          [attr.id]="$index === 0 ? errorId : null"
+          [id]="idDaMensagem($index)"
           class="field__error"
           role="alert"
         >{{ message }}</small>
@@ -202,7 +204,11 @@ export class FileUploadComponent {
 
   /** Aceita vários arquivos por escolha. Só vale no modo controlado (`itens`). */
   readonly multiple = input(false);
-  /** Teto de arquivos na lista, contando os já presentes; sem valor, não há teto. */
+  /**
+   * Teto de arquivos na lista, contando os já presentes; sem valor, não há teto. A conta usa
+   * `itens` no instante da escolha, então o consumidor deve acrescentar os arquivos escolhidos à
+   * lista de forma síncrona, dentro do tratamento de `arquivosEscolhidos`.
+   */
   readonly maxFiles = input<number | null>(null);
   /**
    * Sistemas diferentes informam tipos MIME diferentes para o mesmo DOCX ou ODT (vazio, `zip`,
@@ -227,7 +233,6 @@ export class FileUploadComponent {
   readonly selectedFile = model<File | null>(null);
   readonly isDragging = signal(false);
   readonly errors = signal<readonly string[]>([]);
-  readonly error = computed(() => this.errors()[0] ?? null);
   readonly messages = computed(() => {
     const externa = this.mensagemExterna();
     return externa ? [...this.errors(), externa] : this.errors();
@@ -236,20 +241,23 @@ export class FileUploadComponent {
   readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
   private readonly dropZone = viewChild.required<ElementRef<HTMLButtonElement>>('dropZone');
 
+  /** Vários arquivos só valem no modo controlado, em que o consumidor guarda a lista. */
+  protected readonly modoMultiplo = computed(() => this.multiple() && this.itens() !== null);
   readonly dropTitle = computed(() =>
-    this.multiple()
+    this.modoMultiplo()
       ? 'Arraste arquivos aqui ou selecione do computador'
       : 'Arraste um arquivo aqui ou selecione do computador',
   );
   readonly dropHint = computed(() => {
     const limite = this.maxFiles();
-    const quantidade = this.multiple() && limite !== null ? ` - até ${limite} arquivos` : '';
+    const quantidade = this.modoMultiplo() && limite !== null ? ` - até ${limite} arquivos` : '';
     return `${this.acceptLabel()} - tamanho máximo: ${this.maxSizeMb()}MB${quantidade}`;
   });
   readonly describedBy = computed(() => {
-    const ids = [this.descritoPor(), this.messages().length > 0 ? this.errorId : null].filter(
-      (id): id is string => !!id,
-    );
+    const ids = [
+      this.descritoPor(),
+      ...this.messages().map((_, indice) => this.idDaMensagem(indice)),
+    ].filter((id): id is string => !!id);
     return ids.length > 0 ? ids.join(' ') : null;
   });
 
@@ -303,6 +311,11 @@ export class FileUploadComponent {
     this.fileInput().nativeElement.click();
   }
 
+  /** A primeira mensagem mantém o id estável da instância; as demais levam o índice. */
+  protected idDaMensagem(indice: number): string {
+    return indice === 0 ? this.errorId : `${this.errorId}-${indice}`;
+  }
+
   protected retirar(id: string): void {
     this.errors.set([]);
     this.itemRetirado.emit(id);
@@ -313,8 +326,8 @@ export class FileUploadComponent {
     const bytes = arquivo.tamanhoBytes;
     if (bytes === undefined) return null;
     if (bytes < 1024) return `${bytes} B`;
-    if (bytes < BYTES_POR_MB) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / BYTES_POR_MB).toFixed(1).replace('.', ',')} MB`;
+    if (bytes < BYTES_POR_MB) return `${FORMATO_TAMANHO.format(bytes / 1024)} KB`;
+    return `${FORMATO_TAMANHO.format(bytes / BYTES_POR_MB)} MB`;
   }
 
   protected textoDaFase(arquivo: ArquivoEmEnvio): string {
@@ -353,7 +366,7 @@ export class FileUploadComponent {
   private handleFiles(files: readonly File[]): void {
     if (files.length === 0) return;
 
-    if (this.itens() === null || !this.multiple()) {
+    if (!this.modoMultiplo()) {
       if (files.length > 1) {
         this.errors.set(['Envie um arquivo por vez.']);
         return;

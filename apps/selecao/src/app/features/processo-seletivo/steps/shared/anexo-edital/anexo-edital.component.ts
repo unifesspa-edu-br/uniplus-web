@@ -52,7 +52,8 @@ export class AnexoEditalComponent {
 
   /** Impede que uma segunda escolha atropele o envio em andamento. */
   private operacaoEmCurso = false;
-  private arquivoSelecionado: File | null = null;
+  /** Sinal porque decide se a lista oferece a nova tentativa. */
+  private readonly arquivoSelecionado = signal<File | null>(null);
   private iniciacaoAtual: IniciarUploadDocumentoEditalDto | null = null;
 
   /** Geração do editor quando o anexo em curso começou. */
@@ -105,6 +106,9 @@ export class AnexoEditalComponent {
         fase: item.fase,
         progresso: item.progress,
         mensagem: item.mensagemErro,
+        // A retomada precisa do arquivo na memória e do processo: após recarregar a página o anexo
+        // em erro vem do servidor sem os bytes, e repetir não teria o que enviar.
+        podeTentarDeNovo: this.arquivoSelecionado() !== null && !this.semProcesso(),
         podeRetirar: !this.anexoBloqueado(),
       },
     ];
@@ -160,7 +164,7 @@ export class AnexoEditalComponent {
     this.uploadError.set(null);
     this.operacaoEmCurso = true;
     try {
-      this.arquivoSelecionado = arquivo;
+      this.arquivoSelecionado.set(arquivo);
       this.iniciacaoAtual = null;
       this.registrarAnexo(arquivo);
       await this.executarUpload(processoId, arquivo);
@@ -172,7 +176,7 @@ export class AnexoEditalComponent {
   /** Retoma da fase que falhou, sem repetir o que já concluiu. */
   async retomarUpload(): Promise<void> {
     if (this.operacaoEmCurso) return;
-    const arquivo = this.arquivoSelecionado;
+    const arquivo = this.arquivoSelecionado();
     const processoId = this.store.processoSeletivoId();
     if (arquivo === null || processoId === null) return;
 
@@ -293,7 +297,8 @@ export class AnexoEditalComponent {
   /** Só antes da confirmação: o documento confirmado é imutável no backend. */
   removeUpload(): void {
     if (this.anexoBloqueado()) return;
-    this.arquivoSelecionado = null;
+    this.uploadError.set(null);
+    this.arquivoSelecionado.set(null);
     this.store.patchObjectSection('identificacao', { uploads: [] });
   }
 
