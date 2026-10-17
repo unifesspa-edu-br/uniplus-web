@@ -564,12 +564,12 @@ export function decodificarOrigemCandidatos(valor: string): OrigemCandidatosSele
 
 /**
  * Projeta o readback de um documento confirmado no shape que o passo 2 já
- * sabe exibir, com o rótulo genérico do edital anexado.
+ * sabe exibir, com o nome do arquivo que o operador enviou.
  */
 export function uploadItemDe(documento: DocumentoAPublicarDto): UploadItem {
   return {
     id: documento.id,
-    name: 'Edital anexado.pdf',
+    name: documento.nomeArquivo,
     extension: 'pdf',
     progress: 100,
     fase: 'confirmado',
@@ -604,9 +604,8 @@ export function classificarDocumentos(
 /**
  * Como apresentar um documento confirmado na escolha do oficial (CA-06).
  *
- * O contrato não devolve o nome do arquivo — é metadado de storage, excluído
- * de propósito — e não há rota de download, então não dá para inspecionar o
- * conteúdo antes de decidir. O que resta são metadados estáveis: instante da
+ * Não há rota de download, então não dá para inspecionar o conteúdo antes de
+ * decidir. Além do nome do arquivo, ele vem com metadados estáveis: instante da
  * confirmação com segundos, porque duas confirmações no mesmo minuto ficariam
  * idênticas sem eles; tamanho; e o início do hash, que é a identidade do
  * arquivo — hashes iguais significam o mesmo conteúdo, e aí a escolha é
@@ -621,5 +620,5 @@ export function descreverDocumento(documento: DocumentoAPublicarDto): string {
       ? 'hash indisponível'
       : `hash ${documento.hashSha256.slice(0, 12)}`;
 
-  return `${instante} · ${formatarTamanhoDeArquivo(documento.tamanhoBytes)} · ${hash}`;
+  return `${documento.nomeArquivo} · ${instante} · ${formatarTamanhoDeArquivo(documento.tamanhoBytes)} · ${hash}`;
 }
