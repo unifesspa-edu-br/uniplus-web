@@ -120,7 +120,7 @@ export class CadastroInicialService {
   private geracao = 0;
 
   private chaveCriacao = idempotencyKey.create();
-  private chaveIniciacao = idempotencyKey.create();
+  private readonly chaveIniciacao = new ChaveDeSubstituicao();
   private chaveConfirmacao = idempotencyKey.create();
 
   private readonly chaveTaxa = new ChaveDeSubstituicao();
@@ -175,7 +175,6 @@ export class CadastroInicialService {
     this.geracao += 1;
     this.criacaoPendente = null;
     this.chaveCriacao = idempotencyKey.create();
-    this.chaveIniciacao = idempotencyKey.create();
     this.chaveConfirmacao = idempotencyKey.create();
     // Varredura, não lista nominal: uma enumeração à mão já deixou cinco chaves
     // para trás, e a chave esquecida é invisível — o comando do processo novo sai
@@ -587,7 +586,12 @@ export class CadastroInicialService {
     desejado: FormularioParaGravar & { readonly faseId: string },
   ): Promise<ResultadoGravacao> {
     for (const passo of planoDeGravacao(servidor, desejado)) {
-      const resultado = await this.gravarPassoDoFormulario(processoSeletivoId, finalidade, passo, desejado);
+      const resultado = await this.gravarPassoDoFormulario(
+        processoSeletivoId,
+        finalidade,
+        passo,
+        desejado,
+      );
       if (!resultado.ok) return resultado;
     }
     return { ok: true };
@@ -602,8 +606,11 @@ export class CadastroInicialService {
     switch (passo) {
       case 'cabecalho': {
         const corpo = cabecalhoParaEnvio(desejado.faseId, desejado.conteudo);
-        return this.gravarComChave(this.chaveCabecalhoDoFormulario, { finalidade, corpo }, (contexto) =>
-          this.api.definirCabecalhoDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
+        return this.gravarComChave(
+          this.chaveCabecalhoDoFormulario,
+          { finalidade, corpo },
+          (contexto) =>
+            this.api.definirCabecalhoDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
         );
       }
       case 'itensSemSecao':
@@ -615,8 +622,11 @@ export class CadastroInicialService {
       }
       case 'termos': {
         const corpo = termosParaEnvio(desejado.conteudo);
-        return this.gravarComChave(this.chaveTermosDoFormulario, { finalidade, corpo }, (contexto) =>
-          this.api.definirTermosDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
+        return this.gravarComChave(
+          this.chaveTermosDoFormulario,
+          { finalidade, corpo },
+          (contexto) =>
+            this.api.definirTermosDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
         );
       }
     }
@@ -627,7 +637,10 @@ export class CadastroInicialService {
    * rascunho e não pede chave de idempotência nesta rota: repetir a remoção encontra o formulário
    * já removido, e quem chama confere o desfecho relendo o processo.
    */
-  async removerFormulario(processoSeletivoId: string, finalidade: string): Promise<ResultadoGravacao> {
+  async removerFormulario(
+    processoSeletivoId: string,
+    finalidade: string,
+  ): Promise<ResultadoGravacao> {
     const geracao = this.geracao;
     const result = await firstValueFrom(this.api.removerFormulario(processoSeletivoId, finalidade));
     if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
@@ -642,11 +655,18 @@ export class CadastroInicialService {
   async aplicarModeloDeFormulario(
     processoSeletivoId: string,
     modeloId: string,
-  ): Promise<{ readonly ok: true; readonly relato: AplicacaoDeModeloDto } | (FalhaOperacao & { readonly inconclusiva: boolean })> {
+  ): Promise<
+    | { readonly ok: true; readonly relato: AplicacaoDeModeloDto }
+    | (FalhaOperacao & { readonly inconclusiva: boolean })
+  > {
     const geracao = this.geracao;
     const corpo = { modeloId };
     const result = await firstValueFrom(
-      this.api.aplicarModeloDeFormulario(processoSeletivoId, corpo, this.chaveAplicacaoDeModelo.contextoPara(corpo)),
+      this.api.aplicarModeloDeFormulario(
+        processoSeletivoId,
+        corpo,
+        this.chaveAplicacaoDeModelo.contextoPara(corpo),
+      ),
     );
     if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
 
@@ -654,7 +674,11 @@ export class CadastroInicialService {
       this.chaveAplicacaoDeModelo.renovar();
       return { ok: true, relato: result.data };
     }
-    return { ok: false, problem: result.problem, inconclusiva: this.chaveAplicacaoDeModelo.recusada(result) };
+    return {
+      ok: false,
+      problem: result.problem,
+      inconclusiva: this.chaveAplicacaoDeModelo.recusada(result),
+    };
   }
 
   /** Um comando de substituição sob a chave dele, girando-a como `ChaveDeSubstituicao` manda. */
@@ -816,24 +840,28 @@ export class CadastroInicialService {
     return firstValueFrom(this.api.obterSnapshotVigente(processoSeletivoId));
   }
   /** Passo 1 do anexo: registro pendente + URL pré-assinada. */
-  async iniciarUpload(processoSeletivoId: string, nomeArquivo: string): Promise<ResultadoIniciacao> {
+  async iniciarUpload(
+    processoSeletivoId: string,
+    nomeArquivo: string,
+  ): Promise<ResultadoIniciacao> {
     const geracao = this.geracao;
+    const request = { nomeArquivo, tipoDeMidia: TIPO_DE_MIDIA_DO_EDITAL };
     const result = await firstValueFrom(
       this.api.iniciarEnvioDocumentoAPublicar(
         processoSeletivoId,
-        { nomeArquivo, tipoDeMidia: TIPO_DE_MIDIA_DO_EDITAL },
-        contextoCom(this.chaveIniciacao),
+        request,
+        this.chaveIniciacao.contextoPara(request),
       ),
     );
 
     if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
 
     if (isApiOk(result)) {
-      this.chaveIniciacao = idempotencyKey.create();
+      this.chaveIniciacao.renovar();
       return { ok: true, iniciacao: result.data };
     }
 
-    this.chaveIniciacao = proximaChave(this.chaveIniciacao, result);
+    this.chaveIniciacao.recusada(result);
     return { ok: false, problem: result.problem };
   }
 
