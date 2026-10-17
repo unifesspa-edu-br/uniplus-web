@@ -1,13 +1,9 @@
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  ViewChild,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+  FileUploadComponent,
+  ValorEmConsultaComponent,
+  type ArquivoEmEnvio,
+} from '@uniplus/shared-ui/components';
 import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
 import { DocumentoEditalDto, IniciarUploadDocumentoEditalDto } from '@uniplus/shared-data/selecao';
 
@@ -18,8 +14,7 @@ import { abrirAcessoEmNovaAba, destinoExpirado } from '../envio-pre-assinado';
 import { classificarDocumentos, descreverDocumento, uploadItemDe } from '../hidratacao';
 
 /** Limite do documento do edital no domínio: 20 MB. */
-const TAMANHO_MAXIMO_BYTES = 20 * 1024 * 1024;
-const CONTENT_TYPE_PDF = 'application/pdf';
+const TAMANHO_MAXIMO_MB = 20;
 
 /**
  * Anexo do documento oficial do edital.
@@ -36,7 +31,7 @@ const CONTENT_TYPE_PDF = 'application/pdf';
 @Component({
   selector: 'sel-anexo-edital',
   standalone: true,
-  imports: [ValorEmConsultaComponent],
+  imports: [FileUploadComponent, ValorEmConsultaComponent],
   templateUrl: './anexo-edital.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -45,9 +40,7 @@ export class AnexoEditalComponent {
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
 
-  @ViewChild('fileInput') private fileInput?: ElementRef<HTMLInputElement>;
-
-  readonly dragging = signal(false);
+  readonly tamanhoMaximoMb = TAMANHO_MAXIMO_MB;
   readonly uploadError = signal<string | null>(null);
   readonly reverificando = signal(false);
 
@@ -101,31 +94,31 @@ export class AnexoEditalComponent {
   /** O anexo exige o processo já criado: a rota é `/{id}/documentos-edital`. */
   private readonly semProcesso = computed(() => this.store.processoSeletivoId() === null);
 
-  chooseFiles(): void {
-    if (this.anexoBloqueado()) return;
-    this.fileInput?.nativeElement.click();
-  }
+  /** O anexo na forma que a lista do `ui-file-upload` exibe. */
+  readonly itens = computed<readonly ArquivoEmEnvio[]>(() => {
+    const item = this.anexo();
+    if (item === undefined) return [];
+    return [
+      {
+        id: item.id,
+        nome: item.name,
+        fase: item.fase,
+        progresso: item.progress,
+        mensagem: item.mensagemErro,
+        podeRetirar: !this.anexoBloqueado(),
+      },
+    ];
+  });
 
   /**
-   * O `<input type="file">` é visualmente oculto mas continua focável — quem
-   * navega por teclado chega nele sem passar pela zona de upload. O `disabled`
-   * no template é o que de fato impede a escolha; esta guarda existe para o
-   * caminho não depender só da marcação.
+   * A validação de formato e tamanho é do `ui-file-upload`, que só entrega arquivo aprovado.
+   * A guarda de bloqueio fica aqui porque o campo continua alcançável pelo teclado enquanto a
+   * zona está indisponível, e o `disabled` da marcação não pode ser a única barreira.
    */
-  onFileInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const arquivo = input.files?.[0];
-    input.value = '';
+  aoEscolherArquivo(arquivos: readonly File[]): void {
     if (this.anexoBloqueado()) return;
-    if (arquivo) void this.anexar(arquivo);
-  }
-
-  onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragging.set(false);
-    if (this.anexoBloqueado()) return;
-    const arquivo = event.dataTransfer?.files?.[0];
-    if (arquivo) void this.anexar(arquivo);
+    const arquivo = arquivos[0];
+    if (arquivo !== undefined) void this.anexar(arquivo);
   }
 
   private async anexar(arquivo: File): Promise<void> {
@@ -159,12 +152,6 @@ export class AnexoEditalComponent {
       this.uploadError.set(
         'A confirmação do edital anterior ficou sem resposta e pode ter sido registrada. Use "Tentar novamente" antes de escolher outro arquivo.',
       );
-      return;
-    }
-
-    const recusa = recusarArquivo(arquivo);
-    if (recusa !== null) {
-      this.uploadError.set(recusa);
       return;
     }
 
@@ -316,37 +303,6 @@ export class AnexoEditalComponent {
     this.store.patchObjectSection('identificacao', { uploads: [] });
   }
 
-  /**
-   * Trunca o nome do arquivo preservando a extensão no final.
-   * Ex.: "edital_vestibular_2026_revisado_final_publicado.pdf" →
-   *      "edital_vestibular_2026_revisado...publicado.pdf"
-   */
-  truncateFileName(name: string, maxLength = 36): string {
-    const dotIndex = name.lastIndexOf('.');
-    if (dotIndex <= 1 || name.length <= maxLength) return name;
-    const extension = name.slice(dotIndex);
-    const base = name.slice(0, dotIndex);
-    const available = maxLength - extension.length - 3;
-    if (available < 1) return `...${extension}`;
-    return `${base.slice(0, available)}...${extension}`;
-  }
-
-  /** Rótulo da fase, para o leitor de tela acompanhar o andamento. */
-  descricaoFase(item: UploadItem): string {
-    switch (item.fase) {
-      case 'iniciando':
-        return 'Preparando o envio';
-      case 'enviando':
-        return `Enviando: ${item.progress}%`;
-      case 'confirmando':
-        return 'Validando o arquivo';
-      case 'confirmado':
-        return 'Edital anexado';
-      case 'erro':
-        return item.mensagemErro ?? 'Falha no envio';
-    }
-  }
-
   /** Metadados que distinguem um confirmado do outro na escolha do oficial. */
   protected descrever(documento: DocumentoEditalDto): string {
     return descreverDocumento(documento);
@@ -414,19 +370,4 @@ export class AnexoEditalComponent {
   }
 
   protected readonly aguardandoCadastro = this.semProcesso;
-}
-
-/** Recusa client-side do que o backend recusaria de todo modo. */
-function recusarArquivo(arquivo: File): string | null {
-  const extensao = arquivo.name.split('.').pop()?.toLowerCase() ?? '';
-  if (extensao !== 'pdf' || (arquivo.type !== '' && arquivo.type !== CONTENT_TYPE_PDF)) {
-    return `Formato não permitido: "${arquivo.name}". O edital deve ser um arquivo PDF.`;
-  }
-  if (arquivo.size > TAMANHO_MAXIMO_BYTES) {
-    return 'O edital excede o tamanho máximo permitido de 20 MB.';
-  }
-  if (arquivo.size === 0) {
-    return 'O arquivo está vazio.';
-  }
-  return null;
 }

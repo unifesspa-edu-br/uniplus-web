@@ -115,6 +115,18 @@ describe('AnexoEditalComponent', () => {
 
   afterEach(() => controller.verify());
 
+  /** Escolhe o arquivo pelo campo, como o operador: quem recusa é o `ui-file-upload`. */
+  function escolher(arquivo: File): void {
+    const input = host.querySelector<HTMLInputElement>('input[type="file"]');
+    if (input === null) throw new Error('campo de arquivo ausente');
+    Object.defineProperty(input, 'files', { value: [arquivo], configurable: true });
+    input.dispatchEvent(new Event('change'));
+  }
+
+  function alerta(): string {
+    return host.querySelector('[role="alert"]')?.textContent ?? '';
+  }
+
   /** Percorre as três fases até o documento selado. */
   async function anexarComSucesso(arquivo = pdf()): Promise<void> {
     void componente['anexar'](arquivo);
@@ -136,15 +148,17 @@ describe('AnexoEditalComponent', () => {
   }
 
   it('recusa arquivo que não é PDF sem chamar a API', () => {
-    void componente['anexar'](new File(['x'], 'edital.docx', { type: 'application/msword' }));
+    escolher(new File(['x'], 'edital.docx', { type: 'application/msword' }));
+    detectar();
 
-    expect(componente.uploadError()).toContain('deve ser um arquivo PDF');
+    expect(alerta()).toContain('Tipo de arquivo não permitido');
   });
 
   it('recusa PDF acima de 20 MB sem chamar a API', () => {
-    void componente['anexar'](pdf('grande.pdf', 20 * 1024 * 1024 + 1));
+    escolher(pdf('grande.pdf', 20 * 1024 * 1024 + 1));
+    detectar();
 
-    expect(componente.uploadError()).toContain('20 MB');
+    expect(alerta()).toContain('20MB');
   });
 
   /** O anexo não cria o processo: sem id, não há rota para onde enviar. */
@@ -278,7 +292,7 @@ describe('AnexoEditalComponent', () => {
     detectar();
 
     expect(host.textContent).toContain('edital-de-abertura-do-processo-seletivo-de-medicina-2027.pdf');
-    expect(host.querySelector('input, .upload-zone, .file-delete, [role="progressbar"]')).toBeNull();
+    expect(host.querySelector('ui-file-upload, input, [role="progressbar"]')).toBeNull();
     expect(Array.from(host.querySelectorAll('button')).map((b) => b.textContent?.trim())).toEqual([
       'Abrir o edital',
     ]);
