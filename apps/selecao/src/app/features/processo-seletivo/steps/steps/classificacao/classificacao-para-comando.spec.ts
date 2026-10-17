@@ -27,7 +27,6 @@ function classificacaoBase(): WizardDraft['classificacao'] {
     casasArredondamento: '',
     regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     regraOrdemAlocacaoVersao: '1.0',
-    nOpcoesAlocacao: '2',
     baseadoEmEnem: false,
     resolucaoPesoAreaEnem: '',
     regrasEliminacao: [],
@@ -111,16 +110,6 @@ describe('comoComandoDeClassificacao — bimodalidade (INV-B8)', () => {
     expect(comando.regraArredondamentoVersao).toBe('1.0');
     expect(comando.casasArredondamento).toBe(2);
     expect(comando.regrasEliminacao).toHaveLength(1);
-  });
-
-  it('converte nOpcoesAlocacao de texto para número', () => {
-    const comando = comoComandoDeClassificacao({
-      ...classificacaoBase(),
-      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
-      nOpcoesAlocacao: '1',
-    });
-
-    expect(comando.nOpcoesAlocacao).toBe(1);
   });
 });
 
@@ -311,7 +300,6 @@ describe('mensagensDeClassificacaoBase', () => {
     casasArredondamento: '2',
     regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     regraOrdemAlocacaoVersao: '1.0',
-    nOpcoesAlocacao: '2',
   });
 
   it('sem mensagens quando a base está completa (fórmula local)', () => {
@@ -325,7 +313,7 @@ describe('mensagensDeClassificacaoBase', () => {
   /**
    * A navegação do wizard é livre: quem chega na Eliminação sem ter
    * preenchido o resto da Fórmula não pode gravar um comando com
-   * `regraOrdemAlocacaoCodigo`/`nOpcoesAlocacao` vazios.
+   * `regraOrdemAlocacaoCodigo` vazio.
    */
   it('recusa sem ordem de alocação, mesmo sob classificação importada', () => {
     const mensagens = mensagensDeClassificacaoBase({
@@ -339,15 +327,6 @@ describe('mensagensDeClassificacaoBase', () => {
     });
 
     expect(mensagens.some((mensagem) => mensagem.includes('ordem de alocação'))).toBe(true);
-  });
-
-  it('recusa sem número de opções válido (1 ou 2)', () => {
-    const mensagens = mensagensDeClassificacaoBase({
-      ...classificacaoCompleta(),
-      nOpcoesAlocacao: '3',
-    });
-
-    expect(mensagens.some((mensagem) => mensagem.includes('número de opções'))).toBe(true);
   });
 
   it('sob classificação importada, não exige arredondamento nem casas', () => {

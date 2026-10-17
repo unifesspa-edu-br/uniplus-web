@@ -30,6 +30,48 @@
       <div class="form-field form-grid__full">
         @if (store.emConsulta()) {
           <ui-valor-em-consulta
+            rotulo="Número de opções de curso"
+            seVazio="Não declarado"
+            [valor]="opcoesLidas()"
+          />
+        } @else {
+          <label class="label" for="f-opcoes-curso">Número de opções de curso</label>
+          <select
+            class="input"
+            id="f-opcoes-curso"
+            [class.is-invalid]="erroDasOpcoes() !== null"
+            [attr.aria-invalid]="erroDasOpcoes() !== null ? 'true' : null"
+            [attr.aria-describedby]="
+              erroDasOpcoes() !== null ? 'f-opcoes-curso-ajuda f-opcoes-curso-erro' : 'f-opcoes-curso-ajuda'
+            "
+            [disabled]="!store.aceitaEdicao()"
+            (change)="alterarOpcoesDeCurso($any($event.target).value)"
+          >
+            <option value="" [selected]="store.draft().opcoesDeCurso.numero === ''">
+              — escolher —
+            </option>
+            @for (opcao of opcoesDeCurso; track opcao.valor) {
+              <option
+                [value]="opcao.valor"
+                [selected]="opcao.valor === store.draft().opcoesDeCurso.numero"
+              >
+                {{ opcao.rotulo }}
+              </option>
+            }
+          </select>
+          <p class="field__hint" id="f-opcoes-curso-ajuda">
+            {{ ajudaDasOpcoes }}
+          </p>
+          <div aria-live="polite" aria-atomic="true">
+            @if (erroDasOpcoes(); as erro) {
+              <p class="field__erro" id="f-opcoes-curso-erro">{{ erro }}</p>
+            }
+          </div>
+        }
+      </div>
+      <div class="form-field form-grid__full">
+        @if (store.emConsulta()) {
+          <ui-valor-em-consulta
             rotulo="Regra de distribuição"
             seVazio="Não declarada"
             [valor]="padraoLido().regraDeDistribuicao"

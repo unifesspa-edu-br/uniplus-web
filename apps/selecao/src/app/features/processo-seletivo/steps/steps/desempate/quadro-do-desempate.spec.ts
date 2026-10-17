@@ -40,7 +40,6 @@ function classificacao(resolucao: string | null): WizardDraft['classificacao'] {
     casasArredondamento: '',
     regraOrdemAlocacaoCodigo: '',
     regraOrdemAlocacaoVersao: '',
-    nOpcoesAlocacao: '',
     baseadoEmEnem: resolucao !== null,
     resolucaoPesoAreaEnem: resolucao ?? '',
     regrasEliminacao: [],

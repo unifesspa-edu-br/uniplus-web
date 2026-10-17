@@ -1062,7 +1062,14 @@ export class ProcessoSeletivoPage {
           // jsdom não implementa scrollTo(options); o foco não pode ser bloqueado.
         }
       }
-      alerta.focus({ preventScroll: true });
+      // Um foco só: o primeiro campo que o passo marcou como inválido, quando há; sem campo
+      // marcado, o próprio aviso. O campo é ligado ao seu erro por `aria-describedby`, então o
+      // leitor de tela o lê junto com a mensagem.
+      const campo = this.root.nativeElement.querySelector<HTMLElement>(
+        '.step-pane:not([hidden]) [aria-invalid="true"]',
+      );
+      campo?.focus({ preventScroll: true });
+      if (campo === null || document.activeElement !== campo) alerta.focus({ preventScroll: true });
     });
   }
 

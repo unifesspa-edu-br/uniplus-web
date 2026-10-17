@@ -391,7 +391,6 @@ export class EliminacaoStepComponent {
             : 'não se aplica (classificação importada)',
         },
         { rotulo: 'Ordem de alocação', valor: classificacao.regraOrdemAlocacaoCodigo },
-        { rotulo: 'Número de opções de curso', valor: classificacao.nOpcoesAlocacao },
         { rotulo: 'Baseada em ENEM', valor: classificacao.baseadoEmEnem ? 'Sim' : 'Não' },
         {
           rotulo: 'Resolução de Peso por Área',

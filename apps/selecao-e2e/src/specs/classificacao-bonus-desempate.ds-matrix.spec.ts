@@ -205,7 +205,8 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await expect(page.getByLabel('Regra de arredondamento', { exact: true })).toBeVisible();
       await expect(page.getByLabel('Casas decimais', { exact: true })).toBeVisible();
       await expect(page.getByLabel('Ordem de alocação', { exact: true })).toBeVisible();
-      await expect(page.getByLabel('Número de opções de curso', { exact: true })).toBeVisible();
+      // O número de opções de curso é do passo Vagas, não da Fórmula.
+      await expect(page.getByLabel('Número de opções de curso', { exact: true })).toHaveCount(0);
     });
   });
 
@@ -392,6 +393,7 @@ const DETALHE_PUBLICADO = {
   ofertaAtendimento: null,
   distribuicaoVagas: [],
   aplicaBonusRegional: true,
+  opcoesDeCurso: { numero: 1 },
   bonusRegional: {
     id: '01960000-0000-7000-0000-0000000008b1',
     regra: referencia('BONUS-MULTIPLICATIVO'),
@@ -424,7 +426,6 @@ const DETALHE_PUBLICADO = {
     regraArredondamento: referencia('ARRED-TRUNCAR'),
     casasArredondamento: 2,
     regraOrdemAlocacao: referencia('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA'),
-    nOpcoesAlocacao: 1,
     regrasEliminacao: [
       {
         id: '01960000-0000-7000-0000-0000000008e1',
@@ -460,7 +461,6 @@ const LEITURAS: Record<string, Record<string, string>> = {
     'Regra de arredondamento': 'ARRED-TRUNCAR — Edital padrão PSIQ',
     'Casas decimais': '2',
     'Ordem de alocação': 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
-    'Número de opções de curso': '1 opção',
   },
   Bônus: {
     'Bônus regional': 'Aplicado neste processo',
@@ -915,7 +915,6 @@ async function declararFormulaLocal(page: Page): Promise<void> {
   await page
     .getByLabel('Ordem de alocação', { exact: true })
     .selectOption('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA|1.0');
-  await page.getByLabel('Número de opções de curso', { exact: true }).selectOption('2');
 }
 
 /** Falhar por id diz qual regra caiu; a coleção crua não. */

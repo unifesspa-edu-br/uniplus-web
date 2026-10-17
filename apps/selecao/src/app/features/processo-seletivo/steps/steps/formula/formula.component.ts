@@ -310,22 +310,14 @@ export class FormulaStepComponent {
     );
   });
 
-  /** Quantas opções de curso o candidato declara, com o texto do seletor e da consulta. */
-  protected readonly opcoesDeCurso = [
-    { valor: '1', rotulo: '1 opção' },
-    { valor: '2', rotulo: '2 opções' },
-  ] as const;
-
   /** A classificação como se lê em consulta, com o rótulo de cada escolha. */
   readonly leitura = computed(() => {
     const classificacao = this.store.draft().classificacao;
-    const opcoes = classificacao.nOpcoesAlocacao;
     return {
       regraCalculo: rotuloDaRegraEscolhida(this.regrasCalculo()),
       regraArredondamento: rotuloDaRegraEscolhida(this.regrasArredondamento()),
       casasDecimais: leituraDoCampoDecimal(classificacao.casasArredondamento),
       ordemAlocacao: rotuloDaRegraEscolhida(this.regrasOrdemAlocacao()),
-      opcoesDeCurso: this.opcoesDeCurso.find((opcao) => opcao.valor === opcoes)?.rotulo ?? null,
     };
   });
 
@@ -382,10 +374,6 @@ export class FormulaStepComponent {
       regraOrdemAlocacaoCodigo: codigo,
       regraOrdemAlocacaoVersao: versao,
     });
-  }
-
-  alterarNOpcoesAlocacao(valor: string): void {
-    this.store.patchObjectSection('classificacao', { nOpcoesAlocacao: valor });
   }
 
   acrescentarEdicao(): void {
@@ -526,9 +514,6 @@ export class FormulaStepComponent {
     }
 
     if (!classificacao.regraOrdemAlocacaoCodigo) invalid.add('regraOrdemAlocacao');
-
-    const nOpcoes = numero(classificacao.nOpcoesAlocacao);
-    if (nOpcoes !== 1 && nOpcoes !== 2) invalid.add('nOpcoesAlocacao');
 
     if (
       pendenciaDaResolucao(classificacao, this.cadastroDePesos.resolucaoForaDoCadastro) !== null

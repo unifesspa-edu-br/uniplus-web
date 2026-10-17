@@ -63,6 +63,7 @@ function folha(id: string, documento: Record<string, unknown>) {
 export const PROCESSO_PUBLICADO_COMPLETO = {
   ...PROCESSO_PUBLICADO_DA_MEDICINA,
   aplicaBonusRegional: true,
+  opcoesDeCurso: { numero: 1 },
   bonusRegional: {
     id: '01a0d640-0000-7000-8000-0000000000e1',
     regra: referencia('BONUS-MULTIPLICATIVO'),
@@ -93,7 +94,6 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
     regraArredondamento: referencia('ARRED-TRUNCAR'),
     casasArredondamento: 2,
     regraOrdemAlocacao: referencia('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA'),
-    nOpcoesAlocacao: 1,
     regrasEliminacao: [
       {
         id: '01a0d640-0000-7000-8000-0000000000e4',

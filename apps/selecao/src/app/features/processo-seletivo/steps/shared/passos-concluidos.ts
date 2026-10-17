@@ -24,7 +24,7 @@ function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolea
     'Tipo do processo': true,
     Identificação: (dto.identificadorLegivel ?? '').trim() !== '',
     Pagamento: dto.configuracaoTaxaInscricao != null,
-    Vagas: (dto.distribuicaoVagas ?? []).length > 0,
+    Vagas: (dto.distribuicaoVagas ?? []).length > 0 && dto.opcoesDeCurso != null,
     Cronograma: (dto.cronogramaFases ?? []).length > 0,
     'Fórmula e precisão': classificacaoGravada,
     Bônus: dto.aplicaBonusRegional != null,

@@ -22,10 +22,6 @@
       }
       <ui-valor-em-consulta rotulo="Ordem de alocação" [valor]="leitura().ordemAlocacao" />
       <ui-valor-em-consulta
-        rotulo="Número de opções de curso"
-        [valor]="leitura().opcoesDeCurso"
-      />
-      <ui-valor-em-consulta
         class="form-grid__full"
         rotulo="Classificação baseada em provas e notas do ENEM"
         [valor]="store.draft().classificacao.baseadoEmEnem"
@@ -122,28 +118,6 @@
           @for (regra of regrasOrdemAlocacao(); track regra.codigo + regra.versao) {
             <option [value]="regra.chave" [selected]="regra.selecionada">
               {{ regra.rotulo }}
-            </option>
-          }
-        </select>
-      </div>
-      <div class="form-field">
-        <label class="label" for="f-n-opcoes">Número de opções de curso</label
-        ><select
-          class="input"
-          id="f-n-opcoes"
-          [class.is-invalid]="invalidFields().has('nOpcoesAlocacao')"
-          [disabled]="!store.aceitaEdicao()"
-          (change)="alterarNOpcoesAlocacao($any($event.target).value)"
-        >
-          <option value="" [selected]="store.draft().classificacao.nOpcoesAlocacao === ''">
-            — escolher —
-          </option>
-          @for (opcao of opcoesDeCurso; track opcao.valor) {
-            <option
-              [value]="opcao.valor"
-              [selected]="opcao.valor === store.draft().classificacao.nOpcoesAlocacao"
-            >
-              {{ opcao.rotulo }}
             </option>
           }
         </select>

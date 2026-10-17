@@ -458,6 +458,20 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(document.activeElement).toBe(alerta);
   });
 
+  it('ao bloquear o avanço, leva o foco ao primeiro campo inválido do passo em tela', async () => {
+    const { fixture, page, store } = montar();
+
+    store.goTo(1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    const campo = (fixture.nativeElement as HTMLElement).querySelector('.step-pane:not([hidden]) [aria-invalid="true"]');
+    expect(campo).not.toBeNull();
+    expect(document.activeElement).toBe(campo);
+  });
+
   it('identifica cada pendência pelo passo de origem', async () => {
     const { fixture, page, store } = montar();
 

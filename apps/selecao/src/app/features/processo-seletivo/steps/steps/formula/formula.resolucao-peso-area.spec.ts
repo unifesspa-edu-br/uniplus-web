@@ -694,7 +694,6 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
         casasArredondamento: '2',
         regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
         regraOrdemAlocacaoVersao: '1.0',
-        nOpcoesAlocacao: '2',
       });
       m.fixture.detectChanges();
 
@@ -849,7 +848,6 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
         casasArredondamento: '2',
         regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
         regraOrdemAlocacaoVersao: '1.0',
-        nOpcoesAlocacao: '2',
       });
 
       const resultado = m.componente.validate();

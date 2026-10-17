@@ -42,7 +42,6 @@ function draftVazio(): WizardDraft {
       casasArredondamento: '',
       regraOrdemAlocacaoCodigo: '',
       regraOrdemAlocacaoVersao: '',
-      nOpcoesAlocacao: '',
       baseadoEmEnem: false,
       resolucaoPesoAreaEnem: '',
       regrasEliminacao: [],

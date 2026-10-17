@@ -123,7 +123,6 @@ const CLASSIFICACAO_LOCAL = {
   casasArredondamento: '2',
   regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
   regraOrdemAlocacaoVersao: '1.0',
-  nOpcoesAlocacao: '1',
 };
 
 describe('regra gravada no select, passo lido como texto em consulta', () => {
@@ -162,7 +161,6 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
         ['Regra de arredondamento', 'ARRED-TRUNCAR — Base de ARRED-TRUNCAR'],
         ['Casas decimais', '2'],
         ['Ordem de alocação', 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA — base legal indisponível'],
-        ['Número de opções de curso', '1 opção'],
         ['Classificação baseada em provas e notas do ENEM', 'Não'],
       ]);
     });
