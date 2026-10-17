@@ -50,7 +50,7 @@ const FORMATO_TAMANHO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 
   template: `
     <!-- O contêiner trata o drop que a zona não recebeu (lista, mensagens, ou a zona desabilitada,
          que não recebe eventos): sem isso o navegador abriria o arquivo solto. -->
-    <div class="uni-uploader" (dragover)="$event.preventDefault()" (drop)="aoSoltarForaDaZona($event)">
+    <div class="uni-uploader" (dragover)="aoArrastarSobre($event)" (drop)="aoSoltarForaDaZona($event)">
       @if (fieldLabel()) {
         <label [id]="labelId" [attr.for]="inputId" class="field__label">{{ fieldLabel() }}</label>
       }
@@ -83,7 +83,7 @@ const FORMATO_TAMANHO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 
         [multiple]="modoMultiplo()"
         [disabled]="disabled()"
         [attr.aria-describedby]="describedBy()"
-        [attr.aria-invalid]="messages().length > 0 ? 'true' : null"
+        [attr.aria-invalid]="comErro() ? 'true' : null"
         (change)="onFilesPicked(fileInput)"
       />
       @let lista = itens();
@@ -106,7 +106,7 @@ const FORMATO_TAMANHO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 
           </div>
         }
       } @else if (lista.length > 0) {
-        <ul class="uni-uploader__list" [attr.aria-label]="listaAccessibleName()">
+        <ul #listaDeArquivos tabindex="-1" class="uni-uploader__list" [attr.aria-label]="listaAccessibleName()">
           @for (arquivo of lista; track arquivo.id) {
             <li
               class="uni-uploader__item"
@@ -145,7 +145,7 @@ const FORMATO_TAMANHO = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 
                     type="button"
                     class="btn btn--tertiary btn--sm"
                     [attr.aria-label]="'Tentar enviar novamente ' + arquivo.nome + sufixoDoContexto()"
-                    (click)="tentarDeNovo.emit(arquivo.id)"
+                    (click)="repetir(arquivo.id)"
                   >
                     Tentar novamente
                   </button>
@@ -245,6 +245,10 @@ export class FileUploadComponent {
 
   readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
   private readonly dropZone = viewChild.required<ElementRef<HTMLButtonElement>>('dropZone');
+  private readonly lista = viewChild<ElementRef<HTMLElement>>('listaDeArquivos');
+  protected readonly comErro = computed(
+    () => this.messages().length > 0 || (this.itens() ?? []).some((a) => a.fase === 'erro'),
+  );
 
   /** Vários arquivos só valem no modo controlado, em que o consumidor guarda a lista. */
   protected readonly modoMultiplo = computed(() => this.multiple() && this.itens() !== null);
@@ -307,6 +311,12 @@ export class FileUploadComponent {
     this.handleFiles(Array.from(files ?? []));
   }
 
+  protected aoArrastarSobre(evento: DragEvent): void {
+    evento.preventDefault();
+    // Com o envio indisponível o cursor não deve sugerir que soltar o arquivo vale.
+    if (this.disabled() && evento.dataTransfer) evento.dataTransfer.dropEffect = 'none';
+  }
+
   protected aoSoltarForaDaZona(evento: DragEvent): void {
     // A zona já tratou (e marcou como tratado) o drop que recebeu.
     if (evento.defaultPrevented) return;
@@ -340,6 +350,11 @@ export class FileUploadComponent {
   protected retirar(id: string): void {
     this.errors.set([]);
     this.itemRetirado.emit(id);
+    this.focarZona();
+  }
+
+  protected repetir(id: string): void {
+    this.tentarDeNovo.emit(id);
     this.focarZona();
   }
 
@@ -377,8 +392,14 @@ export class FileUploadComponent {
 
   // Depois de retirar um arquivo o botão que tinha o foco some; devolver o foco à zona evita
   // que a navegação por teclado recomece do topo da página.
+  // Com a zona desabilitada o foco não cabe nela e cairia no <body>; a lista o recebe.
   private focarZona(): void {
-    this.dropZone().nativeElement.focus();
+    const zona = this.dropZone().nativeElement;
+    if (!zona.disabled) {
+      zona.focus();
+      return;
+    }
+    this.lista()?.nativeElement.focus();
   }
 
   // Validação client-side é UX/anti-engano. A fronteira real de segurança

@@ -312,6 +312,66 @@ describe('AnexoEditalComponent', () => {
     expect(componente.anexo()?.fase).toBe('confirmado');
   });
 
+  const SO_FALTA_CONFIRMAR = {
+    id: 'x',
+    name: 'edital.pdf',
+    extension: 'pdf',
+    progress: 100,
+    fase: 'erro' as const,
+    mensagemErro: 'Sem resposta.',
+    enviado: true,
+    documentoEditalId: DOCUMENTO_ID,
+    confirmacaoIndefinida: true,
+  };
+
+  it('descarta a resposta da retomada quando o editor trocou de processo', async () => {
+    store.patchObjectSection('identificacao', { uploads: [SO_FALTA_CONFIRMAR] });
+    void componente.retomarUpload();
+    await tick();
+
+    store.geracao.update((geracao) => geracao + 1);
+    controller
+      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/confirmacao`)
+      .flush({ id: DOCUMENTO_ID }, { status: 200, statusText: 'OK' });
+    await tick();
+
+    expect(componente.anexo()?.fase).toBe('confirmando');
+  });
+
+  it('não oferece nem executa a retomada com o anexo travado por outro motivo', async () => {
+    void componente['anexar'](pdf());
+    await tick();
+    const recusa = problema(503, 'uniplus.client.network_error', 'Serviço indisponível');
+    controller.expectOne(ROTA_DOCUMENTOS).flush(recusa.body, recusa.opts);
+    await tick();
+    detectar();
+    expect(host.textContent).toContain('Tentar novamente');
+
+    store.avisoDocumentos.set('Não foi possível ler os documentos.');
+    detectar();
+    void componente.retomarUpload();
+    await tick();
+
+    expect(host.textContent).not.toContain('Tentar novamente');
+    controller.expectNone(ROTA_DOCUMENTOS);
+  });
+
+  it('não reaproveita o arquivo escolhido em outro processo', async () => {
+    void componente['anexar'](pdf());
+    await tick();
+    const recusa = problema(503, 'uniplus.client.network_error', 'Serviço indisponível');
+    controller.expectOne(ROTA_DOCUMENTOS).flush(recusa.body, recusa.opts);
+    await tick();
+
+    store.geracao.update((geracao) => geracao + 1);
+    detectar();
+
+    expect(host.textContent).not.toContain('Tentar novamente');
+    void componente.retomarUpload();
+    await tick();
+    controller.expectNone(ROTA_DOCUMENTOS);
+  });
+
   it('limpa a recusa anterior ao remover o anexo', async () => {
     void componente['anexar'](pdf('primeiro.pdf'));
     await tick();

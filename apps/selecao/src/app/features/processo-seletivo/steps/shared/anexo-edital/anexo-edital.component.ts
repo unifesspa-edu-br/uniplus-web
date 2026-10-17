@@ -52,8 +52,17 @@ export class AnexoEditalComponent {
 
   /** Impede que uma segunda escolha atropele o envio em andamento. */
   private operacaoEmCurso = false;
-  /** Sinal porque decide se a lista oferece a nova tentativa. */
-  private readonly arquivoSelecionado = signal<File | null>(null);
+  /**
+   * O arquivo escolhido e o processo em que o foi. Sinal porque decide se a lista oferece a nova
+   * tentativa; o arquivo de um processo não vale em outro.
+   */
+  private readonly arquivoEmMemoria = signal<{ arquivo: File; geracao: number } | null>(null);
+  private readonly arquivoSelecionado = computed(() => {
+    const emMemoria = this.arquivoEmMemoria();
+    return emMemoria !== null && emMemoria.geracao === this.store.geracao()
+      ? emMemoria.arquivo
+      : null;
+  });
   private iniciacaoAtual: IniciarUploadDocumentoEditalDto | null = null;
 
   /** Geração do editor quando o anexo em curso começou. */
@@ -75,13 +84,20 @@ export class AnexoEditalComponent {
    * criaria um segundo edital imutável.
    */
   readonly anexoBloqueado = computed(
+    () => this.anexo()?.confirmacaoIndefinida === true || this.travadoSalvoConfirmacaoIndefinida(),
+  );
+
+  /**
+   * O que trava o anexo além da confirmação sem resposta. Essa exceção é justamente o que a
+   * retomada resolve: repetir a mesma confirmação, sem criar documento novo.
+   */
+  private readonly travadoSalvoConfirmacaoIndefinida = computed(
     () =>
       this.anexoEmCurso() ||
       this.anexoConfirmado() ||
       // Cobre também a gravação em curso: anexar é escrita, e o servidor
       // recusa a de processo fora de rascunho.
       !this.store.aceitaEdicao() ||
-      this.anexo()?.confirmacaoIndefinida === true ||
       // Escolha entre documentos confirmados pendente: enviar outro criaria um
       // terceiro documento imutável e agravaria a ambiguidade que a escolha
       // existe para resolver.
@@ -162,7 +178,7 @@ export class AnexoEditalComponent {
     this.uploadError.set(null);
     this.operacaoEmCurso = true;
     try {
-      this.arquivoSelecionado.set(arquivo);
+      this.arquivoEmMemoria.set({ arquivo, geracao: this.store.geracao() });
       this.iniciacaoAtual = null;
       this.registrarAnexo(arquivo);
       await this.executarUpload(processoId, arquivo);
@@ -178,7 +194,9 @@ export class AnexoEditalComponent {
    */
   private podeRetomar(item: UploadItem): boolean {
     return (
-      !this.semProcesso() && (this.arquivoSelecionado() !== null || soFaltaConfirmar(item))
+      !this.semProcesso() &&
+      !this.travadoSalvoConfirmacaoIndefinida() &&
+      (this.arquivoSelecionado() !== null || soFaltaConfirmar(item))
     );
   }
 
@@ -188,9 +206,11 @@ export class AnexoEditalComponent {
     const arquivo = this.arquivoSelecionado();
     const processoId = this.store.processoSeletivoId();
     const atual = this.anexo();
-    if (processoId === null || atual === undefined) return;
-    if (arquivo === null && !soFaltaConfirmar(atual)) return;
+    if (processoId === null || atual === undefined || !this.podeRetomar(atual)) return;
 
+    if (this.arquivoEmMemoria() !== null && arquivo === null) this.arquivoEmMemoria.set(null);
+    // A resposta de uma retomada iniciada aqui só escreve enquanto o editor tratar deste processo.
+    this.geracaoDoAnexo = this.store.geracao();
     this.operacaoEmCurso = true;
     try {
       await this.executarUpload(processoId, arquivo);
@@ -310,7 +330,7 @@ export class AnexoEditalComponent {
   removeUpload(): void {
     if (this.anexoBloqueado()) return;
     this.uploadError.set(null);
-    this.arquivoSelecionado.set(null);
+    this.arquivoEmMemoria.set(null);
     this.store.patchObjectSection('identificacao', { uploads: [] });
   }
 
