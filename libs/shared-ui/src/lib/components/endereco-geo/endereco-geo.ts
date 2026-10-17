@@ -37,6 +37,11 @@ import {
 } from './endereco-geo.model';
 
 
+const URL_BUSCA_DE_CEP_DOS_CORREIOS = 'https://buscacepinter.correios.com.br';
+const LIMITE_DO_COMPLEMENTO = 300;
+/** Sentinela do erro de CEP inexistente quando o endereço exige CEP (mensagem com link). */
+const CEP_SEM_REGISTRO = 'CEP_SEM_REGISTRO';
+
 interface EnderecoFormControls {
   cep: FormControl<string>;
   logradouro: FormControl<string>;
@@ -90,6 +95,10 @@ interface EnderecoFormControls {
       flex: 1;
       min-inline-size: 0;
     }
+    .endereco-geo__contagem {
+      display: block;
+      text-align: end;
+    }
     .endereco-geo__link {
       padding: 0;
       color: inherit;
@@ -126,7 +135,7 @@ interface EnderecoFormControls {
               [readonly]="(ehAncorado('cep') && !editandoCep()) || resolvendoCep()"
               [attr.aria-readonly]="(ehAncorado('cep') && !editandoCep()) || resolvendoCep() ? 'true' : null"
               [attr.aria-invalid]="cepErro() !== null ? 'true' : null"
-              [attr.aria-describedby]="cepErro() !== null ? id('cep') + '-error' : null"
+              [attr.aria-describedby]="cepErro() !== null ? id('cep') + '-hint ' + id('cep') + '-error' : id('cep') + '-hint'"
               (blur)="aoSairDoCep()"
             />
             @if (ehAncorado('cep') && !editandoCep()) {
@@ -153,14 +162,31 @@ interface EnderecoFormControls {
               </button>
             }
           </div>
-          <span class="field__hint">
-            Informe o CEP para preencher o endereço automaticamente, ou
-            <button type="button" class="endereco-geo__link" (click)="alternarModoManual()">
-              {{ modoManual() ? 'voltar a buscar por CEP' : 'preencher sem CEP' }}
-            </button>
-            .
-          </span>
-          @if (cepErro(); as erro) {
+          @if (exigeCep()) {
+            <span [id]="id('cep') + '-hint'" class="field__hint">
+              Informe o CEP para preencher o endereço automaticamente.
+            </span>
+          } @else {
+            <span [id]="id('cep') + '-hint'" class="field__hint">
+              Informe o CEP para preencher o endereço automaticamente, ou
+              <button type="button" class="endereco-geo__link" (click)="alternarModoManual()">
+                {{ modoManual() ? 'voltar a buscar por CEP' : 'preencher sem CEP' }}
+              </button>
+              .
+            </span>
+          }
+          @if (cepSemRegistro()) {
+            <span [id]="id('cep') + '-error'" class="field__error" role="alert">
+              CEP não encontrado. Confira o seu CEP na
+              <a
+                [href]="urlBuscaDeCepDosCorreios"
+                target="_blank"
+                rel="noopener noreferrer"
+                >busca de CEP dos Correios (abre em nova aba)</a
+              >; se o seu bairro não tem CEP próprio, use o CEP geral da sua cidade e descreva o
+              endereço real no complemento.
+            </span>
+          } @else if (cepErro(); as erro) {
             <span [id]="id('cep') + '-error'" class="field__error" role="alert">{{ erro }}</span>
           } @else if (cepPendente()) {
             <span class="field__error" role="alert">
@@ -230,7 +256,12 @@ interface EnderecoFormControls {
              backend não persiste endereço estruturado (só a cidade). #412 -->
         @if (mostrarDetalheEndereco()) {
         <div class="field form-grid__full">
-          <label [for]="id('logradouro')" class="field__label">Logradouro</label>
+          <label
+            [for]="id('logradouro')"
+            class="field__label"
+            [class.is-required]="logradouroBairroObrigatorios()"
+            >Logradouro</label
+          >
           <input
             [id]="id('logradouro')"
             class="input"
@@ -239,9 +270,17 @@ interface EnderecoFormControls {
             [formControl]="form.controls.logradouro"
             [readonly]="ehAncorado('logradouro')"
             [attr.aria-readonly]="ehAncorado('logradouro') ? 'true' : null"
+            [attr.aria-required]="logradouroBairroObrigatorios() ? 'true' : null"
+            [attr.aria-invalid]="faltaPreencher('logradouro') ? 'true' : null"
+            [attr.aria-describedby]="faltaPreencher('logradouro') ? id('logradouro') + '-error' : null"
           />
           @if (ehAncorado('logradouro')) {
             <span class="field__hint">Preenchido pelo CEP.</span>
+          }
+          @if (faltaPreencher('logradouro')) {
+            <span [id]="id('logradouro') + '-error'" class="field__error" role="alert">
+              Informe o logradouro.
+            </span>
           }
         </div>
 
@@ -257,6 +296,27 @@ interface EnderecoFormControls {
           <span class="field__hint">Dado próprio — sempre editável.</span>
         </div>
 
+        @if (exigeCep()) {
+          <div class="field form-grid__full">
+            <label [for]="id('complemento')" class="field__label">Complemento</label>
+            <textarea
+              [id]="id('complemento')"
+              class="textarea"
+              rows="3"
+              autocomplete="off"
+              [attr.maxlength]="limiteDoComplemento"
+              [attr.aria-describedby]="id('complemento') + '-hint ' + id('complemento') + '-contagem'"
+              [formControl]="form.controls.complemento"
+            ></textarea>
+            <span [id]="id('complemento') + '-hint'" class="field__hint">
+              Use para indicar ponto de referência ou o endereço real, quando o CEP for o geral da
+              cidade ou de outro bairro.
+            </span>
+            <span [id]="id('complemento') + '-contagem'" class="field__hint endereco-geo__contagem">
+              {{ tamanhoDoComplemento() }} de {{ limiteDoComplemento }} caracteres
+            </span>
+          </div>
+        } @else {
         <div class="field">
           <label [for]="id('complemento')" class="field__label">Complemento</label>
           <input
@@ -268,10 +328,16 @@ interface EnderecoFormControls {
           />
           <span class="field__hint">Dado próprio — sempre editável.</span>
         </div>
+        }
 
         @if (!semValorDoCep('bairro')) {
         <div class="field">
-          <label [for]="id('bairro')" class="field__label">Bairro</label>
+          <label
+            [for]="id('bairro')"
+            class="field__label"
+            [class.is-required]="logradouroBairroObrigatorios()"
+            >Bairro</label
+          >
           <input
             [id]="id('bairro')"
             class="input"
@@ -280,9 +346,17 @@ interface EnderecoFormControls {
             [formControl]="form.controls.bairro"
             [readonly]="ehAncorado('bairro')"
             [attr.aria-readonly]="ehAncorado('bairro') ? 'true' : null"
+            [attr.aria-required]="logradouroBairroObrigatorios() ? 'true' : null"
+            [attr.aria-invalid]="faltaPreencher('bairro') ? 'true' : null"
+            [attr.aria-describedby]="faltaPreencher('bairro') ? id('bairro') + '-error' : null"
           />
           @if (ehAncorado('bairro')) {
             <span class="field__hint">Preenchido pelo CEP.</span>
+          }
+          @if (faltaPreencher('bairro')) {
+            <span [id]="id('bairro') + '-error'" class="field__error" role="alert">
+              Informe o bairro.
+            </span>
           }
         </div>
         }
@@ -341,9 +415,18 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   readonly obrigatorio = input(false);
   /** A legenda como título de seção do cadastro, ou como rótulo de um campo entre outros. */
   readonly aparencia = input<'secao' | 'campo'>('secao');
+  /**
+   * Só aceita endereço com CEP encontrado no Geo: sem o atalho "preencher sem CEP", com a
+   * orientação dos Correios no 404, logradouro e bairro sempre editáveis (e obrigatórios no CEP
+   * geral da cidade) e complemento de várias linhas. Usado no formulário do candidato.
+   */
+  readonly exigeCep = input(false);
   /** Ids das mensagens de quem hospeda (ajuda, pendência) que descrevem o grupo. */
   readonly descritoPor = input<string | null>(null);
 
+  protected readonly urlBuscaDeCepDosCorreios = URL_BUSCA_DE_CEP_DOS_CORREIOS;
+  protected readonly limiteDoComplemento = LIMITE_DO_COMPLEMENTO;
+  protected readonly tamanhoDoComplemento = signal(0);
   protected readonly disabled = signal(false);
   protected readonly resolvendoCep = signal(false);
   protected readonly cepErro = signal<string | null>(null);
@@ -362,6 +445,13 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     const cidade = this.cidade();
     return cidade ? [cidade.codigoIbge] : [];
   });
+
+  /** O 404 do Geo com `exigeCep`: a mensagem leva o link da busca dos Correios. */
+  protected readonly cepSemRegistro = computed(() => this.cepErro() === CEP_SEM_REGISTRO);
+  /** CEP geral da cidade em endereço que exige CEP: o DNE não traz logradouro nem bairro. */
+  protected readonly logradouroBairroObrigatorios = computed(
+    () => this.exigeCep() && this.nivel() === 'cidade',
+  );
 
   /** Nível de resolução vigente — governa os campos ancorados (read-only). */
   private readonly nivel = signal<NivelResolucao | null>(null);
@@ -442,6 +532,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
       this.cepResolvido.set('');
       this.cepAtual.set('');
       this.cepTextoAtual.set('');
+      this.tamanhoDoComplemento.set(0);
       return;
     }
 
@@ -458,6 +549,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
       },
       { emitEvent: false },
     );
+    this.tamanhoDoComplemento.set((value.complemento ?? '').length);
     this.cidade.set(value.cidade);
     this.ufEscolhida.set(value.cidade?.uf ?? '');
     // O nome da cidade gravada aparece no campo de município sem passar pela busca.
@@ -472,7 +564,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     this.cepAtual.set(cepDigitos);
     this.cepTextoAtual.set((value.cep ?? '').trim());
     // Endereço gravado manualmente reabre em modo manual (tudo editável).
-    this.modoManual.set(value.origem === ORIGEM_MANUAL);
+    this.modoManual.set(value.origem === ORIGEM_MANUAL && !this.exigeCep());
     this.cepErro.set(null);
     this.editandoCep.set(false);
   }
@@ -495,7 +587,19 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
    * tentativa de CEP não ser descartada em silêncio (#412).
    */
   validate(): ValidationErrors | null {
-    return this.cepPendente() ? { cepNaoResolvido: true } : null;
+    if (this.cepPendente()) {
+      return { cepNaoResolvido: true };
+    }
+    if (this.exigeCep() && this.cidade() !== null && this.cepResolvido().length !== 8) {
+      return { cepObrigatorio: true };
+    }
+    if (this.logradouroBairroObrigatorios()) {
+      const { logradouro, bairro } = this.form.getRawValue();
+      if (logradouro.trim() === '' || bairro.trim() === '') {
+        return { logradouroBairroObrigatorios: true };
+      }
+    }
+    return null;
   }
 
   setDisabledState(isDisabled: boolean): void {
@@ -512,7 +616,15 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   }
 
   protected ehAncorado(campo: CampoEndereco): boolean {
+    if (this.exigeCep() && (campo === 'logradouro' || campo === 'bairro')) {
+      return false;
+    }
     return this.ancorados().has(campo);
+  }
+
+  /** Logradouro ou bairro obrigatório (CEP geral da cidade) ainda vazio. */
+  protected faltaPreencher(campo: 'logradouro' | 'bairro'): boolean {
+    return this.logradouroBairroObrigatorios() && this.form.controls[campo].value.trim() === '';
   }
 
   /**
@@ -578,7 +690,11 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
           if (this.cepResolvido().length === 0) {
             this.nivel.set(null);
           }
-          this.cepErro.set('CEP não encontrado. Verifique ou preencha o endereço manualmente.');
+          this.cepErro.set(
+            this.exigeCep()
+              ? CEP_SEM_REGISTRO
+              : 'CEP não encontrado. Verifique ou preencha o endereço manualmente.',
+          );
           return;
         }
         if (result.status === STATUS_HTTP.REQUISICAO_INVALIDA) {
@@ -615,6 +731,9 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
 
   /** Alterna entre autofill por CEP e preenchimento manual (sem CEP). */
   protected alternarModoManual(): void {
+    if (this.exigeCep()) {
+      return;
+    }
     const manual = !this.modoManual();
     // A UF da cidade que já havia (a do CEP, por exemplo) segue escolhida no endereço sem CEP.
     this.ufEscolhida.set(this.cidade()?.uf ?? '');
@@ -705,6 +824,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     // mas não resolvido (ex.: lookup 404, ou ainda sem "Buscar") NÃO deve virar
     // `endereco`: o mapeamento trataria os 8 dígitos como endereço válido e
     // submeteria um CEP que o usuário não conseguiu validar. #412.
+    this.tamanhoDoComplemento.set(raw.complemento.length);
     this.cepAtual.set(cepDigitos);
     this.cepTextoAtual.set(raw.cep.trim());
     const cepCorrespondeAoResolvido = cepDigitos.length > 0 && cepDigitos === this.cepResolvido();

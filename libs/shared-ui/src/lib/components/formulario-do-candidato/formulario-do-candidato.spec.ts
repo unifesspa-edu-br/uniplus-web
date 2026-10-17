@@ -1,9 +1,12 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { vi } from 'vitest';
 import { of } from 'rxjs';
 
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
-import { BUSCA_DE_CEP, type CepEncontrado } from '../endereco-geo/endereco-geo.model';
+import {
+  BUSCA_DE_CEP,
+  type BuscaDeCep,
+  type CepEncontrado,
+} from '../endereco-geo/endereco-geo.model';
 
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type { CampoRenderizavel, FormularioDoCandidato } from './formulario-do-candidato.model';
@@ -239,12 +242,14 @@ const FAMILIA_COM_CONFIRMACAO: FormularioDoCandidato = {
 describe('FormularioDoCandidatoComponent', () => {
   let fixture: ComponentFixture<FormularioDoCandidatoComponent>;
   let simulacoes: SimulacaoDoFormulario[];
+  let resultadoDoCep: (cep: string) => ReturnType<BuscaDeCep>;
 
   beforeEach(() => {
+    resultadoDoCep = () => of({ ok: true, data: CEP_DE_MARABA });
     TestBed.configureTestingModule({
       providers: [
         { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [MARABA] }) },
-        { provide: BUSCA_DE_CEP, useValue: () => of({ ok: true, data: CEP_DE_MARABA }) },
+        { provide: BUSCA_DE_CEP, useValue: (cep: string) => resultadoDoCep(cep) },
       ],
     });
   });
@@ -1069,33 +1074,100 @@ describe('FormularioDoCandidatoComponent', () => {
     });
   });
 
-  it('sem CEP, a cidade escolhida no campo com busca do Geo é a resposta', async () => {
+  it('o endereço do candidato não oferece o atalho para preencher sem CEP', () => {
     const tela = montar(RESIDENCIA);
 
-    clicar(botao(tela, 'preencher sem CEP'));
-    const uf = tela.querySelector('select[id$="-uf"]') as HTMLSelectElement;
-    uf.value = 'PA';
-    uf.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
-    const campo = tela.querySelector('input[role="combobox"]') as HTMLInputElement;
-    campo.value = 'Mara';
-    campo.dispatchEvent(new Event('input'));
-    let marabaNaLista: HTMLElement | undefined;
-    await vi.waitFor(() => {
-      fixture.detectChanges();
-      marabaNaLista = [...tela.querySelectorAll<HTMLElement>('[role="option"]')].find((item) =>
-        item.textContent?.includes('Marabá (PA)'),
-      );
-      expect(marabaNaLista).toBeDefined();
-    });
-    marabaNaLista?.dispatchEvent(new MouseEvent('mousedown'));
-    fixture.detectChanges();
+    expect(botao(tela, 'preencher sem CEP')).toBeUndefined();
+    expect(tela.querySelector('select[id$="-uf"]')).toBeNull();
+  });
 
+  it('o CEP que o Geo não encontra não preenche nada e orienta a busca dos Correios em nova aba', () => {
+    resultadoDoCep = () =>
+      of({ ok: false, status: 404, problem: { type: 'x', title: 'x', status: 404 } } as never);
+    const tela = montar(RESIDENCIA);
+
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68500000');
+    clicar(botao(tela, 'Buscar CEP'));
+
+    expect(tela.querySelector('input[id$="-logradouro"]')).toBeNull();
+    const erro = tela.querySelector('[id$="-cep-error"]') as HTMLElement;
+    expect(erro.getAttribute('role')).toBe('alert');
+    expect(erro.textContent).toContain('CEP não encontrado. Confira o seu CEP na');
+    expect(erro.textContent).toContain('use o CEP geral da sua cidade');
+    const link = erro.querySelector('a') as HTMLAnchorElement;
+    expect(link.href).toBe('https://buscacepinter.correios.com.br/');
+    expect(link.target).toBe('_blank');
+    expect(link.rel).toContain('noopener');
+    expect(link.textContent).toContain('abre em nova aba');
+    expect(tela.querySelector('input[id$="-cep"]')?.getAttribute('aria-describedby')).toContain(
+      erro.id,
+    );
+  });
+
+  it('o CEP geral da cidade deixa logradouro e bairro vazios, editáveis e obrigatórios', () => {
+    resultadoDoCep = () =>
+      of({
+        ok: true,
+        data: {
+          ...CEP_DE_MARABA,
+          logradouro: null,
+          tipo: null,
+          bairro: null,
+          nivelResolucao: 'cidade',
+        },
+      });
+    const tela = montar(RESIDENCIA);
+
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
+    clicar(botao(tela, 'Buscar CEP'));
+
+    const logradouro = tela.querySelector('input[id$="-logradouro"]') as HTMLInputElement;
+    const bairro = tela.querySelector('input[id$="-bairro"]') as HTMLInputElement;
+    expect([logradouro.value, bairro.value]).toEqual(['', '']);
+    expect([logradouro.readOnly, bairro.readOnly]).toEqual([false, false]);
+    expect([
+      logradouro.getAttribute('aria-required'),
+      bairro.getAttribute('aria-required'),
+    ]).toEqual(['true', 'true']);
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+
+    digitar(logradouro, 'Rua do Centro');
+    digitar(bairro, 'Centro');
     expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
-      cep: null,
-      cidade: MARABA,
-      origem: 'manual',
+      logradouro: 'Rua do Centro',
+      bairro: 'Centro',
     });
+  });
+
+  it('logradouro e bairro vindos do CEP continuam editáveis', () => {
+    const tela = montar(RESIDENCIA);
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
+    clicar(botao(tela, 'Buscar CEP'));
+
+    const logradouro = tela.querySelector('input[id$="-logradouro"]') as HTMLInputElement;
+    const bairro = tela.querySelector('input[id$="-bairro"]') as HTMLInputElement;
+    expect([logradouro.readOnly, bairro.readOnly]).toEqual([false, false]);
+    digitar(bairro, 'Cidade Nova');
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
+      bairro: 'Cidade Nova',
+    });
+  });
+
+  it('o complemento é um campo de várias linhas, de linha inteira, limitado a 300 caracteres e com contador', () => {
+    const tela = montar(RESIDENCIA);
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
+    clicar(botao(tela, 'Buscar CEP'));
+
+    const complemento = tela.querySelector('textarea[id$="-complemento"]') as HTMLTextAreaElement;
+    expect(complemento.getAttribute('maxlength')).toBe('300');
+    expect(complemento.closest('.form-grid__full')).not.toBeNull();
+    expect(tela.textContent).toContain(
+      'Use para indicar ponto de referência ou o endereço real, quando o CEP for o geral da cidade ou de outro bairro.',
+    );
+    digitar(complemento as unknown as HTMLInputElement, 'Casa azul');
+    const contagem = tela.querySelector('[id$="-complemento-contagem"]') as HTMLElement;
+    expect(contagem.textContent).toContain('9 de 300 caracteres');
+    expect(complemento.getAttribute('aria-describedby')).toContain(contagem.id);
   });
 
   it('o endereço já respondido volta à tela com a cidade', () => {

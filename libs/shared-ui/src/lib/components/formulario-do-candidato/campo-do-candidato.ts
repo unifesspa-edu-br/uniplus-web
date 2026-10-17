@@ -185,6 +185,7 @@ const ENTRADA_DO_FORMATO: Readonly<
       @case ('endereco') {
         <ui-endereco-geo
           aparencia="campo"
+          [exigeCep]="true"
           [formControl]="endereco"
           [idPrefix]="id()"
           [legend]="campo().rotulo"
