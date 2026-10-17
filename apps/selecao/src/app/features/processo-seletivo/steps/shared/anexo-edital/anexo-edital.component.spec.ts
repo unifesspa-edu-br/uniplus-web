@@ -275,6 +275,28 @@ describe('AnexoEditalComponent', () => {
   });
 
   /** Cada anexo confirmado vira um documento imutável a mais no processo. */
+  it('não oferece nova tentativa para anexo em erro sem o arquivo na memória', () => {
+    store.patchObjectSection('identificacao', {
+      uploads: [{ id: 'x', name: 'edital.pdf', extension: 'pdf', progress: 40, fase: 'erro', mensagemErro: 'Falhou.' }],
+    });
+    detectar();
+
+    expect(host.textContent).not.toContain('Tentar novamente');
+  });
+
+  it('limpa a recusa anterior ao remover o anexo', async () => {
+    void componente['anexar'](pdf('primeiro.pdf'));
+    await tick();
+    controller.expectOne(ROTA_DOCUMENTOS).flush(problema(500, 'x', 'Falhou').body, problema(500, 'x', 'Falhou').opts);
+    await tick();
+    componente.uploadError.set('Recusa antiga.');
+
+    componente.removeUpload();
+
+    expect(componente.uploadError()).toBeNull();
+    expect(componente.anexo()).toBeUndefined();
+  });
+
   it('recusa substituir um edital já confirmado', async () => {
     await anexarComSucesso();
 
