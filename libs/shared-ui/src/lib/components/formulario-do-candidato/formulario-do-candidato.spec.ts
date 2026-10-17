@@ -1219,6 +1219,23 @@ describe('FormularioDoCandidatoComponent', () => {
     });
   });
 
+  it('ao trocar o CEP, os avisos de faixa e de CEP geral somem até a próxima busca e o endereço fica pendente', () => {
+    const tela = buscarCepComOrigem('faixa-cidade');
+    clicar(tela.querySelector('input[type="checkbox"]') as HTMLElement);
+
+    clicar(botao(tela, 'Trocar CEP'));
+    digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507');
+
+    expect(tela.querySelector('[id$="-cep-faixa"]')).toBeNull();
+    expect(tela.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(tela.querySelector('[id$="-cep-geral"]')).toBeNull();
+    expect(
+      tela.querySelector('input[id$="-bairro"]')?.getAttribute('aria-required'),
+    ).toBeNull();
+    expect(tela.textContent).toContain('Valide o CEP em "Buscar CEP"');
+    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+  });
+
   it('trocar o CEP desfaz a confirmação', () => {
     const tela = buscarCepComOrigem('faixa-distrito');
     const caixa = tela.querySelector('input[type="checkbox"]') as HTMLInputElement;
