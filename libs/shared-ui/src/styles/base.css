@@ -105,7 +105,7 @@ button, input, select, textarea {
 .u-lead { font-size: var(--text-md); line-height: var(--leading-relaxed); color: var(--text-secondary); }
 .u-body { font-size: var(--text-base); line-height: var(--leading-normal); color: var(--text-primary); }
 .u-body-sm { font-size: var(--text-sm); line-height: var(--leading-normal); color: var(--text-secondary); }
-.u-caption { font-size: var(--text-xs); line-height: var(--leading-snug); color: var(--text-muted); }
+.u-caption { font-size: var(--text-xs); line-height: var(--leading-snug); color: var(--text-primary); }
 .u-label { font-size: var(--text-sm); font-weight: var(--weight-semibold); line-height: var(--leading-snug); color: var(--text-primary); }
 .u-eyebrow { font-size: var(--text-xs); font-weight: var(--weight-bold); line-height: var(--leading-snug); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); }
 
