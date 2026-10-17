@@ -384,10 +384,13 @@ export function pendenciasDo(
   passo: PassoDoFormulario,
   aceitos: ReadonlySet<string>,
   confirmacoes: ReadonlyMap<string, ProblemaDaConfirmacao>,
+  semCobranca: ReadonlySet<string> = new Set(),
 ): PendenciaDoPasso[] {
   return [
     ...passo.campos.flatMap((c) => [
-      ...(campoPendente(c.avaliado) ? [daResposta(c.campo.fatoCodigo)] : []),
+      ...(campoPendente(c.avaliado) && !semCobranca.has(c.campo.fatoCodigo)
+        ? [daResposta(c.campo.fatoCodigo)]
+        : []),
       ...(confirmacoes.has(c.campo.fatoCodigo)
         ? [{ campo: c.campo.fatoCodigo, naConfirmacao: true }]
         : []),

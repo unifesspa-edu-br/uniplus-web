@@ -402,7 +402,11 @@ export class CampoDoCandidatoComponent {
       (tipo) => tipo !== FAIXA_DE_DATA || dataConferida,
     );
     return [
-      ...(this.mostrarPendencia() && this.obrigatorio() && this.vazia() && !this.numeroInvalido()
+      ...(this.mostrarPendencia() &&
+      this.obrigatorio() &&
+      this.vazia() &&
+      !this.numeroInvalido() &&
+      !this.fixa()
         ? ['Responda este campo.']
         : []),
       ...(this.numeroInvalido() ? ['Escreva um número, com vírgula para as casas decimais.'] : []),

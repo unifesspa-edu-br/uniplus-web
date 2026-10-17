@@ -60,6 +60,7 @@ import {
   secoesQueDefinemAsModalidades,
 } from './modalidades-avaliadas';
 import { ModalidadesDaInscricaoComponent } from './modalidades-da-inscricao';
+import { estaVazia } from './interpretador/logica';
 import { interpretarFormulario, lerEnvio } from './interpretador/interpretador';
 import type {
   EnvioDasRespostas,
@@ -409,6 +410,19 @@ export class FormularioDoCandidatoComponent {
     computation: (erros) => erros,
   });
 
+  /**
+   * As respostas fixas que a conta não tem: o candidato não pode dá-las, então o formulário não as
+   * cobra — a recusa é do servidor, que a aponta no campo.
+   */
+  private readonly fixasSemResposta = computed<ReadonlySet<string>>(
+    () =>
+      new Set(
+        Object.entries(this.respostasFixas())
+          .filter(([, fixa]) => fixa && estaVazia(fixa.valor))
+          .map(([fato]) => fato),
+      ),
+  );
+
   protected readonly respostasComAsFixas = computed<Readonly<Record<string, ValorJson>>>(() => ({
     ...this.respostas(),
     ...Object.fromEntries(
@@ -658,7 +672,7 @@ export class FormularioDoCandidatoComponent {
     while (this.concluir(this.passos())) mudou = true;
 
     const pendentes = this.passos().map((passo) =>
-      pendenciasDo(passo, this.aceitos(), this.problemasDaConfirmacao()),
+      pendenciasDo(passo, this.aceitos(), this.problemasDaConfirmacao(), this.fixasSemResposta()),
     );
     const total = pendentes.reduce((soma, codigos) => soma + codigos.length, 0);
     const indice = pendentes.findIndex((codigos) => codigos.length > 0);
