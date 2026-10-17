@@ -110,13 +110,8 @@ export class AnexoEditalComponent {
     ];
   });
 
-  /**
-   * A validação de formato e tamanho é do `ui-file-upload`, que só entrega arquivo aprovado.
-   * A guarda de bloqueio fica aqui porque o campo continua alcançável pelo teclado enquanto a
-   * zona está indisponível, e o `disabled` da marcação não pode ser a única barreira.
-   */
+  /** A validação de formato e tamanho é do `ui-file-upload`, que só entrega arquivo aprovado. */
   aoEscolherArquivo(arquivos: readonly File[]): void {
-    if (this.anexoBloqueado()) return;
     const arquivo = arquivos[0];
     if (arquivo !== undefined) void this.anexar(arquivo);
   }
@@ -139,9 +134,8 @@ export class AnexoEditalComponent {
 
     this.geracaoDoAnexo = this.store.geracao();
 
-    // O campo de arquivo é alcançável pelo teclado mesmo com a zona de upload
-    // marcada como indisponível, então a recusa precisa estar aqui também:
-    // cada anexo confirmado vira um documento imutável a mais no processo.
+    // `anexar` é a porta de todo envio, então a recusa vive aqui e não só na marcação
+    // desabilitada: cada anexo confirmado vira um documento imutável a mais no processo.
     if (this.anexoConfirmado()) {
       this.uploadError.set(
         'O edital já foi anexado e não pode ser substituído. Para trocar o arquivo, cadastre um novo processo seletivo.',

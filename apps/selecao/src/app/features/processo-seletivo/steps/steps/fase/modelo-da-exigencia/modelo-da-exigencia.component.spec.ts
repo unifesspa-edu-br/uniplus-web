@@ -133,6 +133,15 @@ describe('ModeloDaExigenciaComponent', () => {
     expect(alerta()).toContain('10MB');
   });
 
+  it('aceita DOCX que o sistema identifica com tipo genérico, pela extensão', async () => {
+    escolher(new File([new Uint8Array(2048)], 'autodeclaracao.docx', { type: 'application/zip' }));
+    await tick();
+
+    controller.expectOne(ROTA_MODELOS).flush(iniciacao(), { status: 201, statusText: 'Created' });
+    await tick();
+    controller.expectOne(URL_ASSINADA);
+  });
+
   it('envia, confirma e vincula o modelo com nome, formato e hash', async () => {
     escolher(docx());
     await tick();

@@ -113,8 +113,9 @@ test.describe('Cadastro inicial do processo seletivo', () => {
       buffer: PDF_MINIMO,
     });
 
-    await expect(page.locator('.file-status')).toHaveText('Edital anexado', { timeout: 30_000 });
-    await expect(page.locator('.file-progress')).toHaveAttribute('aria-valuenow', '100');
+    await expect(page.locator('.uni-uploader__item.is-success')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.uni-uploader__item .uni-uploader__item-meta')).toHaveText('Envio concluído');
+    await expect(page.locator('.uni-uploader [role="progressbar"]')).toHaveAttribute('aria-valuenow', '100');
   });
 
   /**
@@ -147,7 +148,7 @@ test.describe('Cadastro inicial do processo seletivo', () => {
       buffer: Buffer.from('conteudo qualquer', 'utf-8'),
     });
 
-    await expect(page.getByRole('alert')).toContainText('deve ser um arquivo PDF');
+    await expect(page.getByRole('alert')).toContainText('Tipo de arquivo não permitido');
     expect(requisicoesDeDocumento).toEqual([]);
   });
 });
