@@ -2718,6 +2718,11 @@ ui-icon-button {
   border-radius: 50%;
   color: var(--color-primary);
 }
+.uni-uploader__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
 .uni-uploader__title {
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
