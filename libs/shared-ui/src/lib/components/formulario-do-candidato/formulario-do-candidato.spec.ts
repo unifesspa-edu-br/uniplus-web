@@ -1197,7 +1197,11 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(aviso.textContent).toContain('faixa de CEPs de Marabá/PA');
     expect(tela.querySelector('input[id$="-bairro"]')).toBeNull();
     expect(tela.textContent).toContain('Confirmo que este é o CEP que uso no meu endereço');
-    expect(tela.querySelector('[id$="-cep-confirmacao"]')?.getAttribute('role')).toBe('alert');
+    const erro = tela.querySelector('[id$="-cep-confirmacao"]') as HTMLElement;
+    expect(erro.getAttribute('role')).toBe('alert');
+    const descricao = tela.querySelector('input[type="checkbox"]')?.getAttribute('aria-describedby');
+    expect(descricao).toContain(erro.id);
+    expect(descricao).toContain(aviso.id);
     expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
 
