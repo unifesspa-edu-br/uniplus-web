@@ -578,6 +578,9 @@ export function uploadItemDe(documento: DocumentoAPublicarDto): UploadItem {
   };
 }
 
+/** O edital é sempre um PDF; o tipo declarado no início do envio é o que a API confere depois. */
+export const TIPO_DE_MIDIA_DO_EDITAL = 'application/pdf';
+
 export interface ReadbackDocumentos {
   /** Documento confirmado único — vínculo restaurável sem decisão. */
   readonly vinculo: UploadItem | null;
@@ -589,12 +592,17 @@ export interface ReadbackDocumentos {
  * Decide o que fazer com os documentos lidos do processo. Um confirmado
  * restaura o vínculo; mais de um é levado ao administrador, porque eleger o
  * mais recente trocaria o edital do certame sem ninguém perceber. Pendentes
- * não contam: só confirmado tem hash e selo de imutabilidade.
+ * não contam: só confirmado tem hash e selo de imutabilidade. Só PDF conta: o
+ * processo também guarda DOCX e ODT enviados como anexo, e a API recusa na
+ * publicação o edital que não é PDF.
  */
 export function classificarDocumentos(
   documentos: readonly DocumentoAPublicarDto[],
 ): ReadbackDocumentos {
-  const confirmados = documentos.filter((documento) => documento.confirmadoEm !== null);
+  const confirmados = documentos.filter(
+    (documento) =>
+      documento.confirmadoEm !== null && documento.tipoDeMidia === TIPO_DE_MIDIA_DO_EDITAL,
+  );
 
   if (confirmados.length === 0) return { vinculo: null, escolha: [] };
   if (confirmados.length === 1) return { vinculo: uploadItemDe(confirmados[0]), escolha: [] };

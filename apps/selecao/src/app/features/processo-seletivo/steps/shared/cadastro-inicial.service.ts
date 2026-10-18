@@ -42,6 +42,7 @@ import {
 } from '../steps/formulario/formulario-do-processo';
 import { ChaveDeSubstituicao, proximaChave } from './chave-de-substituicao';
 import { enviarAoStorage, type ResultadoEnvio } from './envio-pre-assinado';
+import { TIPO_DE_MIDIA_DO_EDITAL } from './hidratacao';
 
 /** Recusa nomeada por `ProblemDetails`, para o chamador exibir e decidir o retry. */
 export interface FalhaOperacao {
@@ -74,9 +75,6 @@ export type ResultadoGravacaoComInconclusiva =
   | (FalhaOperacao & { readonly inconclusiva: boolean });
 
 export type ResultadoGravacaoCascata = ResultadoGravacaoComInconclusiva;
-
-/** O edital é sempre um PDF; o tipo declarado no início do envio é o que a API confere depois. */
-const TIPO_DE_MIDIA_DO_EDITAL = 'application/pdf';
 
 export type ResultadoIniciacao =
   | { readonly ok: true; readonly iniciacao: IniciarEnvioDoDocumentoAPublicarDto }
