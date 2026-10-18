@@ -183,6 +183,15 @@ export interface components {
             readonly linhaDoTempo: readonly components["schemas"]["EventoDaLinhaDoTempoResponse"][];
             readonly aviso: null | string;
         };
+        readonly DocumentoDoEventoResponse: {
+            readonly papel: components["schemas"]["PapelDoDocumento"];
+            readonly nome: string;
+            readonly tipoDeMidia: string;
+            /** Format: int64 */
+            readonly tamanhoBytes: number | string;
+            /** Format: uri */
+            readonly url: string;
+        };
         readonly EventoDaLinhaDoTempoResponse: {
             /** Format: uuid */
             readonly id: string;
@@ -196,7 +205,10 @@ export interface components {
             readonly descricao: null | string;
             /** Format: uri */
             readonly documentoUrl: null | string;
+            readonly documentos: readonly components["schemas"]["DocumentoDoEventoResponse"][];
         };
+        /** @enum {string} */
+        readonly PapelDoDocumento: PapelDoDocumento;
         readonly PingResponse: {
             readonly pong: boolean;
             /** Format: date-time */
@@ -294,4 +306,8 @@ export interface operations {
             };
         };
     };
+}
+export enum PapelDoDocumento {
+    principal = "principal",
+    anexo = "anexo"
 }
