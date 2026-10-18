@@ -1,4 +1,5 @@
-import type { FatoCandidatoDto, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import { Validators, type FormControl, type FormGroup } from '@angular/forms';
+import type { DefinicaoDoFatoInput, FatoCandidatoDto, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 
 /**
  * As regras do catálogo de fatos que a tela espelha da API (ADR-0136). A API continua a autoridade
@@ -133,6 +134,12 @@ export function tipoDoFato(fato: Pick<FatoCandidatoDto, 'binding'>): TipoDoFato 
   return 'OUTRO';
 }
 
+/** O fato de membro que o agregado resume, lido do binding `AGREGACAO_GRUPO:<membro>`; nulo nos outros tipos. */
+export function fatoDeMembroDoBinding(fato: Pick<FatoCandidatoDto, 'binding'>): string | null {
+  const prefixo = 'AGREGACAO_GRUPO:';
+  return fato.binding.startsWith(prefixo) ? fato.binding.slice(prefixo.length) : null;
+}
+
 type FatoAvaliado = Pick<FatoCandidatoDto, 'binding' | 'sistema' | 'dominio' | 'fonteValores'>;
 
 /**
@@ -214,4 +221,145 @@ export function campoDaRecusa(campo: string): string {
 export function indiceDaRegra(campo: string): number | null {
   const encontrado = /^regras\[(\d+)\]/u.exec(campo);
   return encontrado === null ? null : Number(encontrado[1]);
+}
+
+/** Os eixos da definição que o tipo do fato deixa alterar; a API recusa o eixo enviado a mais. */
+export interface EixosEditaveis {
+  readonly dominio: boolean;
+  readonly cardinalidade: boolean;
+  readonly fonteValores: boolean;
+  readonly formato: boolean;
+  readonly escopo: boolean;
+}
+
+const SEM_EIXOS: EixosEditaveis = { dominio: false, cardinalidade: false, fonteValores: false, formato: false, escopo: false };
+
+/**
+ * O declarado altera todos os eixos (fonte e formato conforme o tipo de dado); o derivado por regra
+ * só o tipo de dado e o escopo, porque cardinalidade e fonte saem do tipo de dado; o agregado nenhum,
+ * porque herda do fato de membro. Ponto de resolução e proteção de dados cabem em todo tipo.
+ */
+export function eixosEditaveis(tipo: TipoDoFato, dominio: string): EixosEditaveis {
+  const doTipo = eixosDoTipo(tipo);
+  return { ...doTipo, fonteValores: doTipo.fonteValores && temFonteDeValores(dominio), formato: doTipo.formato && temFormato(dominio) };
+}
+
+/** Os eixos que o tipo do fato edita em algum tipo de dado; fonte e formato ainda dependem do dado. */
+export function eixosDoTipo(tipo: TipoDoFato): EixosEditaveis {
+  if (tipo === 'DECLARADO') return { dominio: true, cardinalidade: true, fonteValores: true, formato: true, escopo: true };
+  if (tipo === 'DERIVADO_POR_REGRA') return { ...SEM_EIXOS, dominio: true, escopo: true };
+  return SEM_EIXOS;
+}
+
+/** Se a definição do fato se altera na tela: o do administrador de um dos três tipos conhecidos. */
+export function podeEditarDefinicao(fato: Pick<FatoCandidatoDto, 'binding' | 'sistema'>): boolean {
+  return !fato.sistema && tipoDoFato(fato) !== 'OUTRO';
+}
+
+/** O que o formulário da definição guarda, no vocabulário do contrato. */
+export interface DefinicaoEmEdicao {
+  readonly dominio: string;
+  readonly cardinalidade: string;
+  readonly fonteValores: string;
+  readonly formato: string;
+  readonly escopo: string;
+  readonly pontoResolucao: string;
+  readonly classificacaoProtecao: string;
+  readonly finalidadeTratamento: string;
+  readonly hipoteseLegal: string;
+}
+
+/** O corpo da alteração: só os eixos que o tipo aceita, porque a API recusa o eixo a mais. */
+export function corpoDaDefinicao(tipo: TipoDoFato, v: DefinicaoEmEdicao): DefinicaoDoFatoInput {
+  const eixos = eixosEditaveis(tipo, v.dominio);
+  const declarado = tipo === 'DECLARADO';
+  return {
+    pontoResolucao: v.pontoResolucao,
+    classificacaoProtecao: v.classificacaoProtecao,
+    finalidadeTratamento: v.finalidadeTratamento.trim(),
+    hipoteseLegal: v.hipoteseLegal,
+    ...(eixos.dominio ? { dominio: v.dominio } : {}),
+    ...(eixos.escopo ? { escopo: v.escopo } : {}),
+    ...(eixos.cardinalidade ? { cardinalidade: v.cardinalidade } : {}),
+    // No declarado fonte e formato valem só em certos tipos de dado: nos demais seguem nulos.
+    ...(declarado ? { fonteValores: eixos.fonteValores ? v.fonteValores : null, formato: eixos.formato ? v.formato : null } : {}),
+  };
+}
+
+/** O que cita o fato e deixaria de valer, agrupado pelo tipo de citação que a API informa. */
+export interface GrupoDeCitacoes {
+  readonly tipo: string;
+  readonly titulo: string;
+  readonly itens: readonly { readonly codigo: string; readonly mensagem: string }[];
+}
+
+const TITULOS_DE_CITACAO: readonly (readonly [string, string])[] = [
+  ['regrasPadrao', 'Regras padrão de outros fatos'],
+  ['agregados', 'Resumos de grupo'],
+  ['modelos', 'Modelos de formulário'],
+  ['modalidades', 'Regras de aplicabilidade de modalidades'],
+];
+
+/** Agrupa as recusas de `citacoes.<tipo>.<código>`; as demais recusas não são citações. */
+export function citacoesDaRecusa(erros: readonly { field: string; message: string }[]): readonly GrupoDeCitacoes[] {
+  const porTipo = new Map<string, { codigo: string; mensagem: string }[]>();
+  for (const erro of erros) {
+    const encontrado = /^citacoes\.([^.]+)\.(.+)$/u.exec(erro.field);
+    if (encontrado === null) continue;
+    const itens = porTipo.get(encontrado[1]) ?? [];
+    itens.push({ codigo: encontrado[2], mensagem: erro.message });
+    porTipo.set(encontrado[1], itens);
+  }
+  const conhecidos = TITULOS_DE_CITACAO.filter(([tipo]) => porTipo.has(tipo)).map(([tipo, titulo]) => ({ tipo, titulo, itens: porTipo.get(tipo) ?? [] }));
+  // Um tipo que a tela ainda não conhece não pode sumir: a alteração foi recusada por causa dele.
+  const desconhecidos = [...porTipo.entries()]
+    .filter(([tipo]) => !TITULOS_DE_CITACAO.some(([conhecido]) => conhecido === tipo))
+    .map(([tipo, itens]) => ({ tipo, titulo: 'Outras citações', itens }));
+  return [...conhecidos, ...desconhecidos];
+}
+
+/** Se a recusa é de uma citação, e não de um campo do formulário. */
+export function ehCitacao(campo: string): boolean {
+  return campo.startsWith('citacoes.');
+}
+
+/** Esvazia a escolha que deixou de estar entre as opções: ficaria no controle, invisível, e só a API a recusaria. */
+export function esvaziarSeForaDas(controle: FormControl<string>, opcoes: readonly OpcaoDeVocabulario[]): void {
+  if (controle.value !== '' && !opcoes.some((opcao) => opcao.valor === controle.value)) {
+    controle.setValue('');
+  }
+}
+
+/**
+ * Exige o controle quando o eixo existe. Fora dele, tira a exigência e, com `limpar`, esvazia o valor;
+ * sem `limpar` o valor fica, porque o tipo do fato não edita o eixo e o valor é do servidor. A
+ * validação só roda quando algo mudou, para não apagar a recusa do servidor posta no controle.
+ */
+export function exigirSe(controle: FormControl<string>, exigido: boolean, limpar = true): void {
+  const tinha = controle.hasValidator(Validators.required);
+  let mudou = false;
+  if (exigido && !tinha) {
+    controle.addValidators(Validators.required);
+    mudou = true;
+  } else if (!exigido) {
+    if (tinha) {
+      controle.removeValidators(Validators.required);
+      mudou = true;
+    }
+    if (limpar && controle.value !== '') {
+      controle.setValue('', { emitEvent: false });
+      mudou = true;
+    }
+  }
+  if (mudou) controle.updateValueAndValidity({ emitEvent: false });
+}
+
+/**
+ * Tira dos controles a recusa que a API devolveu no envio anterior: a causa pode ter sido corrigida
+ * em outro campo, e quem confere de novo é a API, no próximo envio.
+ */
+export function descartarRecusasDoServidor(formulario: FormGroup): void {
+  for (const controle of Object.values(formulario.controls)) {
+    if (controle.hasError('backend')) controle.updateValueAndValidity({ emitEvent: false });
+  }
 }

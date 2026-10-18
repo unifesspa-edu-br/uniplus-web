@@ -195,6 +195,7 @@ export type {
   CriarFatoAgregadoCommand,
   CriarFatoCandidatoCommand,
   CriarFatoDerivadoCommand,
+  DefinicaoDoFatoInput,
   DescritivoDoFatoInput,
   FatoCandidatoDto,
   FatoCandidatoView,

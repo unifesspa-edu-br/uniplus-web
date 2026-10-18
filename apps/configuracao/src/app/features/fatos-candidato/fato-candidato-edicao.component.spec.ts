@@ -32,6 +32,12 @@ const corRaca = (sistema: boolean): FatoCandidatoDto => ({
   regrasPadrao: [],
 });
 
+const URL_FASES = `${BASE}/api/configuracao/fases-canonicas?limit=100`;
+const FASES = [
+  { id: 'f1', codigo: 'INSCRICAO', nome: 'Inscrição' },
+  { id: 'f2', codigo: 'HOMOLOGACAO', nome: 'Homologação' },
+];
+
 describe('FatoCandidatoEdicaoComponent', () => {
   let fixture: ComponentFixture<FatoCandidatoEdicaoComponent>;
   let controller: HttpTestingController;
@@ -51,7 +57,11 @@ describe('FatoCandidatoEdicaoComponent', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => controller.verify());
+  // O formulário da definição pede as fases; os testes das outras seções não dependem delas.
+  afterEach(() => {
+    controller.match(URL_FASES).filter((pedido) => !pedido.cancelled).forEach((pedido) => pedido.flush(FASES));
+    controller.verify();
+  });
 
   async function carregar(fato: FatoCandidatoDto, catalogo: readonly unknown[] = []): Promise<HTMLElement> {
     controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}`).flush(fato);
@@ -552,6 +562,300 @@ describe('FatoCandidatoEdicaoComponent', () => {
       controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/outro-fato`).flush({ ...tresValores(), id: 'outro-fato' });
       await assentar();
       expect(tela.querySelector('#cfg-fato-valor-PRETA-form'), 'a edição do fato anterior não passa para o novo').toBeNull();
+    });
+  });
+
+  describe('definição do fato do administrador', () => {
+    const URL = `${BASE}/api/configuracao/admin/fatos-candidato/${ID}`;
+    const derivado = (): FatoCandidatoDto => ({
+      ...corRaca(false), codigo: 'PERFIL', origem: 'DERIVADO', dominio: 'BOOLEANO', fonteValores: null,
+      classificacaoProtecao: 'PESSOAL', hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL', binding: 'REGRA_DERIVACAO:PERFIL', valores: [],
+    });
+    const agregado = (): FatoCandidatoDto => ({ ...derivado(), codigo: 'PERFIL_FAMILIAR', binding: 'AGREGACAO_GRUPO:RENDA' });
+
+    async function assentar(): Promise<void> {
+      await Promise.resolve();
+      TestBed.inject(ApplicationRef).tick();
+      fixture.detectChanges();
+    }
+
+    /** Carrega o fato, entrega as fases e envia o formulário da definição como está. */
+    async function enviar(fato: FatoCandidatoDto): Promise<{ tela: HTMLElement; pedido: ReturnType<HttpTestingController['expectOne']> }> {
+      const tela = await carregar(fato);
+      controller.expectOne(URL_FASES).flush(FASES);
+      await assentar();
+      (tela.querySelector('#cfg-fato-definicao') as HTMLFormElement).dispatchEvent(new Event('submit'));
+      return { tela, pedido: controller.expectOne(`${URL}/definicao`) };
+    }
+
+    const recusa = (status: number, corpo: object): [string, { status: number; statusText: string; headers: Record<string, string> }] => [
+      JSON.stringify({ status, title: 'Problema', ...corpo }),
+      { status, statusText: 'Erro', headers: { 'content-type': 'application/problem+json' } },
+    ];
+
+    it('o declarado envia todos os eixos que o tipo de dado aceita, com chave de idempotência própria', async () => {
+      const { pedido } = await enviar(corRaca(false));
+
+      expect(pedido.request.method).toBe('PUT');
+      expect(pedido.request.headers.has('Idempotency-Key')).toBe(true);
+      expect(pedido.request.body).toEqual({
+        pontoResolucao: 'INSCRICAO', classificacaoProtecao: 'SENSIVEL', finalidadeTratamento: 'Reserva de vagas.',
+        hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL', dominio: 'CATEGORICO', escopo: 'CANDIDATO',
+        cardinalidade: 'ESCALAR', fonteValores: 'GLOBAL', formato: null,
+      });
+      pedido.flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('o derivado por regra envia o tipo de dado e o escopo, sem cardinalidade, fonte nem formato', async () => {
+      const { pedido } = await enviar(derivado());
+
+      expect(Object.keys(pedido.request.body as object).sort()).toEqual(
+        ['classificacaoProtecao', 'dominio', 'escopo', 'finalidadeTratamento', 'hipoteseLegal', 'pontoResolucao'],
+      );
+      pedido.flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('o agregado envia só o ponto de resolução e a proteção, e mostra o fato de membro sem edição', async () => {
+      const { tela, pedido } = await enviar(agregado());
+
+      expect(Object.keys(pedido.request.body as object).sort()).toEqual(
+        ['classificacaoProtecao', 'finalidadeTratamento', 'hipoteseLegal', 'pontoResolucao'],
+      );
+      const rotulos = Array.from(tela.querySelectorAll('dt'));
+      const membro = rotulos.find((dt) => dt.textContent?.trim() === 'Fato de membro resumido')?.nextElementSibling;
+      expect(membro?.textContent?.trim()).toBe('RENDA');
+      expect(tela.querySelector('#cfg-fato-definicao select[formcontrolname="dominio"]')).toBeNull();
+      pedido.flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('a recusa de campo aparece junto do eixo, ligada a ele por aria-describedby', async () => {
+      const { tela, pedido } = await enviar(corRaca(false));
+      pedido.flush(...recusa(422, {
+        code: 'uniplus.configuracao.fato_candidato.classificacao_protecao_invalida',
+        errors: [{ field: 'classificacaoProtecao', code: 'x', message: 'Classificação fora do tipo de dado.' }],
+      }));
+      await assentar();
+
+      const erro = tela.querySelector('#cfg-fato-def-classificacaoProtecao-erro');
+      expect(erro?.textContent).toContain('Classificação fora do tipo de dado.');
+      const campo = tela.querySelector('#cfg-fato-definicao select[formcontrolname="classificacaoProtecao"]');
+      expect(campo?.getAttribute('aria-describedby')).toBe('cfg-fato-def-classificacaoProtecao-erro');
+    });
+
+    it('a citação que deixaria de valer é listada por tipo, com o foco nela, e nenhum campo leva a recusa', async () => {
+      const { tela, pedido } = await enviar(corRaca(false));
+      pedido.flush(...recusa(422, {
+        code: 'uniplus.configuracao.fato_candidato.alteracao_quebra_modelo_de_formulario',
+        errors: [
+          { field: 'citacoes.modelos.MODELO_MEDICINA', code: 'x', message: 'O campo deixaria de aceitar a lista de valores.' },
+          { field: 'citacoes.regrasPadrao.PERFIL', code: 'x', message: 'A condição deixaria de valer.' },
+          // O código da citação pode coincidir com o nome de um eixo: ainda assim não é recusa do campo.
+          { field: 'citacoes.agregados.escopo', code: 'x', message: 'O resumo deixaria de valer.' },
+        ],
+      }));
+      await assentar();
+
+      const lista = tela.querySelector('#cfg-fato-def-citacoes') as HTMLElement;
+      expect(lista.textContent).toContain('Regras padrão de outros fatos');
+      expect(lista.textContent).toContain('Modelos de formulário');
+      expect(lista.textContent).toContain('MODELO_MEDICINA');
+      expect(lista.textContent).toContain('O campo deixaria de aceitar a lista de valores.');
+      expect(tela.querySelector('#cfg-fato-definicao .field__error')).toBeNull();
+      expect(document.activeElement).toBe(lista);
+    });
+
+    it('o fato de sistema mantém a definição só para leitura, sem formulário', async () => {
+      const tela = await carregar(corRaca(true));
+
+      expect(tela.textContent).toContain('Fato de sistema');
+      expect(tela.querySelector('#cfg-fato-definicao')).toBeNull();
+      expect(tela.textContent).toContain('Conhecido a partir da fase');
+    });
+
+    it('a perda para outra escrita recarrega o fato e orienta a refazer a alteração', async () => {
+      const { tela, pedido } = await enviar(corRaca(false));
+      pedido.flush(...recusa(409, { code: 'uniplus.concorrencia.conflito' }));
+      await assentar();
+
+      controller.expectOne(URL).flush(corRaca(false));
+      await assentar();
+      expect(tela.textContent).toContain('Outra pessoa alterou');
+      expect(document.activeElement?.id).toBe('cfg-fato-def-salvar');
+    });
+
+    async function digitarEEnviar(tela: HTMLElement, campo: string, valor: string): Promise<void> {
+      const el = tela.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`#cfg-fato-definicao [formcontrolname="${campo}"]`);
+      if (el === null) throw new Error(`Sem o campo ${campo}`);
+      el.value = valor;
+      el.dispatchEvent(new Event(el instanceof HTMLSelectElement ? 'change' : 'input'));
+      await assentar();
+    }
+
+    it('o agregado mantém o tipo de dado do servidor e calcula as classificações por ele depois de editar a finalidade', async () => {
+      const texto = { ...agregado(), dominio: 'TEXTO', classificacaoProtecao: 'IDENTIFICADOR' };
+      const tela = await carregar(texto);
+      controller.expectOne(URL_FASES).flush(FASES);
+      await assentar();
+
+      await digitarEEnviar(tela, 'finalidadeTratamento', 'Outra finalidade.');
+
+      const form = (fixture.componentInstance as unknown as { definicao: { getRawValue(): Record<string, string> } }).definicao;
+      expect(form.getRawValue()['dominio']).toBe('TEXTO');
+      expect(form.getRawValue()['classificacaoProtecao']).toBe('IDENTIFICADOR');
+      const opcoes = Array.from(tela.querySelectorAll<HTMLOptionElement>('select[formcontrolname="classificacaoProtecao"] option')).map((o) => o.value);
+      expect(opcoes).not.toContain('PUBLICO');
+    });
+
+    it('a recusa de um eixo que o tipo não edita aparece no alerta da definição, com o nome do eixo e o foco', async () => {
+      const { tela, pedido } = await enviar(agregado());
+      pedido.flush(...recusa(422, { code: 'uniplus.configuracao.fato_candidato.dominio_invalido', errors: [{ field: 'dominio', code: 'x', message: 'Não pode mudar o tipo de dado.' }] }));
+      await assentar();
+
+      const alerta = tela.querySelector('#cfg-fato-definicao #cfg-fato-def-recusa') as HTMLElement;
+      expect(alerta.getAttribute('role')).toBe('alert');
+      expect(alerta.textContent).toContain('Tipo de dado: Não pode mudar o tipo de dado.');
+      expect(document.activeElement).toBe(alerta);
+    });
+
+    it('o erro de campo que a tela não conhece vai ao alerta da definição, mesmo quando outro erro coube num campo', async () => {
+      const { tela, pedido } = await enviar(corRaca(false));
+      pedido.flush(...recusa(422, {
+        code: 'uniplus.configuracao.fato_candidato.invalido',
+        errors: [
+          { field: 'classificacaoProtecao', code: 'x', message: 'Classificação fora do tipo de dado.' },
+          { field: 'campoDesconhecido', code: 'x', message: 'Algo que a tela não mostra.' },
+        ],
+      }));
+      await assentar();
+
+      expect(tela.querySelector('#cfg-fato-def-classificacaoProtecao-erro')?.textContent).toContain('Classificação fora do tipo de dado.');
+      expect(tela.querySelector('#cfg-fato-def-recusa')?.textContent).toContain('Algo que a tela não mostra.');
+    });
+
+    it('os eixos que o tipo não edita aparecem só para leitura, com a origem do valor', async () => {
+      const tela = await carregar(agregado());
+      controller.expectOne(URL_FASES).flush(FASES);
+      await assentar();
+      const lista = tela.querySelector('#cfg-fato-def-derivados') as HTMLElement;
+      expect(lista.textContent).toContain('Tipo de dado');
+      expect(lista.textContent).toContain('De quem é o dado');
+      expect(lista.textContent).toContain('vem do fato de membro');
+      expect(tela.querySelector('#cfg-fato-definicao select[formcontrolname="dominio"]')).toBeNull();
+    });
+
+    it('o derivado mostra só para leitura o que sai do tipo de dado', async () => {
+      const tela = await carregar(derivado());
+      controller.expectOne(URL_FASES).flush(FASES);
+      await assentar();
+      const lista = tela.querySelector('#cfg-fato-def-derivados') as HTMLElement;
+      expect(lista.textContent).toContain('Quantos valores');
+      expect(lista.textContent).toContain('vem do tipo de dado');
+      expect(lista.textContent).not.toContain('De quem é o dado');
+    });
+
+    it('trocar o tipo de dado limpa também as marcas das contribuições e das condições', async () => {
+      const categorico: FatoCandidatoDto = { ...derivado(), dominio: 'CATEGORICO', fonteValores: 'GLOBAL', valores: [{ codigo: 'A', descricao: null, ordem: 0, ativo: true }] };
+      const tela = await carregar(categorico);
+      controller.expectOne(URL_FASES).flush(FASES);
+      await assentar();
+      const comp = fixture.componentInstance as unknown as {
+        contribuicoesFaltando: { set(v: ReadonlySet<number>): void; (): ReadonlySet<number> };
+        errosDasCondicoes: { set(v: Record<number, Record<number, string>>): void; (): object };
+      };
+      comp.contribuicoesFaltando.set(new Set([0]));
+      comp.errosDasCondicoes.set({ 0: { 0: 'Condição inválida.' } });
+
+      await digitarEEnviar(tela, 'dominio', 'BOOLEANO');
+      (tela.querySelector('#cfg-fato-definicao') as HTMLFormElement).dispatchEvent(new Event('submit'));
+      controller.expectOne(`${URL}/definicao`).flush(null, { status: 204, statusText: 'No Content' });
+      await assentar();
+      controller.expectOne(URL).flush({ ...categorico, dominio: 'BOOLEANO', fonteValores: null, valores: [] });
+      await assentar();
+
+      expect(comp.contribuicoesFaltando().size).toBe(0);
+      expect(Object.keys(comp.errosDasCondicoes())).toHaveLength(0);
+    });
+
+    it('depois de trocar o tipo de dado do derivado, as regras em tela são as do servidor', async () => {
+      const categorico: FatoCandidatoDto = {
+        ...derivado(), dominio: 'CATEGORICO', fonteValores: 'GLOBAL', valores: [{ codigo: 'A', descricao: null, ordem: 0, ativo: true }],
+        regrasPadrao: [{ contribui: 'A', quando: [[{ fato: 'QUILOMBOLA', operador: 'IGUAL', valor: true }]] }],
+      };
+      const tela = await carregar(categorico);
+      controller.expectOne(URL_FASES).flush(FASES);
+      await assentar();
+      const regras = (): readonly { contribui: string | null }[] => (fixture.componentInstance as unknown as { regras(): readonly { contribui: string | null }[] }).regras();
+      expect(regras()[0].contribui).toBe('A');
+
+      await digitarEEnviar(tela, 'dominio', 'BOOLEANO');
+      (tela.querySelector('#cfg-fato-definicao') as HTMLFormElement).dispatchEvent(new Event('submit'));
+      controller.expectOne(`${URL}/definicao`).flush(null, { status: 204, statusText: 'No Content' });
+      await assentar();
+      const salvarRegras = [...tela.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Salvar regras') as HTMLButtonElement;
+      expect(salvarRegras.disabled, 'as regras na tela ainda são as do tipo de dado anterior').toBe(true);
+      salvarRegras.click();
+      controller.expectNone(`${URL}/regras-padrao`);
+      controller.expectOne(URL).flush({
+        ...categorico, dominio: 'BOOLEANO', fonteValores: null, valores: [],
+        regrasPadrao: [{ contribui: null, quando: categorico.regrasPadrao[0].quando }],
+      });
+      await assentar();
+
+      expect(regras()[0].contribui).toBeNull();
+    });
+
+    it('sem a lista de fases, avisa e deixa tentar de novo', async () => {
+      const tela = await carregar(derivado());
+      controller.expectOne(URL_FASES).flush('x', { status: 500, statusText: 'Erro' });
+      await assentar();
+
+      expect(tela.textContent).toContain('Fases não carregadas');
+      Array.from(tela.querySelectorAll('button')).find((b) => b.textContent?.includes('Tentar novamente'))?.click();
+      await assentar();
+      controller.expectOne(URL_FASES).flush(FASES);
+    });
+
+    it('a recusa do servidor num controle não some quando outro campo muda', async () => {
+      const texto = { ...corRaca(false), dominio: 'TEXTO', fonteValores: null, formato: 'EMAIL', classificacaoProtecao: 'PESSOAL' };
+      const { tela, pedido } = await enviar(texto);
+      pedido.flush(...recusa(422, { code: 'uniplus.configuracao.fato_candidato.formato_invalido', errors: [{ field: 'formato', code: 'x', message: 'Formato não aceito.' }] }));
+      await assentar();
+      expect(tela.querySelector('#cfg-fato-def-formato-erro')?.textContent).toContain('Formato não aceito.');
+
+      await digitarEEnviar(tela, 'classificacaoProtecao', 'SENSIVEL');
+
+      expect(tela.querySelector('#cfg-fato-def-formato-erro')?.textContent).toContain('Formato não aceito.');
+    });
+
+    it('o mesmo corpo noutro fato, depois de um 5xx, vai com outra chave de idempotência', async () => {
+      const { tela, pedido } = await enviar(corRaca(false));
+      const primeira = pedido.request.headers.get('Idempotency-Key');
+      pedido.flush(...recusa(503, { code: 'uniplus.indisponivel' }));
+      await assentar();
+
+      fixture.componentRef.setInput('id', 'outro-fato');
+      fixture.detectChanges();
+      controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/outro-fato`).flush({ ...corRaca(false), id: 'outro-fato' });
+      await assentar();
+      controller.match(URL_FASES).forEach((r) => r.flush(FASES));
+      await assentar();
+      (tela.querySelector('#cfg-fato-definicao') as HTMLFormElement).dispatchEvent(new Event('submit'));
+      const segundo = controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/outro-fato/definicao`);
+
+      expect(segundo.request.headers.get('Idempotency-Key')).not.toBe(primeira);
+    });
+
+    it('depois da recusa num eixo, corrigir outro e salvar de novo envia: quem reconfere é a API', async () => {
+      const texto = { ...corRaca(false), dominio: 'TEXTO', fonteValores: null, formato: 'EMAIL', classificacaoProtecao: 'PESSOAL' };
+      const { tela, pedido } = await enviar(texto);
+      pedido.flush(...recusa(422, { code: 'uniplus.configuracao.fato_candidato.formato_invalido', errors: [{ field: 'formato', code: 'x', message: 'Formato não aceito.' }] }));
+      await assentar();
+
+      await digitarEEnviar(tela, 'classificacaoProtecao', 'SENSIVEL');
+      (tela.querySelector('#cfg-fato-definicao') as HTMLFormElement).dispatchEvent(new Event('submit'));
+      await assentar();
+
+      controller.expectOne(`${URL}/definicao`);
     });
   });
 });

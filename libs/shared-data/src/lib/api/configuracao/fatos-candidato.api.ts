@@ -14,6 +14,7 @@ export type CriarFatoCandidatoCommand = components['schemas']['CriarFatoCandidat
 export type CriarFatoDerivadoCommand = components['schemas']['CriarFatoDerivadoCommand'];
 export type CriarFatoAgregadoCommand = components['schemas']['CriarFatoAgregadoCommand'];
 export type DescritivoDoFatoInput = components['schemas']['DescritivoDoFatoInput'];
+export type DefinicaoDoFatoInput = components['schemas']['DefinicaoDoFatoInput'];
 export type RegrasPadraoInput = components['schemas']['RegrasPadraoInput'];
 export type ValorDominioInput = components['schemas']['ValorDominioInput'];
 export type CorrecaoDeValorDominioInput = components['schemas']['CorrecaoDeValorDominioInput'];
@@ -92,6 +93,15 @@ export class FatosCandidatoApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(this.admin(id), input, { context });
+  }
+
+  /** PUT `/api/configuracao/admin/fatos-candidato/{id}/definicao` — corrige a definição do fato do administrador. */
+  alterarDefinicao(
+    id: string,
+    input: DefinicaoDoFatoInput,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.put<ApiResult<void>>(this.admin(id, 'definicao'), input, { context });
   }
 
   /** DELETE `/api/configuracao/admin/fatos-candidato/{id}` — desativa: vínculo novo deixa de aceitar o fato. */
