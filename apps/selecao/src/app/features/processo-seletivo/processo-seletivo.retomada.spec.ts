@@ -32,6 +32,7 @@ import { AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   DocumentoAPublicarDto,
+  FinalidadeDoDocumento,
   ItemConformidadeDto,
   OrigemCandidatos,
   RegrasCatalogoApi,
@@ -122,6 +123,7 @@ function documento(overrides: Partial<DocumentoAPublicarDto> = {}): DocumentoAPu
   return {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b030',
     processoSeletivoId: PROCESSO_ID,
+    finalidade: FinalidadeDoDocumento.documentoDoEdital,
     nomeArquivo: 'edital-de-abertura.pdf',
     tipoDeMidia: 'application/pdf',
     status: 'Confirmado',
@@ -400,10 +402,12 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
   });
 
   it('restaura o vínculo quando há um único documento confirmado', async () => {
-    const cenario = montar({
-      listarDocumentos: vi.fn(() => of(okResult([documento()]))),
-    });
+    const listar = vi.fn(() => of(okResult([documento()])));
+    const cenario = montar({ listarDocumentos: listar });
     await propagar();
+
+    // Os anexos do edital vivem na mesma coleção e não disputam o posto de oficial.
+    expect(listar).toHaveBeenCalledWith(PROCESSO_ID, FinalidadeDoDocumento.documentoDoEdital);
 
     const uploads = cenario.store.draft().identificacao.uploads;
     expect(uploads).toHaveLength(1);

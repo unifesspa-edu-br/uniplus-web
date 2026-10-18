@@ -2,7 +2,12 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
+import {
+  FinalidadeDoDocumento,
+  ProcessoSeletivoDto,
+  SELECAO_BASE_PATH,
+  StatusProcesso,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -72,6 +77,7 @@ function documentoConfirmado(id: string, hash: string, confirmadoEm: string) {
   return {
     id,
     processoSeletivoId: PROCESSO_ID,
+    finalidade: FinalidadeDoDocumento.documentoDoEdital,
     nomeArquivo: 'edital.pdf',
     tipoDeMidia: 'application/pdf',
     status: 'Confirmado',
@@ -136,6 +142,7 @@ describe('AnexoEditalComponent', () => {
 
     const inicio = controller.expectOne(ROTA_DOCUMENTOS);
     expect(inicio.request.body).toEqual({
+      finalidade: 'documentoDoEdital',
       nomeArquivo: arquivo.name,
       tipoDeMidia: 'application/pdf',
     });

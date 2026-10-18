@@ -24,6 +24,7 @@ import {
   DefinirTaxaInscricaoRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
+  FinalidadeDoDocumento,
   IniciarEnvioDoDocumentoAPublicarDto,
   NoExigenciaInput,
   ProcessosSeletivosApi,
@@ -215,10 +216,13 @@ export class CadastroInicialService {
   /**
    * Documentos do edital já registrados no processo. Usado na retomada e na
    * reverificação depois de uma leitura que falhou — sem ela, o operador não
-   * tem como saber se o processo já tem edital antes de enviar outro.
+   * tem como saber se o processo já tem edital antes de enviar outro. Só o documento do edital:
+   * os anexos dele vivem na mesma coleção e não são candidatos a edital oficial.
    */
   listarDocumentos(processoSeletivoId: string) {
-    return firstValueFrom(this.api.listarDocumentosAPublicar(processoSeletivoId));
+    return firstValueFrom(
+      this.api.listarDocumentosAPublicar(processoSeletivoId, FinalidadeDoDocumento.documentoDoEdital),
+    );
   }
 
   /**
@@ -843,7 +847,11 @@ export class CadastroInicialService {
     nomeArquivo: string,
   ): Promise<ResultadoIniciacao> {
     const geracao = this.geracao;
-    const request = { nomeArquivo, tipoDeMidia: TIPO_DE_MIDIA_DO_EDITAL };
+    const request = {
+      finalidade: FinalidadeDoDocumento.documentoDoEdital,
+      nomeArquivo,
+      tipoDeMidia: TIPO_DE_MIDIA_DO_EDITAL,
+    };
     const result = await firstValueFrom(
       this.api.iniciarEnvioDocumentoAPublicar(
         processoSeletivoId,

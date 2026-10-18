@@ -21,6 +21,7 @@ import {
   DefinirOfertaAtendimentoRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
+  AtoDoProcessoDto,
   DocumentoAPublicarDto,
   IniciarEnvioDoDocumentoAPublicarDto,
   ProcessoSeletivoDto,
@@ -30,7 +31,7 @@ import {
   SnapshotVigenteDto,
   TipoProcessoSnapshotDto,
 } from './processos-seletivos.api';
-import { OrigemCandidatos } from './schema';
+import { FinalidadeDoDocumento, OrigemCandidatos } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -64,6 +65,7 @@ const iniciacaoSeed: IniciarEnvioDoDocumentoAPublicarDto = {
 const documentoSeed: DocumentoAPublicarDto = {
   id: DOCUMENTO_ID,
   processoSeletivoId: ID,
+  finalidade: FinalidadeDoDocumento.documentoDoEdital,
   nomeArquivo: 'edital.pdf',
   tipoDeMidia: 'application/pdf',
   status: 'Confirmado',
@@ -77,6 +79,7 @@ const documentoSeed: DocumentoAPublicarDto = {
 const documentoPendenteSeed: DocumentoAPublicarDto = {
   id: '01960000-0000-7000-0000-000000000519',
   processoSeletivoId: ID,
+  finalidade: FinalidadeDoDocumento.documentoDoEdital,
   nomeArquivo: 'edital.pdf',
   tipoDeMidia: 'application/pdf',
   status: 'Pendente',
@@ -200,8 +203,36 @@ describe('ProcessosSeletivosApi', () => {
     if (result.ok) expect(result.data).toEqual([]);
   });
 
-  it('iniciarEnvioDocumentoAPublicar() posta nome e tipo de mídia e devolve a URL assinada', async () => {
-    const request = { nomeArquivo: 'edital.pdf', tipoDeMidia: 'application/pdf' };
+  it('listarDocumentosAPublicar() filtra a coleção pela finalidade pedida', async () => {
+    const promise = firstValueFrom(
+      api.listarDocumentosAPublicar(ID, FinalidadeDoDocumento.documentoDoEdital),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/documentos-a-publicar?finalidade=documentoDoEdital`,
+    );
+
+    req.flush([documentoSeed]);
+    await promise;
+  });
+
+  it('listarAtosDoProcesso() lê os atos do processo pelo vendor MIME do ato', async () => {
+    const promise = firstValueFrom(api.listarAtosDoProcesso(ID));
+    const req = controller.expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/atos`);
+
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('ato-do-processo', 1));
+    req.flush([]);
+
+    const result = (await promise) as ApiResult<readonly AtoDoProcessoDto[]>;
+    expect(isApiOk(result)).toBe(true);
+  });
+
+  it('iniciarEnvioDocumentoAPublicar() posta finalidade, nome e tipo de mídia e devolve a URL assinada', async () => {
+    const request = {
+      finalidade: FinalidadeDoDocumento.documentoDoEdital,
+      nomeArquivo: 'edital.pdf',
+      tipoDeMidia: 'application/pdf',
+    };
     const promise = firstValueFrom(
       api.iniciarEnvioDocumentoAPublicar(ID, request, withIdempotencyKey('documento-init-key')),
     );
