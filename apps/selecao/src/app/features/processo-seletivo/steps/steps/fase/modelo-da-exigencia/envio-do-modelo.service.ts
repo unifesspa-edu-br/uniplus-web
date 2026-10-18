@@ -1,7 +1,6 @@
-import { HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, firstValueFrom } from 'rxjs';
-import { SignedUploadClient, isApiOk, type ApiResult } from '@uniplus/shared-core/http';
+import { firstValueFrom } from 'rxjs';
+import { SignedUploadClient } from '@uniplus/shared-core/http';
 import {
   ProcessosSeletivosApi,
   type IniciarEnvioDoModeloDeDocumentoDto,
@@ -10,6 +9,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 
 import { ChaveDeSubstituicao } from '../../../shared/chave-de-substituicao';
+import { comChave, type RespostaDoComando } from '../../../shared/comando-com-chave';
 import { enviarAoStorage, type ResultadoEnvio } from '../../../shared/envio-pre-assinado';
 
 /**
@@ -62,26 +62,4 @@ export class EnvioDoModeloService {
   obterAcesso(processoSeletivoId: string, modeloDeDocumentoId: string) {
     return firstValueFrom(this.api.obterAcessoModeloDeDocumento(processoSeletivoId, modeloDeDocumentoId));
   }
-}
-
-/**
- * A resposta de um comando e se a recusa deixou em aberto se ele foi executado (rede, 5xx): o
- * modelo pode já existir no servidor, e a retentativa repete o mesmo comando com a mesma chave.
- */
-export interface RespostaDoComando<T> {
-  readonly resultado: ApiResult<T>;
-  readonly inconclusiva: boolean;
-}
-
-async function comChave<T>(
-  chave: ChaveDeSubstituicao,
-  corpo: unknown,
-  enviar: (contexto: HttpContext) => Observable<ApiResult<T>>,
-): Promise<RespostaDoComando<T>> {
-  const resultado = await firstValueFrom(enviar(chave.contextoPara(corpo)));
-  if (isApiOk(resultado)) {
-    chave.renovar();
-    return { resultado, inconclusiva: false };
-  }
-  return { resultado, inconclusiva: chave.recusada(resultado) };
 }
