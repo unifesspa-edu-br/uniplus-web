@@ -3,6 +3,7 @@ import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { FUNDAMENTOS_DE_ISENCAO, TIPOS_DE_PROCESSO } from '../fixtures/consulta-da-medicina';
 import {
+  ATO_DO_PROCESSO,
   ATO_PUBLICADO,
   DOCUMENTO_DO_EDITAL,
   FASES_CANONICAS,
@@ -77,10 +78,10 @@ const SELETOR_DE_CONTROLES = [
 ].join(', ');
 
 /**
- * Ações de leitura que são botão: abrir o edital já publicado não edita nada. Qualquer outro
+ * Ações de leitura que são botão: abrir o edital e os anexos já publicados não edita nada. Qualquer outro
  * botão em consulta é ação de edição.
  */
-const BOTOES_DE_LEITURA = ['Abrir o edital'];
+const BOTOES_DE_LEITURA = ['Abrir o edital', 'Abrir'];
 
 /** As ações de edição que a web#905 nomeia: nenhuma pode ter nome acessível em consulta. */
 const ACOES_DE_EDICAO =
@@ -339,6 +340,8 @@ async function mockarApi(page: Page, status: Status): Promise<void> {
       await responderCom(route, { ...PROCESSO_PUBLICADO_COMPLETO, status });
     } else if (caminho.endsWith('/documentos-a-publicar')) {
       await responderCom(route, [DOCUMENTO_DO_EDITAL]);
+    } else if (caminho.endsWith('/atos')) {
+      await responderCom(route, [ATO_DO_PROCESSO]);
     } else if (caminho.endsWith('/snapshot-vigente')) {
       await responderCom(route, SNAPSHOT_VIGENTE);
     } else if (caminho.endsWith('/conformidade-legal')) {

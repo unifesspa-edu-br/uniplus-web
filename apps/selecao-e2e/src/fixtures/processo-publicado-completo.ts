@@ -264,9 +264,44 @@ export const SNAPSHOT_VIGENTE = {
   configuracao: {},
 } as const;
 
+/** O ato da versão vigente, como a consulta dos atos do processo o devolve, com um anexo do edital. */
+export const ATO_DO_PROCESSO = {
+  id: ATO_PUBLICADO.id,
+  tipoCodigo: 'PORTARIA',
+  tipoNome: 'Portaria',
+  numero: '001/2027',
+  dataDoAto: '2027-01-15',
+  publicadoEm: '2027-01-15T12:00:00Z',
+  assinante: 'Reitor da Unifesspa',
+  situacao: 'registrado',
+  registradoEm: '2027-01-15T12:00:00Z',
+  pendenciaAcimaDoLimiar: false,
+  atoCorrigidoId: null,
+  motivoDaCorrecao: null,
+  produtoDoEditalId: null,
+  politicaDeDivulgacaoConfirmada: false,
+  documentoPrincipal: {
+    documentoAPublicarId: '01a0d640-0000-7000-8000-0000000000ac',
+    nomeArquivo: 'edital.pdf',
+    nomeDeExibicao: null,
+    tipoDeMidia: 'application/pdf',
+    hashSha256: 'a'.repeat(64),
+  },
+  anexos: [
+    {
+      documentoAPublicarId: '01a0d640-0000-7000-8000-0000000000ad',
+      nomeArquivo: 'cronograma.pdf',
+      nomeDeExibicao: 'Cronograma detalhado.pdf',
+      tipoDeMidia: 'application/pdf',
+      hashSha256: 'c'.repeat(64),
+    },
+  ],
+} as const;
+
 export const DOCUMENTO_DO_EDITAL = {
   id: '01a0d640-0000-7000-8000-0000000000ac',
   processoSeletivoId: ID_DO_PROCESSO_COMPLETO,
+  finalidade: 'documentoDoEdital',
   nomeArquivo: 'edital.pdf',
   tipoDeMidia: 'application/pdf',
   status: 'Confirmado',
