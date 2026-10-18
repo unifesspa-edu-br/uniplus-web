@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  fatoDeMembroDoBinding,
   acaoDeAtivacao,
   CLASSIFICACOES_DE_PROTECAO,
+  citacoesDaRecusa,
   classificacoesDoDominio,
+  corpoDaDefinicao,
+  podeEditarDefinicao,
   fatosDeMembroAgregaveis,
   fatosCitaveisPelaRegra,
   hipotesesDaClassificacao,
@@ -104,5 +108,49 @@ describe('ativação do fato', () => {
     expect(acaoDeAtivacao({ sistema: true, ativo: true })).toBeNull();
     expect(acaoDeAtivacao({ sistema: false, ativo: true })).toBe('DESATIVAR');
     expect(acaoDeAtivacao({ sistema: false, ativo: false })).toBe('REATIVAR');
+  });
+});
+
+describe('a definição que o administrador altera', () => {
+  const v = {
+    dominio: 'TEXTO', cardinalidade: 'ESCALAR', fonteValores: 'GLOBAL', formato: 'CPF', escopo: 'CANDIDATO',
+    pontoResolucao: 'INSCRICAO', classificacaoProtecao: 'IDENTIFICADOR', finalidadeTratamento: ' Identificar. ', hipoteseLegal: 'CONSENTIMENTO',
+  };
+
+  it('declarado de texto leva o formato e a fonte nula; o de lista leva a fonte e o formato nulo', () => {
+    expect(corpoDaDefinicao('DECLARADO', v)).toMatchObject({ formato: 'CPF', fonteValores: null, cardinalidade: 'ESCALAR', finalidadeTratamento: 'Identificar.' });
+    expect(corpoDaDefinicao('DECLARADO', { ...v, dominio: 'CATEGORICO' })).toMatchObject({ formato: null, fonteValores: 'GLOBAL' });
+  });
+
+  it('derivado e agregado não levam os eixos que o tipo não aceita', () => {
+    expect(Object.keys(corpoDaDefinicao('DERIVADO_POR_REGRA', v))).not.toEqual(expect.arrayContaining(['cardinalidade']));
+    expect(corpoDaDefinicao('DERIVADO_POR_REGRA', v)).not.toHaveProperty('fonteValores');
+    expect(Object.keys(corpoDaDefinicao('AGREGADO', v)).sort()).toEqual(['classificacaoProtecao', 'finalidadeTratamento', 'hipoteseLegal', 'pontoResolucao']);
+  });
+
+  it('o fato de sistema e o de vínculo desconhecido não se editam', () => {
+    expect(podeEditarDefinicao({ binding: 'CAMPO_INSCRICAO:X', sistema: true })).toBe(false);
+    expect(podeEditarDefinicao({ binding: 'SISTEMA:X', sistema: false })).toBe(false);
+    expect(podeEditarDefinicao({ binding: 'REGRA_DERIVACAO:X', sistema: false })).toBe(true);
+  });
+
+  it('agrupa as citações por tipo e deixa de fora a recusa de campo', () => {
+    const grupos = citacoesDaRecusa([
+      { field: 'citacoes.modelos.A.B', message: 'm1' },
+      { field: 'citacoes.regrasPadrao.P', message: 'm2' },
+      { field: 'citacoes.modelos.C', message: 'm3' },
+      { field: 'dominio', message: 'campo' },
+    ]);
+    expect(grupos.map((g) => [g.tipo, g.itens.map((i) => i.codigo)])).toEqual([
+      ['regrasPadrao', ['P']],
+      ['modelos', ['A.B', 'C']],
+    ]);
+  });
+});
+
+describe('o fato de membro do agregado', () => {
+  it('sai do binding do agregado e é nulo nos outros tipos', () => {
+    expect(fatoDeMembroDoBinding({ binding: 'AGREGACAO_GRUPO:RENDA' })).toBe('RENDA');
+    expect(fatoDeMembroDoBinding({ binding: 'REGRA_DERIVACAO:RENDA' })).toBeNull();
   });
 });

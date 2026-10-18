@@ -58,6 +58,9 @@ import {
   acaoDeAtivacao,
   campoDaRecusa,
   classificacoesDoDominio,
+  esvaziarSeForaDas,
+  descartarRecusasDoServidor,
+  exigirSe,
   fatosDeMembroAgregaveis,
   hipotesesDaClassificacao,
   resumoDoAgregado,
@@ -65,7 +68,6 @@ import {
   temFonteDeValores,
   temFormato,
   type AcaoDeAtivacao,
-  type OpcaoDeVocabulario,
 } from './fato-candidato.regras';
 
 const PAGE_SIZE = 50;
@@ -783,6 +785,7 @@ export class FatosCandidatoPage {
 
   protected criar(): void {
     if (this.salvando()) return;
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -965,20 +968,4 @@ export class FatosCandidatoPage {
     this.ultimaSugestao = sugerirCodigoDeCadastro(nome);
     this.form.controls.codigo.setValue(this.ultimaSugestao, { emitEvent: false });
   }
-}
-
-function esvaziarSeForaDas(controle: FormControl<string>, opcoes: readonly OpcaoDeVocabulario[]): void {
-  if (controle.value !== '' && !opcoes.some((opcao) => opcao.valor === controle.value)) {
-    controle.setValue('');
-  }
-}
-
-function exigirSe(controle: FormControl<string>, exigido: boolean): void {
-  if (exigido) {
-    controle.addValidators(Validators.required);
-  } else {
-    controle.removeValidators(Validators.required);
-    controle.setValue('', { emitEvent: false });
-  }
-  controle.updateValueAndValidity({ emitEvent: false });
 }

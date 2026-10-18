@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable } from 'rxjs';
+import { HttpParams } from '@angular/common/http';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Observable, map } from 'rxjs';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   ApiResult,
@@ -17,6 +18,7 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
+  FaseCanonicaDto,
   FatoCandidatoDto,
   FatoCandidatoView,
   FatosCandidatoApi,
@@ -42,21 +44,46 @@ import {
   FORMATOS_DE_TEXTO,
   HIPOTESES_LEGAIS,
   ORIGENS,
+  DOMINIOS_DO_DERIVADO,
   campoDaRecusa,
+  citacoesDaRecusa,
+  classificacoesDoDominio,
+  corpoDaDefinicao,
+  ehCitacao,
+  eixosDoTipo,
+  eixosEditaveis,
+  esvaziarSeForaDas,
+  descartarRecusasDoServidor,
+  exigirSe,
+  fatoDeMembroDoBinding,
   fatosCitaveisPelaRegra,
+  hipotesesDaClassificacao,
   indiceDaRegra,
+  podeEditarDefinicao,
   podeTerRegras,
   podeTerValores,
   rotuloDe,
+  tipoDoFato,
 } from './fato-candidato.regras';
 
-type AcaoComChave = 'descritivo' | 'valor' | 'regras' | 'reativacao' | 'correcao' | 'ordem';
+type AcaoComChave = 'descritivo' | 'valor' | 'regras' | 'reativacao' | 'correcao' | 'ordem' | 'definicao';
 
 /** Uma regra padrão em edição: o valor que contribui (nulo no booleano) e o predicado na forma do editor. */
 interface RegraEmEdicao {
   readonly contribui: string | null;
   readonly condicoes: readonly CondicaoEmClausula[];
 }
+
+/** Os eixos que o tipo do fato pode não editar, com o nome que a tela dá a cada um. */
+const ROTULOS_DOS_EIXOS: Readonly<Record<string, string>> = {
+  dominio: 'Tipo de dado',
+  cardinalidade: 'Quantos valores',
+  fonteValores: 'De onde vêm os valores',
+  formato: 'Formato do texto',
+  escopo: 'De quem é o dado',
+};
+
+const ID_DO_SALVAR_DA_DEFINICAO = 'cfg-fato-def-salvar';
 
 /** Os `code` que a API emite quando a escrita perde para outra: o global e o do fato do catálogo. */
 const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
@@ -120,32 +147,211 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
       </form>
 
       <ui-recolhivel titulo="Definição" [aberto]="somenteLeitura()">
-        <dl class="cfg-detail-list cfg-fato-definicao">
-          <dt>Código</dt>
-          <dd><code>{{ f.codigo }}</code></dd>
-          <dt>Origem</dt>
-          <dd>{{ rotulo(origens, f.origem) }}</dd>
-          <dt>Tipo de dado</dt>
-          <dd>{{ rotulo(dominios, f.dominio) }} ({{ rotulo(cardinalidades, f.cardinalidade) }})</dd>
-          @if (f.fonteValores) {
-            <dt>Fonte dos valores</dt>
-            <dd>{{ rotulo(fontes, f.fonteValores) }}</dd>
+        @if (definicaoEditavel() && !somenteLeitura()) {
+          <dl class="cfg-detail-list cfg-fato-definicao">
+            <dt>Código</dt>
+            <dd><code>{{ f.codigo }}</code></dd>
+            <dt>Origem</dt>
+            <dd>{{ rotulo(origens, f.origem) }}</dd>
+            @if (membroDoAgregado(); as membro) {
+              <dt>Fato de membro resumido</dt>
+              <dd><code>{{ membro }}</code></dd>
+            }
+          </dl>
+          <p class="u-caption" id="cfg-fato-def-aviso">
+            A mudança vale para os rascunhos que citam este fato, a partir da próxima publicação ou retificação deles, e para os processos novos; a versão já publicada não muda.
+            O fato já coletado por um processo publicado não troca de definição numa retificação.
+          </p>
+          @if (eixosSomenteLeitura().length > 0) {
+            <dl class="cfg-detail-list cfg-fato-definicao" id="cfg-fato-def-derivados">
+              @for (eixo of eixosSomenteLeitura(); track eixo.rotulo) {
+                <dt>{{ eixo.rotulo }}</dt>
+                <dd>{{ eixo.valor }} <span class="u-caption">({{ eixo.origem }})</span></dd>
+              }
+            </dl>
+            @if (membroDoAgregado()) {
+              <p class="u-caption">Para mudá-los, altere o fato de membro.</p>
+            }
           }
-          @if (f.formato) {
-            <dt>Formato</dt>
-            <dd>{{ rotulo(formatos, f.formato) }}</dd>
+          @if (fasesComErro()) {
+            <ui-alert variant="warning" heading="Fases não carregadas">
+              Sem a lista de fases não é possível dizer a partir de quando o fato é conhecido.
+              <div class="cfg-list__retry">
+                <button type="button" class="btn btn--secondary btn--sm" (click)="fases.reload()">Tentar novamente</button>
+              </div>
+            </ui-alert>
           }
-          <dt>Escopo</dt>
-          <dd>{{ rotulo(escopos, f.escopo) }}</dd>
-          <dt>Conhecido a partir da fase</dt>
-          <dd><code>{{ f.pontoResolucao }}</code></dd>
-          <dt>Proteção de dados</dt>
-          <dd>{{ rotulo(classificacoes, f.classificacaoProtecao) }}</dd>
-          <dt>Base legal</dt>
-          <dd>{{ rotulo(hipoteses, f.hipoteseLegal) }}</dd>
-          <dt>Finalidade do tratamento</dt>
-          <dd>{{ f.finalidadeTratamento }}</dd>
-        </dl>
+          <form class="cfg-fato-descritivo" [formGroup]="definicao" id="cfg-fato-definicao" (ngSubmit)="salvarDefinicao()" novalidate>
+            <div class="form-grid">
+              @if (eixos().dominio) {
+                <label class="field" [class.is-error]="erroDefinicao('dominio')">
+                  <span class="field__label is-required">Tipo de dado</span>
+                  <select class="select" formControlName="dominio" [attr.aria-invalid]="erroDefinicao('dominio') ? 'true' : null" [attr.aria-describedby]="descritorDe('dominio')">
+                    <option value="">Selecione…</option>
+                    @for (opcao of dominiosDaDefinicao(); track opcao.valor) {
+                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                    }
+                  </select>
+                  @if (erroDefinicao('dominio')) {
+                    <span class="field__error" id="cfg-fato-def-dominio-erro">{{ erroDefinicao('dominio') }}</span>
+                  }
+                </label>
+              }
+              @if (eixos().cardinalidade) {
+                <label class="field" [class.is-error]="erroDefinicao('cardinalidade')">
+                  <span class="field__label is-required">Quantos valores</span>
+                  <select class="select" formControlName="cardinalidade" [attr.aria-invalid]="erroDefinicao('cardinalidade') ? 'true' : null" [attr.aria-describedby]="descritorDe('cardinalidade')">
+                    @for (opcao of cardinalidades; track opcao.valor) {
+                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                    }
+                  </select>
+                  @if (erroDefinicao('cardinalidade')) {
+                    <span class="field__error" id="cfg-fato-def-cardinalidade-erro">{{ erroDefinicao('cardinalidade') }}</span>
+                  }
+                </label>
+              }
+              @if (eixos().fonteValores) {
+                <label class="field" [class.is-error]="erroDefinicao('fonteValores')">
+                  <span class="field__label is-required">De onde vêm os valores</span>
+                  <select class="select" formControlName="fonteValores" [attr.aria-invalid]="erroDefinicao('fonteValores') ? 'true' : null" [attr.aria-describedby]="descritorDe('fonteValores')">
+                    <option value="">Selecione…</option>
+                    @for (opcao of fontes; track opcao.valor) {
+                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                    }
+                  </select>
+                  @if (erroDefinicao('fonteValores')) {
+                    <span class="field__error" id="cfg-fato-def-fonteValores-erro">{{ erroDefinicao('fonteValores') }}</span>
+                  }
+                </label>
+              }
+              @if (eixos().formato) {
+                <label class="field" [class.is-error]="erroDefinicao('formato')">
+                  <span class="field__label is-required">Formato do texto</span>
+                  <select class="select" formControlName="formato" [attr.aria-invalid]="erroDefinicao('formato') ? 'true' : null" [attr.aria-describedby]="descritorDe('formato')">
+                    <option value="">Selecione…</option>
+                    @for (opcao of formatos; track opcao.valor) {
+                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                    }
+                  </select>
+                  @if (erroDefinicao('formato')) {
+                    <span class="field__error" id="cfg-fato-def-formato-erro">{{ erroDefinicao('formato') }}</span>
+                  }
+                </label>
+              }
+              @if (eixos().escopo) {
+                <label class="field" [class.is-error]="erroDefinicao('escopo')">
+                  <span class="field__label is-required">De quem é o dado</span>
+                  <select class="select" formControlName="escopo" [attr.aria-invalid]="erroDefinicao('escopo') ? 'true' : null" [attr.aria-describedby]="descritorDe('escopo')">
+                    @for (opcao of escopos; track opcao.valor) {
+                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                    }
+                  </select>
+                  @if (erroDefinicao('escopo')) {
+                    <span class="field__error" id="cfg-fato-def-escopo-erro">{{ erroDefinicao('escopo') }}</span>
+                  }
+                </label>
+              }
+              <label class="field" [class.is-error]="erroDefinicao('pontoResolucao')">
+                <span class="field__label is-required">Conhecido a partir da fase</span>
+                <select class="select" formControlName="pontoResolucao" [attr.aria-busy]="fases.isLoading() ? 'true' : null" [attr.aria-invalid]="erroDefinicao('pontoResolucao') ? 'true' : null" [attr.aria-describedby]="descritorDe('pontoResolucao')">
+                  <option value="">Selecione…</option>
+                  @for (fase of fasesDaDefinicao(); track fase.codigo) {
+                    <option [value]="fase.codigo">{{ fase.nome }}</option>
+                  }
+                </select>
+                @if (erroDefinicao('pontoResolucao')) {
+                  <span class="field__error" id="cfg-fato-def-pontoResolucao-erro">{{ erroDefinicao('pontoResolucao') }}</span>
+                }
+              </label>
+            </div>
+            <fieldset class="field form-grid__full">
+              <legend class="field__label">Proteção de dados (LGPD)</legend>
+              <div class="form-grid">
+                <label class="field" [class.is-error]="erroDefinicao('classificacaoProtecao')">
+                  <span class="field__label is-required">Classificação</span>
+                  <select class="select" formControlName="classificacaoProtecao" [attr.aria-invalid]="erroDefinicao('classificacaoProtecao') ? 'true' : null" [attr.aria-describedby]="descritorDe('classificacaoProtecao')">
+                    <option value="">Selecione…</option>
+                    @for (opcao of classificacoesDaDefinicao(); track opcao.valor) {
+                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                    }
+                  </select>
+                  @if (erroDefinicao('classificacaoProtecao')) {
+                    <span class="field__error" id="cfg-fato-def-classificacaoProtecao-erro">{{ erroDefinicao('classificacaoProtecao') }}</span>
+                  }
+                </label>
+                <label class="field" [class.is-error]="erroDefinicao('hipoteseLegal')">
+                  <span class="field__label is-required">Hipótese legal</span>
+                  <select class="select" formControlName="hipoteseLegal" [attr.aria-invalid]="erroDefinicao('hipoteseLegal') ? 'true' : null" [attr.aria-describedby]="descritorDe('hipoteseLegal')">
+                    <option value="">Selecione…</option>
+                    @for (opcao of hipotesesDaDefinicao(); track opcao.valor) {
+                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                    }
+                  </select>
+                  @if (erroDefinicao('hipoteseLegal')) {
+                    <span class="field__error" id="cfg-fato-def-hipoteseLegal-erro">{{ erroDefinicao('hipoteseLegal') }}</span>
+                  }
+                </label>
+              </div>
+              <label class="field form-grid__full" [class.is-error]="erroDefinicao('finalidadeTratamento')">
+                <span class="field__label is-required">Finalidade do tratamento</span>
+                <textarea class="textarea" rows="2" formControlName="finalidadeTratamento" [attr.aria-invalid]="erroDefinicao('finalidadeTratamento') ? 'true' : null" [attr.aria-describedby]="descritorDe('finalidadeTratamento')"></textarea>
+                @if (erroDefinicao('finalidadeTratamento')) {
+                  <span class="field__error" id="cfg-fato-def-finalidadeTratamento-erro">{{ erroDefinicao('finalidadeTratamento') }}</span>
+                }
+              </label>
+            </fieldset>
+            @if (citacoes().length > 0) {
+              <div id="cfg-fato-def-citacoes" tabindex="-1">
+                <ui-alert variant="danger" heading="A alteração deixaria de valer o que já usa este fato">
+                  <p>Nada foi gravado. Ajuste o que está listado, ou escolha outra definição, e salve de novo.</p>
+                  @for (grupo of citacoes(); track grupo.tipo) {
+                    <p><strong>{{ grupo.titulo }}</strong></p>
+                    <ul>
+                      @for (item of grupo.itens; track item.codigo) {
+                        <li><code>{{ item.codigo }}</code>: {{ item.mensagem }}</li>
+                      }
+                    </ul>
+                  }
+                </ui-alert>
+              </div>
+            }
+            @if (recusaDaDefinicao(); as recusa) {
+              <div id="cfg-fato-def-recusa" role="alert" tabindex="-1">
+                <ui-alert variant="danger" heading="A definição não foi salva">{{ recusa }}</ui-alert>
+              </div>
+            }
+            <div class="cfg-form-actions">
+              <button type="submit" id="cfg-fato-def-salvar" class="btn btn--primary btn--sm" [disabled]="bloqueado()">Salvar definição</button>
+            </div>
+          </form>
+        } @else {
+          <dl class="cfg-detail-list cfg-fato-definicao">
+            <dt>Código</dt>
+            <dd><code>{{ f.codigo }}</code></dd>
+            <dt>Origem</dt>
+            <dd>{{ rotulo(origens, f.origem) }}</dd>
+            <dt>Tipo de dado</dt>
+            <dd>{{ rotulo(dominios, f.dominio) }} ({{ rotulo(cardinalidades, f.cardinalidade) }})</dd>
+            @if (f.fonteValores) {
+              <dt>Fonte dos valores</dt>
+              <dd>{{ rotulo(fontes, f.fonteValores) }}</dd>
+            }
+            @if (f.formato) {
+              <dt>Formato</dt>
+              <dd>{{ rotulo(formatos, f.formato) }}</dd>
+            }
+            <dt>Escopo</dt>
+            <dd>{{ rotulo(escopos, f.escopo) }}</dd>
+            <dt>Conhecido a partir da fase</dt>
+            <dd><code>{{ f.pontoResolucao }}</code></dd>
+            <dt>Proteção de dados</dt>
+            <dd>{{ rotulo(classificacoes, f.classificacaoProtecao) }}</dd>
+            <dt>Base legal</dt>
+            <dd>{{ rotulo(hipoteses, f.hipoteseLegal) }}</dd>
+            <dt>Finalidade do tratamento</dt>
+            <dd>{{ f.finalidadeTratamento }}</dd>
+          </dl>
+        }
       </ui-recolhivel>
 
       @if (temValores() || f.valores.length > 0) {
@@ -299,7 +505,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
                   <span class="field__label is-required">Valor que a regra acrescenta</span>
                   <select
                     class="select"
-                    [disabled]="somenteLeitura()"
+                    [disabled]="bloqueado() || somenteLeitura()"
                     [attr.aria-invalid]="contribuicoesFaltando().has(i) ? 'true' : null"
                     [attr.aria-describedby]="contribuicoesFaltando().has(i) ? 'cfg-fato-regra-' + i + '-erro' : null"
                     (change)="trocarContribuicao(i, valorDoSelect($event))"
@@ -316,7 +522,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
                 [fatos]="fatosDaRegra()"
                 [idBase]="'cfg-fato-regra-' + i"
                 legenda="Quando"
-                [disabled]="ocupado() || somenteLeitura()"
+                [disabled]="bloqueado() || somenteLeitura()"
                 [erros]="errosDasCondicoes()[i] ?? {}"
                 (condicoesChange)="trocarCondicoes(i, $event)"
               />
@@ -324,7 +530,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
                 <span class="field__error" role="alert" [id]="'cfg-fato-regra-' + i + '-erro'">{{ erro }}</span>
               }
               @if (!somenteLeitura()) {
-                <button type="button" class="btn btn--tertiary btn--sm" [disabled]="ocupado()" (click)="removerRegra(i)">
+                <button type="button" class="btn btn--tertiary btn--sm" [disabled]="bloqueado()" (click)="removerRegra(i)">
                   Remover a regra {{ i + 1 }}
                 </button>
               }
@@ -332,8 +538,8 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
           }
           @if (!somenteLeitura()) {
             <div class="cfg-form-actions">
-              <button type="button" class="btn btn--secondary btn--sm" [disabled]="ocupado()" (click)="acrescentarRegra()">Acrescentar regra</button>
-              <button type="button" class="btn btn--primary btn--sm" [disabled]="ocupado()" (click)="salvarRegras()">Salvar regras</button>
+              <button type="button" class="btn btn--secondary btn--sm" [disabled]="bloqueado()" (click)="acrescentarRegra()">Acrescentar regra</button>
+              <button type="button" class="btn btn--primary btn--sm" [disabled]="bloqueado()" (click)="salvarRegras()">Salvar regras</button>
             </div>
           }
         </section>
@@ -404,6 +610,43 @@ export class FatoCandidatoEdicaoComponent {
     return fato !== null && podeTerRegras(fato);
   });
 
+  /** A Definição vira formulário no fato do administrador de um tipo conhecido; o de sistema só se lê. */
+  protected readonly definicaoEditavel = computed(() => {
+    const fato = this.fato();
+    return fato !== null && podeEditarDefinicao(fato);
+  });
+
+  private readonly tipo = computed(() => {
+    const fato = this.fato();
+    return fato === null ? 'OUTRO' : tipoDoFato(fato);
+  });
+
+  /** O agregado mostra o fato de membro que resume, sem poder trocá-lo. */
+  protected readonly membroDoAgregado = computed(() => {
+    const fato = this.fato();
+    return fato === null ? null : fatoDeMembroDoBinding(fato);
+  });
+
+  /** As fases do ponto de resolução: só pedidas quando o formulário da definição está na tela. */
+  protected readonly fases = useApiResource<readonly FaseCanonicaDto[]>(() =>
+    this.definicaoEditavel() && !this.somenteLeitura()
+      ? {
+          url: `${this.basePath}/api/configuracao/fases-canonicas`,
+          params: new HttpParams().set('limit', '100'),
+          context: withVendorMime('fase-canonica', 1),
+        }
+      : undefined,
+  );
+
+  protected readonly fasesComErro = computed(() => this.fases.problem() !== null || this.fases.error() !== undefined);
+
+  /** A fase atual do fato entra nas opções mesmo se a lista não a traz: a escolha salva não some do select. */
+  protected readonly fasesDaDefinicao = computed<readonly { readonly codigo: string; readonly nome: string }[]>(() => {
+    const lista = this.fases.data() ?? [];
+    const atual = this.fato()?.pontoResolucao;
+    return atual && !lista.some((fase) => fase.codigo === atual) ? [{ codigo: atual, nome: atual }, ...lista] : lista;
+  });
+
   protected readonly valoresAtivos = computed(() =>
     (this.fato()?.valores ?? []).filter((valor) => valor.ativo).map((valor) => valor.codigo),
   );
@@ -454,6 +697,7 @@ export class FatoCandidatoEdicaoComponent {
     reativacao: idempotencyKey.create(),
     correcao: idempotencyKey.create(),
     ordem: idempotencyKey.create(),
+    definicao: idempotencyKey.create(),
   };
   private readonly intencoes: Partial<Record<AcaoComChave, string>> = {};
 
@@ -463,9 +707,11 @@ export class FatoCandidatoEdicaoComponent {
    * da tentativa anterior ou body_mismatch.
    */
   private chaveDe(acao: AcaoComChave, intencao = ''): string {
-    if (this.intencoes[acao] !== intencao) {
+    // O componente pode ser reaproveitado para outro fato: o mesmo corpo noutro fato é outro comando.
+    const alvo = `${this.id()}|${intencao}`;
+    if (this.intencoes[acao] !== alvo) {
       this.chaves[acao] = idempotencyKey.create();
-      this.intencoes[acao] = intencao;
+      this.intencoes[acao] = alvo;
     }
     return this.chaves[acao];
   }
@@ -485,6 +731,49 @@ export class FatoCandidatoEdicaoComponent {
     nome: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
     descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
   });
+
+  protected readonly definicao = new FormGroup({
+    dominio: new FormControl('', { nonNullable: true }),
+    cardinalidade: new FormControl('ESCALAR', { nonNullable: true }),
+    fonteValores: new FormControl('', { nonNullable: true }),
+    formato: new FormControl('', { nonNullable: true }),
+    escopo: new FormControl('CANDIDATO', { nonNullable: true }),
+    pontoResolucao: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    classificacaoProtecao: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    finalidadeTratamento: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(500)] }),
+    hipoteseLegal: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+  });
+
+  private readonly valoresDaDefinicao = toSignal(this.definicao.valueChanges.pipe(map(() => this.definicao.getRawValue())), {
+    initialValue: this.definicao.getRawValue(),
+  });
+
+  protected readonly eixos = computed(() => eixosEditaveis(this.tipo(), this.valoresDaDefinicao().dominio));
+  protected readonly dominiosDaDefinicao = computed(() => (this.tipo() === 'DECLARADO' ? DOMINIOS : DOMINIOS_DO_DERIVADO));
+  protected readonly classificacoesDaDefinicao = computed(() => classificacoesDoDominio(this.valoresDaDefinicao().dominio));
+  protected readonly hipotesesDaDefinicao = computed(() => hipotesesDaClassificacao(this.valoresDaDefinicao().classificacaoProtecao));
+
+  /** A recusa da definição que não cabe num campo da tela: fica junto do botão que salva. */
+  protected readonly recusaDaDefinicao = signal<string | null>(null);
+
+  /** Os eixos que o tipo não edita, só para leitura, com a origem do valor. */
+  protected readonly eixosSomenteLeitura = computed(() => {
+    const fato = this.fato();
+    const tipo = this.tipo();
+    if (fato === null || tipo === 'DECLARADO') return [];
+    const doTipo = eixosDoTipo(tipo);
+    const origem = tipo === 'AGREGADO' ? 'vem do fato de membro' : 'vem do tipo de dado';
+    const itens: { rotulo: string; valor: string }[] = [];
+    if (!doTipo.dominio) itens.push({ rotulo: 'Tipo de dado', valor: this.rotulo(DOMINIOS, fato.dominio) });
+    if (!doTipo.cardinalidade) itens.push({ rotulo: 'Quantos valores', valor: this.rotulo(CARDINALIDADES, fato.cardinalidade) });
+    if (!doTipo.fonteValores && fato.fonteValores) itens.push({ rotulo: 'De onde vêm os valores', valor: this.rotulo(FONTES_DE_VALORES, fato.fonteValores) });
+    if (!doTipo.formato && fato.formato) itens.push({ rotulo: 'Formato do texto', valor: this.rotulo(FORMATOS_DE_TEXTO, fato.formato) });
+    if (!doTipo.escopo) itens.push({ rotulo: 'De quem é o dado', valor: this.rotulo(ESCOPOS, fato.escopo) });
+    return itens.map((item) => ({ ...item, origem }));
+  });
+
+  /** O que cita o fato e deixaria de valer com a definição enviada, agrupado pelo tipo de citação. */
+  protected readonly citacoes = signal<ReturnType<typeof citacoesDaRecusa>>([]);
 
   /** O valor cuja descrição e orientação estão em edição na própria linha. */
   protected readonly editando = signal<string | null>(null);
@@ -509,6 +798,7 @@ export class FatoCandidatoEdicaoComponent {
   private secoesCopiadasDe: string | null = null;
   private recopiarDescritivo = false;
   private recopiarRegras = false;
+  private recopiarDefinicao = false;
 
   constructor() {
     effect(() => {
@@ -526,18 +816,130 @@ export class FatoCandidatoEdicaoComponent {
         if (outroFato || this.recopiarDescritivo) {
           this.descritivo.reset({ nome: fato.nome, descricao: fato.descricao ?? '' });
         }
+        if (outroFato || this.recopiarDefinicao) {
+          this.definicao.reset({
+            dominio: fato.dominio,
+            cardinalidade: fato.cardinalidade,
+            fonteValores: fato.fonteValores ?? '',
+            formato: fato.formato ?? '',
+            escopo: fato.escopo,
+            pontoResolucao: fato.pontoResolucao,
+            classificacaoProtecao: fato.classificacaoProtecao,
+            finalidadeTratamento: fato.finalidadeTratamento,
+            hipoteseLegal: fato.hipoteseLegal,
+          });
+          this.citacoes.set([]);
+        }
         if (outroFato || this.recopiarRegras) {
           this.regras.set(
             fato.regrasPadrao.map((regra) => ({ contribui: regra.contribui, condicoes: deClausulasDoWire(regra.quando) })),
           );
           this.errosDasRegras.set({});
+          this.contribuicoesFaltando.set(new Set());
+          this.errosDasCondicoes.set({});
         }
         this.secoesCopiadasDe = fato.id;
         this.recopiarDescritivo = false;
         this.recopiarRegras = false;
+        this.recopiarDefinicao = false;
         this.focarAposRecarga();
       });
     });
+
+    // A escolha que deixou de caber (a classificação depois de trocar o tipo de dado, a hipótese
+    // depois de trocar a classificação) se esvazia, e fonte e formato só existem nos tipos que os têm.
+    effect(() => {
+      const classificacoes = this.classificacoesDaDefinicao();
+      const hipoteses = this.hipotesesDaDefinicao();
+      const eixos = this.eixos();
+      const doTipo = eixosDoTipo(this.tipo());
+      untracked(() => {
+        esvaziarSeForaDas(this.definicao.controls.classificacaoProtecao, classificacoes);
+        esvaziarSeForaDas(this.definicao.controls.hipoteseLegal, hipoteses);
+        // Eixo que o tipo do fato não edita guarda o valor do servidor: nem se exige, nem se esvazia.
+        exigirSe(this.definicao.controls.dominio, eixos.dominio, doTipo.dominio);
+        exigirSe(this.definicao.controls.fonteValores, eixos.fonteValores, doTipo.fonteValores);
+        exigirSe(this.definicao.controls.formato, eixos.formato, doTipo.formato);
+      });
+    });
+
+    // Mexer na definição desfaz a lista de citações: ela descreve o corpo que foi recusado.
+    this.definicao.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.citacoes.set([]);
+      this.recusaDaDefinicao.set(null);
+    });
+  }
+
+  protected salvarDefinicao(): void {
+    if (this.somenteLeitura() || !this.definicaoEditavel() || this.bloqueado()) return;
+    descartarRecusasDoServidor(this.definicao);
+    this.exigirTextoNaFinalidade();
+    if (this.definicao.invalid) {
+      this.definicao.markAllAsTouched();
+      return;
+    }
+    this.recusaDaDefinicao.set(null);
+    const corpo = corpoDaDefinicao(this.tipo(), this.definicao.getRawValue());
+    this.executar(
+      this.api.alterarDefinicao(this.id(), corpo, withIdempotencyKey(this.chaveDe('definicao', JSON.stringify(corpo)))),
+      'Definição salva',
+      () => {
+        this.rotacionar('definicao');
+        this.recopiarDefinicao = true;
+        // O formato de `contribui` depende do tipo de dado (nulo no booleano, um valor no categórico).
+        if ('dominio' in corpo && corpo.dominio !== this.fato()?.dominio) this.recopiarRegras = true;
+        this.focoAposRecarga = ID_DO_SALVAR_DA_DEFINICAO;
+      },
+      (problem) => this.recusarDefinicao(problem),
+    );
+  }
+
+  /** Finalidade só com espaços não é finalidade: a API a recusaria depois de aparar. */
+  private exigirTextoNaFinalidade(): void {
+    const controle = this.definicao.controls.finalidadeTratamento;
+    if (controle.value.trim() === '') {
+      controle.setErrors({ required: true });
+      controle.markAsTouched();
+    }
+  }
+
+  /**
+   * A recusa da definição: o campo recusado leva a mensagem junto do eixo; a citação que deixaria
+   * de valer vira a lista agrupada, com o foco nela; e a perda para outra escrita recarrega o
+   * fato e descarta o que estava em edição, para refazer sobre a versão atual.
+   */
+  private recusarDefinicao(problem: ProblemDetails): boolean {
+    const erros = problem.errors ?? [];
+    const grupos = citacoesDaRecusa(erros);
+    this.citacoes.set(grupos);
+    const doCampo = erros.filter((erro) => !ehCitacao(erro.field));
+    // Sem controle na tela: o eixo que o tipo não edita e o campo que a tela não conhece.
+    const ocultos = doCampo.filter((erro) => !this.eixoNaTela(campoDaRecusa(erro.field)) || this.definicao.get(campoDaRecusa(erro.field)) === null);
+    const noCampo = this.aplicarErrosNoFormulario(this.definicao, { ...problem, errors: doCampo.filter((erro) => !ocultos.includes(erro)) });
+    if (ocultos.length > 0) {
+      this.recusaDaDefinicao.set(ocultos.map((erro) => `${ROTULOS_DOS_EIXOS[campoDaRecusa(erro.field)] ?? erro.field}: ${erro.message}`).join(' '));
+    }
+    const alvo = grupos.length > 0 ? 'cfg-fato-def-citacoes' : ocultos.length > 0 ? 'cfg-fato-def-recusa' : null;
+    if (alvo !== null) afterNextRender(() => document.getElementById(alvo)?.focus(), { injector: this.injector });
+    if (noCampo || grupos.length > 0 || ocultos.length > 0) return true;
+    if (!this.avisarConflito(problem)) return false;
+    this.recopiarDefinicao = true;
+    this.focoAposRecarga = ID_DO_SALVAR_DA_DEFINICAO;
+    return true;
+  }
+
+  /** Se o controle do eixo está na tela: os eixos de cada tipo são os da lista; os demais campos sempre. */
+  private eixoNaTela(campo: string): boolean {
+    const eixos = this.eixos() as unknown as Readonly<Record<string, boolean>>;
+    return !(campo in ROTULOS_DOS_EIXOS) || eixos[campo];
+  }
+
+  protected erroDefinicao(campo: keyof typeof this.definicao.controls): string | null {
+    return mensagemDoControle(this.definicao.controls[campo]);
+  }
+
+  protected descritorDe(campo: keyof typeof this.definicao.controls): string | null {
+    return this.erroDefinicao(campo) ? `cfg-fato-def-${campo}-erro` : null;
   }
 
   protected salvarDescritivo(): void {
@@ -747,7 +1149,8 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected salvarRegras(): void {
-    if (this.somenteLeitura()) return;
+    // Com o fato recarregado a caminho, as regras na tela podem ser as do tipo de dado anterior.
+    if (this.somenteLeitura() || this.bloqueado()) return;
     const fatosPorCodigo = new Map(this.fatosDaRegra().map((fato) => [fato.codigo, fato]));
     const problemas: Record<number, string> = {};
     const contribuicoesFaltando = new Set<number>();
