@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
-import { DefinirTaxaInscricaoRequestFundamentos } from './schema';
+import { DefinirTaxaInscricaoRequestFundamentos, FinalidadeDoDocumento } from './schema';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
@@ -18,6 +18,12 @@ export type IniciarEnvioDoDocumentoAPublicarDto =
   components['schemas']['IniciarEnvioDoDocumentoAPublicarDto'];
 export type DocumentoAPublicarDto = components['schemas']['DocumentoAPublicarDto'];
 export type AcessoDocumentoAPublicarDto = components['schemas']['AcessoDocumentoAPublicarDto'];
+export type AnexoDoEditalRequest = components['schemas']['AnexoDoEditalRequest'];
+export type AtoDoProcessoDto = components['schemas']['AtoDoProcessoDto'];
+export type DocumentoDoAtoDto = components['schemas']['DocumentoDoAtoDto'];
+
+/** Para que serve o documento enviado: o edital oficial, um anexo dele ou um documento de ato. */
+export { FinalidadeDoDocumento };
 export type IniciarEnvioDoModeloDeDocumentoRequest =
   components['schemas']['IniciarEnvioDoModeloDeDocumentoRequest'];
 export type IniciarEnvioDoModeloDeDocumentoDto =
@@ -769,14 +775,34 @@ export class ProcessosSeletivosApi {
    * a escolha do oficial é do administrador — `criadoEm` e `confirmadoEm`
    * servem para apresentá-los, não para o frontend eleger o mais recente.
    *
+   * `finalidade` restringe a coleção a um tipo de documento. A escolha do edital oficial pede só
+   * `documentoDoEdital`: os anexos do edital vivem na mesma coleção e não são candidatos a oficial.
+   *
    * A coleção não é paginada: um processo tem poucos documentos por natureza.
    */
   listarDocumentosAPublicar(
     processoSeletivoId: string,
+    finalidade?: FinalidadeDoDocumento,
   ): Observable<ApiResult<readonly DocumentoAPublicarDto[]>> {
+    const params =
+      finalidade === undefined ? new HttpParams() : new HttpParams().set('finalidade', finalidade);
     return this.http.get<ApiResult<readonly DocumentoAPublicarDto[]>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-a-publicar`,
-      { context: withVendorMime('documento-a-publicar', 1) },
+      { params, context: withVendorMime('documento-a-publicar', 1) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/processos-seletivos/{id}/atos` — os atos do processo, do mais recente ao
+   * mais antigo, cada um com o documento principal e os anexos que publicou. É daqui que a tela lê
+   * os anexos do edital da versão vigente, já que o ato guarda o que a versão congelou.
+   */
+  listarAtosDoProcesso(
+    processoSeletivoId: string,
+  ): Observable<ApiResult<readonly AtoDoProcessoDto[]>> {
+    return this.http.get<ApiResult<readonly AtoDoProcessoDto[]>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/atos`,
+      { context: withVendorMime('ato-do-processo', 1) },
     );
   }
 

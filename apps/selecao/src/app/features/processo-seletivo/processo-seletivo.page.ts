@@ -16,7 +16,11 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ProblemI18nService, isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
-import { ProcessoSeletivoDto, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import {
+  FinalidadeDoDocumento,
+  ProcessoSeletivoDto,
+  ProcessosSeletivosApi,
+} from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
   DialogComponent,
@@ -457,7 +461,9 @@ export class ProcessoSeletivoPage {
     processoSeletivoId: string,
     superada: () => boolean,
   ): Promise<void> {
-    const resultado = await firstValueFrom(this.api.listarDocumentosAPublicar(processoSeletivoId));
+    const resultado = await firstValueFrom(
+      this.api.listarDocumentosAPublicar(processoSeletivoId, FinalidadeDoDocumento.documentoDoEdital),
+    );
     if (superada()) return;
 
     if (!isApiOk(resultado)) {

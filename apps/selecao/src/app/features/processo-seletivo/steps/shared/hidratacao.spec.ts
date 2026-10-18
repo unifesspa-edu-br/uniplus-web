@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import {
+  FinalidadeDoDocumento,
+  type DocumentoAPublicarDto,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 
 import { WizardDraft } from '../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
@@ -961,6 +965,7 @@ describe('descreverDocumento', () => {
   const documento: DocumentoAPublicarDto = {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b030',
     processoSeletivoId: '019f41cf-69fd-759a-ac6d-09acabc1b031',
+    finalidade: FinalidadeDoDocumento.documentoDoEdital,
     nomeArquivo: 'edital-de-abertura.pdf',
     tipoDeMidia: 'application/pdf',
     status: 'Confirmado',

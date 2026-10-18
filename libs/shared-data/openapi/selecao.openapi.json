@@ -99,6 +99,84 @@
         ]
       }
     },
+    "/api/selecao/processos-seletivos/{processoSeletivoId}/atos": {
+      "get": {
+        "tags": [
+          "AtosDoProcesso"
+        ],
+        "parameters": [
+          {
+            "name": "processoSeletivoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.ato-do-processo.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AtoDoProcessoDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/selecao/certames": {
       "get": {
         "tags": [
@@ -380,6 +458,13 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "finalidade",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/FinalidadeDoDocumento"
             }
           }
         ],
@@ -9652,6 +9737,25 @@
         ],
         "type": "string"
       },
+      "AnexoDoEditalRequest": {
+        "required": [
+          "documentoId",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "documentoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AplicacaoDeModeloDto": {
         "required": [
           "finalidade",
@@ -9886,6 +9990,101 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CondicaoAtendimentoCertameDto"
+            }
+          }
+        }
+      },
+      "AtoDoProcessoDto": {
+        "required": [
+          "id",
+          "tipoCodigo",
+          "tipoNome",
+          "numero",
+          "dataDoAto",
+          "publicadoEm",
+          "assinante",
+          "situacao",
+          "registradoEm",
+          "pendenciaAcimaDoLimiar",
+          "atoCorrigidoId",
+          "motivoDaCorrecao",
+          "produtoDoEditalId",
+          "politicaDeDivulgacaoConfirmada",
+          "documentoPrincipal",
+          "anexos"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipoCodigo": {
+            "type": "string"
+          },
+          "tipoNome": {
+            "type": "string"
+          },
+          "numero": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dataDoAto": {
+            "type": "string",
+            "format": "date"
+          },
+          "publicadoEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "assinante": {
+            "type": "string"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoDoRegistroDoAto"
+          },
+          "registradoEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "pendenciaAcimaDoLimiar": {
+            "type": "boolean"
+          },
+          "atoCorrigidoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "motivoDaCorrecao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "produtoDoEditalId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "politicaDeDivulgacaoConfirmada": {
+            "type": "boolean"
+          },
+          "documentoPrincipal": {
+            "$ref": "#/components/schemas/DocumentoDoAtoDto"
+          },
+          "anexos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentoDoAtoDto"
             }
           }
         }
@@ -12191,6 +12390,7 @@
         "required": [
           "id",
           "processoSeletivoId",
+          "finalidade",
           "nomeArquivo",
           "tipoDeMidia",
           "status",
@@ -12209,6 +12409,9 @@
           "processoSeletivoId": {
             "type": "string",
             "format": "uuid"
+          },
+          "finalidade": {
+            "$ref": "#/components/schemas/FinalidadeDoDocumento"
           },
           "nomeArquivo": {
             "type": "string"
@@ -12330,6 +12533,40 @@
             }
           },
           "repetePorEntidade": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "DocumentoDoAtoDto": {
+        "required": [
+          "documentoAPublicarId",
+          "nomeArquivo",
+          "nomeDeExibicao",
+          "tipoDeMidia",
+          "hashSha256"
+        ],
+        "type": "object",
+        "properties": {
+          "documentoAPublicarId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nomeArquivo": {
+            "type": "string"
+          },
+          "nomeDeExibicao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tipoDeMidia": {
+            "type": "string"
+          },
+          "hashSha256": {
             "type": [
               "null",
               "string"
@@ -13548,8 +13785,25 @@
           },
           "ato": {
             "$ref": "#/components/schemas/DadosDoAtoRequest"
+          },
+          "anexos": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AnexoDoEditalRequest"
+            }
           }
         }
+      },
+      "FinalidadeDoDocumento": {
+        "enum": [
+          "documentoDoEdital",
+          "anexoDoEdital",
+          "documentoDeAto"
+        ],
+        "type": "string"
       },
       "FormatosAceitosCertameDto": {
         "required": [
@@ -14439,11 +14693,22 @@
       },
       "IniciarEnvioDoDocumentoAPublicarRequest": {
         "required": [
+          "finalidade",
           "nomeArquivo",
           "tipoDeMidia"
         ],
         "type": "object",
         "properties": {
+          "finalidade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FinalidadeDoDocumento"
+              }
+            ]
+          },
           "nomeArquivo": {
             "type": [
               "null",
@@ -16731,6 +16996,15 @@
           },
           "ato": {
             "$ref": "#/components/schemas/DadosDoAtoRequest"
+          },
+          "anexos": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AnexoDoEditalRequest"
+            }
           }
         }
       },
@@ -17699,6 +17973,15 @@
           },
           "ato": {
             "$ref": "#/components/schemas/DadosDoAtoRequest"
+          },
+          "anexos": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AnexoDoEditalRequest"
+            }
           }
         }
       },
@@ -17799,6 +18082,13 @@
           "inscricoesAbertas",
           "ultimosDias",
           "encerradas"
+        ],
+        "type": "string"
+      },
+      "SituacaoDoRegistroDoAto": {
+        "enum": [
+          "pendente",
+          "registrado"
         ],
         "type": "string"
       },
@@ -18427,6 +18717,9 @@
     },
     {
       "name": "Profile"
+    },
+    {
+      "name": "AtosDoProcesso"
     },
     {
       "name": "CertamePublicado"

@@ -44,6 +44,79 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/atos": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly processoSeletivoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.ato-do-processo.v1+json": readonly components["schemas"]["AtoDoProcessoDto"][];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/selecao/certames": {
         readonly parameters: {
             readonly query?: never;
@@ -231,7 +304,9 @@ export interface paths {
         };
         readonly get: {
             readonly parameters: {
-                readonly query?: never;
+                readonly query?: {
+                    readonly finalidade?: components["schemas"]["FinalidadeDoDocumento"];
+                };
                 readonly header?: never;
                 readonly path: {
                     readonly processoSeletivoId: string;
@@ -7460,6 +7535,11 @@ export interface components {
         };
         /** @enum {string} */
         readonly AncoraDoRecurso: AncoraDoRecurso;
+        readonly AnexoDoEditalRequest: {
+            /** Format: uuid */
+            readonly documentoId: string;
+            readonly nome: null | string;
+        };
         readonly AplicacaoDeModeloDto: {
             readonly finalidade: string;
             readonly fatosTrazidosParaAInscricao: readonly string[];
@@ -7506,6 +7586,30 @@ export interface components {
             readonly condicoes: readonly components["schemas"]["CondicaoAtendimentoCertameDto"][];
             readonly recursos: readonly string[];
             readonly tiposDeficiencia: readonly components["schemas"]["CondicaoAtendimentoCertameDto"][];
+        };
+        readonly AtoDoProcessoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly tipoCodigo: string;
+            readonly tipoNome: string;
+            readonly numero: null | string;
+            /** Format: date */
+            readonly dataDoAto: string;
+            /** Format: date-time */
+            readonly publicadoEm: string;
+            readonly assinante: string;
+            readonly situacao: components["schemas"]["SituacaoDoRegistroDoAto"];
+            /** Format: date-time */
+            readonly registradoEm: null | string;
+            readonly pendenciaAcimaDoLimiar: boolean;
+            /** Format: uuid */
+            readonly atoCorrigidoId: null | string;
+            readonly motivoDaCorrecao: null | string;
+            /** Format: uuid */
+            readonly produtoDoEditalId: null | string;
+            readonly politicaDeDivulgacaoConfirmada: boolean;
+            readonly documentoPrincipal: components["schemas"]["DocumentoDoAtoDto"];
+            readonly anexos: readonly components["schemas"]["DocumentoDoAtoDto"][];
         };
         readonly AtualizarMotivoDecisaoIsencaoCommand: {
             /** Format: uuid */
@@ -8020,6 +8124,7 @@ export interface components {
             readonly id: string;
             /** Format: uuid */
             readonly processoSeletivoId: string;
+            readonly finalidade: components["schemas"]["FinalidadeDoDocumento"];
             readonly nomeArquivo: string;
             readonly tipoDeMidia: string;
             readonly status: string;
@@ -8049,6 +8154,14 @@ export interface components {
             readonly ocorrenciaId: null | string;
             readonly grupos: readonly components["schemas"]["GrupoDaArvoreDto"][];
             readonly repetePorEntidade: null | string;
+        };
+        readonly DocumentoDoAtoDto: {
+            /** Format: uuid */
+            readonly documentoAPublicarId: string;
+            readonly nomeArquivo: string;
+            readonly nomeDeExibicao: null | string;
+            readonly tipoDeMidia: string;
+            readonly hashSha256: null | string;
         };
         readonly DocumentoEditalCertameDto: {
             /** Format: uuid */
@@ -8307,7 +8420,10 @@ export interface components {
             /** Format: uuid */
             readonly documentoEditalId: string;
             readonly ato: components["schemas"]["DadosDoAtoRequest"];
+            readonly anexos?: null | readonly components["schemas"]["AnexoDoEditalRequest"][];
         };
+        /** @enum {string} */
+        readonly FinalidadeDoDocumento: FinalidadeDoDocumento;
         readonly FormatosAceitosCertameDto: {
             readonly qualquer: boolean;
             readonly lista: null | readonly string[];
@@ -8486,6 +8602,7 @@ export interface components {
             readonly expiraEm: string;
         };
         readonly IniciarEnvioDoDocumentoAPublicarRequest: {
+            readonly finalidade: null | components["schemas"]["FinalidadeDoDocumento"];
             readonly nomeArquivo: null | string;
             readonly tipoDeMidia: null | string;
         };
@@ -8987,6 +9104,7 @@ export interface components {
             /** Format: uuid */
             readonly documentoEditalId: string;
             readonly ato: components["schemas"]["DadosDoAtoRequest"];
+            readonly anexos?: null | readonly components["schemas"]["AnexoDoEditalRequest"][];
         };
         readonly QuadroDeVagasCertameDto: {
             /** Format: uuid */
@@ -9204,6 +9322,7 @@ export interface components {
             /** Format: uuid */
             readonly documentoEditalId: string;
             readonly ato: components["schemas"]["DadosDoAtoRequest"];
+            readonly anexos?: null | readonly components["schemas"]["AnexoDoEditalRequest"][];
         };
         readonly SalvarRascunhoDaPublicacaoRequest: {
             /** Format: int32 */
@@ -9227,6 +9346,8 @@ export interface components {
         };
         /** @enum {string} */
         readonly SituacaoDoCertame: SituacaoDoCertame;
+        /** @enum {string} */
+        readonly SituacaoDoRegistroDoAto: SituacaoDoRegistroDoAto;
         /** @enum {string} */
         readonly SituacaoInscricao: SituacaoInscricao;
         readonly SnapshotVigenteDto: {
@@ -9495,6 +9616,11 @@ export enum DefinirTaxaInscricaoRequestFundamentos {
     DOACAO_MEDULA_OSSEA = "DOACAO_MEDULA_OSSEA",
     CARENCIA_SOCIOECONOMICA = "CARENCIA_SOCIOECONOMICA"
 }
+export enum FinalidadeDoDocumento {
+    documentoDoEdital = "documentoDoEdital",
+    anexoDoEdital = "anexoDoEdital",
+    documentoDeAto = "documentoDeAto"
+}
 export enum OrigemCandidatos {
     nenhuma = "nenhuma",
     inscricaoPropria = "inscricaoPropria",
@@ -9526,6 +9652,10 @@ export enum SituacaoDoCertame {
     inscricoesAbertas = "inscricoesAbertas",
     ultimosDias = "ultimosDias",
     encerradas = "encerradas"
+}
+export enum SituacaoDoRegistroDoAto {
+    pendente = "pendente",
+    registrado = "registrado"
 }
 export enum SituacaoInscricao {
     rascunho = "rascunho",
