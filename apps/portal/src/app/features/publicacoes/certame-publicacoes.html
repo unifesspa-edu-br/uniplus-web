@@ -46,13 +46,39 @@
         <h4 class="publicacao-timeline__evento-titulo">{{ publicacao.titulo }}</h4>
         @if (publicacao.descricao) {
         <p class="publicacao-timeline__evento-desc">{{ publicacao.descricao }}</p>
-        } @if (publicacao.documentoUrl; as documentoUrl) {
-        <a class="publicacao-timeline__link" [href]="documentoUrl" target="_blank" rel="noopener">
-          <i class="pi pi-file-pdf" aria-hidden="true"></i>
-          Ver documento (PDF)
-          <span class="sr-only"> — {{ publicacao.titulo }} (abre em nova aba)</span>
-        </a>
         }
+        <div class="publicacao-documentos">
+          @if (publicacao.documentos.principal; as principal) {
+          <section class="publicacao-documentos__grupo">
+            <h5 class="publicacao-documentos__titulo">Documento principal</h5>
+            <ul class="publicacao-documentos__lista" role="list">
+              <li>
+                <ng-container
+                  *ngTemplateOutlet="documentoLink; context: { $implicit: principal }"
+                />
+              </li>
+            </ul>
+          </section>
+          } @if (publicacao.documentos.anexos.length > 0) {
+          <section class="publicacao-documentos__grupo">
+            <h5 class="publicacao-documentos__titulo">
+              Anexos ({{ publicacao.documentos.anexos.length }})
+            </h5>
+            <ul class="publicacao-documentos__lista" role="list">
+              @for (anexo of publicacao.documentos.anexos; track $index) {
+              <li>
+                <ng-container *ngTemplateOutlet="documentoLink; context: { $implicit: anexo }" />
+              </li>
+              }
+            </ul>
+          </section>
+          } @if (!publicacao.documentos.principal && publicacao.documentos.anexos.length === 0) {
+          <p class="publicacao-documentos__processando">
+            <i class="pi pi-clock" aria-hidden="true"></i>
+            Documento em processamento
+          </p>
+          }
+        </div>
       </div>
     </li>
     }
@@ -69,3 +95,24 @@
   />
   } }
 </div>
+
+<ng-template #documentoLink let-documento>
+  <a
+    class="publicacao-timeline__link"
+    [href]="documento.url"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <i
+      class="pi"
+      [class.pi-file-pdf]="documento.formato === 'PDF'"
+      [class.pi-file]="documento.formato !== 'PDF'"
+      aria-hidden="true"
+    ></i>
+    <span class="publicacao-timeline__link-nome">{{ documento.nome }}</span>
+    <span class="publicacao-timeline__link-meta"
+      >{{ ' (' + documento.formato + ', ' + documento.tamanho + ')' }}</span
+    >
+    <span class="sr-only">, abre em nova aba</span>
+  </a>
+</ng-template>

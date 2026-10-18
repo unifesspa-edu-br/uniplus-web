@@ -10,6 +10,7 @@ import {
 import type { CertameNaVitrineDto } from '@uniplus/shared-data/selecao';
 import { forkJoin, map, type Observable, of } from 'rxjs';
 
+import { paraDocumentos } from './documento-da-publicacao';
 import type { PublicacaoDoCertame, PublicacoesDoCertame } from './publicacoes.model';
 
 /** O que basta saber de um certame da vitrine para ler as publicações dele. */
@@ -69,6 +70,6 @@ function paraPublicacao(evento: EventoDaLinhaDoTempoResponse): PublicacaoDoCerta
     titulo: evento.titulo,
     tipo: evento.tipo.nome,
     ...(evento.descricao ? { descricao: evento.descricao } : {}),
-    ...(evento.documentoUrl ? { documentoUrl: evento.documentoUrl } : {}),
+    documentos: paraDocumentos(evento.documentos),
   };
 }
