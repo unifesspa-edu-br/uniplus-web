@@ -4,6 +4,25 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { CertamePublicacoesComponent } from './certame-publicacoes';
 import type { PublicacoesDoCertame } from './publicacoes.model';
 
+const editalPdf = {
+  nome: 'edital-medicina-2027.pdf',
+  formato: 'PDF',
+  tamanho: '1,2 MB',
+  url: 'https://acervo.example/editais/2026/retificacao.pdf',
+};
+const anexoDocx = {
+  nome: 'cronograma.docx',
+  formato: 'DOCX',
+  tamanho: '84,0 KB',
+  url: 'https://acervo.example/editais/2026/cronograma.docx',
+};
+const anexoOdt = {
+  nome: 'quadro-de-vagas.odt',
+  formato: 'ODT',
+  tamanho: '2,5 MB',
+  url: 'https://acervo.example/editais/2026/quadro-de-vagas.odt',
+};
+
 const medicina: PublicacoesDoCertame = {
   documentoEditalUrl: 'https://acervo.example/editais/2026/retificacao.pdf',
   publicacoes: [
@@ -13,9 +32,15 @@ const medicina: PublicacoesDoCertame = {
       titulo: 'Retificação nº YY/2026',
       tipo: 'Retificação',
       descricao: 'Corrige o cronograma.',
-      documentoUrl: 'https://acervo.example/editais/2026/retificacao.pdf',
+      documentos: { principal: editalPdf, anexos: [anexoDocx, anexoOdt] },
     },
-    { id: 'ato-1', data: '2026-10-11', titulo: 'Edital de abertura nº XX/2026', tipo: 'Edital de abertura' },
+    {
+      id: 'ato-1',
+      data: '2026-10-11',
+      titulo: 'Edital de abertura nº XX/2026',
+      tipo: 'Edital de abertura',
+      documentos: { anexos: [] },
+    },
   ],
 };
 
@@ -128,17 +153,57 @@ describe('CertamePublicacoesComponent', () => {
     );
   });
 
-  it('só o ato com PDF ganha link, em nova aba e com nome acessível próprio', () => {
+  function links(): HTMLAnchorElement[] {
+    return Array.from(host().querySelectorAll<HTMLAnchorElement>('.publicacao-timeline__link'));
+  }
+
+  it('mostra o principal e "Anexos (2)", cada documento com nome, formato e tamanho, em nova aba', () => {
     criar({ publicacoes: medicina });
     abrir();
 
-    const links = Array.from(host().querySelectorAll<HTMLAnchorElement>('.publicacao-timeline__link'));
-    expect(links.map((a) => a.getAttribute('href'))).toEqual([
-      'https://acervo.example/editais/2026/retificacao.pdf',
+    expect(links().map((a) => a.getAttribute('href'))).toEqual([
+      editalPdf.url,
+      anexoDocx.url,
+      anexoOdt.url,
     ]);
-    expect(links[0].target).toBe('_blank');
-    expect(links[0].rel).toContain('noopener');
-    expect(links[0].textContent).toContain('Retificação nº YY/2026 (abre em nova aba)');
+    expect(links().map((a) => a.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+      'edital-medicina-2027.pdf (PDF, 1,2 MB), abre em nova aba',
+      'cronograma.docx (DOCX, 84,0 KB), abre em nova aba',
+      'quadro-de-vagas.odt (ODT, 2,5 MB), abre em nova aba',
+    ]);
+    for (const link of links()) {
+      expect(link.target).toBe('_blank');
+      expect(link.rel).toContain('noopener');
+    }
+    const titulos = Array.from(host().querySelectorAll('.publicacao-documentos__titulo')).map(
+      (el) => el.textContent?.trim(),
+    );
+    expect(titulos).toEqual(['Documento principal', 'Anexos (2)']);
+  });
+
+  it('ato sem documentos mostra "Documento em processamento", sem link nem grupos', () => {
+    criar({ publicacoes: medicina });
+    abrir();
+
+    const cartaoSemDocumento = host().querySelectorAll('.publicacao-timeline__card')[1];
+    expect(cartaoSemDocumento.textContent).toContain('Documento em processamento');
+    expect(cartaoSemDocumento.querySelector('a')).toBeNull();
+    expect(cartaoSemDocumento.querySelector('.publicacao-documentos__titulo')).toBeNull();
+  });
+
+  it('ato só com o principal não mostra o grupo de anexos nem o aviso de processamento', () => {
+    criar({
+      publicacoes: {
+        publicacoes: [
+          { ...medicina.publicacoes[0], documentos: { principal: editalPdf, anexos: [] } },
+        ],
+      },
+    });
+    abrir();
+
+    expect(links()).toHaveLength(1);
+    expect(host().textContent).not.toContain('Anexos');
+    expect(host().textContent).not.toContain('em processamento');
   });
 
   it('a linha do tempo não oferece inscrição', () => {
@@ -152,7 +217,9 @@ describe('CertamePublicacoesComponent', () => {
     criar({ publicacoes: { ...medicina, aviso: 'Pode estar incompleta.' } });
     abrir();
 
-    expect(host().querySelector('.alert--warning')?.textContent).toContain('Pode estar incompleta.');
+    expect(host().querySelector('.alert--warning')?.textContent).toContain(
+      'Pode estar incompleta.',
+    );
     expect(host().querySelectorAll('.publicacao-timeline__item')).toHaveLength(2);
   });
 
@@ -168,7 +235,9 @@ describe('CertamePublicacoesComponent', () => {
     criar({ carregando: true });
     abrir();
 
-    expect(host().querySelector('[role="status"]')?.textContent).toContain('Carregando publicações');
+    expect(host().querySelector('[role="status"]')?.textContent).toContain(
+      'Carregando publicações',
+    );
     expect(host().querySelector('.publicacao-timeline')).toBeNull();
   });
 

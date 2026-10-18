@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import {
   AlertComponent,
@@ -11,13 +12,20 @@ import type { PublicacoesDoCertame } from './publicacoes.model';
 
 /**
  * Accordion "Ver publicações" de um item de Editais — a linha do tempo dos atos publicados do
- * processo seletivo, cada um com o PDF quando houver. Puramente apresentacional: quem consulta o
+ * processo seletivo, cada um com o documento principal e os anexos quando houver. Puramente apresentacional: quem consulta o
  * repositório é a lista de editais; aqui só se decide o que mostrar enquanto o painel está aberto.
  */
 @Component({
   selector: 'ptl-certame-publicacoes',
   standalone: true,
-  imports: [DateBrPipe, AlertComponent, EmptyStateComponent, SpinnerComponent, TagComponent],
+  imports: [
+    NgTemplateOutlet,
+    DateBrPipe,
+    AlertComponent,
+    EmptyStateComponent,
+    SpinnerComponent,
+    TagComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './certame-publicacoes.css',
   templateUrl: './certame-publicacoes.html',

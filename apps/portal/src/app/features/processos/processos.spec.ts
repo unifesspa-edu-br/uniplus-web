@@ -34,7 +34,10 @@ function publicacoesDe(certame: CertameParaPublicacoes): PublicacoesDoCertame {
         data: '2026-01-05',
         titulo: `Edital de abertura de ${certame.identificadorLegivel}`,
         tipo: 'Edital de abertura',
-        documentoUrl,
+        documentos: {
+          principal: { nome: 'edital.pdf', formato: 'PDF', tamanho: '1,2 MB', url: documentoUrl },
+          anexos: [],
+        },
       },
     ],
   };
@@ -43,9 +46,9 @@ function publicacoesDe(certame: CertameParaPublicacoes): PublicacoesDoCertame {
 /** As publicações chegam depois da vitrine. */
 const publicacoesComEdital = {
   buscarPorCertames: (certames: readonly CertameParaPublicacoes[]) =>
-    of(new Map(certames.map((certame) => [certame.processoSeletivoId, publicacoesDe(certame)]))).pipe(
-      delay(300),
-    ),
+    of(
+      new Map(certames.map((certame) => [certame.processoSeletivoId, publicacoesDe(certame)])),
+    ).pipe(delay(300)),
 };
 
 const sisu: CertameNaVitrineDto = {
@@ -476,7 +479,11 @@ describe('ProcessosComponent', () => {
         code: 'uniplus.infra.erro_interno',
         traceId: 'test-trace',
       }),
-      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
+      {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'content-type': 'application/problem+json' },
+      },
     );
     await propagate();
     fixture.detectChanges();
@@ -493,7 +500,9 @@ describe('ProcessosComponent', () => {
     tentar?.click();
     await propagate();
 
-    controller.expectOne((r) => r.url === CERTAMES_URL).flush([sisu], { headers: contadoresHeaders });
+    controller
+      .expectOne((r) => r.url === CERTAMES_URL)
+      .flush([sisu], { headers: contadoresHeaders });
     await propagate();
     expect(component['erro']()).toBeNull();
   });
@@ -506,16 +515,22 @@ describe('ProcessosComponent', () => {
 
     component['proximaPagina']();
     await propagate();
-    controller.expectOne((r) => r.url === CERTAMES_URL).flush(
-      JSON.stringify({
-        type: 'https://uniplus.dev/erros/uniplus.infra.erro_interno',
-        title: 'Erro interno ao consultar certames',
-        status: 500,
-        code: 'uniplus.infra.erro_interno',
-        traceId: 'test-trace',
-      }),
-      { status: 500, statusText: 'Internal Server Error', headers: { 'content-type': 'application/problem+json' } },
-    );
+    controller
+      .expectOne((r) => r.url === CERTAMES_URL)
+      .flush(
+        JSON.stringify({
+          type: 'https://uniplus.dev/erros/uniplus.infra.erro_interno',
+          title: 'Erro interno ao consultar certames',
+          status: 500,
+          code: 'uniplus.infra.erro_interno',
+          traceId: 'test-trace',
+        }),
+        {
+          status: 500,
+          statusText: 'Internal Server Error',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
     await propagate();
     fixture.detectChanges();
 
@@ -538,16 +553,22 @@ describe('ProcessosComponent', () => {
 
     component['proximaPagina']();
     await propagate();
-    controller.expectOne((r) => r.url === CERTAMES_URL).flush(
-      JSON.stringify({
-        type: 'https://uniplus.dev/erros/uniplus.cursor.expirado',
-        title: 'Cursor de paginação expirado',
-        status: 410,
-        code: 'uniplus.cursor.expirado',
-        traceId: 'test-trace',
-      }),
-      { status: 410, statusText: 'Gone', headers: { 'content-type': 'application/problem+json' } },
-    );
+    controller
+      .expectOne((r) => r.url === CERTAMES_URL)
+      .flush(
+        JSON.stringify({
+          type: 'https://uniplus.dev/erros/uniplus.cursor.expirado',
+          title: 'Cursor de paginação expirado',
+          status: 410,
+          code: 'uniplus.cursor.expirado',
+          traceId: 'test-trace',
+        }),
+        {
+          status: 410,
+          statusText: 'Gone',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
     await propagate();
 
     const recarga = controller.expectOne((r) => r.url === CERTAMES_URL);
@@ -609,7 +630,13 @@ describe('ProcessosComponent — sem documento de edital de abertura (CA-14)', (
   // Ato sem PDF e sem edital vigente no acervo: não há o que abrir.
   const publicacaoSemDocumento: PublicacoesDoCertame = {
     publicacoes: [
-      { id: 'ato-abertura', data: '2026-01-05', titulo: 'Edital de abertura', tipo: 'Edital de abertura' },
+      {
+        id: 'ato-abertura',
+        data: '2026-01-05',
+        titulo: 'Edital de abertura',
+        tipo: 'Edital de abertura',
+        documentos: { anexos: [] },
+      },
     ],
   };
 
@@ -677,7 +704,9 @@ describe('ProcessosComponent — sem documento de edital de abertura (CA-14)', (
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         {
           provide: PublicacoesRepository,
-          useValue: { buscarPorCertames: () => of(new Map([[semDocumento.processoSeletivoId, null]])) },
+          useValue: {
+            buscarPorCertames: () => of(new Map([[semDocumento.processoSeletivoId, null]])),
+          },
         },
       ],
     });

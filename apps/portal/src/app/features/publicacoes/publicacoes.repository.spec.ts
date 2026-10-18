@@ -2,7 +2,11 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { type CertamePublicoResponse, PORTAL_BASE_PATH } from '@uniplus/shared-data/portal';
+import {
+  type CertamePublicoResponse,
+  PapelDoDocumento,
+  PORTAL_BASE_PATH,
+} from '@uniplus/shared-data/portal';
 import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -43,6 +47,22 @@ function pagina(certame: CertameParaPublicacoes): CertamePublicoResponse {
         tipo: { codigo: 'EDITAL_RETIFICACAO', nome: 'Retificação' },
         descricao: 'Corrige o cronograma.',
         documentoUrl: `${ACERVO}/${certame.identificadorLegivel}/retificacao.pdf`,
+        documentos: [
+          {
+            papel: PapelDoDocumento.anexo,
+            nome: 'cronograma.docx',
+            tipoDeMidia: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            tamanhoBytes: 86016,
+            url: `${ACERVO}/${certame.identificadorLegivel}/cronograma.docx`,
+          },
+          {
+            papel: PapelDoDocumento.principal,
+            nome: 'retificacao.pdf',
+            tipoDeMidia: 'application/pdf',
+            tamanhoBytes: '1258291',
+            url: `${ACERVO}/${certame.identificadorLegivel}/retificacao.pdf`,
+          },
+        ],
       },
       {
         id: '01960000-0000-7000-0000-0000000000b1',
@@ -53,6 +73,7 @@ function pagina(certame: CertameParaPublicacoes): CertamePublicoResponse {
         tipo: { codigo: 'EDITAL_ABERTURA', nome: 'Edital de abertura' },
         descricao: null,
         documentoUrl: null,
+        documentos: [],
       },
     ],
   };
@@ -103,21 +124,39 @@ describe('PublicacoesRepository', () => {
     );
   });
 
-  it('mantém a ordem do contrato, do mais recente ao mais antigo, com o PDF e o motivo apenas de quem os tem', async () => {
+  it('mantém a ordem do contrato, do mais recente ao mais antigo, com o motivo apenas de quem o tem', async () => {
     const porCertame = await buscar([medicina], () =>
       controller.expectOne(url(medicina)).flush(pagina(medicina)),
     );
 
     const publicacoes = porCertame.get(medicina.processoSeletivoId)?.publicacoes ?? [];
-    expect(publicacoes.map((p) => [p.titulo, p.tipo, p.descricao, p.documentoUrl])).toEqual([
-      [
-        'Retificação nº YY/2026',
-        'Retificação',
-        'Corrige o cronograma.',
-        `${ACERVO}/psr-medicina-2027/retificacao.pdf`,
-      ],
-      ['Edital de abertura nº XX/2026', 'Edital de abertura', undefined, undefined],
+    expect(publicacoes.map((p) => [p.titulo, p.tipo, p.descricao])).toEqual([
+      ['Retificação nº YY/2026', 'Retificação', 'Corrige o cronograma.'],
+      ['Edital de abertura nº XX/2026', 'Edital de abertura', undefined],
     ]);
+  });
+
+  it('separa o principal dos anexos, qualquer que seja a ordem da lista, com formato e tamanho legíveis', async () => {
+    const porCertame = await buscar([medicina], () =>
+      controller.expectOne(url(medicina)).flush(pagina(medicina)),
+    );
+
+    const [retificacao, abertura] = porCertame.get(medicina.processoSeletivoId)?.publicacoes ?? [];
+    expect(retificacao.documentos.principal).toEqual({
+      nome: 'retificacao.pdf',
+      formato: 'PDF',
+      tamanho: '1,2 MB',
+      url: `${ACERVO}/psr-medicina-2027/retificacao.pdf`,
+    });
+    expect(retificacao.documentos.anexos).toEqual([
+      {
+        nome: 'cronograma.docx',
+        formato: 'DOCX',
+        tamanho: '84,0 KB',
+        url: `${ACERVO}/psr-medicina-2027/cronograma.docx`,
+      },
+    ]);
+    expect(abertura.documentos).toEqual({ anexos: [] });
   });
 
   it('o aviso da linha do tempo incompleta acompanha a lista', async () => {
