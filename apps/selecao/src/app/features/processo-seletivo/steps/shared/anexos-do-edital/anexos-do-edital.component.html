@@ -1,0 +1,141 @@
+<div class="step-card upload-section anexos-edital">
+  <p class="label" id="anexos-edital-titulo">Anexos do edital</p>
+
+  @if (store.emConsulta()) {
+    @if (publicado()) {
+      @switch (publicados()?.estado) {
+        @case ('falha') {
+          <div class="alert alert--danger" role="alert">
+            <p>Não foi possível ler os anexos publicados deste processo.</p>
+            <button
+              class="btn btn--tertiary btn--sm"
+              type="button"
+              (click)="tentarLerPublicadosDeNovo()"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        }
+        @case ('lendo') {
+          <p class="step-hint" role="status">Lendo os anexos publicados…</p>
+        }
+        @case ('lido') {
+          @if (listaDeConsulta().length === 0) {
+            <p class="step-hint">A versão vigente do edital não tem anexos.</p>
+          }
+        }
+        @default {
+          <p class="step-hint" role="status">Os anexos aparecem quando o ato publicado for lido.</p>
+        }
+      }
+    } @else if (listaDeConsulta().length === 0) {
+      <p class="step-hint">Nenhum anexo no edital.</p>
+    }
+
+    @if (listaDeConsulta().length > 0) {
+      <ul class="anexos-edital__lista" aria-labelledby="anexos-edital-titulo">
+        @for (anexo of listaDeConsulta(); track anexo.chave) {
+          <li class="anexos-edital__item">
+            <div class="anexos-edital__dados">
+              <span class="anexos-edital__nome">{{ anexo.nome }}</span>
+              <span class="field__hint">{{ anexo.arquivo }} · {{ anexo.formato }}</span>
+            </div>
+            @if (anexo.documentoAPublicarId; as documentoId) {
+              <button
+                class="btn btn--tertiary btn--sm"
+                type="button"
+                [disabled]="abrindo() !== null"
+                [attr.aria-busy]="abrindo() === documentoId || null"
+                [attr.aria-label]="'Abrir o anexo ' + anexo.nome + ' (abre em nova aba)'"
+                (click)="abrir(documentoId)"
+              >
+                {{ abrindo() === documentoId ? 'Abrindo…' : 'Abrir' }}
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  } @else {
+    <p class="field__hint" id="anexos-edital-dica">
+      Arquivos que acompanham o edital, em PDF, DOCX ou ODT, até {{ tamanhoMaximoMb }} MB cada e no
+      máximo {{ limite }}. O nome de cada anexo é o que a pessoa recebe ao baixá-lo.
+    </p>
+
+    @if (semProcesso()) {
+      <p class="field__hint" role="status">
+        Conclua a identificação do processo para anexar arquivos.
+      </p>
+    }
+
+    <ui-file-upload
+      idDoCampo="anexos-edital-arquivo"
+      nomeDaLista="Anexos do edital"
+      descritoPor="anexos-edital-titulo anexos-edital-dica"
+      [acceptedFileTypes]="extensoes"
+      acceptLabel="PDF, DOCX ou ODT"
+      [multiple]="true"
+      [maxFiles]="limite"
+      [validarSoPelaExtensao]="true"
+      [maxSizeMb]="tamanhoMaximoMb"
+      [disabled]="bloqueado()"
+      [itens]="itens()"
+      [mensagemExterna]="recusa()"
+      (arquivosEscolhidos)="aoEscolherArquivos($event)"
+      (itemRetirado)="retirar($event)"
+      (tentarDeNovo)="retomar($event)"
+    />
+
+    @if (confirmados().length > 0) {
+      <ul class="anexos-edital__lista" aria-label="Nomes dos anexos">
+        @for (anexo of confirmados(); track anexo.id) {
+          @let erroDoNome = recusaDoNome(anexo);
+          <li class="anexos-edital__item">
+            <div class="form-field anexos-edital__campo">
+              <label class="label" [for]="'anexo-nome-' + anexo.id">
+                Nome do anexo {{ anexo.nomeArquivo }}
+              </label>
+              <input
+                class="input"
+                type="text"
+                autocomplete="off"
+                [id]="'anexo-nome-' + anexo.id"
+                [value]="anexo.nome"
+                [disabled]="!store.aceitaEdicao()"
+                [attr.aria-invalid]="erroDoNome !== null ? 'true' : null"
+                [attr.aria-describedby]="
+                  'anexo-nome-dica-' + anexo.id + (erroDoNome !== null ? ' anexo-nome-erro-' + anexo.id : '')
+                "
+                (input)="renomear(anexo.id, $event)"
+              />
+              <span class="field__hint" [id]="'anexo-nome-dica-' + anexo.id">
+                Baixado como “{{ anexo.nome.trim() }}.{{ extensaoDe(anexo) }}”.
+              </span>
+              @if (erroDoNome !== null) {
+                <small class="field__error" [id]="'anexo-nome-erro-' + anexo.id">{{
+                  erroDoNome
+                }}</small>
+              }
+            </div>
+            @if (anexo.documentoAPublicarId; as documentoId) {
+              <button
+                class="btn btn--tertiary btn--sm"
+                type="button"
+                [disabled]="abrindo() !== null"
+                [attr.aria-busy]="abrindo() === documentoId || null"
+                [attr.aria-label]="'Conferir o anexo ' + anexo.nomeArquivo + ' (abre em nova aba)'"
+                (click)="abrir(documentoId)"
+              >
+                {{ abrindo() === documentoId ? 'Abrindo…' : 'Conferir' }}
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+
+  @if (erroDeAbertura(); as erro) {
+    <p class="field__error" role="alert">{{ erro }}</p>
+  }
+</div>

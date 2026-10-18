@@ -10,7 +10,13 @@ import {
   errorResult,
   mockProblemDetails,
 } from '@uniplus/shared-core/http';
-import { SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
+import {
+  SELECAO_BASE_PATH,
+  SituacaoDoRegistroDoAto,
+  StatusProcesso,
+  type AtoDoProcessoDto,
+  type DocumentoDoAtoDto,
+} from '@uniplus/shared-data/selecao';
 import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { AtoNormativoDto, AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 
@@ -31,6 +37,7 @@ const ROTA_CONFORMIDADE_LEGAL = `${BASE}/api/selecao/processos-seletivos/${PROCE
 const ROTA_PUBLICACAO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/publicacao`;
 const ROTA_DETALHE = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
 const ROTA_SNAPSHOT = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/snapshot-vigente`;
+const ROTA_ATOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/atos`;
 
 function edital(fase: FaseUpload): UploadItem {
   return {
@@ -122,6 +129,31 @@ const SNAPSHOT_DTO = {
   hashConfiguracao: 'hash-configuracao-123456',
   hashEdital: 'hash-edital-123456',
   configuracao: {},
+};
+
+const ATO_DO_PROCESSO: AtoDoProcessoDto = {
+  id: SNAPSHOT_DTO.atoId,
+  tipoCodigo: 'PORTARIA',
+  tipoNome: 'Portaria',
+  numero: '001/2026',
+  dataDoAto: '2026-09-25',
+  publicadoEm: '2026-09-25T12:00:00Z',
+  assinante: 'Reitor da Unifesspa',
+  situacao: SituacaoDoRegistroDoAto.registrado,
+  registradoEm: '2026-09-25T12:00:00Z',
+  pendenciaAcimaDoLimiar: false,
+  atoCorrigidoId: null,
+  motivoDaCorrecao: null,
+  produtoDoEditalId: null,
+  politicaDeDivulgacaoConfirmada: false,
+  documentoPrincipal: {
+    documentoAPublicarId: '01960000-0000-7000-0000-0000000009ee',
+    nomeArquivo: 'edital.pdf',
+    nomeDeExibicao: null,
+    tipoDeMidia: 'application/pdf',
+    hashSha256: 'b'.repeat(64),
+  },
+  anexos: [],
 };
 
 const ATO_PUBLICADO: AtoNormativoDto = {
@@ -902,6 +934,15 @@ describe('RevisaoStepComponent', () => {
       return (fixture.nativeElement as HTMLElement).textContent ?? '';
     }
 
+    /** Responde a consulta dos atos do processo, de onde vêm os anexos que a versão publicou. */
+    async function responderAtos(anexos: readonly DocumentoDoAtoDto[] = []): Promise<void> {
+      controller
+        .expectOne(ROTA_ATOS)
+        .flush([{ ...ATO_DO_PROCESSO, id: SNAPSHOT_DTO.atoId, anexos }]);
+      await flushMicrotasks();
+      fixture.detectChanges();
+    }
+
     it('lê o ato vigente pelo snapshot e o mostra como texto, sem o formulário', async () => {
       await abrirPublicado();
       controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
@@ -909,6 +950,7 @@ describe('RevisaoStepComponent', () => {
       fixture.detectChanges();
 
       expect(atosLidos).toEqual([SNAPSHOT_DTO.atoId]);
+      await responderAtos();
       const lista = (fixture.nativeElement as HTMLElement).querySelector(
         'dl[aria-label="Ato publicado"]',
       );
@@ -938,6 +980,27 @@ describe('RevisaoStepComponent', () => {
 
       expect(texto()).toContain('Reitor da Unifesspa');
       expect(atosLidos).toHaveLength(2);
+      await responderAtos();
+    });
+
+    it('mostra para leitura os anexos que o ato da versão vigente publicou', async () => {
+      await abrirPublicado();
+      controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
+      await flushMicrotasks();
+      fixture.detectChanges();
+      await responderAtos([
+        {
+          documentoAPublicarId: DOCUMENTO_ID,
+          nomeArquivo: 'cronograma.pdf',
+          nomeDeExibicao: 'Cronograma detalhado.pdf',
+          tipoDeMidia: 'application/pdf',
+          hashSha256: 'a'.repeat(64),
+        },
+      ]);
+
+      const bloco = (fixture.nativeElement as HTMLElement).querySelector('sel-anexos-do-edital');
+      expect(bloco?.textContent).toContain('Cronograma detalhado.pdf');
+      expect(bloco?.querySelector('input')).toBeNull();
     });
 
     it('depois de publicar nesta sessão, lê o ato pelo snapshot já relido', async () => {
@@ -957,6 +1020,7 @@ describe('RevisaoStepComponent', () => {
 
       controller.expectNone(ROTA_SNAPSHOT);
       expect(atosLidos).toEqual([SNAPSHOT_DTO.atoId]);
+      await responderAtos();
     });
 
     // Cancelado e encerrado não dizem se houve publicação: um rascunho cancelado não tem

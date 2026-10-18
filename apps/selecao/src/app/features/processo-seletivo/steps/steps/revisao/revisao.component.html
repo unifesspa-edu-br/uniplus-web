@@ -61,6 +61,8 @@
      meio-tempo (retomada em curso, escolha de documento pendente). -->
 <sel-anexo-edital />
 
+<sel-anexos-do-edital [publicado]="jaPublicado()" [atoId]="atoVigenteId()" />
+
 @if (store.processoSeletivoId() === null) {
   @if (!store.emConsulta()) {
     <p class="alert alert--info" role="status">

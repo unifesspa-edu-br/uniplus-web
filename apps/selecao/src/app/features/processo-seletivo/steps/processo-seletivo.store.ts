@@ -96,6 +96,7 @@ const INITIAL_DRAFT: WizardDraft = {
     periodoInscricaoInicio: '',
     periodoInscricaoFim: '',
     ato: { orgao: '', serie: '', ano: '', dataPublicacao: '', assinante: '', tipoAtoCodigo: '' },
+    anexos: [],
   },
 };
 

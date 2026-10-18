@@ -109,6 +109,7 @@ export {
 export {
   CaraterEtapa,
   OrigemCandidatos,
+  SituacaoDoRegistroDoAto,
   SituacaoInscricao,
   StatusProcesso,
   UnidadePrazo,

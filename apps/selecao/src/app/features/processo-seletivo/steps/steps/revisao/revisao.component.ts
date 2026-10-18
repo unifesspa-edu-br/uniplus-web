@@ -18,6 +18,7 @@ import { SnapshotVigenteDto, StatusProcesso } from '@uniplus/shared-data/selecao
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
 import { AnexoEditalComponent } from '../../shared/anexo-edital/anexo-edital.component';
+import { AnexosDoEditalComponent } from '../../shared/anexos-do-edital/anexos-do-edital.component';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
@@ -98,6 +99,7 @@ export type AtoPublicado =
     ValorLegivelDirective,
     ValorEmConsultaComponent,
     AnexoEditalComponent,
+    AnexosDoEditalComponent,
     DateBrPipe,
     ReactiveFormsModule,
     RegrasDasModalidadesComponent,
@@ -141,6 +143,12 @@ export class RevisaoStepComponent {
   readonly jaPublicado = computed(
     () => this.store.remoteSnapshot()?.status === StatusProcesso.publicado,
   );
+
+  /** O ato da versão vigente, quando já foi lido: é nele que estão os anexos publicados do edital. */
+  readonly atoVigenteId = computed(() => {
+    const leitura = this.atoPublicado();
+    return leitura?.estado === 'lido' ? leitura.ato.id : null;
+  });
 
   /**
    * A transcrição do ato gravada no rascunho, para o processo que não aceita edição e ainda não
