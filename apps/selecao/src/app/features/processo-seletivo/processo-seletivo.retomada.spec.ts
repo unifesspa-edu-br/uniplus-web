@@ -970,6 +970,32 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
   });
 
   /**
+   * O documento guardado não inclui o anexo ainda em envio. Zerar o bloco por inteiro o tiraria da
+   * lista com o envio em curso, e o documento selado sumiria da tela sem aviso.
+   */
+  it('mantém o anexo em envio e tira os confirmados ao descartar o rascunho', async () => {
+    const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
+    await propagar();
+
+    const base = { nomeArquivo: 'a.pdf', nome: 'a', progress: 100 };
+    cenario.store.projetarSecao('publicacao', {
+      anexos: [
+        { ...base, id: 'confirmado', fase: 'confirmado', documentoAPublicarId: 'doc-1' },
+        { ...base, id: 'em-envio', fase: 'enviando', progress: 40 },
+      ],
+    });
+
+    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    api['descartarRascunhoDaPublicacao'] = vi.fn(() => of(okResult(undefined)));
+    await (
+      cenario.componente as unknown as { descartarRascunhoDaPublicacao(): Promise<void> }
+    ).descartarRascunhoDaPublicacao();
+
+    expect(cenario.store.draft().publicacao.anexos.map((anexo) => anexo.id)).toEqual(['em-envio']);
+    expect(cenario.store.draft().publicacao.ato.orgao).toBe('');
+  });
+
+  /**
    * Mudar só o `:id` reusa a rota: o componente nunca é desativado, e a guarda da rota não
    * roda. Sem perguntar no próprio editor, a promessa dela valia para sair da tela e não para
    * trocar de processo — e é a retomada quem apaga a transcrição, logo em seguida.

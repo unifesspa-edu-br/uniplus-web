@@ -16,6 +16,8 @@ const URL_A = 'http://localhost:9000/uniplus-selecao/anexos/a?X-Amz-Signature=a'
 const URL_B = 'http://localhost:9000/uniplus-selecao/anexos/b?X-Amz-Signature=b';
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
+const ATO_ID = '01960000-0000-7000-0000-0000000005e1';
+const ROTA_ATOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/atos`;
 const ROTA_DOCUMENTOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-a-publicar`;
 
 function arquivo(nome: string): File {
@@ -262,6 +264,27 @@ describe('AnexosDoEditalComponent', () => {
 
     controller.expectNone(URL_A);
     expect(anexos()).toEqual([]);
+  });
+
+  // A leitura mais nova vale: a resposta velha, chegando por último, não pode sobrescrevê-la.
+  it('fica com a resposta da leitura mais nova quando a antiga chega depois', async () => {
+    fixture.componentRef.setInput('publicado', true);
+    fixture.componentRef.setInput('atoId', ATO_ID);
+    fixture.detectChanges();
+    await tick();
+    const primeira = controller.expectOne(ROTA_ATOS);
+
+    componente.tentarLerPublicadosDeNovo();
+    await tick();
+    const segunda = controller.expectOne(ROTA_ATOS);
+
+    segunda.flush([{ id: ATO_ID, anexos: [] }]);
+    await tick();
+    expect(componente.publicados()?.estado).toBe('lido');
+
+    primeira.flush(null, { status: 500, statusText: 'x' });
+    await tick();
+    expect(componente.publicados()?.estado).toBe('lido');
   });
 
   describe('nome de exibição', () => {
