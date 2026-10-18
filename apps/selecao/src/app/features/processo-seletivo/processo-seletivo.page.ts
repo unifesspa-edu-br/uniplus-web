@@ -61,6 +61,7 @@ import {
   documentoDoRascunho,
   temAlgoAGuardar,
 } from './steps/shared/rascunho-da-publicacao';
+import { anexoConfirmado } from './steps/shared/anexos-do-edital/anexos-do-edital';
 import {
   AVISO_DE_RASCUNHO_NAO_GRAVADO,
   ConfirmacaoDeSaida,
@@ -629,7 +630,12 @@ export class ProcessoSeletivoPage {
     }
 
     const intocado = JSON.stringify(documentoDoRascunho(this.store.draft().publicacao)) === aoPedir;
-    if (intocado) this.store.projetarSecao('publicacao', blocoDoDocumento(null));
+    if (intocado) {
+      // O anexo em envio não está no documento guardado, mas continua em curso: zerá-lo faria o
+      // envio perder o item e o documento selado sumir da tela sem aviso.
+      const emEnvio = this.store.draft().publicacao.anexos.filter((anexo) => !anexoConfirmado(anexo));
+      this.store.projetarSecao('publicacao', { ...blocoDoDocumento(null), anexos: emEnvio });
+    }
     this.documentoNoServidor.set(null);
     this.rascunhoSalvoEm.set(null);
     this.avisoDoRascunho.set(null);
