@@ -6,6 +6,7 @@ import {
   comoPedidoDeAnexos,
   mensagensDosAnexos,
   nomeInicialDoAnexo,
+  nomeNoDownload,
   recusaDoNomeDoAnexo,
   tipoDeMidiaDoAnexo,
 } from './anexos-do-edital';
@@ -46,6 +47,14 @@ describe('recusaDoNomeDoAnexo', () => {
   it('conta a extensão no limite de 120 caracteres', () => {
     expect(recusaDoNomeDoAnexo('a'.repeat(116), 'a.pdf')).toBeNull();
     expect(recusaDoNomeDoAnexo('a'.repeat(117), 'a.pdf')).toContain('120 caracteres');
+  });
+});
+
+describe('nomeNoDownload', () => {
+  it('acrescenta a extensão uma só vez, com o nome digitado com ou sem ela', () => {
+    expect(nomeNoDownload('Cronograma detalhado', 'a.pdf')).toBe('Cronograma detalhado.pdf');
+    expect(nomeNoDownload('Cronograma detalhado.pdf', 'a.pdf')).toBe('Cronograma detalhado.pdf');
+    expect(nomeNoDownload('  Anexo I.PDF ', 'a.pdf')).toBe('Anexo I.pdf');
   });
 });
 

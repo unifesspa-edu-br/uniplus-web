@@ -42,24 +42,36 @@ export function nomeInicialDoAnexo(nomeArquivo: string): string {
 }
 
 /**
- * Por que o servidor recusaria o nome, ou `null` quando ele serve. Espelha a regra do download:
- * obrigatório, sem separador de caminho nem caractere de controle, e com no máximo
- * {@link TAMANHO_MAXIMO_DO_NOME} caracteres contando a extensão, que o servidor acrescenta quando
- * falta.
+ * O nome do anexo como o servidor o normaliza: aparado, em NFC e sem a extensão do arquivo, que
+ * ele acrescenta uma só vez. Vazio quando só sobrava a extensão.
  */
-export function recusaDoNomeDoAnexo(nome: string, nomeArquivo: string): string | null {
+function nomeSemExtensao(nome: string, nomeArquivo: string): string {
   const extensao = extensaoDoArquivo(nomeArquivo);
   const sufixo = extensao === '' ? '' : `.${extensao}`;
-  let limpo = nome.trim().normalize('NFC');
-  if (sufixo !== '' && limpo.toLowerCase().endsWith(sufixo)) {
-    limpo = limpo.slice(0, -sufixo.length).trimEnd();
-  }
+  const limpo = nome.trim().normalize('NFC');
+  return sufixo !== '' && limpo.toLowerCase().endsWith(sufixo)
+    ? limpo.slice(0, -sufixo.length).trimEnd()
+    : limpo;
+}
 
+/** O nome com que o anexo é baixado: o normalizado, com a extensão do arquivo uma só vez. */
+export function nomeNoDownload(nome: string, nomeArquivo: string): string {
+  const extensao = extensaoDoArquivo(nomeArquivo);
+  return `${nomeSemExtensao(nome, nomeArquivo)}${extensao === '' ? '' : `.${extensao}`}`;
+}
+
+/**
+ * Por que o servidor recusaria o nome, ou `null` quando ele serve. Espelha a regra do download:
+ * obrigatório, sem separador de caminho nem caractere de controle, e com no máximo
+ * {@link TAMANHO_MAXIMO_DO_NOME} caracteres contando a extensão.
+ */
+export function recusaDoNomeDoAnexo(nome: string, nomeArquivo: string): string | null {
+  const limpo = nomeSemExtensao(nome, nomeArquivo);
   if (limpo === '') return 'Informe o nome do anexo.';
   if ([...limpo].some(proibido)) {
     return `O nome do anexo não pode ter caractere de controle nem nenhum destes: ${[...CARACTERES_PROIBIDOS_NO_NOME].join(' ')}`;
   }
-  if (limpo.length + sufixo.length > TAMANHO_MAXIMO_DO_NOME) {
+  if (nomeNoDownload(nome, nomeArquivo).length > TAMANHO_MAXIMO_DO_NOME) {
     return `O nome do anexo passa de ${TAMANHO_MAXIMO_DO_NOME} caracteres com a extensão.`;
   }
   return null;
