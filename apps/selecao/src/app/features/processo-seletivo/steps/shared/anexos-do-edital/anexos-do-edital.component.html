@@ -109,7 +109,7 @@
                 (input)="renomear(anexo.id, $event)"
               />
               <span class="field__hint" [id]="'anexo-nome-dica-' + anexo.id">
-                Baixado como “{{ anexo.nome.trim() }}.{{ extensaoDe(anexo) }}”.
+                Baixado como “{{ nomeBaixado(anexo) }}”.
               </span>
               @if (erroDoNome !== null) {
                 <small class="field__error" [id]="'anexo-nome-erro-' + anexo.id">{{

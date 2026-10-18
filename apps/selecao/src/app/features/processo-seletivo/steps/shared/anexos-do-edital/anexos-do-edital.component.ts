@@ -26,6 +26,7 @@ import {
   anexoConfirmado,
   extensaoDoArquivo,
   nomeInicialDoAnexo,
+  nomeNoDownload,
   recusaDoNomeDoAnexo,
   tipoDeMidiaDoAnexo,
 } from './anexos-do-edital';
@@ -98,6 +99,12 @@ export class AnexosDoEditalComponent {
   readonly publicados = signal<AnexosPublicados | null>(null);
 
   private readonly memoria = new Map<string, EnvioEmMemoria>();
+
+  /** A fila única dos envios: uma nova escolha entra no fim, atrás do que já corre. */
+  private fila: Promise<void> = Promise.resolve();
+
+  /** Distingue a leitura dos anexos publicados mais recente da que ficou para trás. */
+  private leituraAtual = 0;
 
   readonly anexos = computed(() => this.store.draft().publicacao.anexos);
   readonly confirmados = computed(() => this.anexos().filter(anexoConfirmado));
@@ -176,10 +183,8 @@ export class AnexosDoEditalComponent {
     this.store.patchObjectSection('publicacao', {
       anexos: [...this.anexos(), ...novos.map(({ anexo }) => anexo)],
     });
-    void this.enviarEmSequencia(
-      processoId,
-      novos.map(({ anexo }) => anexo.id),
-    );
+    const ids = novos.map(({ anexo }) => anexo.id);
+    this.fila = this.fila.then(() => this.enviarEmSequencia(processoId, ids));
   }
 
   private registrar(arquivo: File): { anexo: AnexoDoEdital } {
@@ -388,8 +393,9 @@ export class AnexosDoEditalComponent {
     return recusaDoNomeDoAnexo(anexo.nome, anexo.nomeArquivo);
   }
 
-  extensaoDe(anexo: AnexoDoEdital): string {
-    return extensaoDoArquivo(anexo.nomeArquivo);
+  /** Como o anexo será baixado, para a dica mostrar o que o servidor entrega. */
+  nomeBaixado(anexo: AnexoDoEdital): string {
+    return nomeNoDownload(anexo.nome, anexo.nomeArquivo);
   }
 
   /** Abre o anexo numa aba nova, pedindo o acesso à API no clique. */
@@ -426,10 +432,11 @@ export class AnexosDoEditalComponent {
   /** Os anexos do ato da versão vigente, entre os atos do processo. */
   private async lerPublicados(processoId: string, atoId: string): Promise<void> {
     const geracao = this.store.geracao();
+    const leitura = ++this.leituraAtual;
     this.publicados.set({ estado: 'lendo' });
 
     const atos = await this.servico.listarAtos(processoId);
-    if (geracao !== this.store.geracao()) return;
+    if (geracao !== this.store.geracao() || leitura !== this.leituraAtual) return;
 
     const ato = isApiOk(atos) ? atos.data.find((item) => item.id === atoId) : undefined;
     this.publicados.set(ato === undefined ? { estado: 'falha' } : { estado: 'lido', anexos: ato.anexos });
