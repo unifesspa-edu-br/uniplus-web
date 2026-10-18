@@ -63,6 +63,7 @@ function draftVazio(): WizardDraft {
       periodoInscricaoInicio: '',
       periodoInscricaoFim: '',
       ato: { orgao: '', serie: '', ano: '', dataPublicacao: '', assinante: '', tipoAtoCodigo: '' },
+      anexos: [],
     },
   };
 }
@@ -159,6 +160,7 @@ describe('comoComandoDePublicacao — ARMADILHA do período (#486)', () => {
       periodoInscricaoInicio: '2027-05-01T08:00',
       periodoInscricaoFim: '2027-05-10T18:00',
       ato: atoCompleto(),
+      anexos: [],
     };
 
     const comando = comoComandoDePublicacao(draft, DOCUMENTO_ID);
@@ -174,6 +176,7 @@ describe('comoComandoDePublicacao — ARMADILHA do período (#486)', () => {
       periodoInscricaoInicio: '2027-05-01T08:00',
       periodoInscricaoFim: '2027-05-10T18:00',
       ato: atoCompleto(),
+      anexos: [],
     };
 
     const comando = comoComandoDePublicacao(draft, DOCUMENTO_ID);
@@ -190,6 +193,7 @@ describe('comoComandoDePublicacao — ARMADILHA do período (#486)', () => {
       periodoInscricaoInicio: '2027-05-01T08:00',
       periodoInscricaoFim: '2027-05-10T18:00',
       ato: atoCompleto(),
+      anexos: [],
     };
 
     const comando = comoComandoDePublicacao(draft, DOCUMENTO_ID);
@@ -646,6 +650,7 @@ describe('mensagensDePublicacao', () => {
       periodoInscricaoInicio: '2027-05-01T08:00',
       periodoInscricaoFim: '2027-05-10T18:00',
       ato: { ...atoCompleto(), ano: '0' },
+      anexos: [],
     };
 
     expect(mensagensDePublicacao(draft, DOCUMENTO_ID)).toContain(
@@ -660,6 +665,7 @@ describe('mensagensDePublicacao', () => {
       periodoInscricaoInicio: '2027-05-10T18:00',
       periodoInscricaoFim: '2027-05-01T08:00',
       ato: atoCompleto(),
+      anexos: [],
     };
 
     expect(mensagensDePublicacao(draft, DOCUMENTO_ID)).toContain(
@@ -675,6 +681,7 @@ describe('mensagensDePublicacao', () => {
       periodoInscricaoInicio: '2027-05-01T08:00',
       periodoInscricaoFim: '2027-05-10T18:00',
       ato: { ...atoCompleto(), orgao: 'O'.repeat(201) },
+      anexos: [],
     };
 
     const mensagens = mensagensDePublicacao(draft, DOCUMENTO_ID);
@@ -694,13 +701,54 @@ describe('mensagensDePublicacao', () => {
       periodoInscricaoInicio: '2027-05-01T08:00',
       periodoInscricaoFim: '2027-05-10T18:00',
       ato: atoCompleto(),
+      anexos: [],
     };
 
     expect(mensagensDePublicacao(draft, DOCUMENTO_ID)).toEqual([]);
   });
+
+  it('barra a publicação com anexo que não foi enviado por completo', () => {
+    const draft = draftVazio();
+    draft.publicacao = {
+      numero: '',
+      periodoInscricaoInicio: '2027-05-01T08:00',
+      periodoInscricaoFim: '2027-05-10T18:00',
+      ato: atoCompleto(),
+      anexos: [{ id: 'a', nomeArquivo: 'a.pdf', nome: 'a', progress: 40, fase: 'enviando' }],
+    };
+
+    expect(mensagensDePublicacao(draft, DOCUMENTO_ID)).toEqual([
+      expect.stringContaining('não foi enviado por completo'),
+    ]);
+  });
+});
+
+describe('comoComandoDePublicacao — anexos', () => {
+  it('leva os anexos confirmados com documento e nome de exibição', () => {
+    const draft = draftVazio();
+    draft.publicacao.anexos = [
+      {
+        id: 'a',
+        nomeArquivo: 'cronograma.pdf',
+        nome: ' Cronograma ',
+        progress: 100,
+        fase: 'confirmado',
+        documentoAPublicarId: 'doc-a',
+      },
+    ];
+
+    expect(comoComandoDePublicacao(draft, DOCUMENTO_ID).anexos).toEqual([
+      { documentoId: 'doc-a', nome: 'Cronograma' },
+    ]);
+  });
 });
 
 describe('eErroDeDocumentoOuAto', () => {
+  it('reconhece as recusas dos anexos do edital', () => {
+    expect(eErroDeDocumentoOuAto('uniplus.selecao.anexo_do_edital.nao_confirmado')).toBe(true);
+    expect(eErroDeDocumentoOuAto('uniplus.selecao.anexo_do_edital.nome_invalido')).toBe(true);
+  });
+
   it('reconhece os códigos nomeados que nenhum dos dois checklists cobre', () => {
     expect(
       eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.documento_nao_confirmado'),

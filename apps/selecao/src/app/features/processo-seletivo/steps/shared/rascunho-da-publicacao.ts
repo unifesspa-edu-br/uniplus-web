@@ -1,4 +1,5 @@
-import type { WizardDraft } from '../processo-seletivo.models';
+import type { AnexoDoEdital, WizardDraft } from '../processo-seletivo.models';
+import { anexoConfirmado } from './anexos-do-edital/anexos-do-edital';
 
 /**
  * A versão do FORMATO em que o bloco do ato é gravado no servidor.
@@ -13,18 +14,36 @@ export const VERSAO_DO_RASCUNHO = 1;
 /** A seção que o passo de Revisão guarda entre uma sessão e outra. */
 export type BlocoDaPublicacao = WizardDraft['publicacao'];
 
+/** O anexo como o rascunho o guarda: o documento já confirmado e o nome com que se apresenta. */
+export interface AnexoGuardado {
+  readonly documentoId: string;
+  readonly nome: string;
+  readonly nomeArquivo: string;
+}
+
+/** O documento que o servidor guarda: o bloco do ato e os anexos já confirmados. */
+export type DocumentoDoRascunho = Omit<BlocoDaPublicacao, 'anexos'> & {
+  readonly anexos: readonly AnexoGuardado[];
+};
+
 /**
  * O documento que vai para o servidor.
  *
  * Manda a seção INTEIRA, e não só o que mudou: a gravação é substituição, então um campo que o
- * operador apagou precisa sumir de lá também.
+ * operador apagou precisa sumir de lá também. Dos anexos vão só os confirmados — o envio em curso
+ * ou falho não tem documento selado a que o rascunho possa se referir.
  */
-export function documentoDoRascunho(publicacao: BlocoDaPublicacao): BlocoDaPublicacao {
+export function documentoDoRascunho(publicacao: BlocoDaPublicacao): DocumentoDoRascunho {
   return {
     numero: publicacao.numero,
     periodoInscricaoInicio: publicacao.periodoInscricaoInicio,
     periodoInscricaoFim: publicacao.periodoInscricaoFim,
     ato: { ...publicacao.ato },
+    anexos: publicacao.anexos.filter(anexoConfirmado).map((anexo) => ({
+      documentoId: anexo.documentoAPublicarId as string,
+      nome: anexo.nome,
+      nomeArquivo: anexo.nomeArquivo,
+    })),
   };
 }
 
@@ -33,8 +52,8 @@ export function documentoDoRascunho(publicacao: BlocoDaPublicacao): BlocoDaPubli
  *
  * `projetarSecao` é patch RASO: devolver só `ato` deixaria `numero` e o par de período do
  * processo anterior em tela — exatamente o vazamento entre processos que a limpeza do editor
- * existe para impedir. Por isso as quatro chaves de topo voltam sempre, mesmo ausentes no
- * documento guardado.
+ * existe para impedir. Por isso as chaves de topo voltam sempre, mesmo ausentes no documento
+ * guardado.
  */
 export function blocoDoDocumento(documento: unknown): BlocoDaPublicacao {
   const raiz = objetoOuVazio(documento);
@@ -52,6 +71,7 @@ export function blocoDoDocumento(documento: unknown): BlocoDaPublicacao {
       assinante: texto(ato['assinante']),
       tipoAtoCodigo: texto(ato['tipoAtoCodigo']),
     },
+    anexos: anexosDoDocumento(raiz['anexos']),
   };
 }
 
@@ -60,8 +80,36 @@ export function blocoDoDocumento(documento: unknown): BlocoDaPublicacao {
  * gravá-lo só criaria linha no servidor com o nome de ninguém.
  */
 export function temAlgoAGuardar(publicacao: BlocoDaPublicacao): boolean {
-  const { ato, ...resto } = publicacao;
-  return [...Object.values(resto), ...Object.values(ato)].some((valor) => valor.trim() !== '');
+  const { ato, anexos, ...resto } = publicacao;
+  return (
+    [...Object.values(resto), ...Object.values(ato)].some((valor) => valor.trim() !== '') ||
+    anexos.some(anexoConfirmado)
+  );
+}
+
+/**
+ * Os anexos guardados voltam como confirmados: só o confirmado é guardado, e o servidor recusa na
+ * publicação o que já não valer. Entrada sem identificador do documento ou sem nome não vira anexo.
+ */
+function anexosDoDocumento(valor: unknown): AnexoDoEdital[] {
+  if (!Array.isArray(valor)) return [];
+  return valor.flatMap((item): AnexoDoEdital[] => {
+    const anexo = objetoOuVazio(item);
+    const documentoId = texto(anexo['documentoId']);
+    const nomeArquivo = texto(anexo['nomeArquivo']);
+    if (documentoId === '' || nomeArquivo === '') return [];
+    return [
+      {
+        id: documentoId,
+        nomeArquivo,
+        nome: texto(anexo['nome']),
+        progress: 100,
+        fase: 'confirmado',
+        documentoAPublicarId: documentoId,
+        enviado: true,
+      },
+    ];
+  });
 }
 
 /**

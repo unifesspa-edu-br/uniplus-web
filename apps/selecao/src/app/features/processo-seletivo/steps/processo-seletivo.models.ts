@@ -77,6 +77,17 @@ export interface UploadItem {
 }
 
 /**
+ * Um anexo do edital no rascunho da publicação. Segue as mesmas fases do documento do edital, e só
+ * o confirmado entra na publicação: o documento confirmado é imutável e é o que o edital atesta.
+ */
+export interface AnexoDoEdital extends Omit<UploadItem, 'extension' | 'name'> {
+  /** O arquivo como o operador o escolheu; identifica o anexo na lista de envio. */
+  nomeArquivo: string;
+  /** O nome com que a pessoa recebe o anexo no download, editável até publicar. */
+  nome: string;
+}
+
+/**
  * Distribuição de vagas de uma oferta de curso (UNI-REQ-0134).
  *
  * A oferta é referenciada pelo id do catálogo de Configuração, e não descrita
@@ -841,6 +852,8 @@ export interface WizardDraft {
       assinante: string;
       tipoAtoCodigo: string;
     };
+    /** Os anexos do edital, na ordem em que a publicação os declara. */
+    anexos: AnexoDoEdital[];
   };
 }
 

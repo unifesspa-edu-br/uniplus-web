@@ -8,6 +8,7 @@ import {
 
 import { PASSOS, RotuloDePasso } from '../../processo-seletivo.data';
 import { FaseDoCronograma, WizardDraft } from '../../processo-seletivo.models';
+import { comoPedidoDeAnexos, mensagensDosAnexos } from '../../shared/anexos-do-edital/anexos-do-edital';
 import { hojeNoFusoInstitucional, instanteDoCampo } from '../../shared/fuso-institucional';
 
 /** Sem catálogo à mão, só o que já foi hidratado do servidor decide — nunca `false` por omissão do parâmetro. */
@@ -461,7 +462,8 @@ export function comoGruposDaRevisao(
  * (`ProcessoSeletivo.*`) é chave de lookup do servidor — não trafega (`#743`).
  *
  * O conjunto é o que `PublicarProcessoSeletivoCommandHandler` e
- * `ConferenciaDoTipoDeAto` de fato emitem sobre documento e ato.
+ * `ConferenciaDoTipoDeAto` de fato emitem sobre documento e ato, mais as recusas dos anexos do
+ * edital (documento ausente, não confirmado, repetido, de outra finalidade, nome e quantidade).
  */
 const CODIGOS_DE_DOCUMENTO_OU_ATO = new Set<string>([
   'uniplus.selecao.processo_seletivo.documento_nao_encontrado',
@@ -470,6 +472,12 @@ const CODIGOS_DE_DOCUMENTO_OU_ATO = new Set<string>([
   'uniplus.selecao.processo_seletivo.tipo_de_ato_sem_versao_vigente',
   'uniplus.selecao.processo_seletivo.tipo_de_ato_nao_congela_configuracao',
   'uniplus.selecao.processo_seletivo.objeto_ja_tem_ato_vivo_do_tipo',
+  'uniplus.selecao.anexo_do_edital.nao_encontrado',
+  'uniplus.selecao.anexo_do_edital.nao_confirmado',
+  'uniplus.selecao.anexo_do_edital.repetido',
+  'uniplus.selecao.anexo_do_edital.finalidade_incompativel',
+  'uniplus.selecao.anexo_do_edital.nome_invalido',
+  'uniplus.selecao.anexo_do_edital.quantidade_excedida',
 ]);
 
 export function eErroDeDocumentoOuAto(codigo: string): boolean {
@@ -630,6 +638,7 @@ export function mensagensDePublicacao(
   if (!publicacao.ato.tipoAtoCodigo.trim()) mensagens.push('Selecione o tipo do ato.');
 
   mensagens.push(...excessosDeComprimento(publicacao));
+  mensagens.push(...mensagensDosAnexos(publicacao.anexos));
 
   return mensagens;
 }
@@ -691,5 +700,6 @@ export function comoComandoDePublicacao(
     periodoInscricaoFim: temFase ? null : instanteDoCampo(publicacao.periodoInscricaoFim),
     documentoEditalId,
     ato,
+    anexos: comoPedidoDeAnexos(publicacao.anexos),
   };
 }
