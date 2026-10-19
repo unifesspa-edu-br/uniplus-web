@@ -183,6 +183,62 @@ describe('Bloco de modalidades da inscrição', () => {
     expect(tela.querySelector('h3')?.textContent).toContain('Reserva de vagas');
   });
 
+  it('com 2ª opção, lista as modalidades de cada opção sob o curso dela', () => {
+    const tela = montar(
+      naTela(modalidades({ itens: [AMPLA, ESCOLA_PUBLICA] }), {
+        modalidadesSegundaOpcao: modalidades({ itens: [AMPLA] }),
+        opcoesDeCurso: { primeira: 'Direito', segunda: 'Engenharia da Computação' },
+      }),
+    );
+    irParaASecao(tela, 'Modalidades de concorrência');
+
+    const titulos = [...bloco(tela).querySelectorAll('h4')].map((h) => h.textContent?.trim());
+    const listas = [...bloco(tela).querySelectorAll('ul li')].map((li) => li.textContent?.trim());
+    expect(titulos).toEqual(['1ª opção — Direito', '2ª opção — Engenharia da Computação']);
+    expect(listas).toEqual([
+      'Ampla concorrência',
+      'Escola pública, sem renda',
+      'Ampla concorrência',
+    ]);
+  });
+
+  it('sem nenhuma modalidade na 2ª opção, só ela avisa e a 1ª segue com a lista', () => {
+    const tela = montar(
+      naTela(modalidades({ itens: [AMPLA] }), {
+        modalidadesSegundaOpcao: modalidades({ situacao: 'NAO_CONCORRE' }),
+        opcoesDeCurso: { primeira: 'Direito', segunda: 'Engenharia da Computação' },
+      }),
+    );
+    irParaASecao(tela, 'Modalidades de concorrência');
+
+    const blocos = bloco(tela).querySelectorAll('.modalidades-da-inscricao__opcao');
+    expect(blocos[0].textContent).toContain('Ampla concorrência');
+    expect(blocos[1].textContent).toContain(
+      'nenhuma das modalidades ofertadas nesta opção de curso',
+    );
+    expect(botao(bloco(tela), 'Conferir Reserva de vagas')).toBeDefined();
+  });
+
+  it('a pendência que a 2ª opção repete da 1ª aparece uma vez só', () => {
+    const pendencia = {
+      fatoCodigo: 'CONCORRER_EP',
+      rotulo: 'Deseja concorrer às vagas de escola pública?',
+      secaoCodigo: 'Inscricao:RESERVA',
+    };
+    const faltando = modalidades({ situacao: 'FALTA_RESPONDER', pendencias: [pendencia] });
+    const tela = montar(naTela(faltando, { modalidadesSegundaOpcao: faltando }));
+    irParaASecao(tela, 'Modalidades de concorrência');
+
+    expect(
+      [...bloco(tela).querySelectorAll('button')].filter((b) =>
+        b.textContent?.includes('Deseja concorrer'),
+      ),
+    ).toHaveLength(1);
+    expect(
+      bloco(tela).querySelectorAll('.modalidades-da-inscricao__opcao')[1].textContent,
+    ).toContain('Depende das mesmas respostas pedidas na 1ª opção.');
+  });
+
   it('o processo que não define as modalidades pela inscrição não mostra a seção delas', () => {
     const tela = montar(naTela(modalidades({ derivada: false, situacao: null })));
 
