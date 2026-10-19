@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { SituacaoDoRegistroDoAto, type AtoDoProcessoDto } from '@uniplus/shared-data/selecao';
-import { EmptyStateComponent, TagComponent } from '@uniplus/shared-ui/components';
+import type { AtoDoProcessoDto } from '@uniplus/shared-data/selecao';
+import { EmptyStateComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
-import { nomeDoDocumento, rotuloDoAto } from './apresentacao-do-ato';
+import { rotuloDoAto } from './apresentacao-do-ato';
+import { ArquivosDoAtoComponent } from './arquivos-do-ato.component';
+import { SituacaoDoAtoComponent } from './situacao-do-ato.component';
 
 /**
  * Os atos publicados pelo processo — o edital, as retificações e os documentos avulsos —, cada um
@@ -13,7 +15,7 @@ import { nomeDoDocumento, rotuloDoAto } from './apresentacao-do-ato';
 @Component({
   selector: 'sel-atos-do-processo',
   standalone: true,
-  imports: [DateBrPipe, EmptyStateComponent, TagComponent],
+  imports: [ArquivosDoAtoComponent, DateBrPipe, EmptyStateComponent, SituacaoDoAtoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './atos-do-processo.component.html',
   styleUrl: './atos-do-processo.component.css',
@@ -29,8 +31,6 @@ export class AtosDoProcessoComponent {
   readonly abrir = output<string>();
 
   protected readonly rotuloDoAto = rotuloDoAto;
-  protected readonly nomeDoDocumento = nomeDoDocumento;
-  protected readonly registrado = SituacaoDoRegistroDoAto.registrado;
 
   private readonly idsCorrigiveis = computed(() => new Set(this.corrigiveis().map((ato) => ato.id)));
   private readonly porId = computed(() => new Map(this.atos().map((ato) => [ato.id, ato])));
