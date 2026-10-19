@@ -853,6 +853,8 @@ export interface components {
             readonly unicoPorObjeto: boolean;
             readonly efeitoIrreversivel: boolean;
             readonly ehResultado: boolean;
+            readonly publicavelComoAvulso: boolean;
+            readonly exigeAtoCorrigido: boolean;
             /** Format: date */
             readonly vigenciaInicio: string;
             /** Format: date */
@@ -879,6 +881,8 @@ export interface components {
             readonly unicoPorObjeto: boolean;
             readonly efeitoIrreversivel: boolean;
             readonly ehResultado: boolean;
+            readonly publicavelComoAvulso: boolean;
+            readonly exigeAtoCorrigido: boolean;
             /** Format: date */
             readonly vigenciaInicio: string;
             /** Format: date */
@@ -935,6 +939,10 @@ export interface components {
             readonly baseLegal: null | string;
             /** Format: date-time */
             readonly criadoEm: string;
+            /** @default false */
+            readonly publicavelComoAvulso: boolean;
+            /** @default false */
+            readonly exigeAtoCorrigido: boolean;
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
