@@ -3,7 +3,12 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
-import { DefinirTaxaInscricaoRequestFundamentos, FinalidadeDoDocumento } from './schema';
+import {
+  DefinirTaxaInscricaoRequestFundamentos,
+  FinalidadeDoDocumento,
+  ImpedimentoDoProduto,
+  SituacaoDoProdutoPrevisto,
+} from './schema';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
@@ -25,9 +30,19 @@ export type PublicarAtoAvulsoDoProcessoRequest =
   components['schemas']['PublicarAtoAvulsoDoProcessoRequest'];
 export type AnexoDoAtoRequest = components['schemas']['AnexoDoAtoRequest'];
 export type AtoPublicadoDto = components['schemas']['AtoPublicadoDto'];
+export type ProdutosPrevistosDoProcessoDto = components['schemas']['ProdutosPrevistosDoProcessoDto'];
+export type FaseComProdutosPrevistosDto = components['schemas']['FaseComProdutosPrevistosDto'];
+export type EtapaComProdutosPrevistosDto = components['schemas']['EtapaComProdutosPrevistosDto'];
+export type ProdutoPrevistoDto = components['schemas']['ProdutoPrevistoDto'];
+export type PublicarProdutoDoEditalRequest = components['schemas']['PublicarProdutoDoEditalRequest'];
+export type ConfiguracaoDivulgacaoDto = components['schemas']['ConfiguracaoDivulgacaoDto'];
+export type CampoDivulgacaoDto = components['schemas']['CampoDivulgacaoDto'];
 
 /** Para que serve o documento enviado: o edital oficial, um anexo dele ou um documento de ato. */
 export { FinalidadeDoDocumento };
+
+/** O que o cronograma do edital declara publicar: a situação de cada item e o que o impede de sair. */
+export { ImpedimentoDoProduto, SituacaoDoProdutoPrevisto };
 export type IniciarEnvioDoModeloDeDocumentoRequest =
   components['schemas']['IniciarEnvioDoModeloDeDocumentoRequest'];
 export type IniciarEnvioDoModeloDeDocumentoDto =
@@ -828,6 +843,55 @@ export class ProcessosSeletivosApi {
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/atos`,
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/processos-seletivos/{id}/produtos-previstos` — os atos que o cronograma da
+   * versão vigente declara publicar, por fase e etapa, cada um com a situação, as correções e o
+   * que o impede de sair agora. Traz também a política de divulgação do certame, a da versão
+   * vigente.
+   */
+  obterProdutosPrevistos(
+    processoSeletivoId: string,
+  ): Observable<ApiResult<ProdutosPrevistosDoProcessoDto>> {
+    return this.http.get<ApiResult<ProdutosPrevistosDoProcessoDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/produtos-previstos`,
+      { context: withVendorMime('produtos-previstos-do-processo', 1) },
+    );
+  }
+
+  /**
+   * POST `/api/selecao/processos-seletivos/{id}/produtos-previstos/{produtoId}/publicacoes` —
+   * publica um item que o edital declara, ou a correção de uma publicação dele quando o corpo cita
+   * `atoCorrigidoId` e o motivo. O tipo do ato vem do item; no resultado, o corpo leva a
+   * confirmação da política de divulgação.
+   *
+   * Responde 202: o ato fica pendente até o registro central confirmar. As recusas de negócio
+   * (item já publicado, definitivo antes do preliminar, política não confirmada) chegam como
+   * `ApiResult.fail` com o `ProblemDetails` do 422.
+   */
+  publicarProdutoPrevisto(
+    processoSeletivoId: string,
+    produtoId: string,
+    request: PublicarProdutoDoEditalRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<AtoPublicadoDto>> {
+    return this.http.post<ApiResult<AtoPublicadoDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/produtos-previstos/${encodeURIComponent(produtoId)}/publicacoes`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/campos-divulgacao` — os campos que a política de divulgação pode tornar
+   * públicos, com o nome para exibição. A política do certame cita os campos só pelo código.
+   */
+  listarCamposDivulgacao(): Observable<ApiResult<readonly CampoDivulgacaoDto[]>> {
+    return this.http.get<ApiResult<readonly CampoDivulgacaoDto[]>>(
+      `${this.basePath}/api/selecao/campos-divulgacao`,
+      { context: withVendorMime('campo-divulgacao', 1) },
     );
   }
 

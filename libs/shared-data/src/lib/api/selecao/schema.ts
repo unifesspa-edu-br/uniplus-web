@@ -7588,6 +7588,200 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/produtos-previstos": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly processoSeletivoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.produtos-previstos-do-processo.v1+json": components["schemas"]["ProdutosPrevistosDoProcessoDto"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/produtos-previstos/{produtoId}/publicacoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly processoSeletivoId: string;
+                    readonly produtoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["PublicarProdutoDoEditalRequest"];
+                    readonly "text/json": components["schemas"]["PublicarProdutoDoEditalRequest"];
+                    readonly "application/*+json": components["schemas"]["PublicarProdutoDoEditalRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description Accepted */
+                readonly 202: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["AtoPublicadoDto"];
+                        readonly "application/json": components["schemas"]["AtoPublicadoDto"];
+                        readonly "text/json": components["schemas"]["AtoPublicadoDto"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9608,6 +9802,64 @@ export interface components {
             readonly ordem: number | string;
             readonly orientacao?: null | string;
         };
+        readonly EtapaComProdutosPrevistosDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly nome: string;
+            /** Format: int32 */
+            readonly ordem: null | number | string;
+            readonly produtos: readonly components["schemas"]["ProdutoPrevistoDto"][];
+        };
+        readonly FaseComProdutosPrevistosDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly codigo: string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+            readonly produtos: readonly components["schemas"]["ProdutoPrevistoDto"][];
+            readonly etapas: readonly components["schemas"]["EtapaComProdutosPrevistosDto"][];
+        };
+        /** @enum {string} */
+        readonly ImpedimentoDoProduto: ImpedimentoDoProduto;
+        readonly ImpedimentoDoProdutoDto: {
+            readonly motivo: components["schemas"]["ImpedimentoDoProduto"];
+            readonly mensagem: string;
+        };
+        readonly ProdutoPrevistoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly tipoCodigo: string;
+            readonly tipoNome: null | string;
+            readonly papel: null | string;
+            readonly situacao: components["schemas"]["SituacaoDoProdutoPrevisto"];
+            readonly ato: null | components["schemas"]["AtoDoProcessoDto"];
+            readonly correcoes: readonly components["schemas"]["AtoDoProcessoDto"][];
+            readonly podePublicar: boolean;
+            readonly impedimento: null | components["schemas"]["ImpedimentoDoProdutoDto"];
+        };
+        readonly ProdutosPrevistosDoProcessoDto: {
+            /** Format: int32 */
+            readonly numeroDaVersao: number | string;
+            readonly politicaDeDivulgacao: components["schemas"]["ConfiguracaoDivulgacaoDto"];
+            readonly fases: readonly components["schemas"]["FaseComProdutosPrevistosDto"][];
+            readonly etapasSemFase: readonly components["schemas"]["EtapaComProdutosPrevistosDto"][];
+        };
+        readonly PublicarProdutoDoEditalRequest: {
+            readonly numero: null | string;
+            /** Format: date */
+            readonly dataPublicacao: string;
+            readonly assinante: string;
+            /** Format: uuid */
+            readonly documentoPrincipalId: string;
+            readonly anexos?: null | readonly components["schemas"]["AnexoDoAtoRequest"][];
+            /** @default false */
+            readonly politicaDeDivulgacaoConfirmada: boolean;
+            /** Format: uuid */
+            readonly atoCorrigidoId?: null | string;
+            readonly motivoDaCorrecao?: null | string;
+        };
+        /** @enum {string} */
+        readonly SituacaoDoProdutoPrevisto: SituacaoDoProdutoPrevisto;
     };
     responses: never;
     parameters: never;
@@ -9790,4 +10042,16 @@ export enum UnidadePrazo {
     horas = "horas",
     dias = "dias",
     diasUteis = "diasUteis"
+}
+export enum ImpedimentoDoProduto {
+    jaPublicado = "jaPublicado",
+    aguardaConfirmacaoDoRegistro = "aguardaConfirmacaoDoRegistro",
+    preliminarNaoPublicado = "preliminarNaoPublicado",
+    preliminarAguardaConfirmacao = "preliminarAguardaConfirmacao",
+    tipoDeAtoNaoVigente = "tipoDeAtoNaoVigente"
+}
+export enum SituacaoDoProdutoPrevisto {
+    aberto = "aberto",
+    pendente = "pendente",
+    publicado = "publicado"
 }
