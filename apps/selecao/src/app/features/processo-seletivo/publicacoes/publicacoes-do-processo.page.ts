@@ -23,12 +23,14 @@ import {
 
 import { abrirAcessoEmNovaAba } from '../steps/shared/envio-pre-assinado';
 import { AtosDoProcessoComponent } from './atos-do-processo.component';
+import { PrevistosNoEditalComponent } from './previstos-no-edital.component';
 import { PublicacoesDoProcesso } from './publicacoes-do-processo.service';
 import { PublicarDocumentoComponent, type ModoDaPublicacao } from './publicar-documento.component';
 
 /**
- * Publicações do processo seletivo: o que ele já publicou, com a situação do registro de cada
- * documento, e a publicação de documento avulso e a correção de um documento já publicado.
+ * Publicações do processo seletivo: o que o edital prevê publicar e o que ele já publicou, com a
+ * situação do registro de cada documento, e a publicação de documento avulso, de item do edital e
+ * a correção de um documento já publicado.
  *
  * Só orquestra. O que vale para cada publicação (tipo, vigência, cadeia de correção, documentos) é
  * decidido pelo servidor; a página lê o que ele devolve e mostra as recusas dele.
@@ -41,6 +43,7 @@ import { PublicarDocumentoComponent, type ModoDaPublicacao } from './publicar-do
     AlertComponent,
     AtosDoProcessoComponent,
     PageHeaderComponent,
+    PrevistosNoEditalComponent,
     PublicarDocumentoComponent,
     SpinnerComponent,
   ],
@@ -101,14 +104,23 @@ export class PublicacoesDoProcessoPage {
     this.formularioAberto.set(true);
   }
 
+  /** O formulário que um item do edital pede: publicar a primeira vez ou corrigir. */
+  protected abrirFormulario(modo: ModoDaPublicacao): void {
+    this.modo.set(modo);
+    this.formularioAberto.set(true);
+  }
+
   protected corrigir(ato: AtoDoProcessoDto): void {
     this.modo.set({ tipo: 'correcao', ato });
     this.formularioAberto.set(true);
   }
 
-  /** O documento foi aceito: relê a lista e leva o foco ao título, que o formulário fechado deixou. */
+  /**
+   * O documento foi aceito: relê a lista e os itens do edital, que mudam de situação, e leva o foco
+   * ao título, que o formulário fechado deixou.
+   */
   protected async aoPublicar(): Promise<void> {
-    await this.publicacoes.recarregarAtos();
+    await Promise.all([this.publicacoes.recarregarAtos(), this.publicacoes.recarregarPrevistos()]);
     this.cabecalho().focar();
   }
 

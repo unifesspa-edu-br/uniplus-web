@@ -1,0 +1,110 @@
+@if (fases().length === 0) {
+  <ui-empty-state
+    heading="O edital não declara documentos a publicar"
+    description="Os resultados e as listas que o cronograma do edital prevê publicar aparecem aqui."
+  />
+} @else {
+  @for (fase of fases(); track fase.id) {
+    <section class="previstos__grupo" [attr.aria-labelledby]="'previstos-fase-' + fase.id">
+      <h3 class="previstos__fase" [id]="'previstos-fase-' + fase.id">{{ fase.nome }}</h3>
+
+      @if (fase.itens.length > 0) {
+        <ng-container
+          [ngTemplateOutlet]="tabela"
+          [ngTemplateOutletContext]="{ itens: fase.itens, nome: fase.nome }"
+        />
+      }
+
+      @for (etapa of fase.etapas; track etapa.id) {
+        <h4 class="previstos__etapa" [id]="'previstos-etapa-' + etapa.id">Etapa: {{ etapa.nome }}</h4>
+        <ng-container
+          [ngTemplateOutlet]="tabela"
+          [ngTemplateOutletContext]="{ itens: etapa.itens, nome: fase.nome + ', etapa ' + etapa.nome }"
+        />
+      }
+    </section>
+  }
+}
+
+<ng-template #tabela let-itens="itens" let-nome="nome">
+  <div class="table-responsive">
+    <table>
+      <caption class="sr-only">
+        Documentos previstos no edital — {{ nome }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Documento</th>
+          <th scope="col">Situação</th>
+          <th scope="col"><span class="sr-only">Ações</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of itens; track item.id) {
+          <tr>
+            <td data-label="Documento">
+              <div class="table-responsive__primary">{{ nomeDoItem(item) }}</div>
+              @if (rotuloDoPapel(item.papel); as papel) {
+                <div class="previstos__detalhe">Resultado {{ papel.toLocaleLowerCase('pt-BR') }}</div>
+              }
+              @if (item.situacao === aberto && item.impedimento) {
+                <div class="previstos__impedimento">{{ item.impedimento.mensagem }}</div>
+              }
+            </td>
+
+            <td data-label="Situação">
+              @if (item.ato; as ato) {
+                @if (item.situacao === publicado) {
+                  <ui-tag variant="success">Publicado em {{ ato.publicadoEm | dateBr: 'short' }}</ui-tag>
+                } @else {
+                  <sel-situacao-do-ato [ato]="ato" />
+                }
+                <div class="previstos__detalhe">
+                  {{ ato.numero === null ? 'Sem número' : 'Número ' + ato.numero }}
+                </div>
+                <sel-arquivos-do-ato [ato]="ato" [abrindo]="abrindo()" (abrir)="abrir.emit($event)" />
+
+                @for (correcao of item.correcoes; track correcao.id) {
+                  <div class="previstos__correcao">
+                    <div class="previstos__detalhe">
+                      Correção: {{ rotuloDoAto(correcao) }}, de {{ correcao.dataDoAto | dateBr: 'short' }}.
+                      @if (correcao.motivoDaCorrecao) {
+                        Motivo: {{ correcao.motivoDaCorrecao }}
+                      }
+                    </div>
+                    <sel-situacao-do-ato [ato]="correcao" />
+                    <sel-arquivos-do-ato [ato]="correcao" [abrindo]="abrindo()" (abrir)="abrir.emit($event)" />
+                  </div>
+                }
+              } @else {
+                <ui-tag variant="neutral">Aberto</ui-tag>
+              }
+            </td>
+
+            <td class="table-responsive__actions" data-label="Ações">
+              @if (item.podePublicar) {
+                <button
+                  type="button"
+                  class="btn btn--primary btn--sm"
+                  [attr.aria-label]="'Publicar ' + nomeDoItem(item)"
+                  (click)="publicarItem(item)"
+                >
+                  Publicar
+                </button>
+              } @else if (corrigivel(item)) {
+                <button
+                  type="button"
+                  class="btn btn--secondary btn--sm"
+                  [attr.aria-label]="'Corrigir ' + nomeDoItem(item)"
+                  (click)="corrigirItem(item)"
+                >
+                  Corrigir
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</ng-template>

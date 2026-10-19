@@ -63,6 +63,42 @@
     <ui-alert variant="danger" heading="Não foi possível abrir o documento">{{ erro }}</ui-alert>
   }
 
+  <section class="panel" aria-labelledby="pub-page-previstos-titulo">
+    <div class="panel-head">
+      <div class="panel-head__title">
+        <h2 id="pub-page-previstos-titulo">Previstos no edital</h2>
+      </div>
+    </div>
+
+    @let previstos = publicacoes.previstos();
+    @switch (previstos.estado) {
+      @case ('lendo') {
+        <p class="pub-page__lendo" role="status">
+          <ui-spinner spinnerSize="sm" />
+          Carregando os documentos previstos no edital…
+        </p>
+      }
+      @case ('falha') {
+        <ui-alert variant="danger" heading="Não foi possível carregar os documentos previstos no edital">
+          {{ previstos.mensagem }}
+          <span class="pub-page__tentar">
+            <button type="button" class="btn btn--secondary btn--sm" (click)="publicacoes.recarregarPrevistos()">
+              Tentar novamente
+            </button>
+          </span>
+        </ui-alert>
+      }
+      @case ('lido') {
+        <sel-previstos-no-edital
+          [previstos]="previstos.dados"
+          [abrindo]="abrindo()"
+          (publicar)="abrirFormulario($event)"
+          (abrir)="abrir($event)"
+        />
+      }
+    }
+  </section>
+
   <section class="panel" aria-labelledby="pub-page-atos-titulo">
     <div class="panel-head">
       <div class="panel-head__title">
