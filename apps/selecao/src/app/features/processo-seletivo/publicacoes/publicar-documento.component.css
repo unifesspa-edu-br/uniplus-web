@@ -27,3 +27,8 @@
   padding: 0;
   list-style: none;
 }
+
+.pub__campos {
+  margin: var(--space-2) 0 var(--space-3);
+  padding-left: var(--space-5);
+}

@@ -46,27 +46,41 @@
       </section>
     }
 
+    @if (item(); as itemDoEdital) {
+      <section aria-labelledby="pub-item-titulo">
+        <h3 id="pub-item-titulo" class="form-section__title">Item do edital</h3>
+        <p class="pub__corrigido">
+          {{ itemDoEdital.tipoNome ?? itemDoEdital.tipoCodigo }}
+          @if (rotuloDoPapel(itemDoEdital.papel); as papel) {
+            — resultado {{ papel.toLocaleLowerCase('pt-BR') }}
+          }
+        </p>
+      </section>
+    }
+
     <section aria-labelledby="pub-identificacao">
       <h3 id="pub-identificacao" class="form-section__title">Identificação</h3>
       <div class="form-grid form-grid--1col">
-        <div class="field" [class.is-error]="erroDoCampo('tipoAtoCodigo')">
-          <label class="field__label is-required" for="pub-tipo">Tipo de documento</label>
-          <select
-            id="pub-tipo"
-            class="select"
-            formControlName="tipoAtoCodigo"
-            [attr.aria-invalid]="erroDoCampo('tipoAtoCodigo') ? 'true' : null"
-            [attr.aria-describedby]="erroDoCampo('tipoAtoCodigo') ? 'pub-tipo-erro' : null"
-          >
-            <option value="" disabled>Selecione o tipo</option>
-            @for (tipo of opcoesDeTipo(); track tipo.codigo) {
-              <option [value]="tipo.codigo">{{ tipo.nome }}</option>
+        @if (escolheOTipo()) {
+          <div class="field" [class.is-error]="erroDoCampo('tipoAtoCodigo')">
+            <label class="field__label is-required" for="pub-tipo">Tipo de documento</label>
+            <select
+              id="pub-tipo"
+              class="select"
+              formControlName="tipoAtoCodigo"
+              [attr.aria-invalid]="erroDoCampo('tipoAtoCodigo') ? 'true' : null"
+              [attr.aria-describedby]="erroDoCampo('tipoAtoCodigo') ? 'pub-tipo-erro' : null"
+            >
+              <option value="" disabled>Selecione o tipo</option>
+              @for (tipo of opcoesDeTipo(); track tipo.codigo) {
+                <option [value]="tipo.codigo">{{ tipo.nome }}</option>
+              }
+            </select>
+            @if (erroDoCampo('tipoAtoCodigo'); as erro) {
+              <span class="field__error" id="pub-tipo-erro">{{ erro }}</span>
             }
-          </select>
-          @if (erroDoCampo('tipoAtoCodigo'); as erro) {
-            <span class="field__error" id="pub-tipo-erro">{{ erro }}</span>
-          }
-        </div>
+          </div>
+        }
 
         <div class="field" [class.is-error]="erroDoCampo('numero')">
           <label class="field__label" for="pub-numero">Número</label>
@@ -252,6 +266,45 @@
         </ul>
       }
     </section>
+
+    @if (politica(); as politicaDoCertame) {
+      <section aria-labelledby="pub-politica-titulo">
+        <h3 id="pub-politica-titulo" class="form-section__title">Política de divulgação do certame</h3>
+        <p class="field__hint" id="pub-politica-dica">
+          Este documento é um resultado. O edital vigente permite que ele mostre apenas os dados dos
+          candidatos listados abaixo. O sistema não lê o conteúdo do PDF: a conferência é de quem
+          publica.
+        </p>
+        <ul class="pub__campos" aria-label="Dados dos candidatos que o documento pode mostrar">
+          @for (campo of politicaDoCertame.campos; track campo) {
+            <li>{{ campo }}</li>
+          }
+        </ul>
+        @if (politicaDoCertame.justificativa; as justificativa) {
+          <p class="field__hint">Justificativa registrada no edital: {{ justificativa }}</p>
+        }
+        <div class="field" [class.is-error]="erroDoCampo('politicaDeDivulgacaoConfirmada')">
+          <label class="checkbox">
+            <input
+              id="pub-politica"
+              type="checkbox"
+              formControlName="politicaDeDivulgacaoConfirmada"
+              [attr.aria-invalid]="erroDoCampo('politicaDeDivulgacaoConfirmada') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('politicaDeDivulgacaoConfirmada')
+                  ? 'pub-politica-dica pub-politica-erro'
+                  : 'pub-politica-dica'
+              "
+            />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            Confirmo que o documento segue a política de divulgação do certame.
+          </label>
+          @if (erroDoCampo('politicaDeDivulgacaoConfirmada'); as erro) {
+            <span class="field__error" id="pub-politica-erro">{{ erro }}</span>
+          }
+        </div>
+      </section>
+    }
   </form>
 
   <div class="cfg-form-footer">

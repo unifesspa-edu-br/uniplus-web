@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { pedidoDoAto, type DadosDoAto } from './pedido-do-ato';
+import { pedidoDoAto, pedidoDoItem, type DadosDoAto, type DadosDoItem } from './pedido-do-ato';
 
 const PRINCIPAL = '01960000-0000-7000-0000-0000000000a1';
 const ANEXO = '01960000-0000-7000-0000-0000000000a2';
@@ -53,5 +53,42 @@ describe('pedidoDoAto', () => {
 
     expect(pedido).not.toHaveProperty('motivoDaCorrecao');
     expect(pedido).not.toHaveProperty('atoCorrigidoId');
+  });
+});
+
+describe('pedidoDoItem', () => {
+  const dadosDoItem: DadosDoItem = {
+    numero: dados.numero,
+    dataPublicacao: dados.dataPublicacao,
+    assinante: dados.assinante,
+    atoCorrigidoId: null,
+    motivoDaCorrecao: '',
+  };
+
+  it('não leva o tipo, que vem do item do edital, e leva a confirmação da política', () => {
+    const pedido = pedidoDoItem(dadosDoItem, PRINCIPAL, [], true);
+
+    expect(pedido).toEqual({
+      numero: '03/2026',
+      dataPublicacao: '2026-10-19',
+      assinante: 'Pró-reitoria de Ensino',
+      documentoPrincipalId: PRINCIPAL,
+      politicaDeDivulgacaoConfirmada: true,
+    });
+  });
+
+  it('leva o ato corrigido junto do motivo, como no documento avulso', () => {
+    const pedido = pedidoDoItem(
+      { ...dadosDoItem, atoCorrigidoId: CORRIGIDO, motivoDaCorrecao: ' Corrige a lista. ' },
+      PRINCIPAL,
+      [],
+      false,
+    );
+
+    expect(pedido).toMatchObject({
+      atoCorrigidoId: CORRIGIDO,
+      motivoDaCorrecao: 'Corrige a lista.',
+      politicaDeDivulgacaoConfirmada: false,
+    });
   });
 });

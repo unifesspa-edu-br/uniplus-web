@@ -14,15 +14,30 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { HttpContext } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ProblemI18nService, isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+  type ValidatorFn,
+} from '@angular/forms';
+import type { Observable } from 'rxjs';
+import {
+  ProblemI18nService,
+  isApiOk,
+  type ApiResult,
+  type ProblemDetails,
+} from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import type { TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
 import {
   FinalidadeDoDocumento,
   ProcessosSeletivosApi,
   type AtoDoProcessoDto,
+  type AtoPublicadoDto,
+  type ProdutoPrevistoDto,
 } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
@@ -49,12 +64,24 @@ import { AnexosDoEditalService } from '../steps/shared/anexos-do-edital/envio-do
 import { hojeNoFusoInstitucional } from '../steps/shared/fuso-institucional';
 import { rotuloDoAto } from './apresentacao-do-ato';
 import { EnviosDeArquivos, type ArquivoDoAto } from './envios-de-arquivos';
-import { pedidoDoAto } from './pedido-do-ato';
+import { pedidoDoAto, pedidoDoItem } from './pedido-do-ato';
+import { rotuloDoPapel, type PoliticaParaConfirmar } from './previstos-do-edital';
 
-/** O que o formulário publica: um documento novo ou a correção de um ato já publicado. */
+/**
+ * O que o formulário publica: um documento novo, a correção de um ato já publicado ou um item que
+ * o edital declara — a primeira publicação dele ou a correção da publicação mais recente.
+ */
 export type ModoDaPublicacao =
   | { readonly tipo: 'avulso' }
-  | { readonly tipo: 'correcao'; readonly ato: AtoDoProcessoDto };
+  | { readonly tipo: 'correcao'; readonly ato: AtoDoProcessoDto }
+  | {
+      readonly tipo: 'previsto';
+      readonly item: ProdutoPrevistoDto;
+      /** A política do certame a confirmar; `null` quando o item não é resultado. */
+      readonly politica: PoliticaParaConfirmar | null;
+      /** O ato que a publicação corrige; `null` na primeira publicação do item. */
+      readonly corrigido: AtoDoProcessoDto | null;
+    };
 
 /** O teto do documento principal: o mesmo dos anexos. */
 const TAMANHO_MAXIMO_DO_PRINCIPAL_MB = TAMANHO_MAXIMO_DO_ANEXO_MB;
@@ -70,7 +97,8 @@ type CampoDoFormulario =
   | 'dataPublicacao'
   | 'assinante'
   | 'atoCorrigidoId'
-  | 'motivoDaCorrecao';
+  | 'motivoDaCorrecao'
+  | 'politicaDeDivulgacaoConfirmada';
 
 const CAMPOS: ReadonlySet<string> = new Set<CampoDoFormulario>([
   'tipoAtoCodigo',
@@ -79,10 +107,13 @@ const CAMPOS: ReadonlySet<string> = new Set<CampoDoFormulario>([
   'assinante',
   'atoCorrigidoId',
   'motivoDaCorrecao',
+  'politicaDeDivulgacaoConfirmada',
 ]);
 
 /**
- * O formulário lateral que publica um documento avulso do processo, ou corrige um ato já publicado.
+ * O formulário lateral que publica um documento avulso do processo, corrige um ato já publicado
+ * ou publica um item que o edital declara, com a política de divulgação do certame quando o item é
+ * resultado.
  *
  * O servidor decide o que vale: quais tipos servem a documento avulso, a vigência, a cadeia de
  * correção e os documentos. A tela oferece o que o catálogo declara, avisa antes do que não se
@@ -151,6 +182,7 @@ export class PublicarDocumentoComponent {
       nonNullable: true,
       validators: [Validators.maxLength(MOTIVO_TAMANHO_MAXIMO)],
     }),
+    politicaDeDivulgacaoConfirmada: new FormControl(false, { nonNullable: true }),
   });
 
   protected readonly principal = new EnviosDeArquivos({
@@ -206,11 +238,15 @@ export class PublicarDocumentoComponent {
     this.opcoesDeTipo().find((tipo) => tipo.codigo === this.tipoEscolhido()),
   );
 
-  /** O ato que este corrige, fixo quando a pessoa clicou em "Corrigir" num ato. */
+  /** O ato que este corrige, fixo quando a pessoa clicou em "Corrigir" num ato ou num item. */
   protected readonly atoDaCorrecao = computed(() => {
     const modo = this.modo();
-    return modo?.tipo === 'correcao' ? modo.ato : null;
+    if (modo?.tipo === 'correcao') return modo.ato;
+    return modo?.tipo === 'previsto' ? modo.corrigido : null;
   });
+
+  /** O tipo do ato é escolhido na tela, salvo no item do edital, que já o traz. */
+  protected readonly escolheOTipo = computed(() => this.modo()?.tipo !== 'previsto');
 
   /** O ato corrigido é escolhido na tela quando o tipo o exige e nenhum foi fixado. */
   protected readonly escolheOAtoCorrigido = computed(
@@ -221,9 +257,25 @@ export class PublicarDocumentoComponent {
     () => this.atoDaCorrecao() !== null || this.escolheOAtoCorrigido(),
   );
 
+  /** O item do edital que se publica; `null` fora do modo dos itens previstos. */
+  protected readonly item = computed(() => {
+    const modo = this.modo();
+    return modo?.tipo === 'previsto' ? modo.item : null;
+  });
+
+  /** A política a confirmar antes de enviar; só o item que é resultado a traz. */
+  protected readonly politica = computed(() => {
+    const modo = this.modo();
+    return modo?.tipo === 'previsto' ? modo.politica : null;
+  });
+
+  protected readonly rotuloDoPapel = rotuloDoPapel;
+
   protected readonly titulo = computed(() => {
     const ato = this.atoDaCorrecao();
-    return ato === null ? 'Publicar documento' : `Corrigir ${rotuloDoAto(ato)}`;
+    if (ato !== null) return `Corrigir ${rotuloDoAto(ato)}`;
+    const item = this.item();
+    return item === null ? 'Publicar documento' : `Publicar ${item.tipoNome ?? item.tipoCodigo}`;
   });
 
   protected readonly semTipoParaCorrecao = computed(
@@ -252,9 +304,17 @@ export class PublicarDocumentoComponent {
     effect(() => {
       const exige = this.corrige();
       const escolhe = this.escolheOAtoCorrigido();
+      const escolheTipo = this.escolheOTipo();
+      const exigeConfirmacao = this.politica() !== null;
       untracked(() => {
         this.trocarObrigatoriedade(this.form.controls.motivoDaCorrecao, exige);
         this.trocarObrigatoriedade(this.form.controls.atoCorrigidoId, escolhe);
+        this.trocarObrigatoriedade(this.form.controls.tipoAtoCodigo, escolheTipo);
+        this.trocarObrigatoriedade(
+          this.form.controls.politicaDeDivulgacaoConfirmada,
+          exigeConfirmacao,
+          Validators.requiredTrue,
+        );
       });
     });
   }
@@ -290,27 +350,11 @@ export class PublicarDocumentoComponent {
     const principal = this.principal.confirmados()[0];
     if (principal === undefined || this.publicando()) return;
 
-    const valores = this.form.getRawValue();
-    const ato = this.atoDaCorrecao();
-    const pedido = pedidoDoAto(
-      {
-        tipoAtoCodigo: valores.tipoAtoCodigo,
-        numero: valores.numero,
-        dataPublicacao: valores.dataPublicacao,
-        assinante: valores.assinante,
-        atoCorrigidoId: ato?.id ?? (this.escolheOAtoCorrigido() ? valores.atoCorrigidoId : null),
-        motivoDaCorrecao: valores.motivoDaCorrecao,
-      },
-      principal.documentoAPublicarId,
-      this.anexos.confirmados(),
-    );
+    const envio = this.montarEnvio(principal.documentoAPublicarId);
 
     this.publicando.set(true);
     this.form.disable({ emitEvent: false });
-    const processoId = this.processoId();
-    const { resultado, inconclusiva } = await comChave(this.chave, pedido, (contexto) =>
-      this.api.publicarAtoAvulso(processoId, pedido, contexto),
-    );
+    const { resultado, inconclusiva } = await comChave(this.chave, envio.pedido, envio.enviar);
     this.publicando.set(false);
     this.form.enable({ emitEvent: false });
 
@@ -333,6 +377,9 @@ export class PublicarDocumentoComponent {
 
     const doServidor = controle.errors['servidor'] as { readonly mensagem: string } | undefined;
     if (doServidor !== undefined) return doServidor.mensagem;
+    if (campo === 'politicaDeDivulgacaoConfirmada') {
+      return 'Confirme que o documento segue a política de divulgação do certame.';
+    }
     if (controle.errors['required']) return 'Campo obrigatório.';
     if (controle.errors['maxlength']) return 'O texto passa do tamanho permitido.';
     return 'Valor inválido.';
@@ -365,12 +412,52 @@ export class PublicarDocumentoComponent {
       assinante: '',
       atoCorrigidoId: '',
       motivoDaCorrecao: '',
+      politicaDeDivulgacaoConfirmada: false,
     });
 
     // Com um tipo só a oferecer, não faz sentido pedir a escolha.
     if (modo?.tipo === 'correcao' && this.tipos().length === 1) {
       this.form.controls.tipoAtoCodigo.setValue(this.tipos()[0].codigo);
     }
+  }
+
+  /** O corpo do pedido e o comando que o envia: o do documento avulso ou o do item do edital. */
+  private montarEnvio(documentoPrincipalId: string): {
+    readonly pedido: object;
+    readonly enviar: (contexto: HttpContext) => Observable<ApiResult<AtoPublicadoDto>>;
+  } {
+    const valores = this.form.getRawValue();
+    const ato = this.atoDaCorrecao();
+    const processoId = this.processoId();
+    const dados = {
+      numero: valores.numero,
+      dataPublicacao: valores.dataPublicacao,
+      assinante: valores.assinante,
+      atoCorrigidoId: ato?.id ?? (this.escolheOAtoCorrigido() ? valores.atoCorrigidoId : null),
+      motivoDaCorrecao: valores.motivoDaCorrecao,
+    };
+    const anexos = this.anexos.confirmados();
+
+    const item = this.item();
+    if (item !== null) {
+      const pedido = pedidoDoItem(
+        dados,
+        documentoPrincipalId,
+        anexos,
+        this.politica() !== null && valores.politicaDeDivulgacaoConfirmada,
+      );
+      return {
+        pedido,
+        enviar: (contexto) => this.api.publicarProdutoPrevisto(processoId, item.id, pedido, contexto),
+      };
+    }
+
+    const pedido = pedidoDoAto(
+      { ...dados, tipoAtoCodigo: valores.tipoAtoCodigo },
+      documentoPrincipalId,
+      anexos,
+    );
+    return { pedido, enviar: (contexto) => this.api.publicarAtoAvulso(processoId, pedido, contexto) };
   }
 
   /** O que impede de publicar por causa dos arquivos: cada recusa é a que o servidor faria. */
@@ -436,11 +523,15 @@ export class PublicarDocumentoComponent {
     );
   }
 
-  private trocarObrigatoriedade(controle: FormControl<string>, obrigatorio: boolean): void {
+  private trocarObrigatoriedade<T extends string | boolean>(
+    controle: FormControl<T>,
+    obrigatorio: boolean,
+    validador: ValidatorFn = Validators.required,
+  ): void {
     if (obrigatorio) {
-      controle.addValidators(Validators.required);
+      controle.addValidators(validador);
     } else {
-      controle.removeValidators(Validators.required);
+      controle.removeValidators(validador);
     }
     controle.updateValueAndValidity({ emitEvent: false });
   }
