@@ -18,6 +18,8 @@ const preliminar = {
   unicoPorObjeto: false,
   efeitoIrreversivel: false,
   ehResultado: true,
+  publicavelComoAvulso: false,
+  exigeAtoCorrigido: false,
   vigenciaInicio: '2026-01-01',
   vigenciaFim: null,
   baseLegal: null,
@@ -31,6 +33,8 @@ const encerrado = {
   nome: 'Aviso',
   congelaConfiguracao: false,
   ehResultado: false,
+  publicavelComoAvulso: true,
+  exigeAtoCorrigido: false,
   vigenciaFim: '2026-06-30',
 };
 
@@ -142,6 +146,12 @@ async function preencherCadastro(page: Page): Promise<void> {
   });
   await page.getByText('Determina a situação do candidato').click();
   await expect(determinaSituacao).toBeChecked();
+  // Sem valor padrão: o operador declara as duas respostas.
+  await page
+    .getByRole('group', { name: 'Pode ser publicado como documento avulso do processo' })
+    .getByText('Não')
+    .click();
+  await page.getByRole('group', { name: 'Corrige sempre outro ato' }).getByText('Não').click();
 }
 
 test.describe('Tipo de ato — cadastro pela interface', () => {
@@ -174,6 +184,8 @@ test.describe('Tipo de ato — cadastro pela interface', () => {
     expect(capturado.posts[0]).toMatchObject({
       codigo: 'RESULTADO_PRELIMINAR_INSCRICAO',
       ehResultado: true,
+      publicavelComoAvulso: false,
+      exigeAtoCorrigido: false,
       vigenciaInicio: '2026-01-01',
       vigenciaFim: null,
     });
@@ -204,6 +216,8 @@ test.describe('Tipo de ato — cadastro pela interface', () => {
       id: PRELIMINAR_ID,
       codigo: preliminar.codigo,
       nome: 'Resultado preliminar das inscrições',
+      publicavelComoAvulso: preliminar.publicavelComoAvulso,
+      exigeAtoCorrigido: preliminar.exigeAtoCorrigido,
     });
     expect(capturado.chavesDeIdempotencia[0]).toBe('');
   });

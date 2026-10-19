@@ -91,6 +91,27 @@ const SINALIZADORES = [
   },
 ] as const satisfies readonly { controle: keyof AtoForm; rotulo: string; ajuda: string }[];
 
+/**
+ * Atributos que a API exige declarados: sem valor padrão, o operador responde sim
+ * ou não em vez de herdar um "não" que apagaria em silêncio o que o tipo é.
+ */
+const DECLARACOES_DE_PUBLICACAO = [
+  {
+    controle: 'publicavelComoAvulso',
+    legenda: 'Pode ser publicado como documento avulso do processo',
+    ajuda:
+      'Sim para aviso, comunicado e errata. Não para convocação, chamada e resultado, que só ' +
+      'são publicados dentro do seu fluxo.',
+  },
+  {
+    controle: 'exigeAtoCorrigido',
+    legenda: 'Corrige sempre outro ato',
+    ajuda:
+      'Sim para a errata: ao publicar, é preciso indicar o ato corrigido e o motivo. Não para ' +
+      'os demais tipos.',
+  },
+] as const satisfies readonly { controle: keyof AtoForm; legenda: string; ajuda: string }[];
+
 interface AtoForm {
   codigo: FormControl<string>;
   nome: FormControl<string>;
@@ -100,6 +121,8 @@ interface AtoForm {
   unicoPorObjeto: FormControl<boolean>;
   efeitoIrreversivel: FormControl<boolean>;
   ehResultado: FormControl<boolean>;
+  publicavelComoAvulso: FormControl<boolean | null>;
+  exigeAtoCorrigido: FormControl<boolean | null>;
   baseLegal: FormControl<string>;
 }
 
@@ -112,6 +135,8 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
   'unicoPorObjeto',
   'efeitoIrreversivel',
   'ehResultado',
+  'publicavelComoAvulso',
+  'exigeAtoCorrigido',
   'baseLegal',
 ]);
 
@@ -231,6 +256,8 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
                 <th scope="col">Nome</th>
                 <th scope="col">Vigência</th>
                 <th scope="col">Resultado</th>
+                <th scope="col">Avulso</th>
+                <th scope="col">Corrige outro ato</th>
                 <th scope="col"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
@@ -247,6 +274,16 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
                       {{ ato.ehResultado ? 'Sim' : 'Não' }}
                     </span>
                   </td>
+                  <td data-label="Avulso">
+                    <span [class]="ato.publicavelComoAvulso ? 'tag tag--success' : 'tag'">
+                      {{ ato.publicavelComoAvulso ? 'Sim' : 'Não' }}
+                    </span>
+                  </td>
+                  <td data-label="Corrige outro ato">
+                    <span [class]="ato.exigeAtoCorrigido ? 'tag tag--success' : 'tag'">
+                      {{ ato.exigeAtoCorrigido ? 'Sim' : 'Não' }}
+                    </span>
+                  </td>
                   <td class="table-responsive__actions cfg-tipos-ato__acoes" data-label="Ações">
                     <ui-icon-button
                       icon="pi-pencil"
@@ -257,7 +294,9 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
                     />
                     <ui-icon-button
                       icon="pi-trash"
-                      [accessibleName]="'Remover vigência do tipo de ato ' + identificacaoDaVigencia(ato)"
+                      [accessibleName]="
+                        'Remover vigência do tipo de ato ' + identificacaoDaVigencia(ato)
+                      "
                       tooltip="Remover esta vigência"
                       [isDisabled]="loading() || saving()"
                       (triggered)="pedirRemocao(ato)"
@@ -422,6 +461,47 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
                 </span>
               </div>
             }
+            @for (declaracao of DECLARACOES_DE_PUBLICACAO; track declaracao.controle) {
+              <fieldset
+                class="field"
+                [class.is-error]="erroDoCampo(declaracao.controle)"
+                [attr.aria-describedby]="descricaoDaDeclaracao(declaracao.controle)"
+              >
+                <legend class="field__label is-required">{{ declaracao.legenda }}</legend>
+                <label class="radio">
+                  <input
+                    type="radio"
+                    [formControlName]="declaracao.controle"
+                    [attr.name]="declaracao.controle"
+                    [attr.formcontrolname]="declaracao.controle"
+                    [value]="true"
+                    [attr.aria-invalid]="erroDoCampo(declaracao.controle) ? 'true' : null"
+                  />
+                  <span class="radio__dot" aria-hidden="true"></span>
+                  Sim
+                </label>
+                <label class="radio">
+                  <input
+                    type="radio"
+                    [formControlName]="declaracao.controle"
+                    [attr.name]="declaracao.controle"
+                    [attr.formcontrolname]="declaracao.controle"
+                    [value]="false"
+                    [attr.aria-invalid]="erroDoCampo(declaracao.controle) ? 'true' : null"
+                  />
+                  <span class="radio__dot" aria-hidden="true"></span>
+                  Não
+                </label>
+                <span class="field__hint" [id]="declaracao.controle + '-ajuda'">
+                  {{ declaracao.ajuda }}
+                </span>
+                @if (erroDoCampo(declaracao.controle)) {
+                  <span class="field__error" [id]="declaracao.controle + '-erro'">
+                    {{ erroDoCampo(declaracao.controle) }}
+                  </span>
+                }
+              </fieldset>
+            }
             <label class="field" [class.is-error]="erroDoCampo('baseLegal')">
               <span class="field__label">Base legal</span>
               <textarea
@@ -480,6 +560,7 @@ export class TiposAtoPage {
   private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
 
   protected readonly SINALIZADORES = SINALIZADORES;
+  protected readonly DECLARACOES_DE_PUBLICACAO = DECLARACOES_DE_PUBLICACAO;
 
   protected readonly saving = signal(false);
   protected readonly formOpen = signal(false);
@@ -629,6 +710,8 @@ export class TiposAtoPage {
     unicoPorObjeto: new FormControl(false, { nonNullable: true }),
     efeitoIrreversivel: new FormControl(false, { nonNullable: true }),
     ehResultado: new FormControl(false, { nonNullable: true }),
+    publicavelComoAvulso: new FormControl<boolean | null>(null, Validators.required),
+    exigeAtoCorrigido: new FormControl<boolean | null>(null, Validators.required),
     baseLegal: new FormControl('', {
       nonNullable: true,
       validators: [Validators.maxLength(500)],
@@ -711,6 +794,8 @@ export class TiposAtoPage {
       unicoPorObjeto: false,
       efeitoIrreversivel: false,
       ehResultado: false,
+      publicavelComoAvulso: null,
+      exigeAtoCorrigido: null,
       baseLegal: '',
     });
     this.formError.set(null);
@@ -732,6 +817,8 @@ export class TiposAtoPage {
       unicoPorObjeto: ato.unicoPorObjeto,
       efeitoIrreversivel: ato.efeitoIrreversivel,
       ehResultado: ato.ehResultado,
+      publicavelComoAvulso: ato.publicavelComoAvulso,
+      exigeAtoCorrigido: ato.exigeAtoCorrigido,
       baseLegal: ato.baseLegal ?? '',
     });
     this.formError.set(null);
@@ -794,6 +881,11 @@ export class TiposAtoPage {
     requisicao
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => this.handleSalvarResult(result));
+  }
+
+  protected descricaoDaDeclaracao(controle: keyof AtoForm): string {
+    const ajuda = `${controle}-ajuda`;
+    return this.erroDoCampo(controle) ? `${ajuda} ${controle}-erro` : ajuda;
   }
 
   protected erroDoCampo(nome: keyof AtoForm): string | null {
@@ -904,9 +996,7 @@ export class TiposAtoPage {
     if (nome === undefined) {
       return;
     }
-    const campo = this.host.nativeElement.querySelector<HTMLElement>(
-      `[formcontrolname="${nome}"]`,
-    );
+    const campo = this.host.nativeElement.querySelector<HTMLElement>(`[formcontrolname="${nome}"]`);
     campo?.focus();
   }
 
@@ -942,6 +1032,8 @@ export class TiposAtoPage {
       unicoPorObjeto: raw.unicoPorObjeto,
       efeitoIrreversivel: raw.efeitoIrreversivel,
       ehResultado: raw.ehResultado,
+      publicavelComoAvulso: raw.publicavelComoAvulso as boolean,
+      exigeAtoCorrigido: raw.exigeAtoCorrigido as boolean,
       vigenciaInicio: raw.vigenciaInicio,
       vigenciaFim: nullIfBlank(raw.vigenciaFim),
       baseLegal: nullIfBlank(raw.baseLegal),

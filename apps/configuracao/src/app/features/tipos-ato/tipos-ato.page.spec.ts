@@ -21,6 +21,8 @@ const preliminar: TipoAtoPublicadoDto = {
   unicoPorObjeto: false,
   efeitoIrreversivel: false,
   ehResultado: true,
+  publicavelComoAvulso: false,
+  exigeAtoCorrigido: false,
   vigenciaInicio: '2026-01-01',
   vigenciaFim: null,
   baseLegal: null,
@@ -34,6 +36,8 @@ const aviso: TipoAtoPublicadoDto = {
   nome: 'Aviso',
   congelaConfiguracao: false,
   ehResultado: false,
+  publicavelComoAvulso: true,
+  exigeAtoCorrigido: false,
   vigenciaFim: '2026-06-30',
 };
 
@@ -83,6 +87,8 @@ describe('TiposAtoPage', () => {
       unicoPorObjeto: false,
       efeitoIrreversivel: false,
       ehResultado: true,
+      publicavelComoAvulso: false,
+      exigeAtoCorrigido: true,
       baseLegal: '',
     });
   }
@@ -112,6 +118,32 @@ describe('TiposAtoPage', () => {
 
     expect(celulaResultado(linhas[0])).toBe('Sim');
     expect(celulaResultado(linhas[1])).toBe('Não');
+  });
+
+  it('a listagem mostra se o tipo é publicável como avulso e se corrige outro ato', async () => {
+    const errata = {
+      ...aviso,
+      codigo: 'ERRATA',
+      publicavelComoAvulso: true,
+      exigeAtoCorrigido: true,
+    };
+    await flushLista([preliminar, errata]);
+    fixture.detectChanges();
+
+    const linhas = Array.from(
+      fixture.nativeElement.querySelectorAll('tbody tr'),
+    ) as HTMLTableRowElement[];
+    const celula = (linha: HTMLTableRowElement, rotulo: string): string =>
+      (linha.querySelector(`[data-label="${rotulo}"]`)?.textContent ?? '').trim();
+
+    expect([celula(linhas[0], 'Avulso'), celula(linhas[0], 'Corrige outro ato')]).toEqual([
+      'Não',
+      'Não',
+    ]);
+    expect([celula(linhas[1], 'Avulso'), celula(linhas[1], 'Corrige outro ato')]).toEqual([
+      'Sim',
+      'Sim',
+    ]);
   });
 
   it('a vigência é apresentada em pt-BR, aberta ou encerrada', async () => {
@@ -147,6 +179,8 @@ describe('TiposAtoPage', () => {
     expect(post.request.body).toMatchObject({
       codigo: 'RESULTADO_PRELIMINAR_INSCRICAO',
       ehResultado: true,
+      publicavelComoAvulso: false,
+      exigeAtoCorrigido: true,
       vigenciaInicio: '2026-01-01',
       vigenciaFim: null,
       baseLegal: null,
@@ -155,6 +189,82 @@ describe('TiposAtoPage', () => {
     post.flush(preliminar.id, { status: 201, statusText: 'Created' });
     await propagate();
     await flushLista([preliminar]);
+  });
+
+  it('não salva um novo tipo sem declarar os dois atributos de publicação', async () => {
+    await flushLista([]);
+
+    component['abrirCriacao']();
+    fixture.detectChanges();
+    preencherFormulario();
+    component['form'].controls.publicavelComoAvulso.setValue(null);
+    component['salvar']();
+    controller.expectNone(ADMIN_URL);
+    expect(component['erroDoCampo']('publicavelComoAvulso')).toBe('Campo obrigatório.');
+    fixture.detectChanges();
+    const primeiroRadio = fixture.nativeElement.querySelector(
+      'input[type="radio"][formcontrolname="publicavelComoAvulso"]',
+    );
+    expect(document.activeElement).toBe(primeiroRadio);
+
+    component['form'].controls.publicavelComoAvulso.setValue(true);
+    component['form'].controls.exigeAtoCorrigido.setValue(null);
+    component['salvar']();
+    controller.expectNone(ADMIN_URL);
+    expect(component['erroDoCampo']('exigeAtoCorrigido')).toBe('Campo obrigatório.');
+  });
+
+  it('Sim e Não do mesmo atributo formam um grupo de rádio nativo', async () => {
+    await flushLista([]);
+    component['abrirCriacao']();
+    fixture.detectChanges();
+
+    const radios = Array.from(
+      fixture.nativeElement.querySelectorAll('input[type="radio"]'),
+    ) as HTMLInputElement[];
+    const nomes = radios.map((radio) => radio.name);
+    expect(nomes).toEqual([
+      'publicavelComoAvulso',
+      'publicavelComoAvulso',
+      'exigeAtoCorrigido',
+      'exigeAtoCorrigido',
+    ]);
+  });
+
+  it('declarar "não" conta como resposta e viaja como false', async () => {
+    await flushLista([]);
+
+    component['abrirCriacao']();
+    preencherFormulario();
+    component['form'].patchValue({ publicavelComoAvulso: false, exigeAtoCorrigido: false });
+    component['salvar']();
+
+    const post = controller.expectOne(ADMIN_URL);
+    expect(post.request.body).toMatchObject({
+      publicavelComoAvulso: false,
+      exigeAtoCorrigido: false,
+    });
+    post.flush(preliminar.id, { status: 201, statusText: 'Created' });
+    await propagate();
+    await flushLista([preliminar]);
+  });
+
+  it('a edição preserva os dois atributos lidos e reenvia no PUT', async () => {
+    const errata = { ...preliminar, publicavelComoAvulso: true, exigeAtoCorrigido: true };
+    await flushLista([errata]);
+
+    component['abrirEdicao'](errata);
+    component['form'].controls.nome.setValue('Errata');
+    component['salvar']();
+
+    const put = controller.expectOne(`${ADMIN_URL}/${errata.id}`);
+    expect(put.request.body).toMatchObject({
+      publicavelComoAvulso: true,
+      exigeAtoCorrigido: true,
+    });
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    await flushLista([errata]);
   });
 
   it('na edição o código é readonly e o PUT reapresenta id e código sem Idempotency-Key', async () => {
