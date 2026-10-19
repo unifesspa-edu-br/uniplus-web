@@ -7951,6 +7951,11 @@ export interface components {
             /** Format: uuid */
             readonly ofertaCursoId?: null | string;
         };
+        readonly AvisoConformidadeDto: {
+            readonly codigo: string;
+            readonly dimensao: string;
+            readonly mensagem: string;
+        };
         readonly BancaDaEtapaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -8238,6 +8243,7 @@ export interface components {
             /** Format: uuid */
             readonly processoSeletivoId: string;
             readonly itens: readonly components["schemas"]["ItemConformidadeDto"][];
+            readonly avisos: readonly components["schemas"]["AvisoConformidadeDto"][];
         };
         readonly CriarMotivoDecisaoIsencaoCommand: {
             readonly codigo: null | string;

@@ -53,6 +53,7 @@ export type {
   FaseCronogramaInput,
   BaseLegalDto,
   DocumentoExigidoDto,
+  AvisoConformidadeDto,
   ItemConformidadeDto,
   ItemDocumentoExigidoInput,
   ConfiguracaoDerivacaoDto,
