@@ -99,6 +99,7 @@ export type DestinoRemanejamentoInput = components['schemas']['DestinoRemanejame
 export type ConformidadeProcessoSeletivoDto =
   components['schemas']['ConformidadeProcessoSeletivoDto'];
 export type ItemConformidadeDto = components['schemas']['ItemConformidadeDto'];
+export type AvisoConformidadeDto = components['schemas']['AvisoConformidadeDto'];
 export type ConformidadeLegalProcessoSeletivoDto =
   components['schemas']['ConformidadeLegalProcessoSeletivoDto'];
 export type RegraAvaliadaDto = components['schemas']['RegraAvaliadaDto'];
