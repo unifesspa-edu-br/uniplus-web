@@ -10317,6 +10317,7 @@
           "prazoUnidade",
           "suspensividadePrimeiraInstanciaValor",
           "suspensividadePrimeiraInstanciaUnidade",
+          "admiteInstanciaSuperior",
           "suspensividadeSegundaInstanciaValor",
           "suspensividadeSegundaInstanciaUnidade"
         ],
@@ -10351,6 +10352,9 @@
                 "$ref": "#/components/schemas/UnidadePrazo"
               }
             ]
+          },
+          "admiteInstanciaSuperior": {
+            "type": "boolean"
           },
           "suspensividadeSegundaInstanciaValor": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
@@ -17601,6 +17605,7 @@
           "atoAncoraCodigo",
           "suspensividadePrimeiraInstanciaValor",
           "suspensividadePrimeiraInstanciaUnidade",
+          "admiteInstanciaSuperior",
           "suspensividadeSegundaInstanciaValor",
           "suspensividadeSegundaInstanciaUnidade"
         ],
@@ -17650,6 +17655,9 @@
                 "$ref": "#/components/schemas/UnidadePrazo"
               }
             ]
+          },
+          "admiteInstanciaSuperior": {
+            "type": "boolean"
           },
           "suspensividadeSegundaInstanciaValor": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
@@ -18128,6 +18136,7 @@
           "atoAncoraCodigo",
           "suspensividadePrimeiraInstanciaValor",
           "suspensividadePrimeiraInstanciaUnidade",
+          "admiteInstanciaSuperior",
           "suspensividadeSegundaInstanciaValor",
           "suspensividadeSegundaInstanciaUnidade"
         ],
@@ -18171,6 +18180,9 @@
                 "$ref": "#/components/schemas/UnidadePrazo"
               }
             ]
+          },
+          "admiteInstanciaSuperior": {
+            "type": "boolean"
           },
           "suspensividadeSegundaInstanciaValor": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",

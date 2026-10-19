@@ -1065,70 +1065,6 @@
                                           </option>
                                         </select>
                                       </div>
-                                      <div class="form-field">
-                                        <label
-                                          class="label"
-                                          [attr.for]="'cr-rec-susp2-val-' + posicao + '-' + $index"
-                                          >Suspensividade da 2ª instância — prazo</label
-                                        >
-                                        <input
-                                          class="input"
-                                          type="text"
-                                          inputmode="decimal"
-                                          [attr.id]="'cr-rec-susp2-val-' + posicao + '-' + $index"
-                                          [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
-                                          [value]="recurso.suspensividadeSegundaInstanciaValor"
-                                          [disabled]="!edicaoLiberada()"
-                                          (input)="
-                                            alterarRecursoDaEtapa(
-                                              etapa,
-                                              $index,
-                                              'suspensividadeSegundaInstanciaValor',
-                                              $any($event.target).value
-                                            )
-                                          "
-                                        />
-                                      </div>
-                                      <div class="form-field">
-                                        <label
-                                          class="label"
-                                          [attr.for]="'cr-rec-susp2-un-' + posicao + '-' + $index"
-                                          >Suspensividade da 2ª instância — unidade</label
-                                        >
-                                        <select
-                                          class="select"
-                                          [attr.id]="'cr-rec-susp2-un-' + posicao + '-' + $index"
-                                          [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
-                                          [disabled]="!edicaoLiberada()"
-                                          (change)="
-                                            alterarRecursoDaEtapa(
-                                              etapa,
-                                              $index,
-                                              'suspensividadeSegundaInstanciaUnidade',
-                                              $any($event.target).value
-                                            )
-                                          "
-                                        >
-                                          <option
-                                            value=""
-                                            [selected]="recurso.suspensividadeSegundaInstanciaUnidade === ''"
-                                          >
-                                            Sem suspensividade
-                                          </option>
-                                          <option
-                                            value="diasUteis"
-                                            [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'diasUteis'"
-                                          >
-                                            dias úteis
-                                          </option>
-                                          <option
-                                            value="horas"
-                                            [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'horas'"
-                                          >
-                                            horas
-                                          </option>
-                                        </select>
-                                      </div>
                                       <p
                                         class="field__hint"
                                         [attr.id]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
@@ -1137,6 +1073,121 @@
                                         publicado. Valor e unidade são declarados juntos; deixar os
                                         dois em branco desativa a suspensividade daquela instância.
                                       </p>
+                                      <fieldset
+                                        class="field form-grid__full"
+                                        [class.is-error]="recurso.admiteInstanciaSuperior === null"
+                                        [attr.aria-describedby]="
+                                          recurso.admiteInstanciaSuperior === null
+                                            ? 'cr-rec-superior-erro-' + posicao + '-' + $index + ' cr-rec-superior-ajuda-' + posicao + '-' + $index
+                                            : 'cr-rec-superior-ajuda-' + posicao + '-' + $index
+                                        "
+                                      >
+                                        <legend class="field__label is-required">Admite recurso em instância superior?</legend>
+                                        <label class="radio">
+                                          <input
+                                            type="radio"
+                                            [attr.name]="'admiteInstanciaSuperior-' + posicao + '-' + $index"
+                                            [attr.formcontrolname]="'admiteInstanciaSuperior-' + posicao + '-' + $index"
+                                            [value]="true"
+                                            [checked]="recurso.admiteInstanciaSuperior === true"
+                                            [disabled]="!edicaoLiberada()"
+                                            [attr.aria-invalid]="recurso.admiteInstanciaSuperior === null ? 'true' : null"
+                                            (change)="declararInstanciaSuperiorDaEtapa(etapa, $index, true)"
+                                          />
+                                          <span class="radio__dot" aria-hidden="true"></span>
+                                          Sim
+                                        </label>
+                                        <label class="radio">
+                                          <input
+                                            type="radio"
+                                            [attr.name]="'admiteInstanciaSuperior-' + posicao + '-' + $index"
+                                            [attr.formcontrolname]="'admiteInstanciaSuperior-' + posicao + '-' + $index"
+                                            [value]="false"
+                                            [checked]="recurso.admiteInstanciaSuperior === false"
+                                            [disabled]="!edicaoLiberada()"
+                                            [attr.aria-invalid]="recurso.admiteInstanciaSuperior === null ? 'true' : null"
+                                            (change)="declararInstanciaSuperiorDaEtapa(etapa, $index, false)"
+                                          />
+                                          <span class="radio__dot" aria-hidden="true"></span>
+                                          Não
+                                        </label>
+                                        <span class="field__hint" [attr.id]="'cr-rec-superior-ajuda-' + posicao + '-' + $index">
+                                          Não quando a decisão da banca recursal é final; Sim quando cabe recurso a outra instância,
+                                          julgada fora do sistema.
+                                        </span>
+                                        @if (recurso.admiteInstanciaSuperior === null) {
+                                          <span class="field__erro" [attr.id]="'cr-rec-superior-erro-' + posicao + '-' + $index">{{
+                                            mensagemDaInstanciaSuperiorEmAberto
+                                          }}</span>
+                                        }
+                                      </fieldset>
+                                      @if (recurso.admiteInstanciaSuperior === true) {
+                                        <div class="form-field">
+                                          <label
+                                            class="label"
+                                            [attr.for]="'cr-rec-susp2-val-' + posicao + '-' + $index"
+                                            >Suspensividade da 2ª instância — prazo</label
+                                          >
+                                          <input
+                                            class="input"
+                                            type="text"
+                                            inputmode="decimal"
+                                            [attr.id]="'cr-rec-susp2-val-' + posicao + '-' + $index"
+                                            [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                            [value]="recurso.suspensividadeSegundaInstanciaValor"
+                                            [disabled]="!edicaoLiberada()"
+                                            (input)="
+                                              alterarRecursoDaEtapa(
+                                                etapa,
+                                                $index,
+                                                'suspensividadeSegundaInstanciaValor',
+                                                $any($event.target).value
+                                              )
+                                            "
+                                          />
+                                        </div>
+                                        <div class="form-field">
+                                          <label
+                                            class="label"
+                                            [attr.for]="'cr-rec-susp2-un-' + posicao + '-' + $index"
+                                            >Suspensividade da 2ª instância — unidade</label
+                                          >
+                                          <select
+                                            class="select"
+                                            [attr.id]="'cr-rec-susp2-un-' + posicao + '-' + $index"
+                                            [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                            [disabled]="!edicaoLiberada()"
+                                            (change)="
+                                              alterarRecursoDaEtapa(
+                                                etapa,
+                                                $index,
+                                                'suspensividadeSegundaInstanciaUnidade',
+                                                $any($event.target).value
+                                              )
+                                            "
+                                          >
+                                            <option
+                                              value=""
+                                              [selected]="recurso.suspensividadeSegundaInstanciaUnidade === ''"
+                                            >
+                                              Sem suspensividade
+                                            </option>
+                                            <option
+                                              value="diasUteis"
+                                              [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'diasUteis'"
+                                            >
+                                              dias úteis
+                                            </option>
+                                            <option
+                                              value="horas"
+                                              [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'horas'"
+                                            >
+                                              horas
+                                            </option>
+                                          </select>
+                                        </div>
+                                      }
+
                                       <button
                                         class="btn btn--tertiary"
                                         type="button"

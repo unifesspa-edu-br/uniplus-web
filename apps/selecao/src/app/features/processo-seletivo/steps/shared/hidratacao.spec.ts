@@ -205,6 +205,7 @@ const FASE_COM_RECURSO = {
       prazoUnidade: 'diasUteis',
       suspensividadePrimeiraInstanciaValor: null,
       suspensividadePrimeiraInstanciaUnidade: null,
+      admiteInstanciaSuperior: true,
       suspensividadeSegundaInstanciaValor: null,
       suspensividadeSegundaInstanciaUnidade: null,
     },
@@ -295,6 +296,25 @@ describe('hidratarDraft — cronograma e etapas', () => {
     expect(fase.regraRecurso?.regraCodigo).toBe('RECURSO-PRAZO-ANCORADO-EM-ATO');
     expect(fase.regraRecurso?.prazoValor).toBe('2');
     expect(fase.regraRecurso).not.toHaveProperty('hash');
+  });
+
+  it('preserva a declaração de instância superior que o servidor devolveu', () => {
+    const semInstancia = dtoComCronograma({
+      cronogramaFases: [
+        {
+          ...FASE_COM_RECURSO,
+          regraRecurso: {
+            ...FASE_COM_RECURSO.regraRecurso,
+            args: { ...FASE_COM_RECURSO.regraRecurso.args, admiteInstanciaSuperior: false },
+          },
+        },
+      ],
+      etapas: [],
+    });
+
+    const [fase] = hidratarDraft(DRAFT, semInstancia).cronograma.fases;
+
+    expect(fase.regraRecurso?.admiteInstanciaSuperior).toBe(false);
   });
 
   /**

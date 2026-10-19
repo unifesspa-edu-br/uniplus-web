@@ -5,6 +5,7 @@ import {
   PAPEL_PRELIMINAR,
   type FaseDoCronograma,
 } from '../../processo-seletivo.models';
+import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../shared/instancia-superior';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 
 /** A fase encerra a matéria que abriu: do que ela publica não cabe mais recurso. */
@@ -35,6 +36,7 @@ export type CampoDaFase =
   | 'recurso.prazo'
   | 'recurso.ancora'
   | 'recurso.suspensividadePrimeiraInstancia'
+  | 'recurso.admiteInstanciaSuperior'
   | 'recurso.suspensividadeSegundaInstancia';
 
 export interface ProblemaDaFase {
@@ -239,14 +241,23 @@ function problemasDoRecurso(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
       regra.suspensividadePrimeiraInstanciaUnidade,
     ),
   );
-  problemas.push(
-    ...problemasDaSuspensividade(
-      'recurso.suspensividadeSegundaInstancia',
-      'segunda instância',
-      regra.suspensividadeSegundaInstanciaValor,
-      regra.suspensividadeSegundaInstanciaUnidade,
-    ),
-  );
+  if (regra.admiteInstanciaSuperior === null) {
+    problemas.push({
+      campo: 'recurso.admiteInstanciaSuperior',
+      mensagem: MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO,
+    });
+  } else if (regra.admiteInstanciaSuperior) {
+    // Sem instância superior o tempo de bloqueio dela não existe nem viaja: conferir um campo
+    // oculto recusaria a gravação por algo que o operador não vê.
+    problemas.push(
+      ...problemasDaSuspensividade(
+        'recurso.suspensividadeSegundaInstancia',
+        'segunda instância',
+        regra.suspensividadeSegundaInstanciaValor,
+        regra.suspensividadeSegundaInstanciaUnidade,
+      ),
+    );
+  }
 
   return problemas;
 }

@@ -1,6 +1,7 @@
 import type { EtapaProcessoInput, FaseCronogramaInput } from '@uniplus/shared-data/selecao';
 
 import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
+import { instanciaSuperiorParaComando } from '../../shared/instancia-superior';
 import { instanteDoCampo } from '../../shared/fuso-institucional';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 
@@ -61,13 +62,7 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
               fase.regraRecurso.suspensividadePrimeiraInstanciaUnidade === ''
                 ? null
                 : fase.regraRecurso.suspensividadePrimeiraInstanciaUnidade,
-            suspensividadeSegundaInstanciaValor: decimalDoCampo(
-              fase.regraRecurso.suspensividadeSegundaInstanciaValor,
-            ),
-            suspensividadeSegundaInstanciaUnidade:
-              fase.regraRecurso.suspensividadeSegundaInstanciaUnidade === ''
-                ? null
-                : fase.regraRecurso.suspensividadeSegundaInstanciaUnidade,
+            ...instanciaSuperiorParaComando(fase.regraRecurso),
           },
   };
 }
@@ -127,13 +122,7 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
         recurso.suspensividadePrimeiraInstanciaUnidade === ''
           ? null
           : recurso.suspensividadePrimeiraInstanciaUnidade,
-      suspensividadeSegundaInstanciaValor: decimalDoCampo(
-        recurso.suspensividadeSegundaInstanciaValor,
-      ),
-      suspensividadeSegundaInstanciaUnidade:
-        recurso.suspensividadeSegundaInstanciaUnidade === ''
-          ? null
-          : recurso.suspensividadeSegundaInstanciaUnidade,
+      ...instanciaSuperiorParaComando(recurso),
     })),
   };
 }

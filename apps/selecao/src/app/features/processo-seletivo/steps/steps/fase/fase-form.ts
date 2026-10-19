@@ -26,6 +26,8 @@ export interface RecursoForm {
   readonly atoAncoraCodigo: FormControl<string>;
   readonly suspensividadePrimeiraInstanciaValor: FormControl<string>;
   readonly suspensividadePrimeiraInstanciaUnidade: FormControl<UnidadeEscolhida>;
+  /** `null` é a pergunta ainda sem resposta; a conferência recusa a gravação nesse estado. */
+  readonly admiteInstanciaSuperior: FormControl<boolean | null>;
   readonly suspensividadeSegundaInstanciaValor: FormControl<string>;
   readonly suspensividadeSegundaInstanciaUnidade: FormControl<UnidadeEscolhida>;
 }
@@ -86,6 +88,7 @@ export function grupoDaConfiguracaoDaFase(fase: FaseDoCronograma): FormGroup<Fas
       suspensividadePrimeiraInstanciaUnidade: controle<UnidadeEscolhida>(
         recurso?.suspensividadePrimeiraInstanciaUnidade ?? '',
       ),
+      admiteInstanciaSuperior: controle<boolean | null>(recurso?.admiteInstanciaSuperior ?? null),
       suspensividadeSegundaInstanciaValor: controle(
         recurso?.suspensividadeSegundaInstanciaValor ?? '',
       ),
@@ -127,6 +130,7 @@ function recursoDaConfiguracao(
     atoAncoraCodigo: valor.atoAncoraCodigo,
     suspensividadePrimeiraInstanciaValor: valor.suspensividadePrimeiraInstanciaValor,
     suspensividadePrimeiraInstanciaUnidade: valor.suspensividadePrimeiraInstanciaUnidade,
+    admiteInstanciaSuperior: valor.admiteInstanciaSuperior,
     suspensividadeSegundaInstanciaValor: valor.suspensividadeSegundaInstanciaValor,
     suspensividadeSegundaInstanciaUnidade: valor.suspensividadeSegundaInstanciaUnidade,
   };

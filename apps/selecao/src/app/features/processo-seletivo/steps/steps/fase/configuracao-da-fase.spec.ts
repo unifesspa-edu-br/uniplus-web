@@ -43,6 +43,7 @@ function recurso(parcial: Partial<RecursoDaFase> = {}): RecursoDaFase {
     atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
     suspensividadePrimeiraInstanciaValor: '',
     suspensividadePrimeiraInstanciaUnidade: '',
+    admiteInstanciaSuperior: true,
     suspensividadeSegundaInstanciaValor: '',
     suspensividadeSegundaInstanciaUnidade: '',
     ...parcial,
@@ -285,6 +286,30 @@ describe('regra de recurso', () => {
 
   it('aceita o par de suspensividade inteiro em branco como desativação', () => {
     expect(conferir(comPreliminar())).toEqual([]);
+  });
+
+  it('cobra a resposta sobre a instância superior, que não tem valor padrão', () => {
+    const problemas = conferir(comPreliminar({ admiteInstanciaSuperior: null }));
+
+    expect(problemas).toHaveLength(1);
+    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.admiteInstanciaSuperior');
+  });
+
+  it('não confere o tempo de bloqueio da instância superior que a janela não admite', () => {
+    const semInstancia = comPreliminar({
+      admiteInstanciaSuperior: false,
+      suspensividadeSegundaInstanciaValor: '48',
+    });
+
+    expect(conferir(semInstancia)).toEqual([]);
+  });
+
+  it('confere o tempo de bloqueio da instância superior que a janela admite', () => {
+    const problemas = conferir(
+      comPreliminar({ admiteInstanciaSuperior: true, suspensividadeSegundaInstanciaValor: '48' }),
+    );
+
+    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.suspensividadeSegundaInstancia');
   });
 
   /**

@@ -276,6 +276,12 @@ export interface RecursoDaFase {
   readonly atoAncoraCodigo: string;
   readonly suspensividadePrimeiraInstanciaValor: string;
   readonly suspensividadePrimeiraInstanciaUnidade: UnidadePrazo | '';
+  /**
+   * Se a janela admite recurso a uma instância superior, julgada fora do sistema. `null` é a
+   * pergunta ainda não respondida: o contrato não tem valor padrão, para que ninguém publique
+   * sem decidir, e a conferência recusa a gravação enquanto ela estiver em aberto.
+   */
+  readonly admiteInstanciaSuperior: boolean | null;
   readonly suspensividadeSegundaInstanciaValor: string;
   readonly suspensividadeSegundaInstanciaUnidade: UnidadePrazo | '';
 }
@@ -348,6 +354,12 @@ export interface RecursoDaEtapa {
    */
   readonly suspensividadePrimeiraInstanciaValor: string;
   readonly suspensividadePrimeiraInstanciaUnidade: UnidadePrazo | '';
+  /**
+   * Se a janela admite recurso a uma instância superior, julgada fora do sistema. `null` é a
+   * pergunta ainda não respondida: o contrato não tem valor padrão, para que ninguém publique
+   * sem decidir, e a conferência recusa a gravação enquanto ela estiver em aberto.
+   */
+  readonly admiteInstanciaSuperior: boolean | null;
   readonly suspensividadeSegundaInstanciaValor: string;
   readonly suspensividadeSegundaInstanciaUnidade: UnidadePrazo | '';
 }

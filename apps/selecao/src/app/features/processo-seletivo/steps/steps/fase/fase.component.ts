@@ -569,11 +569,14 @@ export class FaseStepComponent {
           recurso.suspensividadePrimeiraInstanciaValor.value,
           recurso.suspensividadePrimeiraInstanciaUnidade.value,
         ) || null,
+      admiteInstanciaSuperior: recurso.admiteInstanciaSuperior.value,
       suspensividadeSegundaInstancia:
-        par(
-          recurso.suspensividadeSegundaInstanciaValor.value,
-          recurso.suspensividadeSegundaInstanciaUnidade.value,
-        ) || null,
+        recurso.admiteInstanciaSuperior.value === true
+          ? par(
+              recurso.suspensividadeSegundaInstanciaValor.value,
+              recurso.suspensividadeSegundaInstanciaUnidade.value,
+            ) || null
+          : null,
       bancas: this.bancas.map((banca) => {
         const nomes = banca.categoriasDocumentoIds.map(
           (id) => categorias.find((categoria) => categoria.id === id)?.nome ?? id,

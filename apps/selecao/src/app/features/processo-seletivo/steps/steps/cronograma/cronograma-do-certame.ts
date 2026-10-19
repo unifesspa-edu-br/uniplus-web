@@ -786,6 +786,14 @@ function problemasDasEtapas(
       );
     }
 
+    if (etapa.recursos.some((r) => recursoResolvido(r) && r.admiteInstanciaSuperior === null)) {
+      problemas.push(
+        `Responda, na janela de recurso da etapa ${nome}, se ela admite recurso em instância superior.`,
+      );
+    }
+
+    // O tempo de bloqueio da instância superior só vale quando a janela a admite: oculto, ele
+    // não é conferido nem enviado.
     const suspensividadeQuebrada = etapa.recursos.some(
       (r) =>
         recursoResolvido(r) &&
@@ -793,10 +801,11 @@ function problemasDasEtapas(
           r.suspensividadePrimeiraInstanciaValor,
           r.suspensividadePrimeiraInstanciaUnidade,
         ) ||
-          suspensividadeIncoerente(
-            r.suspensividadeSegundaInstanciaValor,
-            r.suspensividadeSegundaInstanciaUnidade,
-          )),
+          (r.admiteInstanciaSuperior === true &&
+            suspensividadeIncoerente(
+              r.suspensividadeSegundaInstanciaValor,
+              r.suspensividadeSegundaInstanciaUnidade,
+            ))),
     );
     if (suspensividadeQuebrada) {
       problemas.push(

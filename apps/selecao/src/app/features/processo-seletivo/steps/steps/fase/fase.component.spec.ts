@@ -354,6 +354,7 @@ describe('FaseStepComponent', () => {
             atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
             suspensividadePrimeiraInstanciaValor: '',
             suspensividadePrimeiraInstanciaUnidade: '',
+            admiteInstanciaSuperior: true,
             suspensividadeSegundaInstanciaValor: '',
             suspensividadeSegundaInstanciaUnidade: '',
           },
@@ -367,6 +368,94 @@ describe('FaseStepComponent', () => {
 
       expect(selecionado('fase-AVALIACAO-regra')).toBe('RECURSO-PRAZO-ANCORADO-EM-ATO');
       expect(selecionado('fase-AVALIACAO-ancora')).toBe('RESULTADO_PRELIMINAR');
+    });
+  });
+
+  describe('instância superior da regra de recurso', () => {
+    function faseComRecurso(admiteInstanciaSuperior: boolean | null) {
+      return fase({
+        produtos: [
+          { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
+          { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+        ],
+        regraRecurso: {
+          regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+          regraVersao: 'v1',
+          prazoValor: '2',
+          prazoUnidade: 'diasUteis',
+          atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+          suspensividadePrimeiraInstanciaValor: '',
+          suspensividadePrimeiraInstanciaUnidade: '',
+          admiteInstanciaSuperior,
+          suspensividadeSegundaInstanciaValor: '48',
+          suspensividadeSegundaInstanciaUnidade: 'horas',
+        },
+      });
+    }
+
+    function radio(valor: 'true' | 'false'): HTMLInputElement | null {
+      // O valor do DOM não distingue as duas: a diretiva do formulário guarda o booleano nela.
+      const radios = nativo.querySelectorAll<HTMLInputElement>(
+        'input[type="radio"][name="admiteInstanciaSuperior"]',
+      );
+      return radios[valor === 'true' ? 0 : 1] ?? null;
+    }
+
+    async function abrir(admite: boolean | null): Promise<void> {
+      comCronograma(faseComRecurso(admite));
+      await proximoPasso();
+      detectar();
+    }
+
+    it('esconde o tempo de bloqueio da instância superior quando a janela não a admite', async () => {
+      await abrir(false);
+
+      expect(nativo.querySelector('#fase-AVALIACAO-susp2-valor')).toBeNull();
+      expect(nativo.querySelector('#fase-AVALIACAO-susp2-unidade')).toBeNull();
+    });
+
+    it('mostra o tempo de bloqueio quando a janela admite a instância superior', async () => {
+      await abrir(true);
+
+      expect(nativo.querySelector('#fase-AVALIACAO-susp2-valor')).not.toBeNull();
+      expect(nativo.querySelector('#fase-AVALIACAO-susp2-unidade')).not.toBeNull();
+    });
+
+    it('nasce sem resposta e liga o erro ao campo por aria-describedby', async () => {
+      await abrir(null);
+
+      expect(radio('true')?.checked).toBe(false);
+      expect(radio('false')?.checked).toBe(false);
+      expect(radio('true')?.getAttribute('aria-invalid')).toBe('true');
+      expect(componente.erroDoCampo('recurso.admiteInstanciaSuperior')).not.toBeNull();
+
+      const descricao = nativo
+        .querySelector('fieldset.field[aria-describedby*="superior-erro"]')
+        ?.getAttribute('aria-describedby')
+        ?.split(' ');
+      expect(descricao?.every((id) => nativo.querySelector(`#${id}`) !== null)).toBe(true);
+    });
+
+    it('guarda no rascunho a resposta escolhida', async () => {
+      await abrir(null);
+
+      radio('false')?.click();
+      detectar();
+
+      expect(store.draft().cronograma.fases[0].regraRecurso?.admiteInstanciaSuperior).toBe(false);
+      expect(componente.erroDoCampo('recurso.admiteInstanciaSuperior')).toBeNull();
+    });
+
+    it('preserva a resposta lida do servidor ao editar outro campo', async () => {
+      await abrir(false);
+
+      componente.formulario()?.controls.recurso.controls.prazoValor.setValue('5');
+      detectar();
+
+      expect(store.draft().cronograma.fases[0].regraRecurso).toMatchObject({
+        prazoValor: '5',
+        admiteInstanciaSuperior: false,
+      });
     });
   });
 
@@ -390,6 +479,7 @@ describe('FaseStepComponent', () => {
             atoAncoraCodigo: '',
             suspensividadePrimeiraInstanciaValor: '',
             suspensividadePrimeiraInstanciaUnidade: '',
+            admiteInstanciaSuperior: true,
             suspensividadeSegundaInstanciaValor: '',
             suspensividadeSegundaInstanciaUnidade: '',
           },
@@ -422,6 +512,7 @@ describe('FaseStepComponent', () => {
             atoAncoraCodigo: '',
             suspensividadePrimeiraInstanciaValor: '',
             suspensividadePrimeiraInstanciaUnidade: '',
+            admiteInstanciaSuperior: true,
             suspensividadeSegundaInstanciaValor: '',
             suspensividadeSegundaInstanciaUnidade: '',
           },
@@ -531,6 +622,7 @@ describe('FaseStepComponent', () => {
           atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
           suspensividadePrimeiraInstanciaValor: '',
           suspensividadePrimeiraInstanciaUnidade: '',
+          admiteInstanciaSuperior: true,
           suspensividadeSegundaInstanciaValor: '',
           suspensividadeSegundaInstanciaUnidade: '',
         },
