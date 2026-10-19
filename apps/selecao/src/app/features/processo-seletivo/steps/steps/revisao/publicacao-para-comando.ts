@@ -1,6 +1,7 @@
 import { ProblemDetails } from '@uniplus/shared-core/http';
 import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import {
+  AvisoConformidadeDto,
   DadosDoAtoRequest,
   ItemConformidadeDto,
   PublicarProcessoSeletivoRequest,
@@ -451,6 +452,38 @@ export function comoGruposDaRevisao(
   grupos: readonly GrupoDeConformidade[],
 ): readonly GrupoDaRevisao[] {
   return grupos.map((grupo) => ({ ...grupo, itens: grupo.itens.map(comoItemDaRevisao) }));
+}
+
+/** Aviso de conformidade como o painel de revisão o mostra: o que não impede a publicação, mas pede conferência. */
+export interface AvisoDaRevisao {
+  readonly codigo: string;
+  readonly dimensao: string;
+  readonly rotuloDaDimensao: string;
+  readonly mensagem: string;
+  /** Prefixado pela dimensão: a identidade de um aviso é o par `codigo`/`dimensao`. */
+  readonly idDaMensagem: string;
+  /** `null` quando nenhum passo do assistente declara o que o aviso aponta. */
+  readonly passo: { readonly indice: number; readonly nome: string } | null;
+}
+
+/**
+ * Os avisos do servidor com o que o painel mostra de cada um. O atalho para o passo segue o
+ * mesmo destino que o item de pendência da mesma dimensão usa, para os dois não se contradizerem.
+ */
+export function comoAvisosDaRevisao(
+  avisos: readonly AvisoConformidadeDto[],
+): readonly AvisoDaRevisao[] {
+  return avisos.map(({ codigo, dimensao, mensagem }) => {
+    const destino = destinoDoItem(codigo, dimensao);
+    return {
+      codigo,
+      dimensao,
+      rotuloDaDimensao: rotuloDaDimensao(dimensao),
+      mensagem,
+      idDaMensagem: `rev-aviso-${dimensao}-${codigo}`,
+      passo: destino?.passo == null ? null : passoPeloRotulo(destino.passo),
+    };
+  });
 }
 
 /**

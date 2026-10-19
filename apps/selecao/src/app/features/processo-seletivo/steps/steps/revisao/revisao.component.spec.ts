@@ -75,7 +75,7 @@ const TIPO_ATO_DTO = {
   criadoEm: '2020-01-01T00:00:00Z',
 };
 
-const CONFORMIDADE_VERDE = { processoSeletivoId: PROCESSO_ID, itens: [] };
+const CONFORMIDADE_VERDE = { processoSeletivoId: PROCESSO_ID, itens: [], avisos: [] };
 const CONFORMIDADE_LEGAL_VERDE = {
   processoSeletivoId: PROCESSO_ID,
   dataReferencia: '2027-01-01',
@@ -305,6 +305,7 @@ describe('RevisaoStepComponent', () => {
 
       controller.expectOne(ROTA_CONFORMIDADE).flush({
         processoSeletivoId: PROCESSO_ID,
+        avisos: [],
         itens: [
           { codigo: 'x', dimensao: 'taxa_inscricao', mensagem: 'falta declarar', ok: false },
         ],
@@ -800,6 +801,64 @@ describe('RevisaoStepComponent', () => {
     });
   });
 
+  describe('avisos de conformidade', () => {
+    const AVISO = {
+      codigo: 'cronograma_tipo_definitivo_em_mais_de_um_lugar',
+      dimensao: 'cronograma',
+      mensagem: 'O mesmo tipo de ato definitivo foi declarado em mais de uma fase. Confirme que o edital quer isso.',
+    };
+
+    async function abrirComAvisos(avisos: readonly unknown[]): Promise<HTMLElement> {
+      prepararCamposLocais();
+      await criarProcesso();
+      controller
+        .expectOne(ROTA_CONFORMIDADE)
+        .flush({ ...CONFORMIDADE_VERDE, avisos });
+      controller
+        .expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL)
+        .flush(CONFORMIDADE_LEGAL_VERDE);
+      await flushMicrotasks();
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('mostra o aviso numa região própria, com título, fora do checklist de pendências', async () => {
+      const tela = await abrirComAvisos([AVISO]);
+
+      const regiao = tela.querySelector('section[aria-labelledby="revisao-avisos-titulo"]');
+      expect(regiao?.querySelector('h2')?.textContent?.trim()).toBe('Avisos para conferir');
+      expect(regiao?.textContent).toContain(AVISO.mensagem);
+      expect(regiao?.textContent).toContain('não impedem a publicação');
+      expect(tela.querySelector('.revisao-list')?.textContent).not.toContain(AVISO.mensagem);
+    });
+
+    it('oferece o atalho para o passo da dimensão do aviso', async () => {
+      const tela = await abrirComAvisos([AVISO]);
+
+      const botao = tela.querySelector<HTMLButtonElement>(
+        '[aria-labelledby="revisao-avisos-titulo"] .revisao-item__ir',
+      );
+      expect(botao?.textContent?.trim()).toBe(`Ir para ${nomeDoPasso('Cronograma')}`);
+      botao?.click();
+      expect(PASSOS[store.currentStep()].rotulo).toBe('Cronograma');
+    });
+
+    it('não bloqueia a publicação e o banner dos itens conformes traz a ressalva', async () => {
+      const tela = await abrirComAvisos([AVISO]);
+
+      expect(componente.validate()).toEqual({ valid: true });
+      expect(tela.textContent).toContain('Há avisos abaixo, que não impedem a publicação');
+    });
+
+    it('sem aviso, nada aparece e o banner segue sem ressalva', async () => {
+      const tela = await abrirComAvisos([]);
+
+      expect(tela.querySelector('#revisao-avisos-titulo')).toBeNull();
+      expect(tela.textContent).toContain('Nenhuma pendência estrutural.');
+      expect(tela.textContent).not.toContain('avisos abaixo');
+    });
+  });
+
   describe('pendências do processo ENEM', () => {
     const OFERTA_A = '01960000-0000-7000-0000-00000000aaa1';
     const OFERTA_B = '01960000-0000-7000-0000-00000000aaa2';
@@ -809,6 +868,7 @@ describe('RevisaoStepComponent', () => {
       await criarProcesso();
       controller.expectOne(ROTA_CONFORMIDADE).flush({
         processoSeletivoId: PROCESSO_ID,
+        avisos: [],
         itens: [
           {
             codigo: 'distribuicao_vagas_ausente',

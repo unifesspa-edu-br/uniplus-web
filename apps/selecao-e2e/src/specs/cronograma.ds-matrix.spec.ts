@@ -911,7 +911,7 @@ async function mockarProcessoPublicado(
       const corpo = caminho.endsWith(PROCESSO_PUBLICADO_ID)
         ? detalhe
         : caminho.endsWith('/conformidade')
-          ? { processoSeletivoId: PROCESSO_PUBLICADO_ID, itens: [] }
+          ? { processoSeletivoId: PROCESSO_PUBLICADO_ID, itens: [], avisos: [] }
           : [];
 
       await route.fulfill({

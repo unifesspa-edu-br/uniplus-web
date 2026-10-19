@@ -107,7 +107,13 @@
       </div>
 
       @if (estruturalOk()) {
-        <p class="alert alert--success" role="status">Nenhuma pendência estrutural.</p>
+        <p class="alert alert--success" role="status">
+          @if (avisosDaRevisao().length > 0) {
+            Nenhuma pendência estrutural. Há avisos abaixo, que não impedem a publicação, para você conferir.
+          } @else {
+            Nenhuma pendência estrutural.
+          }
+        </p>
       }
 
       <div class="revisao-list">
@@ -171,6 +177,12 @@
         }
       </div>
     </section>
+
+    <sel-avisos-da-revisao
+      [avisos]="avisosDaRevisao()"
+      [navegavel]="!store.emConsulta()"
+      (irParaPasso)="irParaSecao($event)"
+    />
 
     <section class="step-section" aria-labelledby="revisao-legal-titulo">
       <h2 id="revisao-legal-titulo" class="step-section__title">Conformidade legal</h2>
