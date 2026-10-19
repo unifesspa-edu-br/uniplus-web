@@ -90,22 +90,34 @@
     }
   </ui-secao-de-documento>
 
-  @if (oferta(); as nomeDaOferta) {
+  @if (mostrarOpcoes()) {
   <ui-secao-de-documento titulo="Sua inscrição">
     <ui-lista-de-dados>
-      <ng-template uiDado rotulo="Curso" [valor]="nomeDaOferta"></ng-template>
+      @for (opcao of opcoes(); track opcao.rotulo) {
+      <ng-template uiDado [rotulo]="opcao.rotulo" [valor]="opcao.exibicao"></ng-template>
+      }
     </ui-lista-de-dados>
   </ui-secao-de-documento>
   }
 
   <ui-secao-de-documento titulo="Modalidades em que você concorre" largura="inteira">
-    @if (modalidades(); as nomes) {
+    @if (modalidades(); as nomes) { @if (comDuasOpcoes()) { @for (opcao of opcoes(); track
+    opcao.rotulo) { @if (opcao.modalidades; as nomesDaOpcao) {
+    <p>
+      <strong>{{ opcao.rotulo }}@if (opcao.curso) { — {{ opcao.curso }} }</strong>
+    </p>
+    <ul>
+      @for (nome of nomesDaOpcao; track nome) {
+      <li>{{ nome }}</li>
+      }
+    </ul>
+    } } } @else {
     <ul>
       @for (nome of nomes; track nome) {
       <li>{{ nome }}</li>
       }
     </ul>
-    } @else {
+    } } @else {
     <p>
       Este processo seletivo não define pela inscrição as modalidades de concorrência. Consulte o
       edital.
