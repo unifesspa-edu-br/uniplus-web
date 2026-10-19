@@ -145,6 +145,9 @@
             </div>
             <h3 class="edital-row__title">{{ certame.nome }}</h3>
             <div class="edital-row__meta">
+              @if (aberturaDe(certame); as abertura) {
+                <span><strong>Abre:</strong> {{ abertura }}</span>
+              }
               <span><strong>Encerra:</strong> {{ certame.inscricoesAte | dateBr: 'shortMonth' }}</span>
               <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
             </div>
@@ -194,6 +197,9 @@
           </div>
           <h3 class="card__title">{{ certame.nome }}</h3>
           <div class="edital-row__meta">
+            @if (aberturaDe(certame); as abertura) {
+              <span><strong>Abre:</strong> {{ abertura }}</span>
+            }
             <span><strong>Encerra:</strong> {{ certame.inscricoesAte | dateBr: 'shortMonth' }}</span>
             <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
           </div>
