@@ -21,7 +21,7 @@ export interface TiposDocumentoQuery {
  * Configuração). Cadastro classificatório puro — sem FK para outras
  * entidades cadastrais; `tipoEquivalente` é só um rótulo textual (não
  * referência), congelado por snapshot na configuração de exigência
- * documental do edital (RN08, fora desta tela).
+ * documental do edital (congelamento dos parâmetros na publicação, UNI-REQ-0019; fora desta tela).
  *
  * `categoria` guarda o **código** de uma categoria do cadastro, e não um token
  * de vocabulário fechado: o catálogo cresce sem deploy, então o rótulo vem de
@@ -80,7 +80,7 @@ export class TiposDocumentoApi {
     );
   }
 
-  /** DELETE `/api/configuracao/admin/tipos-documento/{id}` — inativação (soft-delete); sem bloqueio por referência externa (RN08/ADR-0061). */
+  /** DELETE `/api/configuracao/admin/tipos-documento/{id}` — inativação (soft-delete); sem bloqueio por referência externa (congelamento na publicação, UNI-REQ-0019; ADR-0061). */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
       `${this.basePath}/api/configuracao/admin/tipos-documento/${encodeURIComponent(id)}`,

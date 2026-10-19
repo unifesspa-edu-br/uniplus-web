@@ -478,7 +478,7 @@ function quadroDeclaradoDe(
  * Projeta a cascata já gravada, só pelo par código/versão da regra escolhida.
  *
  * `fallbackCodigo` e `destinos[]` não entram no rascunho: são derivados do
- * `esquemaArgs` da regra no momento de montar o comando (RN-CASCATA-5), e
+ * `esquemaArgs` da regra no momento de montar o comando (matriz inteira da cascata de remanejamento de cotas, UNI-REQ-0056), e
  * trazê-los da leitura criaria uma segunda fonte que poderia divergir da regra
  * — por exemplo se o catálogo tiver ganhado uma versão nova entre a gravação e
  * esta leitura.

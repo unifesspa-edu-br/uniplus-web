@@ -123,7 +123,7 @@ export interface DistribuicaoDeVagas {
  *
  * A tela não compõe a matriz: `fallbackCodigo` e `destinos[]` são derivados do
  * `esquemaArgs` congelado desta regra no momento de montar o comando de
- * gravação (RN-CASCATA-5). Guardar aqui algo além do par código/versão criaria
+ * gravação (UNI-REQ-0056). Guardar aqui algo além do par código/versão criaria
  * uma segunda fonte que poderia divergir da regra escolhida.
  */
 export interface CascataSelecionada {
