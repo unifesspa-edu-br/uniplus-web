@@ -93,8 +93,10 @@ export {
   FundamentoIsencao,
   type FundamentoIsencaoCodigo,
   type FundamentoIsencaoDto,
+  type AnexoDoAtoRequest,
   type AnexoDoEditalRequest,
   type AtoDoProcessoDto,
+  type AtoPublicadoDto,
   type DocumentoAPublicarDto,
   type DocumentoDoAtoDto,
   FinalidadeDoDocumento,
@@ -104,6 +106,7 @@ export {
   type ProcessoSeletivoDto,
   type ProcessoSeletivoResumoDto,
   type ProcessosSeletivosQuery,
+  type PublicarAtoAvulsoDoProcessoRequest,
   type TipoProcessoSnapshotDto,
 } from './processos-seletivos.api';
 export {

@@ -227,6 +227,31 @@ describe('ProcessosSeletivosApi', () => {
     expect(isApiOk(result)).toBe(true);
   });
 
+  it('publicarAtoAvulso() posta o ato com a chave de idempotência e devolve o ato aceito', async () => {
+    const request = {
+      tipoAtoCodigo: 'ERRATA',
+      numero: '02/2026',
+      dataPublicacao: '2026-10-19',
+      assinante: 'Pró-reitoria de Ensino',
+      documentoPrincipalId: DOCUMENTO_ID,
+      anexos: [{ documentoId: TIPO_ID, nome: 'Planilha' }],
+      atoCorrigidoId: ID,
+      motivoDaCorrecao: 'Corrige a data de abertura.',
+    };
+    const promise = firstValueFrom(
+      api.publicarAtoAvulso(ID, request, withIdempotencyKey('ato-avulso-key')),
+    );
+    const req = controller.expectOne(`${BASE}/api/selecao/processos-seletivos/${ID}/atos`);
+
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(request);
+    expect(req.request.headers.get('Idempotency-Key')).toBe('ato-avulso-key');
+    req.flush({ atoId: TIPO_ID }, { status: 202, statusText: 'Accepted' });
+
+    const result = await promise;
+    expect(isApiOk(result)).toBe(true);
+  });
+
   it('iniciarEnvioDocumentoAPublicar() posta finalidade, nome e tipo de mídia e devolve a URL assinada', async () => {
     const request = {
       finalidade: FinalidadeDoDocumento.documentoDoEdital,
