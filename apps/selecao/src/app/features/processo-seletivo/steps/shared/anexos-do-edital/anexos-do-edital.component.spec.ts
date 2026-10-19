@@ -155,6 +155,23 @@ describe('AnexosDoEditalComponent', () => {
     await tick();
   });
 
+  it('põe a nova tentativa atrás do anexo que ainda está enviando', async () => {
+    componente.aoEscolherArquivos([arquivo('a.pdf'), arquivo('b.pdf')]);
+    await tick();
+    controller.expectOne(ROTA_DOCUMENTOS).flush(null, { status: 500, statusText: 'x' });
+    await tick();
+    // O segundo começou: a nova tentativa do primeiro não pode correr junto com ele.
+    const segundo = controller.expectOne(ROTA_DOCUMENTOS);
+    void componente.retomar(anexos()[0].id);
+    await tick();
+    controller.expectNone(ROTA_DOCUMENTOS);
+
+    segundo.flush(null, { status: 500, statusText: 'x' });
+    await tick();
+    controller.expectOne(ROTA_DOCUMENTOS).flush(null, { status: 500, statusText: 'x' });
+    await tick();
+  });
+
   it('mostra a recusa do catálogo no anexo que falhou e segue para o próximo', async () => {
     componente.aoEscolherArquivos([arquivo('a.pdf'), arquivo('b.pdf')]);
     await tick();
