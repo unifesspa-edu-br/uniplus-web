@@ -27,6 +27,8 @@ const atoSeed: TipoAtoPublicadoDto = {
   unicoPorObjeto: false,
   efeitoIrreversivel: false,
   ehResultado: false,
+  publicavelComoAvulso: false,
+  exigeAtoCorrigido: false,
   vigenciaInicio: '2020-01-01',
   vigenciaFim: null,
   baseLegal: null,
