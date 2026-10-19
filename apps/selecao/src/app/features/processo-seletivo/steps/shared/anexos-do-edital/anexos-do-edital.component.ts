@@ -209,12 +209,16 @@ export class AnexosDoEditalComponent {
     for (const id of ids) await this.executar(processoId, id);
   }
 
-  /** Retoma da fase que falhou, sem repetir o que já concluiu. */
+  /**
+   * Retoma da fase que falhou, sem repetir o que já concluiu. A nova tentativa entra no fim da
+   * mesma fila das escolhas: com outro anexo enviando, as duas requisições correriam juntas.
+   */
   async retomar(id: string): Promise<void> {
     const processoId = this.store.processoSeletivoId();
     const anexo = this.anexos().find((item) => item.id === id);
     if (processoId === null || anexo === undefined || !this.podeRetomar(anexo)) return;
-    await this.executar(processoId, id);
+    this.fila = this.fila.then(() => this.executar(processoId, id));
+    await this.fila;
   }
 
   /**
