@@ -185,6 +185,14 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
                         tooltip="Abrir processo seletivo"
                         [link]="['/processo-seletivo', processo.id]"
                       />
+                      @if (temPublicacoes(processo.status)) {
+                        <ui-icon-button
+                          icon="pi-file"
+                          [accessibleName]="'Publicações de ' + processo.nome"
+                          tooltip="Publicações do processo"
+                          [link]="['/processo-seletivo', processo.id, 'publicacoes']"
+                        />
+                      }
                     </td>
                   </tr>
                 }
@@ -324,6 +332,11 @@ export class ProcessosSeletivosListaPage {
 
   protected statusLabel(status: string): string {
     return STATUS_LABEL.get(status) ?? status;
+  }
+
+  /** Antes da publicação o processo não tem página pública, e portanto nada publicado a mostrar. */
+  protected temPublicacoes(status: string): boolean {
+    return status !== StatusProcesso.rascunho;
   }
 
   protected statusVariante(status: string): UiTagVariant {

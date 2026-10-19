@@ -1,0 +1,276 @@
+<ui-drawer
+  class="cfg-form-drawer"
+  [(visible)]="aberto"
+  [closable]="!publicando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário de publicação de documento"
+  position="right"
+  (closed)="aoFechar()"
+>
+  @if (resumoVisivel()) {
+    <div #resumo class="alert alert--danger pub__resumo" role="alert" tabindex="-1">
+      <span class="alert__icon" aria-hidden="true">!</span>
+      <div class="alert__body">
+        <p class="alert__title">
+          {{ recusa().length > 0 ? 'Não foi possível publicar o documento' : 'Falta completar o documento' }}
+        </p>
+        <ul class="pub__mensagens">
+          @for (mensagem of recusa().length > 0 ? recusa() : impedimentos(); track $index) {
+            <li>{{ mensagem }}</li>
+          }
+        </ul>
+      </div>
+    </div>
+  }
+
+  @if (semTipoParaCorrecao()) {
+    <ui-alert variant="warning" heading="Nenhum tipo de documento disponível">
+      O catálogo não tem tipo publicável como documento avulso em vigor. Fale com a equipe
+      responsável pelo cadastro dos tipos de ato.
+    </ui-alert>
+  }
+
+  <form
+    id="pub-form"
+    class="cfg-form"
+    [formGroup]="form"
+    (ngSubmit)="solicitar()"
+    novalidate
+  >
+    @if (atoDaCorrecao(); as corrigido) {
+      <section aria-labelledby="pub-corrigido-titulo">
+        <h3 id="pub-corrigido-titulo" class="form-section__title">Documento corrigido</h3>
+        <p class="pub__corrigido">
+          {{ rotuloDoAto(corrigido) }}, de {{ corrigido.dataDoAto | dateBr: 'short' }}.
+        </p>
+      </section>
+    }
+
+    <section aria-labelledby="pub-identificacao">
+      <h3 id="pub-identificacao" class="form-section__title">Identificação</h3>
+      <div class="form-grid form-grid--1col">
+        <div class="field" [class.is-error]="erroDoCampo('tipoAtoCodigo')">
+          <label class="field__label is-required" for="pub-tipo">Tipo de documento</label>
+          <select
+            id="pub-tipo"
+            class="select"
+            formControlName="tipoAtoCodigo"
+            [attr.aria-invalid]="erroDoCampo('tipoAtoCodigo') ? 'true' : null"
+            [attr.aria-describedby]="erroDoCampo('tipoAtoCodigo') ? 'pub-tipo-erro' : null"
+          >
+            <option value="" disabled>Selecione o tipo</option>
+            @for (tipo of opcoesDeTipo(); track tipo.codigo) {
+              <option [value]="tipo.codigo">{{ tipo.nome }}</option>
+            }
+          </select>
+          @if (erroDoCampo('tipoAtoCodigo'); as erro) {
+            <span class="field__error" id="pub-tipo-erro">{{ erro }}</span>
+          }
+        </div>
+
+        <div class="field" [class.is-error]="erroDoCampo('numero')">
+          <label class="field__label" for="pub-numero">Número</label>
+          <input
+            id="pub-numero"
+            class="input"
+            type="text"
+            autocomplete="off"
+            formControlName="numero"
+            [attr.aria-invalid]="erroDoCampo('numero') ? 'true' : null"
+            [attr.aria-describedby]="erroDoCampo('numero') ? 'pub-numero-dica pub-numero-erro' : 'pub-numero-dica'"
+          />
+          <span class="field__hint" id="pub-numero-dica">
+            O número que consta no documento, se ele tiver um. Por exemplo: 03/2026.
+          </span>
+          @if (erroDoCampo('numero'); as erro) {
+            <span class="field__error" id="pub-numero-erro">{{ erro }}</span>
+          }
+        </div>
+
+        <div class="field" [class.is-error]="erroDoCampo('dataPublicacao')">
+          <label class="field__label is-required" for="pub-data">Data do documento</label>
+          <input
+            id="pub-data"
+            class="input"
+            type="date"
+            formControlName="dataPublicacao"
+            [attr.aria-invalid]="erroDoCampo('dataPublicacao') ? 'true' : null"
+            [attr.aria-describedby]="erroDoCampo('dataPublicacao') ? 'pub-data-erro' : null"
+          />
+          @if (erroDoCampo('dataPublicacao'); as erro) {
+            <span class="field__error" id="pub-data-erro">{{ erro }}</span>
+          }
+        </div>
+
+        <div class="field" [class.is-error]="erroDoCampo('assinante')">
+          <label class="field__label is-required" for="pub-assinante">Quem assina</label>
+          <input
+            id="pub-assinante"
+            class="input"
+            type="text"
+            autocomplete="off"
+            formControlName="assinante"
+            [attr.aria-invalid]="erroDoCampo('assinante') ? 'true' : null"
+            [attr.aria-describedby]="erroDoCampo('assinante') ? 'pub-assinante-erro' : null"
+          />
+          @if (erroDoCampo('assinante'); as erro) {
+            <span class="field__error" id="pub-assinante-erro">{{ erro }}</span>
+          }
+        </div>
+      </div>
+    </section>
+
+    @if (corrige()) {
+      <section aria-labelledby="pub-correcao">
+        <h3 id="pub-correcao" class="form-section__title">Correção</h3>
+        <div class="form-grid form-grid--1col">
+          @if (escolheOAtoCorrigido()) {
+            <div class="field" [class.is-error]="erroDoCampo('atoCorrigidoId')">
+              <label class="field__label is-required" for="pub-corrigido">Documento corrigido</label>
+              <select
+                id="pub-corrigido"
+                class="select"
+                formControlName="atoCorrigidoId"
+                [attr.aria-invalid]="erroDoCampo('atoCorrigidoId') ? 'true' : null"
+                [attr.aria-describedby]="
+                  erroDoCampo('atoCorrigidoId') ? 'pub-corrigido-dica pub-corrigido-erro' : 'pub-corrigido-dica'
+                "
+              >
+                <option value="" disabled>Selecione o documento</option>
+                @for (ato of atosCorrigiveis(); track ato.id) {
+                  <option [value]="ato.id">
+                    {{ rotuloDoAto(ato) }} — {{ ato.dataDoAto | dateBr: 'short' }}
+                  </option>
+                }
+              </select>
+              <span class="field__hint" id="pub-corrigido-dica">
+                Cada documento é corrigido uma vez. Para corrigir de novo, escolha a correção mais
+                recente.
+              </span>
+              @if (erroDoCampo('atoCorrigidoId'); as erro) {
+                <span class="field__error" id="pub-corrigido-erro">{{ erro }}</span>
+              }
+            </div>
+          }
+
+          <div class="field" [class.is-error]="erroDoCampo('motivoDaCorrecao')">
+            <label class="field__label is-required" for="pub-motivo">Motivo da correção</label>
+            <textarea
+              id="pub-motivo"
+              class="textarea"
+              rows="4"
+              formControlName="motivoDaCorrecao"
+              [attr.aria-invalid]="erroDoCampo('motivoDaCorrecao') ? 'true' : null"
+              [attr.aria-describedby]="erroDoCampo('motivoDaCorrecao') ? 'pub-motivo-erro' : null"
+            ></textarea>
+            @if (erroDoCampo('motivoDaCorrecao'); as erro) {
+              <span class="field__error" id="pub-motivo-erro">{{ erro }}</span>
+            }
+          </div>
+        </div>
+      </section>
+    }
+
+    <section aria-labelledby="pub-principal-titulo">
+      <h3 id="pub-principal-titulo" class="form-section__title">Documento principal</h3>
+      <p class="field__hint" id="pub-principal-dica">
+        O arquivo em PDF que a pessoa lê, de até {{ tamanhoMaximoDoPrincipalMb }} MB.
+      </p>
+      <ui-file-upload
+        idDoCampo="pub-principal"
+        nomeDaLista="Documento principal"
+        descritoPor="pub-principal-titulo pub-principal-dica"
+        acceptedFileTypes=".pdf"
+        [allowedMimeTypes]="apenasPdf"
+        [validarSoPelaExtensao]="true"
+        acceptLabel="PDF"
+        [maxSizeMb]="tamanhoMaximoDoPrincipalMb"
+        [maxFiles]="1"
+        [disabled]="publicando()"
+        [itens]="principal.itens()"
+        (arquivosEscolhidos)="principal.escolher($event)"
+        (itemRetirado)="principal.retirar($event)"
+        (tentarDeNovo)="principal.retomar($event)"
+      />
+    </section>
+
+    <section aria-labelledby="pub-anexos-titulo">
+      <h3 id="pub-anexos-titulo" class="form-section__title">Anexos</h3>
+      <p class="field__hint" id="pub-anexos-dica">
+        Opcional. Arquivos que acompanham o documento, em PDF, DOCX ou ODT, até
+        {{ tamanhoMaximoMb }} MB cada e no máximo {{ limiteDeAnexos }}. O nome de cada anexo é o que
+        a pessoa recebe ao baixá-lo.
+      </p>
+      <ui-file-upload
+        idDoCampo="pub-anexos"
+        nomeDaLista="Anexos"
+        descritoPor="pub-anexos-titulo pub-anexos-dica"
+        [acceptedFileTypes]="extensoesDoAnexo"
+        acceptLabel="PDF, DOCX ou ODT"
+        [multiple]="true"
+        [maxFiles]="limiteDeAnexos"
+        [validarSoPelaExtensao]="true"
+        [maxSizeMb]="tamanhoMaximoMb"
+        [disabled]="publicando()"
+        [itens]="anexos.itens()"
+        (arquivosEscolhidos)="anexos.escolher($event)"
+        (itemRetirado)="anexos.retirar($event)"
+        (tentarDeNovo)="anexos.retomar($event)"
+      />
+
+      @if (anexosConfirmados().length > 0) {
+        <ul class="pub__nomes" aria-label="Nomes dos anexos">
+          @for (anexo of anexosConfirmados(); track anexo.id) {
+            @let erroDoNome = recusaDoNome(anexo);
+            <li>
+              <div class="field" [class.is-error]="erroDoNome !== null">
+                <label class="field__label" [for]="'pub-anexo-nome-' + anexo.id">
+                  Nome do anexo {{ anexo.nomeArquivo }}
+                </label>
+                <input
+                  class="input"
+                  type="text"
+                  autocomplete="off"
+                  [id]="'pub-anexo-nome-' + anexo.id"
+                  [value]="anexo.nome"
+                  [disabled]="publicando()"
+                  [attr.aria-invalid]="erroDoNome !== null ? 'true' : null"
+                  [attr.aria-describedby]="
+                    'pub-anexo-dica-' + anexo.id + (erroDoNome !== null ? ' pub-anexo-erro-' + anexo.id : '')
+                  "
+                  (input)="renomear(anexo, $event)"
+                />
+                <span class="field__hint" [id]="'pub-anexo-dica-' + anexo.id">
+                  Baixado como “{{ nomeBaixado(anexo) }}”.
+                </span>
+                @if (erroDoNome !== null) {
+                  <span class="field__error" [id]="'pub-anexo-erro-' + anexo.id">{{ erroDoNome }}</span>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </form>
+
+  <div class="cfg-form-footer">
+    <button type="button" class="btn btn--tertiary btn--rect" [disabled]="publicando()" (click)="fechar()">
+      Cancelar
+    </button>
+    <button type="submit" form="pub-form" class="btn btn--primary" [disabled]="publicando()">
+      @if (publicando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      {{ publicando() ? 'Publicando…' : 'Publicar' }}
+    </button>
+  </div>
+</ui-drawer>
+
+<ui-confirm-dialog
+  [(visible)]="confirmando"
+  heading="Publicar o documento?"
+  message="A publicação não pode ser desfeita. Depois de publicado, o documento só se corrige por errata ou retificação."
+  confirmLabel="Publicar"
+  (confirmed)="publicar()"
+/>
