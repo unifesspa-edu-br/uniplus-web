@@ -79,6 +79,11 @@ const MODALIDADES_POR_ENVIO: Record<number, ModalidadesDoComprovante> = {
 let modalidadesDoEnvio = (numero: number): ModalidadesDoComprovante =>
   MODALIDADES_POR_ENVIO[numero];
 
+/** A 2ª opção que o envio declarou e as modalidades dela; nulas quando o envio não a declarou. */
+let segundaOpcaoDoEnvio: { id: string; modalidades: ModalidadesDoComprovante } | null = null;
+/** Quantas opções de curso o processo admite. */
+let opcoesDoProcesso = 1;
+
 /** Fernanda Drumond, persona fictícia do portal de documentação, que prefere o nome social. */
 function comprovante(numeroInscricao: string, numero: number): ComprovanteInscricaoDto {
   return {
@@ -88,6 +93,7 @@ function comprovante(numeroInscricao: string, numero: number): ComprovanteInscri
     fusoHorario: FUSO,
     hashIntegridade: 'a'.repeat(64),
     ofertaCursoId: 'o2',
+    ofertaCursoSegundaOpcaoId: segundaOpcaoDoEnvio?.id ?? null,
     respostas: {
       NOME: 'Fernanda Laura Nicole Drumond',
       DESEJA_NOME_SOCIAL: true,
@@ -99,6 +105,7 @@ function comprovante(numeroInscricao: string, numero: number): ComprovanteInscri
     grupos: {},
     aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }],
     modalidades: modalidadesDoEnvio(numero),
+    modalidadesSegundaOpcao: segundaOpcaoDoEnvio?.modalidades ?? null,
   };
 }
 
@@ -157,6 +164,7 @@ const servico = {
           periodo: { inicio: '2026-12-01T03:00:00Z', fim: fimDoPeriodo },
           localidade: { fusoHorario: FUSO },
           ofertas,
+          opcoesDeCurso: { numero: opcoesDoProcesso },
         } as unknown as CertamePublicadoDto,
         200,
         SEM_CABECALHOS,
@@ -215,6 +223,8 @@ describe('ComprovanteDaInscricaoPage', () => {
     fimDoPeriodo = '2999-12-31T02:59:00Z';
     modalidadesDoEnvio = (numero) => MODALIDADES_POR_ENVIO[numero];
     respostasAlteradas = {};
+    segundaOpcaoDoEnvio = null;
+    opcoesDoProcesso = 1;
     vi.restoreAllMocks();
   });
 
@@ -371,6 +381,40 @@ describe('ComprovanteDaInscricaoPage', () => {
     expect(dado(tela, 'Curso')).toBe(
       'Direito (Bacharelado) — Campus Marabá — Matutino e Vespertino',
     );
+  });
+
+  it('com 2 opções, mostra a 1ª e a 2ª e as modalidades concorridas em cada uma', async () => {
+    ofertas = [OFERTA_MEDICINA, OFERTA_DIREITO];
+    opcoesDoProcesso = 2;
+    segundaOpcaoDoEnvio = {
+      id: 'o1',
+      modalidades: [{ codigo: 'LI_EP', nome: 'Escola pública, independente de renda', ordem: 0 }],
+    };
+    const tela = await abrir('1');
+    ofertas = [OFERTA_MEDICINA];
+
+    expect(dado(tela, '1ª opção')).toContain('Direito');
+    expect(dado(tela, '2ª opção')).toContain('Medicina');
+    expect(dado(tela, 'Curso')).toBeNull();
+    const modalidades = secao(tela, 'Modalidades em que você concorre');
+    const listas = [...(modalidades?.querySelectorAll('ul') ?? [])].map((ul) =>
+      [...ul.querySelectorAll('li')].map((li) => li.textContent?.trim()),
+    );
+    expect(listas).toEqual([
+      ['Ampla concorrência', 'Escola pública, independente de renda'],
+      ['Escola pública, independente de renda'],
+    ]);
+  });
+
+  it('o processo de 2 opções com a 2ª vazia mostra "Não declarada" e as modalidades só da 1ª', async () => {
+    ofertas = [OFERTA_MEDICINA, OFERTA_DIREITO];
+    opcoesDoProcesso = 2;
+    const tela = await abrir('1');
+    ofertas = [OFERTA_MEDICINA];
+
+    expect(dado(tela, '2ª opção')).toBe('Não declarada');
+    const modalidades = secao(tela, 'Modalidades em que você concorre');
+    expect(modalidades?.querySelectorAll('ul')).toHaveLength(1);
   });
 
   it('trocar o número na mesma página mostra o outro envio', async () => {

@@ -35,11 +35,11 @@ import {
 import { cpfRevelavel, formatarDataBr, textoMascarado } from '@uniplus/shared-utils';
 
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
-import { nomeDaOferta } from '../oferta-da-inscricao';
 import {
   derivadosDoComprovante,
   envioDoComprovante,
   modalidadesDoComprovante,
+  opcoesDoComprovante,
   municipiosDoComprovante,
   numeroDoComprovante,
   periodoDeInscricaoAberto,
@@ -176,14 +176,17 @@ export class ComprovanteDaInscricaoPage {
       ? doLogin
       : null;
   });
-  /** O curso escolhido, pelo nome congelado na publicação. */
-  protected readonly oferta = computed(() => {
+  /** O curso de cada opção, pelo nome congelado na publicação. */
+  protected readonly opcoes = computed(() => {
     const c = this.carregado();
-    const escolhida = c?.processo?.ofertas.find(
-      (o) => o.ofertaCursoOrigemId === c.comprovante.ofertaCursoId,
-    );
-    return escolhida ? nomeDaOferta(escolhida) : null;
+    return c ? opcoesDoComprovante(c.comprovante, c.processo) : [];
   });
+  /** O envio de um processo de 1 opção sem o curso no certame não tem o que mostrar na seção. */
+  protected readonly mostrarOpcoes = computed(() => {
+    const opcoes = this.opcoes();
+    return opcoes.length > 1 || opcoes[0]?.curso != null;
+  });
+  protected readonly comDuasOpcoes = computed(() => this.opcoes().length > 1);
 
   constructor() {
     // A rota reaproveita a página quando só o número muda: a leitura segue os parâmetros.

@@ -1,4 +1,5 @@
 import type {
+  CertamePublicadoDto,
   ComprovanteInscricaoDto,
   FormularioRenderizavelDto,
   MinhaInscricaoDto,
@@ -10,6 +11,8 @@ import {
   respostaExibida,
   titulosDasOcorrencias,
 } from '@uniplus/shared-ui/components';
+
+import { nomeDaOferta, numeroDeOpcoesDeCurso } from '../oferta-da-inscricao';
 
 export interface RespostaDoComprovante {
   readonly rotulo: string;
@@ -157,6 +160,61 @@ export function modalidadesDoComprovante(
   comprovante: ComprovanteInscricaoDto,
 ): readonly string[] | null {
   return comprovante.modalidades ? nomesPelaOrdem(comprovante.modalidades) : null;
+}
+
+/** Uma opção de curso do envio, com as modalidades em que ele concorre nela. */
+export interface OpcaoDeCursoDoComprovante {
+  /** "Curso" quando o processo admite uma só opção; senão "1ª opção" ou "2ª opção". */
+  readonly rotulo: string;
+  /** O curso pelo nome congelado na publicação; nulo se o envio não declarou a opção ou ela não é mais do certame. */
+  readonly curso: string | null;
+  /** O que a tela mostra da opção: o curso, ou que ela não foi declarada ou não está mais no certame. */
+  readonly exibicao: string;
+  /** Nulo quando a opção não foi declarada ou o processo não define pela inscrição as modalidades. */
+  readonly modalidades: readonly string[] | null;
+}
+
+const exibicaoDaOpcao = (curso: string | null, declarada: boolean): string =>
+  declarada ? (curso ?? 'Curso não encontrado no certame') : 'Não declarada';
+
+/**
+ * Os cursos que o envio declarou, pela ordem das opções. Com 2 opções admitidas, ou com a 2ª declarada, a
+ * 2ª aparece sempre, e não declarada diz isso; com 1, o comprovante tem a única opção, como sempre teve.
+ */
+export function opcoesDoComprovante(
+  comprovante: ComprovanteInscricaoDto,
+  processo: CertamePublicadoDto | null,
+): readonly OpcaoDeCursoDoComprovante[] {
+  const nomeDe = (id: string | null | undefined): string | null => {
+    const oferta = id ? processo?.ofertas.find((o) => o.ofertaCursoOrigemId === id) : undefined;
+    return oferta ? nomeDaOferta(oferta) : null;
+  };
+  const segundaDeclarada = !!comprovante.ofertaCursoSegundaOpcaoId;
+  const admitePar = numeroDeOpcoesDeCurso(processo?.opcoesDeCurso.numero ?? 1) === 2;
+  const opcao = (
+    rotulo: string,
+    id: string | null | undefined,
+    modalidades: readonly string[] | null,
+  ): OpcaoDeCursoDoComprovante => {
+    const curso = nomeDe(id);
+    return { rotulo, curso, exibicao: exibicaoDaOpcao(curso, !!id), modalidades };
+  };
+  const primeira = opcao(
+    segundaDeclarada || admitePar ? '1ª opção' : 'Curso',
+    comprovante.ofertaCursoId,
+    modalidadesDoComprovante(comprovante),
+  );
+  if (!segundaDeclarada && !admitePar) return [primeira];
+  return [
+    primeira,
+    opcao(
+      '2ª opção',
+      comprovante.ofertaCursoSegundaOpcaoId,
+      comprovante.modalidadesSegundaOpcao
+        ? nomesPelaOrdem(comprovante.modalidadesSegundaOpcao)
+        : null,
+    ),
+  ];
 }
 
 /** Os termos aceitos pelo nome que o formulário lhes dá. */

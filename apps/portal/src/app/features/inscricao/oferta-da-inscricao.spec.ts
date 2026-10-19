@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { nomeDaOferta, numeroDeOpcoesDaInscricao, ofertasDaInscricao } from './oferta-da-inscricao';
+import { nomeDaOferta, numeroDeOpcoesDeCurso, ofertasDaInscricao } from './oferta-da-inscricao';
 
 const oferta = (id: string, curso: string) => ({
   ofertaCursoOrigemId: id,
@@ -26,8 +26,8 @@ describe('ofertas da inscrição', () => {
   });
 
   it('o número de opções é 2 só quando a versão fixada admite 2', () => {
-    expect(numeroDeOpcoesDaInscricao({ numeroDeOpcoesDeCurso: 2 })).toBe(2);
-    expect(numeroDeOpcoesDaInscricao({ numeroDeOpcoesDeCurso: '2' })).toBe(2);
-    expect(numeroDeOpcoesDaInscricao({ numeroDeOpcoesDeCurso: 1 })).toBe(1);
+    expect(numeroDeOpcoesDeCurso(2)).toBe(2);
+    expect(numeroDeOpcoesDeCurso('2')).toBe(2);
+    expect(numeroDeOpcoesDeCurso(1)).toBe(1);
   });
 });
