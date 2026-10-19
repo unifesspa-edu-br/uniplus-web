@@ -23,6 +23,7 @@ import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/seleca
 
 import type { DocumentoDefinicao, DocumentoGrupo } from '../../processo-seletivo.models';
 import { hojeNoFusoInstitucional } from '../../shared/fuso-institucional';
+import { vigenteNoDia } from '../../shared/vigencia';
 
 /** Tipo do `rol_de_regras` que a convenção de contagem referencia. */
 const TIPO_REGRA_CONTAGEM = 'algoritmo_contagem_prazo';
@@ -171,9 +172,7 @@ export class CatalogosDoCronogramaService {
    */
   readonly atosVigentes = computed(() => {
     const hoje = this.diaDeReferencia();
-    return this.atos().filter(
-      (ato) => ato.vigenciaInicio <= hoje && (ato.vigenciaFim === null || hoje < ato.vigenciaFim),
-    );
+    return this.atos().filter((ato) => vigenteNoDia(ato, hoje));
   });
 
   /** Rótulo de um ato, vigente ou não — um cronograma gravado precisa de nome. */
