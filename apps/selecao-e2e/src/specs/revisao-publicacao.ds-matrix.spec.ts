@@ -131,6 +131,7 @@ interface MockarProcessoOpcoes {
   readonly status?: 'rascunho' | 'publicado';
   readonly cronogramaFases?: readonly unknown[];
   readonly conformidadeItens?: readonly { codigo: string; dimensao: string; mensagem: string; ok: boolean }[];
+  readonly conformidadeAvisos?: readonly { codigo: string; dimensao: string; mensagem: string }[];
   readonly conformidadeLegalRegras?: readonly unknown[];
 }
 
@@ -186,6 +187,7 @@ function processoDto(cronogramaFases: readonly unknown[], status: string) {
 async function mockarProcesso(page: Page, opcoes: MockarProcessoOpcoes = {}): Promise<void> {
   const cronogramaFases = opcoes.cronogramaFases ?? [FASE_DE_COLETA];
   const conformidadeItens = opcoes.conformidadeItens ?? [];
+  const conformidadeAvisos = opcoes.conformidadeAvisos ?? [];
   const conformidadeLegalRegras = opcoes.conformidadeLegalRegras ?? [];
   const status = opcoes.status ?? 'rascunho';
 
@@ -287,7 +289,11 @@ async function mockarProcesso(page: Page, opcoes: MockarProcessoOpcoes = {}): Pr
           status: 200,
           contentType: 'application/json',
           headers: CORS_HEADERS,
-          body: JSON.stringify({ processoSeletivoId: PROCESSO_ID, itens: conformidadeItens }),
+          body: JSON.stringify({
+            processoSeletivoId: PROCESSO_ID,
+            itens: conformidadeItens,
+            avisos: conformidadeAvisos,
+          }),
         });
         return;
       }
@@ -445,6 +451,31 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
     // dimensão podem levar a passos diferentes, e "Taxa inscricao" era a grafia mecânica do
     // código da dimensão, não o nome que o operador vê no stepper.
     await expect(page.getByRole('button', { name: /Ir para Taxa de inscrição/ })).toBeVisible();
+
+    const resultado = await runAxeWcagAA(page);
+    expect(identificadoresDe(resultado)).toEqual([]);
+  });
+
+  test('não viola WCAG 2.1 AA com aviso de conformidade e checklist conforme', async ({
+    page,
+  }, testInfo) => {
+    await mockarProcesso(page, {
+      cronogramaFases: [FASE_DE_COLETA],
+      conformidadeAvisos: [
+        {
+          codigo: 'cronograma_tipo_definitivo_em_mais_de_um_lugar',
+          dimensao: 'cronograma',
+          mensagem:
+            'O mesmo tipo de ato definitivo foi declarado em mais de uma fase. Confirme que o edital quer isso.',
+        },
+      ],
+    });
+    await page.goto(`/processo-seletivo/${PROCESSO_ID}`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await irAoPasso(page, 'Revisão e publicação', testInfo);
+
+    await expect(page.getByRole('heading', { name: 'Avisos para conferir' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Ir para Cronograma/ })).toBeVisible();
 
     const resultado = await runAxeWcagAA(page);
     expect(identificadoresDe(resultado)).toEqual([]);

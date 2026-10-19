@@ -866,7 +866,7 @@ async function mockarProcesso(page: Page, id: string, detalhe: unknown): Promise
       const corpo = caminho.endsWith(id)
         ? detalhe
         : caminho.endsWith('/conformidade')
-          ? { processoSeletivoId: id, itens: [] }
+          ? { processoSeletivoId: id, itens: [], avisos: [] }
           : [];
 
       await route.fulfill({

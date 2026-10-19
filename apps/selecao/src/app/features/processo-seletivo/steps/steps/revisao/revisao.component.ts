@@ -27,12 +27,14 @@ import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { instanteLegivel } from '../../shared/fuso-institucional';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
 import {
   ObrigatoriedadeReprovadaProblem,
   PendenciaEstruturalProblem,
   agruparPorDimensao,
   comExtensoesDePublicacao,
+  comoAvisosDaRevisao,
   comoGruposDaRevisao,
   comoComandoDePublicacao,
   dataReferenciaLegalDe,
@@ -103,6 +105,7 @@ export type AtoPublicado =
     DateBrPipe,
     ReactiveFormsModule,
     RegrasDasModalidadesComponent,
+    AvisosDaRevisaoComponent,
   ],
   templateUrl: './revisao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -458,6 +461,9 @@ export class RevisaoStepComponent {
         : recusa.pendencias.map((pendencia) => ({ ...pendencia, ok: false }));
     return itens === null ? null : comoGruposDaRevisao(agruparPorDimensao(itens));
   });
+
+  /** Avisos que não impedem publicar: nunca entram em `estruturalOk()` nem em `validate()`. */
+  readonly avisosDaRevisao = computed(() => comoAvisosDaRevisao(this.preflight.avisos()));
 
   readonly estruturalOk = computed(() => {
     const recusa = this.ultimaRecusa();
