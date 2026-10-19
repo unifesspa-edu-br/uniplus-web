@@ -699,7 +699,7 @@ export class TiposDocumentoListPage {
     return tipo
       ? `Deseja remover "${tipo.nome}" (${tipo.codigo})? O tipo é removido e mantido na ` +
           'trilha de auditoria. Editais já publicados que o referenciam não são afetados — os ' +
-          'parâmetros foram congelados na configuração do edital (RN08).'
+          'parâmetros foram congelados na configuração do edital.'
       : 'Deseja remover este tipo de documento?';
   });
 
@@ -843,7 +843,7 @@ export class TiposDocumentoListPage {
     if (this.categoriaForaDasOpcoes() !== null) {
       return 'A categoria atual não está mais no cadastro. Escolha uma das vigentes para substituí-la.';
     }
-    return 'Vem do cadastro de categorias. Congelada no snapshot do edital (RN08).';
+    return 'Vem do cadastro de categorias. Congelada no snapshot do edital.';
   });
 
   protected tamanhoLabel(valor: number | string | null): string {

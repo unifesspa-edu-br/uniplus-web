@@ -534,7 +534,7 @@ describe('TiposDocumentoListPage', () => {
   });
 
   // TiposDocumentoListPage_ModalRemocao_ExibeNomeENota
-  it('CA-07: modal de remoção exibe o nome do tipo e a nota de imunidade RN08', async () => {
+  it('CA-07: modal de remoção exibe o nome do tipo e a nota de congelamento dos parâmetros na publicação', async () => {
     await flushLista([rgSeed]);
     component['pedirRemocao'](rgSeed);
     fixture.detectChanges();
@@ -544,7 +544,9 @@ describe('TiposDocumentoListPage', () => {
     expect(component['confirmRemoverMensagem']()).toContain(
       'Editais já publicados que o referenciam não são afetados',
     );
-    expect(component['confirmRemoverMensagem']()).toContain('RN08');
+    expect(component['confirmRemoverMensagem']()).toContain(
+      'parâmetros foram congelados na configuração do edital',
+    );
   });
 
   // TiposDocumentoListPage_AcaoRemover_UsaVocabularioDeRemocao

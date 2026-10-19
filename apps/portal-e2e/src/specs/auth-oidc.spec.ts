@@ -52,7 +52,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
       await expect(page).toHaveURL(/localhost:4202/);
     });
 
-    test('header exibe nome social do candidato (RN02)', async ({ page }) => {
+    test('header exibe nome social do candidato no lugar do nome civil', async ({ page }) => {
       const user = USERS.candidato;
       await page.goto('/acompanhamento');
       await keycloakLogin(page, user.username, user.password);

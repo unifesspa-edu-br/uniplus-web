@@ -190,7 +190,7 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
       .getByRole('button', { name: `Remover tipo de documento ${rgSeed.codigo}`, exact: true })
       .click();
     const dialog = page.locator('dialog.uni-dialog');
-    await expect(dialog.getByText('RN08')).toBeVisible();
+    await expect(dialog.getByText('parâmetros foram congelados na configuração do edital')).toBeVisible();
     await dialog.getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);

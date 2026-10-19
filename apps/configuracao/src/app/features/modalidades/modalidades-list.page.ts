@@ -102,7 +102,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
       [dynamic]="false"
     >
       Mudanças neste cadastro não afetam processos já publicados, que congelam os dados no momento
-      da criação (RN08). Origem, destino, par e fallback referenciam outra modalidade pelo seu
+      da criação. Origem, destino, par e fallback referenciam outra modalidade pelo seu
       código.
     </ui-alert>
 
@@ -307,8 +307,8 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
         } @else {
           <p>
             A modalidade <code>{{ alvo.codigo }}</code> é removida (soft-delete) e mantida na trilha
-            de auditoria. Cópias congeladas por snapshot em processos publicados não são afetadas
-            (RN08). Confirma?
+            de auditoria. Cópias congeladas por snapshot em processos publicados não são afetadas.
+            Confirma?
           </p>
         }
       }
