@@ -38,6 +38,8 @@ const TIPOS_ATO: TipoAtoPublicadoDto[] = [
     unicoPorObjeto: false,
     efeitoIrreversivel: true,
     ehResultado: false,
+    publicavelComoAvulso: false,
+    exigeAtoCorrigido: false,
     vigenciaInicio: '2020-01-01',
     vigenciaFim: null,
     baseLegal: null,
