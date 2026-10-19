@@ -50,54 +50,11 @@
             </td>
 
             <td data-label="Arquivos">
-              <ul class="atos__arquivos" [attr.aria-label]="'Arquivos de ' + rotuloDoAto(ato)">
-                <li>
-                  <button
-                    type="button"
-                    class="btn btn--tertiary btn--sm"
-                    [disabled]="abrindo() !== null"
-                    [attr.aria-busy]="abrindo() === ato.documentoPrincipal.documentoAPublicarId || null"
-                    [attr.aria-label]="
-                      'Abrir o documento principal ' +
-                      nomeDoDocumento(ato.documentoPrincipal) +
-                      ' (abre em nova aba)'
-                    "
-                    (click)="abrir.emit(ato.documentoPrincipal.documentoAPublicarId)"
-                  >
-                    {{
-                      abrindo() === ato.documentoPrincipal.documentoAPublicarId
-                        ? 'Abrindo…'
-                        : nomeDoDocumento(ato.documentoPrincipal)
-                    }}
-                  </button>
-                  <span class="atos__detalhe">Documento principal</span>
-                </li>
-                @for (anexo of ato.anexos; track anexo.documentoAPublicarId) {
-                  <li>
-                    <button
-                      type="button"
-                      class="btn btn--tertiary btn--sm"
-                      [disabled]="abrindo() !== null"
-                      [attr.aria-busy]="abrindo() === anexo.documentoAPublicarId || null"
-                      [attr.aria-label]="'Abrir o anexo ' + nomeDoDocumento(anexo) + ' (abre em nova aba)'"
-                      (click)="abrir.emit(anexo.documentoAPublicarId)"
-                    >
-                      {{ abrindo() === anexo.documentoAPublicarId ? 'Abrindo…' : nomeDoDocumento(anexo) }}
-                    </button>
-                    <span class="atos__detalhe">Anexo</span>
-                  </li>
-                }
-              </ul>
+              <sel-arquivos-do-ato [ato]="ato" [abrindo]="abrindo()" (abrir)="abrir.emit($event)" />
             </td>
 
             <td data-label="Situação">
-              @if (ato.situacao === registrado) {
-                <ui-tag variant="success">Registrado</ui-tag>
-              } @else if (ato.pendenciaAcimaDoLimiar) {
-                <ui-tag variant="danger">Em processamento há muito tempo</ui-tag>
-              } @else {
-                <ui-tag variant="warning">Em processamento</ui-tag>
-              }
+              <sel-situacao-do-ato [ato]="ato" />
             </td>
 
             <td class="table-responsive__actions" data-label="Ações">
