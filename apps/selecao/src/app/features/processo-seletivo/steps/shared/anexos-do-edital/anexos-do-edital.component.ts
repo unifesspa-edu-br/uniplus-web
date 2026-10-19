@@ -10,15 +10,12 @@ import {
 } from '@angular/core';
 import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
 import { FileUploadComponent, type ArquivoEmEnvio } from '@uniplus/shared-ui/components';
-import {
-  FinalidadeDoDocumento,
-  type DocumentoDoAtoDto,
-  type IniciarEnvioDoDocumentoAPublicarDto,
-} from '@uniplus/shared-data/selecao';
+import { FinalidadeDoDocumento, type DocumentoDoAtoDto } from '@uniplus/shared-data/selecao';
 
 import type { AnexoDoEdital } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { abrirAcessoEmNovaAba, destinoExpirado } from '../envio-pre-assinado';
+import { EnvioDeArquivo, soFaltaConfirmar, type AlvoDoEnvio } from '../envio-de-arquivo';
+import { abrirAcessoEmNovaAba } from '../envio-pre-assinado';
 import {
   EXTENSOES_DO_ANEXO,
   LIMITE_DE_ANEXOS,
@@ -30,21 +27,7 @@ import {
   recusaDoNomeDoAnexo,
   tipoDeMidiaDoAnexo,
 } from './anexos-do-edital';
-import { AnexosDoEditalService, type EnvioDoAnexo } from './envio-do-anexo.service';
-
-/**
- * O que a tela sabe do envio de cada anexo: o arquivo escolhido e onde o fluxo parou. Vive na
- * memória do componente, e não no rascunho, porque os bytes não se guardam e a URL pré-assinada é
- * credencial de acesso ao storage.
- */
-interface EnvioEmMemoria {
-  readonly envio: EnvioDoAnexo;
-  readonly arquivo: File;
-  /** Geração do editor quando o anexo foi escolhido; o arquivo de um processo não vale em outro. */
-  readonly geracao: number;
-  destino: IniciarEnvioDoDocumentoAPublicarDto | null;
-  emCurso: boolean;
-}
+import { AnexosDoEditalService } from './envio-do-anexo.service';
 
 /** Os anexos que o ato da versão vigente publicou, lidos do servidor. */
 type AnexosPublicados =
@@ -98,7 +81,12 @@ export class AnexosDoEditalComponent {
   readonly erroDeAbertura = signal<string | null>(null);
   readonly publicados = signal<AnexosPublicados | null>(null);
 
-  private readonly memoria = new Map<string, EnvioEmMemoria>();
+  /**
+   * O envio de cada anexo, com o arquivo escolhido e onde o fluxo parou. Vive na memória do
+   * componente, e não no rascunho, porque os bytes não se guardam e a URL pré-assinada é
+   * credencial de acesso ao storage.
+   */
+  private readonly memoria = new Map<string, EnvioDeArquivo>();
 
   /** A fila única dos envios: uma nova escolha entra no fim, atrás do que já corre. */
   private fila: Promise<void> = Promise.resolve();
@@ -195,13 +183,20 @@ export class AnexosDoEditalComponent {
       progress: 0,
       fase: 'iniciando',
     };
-    this.memoria.set(anexo.id, {
-      envio: this.servico.abrirEnvio(),
-      arquivo,
-      geracao: this.store.geracao(),
-      destino: null,
-      emCurso: false,
-    });
+    // Geração do editor quando o anexo foi escolhido; o arquivo de um processo não vale em outro.
+    const geracao = this.store.geracao();
+    this.memoria.set(
+      anexo.id,
+      new EnvioDeArquivo({
+        envio: this.servico.abrirEnvio(),
+        arquivo,
+        finalidade: FinalidadeDoDocumento.anexoDoEdital,
+        tipoDeMidia: tipoDeMidiaDoAnexo(arquivo.name),
+        recusaDoFormato: 'O formato do arquivo não é aceito para anexo.',
+        explicar: (problema) => this.problemI18n.resolve(problema).title,
+        vale: () => geracao === this.store.geracao(),
+      }),
+    );
     return { anexo };
   }
 
@@ -240,129 +235,23 @@ export class AnexosDoEditalComponent {
   }
 
   private async executar(processoId: string, id: string): Promise<void> {
-    const memoria = this.memoria.get(id);
-    if (memoria === undefined || memoria.emCurso) return;
+    const envio = this.memoria.get(id);
+    if (envio === undefined) return;
 
-    memoria.emCurso = true;
-    try {
-      await this.percorrer(processoId, id, memoria);
-    } finally {
-      memoria.emCurso = false;
-    }
-  }
-
-  private async percorrer(processoId: string, id: string, memoria: EnvioEmMemoria): Promise<void> {
-    const atual = this.anexoDe(id);
-    if (atual === undefined) return;
-
-    // O arquivo já chegou ao storage numa tentativa anterior: repetir o PUT seria desperdício e
-    // esbarraria numa URL possivelmente vencida. Só a confirmação falta.
-    if (soFaltaConfirmar(atual) && atual.documentoAPublicarId !== undefined) {
-      await this.confirmar(processoId, id, memoria, atual.documentoAPublicarId);
-      return;
-    }
-
-    let destino = memoria.destino;
-    if (destino === null || destinoExpirado(destino)) {
-      const tipoDeMidia = tipoDeMidiaDoAnexo(memoria.arquivo.name);
-      if (tipoDeMidia === null) {
-        this.falhar(id, memoria, 'O formato do arquivo não é aceito para anexo.');
-        return;
-      }
-
-      this.atualizar(id, memoria, { fase: 'iniciando', progress: 0, mensagemErro: undefined });
-      const { resultado } = await memoria.envio.iniciar(processoId, {
-        finalidade: FinalidadeDoDocumento.anexoDoEdital,
-        nomeArquivo: memoria.arquivo.name,
-        tipoDeMidia,
-      });
-      if (!this.vale(memoria)) return;
-      if (!isApiOk(resultado)) {
-        this.falhar(id, memoria, this.problemI18n.resolve(resultado.problem).title);
-        return;
-      }
-      destino = resultado.data;
-      memoria.destino = destino;
-      this.atualizar(id, memoria, {
-        documentoAPublicarId: destino.documentoAPublicarId,
-        expiraEm: destino.expiraEm,
-      });
-    }
-
-    this.atualizar(id, memoria, { fase: 'enviando' });
-    const envio = await memoria.envio.enviarArquivo(destino, memoria.arquivo, (progress) =>
-      this.atualizar(id, memoria, { progress }),
-    );
-    if (!this.vale(memoria)) return;
-    if (!envio.ok) {
-      // A assinatura recusada não volta a valer: a retentativa pede outra URL.
-      if (envio.expirada) {
-        memoria.destino = null;
-        this.atualizar(id, memoria, { documentoAPublicarId: undefined, expiraEm: undefined });
-        this.falhar(id, memoria, 'O endereço de envio não é mais válido. Tente novamente para obter um novo.');
-        return;
-      }
-      this.falhar(id, memoria, 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.');
-      return;
-    }
-
-    this.atualizar(id, memoria, { enviado: true, progress: 100 });
-    // A URL cumpriu o papel; some da memória para não ficar credencial viva à toa.
-    memoria.destino = null;
-    await this.confirmar(processoId, id, memoria, destino.documentoAPublicarId);
-  }
-
-  private async confirmar(
-    processoId: string,
-    id: string,
-    memoria: EnvioEmMemoria,
-    documentoAPublicarId: string,
-  ): Promise<void> {
-    this.atualizar(id, memoria, { fase: 'confirmando', progress: 100 });
-    const { resultado, inconclusiva } = await memoria.envio.confirmar(
-      processoId,
-      documentoAPublicarId,
-    );
-    if (!this.vale(memoria)) return;
-
-    if (!isApiOk(resultado)) {
-      const mensagem = this.problemI18n.resolve(resultado.problem).title;
-      this.atualizar(id, memoria, { confirmacaoIndefinida: inconclusiva });
-      this.falhar(
-        id,
-        memoria,
-        inconclusiva
-          ? `${mensagem} Não é possível saber se o anexo foi registrado; use "Tentar novamente" para repetir a mesma confirmação.`
-          : mensagem,
-      );
-      return;
-    }
-
-    this.atualizar(id, memoria, {
-      fase: 'confirmado',
-      progress: 100,
-      mensagemErro: undefined,
-      confirmacaoIndefinida: false,
-    });
-    this.memoria.delete(id);
+    await envio.executar(processoId, this.alvoDe(id));
+    if (envio.foiConfirmado) this.memoria.delete(id);
   }
 
   /**
-   * Funil de toda escrita do fluxo: a página do editor sobrevive à troca de endereço, então um
-   * envio disparado para o processo anterior continua respondendo depois que o editor já trata de
-   * outro. Escrever ali vincularia o anexo de um processo ao outro.
+   * Onde o envio escreve: o anexo na lista do rascunho. A página do editor sobrevive à troca de
+   * endereço, então um envio disparado para o processo anterior continua respondendo depois que o
+   * editor já trata de outro; o envio só escreve enquanto a geração em que nasceu é a atual.
    */
-  private atualizar(id: string, memoria: EnvioEmMemoria, patch: Partial<AnexoDoEdital>): void {
-    if (!this.vale(memoria)) return;
-    this.alterarAnexo(id, (anexo) => ({ ...anexo, ...patch }));
-  }
-
-  private falhar(id: string, memoria: EnvioEmMemoria, mensagem: string): void {
-    this.atualizar(id, memoria, { fase: 'erro', mensagemErro: mensagem });
-  }
-
-  private vale(memoria: EnvioEmMemoria): boolean {
-    return memoria.geracao === this.store.geracao();
+  private alvoDe(id: string): AlvoDoEnvio {
+    return {
+      estado: () => this.anexoDe(id),
+      atualizar: (alteracao) => this.alterarAnexo(id, (anexo) => ({ ...anexo, ...alteracao })),
+    };
   }
 
   private anexoDe(id: string): AnexoDoEdital | undefined {
@@ -445,11 +334,6 @@ export class AnexosDoEditalComponent {
     const ato = isApiOk(atos) ? atos.data.find((item) => item.id === atoId) : undefined;
     this.publicados.set(ato === undefined ? { estado: 'falha' } : { estado: 'lido', anexos: ato.anexos });
   }
-}
-
-/** O arquivo já chegou ao storage: da tentativa só resta a confirmação, que não usa os bytes. */
-function soFaltaConfirmar(anexo: AnexoDoEdital): boolean {
-  return anexo.enviado === true && anexo.documentoAPublicarId !== undefined;
 }
 
 function formatoDoArquivo(nomeArquivo: string): string {
