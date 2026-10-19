@@ -38,6 +38,7 @@ export class AvaliacaoDaInscricaoEstado {
   private readonly problemas = inject(ProblemI18nService);
 
   private readonly modalidades = signal<ModalidadesAvaliadas | null>(null);
+  private readonly modalidadesSegundaOpcao = signal<ModalidadesAvaliadas | null>(null);
   private readonly documentos = signal<DocumentosAvaliados | null>(null);
   private readonly calculando = signal(false);
   private readonly erro = signal<string | null>(null);
@@ -45,16 +46,24 @@ export class AvaliacaoDaInscricaoEstado {
   /** O estado que os blocos mostram; nulo antes da primeira avaliação. */
   readonly naTela = computed<AvaliacaoNaTela | null>(() => {
     const modalidades = this.modalidades();
+    const modalidadesSegundaOpcao = this.modalidadesSegundaOpcao();
     const documentos = this.documentos();
     const vazia = modalidades === null && documentos === null;
     if (vazia && !this.calculando() && this.erro() === null) return null;
-    return { modalidades, documentos, calculando: this.calculando(), erro: this.erro() };
+    return {
+      modalidades,
+      modalidadesSegundaOpcao,
+      documentos,
+      calculando: this.calculando(),
+      erro: this.erro(),
+    };
   });
 
   private processoId = '';
   private dependencias: DependenciasDaAvaliacao | null = null;
   private impressao: string | null = null;
   private oferta: string | null = null;
+  private segundaOferta: string | null = null;
   private ultimoCorpo: AvaliacaoDaInscricaoRequest | null = null;
   private revisaoAtual = 0;
   private readonly consultas = new Subject<Consulta>();
@@ -92,9 +101,11 @@ export class AvaliacaoDaInscricaoEstado {
     dependencias: DependenciasDaAvaliacao | null | undefined,
     simulacao: SimulacaoDoFormulario,
     oferta: string | null,
+    segundaOferta: string | null,
   ): void {
     this.processoId = processoId;
     this.oferta = oferta;
+    this.segundaOferta = segundaOferta;
     this.dependencias = dependencias ?? null;
     this.impressao = impressaoDasDependencias(simulacao, this.dependencias);
     this.ultimoCorpo = null;
@@ -120,13 +131,26 @@ export class AvaliacaoDaInscricaoEstado {
   }
 
   /**
-   * O candidato trocou a oferta na tela, sem gravar. Cada oferta tem as próprias modalidades e
-   * documentos, então a avaliação mostrada deixa de valer e a consulta sai com a oferta nova — mesmo
-   * que nenhuma resposta tenha mudado. O corpo é montado só quando a oferta de fato mudou.
+   * O candidato trocou a 1ª ou a 2ª opção de curso na tela, sem gravar. Cada oferta tem as próprias
+   * modalidades e documentos, então a avaliação mostrada deixa de valer e a consulta sai com as ofertas
+   * novas — mesmo que nenhuma resposta tenha mudado. O corpo é montado só quando uma oferta de fato mudou.
    */
-  ofertaMudou(oferta: string | null, corpo: () => AvaliacaoDaInscricaoRequest): void {
-    if (oferta === this.oferta) return;
+  ofertaMudou(
+    oferta: string | null,
+    segundaOferta: string | null,
+    corpo: () => AvaliacaoDaInscricaoRequest,
+  ): void {
+    const primeiraMudou = oferta !== this.oferta;
+    const segundaMudou = segundaOferta !== this.segundaOferta;
+    if (!primeiraMudou && !segundaMudou) return;
+    // As modalidades de uma opção cujo curso mudou não valem para o curso novo, e com duas opções elas
+    // estão sob o título do curso: não ficam à vista enquanto a nova avaliação não chega.
+    if (segundaMudou) this.modalidadesSegundaOpcao.set(null);
+    if (primeiraMudou && (segundaOferta !== null || this.segundaOferta !== null)) {
+      this.modalidades.set(null);
+    }
     this.oferta = oferta;
+    this.segundaOferta = segundaOferta;
     this.revisaoAtual++;
     this.consultar(corpo());
   }
@@ -160,6 +184,7 @@ export class AvaliacaoDaInscricaoEstado {
   private aplicar(avaliacao: AvaliacaoDaInscricaoDto): void {
     this.erro.set(null);
     this.modalidades.set(avaliacao.modalidades);
+    this.modalidadesSegundaOpcao.set(avaliacao.modalidadesSegundaOpcao ?? null);
     this.documentos.set(avaliacao.documentos);
   }
 }

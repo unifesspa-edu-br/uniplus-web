@@ -65,29 +65,6 @@ describe('InscricaoDoCandidatoHttp', () => {
     expect(proxima).not.toBe(comSucesso);
   });
 
-  it('as ofertas saem do certame publicado, com o nome congelado e o rótulo dos turnos', async () => {
-    const resultado = firstValueFrom(servico.obterOfertas(PROCESSO));
-    controller
-      .expectOne((req) => req.url.startsWith(`${BASE}/api/selecao/certames/`))
-      .flush({
-        ofertas: [
-          {
-            ofertaCursoOrigemId: 'oferta-1',
-            cursoNome: 'Medicina',
-            cursoGrau: 'Bacharelado',
-            unidadeOfertanteNome: 'Campus Marabá',
-            turnos: ['MATUTINO', 'VESPERTINO'],
-          },
-        ],
-      });
-
-    const ofertas = await resultado;
-
-    expect(ofertas.ok && ofertas.data).toEqual([
-      { id: 'oferta-1', nome: 'Medicina (Bacharelado) — Campus Marabá — Matutino e Vespertino' },
-    ]);
-  });
-
   it('troca a chave depois de uma recusa, para o envio corrigido não colidir com o recusado', async () => {
     const recusada = await enviarERecebe(422);
     const corrigida = await enviarERecebe(200);

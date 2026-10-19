@@ -1,6 +1,5 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { map, type Observable, tap } from 'rxjs';
+import { type Observable, tap } from 'rxjs';
 import { type ApiResult } from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
@@ -10,28 +9,19 @@ import {
 import {
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
-  certamePublicoRequest,
-  type CertamePublicadoDto,
   type ComprovanteInscricaoDto,
   type FormularioRenderizavelDto,
   type InscricaoDto,
   type InscricaoRequest,
   InscricoesApi,
-  SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/selecao';
 
-import { nomeDaOferta } from '../oferta-da-inscricao';
-import {
-  InscricaoDoCandidatoService,
-  type OfertaDaInscricao,
-} from './inscricao-do-candidato.service';
+import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
 
 /** A inscrição do candidato na API do módulo Seleção. */
 @Injectable()
 export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
   private readonly api = inject(InscricoesApi);
-  private readonly http = inject(HttpClient);
-  private readonly basePath = inject(SELECAO_BASE_PATH);
 
   /**
    * O envio em curso: a chave e a assinatura do corpo que ela acompanha. A chave se repete enquanto o
@@ -51,15 +41,6 @@ export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
 
   obterFormulario(processoId: string): Observable<ApiResult<FormularioRenderizavelDto>> {
     return this.api.obterFormulario(processoId);
-  }
-
-  obterOfertas(processoId: string): Observable<ApiResult<readonly OfertaDaInscricao[]>> {
-    const { url, context } = certamePublicoRequest(this.basePath, processoId);
-    return this.http
-      .get<ApiResult<CertamePublicadoDto>>(url, { context })
-      .pipe(
-        map((certame) => (certame.ok ? { ...certame, data: ofertasDo(certame.data) } : certame)),
-      );
   }
 
   salvar(
@@ -104,8 +85,4 @@ export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
  */
 function assinaturaDoEnvio(processoId: string, request: InscricaoRequest): string {
   return JSON.stringify([processoId, request]);
-}
-
-function ofertasDo(certame: CertamePublicadoDto): readonly OfertaDaInscricao[] {
-  return certame.ofertas.map((o) => ({ id: o.ofertaCursoOrigemId, nome: nomeDaOferta(o) }));
 }
