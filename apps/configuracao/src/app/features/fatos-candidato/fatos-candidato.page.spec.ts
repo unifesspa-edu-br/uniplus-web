@@ -69,6 +69,21 @@ describe('FatosCandidatoPage', () => {
     filtrada.flush([]);
   });
 
+  it('as três opções de "O que o fato é" formam um grupo de rádio nativo', async () => {
+    atenderFases();
+    controller.expectOne((r) => r.url === LISTA).flush([]);
+    await propagar();
+
+    component['abrirCriacao']();
+    fixture.detectChanges();
+
+    const radios = Array.from(
+      (fixture.nativeElement as HTMLElement).ownerDocument.querySelectorAll('input[type="radio"][formcontrolname="tipo"]'),
+    ) as HTMLInputElement[];
+    expect(radios.map((radio) => radio.value)).toEqual(['DECLARADO', 'DERIVADO', 'AGREGADO']);
+    expect(radios.map((radio) => radio.name)).toEqual(['tipo', 'tipo', 'tipo']);
+  });
+
   it('sem a lista de fases, a criação avisa e oferece tentar de novo em vez de um campo vazio', async () => {
     for (const req of controller.match((r) => r.url === FASES)) {
       req.flush(JSON.stringify({ status: 503, title: 'Indisponível', code: 'uniplus.indisponivel' }), PROBLEMA(503));

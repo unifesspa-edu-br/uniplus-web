@@ -301,18 +301,18 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
           <fieldset class="field form-grid__full">
             <legend class="field__label is-required">O que o fato é</legend>
             <label class="radio">
-              <input type="radio" formControlName="tipo" value="DECLARADO" />
-              <span class="radio__circle"></span>
+              <input type="radio" formControlName="tipo" name="tipo" value="DECLARADO" />
+              <span class="radio__dot" aria-hidden="true"></span>
               Perguntado ao candidato num formulário
             </label>
             <label class="radio">
-              <input type="radio" formControlName="tipo" value="DERIVADO" />
-              <span class="radio__circle"></span>
+              <input type="radio" formControlName="tipo" name="tipo" value="DERIVADO" />
+              <span class="radio__dot" aria-hidden="true"></span>
               Derivado por regra de outros fatos
             </label>
             <label class="radio">
-              <input type="radio" formControlName="tipo" value="AGREGADO" />
-              <span class="radio__circle"></span>
+              <input type="radio" formControlName="tipo" name="tipo" value="AGREGADO" />
+              <span class="radio__dot" aria-hidden="true"></span>
               Resumo das respostas dos membros de um grupo (ex.: composição familiar)
             </label>
           </fieldset>
