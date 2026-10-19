@@ -22,6 +22,7 @@ import {
   useApiResource,
   useCursorObsoletoRecovery,
 } from '@uniplus/shared-core/http';
+import { RELOGIO } from '@uniplus/shared-core/relogio';
 import {
   CertameNaVitrineDto,
   SELECAO_BASE_PATH,
@@ -44,6 +45,7 @@ import {
   type UiTagVariant,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
+import { diaNoFuso, formatarDataBr } from '@uniplus/shared-utils';
 
 import { CertamePublicacoesComponent } from '../publicacoes/certame-publicacoes';
 import type { PublicacoesDoCertame } from '../publicacoes/publicacoes.model';
@@ -205,6 +207,8 @@ function numeroDoHeader(
   templateUrl: './processos.html',
 })
 export class ProcessosComponent {
+  private readonly relogio = inject(RELOGIO);
+
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(SELECAO_BASE_PATH);
   private readonly problemI18n = inject(ProblemI18nService);
@@ -425,6 +429,28 @@ export class ProcessosComponent {
   /** Só o certame que ainda recebe inscrição oferece o botão de inscrever-se. */
   protected recebeInscricao(certame: CertameNaVitrineDto): boolean {
     return SITUACOES_QUE_RECEBEM_INSCRICAO.includes(certame.situacao);
+  }
+
+  /**
+   * Quando as inscrições de um certame "Em breve" abrem: a data, ou "hoje às HH:mm" se for no dia
+   * corrente. O dia civil é o do fuso institucional. Não mostra abertura de certame que já recebe
+   * inscrição nem de abertura já passada — nesses casos o que importa é o prazo.
+   */
+  protected aberturaDe(certame: CertameNaVitrineDto): string | null {
+    if (certame.situacao !== SituacaoDoCertame.emBreve) {
+      return null;
+    }
+    const abertura = new Date(certame.inscricoesDe);
+    if (Number.isNaN(abertura.getTime())) {
+      return null;
+    }
+    const agora = this.relogio();
+    if (abertura <= agora) {
+      return null;
+    }
+    return diaNoFuso(abertura) === diaNoFuso(agora)
+      ? `hoje às ${formatarDataBr(abertura, 'hora')}`
+      : formatarDataBr(abertura, 'shortMonth');
   }
 
   protected publicacoesDe(certame: CertameNaVitrineDto): PublicacoesDoCertame | undefined {

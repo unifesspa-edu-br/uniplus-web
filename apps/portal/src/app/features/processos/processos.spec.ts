@@ -4,6 +4,7 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { RELOGIO } from '@uniplus/shared-core/relogio';
 import {
   CertameNaVitrineDto,
   SELECAO_BASE_PATH,
@@ -106,8 +107,10 @@ describe('ProcessosComponent', () => {
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
   const matchMediaOriginal = window.matchMedia;
+  let agora = new Date('2026-10-17T12:00:00Z');
 
   beforeEach(() => {
+    agora = new Date('2026-10-17T12:00:00Z');
     localStorage.clear();
     stubMatchMedia(false);
 
@@ -119,6 +122,7 @@ describe('ProcessosComponent', () => {
         provideRouter([]),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: PublicacoesRepository, useValue: publicacoesComEdital },
+        { provide: RELOGIO, useValue: () => agora },
       ],
     });
 
@@ -610,6 +614,65 @@ describe('ProcessosComponent', () => {
     fixture.detectChanges();
 
     expect(localStorage.getItem('uniplus.portal.certames-visao')).toBe('cards');
+  });
+
+  describe('abertura das inscrições', () => {
+    const emBreve = (inscricoesDe: string): CertameNaVitrineDto => ({
+      ...sisu,
+      inscricoesDe,
+      inscricoesAte: '2026-11-13T15:00:00Z',
+      situacao: SituacaoDoCertame.emBreve,
+    });
+
+    it('em data futura mostra "Abre: <data>" e o encerramento, nas duas visões', async () => {
+      await flushLista([emBreve('2026-10-20T11:00:00Z')], contadoresHeaders);
+      fixture.detectChanges();
+
+      const lista = host().querySelector('.edital-row__meta')?.textContent ?? '';
+      expect(lista).toContain('Abre: 20 out 2026');
+      expect(lista).toContain('Encerra: 13 nov 2026');
+
+      component['setVisao']('cards');
+      fixture.detectChanges();
+      expect(host().querySelector('.card .edital-row__meta')?.textContent).toContain(
+        'Abre: 20 out 2026',
+      );
+    });
+
+    it('no próprio dia civil de Belém mostra "hoje às HH:mm"', async () => {
+      await flushLista([emBreve('2026-10-17T19:11:00Z')], contadoresHeaders);
+      fixture.detectChanges();
+
+      expect(host().querySelector('.edital-row__meta')?.textContent).toContain(
+        'Abre: hoje às 16:11',
+      );
+    });
+
+    it('usa o dia de Belém, não o dia UTC, para decidir o "hoje"', async () => {
+      // 02:00Z de 18/10 é 23:00 de 17/10 em Belém: ainda é hoje.
+      await flushLista([emBreve('2026-10-18T02:00:00Z')], contadoresHeaders);
+      fixture.detectChanges();
+
+      expect(host().querySelector('.edital-row__meta')?.textContent).toContain(
+        'Abre: hoje às 23:00',
+      );
+    });
+
+    it('não mostra abertura que já passou', async () => {
+      await flushLista([emBreve('2026-10-17T11:00:00Z')], contadoresHeaders);
+      fixture.detectChanges();
+
+      expect(host().querySelector('.edital-row__meta')?.textContent).not.toContain('Abre:');
+    });
+
+    it('com inscrições abertas mostra só o encerramento', async () => {
+      await flushLista([sisu], contadoresHeaders);
+      fixture.detectChanges();
+
+      const meta = host().querySelector('.edital-row__meta')?.textContent ?? '';
+      expect(meta).toContain('Encerra:');
+      expect(meta).not.toContain('Abre:');
+    });
   });
 });
 
