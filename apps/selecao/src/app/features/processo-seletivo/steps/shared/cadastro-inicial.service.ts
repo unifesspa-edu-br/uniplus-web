@@ -704,7 +704,7 @@ export class CadastroInicialService {
   }
 
   /**
-   * Declara se o processo aplica o bônus regional (RN05). `aplica: false` grava a declaração com
+   * Declara se o processo aplica o Fator de Atenuação das Desigualdades de Acesso (UNI-REQ-0015). `aplica: false` grava a declaração com
    * os cinco campos do bônus `null`; `aplica: true` exige a configuração.
    */
   async definirBonusRegional(

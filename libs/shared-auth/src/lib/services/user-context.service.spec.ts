@@ -69,7 +69,7 @@ describe('UserContextService', () => {
     });
   });
 
-  describe('displayName — prioridade nome social sobre nome civil (RN02)', () => {
+  describe('displayName — prioridade nome social sobre nome civil (UNI-REQ-0032)', () => {
     it('retorna string vazia quando não há perfil', () => {
       expect(service.displayName()).toBe('');
     });
@@ -87,7 +87,7 @@ describe('UserContextService', () => {
     });
 
     it('cai para nome civil quando nome social é só espaços (trim)', () => {
-      // RN02 manda priorizar nome social, mas string com só espaços não
+      // A prioridade do nome social manda usá-lo, mas string com só espaços não
       // conta como preenchida — usuário cadastrou e depois apagou. O pin
       // garante que `'   '.trim() === ''` continua caindo no fallback.
       authStub.userProfile.set(

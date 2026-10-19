@@ -399,7 +399,7 @@ npx nx e2e selecao-e2e -- --grep "accessibility"
 - **Tokens:** nunca armazenar tokens em localStorage — usar o fluxo OIDC configurado e manter JWT fora de logs
 - **Upload:** validar tipo de arquivo, tamanho máximo e exibir preview antes de enviar
 
-### Nome social (RN02)
+### Nome social (prioridade sobre o nome civil, UNI-REQ-0032)
 
 Em qualquer tela que exiba nome de candidato, verificar se existe nome social cadastrado. Se existir, exibir **apenas o nome social** — nunca o nome civil junto.
 

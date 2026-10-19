@@ -727,7 +727,7 @@ export class ProcessosSeletivosApi {
 
   /**
    * PUT `/api/selecao/processos-seletivos/{id}/bonus-regional` — declara se o
-   * processo aplica o bônus regional (RN05). `aplica` é obrigatório: `false`
+   * processo aplica o Fator de Atenuação das Desigualdades de Acesso (UNI-REQ-0015). `aplica` é obrigatório: `false`
    * declara "sem bônus" e vai com os cinco campos `null`; `true` exige a
    * configuração do bônus.
    *

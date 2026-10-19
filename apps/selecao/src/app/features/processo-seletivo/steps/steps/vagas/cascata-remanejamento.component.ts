@@ -28,8 +28,8 @@ import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.serv
 import { explicarRegra, RegraExplicada } from './regra-em-linguagem-clara';
 
 /**
- * A seção da cascata de remanejamento, dentro do passo Vagas (UNI-REQ-0134,
- * RN-CASCATA-1..5).
+ * A seção da cascata de remanejamento, dentro do passo Vagas (UNI-REQ-0134 e
+ * UNI-REQ-0056).
  *
  * Não é passo próprio do wizard: a cascata é função das ofertas que o
  * operador acabou de montar na mesma tela, e só existe uma decisão por
@@ -42,7 +42,7 @@ import { explicarRegra, RegraExplicada } from './regra-em-linguagem-clara';
  * `fallbackCodigo` e os `destinos[]` são derivados do `esquemaArgs`
  * congelado da regra — nunca compostos aqui. O handler recusa com
  * `MatrizDivergenteDaRegra` qualquer divergência célula a célula
- * (RN-CASCATA-5).
+ * (UNI-REQ-0056).
  */
 @Component({
   selector: 'sel-cascata-remanejamento',
@@ -262,7 +262,7 @@ export class CascataRemanejamentoComponent {
     return posicao < destinos.length ? destinos[posicao] : '—';
   }
 
-  /** Encaixe entre a matriz e cada oferta federal — por oferta, nunca sobre a união (RN-CASCATA-1/2/2b). */
+  /** Encaixe entre a matriz e cada oferta federal — por oferta, nunca sobre a união (UNI-REQ-0056). */
   readonly problemas = computed<readonly ProblemaDaCascata[]>(() => {
     const matriz = this.matriz();
     if (matriz === null) return [];

@@ -169,7 +169,7 @@ describe('problemasDaCascata', () => {
   });
 
   /**
-   * A tela sempre envia a matriz INTEIRA que a regra declara (RN-CASCATA-5) —
+   * A tela sempre envia a matriz INTEIRA que a regra declara (cascata de remanejamento de cotas, UNI-REQ-0056) —
    * nunca um recorte. Uma oferta pode passar em todas as checagens por oferta
    * (fallback presente, cada origem que ELA declara resolve) e mesmo assim
    * deixar de cobrir uma origem ou destino que a matriz declara e nenhuma

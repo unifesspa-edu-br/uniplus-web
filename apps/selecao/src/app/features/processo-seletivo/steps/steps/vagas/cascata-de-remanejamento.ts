@@ -69,7 +69,7 @@ function segueCascata(modalidadeId: string, catalogo: ReadonlyMap<string, Modali
   return catalogo.get(modalidadeId)?.regraRemanejamento === SEGUE_CASCATA;
 }
 
-/** A oferta tem ao menos uma modalidade selecionada que segue a cascata única do processo (RN-CASCATA-2b). */
+/** A oferta tem ao menos uma modalidade selecionada que segue a cascata única do processo (UNI-REQ-0056). */
 export function ofertaExigeCascata(
   oferta: DistribuicaoDeVagas,
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
@@ -128,7 +128,7 @@ export interface ProblemaDaCascata {
 
 /**
  * Confere a matriz que a regra declara contra o quadro de vagas, em dois
- * níveis (RN-CASCATA-1/2/2b).
+ * níveis (cascata de remanejamento de cotas, UNI-REQ-0056).
  *
  * **Por oferta** — nunca contra a união —, espelhando
  * `FallbackNaoSelecionadoNaOferta` e `DestinoDaOrigemNaoResolvivelNaOferta`:
@@ -139,8 +139,8 @@ export interface ProblemaDaCascata {
  *
  * **Sobre a união de todas as ofertas** — espelhando
  * `ExisteCascataOrigemNaoSegueCascata` e `ExisteCascataDestinoDesconhecido`:
- * a tela sempre envia a matriz **inteira** que a regra declara (RN-CASCATA-5
- * não admite recorte), então uma origem ou destino que a regra declara mas
+ * a tela sempre envia a matriz **inteira** que a regra declara (a cascata
+ * de remanejamento não admite recorte), então uma origem ou destino que a regra declara mas
  * nenhuma oferta do processo cobre passa despercebido pela checagem por
  * oferta — e o handler de gravação também não o rejeita, porque
  * `BateComEsquemaArgs` só confere a matriz contra o `esquemaArgs`, nunca
@@ -259,7 +259,7 @@ function problemasDeCoberturaDaMatriz(
 
 /**
  * O comando de gravação: a matriz inteira que a regra declarou, célula a
- * célula (RN-CASCATA-5) — nunca um recorte. O handler recusa com
+ * célula (UNI-REQ-0056) — nunca um recorte. O handler recusa com
  * `MatrizDivergenteDaRegra` qualquer payload que não seja idêntico ao
  * `esquemaArgs` congelado, então enviar menos do que a regra declara já é
  * recusa certa.
