@@ -5,8 +5,10 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import type { TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
 import {
   SELECAO_BASE_PATH,
+  SituacaoDoProdutoPrevisto,
   SituacaoDoRegistroDoAto,
   type AtoDoProcessoDto,
+  type ProdutoPrevistoDto,
 } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -20,6 +22,8 @@ const ROTA_DOCUMENTOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/
 const DOCUMENTO_PRINCIPAL = '01960000-0000-7000-0000-0000000005d1';
 const DOCUMENTO_ANEXO = '01960000-0000-7000-0000-0000000005d2';
 const ATO_AVISO = '01960000-0000-7000-0000-0000000005e1';
+const PRODUTO_ID = '01960000-0000-7000-0000-0000000005f1';
+const ROTA_PRODUTO = `${ROTA_ATOS.replace('/atos', '')}/produtos-previstos/${PRODUTO_ID}/publicacoes`;
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 function tipo(codigo: string, sobrescritas: Partial<TipoAtoPublicadoDto> = {}): TipoAtoPublicadoDto {
@@ -68,6 +72,23 @@ const aviso: AtoDoProcessoDto = {
   },
   anexos: [],
 };
+
+function item(sobrescritas: Partial<ProdutoPrevistoDto> = {}): ProdutoPrevistoDto {
+  return {
+    id: PRODUTO_ID,
+    tipoCodigo: 'RESULTADO_HOMOLOGACAO',
+    tipoNome: 'Resultado da homologação',
+    papel: 'PRELIMINAR',
+    situacao: SituacaoDoProdutoPrevisto.aberto,
+    ato: null,
+    correcoes: [],
+    podePublicar: true,
+    impedimento: null,
+    ...sobrescritas,
+  };
+}
+
+const POLITICA = { campos: ['Número de inscrição'], justificativa: null };
 
 function arquivo(nome: string): File {
   return new File([new Uint8Array(2048).fill(37)], nome);
@@ -438,6 +459,135 @@ describe('PublicarDocumentoComponent', () => {
       });
       requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
       await tick();
+    });
+  });
+
+  describe('item do edital', () => {
+    const confirmar = (): void => {
+      clicar('button[type="submit"]');
+      if (componente['confirmando']()) clicar('[data-testid="confirm-dialog-confirm"]');
+    };
+
+    async function preparar(modo: ModoDaPublicacao): Promise<void> {
+      await abrir(modo);
+      preencher({ assinante: 'Pró-reitoria de Ensino', numero: '01/2026' });
+      await enviar(componente['principal'], 'lista.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+    }
+
+    const publicarResultado: ModoDaPublicacao = {
+      tipo: 'previsto',
+      item: item(),
+      politica: POLITICA,
+      corrigido: null,
+    };
+
+    it('não pede o tipo, que vem do item, e mostra a política do certame com os campos pelo nome', async () => {
+      await abrir({ ...publicarResultado, politica: { campos: ['Número de inscrição', 'Nome'], justificativa: 'Lista nominal prevista no edital.' } });
+
+      expect(host.querySelector('#pub-tipo')).toBeNull();
+      expect(host.textContent).toContain('Resultado da homologação');
+      const politica = host.querySelector('[aria-labelledby="pub-politica-titulo"]')?.textContent ?? '';
+      expect(politica).toContain('Número de inscrição');
+      expect(politica).toContain('Nome');
+      expect(politica).toContain('Lista nominal prevista no edital.');
+    });
+
+    it('não publica o resultado sem a confirmação da política, e leva o foco à confirmação', async () => {
+      await preparar(publicarResultado);
+
+      confirmar();
+      await tick();
+      fixture.detectChanges();
+
+      controller.expectNone(ROTA_PRODUTO);
+      expect(componente['confirmando']()).toBe(false);
+      const caixa = host.querySelector('#pub-politica') as HTMLInputElement;
+      expect(caixa.getAttribute('aria-invalid')).toBe('true');
+      expect(caixa.getAttribute('aria-describedby')).toContain('pub-politica-erro');
+      expect(host.querySelector('#pub-politica-erro')?.textContent).toContain(
+        'Confirme que o documento segue a política de divulgação do certame.',
+      );
+      expect(document.activeElement).toBe(caixa);
+    });
+
+    it('publica o resultado no item, sem o tipo, com a confirmação da política', async () => {
+      await preparar(publicarResultado);
+      (host.querySelector('#pub-politica') as HTMLInputElement).click();
+      fixture.detectChanges();
+
+      confirmar();
+
+      const requisicao = controller.expectOne(ROTA_PRODUTO);
+      expect(requisicao.request.body).toMatchObject({
+        numero: '01/2026',
+        assinante: 'Pró-reitoria de Ensino',
+        documentoPrincipalId: DOCUMENTO_PRINCIPAL,
+        politicaDeDivulgacaoConfirmada: true,
+      });
+      expect(requisicao.request.body).not.toHaveProperty('tipoAtoCodigo');
+      expect(requisicao.request.body).not.toHaveProperty('atoCorrigidoId');
+      requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+      await tick();
+
+      expect(publicados).toBe(1);
+      expect(componente.aberto()).toBe(false);
+    });
+
+    it('não mostra a política nem a pede quando o item não é resultado', async () => {
+      await preparar({ tipo: 'previsto', item: item({ papel: null }), politica: null, corrigido: null });
+      expect(host.querySelector('#pub-politica')).toBeNull();
+
+      confirmar();
+
+      const requisicao = controller.expectOne(ROTA_PRODUTO);
+      expect(requisicao.request.body).toMatchObject({ politicaDeDivulgacaoConfirmada: false });
+      requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+      await tick();
+    });
+
+    it('corrige a publicação mais recente: leva o ato corrigido, exige o motivo e a política', async () => {
+      await preparar({ ...publicarResultado, corrigido: aviso });
+      expect(host.textContent).toContain('Corrigir Aviso nº 01/2026');
+
+      confirmar();
+      expect(componente['confirmando']()).toBe(false);
+      expect(host.querySelector('#pub-motivo')?.closest('.field')?.textContent).toContain('Campo obrigatório.');
+      expect(host.querySelector('#pub-politica')?.getAttribute('aria-invalid')).toBe('true');
+
+      preencher({ motivoDaCorrecao: 'Corrige a classificação.' });
+      (host.querySelector('#pub-politica') as HTMLInputElement).click();
+      fixture.detectChanges();
+      confirmar();
+
+      const requisicao = controller.expectOne(ROTA_PRODUTO);
+      expect(requisicao.request.body).toMatchObject({
+        atoCorrigidoId: ATO_AVISO,
+        motivoDaCorrecao: 'Corrige a classificação.',
+        politicaDeDivulgacaoConfirmada: true,
+      });
+      requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+      await tick();
+    });
+
+    it('mostra a recusa do servidor com a mensagem do catálogo e mantém o formulário preenchido', async () => {
+      await preparar({ ...publicarResultado, item: item({ papel: 'DEFINITIVO' }) });
+      (host.querySelector('#pub-politica') as HTMLInputElement).click();
+      fixture.detectChanges();
+      confirmar();
+
+      const recusa = problema(
+        422,
+        'uniplus.selecao.ato_do_processo.preliminar_nao_publicado',
+        'O resultado definitivo só pode ser publicado depois do preliminar da mesma matéria.',
+      );
+      controller.expectOne(ROTA_PRODUTO).flush(recusa.body, recusa.opts);
+      await tick();
+      fixture.detectChanges();
+
+      expect(textoDoResumo()).toContain('só pode ser publicado depois do preliminar');
+      expect(componente.aberto()).toBe(true);
+      expect(componente['form'].getRawValue().politicaDeDivulgacaoConfirmada).toBe(true);
+      expect(componente['principal'].confirmados()).toHaveLength(1);
     });
   });
 });
