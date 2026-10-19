@@ -12,8 +12,8 @@ const EDITOR_PROCESSO_SELETIVO = 'editor-processo-seletivo';
 
 /**
  * A rota base é a listagem administrativa; `novo` inicia um cadastro vazio,
- * `:id` retoma um processo existente e `:id/simulacao/:finalidade` simula um
- * formulário dele.
+ * `:id` retoma um processo existente, `:id/simulacao/:finalidade` simula um
+ * formulário dele e `:id/publicacoes` mostra o que o processo já publicou.
  *
  * `novo` é declarada antes de `:id` porque o roteador casa na ordem — sem
  * isso, `/processo-seletivo/novo` seria lido como um id chamado "novo".
@@ -42,6 +42,14 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
     loadComponent: () =>
       import('./simulacao/simulacao-do-processo.page').then((m) => m.SimulacaoDoProcessoPage),
     data: { breadcrumb: 'Simulação do formulário' },
+  },
+  {
+    // Publicações do processo: o que ele já publicou e a publicação de documento avulso. Fora do
+    // editor, porque não há rascunho a guardar.
+    path: ':id/publicacoes',
+    loadComponent: () =>
+      import('./publicacoes/publicacoes-do-processo.page').then((m) => m.PublicacoesDoProcessoPage),
+    data: { breadcrumb: 'Publicações' },
   },
   {
     path: ':id',

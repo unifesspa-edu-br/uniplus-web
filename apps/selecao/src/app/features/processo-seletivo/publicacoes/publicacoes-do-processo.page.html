@@ -1,0 +1,116 @@
+<ui-page-header
+  heading="Publicações"
+  [description]="
+    nomeDoProcesso() !== null
+      ? nomeDoProcesso() + ' — documentos publicados por este processo seletivo.'
+      : 'Documentos publicados por este processo seletivo.'
+  "
+>
+  <div uiPageActions class="pub-page__acoes">
+    <a class="btn btn--tertiary" routerLink="/processo-seletivo">Voltar aos processos</a>
+    <button
+      type="button"
+      class="btn btn--primary"
+      [disabled]="!podePublicar()"
+      (click)="publicarDocumento()"
+    >
+      Publicar documento
+    </button>
+  </div>
+</ui-page-header>
+
+@let processo = publicacoes.processo();
+@if (processo.estado === 'falha') {
+  <ui-alert variant="danger" heading="Não foi possível carregar o processo seletivo">
+    {{ processo.mensagem }}
+    <span class="pub-page__tentar">
+      <button type="button" class="btn btn--secondary btn--sm" (click)="publicacoes.recarregarProcesso()">
+        Tentar novamente
+      </button>
+    </span>
+  </ui-alert>
+} @else if (processo.estado === 'lendo') {
+  <p class="pub-page__lendo" role="status">
+    <ui-spinner spinnerSize="sm" />
+    Carregando o processo seletivo…
+  </p>
+} @else if (emRascunho()) {
+  <ui-alert variant="info" heading="O processo ainda não foi publicado" [dynamic]="false">
+    Os documentos são publicados depois do edital de abertura, que cria a página pública do
+    processo. Conclua a publicação do processo para começar.
+  </ui-alert>
+} @else {
+  @let tipos = publicacoes.tipos();
+  @if (tipos.estado === 'falha') {
+    <ui-alert variant="warning" heading="Não foi possível carregar os tipos de documento">
+      {{ tipos.mensagem }} Sem eles não é possível publicar um documento.
+      <span class="pub-page__tentar">
+        <button type="button" class="btn btn--secondary btn--sm" (click)="publicacoes.recarregarTipos()">
+          Tentar novamente
+        </button>
+      </span>
+    </ui-alert>
+  }
+
+  @if (existePendenciaAntiga()) {
+    <ui-alert variant="warning" heading="Há documento em processamento há mais tempo que o normal">
+      O registro de um documento não terminou no prazo esperado. Avise a equipe técnica para
+      conferir; enquanto isso, não publique o mesmo documento de novo.
+    </ui-alert>
+  }
+
+  @if (erroDeAbertura(); as erro) {
+    <ui-alert variant="danger" heading="Não foi possível abrir o documento">{{ erro }}</ui-alert>
+  }
+
+  <section class="panel" aria-labelledby="pub-page-atos-titulo">
+    <div class="panel-head">
+      <div class="panel-head__title">
+        <h2 id="pub-page-atos-titulo">Documentos publicados</h2>
+        <span class="list-count" aria-label="Documentos publicados">
+          {{ publicacoes.listaDeAtos().length }}
+        </span>
+      </div>
+    </div>
+
+    @let atos = publicacoes.atos();
+    @switch (atos.estado) {
+      @case ('lendo') {
+        <p class="pub-page__lendo" role="status">
+          <ui-spinner spinnerSize="sm" />
+          Carregando os documentos…
+        </p>
+      }
+      @case ('falha') {
+        <ui-alert variant="danger" heading="Não foi possível carregar os documentos">
+          {{ atos.mensagem }}
+          <span class="pub-page__tentar">
+            <button type="button" class="btn btn--secondary btn--sm" (click)="publicacoes.recarregarAtos()">
+              Tentar novamente
+            </button>
+          </span>
+        </ui-alert>
+      }
+      @case ('lido') {
+        <sel-atos-do-processo
+          [atos]="atos.dados"
+          [corrigiveis]="publicacoes.atosCorrigiveis()"
+          [abrindo]="abrindo()"
+          (corrigir)="corrigir($event)"
+          (abrir)="abrir($event)"
+        />
+      }
+    }
+  </section>
+
+  @if (publicacoes.processoId(); as processoId) {
+    <sel-publicar-documento
+      [processoId]="processoId"
+      [modo]="modo()"
+      [tipos]="publicacoes.tiposDeDocumentoAvulso()"
+      [atosCorrigiveis]="publicacoes.atosCorrigiveis()"
+      [(aberto)]="formularioAberto"
+      (publicado)="aoPublicar()"
+    />
+  }
+}

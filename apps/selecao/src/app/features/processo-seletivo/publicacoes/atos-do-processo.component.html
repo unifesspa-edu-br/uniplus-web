@@ -1,0 +1,120 @@
+@if (atos().length === 0) {
+  <ui-empty-state
+    heading="Nenhum documento publicado"
+    description="Os documentos que este processo publicar aparecem aqui, com a situação do registro de cada um."
+  />
+} @else {
+  <div class="table-responsive">
+    <table>
+      <caption class="sr-only">
+        Documentos publicados pelo processo, com data, arquivos e situação do registro
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Documento</th>
+          <th scope="col">Data</th>
+          <th scope="col">Arquivos</th>
+          <th scope="col">Situação</th>
+          <th scope="col"><span class="sr-only">Ações</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ato of atos(); track ato.id) {
+          <tr>
+            <td data-label="Documento">
+              <div class="table-responsive__primary">{{ rotuloDoAto(ato) }}</div>
+              <div class="atos__detalhe">Assinado por {{ ato.assinante }}</div>
+              @if (corrigidoPor(ato); as corrigido) {
+                <div class="atos__detalhe">
+                  Corrige: {{ rotuloDoAto(corrigido) }}.
+                  @if (ato.motivoDaCorrecao) {
+                    Motivo: {{ ato.motivoDaCorrecao }}
+                  }
+                </div>
+              } @else if (ato.atoCorrigidoId !== null) {
+                <div class="atos__detalhe">
+                  Corrige outro documento do processo.
+                  @if (ato.motivoDaCorrecao) {
+                    Motivo: {{ ato.motivoDaCorrecao }}
+                  }
+                </div>
+              }
+              @if (corretorDoAto(ato); as corretor) {
+                <div class="atos__detalhe">Corrigido por: {{ rotuloDoAto(corretor) }}.</div>
+              }
+            </td>
+
+            <td data-label="Data">
+              <div>{{ ato.dataDoAto | dateBr: 'short' }}</div>
+              <div class="atos__detalhe">Publicado em {{ ato.publicadoEm | dateBr: 'datetime' }}</div>
+            </td>
+
+            <td data-label="Arquivos">
+              <ul class="atos__arquivos" [attr.aria-label]="'Arquivos de ' + rotuloDoAto(ato)">
+                <li>
+                  <button
+                    type="button"
+                    class="btn btn--tertiary btn--sm"
+                    [disabled]="abrindo() !== null"
+                    [attr.aria-busy]="abrindo() === ato.documentoPrincipal.documentoAPublicarId || null"
+                    [attr.aria-label]="
+                      'Abrir o documento principal ' +
+                      nomeDoDocumento(ato.documentoPrincipal) +
+                      ' (abre em nova aba)'
+                    "
+                    (click)="abrir.emit(ato.documentoPrincipal.documentoAPublicarId)"
+                  >
+                    {{
+                      abrindo() === ato.documentoPrincipal.documentoAPublicarId
+                        ? 'Abrindo…'
+                        : nomeDoDocumento(ato.documentoPrincipal)
+                    }}
+                  </button>
+                  <span class="atos__detalhe">Documento principal</span>
+                </li>
+                @for (anexo of ato.anexos; track anexo.documentoAPublicarId) {
+                  <li>
+                    <button
+                      type="button"
+                      class="btn btn--tertiary btn--sm"
+                      [disabled]="abrindo() !== null"
+                      [attr.aria-busy]="abrindo() === anexo.documentoAPublicarId || null"
+                      [attr.aria-label]="'Abrir o anexo ' + nomeDoDocumento(anexo) + ' (abre em nova aba)'"
+                      (click)="abrir.emit(anexo.documentoAPublicarId)"
+                    >
+                      {{ abrindo() === anexo.documentoAPublicarId ? 'Abrindo…' : nomeDoDocumento(anexo) }}
+                    </button>
+                    <span class="atos__detalhe">Anexo</span>
+                  </li>
+                }
+              </ul>
+            </td>
+
+            <td data-label="Situação">
+              @if (ato.situacao === registrado) {
+                <ui-tag variant="success">Registrado</ui-tag>
+              } @else if (ato.pendenciaAcimaDoLimiar) {
+                <ui-tag variant="danger">Em processamento há muito tempo</ui-tag>
+              } @else {
+                <ui-tag variant="warning">Em processamento</ui-tag>
+              }
+            </td>
+
+            <td class="table-responsive__actions" data-label="Ações">
+              @if (admiteCorrecao(ato)) {
+                <button
+                  type="button"
+                  class="btn btn--secondary btn--sm"
+                  [attr.aria-label]="'Corrigir ' + rotuloDoAto(ato)"
+                  (click)="corrigir.emit(ato)"
+                >
+                  Corrigir
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

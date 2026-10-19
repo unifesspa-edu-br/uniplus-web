@@ -365,6 +365,27 @@ describe('ProcessosSeletivosListaPage', () => {
     expect(abrir?.getAttribute('aria-label')).toBe('Abrir Vestibular 2026.1');
   });
 
+  /**
+   * Antes da publicação o processo não tem página pública, então não há o que publicar nem o que
+   * listar: o atalho só aparece depois dela.
+   */
+  it('oferece as publicações só do processo que já foi publicado', async () => {
+    await flushLista([
+      processo({ id: 'rascunho', nome: 'Em cadastro', status: StatusProcesso.rascunho }),
+      processo({ id: 'publicado', nome: 'No ar', status: StatusProcesso.publicado }),
+    ]);
+
+    const hrefs = Array.from(
+      host().querySelectorAll<HTMLAnchorElement>('tbody tr [data-label="Ações"] a'),
+    ).map((a) => a.getAttribute('href'));
+
+    expect(hrefs).toEqual([
+      '/processo-seletivo/rascunho',
+      '/processo-seletivo/publicado',
+      '/processo-seletivo/publicado/publicacoes',
+    ]);
+  });
+
   it('leva ao cadastro pelo atalho de novo processo', async () => {
     await flushLista([processo()]);
 
