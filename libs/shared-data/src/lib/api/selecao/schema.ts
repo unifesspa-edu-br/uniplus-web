@@ -7942,6 +7942,7 @@ export interface components {
         readonly AvaliacaoDaInscricaoDto: {
             readonly modalidades: components["schemas"]["ModalidadesDaInscricaoDto"];
             readonly documentos: components["schemas"]["DocumentosDaInscricaoDto"];
+            readonly modalidadesSegundaOpcao?: null | components["schemas"]["ModalidadesDaInscricaoDto"];
         };
         readonly AvaliacaoDaInscricaoRequest: {
             readonly respostas: null | Record<string, never>;
@@ -7950,6 +7951,8 @@ export interface components {
             };
             /** Format: uuid */
             readonly ofertaCursoId?: null | string;
+            /** Format: uuid */
+            readonly ofertaCursoSegundaOpcaoId?: null | string;
         };
         readonly AvisoConformidadeDto: {
             readonly codigo: string;
@@ -8054,6 +8057,7 @@ export interface components {
             readonly unidadeAdministradora: components["schemas"]["UnidadeAdministradoraCertameDto"];
             readonly documentoEdital: components["schemas"]["DocumentoEditalCertameDto"];
             readonly ofertas: readonly components["schemas"]["OfertaDeCursoCertameDto"][];
+            readonly opcoesDeCurso: components["schemas"]["OpcoesDeCursoCertameDto"];
             readonly modalidadesOfertadas: readonly string[];
             readonly vagas: readonly components["schemas"]["QuadroDeVagasCertameDto"][];
             readonly etapas: readonly components["schemas"]["EtapaCertameDto"][];
@@ -8081,6 +8085,8 @@ export interface components {
             readonly hashIntegridade: string;
             /** Format: uuid */
             readonly ofertaCursoId: null | string;
+            /** Format: uuid */
+            readonly ofertaCursoSegundaOpcaoId: null | string;
             readonly respostas: Record<string, never>;
             readonly derivados: Record<string, never>;
             readonly grupos: {
@@ -8088,6 +8094,7 @@ export interface components {
             };
             readonly aceites: readonly components["schemas"]["AceiteDeTermoInput"][];
             readonly modalidades: null | readonly components["schemas"]["ModalidadeDaInscricaoDto"][];
+            readonly modalidadesSegundaOpcao: null | readonly components["schemas"]["ModalidadeDaInscricaoDto"][];
         };
         readonly CondicaoAtendimentoCertameDto: {
             readonly codigo: string;
@@ -8935,6 +8942,11 @@ export interface components {
             readonly versaoFormularioId: string;
             /** Format: uuid */
             readonly ofertaCursoId: null | string;
+            /** Format: uuid */
+            readonly ofertaCursoSegundaOpcaoId: null | string;
+            /** Format: int32 */
+            readonly numeroDeOpcoesDeCurso: number | string;
+            readonly ofertas: readonly components["schemas"]["OfertaDeCursoCertameDto"][];
             readonly respostas: Record<string, never>;
             readonly derivados: Record<string, never>;
             readonly grupos: {
@@ -8952,6 +8964,8 @@ export interface components {
                 readonly [key: string]: readonly components["schemas"]["OcorrenciaDeGrupoInscricaoInput"][];
             };
             readonly aceites: null | readonly components["schemas"]["AceiteDeTermoInput"][];
+            /** Format: uuid */
+            readonly ofertaCursoSegundaOpcaoId?: null | string;
         };
         readonly ItemConformidadeDto: {
             readonly codigo: string;
@@ -9242,6 +9256,10 @@ export interface components {
         readonly OpcoesDeclaradasDoFatoDto: {
             readonly fatoCodigo: string;
             readonly opcoes: readonly components["schemas"]["OpcaoDoProcessoDto"][];
+        };
+        readonly OpcoesDeCursoCertameDto: {
+            /** Format: int32 */
+            readonly numero: number | string;
         };
         readonly OpcoesDeCursoDto: {
             /** Format: int32 */
