@@ -1,11 +1,15 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ProblemI18nService, coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
+import { FasesCanonicasApi } from '@uniplus/shared-data/configuracao';
 import { TiposAtoApi, type TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
 import {
   ProcessosSeletivosApi,
+  StatusProcesso,
   type AtoDoProcessoDto,
+  type CampoDivulgacaoDto,
   type ProcessoSeletivoDto,
+  type ProdutosPrevistosDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 
 import { hojeNoFusoInstitucional } from '../steps/shared/fuso-institucional';
@@ -20,6 +24,14 @@ export type Leitura<T> =
 
 const LENDO: Leitura<never> = { estado: 'lendo' };
 
+/** O que a seção "Previstos no edital" precisa para mostrar os itens e a política a confirmar. */
+export interface PrevistosLidos {
+  readonly consulta: ProdutosPrevistosDoProcessoDto;
+  readonly camposDeDivulgacao: readonly CampoDivulgacaoDto[];
+  /** O nome de cada fase pelo código; a fase que o catálogo não nomeia aparece pelo código. */
+  readonly nomeDaFase: (codigo: string) => string;
+}
+
 /**
  * O que a página Publicações do processo sabe: o processo, os atos já publicados e o catálogo de
  * tipos de ato. Provido pela página, e não pela raiz, porque descreve um processo só.
@@ -31,6 +43,7 @@ const LENDO: Leitura<never> = { estado: 'lendo' };
 export class PublicacoesDoProcesso {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly tiposApi = inject(TiposAtoApi);
+  private readonly fasesApi = inject(FasesCanonicasApi);
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** Distingue a leitura mais recente da que ficou para trás quando o processo muda. */
@@ -40,6 +53,7 @@ export class PublicacoesDoProcesso {
   readonly processo = signal<Leitura<ProcessoSeletivoDto>>(LENDO);
   readonly atos = signal<Leitura<readonly AtoDoProcessoDto[]>>(LENDO);
   readonly tipos = signal<Leitura<readonly TipoAtoPublicadoDto[]>>(LENDO);
+  readonly previstos = signal<Leitura<PrevistosLidos>>(LENDO);
 
   /**
    * O dia em que o catálogo foi lido, no fuso institucional. Fica junto dos dados e não no relógio
@@ -63,12 +77,16 @@ export class PublicacoesDoProcesso {
   );
 
   /**
-   * Os atos que a tela oferece para corrigir. Sem o catálogo não há como saber quais congelam a
-   * configuração, e oferecer o edital para o servidor recusar seria pior que não oferecer.
+   * Os atos que a tela oferece para corrigir como documento avulso. Sem o catálogo não há como
+   * saber quais congelam a configuração, e oferecer o edital para o servidor recusar seria pior que
+   * não oferecer. O ato de um item do edital fica de fora: ele se corrige pelo item, que pede a
+   * confirmação da política de divulgação quando o item é resultado.
    */
   readonly atosCorrigiveis = computed(() =>
     this.tipos().estado === 'lido'
-      ? atosQueAdmitemCorrecao(this.listaDeAtos(), codigosQueCongelam(this.listaDeTipos()))
+      ? atosQueAdmitemCorrecao(this.listaDeAtos(), codigosQueCongelam(this.listaDeTipos())).filter(
+          (ato) => ato.produtoDoEditalId === null,
+        )
       : [],
   );
 
@@ -79,13 +97,22 @@ export class PublicacoesDoProcesso {
     this.processo.set(LENDO);
     this.atos.set(LENDO);
     this.tipos.set(LENDO);
+    this.previstos.set(LENDO);
     this.diaDeReferencia.set(hojeNoFusoInstitucional());
 
     await Promise.all([
-      this.lerProcesso(processoId, leitura),
+      this.lerProcesso(processoId, leitura).then(() => this.lerPrevistosDoProcessoPublicado(processoId, leitura)),
       this.lerAtos(processoId, leitura),
       this.lerTipos(leitura),
     ]);
+  }
+
+  /** Relê os itens que o edital declara, por exemplo depois de publicar um. */
+  async recarregarPrevistos(): Promise<void> {
+    const processoId = this.processoId();
+    if (processoId === null) return;
+    if (this.previstos().estado === 'falha') this.previstos.set(LENDO);
+    await this.lerPrevistos(processoId, this.leituraAtual);
   }
 
   /** Relê os atos do processo em tela, por exemplo depois de publicar um. */
@@ -106,6 +133,7 @@ export class PublicacoesDoProcesso {
     if (processoId === null) return;
     this.processo.set(LENDO);
     await this.lerProcesso(processoId, this.leituraAtual);
+    await this.lerPrevistosDoProcessoPublicado(processoId, this.leituraAtual);
   }
 
   private async lerProcesso(processoId: string, leitura: number): Promise<void> {
@@ -117,6 +145,38 @@ export class PublicacoesDoProcesso {
         ? { estado: 'lido', dados: resultado.data }
         : { estado: 'falha', mensagem: this.problemI18n.resolve(resultado.problem).title },
     );
+  }
+
+  /** O processo em rascunho ainda não tem edital vigente, e portanto nenhum item a publicar. */
+  private async lerPrevistosDoProcessoPublicado(processoId: string, leitura: number): Promise<void> {
+    const processo = this.processo();
+    if (processo.estado !== 'lido' || processo.dados.status === StatusProcesso.rascunho) return;
+    await this.lerPrevistos(processoId, leitura);
+  }
+
+  private async lerPrevistos(processoId: string, leitura: number): Promise<void> {
+    const [consulta, campos, fases] = await Promise.all([
+      firstValueFrom(this.api.obterProdutosPrevistos(processoId)),
+      firstValueFrom(this.api.listarCamposDivulgacao()),
+      firstValueFrom(coletarPaginas((cursor) => this.fasesApi.listar({ cursor }))),
+    ]);
+    if (leitura !== this.leituraAtual) return;
+
+    // Sem a consulta não há o que publicar. Os nomes das fases e dos campos da política só
+    // traduzem códigos: faltando um deles, a seção continua útil, com o código no lugar.
+    if (!isApiOk(consulta)) {
+      this.previstos.set({ estado: 'falha', mensagem: this.problemI18n.resolve(consulta.problem).title });
+    } else {
+      const nomes = new Map(isApiOk(fases) ? fases.data.map((fase) => [fase.codigo, fase.nome]) : []);
+      this.previstos.set({
+        estado: 'lido',
+        dados: {
+          consulta: consulta.data,
+          camposDeDivulgacao: isApiOk(campos) ? campos.data : [],
+          nomeDaFase: (codigo) => nomes.get(codigo) ?? codigo,
+        },
+      });
+    }
   }
 
   private async lerAtos(processoId: string, leitura: number): Promise<void> {

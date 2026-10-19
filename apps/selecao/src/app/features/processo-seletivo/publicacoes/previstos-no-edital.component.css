@@ -1,0 +1,41 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-4);
+}
+
+.previstos__grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.previstos__fase,
+.previstos__etapa {
+  margin: 0;
+  color: var(--text-heading);
+}
+
+.previstos__etapa {
+  font-size: var(--text-base);
+}
+
+.previstos__detalhe {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.previstos__impedimento {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.previstos__correcao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
