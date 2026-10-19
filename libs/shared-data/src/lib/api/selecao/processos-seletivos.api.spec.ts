@@ -252,6 +252,59 @@ describe('ProcessosSeletivosApi', () => {
     expect(isApiOk(result)).toBe(true);
   });
 
+  it('obterProdutosPrevistos() lê os itens do edital pelo vendor MIME dos produtos previstos', async () => {
+    const promise = firstValueFrom(api.obterProdutosPrevistos(ID));
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/produtos-previstos`,
+    );
+
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('produtos-previstos-do-processo', 1),
+    );
+    req.flush({
+      numeroDaVersao: 1,
+      politicaDeDivulgacao: { camposPublicos: ['numero_inscricao'], justificativa: null },
+      fases: [],
+      etapasSemFase: [],
+    });
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
+  it('publicarProdutoPrevisto() posta no item, com a chave de idempotência, e devolve o ato aceito', async () => {
+    const request = {
+      numero: '01/2026',
+      dataPublicacao: '2026-10-19',
+      assinante: 'Pró-reitoria de Ensino',
+      documentoPrincipalId: DOCUMENTO_ID,
+      politicaDeDivulgacaoConfirmada: true,
+    };
+    const promise = firstValueFrom(
+      api.publicarProdutoPrevisto(ID, TIPO_ID, request, withIdempotencyKey('produto-key')),
+    );
+    const req = controller.expectOne(
+      `${BASE}/api/selecao/processos-seletivos/${ID}/produtos-previstos/${TIPO_ID}/publicacoes`,
+    );
+
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(request);
+    expect(req.request.headers.get('Idempotency-Key')).toBe('produto-key');
+    req.flush({ atoId: ID }, { status: 202, statusText: 'Accepted' });
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
+  it('listarCamposDivulgacao() lê o vocabulário dos campos da política pelo vendor MIME', async () => {
+    const promise = firstValueFrom(api.listarCamposDivulgacao());
+    const req = controller.expectOne(`${BASE}/api/selecao/campos-divulgacao`);
+
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('campo-divulgacao', 1));
+    req.flush([]);
+
+    expect(isApiOk(await promise)).toBe(true);
+  });
+
   it('iniciarEnvioDocumentoAPublicar() posta finalidade, nome e tipo de mídia e devolve a URL assinada', async () => {
     const request = {
       finalidade: FinalidadeDoDocumento.documentoDoEdital,
