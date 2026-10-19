@@ -292,10 +292,17 @@
                   [valor]="leitura.suspensividadePrimeiraInstancia"
                 />
                 <ui-valor-em-consulta
-                  rotulo="Suspensividade da 2ª instância"
-                  seVazio="Sem suspensividade"
-                  [valor]="leitura.suspensividadeSegundaInstancia"
+                  class="form-grid__full"
+                  rotulo="Admite recurso em instância superior"
+                  [valor]="leitura.admiteInstanciaSuperior"
                 />
+                @if (leitura.admiteInstanciaSuperior) {
+                  <ui-valor-em-consulta
+                    rotulo="Suspensividade da 2ª instância"
+                    seVazio="Sem suspensividade"
+                    [valor]="leitura.suspensividadeSegundaInstancia"
+                  />
+                }
               }
             </div>
           }
@@ -460,45 +467,96 @@
               <p class="field__erro form-grid__full" role="alert">{{ erro }}</p>
             }
 
-            <div class="form-field">
-              <label class="label" [attr.for]="idDaFase('susp2-valor')">
-                Suspensividade da 2ª instância — prazo
-              </label>
-              <input
-                class="input"
-                [attr.id]="idDaFase('susp2-valor')"
-                type="text"
-                inputmode="decimal"
-                formControlName="suspensividadeSegundaInstanciaValor"
-                [attr.aria-describedby]="idDaFase('susp-ajuda')"
-                [attr.aria-invalid]="
-                  erroDoCampo('recurso.suspensividadeSegundaInstancia') ? 'true' : null
-                "
-              />
-            </div>
-            <div class="form-field">
-              <label class="label" [attr.for]="idDaFase('susp2-unidade')">
-                Suspensividade da 2ª instância — unidade
-              </label>
-              <select
-                class="input"
-                [attr.id]="idDaFase('susp2-unidade')"
-                formControlName="suspensividadeSegundaInstanciaUnidade"
-                [attr.aria-describedby]="idDaFase('susp-ajuda')"
-              >
-                <option value="">Sem suspensividade</option>
-                @for (unidade of unidades; track unidade.valor) {
-                  <option [value]="unidade.valor">{{ unidade.rotulo }}</option>
-                }
-              </select>
-            </div>
             <p class="field__hint form-grid__full" [attr.id]="idDaFase('susp-ajuda')">
               O prazo em que o recurso suspende o efeito do que foi publicado. Valor e unidade são
               declarados juntos; deixar os dois em branco desativa a suspensividade daquela
               instância.
             </p>
-            @if (erroDoCampo('recurso.suspensividadeSegundaInstancia'); as erro) {
-              <p class="field__erro form-grid__full" role="alert">{{ erro }}</p>
+
+            <fieldset
+              class="field form-grid__full"
+              [class.is-error]="erroDoCampo('recurso.admiteInstanciaSuperior')"
+              [attr.aria-describedby]="
+                erroDoCampo('recurso.admiteInstanciaSuperior')
+                  ? idDaFase('superior-erro') + ' ' + idDaFase('superior-ajuda')
+                  : idDaFase('superior-ajuda')
+              "
+            >
+              <legend class="field__label is-required">Admite recurso em instância superior?</legend>
+              <label class="radio">
+                <input
+                  type="radio"
+                  name="admiteInstanciaSuperior"
+                  formControlName="admiteInstanciaSuperior"
+                  [attr.formcontrolname]="'admiteInstanciaSuperior'"
+                  [value]="true"
+                  [attr.aria-invalid]="
+                    erroDoCampo('recurso.admiteInstanciaSuperior') ? 'true' : null
+                  "
+                />
+                <span class="radio__dot" aria-hidden="true"></span>
+                Sim
+              </label>
+              <label class="radio">
+                <input
+                  type="radio"
+                  name="admiteInstanciaSuperior"
+                  formControlName="admiteInstanciaSuperior"
+                  [attr.formcontrolname]="'admiteInstanciaSuperior'"
+                  [value]="false"
+                  [attr.aria-invalid]="
+                    erroDoCampo('recurso.admiteInstanciaSuperior') ? 'true' : null
+                  "
+                />
+                <span class="radio__dot" aria-hidden="true"></span>
+                Não
+              </label>
+              <span class="field__hint" [attr.id]="idDaFase('superior-ajuda')">
+                Não quando a decisão da banca recursal é final; Sim quando cabe recurso a outra
+                instância, julgada fora do sistema.
+              </span>
+              @if (erroDoCampo('recurso.admiteInstanciaSuperior'); as erro) {
+                <span class="field__erro" [attr.id]="idDaFase('superior-erro')" role="alert">{{
+                  erro
+                }}</span>
+              }
+            </fieldset>
+            @if (form.controls.recurso.controls.admiteInstanciaSuperior.value === true) {
+              <div class="form-field">
+                <label class="label" [attr.for]="idDaFase('susp2-valor')">
+                  Suspensividade da 2ª instância — prazo
+                </label>
+                <input
+                  class="input"
+                  [attr.id]="idDaFase('susp2-valor')"
+                  type="text"
+                  inputmode="decimal"
+                  formControlName="suspensividadeSegundaInstanciaValor"
+                  [attr.aria-describedby]="idDaFase('susp-ajuda')"
+                  [attr.aria-invalid]="
+                    erroDoCampo('recurso.suspensividadeSegundaInstancia') ? 'true' : null
+                  "
+                />
+              </div>
+              <div class="form-field">
+                <label class="label" [attr.for]="idDaFase('susp2-unidade')">
+                  Suspensividade da 2ª instância — unidade
+                </label>
+                <select
+                  class="input"
+                  [attr.id]="idDaFase('susp2-unidade')"
+                  formControlName="suspensividadeSegundaInstanciaUnidade"
+                  [attr.aria-describedby]="idDaFase('susp-ajuda')"
+                >
+                  <option value="">Sem suspensividade</option>
+                  @for (unidade of unidades; track unidade.valor) {
+                    <option [value]="unidade.valor">{{ unidade.rotulo }}</option>
+                  }
+                </select>
+              </div>
+              @if (erroDoCampo('recurso.suspensividadeSegundaInstancia'); as erro) {
+                <p class="field__erro form-grid__full" role="alert">{{ erro }}</p>
+              }
             }
           </div>
         }

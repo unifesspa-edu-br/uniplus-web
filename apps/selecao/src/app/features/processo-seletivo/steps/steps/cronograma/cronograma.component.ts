@@ -72,6 +72,7 @@ import {
   type ProducaoDosFatos,
 } from '../../shared/fase-do-fato';
 import { etapasDe } from '../../shared/hidratacao';
+import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../shared/instancia-superior';
 import { quemCitaNoProcesso } from '../formulario/formulario-de-inscricao';
 import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
 import {
@@ -264,6 +265,7 @@ export class CronogramaStepComponent {
 
   /** Os papéis escolhíveis, no mesmo vocabulário que a configuração da fase usa. */
   readonly papeis = PAPEIS_ESCOLHIVEIS;
+  readonly mensagemDaInstanciaSuperiorEmAberto = MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO;
 
   get etapas() {
     return this.formulario.controls.etapas;
@@ -893,11 +895,18 @@ export class CronogramaStepComponent {
           recurso.suspensividadePrimeiraInstanciaValor,
           recurso.suspensividadePrimeiraInstanciaUnidade,
         );
-        const segunda = par(
-          recurso.suspensividadeSegundaInstanciaValor,
-          recurso.suspensividadeSegundaInstanciaUnidade,
-        );
+        const segunda = recurso.admiteInstanciaSuperior
+          ? par(
+              recurso.suspensividadeSegundaInstanciaValor,
+              recurso.suspensividadeSegundaInstanciaUnidade,
+            )
+          : '';
         if (primeira) partes.push(`suspensividade da 1ª instância de ${primeira}`);
+        partes.push(
+          recurso.admiteInstanciaSuperior
+            ? 'admite instância superior'
+            : 'não admite instância superior',
+        );
         if (segunda) partes.push(`suspensividade da 2ª instância de ${segunda}`);
         return partes.join('; ');
       }),
@@ -1150,6 +1159,9 @@ export class CronogramaStepComponent {
         // branco são a desativação prevista daquela instância.
         suspensividadePrimeiraInstanciaValor: '',
         suspensividadePrimeiraInstanciaUnidade: '',
+        // Sem valor padrão: a janela só é gravada depois de o operador responder se cabe
+        // instância superior.
+        admiteInstanciaSuperior: null,
         suspensividadeSegundaInstanciaValor: '',
         suspensividadeSegundaInstanciaUnidade: '',
       },
@@ -1209,6 +1221,20 @@ export class CronogramaStepComponent {
 
         return { ...recurso, [campo]: valor };
       }),
+    );
+  }
+
+  /** Registra a resposta da pergunta que o contrato não deixa sem decisão. */
+  declararInstanciaSuperiorDaEtapa(
+    grupo: FormGroup<EtapaForm>,
+    posicao: number,
+    admite: boolean,
+  ): void {
+    this.escreverRecursos(
+      grupo,
+      grupo.controls.recursos.value.map((recurso, i) =>
+        i === posicao ? { ...recurso, admiteInstanciaSuperior: admite } : recurso,
+      ),
     );
   }
 

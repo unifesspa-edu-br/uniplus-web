@@ -771,6 +771,72 @@ describe('CronogramaStepComponent', () => {
     expect(componente.resumoDosRecursos(etapa)).toBe('2 recursos');
   });
 
+  describe('instância superior da janela de recurso da etapa', () => {
+    function janelaAberta() {
+      comFases(ID_AVALIACAO);
+      comEtapasEmFases(['AVALIACAO']);
+      const etapa = componente.etapas.at(0);
+      componente.acrescentarRecursoNaEtapa(etapa);
+      // O catálogo não responde neste cenário: a regra resolvida é o que faz a janela viajar.
+      etapa.controls.recursos.setValue(
+        etapa.controls.recursos.value.map((recurso) => ({
+          ...recurso,
+          regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+          regraVersao: 'v1',
+        })),
+      );
+      componente.alternarFase(0);
+      componente.alternarEtapa(0);
+      componente.alternarBloco(0, 'recursos');
+      detectar();
+      return etapa;
+    }
+
+    const radio = (valor: 'true' | 'false') =>
+      Array.from(
+        nativo.querySelectorAll<HTMLInputElement>(
+          'input[type="radio"][name^="admiteInstanciaSuperior-0-0"]',
+        ),
+      ).find((r) => r.value === valor);
+
+    it('nasce sem resposta, com o campo marcado como inválido e a recusa no resumo', () => {
+      const etapa = janelaAberta();
+
+      expect(etapa.controls.recursos.value[0]?.admiteInstanciaSuperior).toBeNull();
+      expect(radio('true')?.checked).toBe(false);
+      expect(radio('false')?.checked).toBe(false);
+      expect(radio('true')?.getAttribute('aria-invalid')).toBe('true');
+      expect(componente.problemas()).toContainEqual(expect.stringContaining('instância superior'));
+    });
+
+    it('guarda no rascunho a resposta escolhida', () => {
+      const etapa = janelaAberta();
+
+      radio('false')?.click();
+      detectar();
+
+      expect(etapa.controls.recursos.value[0]?.admiteInstanciaSuperior).toBe(false);
+      expect(radio('false')?.getAttribute('aria-invalid')).toBeNull();
+      expect(componente.problemas()).not.toContainEqual(
+        expect.stringContaining('instância superior'),
+      );
+    });
+
+    it('esconde o tempo de bloqueio superior com Não e o mostra com Sim', () => {
+      janelaAberta();
+
+      radio('false')?.click();
+      detectar();
+      expect(nativo.querySelector('#cr-rec-susp2-val-0-0')).toBeNull();
+      expect(nativo.querySelector('#cr-rec-susp2-un-0-0')).toBeNull();
+
+      radio('true')?.click();
+      detectar();
+      expect(nativo.querySelector('#cr-rec-susp2-val-0-0')).not.toBeNull();
+      expect(nativo.querySelector('#cr-rec-susp2-un-0-0')).not.toBeNull();
+    });
+  });
+
   it('abrir um bloco de uma etapa não abre o da outra', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO', 'AVALIACAO']);

@@ -2,7 +2,8 @@ import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { etapasDe } from '../../shared/hidratacao';
-import { comoComandoDeEtapa, recursoResolvido } from './cronograma-para-comando';
+import type { FaseDoCronograma, RecursoDaFase } from '../../processo-seletivo.models';
+import { comoComandoDeEtapa, comoComandoDeFase, recursoResolvido } from './cronograma-para-comando';
 
 /**
  * O certame como o servidor o devolve, reduzido à etapa e à janela recursal — é o único
@@ -14,6 +15,7 @@ function detalheComRecursoDaEtapa(
     prazoUnidade: string;
     suspensividadePrimeiraInstanciaValor: number | null;
     suspensividadePrimeiraInstanciaUnidade: string | null;
+    admiteInstanciaSuperior: boolean;
     suspensividadeSegundaInstanciaValor: number | null;
     suspensividadeSegundaInstanciaUnidade: string | null;
   }> = {},
@@ -46,6 +48,7 @@ function detalheComRecursoDaEtapa(
                 args.suspensividadePrimeiraInstanciaValor ?? null,
               suspensividadePrimeiraInstanciaUnidade:
                 args.suspensividadePrimeiraInstanciaUnidade ?? null,
+              admiteInstanciaSuperior: args.admiteInstanciaSuperior ?? true,
               suspensividadeSegundaInstanciaValor: args.suspensividadeSegundaInstanciaValor ?? null,
               suspensividadeSegundaInstanciaUnidade:
                 args.suspensividadeSegundaInstanciaUnidade ?? null,
@@ -108,6 +111,38 @@ describe('recurso da etapa no ida-e-volta', () => {
     });
   });
 
+  it('envia a declaração de instância superior que o servidor devolveu', () => {
+    const admite = comoComandoDeEtapa(
+      etapasDe(detalheComRecursoDaEtapa({ admiteInstanciaSuperior: true }))[0],
+    );
+    const naoAdmite = comoComandoDeEtapa(
+      etapasDe(detalheComRecursoDaEtapa({ admiteInstanciaSuperior: false }))[0],
+    );
+
+    expect(admite.recursos?.[0]?.admiteInstanciaSuperior).toBe(true);
+    expect(naoAdmite.recursos?.[0]?.admiteInstanciaSuperior).toBe(false);
+  });
+
+  it('omite o tempo de bloqueio superior da janela que não admite a instância', () => {
+    const etapa = etapasDe(
+      detalheComRecursoDaEtapa({
+        admiteInstanciaSuperior: true,
+        suspensividadeSegundaInstanciaValor: 48,
+        suspensividadeSegundaInstanciaUnidade: 'horas',
+      }),
+    )[0];
+    const semInstancia = {
+      ...etapa,
+      recursos: etapa.recursos.map((recurso) => ({ ...recurso, admiteInstanciaSuperior: false })),
+    };
+
+    expect(comoComandoDeEtapa(semInstancia).recursos?.[0]).toMatchObject({
+      admiteInstanciaSuperior: false,
+      suspensividadeSegundaInstanciaValor: null,
+      suspensividadeSegundaInstanciaUnidade: null,
+    });
+  });
+
   /** O prazo e a âncora continuam onde estavam — o fix não podia mexer no que já funcionava. */
   it('não altera prazo nem âncora', () => {
     const etapa = etapasDe(detalheComRecursoDaEtapa({ prazoValor: 5 }))[0];
@@ -119,6 +154,53 @@ describe('recurso da etapa no ida-e-volta', () => {
       prazoValor: 5,
       prazoUnidade: 'diasUteis',
       atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+    });
+  });
+});
+
+describe('regra de recurso da fase no comando', () => {
+  const regraRecurso: RecursoDaFase = {
+    regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+    regraVersao: 'v1',
+    prazoValor: '2',
+    prazoUnidade: 'diasUteis',
+    atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+    suspensividadePrimeiraInstanciaValor: '',
+    suspensividadePrimeiraInstanciaUnidade: '',
+    admiteInstanciaSuperior: true,
+    suspensividadeSegundaInstanciaValor: '48',
+    suspensividadeSegundaInstanciaUnidade: 'horas',
+  };
+
+  const fase: FaseDoCronograma = {
+    faseCanonicaId: '01960000-0000-7000-0000-0000000000f1',
+    codigo: 'AVALIACAO',
+    ordem: 1,
+    inicio: null,
+    fim: null,
+    produtos: [],
+    faseConcluinteCodigo: null,
+    emiteParecerIndividual: false,
+    bancasRequeridas: [],
+    regraRecurso,
+    congelados: null,
+  };
+
+  it('envia a declaração e o tempo de bloqueio quando a janela admite a instância superior', () => {
+    expect(comoComandoDeFase(fase).regraRecurso).toMatchObject({
+      admiteInstanciaSuperior: true,
+      suspensividadeSegundaInstanciaValor: 48,
+      suspensividadeSegundaInstanciaUnidade: 'horas',
+    });
+  });
+
+  it('omite o tempo de bloqueio superior quando a janela não admite a instância', () => {
+    const semInstancia = { ...regraRecurso, admiteInstanciaSuperior: false };
+
+    expect(comoComandoDeFase({ ...fase, regraRecurso: semInstancia }).regraRecurso).toMatchObject({
+      admiteInstanciaSuperior: false,
+      suspensividadeSegundaInstanciaValor: null,
+      suspensividadeSegundaInstanciaUnidade: null,
     });
   });
 });

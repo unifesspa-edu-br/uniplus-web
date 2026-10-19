@@ -198,6 +198,7 @@ function recursoDe(
     atoAncoraCodigo: ancora?.atoCodigo ?? '',
     suspensividadePrimeiraInstanciaValor: comoTexto(args.suspensividadePrimeiraInstanciaValor),
     suspensividadePrimeiraInstanciaUnidade: args.suspensividadePrimeiraInstanciaUnidade ?? '',
+    admiteInstanciaSuperior: args.admiteInstanciaSuperior,
     suspensividadeSegundaInstanciaValor: comoTexto(args.suspensividadeSegundaInstanciaValor),
     suspensividadeSegundaInstanciaUnidade: args.suspensividadeSegundaInstanciaUnidade ?? '',
   };
@@ -249,6 +250,7 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
         recurso.args.suspensividadePrimeiraInstanciaValor,
       ),
       suspensividadePrimeiraInstanciaUnidade: recurso.args.suspensividadePrimeiraInstanciaUnidade ?? '',
+      admiteInstanciaSuperior: recurso.args.admiteInstanciaSuperior,
       suspensividadeSegundaInstanciaValor: comoTexto(
         recurso.args.suspensividadeSegundaInstanciaValor,
       ),

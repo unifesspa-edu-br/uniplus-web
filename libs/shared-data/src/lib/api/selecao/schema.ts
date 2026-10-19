@@ -7872,6 +7872,7 @@ export interface components {
             /** Format: double */
             readonly suspensividadePrimeiraInstanciaValor: null | number | string;
             readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            readonly admiteInstanciaSuperior: boolean;
             /** Format: double */
             readonly suspensividadeSegundaInstanciaValor: null | number | string;
             readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
@@ -9458,6 +9459,7 @@ export interface components {
             /** Format: double */
             readonly suspensividadePrimeiraInstanciaValor: null | number | string;
             readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            readonly admiteInstanciaSuperior: boolean;
             /** Format: double */
             readonly suspensividadeSegundaInstanciaValor: null | number | string;
             readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
@@ -9575,6 +9577,7 @@ export interface components {
             /** Format: double */
             readonly suspensividadePrimeiraInstanciaValor: null | number | string;
             readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            readonly admiteInstanciaSuperior: boolean;
             /** Format: double */
             readonly suspensividadeSegundaInstanciaValor: null | number | string;
             readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];

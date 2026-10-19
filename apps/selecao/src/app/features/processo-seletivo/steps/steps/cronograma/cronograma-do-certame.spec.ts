@@ -852,6 +852,7 @@ describe('o que impede gravar o cronograma', () => {
         atoAncoraCodigo: '',
         suspensividadePrimeiraInstanciaValor: '',
         suspensividadePrimeiraInstanciaUnidade: '',
+        admiteInstanciaSuperior: true,
         suspensividadeSegundaInstanciaValor: '',
         suspensividadeSegundaInstanciaUnidade: '',
       },
@@ -887,6 +888,7 @@ describe('o que impede gravar o cronograma', () => {
                 atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
                 suspensividadePrimeiraInstanciaValor: '',
                 suspensividadePrimeiraInstanciaUnidade: '',
+                admiteInstanciaSuperior: true,
                 suspensividadeSegundaInstanciaValor: '',
                 suspensividadeSegundaInstanciaUnidade: '',
                 ...patch,
@@ -933,6 +935,7 @@ describe('o que impede gravar o cronograma', () => {
                 atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
                 suspensividadePrimeiraInstanciaValor: '',
                 suspensividadePrimeiraInstanciaUnidade: '',
+                admiteInstanciaSuperior: true,
                 suspensividadeSegundaInstanciaValor: '',
                 suspensividadeSegundaInstanciaUnidade: '',
               },
@@ -995,6 +998,21 @@ describe('o que impede gravar o cronograma', () => {
       expect(comRecurso({ suspensividadePrimeiraInstanciaValor: '3' })).toContainEqual(
         expect.stringContaining('suspensividade'),
       );
+    });
+
+    it('cobra a resposta sobre a instância superior da janela', () => {
+      expect(comRecurso({ admiteInstanciaSuperior: null })).toContainEqual(
+        expect.stringContaining('instância superior'),
+      );
+    });
+
+    it('não confere o tempo de bloqueio superior da janela que não admite a instância', () => {
+      expect(
+        comRecurso({
+          admiteInstanciaSuperior: false,
+          suspensividadeSegundaInstanciaUnidade: 'horas',
+        }),
+      ).not.toContainEqual(expect.stringContaining('suspensividade'));
     });
 
     it('acusa suspensividade com unidade e sem valor', () => {
@@ -1227,6 +1245,7 @@ describe('etapa de nota do ENEM', () => {
       atoAncoraCodigo: '',
       suspensividadePrimeiraInstanciaValor: '',
       suspensividadePrimeiraInstanciaUnidade: '',
+      admiteInstanciaSuperior: true,
       suspensividadeSegundaInstanciaValor: '',
       suspensividadeSegundaInstanciaUnidade: '',
     });
