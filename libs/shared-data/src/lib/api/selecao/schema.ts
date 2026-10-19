@@ -110,7 +110,102 @@ export interface paths {
             };
         };
         readonly put?: never;
-        readonly post?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly processoSeletivoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["PublicarAtoAvulsoDoProcessoRequest"];
+                    readonly "text/json": components["schemas"]["PublicarAtoAvulsoDoProcessoRequest"];
+                    readonly "application/*+json": components["schemas"]["PublicarAtoAvulsoDoProcessoRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description Accepted */
+                readonly 202: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["AtoPublicadoDto"];
+                        readonly "application/json": components["schemas"]["AtoPublicadoDto"];
+                        readonly "text/json": components["schemas"]["AtoPublicadoDto"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -7535,6 +7630,11 @@ export interface components {
         };
         /** @enum {string} */
         readonly AncoraDoRecurso: AncoraDoRecurso;
+        readonly AnexoDoAtoRequest: {
+            /** Format: uuid */
+            readonly documentoId: string;
+            readonly nome: null | string;
+        };
         readonly AnexoDoEditalRequest: {
             /** Format: uuid */
             readonly documentoId: string;
@@ -7610,6 +7710,10 @@ export interface components {
             readonly politicaDeDivulgacaoConfirmada: boolean;
             readonly documentoPrincipal: components["schemas"]["DocumentoDoAtoDto"];
             readonly anexos: readonly components["schemas"]["DocumentoDoAtoDto"][];
+        };
+        readonly AtoPublicadoDto: {
+            /** Format: uuid */
+            readonly atoId: string;
         };
         readonly AtualizarMotivoDecisaoIsencaoCommand: {
             /** Format: uuid */
@@ -9094,6 +9198,19 @@ export interface components {
         readonly ProdutoDaFaseInput: {
             readonly atoCodigo: string;
             readonly papel: null | string;
+        };
+        readonly PublicarAtoAvulsoDoProcessoRequest: {
+            readonly tipoAtoCodigo: string;
+            readonly numero: null | string;
+            /** Format: date */
+            readonly dataPublicacao: string;
+            readonly assinante: string;
+            /** Format: uuid */
+            readonly documentoPrincipalId: string;
+            readonly anexos?: null | readonly components["schemas"]["AnexoDoAtoRequest"][];
+            /** Format: uuid */
+            readonly atoCorrigidoId?: null | string;
+            readonly motivoDaCorrecao?: null | string;
         };
         readonly PublicarProcessoSeletivoRequest: {
             readonly numero: null | string;

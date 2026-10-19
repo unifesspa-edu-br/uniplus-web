@@ -21,6 +21,10 @@ export type AcessoDocumentoAPublicarDto = components['schemas']['AcessoDocumento
 export type AnexoDoEditalRequest = components['schemas']['AnexoDoEditalRequest'];
 export type AtoDoProcessoDto = components['schemas']['AtoDoProcessoDto'];
 export type DocumentoDoAtoDto = components['schemas']['DocumentoDoAtoDto'];
+export type PublicarAtoAvulsoDoProcessoRequest =
+  components['schemas']['PublicarAtoAvulsoDoProcessoRequest'];
+export type AnexoDoAtoRequest = components['schemas']['AnexoDoAtoRequest'];
+export type AtoPublicadoDto = components['schemas']['AtoPublicadoDto'];
 
 /** Para que serve o documento enviado: o edital oficial, um anexo dele ou um documento de ato. */
 export { FinalidadeDoDocumento };
@@ -803,6 +807,27 @@ export class ProcessosSeletivosApi {
     return this.http.get<ApiResult<readonly AtoDoProcessoDto[]>>(
       `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/atos`,
       { context: withVendorMime('ato-do-processo', 1) },
+    );
+  }
+
+  /**
+   * POST `/api/selecao/processos-seletivos/{id}/atos` — publica um documento avulso do processo
+   * (aviso, comunicado, errata), com o documento principal e os anexos já enviados, e a correção de
+   * um ato publicado quando o corpo cita `atoCorrigidoId` e o motivo.
+   *
+   * Responde 202: o ato fica pendente até o registro central confirmar. As recusas de negócio
+   * (processo sem página pública, tipo que não serve a documento avulso, ato já corrigido,
+   * documento já usado) chegam como `ApiResult.fail` com o `ProblemDetails` do 422.
+   */
+  publicarAtoAvulso(
+    processoSeletivoId: string,
+    request: PublicarAtoAvulsoDoProcessoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<AtoPublicadoDto>> {
+    return this.http.post<ApiResult<AtoPublicadoDto>>(
+      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/atos`,
+      request,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
 
