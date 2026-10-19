@@ -59,17 +59,17 @@
   [pressupostos]="pressupostos()"
   [semDocumentos]="semDocumentos"
   [errosDoServidor]="errosDoServidor()"
-  [passoDaRecusa]="erroDaOferta() ? PASSO_DO_CURSO : null"
+  [passoDaRecusa]="erroDaOferta() || erroDaSegundaOferta() ? PASSO_DO_CURSO : null"
   [concluirNaUltimaSecao]="false"
   [envio]="envio()"
-  [avaliacao]="avaliacao.naTela()"
+  [avaliacao]="avaliacaoNaTela()"
   (simulacaoChange)="responder($event)"
   (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
 >
   @if (formDoCandidato.passoPrefixadoAtual() === PASSO_DO_CURSO) {
   <div class="field inscricao-oferta">
     <label class="field__label is-required" for="inscricao-oferta"
-      >Curso em que você se inscreve</label
+      >{{ comSegundaOpcao() ? '1ª opção' : 'Curso em que você se inscreve' }}</label
     >
     <select
       #selectDaOferta
@@ -90,7 +90,36 @@
     <span class="field__error" id="inscricao-oferta-erro">{{ erro }}</span>
     }
   </div>
-  }
+  @if (comSegundaOpcao()) {
+  <div class="field inscricao-oferta">
+    <label class="field__label" for="inscricao-segunda-oferta">2ª opção (opcional)</label>
+    <select
+      #selectDaSegundaOferta
+      class="select"
+      id="inscricao-segunda-oferta"
+      [disabled]="ofertaEscolhidaValida() === null"
+      [attr.aria-invalid]="erroDaSegundaOferta() ? 'true' : null"
+      [attr.aria-describedby]="descricaoDaSegunda()"
+      (change)="escolherSegundaOferta($event)"
+    >
+      <option value="" [selected]="segundaOfertaEscolhida() === null">Nenhuma</option>
+      @for (oferta of ofertasDaSegunda(); track oferta.id) {
+      <option [value]="oferta.id" [selected]="segundaOfertaEscolhida() === oferta.id">
+        {{ oferta.nome }}
+      </option>
+      }
+    </select>
+    <span class="field__hint" id="inscricao-segunda-oferta-ajuda">
+      @if (ofertaEscolhidaValida() === null) { Escolha a 1ª opção para poder indicar a 2ª. } @else {
+      A 2ª opção tem de ser um curso diferente da 1ª. }
+    </span>
+    @if (avisoDaSegundaLimpa(); as limpa) {
+    <span class="field__hint" id="inscricao-segunda-oferta-aviso">{{ limpa }}</span>
+    } @if (erroDaSegundaOferta(); as erro) {
+    <span class="field__error" id="inscricao-segunda-oferta-erro">{{ erro }}</span>
+    }
+  </div>
+  } }
 </ui-formulario-do-candidato>
 } @if (derivados().length > 0) {
 <section class="inscricao-derivados" aria-labelledby="inscricao-derivados-titulo">

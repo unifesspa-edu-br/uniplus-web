@@ -15,7 +15,7 @@ import {
 import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { forkJoin, type Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
 import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
@@ -30,6 +30,7 @@ import {
 import { isValidCpf } from '@uniplus/shared-data/utils';
 import {
   AlertComponent,
+  type AvaliacaoNaTela,
   derivadosDoSistema,
   type EnvioDasRespostas,
   type ErroDoServidor,
@@ -49,12 +50,14 @@ import {
   mascararCpf,
 } from '@uniplus/shared-utils';
 
-import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
 import {
-  InscricaoDoCandidatoService,
+  numeroDeOpcoesDeCurso,
   type OfertaDaInscricao,
-} from './inscricao-do-candidato.service';
-import { mensagemDaRecusa } from './recusas-da-inscricao';
+  ofertasDaInscricao,
+} from '../oferta-da-inscricao';
+import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
+import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
+import { mensagemDaRecusa, mensagemDaRecusaDaSegundaOpcao } from './recusas-da-inscricao';
 
 type Estado = 'carregando' | 'erro' | 'pronto';
 
@@ -69,6 +72,13 @@ const CONFLITOS: ReadonlySet<string> = new Set([
 
 /** O campo em que o servidor devolve a recusa da oferta de curso. */
 const CAMPO_DA_OFERTA = 'ofertaCursoId';
+/** O campo em que o servidor devolve a recusa da 2ª opção de curso. */
+const CAMPO_DA_SEGUNDA_OPCAO = 'ofertaCursoSegundaOpcaoId';
+/** Recusas da 2ª opção que nascem da 1ª: trocar a 1ª as desfaz; as demais ficam até a 2ª mudar. */
+const RECUSAS_DA_SEGUNDA_QUE_VEM_DA_PRIMEIRA = new Set([
+  'uniplus.selecao.inscricao.segunda_opcao_igual_a_primeira',
+  'uniplus.selecao.inscricao.segunda_opcao_sem_primeira',
+]);
 /** A chave do passo em que o candidato escolhe o curso, quando o processo oferece mais de um. */
 const PASSO_DO_CURSO = 'curso';
 /** O que o leitor de tela ouve quando a releitura mostra que a gravação aconteceu. */
@@ -118,7 +128,10 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly estado = signal<Estado>('carregando');
   protected readonly erroAoCarregar = signal<string | null>(null);
   protected readonly formulario = signal<FormularioRenderizavelDto | null>(null);
+  /** As ofertas da versão que a inscrição fixou ao nascer, não as do certame ao vivo. */
   protected readonly ofertas = signal<readonly OfertaDaInscricao[]>([]);
+  /** Quantas opções de curso a versão fixada admite. */
+  private readonly numeroDeOpcoes = signal<1 | 2>(1);
   private readonly relogio = inject(RELOGIO);
   private readonly documento = inject(DOCUMENT);
   /**
@@ -149,31 +162,86 @@ export class InscricaoDoCandidatoPage implements OnInit {
   /** A escolha do candidato: parte da gravada ao carregar e só ele a muda, nem a releitura do ETag. */
   protected readonly ofertaEscolhida = signal<string | null>(null);
   protected readonly erroDaOferta = signal<string | null>(null);
+  /** A 2ª opção escolhida pelo candidato; só vale com a 1ª escolhida e diferente dela. */
+  protected readonly segundaOfertaEscolhida = signal<string | null>(null);
+  protected readonly erroDaSegundaOferta = signal<string | null>(null);
+  private codigoDaRecusaDaSegunda: string | null = null;
+  /** Por que a 2ª opção foi limpa, até o candidato escolher de novo. */
+  protected readonly avisoDaSegundaLimpa = signal<string | null>(null);
   protected readonly PASSO_DO_CURSO = PASSO_DO_CURSO;
   /** A oferta escolhida, se ainda é uma das do processo: um id gravado que saiu da lista não vale. */
-  private readonly ofertaEscolhidaValida = computed(
+  protected readonly ofertaEscolhidaValida = computed(
     () => this.ofertas().find((o) => o.id === this.ofertaEscolhida()) ?? null,
   );
+  /** O processo admite 2 opções e há de onde escolher a 2ª. */
+  protected readonly comSegundaOpcao = computed(
+    () => this.numeroDeOpcoes() === 2 && this.ofertas().length > 1,
+  );
+  /** A 2ª opção escolhida, se ainda vale: há 2 opções, a 1ª está escolhida e a 2ª é outra oferta. */
+  private readonly segundaOfertaValida = computed(() => {
+    const primeira = this.ofertaEscolhidaValida();
+    if (!this.comSegundaOpcao() || primeira === null) return null;
+    return (
+      this.ofertas().find((o) => o.id === this.segundaOfertaEscolhida() && o.id !== primeira.id) ??
+      null
+    );
+  });
+  /** As ofertas da 2ª opção: todas, menos a escolhida na 1ª. */
+  protected readonly ofertasDaSegunda = computed(() =>
+    this.ofertas().filter((o) => o.id !== this.ofertaEscolhidaValida()?.id),
+  );
+  /** Os ids que descrevem o campo da 2ª opção: a ajuda, o aviso de que foi limpa e o erro. */
+  protected readonly descricaoDaSegunda = computed(() =>
+    [
+      'inscricao-segunda-oferta-ajuda',
+      this.avisoDaSegundaLimpa() ? 'inscricao-segunda-oferta-aviso' : null,
+      this.erroDaSegundaOferta() ? 'inscricao-segunda-oferta-erro' : null,
+    ]
+      .filter((id) => id !== null)
+      .join(' '),
+  );
+  /** Os nomes dos cursos escolhidos, para as modalidades de cada opção terem título. */
+  private readonly opcoesDeCurso = computed(() => ({
+    primeira: this.ofertaEscolhidaValida()?.nome ?? null,
+    segunda: this.segundaOfertaValida()?.nome ?? null,
+  }));
+  /** A avaliação da tela, com o curso de cada opção quando o processo admite 2. */
+  protected readonly avaliacaoNaTela = computed<AvaliacaoNaTela | null>(() => {
+    const avaliacao = this.avaliacao.naTela();
+    return avaliacao && this.comSegundaOpcao()
+      ? { ...avaliacao, opcoesDeCurso: this.opcoesDeCurso() }
+      : avaliacao;
+  });
   /**
    * O curso é o primeiro passo quando há mais de uma oferta; com uma só, ela é escolhida sozinha e
-   * aparece no cabeçalho. A 2ª opção e a lista de espera entram como linhas deste passo.
+   * aparece no cabeçalho. Com 2 opções, o passo escolhe a 1ª e a 2ª (opcional).
    */
   protected readonly passosPrefixados = computed<readonly PassoPrefixado[]>(() => {
     const ofertas = this.ofertas();
     if (ofertas.length <= 1) return [];
     const nome = this.ofertaEscolhidaValida()?.nome ?? null;
+    const comSegunda = this.comSegundaOpcao();
     return [
       {
         chave: PASSO_DO_CURSO,
         titulo: 'Curso',
-        descricao: 'Escolha o curso em que você quer se inscrever neste processo seletivo.',
+        descricao: comSegunda
+          ? 'Escolha o curso da 1ª opção e, se quiser, o da 2ª opção neste processo seletivo.'
+          : 'Escolha o curso em que você quer se inscrever neste processo seletivo.',
         concluido: nome !== null,
-        comErro: this.erroDaOferta() !== null,
-        resumo: [{ rotulo: 'Curso', valor: nome ?? 'Ainda não escolhido' }],
+        comErro: this.erroDaOferta() !== null || this.erroDaSegundaOferta() !== null,
+        resumo: comSegunda
+          ? [
+              { rotulo: '1ª opção', valor: nome ?? 'Ainda não escolhida' },
+              { rotulo: '2ª opção', valor: this.segundaOfertaValida()?.nome ?? 'Não declarada' },
+            ]
+          : [{ rotulo: 'Curso', valor: nome ?? 'Ainda não escolhido' }],
       },
     ];
   });
   private readonly selectDaOferta = viewChild<ElementRef<HTMLSelectElement>>('selectDaOferta');
+  private readonly selectDaSegundaOferta =
+    viewChild<ElementRef<HTMLSelectElement>>('selectDaSegundaOferta');
   private readonly formularioDoCandidato = viewChild(FormularioDoCandidatoComponent);
 
   protected readonly ocupada = signal(false);
@@ -287,14 +355,13 @@ export class InscricaoDoCandidatoPage implements OnInit {
           this.falharAoCarregar(inscricao);
           return;
         }
-        forkJoin({
-          formulario: this.servico.obterFormulario(processoId),
-          ofertas: this.servico.obterOfertas(processoId),
-        })
+        this.servico
+          .obterFormulario(processoId)
           .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe(({ formulario, ofertas }) => {
+          .subscribe((formulario) => {
             if (!formulario.ok) return this.falharAoCarregar(formulario);
-            if (!ofertas.ok) return this.falharAoCarregar(ofertas);
+            const ofertas = ofertasDaInscricao(inscricao.data);
+            const numeroDeOpcoes = numeroDeOpcoesDeCurso(inscricao.data.numeroDeOpcoesDeCurso);
             this.inscricao.set(inscricao.data);
             // As respostas chegam em JSON: são os valores que o formulário lê.
             const inicial: SimulacaoDoFormulario = {
@@ -311,22 +378,41 @@ export class InscricaoDoCandidatoPage implements OnInit {
             // Com uma oferta só, ela é a escolha — mesmo que a gravada seja de outra que saiu do
             // processo —, para o cabeçalho e o envio dizerem o mesmo curso.
             const oferta =
-              ofertas.data.length === 1
-                ? ofertas.data[0].id
-                : (ofertas.data.find((o) => o.id === inscricao.data.ofertaCursoId)?.id ?? null);
+              ofertas.length === 1
+                ? ofertas[0].id
+                : (ofertas.find((o) => o.id === inscricao.data.ofertaCursoId)?.id ?? null);
+            // A 2ª opção só vale com a 1ª, com 2 opções admitidas e sendo outra oferta.
+            const segunda =
+              numeroDeOpcoes === 2 && oferta !== null
+                ? (ofertas.find(
+                    (o) => o.id === inscricao.data.ofertaCursoSegundaOpcaoId && o.id !== oferta,
+                  )?.id ?? null)
+                : null;
             this.avaliacao.iniciar(
               processoId,
               inscricao.data.avaliacao,
               formulario.data.dependenciasDaAvaliacao,
               inicial,
               oferta,
+              segunda,
             );
             this.termosAceitosIniciais.set(inscricao.data.aceites.map((a) => a.codigo));
             this.instanteDoEnvio.set(this.relogio());
             this.formulario.set(formulario.data);
             this.acompanharODiaDoEnvio();
-            this.ofertas.set(ofertas.data);
+            this.ofertas.set(ofertas);
+            this.numeroDeOpcoes.set(numeroDeOpcoes);
             this.ofertaEscolhida.set(oferta);
+            this.segundaOfertaEscolhida.set(segunda);
+            // A 2ª gravada que já não vale (curso que saiu do processo, igual à 1ª ou sem 1ª) não some
+            // sem o candidato saber: a próxima gravação a retiraria.
+            const gravadaPerdida =
+              numeroDeOpcoes === 2 && inscricao.data.ofertaCursoSegundaOpcaoId != null && !segunda;
+            this.avisoDaSegundaLimpa.set(
+              gravadaPerdida
+                ? 'A 2ª opção gravada já não vale neste processo. Escolha de novo, se quiser.'
+                : null,
+            );
             this.estado.set('pronto');
           });
       });
@@ -384,12 +470,50 @@ export class InscricaoDoCandidatoPage implements OnInit {
     const oferta = valor === '' ? null : valor;
     this.ofertaEscolhida.set(oferta);
     this.erroDaOferta.set(null);
+    if (
+      this.codigoDaRecusaDaSegunda === null ||
+      RECUSAS_DA_SEGUNDA_QUE_VEM_DA_PRIMEIRA.has(this.codigoDaRecusaDaSegunda)
+    )
+      this.erroDaSegundaOferta.set(null);
+    this.limparASegundaQueNaoValeMais(oferta);
+    this.reavaliarAsOfertas();
+  }
+
+  protected escolherSegundaOferta(evento: Event): void {
+    const valor = (evento.target as HTMLSelectElement).value;
+    this.segundaOfertaEscolhida.set(valor === '' ? null : valor);
+    this.erroDaSegundaOferta.set(null);
+    this.avisoDaSegundaLimpa.set(null);
+    this.reavaliarAsOfertas();
+  }
+
+  /**
+   * A 2ª opção não existe sem a 1ª nem é a mesma oferta dela: trocar a 1ª para o curso da 2ª, ou
+   * retirá-la, limpa a 2ª, e o aviso diz isso ao candidato, que não a perde sem ver.
+   */
+  private limparASegundaQueNaoValeMais(primeira: string | null): void {
+    const segunda = this.segundaOfertaEscolhida();
+    if (segunda === null || (primeira !== null && primeira !== segunda)) return;
+    const aviso =
+      primeira === null
+        ? 'A 2ª opção foi limpa porque a 1ª opção foi retirada.'
+        : 'A 2ª opção foi limpa porque é o mesmo curso da nova 1ª opção. Escolha outro, se quiser.';
+    this.segundaOfertaEscolhida.set(null);
+    this.erroDaSegundaOferta.set(null);
+    this.avisoDaSegundaLimpa.set(aviso);
+    this.anunciar(aviso);
+  }
+
+  /** A oferta de alguma opção mudou na tela, sem gravar: a avaliação é pedida de novo com as novas. */
+  private reavaliarAsOfertas(): void {
     // Lido do formulário na troca: a emissão das mudanças só chega no ciclo seguinte.
     const inscricao = this.inscricao();
     const formulario = this.formularioDoCandidato();
     if (inscricao && formulario)
-      this.avaliacao.ofertaMudou(oferta, () =>
-        this.corpoDaAvaliacao(inscricao, formulario.simulacao()),
+      this.avaliacao.ofertaMudou(
+        this.ofertaEscolhida(),
+        this.segundaOfertaValida()?.id ?? null,
+        () => this.corpoDaAvaliacao(inscricao, formulario.simulacao()),
       );
   }
 
@@ -416,7 +540,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     const pendencias = this.formularioDoCandidato()?.concluirTodas(!semCurso) ?? 0;
     if (semCurso) {
       const mensagem = mensagemDaRecusa('uniplus.selecao.inscricao.oferta_obrigatoria');
-      this.recusarOferta(mensagem);
+      this.recusarOfertas(mensagem, null);
       this.anunciar(
         pendencias > 0
           ? `${mensagem} Há também ${pendencias === 1 ? '1 item' : `${pendencias} itens`} a corrigir nas seções.`
@@ -471,6 +595,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     this.recusaGeral.set(null);
     this.errosDoServidor.set([]);
     this.erroDaOferta.set(null);
+    this.erroDaSegundaOferta.set(null);
     this.aviso.set('');
     // Lido do formulário no clique: a emissão das mudanças só chega no ciclo seguinte.
     chamada(
@@ -488,7 +613,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
       });
   }
 
-  /** O corpo do salvar e do envio: as respostas, a oferta escolhida e os termos aceitos. */
+  /** O corpo do salvar e do envio: as respostas, as ofertas escolhidas e os termos aceitos. */
   private request(
     inscricao: InscricaoDto,
     simulacao: SimulacaoDoFormulario,
@@ -497,6 +622,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     const termos = new Map((this.formulario()?.termos ?? []).map((t) => [t.codigo, t]));
     return {
       ofertaCursoId: this.ofertaEscolhidaValida()?.id ?? null,
+      ofertaCursoSegundaOpcaoId: this.segundaOfertaValida()?.id ?? null,
       ...this.respostasDoCorpo(inscricao, simulacao),
       aceites: termosAceitos.flatMap((codigo) => {
         const termo = termos.get(codigo);
@@ -505,7 +631,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     };
   }
 
-  /** O corpo da consulta de avaliação: as respostas da tela e a oferta escolhida nela, ou `null`. */
+  /** O corpo da consulta de avaliação: as respostas da tela e as ofertas escolhidas nela, ou `null`. */
   private corpoDaAvaliacao(
     inscricao: InscricaoDto,
     simulacao: SimulacaoDoFormulario,
@@ -513,6 +639,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     return {
       ...this.respostasDoCorpo(inscricao, simulacao),
       ofertaCursoId: this.ofertaEscolhidaValida()?.id ?? null,
+      ofertaCursoSegundaOpcaoId: this.segundaOfertaValida()?.id ?? null,
     };
   }
 
@@ -586,16 +713,24 @@ export class InscricaoDoCandidatoPage implements OnInit {
     }, eTagDaTentativa);
   }
 
-  /** Mostra a recusa no campo, na oferta ou, sem onde apontar, como recusa geral. */
+  /** Mostra a recusa no campo, numa das ofertas ou, sem onde apontar, como recusa geral. */
   private exibirRecusa(falha: ApiFailure, ambigua: boolean): void {
     const recusas = falha.problem.errors ?? [];
     const daOferta = recusas.find((e) => e.field === CAMPO_DA_OFERTA);
+    const daSegunda = recusas.find((e) => e.field === CAMPO_DA_SEGUNDA_OPCAO);
+    this.codigoDaRecusaDaSegunda = daSegunda?.code ?? null;
     const porCampo = recusas
-      .filter((e) => e.field !== CAMPO_DA_OFERTA)
+      .filter((e) => e.field !== CAMPO_DA_OFERTA && e.field !== CAMPO_DA_SEGUNDA_OPCAO)
       .map((e) => ({ campo: e.field, mensagem: mensagemDaRecusa(e.code) }));
-    if (daOferta) this.recusarOferta(mensagemDaRecusa(daOferta.code));
+    const dasOfertas =
+      daOferta || daSegunda
+        ? this.recusarOfertas(
+            daOferta ? mensagemDaRecusa(daOferta.code) : null,
+            daSegunda ? mensagemDaRecusaDaSegundaOpcao(daSegunda.code) : null,
+          )
+        : 0;
     if (porCampo.length > 0) this.errosDoServidor.set(porCampo);
-    const total = porCampo.length + (daOferta ? 1 : 0);
+    const total = porCampo.length + dasOfertas;
     if (total > 0) {
       this.aviso.set(
         total === 1
@@ -618,16 +753,28 @@ export class InscricaoDoCandidatoPage implements OnInit {
     });
   }
 
-  /** Sem o passo Curso na tela, a recusa da oferta só pode aparecer como recusa geral. */
-  private recusarOferta(mensagem: string): void {
-    if (this.ofertas().length <= 1) {
-      this.recusaGeral.set({ titulo: TITULO_DA_RECUSA, texto: mensagem });
-      return;
-    }
-    this.erroDaOferta.set(mensagem);
-    this.formularioDoCandidato()?.irAoPasso(
-      PASSO_DO_CURSO,
-      () => this.selectDaOferta()?.nativeElement ?? null,
-    );
+  /**
+   * Sem o passo Curso na tela, a recusa da oferta só pode aparecer como recusa geral. Com ele, cada
+   * mensagem fica junto do campo da opção, e o foco vai para o primeiro campo recusado.
+   */
+  private recusarOfertas(daPrimeira: string | null, daSegunda: string | null): number {
+    const semPasso = this.ofertas().length <= 1;
+    // A recusa da 2ª num processo que não a oferece não tem campo: o texto dela vai como recusa geral.
+    const semCampoDaSegunda = !semPasso && !this.comSegundaOpcao();
+    const textoGeral = semPasso ? (daPrimeira ?? daSegunda) : semCampoDaSegunda ? daSegunda : null;
+    if (textoGeral !== null) this.recusaGeral.set({ titulo: TITULO_DA_RECUSA, texto: textoGeral });
+    // Sem passo, só um texto aparece; com ele, um por opção recusada.
+    const mostradas = semPasso ? 1 : (daPrimeira === null ? 0 : 1) + (daSegunda === null ? 0 : 1);
+    if (semPasso || (daPrimeira === null && semCampoDaSegunda)) return mostradas;
+    this.erroDaOferta.set(daPrimeira);
+    this.erroDaSegundaOferta.set(semCampoDaSegunda ? null : daSegunda);
+    // O campo só existe depois de o passo aparecer: a escolha do foco espera por ele.
+    this.formularioDoCandidato()?.irAoPasso(PASSO_DO_CURSO, () => {
+      const segunda = this.selectDaSegundaOferta()?.nativeElement;
+      return daPrimeira === null && segunda && !segunda.disabled
+        ? segunda
+        : (this.selectDaOferta()?.nativeElement ?? null);
+    });
+    return mostradas;
   }
 }

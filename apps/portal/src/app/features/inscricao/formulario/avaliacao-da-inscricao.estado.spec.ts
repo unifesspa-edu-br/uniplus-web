@@ -67,7 +67,7 @@ describe('AvaliacaoDaInscricaoEstado', () => {
       ],
     });
     estado = TestBed.inject(AvaliacaoDaInscricaoEstado);
-    estado.iniciar(PROCESSO, avaliacao('Ampla concorrência'), DEPENDENCIAS, {}, null);
+    estado.iniciar(PROCESSO, avaliacao('Ampla concorrência'), DEPENDENCIAS, {}, null, null);
   });
 
   afterEach(() => vi.useRealTimers());
@@ -152,13 +152,13 @@ describe('AvaliacaoDaInscricaoEstado', () => {
   });
 
   it('trocar a oferta consulta de novo, mesmo sem mudar resposta, e repetir a mesma não consulta', () => {
-    estado.ofertaMudou('oferta-2', () => ({
+    estado.ofertaMudou('oferta-2', null, () => ({
       respostas: {},
       grupos: null,
       ofertaCursoId: 'oferta-2',
     }));
     vi.advanceTimersByTime(ESPERA_DA_CONSULTA_MS);
-    estado.ofertaMudou('oferta-2', () => ({
+    estado.ofertaMudou('oferta-2', null, () => ({
       respostas: {},
       grupos: null,
       ofertaCursoId: 'oferta-2',
@@ -168,9 +168,66 @@ describe('AvaliacaoDaInscricaoEstado', () => {
     expect(servico.consultas.map((c) => c.corpo.ofertaCursoId)).toEqual(['oferta-2']);
   });
 
+  it('trocar só a 2ª opção também consulta de novo, com as duas ofertas no corpo', () => {
+    estado.ofertaMudou(null, 'oferta-3', () => ({
+      respostas: {},
+      grupos: null,
+      ofertaCursoId: null,
+      ofertaCursoSegundaOpcaoId: 'oferta-3',
+    }));
+    vi.advanceTimersByTime(ESPERA_DA_CONSULTA_MS);
+
+    expect(servico.consultas.map((c) => c.corpo.ofertaCursoSegundaOpcaoId)).toEqual(['oferta-3']);
+  });
+
+  it('as modalidades da 2ª opção vêm com a avaliação e saem quando a 2ª opção sai', () => {
+    estado.aplicarDaGravacao(
+      {
+        ...avaliacao('Ampla concorrência'),
+        modalidadesSegundaOpcao: avaliacao('Cotas').modalidades,
+      },
+      estado.revisao(),
+    );
+    expect(estado.naTela()?.modalidadesSegundaOpcao?.itens.map((m) => m.nome)).toEqual(['Cotas']);
+
+    estado.aplicarDaGravacao(avaliacao('Ampla concorrência'), estado.revisao());
+    expect(estado.naTela()?.modalidadesSegundaOpcao).toBeNull();
+  });
+
+  it('trocar o curso da 2ª opção não deixa as modalidades do curso antigo sob o curso novo', () => {
+    estado.aplicarDaGravacao(
+      {
+        ...avaliacao('Ampla concorrência'),
+        modalidadesSegundaOpcao: avaliacao('Cotas').modalidades,
+      },
+      estado.revisao(),
+    );
+
+    estado.ofertaMudou(null, 'oferta-4', () => ({ respostas: {}, grupos: null }));
+
+    expect(estado.naTela()?.modalidadesSegundaOpcao).toBeNull();
+    expect(estado.naTela()?.modalidades?.itens.map((m) => m.nome)).toEqual(['Ampla concorrência']);
+  });
+
+  it('retirar a 2ª opção tira as modalidades dela da tela sem esperar a nova avaliação', () => {
+    estado.ofertaMudou('oferta-1', 'oferta-3', () => ({ respostas: {}, grupos: null }));
+    estado.aplicarDaGravacao(
+      {
+        ...avaliacao('Ampla concorrência'),
+        modalidadesSegundaOpcao: avaliacao('Cotas').modalidades,
+      },
+      estado.revisao(),
+    );
+    expect(estado.naTela()?.modalidadesSegundaOpcao).not.toBeNull();
+
+    estado.ofertaMudou('oferta-1', null, () => ({ respostas: {}, grupos: null }));
+
+    expect(estado.naTela()?.modalidadesSegundaOpcao).toBeNull();
+  });
+
   it('a avaliação que volta do salvar com a oferta anterior é descartada depois da troca', () => {
     const revisaoDoSalvar = estado.revisao();
-    estado.ofertaMudou('oferta-2', () => ({
+    estado.ofertaMudou('oferta-2', null, () => ({
       respostas: {},
       grupos: null,
       ofertaCursoId: 'oferta-2',

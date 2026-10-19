@@ -15,6 +15,12 @@ const MENSAGENS: Readonly<Record<string, string>> = {
   'uniplus.selecao.inscricao.oferta_obrigatoria':
     'Escolha a oferta de curso para enviar a inscrição.',
   'uniplus.selecao.inscricao.oferta_fora_do_processo': 'Este curso não é oferecido neste processo.',
+  'uniplus.selecao.inscricao.segunda_opcao_nao_admitida':
+    'Este processo seletivo admite uma só opção de curso. Retire a 2ª opção.',
+  'uniplus.selecao.inscricao.segunda_opcao_igual_a_primeira':
+    'A 2ª opção tem de ser um curso diferente da 1ª.',
+  'uniplus.selecao.inscricao.segunda_opcao_sem_primeira':
+    'Escolha a 1ª opção antes da 2ª, ou retire a 2ª opção.',
   'uniplus.selecao.inscricao.endereco_residencial_invalido':
     'O endereço não foi confirmado. Confira o CEP e a cidade.',
   'uniplus.selecao.inscricao.nome_social_ausente_na_conta':
@@ -23,4 +29,16 @@ const MENSAGENS: Readonly<Record<string, string>> = {
 
 export function mensagemDaRecusa(codigo: string): string {
   return MENSAGENS[codigo] ?? 'Revise esta resposta.';
+}
+
+/** O que dizer ao lado da 2ª opção de curso: a mensagem do código, ou a que fala da opção quando há. */
+const MENSAGENS_DA_SEGUNDA_OPCAO: Readonly<Record<string, string>> = {
+  'uniplus.selecao.inscricao.nenhuma_modalidade':
+    'Com estas respostas, você não concorre a nenhuma modalidade da 2ª opção. Escolha outro curso ou retire a 2ª opção.',
+  'uniplus.selecao.inscricao.modalidade_nao_decidida':
+    'Ainda não é possível saber em quais modalidades você concorre na 2ª opção. Responda os campos indicados e envie de novo.',
+};
+
+export function mensagemDaRecusaDaSegundaOpcao(codigo: string): string {
+  return MENSAGENS_DA_SEGUNDA_OPCAO[codigo] ?? mensagemDaRecusa(codigo);
 }
