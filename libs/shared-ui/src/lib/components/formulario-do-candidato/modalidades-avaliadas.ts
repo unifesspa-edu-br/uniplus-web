@@ -38,12 +38,25 @@ export interface ModalidadesAvaliadas {
   readonly pendencias: readonly PendenciaDaAvaliacao[];
 }
 
+/** Os nomes dos cursos das opções declaradas; nulo na opção ainda não escolhida. */
+export interface OpcoesDeCursoNaTela {
+  readonly primeira: string | null;
+  readonly segunda: string | null;
+}
+
 /**
  * O que a tela sabe da avaliação agora. Calculando, a última avaliação continua à vista até a nova
  * chegar; com erro, também — o envio não depende dela.
  */
 export interface AvaliacaoNaTela {
   readonly modalidades: ModalidadesAvaliadas | null;
+  /**
+   * As modalidades da 2ª opção de curso, que tem a própria distribuição de vagas; nulas quando a
+   * inscrição não declara 2ª opção. Ausente, a avaliação não conhece 2ª opção.
+   */
+  readonly modalidadesSegundaOpcao?: ModalidadesAvaliadas | null;
+  /** Os nomes dos cursos escolhidos, para titular as modalidades de cada opção. */
+  readonly opcoesDeCurso?: OpcoesDeCursoNaTela | null;
   readonly documentos: DocumentosAvaliados | null;
   readonly calculando: boolean;
   readonly erro: string | null;

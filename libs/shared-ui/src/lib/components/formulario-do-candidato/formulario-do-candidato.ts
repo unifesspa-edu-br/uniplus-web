@@ -639,6 +639,16 @@ export class FormularioDoCandidatoComponent {
     source: computed(() => this.avaliacao()?.modalidades ?? null),
     computation: (atuais, anterior) => (conhecidas(atuais) ? atuais : (anterior?.value ?? null)),
   });
+  /** O último conjunto decidido das modalidades da 2ª opção de curso, mantido como o da 1ª. */
+  private readonly conjuntoConhecidoDaSegundaOpcao = linkedSignal<
+    ModalidadesAvaliadas | null,
+    ModalidadesAvaliadas | null
+  >({
+    source: computed(() => this.avaliacao()?.modalidadesSegundaOpcao ?? null),
+    // Sem 2ª opção, não há conjunto a guardar: o da opção retirada não volta.
+    computation: (atuais, anterior) =>
+      atuais === null ? null : conhecidas(atuais) ? atuais : (anterior?.value ?? null),
+  });
   /**
    * Os documentos que a avaliação pede no próprio formulário: a árvore da escolha e o que falta
    * responder; nulos antes da primeira avaliação dos documentos.
@@ -670,6 +680,7 @@ export class FormularioDoCandidatoComponent {
   protected readonly anuncioDaAvaliacao = linkedSignal<
     {
       readonly modalidades: ModalidadesAvaliadas | null;
+      readonly modalidadesDaSegundaOpcao: ModalidadesAvaliadas | null;
       readonly documentos: readonly NoDeDocumentos[] | null;
       readonly integrantes: ReadonlySet<string>;
     },
@@ -677,6 +688,7 @@ export class FormularioDoCandidatoComponent {
   >({
     source: computed(() => ({
       modalidades: this.conjuntoConhecido(),
+      modalidadesDaSegundaOpcao: this.conjuntoConhecidoDaSegundaOpcao(),
       documentos: this.documentosDaAvaliacao()?.arvore ?? null,
       integrantes: new Set(Object.values(this.grupos()).flatMap((lista) => lista.map((o) => o.id))),
     })),
@@ -686,7 +698,19 @@ export class FormularioDoCandidatoComponent {
       return [
         atual.modalidades === antes.modalidades
           ? ''
-          : anunciarMudancaDasModalidades(antes.modalidades, atual.modalidades),
+          : naOpcao(
+              atual.modalidadesDaSegundaOpcao === null ? null : '1ª opção',
+              anunciarMudancaDasModalidades(antes.modalidades, atual.modalidades),
+            ),
+        atual.modalidadesDaSegundaOpcao === antes.modalidadesDaSegundaOpcao
+          ? ''
+          : naOpcao(
+              '2ª opção',
+              anunciarMudancaDasModalidades(
+                antes.modalidadesDaSegundaOpcao,
+                atual.modalidadesDaSegundaOpcao,
+              ),
+            ),
         atual.documentos === antes.documentos
           ? ''
           : anunciarMudancaDosDocumentos(antes.documentos, atual.documentos, atual.integrantes),
@@ -937,6 +961,11 @@ export class FormularioDoCandidatoComponent {
     if (this.erros().some((e) => erroEm(e, codigo)))
       this.erros.update((atuais) => atuais.filter((e) => !erroEm(e, codigo)));
   }
+}
+
+/** O anúncio das modalidades de uma opção de curso, identificado quando há duas; vazio fica vazio. */
+function naOpcao(opcao: string | null, anuncio: string): string {
+  return opcao === null || anuncio === '' ? anuncio : `${opcao}: ${anuncio}`;
 }
 
 /**
