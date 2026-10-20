@@ -61,7 +61,7 @@ import { mensagemDaRecusa, mensagemDaRecusaDaSegundaOpcao } from './recusas-da-i
 
 type Estado = 'carregando' | 'erro' | 'pronto';
 
-/** As recusas de quem gravou sobre uma revisão que outra janela já mudou. */
+/** As recusas de quem gravou sobre uma revisão defasada: outra janela gravou, ou a retificação trocou a versão do formulário. */
 // A inscrição enviada noutra janela também é mudança que esta tela não viu: relê-la troca o rascunho
 // pela correção por novo envio.
 const CONFLITOS: ReadonlySet<string> = new Set([
@@ -97,7 +97,7 @@ function coletaO(formulario: FormularioRenderizavelDto, fato: string): boolean {
 const TITULO_DA_RECUSA = 'A inscrição não foi gravada';
 
 /**
- * A inscrição do candidato num processo: o formulário que a inscrição fixou ao nascer, preenchido em
+ * A inscrição do candidato num processo: o formulário da versão em que está a inscrição, preenchido em
  * passos, salvo como rascunho ou enviado. O rascunho fica só na memória da página e no servidor.
  */
 @Component({
@@ -128,9 +128,9 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly estado = signal<Estado>('carregando');
   protected readonly erroAoCarregar = signal<string | null>(null);
   protected readonly formulario = signal<FormularioRenderizavelDto | null>(null);
-  /** As ofertas da versão que a inscrição fixou ao nascer, não as do certame ao vivo. */
+  /** As ofertas da versão em que está a inscrição, não as do certame ao vivo. */
   protected readonly ofertas = signal<readonly OfertaDaInscricao[]>([]);
-  /** Quantas opções de curso a versão fixada admite. */
+  /** Quantas opções de curso a versão da inscrição admite. */
   private readonly numeroDeOpcoes = signal<1 | 2>(1);
   private readonly relogio = inject(RELOGIO);
   private readonly documento = inject(DOCUMENT);
@@ -343,7 +343,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     this.carregar();
   }
 
-  /** Inicia a inscrição e, com ela, lê o formulário da versão fixada e as ofertas do processo. */
+  /** Inicia a inscrição e, com ela, lê o formulário da versão da inscrição e as ofertas do processo. */
   protected carregar(): void {
     this.estado.set('carregando');
     const processoId = this.processoId();
@@ -404,15 +404,9 @@ export class InscricaoDoCandidatoPage implements OnInit {
             this.numeroDeOpcoes.set(numeroDeOpcoes);
             this.ofertaEscolhida.set(oferta);
             this.segundaOfertaEscolhida.set(segunda);
-            // A 2ª gravada que já não vale (curso que saiu do processo, igual à 1ª ou sem 1ª) não some
-            // sem o candidato saber: a próxima gravação a retiraria.
-            const gravadaPerdida =
-              numeroDeOpcoes === 2 && inscricao.data.ofertaCursoSegundaOpcaoId != null && !segunda;
-            this.avisoDaSegundaLimpa.set(
-              gravadaPerdida
-                ? 'A 2ª opção gravada já não vale neste processo. Escolha de novo, se quiser.'
-                : null,
-            );
+            // A oferta que a versão em que está o rascunho retirou já vem sem seleção da API: o
+            // campo aparece vazio, sem aviso, e o candidato confere na revisão.
+            this.avisoDaSegundaLimpa.set(null);
             this.estado.set('pronto');
           });
       });
@@ -680,7 +674,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     if (CONFLITOS.has(falha.problem.code)) {
       this.ocupada.set(false);
       this.conflito.set(
-        'Recarregamos a versão gravada mais recente para você não sobrescrever o que mudou. Revise e grave de novo.',
+        'Recarregamos a inscrição com a versão mais recente, e o formulário pode ter mudado. Confira as respostas e grave de novo.',
       );
       this.carregar();
       return;

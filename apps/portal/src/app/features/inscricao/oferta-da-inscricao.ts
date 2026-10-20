@@ -21,7 +21,7 @@ export function nomeDaOferta(oferta: OfertaPublicada): string {
 }
 
 /**
- * As ofertas que a inscrição oferece: as da versão que ela fixou ao nascer, não as do certame ao vivo.
+ * As ofertas que a inscrição oferece: as da versão em que ela está, não as do certame ao vivo.
  * Em ordem alfabética, porque a API as devolve na ordem do identificador.
  */
 export function ofertasDaInscricao(
@@ -32,7 +32,7 @@ export function ofertasDaInscricao(
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
-/** Quantas opções de curso a versão fixada admite, do número que a API devolve: uma ou duas. */
+/** Quantas opções de curso a versão da inscrição admite, do número que a API devolve: uma ou duas. */
 export function numeroDeOpcoesDeCurso(numero: number | string): 1 | 2 {
   return Number(numero) >= 2 ? 2 : 1;
 }
