@@ -267,8 +267,9 @@ export class SimuladorDeFormularioPage {
     if (this.listaPedida) return;
     this.listaPedida = true;
     // Os desativados também: o Simular os oferece, e o modelo aberto precisa aparecer escolhido.
+    // Todas as páginas: um modelo além da primeira não poderia ser escolhido nem aparecer marcado.
     this.modelos
-      .listar()
+      .listarTodos()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         if (!resultado.ok) {
