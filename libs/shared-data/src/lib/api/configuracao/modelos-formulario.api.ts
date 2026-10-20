@@ -1,7 +1,13 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import {
+  ApiResult,
+  Cursor,
+  coletarPaginas,
+  cursorToString,
+  withVendorMime,
+} from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -19,6 +25,8 @@ export interface ModelosFormularioQuery {
   readonly finalidade?: string;
   readonly ativo?: boolean;
   readonly limit?: number;
+  /** O cursor do `rel="next"` da página anterior; ausente na primeira. */
+  readonly cursor?: Cursor;
 }
 
 /**
@@ -26,8 +34,8 @@ export interface ModelosFormularioQuery {
  * que o processo copia ao partir de um modelo (ADR-0136, UNI-REQ-0144).
  *
  * A listagem paginada da manutenção é lida pela página com `useApiResource`; aqui ficam a
- * listagem filtrada que o processo consulta ao partir de um modelo, a leitura de um modelo e as
- * escritas. O PUT substitui o conteúdo inteiro, e o DELETE desativa — o modelo
+ * listagem filtrada por página e por inteiro, para quem oferece a escolha de um modelo, a leitura
+ * de um modelo e as escritas. O PUT substitui o conteúdo inteiro, e o DELETE desativa — o modelo
  * desativado deixa de ser oferecido a processo novo, e a ativação o devolve.
  *
  * API thin (ADR-0013): tipos do `schema.ts` gerado; resposta envelopada em `ApiResult<T>`;
@@ -38,11 +46,17 @@ export class ModelosFormularioApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
-  /** GET `/api/configuracao/admin/modelos-formulario` — a primeira página da listagem filtrada. */
+  /**
+   * GET `/api/configuracao/admin/modelos-formulario` — uma página da listagem filtrada: a primeira,
+   * ou a do cursor. Para oferecer a escolha de um modelo, {@link listarTodos}.
+   */
   listar(
     query: ModelosFormularioQuery = {},
   ): Observable<ApiResult<readonly ModeloFormularioView[]>> {
-    let params = new HttpParams().set('limit', String(query.limit ?? 100));
+    let params =
+      query.cursor === undefined
+        ? new HttpParams().set('limit', String(query.limit ?? 100))
+        : new HttpParams().set('cursor', cursorToString(query.cursor)).set('direction', 'next');
     if (query.tipoProcesso !== undefined) params = params.set('tipoProcesso', query.tipoProcesso);
     if (query.finalidade !== undefined) params = params.set('finalidade', query.finalidade);
     if (query.ativo !== undefined) params = params.set('ativo', String(query.ativo));
@@ -50,6 +64,16 @@ export class ModelosFormularioApi {
       params,
       context: withVendorMime('modelo-formulario', 1),
     });
+  }
+
+  /**
+   * Todos os modelos da listagem filtrada, seguindo o cursor até a última página: a escolha de um
+   * modelo só oferece o que conhece. A primeira recusa é entregue como está, sem lista parcial.
+   */
+  listarTodos(
+    query: Omit<ModelosFormularioQuery, 'cursor'> = {},
+  ): Observable<ApiResult<readonly ModeloFormularioView[]>> {
+    return coletarPaginas((cursor) => this.listar({ ...query, cursor }));
   }
 
   /** GET `/api/configuracao/admin/modelos-formulario/{id}` — o modelo com o conteúdo. */

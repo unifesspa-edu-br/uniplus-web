@@ -3,7 +3,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Observable, firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { VENDOR_MIME_TOKEN, apiResultInterceptor } from '@uniplus/shared-core/http';
+import {
+  VENDOR_MIME_TOKEN,
+  apiResultInterceptor,
+  createCursor,
+} from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { ModelosFormularioApi } from './modelos-formulario.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
@@ -45,6 +49,58 @@ describe('ModelosFormularioApi', () => {
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await promise;
+  });
+
+  it('listar() com cursor pede a página seguinte, sem limit, mantendo os filtros', async () => {
+    const promise = firstValueFrom(
+      api.listar({ tipoProcesso: 'SISU', ativo: true, cursor: createCursor('p2') }),
+    );
+    const req = controller.expectOne((r) => r.url === ADMIN);
+    expect(req.request.params.get('cursor')).toBe('p2');
+    expect(req.request.params.get('direction')).toBe('next');
+    expect(req.request.params.has('limit')).toBe(false);
+    expect(req.request.params.get('tipoProcesso')).toBe('SISU');
+    expect(req.request.params.get('ativo')).toBe('true');
+    req.flush([]);
+    await promise;
+  });
+
+  it('listarTodos() segue o cursor até a última página e junta os modelos', async () => {
+    const promise = firstValueFrom(api.listarTodos({ finalidade: 'INSCRICAO' }));
+    const primeira = controller.expectOne((r) => r.url === ADMIN && !r.params.has('cursor'));
+    expect(primeira.request.params.get('finalidade')).toBe('INSCRICAO');
+    primeira.flush([{ id: 'a' }], {
+      headers: { Link: `<${ADMIN}?cursor=p2&direction=next>; rel="next"` },
+    });
+    const segunda = controller.expectOne((r) => r.url === ADMIN && r.params.has('cursor'));
+    expect(segunda.request.params.get('cursor')).toBe('p2');
+    expect(segunda.request.params.get('finalidade')).toBe('INSCRICAO');
+    segunda.flush([{ id: 'b' }]);
+
+    const resultado = await promise;
+    expect(resultado.ok && resultado.data.map((m) => m.id)).toEqual(['a', 'b']);
+  });
+
+  it('listarTodos() entrega a recusa de uma página, sem lista parcial', async () => {
+    const promise = firstValueFrom(api.listarTodos());
+    controller
+      .expectOne((r) => r.url === ADMIN && !r.params.has('cursor'))
+      .flush([{ id: 'a' }], {
+        headers: { Link: `<${ADMIN}?cursor=p2&direction=next>; rel="next"` },
+      });
+    controller
+      .expectOne((r) => r.url === ADMIN && r.params.has('cursor'))
+      .flush(
+        { type: 'about:blank', title: 'Indisponível', status: 503 },
+        {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
+      );
+
+    const resultado = await promise;
+    expect(resultado.ok).toBe(false);
   });
 
   it('obter() pede o media type do modelo, sem o qual a API responde 406', async () => {
