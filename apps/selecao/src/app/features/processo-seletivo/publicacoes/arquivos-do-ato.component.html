@@ -1,31 +1,42 @@
 @let documento = ato().documentoPrincipal;
-<ul class="arquivos" [attr.aria-label]="'Arquivos de ' + rotuloDoAto(ato())">
-  <li>
-    <button
-      type="button"
-      class="btn btn--tertiary btn--sm"
-      [disabled]="abrindo() !== null"
-      [attr.aria-busy]="abrindo() === documento.documentoAPublicarId || null"
-      [attr.aria-label]="'Abrir o documento principal ' + nomeDoDocumento(documento) + ' (abre em nova aba)'"
-      (click)="abrir.emit(documento.documentoAPublicarId)"
-    >
-      {{ abrindo() === documento.documentoAPublicarId ? 'Abrindo…' : nomeDoDocumento(documento) }}
-    </button>
-    <span class="arquivos__detalhe">Documento principal</span>
-  </li>
-  @for (anexo of ato().anexos; track anexo.documentoAPublicarId) {
-    <li>
-      <button
-        type="button"
-        class="btn btn--tertiary btn--sm"
-        [disabled]="abrindo() !== null"
-        [attr.aria-busy]="abrindo() === anexo.documentoAPublicarId || null"
-        [attr.aria-label]="'Abrir o anexo ' + nomeDoDocumento(anexo) + ' (abre em nova aba)'"
-        (click)="abrir.emit(anexo.documentoAPublicarId)"
-      >
-        {{ abrindo() === anexo.documentoAPublicarId ? 'Abrindo…' : nomeDoDocumento(anexo) }}
-      </button>
-      <span class="arquivos__detalhe">Anexo</span>
-    </li>
+@let anexos = ato().anexos;
+<div class="arquivos" role="group" [attr.aria-label]="'Arquivos de ' + rotuloDoAto(ato())">
+  <section class="arquivos__grupo">
+    <p class="arquivos__titulo">Documento principal</p>
+    <ul class="arquivos__lista" role="list">
+      <li>
+        <button
+          type="button"
+          class="btn btn--tertiary btn--sm"
+          [disabled]="abrindo() !== null"
+          [attr.aria-busy]="abrindo() === documento.documentoAPublicarId || null"
+          [attr.aria-label]="'Abrir o documento principal ' + nomeDoDocumento(documento) + ' (abre em nova aba)'"
+          (click)="abrir.emit(documento.documentoAPublicarId)"
+        >
+          {{ abrindo() === documento.documentoAPublicarId ? 'Abrindo…' : nomeDoDocumento(documento) }}
+        </button>
+      </li>
+    </ul>
+  </section>
+  @if (anexos.length > 0) {
+    <section class="arquivos__grupo">
+      <p class="arquivos__titulo">Anexos ({{ anexos.length }})</p>
+      <ul class="arquivos__lista" role="list">
+        @for (anexo of anexos; track anexo.documentoAPublicarId) {
+          <li>
+            <button
+              type="button"
+              class="btn btn--tertiary btn--sm"
+              [disabled]="abrindo() !== null"
+              [attr.aria-busy]="abrindo() === anexo.documentoAPublicarId || null"
+              [attr.aria-label]="'Abrir o anexo ' + nomeDoDocumento(anexo) + ' (abre em nova aba)'"
+              (click)="abrir.emit(anexo.documentoAPublicarId)"
+            >
+              {{ abrindo() === anexo.documentoAPublicarId ? 'Abrindo…' : nomeDoDocumento(anexo) }}
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
   }
-</ul>
+</div>
