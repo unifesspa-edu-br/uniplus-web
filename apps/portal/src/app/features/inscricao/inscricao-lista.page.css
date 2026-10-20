@@ -1,5 +1,5 @@
 .inscricoes-toolbar,
-.inscricao-row__body  {
+.inscricao-row__body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -35,7 +35,9 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-4) var(--space-5);
-  transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
 }
 
 .inscricao-lista-item:hover {
@@ -88,4 +90,24 @@
 
 .card__footer {
   justify-content: flex-end;
+}
+
+.inscricao-lista-item__corpo {
+  overflow-wrap: anywhere;
+}
+
+.inscricoes-aviso:not(:empty) {
+  margin-block: var(--space-4);
+}
+
+.inscricao-dialogo__processo {
+  font-weight: var(--weight-bold);
+  overflow-wrap: anywhere;
+}
+
+.inscricao-dialogo__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
 }

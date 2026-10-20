@@ -271,8 +271,3 @@ export function envioDoComprovante(
     maisRecente,
   };
 }
-
-/** A inscrição enviada ainda se corrige até o fim do período de inscrição. */
-export function periodoDeInscricaoAberto(fim: string, agora: Date): boolean {
-  return agora.getTime() <= new Date(fim).getTime();
-}

@@ -610,7 +610,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       const destino = (await anterior.getAttribute('href')) ?? '';
       await anterior.click();
       await expect(page).toHaveURL(new RegExp(`${destino}$`));
-      await expect(page).toHaveURL(new RegExp(`/inscricao/${PROCESSO_ID}/comprovantes/\\d+$`));
+      await expect(page).toHaveURL(new RegExp('/inscricao/comprovante/[^/]+/\\d+$'));
       await expect(comprovante(page)).toContainText(PERSONA.celular);
       await expect(comprovante(page)).not.toContainText(PERSONA.fixo);
       await expect(comprovante(page)).toContainText('Substituído');
