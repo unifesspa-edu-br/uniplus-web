@@ -21,6 +21,8 @@ export type {
   InscricaoDto,
   InscricaoRequest,
   MinhaInscricaoDto,
+  AcoesDaInscricaoDto,
+  CancelamentoDaInscricaoRequest,
   ModalidadesDaInscricaoDto,
   OcorrenciaDeGrupoInscricaoInput,
   RespostasDaInscricao,

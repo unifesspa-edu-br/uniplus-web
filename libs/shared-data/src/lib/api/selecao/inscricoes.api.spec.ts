@@ -12,6 +12,7 @@ import { SELECAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO = '0199e000-0000-7000-8000-0000000000d1';
+const INSCRICAO = '0199e000-0000-7000-8000-0000000000e1';
 const ROTA = `${BASE}/api/selecao/processos-seletivos/${PROCESSO}/inscricao`;
 const ETAG = '"inscricao-1:3"';
 const REQUEST: InscricaoRequest = { ofertaCursoId: null, respostas: {}, grupos: null, aceites: [] };
@@ -74,11 +75,37 @@ describe('InscricoesApi', () => {
     req.flush({});
     await promessa;
   });
-  it('lê o comprovante pela ordem da submissão e as inscrições do dono, com o media type de cada um', async () => {
-    const comprovante = firstValueFrom(api.obterComprovante(PROCESSO, 2));
+  it('descarta o rascunho por DELETE com o ETag no If-Match', async () => {
+    const promessa = firstValueFrom(api.descartar(PROCESSO, ETAG));
+
+    const req = controller.expectOne(ROTA);
+    expect(req.request.method).toBe('DELETE');
+    expect(req.request.headers.get('If-Match')).toBe(ETAG);
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    await promessa;
+  });
+
+  it('cancela com o motivo, o If-Match e a Idempotency-Key de quem chama', async () => {
+    const promessa = firstValueFrom(
+      api.cancelar(PROCESSO, { motivo: 'Mudei de curso' }, ETAG, withIdempotencyKey('cancelar-1')),
+    );
+
+    const req = controller.expectOne(`${ROTA}/cancelamento`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ motivo: 'Mudei de curso' });
+    expect(req.request.headers.get('If-Match')).toBe(ETAG);
+    expect(req.request.headers.get('Idempotency-Key')).toBe('cancelar-1');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    await promessa;
+  });
+
+  it('lê o comprovante pelo id da inscrição e as inscrições do dono, com o media type de cada um', async () => {
+    const comprovante = firstValueFrom(api.obterComprovante(INSCRICAO, 2));
     const minhas = firstValueFrom(api.minhas());
 
-    const reqComprovante = controller.expectOne(`${ROTA}/comprovantes/2`);
+    const reqComprovante = controller.expectOne(
+      `${BASE}/api/selecao/inscricoes/${INSCRICAO}/comprovantes/2`,
+    );
     expect(reqComprovante.request.headers.get('Accept')).toBe(
       buildVendorMimeAccept('comprovante-inscricao', 1),
     );
