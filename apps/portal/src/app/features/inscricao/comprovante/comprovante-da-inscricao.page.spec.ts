@@ -148,7 +148,7 @@ const INSCRICAO = {
   cpfMascarado: '***.598.363-**',
   canceladaEm: null,
   motivoDoCancelamento: null,
-  acoes: { podeCorrigir: true, podeCancelar: true, podeDescartar: false },
+  acoes: { podeContinuar: false, podeCorrigir: true, podeCancelar: true, podeDescartar: false },
   comprovantes: [
     { numero: 1, instante: '2026-12-11T13:30:00Z' },
     { numero: 2, instante: '2026-12-12T09:00:00Z' },
@@ -327,7 +327,12 @@ describe('ComprovanteDaInscricaoPage', () => {
   it('sem a permissão de corrigir que a API dá, diz que não se corrige mais e não oferece correção', async () => {
     fimDoPeriodo = '2026-01-16T02:59:00Z';
     alteracoesDaInscricao = {
-      acoes: { podeCorrigir: false, podeCancelar: false, podeDescartar: false },
+      acoes: {
+        podeContinuar: false,
+        podeCorrigir: false,
+        podeCancelar: false,
+        podeDescartar: false,
+      },
     };
     const tela = await abrir();
 
@@ -340,7 +345,12 @@ describe('ComprovanteDaInscricaoPage', () => {
       situacao: SituacaoInscricao.cancelada,
       canceladaEm: '2026-12-13T12:00:00Z',
       motivoDoCancelamento: 'Mudei de curso',
-      acoes: { podeCorrigir: false, podeCancelar: false, podeDescartar: false },
+      acoes: {
+        podeContinuar: false,
+        podeCorrigir: false,
+        podeCancelar: false,
+        podeDescartar: false,
+      },
     };
     const formulario = vi.spyOn(servico, 'formulario');
     const comprovante = vi.spyOn(servico, 'comprovante');

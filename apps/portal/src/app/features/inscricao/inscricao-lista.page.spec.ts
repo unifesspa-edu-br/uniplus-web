@@ -21,6 +21,7 @@ function inscricao(
   aberta = true,
 ): MinhaInscricaoDto {
   const enviada = situacao === SituacaoInscricao.submetida;
+  const rascunho = situacao === SituacaoInscricao.rascunho;
   return {
     inscricaoId: `i-${id}`,
     processoSeletivoId: id,
@@ -32,9 +33,10 @@ function inscricao(
     canceladaEm: null,
     motivoDoCancelamento: null,
     acoes: {
+      podeContinuar: rascunho && aberta,
       podeCorrigir: enviada && aberta,
       podeCancelar: enviada && aberta,
-      podeDescartar: situacao === SituacaoInscricao.rascunho,
+      podeDescartar: rascunho && aberta,
     },
     comprovantes: [],
   };
@@ -246,6 +248,7 @@ describe('InscricaoListaPage', () => {
       inscricao('p1', SituacaoInscricao.rascunho, 'Auxílio'),
       inscricao('p2', SituacaoInscricao.submetida, 'Bolsa'),
       inscricao('p3', SituacaoInscricao.submetida, 'Morada', false),
+      inscricao('p4', SituacaoInscricao.rascunho, 'Auxílio transporte', false),
     ]);
 
     const itens = host().querySelectorAll('li.inscricao-lista-item');
@@ -256,6 +259,7 @@ describe('InscricaoListaPage', () => {
       'Cancelar inscrição',
     ]);
     expect(rotulosDe(itens[2])).toEqual(['Ver comprovante']);
+    expect(rotulosDe(itens[3])).toEqual([]);
   });
 
   it('a cancelada e a nova do mesmo processo aparecem as duas, cada uma com a sua chave', async () => {

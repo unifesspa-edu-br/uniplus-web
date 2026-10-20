@@ -8101,6 +8101,7 @@ export interface components {
             readonly expiraEm: string;
         };
         readonly AcoesDaInscricaoDto: {
+            readonly podeContinuar: boolean;
             readonly podeCorrigir: boolean;
             readonly podeCancelar: boolean;
             readonly podeDescartar: boolean;
