@@ -39,6 +39,10 @@ export type ComprovanteInscricaoDto = Omit<
 
 export type MinhaInscricaoDto = Schemas['MinhaInscricaoDto'];
 
+export type AcoesDaInscricaoDto = Schemas['AcoesDaInscricaoDto'];
+
+export type CancelamentoDaInscricaoRequest = Schemas['CancelamentoDaInscricaoRequest'];
+
 /**
  * O que as respostas determinam no processo, calculado pela API sem gravar (ADR-0143): as modalidades
  * em que o candidato concorre ou o que falta responder para saber.

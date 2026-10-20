@@ -6,6 +6,7 @@ import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import type {
   AvaliacaoDaInscricaoDto,
   AvaliacaoDaInscricaoRequest,
+  CancelamentoDaInscricaoRequest,
   ComprovanteInscricaoDto,
   InscricaoDto,
   InscricaoRequest,
@@ -96,15 +97,46 @@ export class InscricoesApi {
   }
 
   /**
-   * GET `…/inscricao/comprovantes/{numero}` — o comprovante da n-ésima submissão, a contar de 1. Os
-   * anteriores continuam acessíveis e não mudam.
+   * DELETE `…/inscricao` — descarta o rascunho. A inscrição enviada é recusada (422): sai pelo
+   * cancelamento.
+   */
+  descartar(processoSeletivoId: string, eTag: string): Observable<ApiResult<void>> {
+    return this.http.delete<ApiResult<void>>(this.url(processoSeletivoId), {
+      headers: { 'If-Match': eTag },
+    });
+  }
+
+  /**
+   * POST `…/inscricao/cancelamento` — cancela a inscrição enviada. A Idempotency-Key vem do `context`
+   * de quem chama; o motivo é opcional.
+   */
+  cancelar(
+    processoSeletivoId: string,
+    request: CancelamentoDaInscricaoRequest,
+    eTag: string,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.post<ApiResult<void>>(
+      `${this.url(processoSeletivoId)}/cancelamento`,
+      request,
+      {
+        headers: { 'If-Match': eTag },
+        context,
+      },
+    );
+  }
+
+  /**
+   * GET `/api/selecao/inscricoes/{inscricaoId}/comprovantes/{numero}` — o comprovante da n-ésima
+   * submissão, a contar de 1, pelo id da inscrição: alcança também a cancelada. Os anteriores
+   * continuam acessíveis e não mudam.
    */
   obterComprovante(
-    processoSeletivoId: string,
+    inscricaoId: string,
     numero: number,
   ): Observable<ApiResult<ComprovanteInscricaoDto>> {
     return this.http.get<ApiResult<ComprovanteInscricaoDto>>(
-      `${this.url(processoSeletivoId)}/comprovantes/${numero}`,
+      `${this.basePath}/api/selecao/inscricoes/${encodeURIComponent(inscricaoId)}/comprovantes/${numero}`,
       { context: withVendorMime('comprovante-inscricao', 1) },
     );
   }
