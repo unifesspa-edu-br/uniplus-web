@@ -1,7 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { forkJoin, map, type Observable, of } from 'rxjs';
+import { forkJoin, map, type Observable, of, switchMap, tap } from 'rxjs';
 import { type ApiResult, apiOk } from '@uniplus/shared-core/http';
+import {
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { GeoApi } from '@uniplus/shared-data/geo';
 import {
   certamePublicoRequest,
@@ -13,13 +18,15 @@ import {
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/selecao';
 
-/** As inscrições do candidato e os comprovantes de cada uma. */
+/** As inscrições do candidato, os comprovantes de cada uma e o que se faz com elas: descartar e cancelar. */
 @Injectable({ providedIn: 'root' })
 export class MinhasInscricoesService {
   private readonly api = inject(InscricoesApi);
   private readonly geo = inject(GeoApi);
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(SELECAO_BASE_PATH);
+  private cancelamentoEmCurso: { readonly chave: string; readonly assinatura: string } | null =
+    null;
 
   /** As inscrições do dono do token, cada uma com os comprovantes emitidos, em ordem de emissão. */
   listar(): Observable<ApiResult<readonly MinhaInscricaoDto[]>> {
@@ -67,7 +74,44 @@ export class MinhasInscricoesService {
     ).pipe(map((nomes) => new Map(nomes.flat())));
   }
 
-  comprovante(processoId: string, numero: number): Observable<ApiResult<ComprovanteInscricaoDto>> {
-    return this.api.obterComprovante(processoId, numero);
+  /** O comprovante do envio `numero` da inscrição `inscricaoId`, também a cancelada. */
+  comprovante(inscricaoId: string, numero: number): Observable<ApiResult<ComprovanteInscricaoDto>> {
+    return this.api.obterComprovante(inscricaoId, numero);
+  }
+
+  /** Descarta o rascunho do processo, com o ETag que a inscrição tem agora. */
+  descartar(processoId: string): Observable<ApiResult<void>> {
+    return this.comETagAtual(processoId, (eTag) => this.api.descartar(processoId, eTag));
+  }
+
+  /**
+   * Cancela a inscrição enviada do processo. A mesma Idempotency-Key acompanha a repetição do mesmo
+   * pedido (rede que cai), e uma nova vale quando a falha já registrou resposta na API.
+   */
+  cancelar(processoId: string, motivo: string | null): Observable<ApiResult<void>> {
+    const assinatura = JSON.stringify([processoId, motivo]);
+    if (this.cancelamentoEmCurso?.assinatura !== assinatura) {
+      this.cancelamentoEmCurso = { chave: idempotencyKey.create(), assinatura };
+    }
+    const { chave } = this.cancelamentoEmCurso;
+    return this.comETagAtual(processoId, (eTag) =>
+      this.api.cancelar(processoId, { motivo }, eTag, withIdempotencyKey(chave)),
+    ).pipe(
+      tap((resultado) => {
+        if (resultado.ok || deveRotacionarIdempotencyKey(resultado.problem)) {
+          this.cancelamentoEmCurso = null;
+        }
+      }),
+    );
+  }
+
+  /** O `If-Match` pede a revisão corrente: lê a inscrição antes e só age se a leitura deu certo. */
+  private comETagAtual(
+    processoId: string,
+    agir: (eTag: string) => Observable<ApiResult<void>>,
+  ): Observable<ApiResult<void>> {
+    return this.api
+      .obter(processoId)
+      .pipe(switchMap((inscricao) => (inscricao.ok ? agir(inscricao.data.eTag) : of(inscricao))));
   }
 }

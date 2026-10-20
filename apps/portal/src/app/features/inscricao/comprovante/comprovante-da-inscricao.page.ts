@@ -10,15 +10,17 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { HttpHeaders } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { forkJoin, map, type Observable, of, switchMap, tap } from 'rxjs';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
-import { type ApiFailure, ProblemI18nService } from '@uniplus/shared-core/http';
-import type {
-  CertamePublicadoDto,
-  ComprovanteInscricaoDto,
-  FormularioRenderizavelDto,
-  MinhaInscricaoDto,
+import { type ApiFailure, apiOk, ProblemI18nService } from '@uniplus/shared-core/http';
+import {
+  type CertamePublicadoDto,
+  type ComprovanteInscricaoDto,
+  type FormularioRenderizavelDto,
+  type MinhaInscricaoDto,
+  SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
@@ -42,7 +44,6 @@ import {
   opcoesDoComprovante,
   municipiosDoComprovante,
   numeroDoComprovante,
-  periodoDeInscricaoAberto,
   secoesDoComprovante,
   termosAceitos,
   type Vizinhos,
@@ -58,7 +59,8 @@ const NAO_ENCONTRADO =
 interface Carregado {
   readonly numero: number;
   readonly comprovante: ComprovanteInscricaoDto;
-  readonly formulario: FormularioRenderizavelDto;
+  /** Nulo na cancelada: a API só entrega o formulário da inscrição ativa do processo. */
+  readonly formulario: FormularioRenderizavelDto | null;
   readonly inscricao: MinhaInscricaoDto;
   readonly processo: CertamePublicadoDto | null;
   readonly vizinhos: Vizinhos;
@@ -106,7 +108,7 @@ export class ComprovanteDaInscricaoPage {
   private readonly tentativa = signal(0);
   private readonly documento = viewChild.required(DocumentoComponent);
 
-  readonly processoId = input.required<string>();
+  readonly inscricaoId = input.required<string>();
   /** A ordem da submissão, a contar de 1; ausente, a última. */
   readonly numero = input<string>();
 
@@ -136,26 +138,40 @@ export class ComprovanteDaInscricaoPage {
   /** O envio substituído, enquanto ele está na tela: o que vale é o mais recente. */
   protected readonly substituido = computed(() => {
     const envio = this.envio();
-    return this.estado() === 'pronto' && envio && !envio.ehOQueVale ? envio : null;
+    return this.estado() === 'pronto' && !this.cancelada() && envio && !envio.ehOQueVale
+      ? envio
+      : null;
   });
-  /** Até quando corrigir, só no envio que vale: o substituído aponta para o mais recente. */
+  protected readonly cancelada = computed(
+    () => this.carregado()?.inscricao.situacao === SituacaoInscricao.cancelada,
+  );
+  protected readonly canceladaEm = computed(() => {
+    const c = this.carregado();
+    return c?.inscricao.canceladaEm
+      ? noFuso(c.inscricao.canceladaEm, c.comprovante.fusoHorario)
+      : '';
+  });
+  /**
+   * Até quando corrigir, só no envio que vale: o substituído aponta para o mais recente e a cancelada
+   * já não se corrige. Se ainda se corrige, a API diz em `acoes`.
+   */
   protected readonly prazo = computed(() => {
     const c = this.carregado();
-    if (!c?.processo || !this.envio()?.ehOQueVale) return null;
+    if (!c?.processo || this.cancelada() || !this.envio()?.ehOQueVale) return null;
     const { fim } = c.processo.periodo;
     return {
-      aberto: periodoDeInscricaoAberto(fim, new Date()),
+      aberto: c.inscricao.acoes.podeCorrigir,
       fim: noFuso(fim, c.processo.localidade.fusoHorario),
       fimIso: fim,
     };
   });
   protected readonly secoes = computed(() => {
     const c = this.carregado();
-    return c ? secoesDoComprovante(c.formulario, c.comprovante, c.municipios) : [];
+    return c?.formulario ? secoesDoComprovante(c.formulario, c.comprovante, c.municipios) : [];
   });
   protected readonly derivados = computed(() => {
     const c = this.carregado();
-    return c ? derivadosDoComprovante(c.formulario, c.comprovante, c.municipios) : [];
+    return c?.formulario ? derivadosDoComprovante(c.formulario, c.comprovante, c.municipios) : [];
   });
   protected readonly modalidades = computed(() => {
     const c = this.carregado();
@@ -163,7 +179,7 @@ export class ComprovanteDaInscricaoPage {
   });
   protected readonly termos = computed(() => {
     const c = this.carregado();
-    return c ? termosAceitos(c.formulario, c.comprovante) : [];
+    return c?.formulario ? termosAceitos(c.formulario, c.comprovante) : [];
   });
   /**
    * O CPF que o titular revela vem do login, sem consulta; só quando confere com o do comprovante,
@@ -192,14 +208,14 @@ export class ComprovanteDaInscricaoPage {
     // A rota reaproveita a página quando só o número muda: a leitura segue os parâmetros.
     toObservable(
       computed(() => ({
-        processoId: this.processoId(),
+        inscricaoId: this.inscricaoId(),
         numero: this.numero(),
         tentativa: this.tentativa(),
       })),
     )
       .pipe(
         tap(() => this.estado.set('carregando')),
-        switchMap(({ processoId, numero }) => this.ler(processoId, numero)),
+        switchMap(({ inscricaoId, numero }) => this.ler(inscricaoId, numero)),
         takeUntilDestroyed(),
       )
       .subscribe((leitura) => this.mostrar(leitura));
@@ -213,47 +229,61 @@ export class ComprovanteDaInscricaoPage {
     this.tentativa.update((n) => n + 1);
   }
 
-  private ler(processoId: string, numeroPedido: string | undefined): Observable<Leitura> {
+  private ler(inscricaoId: string, numeroPedido: string | undefined): Observable<Leitura> {
     // Sem parâmetro na rota, vale o comprovante mais recente. Com parâmetro que não é um inteiro
     // positivo, não há comprovante a abrir: `null` aqui seria lido como "sem número pedido".
     const pedido = numeroPedido === undefined ? null : Number(numeroPedido);
     if (pedido !== null && !(Number.isInteger(pedido) && pedido > 0)) {
       return of({ tipo: 'nao-encontrado' });
     }
-    return forkJoin({
-      minhas: this.servico.listar(),
-      formulario: this.servico.formulario(processoId),
-      processo: this.servico.certame(processoId),
-    }).pipe(
-      switchMap(({ minhas, formulario, processo }): Observable<Leitura> => {
+    return this.servico.listar().pipe(
+      switchMap((minhas): Observable<Leitura> => {
         if (!minhas.ok) return of({ tipo: 'falha', falha: minhas });
-        if (!formulario.ok) return of({ tipo: 'falha', falha: formulario });
-        if (!processo.ok) return of({ tipo: 'falha', falha: processo });
-        const inscricao = minhas.data.find((i) => i.processoSeletivoId === processoId);
+        const inscricao = minhas.data.find((i) => i.inscricaoId === inscricaoId);
         const numero = inscricao ? numeroDoComprovante(inscricao.comprovantes, pedido) : null;
         if (!inscricao || numero === null) return of({ tipo: 'nao-encontrado' });
-        return this.servico.comprovante(processoId, numero).pipe(
-          switchMap((comprovante): Observable<Leitura> => {
-            if (!comprovante.ok) return of({ tipo: 'falha', falha: comprovante });
-            return this.servico
-              .nomesDosMunicipios(municipiosDoComprovante(formulario.data, comprovante.data))
-              .pipe(
-                map(
-                  (municipios): Leitura => ({
-                    tipo: 'pronto',
-                    carregado: {
-                      numero,
-                      comprovante: comprovante.data,
-                      formulario: formulario.data,
-                      inscricao,
-                      processo: processo.data,
-                      vizinhos: vizinhos(inscricao.comprovantes, numero),
-                      municipios,
-                    },
-                  }),
-                ),
-              );
-          }),
+        return this.lerDaInscricao(inscricao, numero);
+      }),
+    );
+  }
+
+  private lerDaInscricao(inscricao: MinhaInscricaoDto, numero: number): Observable<Leitura> {
+    const processoId = inscricao.processoSeletivoId;
+    // O formulário que a API entrega é o da inscrição ativa do processo. A cancelada pode ter outra
+    // versão (ou nenhuma inscrição ativa), então nunca se lê o formulário dela por ali.
+    const formulario =
+      inscricao.situacao === SituacaoInscricao.cancelada
+        ? of(apiOk<FormularioRenderizavelDto | null>(null, 200, new HttpHeaders()))
+        : this.servico.formulario(processoId);
+    return forkJoin({
+      formulario,
+      processo: this.servico.certame(processoId),
+      comprovante: this.servico.comprovante(inscricao.inscricaoId, numero),
+    }).pipe(
+      switchMap(({ formulario, processo, comprovante }): Observable<Leitura> => {
+        if (!formulario.ok) return of({ tipo: 'falha', falha: formulario });
+        if (!processo.ok) return of({ tipo: 'falha', falha: processo });
+        if (!comprovante.ok) return of({ tipo: 'falha', falha: comprovante });
+        const campos = formulario.data;
+        return (
+          campos
+            ? this.servico.nomesDosMunicipios(municipiosDoComprovante(campos, comprovante.data))
+            : of(new Map<string, string>())
+        ).pipe(
+          map(
+            (municipios): Leitura => ({
+              tipo: 'pronto',
+              carregado: {
+                numero,
+                comprovante: comprovante.data,
+                formulario: campos,
+                inscricao,
+                processo: processo.data,
+                vizinhos: vizinhos(inscricao.comprovantes, numero),
+                municipios,
+              },
+            }),
+          ),
         );
       }),
     );

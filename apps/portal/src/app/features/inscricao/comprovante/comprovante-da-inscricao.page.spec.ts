@@ -6,11 +6,12 @@ import { type Observable, of } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
-import type {
-  CertamePublicadoDto,
-  ComprovanteInscricaoDto,
-  FormularioRenderizavelDto,
-  MinhaInscricaoDto,
+import {
+  type CertamePublicadoDto,
+  type ComprovanteInscricaoDto,
+  type FormularioRenderizavelDto,
+  type MinhaInscricaoDto,
+  SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
 
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
@@ -121,6 +122,8 @@ const OFERTA_DIREITO = { ...OFERTA_MEDICINA, ofertaCursoOrigemId: 'o2', cursoNom
 let ofertas: readonly (typeof OFERTA_MEDICINA)[] = [OFERTA_MEDICINA];
 /** O fim do período de inscrição, que decide se o envio ainda se corrige. */
 let fimDoPeriodo = '2999-12-31T02:59:00Z';
+/** O que a API diz sobre corrigir a inscrição agora; a tela não decide pelo relógio. */
+let alteracoesDaInscricao: Partial<MinhaInscricaoDto> = {};
 const NAO_ENCONTRADO = apiFailure(
   {
     type: 'about:blank',
@@ -134,13 +137,18 @@ const NAO_ENCONTRADO = apiFailure(
 );
 
 /** Duas submissões: a primeira e a correção. */
+const INSCRICAO_ID = '0199e000-0000-7000-8000-0000000000e1';
 const INSCRICAO = {
+  inscricaoId: INSCRICAO_ID,
   processoSeletivoId: PROCESSO,
   nomeDoProcesso: 'Medicina 2027',
   numeroInscricao: '00000042',
   situacao: 'submetida',
   nomePreferido: 'Ariel Drumond',
   cpfMascarado: '***.598.363-**',
+  canceladaEm: null,
+  motivoDoCancelamento: null,
+  acoes: { podeCorrigir: true, podeCancelar: true, podeDescartar: false },
   comprovantes: [
     { numero: 1, instante: '2026-12-11T13:30:00Z' },
     { numero: 2, instante: '2026-12-12T09:00:00Z' },
@@ -148,7 +156,7 @@ const INSCRICAO = {
 } as MinhaInscricaoDto;
 
 const servico = {
-  listar: () => of(apiOk([INSCRICAO], 200, SEM_CABECALHOS)),
+  listar: () => of(apiOk([{ ...INSCRICAO, ...alteracoesDaInscricao }], 200, SEM_CABECALHOS)),
   comprovante: (_: string, numero: number) =>
     of(numero <= 2 ? apiOk(comprovante('00000042', numero), 200, SEM_CABECALHOS) : NAO_ENCONTRADO),
   formulario: () => of(apiOk(FORMULARIO, 200, SEM_CABECALHOS)),
@@ -184,7 +192,7 @@ async function abrir(numero?: string): Promise<HTMLElement> {
     ],
   });
   fixture = TestBed.createComponent(ComprovanteDaInscricaoPage);
-  fixture.componentRef.setInput('processoId', PROCESSO);
+  fixture.componentRef.setInput('inscricaoId', INSCRICAO_ID);
   if (numero) fixture.componentRef.setInput('numero', numero);
   await atualizar();
   return fixture.nativeElement as HTMLElement;
@@ -221,6 +229,7 @@ describe('ComprovanteDaInscricaoPage', () => {
   afterEach(() => {
     cpfDoLogin.set(CPF_DA_CONTA);
     fimDoPeriodo = '2999-12-31T02:59:00Z';
+    alteracoesDaInscricao = {};
     modalidadesDoEnvio = (numero) => MODALIDADES_POR_ENVIO[numero];
     respostasAlteradas = {};
     segundaOpcaoDoEnvio = null;
@@ -311,18 +320,41 @@ describe('ComprovanteDaInscricaoPage', () => {
     expect(tela.querySelector('[aria-live="polite"] .alert')?.textContent).toContain(
       'Este envio foi substituído por um mais recente.',
     );
-    expect(tela.textContent).not.toContain('Corrigir inscrição');
+    expect(tela.textContent).not.toContain('Corrigir dados');
     expect(tela.textContent).not.toContain('Próximos passos');
   });
 
-  it('com o período encerrado, diz quando terminou e não oferece correção', async () => {
+  it('sem a permissão de corrigir que a API dá, diz que não se corrige mais e não oferece correção', async () => {
     fimDoPeriodo = '2026-01-16T02:59:00Z';
+    alteracoesDaInscricao = {
+      acoes: { podeCorrigir: false, podeCancelar: false, podeDescartar: false },
+    };
     const tela = await abrir();
 
-    expect(tela.textContent).toContain(
-      'O período de inscrição terminou em 15/01/2026, 23:59, horário de Belém (PA).',
-    );
-    expect(tela.textContent).not.toContain('Corrigir inscrição');
+    expect(tela.textContent).toContain('Não é mais possível corrigir esta inscrição.');
+    expect(tela.textContent).not.toContain('Corrigir dados');
+  });
+
+  it('a inscrição cancelada mostra a etiqueta e o motivo, lê o comprovante pelo id e não usa o formulário do processo', async () => {
+    alteracoesDaInscricao = {
+      situacao: SituacaoInscricao.cancelada,
+      canceladaEm: '2026-12-13T12:00:00Z',
+      motivoDoCancelamento: 'Mudei de curso',
+      acoes: { podeCorrigir: false, podeCancelar: false, podeDescartar: false },
+    };
+    const formulario = vi.spyOn(servico, 'formulario');
+    const comprovante = vi.spyOn(servico, 'comprovante');
+
+    const tela = await abrir('1');
+
+    expect(dado(tela, 'Situação')).toBe('Cancelada');
+    expect(tela.querySelector('[aria-live="polite"] .alert')).toBeNull();
+    expect(dado(tela, 'Motivo do cancelamento')).toBe('Mudei de curso');
+    expect(dado(tela, 'Cancelada em')).toBe('13/12/2026, 09:00, horário de Belém (PA)');
+    expect(tela.textContent).toContain('ela foi cancelada');
+    expect(tela.textContent).not.toContain('Corrigir dados');
+    expect(formulario).not.toHaveBeenCalled();
+    expect(comprovante).toHaveBeenCalledWith(INSCRICAO_ID, 1);
   });
 
   it('ao abrir, o foco vai ao título do documento', async () => {

@@ -21,7 +21,7 @@
     @if (substituido(); as envio) {
     <ui-alert variant="info" [dynamic]="false">
       Este envio foi substituído por um mais recente. A inscrição que vale é a última enviada.
-      <a [routerLink]="['/inscricao', processoId(), 'comprovantes', envio.maisRecente]">
+      <a [routerLink]="['/inscricao', 'comprovante', inscricaoId(), envio.maisRecente]">
         Ver o envio mais recente
       </a>
     </ui-alert>
@@ -54,7 +54,15 @@
         rotulo="Número da inscrição"
         [valor]="c.comprovante.numeroInscricao"
       ></ng-template>
-      @if (envio(); as envio) {
+      @if (cancelada()) {
+      <ng-template uiDado rotulo="Situação">
+        <ui-tag variant="neutral" [dot]="true">Cancelada</ui-tag>
+      </ng-template>
+      @if (canceladaEm(); as quando) {
+      <ng-template uiDado rotulo="Cancelada em" [valor]="quando"></ng-template>
+      } @if (c.inscricao.motivoDoCancelamento; as motivo) {
+      <ng-template uiDado rotulo="Motivo do cancelamento" [valor]="motivo"></ng-template>
+      } } @else if (envio(); as envio) {
       <ng-template uiDado rotulo="Situação">
         @if (envio.ehOQueVale) {
         <ui-tag variant="success" [dot]="true">É o que vale</ui-tag>
@@ -73,14 +81,14 @@
         Envio {{ envio.ordem }} de {{ envio.total }} @if (c.vizinhos.anterior; as anterior) {
         <span class="u-no-print">
           ·
-          <a [routerLink]="['/inscricao', processoId(), 'comprovantes', anterior]"
+          <a [routerLink]="['/inscricao', 'comprovante', inscricaoId(), anterior]"
             >‹ Envio anterior</a
           >
         </span>
         } @if (c.vizinhos.seguinte; as seguinte) {
         <span class="u-no-print">
           ·
-          <a [routerLink]="['/inscricao', processoId(), 'comprovantes', seguinte]"
+          <a [routerLink]="['/inscricao', 'comprovante', inscricaoId(), seguinte]"
             >Envio seguinte ›</a
           >
         </span>
@@ -147,7 +155,12 @@
     </ui-lista-de-dados>
   </ui-secao-de-documento>
 
-  @if (secoes().length > 0 || derivados().length > 0) {
+  @if (!c.formulario) {
+  <ui-alert variant="info" [dynamic]="false">
+    As respostas desta inscrição não são exibidas porque ela foi cancelada. O número, a data do
+    envio e o código de verificação continuam valendo.
+  </ui-alert>
+  } @if (secoes().length > 0 || derivados().length > 0) {
   <ui-secao-de-documento titulo="Respostas da inscrição">
     @for (secao of secoes(); track secao.codigo) {
     <ui-secao-de-documento [titulo]="secao.titulo" [nivel]="3">
@@ -208,14 +221,14 @@
       <time [attr.datetime]="prazo.fimIso">{{ prazo.fim }}</time>. A inscrição que vale é a última
       enviada.
     </p>
-    <a class="btn btn--secondary u-no-print" [routerLink]="['/inscricao', processoId()]">
-      Corrigir inscrição
+    <a
+      class="btn btn--secondary u-no-print"
+      [routerLink]="['/inscricao', c.inscricao.processoSeletivoId]"
+    >
+      Corrigir dados
     </a>
     } @else {
-    <p>
-      O período de inscrição terminou em
-      <time [attr.datetime]="prazo.fimIso">{{ prazo.fim }}</time>.
-    </p>
+    <p>Não é mais possível corrigir esta inscrição.</p>
     }
   </ui-secao-de-documento>
   } } } }

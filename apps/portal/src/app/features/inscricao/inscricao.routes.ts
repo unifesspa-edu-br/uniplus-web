@@ -11,8 +11,10 @@ export const INSCRICAO_ROUTES: Routes = [
   { path: '', component: InscricaoListaPage },
   // O comprovante fica no chunk da feature, como a lista: separado, ele dividiria os tokens que o
   // carregamento inicial já traz em mais um chunk.
-  { path: ':processoId/comprovante', component: ComprovanteDaInscricaoPage },
-  { path: ':processoId/comprovantes/:numero', component: ComprovanteDaInscricaoPage },
+  // O comprovante vai pelo id da inscrição, não pelo do processo: a cancelada e a nova do mesmo
+  // processo têm comprovantes próprios.
+  { path: 'comprovante/:inscricaoId', component: ComprovanteDaInscricaoPage },
+  { path: 'comprovante/:inscricaoId/:numero', component: ComprovanteDaInscricaoPage },
   {
     path: ':processoId',
     loadComponent: () =>

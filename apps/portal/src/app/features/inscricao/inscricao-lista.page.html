@@ -11,20 +11,24 @@
     a cada estado faz o leitor de tela perder o anúncio.
   -->
   <span class="inscricoes-contagem-mensagem" role="status" aria-live="polite">
-    @if (loading()) {
-      Carregando inscrições…
-    } @else if (!errorMessage()) {
-      {{ inscricoesFiltradas().length }}
-      {{ inscricoesFiltradas().length === 1 ? 'inscrição nesta página' : 'inscrições nesta página' }}
-    }
+    @if (loading()) { Carregando inscrições… } @else if (!errorMessage()) { {{
+    inscricoesFiltradas().length }} {{ inscricoesFiltradas().length === 1 ? 'inscrição nesta página'
+    : 'inscrições nesta página' }} }
   </span>
   @if (!isCompacto()) {
-    <ui-segmented
-      accessibleName="Alternar entre lista e cards"
-      [choices]="viewOptions"
-      [selectedValue]="visao()"
-      (selectedValueChange)="setVisao($event)"
-    />
+  <ui-segmented
+    accessibleName="Alternar entre lista e cards"
+    [choices]="viewOptions"
+    [selectedValue]="visao()"
+    (selectedValueChange)="setVisao($event)"
+  />
+  }
+</div>
+
+<!-- Sempre no DOM: só o conteúdo muda, e a troca é anunciada. -->
+<div class="inscricoes-aviso" role="status" aria-live="polite">
+  @if (aviso(); as mensagem) {
+  <ui-alert variant="success" [dynamic]="false">{{ mensagem }}</ui-alert>
   }
 </div>
 
@@ -45,87 +49,115 @@
 </ui-filter-bar>
 
 @if (errorMessage(); as mensagem ) {
-  <ui-alert variant="danger" heading="Não foi possível carregar as inscrições">
-    {{ mensagem }}
-    <div class="ptl-inscricao__retry">
-      <ui-button variant="secondary" buttonSize="sm" [isDisabled]="loading()" (click)="tentarNovamente()">
-        Tentar novamente
-      </ui-button>
-    </div>
-  </ui-alert>
-} @else if (loading()) {
-  <div class="inscricao-spinner">
-    <ui-spinner spinnerSize="sm" accessibleName="Carregando inscrições" />
-    Carregando inscrições...
+<ui-alert variant="danger" heading="Não foi possível carregar as inscrições">
+  {{ mensagem }}
+  <div class="ptl-inscricao__retry">
+    <ui-button
+      variant="secondary"
+      buttonSize="sm"
+      [isDisabled]="loading()"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </ui-button>
   </div>
-} @else if (inscricoesFiltradas().length > 0) {
-    @if (visaoEfetiva() === 'lista') {
-      <ul class="inscricao-lista" role="list">
-        @for (inscricao of inscricoesFiltradas(); track inscricao.id) {
-          <li class="edital-row inscricao-lista-item">
-            <div class="inscricao-lista-item__cabecalho">
-              <ui-tag
-                [dot]="true"
-                [variant]="exibeInscricaoStatusVariantLabel(inscricao.situacao)"
-              >
-                {{ exibeInscricaoStatusLabel(inscricao.situacao) }}
-              </ui-tag>
-            </div>
-            <div class="inscricao-lista-item__corpo">
-              <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
-              <p>{{ inscricao.mensagem }}</p>
-              <p class="ptl-meta">{{ inscricao.candidato }}</p>
-            </div>
-            <div class="inscricao-lista-item__rodape">
-              @let botaoInfo = obterBotaoInfo(inscricao.situacao);
-              <ui-button
-                [variant]="botaoInfo.variant"
-                buttonSize="sm"
-                (click)="abrirInscricao(inscricao)"
-              >
-                {{ botaoInfo.label }}
-              </ui-button>
-            </div>
-          </li>
-        }
-      </ul>
-    }
-    @else {
-      <div class="inscricoes-grid">
-        @for(inscricao of inscricoesFiltradas(); track inscricao.id) {
-          <article class="card">
-            <div class="card__header">
-              <ui-tag
-                [dot]="true"
-                [variant]="exibeInscricaoStatusVariantLabel(inscricao.situacao)"
-              >
-                {{ exibeInscricaoStatusLabel(inscricao.situacao) }}
-              </ui-tag>
-            </div>
-            <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
-            <span class="ptl-meta">{{ inscricao.candidato }}</span>
-            <div class="card__footer">
-              @let botaoInfo = obterBotaoInfo(inscricao.situacao);
-              <ui-button
-                [variant]="botaoInfo.variant"
-                buttonSize="sm"
-                (click)="abrirInscricao(inscricao)"
-              >
-                {{ botaoInfo.label }}
-              </ui-button>
-            </div>
-          </article>
-        }
-      </div>
-    }
-} @else if (temFiltrosAtivos()) {
-  <ui-empty-state
-    heading="Nenhuma inscrição encontrada."
-    description="Ajuste a busca ou limpe os filtros para ver todas as inscrições."
-  />
+</ui-alert>
+} @else if (loading()) {
+<div class="inscricao-spinner">
+  <ui-spinner spinnerSize="sm" accessibleName="Carregando inscrições" />
+  Carregando inscrições...
+</div>
+} @else if (inscricoesFiltradas().length > 0) { @if (visaoEfetiva() === 'lista') {
+<ul class="inscricao-lista" role="list">
+  @for (inscricao of inscricoesFiltradas(); track inscricao.id) {
+  <li class="edital-row inscricao-lista-item">
+    <div class="inscricao-lista-item__cabecalho">
+      <ui-tag [dot]="true" [variant]="exibeInscricaoStatusVariantLabel(inscricao.situacao)">
+        {{ exibeInscricaoStatusLabel(inscricao.situacao) }}
+      </ui-tag>
+    </div>
+    <div class="inscricao-lista-item__corpo">
+      <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
+      <p>{{ inscricao.mensagem }}</p>
+      <p class="ptl-meta">{{ inscricao.candidato }}</p>
+    </div>
+    <div class="inscricao-lista-item__rodape">
+      @for (acao of acoesDe(inscricao); track acao.tipo) {
+      <ui-button [variant]="acao.variant" buttonSize="sm" (click)="executar(acao, inscricao)">
+        {{ acao.label }}
+      </ui-button>
+      }
+    </div>
+  </li>
+  }
+</ul>
 } @else {
-  <ui-empty-state
-    heading="Não há inscrições cadastradas."
-    description="Inicie uma inscrição para exibi-las aqui."
-  />
+<div class="inscricoes-grid">
+  @for(inscricao of inscricoesFiltradas(); track inscricao.id) {
+  <article class="card">
+    <div class="card__header">
+      <ui-tag [dot]="true" [variant]="exibeInscricaoStatusVariantLabel(inscricao.situacao)">
+        {{ exibeInscricaoStatusLabel(inscricao.situacao) }}
+      </ui-tag>
+    </div>
+    <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
+    <p>{{ inscricao.mensagem }}</p>
+    <span class="ptl-meta">{{ inscricao.candidato }}</span>
+    <div class="card__footer">
+      @for (acao of acoesDe(inscricao); track acao.tipo) {
+      <ui-button [variant]="acao.variant" buttonSize="sm" (click)="executar(acao, inscricao)">
+        {{ acao.label }}
+      </ui-button>
+      }
+    </div>
+  </article>
+  }
+</div>
+} } @else if (temFiltrosAtivos()) {
+<ui-empty-state
+  heading="Nenhuma inscrição encontrada."
+  description="Ajuste a busca ou limpe os filtros para ver todas as inscrições."
+/>
+} @else {
+<ui-empty-state
+  heading="Não há inscrições cadastradas."
+  description="Inicie uma inscrição para exibi-las aqui."
+/>
 }
+
+<ui-dialog
+  [heading]="confirmacao()?.tipo === 'cancelar' ? 'Cancelar inscrição' : 'Descartar rascunho'"
+  [(visible)]="dialogoAberto"
+  [dismissible]="!executando()"
+  [restoreFocus]="devolveFocoAoGatilho()"
+  (closed)="aoFecharDialogo()"
+>
+  @if (confirmacao(); as atual) {
+  <p class="inscricao-dialogo__processo">{{ atual.item.nome }}</p>
+  @if (atual.tipo === 'cancelar') {
+  <p>
+    Para voltar a participar, você precisará fazer uma nova inscrição, do zero, com o formulário
+    vigente.
+  </p>
+  <ui-textarea
+    fieldLabel="Motivo do cancelamento (opcional)"
+    [visibleRows]="3"
+    [ngModel]="motivo()"
+    (ngModelChange)="motivo.set($event)"
+  />
+  } @else {
+  <p>
+    O rascunho e tudo o que você preencheu nele serão apagados. Esta ação não pode ser desfeita.
+  </p>
+  } @if (erroDaAcao(); as erro) {
+  <ui-alert variant="danger" heading="Não foi possível concluir">{{ erro }}</ui-alert>
+  } }
+  <div uiDialogFooter class="inscricao-dialogo__rodape">
+    <ui-button variant="tertiary" [isDisabled]="executando()" (click)="dialogoAberto.set(false)">
+      Voltar
+    </ui-button>
+    <ui-button variant="danger" [isDisabled]="executando()" (click)="confirmar()">
+      {{ confirmacao()?.tipo === 'cancelar' ? 'Cancelar inscrição' : 'Descartar rascunho' }}
+    </ui-button>
+  </div>
+</ui-dialog>
