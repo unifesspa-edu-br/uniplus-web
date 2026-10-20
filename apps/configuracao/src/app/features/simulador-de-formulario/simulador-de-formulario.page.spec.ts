@@ -259,6 +259,24 @@ describe('SimuladorDeFormularioPage', () => {
     expect(select.selectedOptions[0]?.textContent).toContain('INSC — Inscrição (desativado)');
   });
 
+  it('?modelo= de um modelo além da primeira página o mostra escolhido', async () => {
+    await abrir(`/simulador?modelo=${ID}`);
+    const listagem = `${BASE}/api/configuracao/admin/modelos-formulario`;
+    http
+      .expectOne((r) => r.url === listagem && !r.params.has('cursor'))
+      .flush([{ id: 'outro', codigo: 'OUTRO', nome: 'Outro', ativo: true }], {
+        headers: { Link: `<${listagem}?cursor=p2&direction=next>; rel="next"` },
+      });
+    const segunda = http.expectOne((r) => r.url === listagem && r.params.get('cursor') === 'p2');
+    expect(segunda.request.params.get('direction')).toBe('next');
+    segunda.flush([{ id: ID, codigo: 'INSC', nome: 'Inscrição', ativo: true }]);
+    renderizavel();
+
+    const select = tela().querySelector('select') as HTMLSelectElement;
+    expect(Array.from(select.options).map((o) => o.value)).toEqual(['', 'outro', ID]);
+    expect(select.value).toBe(ID);
+  });
+
   it('escolher a origem modelo e o modelo põe o modelo na URL e o carrega', async () => {
     await abrir();
     botao('Modelo de formulário').click();
