@@ -189,7 +189,7 @@ export class InscricaoListaPage {
   protected acoesDe(item: ItemDaLista): readonly AcaoDaInscricao[] {
     const { acoes } = item;
     return [
-      ...(item.situacao === SituacaoInscricao.rascunho ? [ACAO.continuar] : []),
+      ...(acoes.podeContinuar ? [ACAO.continuar] : []),
       ...(acoes.podeCorrigir ? [ACAO.corrigir] : []),
       ...(item.temComprovante ? [ACAO.comprovante] : []),
       ...(acoes.podeCancelar ? [ACAO.cancelar] : []),
