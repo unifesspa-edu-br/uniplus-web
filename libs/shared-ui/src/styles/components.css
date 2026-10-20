@@ -908,7 +908,7 @@ ui-editor-de-condicoes {
 }
 .formulario-candidato__secao {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-6);
   min-inline-size: 0;
 }
 .formulario-candidato__titulo {
@@ -955,7 +955,7 @@ ui-editor-de-condicoes {
   justify-items: start;
 }
 .formulario-candidato__grupo {
-  gap: var(--space-3);
+  gap: var(--space-4);
   justify-items: stretch;
 }
 /*
@@ -972,7 +972,7 @@ ui-editor-de-condicoes {
 }
 .formulario-candidato__ocorrencia {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
