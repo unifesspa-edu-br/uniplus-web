@@ -1,42 +1,44 @@
 @let documento = ato().documentoPrincipal;
 @let anexos = ato().anexos;
 <div class="arquivos" role="group" [attr.aria-label]="'Arquivos de ' + rotuloDoAto(ato())">
-  <section class="arquivos__grupo">
-    <p class="arquivos__titulo">Documento principal</p>
-    <ul class="arquivos__lista" role="list">
+  <div class="arquivos__grupo">
+    <p class="arquivos__titulo" [id]="prefixo + '-principal'">Documento principal</p>
+    <ul class="arquivos__lista" role="list" [attr.aria-labelledby]="prefixo + '-principal'">
       <li>
-        <button
-          type="button"
-          class="btn btn--tertiary btn--sm"
-          [disabled]="abrindo() !== null"
-          [attr.aria-busy]="abrindo() === documento.documentoAPublicarId || null"
-          [attr.aria-label]="'Abrir o documento principal ' + nomeDoDocumento(documento) + ' (abre em nova aba)'"
-          (click)="abrir.emit(documento.documentoAPublicarId)"
-        >
-          {{ abrindo() === documento.documentoAPublicarId ? 'Abrindo…' : nomeDoDocumento(documento) }}
-        </button>
+        <ng-container
+          *ngTemplateOutlet="
+            arquivo;
+            context: { $implicit: documento, tipo: 'o documento principal' }
+          "
+        />
       </li>
     </ul>
-  </section>
+  </div>
   @if (anexos.length > 0) {
-    <section class="arquivos__grupo">
-      <p class="arquivos__titulo">Anexos ({{ anexos.length }})</p>
-      <ul class="arquivos__lista" role="list">
+    <div class="arquivos__grupo">
+      <p class="arquivos__titulo" [id]="prefixo + '-anexos'">Anexos ({{ anexos.length }})</p>
+      <ul class="arquivos__lista" role="list" [attr.aria-labelledby]="prefixo + '-anexos'">
         @for (anexo of anexos; track anexo.documentoAPublicarId) {
           <li>
-            <button
-              type="button"
-              class="btn btn--tertiary btn--sm"
-              [disabled]="abrindo() !== null"
-              [attr.aria-busy]="abrindo() === anexo.documentoAPublicarId || null"
-              [attr.aria-label]="'Abrir o anexo ' + nomeDoDocumento(anexo) + ' (abre em nova aba)'"
-              (click)="abrir.emit(anexo.documentoAPublicarId)"
-            >
-              {{ abrindo() === anexo.documentoAPublicarId ? 'Abrindo…' : nomeDoDocumento(anexo) }}
-            </button>
+            <ng-container
+              *ngTemplateOutlet="arquivo; context: { $implicit: anexo, tipo: 'o anexo' }"
+            />
           </li>
         }
       </ul>
-    </section>
+    </div>
   }
 </div>
+
+<ng-template #arquivo let-doc let-tipo="tipo">
+  <button
+    type="button"
+    class="btn btn--tertiary btn--sm"
+    [disabled]="abrindo() !== null"
+    [attr.aria-busy]="abrindo() === doc.documentoAPublicarId || null"
+    [attr.aria-label]="'Abrir ' + tipo + ' ' + nomeDoDocumento(doc) + ' (abre em nova aba)'"
+    (click)="abrir.emit(doc.documentoAPublicarId)"
+  >
+    {{ abrindo() === doc.documentoAPublicarId ? 'Abrindo…' : nomeDoDocumento(doc) }}
+  </button>
+</ng-template>
