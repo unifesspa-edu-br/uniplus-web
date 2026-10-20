@@ -39,7 +39,7 @@
   Não conseguimos confirmar se a inscrição foi gravada. Recarregue a página antes de continuar.
 </ui-alert>
 } } @if (conflito(); as aviso) {
-<ui-alert variant="warning" heading="A inscrição mudou em outra janela">{{ aviso }}</ui-alert>
+<ui-alert variant="warning" heading="A inscrição foi atualizada">{{ aviso }}</ui-alert>
 } @if (recusaGeral(); as recusa) {
 <ui-alert variant="danger" [heading]="recusa.titulo">{{ recusa.texto }}</ui-alert>
 } @if (ofertas().length === 1) {

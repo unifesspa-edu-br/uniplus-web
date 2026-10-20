@@ -780,14 +780,17 @@ describe('InscricaoDoCandidatoPage', () => {
       new HttpHeaders(),
     );
 
-  it('gravar sobre uma revisão que outra janela mudou recarrega a inscrição e avisa', async () => {
+  it('gravar sobre uma revisão defasada relê a inscrição e o formulário e avisa que foi atualizada', async () => {
     const tela = await abrir();
+    expect(tela.querySelector('[data-campo="DESEJA_NOME_SOCIAL"]')).toBeNull();
     servico.salvar = () => of(problema(412, 'uniplus.selecao.inscricao.precondicao_falhou'));
+    servico.formulario = COM_NOME_SOCIAL;
     servico.inscricao = inscricao({ respostas: { NOME: 'Fernanda Laura Nicole Drumond' } });
 
     await clicar(botao(tela, 'Salvar rascunho'));
 
-    expect(tela.textContent).toContain('A inscrição mudou em outra janela');
+    expect(tela.textContent).toContain('A inscrição foi atualizada');
+    expect(tela.querySelector('[data-campo="DESEJA_NOME_SOCIAL"]')).not.toBeNull();
     expect(campoDe(tela, 'NOME').value).toBe('Fernanda Laura Nicole Drumond');
   });
 
@@ -1206,7 +1209,7 @@ describe('InscricaoDoCandidatoPage', () => {
       expect(servico.salvos[0].ofertaCursoSegundaOpcaoId).toBeNull();
     });
 
-    it('a 2ª opção gravada que já não vale é descartada com aviso, não em silêncio', async () => {
+    it('a oferta que a versão nova retirou aparece sem seleção e sem aviso', async () => {
       dosDoisCursos();
       servico.inscricao = inscricao({
         ofertaCursoId: DIREITO.id,
@@ -1215,9 +1218,7 @@ describe('InscricaoDoCandidatoPage', () => {
       const tela = await abrir();
 
       expect(select2(tela).value).toBe('');
-      expect(tela.querySelector('#inscricao-segunda-oferta-aviso')?.textContent).toContain(
-        'já não vale neste processo',
-      );
+      expect(tela.querySelector('#inscricao-segunda-oferta-aviso')).toBeNull();
     });
 
     it('trocar a 1ª para outro curso mantém a 2ª, e as duas vão no corpo do envio', async () => {
