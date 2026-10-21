@@ -1197,8 +1197,10 @@ type DesfechoDaAplicacao =
 
 /** O formulário como texto, para o processo em consulta: cada etapa com os campos e os grupos dela, e se a resposta é obrigatória. */
 function leituraDe(conteudo: ConteudoDoFormulario) {
-  const resposta = (obrigatoriedade: string | null): string =>
-    OBRIGATORIEDADES.find((opcao) => opcao.valor === obrigatoriedade)?.rotulo ?? 'Opcional';
+  const obrigatoriedadeDe = (obrigatoriedade: string | null): string =>
+    (
+      OBRIGATORIEDADES.find((opcao) => opcao.valor === obrigatoriedade)?.rotulo ?? 'Opcional'
+    ).toLocaleLowerCase('pt-BR');
   return etapasEmOrdem(conteudo).map((etapa) => ({
     codigo: etapa.codigo,
     titulo: etapa.titulo,
@@ -1207,12 +1209,12 @@ function leituraDe(conteudo: ConteudoDoFormulario) {
         ? {
             chave: entrada.item.fatoCodigo,
             rotulo: entrada.item.rotulo,
-            resposta: resposta(entrada.item.obrigatoriedade),
+            obrigatoriedade: obrigatoriedadeDe(entrada.item.obrigatoriedade),
           }
         : {
             chave: entrada.grupo.codigo,
             rotulo: entrada.grupo.rotulo,
-            resposta: `Grupo repetível — ${resposta(entrada.grupo.obrigatoriedade).toLocaleLowerCase('pt-BR')}`,
+            obrigatoriedade: `repetível, ${obrigatoriedadeDe(entrada.grupo.obrigatoriedade)}`,
           },
     ),
   }));

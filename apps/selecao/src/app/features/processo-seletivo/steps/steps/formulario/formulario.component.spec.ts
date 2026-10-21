@@ -89,9 +89,31 @@ const GRAVADO = {
     etapa('S1', 1),
     etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
   ],
-  fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS'), campo('PCD', 1, 'S1')],
+  fatosColetados: [
+    campo('NOME', 0, 'DADOS_BASICOS'),
+    {
+      ...campo('PCD', 1, 'S1'),
+      obrigatoriedade: {
+        tipo: 'QUANDO',
+        predicado: [[{ fato: 'NOME', operador: 'IGUAL', valor: 'x' }]],
+      },
+    },
+  ],
   termos: [],
-  grupos: [],
+  grupos: [
+    {
+      codigo: 'FAMILIA',
+      ordem: 3,
+      rotulo: 'FAMILIA',
+      etapaCodigo: 'S1',
+      minimo: 0,
+      maximo: null,
+      exibicao: null,
+      obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+      incluiCandidato: false,
+      subitens: [],
+    },
+  ],
 } as unknown as FormularioDto;
 
 const PROCESSO = {
@@ -981,7 +1003,15 @@ describe('FormularioStepComponent', () => {
       expect(valor('Título do formulário')).toEqual(['Inscrição — Medicina 2027']);
       expect(valor('Fase da inscrição')).toEqual(['INSCRICAO']);
       expect(host.textContent).toContain('Condições especiais');
-      expect(valor('Resposta')).toEqual(['Obrigatório', 'Obrigatório']);
+      expect(host.querySelector('.doc-list ui-valor-em-consulta')).toBeNull();
+      const linhas = Array.from(host.querySelectorAll('.doc-item__head')).map((l) =>
+        l.textContent?.replace(/\s+/g, ' ').trim(),
+      );
+      expect(linhas).toEqual([
+        'NOME · obrigatório',
+        'PCD · obrigatório conforme respostas anteriores',
+        'FAMILIA · repetível, obrigatório',
+      ]);
     });
 
     it('lê a apuração da idade pelo rótulo da âncora e a data no formato brasileiro', () => {
