@@ -133,20 +133,18 @@ export class InscricaoDoCandidatoPage implements OnInit {
     this.documentos.paraOProcesso(this.processoId()),
   );
 
-  /** Os arquivos do envio na última vez que a avaliação foi pedida por causa deles; o envio nasce sem nenhum. */
-  private arquivosVistos = '';
+  /** Quantas mudanças do envio a avaliação já levou em conta; o envio nasce sem nenhuma. */
+  private mudancasVistas = 0;
 
   constructor() {
     // Enviar ou remover um arquivo muda a situação dos documentos, que só a API calcula. O envio fica
     // fora do componente do passo, então a reavaliação vem dele, mesmo que a tela tenha mudado de passo.
     effect(() => {
-      const ids = this.envioDeDocumentos()
-        .arquivos()
-        .map((arquivo) => arquivo.arquivoId)
-        .join(',');
+      const mudancas = this.envioDeDocumentos().mudancas();
       untracked(() => {
-        if (ids !== this.arquivosVistos) this.reavaliarDocumentos();
-        this.arquivosVistos = ids;
+        if (mudancas === this.mudancasVistas) return;
+        this.mudancasVistas = mudancas;
+        this.reavaliarDocumentos();
       });
     });
   }

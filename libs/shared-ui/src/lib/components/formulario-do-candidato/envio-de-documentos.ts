@@ -47,6 +47,11 @@ export interface EnvioDeDocumentos {
    */
   readonly arquivos: Signal<readonly ArquivoEnviado[]>;
   /**
+   * Quantas vezes o envio confirmou ou removeu um arquivo. Quem hospeda reavalia as exigências a cada
+   * mudança, inclusive na remoção de um arquivo que veio da avaliação e nunca esteve em `arquivos`.
+   */
+  readonly mudancas: Signal<number>;
+  /**
    * Leva o arquivo até a confirmação, informando a fase e o progresso. Chamado de novo com o mesmo
    * `File` depois de uma falha, retoma do ponto em que parou.
    */

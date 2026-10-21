@@ -294,7 +294,7 @@ describe('Bloco de documentos da inscrição', () => {
   });
 
   describe('envio do arquivo exigido', () => {
-    const ENVIO: EnvioDeDocumentos = { arquivos: signal([]), enviar: vi.fn(), remover: vi.fn() };
+    const ENVIO: EnvioDeDocumentos = { arquivos: signal([]), mudancas: signal(0), enviar: vi.fn(), remover: vi.fn() };
 
     it('oferece o envio só para o que as respostas já exigem', () => {
       const tela = montar(

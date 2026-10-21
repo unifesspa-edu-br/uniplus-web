@@ -65,6 +65,8 @@ export class EnvioDeDocumentosDaInscricao {
 class EnvioNoProcesso implements EnvioDeDocumentos {
   private readonly confirmados = signal<readonly ArquivoEnviado[]>([]);
   readonly arquivos: Signal<readonly ArquivoEnviado[]> = this.confirmados.asReadonly();
+  private readonly contagemDeMudancas = signal(0);
+  readonly mudancas: Signal<number> = this.contagemDeMudancas.asReadonly();
   /** Uma tentativa por arquivo escolhido: repetir o mesmo `File` retoma dela. */
   private readonly tentativas = new WeakMap<File, Tentativa>();
   private readonly chavesDaRemocao = new Map<string, ChaveDeSubstituicao>();
@@ -129,7 +131,10 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     }
 
     // A URL cumpriu o papel; a confirmação só precisa do id do arquivo.
-    const arquivoId = tentativa.destino?.arquivoId as string;
+    const arquivoId = tentativa.destino?.arquivoId;
+    if (arquivoId === undefined) {
+      return { ok: false, mensagem: FALHA_NO_ARMAZENAMENTO, podeTentarDeNovo: true };
+    }
     aoAndar('confirmando', 100);
     const { resultado, inconclusiva } = await comChave(
       tentativa.chaveDaConfirmacao,
@@ -147,6 +152,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
       tamanhoBytes: Number(resultado.data.tamanhoBytes),
     };
     this.confirmados.update((lista) => [...lista, confirmado]);
+    this.contagemDeMudancas.update((n) => n + 1);
     return { ok: true, arquivo: confirmado };
   }
 
@@ -163,6 +169,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     }
     this.chavesDaRemocao.delete(arquivoId);
     this.confirmados.update((lista) => lista.filter((a) => a.arquivoId !== arquivoId));
+    this.contagemDeMudancas.update((n) => n + 1);
     return { ok: true };
   }
 
