@@ -89,7 +89,7 @@ export {
   type OpcaoDoDocumento,
 } from '../../src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
-export { FormularioDoCandidatoComponent } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
+export { FormularioDoCandidatoComponent, type PendenciaDaSecao } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
 export type {
   CampoRenderizavel,
   DependenciasDaAvaliacao,

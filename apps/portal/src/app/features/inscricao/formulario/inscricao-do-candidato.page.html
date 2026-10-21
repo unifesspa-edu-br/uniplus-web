@@ -61,6 +61,7 @@
   [errosDoServidor]="errosDoServidor()"
   [passoDaRecusa]="erroDaOferta() || erroDaSegundaOferta() ? PASSO_DO_CURSO : null"
   [concluirNaUltimaSecao]="false"
+  [exigirSecaoValida]="true"
   [envio]="envio()"
   [avaliacao]="avaliacaoNaTela()"
   [envioDeDocumentos]="envioDeDocumentos()"
@@ -68,6 +69,7 @@
   [podeRemoverDocumentos]="!enviada() && !bloqueada()"
   [ocorrenciasGravadas]="ocorrenciasGravadas()"
   (simulacaoChange)="responder($event)"
+  (pendenciasChange)="pendenciasDasSecoes.set($event)"
   (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
 >
   @if (formDoCandidato.passoPrefixadoAtual() === PASSO_DO_CURSO) {
@@ -155,10 +157,13 @@
     type="button"
     class="btn btn--primary"
     [disabled]="bloqueada()"
-    [attr.aria-describedby]="enviada() ? 'inscricao-correcao' : null"
+    [attr.aria-disabled]="motivoDoEnvioBloqueado() ? 'true' : null"
+    [attr.aria-describedby]="descricaoDoEnvio()"
     (click)="enviar()"
   >
     Enviar inscrição
   </button>
 </div>
-} }
+@if (motivoDoEnvioBloqueado(); as motivo) {
+<p class="field__hint inscricao-motivo" id="inscricao-motivo-envio">{{ motivo }}</p>
+} } }

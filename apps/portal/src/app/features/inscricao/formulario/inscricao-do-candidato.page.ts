@@ -38,6 +38,7 @@ import {
   type ErroDoServidor,
   FormularioDoCandidatoComponent,
   PageHeaderComponent,
+  type PendenciaDaSecao,
   type PassoPrefixado,
   type RespostaFixa,
   type SimulacaoDoFormulario,
@@ -602,6 +603,36 @@ export class InscricaoDoCandidatoPage implements OnInit {
       },
     );
   }
+
+  protected readonly pendenciasDasSecoes = signal<readonly PendenciaDaSecao[]>([]);
+
+  /**
+   * Por que o envio ainda não segue, ou `null` quando o formulário está válido. Conta as perguntas e os
+   * aceites das seções; a situação dos documentos obrigatórios entra aqui quando a API a devolver na
+   * inscrição, e o envio continua barrado pela API enquanto isso.
+   */
+  protected readonly motivoDoEnvioBloqueado = computed<string | null>(() => {
+    const partes: string[] = [];
+    if (this.ofertas().length > 1 && this.ofertaEscolhidaValida() === null)
+      partes.push('Escolha o curso.');
+    const secoes = this.pendenciasDasSecoes();
+    if (secoes.length > 0) {
+      const total = secoes.reduce((soma, s) => soma + s.quantidade, 0);
+      const onde = secoes.map((s) => `${s.quantidade} em ${s.titulo}`).join(', ');
+      partes.push(
+        `${total === 1 ? 'Falta 1 resposta obrigatória' : `Faltam ${total} respostas obrigatórias`} (${onde}).`,
+      );
+    }
+    return partes.length > 0 ? partes.join(' ') : null;
+  });
+
+  protected readonly descricaoDoEnvio = computed(() => {
+    const ids = [
+      this.motivoDoEnvioBloqueado() ? 'inscricao-motivo-envio' : null,
+      this.enviada() ? 'inscricao-correcao' : null,
+    ].filter((id) => id !== null);
+    return ids.length > 0 ? ids.join(' ') : null;
+  });
 
   protected enviar(): void {
     if (this.bloqueada()) return;

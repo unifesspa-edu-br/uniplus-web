@@ -123,14 +123,14 @@ import type {
               [meta]="posicao()"
               [progresso]="progresso()"
               [items]="itensDosPassos()"
-              (selecionado)="irPara($event)"
+              (selecionado)="irParaSePermitido($event)"
             />
           } @else {
             <ui-steps
               variante="chips"
               [rotuloDaNavegacao]="rotuloDaNavegacao()"
               [items]="itensDosPassos()"
-              (selecionado)="irPara($event)"
+              (selecionado)="irParaSePermitido($event)"
             />
           }
           <div class="formulario-candidato__corpo">
@@ -402,6 +402,11 @@ export class FormularioDoCandidatoComponent {
    */
   readonly concluirNaUltimaSecao = input(true);
   /**
+   * Se avançar exige a seção atual sem pendência: com pendência, o candidato fica onde está, com o
+   * foco na primeira. Voltar é sempre livre. A simulação do administrador deixa desligado.
+   */
+  readonly exigirSecaoValida = input(false);
+  /**
    * O envio contra o qual contam os limites de data: o instante que quem hospeda considera e o fuso
    * que o formulário publica. Sem ele, o limite contado do envio fica indeterminado.
    */
@@ -425,6 +430,8 @@ export class FormularioDoCandidatoComponent {
 
   /** A simulação a cada mudança: as respostas, as ocorrências, as seções concluídas e os pressupostos. */
   readonly simulacaoChange = output<SimulacaoDoFormulario>();
+  /** As pendências por seção a cada mudança, para quem hospeda dizer por que o envio ainda não segue. */
+  readonly pendenciasChange = output<readonly PendenciaDaSecao[]>();
   /** Os termos aceitos, pelo código, a cada mudança. */
   readonly termosAceitosChange = output<readonly string[]>();
   /** O candidato pediu para calcular de novo a avaliação depois de uma falha. */
@@ -775,6 +782,10 @@ export class FormularioDoCandidatoComponent {
 
   constructor() {
     effect(() => {
+      const pendencias = this.pendenciasPorSecao();
+      untracked(() => this.pendenciasChange.emit(pendencias));
+    });
+    effect(() => {
       const simulacao = this.simulacao();
       untracked(() => this.simulacaoChange.emit(simulacao));
     });
@@ -947,8 +958,70 @@ export class FormularioDoCandidatoComponent {
     });
   }
 
+  /**
+   * As pendências das seções, sem dar nenhuma como concluída: o que o candidato ainda tem de resolver.
+   * Quem hospeda monta daqui o motivo de o envio não seguir; `concluirTodas()` é a conta que vale.
+   */
+  readonly pendenciasPorSecao = computed<readonly PendenciaDaSecao[]>(() =>
+    this.passos()
+      .map((passo) => ({
+        titulo: passo.titulo,
+        quantidade: pendenciasDo(
+          passo,
+          this.aceitos(),
+          this.problemasDaConfirmacao(),
+          this.fixasSemResposta(),
+        ).length,
+      }))
+      .filter((secao) => secao.quantidade > 0),
+  );
+
+  /**
+   * Chega ao passo do indicador: para trás ou para um passo já liberado vai direto; para frente, só
+   * com as seções do caminho sem pendência.
+   */
+  protected irParaSePermitido(destino: number): void {
+    if (!this.pendenciaAntesDe(destino)) this.irPara(destino);
+  }
+
+  /**
+   * Com `exigirSecaoValida`, dá as seções de agora até antes do `destino` como concluídas e, na primeira
+   * com pendência, fica nela, põe o foco no primeiro campo pendente e anuncia. Diz se barrou.
+   */
+  private pendenciaAntesDe(destino: number): boolean {
+    if (!this.exigirSecaoValida()) return false;
+    for (let i = this.indice(); i < destino; i++) {
+      const passo = this.passos().find((p) => p.chave === this.chaves()[i]);
+      // O passo prefixado é de quem hospeda: ele decide se o candidato segue.
+      if (!passo) continue;
+      this.concluir([passo]);
+      const pendentes = pendenciasDo(
+        passo,
+        this.aceitos(),
+        this.problemasDaConfirmacao(),
+        this.fixasSemResposta(),
+      );
+      if (pendentes.length === 0) continue;
+      const [primeira] = pendentes;
+      this.irAoPasso(
+        passo.chave,
+        () => this.controleDe(primeira.campo, primeira.naConfirmacao),
+        true,
+      );
+      this.anuncio();
+      this.anuncio.set(
+        pendentes.length === 1
+          ? `Há 1 item a corrigir na seção ${passo.titulo}.`
+          : `Há ${pendentes.length} itens a corrigir na seção ${passo.titulo}.`,
+      );
+      return true;
+    }
+    return false;
+  }
+
   /** Dá a seção atual como concluída e segue para a próxima; na última, só conclui. */
   protected avancar(): void {
+    if (this.pendenciaAntesDe(this.indice() + 1)) return;
     const passo = this.passoAtual();
     if (passo) this.concluir([passo]);
     if (this.indice() < this.total() - 1) this.irPara(this.indice() + 1);
@@ -995,6 +1068,12 @@ export class FormularioDoCandidatoComponent {
     if (this.erros().some((e) => erroEm(e, codigo)))
       this.erros.update((atuais) => atuais.filter((e) => !erroEm(e, codigo)));
   }
+}
+
+/** Quantas pendências uma seção tem. */
+export interface PendenciaDaSecao {
+  readonly titulo: string;
+  readonly quantidade: number;
 }
 
 /** O anúncio das modalidades de uma opção de curso, identificado quando há duas; vazio fica vazio. */
