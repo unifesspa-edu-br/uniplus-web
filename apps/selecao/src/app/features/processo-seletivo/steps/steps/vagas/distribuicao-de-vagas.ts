@@ -106,6 +106,46 @@ export interface ModalidadeDoCatalogo {
   readonly remanejamentoFallback: string | null;
 }
 
+const REGRAS_DE_REMANEJAMENTO = ['SEGUE_CASCATA', 'DESTINO_UNICO', 'CRUZADO'];
+
+/** O detalhe pode serializar o nome do membro do enum (`SegueCascata`); a tela compara o token canônico. */
+function canonicaDaRegraDeRemanejamento(valor: string | null): string | null {
+  if (valor === null) return null;
+  const procurada = semGrafia(valor);
+  return REGRAS_DE_REMANEJAMENTO.find((regra) => semGrafia(regra) === procurada) ?? valor;
+}
+
+/**
+ * As modalidades como o processo as gravou, por id, com o catálogo só a complementar o que o
+ * snapshot não traz. É o que a consulta lê: o catálogo vigente pode ter mudado desde a
+ * publicação, e uma modalidade gravada que saiu dele continua sendo do processo.
+ */
+export function modalidadesGravadasPorId(
+  ofertas: readonly DistribuicaoDeVagas[],
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): ReadonlyMap<string, ModalidadeDoCatalogo> {
+  const mapa = new Map(catalogo);
+
+  for (const modalidade of ofertas.flatMap((oferta) => oferta.modalidades)) {
+    const gravada = modalidade.gravada;
+    if (gravada === undefined) continue;
+
+    const vigente = catalogo.get(modalidade.id);
+    mapa.set(modalidade.id, {
+      id: modalidade.id,
+      codigo: modalidade.codigo,
+      composicaoVagas: gravada.composicaoVagas ?? vigente?.composicaoVagas ?? '',
+      composicaoOrigemCodigo: gravada.composicaoOrigemCodigo,
+      regraRemanejamento: canonicaDaRegraDeRemanejamento(gravada.regraRemanejamento),
+      remanejamentoDestino: gravada.remanejamentoDestino,
+      remanejamentoPar: gravada.remanejamentoPar,
+      remanejamentoFallback: gravada.remanejamentoFallback,
+    });
+  }
+
+  return mapa;
+}
+
 /** O que o edital declara uma vez e vale para todas as ofertas do quadro. */
 export interface PadraoDoEdital {
   readonly regraDistribuicaoCodigo: string;

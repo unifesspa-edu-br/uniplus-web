@@ -25,6 +25,7 @@ import {
   problemasDaCascata,
 } from './cascata-de-remanejamento';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
+import { modalidadesGravadasPorId } from './distribuicao-de-vagas';
 import { explicarRegra, RegraExplicada } from './regra-em-linguagem-clara';
 
 /**
@@ -60,13 +61,20 @@ export class CascataRemanejamentoComponent {
   private readonly ofertas = computed(() => this.store.draft().vagas.ofertas);
   readonly cascata = computed(() => this.store.draft().vagas.cascata);
 
+  /** Em consulta, as modalidades como o processo as gravou, com o catálogo só a complementar. */
+  private readonly modalidadePorId = computed(() =>
+    this.store.emConsulta()
+      ? modalidadesGravadasPorId(this.ofertas(), this.catalogos.modalidadePorId())
+      : this.catalogos.modalidadePorId(),
+  );
+
   /**
    * A seção só aparece quando há ao menos uma oferta federal com modalidade
    * `SEGUE_CASCATA` (`PendenciaDaCascata`/`ExisteCascataForaDoRegimeFederal`
    * do agregado). Fora disso, nada aqui fecha pendência nenhuma.
    */
   readonly precisaExibir = computed(() =>
-    precisaExibirSecaoDaCascata(this.ofertas(), this.catalogos.modalidadePorId()),
+    precisaExibirSecaoDaCascata(this.ofertas(), this.modalidadePorId()),
   );
 
   /** A seção só aparece porque o catálogo falhou: o texto não pode afirmar que a cascata se aplica. */
@@ -92,7 +100,7 @@ export class CascataRemanejamentoComponent {
    * correção é no quadro de vagas acima, nunca aqui.
    */
   readonly ofertasForaDoRegime = computed(() =>
-    ofertasComCascataForaDoRegimeFederal(this.ofertas(), this.catalogos.modalidadePorId()),
+    ofertasComCascataForaDoRegimeFederal(this.ofertas(), this.modalidadePorId()),
   );
 
   /** `"codigo|versao"`, ou `"|"` enquanto não há escolha — mesmo molde do seletor de regra da distribuição. */
@@ -266,7 +274,7 @@ export class CascataRemanejamentoComponent {
   readonly problemas = computed<readonly ProblemaDaCascata[]>(() => {
     const matriz = this.matriz();
     if (matriz === null) return [];
-    return problemasDaCascata(this.ofertas(), this.catalogos.modalidadePorId(), matriz);
+    return problemasDaCascata(this.ofertas(), this.modalidadePorId(), matriz);
   });
 
   /**

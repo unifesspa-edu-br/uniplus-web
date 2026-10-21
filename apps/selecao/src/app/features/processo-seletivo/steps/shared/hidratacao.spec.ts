@@ -31,12 +31,24 @@ const DISTRIBUICAO = {
       modalidadeOrigemId: 'modalidade-1',
       codigo: 'AC',
       composicaoVagas: 'ResidualDoVo',
+      descricao: null,
+      composicaoOrigemCodigo: null,
+      regraRemanejamento: null,
+      remanejamentoDestino: null,
+      remanejamentoPar: null,
+      remanejamentoFallback: null,
     },
     {
       id: 'snapshot-p',
       modalidadeOrigemId: 'modalidade-2',
       codigo: 'AC_PCD',
       composicaoVagas: 'RetiraDe',
+      descricao: null,
+      composicaoOrigemCodigo: null,
+      regraRemanejamento: null,
+      remanejamentoDestino: null,
+      remanejamentoPar: null,
+      remanejamentoFallback: null,
     },
   ],
   quadro: [
@@ -77,6 +89,17 @@ describe('hidratarDraft — tipo do processo', () => {
   });
 });
 
+/** O que o snapshot guarda da modalidade além do código, com a composição no token canônico. */
+const gravada = (composicaoVagas: string) => ({
+  descricao: null,
+  composicaoVagas,
+  composicaoOrigemCodigo: null,
+  regraRemanejamento: null,
+  remanejamentoDestino: null,
+  remanejamentoPar: null,
+  remanejamentoFallback: null,
+});
+
 describe('hidratarDraft — distribuição de vagas', () => {
   it('projeta a distribuição gravada sobre o rascunho', () => {
     const { ofertas } = hidratarDraft(DRAFT, dtoCom([DISTRIBUICAO])).vagas;
@@ -92,8 +115,8 @@ describe('hidratarDraft — distribuição de vagas', () => {
         regraAjusteVersao: 'v1',
         referenciaReservaDemograficaId: 'ref-1',
         modalidades: [
-          { id: 'modalidade-1', codigo: 'AC' },
-          { id: 'modalidade-2', codigo: 'AC_PCD' },
+          { id: 'modalidade-1', codigo: 'AC', gravada: gravada('RESIDUAL_DO_VO') },
+          { id: 'modalidade-2', codigo: 'AC_PCD', gravada: gravada('RETIRA_DE') },
         ],
         quadro: [{ modalidadeId: 'modalidade-2', quantidade: '2' }],
       },

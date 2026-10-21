@@ -858,12 +858,15 @@
                               rotulo="Sobre o documento"
                               seVazio="Sem descrição"
                               [valor]="detalhe.descricao"
-                              [dica]="detalhe.situacao"
+                              [dica]="
+                                detalhe.situacao ??
+                                'Descrição do cadastro vigente: o processo publicado não a guarda.'
+                              "
                             />
                             @if (detalhe.formatos; as formatos) {
                               <ui-valor-em-consulta
                                 class="form-grid__full"
-                                rotulo="Arquivo aceito pelo cadastro"
+                                rotulo="Arquivo aceito pela exigência publicada"
                                 [valor]="formatos"
                                 [dica]="resumo.avisoDeFormatos"
                               />
