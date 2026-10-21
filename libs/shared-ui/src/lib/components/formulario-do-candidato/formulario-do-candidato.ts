@@ -1037,6 +1037,9 @@ export class FormularioDoCandidatoComponent {
     for (let i = this.indice(); ; i++) {
       const chave = this.chaves()[i];
       if (chave === undefined || chave === chaveDoDestino) break;
+      // Concluir pode esconder o destino: o que ficou no lugar dele é o novo destino, e não se valida.
+      // Depois da última seção não há destino, e a última é validada como as outras.
+      if (chaveDoDestino !== undefined && !this.chaves().includes(chaveDoDestino)) break;
       const prefixado = this.passosPrefixados().find((p) => p.chave === chave);
       if (prefixado) {
         if (prefixado.concluido === true) continue;
