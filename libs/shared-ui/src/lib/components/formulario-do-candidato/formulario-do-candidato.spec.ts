@@ -1525,6 +1525,8 @@ describe('FormularioDoCandidatoComponent', () => {
       },
     });
     expect(tela.textContent).not.toContain('Justificativa');
+    // O motivo do envio já conta o obrigatório que concluir vai mostrar, antes do clique.
+    expect(fixture.componentInstance.pendenciasPorSecao().map((s) => s.quantidade)).toEqual([1]);
 
     expect(fixture.componentInstance.concluirTodas()).toBe(1);
     fixture.detectChanges();

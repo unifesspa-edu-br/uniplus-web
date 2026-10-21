@@ -963,11 +963,45 @@ export class FormularioDoCandidatoComponent {
    * As pendências das seções, sem dar nenhuma como concluída: o que o candidato ainda tem de resolver.
    * Quem hospeda monta daqui o motivo de o envio não seguir; `concluirTodas()` é a conta que vale.
    */
-  readonly pendenciasPorSecao = computed<readonly PendenciaDaSecao[]>(() =>
-    this.passos()
-      .map((passo) => ({ titulo: passo.titulo, quantidade: this.pendenciasDoPasso(passo).length }))
-      .filter((secao) => secao.quantidade > 0),
-  );
+  readonly pendenciasPorSecao = computed<readonly PendenciaDaSecao[]>(() => {
+    const passos = this.passosComTodasConcluidas();
+    const problemas = avaliarConfirmacoes(passos, {
+      respostas: this.respostasComAsFixas(),
+      grupos: this.grupos(),
+      confirmacoes: this.confirmacoes(),
+      fixas: this.respostasFixas(),
+    });
+    return passos
+      .map((passo) => ({
+        titulo: passo.titulo,
+        quantidade: pendenciasDo(passo, this.aceitos(), problemas, this.fixasSemResposta()).length,
+      }))
+      .filter((secao) => secao.quantidade > 0);
+  });
+
+  /**
+   * Os passos como ficariam com todas as seções concluídas, sem concluí-las: concluir pode tornar não
+   * informado o opcional em branco e mostrar um obrigatório, e o motivo do envio precisa contar com ele.
+   */
+  private passosComTodasConcluidas(): readonly PassoDoFormulario[] {
+    let etapas = new Set(this.concluidas());
+    let passos = this.passos();
+    for (;;) {
+      const novas = passos.flatMap((p) => p.etapasNasRegras).filter((e) => !etapas.has(e));
+      if (novas.length === 0) return passos;
+      etapas = new Set([...etapas, ...novas]);
+      const interpretacao = interpretarFormulario(
+        this.formulario().regras,
+        { ...this.simulacao(), etapasConcluidas: [...etapas] },
+        new Set(Object.keys(this.respostasFixas())),
+      );
+      if (!interpretacao.valida) return passos;
+      const todos = passosDo(this.formulario(), interpretacao.avaliacao);
+      passos = this.semDerivacao()
+        ? todos.filter((p) => p.bloco !== BLOCO_MODALIDADES_CALCULADAS)
+        : todos;
+    }
+  }
 
   private pendenciasDoPasso(passo: PassoDoFormulario): PendenciaDoPasso[] {
     return pendenciasDo(
