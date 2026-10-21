@@ -118,9 +118,9 @@ export class EnvioDoDocumentoComponent {
 
   /** Os arquivos em andamento ou com falha, que a API ainda não registrou. */
   private readonly emAndamento = signal<readonly ArquivoEmEnvio[]>([]);
-  /** Os arquivos cuja remoção está em curso: um segundo clique não dispara outra. */
   /** Os arquivos já removidos: a avaliação que os trazia só muda quando é refeita. */
   private readonly removidos = signal<ReadonlySet<string>>(new Set());
+  /** Os arquivos cuja remoção está em curso: um segundo clique não dispara outra. */
   private readonly removendo = signal<ReadonlySet<string>>(new Set());
   protected readonly falhaAoRemover = signal<string | null>(null);
   /** Os bytes de cada arquivo em andamento, para a nova tentativa; não é estado da tela. */

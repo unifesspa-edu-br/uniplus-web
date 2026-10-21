@@ -185,6 +185,7 @@ class ServicoDublê extends InscricaoDoCandidatoService {
 
 describe('InscricaoDoCandidatoPage', () => {
   const arquivosDoEnvio = signal<readonly ArquivoEnviado[]>([]);
+  const mudancasDoEnvio = signal(0);
 
   let fixture: ComponentFixture<InscricaoDoCandidatoPage>;
   let servico: ServicoDublê;
@@ -197,6 +198,7 @@ describe('InscricaoDoCandidatoPage', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     agora = new Date('2026-12-11T13:30:00Z');
     arquivosDoEnvio.set([]);
+    mudancasDoEnvio.set(0);
     servico = new ServicoDublê();
     conta.set({ cpf: CPF_DA_CONTA });
     TestBed.configureTestingModule({
@@ -209,7 +211,12 @@ describe('InscricaoDoCandidatoPage', () => {
         {
           provide: EnvioDeDocumentosDaInscricao,
           useValue: {
-            paraOProcesso: () => ({ arquivos: arquivosDoEnvio, enviar: vi.fn(), remover: vi.fn() }),
+            paraOProcesso: () => ({
+              arquivos: arquivosDoEnvio,
+              mudancas: mudancasDoEnvio,
+              enviar: vi.fn(),
+              remover: vi.fn(),
+            }),
           },
         },
         { provide: UserContextService, useValue: { user: conta } },
@@ -537,15 +544,14 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(servico.avaliacoes.map((a) => a.respostas?.['NOME'])).toEqual(['Ariel Drumond']);
   });
 
-  it('enviar um arquivo de documento consulta a avaliação, mesmo sem mudar nenhuma resposta', async () => {
+  it('enviar ou remover um arquivo de documento consulta a avaliação, mesmo sem mudar nenhuma resposta', async () => {
     vi.useRealTimers();
     servico.formulario = COM_MODALIDADES;
     await abrir();
     expect(servico.avaliacoes).toHaveLength(0);
 
-    arquivosDoEnvio.set([
-      { arquivoId: 'a1', chave: 'e1:', tipoDeMidia: 'application/pdf', tamanhoBytes: 10 },
-    ]);
+    // Também vale para o arquivo que veio da avaliação: remover não muda a lista do envio.
+    mudancasDoEnvio.update((n) => n + 1);
     await fixture.whenStable();
     fixture.detectChanges();
     await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));

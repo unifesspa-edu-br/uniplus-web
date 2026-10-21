@@ -102,6 +102,16 @@ describe('Envio dos documentos da inscrição', () => {
     expect(api.confirmarEnvioDeDocumento).toHaveBeenCalledTimes(2);
   });
 
+  it('conta cada arquivo confirmado ou removido, inclusive o que veio da avaliação', async () => {
+    api.removerArquivoDeDocumento.mockReturnValue(of(okResult(undefined)));
+    const envioDoProcesso = envio();
+
+    await envioDoProcesso.enviar(ALVO, laudo, andamento);
+    await envioDoProcesso.remover('arquivo-da-avaliacao');
+
+    expect(envioDoProcesso.mudancas()).toBe(2);
+  });
+
   it('guarda o arquivo confirmado e o tira quando é removido', async () => {
     api.removerArquivoDeDocumento.mockReturnValue(of(okResult(undefined)));
     const envioDoProcesso = envio();
