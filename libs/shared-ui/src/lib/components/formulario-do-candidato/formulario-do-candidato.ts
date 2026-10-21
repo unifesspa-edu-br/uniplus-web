@@ -997,9 +997,12 @@ export class FormularioDoCandidatoComponent {
    * barrou.
    */
   private pendenciaAntesDe(destino: number): boolean {
-    if (!this.exigirSecaoValida()) return false;
-    const antes = this.chaves().slice(this.indice(), destino);
-    for (const chave of antes) {
+    if (!this.exigirSecaoValida() || destino <= this.indice()) return false;
+    const chaveDoDestino = this.chaves()[destino];
+    // As chaves são relidas a cada passo: concluir uma seção pode mostrar outra no caminho.
+    for (let i = this.indice(); ; i++) {
+      const chave = this.chaves()[i];
+      if (chave === undefined || chave === chaveDoDestino) break;
       const prefixado = this.passosPrefixados().find((p) => p.chave === chave);
       if (prefixado) {
         if (prefixado.concluido === true) continue;
