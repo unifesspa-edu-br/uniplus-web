@@ -79,8 +79,6 @@ type Trecho =
               [arquivos]="arquivosPorExigencia().get(exigida.chave) ?? SEM_ARQUIVOS"
               [situacao]="situacoes()[exigida.chave] ?? null"
               [podeAlterar]="podeAlterar()"
-              (arquivoEnviado)="arquivoEnviado.emit($event)"
-              (arquivoRemovido)="arquivoRemovido.emit($event)"
             />
           }
         }
@@ -193,10 +191,6 @@ export class DocumentosDaInscricaoComponent {
   readonly situacoes = input<Readonly<Partial<Record<string, SituacaoDaExigencia>>>>({});
   /** Enviar e remover arquivo só valem enquanto a inscrição é rascunho. */
   readonly podeAlterar = input(true);
-
-  /** Um arquivo foi confirmado ou removido: a avaliação das exigências muda. */
-  readonly arquivoEnviado = output<ArquivoEnviado>();
-  readonly arquivoRemovido = output<string>();
 
   /** O candidato escolheu a pergunta pendente: leva a ela. */
   readonly irAoCampo = output<string>();

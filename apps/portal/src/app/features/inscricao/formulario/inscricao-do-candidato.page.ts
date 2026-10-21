@@ -6,10 +6,12 @@ import {
   Injector,
   afterNextRender,
   computed,
+  effect,
   inject,
   input,
   type OnInit,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
@@ -130,6 +132,24 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly envioDeDocumentos = computed(() =>
     this.documentos.paraOProcesso(this.processoId()),
   );
+
+  /** Os arquivos do envio na última vez que a avaliação foi pedida por causa deles; o envio nasce sem nenhum. */
+  private arquivosVistos = '';
+
+  constructor() {
+    // Enviar ou remover um arquivo muda a situação dos documentos, que só a API calcula. O envio fica
+    // fora do componente do passo, então a reavaliação vem dele, mesmo que a tela tenha mudado de passo.
+    effect(() => {
+      const ids = this.envioDeDocumentos()
+        .arquivos()
+        .map((arquivo) => arquivo.arquivoId)
+        .join(',');
+      untracked(() => {
+        if (ids !== this.arquivosVistos) this.reavaliarDocumentos();
+        this.arquivosVistos = ids;
+      });
+    });
+  }
 
   protected readonly estado = signal<Estado>('carregando');
   protected readonly erroAoCarregar = signal<string | null>(null);
@@ -502,6 +522,14 @@ export class InscricaoDoCandidatoPage implements OnInit {
     this.erroDaSegundaOferta.set(null);
     this.avisoDaSegundaLimpa.set(aviso);
     this.anunciar(aviso);
+  }
+
+  /** Os arquivos enviados mudaram: a avaliação é pedida de novo com as respostas que estão na tela. */
+  private reavaliarDocumentos(): void {
+    const inscricao = this.inscricao();
+    const formulario = this.formularioDoCandidato();
+    if (inscricao && formulario)
+      this.avaliacao.reavaliar(() => this.corpoDaAvaliacao(inscricao, formulario.simulacao()));
   }
 
   /** A oferta de alguma opção mudou na tela, sem gravar: a avaliação é pedida de novo com as novas. */

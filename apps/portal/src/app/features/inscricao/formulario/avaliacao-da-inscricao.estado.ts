@@ -171,15 +171,16 @@ export class AvaliacaoDaInscricaoEstado {
   }
 
   tentarDeNovo(): void {
-    this.reavaliar();
+    if (this.ultimoCorpo !== null) this.consultar(this.ultimoCorpo);
   }
 
   /**
-   * Consulta de novo com as mesmas respostas: o que mudou foi o que o candidato enviou ou removeu, e a
-   * situação de cada documento vem da avaliação.
+   * Consulta de novo com as respostas da tela: o que mudou foi o que o candidato enviou ou removeu, e a
+   * situação de cada documento vem da avaliação. Vale sobre a que está à vista, mesmo a inicial.
    */
-  reavaliar(): void {
-    if (this.ultimoCorpo !== null) this.consultar(this.ultimoCorpo);
+  reavaliar(corpo: () => AvaliacaoDaInscricaoRequest): void {
+    this.revisaoAtual++;
+    this.consultar(corpo());
   }
 
   private consultar(corpo: AvaliacaoDaInscricaoRequest): void {

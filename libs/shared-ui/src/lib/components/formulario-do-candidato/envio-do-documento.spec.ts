@@ -70,14 +70,11 @@ describe('Envio do arquivo de um documento exigido', () => {
 
   it('envia o arquivo escolhido para a exigência e o mostra como enviado', async () => {
     const tela = montar();
-    const enviado = vi.fn();
-    fixture.componentInstance.arquivoEnviado.subscribe(enviado);
 
     const laudo = arquivo('laudo.pdf');
     await escolher(laudo);
 
     expect(envio.enviar).toHaveBeenCalledWith(ALVO, laudo, expect.any(Function));
-    expect(enviado).toHaveBeenCalledWith(CONFIRMADO);
     expect(tela.querySelector('.uni-uploader__item-name')?.textContent).toContain('laudo.pdf');
   });
 
@@ -192,15 +189,12 @@ describe('Envio do arquivo de um documento exigido', () => {
     const tela = montar();
     envio.arquivos.set([CONFIRMADO]);
     fixture.detectChanges();
-    const removido = vi.fn();
-    fixture.componentInstance.arquivoRemovido.subscribe(removido);
 
     (tela.querySelector('button[aria-label^="Remover"]') as HTMLButtonElement).click();
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(envio.remover).toHaveBeenCalledWith('arquivo-1');
-    expect(removido).toHaveBeenCalledWith('arquivo-1');
     expect(tela.querySelector('.uni-uploader__item')).toBeNull();
   });
 

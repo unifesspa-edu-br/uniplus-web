@@ -50,7 +50,7 @@ import {
   type NoDeDocumentos,
 } from './documentos-avaliados';
 import { DocumentosDaInscricaoComponent } from './documentos-da-inscricao';
-import type { ArquivoEnviado, EnvioDeDocumentos } from './envio-de-documentos';
+import type { EnvioDeDocumentos } from './envio-de-documentos';
 import { FatorDeAtenuacaoDaInscricaoComponent } from './fator-de-atenuacao-da-inscricao';
 import { resumoDoFator } from './fator-de-atenuacao';
 import { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
@@ -187,8 +187,6 @@ import type {
                             [arquivosEnviados]="arquivosDosDocumentos()"
                             [situacoes]="situacoesDosDocumentos()"
                             [podeAlterar]="podeAlterarDocumentos()"
-                            (arquivoEnviado)="arquivoEnviado.emit($event)"
-                            (arquivoRemovido)="arquivoRemovido.emit($event)"
                             (irAoCampo)="irAoCampo($event)"
                             (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
                           />
@@ -423,9 +421,6 @@ export class FormularioDoCandidatoComponent {
   readonly simulacaoChange = output<SimulacaoDoFormulario>();
   /** Os termos aceitos, pelo código, a cada mudança. */
   readonly termosAceitosChange = output<readonly string[]>();
-  /** Um arquivo de documento foi confirmado ou removido: quem hospeda reavalia as exigências. */
-  readonly arquivoEnviado = output<ArquivoEnviado>();
-  readonly arquivoRemovido = output<string>();
   /** O candidato pediu para calcular de novo a avaliação depois de uma falha. */
   readonly tentarAvaliarDeNovo = output<void>();
 
@@ -692,15 +687,18 @@ export class FormularioDoCandidatoComponent {
     { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
   );
   /** A situação e os arquivos de cada exigência da fase, como a avaliação da API os traz. */
-  private readonly situacaoEArquivos = computed(() => {
-    const formulario = this.formulario();
-    const avaliados = this.avaliacao()?.documentos ?? null;
-    return situacoesEArquivosDosDocumentos(
-      avaliados === null
-        ? []
-        : documentosDoFormulario(avaliados, formulario.faseId, formulario.finalidade).documentos,
-    );
-  });
+  private readonly situacaoEArquivos = computed(
+    () => {
+      const formulario = this.formulario();
+      const avaliados = this.avaliacao()?.documentos ?? null;
+      return situacoesEArquivosDosDocumentos(
+        avaliados === null
+          ? []
+          : documentosDoFormulario(avaliados, formulario.faseId, formulario.finalidade).documentos,
+      );
+    },
+    { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+  );
   protected readonly situacoesDosDocumentos = computed(() => this.situacaoEArquivos().situacoes);
   protected readonly arquivosDosDocumentos = computed(() => this.situacaoEArquivos().arquivos);
   /**
