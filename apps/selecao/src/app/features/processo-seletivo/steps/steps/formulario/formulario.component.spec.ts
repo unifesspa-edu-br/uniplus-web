@@ -19,6 +19,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { comExigencia, exigenciaNova } from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { FormularioStepComponent } from './formulario.component';
 import { conteudoDoFormulario } from './formulario-do-processo';
@@ -210,6 +211,62 @@ describe('FormularioStepComponent', () => {
     store.remoteSnapshot.set({ ...PROCESSO, id: PROCESSO_ID, status: 'rascunho' } as never);
     fixture.detectChanges();
   }
+
+  describe('etapa dos documentos do formulário', () => {
+    const TIPO_LAUDO = '01960000-0000-7000-0000-0000000000d1';
+    const COM_ETAPA_DE_DOCUMENTOS = {
+      ...GRAVADO,
+      etapas: [
+        etapa('DADOS_BASICOS', 0),
+        etapa('DOCUMENTOS', 1, 'COMPROVACAO_DOCUMENTAL'),
+        etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
+      ],
+      fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS')],
+      grupos: [],
+    } as unknown as FormularioDto;
+
+    /** O processo publicado: os passos mostram o que está gravado como texto. */
+    function emConsulta(): void {
+      TestBed.inject(CatalogosDoCronogramaService).fatos.set([PCD_NO_CATALOGO] as never);
+      store.patchObjectSection('formulario', { conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS) });
+      store.remoteSnapshot.set({ ...PROCESSO, id: PROCESSO_ID, status: 'publicado' } as never);
+      fixture.detectChanges();
+    }
+
+    it('lista os documentos da fase do formulário, com a condição de cada um, em vez de "Nenhum campo"', () => {
+      const laudo = {
+        ...exigenciaNova(TIPO_LAUDO, 'INSCRICAO'),
+        tipoDocumentoNome: 'Laudo médico',
+        aplicabilidade: 'CONDICIONAL',
+        condicoes: [{ clausula: 0, ordem: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
+        formatosPermitidos: ['PDF'],
+        tamanhoMaximoBytes: 5 * 1024 * 1024,
+      } as ExigenciaDeDocumento;
+      const certidaoDeOutraFase = { ...exigenciaNova(TIPO_LAUDO, 'MATRICULA'), tipoDocumentoNome: 'Outra fase' };
+      store.patchSection(
+        'documentos',
+        comExigencia(comExigencia({ raizes: [], emTodasAsFases: [] }, laudo), certidaoDeOutraFase),
+      );
+
+      emConsulta();
+
+      const texto = host.textContent ?? '';
+      expect(texto).toContain('Laudo médico');
+      expect(texto).toContain('Obrigatório');
+      expect(texto).toContain('Pessoa com deficiência');
+      expect(texto).toContain('PDF, até 5 MB');
+      expect(texto).not.toContain('Outra fase');
+      expect(host.querySelector('sel-documentos-do-formulario')?.textContent).toContain('Laudo médico');
+    });
+
+    it('sem documento na fase, diz que nenhum é exigido e leva ao Cronograma', () => {
+      emConsulta();
+
+      expect(host.textContent).toContain('Nenhum documento exigido nesta fase');
+      host.querySelector<HTMLButtonElement>('sel-documentos-do-formulario button')?.click();
+      expect(store.currentStep()).toBe(PASSO_CRONOGRAMA);
+    });
+  });
 
   it('a simulação usa o processo gravado e avisa a alteração ainda não gravada', () => {
     comProcessoLido();
