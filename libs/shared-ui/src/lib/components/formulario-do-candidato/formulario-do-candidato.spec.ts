@@ -1618,7 +1618,7 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(tela.querySelector('h3')?.textContent).toContain('Seção C');
   });
 
-  it('o obrigatório que só aparece com o opcional em branco conta como pendência, e o foco fica no título da seção', async () => {
+  it('o link da pendência que só aparece com o opcional em branco conclui a seção até revelá-la e foca o campo', async () => {
     const tela = montar({
       ...DUAS_SECOES,
       fatosColetados: [
@@ -1651,12 +1651,15 @@ describe('FormularioDoCandidatoComponent', () => {
     // O motivo do envio já conta o obrigatório que concluir vai mostrar, antes do clique.
     expect(fixture.componentInstance.pendenciasPorSecao().map((s) => s.quantidade)).toEqual([1]);
 
-    expect(fixture.componentInstance.concluirTodas()).toBe(1);
+    const { chave } = fixture.componentInstance.pendenciasPorSecao()[0];
+
+    fixture.componentInstance.irAPendenciaDe(chave);
     fixture.detectChanges();
     await fixture.whenStable();
 
-    // O campo só existe depois de a seção ser concluída, e concluir é do envio válido.
-    expect(document.activeElement).toBe(tela.querySelector('h3'));
+    expect(document.activeElement).toBe(tela.querySelector('[data-campo="JUSTIFICATIVA"] input'));
+    expect(itemDoPasso(tela, '1').classList).toContain('is-error');
+    expect(itemDoPasso(tela, '1').classList).not.toContain('is-done');
   });
   describe('confirmação pedida no campo', () => {
     const EMAIL = 'fernanda_laura_drumond@lhp.com.br';
