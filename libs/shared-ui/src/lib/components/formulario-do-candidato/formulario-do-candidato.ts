@@ -36,6 +36,7 @@ import {
   mensagemDosErros,
   type PassoDoFormulario,
   type PassoPrefixado,
+  type PendenciaDoPasso,
   type RespostaFixa,
   type TermoNoPasso,
   passosDo,
@@ -430,6 +431,8 @@ export class FormularioDoCandidatoComponent {
 
   /** A simulação a cada mudança: as respostas, as ocorrências, as seções concluídas e os pressupostos. */
   readonly simulacaoChange = output<SimulacaoDoFormulario>();
+  /** O avanço que o passo prefixado, ainda não concluído, barrou: quem hospeda o leva ao que falta. */
+  readonly avancoBarrado = output<string>();
   /** As pendências por seção a cada mudança, para quem hospeda dizer por que o envio ainda não segue. */
   readonly pendenciasChange = output<readonly PendenciaDaSecao[]>();
   /** Os termos aceitos, pelo código, a cada mudança. */
@@ -874,9 +877,7 @@ export class FormularioDoCandidatoComponent {
     let mudou = false;
     while (this.concluir(this.passos())) mudou = true;
 
-    const pendentes = this.passos().map((passo) =>
-      pendenciasDo(passo, this.aceitos(), this.problemasDaConfirmacao(), this.fixasSemResposta()),
-    );
+    const pendentes = this.passos().map((passo) => this.pendenciasDoPasso(passo));
     const total = pendentes.reduce((soma, codigos) => soma + codigos.length, 0);
     const indice = pendentes.findIndex((codigos) => codigos.length > 0);
     if (indice < 0) return 0;
@@ -964,43 +965,53 @@ export class FormularioDoCandidatoComponent {
    */
   readonly pendenciasPorSecao = computed<readonly PendenciaDaSecao[]>(() =>
     this.passos()
-      .map((passo) => ({
-        titulo: passo.titulo,
-        quantidade: pendenciasDo(
-          passo,
-          this.aceitos(),
-          this.problemasDaConfirmacao(),
-          this.fixasSemResposta(),
-        ).length,
-      }))
+      .map((passo) => ({ titulo: passo.titulo, quantidade: this.pendenciasDoPasso(passo).length }))
       .filter((secao) => secao.quantidade > 0),
   );
+
+  private pendenciasDoPasso(passo: PassoDoFormulario): PendenciaDoPasso[] {
+    return pendenciasDo(
+      passo,
+      this.aceitos(),
+      this.problemasDaConfirmacao(),
+      this.fixasSemResposta(),
+    );
+  }
 
   /**
    * Chega ao passo do indicador: para trás ou para um passo já liberado vai direto; para frente, só
    * com as seções do caminho sem pendência.
    */
   protected irParaSePermitido(destino: number): void {
-    if (!this.pendenciaAntesDe(destino)) this.irPara(destino);
+    const chave = this.chaves()[destino];
+    if (this.pendenciaAntesDe(destino)) return;
+    // Concluir uma seção pode mostrar outra: o destino é achado de novo pela chave.
+    const indice = this.chaves().indexOf(chave);
+    this.irPara(indice >= 0 ? indice : destino);
   }
 
   /**
    * Com `exigirSecaoValida`, dá as seções de agora até antes do `destino` como concluídas e, na primeira
-   * com pendência, fica nela, põe o foco no primeiro campo pendente e anuncia. Diz se barrou.
+   * com pendência, fica nela, põe o foco no primeiro campo pendente e anuncia. O passo prefixado sem
+   * `concluido` também barra, e `avancoBarrado` avisa quem hospeda, que dá o foco e o motivo. Diz se
+   * barrou.
    */
   private pendenciaAntesDe(destino: number): boolean {
     if (!this.exigirSecaoValida()) return false;
-    for (let i = this.indice(); i < destino; i++) {
-      const passo = this.passos().find((p) => p.chave === this.chaves()[i]);
-      // O passo prefixado é de quem hospeda: ele decide se o candidato segue.
-      if (!passo) continue;
-      this.concluir([passo]);
-      const pendentes = pendenciasDo(
-        passo,
-        this.aceitos(),
-        this.problemasDaConfirmacao(),
-        this.fixasSemResposta(),
-      );
+    const antes = this.chaves().slice(this.indice(), destino);
+    for (const chave of antes) {
+      const prefixado = this.passosPrefixados().find((p) => p.chave === chave);
+      if (prefixado) {
+        if (prefixado.concluido === true) continue;
+        this.avancoBarrado.emit(chave);
+        return true;
+      }
+      const secao = this.passos().find((p) => p.chave === chave);
+      if (!secao) continue;
+      this.concluir([secao]);
+      // Relido depois de concluir: a conclusão pode revelar o que ainda falta na seção.
+      const passo = this.passos().find((p) => p.chave === chave) ?? secao;
+      const pendentes = this.pendenciasDoPasso(passo);
       if (pendentes.length === 0) continue;
       const [primeira] = pendentes;
       this.irAoPasso(

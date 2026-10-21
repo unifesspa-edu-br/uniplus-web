@@ -69,6 +69,7 @@
   [podeRemoverDocumentos]="!enviada() && !bloqueada()"
   [ocorrenciasGravadas]="ocorrenciasGravadas()"
   (simulacaoChange)="responder($event)"
+  (avancoBarrado)="recusarCursoAusente()"
   (pendenciasChange)="pendenciasDasSecoes.set($event)"
   (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
 >

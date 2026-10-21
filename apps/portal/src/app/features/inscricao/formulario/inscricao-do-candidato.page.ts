@@ -606,6 +606,13 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   protected readonly pendenciasDasSecoes = signal<readonly PendenciaDaSecao[]>([]);
 
+  /** O curso é obrigatório: mostra a recusa no passo Curso, com o foco no campo, e devolve o texto. */
+  protected recusarCursoAusente(): string {
+    const mensagem = mensagemDaRecusa('uniplus.selecao.inscricao.oferta_obrigatoria');
+    this.recusarOfertas(mensagem, null);
+    return mensagem;
+  }
+
   /**
    * Por que o envio ainda não segue, ou `null` quando o formulário está válido. Conta as perguntas e os
    * aceites das seções; a situação dos documentos obrigatórios entra aqui quando a API a devolver na
@@ -643,8 +650,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     // Sem curso, só as conta: quem leva o candidato é o passo Curso.
     const pendencias = this.formularioDoCandidato()?.concluirTodas(!semCurso) ?? 0;
     if (semCurso) {
-      const mensagem = mensagemDaRecusa('uniplus.selecao.inscricao.oferta_obrigatoria');
-      this.recusarOfertas(mensagem, null);
+      const mensagem = this.recusarCursoAusente();
       this.anunciar(
         pendencias > 0
           ? `${mensagem} Há também ${pendencias === 1 ? '1 item' : `${pendencias} itens`} a corrigir nas seções.`
