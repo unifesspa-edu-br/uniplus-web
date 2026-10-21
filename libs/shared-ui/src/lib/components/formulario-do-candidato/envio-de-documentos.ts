@@ -62,9 +62,6 @@ export interface EnvioDeDocumentos {
 /** Se a exigência está atendida pelos arquivos enviados; vem da avaliação da API. */
 export type SituacaoDaExigencia = 'SATISFEITA' | 'PENDENTE';
 
-/** O teto de tamanho que vale quando a exigência não declara um. */
-export const TAMANHO_MAXIMO_PADRAO_BYTES = 10 * 1024 * 1024;
-
 const BYTES_POR_MB = 1024 * 1024;
 
 interface Formato {
@@ -101,7 +98,7 @@ export interface RegrasDoArquivo {
 
 export function regrasDoArquivo(
   formatos: DocumentoExigido['formatos'],
-  tamanhoMaximoBytes: number | null | undefined,
+  tamanhoMaximoBytes: number,
 ): RegrasDoArquivo {
   const lista = formatos.lista ?? [];
   const declarados = lista.flatMap((nome) => FORMATOS[nome.trim().toUpperCase()] ?? []);
@@ -113,7 +110,7 @@ export function regrasDoArquivo(
     extensoes: aceitos.flatMap((f) => f.extensoes).join(','),
     tiposDeMidia: aceitos.flatMap((f) => f.tiposDeMidia),
     rotuloDosFormatos: aceitos.map((f) => f.rotulo).join(', '),
-    tamanhoMaximoMb: (tamanhoMaximoBytes ?? TAMANHO_MAXIMO_PADRAO_BYTES) / BYTES_POR_MB,
+    tamanhoMaximoMb: tamanhoMaximoBytes / BYTES_POR_MB,
   };
 }
 

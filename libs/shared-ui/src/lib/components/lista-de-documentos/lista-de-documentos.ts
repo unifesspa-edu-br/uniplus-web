@@ -19,10 +19,12 @@ export interface DocumentoExigido {
    */
   readonly situacao?: string;
   readonly obrigatorio: boolean;
-  /** O teto de tamanho de cada arquivo enviado para o documento; sem ele vale o padrão do envio. */
-  readonly tamanhoMaximoBytes?: number | null;
+  /** Os formatos que o envio aceita para o documento. */
+  readonly formatosAceitos?: readonly string[];
+  /** O limite de tamanho de cada arquivo enviado para o documento. */
+  readonly tamanhoMaximoBytes?: number;
   /** Quantas apresentações o documento pede, no mínimo. */
-  readonly quantidadeMinima?: number | null;
+  readonly quantidadeMinima?: number;
   readonly formatos: { readonly qualquer: boolean; readonly lista: readonly string[] | null };
   readonly modelo: {
     readonly nomeArquivo: string;

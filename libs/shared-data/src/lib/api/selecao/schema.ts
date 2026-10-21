@@ -9096,6 +9096,12 @@ export interface components {
             readonly ocorrenciaId: null | string;
             readonly grupos: readonly components["schemas"]["GrupoDaArvoreDto"][];
             readonly repetePorEntidade: null | string;
+            readonly formatosAceitos: readonly string[];
+            /** Format: int64 */
+            readonly tamanhoMaximoBytes: number | string;
+            /** Format: int32 */
+            readonly quantidadeMinima: number | string;
+            readonly arquivos: readonly components["schemas"]["ArquivoDaApresentacaoDto"][];
         };
         readonly DocumentoDoAtoDto: {
             /** Format: uuid */

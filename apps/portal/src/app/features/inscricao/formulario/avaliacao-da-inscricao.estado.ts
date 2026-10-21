@@ -171,6 +171,14 @@ export class AvaliacaoDaInscricaoEstado {
   }
 
   tentarDeNovo(): void {
+    this.reavaliar();
+  }
+
+  /**
+   * Consulta de novo com as mesmas respostas: o que mudou foi o que o candidato enviou ou removeu, e a
+   * situação de cada documento vem da avaliação.
+   */
+  reavaliar(): void {
     if (this.ultimoCorpo !== null) this.consultar(this.ultimoCorpo);
   }
 

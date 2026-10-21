@@ -46,14 +46,11 @@ import {
   anunciarMudancaDosDocumentos,
   arvoreDeDocumentos,
   documentosDoFormulario,
+  situacoesEArquivosDosDocumentos,
   type NoDeDocumentos,
 } from './documentos-avaliados';
 import { DocumentosDaInscricaoComponent } from './documentos-da-inscricao';
-import type {
-  ArquivoEnviado,
-  EnvioDeDocumentos,
-  SituacaoDaExigencia,
-} from './envio-de-documentos';
+import type { ArquivoEnviado, EnvioDeDocumentos } from './envio-de-documentos';
 import { FatorDeAtenuacaoDaInscricaoComponent } from './fator-de-atenuacao-da-inscricao';
 import { resumoDoFator } from './fator-de-atenuacao';
 import { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
@@ -187,7 +184,7 @@ import type {
                             [pendencias]="documentosDaAvaliacao()?.pendencias ?? []"
                             [semDocumentos]="semDocumentos()"
                             [envioDeDocumentos]="envioDeDocumentos()"
-                            [arquivosEnviados]="arquivosEnviados()"
+                            [arquivosEnviados]="arquivosDosDocumentos()"
                             [situacoes]="situacoesDosDocumentos()"
                             [podeAlterar]="podeAlterarDocumentos()"
                             (arquivoEnviado)="arquivoEnviado.emit($event)"
@@ -378,10 +375,6 @@ export class FormularioDoCandidatoComponent {
    * simulação do administrador.
    */
   readonly envioDeDocumentos = input<EnvioDeDocumentos | null>(null);
-  /** Os arquivos que a API já registrou para as exigências, pela chave `exigenciaId:ocorrenciaId`. */
-  readonly arquivosEnviados = input<readonly ArquivoEnviado[]>([]);
-  /** A situação de cada exigência, pela mesma chave, como a avaliação da API a devolve. */
-  readonly situacoesDosDocumentos = input<Readonly<Partial<Record<string, SituacaoDaExigencia>>>>({});
   /** Enviar e remover arquivo só valem enquanto a inscrição é rascunho. */
   readonly podeAlterarDocumentos = input(true);
   readonly idBase = input<string>('formulario-candidato');
@@ -698,6 +691,18 @@ export class FormularioDoCandidatoComponent {
     },
     { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
   );
+  /** A situação e os arquivos de cada exigência da fase, como a avaliação da API os traz. */
+  private readonly situacaoEArquivos = computed(() => {
+    const formulario = this.formulario();
+    const avaliados = this.avaliacao()?.documentos ?? null;
+    return situacoesEArquivosDosDocumentos(
+      avaliados === null
+        ? []
+        : documentosDoFormulario(avaliados, formulario.faseId, formulario.finalidade).documentos,
+    );
+  });
+  protected readonly situacoesDosDocumentos = computed(() => this.situacaoEArquivos().situacoes);
+  protected readonly arquivosDosDocumentos = computed(() => this.situacaoEArquivos().arquivos);
   /**
    * A mesma resposta pode mudar as modalidades e os documentos: os dois vão no mesmo anúncio, e só o que
    * mudou desta vez entra nele — o anúncio de antes não volta a ser lido.

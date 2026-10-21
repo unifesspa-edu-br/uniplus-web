@@ -53,6 +53,7 @@ describe('Envio do arquivo de um documento exigido', () => {
     fixture = TestBed.createComponent(EnvioDoDocumentoComponent);
     fixture.componentRef.setInput('alvo', ALVO);
     fixture.componentRef.setInput('formatos', { qualquer: false, lista: ['PDF'] });
+    fixture.componentRef.setInput('tamanhoMaximoBytes', 10 * 1024 * 1024);
     fixture.componentRef.setInput('envio', envio as unknown as EnvioDeDocumentos);
     for (const [nome, valor] of Object.entries(entradas))
       fixture.componentRef.setInput(nome, valor);
@@ -200,6 +201,16 @@ describe('Envio do arquivo de um documento exigido', () => {
 
     expect(envio.remover).toHaveBeenCalledWith('arquivo-1');
     expect(removido).toHaveBeenCalledWith('arquivo-1');
+    expect(tela.querySelector('.uni-uploader__item')).toBeNull();
+  });
+
+  it('arquivo removido não volta enquanto a avaliação que o trazia não é refeita', async () => {
+    const tela = montar({ arquivos: [CONFIRMADO] });
+
+    (tela.querySelector('button[aria-label^="Remover"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
     expect(tela.querySelector('.uni-uploader__item')).toBeNull();
   });
 
