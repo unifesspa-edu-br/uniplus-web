@@ -15,7 +15,12 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { ProblemI18nService, isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  isApiOk,
+  STATUS_HTTP,
+  ChaveDeSubstituicao,
+} from '@uniplus/shared-core/http';
 import {
   FinalidadeDoDocumento,
   ProcessoSeletivoDto,
@@ -66,7 +71,6 @@ import {
   AVISO_DE_RASCUNHO_NAO_GRAVADO,
   ConfirmacaoDeSaida,
 } from './steps/shared/rascunho-nao-gravado.guard';
-import { ChaveDeSubstituicao } from './steps/shared/chave-de-substituicao';
 import type { MotivoFalhaDeLeitura } from './steps/processo-seletivo.models';
 
 /** Formato do `:id` na rota — recusar aqui poupa uma ida ao servidor com lixo. */

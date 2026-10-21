@@ -8,14 +8,13 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
+import { ProblemI18nService, isApiOk, abrirAcessoEmNovaAba } from '@uniplus/shared-core/http';
 import { FileUploadComponent, type ArquivoEmEnvio } from '@uniplus/shared-ui/components';
 import { FinalidadeDoDocumento, type DocumentoDoAtoDto } from '@uniplus/shared-data/selecao';
 
 import type { AnexoDoEdital } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { EnvioDeArquivo, soFaltaConfirmar, type AlvoDoEnvio } from '../envio-de-arquivo';
-import { abrirAcessoEmNovaAba } from '../envio-pre-assinado';
 import {
   EXTENSOES_DO_ANEXO,
   LIMITE_DE_ANEXOS,

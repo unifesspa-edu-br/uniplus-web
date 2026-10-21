@@ -8,13 +8,18 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { ProblemI18nService, isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  isApiOk,
+  type ProblemDetails,
+  abrirAcessoEmNovaAba,
+  destinoExpirado,
+} from '@uniplus/shared-core/http';
 import { FileUploadComponent, type ArquivoEmEnvio } from '@uniplus/shared-ui/components';
 import type { IniciarEnvioDoModeloDeDocumentoDto } from '@uniplus/shared-data/selecao';
 
 import type { ModeloDaExigencia } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { abrirAcessoEmNovaAba, destinoExpirado } from '../../../shared/envio-pre-assinado';
 import { EnvioDoModeloService } from './envio-do-modelo.service';
 
 /** O teto do modelo no domínio: 10 MB. */

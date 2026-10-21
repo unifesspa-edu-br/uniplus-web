@@ -1,6 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { SignedUploadClient } from '@uniplus/shared-core/http';
+import {
+  SignedUploadClient,
+  ChaveDeSubstituicao,
+  comChave,
+  type RespostaDoComando,
+  enviarAoStorage,
+  type ResultadoEnvio,
+} from '@uniplus/shared-core/http';
 import {
   ProcessosSeletivosApi,
   type DocumentoAPublicarDto,
@@ -8,9 +15,6 @@ import {
   type IniciarEnvioDoDocumentoAPublicarRequest,
 } from '@uniplus/shared-data/selecao';
 
-import { ChaveDeSubstituicao } from '../chave-de-substituicao';
-import { comChave, type RespostaDoComando } from '../comando-com-chave';
-import { enviarAoStorage, type ResultadoEnvio } from '../envio-pre-assinado';
 
 /**
  * Os três passos do envio de UM anexo, escondendo do componente quando a `Idempotency-Key` pode

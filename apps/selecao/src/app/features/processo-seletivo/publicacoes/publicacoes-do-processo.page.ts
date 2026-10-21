@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { ProblemI18nService, abrirAcessoEmNovaAba } from '@uniplus/shared-core/http';
 import {
   ProcessosSeletivosApi,
   StatusProcesso,
@@ -21,7 +21,6 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 
-import { abrirAcessoEmNovaAba } from '../steps/shared/envio-pre-assinado';
 import { AtosDoProcessoComponent } from './atos-do-processo.component';
 import { PrevistosNoEditalComponent } from './previstos-no-edital.component';
 import { PublicacoesDoProcesso } from './publicacoes-do-processo.service';

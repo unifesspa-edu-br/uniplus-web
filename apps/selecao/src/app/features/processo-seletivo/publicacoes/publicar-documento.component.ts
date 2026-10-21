@@ -29,6 +29,8 @@ import {
   isApiOk,
   type ApiResult,
   type ProblemDetails,
+  ChaveDeSubstituicao,
+  comChave,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import type { TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
@@ -48,8 +50,6 @@ import {
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
-import { ChaveDeSubstituicao } from '../steps/shared/chave-de-substituicao';
-import { comChave } from '../steps/shared/comando-com-chave';
 import {
   EXTENSOES_DO_ANEXO,
   LIMITE_DE_ANEXOS,

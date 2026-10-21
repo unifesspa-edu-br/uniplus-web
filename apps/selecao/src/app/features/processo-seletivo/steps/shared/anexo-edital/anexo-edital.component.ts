@@ -4,7 +4,12 @@ import {
   ValorEmConsultaComponent,
   type ArquivoEmEnvio,
 } from '@uniplus/shared-ui/components';
-import { ProblemI18nService, isApiOk } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  isApiOk,
+  abrirAcessoEmNovaAba,
+  destinoExpirado,
+} from '@uniplus/shared-core/http';
 import {
   DocumentoAPublicarDto,
   IniciarEnvioDoDocumentoAPublicarDto,
@@ -13,7 +18,6 @@ import {
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { UploadItem } from '../../processo-seletivo.models';
 import { CadastroInicialService } from '../cadastro-inicial.service';
-import { abrirAcessoEmNovaAba, destinoExpirado } from '../envio-pre-assinado';
 import { classificarDocumentos, descreverDocumento, uploadItemDe } from '../hidratacao';
 
 /** Limite do documento do edital no domínio: 20 MB. */

@@ -1,6 +1,6 @@
 import { HttpContext } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
-import { isApiOk, type ApiResult } from '@uniplus/shared-core/http';
+import { isApiOk, type ApiResult } from './api-result';
 
 import type { ChaveDeSubstituicao } from './chave-de-substituicao';
 

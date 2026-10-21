@@ -1,4 +1,4 @@
-import { isApiOk, type ProblemDetails } from '@uniplus/shared-core/http';
+import { isApiOk, type ProblemDetails, destinoExpirado } from '@uniplus/shared-core/http';
 import type {
   FinalidadeDoDocumento,
   IniciarEnvioDoDocumentoAPublicarDto,
@@ -6,7 +6,6 @@ import type {
 
 import type { UploadItem } from '../processo-seletivo.models';
 import type { EnvioDoAnexo } from './anexos-do-edital/envio-do-anexo.service';
-import { destinoExpirado } from './envio-pre-assinado';
 
 /** O que o envio de um arquivo lê e escreve no item que a tela exibe. */
 export type EstadoDoEnvio = Pick<
