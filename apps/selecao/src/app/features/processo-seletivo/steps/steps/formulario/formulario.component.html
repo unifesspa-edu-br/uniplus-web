@@ -309,10 +309,13 @@
           <ul class="doc-list">
             @for (entrada of etapa.entradas; track entrada.chave) {
               <li class="doc-item">
-                <div class="doc-item__head">
+                <div class="doc-item__head doc-item__head--consulta">
                   <span class="doc-item__name">{{ entrada.rotulo }}</span>
+                  &ngsp;
+                  <span class="field__hint"
+                    ><span aria-hidden="true">·</span> {{ entrada.obrigatoriedade }}</span
+                  >
                 </div>
-                <ui-valor-em-consulta rotulo="Resposta" [valor]="entrada.resposta" />
               </li>
             } @empty {
               <li class="field__hint">Nenhum campo nesta etapa.</li>
