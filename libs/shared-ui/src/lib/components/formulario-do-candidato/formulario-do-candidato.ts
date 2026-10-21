@@ -186,7 +186,9 @@ import type {
                             [envioDeDocumentos]="envioDeDocumentos()"
                             [arquivosEnviados]="arquivosDosDocumentos()"
                             [situacoes]="situacoesDosDocumentos()"
-                            [podeAlterar]="podeAlterarDocumentos()"
+                            [podeEnviar]="podeEnviarDocumentos()"
+                            [podeRemover]="podeRemoverDocumentos()"
+                            [ocorrenciasGravadas]="ocorrenciasGravadas()"
                             (irAoCampo)="irAoCampo($event)"
                             (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
                           />
@@ -373,8 +375,12 @@ export class FormularioDoCandidatoComponent {
    * simulação do administrador.
    */
   readonly envioDeDocumentos = input<EnvioDeDocumentos | null>(null);
-  /** Enviar e remover arquivo só valem enquanto a inscrição é rascunho. */
-  readonly podeAlterarDocumentos = input(true);
+  /** Enviar arquivo vale enquanto a inscrição não está sendo enviada, inclusive na correção. */
+  readonly podeEnviarDocumentos = input(true);
+  /** Remover arquivo só vale enquanto a inscrição é rascunho. */
+  readonly podeRemoverDocumentos = input(true);
+  /** As ocorrências de grupo que a inscrição gravada já tem; nulo, toda ocorrência vale. */
+  readonly ocorrenciasGravadas = input<ReadonlySet<string> | null>(null);
   readonly idBase = input<string>('formulario-candidato');
   /** Os termos já aceitos, pelo código, como os de uma inscrição retomada; recomeçam com a partida. */
   readonly termosAceitosIniciais = input<readonly string[]>([]);

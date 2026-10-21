@@ -39,6 +39,10 @@ type Trecho =
       gap: var(--space-3);
       max-width: 68ch;
     }
+    .documentos-da-inscricao__aviso {
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+    }
     .documentos-da-inscricao p {
       margin: 0;
     }
@@ -64,7 +68,11 @@ type Trecho =
     <ng-template #envioDoDocumento let-documento>
       @if (envioDeDocumentos(); as envio) {
         @for (exigida of documento.exigidas; track exigida.chave) {
-          @if (exigida.enviavel) {
+          @if (exigida.enviavel && !gravada(exigida.ocorrenciaId)) {
+            <p class="documentos-da-inscricao__aviso">
+              Salve o rascunho para enviar o arquivo de {{ exigida.texto }}.
+            </p>
+          } @else if (exigida.enviavel) {
             <ui-envio-do-documento
               [alvo]="{
                 chave: exigida.chave,
@@ -78,7 +86,8 @@ type Trecho =
               [envio]="envio"
               [arquivos]="arquivosPorExigencia().get(exigida.chave) ?? SEM_ARQUIVOS"
               [situacao]="situacoes()[exigida.chave] ?? null"
-              [podeAlterar]="podeAlterar()"
+              [podeEnviar]="podeEnviar()"
+              [podeRemover]="podeRemover()"
             />
           }
         }
@@ -189,8 +198,15 @@ export class DocumentosDaInscricaoComponent {
    * entrada, a tela não afirma se a exigência está atendida.
    */
   readonly situacoes = input<Readonly<Partial<Record<string, SituacaoDaExigencia>>>>({});
-  /** Enviar e remover arquivo só valem enquanto a inscrição é rascunho. */
-  readonly podeAlterar = input(true);
+  /** Enviar arquivo vale enquanto a inscrição não está sendo enviada, inclusive na correção. */
+  readonly podeEnviar = input(true);
+  /** Remover arquivo só vale enquanto a inscrição é rascunho. */
+  readonly podeRemover = input(true);
+  /**
+   * As ocorrências de grupo que a inscrição gravada já tem: a API só aceita arquivo de uma ocorrência
+   * gravada. Nulo, toda ocorrência vale.
+   */
+  readonly ocorrenciasGravadas = input<ReadonlySet<string> | null>(null);
 
   /** O candidato escolheu a pergunta pendente: leva a ela. */
   readonly irAoCampo = output<string>();
@@ -225,6 +241,11 @@ export class DocumentosDaInscricaoComponent {
     }
     return porChave;
   });
+
+  protected gravada(ocorrenciaId: string | null): boolean {
+    const gravadas = this.ocorrenciasGravadas();
+    return ocorrenciaId === null || gravadas === null || gravadas.has(ocorrenciaId);
+  }
 
   protected texto(grupo: GrupoDeDocumentos): string {
     return textoDoGrupo(grupo);

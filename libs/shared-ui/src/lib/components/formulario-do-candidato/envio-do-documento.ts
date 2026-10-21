@@ -79,7 +79,7 @@ let proximoId = 0;
         [itens]="itensDaLista()"
         [multiple]="true"
         [validarSoPelaExtensao]="true"
-        [disabled]="!podeAlterar()"
+        [disabled]="!podeEnviar()"
         [acceptedFileTypes]="regras().extensoes"
         [allowedMimeTypes]="regras().tiposDeMidia"
         [acceptLabel]="regras().rotuloDosFormatos"
@@ -109,8 +109,10 @@ export class EnvioDoDocumentoComponent {
   readonly arquivos = input<readonly ArquivoEnviado[]>([]);
   /** Se a avaliação já disse que a exigência está atendida; nula, nada se afirma. */
   readonly situacao = input<SituacaoDaExigencia | null>(null);
-  /** Enviar e remover só valem enquanto a inscrição é rascunho. */
-  readonly podeAlterar = input(true);
+  /** Enviar vale enquanto a inscrição não está sendo enviada, inclusive na correção de uma já enviada. */
+  readonly podeEnviar = input(true);
+  /** Remover só vale enquanto a inscrição é rascunho: depois do envio o arquivo é retido. */
+  readonly podeRemover = input(true);
 
   protected readonly regras = computed(() =>
     regrasDoArquivo(this.formatos(), this.tamanhoMaximoBytes()),
@@ -143,15 +145,14 @@ export class EnvioDoDocumentoComponent {
         tamanhoBytes: arquivo.tamanhoBytes,
         fase: 'confirmado',
         progresso: 100,
-        podeRetirar: this.podeAlterar() && !removendo.has(arquivo.arquivoId),
+        podeRetirar: this.podeRemover() && !removendo.has(arquivo.arquivoId),
       }),
     );
-    const podeAlterar = this.podeAlterar();
+    const podeEnviar = this.podeEnviar();
     const locais = this.emAndamento().map(
       (a): ArquivoEmEnvio => ({
         ...a,
-        podeRetirar: podeAlterar,
-        podeTentarDeNovo: a.podeTentarDeNovo !== false && podeAlterar,
+        podeTentarDeNovo: a.podeTentarDeNovo !== false && podeEnviar,
       }),
     );
     return [...confirmados, ...locais];
@@ -179,7 +180,7 @@ export class EnvioDoDocumentoComponent {
   }
 
   protected tentarDeNovo(id: string): void {
-    if (!this.podeAlterar()) return;
+    if (!this.podeEnviar()) return;
     this.falhaAoRemover.set(null);
     void this.enviar(id);
   }
@@ -224,7 +225,7 @@ export class EnvioDoDocumentoComponent {
       this.atualizar(id, {
         fase: 'erro',
         mensagem: desfecho.mensagem,
-        podeTentarDeNovo: desfecho.podeTentarDeNovo && this.podeAlterar(),
+        podeTentarDeNovo: desfecho.podeTentarDeNovo && this.podeEnviar(),
       });
       return;
     }

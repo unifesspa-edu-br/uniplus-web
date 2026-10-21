@@ -209,10 +209,16 @@ describe('Envio do arquivo de um documento exigido', () => {
     expect(tela.querySelector('.uni-uploader__item')).toBeNull();
   });
 
-  it('com a inscrição enviada, não deixa remover nem enviar', () => {
-    const tela = montar({ arquivos: [CONFIRMADO], podeAlterar: false });
+  it('com a inscrição enviada, ainda deixa enviar para corrigir, mas não remover', () => {
+    const tela = montar({ arquivos: [CONFIRMADO], podeRemover: false });
 
     expect(tela.querySelector('button[aria-label^="Remover"]')).toBeNull();
+    expect((tela.querySelector('input[type="file"]') as HTMLInputElement).disabled).toBe(false);
+  });
+
+  it('com a inscrição sendo enviada, não deixa enviar', () => {
+    const tela = montar({ podeEnviar: false });
+
     expect((tela.querySelector('input[type="file"]') as HTMLInputElement).disabled).toBe(true);
   });
 
