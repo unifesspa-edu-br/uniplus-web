@@ -1639,6 +1639,24 @@ describe('FormularioDoCandidatoComponent', () => {
       expect(tela.querySelector('h3')?.textContent).toContain('passo 2 de 3');
     });
 
+    it('com a seção válida exigida, o passo prefixado não concluído barra o avanço e avisa quem hospeda', () => {
+      const tela = montar(DUAS_SECOES, {
+        passosPrefixados: [{ ...CURSO, concluido: false }],
+        exigirSecaoValida: true,
+      });
+      const barrados: string[] = [];
+      fixture.componentInstance.avancoBarrado.subscribe((chave) => barrados.push(chave));
+
+      clicar(botao(tela, 'Próximo passo'));
+      expect(fixture.componentInstance.passoPrefixadoAtual()).toBe('curso');
+      expect(barrados).toEqual(['curso']);
+
+      fixture.componentRef.setInput('passosPrefixados', [{ ...CURSO, concluido: true }]);
+      fixture.detectChanges();
+      clicar(botao(tela, 'Próximo passo'));
+      expect(fixture.componentInstance.passoPrefixadoAtual()).toBeNull();
+    });
+
     it('"Próxima seção" vale até o último passo, contando os prefixados', () => {
       const tela = montar(DUAS_SECOES, { passosPrefixados: [CURSO] });
       clicar(botao(tela, 'Próximo passo'));

@@ -659,10 +659,8 @@ describe('InscricaoDoCandidatoPage', () => {
     await irAoPasso(tela, 'Curso');
     await escolherCurso(tela, '');
     await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));
-    await irAoPasso(tela, 'Dados pessoais');
-    await digitar('Ariel Drumond Nunes');
 
-    expect(servico.avaliacoes.map((a) => a.ofertaCursoId)).toEqual([DIREITO.id, null, null]);
+    expect(servico.avaliacoes.map((a) => a.ofertaCursoId)).toEqual([DIREITO.id, null]);
   });
 
   it('trocar a oferta no seletor consulta a avaliação de novo com a oferta nova e as respostas gravadas', async () => {
@@ -745,6 +743,20 @@ describe('InscricaoDoCandidatoPage', () => {
 
     await clicar(enviar);
     expect(servico.enviados).toEqual([]);
+  });
+
+  it('sem curso escolhido o passo Curso não avança e mostra a recusa no campo', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    const tela = await abrir();
+
+    await clicar(botao(tela, 'Próximo passo'));
+
+    expect(passos(tela)[0].getAttribute('aria-current')).toBe('step');
+    expect(tela.querySelector('#inscricao-oferta-erro')).not.toBeNull();
+
+    await escolherCurso(tela, DIREITO.id);
+    await clicar(botao(tela, 'Próximo passo'));
+    expect(passos(tela)[1].getAttribute('aria-current')).toBe('step');
   });
 
   it('com o formulário válido o envio não traz aria-disabled nem motivo', async () => {
