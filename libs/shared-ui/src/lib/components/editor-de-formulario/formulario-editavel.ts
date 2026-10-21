@@ -1357,6 +1357,7 @@ function todosOsPredicados(conteudo: ConteudoDoFormulario): readonly PredicadoNo
     ...(conteudo.etapas ?? []).map((etapa) => etapa.exibicao ?? null),
     ...(conteudo.grupos ?? []).flatMap((grupo) => [grupo.exibicao, grupo.predicadoObrigatoriedade]),
     ...(conteudo.termos ?? []).flatMap((termo) => [termo.exibicao, termo.predicadoObrigatoriedade]),
+    ...(conteudo.documentosExigidos ?? []).map((documento) => documento.quando),
   ];
 }
 
@@ -1385,6 +1386,11 @@ function quemCita(conteudo: ConteudoDoFormulario, fato: string): readonly Citant
   for (const termo of conteudo.termos ?? []) {
     if ([termo.exibicao, termo.predicadoObrigatoriedade].flatMap(fatosDoPredicado).includes(fato)) {
       citantes.push({ fatoCodigo: null, descricao: `o termo ${termo.codigo}` });
+    }
+  }
+  for (const documento of conteudo.documentosExigidos ?? []) {
+    if (fatosDoPredicado(documento.quando).includes(fato)) {
+      citantes.push({ fatoCodigo: null, descricao: `o documento exigido ${documento.tipoDocumentoCodigo}` });
     }
   }
   return citantes;

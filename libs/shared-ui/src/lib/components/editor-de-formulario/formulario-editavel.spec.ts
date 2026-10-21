@@ -286,6 +286,28 @@ describe('removerItem', () => {
     expect(removerItem(atual, 'A', NOMES)).toEqual({ ok: false, recusa: 'Não é possível remover “Campo A”: o campo “B” cita esse campo.' });
     expect(removerItem(atual, 'B', NOMES).ok).toBe(true);
   });
+
+  it('recusa remover o campo que a condição de um documento exigido cita', () => {
+    const atual = conteudo({
+      etapas: [secao('S1', 0)],
+      itens: [item('A', 0, 'S1')],
+      documentosExigidos: [
+        {
+          faseCodigo: 'INSCRICAO',
+          tipoDocumentoCodigo: 'LAUDO',
+          obrigatorio: true,
+          quando: exibidoQuando('A'),
+          consequenciaIndeferimento: 'ELIMINA',
+          basesLegais: [],
+        },
+      ],
+    });
+
+    expect(removerItem(atual, 'A', NOMES)).toEqual({
+      ok: false,
+      recusa: 'Não é possível remover “Campo A”: o documento exigido LAUDO cita esse campo.',
+    });
+  });
 });
 
 describe('regras espelhadas', () => {
