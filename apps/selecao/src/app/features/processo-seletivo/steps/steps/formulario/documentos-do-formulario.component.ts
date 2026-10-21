@@ -71,6 +71,11 @@ import { PASSO_CRONOGRAMA, type DocumentoExigidoLido } from '../../shared/docume
         }}
         e não aparece{{ semFormulario() === 1 ? '' : 'm' }} aqui. Faça a escolha no passo
         Cronograma.
+        @if (!store.emConsulta()) {
+          <button type="button" class="btn btn--tertiary btn--sm" (click)="irParaCronograma()">
+            Ir para Cronograma
+          </button>
+        }
       </p>
     }
   `,
