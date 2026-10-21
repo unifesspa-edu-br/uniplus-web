@@ -206,7 +206,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await expect(page.getByLabel('Casas decimais', { exact: true })).toBeVisible();
       await expect(page.getByLabel('Ordem de alocação', { exact: true })).toBeVisible();
       // O número de opções de curso é do passo Vagas, não da Fórmula.
-      await expect(page.getByLabel('Número de opções de curso', { exact: true })).toHaveCount(0);
+      await expect(page.getByLabel('Número de opções de curso', { exact: true })).toBeHidden();
     });
   });
 
