@@ -1,10 +1,7 @@
 import { HttpEventType } from '@angular/common/http';
-import {
-  isApiOk,
-  type ApiResult,
-  type ProblemDetails,
-  type SignedUploadClient,
-} from '@uniplus/shared-core/http';
+import { isApiOk, type ApiResult } from './api-result';
+import type { ProblemDetails } from './problem-details';
+import type { SignedUploadClient } from './signed-upload';
 
 /**
  * O envio direto ao storage que o edital e o modelo de documento compartilham: a API registra
@@ -63,7 +60,11 @@ export function enviarAoStorage(
       },
       error: (erro: unknown) => {
         const status = statusDe(erro);
-        resolve({ ok: false, status, expirada: status === STATUS_ASSINATURA_RECUSADA_PELO_STORAGE });
+        resolve({
+          ok: false,
+          status,
+          expirada: status === STATUS_ASSINATURA_RECUSADA_PELO_STORAGE,
+        });
       },
       complete: () => {
         onProgresso(100);

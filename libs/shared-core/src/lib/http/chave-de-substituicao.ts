@@ -1,6 +1,6 @@
 import { HttpContext } from '@angular/common/http';
-import { ApiFailure } from '@uniplus/shared-core/http';
-import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
+import { ApiFailure } from './api-result';
+import { idempotencyKey, withIdempotencyKey } from './idempotency';
 
 const PROCESSING_CONFLICT = 'uniplus.idempotency.processing_conflict';
 const NETWORK_ERROR = 'uniplus.client.network_error';

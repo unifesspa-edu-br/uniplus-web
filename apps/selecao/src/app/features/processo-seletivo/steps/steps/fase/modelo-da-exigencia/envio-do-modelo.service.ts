@@ -1,6 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { SignedUploadClient } from '@uniplus/shared-core/http';
+import {
+  SignedUploadClient,
+  ChaveDeSubstituicao,
+  comChave,
+  type RespostaDoComando,
+  enviarAoStorage,
+  type ResultadoEnvio,
+} from '@uniplus/shared-core/http';
 import {
   ProcessosSeletivosApi,
   type IniciarEnvioDoModeloDeDocumentoDto,
@@ -8,9 +15,6 @@ import {
   type ModeloDeDocumentoDto,
 } from '@uniplus/shared-data/selecao';
 
-import { ChaveDeSubstituicao } from '../../../shared/chave-de-substituicao';
-import { comChave, type RespostaDoComando } from '../../../shared/comando-com-chave';
-import { enviarAoStorage, type ResultadoEnvio } from '../../../shared/envio-pre-assinado';
 
 /**
  * Os três passos do envio do modelo de documento e a conferência do confirmado, escondendo do

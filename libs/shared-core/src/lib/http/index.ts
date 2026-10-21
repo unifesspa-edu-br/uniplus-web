@@ -71,3 +71,14 @@ export {
   withVendorMime,
 } from './vendor-mime';
 export type { VendorMimeDeclaration } from './vendor-mime';
+
+export { ChaveDeSubstituicao, proximaChave } from './chave-de-substituicao';
+export { comChave } from './comando-com-chave';
+export type { RespostaDoComando } from './comando-com-chave';
+export { abrirAcessoEmNovaAba, destinoExpirado, enviarAoStorage } from './envio-pre-assinado';
+export type {
+  DesfechoDaAbertura,
+  DestinoPreAssinado,
+  EnvioFalhou,
+  ResultadoEnvio,
+} from './envio-pre-assinado';

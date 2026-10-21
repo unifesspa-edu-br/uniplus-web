@@ -7,6 +7,10 @@ import {
   SignedUploadClient,
   isApiOk,
   STATUS_HTTP,
+  ChaveDeSubstituicao,
+  proximaChave,
+  enviarAoStorage,
+  type ResultadoEnvio,
 } from '@uniplus/shared-core/http';
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import {
@@ -41,8 +45,6 @@ import {
   type FormularioParaGravar,
   type PassoDaGravacao,
 } from '../steps/formulario/formulario-do-processo';
-import { ChaveDeSubstituicao, proximaChave } from './chave-de-substituicao';
-import { enviarAoStorage, type ResultadoEnvio } from './envio-pre-assinado';
 import { TIPO_DE_MIDIA_DO_EDITAL } from './hidratacao';
 
 /** Recusa nomeada por `ProblemDetails`, para o chamador exibir e decidir o retry. */

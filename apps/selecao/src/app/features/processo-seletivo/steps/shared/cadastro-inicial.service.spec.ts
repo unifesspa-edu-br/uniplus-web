@@ -6,7 +6,7 @@ import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { CadastroInicialService } from './cadastro-inicial.service';
-import { ChaveDeSubstituicao } from './chave-de-substituicao';
+import { ChaveDeSubstituicao } from '@uniplus/shared-core/http';
 
 /**
  * A `Idempotency-Key` que ficou para trás é invisível: o comando do processo
