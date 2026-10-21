@@ -948,9 +948,10 @@ export class FormularioDoCandidatoComponent {
     this.pendenciaMostrada.update((atual) => new Set([...atual, chave]));
     const aparece = (): boolean =>
       this.passos().some((p) => p.chave === chave && contemOCampo(p, primeira.campo));
-    for (const passo of this.passos()) {
-      if (aparece()) break;
-      this.concluir([passo]);
+    // Relidos a cada volta: concluir uma seção pode revelar outra, que também precisa ser concluída.
+    while (!aparece()) {
+      const proxima = this.passos().find((p) => !this.concluido(p));
+      if (!proxima || !this.concluir([proxima])) break;
     }
     // O campo revelado só existe na tela depois da renderização.
     this.irAoPasso(chave, () => this.controleDe(primeira.campo, primeira.naConfirmacao), true);
