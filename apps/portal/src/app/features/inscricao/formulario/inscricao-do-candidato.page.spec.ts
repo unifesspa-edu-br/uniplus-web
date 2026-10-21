@@ -466,6 +466,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('a seção de documentos sem exigência nesta fase diz que nada se envia nesta etapa', async () => {
     servico.formulario = COM_DOCUMENTOS;
+    servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
 
     expect((await irAosDocumentos(tela)).textContent).toContain(
@@ -480,6 +481,7 @@ describe('InscricaoDoCandidatoPage', () => {
   it('a seção de documentos lista o que a avaliação pede no formulário da inscrição', async () => {
     servico.formulario = COM_DOCUMENTOS;
     servico.inscricao = inscricao({
+      ...RESPONDIDA,
       avaliacao: {
         ...SEM_DERIVACAO,
         documentos: {
@@ -529,7 +531,10 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('mostra as modalidades que vieram com a inscrição, sem consultar a API ao abrir', async () => {
     servico.formulario = COM_MODALIDADES;
-    servico.inscricao = inscricao({ avaliacao: concorrendoEm('Ampla concorrência') });
+    servico.inscricao = inscricao({
+      ...RESPONDIDA,
+      avaliacao: concorrendoEm('Ampla concorrência'),
+    });
     const tela = await abrir();
     await irAsModalidades(tela);
 
@@ -680,7 +685,10 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('a avaliação que volta do rascunho salvo passa a ser a mostrada', async () => {
     servico.formulario = COM_MODALIDADES;
-    servico.inscricao = inscricao({ avaliacao: concorrendoEm('Ampla concorrência') });
+    servico.inscricao = inscricao({
+      ...RESPONDIDA,
+      avaliacao: concorrendoEm('Ampla concorrência'),
+    });
     const tela = await abrir();
     servico.inscricao = inscricao({ avaliacao: concorrendoEm('Ampla concorrência', 'Cotas') });
 
@@ -726,8 +734,29 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(eTags).toEqual(['"inscricao-1:2"']);
   });
 
+  it('com pendência o envio fica sinalizado por aria-disabled, com o motivo, e não envia', async () => {
+    const tela = await abrir();
+
+    const enviar = botao(tela, 'Enviar inscrição');
+    expect(enviar.getAttribute('aria-disabled')).toBe('true');
+    const motivo = tela.querySelector('#inscricao-motivo-envio');
+    expect(motivo?.textContent).toMatch(/^Falt(a|am) \d+ respostas? obrigatórias?/);
+    expect(enviar.getAttribute('aria-describedby')).toBe('inscricao-motivo-envio');
+
+    await clicar(enviar);
+    expect(servico.enviados).toEqual([]);
+  });
+
+  it('com o formulário válido o envio não traz aria-disabled nem motivo', async () => {
+    servico.inscricao = inscricao(RESPONDIDA);
+    const tela = await abrir();
+
+    expect(botao(tela, 'Enviar inscrição').getAttribute('aria-disabled')).toBeNull();
+    expect(tela.querySelector('#inscricao-motivo-envio')).toBeNull();
+  });
+
   it('a inscrição enviada não oferece rascunho: o aviso diz que corrigir é enviar de novo', async () => {
-    servico.inscricao = inscricao({ situacao: SituacaoInscricao.submetida });
+    servico.inscricao = inscricao({ ...RESPONDIDA, situacao: SituacaoInscricao.submetida });
     const tela = await abrir();
 
     expect(botao(tela, 'Salvar rascunho')).toBeUndefined();
@@ -957,7 +986,10 @@ describe('InscricaoDoCandidatoPage', () => {
     // A espera da consulta corre no agendador do RxJS, que usa `setInterval`, e não `setTimeout`.
     vi.useRealTimers();
     servico.formulario = COM_MODALIDADES;
-    servico.inscricao = inscricao({ avaliacao: concorrendoEm('Ampla concorrência') });
+    servico.inscricao = inscricao({
+      ...RESPONDIDA,
+      avaliacao: concorrendoEm('Ampla concorrência'),
+    });
     servico.avaliar = () => ok(concorrendoEm('Cotas da tela'));
     const tela = await abrir();
     const nome = campoDe(tela, 'NOME');
@@ -1436,6 +1468,7 @@ describe('InscricaoDoCandidatoPage', () => {
     it('a revisão mostra as duas opções, e a 2ª como não declarada quando fica vazia', async () => {
       dosDoisCursos();
       servico.inscricao = inscricao({
+        ...RESPONDIDA,
         ofertaCursoId: DIREITO.id,
         ofertaCursoSegundaOpcaoId: ENGENHARIA.id,
       });
@@ -1447,7 +1480,7 @@ describe('InscricaoDoCandidatoPage', () => {
       expect(revisao).toContain('2ª opção');
       expect(revisao).toContain(ENGENHARIA.nome);
 
-      servico.inscricao = inscricao({ ofertaCursoId: DIREITO.id });
+      servico.inscricao = inscricao({ ...RESPONDIDA, ofertaCursoId: DIREITO.id });
       tela = await abrir();
       await irAoPasso(tela, 'Revisão e aceite');
       revisao = tela.querySelector('ui-formulario-do-candidato')?.textContent ?? '';
@@ -1466,7 +1499,7 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('a revisão mostra o curso escolhido e volta ao passo Curso', async () => {
     servico.ofertas = [MEDICINA, DIREITO];
-    servico.inscricao = inscricao({ ofertaCursoId: DIREITO.id });
+    servico.inscricao = inscricao({ ...RESPONDIDA, ofertaCursoId: DIREITO.id });
     const tela = await abrir();
     await clicar(passos(tela)[passos(tela).length - 1]);
 

@@ -1361,6 +1361,64 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(botao(tela, 'Seção anterior')).toBeDefined();
   });
 
+  describe('com a seção válida exigida para avançar', () => {
+    const emailPreenchido = (tela: HTMLElement): void =>
+      digitar(
+        tela.querySelector('input[type="text"], input:not([type])') as HTMLInputElement,
+        'a@b.br',
+      );
+
+    it('não avança com pergunta obrigatória pendente: fica na seção, com o foco na pergunta', () => {
+      const tela = montar(DUAS_SECOES, { exigirSecaoValida: true });
+
+      clicar(botao(tela, 'Próxima seção'));
+
+      expect(botao(tela, '1').getAttribute('aria-current')).toBe('step');
+      expect(document.activeElement?.tagName).toBe('INPUT');
+      expect(tela.textContent).toContain('Há 1 item a corrigir na seção Contato.');
+    });
+
+    it('avança quando a seção está respondida', () => {
+      const tela = montar(DUAS_SECOES, { exigirSecaoValida: true });
+      emailPreenchido(tela);
+
+      clicar(botao(tela, 'Próxima seção'));
+
+      expect(botao(tela, '2').getAttribute('aria-current')).toBe('step');
+    });
+
+    it('o indicador de passos não pula uma seção pendente, mas volta sempre', () => {
+      const tela = montar(DUAS_SECOES, { exigirSecaoValida: true });
+
+      clicar(botao(tela, '2'));
+      expect(botao(tela, '1').getAttribute('aria-current')).toBe('step');
+
+      emailPreenchido(tela);
+      clicar(botao(tela, '2'));
+      expect(botao(tela, '2').getAttribute('aria-current')).toBe('step');
+
+      clicar(botao(tela, 'Seção anterior'));
+      expect(botao(tela, '1').getAttribute('aria-current')).toBe('step');
+    });
+
+    it('sem a exigência — a simulação do administrador — avança com pendência', () => {
+      const tela = montar(DUAS_SECOES);
+
+      clicar(botao(tela, 'Próxima seção'));
+
+      expect(botao(tela, '2').getAttribute('aria-current')).toBe('step');
+    });
+
+    it('lista as pendências por seção sem dar nenhuma como concluída', () => {
+      montar(DUAS_SECOES);
+
+      expect(fixture.componentInstance.pendenciasPorSecao()).toEqual([
+        { titulo: 'Contato', quantidade: 1 },
+        { titulo: 'Nome', quantidade: 1 },
+      ]);
+    });
+  });
+
   it('concluir todas leva à seção da primeira pendência, põe o foco nela e anuncia quantas são', () => {
     const tela = montar(DUAS_SECOES);
     digitar(tela.querySelector('input') as HTMLInputElement, 'fernanda_laura_drumond@lhp.com.br');
