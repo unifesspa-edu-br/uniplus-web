@@ -20,7 +20,7 @@ import {
   CONSEQUENCIA_REENVIO,
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
   STATUS_BASE_LEGAL_RESOLVIDO,
-} from '@uniplus/shared-ui/components';
+} from '@uniplus/shared-utils';
 import { nomeDaFinalidade } from '../steps/formulario/formularios-por-finalidade';
 
 /**

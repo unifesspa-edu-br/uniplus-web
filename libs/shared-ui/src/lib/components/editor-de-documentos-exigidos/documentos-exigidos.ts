@@ -1,49 +1,9 @@
 import type { PredicadoNoWire } from '../editor-de-formulario/formulario-editavel';
-
-/** Alcance da norma que sustenta a exigência, como a tela o nomeia. */
-export const ABRANGENCIA_PADRAO = 'INTERNA_EDITAL';
-export const STATUS_BASE_LEGAL_RESOLVIDO = 'RESOLVIDO';
-
-export const ABRANGENCIAS_ESCOLHIVEIS = [
-  { valor: 'FEDERAL', rotulo: 'Lei federal' },
-  { valor: 'ESTADUAL', rotulo: 'Lei estadual' },
-  { valor: 'MUNICIPAL', rotulo: 'Lei municipal' },
-  { valor: 'INTERNA_NORMA', rotulo: 'Norma interna da universidade' },
-  { valor: ABRANGENCIA_PADRAO, rotulo: 'O próprio edital' },
-] as const;
-
-/** Se a norma já foi identificada ou se a identificação segue pendente. */
-export const STATUS_BASE_LEGAL_ESCOLHIVEIS = [
-  { valor: STATUS_BASE_LEGAL_RESOLVIDO, rotulo: 'Resolvida' },
-  { valor: 'PENDENTE', rotulo: 'Pendente' },
-] as const;
-
-/**
- * A consequência que só vale em fase que admite complementação — o servidor a recusa nas
- * demais.
- */
-export const CONSEQUENCIA_REENVIO = 'PENDENCIA_REENVIO';
-
-/** O que acontece com o candidato que não apresenta o documento. */
-export const CONSEQUENCIAS_ESCOLHIVEIS = [
-  { valor: 'ELIMINA', rotulo: 'Elimina do processo' },
-  { valor: 'RECLASSIFICA_AC', rotulo: 'Reclassifica para ampla concorrência' },
-  { valor: 'REMOVE_VANTAGEM', rotulo: 'Remove a vantagem pleiteada' },
-  { valor: CONSEQUENCIA_REENVIO, rotulo: 'Abre pendência para reenvio' },
-] as const;
-
-/**
- * As consequências que a fase admite: o reenvio só vale em fase que admite complementação, e
- * oferecê-lo nas demais levaria a uma recusa na gravação que o operador não saberia ligar ao que fez.
- */
-export function consequenciasDaFase<T extends { readonly valor: string }>(
-  consequencias: readonly T[],
-  admiteComplementacao: boolean,
-): readonly T[] {
-  return admiteComplementacao
-    ? consequencias
-    : consequencias.filter((consequencia) => consequencia.valor !== CONSEQUENCIA_REENVIO);
-}
+import {
+  ABRANGENCIA_PADRAO,
+  CONSEQUENCIAS_ESCOLHIVEIS,
+  STATUS_BASE_LEGAL_RESOLVIDO,
+} from '@uniplus/shared-utils';
 
 export interface BaseLegalDoDocumento {
   readonly referencia: string;

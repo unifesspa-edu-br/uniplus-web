@@ -26,8 +26,10 @@ import {
   CONSEQUENCIAS_ESCOLHIVEIS,
   CONSEQUENCIA_REENVIO,
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
-  baseLegalNova,
   consequenciasDaFase,
+} from '@uniplus/shared-utils';
+import {
+  baseLegalNova,
   documentoExigidoNovo,
   type BaseLegalDoDocumento,
   type DocumentoExigidoDoFormulario,
@@ -310,12 +312,11 @@ export class DocumentoExigidoComponent {
   protected readonly tiposComOGravado = computed(() =>
     comOGravado(this.tipos(), this.documento().tipoDocumentoCodigo),
   );
-  /** O reenvio só vale em fase que admite complementação: o servidor o recusa nas demais. */
+  /** O reenvio só vale em fase resolvida que admite complementação: o servidor o recusa nas demais. */
   protected readonly consequencias = computed(() => {
     const gravada = this.documento().consequenciaIndeferimento;
     const fase = this.fases().find((opcao) => opcao.codigo === this.documento().faseCodigo);
-    const aceitaReenvio = fase?.permiteComplementacao !== false || gravada === CONSEQUENCIA_REENVIO;
-    const oferecidas = consequenciasDaFase(CONSEQUENCIAS_ESCOLHIVEIS, aceitaReenvio);
+    const oferecidas = consequenciasDaFase(CONSEQUENCIAS_ESCOLHIVEIS, fase?.permiteComplementacao);
     return oferecidas.some((consequencia) => consequencia.valor === gravada)
       ? oferecidas
       : [{ valor: gravada, rotulo: gravada }, ...oferecidas];
@@ -342,7 +343,7 @@ export class DocumentoExigidoComponent {
   protected trocarFase(faseCodigo: string): void {
     const fase = this.fases().find((opcao) => opcao.codigo === faseCodigo);
     const perdeOReenvio =
-      fase?.permiteComplementacao === false &&
+      fase?.permiteComplementacao !== true &&
       this.documento().consequenciaIndeferimento === CONSEQUENCIA_REENVIO;
     this.trocar(
       perdeOReenvio

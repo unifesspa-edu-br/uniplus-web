@@ -66,11 +66,11 @@ import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   ComboboxComponent,
   EditorDeCondicoesComponent,
-  consequenciasDaFase,
   type UiComboboxGroup,
   ValorEmConsultaComponent,
   ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
+import { consequenciasDaFase } from '@uniplus/shared-utils';
 import { Subscription } from 'rxjs';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
