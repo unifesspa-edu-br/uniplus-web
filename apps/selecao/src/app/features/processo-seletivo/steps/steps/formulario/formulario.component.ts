@@ -517,6 +517,7 @@ export class FormularioStepComponent {
           formulario.finalidade,
           finalidadesDaFase.get(fase.escolhida) ?? [],
           vocabulario,
+          this.fasesDoCronograma().map((faseDoCronograma) => faseDoCronograma.codigo),
         ),
         semFaseParaDocumentos: fase.escolhida === '',
       };

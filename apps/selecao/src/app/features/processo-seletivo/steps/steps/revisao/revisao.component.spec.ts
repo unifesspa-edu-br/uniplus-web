@@ -314,6 +314,43 @@ describe('RevisaoStepComponent', () => {
       expect(texto).toContain('Base legal resolvida');
     });
 
+    it('materializa na fase acrescentada depois o documento exigido em todas as fases', async () => {
+      store.patchSection('cronograma', {
+        ...store.draft().cronograma,
+        fases: [FASE('INSCRICAO'), FASE('NOVA')],
+      });
+      store.patchSection('documentos', {
+        ...comExigencia({ raizes: [], emTodasAsFases: [] }, documento(true, true)),
+        emTodasAsFases: ['01960000-0000-7000-0000-0000000000d1'],
+      });
+
+      expect(await abrirRevisao()).toContain('Fase NOVA: 1 obrigatório');
+    });
+
+    it('não diz que a fase dispensa base legal quando o grupo decisivo tem norma resolvida', async () => {
+      store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
+      const facultativo = (tipo: string) =>
+        folhaDe({ ...documento(false, true), tipoDocumentoId: tipo });
+      store.patchSection('documentos', {
+        emTodasAsFases: [],
+        raizes: [
+          {
+            ...folhaDe(documento(false, true)),
+            tipo: 'OU',
+            documento: null,
+            consequencia: 'INDEFERIMENTO',
+            basesLegais: [baseLegalNova()].map((base) => ({ ...base, referencia: 'Edital' })),
+            filhos: [facultativo('a'), facultativo('b')],
+          },
+        ],
+      });
+
+      const texto = await abrirRevisao();
+
+      expect(texto).toContain('Base legal resolvida');
+      expect(texto).not.toContain('Sem exigência de base legal');
+    });
+
     it('acusa a fase cujo grupo de alternativas decide o resultado sem norma resolvida', async () => {
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
       const facultativo = (tipo: string) =>
