@@ -39,6 +39,7 @@ describe('Envio do arquivo de um documento exigido', () => {
     envio = {
       arquivos,
       mudancas: signal(0),
+      ocupado: signal(false),
       enviar: vi.fn().mockImplementation(async () => {
         arquivos.update((lista) => [...lista, CONFIRMADO]);
         return { ok: true, arquivo: CONFIRMADO };

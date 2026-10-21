@@ -299,6 +299,7 @@ describe('Bloco de documentos da inscrição', () => {
     const ENVIO: EnvioDeDocumentos = {
       arquivos: signal([]),
       mudancas: signal(0),
+      ocupado: signal(false),
       enviar: vi.fn(),
       remover: vi.fn(),
     };

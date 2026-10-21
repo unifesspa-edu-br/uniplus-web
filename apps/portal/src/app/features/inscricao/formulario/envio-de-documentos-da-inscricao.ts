@@ -1,4 +1,4 @@
-import { Injectable, type Signal, inject, signal } from '@angular/core';
+import { Injectable, type Signal, computed, inject, signal } from '@angular/core';
 import {
   ChaveDeSubstituicao,
   type DestinoPreAssinado,
@@ -68,6 +68,8 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
   private readonly confirmados = signal<readonly ArquivoEnviado[]>([]);
   readonly arquivos: Signal<readonly ArquivoEnviado[]> = this.confirmados.asReadonly();
   private readonly contagemDeMudancas = signal(0);
+  private readonly emAndamento = signal(0);
+  readonly ocupado: Signal<boolean> = computed(() => this.emAndamento() > 0);
   /** As chamadas à API saem uma de cada vez: cada uma avança a revisão da inscrição e disputaria com a outra. */
   private fila: Promise<unknown> = Promise.resolve();
   readonly mudancas: Signal<number> = this.contagemDeMudancas.asReadonly();
@@ -82,7 +84,28 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     private readonly explicar: (problema: ProblemDetails) => string,
   ) {}
 
-  async enviar(
+  enviar(
+    alvo: AlvoDoEnvio,
+    arquivo: File,
+    aoAndar: Parameters<EnvioDeDocumentos['enviar']>[2],
+  ): Promise<DesfechoDoEnvio> {
+    return this.contando(() => this.enviarArquivo(alvo, arquivo, aoAndar));
+  }
+
+  remover(arquivoId: string): Promise<DesfechoDaRemocao> {
+    return this.contando(() => this.removerArquivo(arquivoId));
+  }
+
+  private async contando<T>(operacao: () => Promise<T>): Promise<T> {
+    this.emAndamento.update((n) => n + 1);
+    try {
+      return await operacao();
+    } finally {
+      this.emAndamento.update((n) => n - 1);
+    }
+  }
+
+  private async enviarArquivo(
     alvo: AlvoDoEnvio,
     arquivo: File,
     aoAndar: Parameters<EnvioDeDocumentos['enviar']>[2],
@@ -162,7 +185,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     return { ok: true, arquivo: confirmado };
   }
 
-  async remover(arquivoId: string): Promise<DesfechoDaRemocao> {
+  private async removerArquivo(arquivoId: string): Promise<DesfechoDaRemocao> {
     // A chave acompanha o arquivo: repetir depois de uma resposta perdida recebe o replay, e não um 404.
     const chave = this.chavesDaRemocao.get(arquivoId) ?? new ChaveDeSubstituicao();
     this.chavesDaRemocao.set(arquivoId, chave);

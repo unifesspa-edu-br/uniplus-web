@@ -186,6 +186,7 @@ class ServicoDublê extends InscricaoDoCandidatoService {
 describe('InscricaoDoCandidatoPage', () => {
   const arquivosDoEnvio = signal<readonly ArquivoEnviado[]>([]);
   const mudancasDoEnvio = signal(0);
+  const ocupadoDoEnvio = signal(false);
 
   let fixture: ComponentFixture<InscricaoDoCandidatoPage>;
   let servico: ServicoDublê;
@@ -199,6 +200,7 @@ describe('InscricaoDoCandidatoPage', () => {
     agora = new Date('2026-12-11T13:30:00Z');
     arquivosDoEnvio.set([]);
     mudancasDoEnvio.set(0);
+    ocupadoDoEnvio.set(false);
     servico = new ServicoDublê();
     conta.set({ cpf: CPF_DA_CONTA });
     TestBed.configureTestingModule({
@@ -214,6 +216,7 @@ describe('InscricaoDoCandidatoPage', () => {
             paraOProcesso: () => ({
               arquivos: arquivosDoEnvio,
               mudancas: mudancasDoEnvio,
+              ocupado: ocupadoDoEnvio,
               enviar: vi.fn(),
               remover: vi.fn(),
             }),
@@ -590,6 +593,16 @@ describe('InscricaoDoCandidatoPage', () => {
     fixture.detectChanges();
 
     expect(tela.textContent).toContain('Recarregue a página para continuar');
+    expect(botao(tela, 'Salvar rascunho')?.disabled).toBe(true);
+  });
+
+  it('com envio de documento em andamento, não deixa gravar com a revisão velha', async () => {
+    servico.formulario = COM_MODALIDADES;
+    const tela = await abrir();
+
+    ocupadoDoEnvio.set(true);
+    fixture.detectChanges();
+
     expect(botao(tela, 'Salvar rascunho')?.disabled).toBe(true);
   });
 
