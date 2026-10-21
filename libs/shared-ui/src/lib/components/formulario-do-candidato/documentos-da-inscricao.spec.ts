@@ -5,6 +5,7 @@ import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { BUSCA_DE_CEP } from '../endereco-geo/endereco-geo.model';
 
 import type { DocumentoAvaliado, DocumentosAvaliados } from './documentos-avaliados';
+import type { EnvioDeDocumentos } from './envio-de-documentos';
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
 import type { AvaliacaoNaTela } from './modalidades-avaliadas';
@@ -103,7 +104,10 @@ describe('Bloco de documentos da inscrição', () => {
     });
   });
 
-  const montar = (avaliacao: AvaliacaoNaTela | null): HTMLElement => {
+  const montar = (
+    avaliacao: AvaliacaoNaTela | null,
+    envioDeDocumentos: EnvioDeDocumentos | null = null,
+  ): HTMLElement => {
     fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
     fixture.componentRef.setInput('formulario', FORMULARIO);
     fixture.componentRef.setInput('semDocumentos', SEM_DOCUMENTOS);
@@ -117,6 +121,7 @@ describe('Bloco de documentos da inscrição', () => {
       },
     ]);
     fixture.componentRef.setInput('avaliacao', avaliacao);
+    fixture.componentRef.setInput('envioDeDocumentos', envioDeDocumentos);
     fixture.detectChanges();
     const tela = fixture.nativeElement as HTMLElement;
     const passo = [...tela.querySelectorAll<HTMLButtonElement>('ui-steps .ui-steps__botao')].find(
@@ -281,5 +286,42 @@ describe('Bloco de documentos da inscrição', () => {
       'Passou a ser exigido: Laudo médico. Deixou de ser exigido: Histórico.',
     );
     expect(document.activeElement).toBe(foco);
+  });
+
+  describe('envio do arquivo exigido', () => {
+    const ENVIO: EnvioDeDocumentos = { enviar: vi.fn(), remover: vi.fn() };
+
+    it('oferece o envio só para o que as respostas já exigem', () => {
+      const tela = montar(
+        naTela(
+          nestaFase(
+            documento('Laudo médico'),
+            documento('Histórico', { situacao: 'PODE_SER_EXIGIDO' }),
+          ),
+        ),
+        ENVIO,
+      );
+
+      const campos = [...bloco(tela).querySelectorAll('ui-envio-do-documento label')];
+      expect(campos.map((c) => c.textContent?.trim())).toEqual(['Enviar Laudo médico']);
+    });
+
+    it('enquanto não se sabe a quais integrantes o documento se liga, não oferece envio', () => {
+      const tela = montar(
+        naTela(
+          nestaFase(documento('Laudo médico', { grupoCodigo: 'MEMBROS', repetePorEntidade: 'MEMBROS' })),
+        ),
+        ENVIO,
+      );
+
+      expect(bloco(tela).querySelector('h4')).not.toBeNull();
+      expect(bloco(tela).querySelector('ui-envio-do-documento')).toBeNull();
+    });
+
+    it('na simulação do administrador, que não envia, o bloco continua só a lista', () => {
+      const tela = montar(naTela(nestaFase(documento('Laudo médico'))));
+
+      expect(bloco(tela).querySelector('ui-envio-do-documento')).toBeNull();
+    });
   });
 });

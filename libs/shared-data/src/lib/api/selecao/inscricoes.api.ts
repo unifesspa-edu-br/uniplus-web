@@ -4,10 +4,13 @@ import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import type {
+  ArquivoDaApresentacaoDto,
   AvaliacaoDaInscricaoDto,
   AvaliacaoDaInscricaoRequest,
   CancelamentoDaInscricaoRequest,
   ComprovanteInscricaoDto,
+  IniciarEnvioDeDocumentoDaInscricaoDto,
+  IniciarEnvioDeDocumentoDaInscricaoRequest,
   InscricaoDto,
   InscricaoRequest,
   MinhaInscricaoDto,
@@ -146,6 +149,50 @@ export class InscricoesApi {
     return this.http.get<ApiResult<readonly MinhaInscricaoDto[]>>(
       `${this.basePath}/api/selecao/minhas-inscricoes`,
       { context: withVendorMime('minhas-inscricoes', 1) },
+    );
+  }
+
+  /**
+   * POST `…/inscricao/documentos/envios` — passo 1 do envio de um documento exigido: confere a
+   * exigência e devolve a URL pré-assinada de PUT. A Idempotency-Key vem do `context` de quem chama.
+   */
+  iniciarEnvioDeDocumento(
+    processoSeletivoId: string,
+    request: IniciarEnvioDeDocumentoDaInscricaoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<IniciarEnvioDeDocumentoDaInscricaoDto>> {
+    return this.http.post<ApiResult<IniciarEnvioDeDocumentoDaInscricaoDto>>(
+      `${this.url(processoSeletivoId)}/documentos/envios`,
+      request,
+      { context },
+    );
+  }
+
+  /**
+   * POST `…/inscricao/documentos/envios/{arquivoId}/confirmacao` — passo 3: a API lê o arquivo do
+   * armazenamento, confere o conteúdo, passa o antivírus e o sela.
+   */
+  confirmarEnvioDeDocumento(
+    processoSeletivoId: string,
+    arquivoId: string,
+    context: HttpContext,
+  ): Observable<ApiResult<ArquivoDaApresentacaoDto>> {
+    return this.http.post<ApiResult<ArquivoDaApresentacaoDto>>(
+      `${this.url(processoSeletivoId)}/documentos/envios/${encodeURIComponent(arquivoId)}/confirmacao`,
+      null,
+      { context },
+    );
+  }
+
+  /** DELETE `…/inscricao/documentos/arquivos/{arquivoId}` — remove o arquivo do rascunho. */
+  removerArquivoDeDocumento(
+    processoSeletivoId: string,
+    arquivoId: string,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.delete<ApiResult<void>>(
+      `${this.url(processoSeletivoId)}/documentos/arquivos/${encodeURIComponent(arquivoId)}`,
+      { context },
     );
   }
 

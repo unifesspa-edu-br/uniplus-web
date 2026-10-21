@@ -187,3 +187,13 @@ export {
   type StepsVariant,
 } from '../../src/lib/components/steps/steps.component';
 export { StepsResponsivoComponent } from '../../src/lib/components/steps-responsivo/steps-responsivo.component';
+export {
+  regrasDoArquivo,
+  tipoDeMidiaDoArquivo,
+  type AlvoDoEnvio,
+  type ArquivoEnviado,
+  type DesfechoDaRemocao,
+  type DesfechoDoEnvio,
+  type EnvioDeDocumentos,
+  type SituacaoDaExigencia,
+} from '../../src/lib/components/formulario-do-candidato/envio-de-documentos';

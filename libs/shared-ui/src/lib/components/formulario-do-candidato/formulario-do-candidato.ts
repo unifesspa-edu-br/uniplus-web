@@ -49,6 +49,11 @@ import {
   type NoDeDocumentos,
 } from './documentos-avaliados';
 import { DocumentosDaInscricaoComponent } from './documentos-da-inscricao';
+import type {
+  ArquivoEnviado,
+  EnvioDeDocumentos,
+  SituacaoDaExigencia,
+} from './envio-de-documentos';
 import { FatorDeAtenuacaoDaInscricaoComponent } from './fator-de-atenuacao-da-inscricao';
 import { resumoDoFator } from './fator-de-atenuacao';
 import { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
@@ -181,6 +186,12 @@ import type {
                             [arvore]="documentosDaAvaliacao()?.arvore ?? null"
                             [pendencias]="documentosDaAvaliacao()?.pendencias ?? []"
                             [semDocumentos]="semDocumentos()"
+                            [envioDeDocumentos]="envioDeDocumentos()"
+                            [arquivosEnviados]="arquivosEnviados()"
+                            [situacoes]="situacoesDosDocumentos()"
+                            [podeAlterar]="podeAlterarDocumentos()"
+                            (arquivoEnviado)="arquivoEnviado.emit($event)"
+                            (arquivoRemovido)="arquivoRemovido.emit($event)"
                             (irAoCampo)="irAoCampo($event)"
                             (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
                           />
@@ -362,6 +373,17 @@ export class FormularioDoCandidatoComponent {
   readonly documentos = input<readonly DocumentoExigido[] | null>(null);
   /** O que o bloco de comprovação documental diz quando a lista é vazia. */
   readonly semDocumentos = input('Nenhum documento é exigido nesta fase.');
+  /**
+   * Como o candidato envia os arquivos dos documentos exigidos; nulo, o bloco só lista, como na
+   * simulação do administrador.
+   */
+  readonly envioDeDocumentos = input<EnvioDeDocumentos | null>(null);
+  /** Os arquivos que a API já registrou para as exigências, pela chave `exigenciaId:ocorrenciaId`. */
+  readonly arquivosEnviados = input<readonly ArquivoEnviado[]>([]);
+  /** A situação de cada exigência, pela mesma chave, como a avaliação da API a devolve. */
+  readonly situacoesDosDocumentos = input<Readonly<Partial<Record<string, SituacaoDaExigencia>>>>({});
+  /** Enviar e remover arquivo só valem enquanto a inscrição é rascunho. */
+  readonly podeAlterarDocumentos = input(true);
   readonly idBase = input<string>('formulario-candidato');
   /** Os termos já aceitos, pelo código, como os de uma inscrição retomada; recomeçam com a partida. */
   readonly termosAceitosIniciais = input<readonly string[]>([]);
@@ -408,6 +430,9 @@ export class FormularioDoCandidatoComponent {
   readonly simulacaoChange = output<SimulacaoDoFormulario>();
   /** Os termos aceitos, pelo código, a cada mudança. */
   readonly termosAceitosChange = output<readonly string[]>();
+  /** Um arquivo de documento foi confirmado ou removido: quem hospeda reavalia as exigências. */
+  readonly arquivoEnviado = output<ArquivoEnviado>();
+  readonly arquivoRemovido = output<string>();
   /** O candidato pediu para calcular de novo a avaliação depois de uma falha. */
   readonly tentarAvaliarDeNovo = output<void>();
 

@@ -63,6 +63,8 @@
   [concluirNaUltimaSecao]="false"
   [envio]="envio()"
   [avaliacao]="avaliacaoNaTela()"
+  [envioDeDocumentos]="envioDeDocumentos()"
+  [podeAlterarDocumentos]="!enviada()"
   (simulacaoChange)="responder($event)"
   (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
 >
