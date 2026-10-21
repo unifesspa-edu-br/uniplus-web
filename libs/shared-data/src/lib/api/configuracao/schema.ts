@@ -11150,6 +11150,12 @@ export interface components {
             readonly nome: string;
             readonly uf: string;
         };
+        readonly BaseLegalDoModeloInput: {
+            readonly referencia: string;
+            readonly abrangencia: string;
+            readonly status: string;
+            readonly observacao: null | string;
+        };
         readonly CalendarioDiasUteisDto: {
             /** Format: uuid */
             readonly id: string;
@@ -11280,6 +11286,7 @@ export interface components {
             readonly termos: null | readonly components["schemas"]["TermoExigidoInput"][];
             readonly pressupostos: null | readonly string[];
             readonly grupos?: null | readonly components["schemas"]["GrupoColetadoInput"][];
+            readonly documentosExigidos?: null | readonly components["schemas"]["DocumentoExigidoDoModeloInput"][];
         };
         readonly CriarBaseLegalBonusRegionalCommand: {
             readonly tipoInstrumento: null | string;
@@ -11548,6 +11555,14 @@ export interface components {
             /** Format: date */
             readonly data: string;
             readonly descricao: string;
+        };
+        readonly DocumentoExigidoDoModeloInput: {
+            readonly faseCodigo: string;
+            readonly tipoDocumentoCodigo: string;
+            readonly obrigatorio: boolean;
+            readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
+            readonly consequenciaIndeferimento: string;
+            readonly basesLegais: null | readonly components["schemas"]["BaseLegalDoModeloInput"][];
         };
         readonly EdicaoDoModeloInput: {
             readonly nome: string;
