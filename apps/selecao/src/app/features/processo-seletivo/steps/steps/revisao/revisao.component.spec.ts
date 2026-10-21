@@ -23,6 +23,7 @@ import { AtoNormativoDto, AtosApi, TiposAtoApi } from '@uniplus/shared-data/publ
 import { FaseDoCronograma, FaseUpload, UploadItem, WizardDraft } from '../../processo-seletivo.models';
 import { PASSOS } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { baseLegalNova, comExigencia, exigenciaNova } from '../../shared/exigencias-documentais';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { nomeDoPasso } from './publicacao-para-comando';
@@ -216,7 +217,8 @@ describe('RevisaoStepComponent', () => {
         { provide: AtosApi, useValue: atosApi },
         // Stub minimalista: só o que RevisaoStepComponent lê do catálogo de
         // fases — evita puxar as sete APIs que o serviço real injeta.
-        { provide: CatalogosDoCronogramaService, useValue: { fasePorId } },
+        { provide: CatalogosDoCronogramaService, useValue: { fasePorId, nomeDaFase: signal((codigo: string) => `Fase ${codigo}`) },
+        },
       ],
     }).compileComponents();
 
@@ -282,6 +284,45 @@ describe('RevisaoStepComponent', () => {
     expect(store.emConsulta()).toBe(true);
     expect(texto).not.toContain('Anexe e confirme o edital');
     expect(texto).not.toContain('Conclua a identificação');
+  });
+
+  describe('documentos exigidos', () => {
+    const FASE = (codigo: string) => ({ codigo }) as FaseDoCronograma;
+    const documento = (obrigatorio: boolean, comNorma: boolean) => ({
+      ...exigenciaNova('01960000-0000-7000-0000-0000000000d1', 'INSCRICAO'),
+      obrigatorio,
+      basesLegais: [{ ...baseLegalNova(), referencia: comNorma ? 'Lei 12.711/2012' : '' }],
+    });
+
+    async function abrirRevisao(): Promise<string> {
+      await criarProcesso();
+      await flushPreflightVerde();
+      fixture.detectChanges();
+      return (fixture.nativeElement as HTMLElement).textContent ?? '';
+    }
+
+    it('resume os documentos por fase e diz que a base legal está resolvida', async () => {
+      store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
+      store.patchSection(
+        'documentos',
+        comExigencia({ raizes: [], emTodasAsFases: [] }, documento(true, true)),
+      );
+
+      const texto = await abrirRevisao();
+
+      expect(texto).toContain('Fase INSCRICAO: 1 obrigatório, 0 facultativos.');
+      expect(texto).toContain('Base legal resolvida');
+    });
+
+    it('acusa a fase cuja exigência a publicação recusaria por falta de norma', async () => {
+      store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
+      store.patchSection(
+        'documentos',
+        comExigencia({ raizes: [], emTodasAsFases: [] }, documento(true, false)),
+      );
+
+      expect(await abrirRevisao()).toContain('Base legal pendente em 1 documento');
+    });
   });
 
   describe('validate()', () => {
