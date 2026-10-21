@@ -113,6 +113,21 @@ describe('Envio dos documentos da inscrição', () => {
     expect(envioDoProcesso.mudancas()).toBe(3);
   });
 
+  it('resposta inconclusiva também faz a página reler a revisão, porque o servidor pode ter aplicado o comando', async () => {
+    api.iniciarEnvioDeDocumento.mockReturnValueOnce(
+      of(errorResult(mockProblemDetails({ status: 503, title: 'Indisponível' }))),
+    );
+    api.removerArquivoDeDocumento.mockReturnValueOnce(
+      of(errorResult(mockProblemDetails({ status: 503, title: 'Indisponível' }))),
+    );
+    const envioDoProcesso = envio();
+
+    await envioDoProcesso.enviar(ALVO, laudo, andamento);
+    await envioDoProcesso.remover('arquivo-x');
+
+    expect(envioDoProcesso.mudancas()).toBe(2);
+  });
+
   it('guarda o arquivo confirmado e o tira quando é removido', async () => {
     api.removerArquivoDeDocumento.mockReturnValue(of(okResult(undefined)));
     const envioDoProcesso = envio();

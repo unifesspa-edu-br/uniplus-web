@@ -195,13 +195,19 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
       ),
     );
     if (!isApiOk(resultado)) {
-      if (!inconclusiva) this.chavesDaRemocao.delete(arquivoId);
+      if (inconclusiva) this.revisaoTalvezAvancada();
+      else this.chavesDaRemocao.delete(arquivoId);
       return { ok: false, mensagem: this.explicar(resultado.problem) };
     }
     this.chavesDaRemocao.delete(arquivoId);
     this.confirmados.update((lista) => lista.filter((a) => a.arquivoId !== arquivoId));
     this.contagemDeMudancas.update((n) => n + 1);
     return { ok: true };
+  }
+
+  /** Sem resposta conclusiva, o servidor pode ter aplicado o comando: a página relê a revisão para não salvar sobre a antiga. */
+  private revisaoTalvezAvancada(): void {
+    this.contagemDeMudancas.update((n) => n + 1);
   }
 
   private naFila<T>(chamada: () => Promise<T>): Promise<T> {
@@ -230,6 +236,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
    * antivírus fora do ar. Um arquivo recusado pelo conteúdo ou pela exigência precisa ser trocado.
    */
   private recusa(problema: ProblemDetails, inconclusiva: boolean): DesfechoDoEnvio {
+    if (inconclusiva) this.revisaoTalvezAvancada();
     return {
       ok: false,
       mensagem: this.explicar(problema),
