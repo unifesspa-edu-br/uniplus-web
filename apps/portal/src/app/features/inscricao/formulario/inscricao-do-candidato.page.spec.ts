@@ -738,7 +738,7 @@ describe('InscricaoDoCandidatoPage', () => {
     const enviar = botao(tela, 'Enviar inscrição');
     expect(enviar.getAttribute('aria-disabled')).toBe('true');
     const motivo = tela.querySelector('#inscricao-motivo-envio');
-    expect(motivo?.textContent).toMatch(/^Falt(a|am) \d+ respostas? obrigatórias?/);
+    expect(motivo?.textContent).toMatch(/^Falt(a|am) corrigir \d+ itens?/);
     expect(enviar.getAttribute('aria-describedby')).toBe('inscricao-motivo-envio');
 
     await clicar(enviar);
