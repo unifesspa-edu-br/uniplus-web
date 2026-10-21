@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, type Signal, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   ChaveDeSubstituicao,
@@ -15,6 +15,7 @@ import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { InscricoesApi } from '@uniplus/shared-data/selecao';
 import {
   type AlvoDoEnvio,
+  type ArquivoEnviado,
   type DesfechoDaRemocao,
   type DesfechoDoEnvio,
   type EnvioDeDocumentos,
@@ -23,11 +24,16 @@ import {
 
 const FORMATO_NAO_ACEITO = 'O formato do arquivo não é aceito.';
 const FALHA_NO_ARMAZENAMENTO = 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.';
-const ENDERECO_VENCIDO = 'O endereço de envio não é mais válido. Tente novamente para obter um novo.';
+const ENDERECO_VENCIDO =
+  'O endereço de envio não é mais válido. Tente novamente para obter um novo.';
 const STATUS_DE_SERVIDOR = 500;
+/** O PUT falhou sem resposta do armazenamento: rede fora do ar. */
+const SEM_RESPOSTA = 0;
 
 /** Onde um arquivo parou: o que já se sabe dele para a nova tentativa recomeçar do ponto certo. */
 interface Tentativa {
+  /** A exigência para a qual a tentativa nasceu: o mesmo arquivo para outra exigência recomeça. */
+  readonly chaveDoAlvo: string;
   readonly chaveDaIniciacao: ChaveDeSubstituicao;
   readonly chaveDaConfirmacao: ChaveDeSubstituicao;
   destino: (DestinoPreAssinado & { readonly arquivoId: string }) | null;
@@ -59,6 +65,8 @@ export class EnvioDeDocumentosDaInscricao {
 }
 
 class EnvioNoProcesso implements EnvioDeDocumentos {
+  private readonly confirmados = signal<readonly ArquivoEnviado[]>([]);
+  readonly arquivos: Signal<readonly ArquivoEnviado[]> = this.confirmados.asReadonly();
   /** Uma tentativa por arquivo escolhido: repetir o mesmo `File` retoma dela. */
   private readonly tentativas = new WeakMap<File, Tentativa>();
 
@@ -78,7 +86,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     if (tipoDeMidia === null) {
       return { ok: false, mensagem: FORMATO_NAO_ACEITO, podeTentarDeNovo: false };
     }
-    const tentativa = this.tentativaDe(arquivo);
+    const tentativa = this.tentativaDe(arquivo, alvo);
 
     if (!tentativa.enviado) {
       let destino = tentativa.destino;
@@ -113,7 +121,9 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
         return {
           ok: false,
           mensagem: envio.expirada ? ENDERECO_VENCIDO : FALHA_NO_ARMAZENAMENTO,
-          podeTentarDeNovo: true,
+          // O armazenamento que recusa o conteúdo (400, 413) recusará de novo; falha de rede e de servidor passam.
+          podeTentarDeNovo:
+            envio.expirada || envio.status === SEM_RESPOSTA || envio.status >= STATUS_DE_SERVIDOR,
         };
       }
       tentativa.enviado = true;
@@ -130,29 +140,31 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     if (!isApiOk(resultado)) return this.recusa(resultado.problem, inconclusiva);
 
     this.tentativas.delete(arquivo);
-    return {
-      ok: true,
-      arquivo: {
-        arquivoId: resultado.data.arquivoId,
-        chave: alvo.chave,
-        nome: arquivo.name,
-        tipoDeMidia: resultado.data.tipoDeMidia,
-        tamanhoBytes: Number(resultado.data.tamanhoBytes),
-      },
+    const confirmado: ArquivoEnviado = {
+      arquivoId: resultado.data.arquivoId,
+      chave: alvo.chave,
+      nome: arquivo.name,
+      tipoDeMidia: resultado.data.tipoDeMidia,
+      tamanhoBytes: Number(resultado.data.tamanhoBytes),
     };
+    this.confirmados.update((lista) => [...lista, confirmado]);
+    return { ok: true, arquivo: confirmado };
   }
 
   async remover(arquivoId: string): Promise<DesfechoDaRemocao> {
     const resultado = await firstValueFrom(
       this.api.removerArquivoDeDocumento(this.processoId, arquivoId, withIdempotencyKey()),
     );
-    return isApiOk(resultado) ? { ok: true } : { ok: false, mensagem: this.explicar(resultado.problem) };
+    if (!isApiOk(resultado)) return { ok: false, mensagem: this.explicar(resultado.problem) };
+    this.confirmados.update((lista) => lista.filter((a) => a.arquivoId !== arquivoId));
+    return { ok: true };
   }
 
-  private tentativaDe(arquivo: File): Tentativa {
+  private tentativaDe(arquivo: File, alvo: AlvoDoEnvio): Tentativa {
     let tentativa = this.tentativas.get(arquivo);
-    if (tentativa === undefined) {
+    if (tentativa === undefined || tentativa.chaveDoAlvo !== alvo.chave) {
       tentativa = {
+        chaveDoAlvo: alvo.chave,
         chaveDaIniciacao: new ChaveDeSubstituicao(),
         chaveDaConfirmacao: new ChaveDeSubstituicao(),
         destino: null,

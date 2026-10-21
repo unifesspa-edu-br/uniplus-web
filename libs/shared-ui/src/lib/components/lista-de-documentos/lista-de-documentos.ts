@@ -8,6 +8,8 @@ const APLICABILIDADE_CONDICIONAL = 'CONDICIONAL';
 
 /** Um documento que o processo exige, como o certame publicado o descreve. */
 export interface DocumentoExigido {
+  /** Identifica o documento entre duas avaliações; guarda o estado de quem o acompanha na linha. */
+  readonly chave?: string;
   readonly rotulo: string;
   /** `GERAL` ou `CONDICIONAL`, como o certame publica a exigência. */
   readonly aplicabilidade?: string;
@@ -100,7 +102,7 @@ export interface DocumentoExigido {
       <p class="lista-de-documentos__vazia">{{ semDocumentos() }}</p>
     } @else {
       <ul class="lista-de-documentos" role="list">
-        @for (documento of documentos(); track $index) {
+        @for (documento of documentos(); track documento.chave ?? $index) {
           <li class="lista-de-documentos__item">
             <div class="lista-de-documentos__cabeca">
               <h4 class="lista-de-documentos__nome">{{ documento.rotulo }}</h4>

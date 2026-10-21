@@ -94,7 +94,7 @@ let proximoId = 0;
   `,
 })
 export class EnvioDoDocumentoComponent {
-  private readonly destruido = signal(false);
+  private destruido = false;
   protected readonly idDaDica = `envio-do-documento-dica-${++proximoId}`;
 
   /** A exigência a que os arquivos desta lista atendem. */
@@ -105,7 +105,7 @@ export class EnvioDoDocumentoComponent {
   /** Quantas apresentações a exigência pede, no mínimo; acima de 1, a tela diz quantas enviar. */
   readonly quantidadeMinima = input(1, { transform: (v: number | null | undefined) => v ?? 1 });
   readonly envio = input.required<EnvioDeDocumentos>();
-  /** Os arquivos que a API já registrou para esta exigência. */
+  /** Os arquivos que a API já registrou para esta exigência, além dos que o próprio envio confirmou. */
   readonly arquivos = input<readonly ArquivoEnviado[]>([]);
   /** Se a avaliação já disse que a exigência está atendida; nula, nada se afirma. */
   readonly situacao = input<SituacaoDaExigencia | null>(null);
@@ -122,18 +122,21 @@ export class EnvioDoDocumentoComponent {
 
   /** Os arquivos em andamento ou com falha, que a API ainda não registrou. */
   private readonly emAndamento = signal<readonly ArquivoEmEnvio[]>([]);
-  private readonly confirmadosAgora = signal<readonly ArquivoEnviado[]>([]);
-  private readonly removidos = signal<ReadonlySet<string>>(new Set());
+  /** Os arquivos cuja remoção está em curso: um segundo clique não dispara outra. */
+  private readonly removendo = signal<ReadonlySet<string>>(new Set());
   protected readonly falhaAoRemover = signal<string | null>(null);
   /** Os bytes de cada arquivo em andamento, para a nova tentativa; não é estado da tela. */
   private readonly bytes = new Map<string, File>();
   private proximoLocal = 0;
 
   protected readonly itensDaLista = computed<readonly ArquivoEmEnvio[]>(() => {
-    const removidos = this.removidos();
+    const removendo = this.removendo();
     const doServidor = new Map<string, ArquivoEnviado>();
-    for (const arquivo of [...this.arquivos(), ...this.confirmadosAgora()]) {
-      if (!removidos.has(arquivo.arquivoId)) doServidor.set(arquivo.arquivoId, arquivo);
+    const confirmadosPeloEnvio = this.envio()
+      .arquivos()
+      .filter((a) => a.chave === this.alvo().chave);
+    for (const arquivo of [...this.arquivos(), ...confirmadosPeloEnvio]) {
+      doServidor.set(arquivo.arquivoId, arquivo);
     }
     const confirmados = [...doServidor.values()].map(
       (arquivo): ArquivoEmEnvio => ({
@@ -142,14 +145,14 @@ export class EnvioDoDocumentoComponent {
         tamanhoBytes: arquivo.tamanhoBytes,
         fase: 'confirmado',
         progresso: 100,
-        podeRetirar: this.podeAlterar(),
+        podeRetirar: this.podeAlterar() && !removendo.has(arquivo.arquivoId),
       }),
     );
     return [...confirmados, ...this.emAndamento()];
   });
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.destruido.set(true));
+    inject(DestroyRef).onDestroy(() => (this.destruido = true));
   }
 
   protected textoDaSituacao(situacao: SituacaoDaExigencia): string {
@@ -181,13 +184,19 @@ export class EnvioDoDocumentoComponent {
       this.emAndamento.update((lista) => lista.filter((a) => a.id !== id));
       return;
     }
+    if (this.removendo().has(id)) return;
+    this.removendo.update((atual) => new Set(atual).add(id));
     const desfecho = await this.envio().remover(id);
-    if (this.destruido()) return;
+    if (this.destruido) return;
+    this.removendo.update((atual) => {
+      const restantes = new Set(atual);
+      restantes.delete(id);
+      return restantes;
+    });
     if (!desfecho.ok) {
       this.falhaAoRemover.set(desfecho.mensagem || FALHA_AO_REMOVER);
       return;
     }
-    this.removidos.update((atual) => new Set(atual).add(id));
     this.arquivoRemovido.emit(id);
   }
 
@@ -198,7 +207,12 @@ export class EnvioDoDocumentoComponent {
     const desfecho = await this.envio().enviar(this.alvo(), arquivo, (fase, progresso) =>
       this.atualizar(id, { fase, progresso }),
     );
-    if (this.destruido()) return;
+    if (this.destruido) return;
+    if (!this.bytes.has(id)) {
+      // O candidato retirou o arquivo enquanto ele subia: o envio terminou, e o que ele pediu foi tirar.
+      if (desfecho.ok) await this.envio().remover(desfecho.arquivo.arquivoId);
+      return;
+    }
     if (!desfecho.ok) {
       this.atualizar(id, {
         fase: 'erro',
@@ -209,15 +223,13 @@ export class EnvioDoDocumentoComponent {
     }
     this.bytes.delete(id);
     this.emAndamento.update((lista) => lista.filter((a) => a.id !== id));
-    this.confirmadosAgora.update((lista) => [
-      ...lista,
-      { ...desfecho.arquivo, nome: desfecho.arquivo.nome ?? arquivo.name },
-    ]);
     this.arquivoEnviado.emit(desfecho.arquivo);
   }
 
   private atualizar(id: string, alteracao: Partial<ArquivoEmEnvio>): void {
-    this.emAndamento.update((lista) => lista.map((a) => (a.id === id ? { ...a, ...alteracao } : a)));
+    this.emAndamento.update((lista) =>
+      lista.map((a) => (a.id === id ? { ...a, ...alteracao } : a)),
+    );
   }
 }
 

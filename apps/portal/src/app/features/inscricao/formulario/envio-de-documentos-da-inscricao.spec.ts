@@ -2,7 +2,12 @@ import { HttpEventType } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SignedUploadClient, errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
+import {
+  SignedUploadClient,
+  errorResult,
+  mockProblemDetails,
+  okResult,
+} from '@uniplus/shared-core/http';
 import { InscricoesApi } from '@uniplus/shared-data/selecao';
 import type { AlvoDoEnvio } from '@uniplus/shared-ui/components';
 
@@ -38,8 +43,7 @@ describe('Envio dos documentos da inscrição', () => {
   const andamento = vi.fn();
   const laudo = new File(['%PDF-1.7'], 'laudo.pdf', { type: 'application/pdf' });
 
-  const envio = () =>
-    TestBed.inject(EnvioDeDocumentosDaInscricao).paraOProcesso(PROCESSO);
+  const envio = () => TestBed.inject(EnvioDeDocumentosDaInscricao).paraOProcesso(PROCESSO);
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -68,9 +72,18 @@ describe('Envio dos documentos da inscrição', () => {
       expect.anything(),
     );
     expect(upload.enviar).toHaveBeenCalledWith(DESTINO.urlUpload, laudo, 'application/pdf');
-    expect(api.confirmarEnvioDeDocumento).toHaveBeenCalledWith('processo-1', 'arquivo-1', expect.anything());
+    expect(api.confirmarEnvioDeDocumento).toHaveBeenCalledWith(
+      'processo-1',
+      'arquivo-1',
+      expect.anything(),
+    );
     expect(desfecho).toMatchObject({ ok: true, arquivo: { arquivoId: 'arquivo-1', chave: 'e1:' } });
-    expect(andamento.mock.calls.map(([fase]) => fase)).toEqual(['iniciando', 'enviando', 'enviando', 'confirmando']);
+    expect(andamento.mock.calls.map(([fase]) => fase)).toEqual([
+      'iniciando',
+      'enviando',
+      'enviando',
+      'confirmando',
+    ]);
   });
 
   it('confirmação que falha por erro do servidor: a nova tentativa só confirma, sem repetir o envio', async () => {
@@ -89,6 +102,17 @@ describe('Envio dos documentos da inscrição', () => {
     expect(api.confirmarEnvioDeDocumento).toHaveBeenCalledTimes(2);
   });
 
+  it('guarda o arquivo confirmado e o tira quando é removido', async () => {
+    api.removerArquivoDeDocumento.mockReturnValue(of(okResult(undefined)));
+    const envioDoProcesso = envio();
+
+    await envioDoProcesso.enviar(ALVO, laudo, andamento);
+    expect(envioDoProcesso.arquivos().map((a) => a.arquivoId)).toEqual(['arquivo-1']);
+
+    await envioDoProcesso.remover('arquivo-1');
+    expect(envioDoProcesso.arquivos()).toEqual([]);
+  });
+
   it('arquivo recusado pela exigência não oferece nova tentativa', async () => {
     api.iniciarEnvioDeDocumento.mockReturnValue(
       of(errorResult(mockProblemDetails({ status: 422, title: 'Formato não aceito' }))),
@@ -98,6 +122,14 @@ describe('Envio dos documentos da inscrição', () => {
 
     expect(desfecho).toMatchObject({ ok: false, podeTentarDeNovo: false });
     expect(upload.enviar).not.toHaveBeenCalled();
+  });
+
+  it('armazenamento que recusa o conteúdo não oferece nova tentativa', async () => {
+    upload.enviar.mockReturnValueOnce(throwError(() => ({ status: 413 })));
+
+    const desfecho = await envio().enviar(ALVO, laudo, andamento);
+
+    expect(desfecho).toMatchObject({ ok: false, podeTentarDeNovo: false });
   });
 
   it('URL vencida no armazenamento: a nova tentativa pede outra URL', async () => {

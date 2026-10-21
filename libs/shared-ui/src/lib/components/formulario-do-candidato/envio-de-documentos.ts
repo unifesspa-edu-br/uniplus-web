@@ -1,3 +1,5 @@
+import type { Signal } from '@angular/core';
+
 import type { FaseDoArquivo } from '../file-upload/file-upload';
 import type { DocumentoExigido } from '../lista-de-documentos/lista-de-documentos';
 
@@ -33,10 +35,17 @@ export type DesfechoDoEnvio =
   /** `podeTentarDeNovo` é falso quando repetir o mesmo arquivo não muda a resposta. */
   | { readonly ok: false; readonly mensagem: string; readonly podeTentarDeNovo: boolean };
 
-export type DesfechoDaRemocao = { readonly ok: true } | { readonly ok: false; readonly mensagem: string };
+export type DesfechoDaRemocao =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly mensagem: string };
 
 /** O que o passo de documentos pede a quem hospeda para enviar e remover arquivos. */
 export interface EnvioDeDocumentos {
+  /**
+   * Os arquivos que este envio confirmou e ainda estão de pé. Ficam com quem hospeda, e não na tela do
+   * passo: trocar de passo e voltar não pode perder o que já foi enviado nem o envio que terminou depois.
+   */
+  readonly arquivos: Signal<readonly ArquivoEnviado[]>;
   /**
    * Leva o arquivo até a confirmação, informando a fase e o progresso. Chamado de novo com o mesmo
    * `File` depois de uma falha, retoma do ponto em que parou.
