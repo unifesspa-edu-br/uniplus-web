@@ -611,11 +611,9 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   protected readonly pendenciasDasSecoes = signal<readonly PendenciaDaSecao[]>([]);
 
-  /** O curso é obrigatório: mostra a recusa no passo Curso, com o foco no campo, e devolve o texto. */
-  protected recusarCursoAusente(): string {
-    const mensagem = mensagemDaRecusa('uniplus.selecao.inscricao.oferta_obrigatoria');
-    this.recusarOfertas(mensagem, null);
-    return mensagem;
+  /** O curso é obrigatório: mostra a recusa no passo Curso, com o foco no campo. */
+  protected recusarCursoAusente(): void {
+    this.recusarOfertas(mensagemDaRecusa('uniplus.selecao.inscricao.oferta_obrigatoria'), null);
   }
 
   /**

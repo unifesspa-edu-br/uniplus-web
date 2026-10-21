@@ -160,7 +160,11 @@ import type {
                       <ui-alert variant="warning" [dynamic]="false">{{ passo.aviso }}</ui-alert>
                     }
                     @if (recusasDaSecao(passo); as recusadas) {
-                      <ui-alert variant="danger" [heading]="tituloDasRecusas(recusadas)">
+                      <ui-alert
+                        variant="danger"
+                        [dynamic]="false"
+                        [heading]="tituloDasRecusas(recusadas)"
+                      >
                         Corrija o que está marcado nesta seção e tente de novo.
                       </ui-alert>
                     }
@@ -605,21 +609,29 @@ export class FormularioDoCandidatoComponent {
   });
   /** A chave do passo em que o candidato está. */
   private readonly chaveAtual = computed(() => this.chaves()[this.indice()] ?? null);
-  protected readonly itensDosPassos = computed<StepItem[]>(() => [
-    ...this.passosPrefixados().map((passo) =>
-      this.itemDoPasso(passo.chave, passo.titulo, passo.concluido === true, passo.comErro === true),
-    ),
-    ...this.passos().map((passo) => {
-      // A seção dada como concluída com pendência não passa por pronta: aparece com o estado de erro.
-      const pendente = this.concluido(passo) && this.pendenciasDoPasso(passo).length > 0;
-      return this.itemDoPasso(
-        passo.chave,
-        passo.titulo,
-        this.concluido(passo) && !pendente,
-        this.comErro(passo) || pendente,
-      );
-    }),
-  ]);
+  protected readonly itensDosPassos = computed<StepItem[]>(() => {
+    const chavesComPendencia = new Set(this.pendenciasCompletas().map((s) => s.passo.chave));
+    return [
+      ...this.passosPrefixados().map((passo) =>
+        this.itemDoPasso(
+          passo.chave,
+          passo.titulo,
+          passo.concluido === true,
+          passo.comErro === true,
+        ),
+      ),
+      ...this.passos().map((passo) => {
+        // A seção dada como concluída com pendência não passa por pronta: aparece com o estado de erro.
+        const pendente = this.concluido(passo) && chavesComPendencia.has(passo.chave);
+        return this.itemDoPasso(
+          passo.chave,
+          passo.titulo,
+          this.concluido(passo) && !pendente,
+          this.comErro(passo) || pendente,
+        );
+      }),
+    ];
+  });
   protected readonly passoAtual = computed(
     () => this.passos().find((p) => p.chave === this.chaveAtual()) ?? null,
   );
@@ -839,7 +851,7 @@ export class FormularioDoCandidatoComponent {
   }
 
   protected comErro(passo: PassoDoFormulario): boolean {
-    return this.erros().some((e) => contemOCampo(passo, e.campo));
+    return this.recusasDaSecao(passo) > 0;
   }
 
   /** O que dizer ao lado do termo: a recusa do servidor ou, com a seção concluída, a falta do aceite. */
@@ -917,8 +929,10 @@ export class FormularioDoCandidatoComponent {
   }
 
   /**
-   * Leva à seção e põe o foco no primeiro campo pendente dela, sem dar nada como concluído. Sem
-   * pendência, leva só à seção.
+   * Leva à seção e põe o foco no primeiro campo pendente dela. Não dá seção nenhuma como concluída,
+   * salvo quando o campo só aparece depois de concluir as anteriores ou a própria seção, como o
+   * obrigatório que o opcional em branco revela: então conclui, na ordem, só até ele aparecer, e a
+   * seção fica com o estado de erro. Sem pendência, leva só à seção.
    */
   irAPendenciaDe(chave: string): void {
     const primeira = this.pendenciasCompletas().find((s) => s.passo.chave === chave)?.pendencias[0];
@@ -926,7 +940,13 @@ export class FormularioDoCandidatoComponent {
       this.irAoPasso(chave);
       return;
     }
-    // A seção pode ter acabado de aparecer: o campo só existe depois da renderização.
+    const aparece = (): boolean =>
+      this.passos().some((p) => p.chave === chave && contemOCampo(p, primeira.campo));
+    for (const passo of this.passos()) {
+      if (aparece()) break;
+      this.concluir([passo]);
+    }
+    // O campo revelado só existe na tela depois da renderização.
     this.irAoPasso(chave, () => this.controleDe(primeira.campo, primeira.naConfirmacao), true);
   }
 
