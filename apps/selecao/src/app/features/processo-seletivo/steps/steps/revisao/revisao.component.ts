@@ -117,7 +117,6 @@ export class RevisaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly preflight = inject(PreflightDaPublicacaoService);
 
-  /** Quem concorre em cada modalidade ofertada, pela regra que o processo congelou. */
   /**
    * Os documentos exigidos por fase, com a situação da base legal que a publicação confere: a
    * exigência que decide o resultado precisa de norma resolvida.
@@ -136,6 +135,7 @@ export class RevisaoStepComponent {
     () => gruposSemNormaResolvida(this.store.draft().documentos).length,
   );
 
+  /** Quem concorre em cada modalidade ofertada, pela regra que o processo congelou. */
   protected readonly regrasDasModalidades = this.store.regrasDasModalidades;
   private readonly cadastro = inject(CadastroInicialService);
   private readonly atos = inject(AtosApi);

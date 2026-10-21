@@ -307,7 +307,11 @@
         @for (etapa of aba.leitura; track etapa.codigo) {
           <h3 class="form-section__title">{{ etapa.titulo }}</h3>
           @if (etapa.bloco === blocoDocumental) {
-            <sel-documentos-do-formulario [documentos]="aba.documentos" />
+            <sel-documentos-do-formulario
+              [documentos]="aba.documentos.documentos"
+              [semFormulario]="aba.documentos.semFormulario"
+              [semFase]="aba.semFaseParaDocumentos"
+            />
           } @else {
           <ul class="doc-list">
             @for (entrada of etapa.entradas; track entrada.chave) {
@@ -343,7 +347,11 @@
         />
         @if (aba.temBlocoDocumental) {
           <h3 class="form-section__title">Documentos que o formulário pede</h3>
-          <sel-documentos-do-formulario [documentos]="aba.documentos" />
+          <sel-documentos-do-formulario
+              [documentos]="aba.documentos.documentos"
+              [semFormulario]="aba.documentos.semFormulario"
+              [semFase]="aba.semFaseParaDocumentos"
+            />
         }
       }
 

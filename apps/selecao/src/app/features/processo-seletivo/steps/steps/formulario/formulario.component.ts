@@ -518,6 +518,7 @@ export class FormularioStepComponent {
           finalidadesDaFase.get(fase.escolhida) ?? [],
           vocabulario,
         ),
+        semFaseParaDocumentos: fase.escolhida === '',
       };
     });
   });

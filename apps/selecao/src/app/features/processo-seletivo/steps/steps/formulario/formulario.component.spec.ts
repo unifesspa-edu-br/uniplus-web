@@ -259,8 +259,27 @@ describe('FormularioStepComponent', () => {
       expect(host.querySelector('sel-documentos-do-formulario')?.textContent).toContain('Laudo médico');
     });
 
-    it('sem documento na fase, diz que nenhum é exigido e leva ao Cronograma', () => {
+    it('não diz que a fase não exige nada quando o documento ainda não tem formulário escolhido', () => {
+      const dividida = {
+        ...FASE_INSCRICAO,
+        congelados: { ...FASE_INSCRICAO.congelados, coletaSolicitacaoIsencao: true },
+      };
+      store.patchSection('cronograma', { ...store.draft().cronograma, fases: [dividida] });
+      store.patchSection(
+        'documentos',
+        comExigencia({ raizes: [], emTodasAsFases: [] }, exigenciaNova(TIPO_LAUDO, 'INSCRICAO')),
+      );
+
       emConsulta();
+
+      const texto = host.textContent ?? '';
+      expect(texto).toContain('1 documento desta fase ainda não tem formulário definido');
+      expect(texto).not.toContain('Nenhum documento exigido nesta fase');
+    });
+
+    it('sem documento na fase, diz que nenhum é exigido e leva ao Cronograma', () => {
+      store.patchObjectSection('formulario', { conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS) });
+      fixture.detectChanges();
 
       expect(host.textContent).toContain('Nenhum documento exigido nesta fase');
       host.querySelector<HTMLButtonElement>('sel-documentos-do-formulario button')?.click();

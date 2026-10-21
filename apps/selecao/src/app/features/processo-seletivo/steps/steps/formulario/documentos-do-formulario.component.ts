@@ -12,12 +12,18 @@ import { PASSO_CRONOGRAMA, type DocumentoExigidoLido } from '../../shared/docume
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (documentos().length === 0) {
-      <p class="field__hint" role="status">
+    @if (semFase()) {
+      <p class="field__hint">
+        Escolha a fase em que o formulário é respondido para ver os documentos que ele pede.
+      </p>
+    } @else if (documentos().length === 0 && semFormulario() === 0) {
+      <p class="field__hint">
         Nenhum documento exigido nesta fase.
-        <button type="button" class="btn btn--tertiary btn--sm" (click)="irParaCronograma()">
-          Ir para Cronograma
-        </button>
+        @if (!store.emConsulta()) {
+          <button type="button" class="btn btn--tertiary btn--sm" (click)="irParaCronograma()">
+            Ir para Cronograma
+          </button>
+        }
       </p>
     } @else {
       <ul class="doc-list">
@@ -56,12 +62,27 @@ import { PASSO_CRONOGRAMA, type DocumentoExigidoLido } from '../../shared/docume
         }
       </ul>
     }
+    @if (!semFase() && semFormulario() > 0) {
+      <p class="field__hint">
+        {{
+          semFormulario() === 1
+            ? '1 documento desta fase ainda não tem formulário definido'
+            : semFormulario() + ' documentos desta fase ainda não têm formulário definido'
+        }}
+        e não aparece{{ semFormulario() === 1 ? '' : 'm' }} aqui. Escolha o formulário no passo
+        Cronograma.
+      </p>
+    }
   `,
 })
 export class DocumentosDoFormularioComponent {
-  private readonly store = inject(ProcessoSeletivoStore);
+  protected readonly store = inject(ProcessoSeletivoStore);
 
   readonly documentos = input.required<readonly DocumentoExigidoLido[]>();
+  /** Quantos documentos da fase ainda não têm formulário definido. */
+  readonly semFormulario = input(0);
+  /** O formulário ainda não tem fase: sem ela não há documentos a listar. */
+  readonly semFase = input(false);
 
   irParaCronograma(): void {
     this.store.goTo(PASSO_CRONOGRAMA);
