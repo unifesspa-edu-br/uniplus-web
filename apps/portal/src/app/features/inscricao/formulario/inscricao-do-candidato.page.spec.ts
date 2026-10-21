@@ -589,6 +589,27 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(eTags).toEqual(['"inscricao-1:3"']);
   });
 
+  it('outra aba gravou enquanto o ETag era relido: o próximo salvar leva o ETag velho e cai no conflito', async () => {
+    vi.useRealTimers();
+    servico.formulario = COM_MODALIDADES;
+    const tela = await abrir();
+    const eTagInicial = servico.inscricao.eTag;
+    const eTags: string[] = [];
+    servico.salvar = (_: string, request: InscricaoRequest, eTag?: string) => {
+      eTags.push(eTag ?? '');
+      servico.salvos.push(request);
+      return ok(servico.inscricao);
+    };
+
+    servico.inscricao = inscricao({ eTag: '"inscricao-1:3"', ofertaCursoId: 'outra-oferta' });
+    mudancasDoEnvio.update((n) => n + 1);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await clicar(botao(tela, 'Salvar rascunho'));
+
+    expect(eTags).toEqual([eTagInicial]);
+  });
+
   it('releitura do ETag que falha depois de um arquivo de documento pede recarregar, sem gravar com o velho', async () => {
     vi.useRealTimers();
     servico.formulario = COM_MODALIDADES;
