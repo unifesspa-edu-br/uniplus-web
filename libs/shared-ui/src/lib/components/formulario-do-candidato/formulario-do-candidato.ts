@@ -222,7 +222,7 @@ import type {
                         [id]="idBase() + '-' + campo.campo.fatoCodigo"
                         [resposta]="respostasComAsFixas()[campo.campo.fatoCodigo]"
                         [respostaDaUf]="respostaDaUf(campo)"
-                        [mostrarPendencia]="concluido(passo)"
+                        [mostrarPendencia]="mostraPendencia(passo)"
                         [fixa]="respostasFixas()[campo.campo.fatoCodigo] ?? null"
                         [erroDoServidor]="mensagemDosErros(erros(), campo.campo.fatoCodigo)"
                         [diaDoEnvio]="diaDoEnvio()"
@@ -242,7 +242,7 @@ import type {
                         [id]="idBase() + '-' + grupo.grupo.codigo"
                         [ocorrencias]="grupos()[grupo.grupo.codigo]"
                         [respostasDoCandidato]="respostasComAsFixas()"
-                        [mostrarPendencia]="concluido(passo)"
+                        [mostrarPendencia]="mostraPendencia(passo)"
                         [errosDoServidor]="errosEm(grupo.grupo.codigo)"
                         [diaDoEnvio]="diaDoEnvio()"
                         [confirmacoes]="confirmacoes()"
@@ -484,6 +484,11 @@ export class FormularioDoCandidatoComponent {
     source: this.partida,
     computation: () => ({}),
   });
+  /** As seções a que o link da pendência levou: mostram as pendências sem serem dadas como concluídas. */
+  private readonly pendenciaMostrada = linkedSignal<unknown, ReadonlySet<string>>({
+    source: this.partida,
+    computation: () => new Set(),
+  });
   private readonly concluidas = linkedSignal<unknown, ReadonlySet<string>>({
     source: this.partida,
     computation: () => new Set(this.inicial()?.etapasConcluidas ?? []),
@@ -622,11 +627,11 @@ export class FormularioDoCandidatoComponent {
       ),
       ...this.passos().map((passo) => {
         // A seção dada como concluída com pendência não passa por pronta: aparece com o estado de erro.
-        const pendente = this.concluido(passo) && chavesComPendencia.has(passo.chave);
+        const pendente = this.mostraPendencia(passo) && chavesComPendencia.has(passo.chave);
         return this.itemDoPasso(
           passo.chave,
           passo.titulo,
-          this.concluido(passo) && !pendente,
+          this.concluido(passo) && !chavesComPendencia.has(passo.chave),
           this.comErro(passo) || pendente,
         );
       }),
@@ -940,6 +945,7 @@ export class FormularioDoCandidatoComponent {
       this.irAoPasso(chave);
       return;
     }
+    this.pendenciaMostrada.update((atual) => new Set([...atual, chave]));
     const aparece = (): boolean =>
       this.passos().some((p) => p.chave === chave && contemOCampo(p, primeira.campo));
     for (const passo of this.passos()) {
@@ -950,6 +956,11 @@ export class FormularioDoCandidatoComponent {
     this.irAoPasso(chave, () => this.controleDe(primeira.campo, primeira.naConfirmacao), true);
   }
 
+  /** Se a seção mostra a pendência em cada campo: concluída, ou visitada pelo link da pendência. */
+  protected mostraPendencia(passo: PassoDoFormulario): boolean {
+    return this.concluido(passo) || this.pendenciaMostrada().has(passo.chave);
+  }
+
   protected concluido(passo: PassoDoFormulario): boolean {
     return passo.etapasNasRegras.length > 0
       ? passo.etapasNasRegras.every((e) => this.concluidas().has(e))
@@ -958,7 +969,7 @@ export class FormularioDoCandidatoComponent {
 
   /** O termo obrigatório ainda não aceito, depois de a seção ser dada como concluída. */
   protected termoPendente(passo: PassoDoFormulario, termo: TermoNoPasso): boolean {
-    return this.concluido(passo) && termoSemAceite(termo, this.aceitos());
+    return this.mostraPendencia(passo) && termoSemAceite(termo, this.aceitos());
   }
 
   protected alternarAceite(codigo: string, evento: Event): void {
