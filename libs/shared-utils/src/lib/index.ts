@@ -28,6 +28,15 @@ export {
   type PartesDoInstante,
   partesNoFuso,
 } from './utils/data-br.util';
+export {
+  ABRANGENCIAS_ESCOLHIVEIS,
+  ABRANGENCIA_PADRAO,
+  CONSEQUENCIA_REENVIO,
+  CONSEQUENCIAS_ESCOLHIVEIS,
+  consequenciasDaFase,
+  STATUS_BASE_LEGAL_ESCOLHIVEIS,
+  STATUS_BASE_LEGAL_RESOLVIDO,
+} from './utils/documento-exigido.vocabulario';
 export { formatarNumeroPtBr, numeroDaApi, numeroOuNuloDaApi } from './utils/numero.util';
 export { formatarTamanhoDeArquivo } from './utils/tamanho-de-arquivo.util';
 export { digitosDoTelefone, formatarTelefone } from './utils/telefone.util';

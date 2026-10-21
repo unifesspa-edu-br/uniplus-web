@@ -164,6 +164,11 @@ const modelo: ModeloFormularioView = {
   },
 };
 
+const FASES = [
+  { id: '1', codigo: 'INSCRICAO', nome: 'Inscrição', permiteComplementacao: true },
+  { id: '2', codigo: 'HOMOLOGACAO', nome: 'Homologação', permiteComplementacao: false },
+];
+
 describe('ModeloFormularioEdicaoPage', () => {
   let fixture: ComponentFixture<ModeloFormularioEdicaoPage>;
   let controller: HttpTestingController;
@@ -200,6 +205,7 @@ describe('ModeloFormularioEdicaoPage', () => {
   async function carregar(
     doModelo: ModeloFormularioView = modelo,
     fatosExtras: readonly FatoCandidatoView[] = [],
+    fasesCanonicas: readonly object[] = FASES,
   ): Promise<HTMLElement> {
     controller.expectOne(MODELO).flush(doModelo);
     controller
@@ -211,10 +217,7 @@ describe('ModeloFormularioEdicaoPage', () => {
       .flush([]);
     controller
       .expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`)
-      .flush([
-        { id: '1', codigo: 'INSCRICAO', nome: 'Inscrição', permiteComplementacao: true },
-        { id: '2', codigo: 'HOMOLOGACAO', nome: 'Homologação', permiteComplementacao: false },
-      ]);
+      .flush(fasesCanonicas);
     controller
       .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`)
       .flush([
@@ -427,5 +430,14 @@ describe('ModeloFormularioEdicaoPage', () => {
       '[aria-labelledby="cfg-modelo-docs-doc-0-titulo"]',
     ) as HTMLElement;
     expect(documento.textContent).not.toContain('fora do catálogo');
+  });
+
+  it('não oferece o reenvio enquanto a fase do documento não está resolvida', async () => {
+    const tela = await carregar(modelo, [], []);
+
+    const valores = Array.from(
+      (tela.querySelector('#cfg-modelo-docs-doc-0-consequencia') as HTMLSelectElement).options,
+    ).map((opcao) => opcao.value);
+    expect(valores).not.toContain('PENDENCIA_REENVIO');
   });
 });
