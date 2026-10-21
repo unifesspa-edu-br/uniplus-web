@@ -732,13 +732,14 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(eTags).toEqual(['"inscricao-1:2"']);
   });
 
-  it('com pendência o envio fica sinalizado por aria-disabled, com o motivo, e não envia', async () => {
+  it('com pendência o botão de enviar fica inativo, com o motivo e as seções ao lado, e não envia', async () => {
     const tela = await abrir();
 
     const enviar = botao(tela, 'Enviar inscrição');
-    expect(enviar.getAttribute('aria-disabled')).toBe('true');
+    expect(enviar.disabled).toBe(true);
     const motivo = tela.querySelector('#inscricao-motivo-envio');
-    expect(motivo?.textContent).toMatch(/^Falt(a|am) corrigir \d+ itens?/);
+    expect(motivo?.textContent).toMatch(/Falt(a|am) corrigir \d+ itens?\./);
+    expect(motivo?.querySelectorAll('li button').length).toBeGreaterThan(0);
     expect(enviar.getAttribute('aria-describedby')).toBe('inscricao-motivo-envio');
 
     await clicar(enviar);
@@ -759,11 +760,11 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(passos(tela)[1].getAttribute('aria-current')).toBe('step');
   });
 
-  it('com o formulário válido o envio não traz aria-disabled nem motivo', async () => {
+  it('com o formulário válido o envio fica ativo e sem motivo', async () => {
     servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
 
-    expect(botao(tela, 'Enviar inscrição').getAttribute('aria-disabled')).toBeNull();
+    expect(botao(tela, 'Enviar inscrição').disabled).toBe(false);
     expect(tela.querySelector('#inscricao-motivo-envio')).toBeNull();
   });
 
@@ -884,7 +885,7 @@ describe('InscricaoDoCandidatoPage', () => {
     ]);
   });
 
-  it('o envio leva o termo marcado logo antes, sem esperar a próxima emissão do formulário', async () => {
+  it('o envio leva o termo marcado antes dele', async () => {
     servico.inscricao = inscricao({ respostas: RESPONDIDA.respostas });
     const tela = await abrir();
     const secoes = tela.querySelectorAll<HTMLButtonElement>(
@@ -892,10 +893,10 @@ describe('InscricaoDoCandidatoPage', () => {
     );
     await clicar(secoes[secoes.length - 1]);
 
-    (
-      tela.querySelector('[data-campo="VERACIDADE"] input[type="checkbox"]') as HTMLInputElement
-    ).click();
-    botao(tela, 'Enviar inscrição').click();
+    await clicar(
+      tela.querySelector('[data-campo="VERACIDADE"] input[type="checkbox"]') as HTMLElement,
+    );
+    await clicar(botao(tela, 'Enviar inscrição'));
 
     expect(servico.enviados[0].aceites?.map((a) => a.codigo)).toEqual(['VERACIDADE']);
   });
@@ -927,6 +928,9 @@ describe('InscricaoDoCandidatoPage', () => {
     const nome = tela.querySelector('[data-campo="NOME"]');
     expect(nome?.querySelector('.field__error')?.textContent).toContain('Responda este campo.');
     expect(tela.textContent).not.toContain("O item 'NOME'");
+    const topo = tela.querySelector('.formulario-candidato__secao ui-alert');
+    expect(topo?.textContent).toContain('O servidor recusou 1 resposta desta seção');
+    expect(document.activeElement).toBe(campoDe(tela, 'NOME'));
   });
 
   const problema = (status: number, code: string) =>
@@ -1231,38 +1235,23 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(servico.salvos[0].ofertaCursoId).toBeNull();
   });
 
-  it('enviar sem curso conta também as pendências das seções e deixa o foco no curso', async () => {
-    servico.ofertas = [MEDICINA, DIREITO];
-    const tela = await abrir();
-
-    await clicar(botao(tela, 'Enviar inscrição'));
-    await fixture.whenStable();
-
-    expect(servico.enviados).toHaveLength(0);
-    expect(tela.querySelector('p.sr-only[aria-live="polite"]')?.textContent).toContain(
-      'a corrigir nas seções',
-    );
-    expect(passos(tela)[0].getAttribute('aria-current')).toBe('step');
-    expect(document.activeElement).toBe(tela.querySelector('#inscricao-oferta'));
-  });
-
-  it('o aviso de curso é anunciado de novo a cada tentativa de envio', async () => {
+  it('sem curso o envio fica inativo e o link do motivo leva o foco ao seletor do curso', async () => {
     servico.ofertas = [MEDICINA, DIREITO];
     servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
-    const avisos: string[] = [];
-    const vivo = tela.querySelector('p.sr-only[aria-live="polite"]') as HTMLElement;
-    new MutationObserver(() => avisos.push(vivo.textContent ?? '')).observe(vivo, {
-      childList: true,
-      characterData: true,
-      subtree: true,
-    });
+    await clicar(passos(tela)[1]);
 
-    await clicar(botao(tela, 'Enviar inscrição'));
-    await clicar(botao(tela, 'Enviar inscrição'));
+    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+    expect(tela.querySelector('#inscricao-motivo-envio')?.textContent).toContain(
+      'Escolha o curso.',
+    );
+
+    await clicar(botao(tela, 'Escolher o curso'));
     await fixture.whenStable();
 
-    expect(avisos.filter((a) => a.includes('Escolha a oferta')).length).toBeGreaterThanOrEqual(2);
+    expect(servico.enviados).toHaveLength(0);
+    expect(passos(tela)[0].getAttribute('aria-current')).toBe('step');
+    expect(document.activeElement).toBe(tela.querySelector('#inscricao-oferta'));
   });
 
   it('o curso é o primeiro passo quando há mais de uma oferta e não há seletor fora do indicador', async () => {
@@ -1604,17 +1593,19 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(botao(tela, 'Enviar inscrição')).toBeDefined();
   });
 
-  it('o envio com pendência não sai: leva o foco ao primeiro campo a corrigir', async () => {
+  it('o link da seção pendente leva ao primeiro campo a corrigir, sem dar nenhuma seção como concluída', async () => {
     servico.inscricao = inscricao({ ...RESPONDIDA, respostas: {} });
     const tela = await abrir();
+    const pendente = tela.querySelector('#inscricao-motivo-envio li button') as HTMLElement;
 
-    await clicar(botao(tela, 'Enviar inscrição'));
+    await clicar(pendente);
+    await fixture.whenStable();
 
-    expect(servico.enviados).toEqual([]);
     expect(document.activeElement).toBe(campoDe(tela, 'NOME'));
-    expect(tela.querySelector('[data-campo="NOME"] .field__error')?.textContent).toContain(
-      'Responda este campo.',
-    );
+    expect(
+      tela.querySelectorAll('nav[aria-label="Passos da inscrição"] li.is-done, nav li.is-done'),
+    ).toHaveLength(0);
+    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
   });
 
   it('o rascunho não vai para o armazenamento do navegador', async () => {

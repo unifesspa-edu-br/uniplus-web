@@ -627,16 +627,24 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly motivoDoEnvioBloqueado = computed<string | null>(() => {
     const partes: string[] = [];
     if (this.semCurso()) partes.push('Escolha o curso.');
-    const secoes = this.pendenciasDasSecoes();
-    if (secoes.length > 0) {
-      const total = secoes.reduce((soma, s) => soma + s.quantidade, 0);
-      const onde = secoes.map((s) => `${s.quantidade} em ${s.titulo}`).join(', ');
-      partes.push(
-        `${total === 1 ? 'Falta corrigir 1 item' : `Faltam corrigir ${total} itens`} (${onde}).`,
-      );
-    }
+    const total = this.pendenciasDasSecoes().reduce((soma, s) => soma + s.quantidade, 0);
+    if (total > 0)
+      partes.push(total === 1 ? 'Falta corrigir 1 item.' : `Faltam corrigir ${total} itens.`);
     return partes.length > 0 ? partes.join(' ') : null;
   });
+
+  /** O candidato vai ao curso que falta escolher, com o foco no campo e sem mostrar recusa. */
+  protected irAoCurso(): void {
+    this.formularioDoCandidato()?.irAoPasso(
+      PASSO_DO_CURSO,
+      () => this.selectDaOferta()?.nativeElement ?? null,
+    );
+  }
+
+  /** O candidato vai à seção pendente, com o foco no primeiro campo que falta e nada concluído. */
+  protected irAPendencia(chave: string): void {
+    this.formularioDoCandidato()?.irAPendenciaDe(chave);
+  }
 
   protected readonly descricaoDoEnvio = computed(() => {
     const ids = [
@@ -647,23 +655,10 @@ export class InscricaoDoCandidatoPage implements OnInit {
   });
 
   protected enviar(): void {
-    if (this.bloqueada()) return;
-    // O curso é o primeiro passo: sem ele a inscrição não segue. As pendências das seções são
-    // contadas na mesma tentativa, e o foco fica no curso.
-    const semCurso = this.semCurso();
-    // O envio conclui todas as seções: com pendência, o formulário leva à primeira e nada é enviado.
-    // Sem curso, só as conta: quem leva o candidato é o passo Curso.
-    const pendencias = this.formularioDoCandidato()?.concluirTodas(!semCurso) ?? 0;
-    if (semCurso) {
-      const mensagem = this.recusarCursoAusente();
-      this.anunciar(
-        pendencias > 0
-          ? `${mensagem} Há também ${pendencias === 1 ? '1 item' : `${pendencias} itens`} a corrigir nas seções.`
-          : mensagem,
-      );
-      return;
-    }
-    if (pendencias > 0) return;
+    // O botão fica inativo com pendência; a guarda cobre a chamada que não vem dele.
+    if (this.bloqueada() || this.motivoDoEnvioBloqueado() !== null) return;
+    // Só o envio de um formulário válido conclui as seções.
+    if ((this.formularioDoCandidato()?.concluirTodas(false) ?? 0) > 0) return;
     this.gravar(
       (request, eTag) => this.servico.submeter(this.processoId(), request, eTag),
       (comprovante) => {

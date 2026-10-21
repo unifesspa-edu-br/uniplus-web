@@ -61,3 +61,27 @@
   gap: var(--space-3);
   justify-content: flex-end;
 }
+
+.inscricao-motivo {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-default);
+  border-inline-start: 4px solid var(--color-danger-solid);
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+}
+
+.inscricao-motivo__texto {
+  margin: 0;
+  font-weight: var(--weight-semibold);
+}
+
+.inscricao-motivo__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
