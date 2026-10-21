@@ -25,6 +25,8 @@ const FALHA_NO_ARMAZENAMENTO = 'Falha ao enviar o arquivo. Verifique a conexão 
 const ENDERECO_VENCIDO =
   'O endereço de envio não é mais válido. Tente novamente para obter um novo.';
 const STATUS_DE_SERVIDOR = 500;
+/** Outra gravação da inscrição passou na frente; repetir o mesmo pedido depois dela dá certo. */
+const INSCRICAO_ALTERADA = 'uniplus.selecao.documento_da_inscricao.inscricao_alterada';
 /** O PUT falhou sem resposta do armazenamento: rede fora do ar. */
 const SEM_RESPOSTA = 0;
 
@@ -66,6 +68,8 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
   private readonly confirmados = signal<readonly ArquivoEnviado[]>([]);
   readonly arquivos: Signal<readonly ArquivoEnviado[]> = this.confirmados.asReadonly();
   private readonly contagemDeMudancas = signal(0);
+  /** As chamadas à API saem uma de cada vez: cada uma avança a revisão da inscrição e disputaria com a outra. */
+  private fila: Promise<unknown> = Promise.resolve();
   readonly mudancas: Signal<number> = this.contagemDeMudancas.asReadonly();
   /** Uma tentativa por arquivo escolhido: repetir o mesmo `File` retoma dela. */
   private readonly tentativas = new WeakMap<File, Tentativa>();
@@ -100,16 +104,18 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
           tipoDeMidia,
           tamanhoBytes: arquivo.size,
         };
-        const { resultado, inconclusiva } = await comChave(
-          tentativa.chaveDaIniciacao,
-          pedido,
-          (contexto) => this.api.iniciarEnvioDeDocumento(this.processoId, pedido, contexto),
+        const { resultado, inconclusiva } = await this.naFila(() =>
+          comChave(tentativa.chaveDaIniciacao, pedido, (contexto) =>
+            this.api.iniciarEnvioDeDocumento(this.processoId, pedido, contexto),
+          ),
         );
         if (!isApiOk(resultado)) {
           return this.recusa(resultado.problem, inconclusiva);
         }
         destino = resultado.data;
         tentativa.destino = destino;
+        // Iniciar já avança a revisão da inscrição, mesmo que o envio não chegue ao fim.
+        this.contagemDeMudancas.update((n) => n + 1);
       }
 
       aoAndar('enviando', 0);
@@ -136,10 +142,10 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
       return { ok: false, mensagem: FALHA_NO_ARMAZENAMENTO, podeTentarDeNovo: true };
     }
     aoAndar('confirmando', 100);
-    const { resultado, inconclusiva } = await comChave(
-      tentativa.chaveDaConfirmacao,
-      arquivoId,
-      (contexto) => this.api.confirmarEnvioDeDocumento(this.processoId, arquivoId, contexto),
+    const { resultado, inconclusiva } = await this.naFila(() =>
+      comChave(tentativa.chaveDaConfirmacao, arquivoId, (contexto) =>
+        this.api.confirmarEnvioDeDocumento(this.processoId, arquivoId, contexto),
+      ),
     );
     if (!isApiOk(resultado)) return this.recusa(resultado.problem, inconclusiva);
 
@@ -160,8 +166,10 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     // A chave acompanha o arquivo: repetir depois de uma resposta perdida recebe o replay, e não um 404.
     const chave = this.chavesDaRemocao.get(arquivoId) ?? new ChaveDeSubstituicao();
     this.chavesDaRemocao.set(arquivoId, chave);
-    const { resultado, inconclusiva } = await comChave(chave, arquivoId, (contexto) =>
-      this.api.removerArquivoDeDocumento(this.processoId, arquivoId, contexto),
+    const { resultado, inconclusiva } = await this.naFila(() =>
+      comChave(chave, arquivoId, (contexto) =>
+        this.api.removerArquivoDeDocumento(this.processoId, arquivoId, contexto),
+      ),
     );
     if (!isApiOk(resultado)) {
       if (!inconclusiva) this.chavesDaRemocao.delete(arquivoId);
@@ -171,6 +179,12 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     this.confirmados.update((lista) => lista.filter((a) => a.arquivoId !== arquivoId));
     this.contagemDeMudancas.update((n) => n + 1);
     return { ok: true };
+  }
+
+  private naFila<T>(chamada: () => Promise<T>): Promise<T> {
+    const vez = this.fila.then(chamada, chamada);
+    this.fila = vez.catch(() => undefined);
+    return vez;
   }
 
   private tentativaDe(arquivo: File, alvo: AlvoDoEnvio): Tentativa {
@@ -196,7 +210,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     return {
       ok: false,
       mensagem: this.explicar(problema),
-      podeTentarDeNovo: inconclusiva,
+      podeTentarDeNovo: inconclusiva || problema.code === INSCRICAO_ALTERADA,
     };
   }
 }

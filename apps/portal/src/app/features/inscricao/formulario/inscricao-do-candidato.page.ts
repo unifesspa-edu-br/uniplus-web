@@ -153,7 +153,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
       untracked(() => {
         if (mudancas === this.mudancasVistas) return;
         this.mudancasVistas = mudancas;
-        this.reavaliarDocumentos();
+        this.atualizarARevisaoEReavaliar();
       });
     });
   }
@@ -529,6 +529,23 @@ export class InscricaoDoCandidatoPage implements OnInit {
     this.erroDaSegundaOferta.set(null);
     this.avisoDaSegundaLimpa.set(aviso);
     this.anunciar(aviso);
+  }
+
+  /**
+   * Cada chamada de documento avança a revisão da inscrição. O ETag da tela é relido sem trocar as
+   * respostas dela, ou o próximo salvar seria recusado e as respostas não salvas se perderiam.
+   */
+  private atualizarARevisaoEReavaliar(): void {
+    this.servico
+      .obter(this.processoId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultado) => {
+        if (resultado.ok) {
+          const eTag = resultado.data.eTag;
+          this.inscricao.update((atual) => (atual ? { ...atual, eTag } : atual));
+        }
+        this.reavaliarDocumentos();
+      });
   }
 
   /** Os arquivos enviados mudaram: a avaliação é pedida de novo com as respostas que estão na tela. */

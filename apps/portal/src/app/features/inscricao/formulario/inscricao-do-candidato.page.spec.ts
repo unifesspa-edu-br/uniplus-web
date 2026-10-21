@@ -559,6 +559,26 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(servico.avaliacoes).toHaveLength(1);
   });
 
+  it('o arquivo de documento avança a revisão da inscrição: o próximo salvar leva o ETag novo', async () => {
+    vi.useRealTimers();
+    servico.formulario = COM_MODALIDADES;
+    const tela = await abrir();
+    const eTags: string[] = [];
+    servico.salvar = (_: string, request: InscricaoRequest, eTag?: string) => {
+      eTags.push(eTag ?? '');
+      servico.salvos.push(request);
+      return ok(servico.inscricao);
+    };
+
+    servico.inscricao = inscricao({ eTag: '"inscricao-1:3"' });
+    mudancasDoEnvio.update((n) => n + 1);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await clicar(botao(tela, 'Salvar rascunho'));
+
+    expect(eTags).toEqual(['"inscricao-1:3"']);
+  });
+
   it('a consulta de avaliação leva a oferta escolhida na tela, ou null quando não há escolha', async () => {
     // A espera da consulta corre no agendador do RxJS, que usa `setInterval`, e não `setTimeout`.
     vi.useRealTimers();

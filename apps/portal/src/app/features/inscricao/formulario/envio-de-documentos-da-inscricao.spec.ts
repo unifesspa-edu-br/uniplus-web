@@ -102,14 +102,15 @@ describe('Envio dos documentos da inscrição', () => {
     expect(api.confirmarEnvioDeDocumento).toHaveBeenCalledTimes(2);
   });
 
-  it('conta cada arquivo confirmado ou removido, inclusive o que veio da avaliação', async () => {
+  it('conta cada chamada que avança a revisão da inscrição, inclusive remover arquivo que veio da avaliação', async () => {
     api.removerArquivoDeDocumento.mockReturnValue(of(okResult(undefined)));
     const envioDoProcesso = envio();
 
     await envioDoProcesso.enviar(ALVO, laudo, andamento);
     await envioDoProcesso.remover('arquivo-da-avaliacao');
 
-    expect(envioDoProcesso.mudancas()).toBe(2);
+    // Iniciar, confirmar e remover avançam a revisão da inscrição.
+    expect(envioDoProcesso.mudancas()).toBe(3);
   });
 
   it('guarda o arquivo confirmado e o tira quando é removido', async () => {
@@ -121,6 +122,23 @@ describe('Envio dos documentos da inscrição', () => {
 
     await envioDoProcesso.remover('arquivo-1');
     expect(envioDoProcesso.arquivos()).toEqual([]);
+  });
+
+  it('inscrição alterada por outra gravação durante o envio: oferece nova tentativa', async () => {
+    api.confirmarEnvioDeDocumento.mockReturnValueOnce(
+      of(
+        errorResult(
+          mockProblemDetails({
+            status: 409,
+            code: 'uniplus.selecao.documento_da_inscricao.inscricao_alterada',
+          }),
+        ),
+      ),
+    );
+
+    const desfecho = await envio().enviar(ALVO, laudo, andamento);
+
+    expect(desfecho).toMatchObject({ ok: false, podeTentarDeNovo: true });
   });
 
   it('arquivo recusado pela exigência não oferece nova tentativa', async () => {
