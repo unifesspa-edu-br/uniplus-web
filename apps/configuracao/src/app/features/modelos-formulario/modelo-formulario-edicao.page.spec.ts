@@ -197,11 +197,14 @@ describe('ModeloFormularioEdicaoPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  async function carregar(doModelo: ModeloFormularioView = modelo): Promise<HTMLElement> {
+  async function carregar(
+    doModelo: ModeloFormularioView = modelo,
+    fatosExtras: readonly FatoCandidatoView[] = [],
+  ): Promise<HTMLElement> {
     controller.expectOne(MODELO).flush(doModelo);
     controller
       .expectOne(`${BASE}/api/configuracao/fatos-candidato`)
-      .flush([fato('NOME'), fato('ESCOLA_PUBLICA'), fato('GESTANTE')]);
+      .flush([fato('NOME'), fato('ESCOLA_PUBLICA'), fato('GESTANTE'), ...fatosExtras]);
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-processo`).flush([]);
     controller
       .expectOne((r) => r.url === `${BASE}/api/configuracao/termos-consentimento`)
@@ -389,5 +392,40 @@ describe('ModeloFormularioEdicaoPage', () => {
       (tela.querySelector('#cfg-modelo-docs-doc-0-consequencia') as HTMLSelectElement).options,
     ).map((opcao) => opcao.value);
     expect(valores).not.toContain('PENDENCIA_REENVIO');
+  });
+
+  it('tira o reenvio da consequência ao trocar para fase que não admite complementação', async () => {
+    const tela = await carregar();
+    selecionar(tela, 'cfg-modelo-docs-doc-1-fase', 'HOMOLOGACAO');
+    await propagar();
+    salvar(tela);
+
+    const req = controller.expectOne((r) => r.method === 'PUT' && r.url === MODELO);
+    const documento = req.request.body.conteudo.documentosExigidos[1];
+    expect(documento).toMatchObject({ faseCodigo: 'HOMOLOGACAO' });
+    expect(documento.consequenciaIndeferimento).not.toBe('PENDENCIA_REENVIO');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    controller.expectOne(MODELO).flush(modelo);
+  });
+
+  it('oferece o fato de município que a condição do documento cita', async () => {
+    const [laudo] = modelo.conteudo.documentosExigidos ?? [];
+    const tela = await carregar(
+      {
+        ...modelo,
+        conteudo: {
+          ...modelo.conteudo,
+          documentosExigidos: [
+            { ...laudo, quando: [[{ fato: 'MUNICIPIO', operador: 'EM', valor: ['1500000'] }]] },
+          ],
+        },
+      },
+      [{ ...fato('MUNICIPIO'), dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' }],
+    );
+
+    const documento = tela.querySelector(
+      '[aria-labelledby="cfg-modelo-docs-doc-0-titulo"]',
+    ) as HTMLElement;
+    expect(documento.textContent).not.toContain('fora do catálogo');
   });
 });
