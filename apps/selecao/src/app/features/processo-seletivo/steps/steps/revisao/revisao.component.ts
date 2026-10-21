@@ -27,7 +27,6 @@ import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { instanteLegivel } from '../../shared/fuso-institucional';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
 import { documentosPorFase } from '../../shared/documentos-exigidos';
-import { gruposSemNormaResolvida } from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
@@ -129,11 +128,6 @@ export class RevisaoStepComponent {
       cronograma.fases.map((fase) => fase.codigo),
     ).map((fase) => ({ ...fase, nome: nomeDaFase(fase.faseCodigo) }));
   });
-
-  /** Quantos grupos de alternativas decidem o resultado sem norma resolvida. */
-  protected readonly gruposDeDocumentosSemNorma = computed(
-    () => gruposSemNormaResolvida(this.store.draft().documentos).length,
-  );
 
   /** Quem concorre em cada modalidade ofertada, pela regra que o processo congelou. */
   protected readonly regrasDasModalidades = this.store.regrasDasModalidades;

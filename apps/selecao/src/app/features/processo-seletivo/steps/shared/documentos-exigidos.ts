@@ -1,3 +1,4 @@
+import { formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { STEP_LABELS } from '../processo-seletivo.data';
 import type { ExigenciasDoRascunho } from '../processo-seletivo.models';
@@ -11,13 +12,12 @@ import {
 import {
   exigenciaDecideResultado,
   exigenciasLocalizadasDaFase,
+  gruposSemNormaResolvida,
   finalidadeDaExigencia,
   exigenciaSemNormaResolvida,
   type ExigenciaLocalizada,
 } from './exigencias-documentais';
 import { dominiosDoGatilho, fatosParaGatilho, type FatoEscolhivel } from './gatilho-de-exigencia';
-
-const BYTES_POR_MB = 1024 * 1024;
 
 /** Como a leitura nomeia o que o rascunho guarda por código. */
 export interface VocabularioDosDocumentos {
@@ -38,13 +38,6 @@ export interface DocumentoExigidoLido {
   readonly repeticao: string;
 }
 
-/** O teto em MB, ou em KB quando não chega a 1 MB — arredondar para 0 MB diria que nada cabe. */
-function tamanhoLegivel(bytes: number): string {
-  return bytes < BYTES_POR_MB
-    ? `${Math.ceil(bytes / 1024).toLocaleString('pt-BR')} KB`
-    : `${Number((bytes / BYTES_POR_MB).toFixed(1)).toLocaleString('pt-BR')} MB`;
-}
-
 /** Os formatos e o tamanho que a exigência aceita, numa frase. */
 export function descreverArquivo(formatosPermitidos: unknown, tamanhoMaximoBytes: number | null): string {
   const formatos =
@@ -54,7 +47,7 @@ export function descreverArquivo(formatosPermitidos: unknown, tamanhoMaximoBytes
   const tamanho =
     tamanhoMaximoBytes === null
       ? 'sem limite de tamanho declarado'
-      : `até ${tamanhoLegivel(tamanhoMaximoBytes)}`;
+      : `até ${formatarTamanhoDeArquivo(tamanhoMaximoBytes)}`;
   return `${formatos}, ${tamanho}`;
 }
 
@@ -128,18 +121,22 @@ export function documentosPorFase(
   exigencias: ExigenciasDoRascunho,
   faseCodigos: readonly string[],
 ): readonly DocumentosDaFase[] {
+  const gruposPendentes = gruposSemNormaResolvida(exigencias);
   return faseCodigos.flatMap((faseCodigo) => {
     const documentos = exigenciasLocalizadasDaFase(exigencias, faseCodigo).map(
       ({ documento }) => documento,
     );
     if (documentos.length === 0) return [];
+    // O grupo `OU` com consequência própria decide o resultado como uma exigência: entra na fase
+    // dos documentos que reúne, nas duas contagens.
+    const gruposDaFase = gruposPendentes.filter((grupo) => grupo.fases.includes(faseCodigo)).length;
     return [
       {
         faseCodigo,
         obrigatorios: documentos.filter((documento) => documento.obrigatorio).length,
         facultativos: documentos.filter((documento) => !documento.obrigatorio).length,
-        comNormaExigida: documentos.filter(exigenciaDecideResultado).length,
-        semNorma: documentos.filter(exigenciaSemNormaResolvida).length,
+        comNormaExigida: documentos.filter(exigenciaDecideResultado).length + gruposDaFase,
+        semNorma: documentos.filter(exigenciaSemNormaResolvida).length + gruposDaFase,
       },
     ];
   });

@@ -254,7 +254,7 @@ describe('FormularioStepComponent', () => {
       expect(texto).toContain('Laudo médico');
       expect(texto).toContain('Obrigatório');
       expect(texto).toContain('Pessoa com deficiência');
-      expect(texto).toContain('PDF, até 5 MB');
+      expect(texto).toContain('PDF, até 5,0 MB');
       expect(texto).not.toContain('Outra fase');
       expect(host.querySelector('sel-documentos-do-formulario')?.textContent).toContain('Laudo médico');
     });
@@ -273,7 +273,7 @@ describe('FormularioStepComponent', () => {
       emConsulta();
 
       const texto = host.textContent ?? '';
-      expect(texto).toContain('1 documento desta fase ainda não tem formulário definido');
+      expect(texto).toContain('1 documento desta fase depende da escolha do formulário');
       expect(texto).not.toContain('Nenhum documento exigido nesta fase');
     });
 

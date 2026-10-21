@@ -90,14 +90,14 @@
     <section class="step-section" aria-labelledby="revisao-documentos-titulo">
       <h2 id="revisao-documentos-titulo" class="step-section__title">Documentos exigidos</h2>
       @for (fase of documentosDasFases(); track fase.faseCodigo) {
-        <p class="revisao-documentos__fase">
+        <p>
           <strong>{{ fase.nome }}</strong>:
           {{ fase.obrigatorios === 1 ? '1 obrigatório' : fase.obrigatorios + ' obrigatórios' }},
           {{ fase.facultativos === 1 ? '1 facultativo' : fase.facultativos + ' facultativos' }}.
           @if (fase.semNorma > 0) {
             <span class="revisao-chip revisao-chip--pending"
               >Base legal pendente em
-              {{ fase.semNorma === 1 ? '1 documento' : fase.semNorma + ' documentos' }}</span
+              {{ fase.semNorma === 1 ? '1 exigência' : fase.semNorma + ' exigências' }}</span
             >
           } @else if (fase.comNormaExigida > 0) {
             <span class="revisao-chip revisao-chip--ok">Base legal resolvida</span>
@@ -107,14 +107,6 @@
         </p>
       } @empty {
         <p class="field__hint" role="status">Nenhum documento exigido nas fases do processo.</p>
-      }
-      @if (gruposDeDocumentosSemNorma() > 0) {
-        <p>
-          <span class="revisao-chip revisao-chip--pending"
-            >{{ gruposDeDocumentosSemNorma() === 1 ? '1 grupo de alternativas' : gruposDeDocumentosSemNorma() + ' grupos de alternativas' }}
-            sem base legal resolvida</span
-          >
-        </p>
       }
     </section>
 

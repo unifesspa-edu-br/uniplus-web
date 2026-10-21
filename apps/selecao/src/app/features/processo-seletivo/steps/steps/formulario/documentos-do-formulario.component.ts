@@ -25,7 +25,7 @@ import { PASSO_CRONOGRAMA, type DocumentoExigidoLido } from '../../shared/docume
           </button>
         }
       </p>
-    } @else {
+    } @else if (documentos().length > 0) {
       <ul class="doc-list">
         @for (documento of documentos(); track documento.chave) {
           <li class="doc-item">
@@ -66,10 +66,10 @@ import { PASSO_CRONOGRAMA, type DocumentoExigidoLido } from '../../shared/docume
       <p class="field__hint">
         {{
           semFormulario() === 1
-            ? '1 documento desta fase ainda não tem formulário definido'
-            : semFormulario() + ' documentos desta fase ainda não têm formulário definido'
+            ? '1 documento desta fase depende da escolha do formulário em que é apresentado'
+            : semFormulario() + ' documentos desta fase dependem da escolha do formulário em que são apresentados'
         }}
-        e não aparece{{ semFormulario() === 1 ? '' : 'm' }} aqui. Escolha o formulário no passo
+        e não aparece{{ semFormulario() === 1 ? '' : 'm' }} aqui. Faça a escolha no passo
         Cronograma.
       </p>
     }
