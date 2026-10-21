@@ -620,8 +620,9 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   /**
    * Por que o envio ainda não segue, ou `null` quando o formulário está válido. Conta as perguntas e os
-   * aceites das seções; a situação dos documentos obrigatórios entra aqui quando a API a devolver na
-   * inscrição, e o envio continua barrado pela API enquanto isso.
+   * aceites das seções. Os documentos obrigatórios ficam com a API, que recusa o envio: a situação de
+   * cada documento não basta, porque a alternativa não escolhida de um grupo "um ou outro" atendido
+   * continua pendente.
    */
   protected readonly motivoDoEnvioBloqueado = computed<string | null>(() => {
     const partes: string[] = [];
