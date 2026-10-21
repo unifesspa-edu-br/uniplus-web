@@ -555,8 +555,12 @@ export class InscricaoDoCandidatoPage implements OnInit {
         if (releitura !== this.ultimaReleituraDaRevisao) return;
         this.relendoARevisao.set(false);
         if (resultado.ok) {
-          const eTag = resultado.data.eTag;
-          this.inscricao.update((atual) => (atual ? { ...atual, eTag } : atual));
+          const relida = resultado.data;
+          // Se outra aba gravou nesse meio-tempo, o ETag novo cobre as respostas dela: a tela fica com o
+          // velho, e o próximo salvar cai no conflito em vez de sobrescrever o que a outra aba gravou.
+          this.inscricao.update((atual) =>
+            atual && mesmoConteudoGravado(atual, relida) ? { ...atual, eTag: relida.eTag } : atual,
+          );
         } else {
           // Com o ETag velho na tela, o próximo salvar seria recusado e as respostas se perderiam.
           this.motivoDoRecarregar.set('incerta');
@@ -846,4 +850,19 @@ export class InscricaoDoCandidatoPage implements OnInit {
     });
     return mostradas;
   }
+}
+
+/** O que só o candidato grava; enviar ou remover documento não muda nada disso. */
+function mesmoConteudoGravado(a: InscricaoDto, b: InscricaoDto): boolean {
+  const gravado = (i: InscricaoDto) =>
+    JSON.stringify([
+      i.situacao,
+      i.versaoFormularioId,
+      i.ofertaCursoId,
+      i.ofertaCursoSegundaOpcaoId,
+      i.respostas,
+      i.grupos,
+      i.aceites,
+    ]);
+  return gravado(a) === gravado(b);
 }
