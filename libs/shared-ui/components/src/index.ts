@@ -82,6 +82,12 @@ export { EnderecoGeoComponent } from '../../src/lib/components/endereco-geo/ende
 export * from '../../src/lib/components/endereco-geo/endereco-geo.model';
 export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
 export * from '../../src/lib/components/editor-de-formulario/formulario-editavel';
+export * from '../../src/lib/components/editor-de-documentos-exigidos/documentos-exigidos';
+export {
+  DocumentoExigidoComponent,
+  EditorDeDocumentosExigidosComponent,
+  type OpcaoDoDocumento,
+} from '../../src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
 export { FormularioDoCandidatoComponent } from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
 export type {

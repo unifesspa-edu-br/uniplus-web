@@ -42,6 +42,12 @@ export * from './editor-de-condicoes/condicoes-de-fatos';
 export * from './editor-de-condicoes/leitura-de-condicoes';
 export { EditorDeFormularioComponent } from './editor-de-formulario/editor-de-formulario';
 export * from './editor-de-formulario/formulario-editavel';
+export * from './editor-de-documentos-exigidos/documentos-exigidos';
+export {
+  DocumentoExigidoComponent,
+  EditorDeDocumentosExigidosComponent,
+  type OpcaoDoDocumento,
+} from './editor-de-documentos-exigidos/editor-de-documentos-exigidos';
 export * from './editor-de-formulario/termos-disponiveis';
 export { SkeletonComponent } from './skeleton/skeleton';
 export { SkipLinkComponent } from './skip-link/skip-link';

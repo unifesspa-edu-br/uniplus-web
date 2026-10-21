@@ -1,3 +1,4 @@
+import type { DocumentoExigidoDoFormulario } from '../editor-de-documentos-exigidos/documentos-exigidos';
 import {
   OPERADOR_DIFERENTE,
   OPERADOR_NAO_EM,
@@ -103,6 +104,8 @@ export interface ConteudoDoFormulario {
   readonly termos: null | readonly TermoDoFormulario[];
   readonly pressupostos: null | readonly string[];
   readonly grupos?: null | readonly GrupoDoFormulario[];
+  /** O conjunto padrão de documentos exigidos; o PUT substitui o conteúdo inteiro, então ele viaja a cada gravação. */
+  readonly documentosExigidos?: null | readonly DocumentoExigidoDoFormulario[];
 }
 
 /** O que o editor precisa saber de um fato do catálogo para oferecê-lo como campo. */
