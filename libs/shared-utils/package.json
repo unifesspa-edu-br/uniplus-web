@@ -4,8 +4,7 @@
   "peerDependencies": {
     "vite": "^7.0.0",
     "@analogjs/vite-plugin-angular": ">=2.0.0",
-    "@nx/vite": ">=22.0.0",
-    "@angular/core": "^21.2.0"
+    "@nx/vite": ">=22.0.0"
   },
   "sideEffects": false
 }
