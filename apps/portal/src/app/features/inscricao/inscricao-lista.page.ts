@@ -24,9 +24,9 @@ import {
   type UiSegmentedOption,
   UiTagVariant,
 } from '@uniplus/shared-ui/components';
-import { mediaQuerySignal } from '@uniplus/shared-utils';
 import { FormsModule } from '@angular/forms';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
+import { mediaQuerySignal } from '@uniplus/shared-core/dom';
 import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
 import { SituacaoInscricao } from '@uniplus/shared-data/selecao';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';

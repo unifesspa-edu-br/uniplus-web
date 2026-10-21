@@ -4,3 +4,4 @@ export {
   type UiDisclosureControllerOptions,
   type UiDisclosureRef,
 } from '../../src/lib/dom/disclosure';
+export { mediaQuerySignal } from '../../src/lib/dom/media-query';

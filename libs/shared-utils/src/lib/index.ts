@@ -41,4 +41,3 @@ export { formatarNumeroPtBr, numeroDaApi, numeroOuNuloDaApi } from './utils/nume
 export { formatarTamanhoDeArquivo } from './utils/tamanho-de-arquivo.util';
 export { digitosDoTelefone, formatarTelefone } from './utils/telefone.util';
 export { UNIDADES_FEDERATIVAS, type UnidadeFederativa } from './utils/unidades-federativas';
-export { mediaQuerySignal } from './utils/media-query.util';

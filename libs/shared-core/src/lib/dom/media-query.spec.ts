@@ -1,7 +1,7 @@
 import { DOCUMENT, Injector, runInInjectionContext } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
 
-import { mediaQuerySignal } from './media-query.util';
+import { mediaQuerySignal } from './media-query';
 
 function criarMediaQuery(matches: boolean) {
   const addEventListener = vi.fn();

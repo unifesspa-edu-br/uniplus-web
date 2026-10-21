@@ -21,6 +21,7 @@ import {
   useApiResource,
   useCursorObsoletoRecovery,
 } from '@uniplus/shared-core/http';
+import { mediaQuerySignal } from '@uniplus/shared-core/dom';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
 import {
   CertameNaVitrineDto,
@@ -44,7 +45,7 @@ import {
   type UiTagVariant,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
-import { diaNoFuso, formatarDataBr, mediaQuerySignal } from '@uniplus/shared-utils';
+import { diaNoFuso, formatarDataBr } from '@uniplus/shared-utils';
 
 import { CertamePublicacoesComponent } from '../publicacoes/certame-publicacoes';
 import type { PublicacoesDoCertame } from '../publicacoes/publicacoes.model';

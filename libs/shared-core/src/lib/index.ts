@@ -14,6 +14,7 @@ export {
   type UiDisclosureControllerOptions,
   type UiDisclosureRef,
 } from './dom/disclosure';
+export { mediaQuerySignal } from './dom/media-query';
 
 // HTTP — adapter `ApiResult<T>` consolidado (ADR-0011 + ADR-0012)
 export * from './http';

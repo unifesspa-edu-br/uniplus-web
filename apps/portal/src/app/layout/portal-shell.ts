@@ -15,7 +15,7 @@ import {
   SkipLinkComponent,
   VlibrasLoaderComponent,
 } from '@uniplus/shared-ui/components';
-import { mediaQuerySignal } from '@uniplus/shared-utils';
+import { mediaQuerySignal } from '@uniplus/shared-core/dom';
 
 interface PortalNavItem {
   readonly label: string;
