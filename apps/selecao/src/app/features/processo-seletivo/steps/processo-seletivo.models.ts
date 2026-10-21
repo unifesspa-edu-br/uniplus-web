@@ -146,6 +146,23 @@ export interface CascataSelecionada {
 export interface ModalidadeDaOferta {
   readonly id: string;
   readonly codigo: string;
+  /**
+   * A modalidade como o processo a gravou, quando veio do detalhe. É o que a consulta lê: o
+   * catálogo vigente pode ter mudado depois da publicação, ou nem ter carregado.
+   */
+  readonly gravada?: ModalidadeGravada;
+}
+
+/** Os dados da modalidade que o snapshot do processo guarda, com a composição já decodificada. */
+export interface ModalidadeGravada {
+  readonly descricao: string | null;
+  /** `null` quando a grafia gravada não pertence ao vocabulário conhecido. */
+  readonly composicaoVagas: string | null;
+  readonly composicaoOrigemCodigo: string | null;
+  readonly regraRemanejamento: string | null;
+  readonly remanejamentoDestino: string | null;
+  readonly remanejamentoPar: string | null;
+  readonly remanejamentoFallback: string | null;
 }
 
 export interface QuantidadeDeVagas {

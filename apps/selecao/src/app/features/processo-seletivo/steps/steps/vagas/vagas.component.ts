@@ -43,6 +43,7 @@ import {
   EscopoDoProblema,
   ehRamoFederal,
   modalidadesDoRol,
+  modalidadesGravadasPorId,
   ofertasRepetidas,
   ProblemaDaDistribuicao,
   problemaDeVagasAutorizadas,
@@ -118,6 +119,10 @@ function lista(itens: readonly string[]): string {
   if (itens.length <= 1) return itens[0] ?? '';
   return `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1]}`;
 }
+
+/** A modalidade do padrão como a tela a lê; sem `composicaoVagas`, nem o processo nem o catálogo a dizem. */
+type ModalidadeDoPadrao = Pick<ModalidadeDto, 'id' | 'codigo' | 'descricao'> &
+  Partial<Pick<ModalidadeDto, 'composicaoVagas'>>;
 
 /**
  * Distribuição de vagas por oferta de curso (UNI-REQ-0134).
@@ -385,11 +390,15 @@ export class VagasStepComponent {
             : `Referência gravada, mas o catálogo ${motivo}`,
       modalidades:
         situacao === 'lido'
-          ? this.modalidadesDoPadrao().map(
-              (modalidade) => `${modalidade.codigo} — ${modalidade.descricao}`,
+          ? this.modalidadesDoPadrao().map((modalidade) =>
+              modalidade.descricao === ''
+                ? modalidade.codigo
+                : `${modalidade.codigo} — ${modalidade.descricao}`,
             )
-          : padrao.modalidades.map(
-              (modalidade) => `${modalidade.codigo} — descrição: o catálogo ${motivo}`,
+          : this.modalidadesDoPadrao().map((modalidade) =>
+              modalidade.descricao === ''
+                ? `${modalidade.codigo} — descrição: o catálogo ${motivo}`
+                : `${modalidade.codigo} — ${modalidade.descricao}`,
             ),
     };
   });
@@ -413,17 +422,17 @@ export class VagasStepComponent {
   readonly colunasDoQuadro = computed<
     readonly Pick<ModalidadeDto, 'id' | 'codigo' | 'descricao'>[]
   >(() => {
-    if (!this.store.emConsulta() || this.catalogos.situacao() === 'lido') {
-      return this.colunasDeQuantidade();
-    }
-    // No regime federal a regra calcula várias modalidades e o rascunho não guarda quantidade
-    // delas: coluna só para quem tem quantidade gravada, senão o rodapé leria "0" vagas.
+    if (!this.store.emConsulta()) return this.colunasDeQuantidade();
+    // O processo gravado sem a composição da modalidade (e sem catálogo que a complete) não diz se
+    // a regra a calcula: coluna só para quem tem quantidade gravada, senão o rodapé leria "0" vagas.
     const comQuantidade = new Set(
       this.distribuicoes().flatMap((item) => item.quadro.map((q) => q.modalidadeId)),
     );
-    return this.padrao()
-      .modalidades.filter((modalidade) => comQuantidade.has(modalidade.id))
-      .map((modalidade) => ({ id: modalidade.id, codigo: modalidade.codigo, descricao: '' }));
+    return this.modalidadesDoPadrao().filter((modalidade) =>
+      modalidade.composicaoVagas === undefined
+        ? comQuantidade.has(modalidade.id)
+        : this.ehDeclarada(modalidade),
+    );
   });
 
   /** Carregando e erro só servem a quem edita: a consulta lê o gravado e diz o que não leu. */
@@ -448,7 +457,9 @@ export class VagasStepComponent {
   });
 
   readonly modalidadesCalculadas = computed(() =>
-    this.modalidadesDoPadrao().filter((modalidade) => !this.ehDeclarada(modalidade)),
+    this.modalidadesDoPadrao().filter(
+      (modalidade) => modalidade.composicaoVagas !== undefined && !this.ehDeclarada(modalidade),
+    ),
   );
 
   readonly ofertasDisponiveis = computed(() => {
@@ -1571,13 +1582,37 @@ export class VagasStepComponent {
     );
   }
 
-  private modalidadesDoPadrao(): readonly ModalidadeDto[] {
+  /**
+   * Em consulta, as do snapshot gravado, com o catálogo só a complementar o que ele não traz;
+   * fora dela, as do catálogo que o padrão seleciona.
+   */
+  private modalidadesDoPadrao(): readonly ModalidadeDoPadrao[] {
+    if (this.store.emConsulta()) {
+      const vigentes = new Map(
+        this.catalogos.modalidades().map((modalidade) => [modalidade.id, modalidade]),
+      );
+      const gravadas = modalidadesGravadasPorId(
+        this.distribuicoes(),
+        this.catalogos.modalidadePorId(),
+      );
+
+      return this.padrao().modalidades.map((modalidade) => ({
+        id: modalidade.id,
+        codigo: modalidade.codigo,
+        descricao: modalidade.gravada?.descricao ?? vigentes.get(modalidade.id)?.descricao ?? '',
+        composicaoVagas: gravadas.get(modalidade.id)?.composicaoVagas || undefined,
+      }));
+    }
+
     const selecionadas = new Set(this.padrao().modalidades.map((modalidade) => modalidade.id));
     return this.catalogos.modalidades().filter((modalidade) => selecionadas.has(modalidade.id));
   }
 
-  private ehDeclarada(modalidade: ModalidadeDto): boolean {
-    return quantidadeEhDeclarada(modalidade.composicaoVagas, this.ehFederal());
+  private ehDeclarada(modalidade: ModalidadeDoPadrao): boolean {
+    return (
+      modalidade.composicaoVagas !== undefined &&
+      quantidadeEhDeclarada(modalidade.composicaoVagas, this.ehFederal())
+    );
   }
 
   private alterarPadrao(patch: Partial<PadraoDaDistribuicao>): void {

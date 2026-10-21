@@ -1501,8 +1501,40 @@ describe('FaseStepComponent', () => {
 
         const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
         expect(leitura).toContain('Sem descrição');
-        expect(leitura).toContain('Arquivo aceito pelo cadastro');
-        expect(leitura).toContain('Formatos aceitos: pdf,jpg. Até 10 MB.');
+        expect(leitura).toContain('Arquivo aceito pela exigência publicada');
+        expect(leitura).toContain('Formatos aceitos: PDF, JPEG. Até 10 MB.');
+      });
+
+      /**
+       * O cadastro mudou depois da publicação: a consulta lê o que a exigência gravou, e a
+       * descrição, que o snapshot não guarda, diz de onde vem.
+       */
+      it('em consulta, lê os formatos e o limite gravados quando o cadastro diverge', () => {
+        componente.alternarExigencia(ID_CPF, true);
+        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+          { ...TIPOS_DOCUMENTO[0], formatosAceitos: 'pdf', tamanhoMaximoMb: 5 },
+        ]);
+        store.remoteSnapshot.set({
+          status: StatusProcesso.publicado,
+        } as unknown as ProcessoSeletivoDto);
+        detectar();
+
+        const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+        expect(leitura).toContain('Formatos aceitos: PDF, JPEG. Até 10 MB.');
+        expect(leitura).not.toContain('Até 5 MB');
+        expect(leitura).toContain('Descrição do cadastro vigente');
+      });
+
+      it('em consulta, lê os formatos gravados do documento cujo tipo saiu do cadastro', () => {
+        componente.alternarExigencia(ID_CPF, true);
+        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([]);
+        store.remoteSnapshot.set({
+          status: StatusProcesso.publicado,
+        } as unknown as ProcessoSeletivoDto);
+        detectar();
+
+        const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+        expect(leitura).toContain('Formatos aceitos: PDF, JPEG. Até 10 MB.');
       });
 
       /**

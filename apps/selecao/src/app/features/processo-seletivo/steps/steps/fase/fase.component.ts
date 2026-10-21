@@ -21,6 +21,7 @@ import {
   exigidoDeTodos,
   faltaOFormulario,
   finalidadeDaExigencia,
+  arquivoPublicadoDe,
   formatosDeclarados,
   modalidadesDaExigencia,
   semAExigencia,
@@ -921,7 +922,7 @@ export class FaseStepComponent {
     const finalidade = this.finalidadeDoDocumento(id);
     return {
       descricao: doc.descricao,
-      formatos: doc.formatos,
+      formatos: arquivoPublicadoDe(this.exigenciaDoDocumento(id)),
       situacao: doc.situacao,
       formulario: this.mostraFormulario(id)
         ? (this.formulariosEscolhiveis().find((opcao) => opcao.valor === finalidade)?.rotulo ?? null)

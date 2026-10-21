@@ -442,6 +442,15 @@ function distribuicoesDe(dto: ProcessoSeletivoDto): DistribuicaoDeVagas[] {
     modalidades: distribuicao.modalidades.map((modalidade) => ({
       id: modalidade.modalidadeOrigemId,
       codigo: modalidade.codigo,
+      gravada: {
+        descricao: modalidade.descricao,
+        composicaoVagas: decodificarComposicaoVagas(modalidade.composicaoVagas),
+        composicaoOrigemCodigo: modalidade.composicaoOrigemCodigo,
+        regraRemanejamento: modalidade.regraRemanejamento,
+        remanejamentoDestino: modalidade.remanejamentoDestino,
+        remanejamentoPar: modalidade.remanejamentoPar,
+        remanejamentoFallback: modalidade.remanejamentoFallback,
+      },
     })),
     quadro: quadroDeclaradoDe(distribuicao),
   }));

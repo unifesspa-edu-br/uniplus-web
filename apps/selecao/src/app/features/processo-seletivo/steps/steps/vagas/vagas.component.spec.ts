@@ -8,7 +8,7 @@ import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { OrigemCandidatos, ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
+import { DistribuicaoDeVagas, ModalidadeGravada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
@@ -736,6 +736,19 @@ const REGRA_CASCATA_SEM_MATRIZ = {
 };
 
 /** Oferta federal com as três modalidades: cobre fallback e o destino da origem. */
+/** A modalidade como o snapshot a guarda; o que não interessa ao teste fica vazio. */
+function gravadaDe(descricao: string, composicaoVagas: string): ModalidadeGravada {
+  return {
+    descricao,
+    composicaoVagas,
+    composicaoOrigemCodigo: null,
+    regraRemanejamento: null,
+    remanejamentoDestino: null,
+    remanejamentoPar: null,
+    remanejamentoFallback: null,
+  };
+}
+
 function distribuicaoComCascata(): DistribuicaoDeVagas {
   return {
     ofertaCursoId: OFERTA_CASCATA,
@@ -2212,6 +2225,78 @@ describe('VagasStepComponent — consulta com o catálogo em falha', () => {
     expect(celulas).toEqual(expect.arrayContaining(['LB_PPI=10', 'AC=80']));
     expect(celulas.filter((c) => c.startsWith('LB_Q='))).toEqual([]);
     expect(celulas).not.toContain('LB_Q=0');
+  });
+
+  /** O snapshot traz descrição e composição: a consulta as lê dele, sem esperar pelo catálogo. */
+  it('lê descrição e composição do snapshot gravado, mesmo com o catálogo fora do ar', () => {
+    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicaoComCascata(),
+          modalidades: [
+            { id: LB_PPI, codigo: 'LB_PPI', gravada: gravadaDe('Baixa renda PPI', 'DENTRO_DO_VR') },
+            { id: AC_CASCATA, codigo: 'AC', gravada: gravadaDe('Ampla concorrência', 'RETIRA_DE') },
+          ],
+          quadro: [{ modalidadeId: AC_CASCATA, quantidade: '80' }],
+        },
+      ],
+    });
+    store.remoteSnapshot.set({
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
+    fixture.detectChanges();
+
+    expect(leitura()).toContain('LB_PPI — Baixa renda PPI');
+    expect(leitura()).toContain('AC — Ampla concorrência');
+    expect(leitura()).not.toContain('descrição: o catálogo');
+    const colunas = Array.from(tela.querySelectorAll('.vagas-table thead th')).map((th) =>
+      th.textContent?.trim(),
+    );
+    expect(colunas).toContain('AC');
+    expect(colunas).not.toContain('LB_PPI');
+  });
+
+  /** O catálogo mudou depois da publicação: vale o gravado, e a modalidade que saiu continua. */
+  it('com o catálogo divergente do snapshot, mostra o gravado e mantém a modalidade que saiu dele', () => {
+    store.remoteSnapshot.set({ status: StatusProcesso.rascunho } as unknown as ProcessoSeletivoDto);
+    store.patchObjectSection('vagas', {
+      ofertas: [
+        {
+          ...distribuicaoComCascata(),
+          regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
+          modalidades: [
+            { id: LB_PPI, codigo: 'LB_PPI', gravada: gravadaDe('Descrição publicada', 'RETIRA_DE') },
+            { id: LB_Q, codigo: 'LB_Q', gravada: gravadaDe('Quilombola publicada', 'RETIRA_DE') },
+          ],
+          quadro: [
+            { modalidadeId: LB_PPI, quantidade: '10' },
+            { modalidadeId: LB_Q, quantidade: '7' },
+          ],
+        },
+      ],
+    });
+    // Hoje o catálogo só conhece LB_PPI, com outra descrição e outra composição.
+    fixture.componentInstance.catalogos.modalidades.set([
+      {
+        id: LB_PPI,
+        codigo: 'LB_PPI',
+        descricao: 'Descrição de hoje',
+        composicaoVagas: 'DENTRO_DO_VR',
+      } as never,
+    ]);
+    store.remoteSnapshot.set({
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
+    fixture.detectChanges();
+
+    expect(leitura()).toContain('LB_PPI — Descrição publicada');
+    expect(leitura()).not.toContain('Descrição de hoje');
+    expect(leitura()).toContain('LB_Q — Quilombola publicada');
+    const celulas = Array.from(tela.querySelectorAll('.vagas-table td[data-label]')).map(
+      (td) => `${td.getAttribute('data-label')}=${td.textContent?.trim()}`,
+    );
+    expect(celulas).toEqual(expect.arrayContaining(['LB_PPI=10', 'LB_Q=7']));
   });
 
   it('padrão sem modalidades diz que nenhuma é oferecida, e não que não leu', () => {
