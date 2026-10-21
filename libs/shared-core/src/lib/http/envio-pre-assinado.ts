@@ -4,7 +4,7 @@ import type { ProblemDetails } from './problem-details';
 import type { SignedUploadClient } from './signed-upload';
 
 /**
- * O envio direto ao storage que o edital e o modelo de documento compartilham: a API registra
+ * O envio direto ao storage que o edital, o modelo de documento e os documentos da inscrição compartilham: a API registra
  * o arquivo pendente e devolve uma URL pré-assinada de PUT; o navegador envia os bytes direto ao
  * object store, sem passar pela API; a API confirma lendo o objeto e o sela como imutável. A
  * conferência do arquivo confirmado segue o mesmo desenho — uma URL de leitura emitida por
