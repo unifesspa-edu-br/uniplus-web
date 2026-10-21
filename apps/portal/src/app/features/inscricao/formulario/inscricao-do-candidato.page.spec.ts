@@ -195,7 +195,7 @@ describe('InscricaoDoCandidatoPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: InscricaoDoCandidatoService, useValue: servico },
-        { provide: EnvioDeDocumentosDaInscricao, useValue: { paraOProcesso: () => ({}) } },
+        { provide: EnvioDeDocumentosDaInscricao, useValue: { paraOProcesso: () => ({ arquivos: signal([]), enviar: vi.fn(), remover: vi.fn() }) } },
         { provide: UserContextService, useValue: { user: conta } },
         { provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) },
         { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },

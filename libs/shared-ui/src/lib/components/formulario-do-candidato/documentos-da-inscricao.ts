@@ -3,11 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import { AlertComponent } from '../alert/alert';
 import { EnvioDoDocumentoComponent } from './envio-do-documento';
-import type {
-  ArquivoEnviado,
-  EnvioDeDocumentos,
-  SituacaoDaExigencia,
-} from './envio-de-documentos';
+import type { ArquivoEnviado, EnvioDeDocumentos, SituacaoDaExigencia } from './envio-de-documentos';
 import { ListaDeDocumentosComponent } from '../lista-de-documentos/lista-de-documentos';
 import { type DocumentoNaTela, type NoDeDocumentos, textoDoGrupo } from './documentos-avaliados';
 import type { AvaliacaoNaTela, PendenciaDaAvaliacao } from './modalidades-avaliadas';
@@ -28,7 +24,12 @@ type Trecho =
 @Component({
   selector: 'ui-documentos-da-inscricao',
   standalone: true,
-  imports: [AlertComponent, EnvioDoDocumentoComponent, ListaDeDocumentosComponent, NgTemplateOutlet],
+  imports: [
+    AlertComponent,
+    EnvioDoDocumentoComponent,
+    ListaDeDocumentosComponent,
+    NgTemplateOutlet,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[attr.aria-busy]': 'avaliacao().calculando' },
   styles: `
@@ -75,7 +76,7 @@ type Trecho =
               [tamanhoMaximoBytes]="documento.tamanhoMaximoBytes ?? null"
               [quantidadeMinima]="documento.quantidadeMinima"
               [envio]="envio"
-              [arquivos]="arquivosDe(exigida.chave)"
+              [arquivos]="arquivosPorExigencia().get(exigida.chave) ?? SEM_ARQUIVOS"
               [situacao]="situacoes()[exigida.chave] ?? null"
               [podeAlterar]="podeAlterar()"
               (arquivoEnviado)="arquivoEnviado.emit($event)"
@@ -220,9 +221,16 @@ export class DocumentosDaInscricaoComponent {
     return trechos;
   });
 
-  protected arquivosDe(chave: string): readonly ArquivoEnviado[] {
-    return this.arquivosEnviados().filter((arquivo) => arquivo.chave === chave);
-  }
+  protected readonly SEM_ARQUIVOS: readonly ArquivoEnviado[] = [];
+
+  /** Os arquivos já registrados, agrupados pela exigência e ocorrência a que pertencem. */
+  protected readonly arquivosPorExigencia = computed(() => {
+    const porChave = new Map<string, ArquivoEnviado[]>();
+    for (const arquivo of this.arquivosEnviados()) {
+      porChave.set(arquivo.chave, [...(porChave.get(arquivo.chave) ?? []), arquivo]);
+    }
+    return porChave;
+  });
 
   protected texto(grupo: GrupoDeDocumentos): string {
     return textoDoGrupo(grupo);

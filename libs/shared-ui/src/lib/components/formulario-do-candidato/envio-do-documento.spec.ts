@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,6 +16,7 @@ const ALVO: AlvoDoEnvio = {
 const CONFIRMADO: ArquivoEnviado = {
   arquivoId: 'arquivo-1',
   chave: ALVO.chave,
+  nome: 'laudo.pdf',
   tipoDeMidia: 'application/pdf',
   tamanhoBytes: 2048,
 };
@@ -24,12 +26,25 @@ const arquivo = (nome: string, bytes = 2048): File =>
 
 describe('Envio do arquivo de um documento exigido', () => {
   let fixture: ComponentFixture<EnvioDoDocumentoComponent>;
-  let envio: { enviar: ReturnType<typeof vi.fn>; remover: ReturnType<typeof vi.fn> };
+  let envio: {
+    arquivos: ReturnType<typeof signal<readonly ArquivoEnviado[]>>;
+    enviar: ReturnType<typeof vi.fn>;
+    remover: ReturnType<typeof vi.fn>;
+  };
 
+  // Como o envio de quem hospeda: o arquivo confirmado fica na lista dele, e a remoção o tira.
   beforeEach(() => {
+    const arquivos = signal<readonly ArquivoEnviado[]>([]);
     envio = {
-      enviar: vi.fn().mockResolvedValue({ ok: true, arquivo: CONFIRMADO }),
-      remover: vi.fn().mockResolvedValue({ ok: true }),
+      arquivos,
+      enviar: vi.fn().mockImplementation(async () => {
+        arquivos.update((lista) => [...lista, CONFIRMADO]);
+        return { ok: true, arquivo: CONFIRMADO };
+      }),
+      remover: vi.fn().mockImplementation(async (id: string) => {
+        arquivos.update((lista) => lista.filter((a) => a.arquivoId !== id));
+        return { ok: true };
+      }),
     };
   });
 
@@ -38,7 +53,8 @@ describe('Envio do arquivo de um documento exigido', () => {
     fixture.componentRef.setInput('alvo', ALVO);
     fixture.componentRef.setInput('formatos', { qualquer: false, lista: ['PDF'] });
     fixture.componentRef.setInput('envio', envio as unknown as EnvioDeDocumentos);
-    for (const [nome, valor] of Object.entries(entradas)) fixture.componentRef.setInput(nome, valor);
+    for (const [nome, valor] of Object.entries(entradas))
+      fixture.componentRef.setInput(nome, valor);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   };
@@ -82,7 +98,9 @@ describe('Envio do arquivo de um documento exigido', () => {
     await escolher(new File(['x'], 'foto.png', { type: 'image/png' }));
 
     expect(envio.enviar).not.toHaveBeenCalled();
-    expect(tela.querySelector('[role="alert"]')?.textContent).toContain('Tipo de arquivo não permitido');
+    expect(tela.querySelector('[role="alert"]')?.textContent).toContain(
+      'Tipo de arquivo não permitido',
+    );
   });
 
   it('falha no envio: mostra a recusa e repete o mesmo arquivo na nova tentativa', async () => {
@@ -95,17 +113,68 @@ describe('Envio do arquivo de um documento exigido', () => {
     const laudo = arquivo('laudo.pdf');
 
     await escolher(laudo);
-    expect(tela.querySelector('[role="alert"]')?.textContent).toContain('O antivírus está indisponível.');
+    expect(tela.querySelector('[role="alert"]')?.textContent).toContain(
+      'O antivírus está indisponível.',
+    );
 
-    (tela.querySelector('button[aria-label^="Tentar enviar novamente"]') as HTMLButtonElement).click();
+    (
+      tela.querySelector('button[aria-label^="Tentar enviar novamente"]') as HTMLButtonElement
+    ).click();
     await fixture.whenStable();
 
     expect(envio.enviar).toHaveBeenCalledTimes(2);
     expect(envio.enviar.mock.calls[1][1]).toBe(laudo);
   });
 
+  it('o arquivo enviado antes de trocar de passo reaparece quando a tela volta', async () => {
+    montar();
+    await escolher(arquivo('laudo.pdf'));
+    fixture.destroy();
+
+    const tela = montar();
+
+    expect(tela.querySelector('.uni-uploader__item-name')?.textContent).toContain('laudo.pdf');
+  });
+
+  it('arquivo retirado enquanto sobe é descartado quando o envio termina', async () => {
+    let terminar: (d: unknown) => void = () => undefined;
+    envio.enviar.mockImplementationOnce(() => new Promise((resolve) => (terminar = resolve)));
+    const tela = montar();
+    await escolher(arquivo('laudo.pdf'));
+
+    (tela.querySelector('button[aria-label^="Remover"]') as HTMLButtonElement).click();
+    terminar({ ok: true, arquivo: CONFIRMADO });
+    await fixture.whenStable();
+
+    expect(envio.remover).toHaveBeenCalledWith('arquivo-1');
+  });
+
+  it('anuncia as fases do envio no leitor de tela', async () => {
+    let andar: (fase: 'enviando' | 'confirmando', progresso: number) => void = () => undefined;
+    let terminar: (d: unknown) => void = () => undefined;
+    envio.enviar.mockImplementationOnce((_alvo, _arquivo, aoAndar) => {
+      andar = aoAndar;
+      return new Promise((resolve) => (terminar = resolve));
+    });
+    const tela = montar();
+    await escolher(arquivo('laudo.pdf'));
+    const anuncio = (): string => tela.querySelector('[role="status"]')?.textContent?.trim() ?? '';
+
+    andar('enviando', 50);
+    fixture.detectChanges();
+    const durante = anuncio();
+    andar('confirmando', 100);
+    fixture.detectChanges();
+
+    expect(durante).not.toBe('');
+    expect(anuncio()).not.toBe(durante);
+    terminar({ ok: true, arquivo: CONFIRMADO });
+  });
+
   it('remove o arquivo enviado pela API e avisa quem hospeda', async () => {
-    const tela = montar({ arquivos: [CONFIRMADO] });
+    const tela = montar();
+    envio.arquivos.set([CONFIRMADO]);
+    fixture.detectChanges();
     const removido = vi.fn();
     fixture.componentInstance.arquivoRemovido.subscribe(removido);
 
@@ -131,7 +200,9 @@ describe('Envio do arquivo de um documento exigido', () => {
     const dica = tela.querySelector('.envio-do-documento__dica') as HTMLElement;
     expect(dica.textContent).toContain('Envie 2 arquivos');
     expect(
-      (tela.querySelector('input[type="file"]') as HTMLInputElement).getAttribute('aria-describedby'),
+      (tela.querySelector('input[type="file"]') as HTMLInputElement).getAttribute(
+        'aria-describedby',
+      ),
     ).toContain(dica.id);
   });
 

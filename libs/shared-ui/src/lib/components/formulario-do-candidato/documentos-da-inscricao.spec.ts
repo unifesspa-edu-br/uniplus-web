@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { of } from 'rxjs';
 
@@ -289,7 +290,7 @@ describe('Bloco de documentos da inscrição', () => {
   });
 
   describe('envio do arquivo exigido', () => {
-    const ENVIO: EnvioDeDocumentos = { enviar: vi.fn(), remover: vi.fn() };
+    const ENVIO: EnvioDeDocumentos = { arquivos: signal([]), enviar: vi.fn(), remover: vi.fn() };
 
     it('oferece o envio só para o que as respostas já exigem', () => {
       const tela = montar(
@@ -309,7 +310,9 @@ describe('Bloco de documentos da inscrição', () => {
     it('enquanto não se sabe a quais integrantes o documento se liga, não oferece envio', () => {
       const tela = montar(
         naTela(
-          nestaFase(documento('Laudo médico', { grupoCodigo: 'MEMBROS', repetePorEntidade: 'MEMBROS' })),
+          nestaFase(
+            documento('Laudo médico', { grupoCodigo: 'MEMBROS', repetePorEntidade: 'MEMBROS' }),
+          ),
         ),
         ENVIO,
       );
