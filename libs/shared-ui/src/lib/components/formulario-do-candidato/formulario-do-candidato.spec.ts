@@ -1378,6 +1378,17 @@ describe('FormularioDoCandidatoComponent', () => {
       expect(tela.textContent).toContain('Há 1 item a corrigir na seção Contato.');
     });
 
+    it('na última seção, concluir também barra com pergunta obrigatória pendente', () => {
+      const tela = montar(
+        { ...DUAS_SECOES, etapas: [DUAS_SECOES.etapas[0]], regras: { etapas: [DUAS_SECOES.regras.etapas[0]] } },
+        { exigirSecaoValida: true },
+      );
+
+      clicar(botao(tela, 'Concluir a seção'));
+
+      expect(tela.textContent).toContain('Há 1 item a corrigir na seção Contato.');
+    });
+
     it('avança quando a seção está respondida', () => {
       const tela = montar(DUAS_SECOES, { exigirSecaoValida: true });
       emailPreenchido(tela);
@@ -1493,6 +1504,50 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(document.activeElement).toBe(
       tela.querySelector('[data-campo="FAMILIA.membro-2.RENDA"] input'),
     );
+  });
+
+  it('concluir a seção esconde o destino: o avanço para na seção que ficou no lugar dele', () => {
+    const tela = montar(
+      {
+        ...DUAS_SECOES,
+        etapas: [
+          { codigo: 'A', codigoNasRegras: 'Inscricao:A', ordem: 0, tipo: 'SECAO', titulo: 'Seção A' },
+          { codigo: 'B', codigoNasRegras: 'Inscricao:B', ordem: 1, tipo: 'SECAO', titulo: 'Seção B' },
+          { codigo: 'C', codigoNasRegras: 'Inscricao:C', ordem: 2, tipo: 'SECAO', titulo: 'Seção C' },
+          { codigo: 'D', codigoNasRegras: 'Inscricao:D', ordem: 3, tipo: 'SECAO', titulo: 'Seção D' },
+        ],
+        fatosColetados: [
+          campo('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
+          campo('APELIDO', 'Apelido', 'TEXTO', { ordem: 1 }),
+          campo('EMAIL', 'E-mail', 'TEXTO', { ordem: 2 }),
+        ],
+        regras: {
+          etapas: [
+            { codigo: 'Inscricao:A', itens: [regra('TEM_BOLSA', { obrigatoriedade: 'NUNCA' })] },
+            {
+              codigo: 'Inscricao:B',
+              exibicao: [[{ fato: 'BOLSISTA', operador: 'DIFERENTE', valor: false }]],
+            },
+            { codigo: 'Inscricao:C', itens: [regra('APELIDO', { obrigatoriedade: 'NUNCA' })] },
+            { codigo: 'Inscricao:D', itens: [regra('EMAIL')] },
+          ],
+          derivacoes: [
+            {
+              fatoCodigo: 'BOLSISTA',
+              booleano: true,
+              regras: [{ quando: [[{ fato: 'TEM_BOLSA', operador: 'IGUAL', valor: 'SIM' }]] }],
+            },
+          ],
+        },
+      },
+      { exigirSecaoValida: true },
+    );
+    expect(tela.textContent).toContain('Seção B');
+
+    clicar(botao(tela, 'Próxima seção'));
+
+    expect(tela.textContent).not.toContain('Seção B');
+    expect(tela.querySelector('h3')?.textContent).toContain('Seção C');
   });
 
   it('concluir todas leva o foco ao obrigatório que só aparece com o opcional em branco', async () => {
