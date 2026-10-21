@@ -225,7 +225,7 @@ export class EnvioDoDocumentoComponent {
       this.atualizar(id, {
         fase: 'erro',
         mensagem: desfecho.mensagem,
-        podeTentarDeNovo: desfecho.podeTentarDeNovo && this.podeEnviar(),
+        podeTentarDeNovo: desfecho.podeTentarDeNovo,
       });
       return;
     }

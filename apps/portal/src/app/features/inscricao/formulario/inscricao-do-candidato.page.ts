@@ -144,6 +144,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   /** Quantas mudanças do envio a avaliação já levou em conta; o envio nasce sem nenhuma. */
   private mudancasVistas = 0;
+  private ultimaReleituraDaRevisao = 0;
 
   constructor() {
     // Enviar ou remover um arquivo muda a situação dos documentos, que só a API calcula. O envio fica
@@ -289,7 +290,11 @@ export class InscricaoDoCandidatoPage implements OnInit {
   /** O ETag está sendo relido depois de uma chamada de documento: gravar agora sairia com o velho. */
   private readonly relendoARevisao = signal(false);
   protected readonly bloqueada = computed(
-    () => this.ocupada() || this.relendoARevisao() || this.precisaRecarregar(),
+    () =>
+      this.ocupada() ||
+      this.relendoARevisao() ||
+      this.envioDeDocumentos().ocupado() ||
+      this.precisaRecarregar(),
   );
   protected readonly errosDoServidor = signal<readonly ErroDoServidor[]>([]);
   /** A recusa sem campo para apontar: o título diz o que aconteceu e o texto, o que fazer. */
@@ -541,10 +546,13 @@ export class InscricaoDoCandidatoPage implements OnInit {
    */
   private atualizarARevisaoEReavaliar(): void {
     this.relendoARevisao.set(true);
+    // Só a última releitura vale: uma resposta antiga não pode pôr na tela um ETag mais velho.
+    const releitura = ++this.ultimaReleituraDaRevisao;
     this.servico
       .obter(this.processoId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
+        if (releitura !== this.ultimaReleituraDaRevisao) return;
         this.relendoARevisao.set(false);
         if (resultado.ok) {
           const eTag = resultado.data.eTag;
