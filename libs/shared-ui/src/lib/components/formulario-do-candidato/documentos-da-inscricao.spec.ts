@@ -112,6 +112,7 @@ describe('Bloco de documentos da inscrição', () => {
   const montar = (
     avaliacao: AvaliacaoNaTela | null,
     envioDeDocumentos: EnvioDeDocumentos | null = null,
+    ocorrenciasGravadas: ReadonlySet<string> | null = null,
   ): HTMLElement => {
     fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
     fixture.componentRef.setInput('formulario', FORMULARIO);
@@ -127,6 +128,7 @@ describe('Bloco de documentos da inscrição', () => {
     ]);
     fixture.componentRef.setInput('avaliacao', avaliacao);
     fixture.componentRef.setInput('envioDeDocumentos', envioDeDocumentos);
+    fixture.componentRef.setInput('ocorrenciasGravadas', ocorrenciasGravadas);
     fixture.detectChanges();
     const tela = fixture.nativeElement as HTMLElement;
     const passo = [...tela.querySelectorAll<HTMLButtonElement>('ui-steps .ui-steps__botao')].find(
@@ -294,7 +296,12 @@ describe('Bloco de documentos da inscrição', () => {
   });
 
   describe('envio do arquivo exigido', () => {
-    const ENVIO: EnvioDeDocumentos = { arquivos: signal([]), mudancas: signal(0), enviar: vi.fn(), remover: vi.fn() };
+    const ENVIO: EnvioDeDocumentos = {
+      arquivos: signal([]),
+      mudancas: signal(0),
+      enviar: vi.fn(),
+      remover: vi.fn(),
+    };
 
     it('oferece o envio só para o que as respostas já exigem', () => {
       const tela = montar(
@@ -350,6 +357,17 @@ describe('Bloco de documentos da inscrição', () => {
 
       expect(bloco(tela).querySelector('h4')).not.toBeNull();
       expect(bloco(tela).querySelector('ui-envio-do-documento')).toBeNull();
+    });
+
+    it('ocorrência que o rascunho ainda não gravou pede salvar antes de enviar', () => {
+      const tela = montar(
+        naTela(nestaFase(documento('Laudo médico', { ocorrenciaId: 'o1' }))),
+        ENVIO,
+        new Set(),
+      );
+
+      expect(bloco(tela).querySelector('ui-envio-do-documento')).toBeNull();
+      expect(bloco(tela).textContent).toContain('Salve o rascunho para enviar o arquivo');
     });
 
     it('na simulação do administrador, que não envia, o bloco continua só a lista', () => {

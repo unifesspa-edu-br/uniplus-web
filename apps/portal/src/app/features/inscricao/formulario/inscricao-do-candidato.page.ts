@@ -128,6 +128,15 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly avaliacao = inject(AvaliacaoDaInscricaoEstado);
 
   readonly processoId = input.required<string>();
+  /** As ocorrências de grupo já gravadas: a API só aceita arquivo de uma ocorrência que a inscrição tem. */
+  protected readonly ocorrenciasGravadas = computed(
+    () =>
+      new Set(
+        Object.values(this.inscricao()?.grupos ?? {}).flatMap((ocorrencias) =>
+          ocorrencias.map((ocorrencia) => ocorrencia.id),
+        ),
+      ),
+  );
   /** O envio dos arquivos dos documentos exigidos, no processo desta tela. */
   protected readonly envioDeDocumentos = computed(() =>
     this.documentos.paraOProcesso(this.processoId()),
