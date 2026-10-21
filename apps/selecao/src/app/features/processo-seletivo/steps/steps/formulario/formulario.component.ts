@@ -34,6 +34,7 @@ import {
   EditorDeFormularioComponent,
   FINALIDADE_INSCRICAO,
   FINALIDADES,
+  BLOCO_COMPROVACAO_DOCUMENTAL,
   OBRIGATORIEDADES,
   ValorEmConsultaComponent,
   conteudoInicial,
@@ -53,6 +54,11 @@ import type { FormularioDaFinalidade, StepValidation } from '../../processo-sele
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { DocumentosDoFormularioComponent } from './documentos-do-formulario.component';
+import {
+  documentosDoFormulario,
+  fatosParaLerOGatilho,
+} from '../../shared/documentos-exigidos';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { descreverFase } from '../cronograma/cronograma-do-certame';
 import {
@@ -104,6 +110,7 @@ import {
   ordemDeGravacao,
   sufixoDaFinalidade,
   emOrdemDasFinalidades,
+  finalidadesQueAtende,
 } from './formularios-por-finalidade';
 
 /** O que a gravação de um formulário precisa: a fase resolvida para id e o conteúdo desejado. */
@@ -130,6 +137,7 @@ interface FormularioParaEnvio {
     ValorLegivelDirective,
     ConfirmDialogComponent,
     DateBrPipe,
+    DocumentosDoFormularioComponent,
     EditorDeFormularioComponent,
     RouterLink,
     ValorEmConsultaComponent,
@@ -393,6 +401,23 @@ export class FormularioStepComponent {
     ),
   );
 
+  /** Como a lista de documentos do formulário nomeia o tipo de documento e lê o público de cada um. */
+  private readonly vocabularioDosDocumentos = computed(() => {
+    const tipoPorId = this.catalogos.tipoDocumentoPorId();
+    return {
+      fatoPorCodigo: fatosParaLerOGatilho(
+        this.catalogos.fatos(),
+        this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
+        this.store.modalidadesDoProcesso(),
+      ),
+      nomeDoTipo: (id: string, nomeGuardado: string | undefined) =>
+        tipoPorId.get(id)?.nome ?? nomeGuardado ?? id,
+    };
+  });
+
+  /** O bloco de comprovação documental, que o formulário em consulta lê como lista de documentos. */
+  protected readonly blocoDocumental = BLOCO_COMPROVACAO_DOCUMENTAL;
+
   /** Os fatos que a inscrição coleta, o conjunto básico ainda não gravado inclusive: as outras finalidades os citam. */
   private readonly fatosDaInscricao = computed(() => [
     ...fatosColetadosPelaInscricao(this.conteudo()),
@@ -435,6 +460,11 @@ export class FormularioStepComponent {
     const formularios = this.formularios();
     const outras = this.store.draft().formulario.outrasFinalidades;
     const fases = this.fasesDosFormularios();
+    const draft = this.store.draft();
+    const finalidadesDaFase = new Map(
+      this.fasesDoCronograma().map((fase) => [fase.codigo, finalidadesQueAtende(fase)]),
+    );
+    const vocabulario = this.vocabularioDosDocumentos();
     return formularios.map((formulario) => {
       const ehInscricao = formulario.finalidade === FINALIDADE_INSCRICAO;
       const sufixo = sufixoDaFinalidade(formulario.finalidade);
@@ -478,6 +508,16 @@ export class FormularioStepComponent {
           ? fatosDaInscricaoQueOutrasExigem(formulario.conteudo, outras)
           : [],
         leitura: leituraDe(formulario.conteudo),
+        temBlocoDocumental: etapasEmOrdem(formulario.conteudo).some(
+          (etapa) => etapa.bloco === BLOCO_COMPROVACAO_DOCUMENTAL,
+        ),
+        documentos: documentosDoFormulario(
+          draft.documentos,
+          fase.escolhida,
+          formulario.finalidade,
+          finalidadesDaFase.get(fase.escolhida) ?? [],
+          vocabulario,
+        ),
       };
     });
   });
@@ -1203,6 +1243,7 @@ function leituraDe(conteudo: ConteudoDoFormulario) {
     ).toLocaleLowerCase('pt-BR');
   return etapasEmOrdem(conteudo).map((etapa) => ({
     codigo: etapa.codigo,
+    bloco: etapa.bloco,
     titulo: etapa.titulo,
     entradas: entradasDaSecao(conteudo, etapa.codigo).map((entrada) =>
       entrada.tipo === 'item'

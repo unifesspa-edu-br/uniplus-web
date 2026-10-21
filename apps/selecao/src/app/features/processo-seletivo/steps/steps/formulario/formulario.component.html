@@ -306,6 +306,9 @@
         </div>
         @for (etapa of aba.leitura; track etapa.codigo) {
           <h3 class="form-section__title">{{ etapa.titulo }}</h3>
+          @if (etapa.bloco === blocoDocumental) {
+            <sel-documentos-do-formulario [documentos]="aba.documentos" />
+          } @else {
           <ul class="doc-list">
             @for (entrada of etapa.entradas; track entrada.chave) {
               <li class="doc-item">
@@ -321,6 +324,7 @@
               <li class="field__hint">Nenhum campo nesta etapa.</li>
             }
           </ul>
+          }
         }
       } @else {
         <ui-editor-de-formulario
@@ -337,6 +341,10 @@
           [remocoesTravadas]="remocoesTravadas()"
           (conteudoChange)="editar(aba.finalidade, $event)"
         />
+        @if (aba.temBlocoDocumental) {
+          <h3 class="form-section__title">Documentos que o formulário pede</h3>
+          <sel-documentos-do-formulario [documentos]="aba.documentos" />
+        }
       }
 
       @if (aba.ehInscricao && camposSemUso().length > 0 && !store.emConsulta()) {
