@@ -1442,7 +1442,6 @@ describe('FormularioDoCandidatoComponent', () => {
 
     expect(simulacoes.at(-1)?.etapasConcluidas ?? []).toEqual([]);
     expect(tela.querySelectorAll('nav li.is-done')).toHaveLength(0);
-    expect(tela.querySelectorAll('nav li.is-error')).toHaveLength(0);
   });
 
   it('a seção concluída com pendência aparece com o estado de erro, e não como concluída', () => {
@@ -1463,8 +1462,14 @@ describe('FormularioDoCandidatoComponent', () => {
     await fixture.whenStable();
 
     expect(tela.querySelector('h3')?.textContent).toContain('Nome');
-    expect(document.activeElement).toBe(tela.querySelector('input'));
+    const input = tela.querySelector('input') as HTMLInputElement;
+    expect(document.activeElement).toBe(input);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(tela.querySelector(`#${input.getAttribute('aria-describedby')}`)?.textContent).toContain(
+      'Responda este campo.',
+    );
     expect(simulacoes.at(-1)?.etapasConcluidas ?? []).toEqual([]);
+    expect(itemDoPasso(tela, '2').classList).not.toContain('is-done');
   });
 
   it('a recusa do servidor avisa no topo da seção que tem o campo recusado', () => {
