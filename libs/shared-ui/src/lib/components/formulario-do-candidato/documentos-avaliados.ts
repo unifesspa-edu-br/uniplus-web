@@ -346,7 +346,9 @@ function paraALista(documento: DocumentoAvaliado, rotulo: string): DocumentoNaTe
               chave,
               exigenciaId: documento.exigenciaId,
               ocorrenciaId: documento.ocorrenciaId,
-              enviavel: documento.repetePorEntidade === null || documento.ocorrenciaId !== null,
+              enviavel:
+                documento.ocorrenciaId !== null ||
+                (documento.grupoCodigo === null && documento.repetePorEntidade === null),
               texto: rotulo,
             },
           ]
