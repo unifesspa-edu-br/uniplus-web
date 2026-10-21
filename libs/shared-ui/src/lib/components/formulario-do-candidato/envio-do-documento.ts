@@ -79,6 +79,7 @@ let proximoId = 0;
         [nomeDaLista]="alvo().nome"
         [itens]="itensDaLista()"
         [multiple]="true"
+        [validarSoPelaExtensao]="true"
         [disabled]="!podeAlterar()"
         [acceptedFileTypes]="regras().extensoes"
         [allowedMimeTypes]="regras().tiposDeMidia"
@@ -148,7 +149,15 @@ export class EnvioDoDocumentoComponent {
         podeRetirar: this.podeAlterar() && !removendo.has(arquivo.arquivoId),
       }),
     );
-    return [...confirmados, ...this.emAndamento()];
+    const podeAlterar = this.podeAlterar();
+    const locais = this.emAndamento().map(
+      (a): ArquivoEmEnvio => ({
+        ...a,
+        podeRetirar: podeAlterar,
+        podeTentarDeNovo: a.podeTentarDeNovo !== false && podeAlterar,
+      }),
+    );
+    return [...confirmados, ...locais];
   });
 
   constructor() {
@@ -173,6 +182,7 @@ export class EnvioDoDocumentoComponent {
   }
 
   protected tentarDeNovo(id: string): void {
+    if (!this.podeAlterar()) return;
     this.falhaAoRemover.set(null);
     void this.enviar(id);
   }
@@ -207,23 +217,30 @@ export class EnvioDoDocumentoComponent {
     const desfecho = await this.envio().enviar(this.alvo(), arquivo, (fase, progresso) =>
       this.atualizar(id, { fase, progresso }),
     );
-    if (this.destruido) return;
     if (!this.bytes.has(id)) {
       // O candidato retirou o arquivo enquanto ele subia: o envio terminou, e o que ele pediu foi tirar.
-      if (desfecho.ok) await this.envio().remover(desfecho.arquivo.arquivoId);
+      if (desfecho.ok) await this.descartar(desfecho.arquivo.arquivoId);
       return;
     }
+    if (this.destruido) return;
     if (!desfecho.ok) {
       this.atualizar(id, {
         fase: 'erro',
         mensagem: desfecho.mensagem,
-        podeTentarDeNovo: desfecho.podeTentarDeNovo,
+        podeTentarDeNovo: desfecho.podeTentarDeNovo && this.podeAlterar(),
       });
       return;
     }
     this.bytes.delete(id);
     this.emAndamento.update((lista) => lista.filter((a) => a.id !== id));
     this.arquivoEnviado.emit(desfecho.arquivo);
+  }
+
+  /** Remove o arquivo que o candidato já tinha retirado quando o envio terminou. */
+  private async descartar(arquivoId: string): Promise<void> {
+    const desfecho = await this.envio().remover(arquivoId);
+    if (!this.destruido && !desfecho.ok)
+      this.falhaAoRemover.set(desfecho.mensagem || FALHA_AO_REMOVER);
   }
 
   private atualizar(id: string, alteracao: Partial<ArquivoEmEnvio>): void {

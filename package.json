@@ -92,6 +92,7 @@
     "@vitest/ui": "4.1.9",
     "angular-eslint": "21.3.1",
     "autoprefixer": "^10.4.0",
+    "axe-core": "^4.12.1",
     "esbuild": "^0.28.0",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
