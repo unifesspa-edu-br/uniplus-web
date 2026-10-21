@@ -1,5 +1,4 @@
 import { Injectable, type Signal, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
 import {
   ChaveDeSubstituicao,
   type DestinoPreAssinado,
@@ -11,7 +10,6 @@ import {
   enviarAoStorage,
   isApiOk,
 } from '@uniplus/shared-core/http';
-import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { InscricoesApi } from '@uniplus/shared-data/selecao';
 import {
   type AlvoDoEnvio,
@@ -69,6 +67,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
   readonly arquivos: Signal<readonly ArquivoEnviado[]> = this.confirmados.asReadonly();
   /** Uma tentativa por arquivo escolhido: repetir o mesmo `File` retoma dela. */
   private readonly tentativas = new WeakMap<File, Tentativa>();
+  private readonly chavesDaRemocao = new Map<string, ChaveDeSubstituicao>();
 
   constructor(
     private readonly processoId: string,
@@ -152,10 +151,17 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
   }
 
   async remover(arquivoId: string): Promise<DesfechoDaRemocao> {
-    const resultado = await firstValueFrom(
-      this.api.removerArquivoDeDocumento(this.processoId, arquivoId, withIdempotencyKey()),
+    // A chave acompanha o arquivo: repetir depois de uma resposta perdida recebe o replay, e não um 404.
+    const chave = this.chavesDaRemocao.get(arquivoId) ?? new ChaveDeSubstituicao();
+    this.chavesDaRemocao.set(arquivoId, chave);
+    const { resultado, inconclusiva } = await comChave(chave, arquivoId, (contexto) =>
+      this.api.removerArquivoDeDocumento(this.processoId, arquivoId, contexto),
     );
-    if (!isApiOk(resultado)) return { ok: false, mensagem: this.explicar(resultado.problem) };
+    if (!isApiOk(resultado)) {
+      if (!inconclusiva) this.chavesDaRemocao.delete(arquivoId);
+      return { ok: false, mensagem: this.explicar(resultado.problem) };
+    }
+    this.chavesDaRemocao.delete(arquivoId);
     this.confirmados.update((lista) => lista.filter((a) => a.arquivoId !== arquivoId));
     return { ok: true };
   }
@@ -183,7 +189,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     return {
       ok: false,
       mensagem: this.explicar(problema),
-      podeTentarDeNovo: inconclusiva || problema.status >= STATUS_DE_SERVIDOR,
+      podeTentarDeNovo: inconclusiva,
     };
   }
 }

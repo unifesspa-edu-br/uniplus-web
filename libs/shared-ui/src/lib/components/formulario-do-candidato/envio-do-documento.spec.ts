@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import axe from 'axe-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FileUploadComponent } from '../file-upload/file-upload';
@@ -149,6 +150,21 @@ describe('Envio do arquivo de um documento exigido', () => {
     expect(envio.remover).toHaveBeenCalledWith('arquivo-1');
   });
 
+  it('arquivo retirado enquanto sobe é descartado mesmo se a tela saiu antes do fim', async () => {
+    let terminar: (d: unknown) => void = () => undefined;
+    envio.enviar.mockImplementationOnce(() => new Promise((resolve) => (terminar = resolve)));
+    const tela = montar();
+    await escolher(arquivo('laudo.pdf'));
+
+    (tela.querySelector('button[aria-label^="Remover"]') as HTMLButtonElement).click();
+    fixture.destroy();
+    terminar({ ok: true, arquivo: CONFIRMADO });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(envio.remover).toHaveBeenCalledWith('arquivo-1');
+  });
+
   it('anuncia as fases do envio no leitor de tela', async () => {
     let andar: (fase: 'enviando' | 'confirmando', progresso: number) => void = () => undefined;
     let terminar: (d: unknown) => void = () => undefined;
@@ -210,5 +226,19 @@ describe('Envio do arquivo de um documento exigido', () => {
     const tela = montar({ situacao: 'PENDENTE' });
 
     expect(tela.querySelector('ui-tag')?.textContent?.trim()).toBe('Pendente');
+  });
+
+  it('não tem violação de acessibilidade com o arquivo enviado, a situação e a dica', async () => {
+    document.body.appendChild(montar({ situacao: 'PENDENTE', quantidadeMinima: 2 }));
+    await escolher(arquivo('laudo.pdf'));
+
+    // O contraste depende dos estilos globais do design system, que o teste de unidade não carrega.
+    const resultado = await axe.run(fixture.nativeElement, {
+      runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
+      rules: { 'color-contrast': { enabled: false } },
+    });
+
+    expect(resultado.violations.map((v) => v.id)).toEqual([]);
+    fixture.nativeElement.remove();
   });
 });
