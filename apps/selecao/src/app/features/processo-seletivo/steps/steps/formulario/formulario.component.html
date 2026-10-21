@@ -312,7 +312,8 @@
               [semFormulario]="aba.documentos.semFormulario"
               [semFase]="aba.semFaseParaDocumentos"
             />
-          } @else {
+          }
+          @if (etapa.bloco !== blocoDocumental || etapa.entradas.length > 0) {
           <ul class="doc-list">
             @for (entrada of etapa.entradas; track entrada.chave) {
               <li class="doc-item">
