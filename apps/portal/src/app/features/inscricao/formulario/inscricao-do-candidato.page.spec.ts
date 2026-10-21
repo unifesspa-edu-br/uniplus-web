@@ -579,6 +579,20 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(eTags).toEqual(['"inscricao-1:3"']);
   });
 
+  it('releitura do ETag que falha depois de um arquivo de documento pede recarregar, sem gravar com o velho', async () => {
+    vi.useRealTimers();
+    servico.formulario = COM_MODALIDADES;
+    const tela = await abrir();
+
+    servico.obter = () => of(problema(503, 'uniplus.teste'));
+    mudancasDoEnvio.update((n) => n + 1);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(tela.textContent).toContain('Recarregue a página para continuar');
+    expect(botao(tela, 'Salvar rascunho')?.disabled).toBe(true);
+  });
+
   it('a consulta de avaliação leva a oferta escolhida na tela, ou null quando não há escolha', async () => {
     // A espera da consulta corre no agendador do RxJS, que usa `setInterval`, e não `setTimeout`.
     vi.useRealTimers();
