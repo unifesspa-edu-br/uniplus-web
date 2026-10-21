@@ -94,13 +94,15 @@
           <strong>{{ fase.nome }}</strong>:
           {{ fase.obrigatorios === 1 ? '1 obrigatório' : fase.obrigatorios + ' obrigatórios' }},
           {{ fase.facultativos === 1 ? '1 facultativo' : fase.facultativos + ' facultativos' }}.
-          @if (fase.semNorma === 0) {
-            <span class="revisao-chip revisao-chip--ok">Base legal resolvida</span>
-          } @else {
+          @if (fase.semNorma > 0) {
             <span class="revisao-chip revisao-chip--pending"
               >Base legal pendente em
               {{ fase.semNorma === 1 ? '1 documento' : fase.semNorma + ' documentos' }}</span
             >
+          } @else if (fase.comNormaExigida > 0) {
+            <span class="revisao-chip revisao-chip--ok">Base legal resolvida</span>
+          } @else {
+            <span class="revisao-chip revisao-chip--ok">Sem exigência de base legal</span>
           }
         </p>
       } @empty {

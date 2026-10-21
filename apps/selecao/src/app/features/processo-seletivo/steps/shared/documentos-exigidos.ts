@@ -3,18 +3,16 @@ import { STEP_LABELS } from '../processo-seletivo.data';
 import type { ExigenciasDoRascunho } from '../processo-seletivo.models';
 import {
   composicaoResumida,
-  descreverNorma,
   descreverPublico,
   publicoDaExigencia,
   repeticaoResumida,
   rotuloDaConsequencia,
-  type NormaDescrita,
 } from '../steps/fase/resumo-da-exigencia';
 import {
   exigenciaDecideResultado,
   exigenciasLocalizadasDaFase,
   finalidadeDaExigencia,
-  temNormaResolvida,
+  exigenciaSemNormaResolvida,
   type ExigenciaLocalizada,
 } from './exigencias-documentais';
 import { dominiosDoGatilho, fatosParaGatilho, type FatoEscolhivel } from './gatilho-de-exigencia';
@@ -38,9 +36,13 @@ export interface DocumentoExigidoLido {
   /** Vazio quando o documento é exigido por si, fora de grupo. */
   readonly composicao: string;
   readonly repeticao: string;
-  readonly normas: readonly NormaDescrita[];
-  /** A publicação recusaria a exigência: decide o resultado e nenhuma norma está resolvida. */
-  readonly faltaNorma: boolean;
+}
+
+/** O teto em MB, ou em KB quando não chega a 1 MB — arredondar para 0 MB diria que nada cabe. */
+function tamanhoLegivel(bytes: number): string {
+  return bytes < BYTES_POR_MB
+    ? `${Math.ceil(bytes / 1024).toLocaleString('pt-BR')} KB`
+    : `${Number((bytes / BYTES_POR_MB).toFixed(1)).toLocaleString('pt-BR')} MB`;
 }
 
 /** Os formatos e o tamanho que a exigência aceita, numa frase. */
@@ -52,17 +54,18 @@ export function descreverArquivo(formatosPermitidos: unknown, tamanhoMaximoBytes
   const tamanho =
     tamanhoMaximoBytes === null
       ? 'sem limite de tamanho declarado'
-      : `até ${Number((tamanhoMaximoBytes / BYTES_POR_MB).toFixed(1)).toLocaleString('pt-BR')} MB`;
+      : `até ${tamanhoLegivel(tamanhoMaximoBytes)}`;
   return `${formatos}, ${tamanho}`;
 }
 
 function lerExigencia(
   { documento, grupo, repeticao }: ExigenciaLocalizada,
+  indice: number,
   vocabulario: VocabularioDosDocumentos,
 ): DocumentoExigidoLido {
   const nome = vocabulario.nomeDoTipo(documento.tipoDocumentoId, documento.tipoDocumentoNome);
   return {
-    chave: `${documento.faseCodigo}|${documento.tipoDocumentoId}|${documento.etapaId ?? ''}`,
+    chave: `${indice}|${documento.tipoDocumentoId}`,
     nome,
     obrigatoriedade: documento.obrigatorio ? 'Obrigatório' : 'Facultativo',
     aplicaA: descreverPublico(publicoDaExigencia(documento, vocabulario.fatoPorCodigo)),
@@ -70,15 +73,21 @@ function lerExigencia(
     arquivo: descreverArquivo(documento.formatosPermitidos, documento.tamanhoMaximoBytes),
     composicao: composicaoResumida(grupo !== null && grupo.alternativas >= 2 ? grupo : null),
     repeticao: repeticaoResumida(repeticao?.grupo ?? null),
-    normas: documento.basesLegais.map(descreverNorma),
-    faltaNorma: exigenciaDecideResultado(documento) && !temNormaResolvida(documento.basesLegais),
   };
+}
+
+/** Os documentos de um formulário e quantos da mesma fase ainda não têm formulário definido. */
+export interface DocumentosDoFormulario {
+  readonly documentos: readonly DocumentoExigidoLido[];
+  /** Da fase, sem formulário escolhido ou com um que a fase não responde: não cabem em nenhum. */
+  readonly semFormulario: number;
 }
 
 /**
  * Os documentos que o formulário da finalidade pede na fase dele: os da fase cujo formulário
  * efetivo é este. A fase que inscrição e isenção dividem leva cada documento ao formulário que o
- * operador declarou; o declarado que a fase não responde não aparece em nenhum.
+ * operador declarou; o que ainda não tem formulário definido é contado à parte, para a tela não
+ * dizer que a fase não exige nada.
  */
 export function documentosDoFormulario(
   exigencias: ExigenciasDoRascunho,
@@ -86,13 +95,17 @@ export function documentosDoFormulario(
   finalidade: string,
   finalidadesDaFase: readonly string[],
   vocabulario: VocabularioDosDocumentos,
-): readonly DocumentoExigidoLido[] {
-  return exigenciasLocalizadasDaFase(exigencias, faseCodigo)
-    .filter(({ documento }) => {
-      const formulario = finalidadeDaExigencia(documento.finalidade, finalidadesDaFase);
-      return formulario.situacao === 'DEFINIDO' && formulario.finalidade === finalidade;
-    })
-    .map((exigencia) => lerExigencia(exigencia, vocabulario));
+): DocumentosDoFormulario {
+  const daFase = exigenciasLocalizadasDaFase(exigencias, faseCodigo).map((exigencia) => ({
+    exigencia,
+    formulario: finalidadeDaExigencia(exigencia.documento.finalidade, finalidadesDaFase),
+  }));
+  return {
+    documentos: daFase
+      .filter(({ formulario }) => formulario.situacao === 'DEFINIDO' && formulario.finalidade === finalidade)
+      .map(({ exigencia }, indice) => lerExigencia(exigencia, indice, vocabulario)),
+    semFormulario: daFase.filter(({ formulario }) => formulario.situacao !== 'DEFINIDO').length,
+  };
 }
 
 /** O resumo dos documentos de uma fase, para a revisão. */
@@ -100,6 +113,8 @@ export interface DocumentosDaFase {
   readonly faseCodigo: string;
   readonly obrigatorios: number;
   readonly facultativos: number;
+  /** Quantas decidem o resultado e, por isso, precisam de norma resolvida para publicar. */
+  readonly comNormaExigida: number;
   /** Quantas exigências a publicação recusaria por falta de norma resolvida. */
   readonly semNorma: number;
 }
@@ -123,9 +138,8 @@ export function documentosPorFase(
         faseCodigo,
         obrigatorios: documentos.filter((documento) => documento.obrigatorio).length,
         facultativos: documentos.filter((documento) => !documento.obrigatorio).length,
-        semNorma: documentos.filter(
-          (documento) => exigenciaDecideResultado(documento) && !temNormaResolvida(documento.basesLegais),
-        ).length,
+        comNormaExigida: documentos.filter(exigenciaDecideResultado).length,
+        semNorma: documentos.filter(exigenciaSemNormaResolvida).length,
       },
     ];
   });

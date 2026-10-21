@@ -13,10 +13,10 @@ import {
   comRecorteEscolhido,
   comRepeticao,
   comRepeticaoEmTodasAsFases,
-  exigenciaDecideResultado,
   exigenciaNova,
   exigenciasDaFase,
   exigenciasDaRaiz,
+  exigenciaSemNormaResolvida,
   exigenciasLocalizadasDaFase,
   exigidoDeTodos,
   faltaOFormulario,
@@ -24,7 +24,6 @@ import {
   formatosDeclarados,
   modalidadesDaExigencia,
   semAExigencia,
-  temNormaResolvida,
   todasAsExigencias,
   type ExigenciaLocalizada,
   type GrupoDaExigencia,
@@ -1228,8 +1227,7 @@ export class FaseStepComponent {
 
   /** Se a publicação recusaria esta exigência por falta de norma: a mesma regra que ela aplica. */
   faltaNormaResolvida(id: string): boolean {
-    const exigencia = this.exigenciaDoDocumento(id);
-    return exigenciaDecideResultado(exigencia) && !temNormaResolvida(exigencia.basesLegais);
+    return exigenciaSemNormaResolvida(this.exigenciaDoDocumento(id));
   }
 
   /**

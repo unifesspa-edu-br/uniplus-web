@@ -228,6 +228,16 @@ export function exigenciaDecideResultado(
 }
 
 /**
+ * Se a publicação recusaria a exigência por falta de norma: ela decide o resultado e nenhuma das
+ * normas está resolvida. É a única definição da regra; a tela da fase e a revisão a usam.
+ */
+export function exigenciaSemNormaResolvida(
+  exigencia: Pick<ExigenciaDeDocumento, 'obrigatorio' | 'consequenciaIndeferimento' | 'basesLegais'>,
+): boolean {
+  return exigenciaDecideResultado(exigencia) && !temNormaResolvida(exigencia.basesLegais);
+}
+
+/**
  * O que acontece com quem não entrega o documento, ou tem a entrega indeferida. Vazio é
  * escolha legítima: a exigência que não decide sozinha não precisa declarar consequência.
  */
