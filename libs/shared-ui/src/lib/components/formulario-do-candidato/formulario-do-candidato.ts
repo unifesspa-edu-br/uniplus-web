@@ -159,6 +159,11 @@ import type {
                     @if (passo.aviso) {
                       <ui-alert variant="warning" [dynamic]="false">{{ passo.aviso }}</ui-alert>
                     }
+                    @if (recusasDaSecao(passo); as recusadas) {
+                      <ui-alert variant="danger" [heading]="tituloDasRecusas(recusadas)">
+                        Corrija o que está marcado nesta seção e tente de novo.
+                      </ui-alert>
+                    }
 
                     @switch (passo.bloco) {
                       @case (BLOCO_MODALIDADES_CALCULADAS) {
@@ -604,9 +609,16 @@ export class FormularioDoCandidatoComponent {
     ...this.passosPrefixados().map((passo) =>
       this.itemDoPasso(passo.chave, passo.titulo, passo.concluido === true, passo.comErro === true),
     ),
-    ...this.passos().map((passo) =>
-      this.itemDoPasso(passo.chave, passo.titulo, this.concluido(passo), this.comErro(passo)),
-    ),
+    ...this.passos().map((passo) => {
+      // A seção dada como concluída com pendência não passa por pronta: aparece com o estado de erro.
+      const pendente = this.concluido(passo) && this.pendenciasDoPasso(passo).length > 0;
+      return this.itemDoPasso(
+        passo.chave,
+        passo.titulo,
+        this.concluido(passo) && !pendente,
+        this.comErro(passo) || pendente,
+      );
+    }),
   ]);
   protected readonly passoAtual = computed(
     () => this.passos().find((p) => p.chave === this.chaveAtual()) ?? null,
@@ -815,6 +827,17 @@ export class FormularioDoCandidatoComponent {
     return this.erros().filter((e) => erroEm(e, codigo));
   }
 
+  /** Quantas respostas desta seção o servidor recusou; zero não mostra o aviso do topo. */
+  protected recusasDaSecao(passo: PassoDoFormulario): number {
+    return this.erros().filter((e) => contemOCampo(passo, e.campo)).length;
+  }
+
+  protected tituloDasRecusas(quantidade: number): string {
+    return quantidade === 1
+      ? 'O servidor recusou 1 resposta desta seção'
+      : `O servidor recusou ${quantidade} respostas desta seção`;
+  }
+
   protected comErro(passo: PassoDoFormulario): boolean {
     return this.erros().some((e) => contemOCampo(passo, e.campo));
   }
@@ -868,36 +891,43 @@ export class FormularioDoCandidatoComponent {
   }
 
   /**
-   * Dá todas as seções como concluídas, como o envio faz, e devolve quantas pendências ficam. Concluir
-   * pode mostrar outra seção — o opcional em branco passa a não informado —, e ela também é concluída.
-   * Com pendência, leva à seção da primeira, põe o foco nela e anuncia quantas são; com `navegar`
-   * falso, só conta e marca, e quem hospeda decide para onde levar o candidato.
+   * Dá todas as seções como concluídas, como o envio faz, quando nenhuma tem pendência, e devolve
+   * quantas pendências há. Com pendência nada é concluído: com `navegar`, leva à seção da primeira, põe
+   * o foco no campo e anuncia quantas são; sem ele, só conta, e quem hospeda decide para onde levar.
    */
   concluirTodas(navegar = true): number {
-    let mudou = false;
-    while (this.concluir(this.passos())) mudou = true;
-
-    const pendentes = this.passos().map((passo) => this.pendenciasDoPasso(passo));
-    const total = pendentes.reduce((soma, codigos) => soma + codigos.length, 0);
-    const indice = pendentes.findIndex((codigos) => codigos.length > 0);
-    if (indice < 0) return 0;
-
-    if (!navegar) return total;
-
-    const [primeira] = pendentes[indice];
-    // O que concluir revelou só existe na tela depois da renderização, mesmo na seção atual.
-    this.irAoPasso(
-      this.passos()[indice].chave,
-      () => this.controleDe(primeira.campo, primeira.naConfirmacao),
-      mudou,
-    );
-    // A troca de seção recalcula o anúncio dos campos; o da pendência é escrito depois dela.
-    this.anuncio();
-    this.anuncio.set(
-      `${total === 1 ? 'Há 1 item a corrigir' : `Há ${total} itens a corrigir`}. ` +
-        `O primeiro está na seção ${this.passos()[indice].titulo}.`,
-    );
+    const secoes = this.pendenciasCompletas();
+    const total = secoes.reduce((soma, s) => soma + s.pendencias.length, 0);
+    if (total === 0) {
+      while (this.concluir(this.passos())) {
+        // Concluir pode mostrar outra seção, que também é concluída.
+      }
+      return 0;
+    }
+    if (navegar) {
+      const [primeira] = secoes;
+      this.irAPendenciaDe(primeira.passo.chave);
+      this.anuncio();
+      this.anuncio.set(
+        `${total === 1 ? 'Há 1 item a corrigir' : `Há ${total} itens a corrigir`}. ` +
+          `O primeiro está na seção ${primeira.passo.titulo}.`,
+      );
+    }
     return total;
+  }
+
+  /**
+   * Leva à seção e põe o foco no primeiro campo pendente dela, sem dar nada como concluído. Sem
+   * pendência, leva só à seção.
+   */
+  irAPendenciaDe(chave: string): void {
+    const primeira = this.pendenciasCompletas().find((s) => s.passo.chave === chave)?.pendencias[0];
+    if (!primeira) {
+      this.irAoPasso(chave);
+      return;
+    }
+    // A seção pode ter acabado de aparecer: o campo só existe depois da renderização.
+    this.irAoPasso(chave, () => this.controleDe(primeira.campo, primeira.naConfirmacao), true);
   }
 
   protected concluido(passo: PassoDoFormulario): boolean {
@@ -963,7 +993,16 @@ export class FormularioDoCandidatoComponent {
    * As pendências das seções, sem dar nenhuma como concluída: o que o candidato ainda tem de resolver.
    * Quem hospeda monta daqui o motivo de o envio não seguir; `concluirTodas()` é a conta que vale.
    */
-  readonly pendenciasPorSecao = computed<readonly PendenciaDaSecao[]>(() => {
+  readonly pendenciasPorSecao = computed<readonly PendenciaDaSecao[]>(() =>
+    this.pendenciasCompletas().map(({ passo, pendencias }) => ({
+      chave: passo.chave,
+      titulo: passo.titulo,
+      quantidade: pendencias.length,
+    })),
+  );
+
+  /** As seções com pendência, contadas como ficariam com todas concluídas, sem concluí-las. */
+  private readonly pendenciasCompletas = computed(() => {
     const passos = this.passosComTodasConcluidas();
     const problemas = avaliarConfirmacoes(passos, {
       respostas: this.respostasComAsFixas(),
@@ -973,10 +1012,10 @@ export class FormularioDoCandidatoComponent {
     });
     return passos
       .map((passo) => ({
-        titulo: passo.titulo,
-        quantidade: pendenciasDo(passo, this.aceitos(), problemas, this.fixasSemResposta()).length,
+        passo,
+        pendencias: pendenciasDo(passo, this.aceitos(), problemas, this.fixasSemResposta()),
       }))
-      .filter((secao) => secao.quantidade > 0);
+      .filter((secao) => secao.pendencias.length > 0);
   });
 
   /**
@@ -1123,6 +1162,7 @@ export class FormularioDoCandidatoComponent {
 
 /** Quantas pendências uma seção tem. */
 export interface PendenciaDaSecao {
+  readonly chave: string;
   readonly titulo: string;
   readonly quantidade: number;
 }

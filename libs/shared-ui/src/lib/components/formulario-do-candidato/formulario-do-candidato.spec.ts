@@ -1380,7 +1380,11 @@ describe('FormularioDoCandidatoComponent', () => {
 
     it('na última seção, concluir também barra com pergunta obrigatória pendente', () => {
       const tela = montar(
-        { ...DUAS_SECOES, etapas: [DUAS_SECOES.etapas[0]], regras: { etapas: [DUAS_SECOES.regras.etapas[0]] } },
+        {
+          ...DUAS_SECOES,
+          etapas: [DUAS_SECOES.etapas[0]],
+          regras: { etapas: [DUAS_SECOES.regras.etapas[0]] },
+        },
         { exigirSecaoValida: true },
       );
 
@@ -1424,10 +1428,53 @@ describe('FormularioDoCandidatoComponent', () => {
       montar(DUAS_SECOES);
 
       expect(fixture.componentInstance.pendenciasPorSecao()).toEqual([
-        { titulo: 'Contato', quantidade: 1 },
-        { titulo: 'Nome', quantidade: 1 },
+        { chave: expect.any(String), titulo: 'Contato', quantidade: 1 },
+        { chave: expect.any(String), titulo: 'Nome', quantidade: 1 },
       ]);
     });
+  });
+
+  it('concluir todas com pendência não dá seção nenhuma como concluída nem muda o indicador', () => {
+    const tela = montar(DUAS_SECOES);
+
+    expect(fixture.componentInstance.concluirTodas()).toBe(2);
+    fixture.detectChanges();
+
+    expect(simulacoes.at(-1)?.etapasConcluidas ?? []).toEqual([]);
+    expect(tela.querySelectorAll('nav li.is-done')).toHaveLength(0);
+    expect(tela.querySelectorAll('nav li.is-error')).toHaveLength(0);
+  });
+
+  it('a seção concluída com pendência aparece com o estado de erro, e não como concluída', () => {
+    const tela = montar(DUAS_SECOES);
+
+    clicar(botao(tela, 'Próxima seção'));
+
+    expect(itemDoPasso(tela, '1').classList).toContain('is-error');
+    expect(itemDoPasso(tela, '1').classList).not.toContain('is-done');
+  });
+
+  it('ir à pendência da seção põe o foco no campo que falta sem concluir nada', async () => {
+    const tela = montar(DUAS_SECOES);
+    const chaveDoNome = fixture.componentInstance.pendenciasPorSecao()[1].chave;
+
+    fixture.componentInstance.irAPendenciaDe(chaveDoNome);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(tela.querySelector('h3')?.textContent).toContain('Nome');
+    expect(document.activeElement).toBe(tela.querySelector('input'));
+    expect(simulacoes.at(-1)?.etapasConcluidas ?? []).toEqual([]);
+  });
+
+  it('a recusa do servidor avisa no topo da seção que tem o campo recusado', () => {
+    const tela = montar(DUAS_SECOES, {
+      errosDoServidor: [{ campo: 'EMAIL', mensagem: 'Recusado.' }],
+    });
+
+    expect(tela.querySelector('.formulario-candidato__secao ui-alert')?.textContent).toContain(
+      'O servidor recusou 1 resposta desta seção',
+    );
   });
 
   it('concluir todas leva à seção da primeira pendência, põe o foco nela e anuncia quantas são', () => {
@@ -1440,9 +1487,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const input = tela.querySelector('input') as HTMLInputElement;
     expect(tela.querySelector('h3')?.textContent).toContain('Nome');
     expect(document.activeElement).toBe(input);
-    expect(tela.querySelector('[data-campo="NOME_SOCIAL"] .field__error')?.textContent).toContain(
-      'Responda este campo.',
-    );
+    expect(simulacoes.at(-1)?.etapasConcluidas ?? []).toEqual([]);
     expect(tela.querySelector('[aria-live="polite"]')?.textContent).toBe(
       'Há 1 item a corrigir. O primeiro está na seção Nome.',
     );
@@ -1476,7 +1521,6 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(document.activeElement).toBe(
       tela.querySelector('[data-campo="VERACIDADE"] input[type="checkbox"]'),
     );
-    expect(tela.textContent).toContain('Aceite o termo para concluir.');
   });
 
   it('concluir todas conta o grupo obrigatório sem integrante', () => {
@@ -1511,10 +1555,34 @@ describe('FormularioDoCandidatoComponent', () => {
       {
         ...DUAS_SECOES,
         etapas: [
-          { codigo: 'A', codigoNasRegras: 'Inscricao:A', ordem: 0, tipo: 'SECAO', titulo: 'Seção A' },
-          { codigo: 'B', codigoNasRegras: 'Inscricao:B', ordem: 1, tipo: 'SECAO', titulo: 'Seção B' },
-          { codigo: 'C', codigoNasRegras: 'Inscricao:C', ordem: 2, tipo: 'SECAO', titulo: 'Seção C' },
-          { codigo: 'D', codigoNasRegras: 'Inscricao:D', ordem: 3, tipo: 'SECAO', titulo: 'Seção D' },
+          {
+            codigo: 'A',
+            codigoNasRegras: 'Inscricao:A',
+            ordem: 0,
+            tipo: 'SECAO',
+            titulo: 'Seção A',
+          },
+          {
+            codigo: 'B',
+            codigoNasRegras: 'Inscricao:B',
+            ordem: 1,
+            tipo: 'SECAO',
+            titulo: 'Seção B',
+          },
+          {
+            codigo: 'C',
+            codigoNasRegras: 'Inscricao:C',
+            ordem: 2,
+            tipo: 'SECAO',
+            titulo: 'Seção C',
+          },
+          {
+            codigo: 'D',
+            codigoNasRegras: 'Inscricao:D',
+            ordem: 3,
+            tipo: 'SECAO',
+            titulo: 'Seção D',
+          },
         ],
         fatosColetados: [
           campo('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
@@ -1550,7 +1618,7 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(tela.querySelector('h3')?.textContent).toContain('Seção C');
   });
 
-  it('concluir todas leva o foco ao obrigatório que só aparece com o opcional em branco', async () => {
+  it('o obrigatório que só aparece com o opcional em branco conta como pendência, e o foco fica no título da seção', async () => {
     const tela = montar({
       ...DUAS_SECOES,
       fatosColetados: [
@@ -1587,7 +1655,8 @@ describe('FormularioDoCandidatoComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(document.activeElement).toBe(tela.querySelector('[data-campo="JUSTIFICATIVA"] input'));
+    // O campo só existe depois de a seção ser concluída, e concluir é do envio válido.
+    expect(document.activeElement).toBe(tela.querySelector('h3'));
   });
   describe('confirmação pedida no campo', () => {
     const EMAIL = 'fernanda_laura_drumond@lhp.com.br';
@@ -1625,10 +1694,7 @@ describe('FormularioDoCandidatoComponent', () => {
       await fixture.whenStable();
 
       expect(document.activeElement).toBe(confirmacao);
-      expect(confirmacao.getAttribute('aria-invalid')).toBe('true');
-      expect(
-        tela.querySelector(`#${confirmacao.getAttribute('aria-describedby')}`)?.textContent,
-      ).toContain('Confirme E-mail digitando o mesmo valor.');
+      expect(simulacoes.at(-1)?.etapasConcluidas ?? []).toEqual([]);
     });
 
     it('a resposta gravada sem confirmação também bloqueia o envio, como a digitada', () => {
