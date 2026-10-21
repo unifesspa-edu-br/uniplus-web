@@ -5,7 +5,6 @@ import {
   computed,
   inject,
   input,
-  output,
   signal,
 } from '@angular/core';
 
@@ -113,10 +112,6 @@ export class EnvioDoDocumentoComponent {
   /** Enviar e remover só valem enquanto a inscrição é rascunho. */
   readonly podeAlterar = input(true);
 
-  /** Um arquivo foi confirmado: quem hospeda reavalia as exigências. */
-  readonly arquivoEnviado = output<ArquivoEnviado>();
-  readonly arquivoRemovido = output<string>();
-
   protected readonly regras = computed(() =>
     regrasDoArquivo(this.formatos(), this.tamanhoMaximoBytes()),
   );
@@ -210,7 +205,6 @@ export class EnvioDoDocumentoComponent {
       return;
     }
     this.removidos.update((atual) => new Set(atual).add(id));
-    this.arquivoRemovido.emit(id);
   }
 
   private async enviar(id: string): Promise<void> {
@@ -236,7 +230,6 @@ export class EnvioDoDocumentoComponent {
     }
     this.bytes.delete(id);
     this.emAndamento.update((lista) => lista.filter((a) => a.id !== id));
-    this.arquivoEnviado.emit(desfecho.arquivo);
   }
 
   /** Remove o arquivo que o candidato já tinha retirado quando o envio terminou. */

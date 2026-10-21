@@ -17,7 +17,11 @@ import {
   type InscricaoRequest,
   SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
-import { BUSCA_DE_CEP, BUSCA_DE_MUNICIPIOS } from '@uniplus/shared-ui/components';
+import {
+  type ArquivoEnviado,
+  BUSCA_DE_CEP,
+  BUSCA_DE_MUNICIPIOS,
+} from '@uniplus/shared-ui/components';
 
 import type { OfertaDaInscricao } from '../oferta-da-inscricao';
 import { ESPERA_DA_CONSULTA_MS } from './avaliacao-da-inscricao.estado';
@@ -180,6 +184,8 @@ class ServicoDublê extends InscricaoDoCandidatoService {
 }
 
 describe('InscricaoDoCandidatoPage', () => {
+  const arquivosDoEnvio = signal<readonly ArquivoEnviado[]>([]);
+
   let fixture: ComponentFixture<InscricaoDoCandidatoPage>;
   let servico: ServicoDublê;
   const conta = signal<Record<string, string | undefined>>({});
@@ -190,6 +196,7 @@ describe('InscricaoDoCandidatoPage', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     agora = new Date('2026-12-11T13:30:00Z');
+    arquivosDoEnvio.set([]);
     servico = new ServicoDublê();
     conta.set({ cpf: CPF_DA_CONTA });
     TestBed.configureTestingModule({
@@ -202,7 +209,7 @@ describe('InscricaoDoCandidatoPage', () => {
         {
           provide: EnvioDeDocumentosDaInscricao,
           useValue: {
-            paraOProcesso: () => ({ arquivos: signal([]), enviar: vi.fn(), remover: vi.fn() }),
+            paraOProcesso: () => ({ arquivos: arquivosDoEnvio, enviar: vi.fn(), remover: vi.fn() }),
           },
         },
         { provide: UserContextService, useValue: { user: conta } },
@@ -528,6 +535,22 @@ describe('InscricaoDoCandidatoPage', () => {
     await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));
 
     expect(servico.avaliacoes.map((a) => a.respostas?.['NOME'])).toEqual(['Ariel Drumond']);
+  });
+
+  it('enviar um arquivo de documento consulta a avaliação, mesmo sem mudar nenhuma resposta', async () => {
+    vi.useRealTimers();
+    servico.formulario = COM_MODALIDADES;
+    await abrir();
+    expect(servico.avaliacoes).toHaveLength(0);
+
+    arquivosDoEnvio.set([
+      { arquivoId: 'a1', chave: 'e1:', tipoDeMidia: 'application/pdf', tamanhoBytes: 10 },
+    ]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await new Promise((resolver) => setTimeout(resolver, ESPERA_DA_CONSULTA_MS + 50));
+
+    expect(servico.avaliacoes).toHaveLength(1);
   });
 
   it('a consulta de avaliação leva a oferta escolhida na tela, ou null quando não há escolha', async () => {

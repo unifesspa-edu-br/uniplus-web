@@ -292,7 +292,10 @@ function incluirDeTodos(
       exigidas: integrantes
         .filter((i) => i.situacao === EXIGIDO)
         .map((i) => ({
-          chave: `${documento.exigenciaId}:${i.ocorrenciaId ?? ''}`,
+          chave: chaveDaExigencia({
+            exigenciaId: documento.exigenciaId,
+            ocorrenciaId: i.ocorrenciaId,
+          }),
           exigenciaId: documento.exigenciaId,
           ocorrenciaId: i.ocorrenciaId,
           enviavel: i.ocorrenciaId !== null,

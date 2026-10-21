@@ -64,11 +64,9 @@
   [envio]="envio()"
   [avaliacao]="avaliacaoNaTela()"
   [envioDeDocumentos]="envioDeDocumentos()"
-  [podeAlterarDocumentos]="!enviada()"
+  [podeAlterarDocumentos]="!enviada() && !bloqueada()"
   (simulacaoChange)="responder($event)"
   (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
-  (arquivoEnviado)="avaliacao.reavaliar()"
-  (arquivoRemovido)="avaliacao.reavaliar()"
 >
   @if (formDoCandidato.passoPrefixadoAtual() === PASSO_DO_CURSO) {
   <div class="field inscricao-oferta">
