@@ -605,7 +605,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
   }
 
   /** O processo com mais de uma oferta pede o curso antes de seguir. */
-  private readonly semCurso = computed(
+  protected readonly semCurso = computed(
     () => this.ofertas().length > 1 && this.ofertaEscolhidaValida() === null,
   );
 
