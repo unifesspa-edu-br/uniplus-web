@@ -191,7 +191,7 @@ export function descreverNorma(base: BaseLegalConfig): NormaDescrita {
   return {
     referencia: base.referencia.trim() !== '' ? base.referencia.trim() : 'Sem referência declarada',
     detalhe: `${abrangencia} · ${status}`,
-    observacao: base.observacao.trim(),
+    observacao: (base.observacao ?? '').trim(),
   };
 }
 
@@ -211,7 +211,7 @@ export function normaComum(
     base.referencia.trim() === modelo.referencia.trim() &&
     base.abrangencia === modelo.abrangencia &&
     base.status === modelo.status &&
-    base.observacao.trim() === modelo.observacao.trim();
+    (base.observacao ?? '').trim() === (modelo.observacao ?? '').trim();
 
   return basesPorExigencia.every((bases) => bases.length === 1 && mesma(bases[0])) ? modelo : null;
 }

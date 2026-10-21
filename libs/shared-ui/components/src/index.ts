@@ -83,6 +83,7 @@ export * from '../../src/lib/components/endereco-geo/endereco-geo.model';
 export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
 export * from '../../src/lib/components/editor-de-formulario/formulario-editavel';
 export * from '../../src/lib/components/editor-de-documentos-exigidos/documentos-exigidos';
+export { NormasDaExigenciaComponent } from '../../src/lib/components/editor-de-documentos-exigidos/normas-da-exigencia';
 export {
   DocumentoExigidoComponent,
   EditorDeDocumentosExigidosComponent,

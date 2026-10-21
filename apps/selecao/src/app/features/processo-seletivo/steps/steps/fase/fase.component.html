@@ -1271,156 +1271,20 @@
 
                               <!-- As normas que sustentam a exigência: são N por exigência, porque uma lei
                                  federal somada à cláusula do edital é o caso comum. -->
-                              @for (base of basesLegaisDoDocumento(doc.id); track $index) {
-                                <div class="form-field">
-                                  <label
-                                    class="label"
-                                    [attr.for]="idDaFase('doc-base-legal-' + doc.id + '-' + $index)"
-                                  >
-                                    Norma que exige o documento
-                                  </label>
-                                  <input
-                                    class="input"
-                                    type="text"
-                                    [attr.id]="idDaFase('doc-base-legal-' + doc.id + '-' + $index)"
-                                    placeholder="Lei 12.711/2012, art. 3º"
-                                    [value]="base.referencia"
-                                    [disabled]="!store.aceitaEdicao()"
-                                    (input)="
-                                      escreverBaseLegal(
-                                        doc.id,
-                                        $index,
-                                        'referencia',
-                                        $any($event.target).value
-                                      )
-                                    "
-                                  />
-                                </div>
-
-                                <div class="form-field">
-                                  <label
-                                    class="label"
-                                    [attr.for]="
-                                      idDaFase('doc-abrangencia-' + doc.id + '-' + $index)
-                                    "
-                                  >
-                                    Alcance da norma
-                                  </label>
-                                  <select
-                                    class="select"
-                                    [attr.id]="idDaFase('doc-abrangencia-' + doc.id + '-' + $index)"
-                                    [disabled]="!store.aceitaEdicao()"
-                                    (change)="
-                                      escreverBaseLegal(
-                                        doc.id,
-                                        $index,
-                                        'abrangencia',
-                                        $any($event.target).value
-                                      )
-                                    "
-                                  >
-                                    @for (opcao of abrangencias; track opcao.valor) {
-                                      <option
-                                        [value]="opcao.valor"
-                                        [selected]="opcao.valor === base.abrangencia"
-                                      >
-                                        {{ opcao.rotulo }}
-                                      </option>
-                                    }
-                                  </select>
-                                </div>
-
-                                <div class="form-field">
-                                  <label
-                                    class="label"
-                                    [attr.for]="
-                                      idDaFase('doc-status-legal-' + doc.id + '-' + $index)
-                                    "
-                                  >
-                                    Identificação da norma
-                                  </label>
-                                  <select
-                                    class="select"
-                                    [attr.id]="
-                                      idDaFase('doc-status-legal-' + doc.id + '-' + $index)
-                                    "
-                                    [disabled]="!store.aceitaEdicao()"
-                                    (change)="
-                                      escreverBaseLegal(
-                                        doc.id,
-                                        $index,
-                                        'status',
-                                        $any($event.target).value
-                                      )
-                                    "
-                                  >
-                                    @for (opcao of statusBaseLegal; track opcao.valor) {
-                                      <option
-                                        [value]="opcao.valor"
-                                        [selected]="opcao.valor === base.status"
-                                      >
-                                        {{ opcao.rotulo }}
-                                      </option>
-                                    }
-                                  </select>
-                                </div>
-
-                                <div class="form-field">
-                                  <label
-                                    class="label"
-                                    [attr.for]="idDaFase('doc-obs-legal-' + doc.id + '-' + $index)"
-                                  >
-                                    Observação<span class="sr-only"> sobre a norma</span> (opcional)
-                                  </label>
-                                  <input
-                                    class="input"
-                                    type="text"
-                                    [attr.id]="idDaFase('doc-obs-legal-' + doc.id + '-' + $index)"
-                                    placeholder="O que esta norma exige, em uma linha"
-                                    [value]="base.observacao"
-                                    [disabled]="!store.aceitaEdicao()"
-                                    (input)="
-                                      escreverBaseLegal(
-                                        doc.id,
-                                        $index,
-                                        'observacao',
-                                        $any($event.target).value
-                                      )
-                                    "
-                                  />
-                                </div>
-
-                                @if (basesLegaisDoDocumento(doc.id).length > 1) {
-                                  <div class="doc-item__acoes">
-                                    <button
-                                      class="btn btn--tertiary btn--sm"
-                                      type="button"
-                                      [disabled]="!store.aceitaEdicao()"
-                                      (click)="removerBaseLegal(doc.id, $index)"
-                                    >
-                                      Remover esta norma
-                                    </button>
-                                  </div>
+                              <ui-normas-da-exigencia
+                                manterUma
+                                [bases]="basesLegaisDoDocumento(doc.id)"
+                                [idBase]="idDaFase('doc-' + doc.id)"
+                                [disabled]="!store.aceitaEdicao()"
+                                (basesChange)="definirBasesLegais(doc.id, $event)"
+                              >
+                                @if (faltaNormaResolvida(doc.id)) {
+                                  <p class="field__hint doc-item__aviso-norma">
+                                    Sem uma norma declarada e identificada como "Resolvida", a
+                                    publicação recusa esta exigência, que decide o resultado.
+                                  </p>
                                 }
-                              }
-
-                              @if (faltaNormaResolvida(doc.id)) {
-                                <p class="field__hint doc-item__aviso-norma">
-                                  Sem uma norma declarada e identificada como "Resolvida", a
-                                  publicação recusa esta exigência, que decide o resultado.
-                                </p>
-                              }
-
-                              <div class="doc-item__acoes">
-                                <button
-                                  class="btn btn--tertiary btn--sm"
-                                  type="button"
-                                  [disabled]="!store.aceitaEdicao()"
-                                  (click)="acrescentarBaseLegal(doc.id)"
-                                >
-                                  Acrescentar outra norma
-                                </button>
-                              </div>
+                              </ui-normas-da-exigencia>
                             </div>
                           </div>
                         </td>

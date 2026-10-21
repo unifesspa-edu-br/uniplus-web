@@ -22,19 +22,16 @@ import {
 } from '../editor-de-formulario/predicado-em-edicao';
 import type { PredicadoNoWire } from '../editor-de-formulario/formulario-editavel';
 import {
-  ABRANGENCIAS_ESCOLHIVEIS,
   CONSEQUENCIAS_ESCOLHIVEIS,
   CONSEQUENCIA_REENVIO,
-  STATUS_BASE_LEGAL_ESCOLHIVEIS,
   consequenciasDaFase,
 } from '@uniplus/shared-utils';
 import {
-  baseLegalNova,
   documentoExigidoNovo,
-  type BaseLegalDoDocumento,
   type DocumentoExigidoDoFormulario,
   type RecusasDoDocumento,
 } from './documentos-exigidos';
+import { NormasDaExigenciaComponent } from './normas-da-exigencia';
 
 /** Uma opção de vocabulário: fase canônica ou tipo de documento, pelo código. */
 export interface OpcaoDoDocumento {
@@ -54,7 +51,7 @@ const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
 @Component({
   selector: 'ui-documento-exigido',
   standalone: true,
-  imports: [EditorDeCondicoesComponent],
+  imports: [EditorDeCondicoesComponent, NormasDaExigenciaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article class="editor-formulario__item" [attr.aria-labelledby]="idDe('titulo')">
@@ -178,90 +175,14 @@ const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
 
       <fieldset class="editor-formulario__bases">
         <legend class="label">Normas que sustentam a exigência</legend>
-        @for (base of basesLegais(); track $index) {
-          <div class="form-grid" role="group" [attr.aria-label]="'Norma ' + ($index + 1)">
-            <div class="field form-grid__full">
-              <label class="field__label is-required" [for]="idDe('base-' + $index + '-ref')"
-                >Referência da norma</label
-              >
-              <input
-                class="input"
-                type="text"
-                maxlength="500"
-                [id]="idDe('base-' + $index + '-ref')"
-                [value]="base.referencia"
-                [disabled]="disabled()"
-                (change)="trocarBase($index, { referencia: valorDe($event) })"
-              />
-            </div>
-            <div class="field">
-              <label class="field__label" [for]="idDe('base-' + $index + '-abr')">Alcance</label>
-              <select
-                class="select"
-                [id]="idDe('base-' + $index + '-abr')"
-                [disabled]="disabled()"
-                (change)="trocarBase($index, { abrangencia: valorDe($event) })"
-              >
-                @for (abrangencia of abrangencias; track abrangencia.valor) {
-                  <option
-                    [value]="abrangencia.valor"
-                    [selected]="abrangencia.valor === base.abrangencia"
-                  >
-                    {{ abrangencia.rotulo }}
-                  </option>
-                }
-              </select>
-            </div>
-            <div class="field">
-              <label class="field__label" [for]="idDe('base-' + $index + '-sts')">Situação</label>
-              <select
-                class="select"
-                [id]="idDe('base-' + $index + '-sts')"
-                [disabled]="disabled()"
-                (change)="trocarBase($index, { status: valorDe($event) })"
-              >
-                @for (status of statusEscolhiveis; track status.valor) {
-                  <option [value]="status.valor" [selected]="status.valor === base.status">
-                    {{ status.rotulo }}
-                  </option>
-                }
-              </select>
-            </div>
-            <div class="field form-grid__full">
-              <label class="field__label" [for]="idDe('base-' + $index + '-obs')">Observação</label>
-              <input
-                class="input"
-                type="text"
-                maxlength="1000"
-                [id]="idDe('base-' + $index + '-obs')"
-                [value]="base.observacao ?? ''"
-                [disabled]="disabled()"
-                (change)="trocarBase($index, { observacao: valorDe($event) || null })"
-              />
-            </div>
-            <div class="field">
-              <button
-                class="btn btn--tertiary btn--sm"
-                type="button"
-                [id]="idDe('base-' + $index + '-remover')"
-                [disabled]="disabled()"
-                [attr.aria-label]="'Remover a norma ' + ($index + 1)"
-                (click)="removerBase($index)"
-              >
-                Remover norma
-              </button>
-            </div>
-          </div>
-        }
-        <button
-          class="btn btn--tertiary btn--sm"
-          type="button"
-          [id]="idDe('base-nova')"
-          [disabled]="disabled()"
-          (click)="acrescentarBase()"
-        >
-          Acrescentar norma
-        </button>
+        <div class="form-grid">
+          <ui-normas-da-exigencia
+            [bases]="basesLegais()"
+            [idBase]="idBase()"
+            [disabled]="disabled()"
+            (basesChange)="trocar({ basesLegais: $event })"
+          />
+        </div>
       </fieldset>
     </article>
   `,
@@ -282,9 +203,6 @@ export class DocumentoExigidoComponent {
 
   readonly documentoChange = output<DocumentoExigidoDoFormulario>();
   readonly remover = output<void>();
-
-  protected readonly abrangencias = ABRANGENCIAS_ESCOLHIVEIS;
-  protected readonly statusEscolhiveis = STATUS_BASE_LEGAL_ESCOLHIVEIS;
 
   protected readonly condicoes = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
     source: () => this.documento().quando,
@@ -359,31 +277,6 @@ export class DocumentoExigidoComponent {
   protected trocarCondicoes(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoes.set(condicoes);
     this.trocar({ quando: paraPredicado(condicoes) });
-  }
-
-  protected trocarBase(indice: number, mudanca: Partial<BaseLegalDoDocumento>): void {
-    this.trocar({
-      basesLegais: this.basesLegais().map((base, posicao) =>
-        posicao === indice ? { ...base, ...mudanca } : base,
-      ),
-    });
-  }
-
-  protected acrescentarBase(): void {
-    const indice = this.basesLegais().length;
-    this.trocar({ basesLegais: [...this.basesLegais(), baseLegalNova()] });
-    focarDepois(this.injector, this.idDe(`base-${indice}-ref`));
-  }
-
-  /** O foco vai ao botão de remover da norma seguinte, da anterior, ou ao de acrescentar. */
-  protected removerBase(indice: number): void {
-    this.trocar({ basesLegais: this.basesLegais().filter((_, posicao) => posicao !== indice) });
-    focarDepois(
-      this.injector,
-      this.idDe(`base-${indice}-remover`),
-      this.idDe(`base-${indice - 1}-remover`),
-      this.idDe('base-nova'),
-    );
   }
 }
 

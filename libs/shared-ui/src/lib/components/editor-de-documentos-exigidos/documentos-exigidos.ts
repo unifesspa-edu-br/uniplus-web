@@ -32,6 +32,18 @@ export function baseLegalNova(): BaseLegalDoDocumento {
   };
 }
 
+/**
+ * Se alguma das normas sustenta a exigência perante a publicação: declarada e identificada como
+ * resolvida. Uma norma só com a referência, mas pendente, não basta.
+ */
+export function temNormaResolvida(
+  bases: readonly Pick<BaseLegalDoDocumento, 'referencia' | 'status'>[],
+): boolean {
+  return bases.some(
+    (base) => base.referencia.trim() !== '' && base.status === STATUS_BASE_LEGAL_RESOLVIDO,
+  );
+}
+
 /** Um documento novo: exigido de todo candidato, com uma norma em branco para preencher. */
 export function documentoExigidoNovo(
   faseCodigo: string,

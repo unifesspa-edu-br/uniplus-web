@@ -472,7 +472,8 @@
   margin-top: var(--space-3);
 }
 
-.sel-processo .doc-item__eixos > .form-field {
+.sel-processo .doc-item__eixos > .form-field,
+.sel-processo .doc-item__eixos > ui-normas-da-exigencia .field {
   margin: 0;
   min-width: 0;
 }

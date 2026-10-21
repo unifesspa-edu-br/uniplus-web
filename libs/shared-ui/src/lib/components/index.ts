@@ -43,6 +43,7 @@ export * from './editor-de-condicoes/leitura-de-condicoes';
 export { EditorDeFormularioComponent } from './editor-de-formulario/editor-de-formulario';
 export * from './editor-de-formulario/formulario-editavel';
 export * from './editor-de-documentos-exigidos/documentos-exigidos';
+export { NormasDaExigenciaComponent } from './editor-de-documentos-exigidos/normas-da-exigencia';
 export {
   DocumentoExigidoComponent,
   EditorDeDocumentosExigidosComponent,

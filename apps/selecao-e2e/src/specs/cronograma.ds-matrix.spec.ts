@@ -304,11 +304,13 @@ test.describe('Cronograma — matriz DS @ds', () => {
           const topoDoInput = (campo: Element) =>
             campo.querySelector('input, select, textarea')?.getBoundingClientRect().top ?? null;
           const campo = elemento
-            .querySelector('[id*="-doc-obs-legal-"]')
-            ?.closest('.form-field') as Element;
+            .querySelector('[id*="-base-"][id$="-obs"]')
+            ?.closest('.field') as Element;
           const linha = campo.getBoundingClientRect().top;
           const referencia = topoDoInput(campo) ?? 0;
-          const vizinhos = Array.from(elemento.querySelectorAll('.doc-item__eixos > .form-field'))
+          const vizinhos = Array.from(elemento.querySelectorAll(
+              '.doc-item__eixos > .form-field, .doc-item__eixos > ui-normas-da-exigencia .field',
+            ))
             .filter((outro) => outro !== campo)
             .filter((outro) => Math.abs(outro.getBoundingClientRect().top - linha) <= 1)
             .map(topoDoInput)

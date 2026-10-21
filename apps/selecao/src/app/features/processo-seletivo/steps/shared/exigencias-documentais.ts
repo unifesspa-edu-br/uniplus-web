@@ -21,6 +21,7 @@ import {
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
   STATUS_BASE_LEGAL_RESOLVIDO,
 } from '@uniplus/shared-utils';
+import { baseLegalNova, temNormaResolvida } from '@uniplus/shared-ui/components';
 import { nomeDaFinalidade } from '../steps/formulario/formularios-por-finalidade';
 
 /**
@@ -147,16 +148,6 @@ export function exigenciaNova(
   };
 }
 
-/** Uma norma em branco, no alcance e no status que são o caso comum. */
-export function baseLegalNova(): BaseLegalConfig {
-  return {
-    referencia: '',
-    abrangencia: ABRANGENCIA_PADRAO,
-    status: STATUS_BASE_LEGAL_RESOLVIDO,
-    observacao: '',
-  };
-}
-
 /** A folha do rascunho que envolve uma exigência. */
 /**
  * Acrescenta a exigência como declaração de RAIZ, sem tocar no resto da árvore.
@@ -208,14 +199,10 @@ export {
 };
 
 /**
- * Se alguma das normas sustenta a exigência perante a publicação: declarada e identificada
- * como resolvida. Uma norma só com a referência, mas pendente, não basta.
+ * A norma em branco e a regra de quando uma norma sustenta a exigência são da folha, que mora no
+ * editor compartilhado: o modelo e o processo nascem e conferem a norma pela mesma regra.
  */
-export function temNormaResolvida(bases: readonly BaseLegalConfig[]): boolean {
-  return bases.some(
-    (base) => base.referencia.trim() !== '' && base.status === STATUS_BASE_LEGAL_RESOLVIDO,
-  );
-}
+export { baseLegalNova, temNormaResolvida };
 
 /**
  * Se a exigência decide sozinha o resultado de quem não a cumpre: é obrigatória ou declara
@@ -985,7 +972,7 @@ function comoBaseLegal(base: BaseLegalConfig): {
     referencia: base.referencia.trim(),
     abrangencia: base.abrangencia,
     status: base.status,
-    observacao: base.observacao.trim() === '' ? null : base.observacao.trim(),
+    observacao: (base.observacao ?? '').trim() === '' ? null : (base.observacao ?? '').trim(),
   };
 }
 

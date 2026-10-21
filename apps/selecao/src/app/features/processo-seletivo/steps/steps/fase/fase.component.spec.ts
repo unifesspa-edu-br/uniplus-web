@@ -13,7 +13,12 @@ import {
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 
-import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo-seletivo.models';
+import type {
+  AtributosCongeladosDaFase,
+  BaseLegalConfig,
+  FaseDoCronograma,
+} from '../../processo-seletivo.models';
+import { baseLegalNova } from '../../shared/exigencias-documentais';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import {
@@ -187,6 +192,29 @@ function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
     congelados: null,
     ...parcial,
   };
+}
+
+/**
+ * Faz o que o editor compartilhado de normas faz ao ser editado: devolve a lista inteira ao
+ * passo. O comportamento do editor em si é testado na `shared-ui`.
+ */
+function escreverNorma(
+  passo: FaseStepComponent,
+  id: string,
+  posicao: number,
+  campo: keyof BaseLegalConfig,
+  valor: string,
+): void {
+  passo.definirBasesLegais(
+    id,
+    passo
+      .basesLegaisDoDocumento(id)
+      .map((base, i) => (i === posicao ? { ...base, [campo]: valor } : base)),
+  );
+}
+
+function acrescentarNorma(passo: FaseStepComponent, id: string): void {
+  passo.definirBasesLegais(id, [...passo.basesLegaisDoDocumento(id), baseLegalNova()]);
 }
 
 describe('FaseStepComponent', () => {
@@ -1124,30 +1152,30 @@ describe('FaseStepComponent', () => {
       });
 
       it('avisa enquanto nenhuma norma está declarada, e uma vez só', () => {
-        componente.acrescentarBaseLegal(ID_CPF);
+        acrescentarNorma(componente, ID_CPF);
         detectar();
 
         expect(avisos()).toBe(1);
       });
 
       it('some com a norma declarada e resolvida', () => {
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        escreverNorma(componente, ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
         detectar();
 
         expect(avisos()).toBe(0);
       });
 
       it('continua com a norma declarada mas pendente', () => {
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
-        componente.escreverBaseLegal(ID_CPF, 0, 'status', 'PENDENTE');
+        escreverNorma(componente, ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        escreverNorma(componente, ID_CPF, 0, 'status', 'PENDENTE');
         detectar();
 
         expect(avisos()).toBe(1);
       });
 
       it('some quando outra norma da exigência já está resolvida', () => {
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
-        componente.acrescentarBaseLegal(ID_CPF);
+        escreverNorma(componente, ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        acrescentarNorma(componente, ID_CPF);
         detectar();
 
         expect(avisos()).toBe(0);
@@ -1181,7 +1209,7 @@ describe('FaseStepComponent', () => {
       it('mostra no resumo o que decide a exigência, com os campos fechados', () => {
         componente.alternarExigencia(ID_CPF, true);
         componente.escolherConsequencia(ID_CPF, 'ELIMINA');
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        escreverNorma(componente, ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
         detectar();
 
         const [linha] = linhas();
@@ -1197,7 +1225,7 @@ describe('FaseStepComponent', () => {
       /** A norma de todos aparece uma vez, acima da tabela; repetida, dobraria cada linha. */
       it('mostra uma vez a norma resolvida que sustenta todos os documentos', () => {
         componente.alternarExigencia(ID_CPF, true);
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        escreverNorma(componente, ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
         detectar();
 
         expect(
@@ -1215,8 +1243,8 @@ describe('FaseStepComponent', () => {
         ]);
         componente.alternarExigencia(ID_CPF, true);
         componente.alternarExigencia(ID_RG, true);
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
-        componente.escreverBaseLegal(ID_RG, 0, 'referencia', 'Lei 7.116/1983');
+        escreverNorma(componente, ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        escreverNorma(componente, ID_RG, 0, 'referencia', 'Lei 7.116/1983');
         detectar();
 
         expect(nativo.querySelector('.doc-conferencia__norma-comum')).toBeNull();
@@ -1550,7 +1578,7 @@ describe('FaseStepComponent', () => {
       componente.acrescentarDocumento();
       detectar();
 
-      const rotulo = nativo.querySelector(`label[for="fase-AVALIACAO-doc-obs-legal-${ID_CPF}-0"]`);
+      const rotulo = nativo.querySelector(`label[for="fase-AVALIACAO-doc-${ID_CPF}-base-0-obs"]`);
       const normalizar = (texto: string | null | undefined) => texto?.replace(/\s+/g, ' ').trim();
       expect(normalizar(rotulo?.textContent)).toBe('Observação sobre a norma (opcional)');
 
@@ -2014,7 +2042,7 @@ describe('FaseStepComponent', () => {
         instancia.escolherDocumento(ID_CPF);
         instancia.acrescentarDocumento();
         instancia.alternarEdicao(ID_CPF, true);
-        instancia.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 1/2000');
+        escreverNorma(instancia, ID_CPF, 0, 'referencia', 'Lei 1/2000');
         fixture.detectChanges();
       }
       return [avaliacao, recursos].map((fixture) => fixture.nativeElement as HTMLElement);

@@ -379,7 +379,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     const antes = tela.querySelector('#cfg-modelo-docs-doc-0-base-0-ref') as HTMLInputElement;
 
     antes.value = 'Lei 14.723/2023';
-    antes.dispatchEvent(new Event('change'));
+    antes.dispatchEvent(new Event('input'));
     await propagar();
 
     expect(tela.querySelector('#cfg-modelo-docs-doc-0-base-0-ref')).toBe(antes);

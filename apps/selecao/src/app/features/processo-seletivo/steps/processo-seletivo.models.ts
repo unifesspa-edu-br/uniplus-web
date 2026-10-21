@@ -429,13 +429,13 @@ export interface DocumentoGrupo {
  * (ADR-0074): uma lei federal somada à cláusula do edital é o caso comum, e só as
  * `RESOLVIDO` congelam no snapshot da publicação.
  *
- * `observacao` é texto livre opcional; `''` é a ausência, que vira `null` no envio.
+ * `observacao` é texto livre opcional; `null` ou `''` é a ausência, que viaja como `null`.
  */
 export interface BaseLegalConfig {
   readonly referencia: string;
   readonly abrangencia: string;
   readonly status: string;
-  readonly observacao: string;
+  readonly observacao: null | string;
 }
 
 /** Uma cláusula do gatilho, na forma em que o contrato a guarda. */

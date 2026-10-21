@@ -1,10 +1,7 @@
 import {
-  ABRANGENCIAS_ESCOLHIVEIS,
   CONSEQUENCIAS_ESCOLHIVEIS,
   FATO_MODALIDADE,
-  STATUS_BASE_LEGAL_ESCOLHIVEIS,
   agrupadosPorFormulario,
-  baseLegalNova,
   comAlcanceDeTodasAsFases,
   comExigencia,
   comFinalidade,
@@ -66,6 +63,7 @@ import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   ComboboxComponent,
   EditorDeCondicoesComponent,
+  NormasDaExigenciaComponent,
   type UiComboboxGroup,
   ValorEmConsultaComponent,
   ValorLegivelDirective,
@@ -170,6 +168,7 @@ interface FaseNoSeletor {
     ValorEmConsultaComponent,
     ComboboxComponent,
     EditorDeCondicoesComponent,
+    NormasDaExigenciaComponent,
     FormsModule,
     ModeloDaExigenciaComponent,
     ReactiveFormsModule,
@@ -1184,8 +1183,6 @@ export class FaseStepComponent {
   }
 
   protected readonly consequencias = CONSEQUENCIAS_ESCOLHIVEIS;
-  protected readonly abrangencias = ABRANGENCIAS_ESCOLHIVEIS;
-  protected readonly statusBaseLegal = STATUS_BASE_LEGAL_ESCOLHIVEIS;
 
   ehObrigatorio(id: string): boolean {
     return this.exigenciaDoDocumento(id).obrigatorio;
@@ -1232,41 +1229,9 @@ export class FaseStepComponent {
     return exigenciaDecideResultado(exigencia) && !temNormaResolvida(exigencia.basesLegais);
   }
 
-  /**
-   * Escreve um campo de UMA das normas, endereçada pela posição.
-   *
-   * Antes havia três campos escalares por documento e uma união fechada de três literais: a
-   * segunda norma não tinha onde existir, e a observação não tinha campo nenhum — ela era
-   * escrita como `null` fixo e nunca lida de volta.
-   */
-  escreverBaseLegal(
-    id: string,
-    posicao: number,
-    campo: keyof BaseLegalConfig,
-    valor: string,
-  ): void {
-    const bases = this.basesLegaisDoDocumento(id).map((base, i) =>
-      i === posicao ? { ...base, [campo]: valor } : base,
-    );
+  /** Grava a lista de normas que o editor compartilhado devolve, inteira. */
+  definirBasesLegais(id: string, bases: readonly BaseLegalConfig[]): void {
     this.escreverExigencia(id, { basesLegais: bases });
-  }
-
-  /** Acrescenta uma norma à exigência — uma lei federal somada à cláusula do edital. */
-  acrescentarBaseLegal(id: string): void {
-    this.escreverExigencia(id, {
-      basesLegais: [...this.basesLegaisDoDocumento(id), baseLegalNova()],
-    });
-  }
-
-  /**
-   * Remove uma norma. A última não sai: a exigência que decide o resultado precisa de norma
-   * resolvida para publicar, e deixar a lista vazia tiraria da tela o campo que a publicação
-   * cobra — a linha em branco não viaja no comando de qualquer forma.
-   */
-  removerBaseLegal(id: string, posicao: number): void {
-    const bases = this.basesLegaisDoDocumento(id);
-    if (bases.length <= 1) return;
-    this.escreverExigencia(id, { basesLegais: bases.filter((_, i) => i !== posicao) });
   }
 
   /**
