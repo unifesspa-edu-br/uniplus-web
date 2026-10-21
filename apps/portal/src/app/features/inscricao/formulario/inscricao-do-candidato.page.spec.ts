@@ -510,6 +510,13 @@ describe('InscricaoDoCandidatoPage', () => {
     const secao = await irAosDocumentos(tela);
     const nomes = [...secao.querySelectorAll('h4')].map((h) => h.textContent?.trim());
     expect(nomes).toEqual(['Histórico escolar']);
+
+    // Com um envio em andamento a zona de escolha segue habilitada: desabilitá-la tira o foco do teclado.
+    ocupadoDoEnvio.set(true);
+    fixture.detectChanges();
+    const campo = secao.querySelector<HTMLInputElement>('ui-envio-do-documento input[type="file"]');
+    expect(campo).not.toBeNull();
+    expect(campo?.disabled).toBe(false);
     expect(secao.textContent).toContain('Exigido pelas suas respostas');
   });
 

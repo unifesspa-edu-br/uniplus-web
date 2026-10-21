@@ -64,7 +64,7 @@
   [envio]="envio()"
   [avaliacao]="avaliacaoNaTela()"
   [envioDeDocumentos]="envioDeDocumentos()"
-  [podeEnviarDocumentos]="!bloqueada()"
+  [podeEnviarDocumentos]="!ocupada() && !precisaRecarregar()"
   [podeRemoverDocumentos]="!enviada() && !bloqueada()"
   [ocorrenciasGravadas]="ocorrenciasGravadas()"
   (simulacaoChange)="responder($event)"
