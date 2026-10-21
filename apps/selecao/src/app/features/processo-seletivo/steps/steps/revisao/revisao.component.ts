@@ -26,6 +26,8 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { instanteLegivel } from '../../shared/fuso-institucional';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
+import { documentosPorFase } from '../../shared/documentos-exigidos';
+import { gruposSemNormaResolvida } from '../../shared/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
@@ -116,6 +118,24 @@ export class RevisaoStepComponent {
   readonly preflight = inject(PreflightDaPublicacaoService);
 
   /** Quem concorre em cada modalidade ofertada, pela regra que o processo congelou. */
+  /**
+   * Os documentos exigidos por fase, com a situação da base legal que a publicação confere: a
+   * exigência que decide o resultado precisa de norma resolvida.
+   */
+  protected readonly documentosDasFases = computed(() => {
+    const { documentos, cronograma } = this.store.draft();
+    const nomeDaFase = this.catalogosDoCronograma.nomeDaFase();
+    return documentosPorFase(
+      documentos,
+      cronograma.fases.map((fase) => fase.codigo),
+    ).map((fase) => ({ ...fase, nome: nomeDaFase(fase.faseCodigo) }));
+  });
+
+  /** Quantos grupos de alternativas decidem o resultado sem norma resolvida. */
+  protected readonly gruposDeDocumentosSemNorma = computed(
+    () => gruposSemNormaResolvida(this.store.draft().documentos).length,
+  );
+
   protected readonly regrasDasModalidades = this.store.regrasDasModalidades;
   private readonly cadastro = inject(CadastroInicialService);
   private readonly atos = inject(AtosApi);
