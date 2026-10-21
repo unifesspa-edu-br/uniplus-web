@@ -286,7 +286,11 @@ export class InscricaoDoCandidatoPage implements OnInit {
    */
   protected readonly motivoDoRecarregar = signal<'envio' | 'incerta' | null>(null);
   protected readonly precisaRecarregar = computed(() => this.motivoDoRecarregar() !== null);
-  protected readonly bloqueada = computed(() => this.ocupada() || this.precisaRecarregar());
+  /** O ETag está sendo relido depois de uma chamada de documento: gravar agora sairia com o velho. */
+  private readonly relendoARevisao = signal(false);
+  protected readonly bloqueada = computed(
+    () => this.ocupada() || this.relendoARevisao() || this.precisaRecarregar(),
+  );
   protected readonly errosDoServidor = signal<readonly ErroDoServidor[]>([]);
   /** A recusa sem campo para apontar: o título diz o que aconteceu e o texto, o que fazer. */
   protected readonly recusaGeral = signal<{ titulo: string; texto: string } | null>(null);
@@ -536,13 +540,18 @@ export class InscricaoDoCandidatoPage implements OnInit {
    * respostas dela, ou o próximo salvar seria recusado e as respostas não salvas se perderiam.
    */
   private atualizarARevisaoEReavaliar(): void {
+    this.relendoARevisao.set(true);
     this.servico
       .obter(this.processoId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
+        this.relendoARevisao.set(false);
         if (resultado.ok) {
           const eTag = resultado.data.eTag;
           this.inscricao.update((atual) => (atual ? { ...atual, eTag } : atual));
+        } else {
+          // Com o ETag velho na tela, o próximo salvar seria recusado e as respostas se perderiam.
+          this.motivoDoRecarregar.set('incerta');
         }
         this.reavaliarDocumentos();
       });
