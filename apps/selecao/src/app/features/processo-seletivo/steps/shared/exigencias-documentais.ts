@@ -701,20 +701,36 @@ export function exigenciasLocalizadas(exigencias: ExigenciasDoRascunho): readonl
 export function gruposSemNormaResolvida(
   exigencias: ExigenciasDoRascunho,
 ): readonly { readonly documentos: readonly string[]; readonly fases: readonly string[] }[] {
-  const pendentes: { readonly documentos: readonly string[]; readonly fases: readonly string[] }[] = [];
+  return gruposQueDecidem(exigencias).filter((grupo) => !grupo.normaResolvida);
+}
+
+/**
+ * Os grupos `OU` que decidem sozinhos o resultado (consequência própria), com os documentos e as
+ * fases que reúnem e se têm norma resolvida.
+ */
+export function gruposQueDecidem(exigencias: ExigenciasDoRascunho): readonly {
+  readonly documentos: readonly string[];
+  readonly fases: readonly string[];
+  readonly normaResolvida: boolean;
+}[] {
+  const decisivos: {
+    documentos: readonly string[];
+    fases: readonly string[];
+    normaResolvida: boolean;
+  }[] = [];
 
   const visitar = (nos: readonly NoDeExigencia[]): void => {
     for (const no of nos) {
       if (no.tipo === 'FOLHA') continue;
 
-      const decideResultado = no.tipo === 'OU' && (no.consequencia ?? '') !== '';
-      if (decideResultado && !temNormaResolvida(no.basesLegais ?? [])) {
+      if (no.tipo === 'OU' && (no.consequencia ?? '') !== '') {
         // Os documentos de TODA a subárvore, não só as folhas diretas: um grupo que reúne
         // outros grupos ficaria sem nome nenhum na mensagem, que é o oposto do que ela serve.
         const documentos = documentosDe(no.filhos ?? []);
-        pendentes.push({
+        decisivos.push({
           documentos: documentos.map((documento) => documento.tipoDocumentoId),
           fases: [...new Set(documentos.map((documento) => documento.faseCodigo))],
+          normaResolvida: temNormaResolvida(no.basesLegais ?? []),
         });
       }
 
@@ -723,7 +739,7 @@ export function gruposSemNormaResolvida(
   };
 
   visitar(exigencias.raizes);
-  return pendentes;
+  return decisivos;
 }
 
 /**

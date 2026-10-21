@@ -277,6 +277,29 @@ describe('FormularioStepComponent', () => {
       expect(texto).not.toContain('Nenhum documento exigido nesta fase');
     });
 
+    it('lista o documento exigido em todas as fases, também na fase acrescentada depois', () => {
+      const antes = {
+        ...FASE_INSCRICAO,
+        codigo: 'ANTES',
+        congelados: { ...FASE_INSCRICAO.congelados, coletaInscricao: false },
+      };
+      store.patchSection('cronograma', {
+        ...store.draft().cronograma,
+        fases: [antes, FASE_INSCRICAO],
+      });
+      store.patchSection('documentos', {
+        ...comExigencia(
+          { raizes: [], emTodasAsFases: [] },
+          { ...exigenciaNova(TIPO_LAUDO, 'ANTES'), tipoDocumentoNome: 'Laudo médico' },
+        ),
+        emTodasAsFases: [TIPO_LAUDO],
+      });
+
+      emConsulta();
+
+      expect(host.querySelector('sel-documentos-do-formulario')?.textContent).toContain('Laudo médico');
+    });
+
     it('sem documento na fase, diz que nenhum é exigido e leva ao Cronograma', () => {
       store.patchObjectSection('formulario', { conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS) });
       fixture.detectChanges();

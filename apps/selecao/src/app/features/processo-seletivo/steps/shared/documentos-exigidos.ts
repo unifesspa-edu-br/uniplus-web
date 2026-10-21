@@ -12,7 +12,8 @@ import {
 import {
   exigenciaDecideResultado,
   exigenciasLocalizadasDaFase,
-  gruposSemNormaResolvida,
+  comAlcanceDeTodasAsFases,
+  gruposQueDecidem,
   finalidadeDaExigencia,
   exigenciaSemNormaResolvida,
   type ExigenciaLocalizada,
@@ -88,8 +89,11 @@ export function documentosDoFormulario(
   finalidade: string,
   finalidadesDaFase: readonly string[],
   vocabulario: VocabularioDosDocumentos,
+  fasesVivas: readonly string[],
 ): DocumentosDoFormulario {
-  const daFase = exigenciasLocalizadasDaFase(exigencias, faseCodigo).map((exigencia) => ({
+  // O documento declarado para todas as fases só existe na fase acrescentada depois quando é
+  // materializado, como na gravação.
+  const daFase = exigenciasLocalizadasDaFase(comAlcanceDeTodasAsFases(exigencias, fasesVivas), faseCodigo).map((exigencia) => ({
     exigencia,
     formulario: finalidadeDaExigencia(exigencia.documento.finalidade, finalidadesDaFase),
   }));
@@ -121,22 +125,24 @@ export function documentosPorFase(
   exigencias: ExigenciasDoRascunho,
   faseCodigos: readonly string[],
 ): readonly DocumentosDaFase[] {
-  const gruposPendentes = gruposSemNormaResolvida(exigencias);
+  const materializadas = comAlcanceDeTodasAsFases(exigencias, faseCodigos);
+  const grupos = gruposQueDecidem(materializadas);
   return faseCodigos.flatMap((faseCodigo) => {
-    const documentos = exigenciasLocalizadasDaFase(exigencias, faseCodigo).map(
+    const documentos = exigenciasLocalizadasDaFase(materializadas, faseCodigo).map(
       ({ documento }) => documento,
     );
     if (documentos.length === 0) return [];
     // O grupo `OU` com consequência própria decide o resultado como uma exigência: entra na fase
     // dos documentos que reúne, nas duas contagens.
-    const gruposDaFase = gruposPendentes.filter((grupo) => grupo.fases.includes(faseCodigo)).length;
+    const gruposDaFase = grupos.filter((grupo) => grupo.fases.includes(faseCodigo));
     return [
       {
         faseCodigo,
         obrigatorios: documentos.filter((documento) => documento.obrigatorio).length,
         facultativos: documentos.filter((documento) => !documento.obrigatorio).length,
-        comNormaExigida: documentos.filter(exigenciaDecideResultado).length + gruposDaFase,
-        semNorma: documentos.filter(exigenciaSemNormaResolvida).length + gruposDaFase,
+        comNormaExigida: documentos.filter(exigenciaDecideResultado).length + gruposDaFase.length,
+        semNorma: documentos.filter(exigenciaSemNormaResolvida).length +
+          gruposDaFase.filter((grupo) => !grupo.normaResolvida).length,
       },
     ];
   });
