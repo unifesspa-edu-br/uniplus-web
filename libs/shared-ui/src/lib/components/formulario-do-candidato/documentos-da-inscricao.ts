@@ -2,6 +2,12 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { AlertComponent } from '../alert/alert';
+import { EnvioDoDocumentoComponent } from './envio-do-documento';
+import type {
+  ArquivoEnviado,
+  EnvioDeDocumentos,
+  SituacaoDaExigencia,
+} from './envio-de-documentos';
 import { ListaDeDocumentosComponent } from '../lista-de-documentos/lista-de-documentos';
 import { type DocumentoNaTela, type NoDeDocumentos, textoDoGrupo } from './documentos-avaliados';
 import type { AvaliacaoNaTela, PendenciaDaAvaliacao } from './modalidades-avaliadas';
@@ -22,7 +28,7 @@ type Trecho =
 @Component({
   selector: 'ui-documentos-da-inscricao',
   standalone: true,
-  imports: [AlertComponent, ListaDeDocumentosComponent, NgTemplateOutlet],
+  imports: [AlertComponent, EnvioDoDocumentoComponent, ListaDeDocumentosComponent, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[attr.aria-busy]': 'avaliacao().calculando' },
   styles: `
@@ -53,8 +59,39 @@ type Trecho =
     }
   `,
   template: `
+    <!-- O envio é por exigência e ocorrência: o documento que junta integrantes tem um campo por integrante. -->
+    <ng-template #envioDoDocumento let-documento>
+      @if (envioDeDocumentos(); as envio) {
+        @for (exigida of documento.exigidas; track exigida.chave) {
+          @if (exigida.enviavel) {
+            <ui-envio-do-documento
+              [alvo]="{
+                chave: exigida.chave,
+                exigenciaId: exigida.exigenciaId,
+                ocorrenciaId: exigida.ocorrenciaId,
+                nome: exigida.texto,
+              }"
+              [formatos]="documento.formatos"
+              [tamanhoMaximoBytes]="documento.tamanhoMaximoBytes ?? null"
+              [quantidadeMinima]="documento.quantidadeMinima"
+              [envio]="envio"
+              [arquivos]="arquivosDe(exigida.chave)"
+              [situacao]="situacoes()[exigida.chave] ?? null"
+              [podeAlterar]="podeAlterar()"
+              (arquivoEnviado)="arquivoEnviado.emit($event)"
+              (arquivoRemovido)="arquivoRemovido.emit($event)"
+            />
+          }
+        }
+      }
+    </ng-template>
+
     <ng-template #listaDeDocumentos let-documentos>
-      <ui-lista-de-documentos [documentos]="documentos" [semDocumentos]="semDocumentos()" />
+      <ui-lista-de-documentos
+        [documentos]="documentos"
+        [semDocumentos]="semDocumentos()"
+        [acao]="envioDeDocumentos() ? envioDoDocumento : null"
+      />
     </ng-template>
 
     <ng-template #grupoDeDocumentos let-grupo>
@@ -138,6 +175,28 @@ export class DocumentosDaInscricaoComponent {
   /** O que dizer quando nada é pedido nesta fase. */
   readonly semDocumentos = input.required<string>();
 
+  /**
+   * Como o candidato envia os arquivos exigidos; nulo, a lista só informa, como na pré-visualização do
+   * administrador.
+   */
+  readonly envioDeDocumentos = input<EnvioDeDocumentos | null>(null);
+  /**
+   * Os arquivos que a API já registrou, com a chave da exigência e da ocorrência (`ExigenciaPedida.chave`).
+   * É por aqui que a avaliação da API (api#2037) traz de volta o que foi enviado.
+   */
+  readonly arquivosEnviados = input<readonly ArquivoEnviado[]>([]);
+  /**
+   * A situação de cada exigência, pela chave dela, como a avaliação da API a devolve (api#2037); sem
+   * entrada, a tela não afirma se a exigência está atendida.
+   */
+  readonly situacoes = input<Readonly<Partial<Record<string, SituacaoDaExigencia>>>>({});
+  /** Enviar e remover arquivo só valem enquanto a inscrição é rascunho. */
+  readonly podeAlterar = input(true);
+
+  /** Um arquivo foi confirmado ou removido: a avaliação das exigências muda. */
+  readonly arquivoEnviado = output<ArquivoEnviado>();
+  readonly arquivoRemovido = output<string>();
+
   /** O candidato escolheu a pergunta pendente: leva a ela. */
   readonly irAoCampo = output<string>();
   readonly tentarDeNovo = output<void>();
@@ -160,6 +219,10 @@ export class DocumentosDaInscricaoComponent {
     }
     return trechos;
   });
+
+  protected arquivosDe(chave: string): readonly ArquivoEnviado[] {
+    return this.arquivosEnviados().filter((arquivo) => arquivo.chave === chave);
+  }
 
   protected texto(grupo: GrupoDeDocumentos): string {
     return textoDoGrupo(grupo);

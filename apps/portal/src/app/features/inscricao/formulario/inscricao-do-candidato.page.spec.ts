@@ -21,6 +21,7 @@ import { BUSCA_DE_CEP, BUSCA_DE_MUNICIPIOS } from '@uniplus/shared-ui/components
 
 import type { OfertaDaInscricao } from '../oferta-da-inscricao';
 import { ESPERA_DA_CONSULTA_MS } from './avaliacao-da-inscricao.estado';
+import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';
 import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.mock';
 import { InscricaoDoCandidatoPage } from './inscricao-do-candidato.page';
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
@@ -194,6 +195,7 @@ describe('InscricaoDoCandidatoPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: InscricaoDoCandidatoService, useValue: servico },
+        { provide: EnvioDeDocumentosDaInscricao, useValue: { paraOProcesso: () => ({}) } },
         { provide: UserContextService, useValue: { user: conta } },
         { provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) },
         { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },

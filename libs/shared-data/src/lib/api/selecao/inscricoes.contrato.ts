@@ -59,3 +59,13 @@ export type AvaliacaoDaInscricaoRequest = Omit<
   readonly respostas: RespostasDaInscricao | null;
   readonly grupos: GruposDaInscricao | null;
 };
+
+/** O pedido de envio de um arquivo que atende uma exigência de documento da inscrição. */
+export type IniciarEnvioDeDocumentoDaInscricaoRequest =
+  Schemas['IniciarEnvioDeDocumentoDaInscricaoRequest'];
+
+/** O arquivo pendente e a URL pré-assinada de PUT, de validade curta. */
+export type IniciarEnvioDeDocumentoDaInscricaoDto = Schemas['IniciarEnvioDeDocumentoDaInscricaoDto'];
+
+/** O arquivo confirmado: lido do armazenamento, conferido e selado. */
+export type ArquivoDaApresentacaoDto = Schemas['ArquivoDaApresentacaoDto'];

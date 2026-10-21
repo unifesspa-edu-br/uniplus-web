@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, type TemplateRef, input } from '@angular/core';
 
 import { TagComponent } from '../tag/tag';
 
@@ -16,6 +17,10 @@ export interface DocumentoExigido {
    */
   readonly situacao?: string;
   readonly obrigatorio: boolean;
+  /** O teto de tamanho de cada arquivo enviado para o documento; sem ele vale o padrão do envio. */
+  readonly tamanhoMaximoBytes?: number | null;
+  /** Quantas apresentações o documento pede, no mínimo. */
+  readonly quantidadeMinima?: number | null;
   readonly formatos: { readonly qualquer: boolean; readonly lista: readonly string[] | null };
   readonly modelo: {
     readonly nomeArquivo: string;
@@ -32,7 +37,7 @@ export interface DocumentoExigido {
 @Component({
   selector: 'ui-lista-de-documentos',
   standalone: true,
-  imports: [TagComponent],
+  imports: [NgTemplateOutlet, TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Um cartão por documento, com a obrigatoriedade escrita na etiqueta — não só pela cor (WCAG 1.4.1).
   styles: `
@@ -121,6 +126,9 @@ export interface DocumentoExigido {
                 </span>
               </a>
             }
+            @if (acao(); as acao) {
+              <ng-container *ngTemplateOutlet="acao; context: { $implicit: documento }" />
+            }
           </li>
         }
       </ul>
@@ -131,6 +139,11 @@ export class ListaDeDocumentosComponent {
   readonly documentos = input.required<readonly DocumentoExigido[]>();
   /** O que dizer quando a lista é vazia: só quem hospeda sabe o que a ausência significa ali. */
   readonly semDocumentos = input.required<string>();
+  /**
+   * Uma ação por documento, como o envio do arquivo exigido: o modelo recebe o documento. Sem ele, a
+   * lista só informa.
+   */
+  readonly acao = input<TemplateRef<{ $implicit: DocumentoExigido }> | null>(null);
 
   protected aQuemSeAplica(documento: DocumentoExigido): string {
     if (documento.situacao) return documento.situacao;

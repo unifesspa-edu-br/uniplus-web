@@ -56,6 +56,7 @@ import {
   ofertasDaInscricao,
 } from '../oferta-da-inscricao';
 import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
+import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
 import { mensagemDaRecusa, mensagemDaRecusaDaSegundaOpcao } from './recusas-da-inscricao';
 
@@ -117,6 +118,7 @@ const TITULO_DA_RECUSA = 'A inscrição não foi gravada';
 })
 export class InscricaoDoCandidatoPage implements OnInit {
   private readonly servico = inject(InscricaoDoCandidatoService);
+  private readonly documentos = inject(EnvioDeDocumentosDaInscricao);
   private readonly usuario = inject(UserContextService);
   private readonly problemas = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
@@ -124,6 +126,10 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly avaliacao = inject(AvaliacaoDaInscricaoEstado);
 
   readonly processoId = input.required<string>();
+  /** O envio dos arquivos dos documentos exigidos, no processo desta tela. */
+  protected readonly envioDeDocumentos = computed(() =>
+    this.documentos.paraOProcesso(this.processoId()),
+  );
 
   protected readonly estado = signal<Estado>('carregando');
   protected readonly erroAoCarregar = signal<string | null>(null);

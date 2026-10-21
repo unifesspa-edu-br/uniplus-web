@@ -1,0 +1,177 @@
+import { Injectable, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import {
+  ChaveDeSubstituicao,
+  type DestinoPreAssinado,
+  ProblemI18nService,
+  type ProblemDetails,
+  SignedUploadClient,
+  comChave,
+  destinoExpirado,
+  enviarAoStorage,
+  isApiOk,
+} from '@uniplus/shared-core/http';
+import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
+import { InscricoesApi } from '@uniplus/shared-data/selecao';
+import {
+  type AlvoDoEnvio,
+  type DesfechoDaRemocao,
+  type DesfechoDoEnvio,
+  type EnvioDeDocumentos,
+  tipoDeMidiaDoArquivo,
+} from '@uniplus/shared-ui/components';
+
+const FORMATO_NAO_ACEITO = 'O formato do arquivo não é aceito.';
+const FALHA_NO_ARMAZENAMENTO = 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.';
+const ENDERECO_VENCIDO = 'O endereço de envio não é mais válido. Tente novamente para obter um novo.';
+const STATUS_DE_SERVIDOR = 500;
+
+/** Onde um arquivo parou: o que já se sabe dele para a nova tentativa recomeçar do ponto certo. */
+interface Tentativa {
+  readonly chaveDaIniciacao: ChaveDeSubstituicao;
+  readonly chaveDaConfirmacao: ChaveDeSubstituicao;
+  destino: (DestinoPreAssinado & { readonly arquivoId: string }) | null;
+  /** Os bytes já chegaram ao armazenamento: só a confirmação falta. */
+  enviado: boolean;
+}
+
+/**
+ * O envio dos documentos exigidos da inscrição ao armazenamento: a API registra o arquivo pendente, o
+ * navegador envia os bytes direto à URL pré-assinada e a API confirma lendo o objeto.
+ */
+@Injectable()
+export class EnvioDeDocumentosDaInscricao {
+  private readonly api = inject(InscricoesApi);
+  private readonly upload = inject(SignedUploadClient);
+  private readonly problemas = inject(ProblemI18nService);
+
+  /** O envio dos documentos da inscrição do candidato neste processo. */
+  paraOProcesso(processoId: string): EnvioDeDocumentos {
+    return new EnvioNoProcesso(processoId, this.api, this.upload, (problema) =>
+      this.mensagemDe(problema),
+    );
+  }
+
+  private mensagemDe(problema: ProblemDetails): string {
+    const mensagem = this.problemas.resolve(problema);
+    return mensagem.detail ?? mensagem.title;
+  }
+}
+
+class EnvioNoProcesso implements EnvioDeDocumentos {
+  /** Uma tentativa por arquivo escolhido: repetir o mesmo `File` retoma dela. */
+  private readonly tentativas = new WeakMap<File, Tentativa>();
+
+  constructor(
+    private readonly processoId: string,
+    private readonly api: InscricoesApi,
+    private readonly upload: SignedUploadClient,
+    private readonly explicar: (problema: ProblemDetails) => string,
+  ) {}
+
+  async enviar(
+    alvo: AlvoDoEnvio,
+    arquivo: File,
+    aoAndar: Parameters<EnvioDeDocumentos['enviar']>[2],
+  ): Promise<DesfechoDoEnvio> {
+    const tipoDeMidia = tipoDeMidiaDoArquivo(arquivo.name);
+    if (tipoDeMidia === null) {
+      return { ok: false, mensagem: FORMATO_NAO_ACEITO, podeTentarDeNovo: false };
+    }
+    const tentativa = this.tentativaDe(arquivo);
+
+    if (!tentativa.enviado) {
+      let destino = tentativa.destino;
+      if (destino === null || destinoExpirado(destino)) {
+        aoAndar('iniciando', 0);
+        const pedido = {
+          exigenciaId: alvo.exigenciaId,
+          ocorrenciaId: alvo.ocorrenciaId,
+          apresentacaoId: null,
+          tipoDeMidia,
+          tamanhoBytes: arquivo.size,
+        };
+        const { resultado, inconclusiva } = await comChave(
+          tentativa.chaveDaIniciacao,
+          pedido,
+          (contexto) => this.api.iniciarEnvioDeDocumento(this.processoId, pedido, contexto),
+        );
+        if (!isApiOk(resultado)) {
+          return this.recusa(resultado.problem, inconclusiva);
+        }
+        destino = resultado.data;
+        tentativa.destino = destino;
+      }
+
+      aoAndar('enviando', 0);
+      const envio = await enviarAoStorage(this.upload, destino, arquivo, (progresso) =>
+        aoAndar('enviando', progresso),
+      );
+      if (!envio.ok) {
+        // A assinatura recusada não volta a valer: a nova tentativa pede outra URL.
+        if (envio.expirada) tentativa.destino = null;
+        return {
+          ok: false,
+          mensagem: envio.expirada ? ENDERECO_VENCIDO : FALHA_NO_ARMAZENAMENTO,
+          podeTentarDeNovo: true,
+        };
+      }
+      tentativa.enviado = true;
+    }
+
+    // A URL cumpriu o papel; a confirmação só precisa do id do arquivo.
+    const arquivoId = tentativa.destino?.arquivoId as string;
+    aoAndar('confirmando', 100);
+    const { resultado, inconclusiva } = await comChave(
+      tentativa.chaveDaConfirmacao,
+      arquivoId,
+      (contexto) => this.api.confirmarEnvioDeDocumento(this.processoId, arquivoId, contexto),
+    );
+    if (!isApiOk(resultado)) return this.recusa(resultado.problem, inconclusiva);
+
+    this.tentativas.delete(arquivo);
+    return {
+      ok: true,
+      arquivo: {
+        arquivoId: resultado.data.arquivoId,
+        chave: alvo.chave,
+        nome: arquivo.name,
+        tipoDeMidia: resultado.data.tipoDeMidia,
+        tamanhoBytes: Number(resultado.data.tamanhoBytes),
+      },
+    };
+  }
+
+  async remover(arquivoId: string): Promise<DesfechoDaRemocao> {
+    const resultado = await firstValueFrom(
+      this.api.removerArquivoDeDocumento(this.processoId, arquivoId, withIdempotencyKey()),
+    );
+    return isApiOk(resultado) ? { ok: true } : { ok: false, mensagem: this.explicar(resultado.problem) };
+  }
+
+  private tentativaDe(arquivo: File): Tentativa {
+    let tentativa = this.tentativas.get(arquivo);
+    if (tentativa === undefined) {
+      tentativa = {
+        chaveDaIniciacao: new ChaveDeSubstituicao(),
+        chaveDaConfirmacao: new ChaveDeSubstituicao(),
+        destino: null,
+        enviado: false,
+      };
+      this.tentativas.set(arquivo, tentativa);
+    }
+    return tentativa;
+  }
+
+  /**
+   * Repetir só adianta quando a recusa não é do arquivo: falha de rede ou do servidor, inclusive o
+   * antivírus fora do ar. Um arquivo recusado pelo conteúdo ou pela exigência precisa ser trocado.
+   */
+  private recusa(problema: ProblemDetails, inconclusiva: boolean): DesfechoDoEnvio {
+    return {
+      ok: false,
+      mensagem: this.explicar(problema),
+      podeTentarDeNovo: inconclusiva || problema.status >= STATUS_DE_SERVIDOR,
+    };
+  }
+}

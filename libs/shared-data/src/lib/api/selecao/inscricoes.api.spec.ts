@@ -117,4 +117,39 @@ describe('InscricoesApi', () => {
     reqMinhas.flush([]);
     await Promise.all([comprovante, minhas]);
   });
+
+  it('envia o documento em três chamadas, cada uma com a Idempotency-Key de quem chama', async () => {
+    const rota = `${ROTA}/documentos`;
+    const iniciar = firstValueFrom(
+      api.iniciarEnvioDeDocumento(
+        PROCESSO,
+        { exigenciaId: 'e1', ocorrenciaId: null, apresentacaoId: null, tipoDeMidia: 'application/pdf', tamanhoBytes: 10 },
+        withIdempotencyKey('iniciar-1'),
+      ),
+    );
+    const pedido = controller.expectOne(`${rota}/envios`);
+    expect(pedido.request.method).toBe('POST');
+    expect(pedido.request.body).toMatchObject({ exigenciaId: 'e1', tamanhoBytes: 10 });
+    expect(pedido.request.headers.get('Idempotency-Key')).toBe('iniciar-1');
+    pedido.flush(null);
+    await iniciar;
+
+    const confirmar = firstValueFrom(
+      api.confirmarEnvioDeDocumento(PROCESSO, 'a 1', withIdempotencyKey('confirmar-1')),
+    );
+    const confirmacao = controller.expectOne(`${rota}/envios/a%201/confirmacao`);
+    expect(confirmacao.request.method).toBe('POST');
+    expect(confirmacao.request.headers.get('Idempotency-Key')).toBe('confirmar-1');
+    confirmacao.flush(null);
+    await confirmar;
+
+    const remover = firstValueFrom(
+      api.removerArquivoDeDocumento(PROCESSO, 'a1', withIdempotencyKey('remover-1')),
+    );
+    const remocao = controller.expectOne(`${rota}/arquivos/a1`);
+    expect(remocao.request.method).toBe('DELETE');
+    expect(remocao.request.headers.get('Idempotency-Key')).toBe('remover-1');
+    remocao.flush(null, { status: 204, statusText: 'No Content' });
+    await remover;
+  });
 });

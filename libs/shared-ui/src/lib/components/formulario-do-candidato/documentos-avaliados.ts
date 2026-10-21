@@ -36,6 +36,10 @@ export interface DocumentoAvaliado {
   readonly finalidade: string | null;
   readonly formatos: DocumentoExigido['formatos'];
   readonly modelo: DocumentoExigido['modelo'];
+  /** O teto de tamanho de cada arquivo da exigência; a avaliação ainda não o informa. */
+  readonly tamanhoMaximoBytes?: number | null;
+  /** Quantas apresentações a exigência pede, no mínimo; a avaliação ainda não o informa. */
+  readonly quantidadeMinima?: number | null;
   readonly situacao: string;
   /** O grupo pelo qual a exigência se repete, uma vez por integrante; nulo fora de repetição. */
   readonly grupoCodigo: string | null;
@@ -104,6 +108,11 @@ export interface DocumentoNaTela extends DocumentoExigido {
 /** Uma exigência que as respostas já pedem, de um integrante, com o nome a anunciar. */
 export interface ExigenciaPedida {
   readonly chave: string;
+  readonly exigenciaId: string;
+  /** A ocorrência do grupo a que a exigência se liga; nula fora de repetição. */
+  readonly ocorrenciaId: string | null;
+  /** Se já se sabe a que se anexa o arquivo: enquanto os integrantes não são conhecidos, não há envio. */
+  readonly enviavel: boolean;
   readonly texto: string;
 }
 
@@ -259,6 +268,9 @@ function incluirDeTodos(
         .filter((i) => i.situacao === EXIGIDO)
         .map((i) => ({
           chave: `${documento.exigenciaId}:${i.ocorrenciaId ?? ''}`,
+          exigenciaId: documento.exigenciaId,
+          ocorrenciaId: i.ocorrenciaId,
+          enviavel: i.ocorrenciaId !== null,
           texto: i.titulo === null ? documento.nome : `${documento.nome} — ${i.titulo}`,
         })),
     },
@@ -327,11 +339,24 @@ function paraALista(documento: DocumentoAvaliado, rotulo: string): DocumentoNaTe
     chave,
     juntado: false,
     rotulo,
-    exigidas: documento.situacao === EXIGIDO ? [{ chave, texto: rotulo }] : [],
+    exigidas:
+      documento.situacao === EXIGIDO
+        ? [
+            {
+              chave,
+              exigenciaId: documento.exigenciaId,
+              ocorrenciaId: documento.ocorrenciaId,
+              enviavel: documento.repetePorEntidade === null || documento.ocorrenciaId !== null,
+              texto: rotulo,
+            },
+          ]
+        : [],
     ...situacaoNaLista(documento.situacao),
     obrigatorio: documento.obrigatorio,
     formatos: documento.formatos,
     modelo: documento.modelo,
+    tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
+    quantidadeMinima: documento.quantidadeMinima,
   };
 }
 
