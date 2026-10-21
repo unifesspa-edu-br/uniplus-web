@@ -26,7 +26,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
-  EmptyStateComponent,
+  EmptyStateComponent, IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
   TagComponent,
@@ -61,6 +61,7 @@ const FORMA_ACEITE_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
     PagerComponent,
     SpinnerComponent,
     TagComponent,
+    IconButtonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -162,13 +163,12 @@ const FORMA_ACEITE_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                     </ui-tag>
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <a
-                      class="btn btn--tertiary btn--sm btn--rect"
-                      [routerLink]="t.id"
-                      [attr.aria-label]="'Abrir termo ' + t.nome"
-                    >
-                      Abrir
-                    </a>
+                    <ui-icon-button
+                      icon="pi-folder-open"
+                      [accessibleName]="'Abrir termo de consentimento ' + t.nome"
+                      tooltip="Abrir termo de consentimento"
+                      [link]="[t.id]"
+                    />
                   </td>
                 </tr>
               }
