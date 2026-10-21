@@ -452,9 +452,7 @@ export class ProcessosComponent {
 
   protected publicacoesDe(certame: CertameNaVitrineDto): PublicacoesDoCertame | undefined {
     const atual = this.publicacoes();
-    return atual.status === 'ok'
-      ? (atual.porCertame.get(certame.processoSeletivoId) ?? undefined)
-      : undefined;
+    return atual.status === 'ok' ? (atual.porCertame.get(certame.processoSeletivoId) ?? undefined) : undefined;
   }
 
   /** A consulta da página toda falhou, ou só a deste certame. */
