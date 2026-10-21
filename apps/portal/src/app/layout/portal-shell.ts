@@ -211,7 +211,9 @@ export class PortalShellComponent {
   protected readonly footerGroups = computed(() =>
     this.allFooterGroups.map((group) => ({
       ...group,
-      links: group.links.filter((link) => !link.requiresAuth || this.userContext.isAuthenticated()),
+      links: group.links.filter(
+        (link) => !link.requiresAuth || this.userContext.isAuthenticated(),
+      ),
     })),
   );
 }
