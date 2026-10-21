@@ -101,8 +101,8 @@ export class EnvioDoDocumentoComponent {
   /** A exigência a que os arquivos desta lista atendem. */
   readonly alvo = input.required<AlvoDoEnvio>();
   readonly formatos = input.required<DocumentoExigido['formatos']>();
-  /** O teto de tamanho da exigência; sem ele vale o padrão do armazenamento. */
-  readonly tamanhoMaximoBytes = input<number | null>(null);
+  /** O limite de tamanho de cada arquivo, como a API o informa para a exigência. */
+  readonly tamanhoMaximoBytes = input.required<number>();
   /** Quantas apresentações a exigência pede, no mínimo; acima de 1, a tela diz quantas enviar. */
   readonly quantidadeMinima = input(1, { transform: (v: number | null | undefined) => v ?? 1 });
   readonly envio = input.required<EnvioDeDocumentos>();
@@ -124,6 +124,8 @@ export class EnvioDoDocumentoComponent {
   /** Os arquivos em andamento ou com falha, que a API ainda não registrou. */
   private readonly emAndamento = signal<readonly ArquivoEmEnvio[]>([]);
   /** Os arquivos cuja remoção está em curso: um segundo clique não dispara outra. */
+  /** Os arquivos já removidos: a avaliação que os trazia só muda quando é refeita. */
+  private readonly removidos = signal<ReadonlySet<string>>(new Set());
   private readonly removendo = signal<ReadonlySet<string>>(new Set());
   protected readonly falhaAoRemover = signal<string | null>(null);
   /** Os bytes de cada arquivo em andamento, para a nova tentativa; não é estado da tela. */
@@ -137,7 +139,7 @@ export class EnvioDoDocumentoComponent {
       .arquivos()
       .filter((a) => a.chave === this.alvo().chave);
     for (const arquivo of [...this.arquivos(), ...confirmadosPeloEnvio]) {
-      doServidor.set(arquivo.arquivoId, arquivo);
+      if (!this.removidos().has(arquivo.arquivoId)) doServidor.set(arquivo.arquivoId, arquivo);
     }
     const confirmados = [...doServidor.values()].map(
       (arquivo): ArquivoEmEnvio => ({
@@ -207,6 +209,7 @@ export class EnvioDoDocumentoComponent {
       this.falhaAoRemover.set(desfecho.mensagem || FALHA_AO_REMOVER);
       return;
     }
+    this.removidos.update((atual) => new Set(atual).add(id));
     this.arquivoRemovido.emit(id);
   }
 

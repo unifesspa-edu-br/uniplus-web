@@ -72,8 +72,8 @@ type Trecho =
                 ocorrenciaId: exigida.ocorrenciaId,
                 nome: exigida.texto,
               }"
-              [formatos]="documento.formatos"
-              [tamanhoMaximoBytes]="documento.tamanhoMaximoBytes ?? null"
+              [formatos]="{ qualquer: false, lista: documento.formatosAceitos }"
+              [tamanhoMaximoBytes]="documento.tamanhoMaximoBytes"
               [quantidadeMinima]="documento.quantidadeMinima"
               [envio]="envio"
               [arquivos]="arquivosPorExigencia().get(exigida.chave) ?? SEM_ARQUIVOS"

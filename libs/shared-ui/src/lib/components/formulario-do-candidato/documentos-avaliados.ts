@@ -2,10 +2,20 @@ import type { DocumentoExigido } from '../lista-de-documentos/lista-de-documento
 import { comoInteiro, type GrupoRenderizavel, type Inteiro } from './formulario-do-candidato.model';
 import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada } from './interpretador/regras-do-formulario';
+import type { ArquivoEnviado, SituacaoDaExigencia } from './envio-de-documentos';
 import type { PendenciaDaAvaliacao } from './modalidades-avaliadas';
 
-/** As respostas dadas já pedem o documento. */
+/** As respostas dadas já pedem o documento e falta enviar. */
+export const PENDENTE = 'PENDENTE';
+/** As respostas dadas já pedem o documento e os arquivos enviados o atendem. */
+export const SATISFEITA = 'SATISFEITA';
+/** As respostas dadas já pedem o documento, pendente ou satisfeito: a lista não distingue os dois. */
 export const EXIGIDO = 'EXIGIDO';
+
+/** A situação como a lista a agrupa: pendente e satisfeita são ambas o que já é exigido. */
+function classeDaSituacao(situacao: string): string {
+  return situacao === PENDENTE || situacao === SATISFEITA ? EXIGIDO : situacao;
+}
 /** Uma resposta que ainda falta decide se o documento é pedido. */
 export const PODE_SER_EXIGIDO = 'PODE_SER_EXIGIDO';
 /** Decide um fato que só se conhece numa fase posterior, como a modalidade da convocação. */
@@ -27,6 +37,13 @@ export interface GrupoDoDocumento {
   readonly repetePorEntidade: string | null;
 }
 
+/** Um arquivo já confirmado para a exigência, como a avaliação o devolve. */
+export interface ArquivoDoDocumento {
+  readonly arquivoId: string;
+  readonly tipoDeMidia: string;
+  readonly tamanhoBytes: number | string;
+}
+
 /** Uma exigência documental diante das respostas do candidato, como a API a calcula (ADR-0143). */
 export interface DocumentoAvaliado {
   readonly exigenciaId: string;
@@ -36,10 +53,14 @@ export interface DocumentoAvaliado {
   readonly finalidade: string | null;
   readonly formatos: DocumentoExigido['formatos'];
   readonly modelo: DocumentoExigido['modelo'];
-  /** O teto de tamanho de cada arquivo da exigência; a avaliação ainda não o informa. */
-  readonly tamanhoMaximoBytes?: number | null;
-  /** Quantas apresentações a exigência pede, no mínimo; a avaliação ainda não o informa. */
-  readonly quantidadeMinima?: number | null;
+  /** Os formatos que o envio aceita para a exigência (PDF, JPEG, PNG). */
+  readonly formatosAceitos: readonly string[];
+  /** O menor limite de tamanho efetivo entre os formatos aceitos. */
+  readonly tamanhoMaximoBytes: number | string;
+  /** Quantas apresentações a exigência pede, no mínimo. */
+  readonly quantidadeMinima: number | string;
+  /** Os arquivos confirmados desta exigência e ocorrência. */
+  readonly arquivos: readonly ArquivoDoDocumento[];
   readonly situacao: string;
   /** O grupo pelo qual a exigência se repete, uma vez por integrante; nulo fora de repetição. */
   readonly grupoCodigo: string | null;
@@ -247,11 +268,15 @@ function incluirDeTodos(
   const chave = `${documento.exigenciaId}:todos`;
   const integrantes = [
     ...(integrantesDeTodos.get(chave) ?? []),
-    { titulo: integrante, ocorrenciaId: documento.ocorrenciaId, situacao: documento.situacao },
+    {
+      titulo: integrante,
+      ocorrenciaId: documento.ocorrenciaId,
+      situacao: classeDaSituacao(documento.situacao),
+    },
   ];
   integrantesDeTodos.set(chave, integrantes);
   const situacoes = new Set(integrantes.map((i) => i.situacao));
-  const unica = situacoes.size === 1 ? documento.situacao : null;
+  const unica = situacoes.size === 1 ? classeDaSituacao(documento.situacao) : null;
   const item: NoEmMontagem = {
     tipo: 'DOCUMENTO',
     documento: {
@@ -334,13 +359,13 @@ function situacaoNaLista(situacao: string): Pick<DocumentoNaTela, 'exigido' | 's
 }
 
 function paraALista(documento: DocumentoAvaliado, rotulo: string): DocumentoNaTela {
-  const chave = `${documento.exigenciaId}:${documento.ocorrenciaId ?? ''}`;
+  const chave = chaveDaExigencia(documento);
   return {
     chave,
     juntado: false,
     rotulo,
     exigidas:
-      documento.situacao === EXIGIDO
+      classeDaSituacao(documento.situacao) === EXIGIDO
         ? [
             {
               chave,
@@ -353,12 +378,13 @@ function paraALista(documento: DocumentoAvaliado, rotulo: string): DocumentoNaTe
             },
           ]
         : [],
-    ...situacaoNaLista(documento.situacao),
+    ...situacaoNaLista(classeDaSituacao(documento.situacao)),
     obrigatorio: documento.obrigatorio,
     formatos: documento.formatos,
     modelo: documento.modelo,
-    tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
-    quantidadeMinima: documento.quantidadeMinima,
+    formatosAceitos: documento.formatosAceitos,
+    tamanhoMaximoBytes: Number(documento.tamanhoMaximoBytes),
+    quantidadeMinima: Number(documento.quantidadeMinima),
   };
 }
 
@@ -551,4 +577,38 @@ function textoDaEscolha(no: Exclude<NoDeDocumentos, { tipo: 'DOCUMENTO' }>): str
   return soDocumentos
     ? `Envie ${no.minimo} dos documentos abaixo, à sua escolha:`
     : `Envie ${no.minimo} das opções abaixo, à sua escolha:`;
+}
+
+/** A chave da exigência e da ocorrência, que liga o envio, a situação e os arquivos dela. */
+export function chaveDaExigencia(
+  documento: Pick<DocumentoAvaliado, 'exigenciaId' | 'ocorrenciaId'>,
+): string {
+  return `${documento.exigenciaId}:${documento.ocorrenciaId ?? ''}`;
+}
+
+/**
+ * Da avaliação da API, a situação de cada exigência que já se aplica (pendente ou satisfeita) e os
+ * arquivos já confirmados, ambos pela chave da exigência e da ocorrência.
+ */
+export function situacoesEArquivosDosDocumentos(documentos: readonly DocumentoAvaliado[]): {
+  readonly situacoes: Readonly<Record<string, SituacaoDaExigencia>>;
+  readonly arquivos: readonly ArquivoEnviado[];
+} {
+  const situacoes: Record<string, SituacaoDaExigencia> = {};
+  const arquivos: ArquivoEnviado[] = [];
+  for (const documento of documentos) {
+    const chave = chaveDaExigencia(documento);
+    if (documento.situacao === PENDENTE || documento.situacao === SATISFEITA) {
+      situacoes[chave] = documento.situacao;
+    }
+    for (const arquivo of documento.arquivos) {
+      arquivos.push({
+        arquivoId: arquivo.arquivoId,
+        chave,
+        tipoDeMidia: arquivo.tipoDeMidia,
+        tamanhoBytes: Number(arquivo.tamanhoBytes),
+      });
+    }
+  }
+  return { situacoes, arquivos };
 }

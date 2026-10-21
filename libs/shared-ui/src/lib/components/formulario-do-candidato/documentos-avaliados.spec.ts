@@ -17,11 +17,15 @@ const documento = (nome: string, outros: Partial<DocumentoAvaliado> = {}): Docum
   finalidade: 'INSCRICAO',
   formatos: { qualquer: true, lista: null },
   modelo: null,
-  situacao: 'EXIGIDO',
+  situacao: 'PENDENTE',
   grupoCodigo: null,
   ocorrenciaId: null,
   grupos: [],
   repetePorEntidade: null,
+  formatosAceitos: ['PDF'],
+  tamanhoMaximoBytes: 2 * 1024 * 1024,
+  quantidadeMinima: 1,
+  arquivos: [],
   ...outros,
 });
 const ou = (
@@ -49,7 +53,7 @@ const MAE = { id: 'o2', respostas: { PARENTESCO: 'MAE' } };
 const PAI = { id: 'o3', respostas: { PARENTESCO: 'PAI' } };
 
 /** O documento que se repete por integrante a partir da própria folha, sob um OU escolhido uma vez. */
-const folhaRepetida = (nome: string, ocorrenciaId: string, situacao = 'EXIGIDO') =>
+const folhaRepetida = (nome: string, ocorrenciaId: string, situacao = 'PENDENTE') =>
   documento(nome, {
     grupoCodigo: 'FAMILIA',
     ocorrenciaId,
@@ -325,7 +329,7 @@ describe('anunciarMudancaDosDocumentos', () => {
   const anuncio = (antes: DocumentoAvaliado[], depois: DocumentoAvaliado[]) =>
     anunciarMudancaDosDocumentos(arvore(antes), arvore(depois), noFormulario);
   const P = 'PODE_SER_EXIGIDO';
-  const naEscolha = (nome: string, situacao = 'EXIGIDO', ...grupos: GrupoDoDocumento[]) =>
+  const naEscolha = (nome: string, situacao = 'PENDENTE', ...grupos: GrupoDoDocumento[]) =>
     documento(nome, { situacao, grupos: grupos.length > 0 ? grupos : [ou('id')] });
   /** O OU que se repete por integrante: cada um escolhe o seu. */
   const doIntegrante = (nome: string, ocorrenciaId: string) =>
@@ -337,7 +341,7 @@ describe('anunciarMudancaDosDocumentos', () => {
       ocorrenciaId,
       grupos: [ou('ext'), { ...e('in'), repetePorEntidade: 'FAMILIA' }],
     });
-  const c = (situacao = 'EXIGIDO') => documento('C', { situacao, grupos: [ou('ext')] });
+  const c = (situacao = 'PENDENTE') => documento('C', { situacao, grupos: [ou('ext')] });
   /** A folha que se repete sob um OU escolhido uma vez. */
   const juntada = (nome: string, ocorrenciaId: string) =>
     documento(nome, {
@@ -385,8 +389,8 @@ describe('anunciarMudancaDosDocumentos', () => {
       naEscolha('Autodeclaração'),
     ];
 
-    expect(anuncio(escolha(P), escolha('EXIGIDO'))).toBe('');
-    expect(anuncio(escolha('EXIGIDO'), escolha(P))).toBe('');
+    expect(anuncio(escolha(P), escolha('PENDENTE'))).toBe('');
+    expect(anuncio(escolha('PENDENTE'), escolha(P))).toBe('');
   });
 
   it('a escolha aninhada é lida delimitada, e o N-de fecha a lista com "e"', () => {
@@ -398,10 +402,10 @@ describe('anunciarMudancaDosDocumentos', () => {
     const nDe = (situacao: string) =>
       ['A', 'B', 'C'].map((n) => naEscolha(n, situacao, ou('n', 2)));
 
-    expect(anuncio(aninhada(P), aninhada('EXIGIDO'))).toBe(
+    expect(anuncio(aninhada(P), aninhada('PENDENTE'))).toBe(
       'Passou a ser exigido, à sua escolha: RG ou CNH, ou Passaporte.',
     );
-    expect(anuncio(nDe(P), nDe('EXIGIDO'))).toBe(
+    expect(anuncio(nDe(P), nDe('PENDENTE'))).toBe(
       'Passou a ser exigido, à sua escolha: 2 entre A, B e C.',
     );
   });

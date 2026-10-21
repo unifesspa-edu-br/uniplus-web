@@ -66,11 +66,15 @@ const documento = (nome: string, outros: Partial<DocumentoAvaliado> = {}): Docum
   finalidade: 'INSCRICAO',
   formatos: { qualquer: true, lista: null },
   modelo: null,
-  situacao: 'EXIGIDO',
+  situacao: 'PENDENTE',
   grupoCodigo: null,
   ocorrenciaId: null,
   grupos: [],
   repetePorEntidade: null,
+  formatosAceitos: ['PDF'],
+  tamanhoMaximoBytes: 2 * 1024 * 1024,
+  quantidadeMinima: 1,
+  arquivos: [],
   ...outros,
 });
 
@@ -305,6 +309,33 @@ describe('Bloco de documentos da inscrição', () => {
 
       const campos = [...bloco(tela).querySelectorAll('ui-envio-do-documento label')];
       expect(campos.map((c) => c.textContent?.trim())).toEqual(['Enviar Laudo médico']);
+    });
+
+    it('usa o que a avaliação informa da exigência: situação, arquivos, formatos, limite e mínimo', () => {
+      const tela = montar(
+        naTela(
+          nestaFase(
+            documento('Laudo médico', {
+              situacao: 'SATISFEITA',
+              formatosAceitos: ['PDF', 'JPEG'],
+              tamanhoMaximoBytes: 3 * 1024 * 1024,
+              quantidadeMinima: 2,
+              arquivos: [{ arquivoId: 'a1', tipoDeMidia: 'application/pdf', tamanhoBytes: 2048 }],
+            }),
+            documento('Atestado', { situacao: 'PENDENTE' }),
+          ),
+        ),
+        ENVIO,
+      );
+
+      const [laudo, atestado] = [...bloco(tela).querySelectorAll('ui-envio-do-documento')];
+      expect(laudo.querySelector('ui-tag')?.textContent?.trim()).toBe('Satisfeita');
+      expect(atestado.querySelector('ui-tag')?.textContent?.trim()).toBe('Pendente');
+      expect(laudo.querySelector('.uni-uploader__item-name')?.textContent).toContain(
+        'Arquivo enviado',
+      );
+      expect(laudo.textContent).toContain('Envie 2 arquivos');
+      expect(laudo.textContent).toContain('PDF, JPG - tamanho máximo: 3MB');
     });
 
     it('enquanto não se sabe a quais integrantes o documento se liga, não oferece envio', () => {

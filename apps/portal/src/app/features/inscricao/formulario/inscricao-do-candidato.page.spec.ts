@@ -52,11 +52,15 @@ const documento = (
   etapaId: null,
   formatos: { qualquer: true, lista: null },
   modelo: null,
-  situacao: 'EXIGIDO',
+  situacao: 'PENDENTE',
   grupoCodigo: null,
   ocorrenciaId: null,
   grupos: [],
   repetePorEntidade: null,
+  formatosAceitos: ['PDF'],
+  tamanhoMaximoBytes: 2 * 1024 * 1024,
+  quantidadeMinima: 1,
+  arquivos: [],
 });
 
 /** A avaliação em que o candidato concorre nas modalidades de nome dado. */
@@ -195,7 +199,12 @@ describe('InscricaoDoCandidatoPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: InscricaoDoCandidatoService, useValue: servico },
-        { provide: EnvioDeDocumentosDaInscricao, useValue: { paraOProcesso: () => ({ arquivos: signal([]), enviar: vi.fn(), remover: vi.fn() }) } },
+        {
+          provide: EnvioDeDocumentosDaInscricao,
+          useValue: {
+            paraOProcesso: () => ({ arquivos: signal([]), enviar: vi.fn(), remover: vi.fn() }),
+          },
+        },
         { provide: UserContextService, useValue: { user: conta } },
         { provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) },
         { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },
