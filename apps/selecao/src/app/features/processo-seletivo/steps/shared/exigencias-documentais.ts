@@ -700,8 +700,8 @@ export function exigenciasLocalizadas(exigencias: ExigenciasDoRascunho): readonl
  */
 export function gruposSemNormaResolvida(
   exigencias: ExigenciasDoRascunho,
-): readonly { readonly documentos: readonly string[] }[] {
-  const pendentes: { readonly documentos: readonly string[] }[] = [];
+): readonly { readonly documentos: readonly string[]; readonly fases: readonly string[] }[] {
+  const pendentes: { readonly documentos: readonly string[]; readonly fases: readonly string[] }[] = [];
 
   const visitar = (nos: readonly NoDeExigencia[]): void => {
     for (const no of nos) {
@@ -711,7 +711,11 @@ export function gruposSemNormaResolvida(
       if (decideResultado && !temNormaResolvida(no.basesLegais ?? [])) {
         // Os documentos de TODA a subárvore, não só as folhas diretas: um grupo que reúne
         // outros grupos ficaria sem nome nenhum na mensagem, que é o oposto do que ela serve.
-        pendentes.push({ documentos: documentosDe(no.filhos ?? []).map((documento) => documento.tipoDocumentoId) });
+        const documentos = documentosDe(no.filhos ?? []);
+        pendentes.push({
+          documentos: documentos.map((documento) => documento.tipoDocumentoId),
+          fases: [...new Set(documentos.map((documento) => documento.faseCodigo))],
+        });
       }
 
       visitar(no.filhos ?? []);

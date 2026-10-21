@@ -23,7 +23,7 @@ import { AtoNormativoDto, AtosApi, TiposAtoApi } from '@uniplus/shared-data/publ
 import { FaseDoCronograma, FaseUpload, UploadItem, WizardDraft } from '../../processo-seletivo.models';
 import { PASSOS } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { baseLegalNova, comExigencia, exigenciaNova } from '../../shared/exigencias-documentais';
+import { baseLegalNova, comExigencia, exigenciaNova, folhaDe } from '../../shared/exigencias-documentais';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { nomeDoPasso } from './publicacao-para-comando';
@@ -314,6 +314,27 @@ describe('RevisaoStepComponent', () => {
       expect(texto).toContain('Base legal resolvida');
     });
 
+    it('acusa a fase cujo grupo de alternativas decide o resultado sem norma resolvida', async () => {
+      store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
+      const facultativo = (tipo: string) =>
+        folhaDe({ ...documento(false, true), tipoDocumentoId: tipo });
+      store.patchSection('documentos', {
+        emTodasAsFases: [],
+        raizes: [
+          {
+            ...folhaDe(documento(false, true)),
+            tipo: 'OU',
+            documento: null,
+            consequencia: 'INDEFERIMENTO',
+            basesLegais: [],
+            filhos: [facultativo('a'), facultativo('b')],
+          },
+        ],
+      });
+
+      expect(await abrirRevisao()).toContain('Base legal pendente em 1 exigência');
+    });
+
     it('acusa a fase cuja exigência a publicação recusaria por falta de norma', async () => {
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [FASE('INSCRICAO')] });
       store.patchSection(
@@ -321,7 +342,7 @@ describe('RevisaoStepComponent', () => {
         comExigencia({ raizes: [], emTodasAsFases: [] }, documento(true, false)),
       );
 
-      expect(await abrirRevisao()).toContain('Base legal pendente em 1 documento');
+      expect(await abrirRevisao()).toContain('Base legal pendente em 1 exigência');
     });
   });
 
