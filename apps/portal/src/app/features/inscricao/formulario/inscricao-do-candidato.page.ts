@@ -604,6 +604,11 @@ export class InscricaoDoCandidatoPage implements OnInit {
     );
   }
 
+  /** O processo com mais de uma oferta pede o curso antes de seguir. */
+  private readonly semCurso = computed(
+    () => this.ofertas().length > 1 && this.ofertaEscolhidaValida() === null,
+  );
+
   protected readonly pendenciasDasSecoes = signal<readonly PendenciaDaSecao[]>([]);
 
   /** O curso é obrigatório: mostra a recusa no passo Curso, com o foco no campo, e devolve o texto. */
@@ -620,14 +625,13 @@ export class InscricaoDoCandidatoPage implements OnInit {
    */
   protected readonly motivoDoEnvioBloqueado = computed<string | null>(() => {
     const partes: string[] = [];
-    if (this.ofertas().length > 1 && this.ofertaEscolhidaValida() === null)
-      partes.push('Escolha o curso.');
+    if (this.semCurso()) partes.push('Escolha o curso.');
     const secoes = this.pendenciasDasSecoes();
     if (secoes.length > 0) {
       const total = secoes.reduce((soma, s) => soma + s.quantidade, 0);
       const onde = secoes.map((s) => `${s.quantidade} em ${s.titulo}`).join(', ');
       partes.push(
-        `${total === 1 ? 'Falta 1 resposta obrigatória' : `Faltam ${total} respostas obrigatórias`} (${onde}).`,
+        `${total === 1 ? 'Falta corrigir 1 item' : `Faltam corrigir ${total} itens`} (${onde}).`,
       );
     }
     return partes.length > 0 ? partes.join(' ') : null;
@@ -645,7 +649,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
     if (this.bloqueada()) return;
     // O curso é o primeiro passo: sem ele a inscrição não segue. As pendências das seções são
     // contadas na mesma tentativa, e o foco fica no curso.
-    const semCurso = this.ofertas().length > 1 && this.ofertaEscolhidaValida() === null;
+    const semCurso = this.semCurso();
     // O envio conclui todas as seções: com pendência, o formulário leva à primeira e nada é enviado.
     // Sem curso, só as conta: quem leva o candidato é o passo Curso.
     const pendencias = this.formularioDoCandidato()?.concluirTodas(!semCurso) ?? 0;
