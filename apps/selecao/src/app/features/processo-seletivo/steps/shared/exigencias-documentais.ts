@@ -13,6 +13,14 @@ import type {
   ExigenciasDoRascunho,
   NoDeExigencia,
 } from '../processo-seletivo.models';
+import {
+  ABRANGENCIAS_ESCOLHIVEIS,
+  ABRANGENCIA_PADRAO,
+  CONSEQUENCIAS_ESCOLHIVEIS as CONSEQUENCIAS_DO_DOCUMENTO,
+  CONSEQUENCIA_REENVIO,
+  STATUS_BASE_LEGAL_ESCOLHIVEIS,
+  STATUS_BASE_LEGAL_RESOLVIDO,
+} from '@uniplus/shared-ui/components';
 import { nomeDaFinalidade } from '../steps/formulario/formularios-por-finalidade';
 
 /**
@@ -186,30 +194,18 @@ export function exigenciasVazias(): ExigenciasDoRascunho {
 }
 
 /**
- * O que a tela oferece para a base legal de uma exigência recém-declarada: alcance interno do
- * edital e status resolvido. É o caso comum — a exigência nasce da própria norma do certame —,
- * e quem declara uma lei federal troca os dois no formulário.
+ * O vocabulário da base legal e as consequências do documento são do editor compartilhado em
+ * `@uniplus/shared-ui`, reexportados daqui para que o módulo tenha um só lugar de onde importar.
+ * O alcance e o status que a tela oferece a uma exigência recém-declarada são o caso comum: o
+ * edital, resolvida.
  */
-export const ABRANGENCIA_PADRAO = 'INTERNA_EDITAL';
-export const STATUS_BASE_LEGAL_RESOLVIDO = 'RESOLVIDO';
-
-/**
- * Alcance da norma que sustenta a exigência, como a tela o nomeia. Vocabulário fechado do
- * domínio, governado por código — mesmo tratamento que o papel de uma publicação recebe.
- */
-export const ABRANGENCIAS_ESCOLHIVEIS = [
-  { valor: 'FEDERAL', rotulo: 'Lei federal' },
-  { valor: 'ESTADUAL', rotulo: 'Lei estadual' },
-  { valor: 'MUNICIPAL', rotulo: 'Lei municipal' },
-  { valor: 'INTERNA_NORMA', rotulo: 'Norma interna da universidade' },
-  { valor: ABRANGENCIA_PADRAO, rotulo: 'O próprio edital' },
-] as const;
-
-/** Se a norma já foi identificada ou se a identificação segue pendente. */
-export const STATUS_BASE_LEGAL_ESCOLHIVEIS = [
-  { valor: STATUS_BASE_LEGAL_RESOLVIDO, rotulo: 'Resolvida' },
-  { valor: 'PENDENTE', rotulo: 'Pendente' },
-] as const;
+export {
+  ABRANGENCIAS_ESCOLHIVEIS,
+  ABRANGENCIA_PADRAO,
+  CONSEQUENCIA_REENVIO,
+  STATUS_BASE_LEGAL_ESCOLHIVEIS,
+  STATUS_BASE_LEGAL_RESOLVIDO,
+};
 
 /**
  * Se alguma das normas sustenta a exigência perante a publicação: declarada e identificada
@@ -235,18 +231,9 @@ export function exigenciaDecideResultado(
  * O que acontece com quem não entrega o documento, ou tem a entrega indeferida. Vazio é
  * escolha legítima: a exigência que não decide sozinha não precisa declarar consequência.
  */
-/**
- * A consequência que só vale em fase que admite complementação — o servidor a recusa nas
- * demais, e a tela precisa saber disso para não oferecê-la onde não cabe.
- */
-export const CONSEQUENCIA_REENVIO = 'PENDENCIA_REENVIO';
-
 export const CONSEQUENCIAS_ESCOLHIVEIS = [
   { valor: '', rotulo: 'Não decide sozinha' },
-  { valor: 'ELIMINA', rotulo: 'Elimina do processo' },
-  { valor: 'RECLASSIFICA_AC', rotulo: 'Reclassifica para ampla concorrência' },
-  { valor: 'REMOVE_VANTAGEM', rotulo: 'Remove a vantagem pleiteada' },
-  { valor: CONSEQUENCIA_REENVIO, rotulo: 'Abre pendência para reenvio' },
+  ...CONSEQUENCIAS_DO_DOCUMENTO,
 ] as const;
 
 /**

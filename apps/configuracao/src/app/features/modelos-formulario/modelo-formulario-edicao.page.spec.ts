@@ -136,6 +136,31 @@ const modelo: ModeloFormularioView = {
         incluiCandidato: true,
       },
     ],
+    documentosExigidos: [
+      {
+        faseCodigo: 'INSCRICAO',
+        tipoDocumentoCodigo: 'LAUDO_MEDICO',
+        obrigatorio: true,
+        quando: [[{ fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: true }]],
+        consequenciaIndeferimento: 'ELIMINA',
+        basesLegais: [
+          {
+            referencia: 'Lei 13.146/2015',
+            abrangencia: 'FEDERAL',
+            status: 'RESOLVIDO',
+            observacao: null,
+          },
+        ],
+      },
+      {
+        faseCodigo: 'INSCRICAO',
+        tipoDocumentoCodigo: 'CERTIDAO_NASCIMENTO',
+        obrigatorio: false,
+        quando: null,
+        consequenciaIndeferimento: 'PENDENCIA_REENVIO',
+        basesLegais: [],
+      },
+    ],
   },
 };
 
@@ -172,16 +197,35 @@ describe('ModeloFormularioEdicaoPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  async function carregar(): Promise<HTMLElement> {
-    controller.expectOne(MODELO).flush(modelo);
+  async function carregar(doModelo: ModeloFormularioView = modelo): Promise<HTMLElement> {
+    controller.expectOne(MODELO).flush(doModelo);
     controller
       .expectOne(`${BASE}/api/configuracao/fatos-candidato`)
-      .flush([fato('NOME'), fato('ESCOLA_PUBLICA')]);
+      .flush([fato('NOME'), fato('ESCOLA_PUBLICA'), fato('GESTANTE')]);
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-processo`).flush([]);
     controller
       .expectOne((r) => r.url === `${BASE}/api/configuracao/termos-consentimento`)
       .flush([]);
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`)
+      .flush([
+        { id: '1', codigo: 'INSCRICAO', nome: 'Inscrição', permiteComplementacao: true },
+        { id: '2', codigo: 'HOMOLOGACAO', nome: 'Homologação', permiteComplementacao: false },
+      ]);
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`)
+      .flush([
+        { id: '1', codigo: 'LAUDO_MEDICO', nome: 'Laudo médico' },
+        { id: '2', codigo: 'CERTIDAO_NASCIMENTO', nome: 'Certidão de nascimento' },
+        { id: '3', codigo: 'ATESTADO', nome: 'Atestado' },
+      ]);
     return propagar();
+  }
+
+  function selecionar(tela: HTMLElement, id: string, valor: string): void {
+    const campo = tela.querySelector<HTMLSelectElement>(`#${id}`) as HTMLSelectElement;
+    campo.value = valor;
+    campo.dispatchEvent(new Event('change'));
   }
 
   function salvar(tela: HTMLElement): void {
@@ -243,5 +287,107 @@ describe('ModeloFormularioEdicaoPage', () => {
     const resumo = depois.querySelector('.cfg-modelo-resumo');
     expect(resumo?.textContent).toContain('O item cita fato que vem depois dele.');
     expect(resumo?.textContent).not.toContain('O rótulo passou do tamanho.');
+  });
+
+  it('mostra o conjunto padrão e grava a troca do tipo de documento, o incluído e sem o removido', async () => {
+    const tela = await carregar();
+    expect(tela.textContent).toContain('Documentos exigidos (padrão)');
+    expect(tela.textContent).toContain('só para processos aos quais o modelo for aplicado depois');
+
+    selecionar(tela, 'cfg-modelo-docs-doc-0-tipo', 'ATESTADO');
+    await propagar();
+    (tela.querySelector('#cfg-modelo-docs-doc-1-remover') as HTMLButtonElement).click();
+    await propagar();
+    (tela.querySelector('#cfg-modelo-docs-acrescentar') as HTMLButtonElement).click();
+    await propagar();
+    salvar(tela);
+
+    const req = controller.expectOne((r) => r.method === 'PUT' && r.url === MODELO);
+    const documentos = req.request.body.conteudo.documentosExigidos;
+    expect(documentos).toHaveLength(2);
+    expect(documentos[0]).toMatchObject({
+      tipoDocumentoCodigo: 'ATESTADO',
+      quando: modelo.conteudo.documentosExigidos?.[0].quando,
+      basesLegais: modelo.conteudo.documentosExigidos?.[0].basesLegais,
+    });
+    expect(documentos[1]).toMatchObject({ faseCodigo: 'INSCRICAO', quando: null });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    controller.expectOne(MODELO).flush(modelo);
+  });
+
+  it('mostra a recusa da condição junto dela e mantém o restante do modelo editável', async () => {
+    const tela = await carregar();
+
+    salvar(tela);
+    controller
+      .expectOne((r) => r.method === 'PUT')
+      .flush(
+        JSON.stringify({
+          status: 422,
+          title: 'Requisição inválida',
+          code: 'uniplus.configuracao.modelo_formulario.conteudo_invalido',
+          errors: [
+            {
+              field: 'conteudo.documentosExigidos[0].quando',
+              code: 'x',
+              message: 'A condição cita fato que o modelo não coleta.',
+            },
+          ],
+        }),
+        PROBLEMA,
+      );
+    const depois = await propagar();
+
+    const documento = depois.querySelector(
+      '[aria-labelledby="cfg-modelo-docs-doc-0-titulo"]',
+    ) as HTMLElement;
+    expect(documento.textContent).toContain('A condição cita fato que o modelo não coleta.');
+    expect(depois.querySelector('.cfg-modelo-resumo')?.textContent).not.toContain(
+      'A condição cita fato',
+    );
+    expect(
+      (depois.querySelector('#cfg-modelo-docs-doc-0-tipo') as HTMLSelectElement).disabled,
+    ).toBe(false);
+  });
+
+  it('marca junto da condição o fato que o modelo não coleta, antes de enviar', async () => {
+    const [laudo] = modelo.conteudo.documentosExigidos ?? [];
+    const tela = await carregar({
+      ...modelo,
+      conteudo: {
+        ...modelo.conteudo,
+        documentosExigidos: [
+          { ...laudo, quando: [[{ fato: 'GESTANTE', operador: 'IGUAL', valor: true }]] },
+        ],
+      },
+    });
+
+    const documento = tela.querySelector(
+      '[aria-labelledby="cfg-modelo-docs-doc-0-titulo"]',
+    ) as HTMLElement;
+    expect(documento.textContent).toContain('o modelo não coleta este fato');
+  });
+
+  it('mantém o mesmo campo ao editar o documento, para o foco do teclado não se perder', async () => {
+    const tela = await carregar();
+    const antes = tela.querySelector('#cfg-modelo-docs-doc-0-base-0-ref') as HTMLInputElement;
+
+    antes.value = 'Lei 14.723/2023';
+    antes.dispatchEvent(new Event('change'));
+    await propagar();
+
+    expect(tela.querySelector('#cfg-modelo-docs-doc-0-base-0-ref')).toBe(antes);
+  });
+
+  it('não oferece o reenvio em fase que não admite complementação', async () => {
+    const tela = await carregar();
+
+    selecionar(tela, 'cfg-modelo-docs-doc-0-fase', 'HOMOLOGACAO');
+    await propagar();
+
+    const valores = Array.from(
+      (tela.querySelector('#cfg-modelo-docs-doc-0-consequencia') as HTMLSelectElement).options,
+    ).map((opcao) => opcao.value);
+    expect(valores).not.toContain('PENDENCIA_REENVIO');
   });
 });

@@ -1,7 +1,6 @@
 import {
   ABRANGENCIAS_ESCOLHIVEIS,
   CONSEQUENCIAS_ESCOLHIVEIS,
-  CONSEQUENCIA_REENVIO,
   FATO_MODALIDADE,
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
   agrupadosPorFormulario,
@@ -67,6 +66,7 @@ import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   ComboboxComponent,
   EditorDeCondicoesComponent,
+  consequenciasDaFase,
   type UiComboboxGroup,
   ValorEmConsultaComponent,
   ValorLegivelDirective,
@@ -1173,8 +1173,7 @@ export class FaseStepComponent {
    * sinalizador não é editável aqui.
    */
   consequenciasDaFase(): readonly { readonly valor: string; readonly rotulo: string }[] {
-    if (this.faseAdmiteComplementacao()) return CONSEQUENCIAS_ESCOLHIVEIS;
-    return CONSEQUENCIAS_ESCOLHIVEIS.filter((opcao) => opcao.valor !== CONSEQUENCIA_REENVIO);
+    return consequenciasDaFase(CONSEQUENCIAS_ESCOLHIVEIS, this.faseAdmiteComplementacao());
   }
 
   /** Se a fase aberta admite reenvio de documento depois da análise. */

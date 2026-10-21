@@ -30,23 +30,33 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   FatoCandidatoView,
+  FaseCanonicaDto,
   ModeloFormularioView,
   ModelosFormularioApi,
   TermosConsentimentoApi,
+  TipoDocumentoDto,
   TipoProcessoDto,
 } from '@uniplus/shared-data/configuracao';
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
   AlertComponent,
   BUSCA_DE_MUNICIPIOS,
+  EditorDeDocumentosExigidosComponent,
   EditorDeFormularioComponent,
   FINALIDADES,
   SpinnerComponent,
   TagComponent,
   distribuirRecusas,
+  distribuirRecusasDosDocumentos,
+  ehRecusaDeDocumento,
+  fatosCitaveisPelosTermos,
+  fatosOferecidos,
   semDadosBasicos,
   termoDisponivelDe,
   type ConteudoDoFormulario,
+  type DocumentoExigidoDoFormulario,
+  type OpcaoDoDocumento,
+  type RecusasDoDocumento,
   type RecusasDoConteudo,
   type TermoDisponivel,
 } from '@uniplus/shared-ui/components';
@@ -68,6 +78,7 @@ interface CabecalhoForm {
     ReactiveFormsModule,
     RouterLink,
     AlertComponent,
+    EditorDeDocumentosExigidosComponent,
     EditorDeFormularioComponent,
     SpinnerComponent,
     TagComponent,
@@ -201,6 +212,21 @@ interface CabecalhoForm {
         </label>
       </form>
 
+      @if (vocabularioDosDocumentosComErro()) {
+        <ui-alert variant="warning" heading="Fases ou tipos de documento não carregados">
+          Sem as fases e os tipos de documento não é possível acrescentar documentos exigidos.
+          <div class="cfg-list__retry">
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              (click)="recarregarVocabularioDosDocumentos()"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </ui-alert>
+      }
+
       @if (conteudo(); as c) {
         <ui-editor-de-formulario
           idBase="cfg-modelo"
@@ -211,6 +237,19 @@ interface CabecalhoForm {
           [recusas]="recusas()"
           [termosDisponiveis]="termosDisponiveis()"
           (conteudoChange)="conteudo.set($event)"
+        />
+
+        <ui-editor-de-documentos-exigidos
+          idBase="cfg-modelo-docs"
+          [documentos]="documentosExigidos()"
+          [fases]="fases()"
+          [tipos]="tiposDeDocumento()"
+          [fatos]="fatosDosDocumentos()"
+          [citaveis]="fatosCitaveisDosDocumentos()"
+          [disabled]="salvando()"
+          [recusas]="recusasDosDocumentos().porDocumento"
+          [recusasGerais]="recusasDosDocumentos().gerais"
+          (documentosChange)="trocarDocumentos($event)"
         />
       }
 
@@ -280,6 +319,18 @@ export class ModeloFormularioEdicaoPage {
     context: withVendorMime('fato-candidato', 1),
   }));
 
+  private readonly fasesCanonicas = useApiResource<readonly FaseCanonicaDto[]>(() => ({
+    url: `${this.basePath}/api/configuracao/fases-canonicas`,
+    params: new HttpParams().set('limit', '100'),
+    context: withVendorMime('fase-canonica', 1),
+  }));
+
+  private readonly tiposDocumento = useApiResource<readonly TipoDocumentoDto[]>(() => ({
+    url: `${this.basePath}/api/configuracao/tipos-documento`,
+    params: new HttpParams().set('limit', '100'),
+    context: withVendorMime('tipo-documento', 1),
+  }));
+
   private readonly tipos = useApiResource<readonly TipoProcessoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/tipos-processo`,
     params: new HttpParams().set('limit', '100'),
@@ -291,6 +342,39 @@ export class ModeloFormularioEdicaoPage {
     () => this.catalogo.problem() !== null || this.catalogo.error() !== undefined,
   );
   protected readonly tiposDeProcesso = computed(() => this.tipos.data() ?? []);
+  protected readonly fases = computed<readonly OpcaoDoDocumento[]>(() =>
+    (this.fasesCanonicas.data() ?? []).map(({ codigo, nome, permiteComplementacao }) => ({
+      codigo,
+      nome,
+      permiteComplementacao,
+    })),
+  );
+  protected readonly tiposDeDocumento = computed<readonly OpcaoDoDocumento[]>(() =>
+    (this.tiposDocumento.data() ?? []).map(({ codigo, nome }) => ({ codigo, nome })),
+  );
+  protected readonly vocabularioDosDocumentosComErro = computed(() =>
+    [this.fasesCanonicas, this.tiposDocumento].some(
+      (recurso) => recurso.problem() !== null || recurso.error() !== undefined,
+    ),
+  );
+  protected readonly documentosExigidos = computed(() => this.conteudo()?.documentosExigidos ?? []);
+  /** Os fatos que o documento pode citar: os mesmos que o termo, pois a API confere ambos da mesma forma. */
+  protected readonly fatosCitaveisDosDocumentos = computed(() => {
+    const conteudo = this.conteudo();
+    return conteudo === null ? new Set<string>() : fatosCitaveisPelosTermos(conteudo);
+  });
+  /** Os citáveis e os que as condições gravadas já citam, para a condição gravada aparecer na lista. */
+  protected readonly fatosDosDocumentos = computed(() =>
+    fatosOferecidos(
+      this.fatos(),
+      this.fatosCitaveisDosDocumentos(),
+      this.documentosExigidos().map((documento) => documento.quando),
+    ),
+  );
+  protected readonly recusasDosDocumentos = signal<{
+    readonly porDocumento: ReadonlyMap<DocumentoExigidoDoFormulario, RecusasDoDocumento>;
+    readonly gerais: readonly string[];
+  }>({ porDocumento: new Map(), gerais: [] });
   /** O conteúdo na tela difere do gravado: a simulação, que abre o modelo gravado, não o refletiria. */
   protected readonly conteudoAlterado = computed(
     () => JSON.stringify(this.conteudo()) !== JSON.stringify(this.modelo()?.conteudo ?? null),
@@ -326,6 +410,16 @@ export class ModeloFormularioEdicaoPage {
         }
         this.termosDisponiveis.set(termos.data.map(termoDisponivelDe));
       });
+  }
+
+  protected recarregarVocabularioDosDocumentos(): void {
+    this.fasesCanonicas.reload();
+    this.tiposDocumento.reload();
+  }
+
+  protected trocarDocumentos(documentos: readonly DocumentoExigidoDoFormulario[]): void {
+    const atual = this.conteudo();
+    if (atual !== null) this.conteudo.set({ ...atual, documentosExigidos: documentos });
   }
 
   protected rotuloDaFinalidade(valor: string): string {
@@ -401,6 +495,7 @@ export class ModeloFormularioEdicaoPage {
     this.conteudo.set(modelo.conteudo);
     this.recusas.set(null);
     this.recusasGerais.set([]);
+    this.recusasDosDocumentos.set({ porDocumento: new Map(), gerais: [] });
     this.form.reset({
       nome: modelo.nome,
       descricao: modelo.descricao ?? '',
@@ -417,7 +512,10 @@ export class ModeloFormularioEdicaoPage {
       this.chaveDaGravacao = idempotencyKey.create();
     }
     const erros = problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? (problem.errors ?? []) : [];
-    const doConteudo = erros.filter((erro) => campoDoCabecalho(erro.field) === null);
+    const doConteudo = erros.filter(
+      (erro) => campoDoCabecalho(erro.field) === null && !ehRecusaDeDocumento(erro.field),
+    );
+    const dosDocumentos = erros.filter((erro) => ehRecusaDeDocumento(erro.field));
     for (const erro of erros) {
       const campo = campoDoCabecalho(erro.field);
       if (campo !== null) {
@@ -428,6 +526,9 @@ export class ModeloFormularioEdicaoPage {
 
     const recusas = distribuirRecusas(doConteudo, enviado);
     this.recusas.set(recusas);
+    this.recusasDosDocumentos.set(
+      distribuirRecusasDosDocumentos(dosDocumentos, enviado.documentosExigidos ?? []),
+    );
     this.recusasGerais.set(
       recusas.gerais.length > 0
         ? recusas.gerais
