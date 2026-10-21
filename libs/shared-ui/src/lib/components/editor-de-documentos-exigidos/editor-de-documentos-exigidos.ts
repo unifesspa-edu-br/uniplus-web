@@ -92,7 +92,7 @@ const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
             class="select"
             [id]="idDe('fase')"
             [disabled]="disabled()"
-            (change)="trocar({ faseCodigo: valorDe($event) })"
+            (change)="trocarFase(valorDe($event))"
           >
             @for (fase of fasesComAGravada(); track fase.codigo) {
               <option [value]="fase.codigo" [selected]="fase.codigo === documento().faseCodigo">
@@ -336,6 +336,19 @@ export class DocumentoExigidoComponent {
 
   protected trocar(mudanca: Partial<DocumentoExigidoDoFormulario>): void {
     this.documentoChange.emit({ ...this.documento(), ...mudanca });
+  }
+
+  /** Em fase que não admite complementação o reenvio sai: a consequência volta à primeira oferecida. */
+  protected trocarFase(faseCodigo: string): void {
+    const fase = this.fases().find((opcao) => opcao.codigo === faseCodigo);
+    const perdeOReenvio =
+      fase?.permiteComplementacao === false &&
+      this.documento().consequenciaIndeferimento === CONSEQUENCIA_REENVIO;
+    this.trocar(
+      perdeOReenvio
+        ? { faseCodigo, consequenciaIndeferimento: CONSEQUENCIAS_ESCOLHIVEIS[0].valor }
+        : { faseCodigo },
+    );
   }
 
   protected trocarObrigatorio(evento: Event): void {

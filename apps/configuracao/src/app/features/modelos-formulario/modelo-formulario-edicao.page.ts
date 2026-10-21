@@ -301,6 +301,8 @@ export class ModeloFormularioEdicaoPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
+  /** A condição sobre município escolhe o valor pela busca no Geo, como nos editores de formulário e de termos. */
+  private readonly comMunicipios = inject(BUSCA_DE_MUNICIPIOS, { optional: true }) !== null;
 
   private readonly id = this.route.snapshot.paramMap.get('id') ?? '';
   private readonly resumo = viewChild<ElementRef<HTMLElement>>('resumo');
@@ -369,6 +371,7 @@ export class ModeloFormularioEdicaoPage {
       this.fatos(),
       this.fatosCitaveisDosDocumentos(),
       this.documentosExigidos().map((documento) => documento.quando),
+      this.comMunicipios,
     ),
   );
   protected readonly recusasDosDocumentos = signal<{
