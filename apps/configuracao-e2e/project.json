@@ -6,5 +6,11 @@
   "tags": ["scope:configuracao", "type:e2e"],
   "implicitDependencies": ["configuracao"],
   "// targets": "to see all targets run: nx show project configuracao-e2e --web",
-  "targets": {}
+  "targets": {
+    "typecheck-spec": {
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"
+      }
+    }
+  }
 }

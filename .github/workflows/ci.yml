@@ -128,7 +128,7 @@ jobs:
       # distributed run cannot finish before all blocking gates are reconciled.
       # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
       - if: steps.gate.outputs.run == 'true'
-        run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="lint,test,build,typecheck"
+        run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="lint,test,build,typecheck,typecheck-spec"
 
       - if: steps.gate.outputs.run == 'true'
         uses: actions/setup-node@v4
@@ -161,11 +161,11 @@ jobs:
       # enquanto a causa (recursos do runner) não é resolvida.
       - name: Rodar gates (nx affected — pull_request)
         if: steps.gate.outputs.run == 'true' && github.event_name == 'pull_request'
-        run: npx nx affected -t lint test build typecheck --base=origin/${{ github.base_ref }} --head=HEAD --nxBail --outputStyle=static
+        run: npx nx affected -t lint test build typecheck typecheck-spec --base=origin/${{ github.base_ref }} --head=HEAD --nxBail --outputStyle=static
 
       - name: Rodar gates (nx run-many — push em main)
         if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
-        run: npx nx run-many -t lint test build typecheck --nxBail --outputStyle=static
+        run: npx nx run-many -t lint test build typecheck typecheck-spec --nxBail --outputStyle=static
 
       - if: always() && steps.gate.outputs.run == 'true'
         run: npx nx fix-ci

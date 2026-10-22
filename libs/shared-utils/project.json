@@ -23,6 +23,7 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint"
-    }
+    },
+    "typecheck-spec": {}
   }
 }

@@ -37,6 +37,14 @@
           "NO_COLOR": ""
         }
       }
+    },
+    "typecheck-spec": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^default"],
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
+      }
     }
   },
   "plugins": [

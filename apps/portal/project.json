@@ -87,6 +87,7 @@
         "staticFilePath": "dist/apps/portal/browser",
         "spa": true
       }
-    }
+    },
+    "typecheck-spec": {}
   }
 }
