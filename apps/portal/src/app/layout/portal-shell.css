@@ -167,6 +167,11 @@
   .portal-scroll {
     flex: none;
   }
+  /* O respiro de tela do conteúdo some no papel: a margem da página já o dá, e o padding de
+     baixo, quando o conteúdo termina perto do fim da folha, empurra uma página em branco. */
+  .portal-main {
+    padding: 0;
+  }
 }
 
 /* ── Rodapé institucional ────────────────────────────────────────── */
