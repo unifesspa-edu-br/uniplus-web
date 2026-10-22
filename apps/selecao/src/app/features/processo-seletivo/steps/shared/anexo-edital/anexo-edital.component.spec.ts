@@ -329,7 +329,7 @@ describe('AnexoEditalComponent', () => {
   const SO_FALTA_CONFIRMAR = {
     id: 'x',
     name: 'edital.pdf',
-    extension: 'pdf',
+    extension: 'pdf' as const,
     progress: 100,
     fase: 'erro' as const,
     mensagemErro: 'Sem resposta.',

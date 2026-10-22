@@ -1,3 +1,4 @@
+import { UnidadePrazo } from '@uniplus/shared-data/selecao';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
@@ -163,13 +164,13 @@ describe('regra de recurso da fase no comando', () => {
     regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
     regraVersao: 'v1',
     prazoValor: '2',
-    prazoUnidade: 'diasUteis',
+    prazoUnidade: UnidadePrazo.diasUteis,
     atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
     suspensividadePrimeiraInstanciaValor: '',
     suspensividadePrimeiraInstanciaUnidade: '',
     admiteInstanciaSuperior: true,
     suspensividadeSegundaInstanciaValor: '48',
-    suspensividadeSegundaInstanciaUnidade: 'horas',
+    suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
   };
 
   const fase: FaseDoCronograma = {

@@ -104,7 +104,7 @@ describe('MinhasInscricoesService.cancelar e descartar', () => {
     return TestBed.inject(MinhasInscricoesService);
   }
 
-  const chaveDe = (contexto: HttpContext): string => contexto.get(IDEMPOTENCY_KEY_TOKEN);
+  const chaveDe = (contexto: HttpContext): string | null => contexto.get(IDEMPOTENCY_KEY_TOKEN);
 
   it('age com o ETag que a inscrição tem agora, e sem ele não age', async () => {
     const descartar = vi.fn(() => of(apiOk<void>(undefined, 204, semCabecalhos)));

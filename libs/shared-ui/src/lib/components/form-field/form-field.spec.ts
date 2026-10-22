@@ -1,5 +1,6 @@
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By, DebugElement } from '@angular/platform-browser';
+import { By } from '@angular/platform-browser';
 import { FormControl, Validators } from '@angular/forms';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { FormFieldComponent } from './form-field';

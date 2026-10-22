@@ -7,11 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import {
-  SELECAO_BASE_PATH,
-  StatusProcesso,
-  type ProcessoSeletivoDto,
-} from '@uniplus/shared-data/selecao';
+import { CaraterEtapa, SELECAO_BASE_PATH, StatusProcesso, type ProcessoSeletivoDto, UnidadePrazo } from '@uniplus/shared-data/selecao';
 
 import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -350,7 +346,7 @@ describe('FaseStepComponent', () => {
             regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
             regraVersao: 'v1',
             prazoValor: '2',
-            prazoUnidade: 'diasUteis',
+            prazoUnidade: UnidadePrazo.diasUteis,
             atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
             suspensividadePrimeiraInstanciaValor: '',
             suspensividadePrimeiraInstanciaUnidade: '',
@@ -382,13 +378,13 @@ describe('FaseStepComponent', () => {
           regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
           regraVersao: 'v1',
           prazoValor: '2',
-          prazoUnidade: 'diasUteis',
+          prazoUnidade: UnidadePrazo.diasUteis,
           atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
           suspensividadePrimeiraInstanciaValor: '',
           suspensividadePrimeiraInstanciaUnidade: '',
           admiteInstanciaSuperior,
           suspensividadeSegundaInstanciaValor: '48',
-          suspensividadeSegundaInstanciaUnidade: 'horas',
+          suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
         },
       });
     }
@@ -475,7 +471,7 @@ describe('FaseStepComponent', () => {
             regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
             regraVersao: 'v1',
             prazoValor: '2',
-            prazoUnidade: 'diasUteis',
+            prazoUnidade: UnidadePrazo.diasUteis,
             atoAncoraCodigo: '',
             suspensividadePrimeiraInstanciaValor: '',
             suspensividadePrimeiraInstanciaUnidade: '',
@@ -508,7 +504,7 @@ describe('FaseStepComponent', () => {
             regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
             regraVersao: 'v1',
             prazoValor: '2',
-            prazoUnidade: 'diasUteis',
+            prazoUnidade: UnidadePrazo.diasUteis,
             atoAncoraCodigo: '',
             suspensividadePrimeiraInstanciaValor: '',
             suspensividadePrimeiraInstanciaUnidade: '',
@@ -618,7 +614,7 @@ describe('FaseStepComponent', () => {
           regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
           regraVersao: 'v1',
           prazoValor: '2',
-          prazoUnidade: 'diasUteis',
+          prazoUnidade: UnidadePrazo.diasUteis,
           atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
           suspensividadePrimeiraInstanciaValor: '',
           suspensividadePrimeiraInstanciaUnidade: '',
@@ -736,11 +732,18 @@ describe('FaseStepComponent', () => {
           {
             id: '01960000-0000-7000-0000-0000000000ee',
             nome: 'Prova objetiva',
-            carater: 'classificatoria' as const,
+            carater: CaraterEtapa.classificatoria as const,
             tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000000e1',
             peso: '1',
             notaMinima: '',
             ordem: 1,
+            faseCodigo: '',
+            produtos: [],
+            inicio: '',
+            fim: '',
+            emiteParecerIndividual: false,
+            bancas: [],
+            recursos: [],
           },
         ],
       });
@@ -1098,6 +1101,7 @@ describe('FaseStepComponent', () => {
       expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
       expect(
         componente.documentosDisponiveis().flatMap((grupo) => grupo.options),
+        'e não volta a ser oferecida para quem ainda não a exige',
       ).not.toContainEqual(expect.objectContaining({ value: ID_CPF }));
       // O seletor volta ao estado neutro: o próximo documento começa do zero.
       expect(componente.documentoAAcrescentar()).toBe('');
@@ -1615,7 +1619,7 @@ describe('FaseStepComponent', () => {
       detectar();
 
       expect(componente.documentosAlcancados()).toBe(antes - 1);
-      expect(componente.documentoAAcrescentar()).toBe('', 'o campo volta ao estado neutro');
+      expect(componente.documentoAAcrescentar(), 'o campo volta ao estado neutro').toBe('');
     });
 
     /**
@@ -1636,16 +1640,13 @@ describe('FaseStepComponent', () => {
       );
       detectar();
 
-      expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual(
+      expect(componente.documentosDaFase().map((doc) => doc.id), 'a exigência continua no rascunho e continua sendo reenviada — precisa continuar à vista').toEqual(
         [ID_CPF],
-        'a exigência continua no rascunho e continua sendo reenviada — precisa continuar à vista',
       );
       expect(
         componente.documentosDisponiveis().flatMap((grupo) => grupo.options),
-      ).not.toContainEqual(
-        expect.objectContaining({ value: ID_CPF }),
         'e não volta a ser oferecida para quem ainda não a exige',
-      );
+      ).not.toContainEqual(expect.objectContaining({ value: ID_CPF }));
     });
 
     it('remove o documento e o devolve ao seletor', () => {
@@ -1692,7 +1693,7 @@ describe('FaseStepComponent', () => {
           {
             id: ID_ETAPA_DOCUMENTAL,
             nome: 'Análise documental',
-            carater: 'Eliminatoria',
+            carater: CaraterEtapa.eliminatoria,
             tipoEtapaOrigemId: ID_TIPO_ETAPA,
             peso: '',
             notaMinima: '',

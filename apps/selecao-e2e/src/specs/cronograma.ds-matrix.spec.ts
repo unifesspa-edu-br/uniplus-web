@@ -768,10 +768,12 @@ test.describe('Cronograma em consulta com duas fases — matriz DS @ds', () => {
   });
 });
 
+type DetalheMockado = typeof DETALHE_PUBLICADO | typeof DETALHE_DUAS_FASES;
+
 async function abrirCronogramaPublicado(
   page: Page,
   testInfo: TestInfo,
-  detalhe: typeof DETALHE_PUBLICADO,
+  detalhe: DetalheMockado,
 ): Promise<void> {
   await mockarCatalogos(page);
   await mockarProcessoPublicado(page, detalhe);
@@ -897,7 +899,7 @@ async function mockarCatalogos(page: Page): Promise<void> {
 /** O detalhe e o que mora sob o prefixo do processo publicado da consulta. */
 async function mockarProcessoPublicado(
   page: Page,
-  detalhe: typeof DETALHE_PUBLICADO = DETALHE_PUBLICADO,
+  detalhe: DetalheMockado = DETALHE_PUBLICADO,
 ): Promise<void> {
   await page.route(
     new RegExp(`/api/selecao/processos-seletivos/${PROCESSO_PUBLICADO_ID}(/.*)?(\\?.*)?$`),

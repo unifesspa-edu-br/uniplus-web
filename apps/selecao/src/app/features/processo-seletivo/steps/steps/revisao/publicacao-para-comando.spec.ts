@@ -1,4 +1,5 @@
 import { ProblemDetails } from '@uniplus/shared-core/http';
+import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { ItemConformidadeDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
@@ -32,7 +33,8 @@ function draftVazio(): WizardDraft {
       localidade: null,
       uploads: [],
     },
-    vagas: { ofertas: [] },
+    opcoesDeCurso: { numero: '' },
+    vagas: { ofertas: [], cascata: null },
     cronograma: { fases: [], etapas: [], algoritmoContagemCodigo: '', algoritmoContagemVersao: '' },
     classificacao: {
       regraCalculoCodigo: '',
@@ -45,9 +47,10 @@ function draftVazio(): WizardDraft {
       baseadoEmEnem: false,
       resolucaoPesoAreaEnem: '',
       regrasEliminacao: [],
+      edicoesEnem: [],
     },
     bonus: {
-      ativo: false,
+      aplica: false,
       regraCodigo: '',
       regraVersao: '',
       fator: '',
@@ -56,7 +59,14 @@ function draftVazio(): WizardDraft {
       fatoElegibilidadeCodigo: '',
     },
     desempate: [],
-    documentos: {},
+    documentos: { raizes: [], emTodasAsFases: [] },
+    formulario: {
+      faseCodigo: '',
+      conteudo: conteudoInicial(),
+      referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
+      derivacao: [],
+      outrasFinalidades: [],
+    },
     atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
     publicacao: {
       numero: '',
@@ -72,7 +82,6 @@ function fase(parcial: Partial<FaseDoCronograma> & { ordem: number }): FaseDoCro
   return {
     faseCanonicaId: `fase-${parcial.ordem}`,
     codigo: `FASE-${parcial.ordem}`,
-    ordem: parcial.ordem,
     inicio: null,
     fim: null,
     produtos: [],

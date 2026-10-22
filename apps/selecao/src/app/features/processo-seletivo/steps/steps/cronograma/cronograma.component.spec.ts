@@ -5,16 +5,15 @@ import type { FormGroup } from '@angular/forms';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import {
-  OrigemCandidatos,
-  SELECAO_BASE_PATH,
-  StatusProcesso,
-  type ProcessoSeletivoDto,
-} from '@uniplus/shared-data/selecao';
+import { CaraterEtapa, OrigemCandidatos, SELECAO_BASE_PATH, StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 
-import type { BancaRequeridaDaFase, ProdutoDaFase } from '../../processo-seletivo.models';
+import type {
+  BancaRequeridaDaFase,
+  BaseLegalConfig,
+  ProdutoDaFase,
+} from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
@@ -356,7 +355,7 @@ describe('CronogramaStepComponent', () => {
           origemData: 'PROPRIA',
           agrupaEtapas: fase.agrupaEtapas,
           coletaInscricao: false,
-          permiteComplementacao: fase.permiteComplementacao,
+          permiteComplementacao: false,
           coletaSolicitacaoIsencao: false,
           bancas: [],
         },
@@ -371,7 +370,7 @@ describe('CronogramaStepComponent', () => {
       etapas: codigos.map((faseCodigo, posicao) => ({
         id: null,
         nome: `Etapa ${posicao + 1}`,
-        carater: 'classificatoria' as const,
+        carater: CaraterEtapa.classificatoria,
         tipoEtapaOrigemId: TIPO_ETAPA,
         peso: '1',
         notaMinima: '',
@@ -394,11 +393,18 @@ describe('CronogramaStepComponent', () => {
         {
           id: null,
           nome: 'Prova objetiva',
-          carater: 'classificatoria' as const,
+          carater: CaraterEtapa.classificatoria,
           tipoEtapaOrigemId: TIPO_ETAPA,
           peso: '1',
           notaMinima: '',
           ordem: 1,
+          faseCodigo: '',
+          produtos: [],
+          inicio: '',
+          fim: '',
+          emiteParecerIndividual: false,
+          bancas: [],
+          recursos: [],
         },
       ],
     });
@@ -489,9 +495,8 @@ describe('CronogramaStepComponent', () => {
 
     const item = componente.linhaDoTempo()[0];
 
-    expect(item.exigencias?.agrupaEtapas).toBe(
+    expect(item.exigencias?.agrupaEtapas, 'o catálogo diz que COLETA_INSCRICAO não agrupa; o processo congelou que agrupa').toBe(
       true,
-      'o catálogo diz que COLETA_INSCRICAO não agrupa; o processo congelou que agrupa',
     );
     expect(item.foraDoCatalogo).toBe(false);
   });
@@ -562,7 +567,7 @@ describe('CronogramaStepComponent', () => {
     componente.alternarFase(1);
     detectar();
     expect(componente.faseExpandida(1)).toBe(true);
-    expect(componente.faseExpandida(0)).toBe(false, 'abrir uma não fecha a outra');
+    expect(componente.faseExpandida(0), 'abrir uma não fecha a outra').toBe(false);
 
     componente.alternarFase(1);
     expect(componente.faseExpandida(1)).toBe(false);
@@ -629,7 +634,7 @@ describe('CronogramaStepComponent', () => {
     componente.escolherTipoEtapa(etapa, TIPO_ETAPA_SO_ELIMINA);
     detectar();
 
-    expect(etapa.controls.carater.value).toBe('classificatoria', 'o valor declarado permanece');
+    expect(etapa.controls.carater.value, 'o valor declarado permanece').toBe('classificatoria');
     const marcada = componente
       .caracteresPara(etapa)
       .find((opcao) => opcao.valor === 'classificatoria');
@@ -716,7 +721,7 @@ describe('CronogramaStepComponent', () => {
     componente.alternarFase(0);
     detectar();
 
-    expect(componente.etapaAberta(0)).toBe(false, 'a etapa chega fechada');
+    expect(componente.etapaAberta(0), 'a etapa chega fechada').toBe(false);
 
     componente.alternarEtapa(0);
     componente.alternarEtapa(1);
@@ -847,7 +852,7 @@ describe('CronogramaStepComponent', () => {
 
     expect(componente.blocoAberto(0, 'recursos')).toBe(true);
     expect(componente.blocoAberto(1, 'recursos')).toBe(false);
-    expect(componente.blocoAberto(0, 'publica')).toBe(false, 'cada bloco tem o seu estado');
+    expect(componente.blocoAberto(0, 'publica'), 'cada bloco tem o seu estado').toBe(false);
   });
 
   /**
@@ -885,12 +890,12 @@ describe('CronogramaStepComponent', () => {
 
     componente.escolherCarater(etapa, 'eliminatoria');
 
-    expect(etapa.controls.peso.value).toBe('', 'a eliminatória não entra no divisor da média');
-    expect(etapa.controls.notaMinima.value).toBe('5', 'o corte continua sendo dela');
+    expect(etapa.controls.peso.value, 'a eliminatória não entra no divisor da média').toBe('');
+    expect(etapa.controls.notaMinima.value, 'o corte continua sendo dela').toBe('5');
 
     componente.escolherCarater(etapa, 'classificatoria');
 
-    expect(etapa.controls.notaMinima.value).toBe('', 'quem não elimina não tem corte');
+    expect(etapa.controls.notaMinima.value, 'quem não elimina não tem corte').toBe('');
   });
 
   it('a etapa sem nome aparece na lista mesmo assim', () => {
@@ -952,7 +957,7 @@ describe('CronogramaStepComponent', () => {
 
     expect(componente.remocaoAConfirmar()).toBe(1);
     expect(componente.resumoDaRemocao(1)).toBe('2 etapas');
-    expect(store.draft().cronograma.fases).toHaveLength(2, 'nada sai antes de confirmar');
+    expect(store.draft().cronograma.fases, 'nada sai antes de confirmar').toHaveLength(2);
     expect(nativo.textContent).toContain('apaga também 2 etapas desta fase');
   });
 
@@ -1016,9 +1021,8 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
 
     const intermediaria = controller.expectOne(ROTA_FASES);
-    expect(ordensDe(intermediaria.request.body)).toEqual(
+    expect(ordensDe(intermediaria.request.body), 'a faixa livre é a que nenhuma fase ocupa hoje').toEqual(
       [3, 4],
-      'a faixa livre é a que nenhuma fase ocupa hoje',
     );
     intermediaria.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
@@ -1180,9 +1184,10 @@ describe('CronogramaStepComponent', () => {
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    expect(store.draft().cronograma.etapas[0].id).toBeNull(
+    expect(
+      store.draft().cronograma.etapas[0].id,
       'sem gravação de etapas não há identificador a recolher',
-    );
+    ).toBeNull();
   });
 
   /**
@@ -1601,20 +1606,34 @@ describe('CronogramaStepComponent', () => {
         {
           id: 'etapa-primeira',
           nome: 'Prova',
-          carater: 'classificatoria' as const,
+          carater: CaraterEtapa.classificatoria,
           tipoEtapaOrigemId: TIPO_ETAPA,
           peso: '1',
           notaMinima: '',
           ordem: 1,
+          faseCodigo: '',
+          produtos: [],
+          inicio: '',
+          fim: '',
+          emiteParecerIndividual: false,
+          bancas: [],
+          recursos: [],
         },
         {
           id: 'etapa-segunda',
           nome: 'Redação',
-          carater: 'classificatoria' as const,
+          carater: CaraterEtapa.classificatoria,
           tipoEtapaOrigemId: TIPO_ETAPA,
           peso: '2',
           notaMinima: '',
           ordem: 2,
+          faseCodigo: '',
+          produtos: [],
+          inicio: '',
+          fim: '',
+          emiteParecerIndividual: false,
+          bancas: [],
+          recursos: [],
         },
       ],
     });
@@ -1758,7 +1777,7 @@ describe('CronogramaStepComponent', () => {
    * descrevem a convenção escolhida, não as disponíveis.
    */
   it('mostra o que a convenção escolhida faz, na prosa do catálogo', () => {
-    expect(componente.invariantesDaContagem()).toEqual([], 'sem escolha, não há o que descrever');
+    expect(componente.invariantesDaContagem(), 'sem escolha, não há o que descrever').toEqual([]);
 
     componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
     detectar();
@@ -2002,7 +2021,7 @@ describe('CronogramaStepComponent', () => {
    */
   describe('conferência da norma das exigências', () => {
     function comExigenciaDeclarada(
-      bases: readonly unknown[],
+      bases: readonly BaseLegalConfig[],
       patch: Record<string, unknown> = {},
     ): void {
       comFases(ID_AVALIACAO);
@@ -2235,9 +2254,8 @@ describe('CronogramaStepComponent', () => {
       expect(componente.dependentesDaFase(indice).documentos).toBe(1);
 
       componente.pedirRemocaoDaFase(indice);
-      expect(componente.remocaoAConfirmar()).toBe(
+      expect(componente.remocaoAConfirmar(), 'a remoção precisa passar pela confirmação, porque leva o documento junto').toBe(
         indice,
-        'a remoção precisa passar pela confirmação, porque leva o documento junto',
       );
       expect(componente.resumoDaRemocao(indice)).toContain('1 documento exigido');
     });

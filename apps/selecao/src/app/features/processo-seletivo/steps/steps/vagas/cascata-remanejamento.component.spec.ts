@@ -88,9 +88,7 @@ const REGRA_CASCATA_INATIVADA = {
   modalidadesAdmitidas: null,
 };
 
-function distribuicaoFederal(
-  modalidades: readonly { id: string; codigo: string }[],
-): DistribuicaoDeVagas {
+function distribuicaoFederal(modalidades: DistribuicaoDeVagas['modalidades']): DistribuicaoDeVagas {
   return {
     ofertaCursoId: 'oferta-1',
     voBase: '100',

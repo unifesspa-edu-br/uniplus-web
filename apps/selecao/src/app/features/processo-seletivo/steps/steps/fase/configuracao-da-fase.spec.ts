@@ -1,3 +1,4 @@
+import { UnidadePrazo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
@@ -39,7 +40,7 @@ function recurso(parcial: Partial<RecursoDaFase> = {}): RecursoDaFase {
     regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
     regraVersao: 'v1',
     prazoValor: '2',
-    prazoUnidade: 'diasUteis',
+    prazoUnidade: UnidadePrazo.diasUteis,
     atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
     suspensividadePrimeiraInstanciaValor: '',
     suspensividadePrimeiraInstanciaUnidade: '',
@@ -245,7 +246,7 @@ describe('regra de recurso', () => {
   });
 
   it('recusa prazo de interposição em dias corridos', () => {
-    const problemas = conferir(comPreliminar({ prazoUnidade: 'dias' }));
+    const problemas = conferir(comPreliminar({ prazoUnidade: UnidadePrazo.dias }));
 
     expect(problemas[0].campo).toBe<CampoDaFase>('recurso.prazo');
     expect(problemas[0].mensagem).toContain('dias corridos não é aceito');

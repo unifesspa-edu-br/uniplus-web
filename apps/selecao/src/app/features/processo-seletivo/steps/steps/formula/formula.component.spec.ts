@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { OrigemCandidatos, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { CaraterEtapa, OrigemCandidatos, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { EtapaPontuada } from '../../processo-seletivo.models';
@@ -19,11 +19,18 @@ function etapaQueCompoeNota(): EtapaPontuada {
   return {
     id: 'etapa-1',
     nome: 'Prova objetiva',
-    carater: 'classificatoria',
+    carater: CaraterEtapa.classificatoria,
     tipoEtapaOrigemId: 'tipo-1',
     peso: '1',
     notaMinima: '',
     ordem: 1,
+    faseCodigo: '',
+    produtos: [],
+    inicio: '',
+    fim: '',
+    emiteParecerIndividual: false,
+    bancas: [],
+    recursos: [],
   };
 }
 

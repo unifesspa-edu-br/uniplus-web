@@ -1034,6 +1034,7 @@ describe('classificarDocumentos', () => {
   const pdf: DocumentoAPublicarDto = {
     id: '019f41cf-69fd-759a-ac6d-09acabc1b040',
     processoSeletivoId: '019f41cf-69fd-759a-ac6d-09acabc1b031',
+    finalidade: FinalidadeDoDocumento.documentoDoEdital,
     nomeArquivo: 'edital-de-abertura.pdf',
     tipoDeMidia: 'application/pdf',
     status: 'Confirmado',

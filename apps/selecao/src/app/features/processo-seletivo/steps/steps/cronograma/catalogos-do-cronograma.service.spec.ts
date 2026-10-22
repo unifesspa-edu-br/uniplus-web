@@ -15,7 +15,7 @@ import {
   TiposDocumentoApi,
   TiposEtapaApi,
 } from '@uniplus/shared-data/configuracao';
-import { TipoAtoPublicadoDto, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
+import { TipoAtoPublicadoDto, TiposAtoApi, type TiposAtoQuery } from '@uniplus/shared-data/publicacoes';
 import { RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
 import { hojeNoFusoInstitucional } from '../../shared/fuso-institucional';
@@ -75,7 +75,7 @@ interface Cenario {
 }
 
 function montar(cenario: Cenario = {}) {
-  const listarAtos = vi.fn(() => pagina(cenario.atos ?? []));
+  const listarAtos = vi.fn((_query: TiposAtoQuery) => pagina(cenario.atos ?? []));
 
   TestBed.configureTestingModule({
     providers: [
