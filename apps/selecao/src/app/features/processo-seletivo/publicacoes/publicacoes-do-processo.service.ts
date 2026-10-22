@@ -88,12 +88,12 @@ export class PublicacoesDoProcesso {
 
   /**
    * Os atos que a tela oferece para corrigir como documento avulso. Sem o catálogo não há como
-   * saber quais congelam a configuração, e oferecer o edital para o servidor recusar seria pior que
-   * não oferecer. O ato de um item do edital fica de fora: ele se corrige pelo item, que pede a
+   * saber quais congelam a configuração, e sem os itens previstos não há como saber quais atos são
+   * de item: oferecer o edital para o servidor recusar seria pior que não oferecer. O ato de um item do edital fica de fora: ele se corrige pelo item, que pede a
    * confirmação da política de divulgação quando o item é resultado.
    */
   readonly atosCorrigiveis = computed(() =>
-    this.tipos().estado === 'lido'
+    this.tipos().estado === 'lido' && this.previstos().estado === 'lido'
       ? atosQueAdmitemCorrecao(this.listaDeAtos(), codigosQueCongelam(this.listaDeTipos())).filter(
           (ato) => !this.atosDosItens().has(ato.id),
         )
