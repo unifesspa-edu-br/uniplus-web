@@ -81,7 +81,7 @@ interface OcorrenciaNaTela {
                 )
               "
               [confirmacao]="
-                confirmacoes()[campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)]
+                confirmacoes()[campoNoServidor(ocorrencia.id, campo.campo.fatoCodigo)] ?? ''
               "
               [problemaDaConfirmacao]="
                 problemasDaConfirmacao().get(
@@ -160,7 +160,7 @@ export class GrupoDoCandidatoComponent {
   readonly errosDoServidor = input<readonly ErroDoServidor[]>([]);
 
   /** A confirmação digitada de cada subitem, pelo código com que o servidor o nomeia. */
-  readonly confirmacoes = input<Readonly<Record<string, string>>>({});
+  readonly confirmacoes = input<Readonly<Partial<Record<string, string>>>>({});
   /** O problema da confirmação de cada subitem, pelo mesmo código. */
   readonly problemasDaConfirmacao = input<ReadonlyMap<string, ProblemaDaConfirmacao>>(new Map());
 

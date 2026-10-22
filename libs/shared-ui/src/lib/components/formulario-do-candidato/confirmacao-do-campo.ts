@@ -55,7 +55,7 @@ export interface EntradaDasConfirmacoes {
   readonly respostas: Readonly<Record<string, ValorJson>>;
   readonly grupos: Readonly<Record<string, readonly OcorrenciaSimulada[]>>;
   /** A confirmação digitada, pelo código da tela: o fato ou `grupo.ocorrência.fato`. */
-  readonly confirmacoes: Readonly<Record<string, string>>;
+  readonly confirmacoes: Readonly<Partial<Record<string, string>>>;
   readonly fixas: Readonly<Partial<Record<string, RespostaFixa>>>;
 }
 

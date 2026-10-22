@@ -232,7 +232,7 @@ import type {
                         [fixa]="respostasFixas()[campo.campo.fatoCodigo] ?? null"
                         [erroDoServidor]="mensagemDosErros(erros(), campo.campo.fatoCodigo)"
                         [diaDoEnvio]="diaDoEnvio()"
-                        [confirmacao]="confirmacoes()[campo.campo.fatoCodigo]"
+                        [confirmacao]="confirmacoes()[campo.campo.fatoCodigo] ?? ''"
                         [problemaDaConfirmacao]="
                           problemasDaConfirmacao().get(campo.campo.fatoCodigo) ?? null
                         "
@@ -486,7 +486,10 @@ export class FormularioDoCandidatoComponent {
    * Mora aqui, e não no campo, porque o envio confere também as seções que não estão na tela e porque a
    * seção trocada recria o campo, que perderia o que se digitou.
    */
-  protected readonly confirmacoes = linkedSignal<unknown, Readonly<Record<string, string>>>({
+  protected readonly confirmacoes = linkedSignal<
+    unknown,
+    Readonly<Partial<Record<string, string>>>
+  >({
     source: this.partida,
     computation: () => ({}),
   });
