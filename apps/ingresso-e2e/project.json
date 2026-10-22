@@ -6,5 +6,11 @@
   "tags": ["scope:ingresso", "type:e2e"],
   "implicitDependencies": ["ingresso"],
   "// targets": "to see all targets run: nx show project ingresso-e2e --web",
-  "targets": {}
+  "targets": {
+    "typecheck-spec": {
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"
+      }
+    }
+  }
 }

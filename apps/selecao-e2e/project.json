@@ -6,5 +6,11 @@
   "tags": ["scope:selecao", "type:e2e"],
   "implicitDependencies": ["selecao"],
   "// targets": "to see all targets run: nx show project selecao-e2e --web",
-  "targets": {}
+  "targets": {
+    "typecheck-spec": {
+      "options": {
+        "command": "tsc --noEmit -p {projectRoot}/tsconfig.json"
+      }
+    }
+  }
 }

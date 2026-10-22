@@ -87,6 +87,7 @@
         "staticFilePath": "dist/apps/ingresso/browser",
         "spa": true
       }
-    }
+    },
+    "typecheck-spec": {}
   }
 }
