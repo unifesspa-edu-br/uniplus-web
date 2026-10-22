@@ -121,6 +121,18 @@ export function regrasDoArquivo(
   };
 }
 
+/**
+ * Os formatos que a avaliação diz aceitar para a exigência, com o nome que a zona de envio usa. É o
+ * que a linha da lista também mostra: as duas dizem o mesmo, em vez de a lista dizer "qualquer
+ * formato" enquanto o envio recusa o que não é PDF, JPG ou PNG.
+ */
+export function formatosDaExigencia(
+  formatosAceitos: readonly string[],
+): { readonly qualquer: false; readonly lista: readonly string[] } {
+  const { rotuloDosFormatos } = regrasDoArquivo({ qualquer: false, lista: formatosAceitos }, 0);
+  return { qualquer: false, lista: rotuloDosFormatos.split(', ') };
+}
+
 /** O tipo de mídia que o envio declara, pela extensão; nulo quando o formato não serve à inscrição. */
 export function tipoDeMidiaDoArquivo(nomeDoArquivo: string): string | null {
   const nome = nomeDoArquivo.toLowerCase();

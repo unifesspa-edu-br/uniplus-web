@@ -2,7 +2,11 @@ import type { DocumentoExigido } from '../lista-de-documentos/lista-de-documento
 import { comoInteiro, type GrupoRenderizavel, type Inteiro } from './formulario-do-candidato.model';
 import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada } from './interpretador/regras-do-formulario';
-import type { ArquivoEnviado, SituacaoDaExigencia } from './envio-de-documentos';
+import {
+  type ArquivoEnviado,
+  formatosDaExigencia,
+  type SituacaoDaExigencia,
+} from './envio-de-documentos';
 import type { PendenciaDaAvaliacao } from './modalidades-avaliadas';
 
 /** As respostas dadas já pedem o documento e falta enviar. */
@@ -383,7 +387,7 @@ function paraALista(documento: DocumentoAvaliado, rotulo: string): DocumentoNaTe
         : [],
     ...situacaoNaLista(classeDaSituacao(documento.situacao)),
     obrigatorio: documento.obrigatorio,
-    formatos: documento.formatos,
+    formatos: formatosDaExigencia(documento.formatosAceitos),
     modelo: documento.modelo,
     formatosAceitos: documento.formatosAceitos,
     tamanhoMaximoBytes: Number(documento.tamanhoMaximoBytes),

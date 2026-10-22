@@ -344,6 +344,9 @@ describe('Bloco de documentos da inscrição', () => {
       );
       expect(laudo.textContent).toContain('Envie 2 arquivos');
       expect(laudo.textContent).toContain('PDF, JPG - tamanho máximo: 3MB');
+      expect(laudo.closest('li')?.querySelector('.lista-de-documentos__meta')?.textContent).toMatch(
+        /·\s*PDF, JPG\s*$/u,
+      );
     });
 
     it('enquanto não se sabe a quais integrantes o documento se liga, não oferece envio', () => {
