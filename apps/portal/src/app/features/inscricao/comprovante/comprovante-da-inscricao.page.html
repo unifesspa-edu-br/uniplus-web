@@ -194,6 +194,35 @@
     </ui-secao-de-documento>
     }
   </ui-secao-de-documento>
+  } @if (documentos().length > 0) {
+  <ui-secao-de-documento titulo="Documentos enviados" largura="inteira">
+    @for (documento of documentos(); track $index) {
+    <ui-secao-de-documento [titulo]="documento.nome" [nivel]="3">
+      <ui-lista-de-dados [colunas]="2">
+        <ng-template uiDado rotulo="Exigência" [valor]="documento.obrigatoriedade"></ng-template>
+        <ng-template uiDado rotulo="Situação" [valor]="documento.situacao"></ng-template>
+        @if (documento.consequencia; as consequencia) {
+        <ng-template uiDado rotulo="Se não for enviado" [valor]="consequencia"></ng-template>
+        }
+      </ui-lista-de-dados>
+      @if (documento.arquivos.length > 0) {
+      <ul>
+        @for (arquivo of documento.arquivos; track arquivo.codigo) {
+        <li>
+          {{ arquivo.formato }} · {{ arquivo.tamanho }} · Código de verificação:
+          <code class="u-no-print" [attr.title]="arquivo.codigo">{{ arquivo.codigoAbreviado }}</code>
+          <code class="u-print-only">{{ arquivo.codigo }}</code>
+          <details class="u-no-print">
+            <summary>Ver o código completo</summary>
+            <code>{{ arquivo.codigo }}</code>
+          </details>
+        </li>
+        }
+      </ul>
+      }
+    </ui-secao-de-documento>
+    }
+  </ui-secao-de-documento>
   } @if (termos().length > 0) {
   <ui-secao-de-documento titulo="Termos aceitos" largura="inteira">
     <ul>

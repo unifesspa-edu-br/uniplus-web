@@ -12,6 +12,7 @@ import {
   titulosDasOcorrencias,
 } from '@uniplus/shared-ui/components';
 
+import { formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 import { nomeDaOferta, numeroDeOpcoesDeCurso } from '../oferta-da-inscricao';
 
 export interface RespostaDoComprovante {
@@ -215,6 +216,57 @@ export function opcoesDoComprovante(
         : null,
     ),
   ];
+}
+
+export interface ArquivoDoComprovanteExibido {
+  readonly formato: string;
+  readonly tamanho: string;
+  /** O código de verificação do arquivo, abreviado para caber numa linha. */
+  readonly codigoAbreviado: string;
+  readonly codigo: string;
+}
+
+export interface DocumentoDoComprovanteExibido {
+  readonly nome: string;
+  readonly obrigatoriedade: 'Obrigatório' | 'Facultativo';
+  readonly situacao: string;
+  readonly consequencia: string | null;
+  readonly arquivos: readonly ArquivoDoComprovanteExibido[];
+}
+
+const SITUACOES_DO_DOCUMENTO: Readonly<Record<string, string>> = {
+  SATISFEITA: 'Atendido',
+  PENDENTE: 'Pendente',
+  DISPENSADA: 'Dispensado',
+};
+
+/** Quantos caracteres do código de verificação ficam de cada lado quando ele é abreviado. */
+const LADO_DO_CODIGO_ABREVIADO = 8;
+
+const abreviado = (codigo: string): string =>
+  codigo.length <= 2 * LADO_DO_CODIGO_ABREVIADO + 1
+    ? codigo
+    : `${codigo.slice(0, LADO_DO_CODIGO_ABREVIADO)}…${codigo.slice(-LADO_DO_CODIGO_ABREVIADO)}`;
+
+/**
+ * Os documentos que o envio registrou, com o que o candidato precisa guardar de cada arquivo. Vazio
+ * quando o processo não exigiu documento nesse envio: a página não mostra a seção (UNI-REQ-0171).
+ */
+export function documentosDoComprovante(
+  comprovante: ComprovanteInscricaoDto,
+): readonly DocumentoDoComprovanteExibido[] {
+  return comprovante.documentos.map((d) => ({
+    nome: d.nome,
+    obrigatoriedade: d.obrigatorio ? 'Obrigatório' : 'Facultativo',
+    situacao: SITUACOES_DO_DOCUMENTO[d.situacao] ?? d.situacao,
+    consequencia: d.consequencia,
+    arquivos: d.arquivos.map((a) => ({
+      formato: a.formato,
+      tamanho: formatarTamanhoDeArquivo(a.tamanhoBytes),
+      codigoAbreviado: abreviado(a.hashSha256),
+      codigo: a.hashSha256,
+    })),
+  }));
 }
 
 /** Os termos aceitos pelo nome que o formulário lhes dá. */

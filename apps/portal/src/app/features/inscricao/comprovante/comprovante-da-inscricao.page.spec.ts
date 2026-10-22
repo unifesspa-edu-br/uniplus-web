@@ -85,6 +85,9 @@ let segundaOpcaoDoEnvio: { id: string; modalidades: ModalidadesDoComprovante } |
 /** Quantas opções de curso o processo admite. */
 let opcoesDoProcesso = 1;
 
+/** Os documentos que o envio registrou; vazio quando o processo não exigiu documento. */
+let documentosDoEnvio: ComprovanteInscricaoDto['documentos'] = [];
+
 /** Fernanda Drumond, persona fictícia do portal de documentação, que prefere o nome social. */
 function comprovante(numeroInscricao: string, numero: number): ComprovanteInscricaoDto {
   return {
@@ -107,6 +110,7 @@ function comprovante(numeroInscricao: string, numero: number): ComprovanteInscri
     aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }],
     modalidades: modalidadesDoEnvio(numero),
     modalidadesSegundaOpcao: segundaOpcaoDoEnvio?.modalidades ?? null,
+    documentos: documentosDoEnvio,
   };
 }
 
@@ -234,7 +238,57 @@ describe('ComprovanteDaInscricaoPage', () => {
     respostasAlteradas = {};
     segundaOpcaoDoEnvio = null;
     opcoesDoProcesso = 1;
+    documentosDoEnvio = [];
     vi.restoreAllMocks();
+  });
+
+  const HASH = 'f0e1d2c3b4a5968778695a4b3c2d1e0f00112233445566778899aabbccddeeff';
+
+  it('lista cada documento com a exigência, a situação, a consequência e o código de cada arquivo', async () => {
+    documentosDoEnvio = [
+      {
+        exigenciaId: 'e1',
+        tipoDocumentoCodigo: 'LAUDO',
+        nome: 'Laudo médico',
+        obrigatorio: true,
+        situacao: 'SATISFEITA',
+        ocorrenciaId: null,
+        consequencia: 'Indeferimento da inscrição',
+        arquivos: [{ formato: 'PDF', tamanhoBytes: 2048, hashSha256: HASH }],
+      },
+      {
+        exigenciaId: 'e2',
+        tipoDocumentoCodigo: 'ATESTADO',
+        nome: 'Atestado',
+        obrigatorio: false,
+        situacao: 'DISPENSADA',
+        ocorrenciaId: null,
+        consequencia: null,
+        arquivos: [],
+      },
+    ];
+    const tela = await abrir();
+
+    const documentos = secao(tela, 'Documentos enviados') as HTMLElement;
+    const [laudo, atestado] = Array.from(documentos.querySelectorAll('ui-secao-de-documento'));
+    expect(laudo.textContent).toContain('Laudo médico');
+    expect(dado(laudo as HTMLElement, 'Exigência')).toBe('Obrigatório');
+    expect(dado(laudo as HTMLElement, 'Situação')).toBe('Atendido');
+    expect(dado(laudo as HTMLElement, 'Se não for enviado')).toBe('Indeferimento da inscrição');
+    const arquivo = laudo.querySelector('li')?.textContent?.replace(/\s+/g, ' ');
+    expect(arquivo).toContain('PDF · 2,0 KB');
+    expect(laudo.querySelector('code[title]')?.textContent).toBe('f0e1d2c3…ccddeeff');
+    expect(laudo.querySelector('details code')?.textContent).toBe(HASH);
+    expect(dado(atestado as HTMLElement, 'Exigência')).toBe('Facultativo');
+    expect(dado(atestado as HTMLElement, 'Situação')).toBe('Dispensado');
+    expect(dado(atestado as HTMLElement, 'Se não for enviado')).toBeNull();
+    expect(atestado.querySelector('li')).toBeNull();
+  });
+
+  it('sem documento exigido, a seção não aparece', async () => {
+    const tela = await abrir();
+
+    expect(secao(tela, 'Documentos enviados')).toBeNull();
   });
 
   it('o titular revela o CPF do login para conferir, sem nova consulta', async () => {

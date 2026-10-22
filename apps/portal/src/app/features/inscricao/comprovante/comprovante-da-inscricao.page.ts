@@ -39,6 +39,7 @@ import { cpfRevelavel, formatarDataBr, textoMascarado } from '@uniplus/shared-ut
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
 import {
   derivadosDoComprovante,
+  documentosDoComprovante,
   envioDoComprovante,
   modalidadesDoComprovante,
   opcoesDoComprovante,
@@ -172,6 +173,10 @@ export class ComprovanteDaInscricaoPage {
   protected readonly derivados = computed(() => {
     const c = this.carregado();
     return c?.formulario ? derivadosDoComprovante(c.formulario, c.comprovante, c.municipios) : [];
+  });
+  protected readonly documentos = computed(() => {
+    const c = this.carregado();
+    return c ? documentosDoComprovante(c.comprovante) : [];
   });
   protected readonly modalidades = computed(() => {
     const c = this.carregado();
