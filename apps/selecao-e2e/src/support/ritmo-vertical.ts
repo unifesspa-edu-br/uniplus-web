@@ -65,3 +65,113 @@ export async function blocosColados(page: Page): Promise<string[]> {
     return colados;
   });
 }
+
+/**
+ * Espaços, em px, em volta de dois blocos novos acrescentados logo depois do subtítulo do passo
+ * aberto, sem classe nem margem própria: um `div` e um elemento customizado, que é inline por
+ * padrão como o host de um componente. O ritmo do passo é que tem de espaçá-los.
+ */
+export async function espacosDeBlocosNovos(page: Page): Promise<number[]> {
+  return page.evaluate(() => {
+    const host = document.querySelector('.step-pane:not([hidden]) > *');
+    const subtitulo = host?.firstElementChild;
+    if (!host || !subtitulo) {
+      return [];
+    }
+    const div = document.createElement('div');
+    div.textContent = 'Bloco novo';
+    const componente = document.createElement('sel-bloco-novo');
+    componente.innerHTML = '<p>Componente novo</p>';
+    subtitulo.after(div, componente);
+
+    const espaco = (de: Element, para: Element): number =>
+      Math.round(para.getBoundingClientRect().top - de.getBoundingClientRect().bottom);
+    const espacos = [espaco(subtitulo, div), espaco(div, componente)];
+    div.remove();
+    componente.remove();
+    return espacos;
+  });
+}
+
+/** O valor de `--space-5` em px, o ritmo entre os blocos do corpo de um passo. */
+export async function ritmoDoPasso(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const sonda = document.createElement('div');
+    sonda.style.height = 'var(--space-5)';
+    document.body.append(sonda);
+    const altura = Math.round(sonda.getBoundingClientRect().height);
+    sonda.remove();
+    return altura;
+  });
+}
+
+export interface EspacoEntreBlocos {
+  readonly de: string;
+  readonly para: string;
+  readonly espaco: number;
+}
+
+/**
+ * Espaços, em px, entre os blocos visíveis do corpo do passo aberto, na ordem do documento.
+ *
+ * A medida vai da borda visual de um bloco à do seguinte, e não da caixa: um bloco sem borda,
+ * padding nem fundo naquele lado não desenha nada ali, e a margem de um filho que ficou presa
+ * dentro dele (numa lista flex, por exemplo) é espaço que o usuário vê. Nesse caso a medida
+ * desce até o filho em fluxo mais próximo da borda.
+ */
+export async function espacosEntreBlocos(page: Page): Promise<EspacoEntreBlocos[]> {
+  return page.evaluate(() => {
+    const host = document.querySelector('.step-pane:not([hidden]) > *');
+    if (!host) {
+      return [];
+    }
+    const emFluxo = (e: Element): boolean => {
+      if (e.hasAttribute('hidden')) return false;
+      const estilo = getComputedStyle(e);
+      return (
+        estilo.position !== 'absolute' &&
+        estilo.position !== 'fixed' &&
+        e.getBoundingClientRect().height > 0
+      );
+    };
+    const CONTROLES = 'button, input, select, textarea, img, svg, video, canvas, iframe';
+    const desenhaNaBorda = (e: Element, lado: 'top' | 'bottom'): boolean => {
+      const estilo = getComputedStyle(e);
+      return (
+        e.matches(CONTROLES) ||
+        parseFloat(estilo.getPropertyValue(`border-${lado}-width`)) > 0 ||
+        parseFloat(estilo.getPropertyValue(`padding-${lado}`)) > 0 ||
+        estilo.backgroundColor !== 'rgba(0, 0, 0, 0)' ||
+        estilo.overflow !== 'visible'
+      );
+    };
+    /*
+     * Quem contém linhas de texto vale pela própria caixa: a caixa de um filho inline não
+     * coincide com a da linha, e descer até ela mediria a entrelinha, não o espaço do passo.
+     */
+    const contemLinhas = (e: Element): boolean =>
+      Array.from(e.childNodes).some(
+        (no) => no.nodeType === Node.TEXT_NODE && no.textContent?.trim(),
+      ) ||
+      Array.from(e.children).some((filho) => getComputedStyle(filho).display.startsWith('inline'));
+    const filhosParaDescer = (e: Element, lado: 'top' | 'bottom'): Element[] =>
+      desenhaNaBorda(e, lado) || contemLinhas(e) ? [] : Array.from(e.children).filter(emFluxo);
+    const topo = (e: Element): number => {
+      const filhos = filhosParaDescer(e, 'top');
+      return filhos.length === 0 ? e.getBoundingClientRect().top : Math.min(...filhos.map(topo));
+    };
+    const base = (e: Element): number => {
+      const filhos = filhosParaDescer(e, 'bottom');
+      return filhos.length === 0 ? e.getBoundingClientRect().bottom : Math.max(...filhos.map(base));
+    };
+    const rotulo = (e: Element): string =>
+      e.classList.length > 0 ? `.${e.classList[0]}` : e.tagName.toLowerCase();
+
+    const blocos = Array.from(host.children).filter(emFluxo);
+    return blocos.slice(1).map((bloco, indice) => ({
+      de: rotulo(blocos[indice]),
+      para: rotulo(bloco),
+      espaco: Math.round(topo(bloco) - base(blocos[indice])),
+    }));
+  });
+}

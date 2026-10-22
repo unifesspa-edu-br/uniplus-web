@@ -12,7 +12,7 @@ import {
   SNAPSHOT_VIGENTE,
 } from '../fixtures/processo-publicado-completo';
 import { conferirObrigatoriedadeDoCampo } from '../support/consulta-do-formulario';
-import { blocosColados } from '../support/ritmo-vertical';
+import { blocosColados, espacosEntreBlocos, ritmoDoPasso } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
@@ -135,6 +135,7 @@ test.describe('Varredura da consulta — todos os passos, matriz DS @ds', () => 
         expect(transbordo.documento).toBeLessThanOrEqual(1);
         expect(transbordo.areaDeTrabalho).toBeLessThanOrEqual(1);
         expect(await blocosColados(page)).toEqual([]);
+        expect(await blocosForaDoRitmo(page)).toEqual([]);
       });
     });
   }
@@ -206,6 +207,50 @@ test.describe('Valor longo em edição — todos os passos, matriz DS @ds', () =
     await expect(valor).not.toHaveAttribute('title', /.+/);
   });
 });
+
+/**
+ * O corpo do passo dá o mesmo espaço entre todos os blocos (web#613), também em edição, onde
+ * entram as ações soltas de fim de lista ("+ Acrescentar critério", "+ Acrescentar regra").
+ * Medir só o mínimo deixaria passar o espaço em dobro de uma margem que soma com o ritmo.
+ */
+test.describe('Ritmo do corpo do passo em edição — todos os passos, matriz DS @ds', () => {
+  for (const passo of PASSOS) {
+    test(`passo ${passo.numero}, ${passo.rotulo}: blocos separados pelo mesmo espaço`, async ({
+      page,
+    }, testInfo) => {
+      await abrirPasso(page, testInfo, 'rascunho', passo);
+
+      expect(await blocosForaDoRitmo(page)).toEqual([]);
+    });
+  }
+
+  /**
+   * A medida só vale se enxergar a margem presa dentro de um bloco. Aqui o último critério do
+   * Desempate volta a ter margem própria, dentro da lista flex: a caixa da lista cresce junto e,
+   * de caixa a caixa, o espaço continuaria igual ao ritmo.
+   */
+  test('acusa a margem do último critério que soma com o ritmo', async ({ page }, testInfo) => {
+    const desempate = PASSOS.find((item) => item.rotulo === 'Desempate') as Passo;
+    await abrirPasso(page, testInfo, 'rascunho', desempate);
+    expect(await blocosForaDoRitmo(page)).toEqual([]);
+
+    await page.addStyleTag({
+      content: '.desempate-list > .step-section:last-child { margin-block-end: 24px !important; }',
+    });
+
+    expect(await blocosForaDoRitmo(page)).toEqual([
+      expect.stringMatching(/^\.desempate-list → \.btn: \d+$/),
+    ]);
+  });
+});
+
+/** Os pares de blocos do passo aberto cujo espaço difere do ritmo, para a falha dizer onde. */
+async function blocosForaDoRitmo(page: Page): Promise<string[]> {
+  const ritmo = await ritmoDoPasso(page);
+  return (await espacosEntreBlocos(page))
+    .filter(({ espaco }) => espaco !== ritmo)
+    .map(({ de, para, espaco }) => `${de} → ${para}: ${espaco}`);
+}
 
 async function abrirPasso(
   page: Page,

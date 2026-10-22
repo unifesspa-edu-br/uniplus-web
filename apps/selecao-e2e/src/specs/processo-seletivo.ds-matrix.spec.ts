@@ -1,6 +1,6 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
-import { blocosColados } from '../support/ritmo-vertical';
+import { blocosColados, espacosDeBlocosNovos, ritmoDoPasso } from '../support/ritmo-vertical';
 import {
   conferirFocoForaDasFaixasFixas,
   conferirRolagemPorRodaForaDoConteudo,
@@ -135,6 +135,35 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
       await expect(page.locator('.wiz-content h1')).toContainText(`Passo ${posicao}:`);
 
       expect(await blocosColados(page), `passo ${passo}`).toEqual([]);
+    }
+  });
+
+  /**
+   * O ritmo é do corpo do passo, não de cada bloco: um aviso novo entre o subtítulo e o cartão
+   * nasce espaçado sem margem própria — também quando é o host de um componente, inline por
+   * padrão (web#613).
+   */
+  test('espaça um bloco novo do passo sem margem própria', async ({ page }) => {
+    const ritmo = await ritmoDoPasso(page);
+    for (const passo of [
+      'Tipo do processo',
+      'Identificação',
+      'Desempate',
+      'Revisão e publicação',
+    ]) {
+      const posicao = await page.evaluate((rotulo) => {
+        const botoes = Array.from(
+          document.querySelectorAll<HTMLButtonElement>(
+            'nav[aria-label="Etapas do cadastro"] li.ui-steps__item button',
+          ),
+        );
+        const indice = botoes.findIndex((botao) => botao.textContent?.includes(rotulo));
+        botoes[indice]?.click();
+        return indice + 1;
+      }, passo);
+      await expect(page.locator('.wiz-content h1')).toContainText(`Passo ${posicao}:`);
+
+      expect(await espacosDeBlocosNovos(page), `passo ${passo}`).toEqual([ritmo, ritmo]);
     }
   });
 

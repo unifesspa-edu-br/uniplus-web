@@ -1234,6 +1234,14 @@
   width: fit-content;
 }
 
+/* O último item de uma lista do passo não leva a margem dele para fora dela. Na lista flex a
+   margem não colapsa e somava com o ritmo; em bloco ela colapsa, mas valia a maior, 24 px. */
+.desempate-list > .step-section:last-child,
+.eliminacao-list > .step-section:last-child,
+.form-abas__painel > :last-child {
+  margin-block-end: 0;
+}
+
 /* Step card (mobile wrapper) */
 .step-card {
   margin-bottom: var(--space-4);
@@ -1676,11 +1684,6 @@
   gap: var(--space-3);
 }
 
-/* Em flex a margem do último critério não colapsa: somava com o ritmo do passo antes da ação. */
-.desempate-list > .step-section:last-child {
-  margin-block-end: 0;
-}
-
 /*
  * Número, campos e ações ficam no topo do cartão: centralizados num critério alto, o número e
  * as ações se afastavam do título do critério e pareciam soltos.
@@ -1929,6 +1932,12 @@
 .revisao-list {
   display: flex;
   flex-direction: column;
+}
+
+/* Sem nenhum grupo, a lista flex vazia ficava entre o alerta e o fim da seção e impedia a
+   margem do alerta de colapsar com o espaço até a seção seguinte. */
+.revisao-list:empty {
+  display: none;
 }
 
 .revisao-item {
