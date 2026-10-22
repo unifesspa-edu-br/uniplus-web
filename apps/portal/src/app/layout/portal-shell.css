@@ -1,9 +1,10 @@
 /* ── Shell público do Portal do Candidato ────────────────────────── */
 
-/* Trava a altura no viewport — mesmo contrato do `.ui-app-shell` admin — pra
-   que só `.portal-scroll` role. Sem isso a faixa institucional, o topo e a
-   navegação por abas rolariam junto com o resto da página. Em janela baixa a
-   trava é desfeita (ver "Janela baixa ou zoom alto"). */
+/* Ocupa o que sobra da coluna `ptl-root`, travada no viewport — mesmo contrato do
+   `.ui-app-shell` admin —, pra que só `.portal-scroll` role. Sem isso a faixa
+   institucional, o topo e a navegação por abas rolariam junto com o resto da
+   página, e um aviso acima do shell o empurraria para fora da janela. Em janela
+   baixa a trava é desfeita (ver "Janela baixa ou zoom alto"). */
 :host {
   display: flex;
   flex: 1 1 0;
