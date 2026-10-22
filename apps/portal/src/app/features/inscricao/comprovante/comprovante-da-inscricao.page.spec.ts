@@ -274,14 +274,16 @@ describe('ComprovanteDaInscricaoPage', () => {
     expect(laudo.textContent).toContain('Laudo médico');
     expect(dado(laudo as HTMLElement, 'Exigência')).toBe('Obrigatório');
     expect(dado(laudo as HTMLElement, 'Situação')).toBe('Atendido');
-    expect(dado(laudo as HTMLElement, 'Se não for enviado')).toBe('Indeferimento da inscrição');
+    expect(dado(laudo as HTMLElement, 'Consequência de não atender')).toBe(
+      'Indeferimento da inscrição',
+    );
     const arquivo = laudo.querySelector('li')?.textContent?.replace(/\s+/g, ' ');
     expect(arquivo).toContain('PDF · 2,0 KB');
     expect(laudo.querySelector('code[title]')?.textContent).toBe('f0e1d2c3…ccddeeff');
     expect(laudo.querySelector('details code')?.textContent).toBe(HASH);
     expect(dado(atestado as HTMLElement, 'Exigência')).toBe('Facultativo');
     expect(dado(atestado as HTMLElement, 'Situação')).toBe('Dispensado');
-    expect(dado(atestado as HTMLElement, 'Se não for enviado')).toBeNull();
+    expect(dado(atestado as HTMLElement, 'Consequência de não atender')).toBeNull();
     expect(atestado.querySelector('li')).toBeNull();
   });
 
