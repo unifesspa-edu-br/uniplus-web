@@ -621,7 +621,7 @@ export function situacoesEArquivosDosDocumentos(documentos: readonly DocumentoAv
 }
 
 /**
- * Se a exigência está atendida, dado o conjunto das exigências com arquivo ou situação satisfeita. Num
+ * Se a exigência está atendida, dado o conjunto das exigências que a avaliação deu por satisfeitas. Num
  * grupo "um ou outro", a exigência está atendida quando o grupo está: bastam as alternativas que o
  * `minimo` pede, e cada alternativa que junta documentos pede todos eles.
  */

@@ -429,6 +429,35 @@ describe('Bloco de documentos da inscrição', () => {
       expect(tela.textContent).not.toContain('O servidor recusou');
     });
 
+    it('a recusa continua enquanto a exigência com mais de um arquivo está pendente', async () => {
+      const tela = montar(
+        naTela(nestaFase(documento('Laudo médico', { quantidadeMinima: 2 }))),
+        ENVIO,
+      );
+      fixture.componentRef.setInput('errosDoServidor', [
+        { campo: 'documentos.exigencia-Laudo médico', mensagem: 'Documento ausente.' },
+      ]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      fixture.componentRef.setInput(
+        'avaliacao',
+        naTela(
+          nestaFase(
+            documento('Laudo médico', {
+              quantidadeMinima: 2,
+              arquivos: [{ arquivoId: 'a1', tipoDeMidia: 'application/pdf', tamanhoBytes: 2048 }],
+            }),
+          ),
+        ),
+      );
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(tela.textContent).toContain('Documento ausente.');
+    });
+
     it('a recusa de uma alternativa some quando o candidato atende o grupo "um ou outro" por outra', async () => {
       const identidade = { grupoId: 'identidade', tipo: 'OU', minimo: 1, repetePorEntidade: null };
       const tela = montar(
