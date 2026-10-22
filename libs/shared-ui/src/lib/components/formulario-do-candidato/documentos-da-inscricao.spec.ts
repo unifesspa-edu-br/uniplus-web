@@ -494,6 +494,51 @@ describe('Bloco de documentos da inscrição', () => {
       expect(tela.textContent).not.toContain('O servidor recusou');
     });
 
+    const recusar = async (campo: string): Promise<void> => {
+      fixture.componentRef.setInput('errosDoServidor', [{ campo, mensagem: 'Documento ausente.' }]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+    const reavaliar = async (avaliacao: AvaliacaoNaTela): Promise<void> => {
+      fixture.componentRef.setInput('avaliacao', avaliacao);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    };
+
+    it('a recusa sai quando um grupo "um ou outro" externo está atendido, mesmo com o interno pendente', async () => {
+      const externo = { grupoId: 'externo', tipo: 'OU', minimo: 1, repetePorEntidade: null };
+      const interno = { grupoId: 'interno', tipo: 'OU', minimo: 1, repetePorEntidade: null };
+      const docs = (passaporte: string) =>
+        naTela(
+          nestaFase(
+            documento('RG', { grupos: [externo, interno] }),
+            documento('CNH', { grupos: [externo, interno] }),
+            documento('Passaporte', { grupos: [externo], situacao: passaporte }),
+          ),
+        );
+      const tela = montar(docs('PENDENTE'), ENVIO);
+      await recusar('documentos.exigencia-RG');
+      expect(tela.textContent).toContain('Documento ausente.');
+
+      await reavaliar(docs('SATISFEITA'));
+
+      expect(tela.textContent).not.toContain('Documento ausente.');
+      expect(tela.textContent).not.toContain('O servidor recusou');
+    });
+
+    it('a recusa de uma exigência que as respostas já não pedem sai com ela', async () => {
+      const tela = montar(naTela(nestaFase(documento('Atestado'))), ENVIO);
+      await recusar('documentos.exigencia-Atestado');
+      expect(tela.textContent).toContain('O servidor recusou 1 resposta');
+
+      await reavaliar(naTela(nestaFase(documento('Atestado', { situacao: 'PODE_SER_EXIGIDO' }))));
+
+      expect(tela.textContent).not.toContain('Documento ausente.');
+      expect(tela.textContent).not.toContain('O servidor recusou');
+    });
+
     it('na simulação do administrador, que não envia, o bloco continua só a lista', () => {
       const tela = montar(naTela(nestaFase(documento('Laudo médico'))));
 
