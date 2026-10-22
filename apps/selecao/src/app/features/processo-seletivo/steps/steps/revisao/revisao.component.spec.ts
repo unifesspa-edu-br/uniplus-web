@@ -145,7 +145,6 @@ const ATO_DO_PROCESSO: AtoDoProcessoDto = {
   pendenciaAcimaDoLimiar: false,
   atoCorrigidoId: null,
   motivoDaCorrecao: null,
-  produtoDoEditalId: null,
   politicaDeDivulgacaoConfirmada: false,
   documentoPrincipal: {
     documentoAPublicarId: '01960000-0000-7000-0000-0000000009ee',

@@ -61,7 +61,6 @@ const aviso: AtoDoProcessoDto = {
   pendenciaAcimaDoLimiar: false,
   atoCorrigidoId: null,
   motivoDaCorrecao: null,
-  produtoDoEditalId: null,
   politicaDeDivulgacaoConfirmada: false,
   documentoPrincipal: {
     documentoAPublicarId: DOCUMENTO_PRINCIPAL,

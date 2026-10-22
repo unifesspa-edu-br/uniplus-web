@@ -71,6 +71,16 @@ export class PublicacoesDoProcesso {
     return leitura.estado === 'lido' ? leitura.dados : [];
   });
 
+  /** Os atos que pertencem a um item do edital: o publicado e as correções dele. */
+  private readonly atosDosItens = computed(() => {
+    const leitura = this.previstos();
+    if (leitura.estado !== 'lido') return new Set<string>();
+    const { fases, etapasSemFase } = leitura.dados.consulta;
+    const etapas = [...fases.flatMap((fase) => fase.etapas), ...etapasSemFase];
+    const itens = [...fases.flatMap((fase) => fase.produtos), ...etapas.flatMap((etapa) => etapa.produtos)];
+    return new Set(itens.flatMap((item) => [item.ato, ...item.correcoes]).flatMap((ato) => (ato ? [ato.id] : [])));
+  });
+
   /** Os tipos que o catálogo declara publicáveis como documento avulso e que vigoram hoje. */
   readonly tiposDeDocumentoAvulso = computed(() =>
     tiposDeDocumentoAvulso(this.listaDeTipos(), this.diaDeReferencia()),
@@ -85,7 +95,7 @@ export class PublicacoesDoProcesso {
   readonly atosCorrigiveis = computed(() =>
     this.tipos().estado === 'lido'
       ? atosQueAdmitemCorrecao(this.listaDeAtos(), codigosQueCongelam(this.listaDeTipos())).filter(
-          (ato) => ato.produtoDoEditalId === null,
+          (ato) => !this.atosDosItens().has(ato.id),
         )
       : [],
   );
