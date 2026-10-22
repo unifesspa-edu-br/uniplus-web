@@ -6,7 +6,8 @@ const MENSAGENS: Readonly<Record<string, string>> = {
     'A resposta não está no formato que o campo pede.',
   'uniplus.selecao.inscricao.fato_fora_do_formulario': 'Este campo não faz parte do formulário.',
   'uniplus.selecao.inscricao.impedimento': 'Esta resposta impede a inscrição.',
-  'uniplus.selecao.inscricao.documento_obrigatorio_ausente': 'Envie o documento exigido.',
+  'uniplus.selecao.inscricao.documento_obrigatorio_ausente':
+    'Envie este documento, ou uma das alternativas da lista, para concluir.',
   'uniplus.selecao.inscricao.termo_nao_aceito': 'Aceite o termo para concluir.',
   'uniplus.selecao.inscricao.grupo_contagem_invalida':
     'A quantidade informada não respeita o mínimo ou o máximo.',

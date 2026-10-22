@@ -385,7 +385,10 @@ describe('Bloco de documentos da inscrição', () => {
       expect(bloco(tela)).toBeNull();
 
       fixture.componentRef.setInput('errosDoServidor', [
-        { campo: 'documentos.exigencia-Atestado', mensagem: 'Envie o documento exigido.' },
+        {
+          campo: 'documentos.exigencia-Atestado',
+          mensagem: 'Envie este documento, ou uma das alternativas da lista, para concluir.',
+        },
       ]);
       fixture.detectChanges();
       await fixture.whenStable();
@@ -393,11 +396,37 @@ describe('Bloco de documentos da inscrição', () => {
 
       const envio = bloco(tela).querySelector('[data-campo="documentos.exigencia-Atestado"]');
       expect(envio?.contains(document.activeElement)).toBe(true);
-      expect(envio?.textContent).toContain('Envie o documento exigido.');
+      expect(envio?.textContent).toContain(
+        'Envie este documento, ou uma das alternativas da lista, para concluir.',
+      );
       expect(tela.textContent).toContain('O servidor recusou 1 resposta desta seção');
       expect(
         bloco(tela).querySelector('[data-campo="documentos.exigencia-Laudo médico"]')?.textContent,
-      ).not.toContain('Envie o documento exigido.');
+      ).not.toContain('Envie este documento, ou uma das alternativas da lista, para concluir.');
+    });
+
+    it('a recusa de uma exigência some quando a avaliação a dá por atendida', async () => {
+      const tela = montar(naTela(nestaFase(documento('Atestado'))), ENVIO);
+      fixture.componentRef.setInput('errosDoServidor', [
+        { campo: 'documentos.exigencia-Atestado', mensagem: 'Documento ausente.' },
+      ]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(bloco(tela).querySelector('[role="alert"]')?.textContent).toContain(
+        'Documento ausente.',
+      );
+
+      fixture.componentRef.setInput(
+        'avaliacao',
+        naTela(nestaFase(documento('Atestado', { situacao: 'SATISFEITA' }))),
+      );
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(tela.textContent).not.toContain('Documento ausente.');
+      expect(tela.textContent).not.toContain('O servidor recusou');
     });
 
     it('na simulação do administrador, que não envia, o bloco continua só a lista', () => {
