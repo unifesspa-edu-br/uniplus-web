@@ -56,6 +56,14 @@ ptl-root {
   flex-direction: column;
 }
 
+/* A trava no viewport cortaria o que passa da primeira folha: no papel o host
+   volta ao fluxo normal e o conteúdo se reparte nas folhas que precisar. */
+@media print {
+  ptl-root {
+    height: auto;
+  }
+}
+
 .ptl-page {
   display: flex;
   flex: 1;

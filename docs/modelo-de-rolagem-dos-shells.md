@@ -5,8 +5,11 @@ ou com zoom alto. Contexto: issue #1100.
 
 ## Princípio comum
 
-Os dois shells travam a altura no viewport dinâmico (`100dvh`) e fazem a rolagem
-acontecer numa região interna, nunca no `<body>`. A faixa institucional, o topo e
+Os dois shells ficam travados no viewport dinâmico (`100dvh`) e fazem a rolagem
+acontecer numa região interna, nunca no `<body>`. No portal, quem trava é o
+`ptl-root` (`apps/portal/src/styles.css`) e o shell ocupa o espaço que sobra, de modo
+que um aviso acima dele, como o de autenticação indisponível, não cria uma segunda
+rolagem. A faixa institucional, o topo e
 a navegação ficam sempre visíveis por **layout flex**, não por `position: sticky`
 ou `fixed`. A única exceção é o portal em janela baixa (≤ 500px de altura), em que
 a página inteira rola — ver a seção do shell do portal.
@@ -34,7 +37,7 @@ indo para `.portal-scroll` (`focoAoTopo`), que tem `tabindex="-1"` nos dois modo
 Limitação conhecida: ao cruzar o limiar com a janela aberta (zoom ou redimensionamento),
 a posição de leitura pode voltar ao topo.
 
-Na impressão (`@media print`) o host e `.portal-scroll` voltam ao fluxo normal
+Na impressão (`@media print`) o `ptl-root`, o host e `.portal-scroll` voltam ao fluxo normal
 (`height: auto`, `overflow: visible`) e só o conteúdo vai para o papel; o
 cabeçalho, a navegação, o rodapé e os controles flutuantes saem por `.u-no-print`.
 
