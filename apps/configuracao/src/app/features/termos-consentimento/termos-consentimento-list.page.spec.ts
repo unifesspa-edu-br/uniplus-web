@@ -236,4 +236,18 @@ describe('TermosConsentimentoListPage', () => {
       'Termos de consentimento, com forma de aceite e status de revisão',
     );
   });
+
+  it('a ação de abrir possui ícone, tooltip, nome acessível e leva ao termo', () => {
+    montar();
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector(
+      'ui-icon-button[icon="pi-folder-open"] a[aria-label="Abrir termo de consentimento Termo LGPD"]',
+    );
+
+    expect(link).not.toBeNull();
+    expect(link?.querySelector('i')?.classList.contains('pi-folder-open')).toBe(true);
+    expect(link?.getAttribute('data-tooltip')).toBe('Abrir termo de consentimento');
+    expect(link?.getAttribute('href')).toMatch(/id-lgpd$/u);
+  });
 });

@@ -26,7 +26,8 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
-  EmptyStateComponent, IconButtonComponent,
+  EmptyStateComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
   TagComponent,
