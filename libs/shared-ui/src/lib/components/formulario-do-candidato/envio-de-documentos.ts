@@ -99,7 +99,7 @@ const FORMATOS_DO_ARMAZENAMENTO: readonly Formato[] = [PDF, JPG, PNG];
 export interface RegrasDoArquivo {
   readonly extensoes: string;
   readonly tiposDeMidia: readonly string[];
-  readonly rotuloDosFormatos: string;
+  readonly rotulosDosFormatos: readonly string[];
   readonly tamanhoMaximoMb: number;
 }
 
@@ -116,7 +116,7 @@ export function regrasDoArquivo(
   return {
     extensoes: aceitos.flatMap((f) => f.extensoes).join(','),
     tiposDeMidia: aceitos.flatMap((f) => f.tiposDeMidia),
-    rotuloDosFormatos: aceitos.map((f) => f.rotulo).join(', '),
+    rotulosDosFormatos: aceitos.map((f) => f.rotulo),
     tamanhoMaximoMb: tamanhoMaximoBytes / BYTES_POR_MB,
   };
 }
@@ -129,6 +129,14 @@ export function campoDaExigencia(exigenciaId: string, ocorrenciaId: string | nul
   return `${PREFIXO_DO_CAMPO_DE_DOCUMENTO}${exigenciaId}${ocorrenciaId === null ? '' : `.${ocorrenciaId}`}`;
 }
 
+/** A chave da exigência (e da ocorrência) que o campo da recusa aponta, a mesma de `chaveDaExigencia`. */
+export function chaveDoCampoDeDocumento(campo: string): string {
+  const [exigenciaId, ocorrenciaId = ''] = campo
+    .slice(PREFIXO_DO_CAMPO_DE_DOCUMENTO.length)
+    .split('.');
+  return `${exigenciaId}:${ocorrenciaId}`;
+}
+
 /** Se o campo da recusa é de uma exigência documental, e não de uma resposta do formulário. */
 export function ehCampoDeDocumento(campo: string): boolean {
   return campo.startsWith(PREFIXO_DO_CAMPO_DE_DOCUMENTO);
@@ -139,11 +147,12 @@ export function ehCampoDeDocumento(campo: string): boolean {
  * que a linha da lista também mostra: as duas dizem o mesmo, em vez de a lista dizer "qualquer
  * formato" enquanto o envio recusa o que não é PDF, JPG ou PNG.
  */
-export function formatosDaExigencia(
-  formatosAceitos: readonly string[],
-): { readonly qualquer: false; readonly lista: readonly string[] } {
-  const { rotuloDosFormatos } = regrasDoArquivo({ qualquer: false, lista: formatosAceitos }, 0);
-  return { qualquer: false, lista: rotuloDosFormatos.split(', ') };
+export function formatosDaExigencia(formatosAceitos: readonly string[]): {
+  readonly qualquer: false;
+  readonly lista: readonly string[];
+} {
+  const { rotulosDosFormatos } = regrasDoArquivo({ qualquer: false, lista: formatosAceitos }, 0);
+  return { qualquer: false, lista: rotulosDosFormatos };
 }
 
 /** O tipo de mídia que o envio declara, pela extensão; nulo quando o formato não serve à inscrição. */

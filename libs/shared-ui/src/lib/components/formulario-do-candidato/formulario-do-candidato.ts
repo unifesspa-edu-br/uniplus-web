@@ -51,7 +51,11 @@ import {
   type NoDeDocumentos,
 } from './documentos-avaliados';
 import { DocumentosDaInscricaoComponent } from './documentos-da-inscricao';
-import { type EnvioDeDocumentos, ehCampoDeDocumento } from './envio-de-documentos';
+import {
+  chaveDoCampoDeDocumento,
+  ehCampoDeDocumento,
+  type EnvioDeDocumentos,
+} from './envio-de-documentos';
 import { FatorDeAtenuacaoDaInscricaoComponent } from './fator-de-atenuacao-da-inscricao';
 import { resumoDoFator } from './fator-de-atenuacao';
 import { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
@@ -819,6 +823,19 @@ export class FormularioDoCandidatoComponent {
       untracked(() => this.pendenciasChange.emit(pendencias));
     });
     effect(() => {
+      // A recusa de uma exigência some quando a avaliação a dá por atendida: o arquivo foi enviado.
+      const situacoes = this.situacoesDosDocumentos();
+      untracked(() => {
+        const atuais = this.erros();
+        const vigentes = atuais.filter(
+          (e) =>
+            !ehCampoDeDocumento(e.campo) ||
+            situacoes[chaveDoCampoDeDocumento(e.campo)] !== 'SATISFEITA',
+        );
+        if (vigentes.length !== atuais.length) this.erros.set(vigentes);
+      });
+    });
+    effect(() => {
       const simulacao = this.simulacao();
       untracked(() => this.simulacaoChange.emit(simulacao));
     });
@@ -900,7 +917,9 @@ export class FormularioDoCandidatoComponent {
     );
     const alvo =
       partes.find((p) => p.dataset['campo'] === campo) ??
-      partes.find((p) => p.dataset['campo']?.startsWith(`${campo}.`)) ??
+      (ehCampoDeDocumento(campo)
+        ? partes.find((p) => p.dataset['campo']?.startsWith(`${campo}.`))
+        : undefined) ??
       partes.find((p) => p.dataset['campo'] === campo.split('.')[0]);
     return (
       alvo?.querySelector<HTMLElement>(
