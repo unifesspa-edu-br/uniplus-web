@@ -85,7 +85,7 @@ let proximoId = 0;
         [acceptLabel]="regras().rotuloDosFormatos"
         [maxSizeMb]="regras().tamanhoMaximoMb"
         [descritoPor]="quantidadeMinima() > 1 ? idDaDica : null"
-        [mensagemExterna]="falhaAoRemover()"
+        [mensagemExterna]="falhaAoRemover() ?? erroDoServidor()"
         (arquivosEscolhidos)="enviarTodos($event)"
         (tentarDeNovo)="tentarDeNovo($event)"
         (itemRetirado)="retirar($event)"
@@ -104,6 +104,8 @@ export class EnvioDoDocumentoComponent {
   readonly tamanhoMaximoBytes = input.required<number>();
   /** Quantas apresentações a exigência pede, no mínimo; acima de 1, a tela diz quantas enviar. */
   readonly quantidadeMinima = input(1, { transform: (v: number | null | undefined) => v ?? 1 });
+  /** A recusa do servidor desta exigência, por exemplo o documento obrigatório que falta. */
+  readonly erroDoServidor = input<string | null>(null);
   readonly envio = input.required<EnvioDeDocumentos>();
   /** Os arquivos que a API já registrou para esta exigência, além dos que o próprio envio confirmou. */
   readonly arquivos = input<readonly ArquivoEnviado[]>([]);

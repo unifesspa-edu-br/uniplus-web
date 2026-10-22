@@ -121,6 +121,19 @@ export function regrasDoArquivo(
   };
 }
 
+/** O prefixo do campo com que a API aponta a recusa de uma exigência documental. */
+const PREFIXO_DO_CAMPO_DE_DOCUMENTO = 'documentos.';
+
+/** O campo da recusa de uma exigência: `documentos.<exigenciaId>`, com `.<ocorrenciaId>` quando há. */
+export function campoDaExigencia(exigenciaId: string, ocorrenciaId: string | null): string {
+  return `${PREFIXO_DO_CAMPO_DE_DOCUMENTO}${exigenciaId}${ocorrenciaId === null ? '' : `.${ocorrenciaId}`}`;
+}
+
+/** Se o campo da recusa é de uma exigência documental, e não de uma resposta do formulário. */
+export function ehCampoDeDocumento(campo: string): boolean {
+  return campo.startsWith(PREFIXO_DO_CAMPO_DE_DOCUMENTO);
+}
+
 /**
  * Os formatos que a avaliação diz aceitar para a exigência, com o nome que a zona de envio usa. É o
  * que a linha da lista também mostra: as duas dizem o mesmo, em vez de a lista dizer "qualquer
