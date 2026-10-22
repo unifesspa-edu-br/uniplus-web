@@ -1675,6 +1675,23 @@ describe('FormularioDoCandidatoComponent', () => {
       confirmacao: tela.querySelector('input[id$="-confirmacao"]') as HTMLInputElement,
     });
 
+    it('a confirmação ainda não digitada abre vazia, sem o texto "undefined"', () => {
+      const tela = montar(COM_CONFIRMACAO);
+
+      expect(entradas(tela).confirmacao.value).toBe('');
+    });
+
+    it('a confirmação de uma ocorrência nova do grupo abre vazia', () => {
+      const tela = montar(FAMILIA_COM_CONFIRMACAO, {
+        inicial: { grupos: { FAMILIA: [{ id: 'membro-1', respostas: {} }] } },
+      });
+
+      const confirmacao = tela.querySelector(
+        '[data-campo="FAMILIA.membro-1.EMAIL"] input[id$="-confirmacao"]',
+      ) as HTMLInputElement;
+      expect(confirmacao.value).toBe('');
+    });
+
     it('a confirmação que não confere com a resposta bloqueia o envio e leva o foco a ela', async () => {
       const tela = montar(COM_CONFIRMACAO);
       const { resposta, confirmacao } = entradas(tela);
