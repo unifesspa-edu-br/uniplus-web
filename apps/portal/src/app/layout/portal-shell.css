@@ -6,9 +6,9 @@
    trava é desfeita (ver "Janela baixa ou zoom alto"). */
 :host {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
-  height: 100vh; /* fallback para navegadores sem dvh */
-  height: 100dvh;
+  min-height: 0;
   overflow: hidden;
   background: var(--surface-page);
 }

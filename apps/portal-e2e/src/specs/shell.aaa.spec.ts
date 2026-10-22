@@ -69,8 +69,10 @@ const CERTAMES_POPULADOS = [
 ];
 
 // O portão não pode depender de servidor real: a vitrine é simulada na rede, em
-// três cenários — populado, vazio e indisponível — e cada um roda nas dezoito combinações de
+// quatro cenários — populado, vazio, indisponível e autenticação indisponível — e cada um roda nas dezoito combinações de
 // largura, tema e modo de fonte (um projeto Playwright cada).
+const PRAZO_DA_AUTENTICACAO_INDISPONIVEL = 30_000;
+
 test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     const { theme, fontMode } = settingsFromProjectName(testInfo.project.name);
@@ -125,6 +127,22 @@ test.describe('Portal do Candidato — gate AAA aplicável @aaa', () => {
 
     await assertAcessibilidade(page, fontMode);
   });
+
+  test('autenticação indisponível passa AAA aplicável', async ({ page }, testInfo) => {
+    const { theme, fontMode } = settingsFromProjectName(testInfo.project.name);
+    await mockVitrine(page, CERTAMES_POPULADOS, 'indisponivel');
+
+    // Sem resposta do provedor, a inicialização só falha depois do tempo de espera do
+    // `keycloak-js`; só então a app sobe e mostra o aviso.
+    test.setTimeout(PRAZO_DA_AUTENTICACAO_INDISPONIVEL * 2);
+    await abrirVitrine(page, theme, fontMode, 'erro', PRAZO_DA_AUTENTICACAO_INDISPONIVEL);
+
+    const aviso = page.locator('auth-error-banner [role="alert"]');
+    await expect(aviso).toContainText('Serviço de autenticação indisponível');
+    await expect(aviso.locator('.u-caption')).toBeVisible();
+
+    await assertAcessibilidade(page, fontMode);
+  });
 });
 
 async function abrirVitrine(
@@ -132,9 +150,12 @@ async function abrirVitrine(
   theme: AaaTheme,
   fontMode: AaaFontMode,
   cenario: Cenario,
+  prazoDaInicializacao?: number,
 ): Promise<void> {
   await page.goto('/processos');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', theme, {
+    timeout: prazoDaInicializacao,
+  });
   await expectFontMode(page, fontMode);
 
   await expect(page.getByRole('banner')).toBeVisible();
@@ -193,6 +214,7 @@ function certame(
 async function mockVitrine(
   page: Page,
   certames: readonly CertameNaVitrineDto[] | 'indisponivel',
+  oidc: 'disponivel' | 'indisponivel' = 'disponivel',
 ): Promise<void> {
   await page.route(/\/assets\/runtime-config\.json(\?.*)?$/, (route) =>
     route.fulfill({
@@ -207,24 +229,29 @@ async function mockVitrine(
 
   // O `check-sso` do início da app consulta o provedor OIDC: sem resposta, a app
   // exibe o aviso de autenticação indisponível e o portão passaria a medir esse
-  // aviso, e não a vitrine. O provedor simulado aceita a checagem de cookies de
-  // terceiros e responde que não há sessão.
-  await page.route(`${ISSUER_URL}/protocol/openid-connect/3p-cookies/step1.html`, (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'text/html',
-      body: '<script>parent.postMessage("supported", "*");</script>',
-    }),
-  );
-  await page.route(`${ISSUER_URL}/protocol/openid-connect/auth?*`, (route) => {
-    const url = new URL(route.request().url());
-    const retorno = url.searchParams.get('redirect_uri') ?? '';
-    const estado = url.searchParams.get('state') ?? '';
-    return route.fulfill({
-      status: 302,
-      headers: { location: `${retorno}#error=login_required&state=${estado}` },
+  // aviso, e não a vitrine. Por padrão, o provedor simulado aceita a checagem de
+  // cookies de terceiros e responde que não há sessão; no cenário `indisponivel`,
+  // ele recusa a conexão para o portão medir justamente o aviso.
+  if (oidc === 'indisponivel') {
+    await page.route(`${ISSUER_URL}/**`, (route) => route.abort('connectionrefused'));
+  } else {
+    await page.route(`${ISSUER_URL}/protocol/openid-connect/3p-cookies/step1.html`, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<script>parent.postMessage("supported", "*");</script>',
+      }),
+    );
+    await page.route(`${ISSUER_URL}/protocol/openid-connect/auth?*`, (route) => {
+      const url = new URL(route.request().url());
+      const retorno = url.searchParams.get('redirect_uri') ?? '';
+      const estado = url.searchParams.get('state') ?? '';
+      return route.fulfill({
+        status: 302,
+        headers: { location: `${retorno}#error=login_required&state=${estado}` },
+      });
     });
-  });
+  }
 
   const lista = certames === 'indisponivel' ? [] : certames;
   const contar = (situacao: Situacao): string =>

@@ -44,14 +44,15 @@ ptl-root {
   min-height: 100%;
 }
 
-/* Host da rota como coluna flex: o `ui-app-shell` trava a própria altura no
-   viewport e cuida da rolagem (conteúdo e navegação). O `100dvh` acompanha o
-   `ui-app-shell` — sem ele, em navegador móvel com barra de URL retrátil o host
-   ficaria mais alto que o shell e o `<body>` voltaria a rolar. */
+/* Host da rota como coluna flex travada no viewport: o shell ocupa o espaço que
+   sobra depois dos avisos acima dele (como o de autenticação indisponível) e cuida
+   da rolagem (conteúdo e navegação). O `100dvh` acompanha a barra de URL retrátil
+   dos navegadores móveis; sem a trava, o aviso empurraria o shell para fora da
+   janela e o `<body>` voltaria a rolar. */
 ptl-root {
   display: flex;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   flex-direction: column;
 }
 

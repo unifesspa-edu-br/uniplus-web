@@ -1551,6 +1551,12 @@ ui-secao-do-formulario {
   margin: 0;
   line-height: var(--leading-normal);
 }
+/* --text-muted sobre os tints de alerta também fica abaixo do 7:1 AAA no tema
+   claro (6,79:1 sobre o tint de perigo); o texto secundário do alerta usa a
+   mesma alternativa mais escura do corpo. */
+.alert .u-caption {
+  color: var(--text-primary);
+}
 
 .alert--success {
   background: var(--color-success-50);
