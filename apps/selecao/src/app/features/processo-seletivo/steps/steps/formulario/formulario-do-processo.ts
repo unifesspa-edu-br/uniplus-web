@@ -44,6 +44,8 @@ function restricaoDoDto(restricao: FatoColetadoDto['restricoes'][number]): Restr
         valores: entrada.valores,
       })) ?? null,
     fatos: restricao.fatos,
+    dataMinima: restricao.dataMinima,
+    dataMaxima: restricao.dataMaxima,
   };
 }
 
