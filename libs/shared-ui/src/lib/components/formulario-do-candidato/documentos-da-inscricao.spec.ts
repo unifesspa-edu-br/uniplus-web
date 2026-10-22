@@ -429,6 +429,42 @@ describe('Bloco de documentos da inscrição', () => {
       expect(tela.textContent).not.toContain('O servidor recusou');
     });
 
+    it('a recusa de uma alternativa some quando o candidato atende o grupo "um ou outro" por outra', async () => {
+      const identidade = { grupoId: 'identidade', tipo: 'OU', minimo: 1, repetePorEntidade: null };
+      const tela = montar(
+        naTela(
+          nestaFase(
+            documento('RG', { grupos: [identidade] }),
+            documento('CNH', { grupos: [identidade] }),
+          ),
+        ),
+        ENVIO,
+      );
+      fixture.componentRef.setInput('errosDoServidor', [
+        { campo: 'documentos.exigencia-RG', mensagem: 'Documento ausente.' },
+      ]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(tela.textContent).toContain('Documento ausente.');
+
+      fixture.componentRef.setInput(
+        'avaliacao',
+        naTela(
+          nestaFase(
+            documento('RG', { grupos: [identidade] }),
+            documento('CNH', { grupos: [identidade], situacao: 'SATISFEITA' }),
+          ),
+        ),
+      );
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(tela.textContent).not.toContain('Documento ausente.');
+      expect(tela.textContent).not.toContain('O servidor recusou');
+    });
+
     it('na simulação do administrador, que não envia, o bloco continua só a lista', () => {
       const tela = montar(naTela(nestaFase(documento('Laudo médico'))));
 
