@@ -3,7 +3,13 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import { AlertComponent } from '../alert/alert';
 import { EnvioDoDocumentoComponent } from './envio-do-documento';
-import type { ArquivoEnviado, EnvioDeDocumentos, SituacaoDaExigencia } from './envio-de-documentos';
+import {
+  type ArquivoEnviado,
+  campoDaExigencia,
+  type EnvioDeDocumentos,
+  type SituacaoDaExigencia,
+} from './envio-de-documentos';
+import { type ErroDoServidor, mensagemDosErros } from './formulario-do-candidato.model';
 import { ListaDeDocumentosComponent } from '../lista-de-documentos/lista-de-documentos';
 import { type DocumentoNaTela, type NoDeDocumentos, textoDoGrupo } from './documentos-avaliados';
 import type { AvaliacaoNaTela, PendenciaDaAvaliacao } from './modalidades-avaliadas';
@@ -74,6 +80,8 @@ type Trecho =
             </p>
           } @else if (exigida.enviavel) {
             <ui-envio-do-documento
+              [attr.data-campo]="campo(exigida)"
+              [erroDoServidor]="erroDe(exigida)"
               [alvo]="{
                 chave: exigida.chave,
                 exigenciaId: exigida.exigenciaId,
@@ -208,6 +216,9 @@ export class DocumentosDaInscricaoComponent {
    */
   readonly ocorrenciasGravadas = input<ReadonlySet<string> | null>(null);
 
+  /** As recusas do servidor; a de uma exigência aparece junto do envio dela. */
+  readonly errosDoServidor = input<readonly ErroDoServidor[]>([]);
+
   /** O candidato escolheu a pergunta pendente: leva a ela. */
   readonly irAoCampo = output<string>();
   readonly tentarDeNovo = output<void>();
@@ -241,6 +252,14 @@ export class DocumentosDaInscricaoComponent {
     }
     return porChave;
   });
+
+  protected campo(exigida: { exigenciaId: string; ocorrenciaId: string | null }): string {
+    return campoDaExigencia(exigida.exigenciaId, exigida.ocorrenciaId);
+  }
+
+  protected erroDe(exigida: { exigenciaId: string; ocorrenciaId: string | null }): string | null {
+    return mensagemDosErros(this.errosDoServidor(), this.campo(exigida));
+  }
 
   protected gravada(ocorrenciaId: string | null): boolean {
     const gravadas = this.ocorrenciasGravadas();

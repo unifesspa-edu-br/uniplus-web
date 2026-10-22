@@ -374,6 +374,32 @@ describe('Bloco de documentos da inscrição', () => {
       expect(bloco(tela).textContent).toContain('Salve o rascunho para enviar o arquivo');
     });
 
+    it('a recusa por documento obrigatório ausente leva ao passo Documentos, ao envio da exigência, com o erro nele', async () => {
+      const tela = montar(
+        naTela(nestaFase(documento('Laudo médico'), documento('Atestado'))),
+        ENVIO,
+      );
+      const primeiroPasso = tela.querySelector<HTMLButtonElement>('ui-steps .ui-steps__botao');
+      primeiroPasso?.click();
+      fixture.detectChanges();
+      expect(bloco(tela)).toBeNull();
+
+      fixture.componentRef.setInput('errosDoServidor', [
+        { campo: 'documentos.exigencia-Atestado', mensagem: 'Envie o documento exigido.' },
+      ]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const envio = bloco(tela).querySelector('[data-campo="documentos.exigencia-Atestado"]');
+      expect(envio?.contains(document.activeElement)).toBe(true);
+      expect(envio?.textContent).toContain('Envie o documento exigido.');
+      expect(tela.textContent).toContain('O servidor recusou 1 resposta desta seção');
+      expect(
+        bloco(tela).querySelector('[data-campo="documentos.exigencia-Laudo médico"]')?.textContent,
+      ).not.toContain('Envie o documento exigido.');
+    });
+
     it('na simulação do administrador, que não envia, o bloco continua só a lista', () => {
       const tela = montar(naTela(nestaFase(documento('Laudo médico'))));
 

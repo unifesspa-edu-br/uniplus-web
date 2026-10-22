@@ -51,7 +51,7 @@ import {
   type NoDeDocumentos,
 } from './documentos-avaliados';
 import { DocumentosDaInscricaoComponent } from './documentos-da-inscricao';
-import type { EnvioDeDocumentos } from './envio-de-documentos';
+import { type EnvioDeDocumentos, ehCampoDeDocumento } from './envio-de-documentos';
 import { FatorDeAtenuacaoDaInscricaoComponent } from './fator-de-atenuacao-da-inscricao';
 import { resumoDoFator } from './fator-de-atenuacao';
 import { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
@@ -199,6 +199,7 @@ import type {
                             [podeEnviar]="podeEnviarDocumentos()"
                             [podeRemover]="podeRemoverDocumentos()"
                             [ocorrenciasGravadas]="ocorrenciasGravadas()"
+                            [errosDoServidor]="erros()"
                             (irAoCampo)="irAoCampo($event)"
                             (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
                           />
@@ -899,6 +900,7 @@ export class FormularioDoCandidatoComponent {
     );
     const alvo =
       partes.find((p) => p.dataset['campo'] === campo) ??
+      partes.find((p) => p.dataset['campo']?.startsWith(`${campo}.`)) ??
       partes.find((p) => p.dataset['campo'] === campo.split('.')[0]);
     return (
       alvo?.querySelector<HTMLElement>(
@@ -1238,7 +1240,8 @@ function contemOCampo(passo: PassoDoFormulario, campo: string): boolean {
   return (
     passo.campos.some((c) => campo === c.campo.fatoCodigo) ||
     passo.grupos.some((g) => campoEm(campo, g.grupo.codigo)) ||
-    passo.termos.some((t) => campo === t.termo.codigo)
+    passo.termos.some((t) => campo === t.termo.codigo) ||
+    (passo.bloco === BLOCO_COMPROVACAO_DOCUMENTAL && ehCampoDeDocumento(campo))
   );
 }
 
