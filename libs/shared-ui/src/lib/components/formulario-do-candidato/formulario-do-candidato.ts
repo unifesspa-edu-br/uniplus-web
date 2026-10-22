@@ -47,6 +47,7 @@ import {
   anunciarMudancaDosDocumentos,
   arvoreDeDocumentos,
   documentosDoFormulario,
+  exigenciaAtendida,
   situacoesEArquivosDosDocumentos,
   type NoDeDocumentos,
 } from './documentos-avaliados';
@@ -518,10 +519,33 @@ export class FormularioDoCandidatoComponent {
   });
   /** Os termos aceitos agora, pelo código — o que se lê para gravar, sem esperar a próxima emissão. */
   readonly termosAceitos = computed<readonly string[]>(() => [...this.aceitos()]);
-  /** As recusas do servidor que ainda valem: a resposta mudada leva a dela. */
-  protected readonly erros = linkedSignal<readonly ErroDoServidor[], readonly ErroDoServidor[]>({
+  /** As recusas do servidor que ainda não foram descartadas: a resposta mudada leva a dela. */
+  private readonly errosRecebidos = linkedSignal<
+    readonly ErroDoServidor[],
+    readonly ErroDoServidor[]
+  >({
     source: this.errosDoServidor,
     computation: (erros) => erros,
+  });
+  /**
+   * As recusas que valem agora. A de uma exigência documental deixa de valer quando a avaliação a dá
+   * por atendida — pelo arquivo dela ou, num grupo "um ou outro", pelo de outra alternativa.
+   */
+  protected readonly erros = computed<readonly ErroDoServidor[]>(() => {
+    const recebidos = this.errosRecebidos();
+    if (!recebidos.some((e) => ehCampoDeDocumento(e.campo))) return recebidos;
+    const atendidas = new Set([
+      ...Object.entries(this.situacoesDosDocumentos())
+        .filter(([, situacao]) => situacao === 'SATISFEITA')
+        .map(([chave]) => chave),
+      ...this.arquivosDosDocumentos().map((a) => a.chave),
+    ]);
+    const arvore = this.documentosDaAvaliacao()?.arvore ?? [];
+    return recebidos.filter(
+      (e) =>
+        !ehCampoDeDocumento(e.campo) ||
+        !exigenciaAtendida(chaveDoCampoDeDocumento(e.campo), arvore, atendidas),
+    );
   });
 
   /**
@@ -823,19 +847,6 @@ export class FormularioDoCandidatoComponent {
       untracked(() => this.pendenciasChange.emit(pendencias));
     });
     effect(() => {
-      // A recusa de uma exigência some quando a avaliação a dá por atendida: o arquivo foi enviado.
-      const situacoes = this.situacoesDosDocumentos();
-      untracked(() => {
-        const atuais = this.erros();
-        const vigentes = atuais.filter(
-          (e) =>
-            !ehCampoDeDocumento(e.campo) ||
-            situacoes[chaveDoCampoDeDocumento(e.campo)] !== 'SATISFEITA',
-        );
-        if (vigentes.length !== atuais.length) this.erros.set(vigentes);
-      });
-    });
-    effect(() => {
       const simulacao = this.simulacao();
       untracked(() => this.simulacaoChange.emit(simulacao));
     });
@@ -917,9 +928,6 @@ export class FormularioDoCandidatoComponent {
     );
     const alvo =
       partes.find((p) => p.dataset['campo'] === campo) ??
-      (ehCampoDeDocumento(campo)
-        ? partes.find((p) => p.dataset['campo']?.startsWith(`${campo}.`))
-        : undefined) ??
       partes.find((p) => p.dataset['campo'] === campo.split('.')[0]);
     return (
       alvo?.querySelector<HTMLElement>(
@@ -1028,7 +1036,7 @@ export class FormularioDoCandidatoComponent {
     codigo: string,
     ocorrencias: readonly OcorrenciaSimulada[] | undefined,
   ): void {
-    this.erros.update((atuais) => {
+    this.errosRecebidos.update((atuais) => {
       const restantes = atuais.filter(
         (e) => !erroEm(e, codigo) || erroSobrevive(e, codigo, this.grupos()[codigo], ocorrencias),
       );
@@ -1208,8 +1216,8 @@ export class FormularioDoCandidatoComponent {
   }
 
   private descartarErros(codigo: string): void {
-    if (this.erros().some((e) => erroEm(e, codigo)))
-      this.erros.update((atuais) => atuais.filter((e) => !erroEm(e, codigo)));
+    if (this.errosRecebidos().some((e) => erroEm(e, codigo)))
+      this.errosRecebidos.update((atuais) => atuais.filter((e) => !erroEm(e, codigo)));
   }
 }
 

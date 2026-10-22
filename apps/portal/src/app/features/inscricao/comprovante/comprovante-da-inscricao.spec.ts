@@ -186,6 +186,19 @@ describe('documentosDoComprovante', () => {
     documentos: [documento('a'), documento('b'), documento(null)],
   } as unknown as ComprovanteInscricaoDto;
 
+  it('traduz a situação que o servidor devolve, e nunca mostra o código cru', () => {
+    const doc = (situacao: string) => ({ ...documento(null), situacao });
+    const comSituacoes = {
+      grupos: {},
+      documentos: [doc('DEPENDE_DE_FASE_POSTERIOR'), doc('QUALQUER_OUTRA')],
+    } as unknown as ComprovanteInscricaoDto;
+
+    expect(documentosDoComprovante(comSituacoes).map((d) => d.situacao)).toEqual([
+      'Pode ser exigido, conforme uma fase posterior do processo',
+      'A confirmar',
+    ]);
+  });
+
   it('diz a quem se refere a exigência repetida por integrante do grupo', () => {
     const documentos = documentosDoComprovante(comprovante, formulario);
 

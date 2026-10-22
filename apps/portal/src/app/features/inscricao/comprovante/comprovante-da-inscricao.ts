@@ -240,7 +240,11 @@ const SITUACOES_DO_DOCUMENTO: Readonly<Record<string, string>> = {
   SATISFEITA: 'Atendido',
   PENDENTE: 'Pendente',
   DISPENSADA: 'Dispensado',
+  PODE_SER_EXIGIDO: 'Pode ser exigido, conforme as respostas',
+  DEPENDE_DE_FASE_POSTERIOR: 'Pode ser exigido, conforme uma fase posterior do processo',
 };
+
+const SITUACAO_DESCONHECIDA = 'A confirmar';
 
 /** Quantos caracteres do código de verificação ficam de cada lado quando ele é abreviado. */
 const LADO_DO_CODIGO_ABREVIADO = 8;
@@ -272,7 +276,7 @@ export function documentosDoComprovante(
     nome: d.nome,
     integrante: d.ocorrenciaId === null ? null : (integrantes.get(d.ocorrenciaId) ?? null),
     obrigatoriedade: d.obrigatorio ? 'Obrigatório' : 'Facultativo',
-    situacao: SITUACOES_DO_DOCUMENTO[d.situacao] ?? d.situacao,
+    situacao: SITUACOES_DO_DOCUMENTO[d.situacao] ?? SITUACAO_DESCONHECIDA,
     consequencia: d.consequencia,
     arquivos: d.arquivos.map((a) => ({
       formato: a.formato,

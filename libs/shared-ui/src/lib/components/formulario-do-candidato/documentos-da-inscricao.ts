@@ -88,7 +88,7 @@ type Trecho =
                 ocorrenciaId: exigida.ocorrenciaId,
                 nome: exigida.texto,
               }"
-              [formatos]="{ qualquer: false, lista: documento.formatosAceitos }"
+              [formatos]="documento.formatos"
               [tamanhoMaximoBytes]="documento.tamanhoMaximoBytes"
               [quantidadeMinima]="documento.quantidadeMinima"
               [envio]="envio"

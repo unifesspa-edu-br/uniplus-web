@@ -619,3 +619,42 @@ export function situacoesEArquivosDosDocumentos(documentos: readonly DocumentoAv
   }
   return { situacoes, arquivos };
 }
+
+/**
+ * Se a exigência está atendida, dado o conjunto das exigências com arquivo ou situação satisfeita. Num
+ * grupo "um ou outro", a exigência está atendida quando o grupo está: bastam as alternativas que o
+ * `minimo` pede, e cada alternativa que junta documentos pede todos eles.
+ */
+export function exigenciaAtendida(
+  chave: string,
+  arvore: readonly NoDeDocumentos[],
+  atendidas: ReadonlySet<string>,
+): boolean {
+  const chavesDo = (documento: DocumentoNaTela): readonly string[] =>
+    documento.exigidas.length > 0 ? documento.exigidas.map((e) => e.chave) : [documento.chave];
+  const documentoAtendido = (documento: DocumentoNaTela): boolean =>
+    chavesDo(documento).every((c) => atendidas.has(c));
+  const atendido = (no: NoDeDocumentos): boolean => {
+    if (no.tipo === 'DOCUMENTO') return documentoAtendido(no.documento);
+    return no.tipo === GRUPO_OU
+      ? no.itens.filter(atendido).length >= no.minimo
+      : no.itens.every(atendido);
+  };
+  // O grupo "um ou outro" mais próximo do documento, ou nenhum.
+  const procurar = (
+    nos: readonly NoDeDocumentos[],
+    grupo: NoDeDocumentos | null,
+  ): { readonly achou: boolean; readonly grupo: NoDeDocumentos | null } => {
+    for (const no of nos) {
+      if (no.tipo === 'DOCUMENTO') {
+        if (chavesDo(no.documento).includes(chave)) return { achou: true, grupo };
+        continue;
+      }
+      const dentro = procurar(no.itens, no.tipo === GRUPO_OU ? no : grupo);
+      if (dentro.achou) return dentro;
+    }
+    return { achou: false, grupo: null };
+  };
+  const { grupo } = procurar(arvore, null);
+  return grupo ? atendido(grupo) : atendidas.has(chave);
+}
