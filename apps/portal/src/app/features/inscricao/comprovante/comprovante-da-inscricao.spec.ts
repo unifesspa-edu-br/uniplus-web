@@ -6,6 +6,7 @@ import type {
 
 import {
   derivadosDoComprovante,
+  documentosDoComprovante,
   envioDoComprovante,
   municipiosDoComprovante,
   secoesDoComprovante,
@@ -158,5 +159,36 @@ describe('envioDoComprovante', () => {
       ehOQueVale: false,
       maisRecente: 2,
     });
+  });
+});
+
+describe('documentosDoComprovante', () => {
+  const formulario = {
+    grupos: [{ codigo: 'FAMILIA', incluiCandidato: true }],
+  } as unknown as FormularioRenderizavelDto;
+  const documento = (ocorrenciaId: string | null) => ({
+    exigenciaId: 'e1',
+    tipoDocumentoCodigo: 'RENDA',
+    nome: 'Comprovante de renda',
+    obrigatorio: true,
+    situacao: 'PENDENTE',
+    ocorrenciaId,
+    consequencia: null,
+    arquivos: [],
+  });
+  const comprovante = {
+    grupos: {
+      FAMILIA: [
+        { id: 'a', respostas: { PARENTESCO: 'PROPRIO_CANDIDATO' } },
+        { id: 'b', respostas: { PARENTESCO: 'FILHO' } },
+      ],
+    },
+    documentos: [documento('a'), documento('b'), documento(null)],
+  } as unknown as ComprovanteInscricaoDto;
+
+  it('diz a quem se refere a exigência repetida por integrante do grupo', () => {
+    const documentos = documentosDoComprovante(comprovante, formulario);
+
+    expect(documentos.map((d) => d.integrante)).toEqual(['Você (candidato)', 'Integrante 1', null]);
   });
 });

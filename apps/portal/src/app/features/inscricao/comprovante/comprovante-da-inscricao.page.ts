@@ -176,7 +176,7 @@ export class ComprovanteDaInscricaoPage {
   });
   protected readonly documentos = computed(() => {
     const c = this.carregado();
-    return c ? documentosDoComprovante(c.comprovante) : [];
+    return c ? documentosDoComprovante(c.comprovante, c.formulario) : [];
   });
   protected readonly modalidades = computed(() => {
     const c = this.carregado();

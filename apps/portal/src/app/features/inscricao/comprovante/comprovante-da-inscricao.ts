@@ -228,6 +228,8 @@ export interface ArquivoDoComprovanteExibido {
 
 export interface DocumentoDoComprovanteExibido {
   readonly nome: string;
+  /** "Você (candidato)" ou "Integrante {n}" quando a exigência é de uma ocorrência de grupo. */
+  readonly integrante: string | null;
   readonly obrigatoriedade: 'Obrigatório' | 'Facultativo';
   readonly situacao: string;
   readonly consequencia: string | null;
@@ -254,9 +256,21 @@ const abreviado = (codigo: string): string =>
  */
 export function documentosDoComprovante(
   comprovante: ComprovanteInscricaoDto,
+  formulario: FormularioRenderizavelDto | null = null,
 ): readonly DocumentoDoComprovanteExibido[] {
+  const integrantes = new Map(
+    (formulario?.grupos ?? []).flatMap((grupo) => {
+      const ocorrencias = comprovante.grupos[grupo.codigo] ?? [];
+      const titulos = titulosDasOcorrencias(
+        grupo.incluiCandidato,
+        ocorrencias.map((o) => o.respostas),
+      );
+      return ocorrencias.map((o, i): [string, string] => [o.id, titulos[i]]);
+    }),
+  );
   return comprovante.documentos.map((d) => ({
     nome: d.nome,
+    integrante: d.ocorrenciaId === null ? null : (integrantes.get(d.ocorrenciaId) ?? null),
     obrigatoriedade: d.obrigatorio ? 'Obrigatório' : 'Facultativo',
     situacao: SITUACOES_DO_DOCUMENTO[d.situacao] ?? d.situacao,
     consequencia: d.consequencia,
