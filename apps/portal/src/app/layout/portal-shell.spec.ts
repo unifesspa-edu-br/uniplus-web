@@ -176,6 +176,10 @@ describe('PortalShellComponent — contrato de impressão', () => {
     expect(declaracoesNaImpressao('.portal-scroll')).toMatch(/flex:\s*none/u);
   });
 
+  it('no papel, o conteúdo não leva o respiro de tela, que empurraria uma última página em branco', () => {
+    expect(declaracoesNaImpressao('.portal-main')).toMatch(/padding:\s*0\s*(;|$)/u);
+  });
+
   it('cabeçalho, navegação, rodapé e controles flutuantes não vão para o papel', async () => {
     await TestBed.configureTestingModule({
       imports: [PortalShellComponent],
