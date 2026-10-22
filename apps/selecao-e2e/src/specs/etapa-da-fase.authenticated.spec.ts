@@ -207,7 +207,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await etapa.getByLabel('Tipo').selectOption({ label: 'Prova Objetiva' });
 
     const carater = etapa.getByLabel('Caráter');
-    await expect(carater.getByRole('option')).toHaveCount(4, 'as três escolhas mais "Selecione…"');
+    await expect(carater.getByRole('option'), 'as três escolhas mais "Selecione…"').toHaveCount(4);
 
     await carater.selectOption({ label: 'Classificatória' });
     await expect(etapa.getByLabel('Peso')).toBeVisible();

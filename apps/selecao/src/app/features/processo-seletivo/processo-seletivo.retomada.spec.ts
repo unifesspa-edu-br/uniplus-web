@@ -33,6 +33,7 @@ import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   DocumentoAPublicarDto,
   FinalidadeDoDocumento,
+  FundamentoIsencaoDto,
   ItemConformidadeDto,
   OrigemCandidatos,
   RegrasCatalogoApi,
@@ -1013,7 +1014,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     await propagar();
 
     cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
-    expect(cenario.componente.rascunhoPendente()).toBe(true, 'pré-condição: há o que perder');
+    expect(cenario.componente.rascunhoPendente(), 'pré-condição: há o que perder').toBe(true);
 
     const confirmacao = TestBed.inject(ConfirmacaoDeSaida);
     const perguntar = vi.spyOn(confirmacao, 'confirmar').mockReturnValue(false);
@@ -1022,8 +1023,8 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     await propagar();
 
     expect(perguntar).toHaveBeenCalled();
-    expect(cenario.store.processoSeletivoId()).toBe(PROCESSO_ID, 'a troca foi recusada');
-    expect(cenario.store.draft().publicacao.numero).toBe('07/2027', 'a transcrição ficou');
+    expect(cenario.store.processoSeletivoId(), 'a troca foi recusada').toBe(PROCESSO_ID);
+    expect(cenario.store.draft().publicacao.numero, 'a transcrição ficou').toBe('07/2027');
     expect(cenario.navigate).toHaveBeenCalledWith(['/processo-seletivo', PROCESSO_ID], {
       replaceUrl: true,
     });
@@ -1043,7 +1044,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     await propagar();
 
     cenario.store.projetarSecao('publicacao', { numero: '07/2027' });
-    expect(cenario.componente.rascunhoPendente()).toBe(true, 'pré-condição: há o que perder');
+    expect(cenario.componente.rascunhoPendente(), 'pré-condição: há o que perder').toBe(true);
     vi.spyOn(TestBed.inject(ConfirmacaoDeSaida), 'confirmar').mockReturnValue(false);
 
     paramMap.next({ get: () => PROCESSO_ID });
@@ -1087,7 +1088,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     const cenario = montar();
     await propagar();
 
-    const chaves: (string | undefined)[] = [];
+    const chaves: (string | null)[] = [];
     const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
     api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
       chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
@@ -1138,7 +1139,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     const cenario = montar();
     await propagar();
 
-    const chaves: (string | undefined)[] = [];
+    const chaves: (string | null)[] = [];
     const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
     api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
       chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
@@ -1177,7 +1178,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
         tipoAtoCodigo: 'EDITAL_ABERTURA',
       },
     });
-    expect(cenario.componente.rascunhoPendente()).toBe(true, 'pré-condição: há transcrição por gravar');
+    expect(cenario.componente.rascunhoPendente(), 'pré-condição: há transcrição por gravar').toBe(true);
 
     (cenario.componente as unknown as { fixarRascunhoComoJaGravado(): void })
       .fixarRascunhoComoJaGravado();
@@ -1203,7 +1204,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     });
     await propagar();
 
-    const chaves: (string | undefined)[] = [];
+    const chaves: (string | null)[] = [];
     const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
     api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
       chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
@@ -1403,12 +1404,12 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       get: () => PROCESSO_ID,
     });
 
-    let resolverA: ((v: unknown) => void) | null = null;
+    const leituraA: { resolver?: (v: unknown) => void } = {};
     const obter = vi.fn((id: string) =>
       id === PROCESSO_ID
         ? from(
             new Promise((r) => {
-              resolverA = r;
+              leituraA.resolver = r;
             }),
           )
         : of(okResult(detalhe({ id, nome: 'Processo B' }))),
@@ -1424,7 +1425,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     expect(cenario.store.processoSeletivoId()).toBe(OUTRO_ID);
 
     // A responde depois: não pode sobrescrever B.
-    resolverA?.(okResult(detalhe({ id: PROCESSO_ID, nome: 'Processo A' })));
+    leituraA.resolver?.(okResult(detalhe({ id: PROCESSO_ID, nome: 'Processo A' })));
     await propagar();
     await propagar();
 
@@ -1441,11 +1442,11 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
       get: () => PROCESSO_ID,
     });
-    let resolver: ((v: unknown) => void) | null = null;
+    const leitura: { resolver?: (v: unknown) => void } = {};
     const obter = vi.fn(() =>
       from(
         new Promise((r) => {
-          resolver = r;
+          leitura.resolver = r;
         }),
       ),
     );
@@ -1457,7 +1458,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     paramMap.next({ get: () => null });
     await propagar();
 
-    resolver?.(okResult(detalhe()));
+    leitura.resolver?.(okResult(detalhe()));
     await propagar();
     await propagar();
 
@@ -1833,10 +1834,10 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       const cenario = publicado();
       await propagar();
 
-      const antes = cenario.store.draft().modalidades;
-      cenario.store.patchSection('modalidades', { ...antes, selecionadas: ['AC'] } as never);
+      const antes = cenario.store.draft().opcoesDeCurso;
+      cenario.store.patchSection('opcoesDeCurso', { ...antes, numero: antes.numero === '2' ? '1' : '2' });
 
-      expect(cenario.store.draft().modalidades).toEqual(antes);
+      expect(cenario.store.draft().opcoesDeCurso).toEqual(antes);
     });
 
     it('explica a consulta conforme o status, sem prometer retificação a quem não a tem', async () => {
@@ -1889,7 +1890,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       });
       await propagar();
 
-      expect(cenario.store.edicaoPermitida()).toBe(false, 'pré-condição: o processo é de leitura');
+      expect(cenario.store.edicaoPermitida(), 'pré-condição: o processo é de leitura').toBe(false);
 
       cenario.store.goTo(cenario.store.totalSteps - 1);
       cenario.fixture.detectChanges();

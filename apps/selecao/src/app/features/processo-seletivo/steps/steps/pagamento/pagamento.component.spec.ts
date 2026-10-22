@@ -82,7 +82,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '0',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     expect(componente.validate().valid).toBe(false);
@@ -110,7 +110,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '150,00',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     expect(componente.validate().valid).toBe(true);
@@ -122,7 +122,7 @@ describe('PagamentoStepComponent', () => {
     componente.validate();
     expect(componente.fundamentosInvalidos()).toBe(true);
 
-    componente.alternarFundamento('CADASTRO_UNICO');
+    componente.alternarFundamento(FundamentoIsencao.CADASTRO_UNICO);
 
     expect(componente.fundamentosInvalidos()).toBe(false);
   });
@@ -137,7 +137,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '200,00',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
     detectar();
 
@@ -151,10 +151,10 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', { valor: '180,00' });
     detectar();
 
-    expect(componente.fundamentosInvalidos()).toBe(
-      true,
+    expect(
+      componente.fundamentosInvalidos(),
       'corrigir o valor não corrige o fundamento ausente',
-    );
+    ).toBe(true);
   });
 
   it('não acusa fundamento ausente em processo gratuito', () => {
@@ -168,10 +168,10 @@ describe('PagamentoStepComponent', () => {
 
   /** Alternar é o único caminho de escrita da lista: marca e desmarca. */
   it('alterna o fundamento sem pedir confirmação nenhuma', () => {
-    componente.alternarFundamento('CADASTRO_UNICO');
+    componente.alternarFundamento(FundamentoIsencao.CADASTRO_UNICO);
     expect(store.draft().pagamento.fundamentos).toEqual(['CADASTRO_UNICO']);
 
-    componente.alternarFundamento('CADASTRO_UNICO');
+    componente.alternarFundamento(FundamentoIsencao.CADASTRO_UNICO);
     expect(store.draft().pagamento.fundamentos).toEqual([]);
   });
 
@@ -179,7 +179,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '150,00',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
     detectar();
 
@@ -189,7 +189,10 @@ describe('PagamentoStepComponent', () => {
 
   /** Os fundamentos só fazem sentido para processo que cobra. */
   it('oferece os fundamentos que o catálogo devolve, com a descrição', () => {
-    store.patchObjectSection('pagamento', { cobra: true, fundamentos: ['CADASTRO_UNICO'] });
+    store.patchObjectSection('pagamento', {
+      cobra: true,
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
+    });
     detectar();
 
     expect(componente.fundamentos()).toHaveLength(3);
@@ -201,7 +204,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '150,50',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     const promessa = componente.persistir();
@@ -236,7 +239,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '150,00',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     const promessa = componente.persistir();
@@ -274,7 +277,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '230',
-      fundamentos: [FundamentoIsencao.CadastroUnico],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
     await tick();
 
@@ -303,7 +306,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '230',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     const primeira = componente.persistir();
@@ -335,7 +338,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '230',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     const primeira = componente.persistir();
@@ -367,7 +370,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '150',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
     await tick();
 
@@ -376,11 +379,11 @@ describe('PagamentoStepComponent', () => {
 
     expect(componente.form.disabled).toBe(true);
 
-    componente.alternarFundamento(FundamentoIsencao.DoacaoMedulaOssea);
-    expect(store.draft().pagamento.fundamentos).toEqual(
-      ['CADASTRO_UNICO'],
+    componente.alternarFundamento(FundamentoIsencao.DOACAO_MEDULA_OSSEA);
+    expect(
+      store.draft().pagamento.fundamentos,
       'a lista não muda com a gravação em curso — alternar é ignorado',
-    );
+    ).toEqual(['CADASTRO_UNICO']);
 
     controller.expectOne(ROTA_TAXA).flush(null, { status: 204, statusText: 'No Content' });
     await promessa;
@@ -399,7 +402,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '150',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     const primeira = componente.persistir();
@@ -423,7 +426,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '150',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     const primeira = componente.persistir();
@@ -450,7 +453,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '150',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
     const passoInicial = store.currentStep();
 
@@ -477,7 +480,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '150',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     const promessa = componente.persistir();
@@ -572,7 +575,7 @@ describe('PagamentoStepComponent', () => {
       store.patchObjectSection('pagamento', {
         cobra: true,
         valor: texto,
-        fundamentos: ['CADASTRO_UNICO'],
+        fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
       });
 
       const resultado = componente.validate();
@@ -595,7 +598,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: texto,
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     const promessa = componente.persistir();
@@ -612,7 +615,7 @@ describe('PagamentoStepComponent', () => {
     store.patchObjectSection('pagamento', {
       cobra: true,
       valor: '1e2x',
-      fundamentos: ['CADASTRO_UNICO'],
+      fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
     const resultado = await componente.persistir();

@@ -43,6 +43,7 @@ function classificacao(resolucao: string | null): WizardDraft['classificacao'] {
     baseadoEmEnem: resolucao !== null,
     resolucaoPesoAreaEnem: resolucao ?? '',
     regrasEliminacao: [],
+    edicoesEnem: [],
   };
 }
 

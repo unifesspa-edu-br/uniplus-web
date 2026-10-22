@@ -822,6 +822,7 @@ describe('InscricaoDoCandidatoPage', () => {
         {
           codigo: 'FAMILIA',
           ordem: 0,
+          etapaCodigo: 'Inscricao:DADOS_PESSOAIS',
           rotulo: 'Integrante',
           minimo: 0,
           maximo: null,
@@ -851,7 +852,9 @@ describe('InscricaoDoCandidatoPage', () => {
                 grupos: [
                   {
                     codigo: 'FAMILIA',
+                    exibicao: null,
                     obrigatoriedade: 'SEMPRE',
+                    predicadoObrigatoriedade: null,
                     minimo: 0,
                     maximo: null,
                     incluiCandidato: false,

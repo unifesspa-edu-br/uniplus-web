@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FaseCanonicaDto, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
-import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { CaraterEtapa, UnidadePrazo } from '@uniplus/shared-data/selecao';
 
 import type {
   EtapaPontuada,
@@ -114,7 +114,7 @@ function etapa(parcial: Partial<EtapaPontuada>): EtapaPontuada {
   return {
     id: null,
     nome: 'Prova Objetiva',
-    carater: 'classificatoria',
+    carater: CaraterEtapa.classificatoria,
     tipoEtapaOrigemId: 'tipo-1',
     peso: '2',
     notaMinima: '',
@@ -365,11 +365,11 @@ describe('etapa que compõe a nota', () => {
    * recusada, e a mensagem do domínio fala de nota final, não de etapa.
    */
   it('exige caráter que pontua e peso declarado', () => {
-    expect(componeNota(etapa({ carater: 'classificatoria', peso: '2' }))).toBe(true);
-    expect(componeNota(etapa({ carater: 'ambas', peso: '1' }))).toBe(true);
-    expect(componeNota(etapa({ carater: 'eliminatoria', peso: '2' }))).toBe(false);
-    expect(componeNota(etapa({ carater: 'classificatoria', peso: '' }))).toBe(false);
-    expect(componeNota(etapa({ carater: 'classificatoria', peso: '   ' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '2' }))).toBe(true);
+    expect(componeNota(etapa({ carater: CaraterEtapa.ambas, peso: '1' }))).toBe(true);
+    expect(componeNota(etapa({ carater: CaraterEtapa.eliminatoria, peso: '2' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '   ' }))).toBe(false);
   });
 
   /**
@@ -378,8 +378,8 @@ describe('etapa que compõe a nota', () => {
    * conferência da tela e ser recusado no servidor por outro motivo.
    */
   it('não considera peso zero como composição de nota', () => {
-    expect(componeNota(etapa({ carater: 'classificatoria', peso: '0' }))).toBe(false);
-    expect(componeNota(etapa({ carater: 'ambas', peso: '0,0' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '0' }))).toBe(false);
+    expect(componeNota(etapa({ carater: CaraterEtapa.ambas, peso: '0,0' }))).toBe(false);
   });
 });
 
@@ -444,7 +444,7 @@ describe('o que impede gravar o cronograma', () => {
 
   const etapaValida = etapa({
     nome: 'Prova',
-    carater: 'classificatoria',
+    carater: CaraterEtapa.classificatoria,
     tipoEtapaOrigemId: 'tipo-1',
     peso: '1',
   });
@@ -518,7 +518,7 @@ describe('o que impede gravar o cronograma', () => {
   it('etapas que não compõem a nota final são recusadas com a explicação da média', () => {
     const soEliminatoria = etapa({
       nome: 'Títulos',
-      carater: 'eliminatoria',
+      carater: CaraterEtapa.eliminatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '',
     });
@@ -536,7 +536,7 @@ describe('o que impede gravar o cronograma', () => {
   it('caráter que o tipo de etapa não admite é recusado antes de gravar', () => {
     const classificatoria = etapa({
       nome: 'Análise documental',
-      carater: 'classificatoria',
+      carater: CaraterEtapa.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
     });
@@ -567,7 +567,7 @@ describe('o que impede gravar o cronograma', () => {
   it('tipo que a tela não conhece não gera recusa de caráter', () => {
     const classificatoria = etapa({
       nome: 'Prova',
-      carater: 'classificatoria',
+      carater: CaraterEtapa.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
     });
@@ -762,7 +762,7 @@ describe('o que impede gravar o cronograma', () => {
   it('número malformado é recusado em vez de limpar o campo em silêncio', () => {
     const notaTorta = etapa({
       nome: 'Prova',
-      carater: 'classificatoria',
+      carater: CaraterEtapa.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
       notaMinima: '7,5,',
@@ -776,7 +776,7 @@ describe('o que impede gravar o cronograma', () => {
   it('campo numérico vazio continua sendo não declarado, e não erro', () => {
     const semNota = etapa({
       nome: 'Prova',
-      carater: 'classificatoria',
+      carater: CaraterEtapa.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
       notaMinima: '',
@@ -793,14 +793,14 @@ describe('o que impede gravar o cronograma', () => {
   it('peso zero declarado é recusado mesmo com outra etapa compondo a nota', () => {
     const compoe = etapa({
       nome: 'Prova',
-      carater: 'classificatoria',
+      carater: CaraterEtapa.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
       ordem: 1,
     });
     const zerada = etapa({
       nome: 'Redação',
-      carater: 'classificatoria',
+      carater: CaraterEtapa.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '0',
       ordem: 2,
@@ -814,14 +814,14 @@ describe('o que impede gravar o cronograma', () => {
   it('etapa sem peso declarado continua válida ao lado de outra que compõe', () => {
     const compoe = etapa({
       nome: 'Prova',
-      carater: 'classificatoria',
+      carater: CaraterEtapa.classificatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '1',
       ordem: 1,
     });
     const soEliminatoria = etapa({
       nome: 'Títulos',
-      carater: 'eliminatoria',
+      carater: CaraterEtapa.eliminatoria,
       tipoEtapaOrigemId: 'tipo-1',
       peso: '',
       ordem: 2,
@@ -848,7 +848,7 @@ describe('o que impede gravar o cronograma', () => {
         regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
         regraVersao: 'v1',
         prazoValor: '2',
-        prazoUnidade: 'diasUteis',
+        prazoUnidade: UnidadePrazo.diasUteis,
         atoAncoraCodigo: '',
         suspensividadePrimeiraInstanciaValor: '',
         suspensividadePrimeiraInstanciaUnidade: '',
@@ -871,7 +871,7 @@ describe('o que impede gravar o cronograma', () => {
    * não casa para 0 — janela de prazo zero fecha no instante em que abre, e o servidor aceita.
    */
   describe('janela de recurso da etapa', () => {
-    function comRecurso(patch: Record<string, string>): readonly string[] {
+    function comRecurso(patch: Partial<RecursoDaEtapa>): readonly string[] {
       return problemasDoCronograma(
         [faseDeAvaliacao],
         [
@@ -1010,13 +1010,13 @@ describe('o que impede gravar o cronograma', () => {
       expect(
         comRecurso({
           admiteInstanciaSuperior: false,
-          suspensividadeSegundaInstanciaUnidade: 'horas',
+          suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
         }),
       ).not.toContainEqual(expect.stringContaining('suspensividade'));
     });
 
     it('acusa suspensividade com unidade e sem valor', () => {
-      expect(comRecurso({ suspensividadeSegundaInstanciaUnidade: 'horas' })).toContainEqual(
+      expect(comRecurso({ suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas })).toContainEqual(
         expect.stringContaining('suspensividade'),
       );
     });
@@ -1025,7 +1025,7 @@ describe('o que impede gravar o cronograma', () => {
       expect(
         comRecurso({
           suspensividadePrimeiraInstanciaValor: '0',
-          suspensividadePrimeiraInstanciaUnidade: 'diasUteis',
+          suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
         }),
       ).toContainEqual(expect.stringContaining('suspensividade'));
     });
@@ -1033,7 +1033,7 @@ describe('o que impede gravar o cronograma', () => {
     it('aceita o par completo, e aceita a instância desativada', () => {
       const comPar = comRecurso({
         suspensividadePrimeiraInstanciaValor: '3',
-        suspensividadePrimeiraInstanciaUnidade: 'diasUteis',
+        suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
       });
       expect(comPar).not.toContainEqual(expect.stringContaining('suspensividade'));
       expect(comRecurso({})).not.toContainEqual(expect.stringContaining('suspensividade'));

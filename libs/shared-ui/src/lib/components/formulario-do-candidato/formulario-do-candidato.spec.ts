@@ -1,5 +1,7 @@
+import { HttpHeaders } from '@angular/common/http';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { apiFailure, apiOk } from '@uniplus/shared-core/http';
 
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import {
@@ -239,16 +241,18 @@ const FAMILIA_COM_CONFIRMACAO: FormularioDoCandidato = {
   },
 };
 
+const resultadoOk = <T>(data: T) => apiOk(data, 200, new HttpHeaders());
+
 describe('FormularioDoCandidatoComponent', () => {
   let fixture: ComponentFixture<FormularioDoCandidatoComponent>;
   let simulacoes: SimulacaoDoFormulario[];
   let resultadoDoCep: (cep: string) => ReturnType<BuscaDeCep>;
 
   beforeEach(() => {
-    resultadoDoCep = () => of({ ok: true, data: CEP_DE_MARABA });
+    resultadoDoCep = () => of(resultadoOk(CEP_DE_MARABA));
     TestBed.configureTestingModule({
       providers: [
-        { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [MARABA] }) },
+        { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of(resultadoOk([MARABA])) },
         { provide: BUSCA_DE_CEP, useValue: (cep: string) => resultadoDoCep(cep) },
       ],
     });
@@ -1059,7 +1063,7 @@ describe('FormularioDoCandidatoComponent', () => {
     clicar(botao(tela, 'Buscar CEP'));
     digitar(tela.querySelector('input[id$="-numero"]') as HTMLInputElement, '12');
 
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toEqual({
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toEqual({
       cep: '68507590',
       logradouro: 'Rua Folha 31',
       numero: '12',
@@ -1083,7 +1087,19 @@ describe('FormularioDoCandidatoComponent', () => {
 
   it('o CEP que o Geo não encontra não preenche nada e orienta a busca dos Correios em nova aba', () => {
     resultadoDoCep = () =>
-      of({ ok: false, status: 404, problem: { type: 'x', title: 'x', status: 404 } } as never);
+      of(
+        apiFailure(
+          {
+            type: 'x',
+            title: 'x',
+            status: 404,
+            code: 'uniplus.geo.cep_nao_encontrado',
+            traceId: '',
+          },
+          404,
+          new HttpHeaders(),
+        ),
+      );
     const tela = montar(RESIDENCIA);
 
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68500000');
@@ -1106,17 +1122,16 @@ describe('FormularioDoCandidatoComponent', () => {
 
   const buscarCepComOrigem = (origem: string): HTMLElement => {
     resultadoDoCep = () =>
-      of({
-        ok: true,
-        data: {
+      of(
+        resultadoOk({
           ...CEP_DE_MARABA,
           logradouro: null,
           tipo: null,
           bairro: 'Nova Marabá',
           nivelResolucao: 'cidade',
           origem,
-        },
-      });
+        }),
+      );
     const tela = montar(RESIDENCIA);
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
     clicar(botao(tela, 'Buscar CEP'));
@@ -1125,17 +1140,16 @@ describe('FormularioDoCandidatoComponent', () => {
 
   it('o CEP de grande usuário não exige bairro nem logradouro, mesmo no nível da cidade', () => {
     resultadoDoCep = () =>
-      of({
-        ok: true,
-        data: {
+      of(
+        resultadoOk({
           ...CEP_DE_MARABA,
           logradouro: null,
           tipo: null,
           bairro: null,
           nivelResolucao: 'cidade',
           origem: 'grande-usuario',
-        },
-      });
+        }),
+      );
     const tela = montar(RESIDENCIA);
 
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
@@ -1144,7 +1158,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const bairro = tela.querySelector('input[id$="-bairro"]') as HTMLInputElement;
     expect(bairro.getAttribute('aria-required')).toBeNull();
     expect(bairro.readOnly).toBe(false);
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toMatchObject({
       cep: '68507590',
       origem: 'grande-usuario',
     });
@@ -1155,12 +1169,11 @@ describe('FormularioDoCandidatoComponent', () => {
 
     expect(tela.querySelector('[id$="-cep-faixa"]')).not.toBeNull();
     expect(tela.querySelector('[id$="-cep-confirmacao"]')?.getAttribute('role')).toBe('alert');
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
 
   it('o aviso do CEP geral descreve o campo CEP para o leitor de tela', () => {
-    resultadoDoCep = () =>
-      of({ ok: true, data: { ...CEP_DE_MARABA, bairro: null, origem: 'cep-geral' } });
+    resultadoDoCep = () => of(resultadoOk({ ...CEP_DE_MARABA, bairro: null, origem: 'cep-geral' }));
     const tela = montar(RESIDENCIA);
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
     clicar(botao(tela, 'Buscar CEP'));
@@ -1173,17 +1186,22 @@ describe('FormularioDoCandidatoComponent', () => {
 
   it('o CEP geral oficial mostra de qual cidade é e exige logradouro e bairro', () => {
     resultadoDoCep = () =>
-      of({
-        ok: true,
-        data: { ...CEP_DE_MARABA, logradouro: null, tipo: null, bairro: null, origem: 'cep-geral' },
-      });
+      of(
+        resultadoOk({
+          ...CEP_DE_MARABA,
+          logradouro: null,
+          tipo: null,
+          bairro: null,
+          origem: 'cep-geral',
+        }),
+      );
     const tela = montar(RESIDENCIA);
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
     clicar(botao(tela, 'Buscar CEP'));
 
     expect(tela.textContent).toContain('Este é o CEP geral de Marabá/PA');
     expect(tela.querySelector('input[id$="-bairro"]')?.getAttribute('aria-required')).toBe('true');
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
 
   it('o CEP que só cai numa faixa avisa, não preenche além da cidade e não vale sem confirmação', () => {
@@ -1202,7 +1220,7 @@ describe('FormularioDoCandidatoComponent', () => {
       ?.getAttribute('aria-describedby');
     expect(descricao).toContain(erro.id);
     expect(descricao).toContain(aviso.id);
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
 
   it('confirmado o CEP de faixa, logradouro e bairro são obrigatórios e a resposta leva cepConfirmado', () => {
@@ -1213,11 +1231,11 @@ describe('FormularioDoCandidatoComponent', () => {
     const bairro = tela.querySelector('input[id$="-bairro"]') as HTMLInputElement;
     expect([logradouro.value, bairro.value]).toEqual(['', '']);
     expect(logradouro.getAttribute('aria-required')).toBe('true');
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
 
     digitar(logradouro, 'Rua do Centro');
     digitar(bairro, 'Centro');
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toMatchObject({
       cepConfirmado: true,
       origem: 'faixa-cidade',
     });
@@ -1235,7 +1253,7 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(tela.querySelector('[id$="-cep-geral"]')).toBeNull();
     expect(tela.querySelector('input[id$="-bairro"]')?.getAttribute('aria-required')).toBeNull();
     expect(tela.textContent).toContain('Valide o CEP em "Buscar CEP"');
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
 
   it('trocar o CEP desfaz a confirmação', () => {
@@ -1246,7 +1264,7 @@ describe('FormularioDoCandidatoComponent', () => {
 
     clicar(botao(tela, 'Trocar CEP'));
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507');
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
     clicar(botao(tela, 'Buscar CEP'));
 
@@ -1262,7 +1280,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const bairro = tela.querySelector('input[id$="-bairro"]') as HTMLInputElement;
     expect([logradouro.readOnly, bairro.readOnly]).toEqual([false, false]);
     digitar(bairro, 'Cidade Nova');
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toMatchObject({
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toMatchObject({
       bairro: 'Cidade Nova',
     });
   });
@@ -1318,7 +1336,7 @@ describe('FormularioDoCandidatoComponent', () => {
     digitar(cep, '6850');
     clicar(botao(tela, 'Concluir a seção'));
 
-    expect(simulacoes.at(-1)?.respostas['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
     expect(tela.textContent).toContain('Responda este campo.');
     expect(cep.value).toBe('6850');
   });
@@ -1383,7 +1401,7 @@ describe('FormularioDoCandidatoComponent', () => {
         {
           ...DUAS_SECOES,
           etapas: [DUAS_SECOES.etapas[0]],
-          regras: { etapas: [DUAS_SECOES.regras.etapas[0]] },
+          regras: { etapas: DUAS_SECOES.regras.etapas?.slice(0, 1) },
         },
         { exigirSecaoValida: true },
       );

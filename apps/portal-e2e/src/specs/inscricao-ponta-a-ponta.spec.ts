@@ -26,6 +26,7 @@ interface Persona {
   readonly pai: string;
   readonly email: string;
   readonly celular: string;
+  readonly fixo?: string;
   readonly cep: string;
   readonly numero: string;
   readonly uf: string;

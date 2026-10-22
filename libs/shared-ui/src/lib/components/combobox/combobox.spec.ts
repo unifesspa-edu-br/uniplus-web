@@ -92,7 +92,7 @@ describe('ComboboxComponent', () => {
   it('a busca alcança também o nome do grupo', () => {
     digitar('renda');
 
-    expect(opcoes()).toHaveLength(2, 'o grupo inteiro entra quando o termo casa com ele');
+    expect(opcoes(), 'o grupo inteiro entra quando o termo casa com ele').toHaveLength(2);
     expect(nativo.textContent).toContain('Contracheque');
   });
 
@@ -144,10 +144,10 @@ describe('ComboboxComponent', () => {
     fixture.detectChanges();
 
     for (let passo = 0; passo < 4; passo += 1) teclar('ArrowDown');
-    expect(rotuloApontado()).toBe('CPF', 'a quarta descida chega à última opção do segundo grupo');
+    expect(rotuloApontado(), 'a quarta descida chega à última opção do segundo grupo').toBe('CPF');
 
     teclar('ArrowDown');
-    expect(rotuloApontado()).toBe('Contracheque', 'depois da última, volta à primeira');
+    expect(rotuloApontado(), 'depois da última, volta à primeira').toBe('Contracheque');
   });
 
   it('Home e End vão aos extremos da lista', () => {
@@ -179,7 +179,7 @@ describe('ComboboxComponent', () => {
 
     expect(fixture.componentInstance.escolhido()).toBe('irpf');
     expect(campo().getAttribute('aria-expanded')).toBe('false');
-    expect(campo().value).toBe('Declaração de IRPF', 'o campo passa a mostrar o que foi escolhido');
+    expect(campo().value, 'o campo passa a mostrar o que foi escolhido').toBe('Declaração de IRPF');
   });
 
   it('Escape fecha sem escolher e devolve o campo ao que mostrava', () => {
@@ -189,7 +189,7 @@ describe('ComboboxComponent', () => {
 
     teclar('Escape');
 
-    expect(fixture.componentInstance.escolhido()).toBe('rg', 'a escolha anterior permanece');
+    expect(fixture.componentInstance.escolhido(), 'a escolha anterior permanece').toBe('rg');
     expect(campo().value).toBe('RG');
     expect(campo().getAttribute('aria-expanded')).toBe('false');
   });
@@ -228,7 +228,7 @@ describe('ComboboxComponent', () => {
     expect(campo().value).toBe('');
 
     teclar('Escape');
-    expect(campo().value).toBe('RG', 'fechada, a lista devolve ao campo o que está escolhido');
+    expect(campo().value, 'fechada, a lista devolve ao campo o que está escolhido').toBe('RG');
   });
 
   /** A seta é a outra porta de reabertura, e precisa deixar o campo tão vazio quanto o foco. */
@@ -239,7 +239,7 @@ describe('ComboboxComponent', () => {
     campo().dispatchEvent(new Event('focus'));
     fixture.detectChanges();
     teclar('Escape');
-    expect(campo().value).toBe('RG', 'pré-condição: fechada, a lista devolveu o rótulo');
+    expect(campo().value, 'pré-condição: fechada, a lista devolveu o rótulo').toBe('RG');
 
     teclar('ArrowDown');
     expect(campo().value).toBe('');
@@ -359,9 +359,8 @@ describe('ComboboxComponent', () => {
       multi.componentInstance.escolhidas.set(['rg', 'contracheque']);
       multi.detectChanges();
 
-      expect(campoMulti().value).toBe(
+      expect(campoMulti().value, 'na ordem da lista, não na ordem em que foram marcadas').toBe(
         'Contracheque, RG',
-        'na ordem da lista, não na ordem em que foram marcadas',
       );
     });
 

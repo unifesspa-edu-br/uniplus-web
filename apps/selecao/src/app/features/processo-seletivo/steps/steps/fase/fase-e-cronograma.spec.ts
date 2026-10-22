@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { CaraterEtapa, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
@@ -263,11 +263,18 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
         {
           id: ID_ETAPA_GRAVADA,
           nome: 'Prova objetiva',
-          carater: 'classificatoria' as const,
+          carater: CaraterEtapa.classificatoria as const,
           tipoEtapaOrigemId: ID_TIPO_ETAPA,
           peso: '1',
           notaMinima: '',
           ordem: 1,
+          faseCodigo: '',
+          produtos: [],
+          inicio: '',
+          fim: '',
+          emiteParecerIndividual: false,
+          bancas: [],
+          recursos: [],
         },
       ],
     });

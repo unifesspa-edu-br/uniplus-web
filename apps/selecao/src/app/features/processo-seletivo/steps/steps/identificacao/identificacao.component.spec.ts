@@ -129,13 +129,7 @@ describe('IdentificacaoStepComponent', () => {
   /** Tudo que `validate()` exige, menos o anexo do edital. */
   function preencherPassoInteiro(): void {
     preencherCamposDoComando();
-    store.patchObjectSection('identificacao', {
-      numero: '12/2026',
-      ano: 2026,
-      data: '2026-09-01',
-      orgao: 'CEPS',
-      periodo: '1º semestre',
-    });
+    store.patchObjectSection('identificacao', {});
   }
 
   it('carrega as unidades administradoras da API de Organização', () => {
@@ -147,11 +141,6 @@ describe('IdentificacaoStepComponent', () => {
 
   it('exige unidade administradora e origem dos candidatos para avançar', () => {
     store.patchObjectSection('identificacao', {
-      numero: '12/2026',
-      ano: 2026,
-      data: '2026-09-01',
-      orgao: 'CEPS',
-      periodo: '1º semestre',
       nome: 'Processo Seletivo 2027',
     });
 
@@ -315,11 +304,6 @@ describe('IdentificacaoStepComponent', () => {
 
   it('exige a localidade para avançar', () => {
     store.patchObjectSection('identificacao', {
-      numero: '12/2026',
-      ano: 2026,
-      data: '2026-09-01',
-      orgao: 'CEPS',
-      periodo: '1º semestre',
       nome: 'Processo Seletivo 2027',
       unidadeAdministradoraId: UNIDADE_ID,
       origemCandidatos: OrigemCandidatos.inscricaoPropria,

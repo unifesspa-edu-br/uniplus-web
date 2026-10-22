@@ -461,10 +461,9 @@ describe('VagasStepComponent — gravação da distribuição', () => {
       i.rotulo.startsWith('Total publicado'),
     );
 
-    expect(informadas?.valor).toBe('80', 'duas ofertas de 40 vagas informadas');
-    expect(publicado?.valor).toBe(
+    expect(informadas?.valor, 'duas ofertas de 40 vagas informadas').toBe('80');
+    expect(publicado?.valor, 'duas ofertas cujo cálculo da regra publica 42 — é este o total do edital').toBe(
       '84',
-      'duas ofertas cujo cálculo da regra publica 42 — é este o total do edital',
     );
   });
 
@@ -1947,7 +1946,7 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
       formularios: [formularioDeInscricao(['NOME', 'CONCORRER_PCD'])],
       cronogramaFases: [FASE_DE_INSCRICAO],
     },
-  ): unknown {
+  ): Record<string, unknown> {
     return {
       id: PROCESSO_ID,
       distribuicaoVagas: [
@@ -1965,7 +1964,7 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
 
   /** Grava o quadro e responde o processo relido; o resto da gravação fica com o teste. */
   async function gravarQuadro(
-    processo: unknown = processoGravado(),
+    processo: Record<string, unknown> = processoGravado(),
   ): Promise<{ readonly gravacao: Promise<{ valid: boolean; messages?: readonly string[] }> }> {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_DISTRIBUICAO).flush(null, { status: 204, statusText: 'No Content' });

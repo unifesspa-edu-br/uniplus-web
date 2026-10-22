@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import type { AtoDoProcessoDto } from '@uniplus/shared-data/selecao';
+import { type AtoDoProcessoDto, SituacaoDoRegistroDoAto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { ArquivosDoAtoComponent } from './arquivos-do-ato.component';
@@ -23,9 +23,18 @@ function render(quantidadeDeAnexos: number, abrindo: string | null = null) {
     tipoCodigo: 'AVISO',
     tipoNome: 'Aviso',
     numero: null,
+    dataDoAto: '2027-01-10',
+    publicadoEm: '2027-01-10T12:00:00Z',
+    assinante: 'Reitoria',
+    situacao: SituacaoDoRegistroDoAto.registrado,
+    registradoEm: '2027-01-10T12:00:00Z',
+    pendenciaAcimaDoLimiar: false,
+    atoCorrigidoId: null,
+    motivoDaCorrecao: null,
+    politicaDeDivulgacaoConfirmada: true,
     documentoPrincipal: documento('principal'),
     anexos: Array.from({ length: quantidadeDeAnexos }, (_, i) => documento(`anexo-${i + 1}`)),
-  } as AtoDoProcessoDto;
+  };
   const abertos: string[] = [];
   fixture.componentInstance.abrir.subscribe((id) => abertos.push(id));
   fixture.componentRef.setInput('ato', ato);

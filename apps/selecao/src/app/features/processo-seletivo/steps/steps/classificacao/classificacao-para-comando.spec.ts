@@ -1,3 +1,4 @@
+import { CaraterEtapa } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -30,6 +31,7 @@ function classificacaoBase(): WizardDraft['classificacao'] {
     baseadoEmEnem: false,
     resolucaoPesoAreaEnem: '',
     regrasEliminacao: [],
+    edicoesEnem: [],
   };
 }
 
@@ -49,11 +51,18 @@ function etapa(patch: Partial<EtapaPontuada>): EtapaPontuada {
   return {
     id: 'etapa-1',
     nome: 'Prova objetiva',
-    carater: 'classificatoria',
+    carater: CaraterEtapa.classificatoria,
     tipoEtapaOrigemId: 'tipo-1',
     peso: '1',
     notaMinima: '',
     ordem: 1,
+    faseCodigo: '',
+    produtos: [],
+    inicio: '',
+    fim: '',
+    emiteParecerIndividual: false,
+    bancas: [],
+    recursos: [],
     ...patch,
   };
 }
@@ -274,19 +283,25 @@ describe('divisorDaMediaValido', () => {
   });
 
   it('é falso quando nenhuma etapa compõe a nota', () => {
-    expect(divisorDaMediaValido([etapa({ carater: 'eliminatoria', peso: '1' })])).toBe(false);
+    expect(divisorDaMediaValido([etapa({ carater: CaraterEtapa.eliminatoria, peso: '1' })])).toBe(
+      false,
+    );
   });
 
   it('é falso quando a única etapa que pontua tem peso zero', () => {
-    expect(divisorDaMediaValido([etapa({ carater: 'classificatoria', peso: '0' })])).toBe(false);
+    expect(
+      divisorDaMediaValido([etapa({ carater: CaraterEtapa.classificatoria, peso: '0' })]),
+    ).toBe(false);
   });
 
   it('é verdadeiro com ao menos uma etapa classificatória de peso positivo', () => {
-    expect(divisorDaMediaValido([etapa({ carater: 'classificatoria', peso: '1' })])).toBe(true);
+    expect(
+      divisorDaMediaValido([etapa({ carater: CaraterEtapa.classificatoria, peso: '1' })]),
+    ).toBe(true);
   });
 
   it('é verdadeiro para etapa de caráter "ambas"', () => {
-    expect(divisorDaMediaValido([etapa({ carater: 'ambas', peso: '2' })])).toBe(true);
+    expect(divisorDaMediaValido([etapa({ carater: CaraterEtapa.ambas, peso: '2' })])).toBe(true);
   });
 });
 

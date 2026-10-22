@@ -1227,7 +1227,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     store.patchObjectSection('identificacao', {
       nome: 'Vestibular 2027',
       unidadeAdministradoraId: 'unidade-1',
-      origemCandidatos: 'inscricaoPropria',
+      origemCandidatos: OrigemCandidatos.inscricaoPropria,
       localidade: MARABA,
       identificadorLegivel: 'vestibular-2027',
     });
@@ -1376,7 +1376,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     store.patchObjectSection('identificacao', {
       nome: 'Vestibular 2027',
       unidadeAdministradoraId: 'unidade-1',
-      origemCandidatos: 'inscricaoPropria',
+      origemCandidatos: OrigemCandidatos.inscricaoPropria,
       localidade: MARABA,
       identificadorLegivel: 'vestibular-2027',
     });
@@ -1440,7 +1440,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     store.patchObjectSection('identificacao', {
       nome: 'Vestibular 2027',
       unidadeAdministradoraId: 'unidade-1',
-      origemCandidatos: 'inscricaoPropria',
+      origemCandidatos: OrigemCandidatos.inscricaoPropria,
       localidade: MARABA,
       identificadorLegivel: 'vestibular-2027',
     });

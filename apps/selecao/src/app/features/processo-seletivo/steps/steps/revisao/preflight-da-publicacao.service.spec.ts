@@ -20,7 +20,7 @@ const ITENS: ItemConformidadeDto[] = [
 ];
 
 /** `obterConformidade()` devolve o item por dentro do envelope `ConformidadeProcessoSeletivoDto`, não o array cru. */
-const CONFORMIDADE: ConformidadeProcessoSeletivoDto = { processoSeletivoId: PROCESSO_ID, itens: ITENS };
+const CONFORMIDADE: ConformidadeProcessoSeletivoDto = { processoSeletivoId: PROCESSO_ID, itens: ITENS, avisos: [] };
 
 const LEGAL: ConformidadeLegalProcessoSeletivoDto = {
   processoSeletivoId: PROCESSO_ID,
@@ -290,6 +290,7 @@ describe('PreflightDaPublicacaoService', () => {
               itens: [
                 { codigo: 'x', dimensao: 'taxa_inscricao', mensagem: 'agora vermelho', ok: false },
               ],
+              avisos: [],
             } satisfies ConformidadeProcessoSeletivoDto,
             200,
             new HttpHeaders(),

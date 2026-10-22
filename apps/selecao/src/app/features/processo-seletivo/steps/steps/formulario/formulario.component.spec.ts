@@ -14,7 +14,11 @@ import {
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { ExigenciaDeDocumento, FaseDoCronograma } from '../../processo-seletivo.models';
+import type {
+  AtributosCongeladosDaFase,
+  ExigenciaDeDocumento,
+  FaseDoCronograma,
+} from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { comExigencia, exigenciaNova } from '../../shared/exigencias-documentais';
@@ -30,6 +34,16 @@ const ROTA_PROCESSO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
 const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
 const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
 
+const CONGELADOS_DA_INSCRICAO: AtributosCongeladosDaFase = {
+  donoTipico: 'CEPS',
+  origemData: 'PROPRIA',
+  agrupaEtapas: false,
+  coletaInscricao: true,
+  permiteComplementacao: false,
+  coletaSolicitacaoIsencao: false,
+  bancas: [],
+};
+
 const FASE_INSCRICAO: FaseDoCronograma = {
   faseCanonicaId: 'fc-inscricao',
   codigo: 'INSCRICAO',
@@ -41,15 +55,7 @@ const FASE_INSCRICAO: FaseDoCronograma = {
   emiteParecerIndividual: false,
   bancasRequeridas: [],
   regraRecurso: null,
-  congelados: {
-    donoTipico: 'CEPS',
-    origemData: 'PROPRIA',
-    agrupaEtapas: false,
-    coletaInscricao: true,
-    permiteComplementacao: false,
-    coletaSolicitacaoIsencao: false,
-    bancas: [],
-  },
+  congelados: CONGELADOS_DA_INSCRICAO,
 };
 
 const campo = (fatoCodigo: string, ordem: number, etapaCodigo: string) => ({
@@ -238,7 +244,7 @@ describe('FormularioStepComponent', () => {
         ...exigenciaNova(TIPO_LAUDO, 'INSCRICAO'),
         tipoDocumentoNome: 'Laudo médico',
         aplicabilidade: 'CONDICIONAL',
-        condicoes: [{ clausula: 0, ordem: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
+        condicoes: [{ clausula: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
         formatosPermitidos: ['PDF'],
         tamanhoMaximoBytes: 5 * 1024 * 1024,
       } as ExigenciaDeDocumento;
@@ -262,7 +268,7 @@ describe('FormularioStepComponent', () => {
     it('não diz que a fase não exige nada quando o documento ainda não tem formulário escolhido', () => {
       const dividida = {
         ...FASE_INSCRICAO,
-        congelados: { ...FASE_INSCRICAO.congelados, coletaSolicitacaoIsencao: true },
+        congelados: { ...CONGELADOS_DA_INSCRICAO, coletaSolicitacaoIsencao: true },
       };
       store.patchSection('cronograma', { ...store.draft().cronograma, fases: [dividida] });
       store.patchSection(
@@ -281,7 +287,7 @@ describe('FormularioStepComponent', () => {
       const antes = {
         ...FASE_INSCRICAO,
         codigo: 'ANTES',
-        congelados: { ...FASE_INSCRICAO.congelados, coletaInscricao: false },
+        congelados: { ...CONGELADOS_DA_INSCRICAO, coletaInscricao: false },
       };
       store.patchSection('cronograma', {
         ...store.draft().cronograma,
@@ -368,7 +374,7 @@ describe('FormularioStepComponent', () => {
     const exigencia = {
       ...exigenciaNova('01960000-0000-7000-0000-0000000000d1', 'INSCRICAO'),
       aplicabilidade: 'CONDICIONAL',
-      condicoes: [{ clausula: 0, ordem: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
+      condicoes: [{ clausula: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
     } as ExigenciaDeDocumento;
     store.patchSection('documentos', comExigencia({ raizes: [], emTodasAsFases: [] }, exigencia));
     fixture.detectChanges();
@@ -773,7 +779,7 @@ describe('FormularioStepComponent', () => {
       const exigencia = {
         ...exigenciaNova('01960000-0000-7000-0000-0000000000d1', 'INSCRICAO'),
         aplicabilidade: 'CONDICIONAL',
-        condicoes: [{ clausula: 0, ordem: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
+        condicoes: [{ clausula: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
       } as ExigenciaDeDocumento;
       store.patchSection('documentos', comExigencia({ raizes: [], emTodasAsFases: [] }, exigencia));
 
@@ -818,7 +824,7 @@ describe('FormularioStepComponent', () => {
         faseCanonicaId: 'fc-habilitacao',
         codigo: 'HABILITACAO',
         ordem: 1,
-        congelados: { ...FASE_INSCRICAO.congelados, coletaInscricao: false },
+        congelados: { ...CONGELADOS_DA_INSCRICAO, coletaInscricao: false },
       };
       store.patchSection('cronograma', {
         ...store.draft().cronograma,

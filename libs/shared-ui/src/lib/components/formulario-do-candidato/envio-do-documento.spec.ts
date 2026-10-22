@@ -29,6 +29,8 @@ describe('Envio do arquivo de um documento exigido', () => {
   let fixture: ComponentFixture<EnvioDoDocumentoComponent>;
   let envio: {
     arquivos: ReturnType<typeof signal<readonly ArquivoEnviado[]>>;
+    mudancas: ReturnType<typeof signal<number>>;
+    ocupado: ReturnType<typeof signal<boolean>>;
     enviar: ReturnType<typeof vi.fn>;
     remover: ReturnType<typeof vi.fn>;
   };

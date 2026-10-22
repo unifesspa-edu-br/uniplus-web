@@ -3,12 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import {
-  OrigemCandidatos,
-  ProcessoSeletivoDto,
-  SELECAO_BASE_PATH,
-  StatusProcesso,
-} from '@uniplus/shared-data/selecao';
+import { CaraterEtapa, OrigemCandidatos, ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { CriterioDesempateConfigurado, EtapaPontuada } from '../../processo-seletivo.models';
@@ -27,11 +22,18 @@ const ROTA_DESEMPATE = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/c
 const ETAPA_PERSISTIDA: EtapaPontuada = {
   id: 'etapa-1',
   nome: 'Prova objetiva',
-  carater: 'classificatoria',
+  carater: CaraterEtapa.classificatoria,
   tipoEtapaOrigemId: 'tipo-1',
   peso: '1',
   notaMinima: '',
   ordem: 1,
+  faseCodigo: '',
+  produtos: [],
+  inicio: '',
+  fim: '',
+  emiteParecerIndividual: false,
+  bancas: [],
+  recursos: [],
 };
 
 /** O catálogo institucional, como a API o publica — só o que o predicado pode citar. */

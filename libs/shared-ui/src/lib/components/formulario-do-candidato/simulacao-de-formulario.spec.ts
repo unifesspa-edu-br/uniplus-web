@@ -1,5 +1,7 @@
+import { HttpHeaders } from '@angular/common/http';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { apiOk } from '@uniplus/shared-core/http';
 
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
 import { interpretarFormulario } from './interpretador/interpretador';
@@ -11,6 +13,8 @@ import {
 } from './simulacao-de-formulario';
 
 const SECAO = 'Inscricao:DADOS';
+
+const resultadoOk = <T>(data: T) => apiOk(data, 200, new HttpHeaders());
 
 /** O nascimento de até 120 anos antes do envio até o envio: a faixa que o editor declara. */
 const COM_FAIXA_DE_DATA: FormularioDoCandidato = {
@@ -103,7 +107,7 @@ describe('SimulacaoDeFormularioComponent', () => {
 
   it('o pressuposto sem apresentação é informado na forma escolhida e muda o que o formulário mostra', () => {
     const tela = montar(() =>
-      of({ ok: true, data: { etapas: [], campos: [], grupos: [], termos: [] } }),
+      of(resultadoOk({ etapas: [], campos: [], grupos: [], termos: [] })),
     );
     expect(tela.textContent).toContain('Calculado pelo sistema a partir de VINCULO_EMPREGATICIO.');
     expect(tela.textContent).not.toContain('Prefere o turno noturno?');
@@ -123,8 +127,8 @@ describe('SimulacaoDeFormularioComponent', () => {
       const local = interpretarFormulario(simulacao.regras, simulacao);
       return of(
         local.valida
-          ? { ok: true as const, data: local.avaliacao }
-          : { ok: true as const, data: { etapas: [], campos: [], grupos: [], termos: [] } },
+          ? resultadoOk(local.avaliacao)
+          : resultadoOk({ etapas: [], campos: [], grupos: [], termos: [] }),
       );
     });
 
@@ -143,7 +147,7 @@ describe('SimulacaoDeFormularioComponent', () => {
     const conferirTudo = (): HTMLElement => {
       const tela = montar((simulacao) => {
         enviadas.push(simulacao);
-        return of({ ok: true as const, data: { etapas: [], campos: [], grupos: [], termos: [] } });
+        return of(resultadoOk({ etapas: [], campos: [], grupos: [], termos: [] }));
       });
       clicar(
         [...tela.querySelectorAll('button')].find(
@@ -165,7 +169,7 @@ describe('SimulacaoDeFormularioComponent', () => {
       const tela = montar(
         (simulacao) => {
           enviadas.push(simulacao);
-          return of({ ok: true as const, data: { etapas: [], campos: [], grupos: [], termos: [] } });
+          return of(resultadoOk({ etapas: [], campos: [], grupos: [], termos: [] }));
         },
         { envio },
       );
@@ -182,7 +186,7 @@ describe('SimulacaoDeFormularioComponent', () => {
   describe('avaliação da faixa de data', () => {
     const envio = { instante: '2026-10-12T02:30:00Z', fuso: 'America/Belem' };
     const sempreOk = (): ReturnType<ConferenciaComOServidor> =>
-      of({ ok: true as const, data: { etapas: [], campos: [], grupos: [], termos: [] } });
+      of(resultadoOk({ etapas: [], campos: [], grupos: [], termos: [] }));
     const digitar = (tela: HTMLElement, valor: string): HTMLInputElement => {
       const input = tela.querySelector('input[type="date"]') as HTMLInputElement;
       input.value = valor;
