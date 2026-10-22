@@ -1053,6 +1053,421 @@
         ]
       }
     },
+    "/api/selecao/processos-seletivos/{id}/inscricao/documentos/envios": {
+      "post": {
+        "tags": [
+          "DocumentosDaInscricao"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Requisi\u00E7\u00E3o concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Conclu\u00EDda a opera\u00E7\u00E3o anterior, a repeti\u00E7\u00E3o recebe em replay o resultado dela quando ele \u00E9 guard\u00E1vel; n\u00E3o sendo (5xx, cancelamento, ou conflito que a pr\u00F3pria resposta declara retent\u00E1vel), a reserva \u00E9 liberada e a repeti\u00E7\u00E3o executa de novo.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/selecao/processos-seletivos/{id}/inscricao/documentos/envios/{arquivoId}/confirmacao": {
+      "post": {
+        "tags": [
+          "DocumentosDaInscricao"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "arquivoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArquivoDaApresentacaoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArquivoDaApresentacaoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArquivoDaApresentacaoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/selecao/processos-seletivos/{id}/inscricao/documentos/arquivos/{arquivoId}": {
+      "delete": {
+        "tags": [
+          "DocumentosDaInscricao"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "arquivoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
     "/api/selecao/processos-seletivos/{id}/formularios/{finalidade}": {
       "get": {
         "tags": [
@@ -9840,6 +10255,248 @@
         ]
       }
     },
+    "/api/selecao/processos-seletivos/{processoSeletivoId}/produtos-previstos": {
+      "get": {
+        "tags": [
+          "ProdutosPrevistosDoProcesso"
+        ],
+        "parameters": [
+          {
+            "name": "processoSeletivoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.produtos-previstos-do-processo.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProdutosPrevistosDoProcessoDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/selecao/processos-seletivos/{processoSeletivoId}/produtos-previstos/{produtoId}/publicacoes": {
+      "post": {
+        "tags": [
+          "ProdutosPrevistosDoProcesso"
+        ],
+        "parameters": [
+          {
+            "name": "processoSeletivoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "produtoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicarProdutoDoEditalRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicarProdutoDoEditalRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicarProdutoDoEditalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtoPublicadoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtoPublicadoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtoPublicadoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
     "/api/selecao/regras-catalogo": {
       "get": {
         "tags": [
@@ -10126,663 +10783,6 @@
             }
           }
         }
-      }
-    },
-    "/api/selecao/processos-seletivos/{processoSeletivoId}/produtos-previstos": {
-      "get": {
-        "tags": [
-          "ProdutosPrevistosDoProcesso"
-        ],
-        "parameters": [
-          {
-            "name": "processoSeletivoId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.uniplus.produtos-previstos-do-processo.v1\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProdutosPrevistosDoProcessoDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "406": {
-            "description": "Not Acceptable",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/api/selecao/processos-seletivos/{processoSeletivoId}/produtos-previstos/{produtoId}/publicacoes": {
-      "post": {
-        "tags": [
-          "ProdutosPrevistosDoProcesso"
-        ],
-        "parameters": [
-          {
-            "name": "processoSeletivoId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "produtoId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
-            "required": true,
-            "schema": {
-              "maxLength": 255,
-              "minLength": 1,
-              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PublicarProdutoDoEditalRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PublicarProdutoDoEditalRequest"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/PublicarProdutoDoEditalRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "202": {
-            "description": "Accepted",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/AtoPublicadoDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AtoPublicadoDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AtoPublicadoDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "x-uniplus-idempotent": true
-      }
-    },
-    "/api/selecao/processos-seletivos/{id}/inscricao/documentos/envios": {
-      "post": {
-        "tags": [
-          "DocumentosDaInscricao"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
-            "required": true,
-            "schema": {
-              "maxLength": 255,
-              "minLength": 1,
-              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoRequest"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IniciarEnvioDeDocumentoDaInscricaoDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Requisi\u00E7\u00E3o concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Conclu\u00EDda a opera\u00E7\u00E3o anterior, a repeti\u00E7\u00E3o recebe em replay o resultado dela quando ele \u00E9 guard\u00E1vel; n\u00E3o sendo (5xx, cancelamento, ou conflito que a pr\u00F3pria resposta declara retent\u00E1vel), a reserva \u00E9 liberada e a repeti\u00E7\u00E3o executa de novo.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "x-uniplus-idempotent": true
-      }
-    },
-    "/api/selecao/processos-seletivos/{id}/inscricao/documentos/envios/{arquivoId}/confirmacao": {
-      "post": {
-        "tags": [
-          "DocumentosDaInscricao"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "arquivoId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
-            "required": true,
-            "schema": {
-              "maxLength": 255,
-              "minLength": 1,
-              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArquivoDaApresentacaoDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArquivoDaApresentacaoDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArquivoDaApresentacaoDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service Unavailable",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "x-uniplus-idempotent": true
-      }
-    },
-    "/api/selecao/processos-seletivos/{id}/inscricao/documentos/arquivos/{arquivoId}": {
-      "delete": {
-        "tags": [
-          "DocumentosDaInscricao"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "arquivoId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
-            "required": true,
-            "schema": {
-              "maxLength": 255,
-              "minLength": 1,
-              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "x-uniplus-idempotent": true
       }
     }
   },
@@ -11191,6 +11191,81 @@
           }
         }
       },
+      "ArquivoDaApresentacaoDto": {
+        "required": [
+          "arquivoId",
+          "apresentacaoId",
+          "exigenciaId",
+          "ocorrenciaId",
+          "tipoDeMidia",
+          "tamanhoBytes",
+          "hashSha256",
+          "confirmadoEm"
+        ],
+        "type": "object",
+        "properties": {
+          "arquivoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "apresentacaoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "exigenciaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ocorrenciaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tipoDeMidia": {
+            "type": "string"
+          },
+          "tamanhoBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "hashSha256": {
+            "type": "string"
+          },
+          "confirmadoEm": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ArquivoDoComprovanteDto": {
+        "required": [
+          "hashSha256",
+          "tamanhoBytes",
+          "formato"
+        ],
+        "type": "object",
+        "properties": {
+          "hashSha256": {
+            "type": "string"
+          },
+          "tamanhoBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "formato": {
+            "type": "string"
+          }
+        }
+      },
       "AtendimentoCertameDto": {
         "required": [
           "condicoes",
@@ -11233,7 +11308,6 @@
           "pendenciaAcimaDoLimiar",
           "atoCorrigidoId",
           "motivoDaCorrecao",
-          "produtoDoEditalId",
           "politicaDeDivulgacaoConfirmada",
           "documentoPrincipal",
           "anexos"
@@ -11292,13 +11366,6 @@
               "null",
               "string"
             ]
-          },
-          "produtoDoEditalId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
           },
           "politicaDeDivulgacaoConfirmada": {
             "type": "boolean"
@@ -12058,6 +12125,7 @@
           "derivados",
           "grupos",
           "aceites",
+          "documentos",
           "modalidades",
           "modalidadesSegundaOpcao"
         ],
@@ -12112,6 +12180,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AceiteDeTermoInput"
+            }
+          },
+          "documentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentoDoComprovanteDto"
             }
           },
           "modalidades": {
@@ -13888,6 +13962,43 @@
           }
         }
       },
+      "DocumentoDoAtoCertameDto": {
+        "required": [
+          "papel",
+          "nome",
+          "tipoDeMidia",
+          "tamanhoBytes",
+          "hashSha256",
+          "urlDownload"
+        ],
+        "type": "object",
+        "properties": {
+          "papel": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "tipoDeMidia": {
+            "type": "string"
+          },
+          "tamanhoBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "hashSha256": {
+            "type": "string"
+          },
+          "urlDownload": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
       "DocumentoDoAtoDto": {
         "required": [
           "documentoAPublicarId",
@@ -13919,6 +14030,55 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "DocumentoDoComprovanteDto": {
+        "required": [
+          "exigenciaId",
+          "tipoDocumentoCodigo",
+          "nome",
+          "obrigatorio",
+          "situacao",
+          "ocorrenciaId",
+          "consequencia",
+          "arquivos"
+        ],
+        "type": "object",
+        "properties": {
+          "exigenciaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipoDocumentoCodigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "obrigatorio": {
+            "type": "boolean"
+          },
+          "situacao": {
+            "type": "string"
+          },
+          "ocorrenciaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "consequencia": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "arquivos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArquivoDoComprovanteDto"
+            }
           }
         }
       },
@@ -14136,7 +14296,8 @@
       "EditalPublicadoCertameDto": {
         "required": [
           "atoId",
-          "urlDownload"
+          "urlDownload",
+          "documentos"
         ],
         "type": "object",
         "properties": {
@@ -14147,6 +14308,12 @@
           "urlDownload": {
             "type": "string",
             "format": "uri"
+          },
+          "documentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentoDoAtoCertameDto"
+            }
           }
         }
       },
@@ -14217,6 +14384,39 @@
           },
           "emiteParecerIndividual": {
             "type": "boolean"
+          }
+        }
+      },
+      "EtapaComProdutosPrevistosDto": {
+        "required": [
+          "id",
+          "nome",
+          "ordem",
+          "produtos"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "produtos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProdutoPrevistoDto"
+            }
           }
         }
       },
@@ -14631,6 +14831,45 @@
                 "$ref": "#/components/schemas/ModeloDocumentalCertameDto"
               }
             ]
+          }
+        }
+      },
+      "FaseComProdutosPrevistosDto": {
+        "required": [
+          "id",
+          "codigo",
+          "ordem",
+          "produtos",
+          "etapas"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "produtos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProdutoPrevistoDto"
+            }
+          },
+          "etapas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EtapaComProdutosPrevistosDto"
+            }
           }
         }
       },
@@ -15965,6 +16204,31 @@
           }
         }
       },
+      "ImpedimentoDoProduto": {
+        "enum": [
+          "jaPublicado",
+          "aguardaConfirmacaoDoRegistro",
+          "preliminarNaoPublicado",
+          "preliminarAguardaConfirmacao",
+          "tipoDeAtoNaoVigente"
+        ],
+        "type": "string"
+      },
+      "ImpedimentoDoProdutoDto": {
+        "required": [
+          "motivo",
+          "mensagem"
+        ],
+        "type": "object",
+        "properties": {
+          "motivo": {
+            "$ref": "#/components/schemas/ImpedimentoDoProduto"
+          },
+          "mensagem": {
+            "type": "string"
+          }
+        }
+      },
       "ImpedimentoDto": {
         "required": [
           "quando",
@@ -16010,6 +16274,80 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "IniciarEnvioDeDocumentoDaInscricaoDto": {
+        "required": [
+          "arquivoId",
+          "apresentacaoId",
+          "urlUpload",
+          "contentTypeExigido",
+          "expiraEm"
+        ],
+        "type": "object",
+        "properties": {
+          "arquivoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "apresentacaoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "urlUpload": {
+            "type": "string",
+            "format": "uri"
+          },
+          "contentTypeExigido": {
+            "type": "string"
+          },
+          "expiraEm": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IniciarEnvioDeDocumentoDaInscricaoRequest": {
+        "required": [
+          "exigenciaId",
+          "ocorrenciaId",
+          "apresentacaoId",
+          "tipoDeMidia",
+          "tamanhoBytes"
+        ],
+        "type": "object",
+        "properties": {
+          "exigenciaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ocorrenciaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "apresentacaoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "tipoDeMidia": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tamanhoBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
           }
         }
       },
@@ -18379,6 +18717,107 @@
           }
         }
       },
+      "ProdutoPrevistoDto": {
+        "required": [
+          "id",
+          "tipoCodigo",
+          "tipoNome",
+          "papel",
+          "situacao",
+          "ato",
+          "correcoes",
+          "podePublicar",
+          "impedimento"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipoCodigo": {
+            "type": "string"
+          },
+          "tipoNome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "papel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoDoProdutoPrevisto"
+          },
+          "ato": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AtoDoProcessoDto"
+              }
+            ]
+          },
+          "correcoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AtoDoProcessoDto"
+            }
+          },
+          "podePublicar": {
+            "type": "boolean"
+          },
+          "impedimento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ImpedimentoDoProdutoDto"
+              }
+            ]
+          }
+        }
+      },
+      "ProdutosPrevistosDoProcessoDto": {
+        "required": [
+          "numeroDaVersao",
+          "politicaDeDivulgacao",
+          "fases",
+          "etapasSemFase"
+        ],
+        "type": "object",
+        "properties": {
+          "numeroDaVersao": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "politicaDeDivulgacao": {
+            "$ref": "#/components/schemas/ConfiguracaoDivulgacaoDto"
+          },
+          "fases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FaseComProdutosPrevistosDto"
+            }
+          },
+          "etapasSemFase": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EtapaComProdutosPrevistosDto"
+            }
+          }
+        }
+      },
       "PublicarAtoAvulsoDoProcessoRequest": {
         "required": [
           "tipoAtoCodigo",
@@ -18478,6 +18917,60 @@
             "items": {
               "$ref": "#/components/schemas/AnexoDoEditalRequest"
             }
+          }
+        }
+      },
+      "PublicarProdutoDoEditalRequest": {
+        "required": [
+          "numero",
+          "dataPublicacao",
+          "assinante",
+          "documentoPrincipalId"
+        ],
+        "type": "object",
+        "properties": {
+          "numero": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dataPublicacao": {
+            "type": "string",
+            "format": "date"
+          },
+          "assinante": {
+            "type": "string"
+          },
+          "documentoPrincipalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anexos": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AnexoDoAtoRequest"
+            }
+          },
+          "politicaDeDivulgacaoConfirmada": {
+            "type": "boolean",
+            "default": false
+          },
+          "atoCorrigidoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "motivoDaCorrecao": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -19566,6 +20059,14 @@
         ],
         "type": "string"
       },
+      "SituacaoDoProdutoPrevisto": {
+        "enum": [
+          "aberto",
+          "pendente",
+          "publicado"
+        ],
+        "type": "string"
+      },
       "SituacaoDoRegistroDoAto": {
         "enum": [
           "pendente",
@@ -20182,391 +20683,6 @@
             ]
           }
         }
-      },
-      "EtapaComProdutosPrevistosDto": {
-        "required": [
-          "id",
-          "nome",
-          "ordem",
-          "produtos"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "nome": {
-            "type": "string"
-          },
-          "ordem": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "produtos": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProdutoPrevistoDto"
-            }
-          }
-        }
-      },
-      "FaseComProdutosPrevistosDto": {
-        "required": [
-          "id",
-          "codigo",
-          "ordem",
-          "produtos",
-          "etapas"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "codigo": {
-            "type": "string"
-          },
-          "ordem": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "produtos": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProdutoPrevistoDto"
-            }
-          },
-          "etapas": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EtapaComProdutosPrevistosDto"
-            }
-          }
-        }
-      },
-      "ImpedimentoDoProduto": {
-        "enum": [
-          "jaPublicado",
-          "aguardaConfirmacaoDoRegistro",
-          "preliminarNaoPublicado",
-          "preliminarAguardaConfirmacao",
-          "tipoDeAtoNaoVigente"
-        ],
-        "type": "string"
-      },
-      "ImpedimentoDoProdutoDto": {
-        "required": [
-          "motivo",
-          "mensagem"
-        ],
-        "type": "object",
-        "properties": {
-          "motivo": {
-            "$ref": "#/components/schemas/ImpedimentoDoProduto"
-          },
-          "mensagem": {
-            "type": "string"
-          }
-        }
-      },
-      "ProdutoPrevistoDto": {
-        "required": [
-          "id",
-          "tipoCodigo",
-          "tipoNome",
-          "papel",
-          "situacao",
-          "ato",
-          "correcoes",
-          "podePublicar",
-          "impedimento"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "tipoCodigo": {
-            "type": "string"
-          },
-          "tipoNome": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "papel": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "situacao": {
-            "$ref": "#/components/schemas/SituacaoDoProdutoPrevisto"
-          },
-          "ato": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/AtoDoProcessoDto"
-              }
-            ]
-          },
-          "correcoes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AtoDoProcessoDto"
-            }
-          },
-          "podePublicar": {
-            "type": "boolean"
-          },
-          "impedimento": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/ImpedimentoDoProdutoDto"
-              }
-            ]
-          }
-        }
-      },
-      "ProdutosPrevistosDoProcessoDto": {
-        "required": [
-          "numeroDaVersao",
-          "politicaDeDivulgacao",
-          "fases",
-          "etapasSemFase"
-        ],
-        "type": "object",
-        "properties": {
-          "numeroDaVersao": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "politicaDeDivulgacao": {
-            "$ref": "#/components/schemas/ConfiguracaoDivulgacaoDto"
-          },
-          "fases": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FaseComProdutosPrevistosDto"
-            }
-          },
-          "etapasSemFase": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EtapaComProdutosPrevistosDto"
-            }
-          }
-        }
-      },
-      "PublicarProdutoDoEditalRequest": {
-        "required": [
-          "numero",
-          "dataPublicacao",
-          "assinante",
-          "documentoPrincipalId"
-        ],
-        "type": "object",
-        "properties": {
-          "numero": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "dataPublicacao": {
-            "type": "string",
-            "format": "date"
-          },
-          "assinante": {
-            "type": "string"
-          },
-          "documentoPrincipalId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "anexos": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "$ref": "#/components/schemas/AnexoDoAtoRequest"
-            }
-          },
-          "politicaDeDivulgacaoConfirmada": {
-            "type": "boolean",
-            "default": false
-          },
-          "atoCorrigidoId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
-          },
-          "motivoDaCorrecao": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "SituacaoDoProdutoPrevisto": {
-        "enum": [
-          "aberto",
-          "pendente",
-          "publicado"
-        ],
-        "type": "string"
-      },
-      "ArquivoDaApresentacaoDto": {
-        "required": [
-          "arquivoId",
-          "apresentacaoId",
-          "exigenciaId",
-          "ocorrenciaId",
-          "tipoDeMidia",
-          "tamanhoBytes",
-          "hashSha256",
-          "confirmadoEm"
-        ],
-        "type": "object",
-        "properties": {
-          "arquivoId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "apresentacaoId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "exigenciaId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "ocorrenciaId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "tipoDeMidia": {
-            "type": "string"
-          },
-          "tamanhoBytes": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
-          },
-          "hashSha256": {
-            "type": "string"
-          },
-          "confirmadoEm": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "IniciarEnvioDeDocumentoDaInscricaoDto": {
-        "required": [
-          "arquivoId",
-          "apresentacaoId",
-          "urlUpload",
-          "contentTypeExigido",
-          "expiraEm"
-        ],
-        "type": "object",
-        "properties": {
-          "arquivoId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "apresentacaoId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "urlUpload": {
-            "type": "string",
-            "format": "uri"
-          },
-          "contentTypeExigido": {
-            "type": "string"
-          },
-          "expiraEm": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "IniciarEnvioDeDocumentoDaInscricaoRequest": {
-        "required": [
-          "exigenciaId",
-          "ocorrenciaId",
-          "apresentacaoId",
-          "tipoDeMidia",
-          "tamanhoBytes"
-        ],
-        "type": "object",
-        "properties": {
-          "exigenciaId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "ocorrenciaId": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "apresentacaoId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
-          },
-          "tipoDeMidia": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "tamanhoBytes": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int64"
-          }
-        }
       }
     },
     "securitySchemes": {
@@ -20595,6 +20711,9 @@
       "name": "DocumentosAPublicar"
     },
     {
+      "name": "DocumentosDaInscricao"
+    },
+    {
       "name": "Formularios"
     },
     {
@@ -20611,6 +20730,9 @@
     },
     {
       "name": "ProcessoSeletivo"
+    },
+    {
+      "name": "ProdutosPrevistosDoProcesso"
     },
     {
       "name": "RegrasCatalogo"
