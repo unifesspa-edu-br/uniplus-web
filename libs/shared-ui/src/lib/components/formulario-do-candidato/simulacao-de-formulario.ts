@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
+import { FUSO_INSTITUCIONAL } from '@uniplus/shared-utils';
 import type { Observable, Subscription } from 'rxjs';
 
 import { AlertComponent } from '../alert/alert';
@@ -24,6 +25,7 @@ import type { FormularioDoCandidato } from './formulario-do-candidato.model';
 import { interpretarFormulario } from './interpretador/interpretador';
 import type {
   AvaliacaoDoFormulario,
+  EnvioDasRespostas,
   RegrasDoFormulario,
   SimulacaoDoFormulario,
   ValorJson,
@@ -37,6 +39,7 @@ export interface SimulacaoParaConferir {
   readonly grupos: NonNullable<SimulacaoDoFormulario['grupos']> | null;
   readonly etapasConcluidas: readonly string[] | null;
   readonly pressupostos: Readonly<Record<string, ValorJson>> | null;
+  readonly envio: EnvioDasRespostas | null;
 }
 
 /**
@@ -166,6 +169,7 @@ type Conferencia =
       [inicial]="inicial()"
       [pressupostos]="pressupostos()"
       [documentos]="documentos()"
+      [envio]="envio()"
       (simulacaoChange)="simulacao.set($event)"
     />
   `,
@@ -191,6 +195,15 @@ export class SimulacaoDeFormularioComponent {
   protected readonly pressupostos = linkedSignal<unknown, Readonly<Record<string, ValorJson>>>({
     source: this.partida,
     computation: () => ({ ...(this.inicial()?.pressupostos ?? {}) }),
+  });
+  /**
+   * O envio que a simulação supõe para os limites de data: o do caso importado ou, sem ele, o dia de
+   * agora no fuso institucional. A simulação não envia nada, e o servidor confere com o mesmo envio.
+   */
+  protected readonly envio = linkedSignal<unknown, EnvioDasRespostas>({
+    source: this.partida,
+    computation: () =>
+      this.inicial()?.envio ?? { instante: new Date().toISOString(), fuso: FUSO_INSTITUCIONAL },
   });
   protected readonly simulacao = signal<SimulacaoDoFormulario>({});
   protected readonly conferencia = linkedSignal<unknown, Conferencia | null>({
@@ -240,6 +253,7 @@ export class SimulacaoDeFormularioComponent {
       grupos: simulacao.grupos ?? null,
       etapasConcluidas: simulacao.etapasConcluidas ?? null,
       pressupostos: simulacao.pressupostos ?? null,
+      envio: simulacao.envio ?? null,
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {

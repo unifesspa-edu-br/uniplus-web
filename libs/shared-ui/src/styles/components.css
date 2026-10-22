@@ -1186,7 +1186,8 @@ ui-secao-do-formulario {
 
 .editor-formulario__bases,
 .editor-formulario__restricoes,
-.editor-formulario__restricao {
+.editor-formulario__restricao,
+.editor-formulario__limite {
   display: grid;
   gap: var(--space-3);
   margin: 0;
@@ -1199,7 +1200,9 @@ ui-secao-do-formulario {
 }
 
 .editor-formulario__restricoes > .form-grid,
-.editor-formulario__restricao > .form-grid {
+.editor-formulario__restricao > .form-grid,
+.editor-formulario__limite > .form-grid,
+.editor-formulario__limite > .field {
   width: 100%;
 }
 

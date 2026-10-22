@@ -1,3 +1,5 @@
+import { diaDoCalendario } from '@uniplus/shared-utils';
+
 import type { DocumentoExigidoDoFormulario } from '../editor-de-documentos-exigidos/documentos-exigidos';
 import {
   OPERADOR_DIFERENTE,
@@ -11,6 +13,11 @@ import {
   FATO_PARENTESCO,
   PROPRIO_CANDIDATO,
 } from '../formulario-do-candidato/interpretador/ocorrencia-do-candidato';
+import {
+  minimaDepoisDaMaxima,
+  TETO_DE_ANOS,
+  TETO_DE_DIAS,
+} from '../formulario-do-candidato/interpretador/restricoes';
 
 /**
  * O conteúdo de um formulário — o do modelo, na Configuração, e o do processo, na Seleção — na
@@ -33,12 +40,26 @@ export interface OpcoesCondicionadas {
   readonly valores: readonly string[];
 }
 
+/**
+ * Um limite da faixa de data: `DATA_FIXA` com a data `AAAA-MM-DD`, ou `ENVIO` com os anos e os dias
+ * somados ao dia do envio. O deslocamento viaja como texto quando o administrador digitou o que não é
+ * número, para o problema dizer o quê.
+ */
+export interface LimiteDeDataNoWire {
+  readonly ancora: string;
+  readonly data?: null | string;
+  readonly anos?: null | number | string;
+  readonly dias?: null | number | string;
+}
+
 export interface RestricaoDeValor {
   readonly tipo: string;
   readonly minimo?: null | number | string;
   readonly maximo?: null | number | string;
   readonly entradas?: null | readonly OpcoesCondicionadas[];
   readonly fatos?: null | readonly string[];
+  readonly dataMinima?: null | LimiteDeDataNoWire;
+  readonly dataMaxima?: null | LimiteDeDataNoWire;
 }
 
 export interface Impedimento {
@@ -699,6 +720,10 @@ export const RESTRICAO_TAMANHO_TEXTO = 'TAMANHO_TEXTO';
 export const RESTRICAO_OPCOES_PERMITIDAS = 'OPCOES_PERMITIDAS';
 export const RESTRICAO_OPCOES_DAS_RESPOSTAS = 'OPCOES_DAS_RESPOSTAS';
 export const RESTRICAO_MUNICIPIOS_DA_UF = 'MUNICIPIOS_DA_UF';
+export const RESTRICAO_FAIXA_DE_DATA = 'FAIXA_DE_DATA';
+
+export const ANCORA_DATA_FIXA = 'DATA_FIXA';
+export const ANCORA_ENVIO = 'ENVIO';
 
 export const RESTRICOES: readonly OpcaoDoFormulario[] = [
   { valor: RESTRICAO_FAIXA_NUMERICA, rotulo: 'Faixa de valores' },
@@ -706,6 +731,7 @@ export const RESTRICOES: readonly OpcaoDoFormulario[] = [
   { valor: RESTRICAO_OPCOES_PERMITIDAS, rotulo: 'Opções permitidas' },
   { valor: RESTRICAO_OPCOES_DAS_RESPOSTAS, rotulo: 'Opções das respostas anteriores' },
   { valor: RESTRICAO_MUNICIPIOS_DA_UF, rotulo: 'Municípios da UF respondida' },
+  { valor: RESTRICAO_FAIXA_DE_DATA, rotulo: 'Faixa de datas' },
 ];
 
 /** As casas decimais que a faixa admite: as do edital (`FormaDoItem.CasasDecimaisDaFaixa`). */
@@ -716,7 +742,7 @@ const TIPOS_DE_SELECAO = new Set(['SELECAO_UNICA', 'SELECAO_MULTIPLA']);
  * As restrições que o administrador pode acrescentar ao campo: a faixa no numérico, o tamanho no de
  * texto e, na seleção, as opções permitidas — quando os valores do domínio são conhecidos, para
  * serem marcados — e as opções das respostas anteriores — quando há campo anterior de onde elas
- * venham. Uma por tipo. A do município é posta pela própria tela.
+ * venham. A faixa de datas só no campo de data, como a API confere. Uma por tipo. A do município é posta pela própria tela.
  */
 export function restricoesParaAcrescentar(
   item: ItemDoFormulario,
@@ -728,6 +754,7 @@ export function restricoesParaAcrescentar(
   const cabe = (tipo: string): boolean =>
     (tipo === RESTRICAO_FAIXA_NUMERICA && item.tipoRenderizacao === 'NUMERO') ||
     (tipo === RESTRICAO_TAMANHO_TEXTO && item.tipoRenderizacao === 'TEXTO') ||
+    (tipo === RESTRICAO_FAIXA_DE_DATA && item.tipoRenderizacao === 'DATA') ||
     (tipo === RESTRICAO_OPCOES_PERMITIDAS && selecao && temValoresConhecidos) ||
     (tipo === RESTRICAO_OPCOES_DAS_RESPOSTAS && selecao && temFontesDeOpcoes);
   return RESTRICOES.filter((restricao) => cabe(restricao.valor) && !presentes.has(restricao.valor));
@@ -740,6 +767,8 @@ export function restricaoNova(tipo: string): RestricaoDeValor {
       return { tipo, entradas: [entradaDeOpcoesNova()] };
     case RESTRICAO_OPCOES_DAS_RESPOSTAS:
       return { tipo, fatos: [] };
+    case RESTRICAO_FAIXA_DE_DATA:
+      return { tipo, dataMinima: null, dataMaxima: null };
     default:
       return { tipo, minimo: null, maximo: null };
   }
@@ -775,9 +804,57 @@ export function problemaDaRestricao(restricao: RestricaoDeValor): string | null 
       return (restricao.fatos ?? []).length === 0 ? 'Escolha ao menos um campo de onde vêm as opções.' : null;
     case RESTRICAO_MUNICIPIOS_DA_UF:
       return (restricao.fatos ?? []).length === 1 ? null : 'Escolha o campo de UF de onde vêm os municípios.';
+    case RESTRICAO_FAIXA_DE_DATA:
+      return problemaDaFaixaDeData(restricao);
     default:
       return null;
   }
+}
+
+/** Deslocamento ausente ou zero: não precisa ser conferido como número inteiro. */
+const ZERO_OU_AUSENTE = (valor: null | number | string | undefined): boolean => valor === null || valor === undefined || Number(valor) === 0;
+
+/**
+ * O que impede o limite da faixa de data de ser gravado, nos termos da API; nulo quando nada. Mostrado
+ * no controle do limite, e não na restrição.
+ */
+export function problemaDoLimiteDeData(limite: LimiteDeDataNoWire | null | undefined): string | null {
+  if (limite === null || limite === undefined) return null;
+  if (limite.ancora === ANCORA_DATA_FIXA) {
+    const data = limite.data ?? '';
+    if (data === '') return 'Informe a data.';
+    if (diaDoCalendario(data) === null) return 'Use uma data do calendário, no formato dia/mês/ano.';
+    return data === '0001-01-01' ? 'A data não pode ser 01/01/0001.' : null;
+  }
+  const deslocamentos = [limite.anos, limite.dias];
+  if (deslocamentos.some((valor) => !ZERO_OU_AUSENTE(valor) && !Number.isInteger(Number(valor)))) return 'Os anos e os dias são números inteiros.';
+  if (Math.abs(Number(limite.anos ?? 0)) > TETO_DE_ANOS || Math.abs(Number(limite.dias ?? 0)) > TETO_DE_DIAS) {
+    return `O deslocamento vai até ${TETO_DE_ANOS} anos ou ${TETO_DE_DIAS} dias, para mais ou para menos.`;
+  }
+  return null;
+}
+
+/**
+ * O problema da faixa como um todo: ao menos um limite e a mínima não depois da máxima. A ordem que
+ * depende do dia do envio não é recusada, como na API; o problema de cada limite é o dele.
+ */
+function problemaDaFaixaDeData(restricao: RestricaoDeValor): string | null {
+  const minima = restricao.dataMinima ?? null;
+  const maxima = restricao.dataMaxima ?? null;
+  if (minima === null && maxima === null) return 'Informe ao menos um limite.';
+  if (minima === null || maxima === null || problemaDoLimiteDeData(minima) !== null || problemaDoLimiteDeData(maxima) !== null) return null;
+  return minimaDepoisDaMaxima(limiteLido(minima), limiteLido(maxima)) ? 'A data mínima fica depois da data máxima.' : null;
+}
+
+function limiteLido(limite: LimiteDeDataNoWire): Parameters<typeof minimaDepoisDaMaxima>[0] {
+  return limite.ancora === ANCORA_DATA_FIXA
+    ? { ancora: 'DATA_FIXA', data: limite.data ?? '' }
+    : { ancora: 'ENVIO', anos: Number(limite.anos ?? 0), dias: Number(limite.dias ?? 0) };
+}
+
+/** O limite novo, na âncora escolhida: a data fixa ainda sem data, ou o dia do envio sem deslocamento. */
+export function limiteDeDataNovo(ancora: string): LimiteDeDataNoWire {
+  return ancora === ANCORA_DATA_FIXA ? { ancora, data: null } : { ancora: ANCORA_ENVIO, anos: 0, dias: 0 };
 }
 
 /** O que impede o grupo de opções de ser gravado (`OpcoesCondicionadas.Violacao`); nulo quando nada. */

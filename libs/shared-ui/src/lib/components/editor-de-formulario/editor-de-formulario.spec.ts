@@ -234,6 +234,151 @@ describe('EditorDeFormularioComponent', () => {
     });
   });
 
+  describe('faixa de datas', () => {
+    const data = (codigo: string): FatoDoFormulario => ({ ...fato(codigo), dominio: 'DATA' });
+    const faixaDe = (fatoCodigo: string): HTMLElement => tela().querySelector(`[aria-labelledby="f-item-${fatoCodigo}-titulo"]`) as HTMLElement;
+    const limite = (fatoCodigo: string, nome: string): HTMLElement =>
+      [...faixaDe(fatoCodigo).querySelectorAll('fieldset')].find((f) => f.querySelector('legend')?.textContent?.trim() === nome) as HTMLElement;
+    const trocar = (controle: HTMLInputElement | HTMLSelectElement, valor: string): void => {
+      controle.value = valor;
+      controle.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+    };
+    const emitida = (fatoCodigo: string): unknown => emitidos.at(-1)?.itens?.find((i) => i.fatoCodigo === fatoCodigo)?.restricoes;
+    const comData = (restricoes?: ItemDoFormulario['restricoes']): void => {
+      fixture.componentRef.setInput('catalogo', [fato('A'), data('NASCIMENTO')]);
+      fixture.componentRef.setInput('conteudo', {
+        ...conteudo,
+        itens: [item('A', 0), item('NASCIMENTO', 1, { tipoRenderizacao: 'DATA', restricoes })],
+      });
+      fixture.detectChanges();
+    };
+    const acrescentarFaixa = (): void => {
+      trocar(tela().querySelector('#f-item-NASCIMENTO-restricao') as HTMLSelectElement, 'FAIXA_DE_DATA');
+      ([...faixaDe('NASCIMENTO').querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Acrescentar restrição') as HTMLButtonElement).click();
+      fixture.detectChanges();
+    };
+
+    it('só o campo de data oferece a faixa', () => {
+      comData();
+      const opcoes = (codigo: string): string[] =>
+        [...(tela().querySelectorAll(`#f-item-${codigo}-restricao option`) as NodeListOf<HTMLOptionElement>)].map((o) => o.value);
+
+      expect(opcoes('NASCIMENTO')).toContain('FAIXA_DE_DATA');
+      expect(tela().querySelector('#f-item-A-restricao')).toBeNull();
+    });
+
+    it('acrescenta a faixa sem limite e pede ao menos um', () => {
+      comData();
+      acrescentarFaixa();
+
+      expect(emitida('NASCIMENTO')).toEqual([{ tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: null }]);
+      expect(faixaDe('NASCIMENTO').textContent).toContain('Informe ao menos um limite.');
+    });
+
+    it('declara o limite como data fixa ou como o dia do envio deslocado, com número negativo', () => {
+      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: null }]);
+
+      trocar(tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-ancora') as HTMLSelectElement, 'ENVIO');
+      trocar(tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos') as HTMLInputElement, '−120');
+      trocar(tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMaxima-ancora') as HTMLSelectElement, 'DATA_FIXA');
+      trocar(tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMaxima-data') as HTMLInputElement, '2030-12-31');
+
+      expect(emitida('NASCIMENTO')).toEqual([
+        { tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: -120, dias: 0 }, dataMaxima: { ancora: 'DATA_FIXA', data: '2030-12-31' } },
+      ]);
+    });
+
+    it('volta o limite a sem limite', () => {
+      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'DATA_FIXA', data: '2000-01-01' }, dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 } }]);
+
+      trocar(tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-ancora') as HTMLSelectElement, '');
+
+      expect(emitida('NASCIMENTO')).toEqual([{ tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 } }]);
+    });
+
+    it('rotula os controles e liga a dica da faixa a eles por aria-describedby', () => {
+      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'DATA_FIXA', data: '2000-01-01' }, dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 } }]);
+      const dica = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dica') as HTMLElement;
+      const controles = [...faixaDe('NASCIMENTO').querySelectorAll('select, input')].filter((c) => c.closest('.editor-formulario__limite')) as HTMLElement[];
+
+      expect(dica.textContent).toContain('dia do envio');
+      expect(controles.length).toBe(5);
+      for (const controle of controles) {
+        expect(tela().querySelector(`label[for="${controle.id}"]`), controle.id).not.toBeNull();
+        expect(controle.getAttribute('aria-describedby') ?? '', controle.id).toContain(dica.id);
+      }
+    });
+
+    it('os deslocamentos do dia do envio aceitam o sinal de menos no teclado do aparelho', () => {
+      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: -18, dias: 0 }, dataMaxima: null }]);
+
+      for (const parte of ['anos', 'dias']) {
+        const campo = tela().querySelector(`#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-${parte}`) as HTMLInputElement;
+        expect(campo.hasAttribute('inputmode'), parte).toBe(false);
+      }
+    });
+
+    it('mostra o problema do limite no controle dele, associado e marcado como inválido', () => {
+      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: 'abc', dias: 0 }, dataMaxima: null }]);
+
+      const erro = limite('NASCIMENTO', 'Data mínima').querySelector('.field__error') as HTMLElement;
+      const anos = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos') as HTMLInputElement;
+
+      expect(erro.textContent).toContain('Os anos e os dias são números inteiros.');
+      expect(anos.getAttribute('aria-describedby')).toContain(erro.id);
+      expect(anos.getAttribute('aria-invalid')).toBe('true');
+      expect(limite('NASCIMENTO', 'Data máxima').querySelector('.field__error')).toBeNull();
+    });
+
+    it('mostra a mínima depois da máxima no controle da data máxima', () => {
+      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'DATA_FIXA', data: '2030-01-02' }, dataMaxima: { ancora: 'DATA_FIXA', data: '2030-01-01' } }]);
+
+      expect(limite('NASCIMENTO', 'Data máxima').textContent).toContain('A data mínima fica depois da data máxima.');
+      expect(limite('NASCIMENTO', 'Data mínima').textContent).not.toContain('A data mínima fica depois da data máxima.');
+    });
+
+    it('a recusa de mínimo maior que o máximo aparece no controle da data máxima', () => {
+      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: 0, dias: 5 }, dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 1 } }]);
+      fixture.componentRef.setInput(
+        'recusas',
+        distribuirRecusas([{ field: 'conteudo.itens[1].restricoes[0]', message: 'A data mínima fica depois da data máxima.' }], fixture.componentInstance.conteudo()),
+      );
+      fixture.detectChanges();
+
+      const recusa = limite('NASCIMENTO', 'Data máxima').querySelector('.editor-formulario__erros') as HTMLElement;
+      expect(recusa.textContent).toContain('A data mínima fica depois da data máxima.');
+      for (const limite of ['dataMinima', 'dataMaxima']) {
+        const controle = tela().querySelector(`#f-item-NASCIMENTO-FAIXA_DE_DATA-${limite}-ancora`) as HTMLSelectElement;
+        expect(controle.getAttribute('aria-describedby'), limite).toContain(recusa.id);
+      }
+    });
+
+    it('o subitem de data de um grupo também declara a faixa', () => {
+      fixture.componentRef.setInput('catalogo', [fato('A'), data('NASCIMENTO_FILHO')]);
+      fixture.componentRef.setInput('conteudo', {
+        ...conteudo,
+        itens: [item('A', 0)],
+        grupos: [
+          {
+            codigo: 'FILHOS',
+            ordem: 1,
+            rotulo: 'Filhos',
+            etapaCodigo: 'S1',
+            minimo: 0,
+            maximo: null,
+            exibicao: null,
+            obrigatoriedade: 'NUNCA',
+            subitens: [item('NASCIMENTO_FILHO', 0, { tipoRenderizacao: 'DATA' })],
+          },
+        ],
+      });
+      fixture.detectChanges();
+
+      expect([...tela().querySelectorAll('select option')].some((o) => (o as HTMLOptionElement).value === 'FAIXA_DE_DATA')).toBe(true);
+    });
+  });
+
   it('recusa acrescentar município sem campo de UF antes, dizendo o que fazer', () => {
     fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), { ...fato('MUNICIPIO'), dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' }]);
     fixture.detectChanges();

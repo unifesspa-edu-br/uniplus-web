@@ -176,4 +176,25 @@ describe('planoDeGravacao', () => {
       'cabecalho',
     ]);
   });
+
+  it('a faixa de data lida do processo volta inteira no envio, com os dois limites', () => {
+    const faixa = {
+      tipo: 'FAIXA_DE_DATA',
+      minimo: null,
+      maximo: null,
+      entradas: null,
+      fatos: null,
+      dataMinima: { ancora: 'ENVIO', data: null, anos: -120, dias: 0 },
+      dataMaxima: { ancora: 'DATA_FIXA', data: '2030-12-31', anos: 0, dias: 0 },
+    };
+    const comFaixa: FormularioDto = {
+      ...inscricao,
+      fatosColetados: [fato('NASCIMENTO', 0, 'S1', { tipoRenderizacao: 'DATA', restricoes: [faixa] })],
+      grupos: [],
+    };
+
+    const enviado = itensParaEnvio(conteudoDoFormulario(comFaixa));
+
+    expect(enviado.itens[0].restricoes).toEqual([faixa]);
+  });
 });
