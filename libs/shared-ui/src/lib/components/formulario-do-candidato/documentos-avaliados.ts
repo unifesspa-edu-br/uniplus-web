@@ -640,21 +640,21 @@ export function exigenciaAtendida(
       ? no.itens.filter(atendido).length >= no.minimo
       : no.itens.every(atendido);
   };
-  // O grupo "um ou outro" mais próximo do documento, ou nenhum.
-  const procurar = (
-    nos: readonly NoDeDocumentos[],
-    grupo: NoDeDocumentos | null,
-  ): { readonly achou: boolean; readonly grupo: NoDeDocumentos | null } => {
+  // Os grupos "um ou outro" que contêm a exigência, do mais interno ao mais externo; nulo quando a
+  // árvore atual não a pede mais.
+  const ancestrais = (nos: readonly NoDeDocumentos[]): readonly NoDeDocumentos[] | null => {
     for (const no of nos) {
       if (no.tipo === 'DOCUMENTO') {
-        if (chavesDo(no.documento).includes(chave)) return { achou: true, grupo };
+        if (no.documento.exigidas.some((e) => e.chave === chave)) return [];
         continue;
       }
-      const dentro = procurar(no.itens, no.tipo === GRUPO_OU ? no : grupo);
-      if (dentro.achou) return dentro;
+      const dentro = ancestrais(no.itens);
+      if (dentro) return no.tipo === GRUPO_OU ? [...dentro, no] : dentro;
     }
-    return { achou: false, grupo: null };
+    return null;
   };
-  const { grupo } = procurar(arvore, null);
-  return grupo ? atendido(grupo) : atendidas.has(chave);
+  const grupos = ancestrais(arvore);
+  // Exigência que as respostas atuais já não pedem está fora da recusa antiga.
+  if (grupos === null) return true;
+  return atendidas.has(chave) || grupos.some(atendido);
 }
