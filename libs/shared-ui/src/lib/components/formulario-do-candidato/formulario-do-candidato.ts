@@ -529,17 +529,16 @@ export class FormularioDoCandidatoComponent {
   });
   /**
    * As recusas que valem agora. A de uma exigência documental deixa de valer quando a avaliação a dá
-   * por atendida — pelo arquivo dela ou, num grupo "um ou outro", pelo de outra alternativa.
+   * por atendida — ela ou, num grupo "um ou outro", pelo de outra alternativa.
    */
   protected readonly erros = computed<readonly ErroDoServidor[]>(() => {
     const recebidos = this.errosRecebidos();
     if (!recebidos.some((e) => ehCampoDeDocumento(e.campo))) return recebidos;
-    const atendidas = new Set([
-      ...Object.entries(this.situacoesDosDocumentos())
+    const atendidas = new Set(
+      Object.entries(this.situacoesDosDocumentos())
         .filter(([, situacao]) => situacao === 'SATISFEITA')
         .map(([chave]) => chave),
-      ...this.arquivosDosDocumentos().map((a) => a.chave),
-    ]);
+    );
     const arvore = this.documentosDaAvaliacao()?.arvore ?? [];
     return recebidos.filter(
       (e) =>
