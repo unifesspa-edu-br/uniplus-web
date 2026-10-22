@@ -116,7 +116,6 @@ function atoDoProcesso() {
     pendenciaAcimaDoLimiar: false,
     atoCorrigidoId: null,
     motivoDaCorrecao: null,
-    produtoDoEditalId: null,
     politicaDeDivulgacaoConfirmada: false,
     documentoPrincipal: documento(DOCUMENTO_ID, 'edital.pdf', null),
     anexos: [

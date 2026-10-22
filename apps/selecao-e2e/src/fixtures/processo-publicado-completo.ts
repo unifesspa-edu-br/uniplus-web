@@ -280,7 +280,6 @@ export const ATO_DO_PROCESSO = {
   pendenciaAcimaDoLimiar: false,
   atoCorrigidoId: null,
   motivoDaCorrecao: null,
-  produtoDoEditalId: null,
   politicaDeDivulgacaoConfirmada: false,
   documentoPrincipal: {
     documentoAPublicarId: '01a0d640-0000-7000-8000-0000000000ac',

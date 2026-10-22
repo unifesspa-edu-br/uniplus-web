@@ -27,7 +27,6 @@ function ato(id: string, sobrescritas: Partial<AtoDoProcessoDto> = {}): AtoDoPro
     pendenciaAcimaDoLimiar: false,
     atoCorrigidoId: null,
     motivoDaCorrecao: null,
-    produtoDoEditalId: 'produto',
     politicaDeDivulgacaoConfirmada: true,
     documentoPrincipal: {
       documentoAPublicarId: `doc-${id}`,

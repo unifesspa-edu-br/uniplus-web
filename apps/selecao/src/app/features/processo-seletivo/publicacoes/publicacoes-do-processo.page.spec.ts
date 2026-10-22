@@ -64,7 +64,6 @@ function ato(id: string, sobrescritas: Partial<AtoDoProcessoDto> = {}): AtoDoPro
     pendenciaAcimaDoLimiar: false,
     atoCorrigidoId: null,
     motivoDaCorrecao: null,
-    produtoDoEditalId: null,
     politicaDeDivulgacaoConfirmada: false,
     documentoPrincipal: {
       documentoAPublicarId: `doc-${id}`,
@@ -315,8 +314,8 @@ describe('PublicacoesDoProcessoPage', () => {
   });
 
   it('abre a correção do item apontando a correção mais recente da cadeia', async () => {
-    const original = ato('original', { produtoDoEditalId: 'preliminar' });
-    const errata = ato('errata', { produtoDoEditalId: 'preliminar', atoCorrigidoId: 'original' });
+    const original = ato('original');
+    const errata = ato('errata', { atoCorrigidoId: 'original' });
     const publicado = item('preliminar', {
       situacao: SituacaoDoProdutoPrevisto.publicado,
       ato: original,
@@ -336,9 +335,13 @@ describe('PublicacoesDoProcessoPage', () => {
   });
 
   it('não oferece, na lista de documentos, a correção do ato de um item do edital', async () => {
-    const doItem = ato('resultado', { produtoDoEditalId: 'preliminar' });
+    const doItem = ato('resultado');
 
-    await abrir(StatusProcesso.publicado, [doItem]);
+    await abrir(
+      StatusProcesso.publicado,
+      [doItem],
+      previstos(item('preliminar', { situacao: SituacaoDoProdutoPrevisto.publicado, ato: doItem, podePublicar: false })),
+    );
 
     expect(temCorrigir(linhas()[0])).toBe(false);
   });
@@ -363,7 +366,7 @@ describe('PublicacoesDoProcessoPage', () => {
       previstos(
         item('preliminar', {
           situacao: SituacaoDoProdutoPrevisto.publicado,
-          ato: ato('original', { produtoDoEditalId: 'preliminar' }),
+          ato: ato('original'),
           podePublicar: false,
         }),
         item('definitivo', { papel: 'DEFINITIVO' }),
