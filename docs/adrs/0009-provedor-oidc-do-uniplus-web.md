@@ -39,7 +39,7 @@ Diretrizes derivadas da decisão para o `uniplus-web`:
 3. Implementar `authGuard` e `roleGuard` em `libs/shared-auth` para proteger rotas por perfil.
 4. Persistência de sessão usando o storage padrão do `keycloak-js` (sessionStorage) com silent SSO check via iframe — **nunca** armazenar tokens em `localStorage`.
 5. Logout iniciado no provedor OIDC para garantir invalidação da sessão SSO entre as três apps.
-6. Atributos como `nome_social` e `cpf` consumidos via claims do token; LGPD obriga masking em logs (CPF como `***.***.***-XX`).
+6. Atributos como `nome_social` e `cpf` consumidos via claims do token; LGPD obriga masking em logs, com o CPF como `***.999.999-**` (Parecer DPO 002/2026).
 
 A configuração específica de realm/tenant, clients, flows e mappers é responsabilidade da plataforma e está fora do escopo deste ADR — o `uniplus-web` apenas consome endpoints OIDC e claims acordados.
 
