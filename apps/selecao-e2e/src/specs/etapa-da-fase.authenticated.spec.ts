@@ -199,7 +199,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
    * próprias e os devolve na leitura, mas a tela não tinha onde declará-los e o comando saía
    * com os quatro em branco: bastava mexer numa data do cronograma para o que estivesse
    * gravado desaparecer. A fase sempre teve estes campos — a etapa recorre nas mesmas
-   * condições.
+   * condições. Os dois da 2ª instância só existem quando a janela admite instância superior.
    */
   test('a janela da etapa declara por quanto tempo suspende o efeito do ato', async ({ page }) => {
     await acrescentarEtapa(page);
@@ -212,7 +212,15 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await recursos
       .getByLabel('Suspensividade da 1ª instância — unidade')
       .selectOption('diasUteis');
-    await recursos.getByLabel('Suspensividade da 2ª instância — prazo').fill('48');
+    // A 2ª instância só tem suspensividade quando a janela admite instância superior.
+    const prazoDaSegunda = recursos.getByLabel('Suspensividade da 2ª instância — prazo');
+    await expect(prazoDaSegunda).toHaveCount(0);
+    const instanciaSuperior = recursos.getByRole('group', {
+      name: 'Admite recurso em instância superior?',
+    });
+    await instanciaSuperior.getByText('Sim', { exact: true }).click();
+    await expect(instanciaSuperior.getByRole('radio', { name: 'Sim', exact: true })).toBeChecked();
+    await prazoDaSegunda.fill('48');
     await recursos.getByLabel('Suspensividade da 2ª instância — unidade').selectOption('horas');
 
     await expect(recursos.getByLabel('Suspensividade da 1ª instância — prazo')).toHaveValue('3');
