@@ -81,17 +81,21 @@ export class CascataRemanejamentoComponent {
   readonly secaoSemConfirmacao = computed(() => this.exibirSecao() && !this.precisaExibir());
 
   /**
-   * Em consulta a regra gravada é o que se lê. Sem o catálogo de modalidades a seção não sabe
-   * dizer se a cascata se aplica, e sumir seria concluir que não; com o catálogo lido, vale
-   * `precisaExibir`. Durante o carregamento a exceção não vale: a seção apareceria e sumiria
-   * quando o catálogo chegasse. Só o template usa: validação e gravação seguem `precisaExibir`.
+   * Em consulta o snapshot diz se cada modalidade segue a cascata, e `precisaExibir` decide por
+   * ele. Só quando alguma modalidade chega sem a regra gravada a seção depende do catálogo: se ele
+   * falhou, ela não sabe dizer se a cascata se aplica, e sumir seria concluir que não. Durante o
+   * carregamento a exceção não vale: a seção apareceria e sumiria quando o catálogo chegasse. Só o
+   * template usa: validação e gravação seguem `precisaExibir`.
    */
   readonly exibirSecao = computed(
     () =>
       this.precisaExibir() ||
       (this.store.emConsulta() &&
         this.catalogos.situacao() === 'falhou' &&
-        this.cascata() !== null),
+        this.cascata() !== null &&
+        this.ofertas().some((oferta) =>
+          oferta.modalidades.some((modalidade) => modalidade.gravada === undefined),
+        )),
   );
 
   /**

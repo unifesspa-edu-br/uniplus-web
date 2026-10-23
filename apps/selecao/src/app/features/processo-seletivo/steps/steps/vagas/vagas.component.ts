@@ -405,8 +405,9 @@ export class VagasStepComponent {
 
   /**
    * Em consulta o passo lê o que o processo gravou e não espera pelos catálogos; o que só o
-   * catálogo sabe dizer (nome da oferta, descrição da modalidade) é lido como não lido, e nunca
-   * como ausente. Carregando e falhou são estados distintos: o primeiro passa, o segundo fica.
+   * catálogo sabe dizer (nome da oferta, referência demográfica, regras) é lido como não lido, e
+   * nunca como ausente. Descrição e composição da modalidade vêm do snapshot. Carregando e falhou
+   * são estados distintos: o primeiro passa, o segundo fica.
    */
   readonly catalogoCarregandoEmConsulta = computed(
     () => this.store.emConsulta() && this.catalogos.situacao() === 'carregando',
@@ -416,8 +417,9 @@ export class VagasStepComponent {
   );
 
   /**
-   * Com o catálogo ausente em consulta, o quadro monta as colunas pelo que o processo gravou:
-   * as modalidades do padrão com quantidade gravada em alguma oferta, na ordem do padrão.
+   * Em consulta, as colunas saem do que o processo gravou, com ou sem catálogo: as modalidades do
+   * padrão cuja quantidade o edital fixa, na ordem do padrão. Só quando a composição é
+   * desconhecida (nem o snapshot nem o catálogo a dizem) vale ter quantidade gravada em alguma oferta.
    */
   readonly colunasDoQuadro = computed<
     readonly Pick<ModalidadeDto, 'id' | 'codigo' | 'descricao'>[]
