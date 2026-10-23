@@ -126,12 +126,6 @@ describe('IdentificacaoStepComponent', () => {
     store.patchObjectSection('identificacao', { identificadorLegivel: identificadorLegivel ?? '' });
   }
 
-  /** Tudo que `validate()` exige, menos o anexo do edital. */
-  function preencherPassoInteiro(): void {
-    preencherCamposDoComando();
-    store.patchObjectSection('identificacao', {});
-  }
-
   it('carrega as unidades administradoras da API de Organização', () => {
     expect(componente.unidades()).toEqual([
       { id: UNIDADE_ID, rotulo: 'ICE — Instituto de Ciências Exatas' },
@@ -240,7 +234,7 @@ describe('IdentificacaoStepComponent', () => {
    * segundo processo.
    */
   it('repete a criação inconclusiva com o mesmo corpo, ignorando edição posterior', async () => {
-    preencherPassoInteiro();
+    preencherCamposDoComando();
     const primeira = componente['persistir']();
 
     const req1 = controller.expectOne(`${BASE}/api/selecao/processos-seletivos`);
@@ -268,7 +262,7 @@ describe('IdentificacaoStepComponent', () => {
    * a retentativa vai confirmar no servidor.
    */
   it('congela também o passo 1 enquanto a criação está indefinida', async () => {
-    preencherPassoInteiro();
+    preencherCamposDoComando();
     const primeira = componente['persistir']();
 
     controller
@@ -284,7 +278,7 @@ describe('IdentificacaoStepComponent', () => {
    * a tela repetindo para sempre um comando que o servidor não aceita.
    */
   it('rotaciona a chave e libera os campos após 413', async () => {
-    preencherPassoInteiro();
+    preencherCamposDoComando();
     const primeira = componente['persistir']();
 
     const req1 = controller.expectOne(`${BASE}/api/selecao/processos-seletivos`);
