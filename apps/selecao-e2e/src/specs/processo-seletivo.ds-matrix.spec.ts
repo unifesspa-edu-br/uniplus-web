@@ -122,17 +122,7 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
       'Vagas',
       'Formulários',
     ]) {
-      const posicao = await page.evaluate((rotulo) => {
-        const botoes = Array.from(
-          document.querySelectorAll<HTMLButtonElement>(
-            'nav[aria-label="Etapas do cadastro"] li.ui-steps__item button',
-          ),
-        );
-        const indice = botoes.findIndex((botao) => botao.textContent?.includes(rotulo));
-        botoes[indice]?.click();
-        return indice + 1;
-      }, passo);
-      await expect(page.locator('.wiz-content h1')).toContainText(`Passo ${posicao}:`);
+      await irAoPasso(page, passo);
 
       expect(await blocosColados(page), `passo ${passo}`).toEqual([]);
     }
@@ -151,17 +141,7 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
       'Desempate',
       'Revisão e publicação',
     ]) {
-      const posicao = await page.evaluate((rotulo) => {
-        const botoes = Array.from(
-          document.querySelectorAll<HTMLButtonElement>(
-            'nav[aria-label="Etapas do cadastro"] li.ui-steps__item button',
-          ),
-        );
-        const indice = botoes.findIndex((botao) => botao.textContent?.includes(rotulo));
-        botoes[indice]?.click();
-        return indice + 1;
-      }, passo);
-      await expect(page.locator('.wiz-content h1')).toContainText(`Passo ${posicao}:`);
+      await irAoPasso(page, passo);
 
       expect(await espacosDeBlocosNovos(page), `passo ${passo}`).toEqual([ritmo, ritmo]);
     }
@@ -346,4 +326,20 @@ async function mockTiposProcesso(page: Page): Promise<void> {
       body: JSON.stringify(TIPOS_PROCESSO),
     });
   });
+}
+
+/** Abre o passo pelo rótulo no stepper e espera o título dele; falha dizendo qual rótulo faltou. */
+async function irAoPasso(page: Page, rotulo: string): Promise<void> {
+  const posicao = await page.evaluate((procurado) => {
+    const botoes = Array.from(
+      document.querySelectorAll<HTMLButtonElement>(
+        'nav[aria-label="Etapas do cadastro"] li.ui-steps__item button',
+      ),
+    );
+    const indice = botoes.findIndex((botao) => botao.textContent?.includes(procurado));
+    botoes[indice]?.click();
+    return indice + 1;
+  }, rotulo);
+  expect(posicao, `passo "${rotulo}" no stepper`).toBeGreaterThan(0);
+  await expect(page.locator('.wiz-content h1')).toContainText(`Passo ${posicao}:`);
 }

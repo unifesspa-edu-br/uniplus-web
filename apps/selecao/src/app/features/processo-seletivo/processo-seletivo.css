@@ -1204,17 +1204,23 @@
    margem do último item de uma lista ou do primeiro título de uma seção somaria com o `gap`.
    Em fluxo de bloco ela colapsa, e vale a maior das duas.
 
-   O `.sel-processo` na frente vence as margens de `.step-subtitle`, `.step-card` e afins, que
-   vêm depois nesta folha com a mesma especificidade. */
+   O `.sel-processo` na frente dá especificidade maior que a das margens de `.step-subtitle`,
+   `.step-card` e afins, que vêm depois nesta folha. Uma regra `.sel-processo .x` posterior,
+   com a mesma especificidade, ainda venceria pela ordem.
+
+   O `<form>` que embrulha os cartões de um passo (Pagamento, Cronograma) só agrupa controles:
+   os blocos dentro dele seguem o mesmo ritmo dos irmãos dele. */
 .sel-processo .step-pane > * {
   display: block;
 }
 
-.sel-processo .step-pane > * > * {
+.sel-processo .step-pane > * > *,
+.sel-processo .step-pane > * > form > * {
   margin-block: 0;
 }
 
-.sel-processo .step-pane > * > * + * {
+.sel-processo .step-pane > * > * + *,
+.sel-processo .step-pane > * > form > * + * {
   margin-block-start: var(--space-5);
 }
 
@@ -1223,7 +1229,10 @@
    especificidade, então só o `display` padrão do navegador perde — quem tem classe com
    `display` próprio mantém o seu. `[hidden]` e diálogo fechado continuam fora da tela, e o
    host que só embrulha um `<dialog>` não vira um bloco vazio com margem no fim do passo. */
-:where(.sel-processo .step-pane > * > :not([hidden], dialog, ui-confirm-dialog)) {
+:where(
+    .sel-processo .step-pane > * > :not([hidden], dialog, ui-confirm-dialog),
+    .sel-processo .step-pane > * > form > :not([hidden], dialog, ui-confirm-dialog)
+  ) {
   display: block;
 }
 
