@@ -860,7 +860,9 @@
                               [valor]="detalhe.descricao"
                               [dica]="
                                 detalhe.situacao ??
-                                'Descrição do cadastro vigente: o processo publicado não a guarda.'
+                                (detalhe.descricao === null
+                                  ? null
+                                  : 'Descrição do cadastro vigente: o processo não a guarda.')
                               "
                             />
                             @if (detalhe.formatos; as formatos) {

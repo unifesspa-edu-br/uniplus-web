@@ -116,9 +116,10 @@ function canonicaDaRegraDeRemanejamento(valor: string | null): string | null {
 }
 
 /**
- * As modalidades como o processo as gravou, por id, com o catálogo só a complementar o que o
- * snapshot não traz. É o que a consulta lê: o catálogo vigente pode ter mudado desde a
- * publicação, e uma modalidade gravada que saiu dele continua sendo do processo.
+ * As modalidades como o processo as gravou, por id. É o que a consulta lê: o catálogo vigente
+ * pode ter mudado desde a publicação, e uma modalidade gravada que saiu dele continua sendo do
+ * processo. O catálogo só completa a composição de vagas que o snapshot não diz; as regras de
+ * remanejamento valem como gravadas, inclusive quando nulas, porque nulo é a resposta do snapshot.
  */
 export function modalidadesGravadasPorId(
   ofertas: readonly DistribuicaoDeVagas[],
