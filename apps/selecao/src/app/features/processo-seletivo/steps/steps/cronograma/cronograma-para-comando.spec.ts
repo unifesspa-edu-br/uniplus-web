@@ -1,5 +1,4 @@
-import { UnidadePrazo } from '@uniplus/shared-data/selecao';
-import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { UnidadePrazo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { etapasDe } from '../../shared/hidratacao';

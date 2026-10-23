@@ -36,7 +36,9 @@ describe('InstitutionalBarComponent', () => {
     fixture.detectChanges();
 
     const links = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('.institutional-bar__links a'),
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
+        '.institutional-bar__links a',
+      ),
     );
 
     expect(links.map((link) => link.textContent?.trim())).toEqual([

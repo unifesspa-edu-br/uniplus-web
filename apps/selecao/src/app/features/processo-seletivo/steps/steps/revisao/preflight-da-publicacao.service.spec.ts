@@ -20,7 +20,11 @@ const ITENS: ItemConformidadeDto[] = [
 ];
 
 /** `obterConformidade()` devolve o item por dentro do envelope `ConformidadeProcessoSeletivoDto`, não o array cru. */
-const CONFORMIDADE: ConformidadeProcessoSeletivoDto = { processoSeletivoId: PROCESSO_ID, itens: ITENS, avisos: [] };
+const CONFORMIDADE: ConformidadeProcessoSeletivoDto = {
+  processoSeletivoId: PROCESSO_ID,
+  itens: ITENS,
+  avisos: [],
+};
 
 const LEGAL: ConformidadeLegalProcessoSeletivoDto = {
   processoSeletivoId: PROCESSO_ID,

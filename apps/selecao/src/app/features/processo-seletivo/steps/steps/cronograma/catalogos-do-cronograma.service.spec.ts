@@ -15,7 +15,11 @@ import {
   TiposDocumentoApi,
   TiposEtapaApi,
 } from '@uniplus/shared-data/configuracao';
-import { TipoAtoPublicadoDto, TiposAtoApi, type TiposAtoQuery } from '@uniplus/shared-data/publicacoes';
+import {
+  TipoAtoPublicadoDto,
+  TiposAtoApi,
+  type TiposAtoQuery,
+} from '@uniplus/shared-data/publicacoes';
 import { RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
 import { hojeNoFusoInstitucional } from '../../shared/fuso-institucional';

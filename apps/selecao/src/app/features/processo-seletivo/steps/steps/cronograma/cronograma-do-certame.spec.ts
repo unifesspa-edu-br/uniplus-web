@@ -1016,9 +1016,9 @@ describe('o que impede gravar o cronograma', () => {
     });
 
     it('acusa suspensividade com unidade e sem valor', () => {
-      expect(comRecurso({ suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas })).toContainEqual(
-        expect.stringContaining('suspensividade'),
-      );
+      expect(
+        comRecurso({ suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas }),
+      ).toContainEqual(expect.stringContaining('suspensividade'));
     });
 
     it('acusa suspensividade não positiva', () => {

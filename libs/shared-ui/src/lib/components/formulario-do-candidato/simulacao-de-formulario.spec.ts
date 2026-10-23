@@ -103,9 +103,7 @@ describe('SimulacaoDeFormularioComponent', () => {
   beforeEach(() => (enviadas = []));
 
   it('o pressuposto sem apresentação é informado na forma escolhida e muda o que o formulário mostra', () => {
-    const tela = montar(() =>
-      of(okResult({ etapas: [], campos: [], grupos: [], termos: [] })),
-    );
+    const tela = montar(() => of(okResult({ etapas: [], campos: [], grupos: [], termos: [] })));
     expect(tela.textContent).toContain('Calculado pelo sistema a partir de VINCULO_EMPREGATICIO.');
     expect(tela.textContent).not.toContain('Prefere o turno noturno?');
 
