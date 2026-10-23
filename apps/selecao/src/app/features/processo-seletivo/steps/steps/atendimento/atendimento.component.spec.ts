@@ -111,7 +111,7 @@ describe('AtendimentoStepComponent', () => {
     expect(elemento.querySelector('#atend-aviso-pcd-desmarcada')).toBeNull();
   });
 
-  it('sem a condição PcD no cadastro, a validação do passo nomeia o cadastro a corrigir (CA-03)', () => {
+  it('sem a condição PcD no cadastro, o formulário que pergunta o tipo de deficiência não trava o passo', () => {
     componente.catalogos.condicoes.set([CONDICOES[1]]);
     store.patchObjectSection('formulario', {
       ...store.draft().formulario,
@@ -123,7 +123,7 @@ describe('AtendimentoStepComponent', () => {
             fatoCodigo: 'TIPO_DEFICIENCIA',
             ordem: 0,
             rotulo: 'Tipo de deficiência',
-            tipoRenderizacao: 'SELECAO_MULTIPLA',
+            tipoRenderizacao: 'SELECAO_UNICA',
             obrigatoriedade: 'SEMPRE',
             precondicao: null,
             etapaCodigo: 'S1',
@@ -141,13 +141,9 @@ describe('AtendimentoStepComponent', () => {
 
     const resultado = componente.validate();
 
+    // O tipo de deficiência oferece os tipos do cadastro, com ou sem oferta (UNI-REQ-0012).
     expect(componente.pcdAusenteDoCadastro()).toBe(true);
-    expect(resultado.valid).toBe(false);
-    expect(
-      resultado.messages?.some(
-        (m) => m.includes('código PCD') && m.includes('Configuração → Condições de atendimento'),
-      ),
-    ).toBe(true);
+    expect(resultado.valid).toBe(true);
   });
 
   it('marcar a condição PCD revela a seção de tipos de deficiência', () => {

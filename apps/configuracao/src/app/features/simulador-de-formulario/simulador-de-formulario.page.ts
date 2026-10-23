@@ -176,9 +176,10 @@ export class SimuladorDeFormularioPage {
   protected readonly erroAoListar = signal<string | null>(null);
   private listaPedida = false;
   protected readonly ajudaDoModelo =
-    'Simula o modelo gravado. Sem processo, a condição de atendimento, o tipo de deficiência e o ' +
-    'município da área do bônus mostram todo o cadastro institucional; no processo, as opções são ' +
-    'as que ele oferece. As demais opções que só o processo oferta aparecem pelo código.';
+    'Simula o modelo gravado. Sem processo, a condição de atendimento e o município da área do ' +
+    'bônus mostram todo o cadastro institucional; no processo, as opções são as que ele oferece. ' +
+    'Os tipos de deficiência do cadastro aparecem também no processo, no fato que os usa como ' +
+    'opções. As demais opções que só o processo oferta aparecem pelo código.';
 
   protected readonly modeloId = signal('');
   private carregamento?: Subscription;

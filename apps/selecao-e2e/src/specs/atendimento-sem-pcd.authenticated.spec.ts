@@ -7,9 +7,10 @@ import { CAMPOS_DAS_MODALIDADES_DA_MEDICINA } from '../fixtures/vagas-da-medicin
 import { responder, responderCom } from '../support/responder';
 
 /**
- * web#1008 — o passo Formulários manda declarar o tipo de deficiência em "Atend. especial", e
- * a seção que o recebe sumia quando o cadastro de condições não tinha a condição PCD. O
- * operador seguia a orientação e chegava a uma tela sem saída.
+ * web#1008 — a seção de tipos de deficiência de "Atend. especial" sumia quando o cadastro de
+ * condições não tinha a condição PCD, e o operador chegava a uma tela sem saída. O tipo de
+ * deficiência perguntado no formulário não depende desta oferta (UNI-REQ-0012): só a seção
+ * orienta, e o passo não trava.
  *
  * O CI do frontend sobe Keycloak, mas não a API: o processo e os catálogos são servidos por
  * rota. O catálogo de condições é trocado entre as cargas para reproduzir o operador que
@@ -58,7 +59,7 @@ const PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO = {
           ...PROCESSO_PUBLICADO_DA_MEDICINA.formularios[0].fatosColetados[0],
           fatoCodigo: 'TIPO_DEFICIENCIA',
           rotulo: 'Tipo de deficiência',
-          tipoRenderizacao: 'SELECAO_MULTIPLA',
+          tipoRenderizacao: 'SELECAO_UNICA',
         },
         ...CAMPOS_DAS_MODALIDADES_DA_MEDICINA.map((campo) => ({
           ...campo,
@@ -90,10 +91,6 @@ test.describe('Atendimento sem a condição PCD no cadastro (web#1008)', () => {
     await expect(aviso).toContainText('Pessoa com deficiência');
     await expect(aviso).toContainText('código PCD');
     await expect(aviso).toContainText('Configuração → Condições de atendimento');
-
-    // CA-03: o "Gravar e avançar" também recusa com a orientação, e não só com "declare um".
-    await page.getByRole('button', { name: 'Gravar e avançar' }).click();
-    await expect(page.locator('.step-error')).toContainText('código PCD');
 
     // O operador cadastra a PCD em Configuração (outro app) e volta: o passo recarrega.
     catalogo.condicoes = [PCD, SURDEZ];

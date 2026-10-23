@@ -380,10 +380,11 @@ export class AtendimentoStepComponent {
 
   /**
    * Os fatos que o formulário de inscrição pergunta ao candidato e cujo domínio sai DESTA
-   * tela — a condição de atendimento e o tipo de deficiência que o processo oferta.
+   * tela — a condição de atendimento. O tipo de deficiência perguntado no formulário oferece os
+   * tipos do cadastro, com ou sem oferta (UNI-REQ-0012).
    *
-   * O acoplamento é real e a publicação o cobra: um campo de seleção sobre um desses fatos com
-   * oferta vazia é pendência estrutural. Sem dizê-lo aqui, o operador grava três listas vazias
+   * O acoplamento é real e a publicação o cobra: um campo de seleção sobre esse fato com a lista
+   * de condições vazia é pendência estrutural. Sem dizê-lo aqui, o operador grava a oferta vazia
    * sem nada indicando o problema, descobre na revisão, e o botão "Ir para Atend. especial" o
    * traz de volta a uma tela que não menciona por que ele veio.
    */
@@ -410,12 +411,6 @@ export class AtendimentoStepComponent {
     for (const pendente of this.fatosQueDependemDaOferta()) {
       mensagens.push(
         `O formulário de inscrição pergunta ${pendente} ao candidato, e esta oferta não declara nenhum valor para escolher. Declare ao menos um, ou retire o campo do formulário.`,
-      );
-    }
-
-    if (this.pcdAusenteDoCadastro() && this.fatosQueDependemDaOferta().includes('o tipo de deficiência')) {
-      mensagens.push(
-        'Não há tipos de deficiência para declarar porque o cadastro de condições não tem a condição "Pessoa com deficiência" (código PCD). Cadastre-a em Configuração → Condições de atendimento e volte a este passo.',
       );
     }
 
