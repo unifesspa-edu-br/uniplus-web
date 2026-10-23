@@ -179,18 +179,18 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
     await recursos.getByLabel('Prazo', { exact: true }).nth(0).fill('24');
-    await recursos.getByLabel('Unidade').nth(0).selectOption('horas');
+    await recursos.getByLabel('Unidade', { exact: true }).nth(0).selectOption('horas');
 
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
     await recursos.getByLabel('Contra qual publicação').nth(1).selectOption('RESULTADO_FINAL');
     await recursos.getByLabel('Prazo', { exact: true }).nth(1).fill('2');
-    await recursos.getByLabel('Unidade').nth(1).selectOption('diasUteis');
+    await recursos.getByLabel('Unidade', { exact: true }).nth(1).selectOption('diasUteis');
 
     await expect(recursos.getByLabel('Prazo', { exact: true }).nth(0)).toHaveValue('24');
-    await expect(recursos.getByLabel('Unidade').nth(0)).toHaveValue('horas');
+    await expect(recursos.getByLabel('Unidade', { exact: true }).nth(0)).toHaveValue('horas');
     await expect(recursos.getByLabel('Contra qual publicação').nth(0)).toHaveValue('RESULTADO_PRELIMINAR');
     await expect(recursos.getByLabel('Prazo', { exact: true }).nth(1)).toHaveValue('2');
-    await expect(recursos.getByLabel('Unidade').nth(1)).toHaveValue('diasUteis');
+    await expect(recursos.getByLabel('Unidade', { exact: true }).nth(1)).toHaveValue('diasUteis');
     await expect(recursos.getByLabel('Contra qual publicação').nth(1)).toHaveValue('RESULTADO_FINAL');
   });
 
