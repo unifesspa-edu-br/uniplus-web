@@ -167,7 +167,10 @@ export async function espacosEntreBlocos(page: Page): Promise<EspacoEntreBlocos[
     const rotulo = (e: Element): string =>
       e.classList.length > 0 ? `.${e.classList[0]}` : e.tagName.toLowerCase();
 
-    const blocos = Array.from(host.children).filter(emFluxo);
+    // O `<form>` que embrulha os cartões só agrupa controles: os blocos dele são do passo.
+    const blocos = Array.from(host.children)
+      .filter(emFluxo)
+      .flatMap((e) => (e.tagName === 'FORM' ? Array.from(e.children).filter(emFluxo) : [e]));
     return blocos.slice(1).map((bloco, indice) => ({
       de: rotulo(blocos[indice]),
       para: rotulo(bloco),
