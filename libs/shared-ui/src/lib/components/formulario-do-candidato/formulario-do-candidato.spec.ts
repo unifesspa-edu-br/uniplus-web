@@ -245,6 +245,15 @@ describe('FormularioDoCandidatoComponent', () => {
   let simulacoes: SimulacaoDoFormulario[];
   let resultadoDoCep: (cep: string) => ReturnType<BuscaDeCep>;
 
+  /** As respostas da última simulação; sem elas, a ausência de um campo não provaria nada. */
+  const respostasDaUltimaSimulacao = (): NonNullable<SimulacaoDoFormulario['respostas']> => {
+    const respostas = simulacoes.at(-1)?.respostas;
+    if (respostas === undefined || respostas === null) {
+      throw new Error('a última simulação não trouxe respostas');
+    }
+    return respostas;
+  };
+
   beforeEach(() => {
     resultadoDoCep = () => of(okResult(CEP_DE_MARABA));
     TestBed.configureTestingModule({
@@ -1154,7 +1163,7 @@ describe('FormularioDoCandidatoComponent', () => {
 
     expect(tela.querySelector('[id$="-cep-faixa"]')).not.toBeNull();
     expect(tela.querySelector('[id$="-cep-confirmacao"]')?.getAttribute('role')).toBe('alert');
-    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(respostasDaUltimaSimulacao()['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
 
   it('o aviso do CEP geral descreve o campo CEP para o leitor de tela', () => {
@@ -1186,7 +1195,7 @@ describe('FormularioDoCandidatoComponent', () => {
 
     expect(tela.textContent).toContain('Este é o CEP geral de Marabá/PA');
     expect(tela.querySelector('input[id$="-bairro"]')?.getAttribute('aria-required')).toBe('true');
-    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(respostasDaUltimaSimulacao()['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
 
   it('o CEP que só cai numa faixa avisa, não preenche além da cidade e não vale sem confirmação', () => {
@@ -1205,7 +1214,7 @@ describe('FormularioDoCandidatoComponent', () => {
       ?.getAttribute('aria-describedby');
     expect(descricao).toContain(erro.id);
     expect(descricao).toContain(aviso.id);
-    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(respostasDaUltimaSimulacao()['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
 
   it('confirmado o CEP de faixa, logradouro e bairro são obrigatórios e a resposta leva cepConfirmado', () => {
@@ -1216,7 +1225,7 @@ describe('FormularioDoCandidatoComponent', () => {
     const bairro = tela.querySelector('input[id$="-bairro"]') as HTMLInputElement;
     expect([logradouro.value, bairro.value]).toEqual(['', '']);
     expect(logradouro.getAttribute('aria-required')).toBe('true');
-    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(respostasDaUltimaSimulacao()['ENDERECO_RESIDENCIAL']).toBeUndefined();
 
     digitar(logradouro, 'Rua do Centro');
     digitar(bairro, 'Centro');
@@ -1238,7 +1247,7 @@ describe('FormularioDoCandidatoComponent', () => {
     expect(tela.querySelector('[id$="-cep-geral"]')).toBeNull();
     expect(tela.querySelector('input[id$="-bairro"]')?.getAttribute('aria-required')).toBeNull();
     expect(tela.textContent).toContain('Valide o CEP em "Buscar CEP"');
-    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(respostasDaUltimaSimulacao()['ENDERECO_RESIDENCIAL']).toBeUndefined();
   });
 
   it('trocar o CEP desfaz a confirmação', () => {
@@ -1249,7 +1258,7 @@ describe('FormularioDoCandidatoComponent', () => {
 
     clicar(botao(tela, 'Trocar CEP'));
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507');
-    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(respostasDaUltimaSimulacao()['ENDERECO_RESIDENCIAL']).toBeUndefined();
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
     clicar(botao(tela, 'Buscar CEP'));
 
@@ -1321,7 +1330,7 @@ describe('FormularioDoCandidatoComponent', () => {
     digitar(cep, '6850');
     clicar(botao(tela, 'Concluir a seção'));
 
-    expect(simulacoes.at(-1)?.respostas?.['ENDERECO_RESIDENCIAL']).toBeUndefined();
+    expect(respostasDaUltimaSimulacao()['ENDERECO_RESIDENCIAL']).toBeUndefined();
     expect(tela.textContent).toContain('Responda este campo.');
     expect(cep.value).toBe('6850');
   });
