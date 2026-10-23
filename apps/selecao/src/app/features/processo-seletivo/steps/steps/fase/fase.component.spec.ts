@@ -1101,7 +1101,6 @@ describe('FaseStepComponent', () => {
       expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
       expect(
         componente.documentosDisponiveis().flatMap((grupo) => grupo.options),
-        'e não volta a ser oferecida para quem ainda não a exige',
       ).not.toContainEqual(expect.objectContaining({ value: ID_CPF }));
       // O seletor volta ao estado neutro: o próximo documento começa do zero.
       expect(componente.documentoAAcrescentar()).toBe('');
