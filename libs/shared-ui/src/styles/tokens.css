@@ -207,6 +207,8 @@
   --text-disabled:    light-dark(#94a3b8, #64748b);
   --text-on-primary:  light-dark(#ffffff, #0f172a);  /* texto sobre primary */
   --text-on-inverse:  #ffffff;
+  /* Erro sobre --surface-inverse, que é escura nos dois temas: 8.8:1 vs #071d41, 10.6:1 vs #020617. */
+  --text-danger-on-inverse: #fca5a5;
 
   /* Text tokens are DECOUPLED from the primary/info SCALE. The scale flips dark
    * in dark mode (it backs surfaces, buttons, institutional-bar); text must stay light to
@@ -442,6 +444,7 @@
   --text-disabled:    #666666;
   --text-on-primary:  #000000;
   --text-on-inverse:  #ffff00;
+  --text-danger-on-inverse: #ffffff;
   --text-heading:     #ffff00;
   --text-title-soft:  #ffff00;
   --text-link:        #00ffff;
