@@ -5,7 +5,13 @@ import type { FormGroup } from '@angular/forms';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { CaraterEtapa, OrigemCandidatos, SELECAO_BASE_PATH, StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import {
+  CaraterEtapa,
+  OrigemCandidatos,
+  SELECAO_BASE_PATH,
+  StatusProcesso,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 
@@ -495,9 +501,10 @@ describe('CronogramaStepComponent', () => {
 
     const item = componente.linhaDoTempo()[0];
 
-    expect(item.exigencias?.agrupaEtapas, 'o catálogo diz que COLETA_INSCRICAO não agrupa; o processo congelou que agrupa').toBe(
-      true,
-    );
+    expect(
+      item.exigencias?.agrupaEtapas,
+      'o catálogo diz que COLETA_INSCRICAO não agrupa; o processo congelou que agrupa',
+    ).toBe(true);
     expect(item.foraDoCatalogo).toBe(false);
   });
 
@@ -1021,9 +1028,10 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
 
     const intermediaria = controller.expectOne(ROTA_FASES);
-    expect(ordensDe(intermediaria.request.body), 'a faixa livre é a que nenhuma fase ocupa hoje').toEqual(
-      [3, 4],
-    );
+    expect(
+      ordensDe(intermediaria.request.body),
+      'a faixa livre é a que nenhuma fase ocupa hoje',
+    ).toEqual([3, 4]);
     intermediaria.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
 
@@ -2254,9 +2262,10 @@ describe('CronogramaStepComponent', () => {
       expect(componente.dependentesDaFase(indice).documentos).toBe(1);
 
       componente.pedirRemocaoDaFase(indice);
-      expect(componente.remocaoAConfirmar(), 'a remoção precisa passar pela confirmação, porque leva o documento junto').toBe(
-        indice,
-      );
+      expect(
+        componente.remocaoAConfirmar(),
+        'a remoção precisa passar pela confirmação, porque leva o documento junto',
+      ).toBe(indice);
       expect(componente.resumoDaRemocao(indice)).toContain('1 documento exigido');
     });
 

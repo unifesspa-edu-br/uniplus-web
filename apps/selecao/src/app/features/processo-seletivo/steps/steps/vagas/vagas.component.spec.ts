@@ -462,9 +462,10 @@ describe('VagasStepComponent — gravação da distribuição', () => {
     );
 
     expect(informadas?.valor, 'duas ofertas de 40 vagas informadas').toBe('80');
-    expect(publicado?.valor, 'duas ofertas cujo cálculo da regra publica 42 — é este o total do edital').toBe(
-      '84',
-    );
+    expect(
+      publicado?.valor,
+      'duas ofertas cujo cálculo da regra publica 42 — é este o total do edital',
+    ).toBe('84');
   });
 
   /**

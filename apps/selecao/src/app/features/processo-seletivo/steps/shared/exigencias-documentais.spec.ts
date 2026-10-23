@@ -652,7 +652,9 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
 
     const comRaiz = comExigenciaNaRaiz(comGrupo, exigenciaNova(ID_RG, 'HABILITACAO'));
 
-    expect(comRaiz.raizes, 'o grupo continua, e a declaração de raiz nasce ao lado').toHaveLength(2);
+    expect(comRaiz.raizes, 'o grupo continua, e a declaração de raiz nasce ao lado').toHaveLength(
+      2,
+    );
     expect(comRaiz.raizes[0].tipo).toBe('OU');
     expect(comRaiz.raizes[0].filhos).toHaveLength(1);
     expect(exigenciasDaRaiz(comRaiz).map((e) => e.tipoDocumentoId)).toEqual([ID_RG]);

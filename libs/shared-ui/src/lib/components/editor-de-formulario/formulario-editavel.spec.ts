@@ -825,7 +825,21 @@ describe('faixa de datas', () => {
     const enviado = conteudo({
       etapas: [secao('S1', 0)],
       itens: [item('NASCIMENTO', 0, 'S1', { tipoRenderizacao: 'DATA', restricoes: [faixa] })],
-      grupos: [{ codigo: 'G', ordem: 1, rotulo: 'G', etapaCodigo: 'S1', minimo: 0, maximo: null, exibicao: null, obrigatoriedade: 'NUNCA', predicadoObrigatoriedade: null, incluiCandidato: false, subitens: [item('FILHO', 0, 'S1', { tipoRenderizacao: 'DATA', restricoes: [faixa] })] }],
+      grupos: [
+        {
+          codigo: 'G',
+          ordem: 1,
+          rotulo: 'G',
+          etapaCodigo: 'S1',
+          minimo: 0,
+          maximo: null,
+          exibicao: null,
+          obrigatoriedade: 'NUNCA',
+          predicadoObrigatoriedade: null,
+          incluiCandidato: false,
+          subitens: [item('FILHO', 0, 'S1', { tipoRenderizacao: 'DATA', restricoes: [faixa] })],
+        },
+      ],
     });
 
     const recusas = distribuirRecusas(

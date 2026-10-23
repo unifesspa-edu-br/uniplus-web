@@ -1178,7 +1178,9 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
         tipoAtoCodigo: 'EDITAL_ABERTURA',
       },
     });
-    expect(cenario.componente.rascunhoPendente(), 'pré-condição: há transcrição por gravar').toBe(true);
+    expect(cenario.componente.rascunhoPendente(), 'pré-condição: há transcrição por gravar').toBe(
+      true,
+    );
 
     (cenario.componente as unknown as { fixarRascunhoComoJaGravado(): void })
       .fixarRascunhoComoJaGravado();
@@ -1835,7 +1837,10 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       await propagar();
 
       const antes = cenario.store.draft().opcoesDeCurso;
-      cenario.store.patchSection('opcoesDeCurso', { ...antes, numero: antes.numero === '2' ? '1' : '2' });
+      cenario.store.patchSection('opcoesDeCurso', {
+        ...antes,
+        numero: antes.numero === '2' ? '1' : '2',
+      });
 
       expect(cenario.store.draft().opcoesDeCurso).toEqual(antes);
     });
