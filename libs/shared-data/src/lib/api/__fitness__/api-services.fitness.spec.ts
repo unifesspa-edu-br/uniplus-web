@@ -154,11 +154,11 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
         return;
       }
 
-      expect(vendorMimeCalls).toBeGreaterThanOrEqual(
-        getCalls,
+      expect(
+        vendorMimeCalls,
         `\nEsperado ≥${getCalls} call sites de withVendorMime() (1 por this.http.get<>); ` +
           `encontrado ${vendorMimeCalls}. ADR-0016 exige Accept versionado em todo GET de recurso versionado.`,
-      );
+      ).toBeGreaterThanOrEqual(getCalls);
     });
   });
 });

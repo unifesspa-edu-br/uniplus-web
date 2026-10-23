@@ -18,6 +18,7 @@ const analiseDocumental: TipoEtapaDto = {
   ativo: true,
   admitePontuacao: false,
   admiteEliminacao: true,
+  notaDeOrigemNoEnem: false,
   criadoEm: '2026-08-11T00:00:00Z',
 };
 
@@ -29,6 +30,7 @@ const provaObjetiva: TipoEtapaDto = {
   ativo: true,
   admitePontuacao: true,
   admiteEliminacao: true,
+  notaDeOrigemNoEnem: false,
   criadoEm: '2026-08-11T00:00:00Z',
 };
 

@@ -23,6 +23,7 @@ const provaObjetiva: TipoEtapaDto = {
   ativo: true,
   admitePontuacao: true,
   admiteEliminacao: true,
+  notaDeOrigemNoEnem: false,
   criadoEm: '2026-08-30T12:00:00Z',
 };
 

@@ -31,7 +31,7 @@ import {
   SnapshotVigenteDto,
   TipoProcessoSnapshotDto,
 } from './processos-seletivos.api';
-import { FinalidadeDoDocumento, OrigemCandidatos } from './schema';
+import { FinalidadeDoDocumento, OrigemCandidatos, StatusProcesso } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -51,7 +51,7 @@ const resumoSeed: ProcessoSeletivoResumoDto = {
   id: ID,
   nome: 'Processo Seletivo 2027',
   tipoProcesso,
-  status: 'rascunho',
+  status: StatusProcesso.rascunho,
   criadoEm: '2026-08-11T12:00:00Z',
 };
 
@@ -95,6 +95,10 @@ const criarCommand: CriarProcessoSeletivoCommand = {
   tipoProcessoOrigemId: TIPO_ID,
   origemCandidatos: OrigemCandidatos.inscricaoPropria,
   unidadeAdministradoraOrigemId: '01960000-0000-7000-000000000517',
+  localidadeCodigoIbge: null,
+  localidadeNome: null,
+  localidadeUf: null,
+  identificadorLegivel: null,
 };
 
 describe('ProcessosSeletivosApi', () => {
@@ -366,6 +370,10 @@ describe('ProcessosSeletivosApi', () => {
         peso: 2,
         notaMinima: null,
         ordem: 1,
+        produtos: [],
+        emiteParecerIndividual: false,
+        bancas: [],
+        recursos: [],
       },
       {
         nome: 'Redação',
@@ -374,6 +382,10 @@ describe('ProcessosSeletivosApi', () => {
         peso: 1,
         notaMinima: 5,
         ordem: 2,
+        produtos: [],
+        emiteParecerIndividual: false,
+        bancas: [],
+        recursos: [],
       },
     ];
 
@@ -768,6 +780,7 @@ describe('ProcessosSeletivosApi', () => {
       itens: [
         { codigo: 'classificacao_ausente', dimensao: 'classificacao', mensagem: 'x', ok: false },
       ],
+      avisos: [],
     };
 
     const promise = firstValueFrom(api.obterConformidade(ID));

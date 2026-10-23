@@ -24,18 +24,21 @@ const RECURSO_ACESSIBILIDADE_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
 
 const recursoAcessibilidadeSeed: RecursoAcessibilidadeDto = {
   id: RECURSO_ACESSIBILIDADE_ID,
+  codigo: 'LEDOR',
   nome: 'Ledor',
   descricao: 'Leitura da prova em voz alta por fiscal designado.',
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
 const criarCommand: CriarRecursoAcessibilidadeCommand = {
+  codigo: 'LEDOR',
   nome: 'Ledor',
   descricao: 'Leitura da prova em voz alta por fiscal designado.',
 };
 
 const atualizarCommand: AtualizarRecursoAcessibilidadeCommand = {
   id: RECURSO_ACESSIBILIDADE_ID,
+  codigo: 'LEDOR',
   nome: 'Ledor de Prova',
   descricao: 'Leitura da prova em voz alta por fiscal designado.',
 };

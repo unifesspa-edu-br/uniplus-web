@@ -30,7 +30,9 @@ const reitoriasSeed: readonly UnidadeDto[] = [
     unidadeAcademica: false,
     vigenciaInicio: '2026-01-01',
     vigenciaFim: null,
-    origem: 'CriadoNoUniPlus',
+    cidadeCodigoIbge: null,
+    cidadeNome: null,
+    cidadeUf: null,
     criadoEm: '2026-06-10T12:00:00Z',
   },
 ];

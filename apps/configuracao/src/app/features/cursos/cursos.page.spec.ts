@@ -48,6 +48,7 @@ const ofertaSeed: OfertaCursoDto = {
     tipo: 'Instituto',
   },
   programaDeOferta: 'REGULAR',
+  regimeDeFuncionamento: 'EXTENSIVO',
   formatoPedagogico: 'PRESENCIAL',
   regimeDeTurno: 'REGULAR',
   turnos: ['MATUTINO'],

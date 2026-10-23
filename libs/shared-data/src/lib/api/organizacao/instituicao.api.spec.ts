@@ -38,8 +38,8 @@ const instituicaoSeed: InstituicaoDto = {
   conceitoInstitucional: null,
   igc: null,
   website: null,
-  enderecoSede: null,
-  municipioSede: null,
+  cidade: null,
+  endereco: null,
   unidadeRaizId: null,
   criadoEm: '2026-06-10T12:00:00Z',
 };
@@ -59,8 +59,10 @@ const criarCommand: CriarInstituicaoCommand = {
   conceitoInstitucional: null,
   igc: null,
   website: null,
-  enderecoSede: null,
-  municipioSede: null,
+  endereco: null,
+  cidadeCodigoIbge: null,
+  cidadeNome: null,
+  cidadeUf: null,
   unidadeRaizId: null,
 };
 
