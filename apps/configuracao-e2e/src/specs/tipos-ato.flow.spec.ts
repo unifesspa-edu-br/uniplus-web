@@ -147,11 +147,15 @@ async function preencherCadastro(page: Page): Promise<void> {
   await page.getByText('Determina a situação do candidato').click();
   await expect(determinaSituacao).toBeChecked();
   // Sem valor padrão: o operador declara as duas respostas.
-  await page
-    .getByRole('group', { name: 'Pode ser publicado como documento avulso do processo' })
-    .getByText('Não')
-    .click();
-  await page.getByRole('group', { name: 'Corrige sempre outro ato' }).getByText('Não').click();
+  await responderNao(page, 'Pode ser publicado como documento avulso do processo');
+  await responderNao(page, 'Corrige sempre outro ato');
+}
+
+/** A ajuda dos dois grupos cita "Não"; só o rótulo da opção tem esse texto inteiro. */
+async function responderNao(page: Page, pergunta: string): Promise<void> {
+  const grupo = page.getByRole('group', { name: pergunta });
+  await grupo.getByText('Não', { exact: true }).click();
+  await expect(grupo.getByRole('radio', { name: 'Não', exact: true })).toBeChecked();
 }
 
 test.describe('Tipo de ato — cadastro pela interface', () => {
