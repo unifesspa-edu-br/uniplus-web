@@ -56,6 +56,7 @@
         "command": "bash libs/shared-data/scripts/verify-codegen.sh",
         "cwd": "{workspaceRoot}"
       }
-    }
+    },
+    "typecheck-spec": {}
   }
 }

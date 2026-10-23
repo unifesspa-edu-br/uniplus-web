@@ -88,6 +88,7 @@
         "staticFilePath": "dist/apps/configuracao/browser",
         "spa": true
       }
-    }
+    },
+    "typecheck-spec": {}
   }
 }
