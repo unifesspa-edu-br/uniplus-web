@@ -7,6 +7,8 @@ decision-makers:
 
 # ADR-0009: Provedor OIDC do `uniplus-web`
 
+> **Emenda (2026-10-23).** A diretriz 6 passou a fixar a máscara de CPF `***.999.999-**`, conforme o Parecer DPO 002/2026. A forma anterior, que ocultava os dígitos centrais e deixava os verificadores à mostra, foi substituída.
+
 ## Contexto e enunciado do problema
 
 O `uniplus-web` é composto por três aplicações Angular (Seleção, Ingresso, Portal — ver ADR-0001) cujos usuários precisam autenticar-se com diferentes perfis (administrador, gestor, avaliador, candidato). Os candidatos chegam preferencialmente pelo Login Único do gov.br, e os usuários internos pelo IdP institucional. O frontend precisa de SSO entre as três apps e de tokens JWT carregados automaticamente nas requisições aos backends.
