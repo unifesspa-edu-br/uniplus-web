@@ -388,18 +388,13 @@ export class VagasStepComponent {
           : situacao === 'lido'
             ? 'Referência gravada fora do catálogo'
             : `Referência gravada, mas o catálogo ${motivo}`,
-      modalidades:
-        situacao === 'lido'
-          ? this.modalidadesDoPadrao().map((modalidade) =>
-              modalidade.descricao === ''
-                ? modalidade.codigo
-                : `${modalidade.codigo} — ${modalidade.descricao}`,
-            )
-          : this.modalidadesDoPadrao().map((modalidade) =>
-              modalidade.descricao === ''
-                ? `${modalidade.codigo} — descrição: o catálogo ${motivo}`
-                : `${modalidade.codigo} — ${modalidade.descricao}`,
-            ),
+      modalidades: this.modalidadesDoPadrao().map((modalidade) =>
+        modalidade.descricao !== ''
+          ? `${modalidade.codigo} — ${modalidade.descricao}`
+          : situacao === 'lido'
+            ? modalidade.codigo
+            : `${modalidade.codigo} — descrição: o catálogo ${motivo}`,
+      ),
     };
   });
 
@@ -1588,7 +1583,7 @@ export class VagasStepComponent {
    * Em consulta, as do snapshot gravado, com o catálogo só a complementar o que ele não traz;
    * fora dela, as do catálogo que o padrão seleciona.
    */
-  private modalidadesDoPadrao(): readonly ModalidadeDoPadrao[] {
+  private readonly modalidadesDoPadrao = computed<readonly ModalidadeDoPadrao[]>(() => {
     if (this.store.emConsulta()) {
       const vigentes = new Map(
         this.catalogos.modalidades().map((modalidade) => [modalidade.id, modalidade]),
@@ -1608,7 +1603,7 @@ export class VagasStepComponent {
 
     const selecionadas = new Set(this.padrao().modalidades.map((modalidade) => modalidade.id));
     return this.catalogos.modalidades().filter((modalidade) => selecionadas.has(modalidade.id));
-  }
+  });
 
   private ehDeclarada(modalidade: ModalidadeDoPadrao): boolean {
     return (
