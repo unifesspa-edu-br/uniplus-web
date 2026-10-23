@@ -41,7 +41,7 @@
     "typecheck-spec": {
       "executor": "nx:run-commands",
       "cache": true,
-      "inputs": ["default", "^default"],
+      "inputs": ["default", "^production"],
       "options": {
         "command": "tsc --noEmit -p {projectRoot}/tsconfig.spec.json"
       }

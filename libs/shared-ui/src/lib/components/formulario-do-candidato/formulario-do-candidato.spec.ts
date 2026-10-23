@@ -1,7 +1,6 @@
-import { HttpHeaders } from '@angular/common/http';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { apiFailure, apiOk } from '@uniplus/shared-core/http';
+import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
 
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import {
@@ -241,18 +240,16 @@ const FAMILIA_COM_CONFIRMACAO: FormularioDoCandidato = {
   },
 };
 
-const resultadoOk = <T>(data: T) => apiOk(data, 200, new HttpHeaders());
-
 describe('FormularioDoCandidatoComponent', () => {
   let fixture: ComponentFixture<FormularioDoCandidatoComponent>;
   let simulacoes: SimulacaoDoFormulario[];
   let resultadoDoCep: (cep: string) => ReturnType<BuscaDeCep>;
 
   beforeEach(() => {
-    resultadoDoCep = () => of(resultadoOk(CEP_DE_MARABA));
+    resultadoDoCep = () => of(okResult(CEP_DE_MARABA));
     TestBed.configureTestingModule({
       providers: [
-        { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of(resultadoOk([MARABA])) },
+        { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of(okResult([MARABA])) },
         { provide: BUSCA_DE_CEP, useValue: (cep: string) => resultadoDoCep(cep) },
       ],
     });
@@ -1087,19 +1084,7 @@ describe('FormularioDoCandidatoComponent', () => {
 
   it('o CEP que o Geo não encontra não preenche nada e orienta a busca dos Correios em nova aba', () => {
     resultadoDoCep = () =>
-      of(
-        apiFailure(
-          {
-            type: 'x',
-            title: 'x',
-            status: 404,
-            code: 'uniplus.geo.cep_nao_encontrado',
-            traceId: '',
-          },
-          404,
-          new HttpHeaders(),
-        ),
-      );
+      of(errorResult(mockProblemDetails({ status: 404, code: 'uniplus.geo.cep_nao_encontrado' })));
     const tela = montar(RESIDENCIA);
 
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68500000');
@@ -1123,7 +1108,7 @@ describe('FormularioDoCandidatoComponent', () => {
   const buscarCepComOrigem = (origem: string): HTMLElement => {
     resultadoDoCep = () =>
       of(
-        resultadoOk({
+        okResult({
           ...CEP_DE_MARABA,
           logradouro: null,
           tipo: null,
@@ -1141,7 +1126,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('o CEP de grande usuário não exige bairro nem logradouro, mesmo no nível da cidade', () => {
     resultadoDoCep = () =>
       of(
-        resultadoOk({
+        okResult({
           ...CEP_DE_MARABA,
           logradouro: null,
           tipo: null,
@@ -1173,7 +1158,7 @@ describe('FormularioDoCandidatoComponent', () => {
   });
 
   it('o aviso do CEP geral descreve o campo CEP para o leitor de tela', () => {
-    resultadoDoCep = () => of(resultadoOk({ ...CEP_DE_MARABA, bairro: null, origem: 'cep-geral' }));
+    resultadoDoCep = () => of(okResult({ ...CEP_DE_MARABA, bairro: null, origem: 'cep-geral' }));
     const tela = montar(RESIDENCIA);
     digitar(tela.querySelector('input[id$="-cep"]') as HTMLInputElement, '68507590');
     clicar(botao(tela, 'Buscar CEP'));
@@ -1187,7 +1172,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('o CEP geral oficial mostra de qual cidade é e exige logradouro e bairro', () => {
     resultadoDoCep = () =>
       of(
-        resultadoOk({
+        okResult({
           ...CEP_DE_MARABA,
           logradouro: null,
           tipo: null,

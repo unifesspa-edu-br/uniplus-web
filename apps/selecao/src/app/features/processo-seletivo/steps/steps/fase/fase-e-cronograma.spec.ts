@@ -263,7 +263,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
         {
           id: ID_ETAPA_GRAVADA,
           nome: 'Prova objetiva',
-          carater: CaraterEtapa.classificatoria as const,
+          carater: CaraterEtapa.classificatoria,
           tipoEtapaOrigemId: ID_TIPO_ETAPA,
           peso: '1',
           notaMinima: '',

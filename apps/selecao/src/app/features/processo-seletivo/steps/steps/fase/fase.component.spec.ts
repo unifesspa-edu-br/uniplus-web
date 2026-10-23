@@ -732,7 +732,7 @@ describe('FaseStepComponent', () => {
           {
             id: '01960000-0000-7000-0000-0000000000ee',
             nome: 'Prova objetiva',
-            carater: CaraterEtapa.classificatoria as const,
+            carater: CaraterEtapa.classificatoria,
             tipoEtapaOrigemId: '01960000-0000-7000-0000-0000000000e1',
             peso: '1',
             notaMinima: '',
