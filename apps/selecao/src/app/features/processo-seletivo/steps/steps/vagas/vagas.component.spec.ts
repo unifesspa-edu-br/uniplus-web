@@ -735,7 +735,6 @@ const REGRA_CASCATA_SEM_MATRIZ = {
   modalidadesAdmitidas: null,
 };
 
-/** Oferta federal com as três modalidades: cobre fallback e o destino da origem. */
 /** A modalidade como o snapshot a guarda; o que não interessa ao teste fica vazio. */
 function gravadaDe(descricao: string, composicaoVagas: string): ModalidadeGravada {
   return {
@@ -749,6 +748,7 @@ function gravadaDe(descricao: string, composicaoVagas: string): ModalidadeGravad
   };
 }
 
+/** Oferta federal com as três modalidades: cobre fallback e o destino da origem. */
 function distribuicaoComCascata(): DistribuicaoDeVagas {
   return {
     ofertaCursoId: OFERTA_CASCATA,

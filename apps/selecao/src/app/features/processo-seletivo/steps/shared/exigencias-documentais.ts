@@ -115,34 +115,6 @@ export function formatosDeclarados(formatosAceitos: string | null | undefined): 
 }
 
 /**
- * O arquivo que a exigência gravou aceitar, como texto: o que o processo publicou, e não o que o
- * cadastro do tipo declara hoje. `null` quando a exigência não restringe nada que se possa dizer.
- */
-export function arquivoPublicadoDe(
-  exigencia: Pick<ExigenciaDeDocumento, 'formatosPermitidos' | 'tamanhoMaximoBytes'>,
-): string | null {
-  const bruto = exigencia.formatosPermitidos;
-  const formatos = Array.isArray(bruto)
-    ? bruto.filter((formato): formato is string => typeof formato === 'string')
-    : [];
-  const mb =
-    exigencia.tamanhoMaximoBytes !== null && exigencia.tamanhoMaximoBytes > 0
-      ? exigencia.tamanhoMaximoBytes / BYTES_POR_MB
-      : null;
-
-  const partes = [
-    formatos.length > 0
-      ? `Formatos aceitos: ${formatos.join(', ')}.`
-      : bruto === QUALQUER_FORMATO
-        ? 'Qualquer formato.'
-        : null,
-    mb === null ? null : `Até ${mb.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} MB.`,
-  ].filter((parte) => parte !== null);
-
-  return partes.length === 0 ? null : partes.join(' ');
-}
-
-/**
  * Uma exigência recém-declarada, antes de o operador dizer qualquer coisa sobre ela. Nasce
  * obrigatória porque é o caso comum — documento pedido no edital é documento que decide a
  * análise —, e é por isso que a tela pede a base legal em seguida.

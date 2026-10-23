@@ -21,7 +21,6 @@ import {
   exigidoDeTodos,
   faltaOFormulario,
   finalidadeDaExigencia,
-  arquivoPublicadoDe,
   formatosDeclarados,
   modalidadesDaExigencia,
   semAExigencia,
@@ -30,6 +29,7 @@ import {
   type GrupoDaExigencia,
   type RepeticaoDaExigencia,
 } from '../../shared/exigencias-documentais';
+import { descreverArquivo } from '../../shared/documentos-exigidos';
 import {
   clausulasDoGatilho,
   dominiosDoGatilho,
@@ -915,6 +915,12 @@ export class FaseStepComponent {
     }),
   );
 
+  /** O arquivo que a exigência gravou aceitar, escrito como o formulário e a revisão o escrevem. */
+  private arquivoPublicadoDoDocumento(id: string): string {
+    const exigencia = this.exigenciaDoDocumento(id);
+    return descreverArquivo(exigencia.formatosPermitidos, exigencia.tamanhoMaximoBytes);
+  }
+
   /** O que a consulta lê de um documento além do que a conferência já resume. */
   private detalheLidoDoDocumento(doc: DocumentoDefinicao): DetalheLidoDoDocumento {
     const id = doc.id;
@@ -922,7 +928,7 @@ export class FaseStepComponent {
     const finalidade = this.finalidadeDoDocumento(id);
     return {
       descricao: doc.descricao,
-      formatos: arquivoPublicadoDe(this.exigenciaDoDocumento(id)),
+      formatos: this.arquivoPublicadoDoDocumento(id),
       situacao: doc.situacao,
       formulario: this.mostraFormulario(id)
         ? (this.formulariosEscolhiveis().find((opcao) => opcao.valor === finalidade)?.rotulo ?? null)

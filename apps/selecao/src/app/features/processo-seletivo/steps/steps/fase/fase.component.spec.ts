@@ -1473,8 +1473,8 @@ describe('FaseStepComponent', () => {
         expect(nativo.querySelector('tbody select, tbody input, tbody button')).toBeNull();
       });
 
-      /** O aviso de formatos é do detalhe: em consulta continua alcançável, como texto. */
-      it('em consulta, lê o aviso dos formatos que a exigência não declara', () => {
+      /** O aviso compara com o cadastro vigente: serve a quem edita, e não ao que se publicou. */
+      it('em consulta, não mistura o aviso do cadastro vigente com os formatos publicados', () => {
         TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
           { ...TIPOS_DOCUMENTO[0], formatosAceitos: 'pdf,tiff' },
         ]);
@@ -1485,7 +1485,7 @@ describe('FaseStepComponent', () => {
         detectar();
 
         const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
-        expect(leitura).toContain('O cadastro aceita tiff, que a exigência não sabe declarar');
+        expect(leitura).not.toContain('O cadastro aceita');
       });
 
       /**
@@ -1502,7 +1502,7 @@ describe('FaseStepComponent', () => {
         const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
         expect(leitura).toContain('Sem descrição');
         expect(leitura).toContain('Arquivo aceito pela exigência publicada');
-        expect(leitura).toContain('Formatos aceitos: PDF, JPEG. Até 10 MB.');
+        expect(leitura).toContain('PDF, JPEG, até 10,0 MB');
       });
 
       /**
@@ -1520,8 +1520,8 @@ describe('FaseStepComponent', () => {
         detectar();
 
         const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
-        expect(leitura).toContain('Formatos aceitos: PDF, JPEG. Até 10 MB.');
-        expect(leitura).not.toContain('Até 5 MB');
+        expect(leitura).toContain('PDF, JPEG, até 10,0 MB');
+        expect(leitura).not.toContain('5,0 MB');
         expect(leitura).toContain('Descrição do cadastro vigente');
       });
 
@@ -1534,7 +1534,7 @@ describe('FaseStepComponent', () => {
         detectar();
 
         const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
-        expect(leitura).toContain('Formatos aceitos: PDF, JPEG. Até 10 MB.');
+        expect(leitura).toContain('PDF, JPEG, até 10,0 MB');
       });
 
       /**

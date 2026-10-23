@@ -528,6 +528,43 @@ describe('CascataRemanejamentoComponent', () => {
       controller.match(URL_DA_REGRA);
     });
 
+    /** O snapshot já responde: o catálogo fora do ar não torna a pergunta aberta. */
+    it('com a regra de remanejamento gravada, o catálogo fora do ar não cria a seção', () => {
+      store.remoteSnapshot.set({
+        status: StatusProcesso.rascunho,
+      } as unknown as ProcessoSeletivoDto);
+      store.patchObjectSection('vagas', {
+        ofertas: [
+          distribuicaoFederal([
+            {
+              id: LB_Q,
+              codigo: 'LB_Q',
+              gravada: {
+                descricao: null,
+                composicaoVagas: 'RETIRA_DE',
+                composicaoOrigemCodigo: null,
+                regraRemanejamento: 'DESTINO_UNICO',
+                remanejamentoDestino: 'AC',
+                remanejamentoPar: null,
+                remanejamentoFallback: null,
+              },
+            },
+          ]),
+        ],
+      });
+      store.remoteSnapshot.set({
+        status: StatusProcesso.publicado,
+      } as unknown as ProcessoSeletivoDto);
+      componente.catalogos.modalidades.set([]);
+      componente.catalogos.erro.set('Falha');
+      detectar();
+
+      expect(componente.precisaExibir()).toBe(false);
+      expect(componente.exibirSecao()).toBe(false);
+      expect(leitura()).not.toContain('não foi possível confirmar');
+      controller.match(URL_DA_REGRA);
+    });
+
     it('durante o carregamento do catálogo, a seção não aparece pela exceção', () => {
       componente.catalogos.modalidades.set([]);
       componente.catalogos.carregando.set(true);
