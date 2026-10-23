@@ -18,59 +18,127 @@ const CORS = {
 };
 
 const TIPOS_PROCESSO = [
-  { id: '01960000-0000-7000-0000-000000000515', codigo: 'SISU', nome: 'SISU',
-    descricao: null, ativo: true, criadoEm: '2026-08-11T00:00:00Z' },
+  {
+    id: '01960000-0000-7000-0000-000000000515',
+    codigo: 'SISU',
+    nome: 'SISU',
+    descricao: null,
+    ativo: true,
+    criadoEm: '2026-08-11T00:00:00Z',
+  },
 ] as const;
 
 /** Habilitação: uma fase que o cadastro NÃO marca como agrupadora de etapas. */
 const FASES_CANONICAS = [
-  { id: '01960000-0000-7000-0000-0000000000d1', codigo: 'HABILITACAO', nome: 'Habilitação',
-    descricao: null, donoTipico: 'CRCA', agrupaEtapas: false, permiteComplementacao: false,
-    baseLegal: null, coletaInscricao: false, origemData: 'PROPRIA',
-    criadoEm: '2026-08-30T12:00:00Z' },
+  {
+    id: '01960000-0000-7000-0000-0000000000d1',
+    codigo: 'HABILITACAO',
+    nome: 'Habilitação',
+    descricao: null,
+    donoTipico: 'CRCA',
+    agrupaEtapas: false,
+    permiteComplementacao: false,
+    baseLegal: null,
+    coletaInscricao: false,
+    origemData: 'PROPRIA',
+    criadoEm: '2026-08-30T12:00:00Z',
+  },
 ] as const;
 
 const TIPOS_ETAPA = [
-  { id: '01960000-0000-7000-0000-0000000000e1', codigo: 'ANALISE_DOCUMENTAL',
-    nome: 'Análise Documental', descricao: null, ativo: true,
-    admitePontuacao: false, admiteEliminacao: true },
-  { id: '01960000-0000-7000-0000-0000000000e2', codigo: 'PROVA_OBJETIVA',
-    nome: 'Prova Objetiva', descricao: null, ativo: true,
-    admitePontuacao: true, admiteEliminacao: true },
+  {
+    id: '01960000-0000-7000-0000-0000000000e1',
+    codigo: 'ANALISE_DOCUMENTAL',
+    nome: 'Análise Documental',
+    descricao: null,
+    ativo: true,
+    admitePontuacao: false,
+    admiteEliminacao: true,
+  },
+  {
+    id: '01960000-0000-7000-0000-0000000000e2',
+    codigo: 'PROVA_OBJETIVA',
+    nome: 'Prova Objetiva',
+    descricao: null,
+    ativo: true,
+    admitePontuacao: true,
+    admiteEliminacao: true,
+  },
 ] as const;
 
 const TIPOS_ATO = [
-  { id: '01960000-0000-7000-0000-0000000000a1', codigo: 'RESULTADO_PRELIMINAR',
-    nome: 'Resultado preliminar', congelaConfiguracao: false, unicoPorObjeto: false,
-    efeitoIrreversivel: false, ehResultado: true, vigenciaInicio: '2020-01-01',
-    vigenciaFim: null, baseLegal: null },
-  { id: '01960000-0000-7000-0000-0000000000a2', codigo: 'RESULTADO_FINAL',
-    nome: 'Resultado final', congelaConfiguracao: false, unicoPorObjeto: false,
-    efeitoIrreversivel: false, ehResultado: true, vigenciaInicio: '2020-01-01',
-    vigenciaFim: null, baseLegal: null },
+  {
+    id: '01960000-0000-7000-0000-0000000000a1',
+    codigo: 'RESULTADO_PRELIMINAR',
+    nome: 'Resultado preliminar',
+    congelaConfiguracao: false,
+    unicoPorObjeto: false,
+    efeitoIrreversivel: false,
+    ehResultado: true,
+    vigenciaInicio: '2020-01-01',
+    vigenciaFim: null,
+    baseLegal: null,
+  },
+  {
+    id: '01960000-0000-7000-0000-0000000000a2',
+    codigo: 'RESULTADO_FINAL',
+    nome: 'Resultado final',
+    congelaConfiguracao: false,
+    unicoPorObjeto: false,
+    efeitoIrreversivel: false,
+    ehResultado: true,
+    vigenciaInicio: '2020-01-01',
+    vigenciaFim: null,
+    baseLegal: null,
+  },
 ] as const;
 
 const TIPOS_BANCA = [
-  { id: '01960000-0000-7000-0000-0000000000a9', codigo: 'ANALISE_DOCUMENTAL',
-    nome: 'Banca de análise documental', faseTipica: 'HABILITACAO', descricao: null,
-    criadoEm: '2026-08-30T12:00:00Z' },
+  {
+    id: '01960000-0000-7000-0000-0000000000a9',
+    codigo: 'ANALISE_DOCUMENTAL',
+    nome: 'Banca de análise documental',
+    faseTipica: 'HABILITACAO',
+    descricao: null,
+    criadoEm: '2026-08-30T12:00:00Z',
+  },
 ] as const;
 
 const CATEGORIAS_DOCUMENTO = [
-  { id: '01960000-0000-7000-0000-0000000000c1', codigo: 'RENDA', nome: 'Comprovação de renda',
-    descricao: null, ativo: true },
+  {
+    id: '01960000-0000-7000-0000-0000000000c1',
+    codigo: 'RENDA',
+    nome: 'Comprovação de renda',
+    descricao: null,
+    ativo: true,
+  },
 ] as const;
 
 const TIPOS_DOCUMENTO = [
-  { id: '01960000-0000-7000-0000-0000000000b1', codigo: 'CONTRACHEQUE', nome: 'Contracheque',
-    descricao: null, categoria: 'RENDA', tipoEquivalente: null, ativo: true,
-    formatosAceitos: null, criadoEm: '2026-08-30T12:00:00Z' },
+  {
+    id: '01960000-0000-7000-0000-0000000000b1',
+    codigo: 'CONTRACHEQUE',
+    nome: 'Contracheque',
+    descricao: null,
+    categoria: 'RENDA',
+    tipoEquivalente: null,
+    ativo: true,
+    formatosAceitos: null,
+    criadoEm: '2026-08-30T12:00:00Z',
+  },
 ] as const;
 
 const REGRAS_RECURSO = [
-  { codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO', versao: 'v1', tipo: 'regra_prazo_recurso',
-    esquemaArgs: {}, invariantes: {}, baseLegal: 'Lei 9.784/1999, art. 59',
-    hash: 'abc', modalidadesAdmitidas: null },
+  {
+    codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+    versao: 'v1',
+    tipo: 'regra_prazo_recurso',
+    esquemaArgs: {},
+    invariantes: {},
+    baseLegal: 'Lei 9.784/1999, art. 59',
+    hash: 'abc',
+    modalidadesAdmitidas: null,
+  },
 ] as const;
 
 test.describe('Etapa da fase — o que ela publica e que recurso admite', () => {
@@ -99,7 +167,9 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await expect(page.getByLabel('Nome', { exact: true }).last()).toBeVisible();
     await expect(page.getByRole('heading', { name: 'O que esta etapa publica' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Quem julga esta etapa' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Recursos que esta etapa admite' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Recursos que esta etapa admite' }),
+    ).toBeVisible();
   });
 
   /**
@@ -188,10 +258,14 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
 
     await expect(recursos.getByLabel('Prazo', { exact: true }).nth(0)).toHaveValue('24');
     await expect(recursos.getByLabel('Unidade', { exact: true }).nth(0)).toHaveValue('horas');
-    await expect(recursos.getByLabel('Contra qual publicação').nth(0)).toHaveValue('RESULTADO_PRELIMINAR');
+    await expect(recursos.getByLabel('Contra qual publicação').nth(0)).toHaveValue(
+      'RESULTADO_PRELIMINAR',
+    );
     await expect(recursos.getByLabel('Prazo', { exact: true }).nth(1)).toHaveValue('2');
     await expect(recursos.getByLabel('Unidade', { exact: true }).nth(1)).toHaveValue('diasUteis');
-    await expect(recursos.getByLabel('Contra qual publicação').nth(1)).toHaveValue('RESULTADO_FINAL');
+    await expect(recursos.getByLabel('Contra qual publicação').nth(1)).toHaveValue(
+      'RESULTADO_FINAL',
+    );
   });
 
   /**
@@ -209,9 +283,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
 
     await recursos.getByLabel('Suspensividade da 1ª instância — prazo').fill('3');
-    await recursos
-      .getByLabel('Suspensividade da 1ª instância — unidade')
-      .selectOption('diasUteis');
+    await recursos.getByLabel('Suspensividade da 1ª instância — unidade').selectOption('diasUteis');
     // A 2ª instância só tem suspensividade quando a janela admite instância superior.
     const prazoDaSegunda = recursos.getByLabel('Suspensividade da 2ª instância — prazo');
     await expect(prazoDaSegunda).toHaveCount(0);
