@@ -363,7 +363,11 @@ async function mockarApi(page: Page, status: Status): Promise<void> {
         avisos: [],
       });
     } else if (caminho.endsWith('/conformidade')) {
-      await responderCom(route, { processoSeletivoId: ID_DO_PROCESSO_COMPLETO, itens: [], avisos: [] });
+      await responderCom(route, {
+        processoSeletivoId: ID_DO_PROCESSO_COMPLETO,
+        itens: [],
+        avisos: [],
+      });
     } else {
       await route.fulfill({ status: 404, headers: CORS_HEADERS });
     }
