@@ -28,7 +28,7 @@ const corRaca = (sistema: boolean): FatoCandidatoDto => ({
   hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
   sistema,
   ativo: true,
-  valores: [{ codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true }],
+  valores: [{ codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true, orientacao: null }],
   regrasPadrao: [],
 });
 
@@ -110,7 +110,10 @@ describe('FatoCandidatoEdicaoComponent', () => {
   });
 
   it('o valor desativado se reativa com chave de idempotência, e o foco volta ao botão da linha', async () => {
-    const comDesativado = { ...corRaca(false), valores: [{ codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: false }] };
+    const comDesativado = {
+      ...corRaca(false),
+      valores: [{ codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: false, orientacao: null }],
+    };
     const tela = await carregar(comDesativado);
     const reativar = tela.querySelector<HTMLButtonElement>('#cfg-fato-valor-PRETA-acao');
     expect(reativar?.textContent).toContain('Reativar');
@@ -137,7 +140,7 @@ describe('FatoCandidatoEdicaoComponent', () => {
       origem: 'DERIVADO',
       cardinalidade: 'MULTIVALORADO',
       binding: 'REGRA_DERIVACAO:PERFIL',
-      valores: [{ codigo: 'A', descricao: null, ordem: 0, ativo: true }],
+      valores: [{ codigo: 'A', descricao: null, ordem: 0, ativo: true, orientacao: null }],
     };
     const quilombola = {
       id: 'q', codigo: 'QUILOMBOLA', nome: 'Quilombola', descricao: null, dominio: 'BOOLEANO', origem: 'DECLARADO',
@@ -210,9 +213,10 @@ describe('FatoCandidatoEdicaoComponent', () => {
     controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}/valores`).flush(null, { status: 204, statusText: 'No Content' });
     await Promise.resolve();
     TestBed.inject(ApplicationRef).tick();
-    controller
-      .expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}`)
-      .flush({ ...perfil, valores: [{ codigo: 'B', descricao: null, ordem: 0, ativo: true }] });
+    controller.expectOne(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}`).flush({
+      ...perfil,
+      valores: [{ codigo: 'B', descricao: null, ordem: 0, ativo: true, orientacao: null }],
+    });
     await Promise.resolve();
     TestBed.inject(ApplicationRef).tick();
 
@@ -292,9 +296,9 @@ describe('FatoCandidatoEdicaoComponent', () => {
     const tresValores = (): FatoCandidatoDto => ({
       ...corRaca(false),
       valores: [
-        { codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true },
-        { codigo: 'PARDA', descricao: 'Parda', ordem: 1, ativo: false },
-        { codigo: 'BRANCA', descricao: 'Branca', ordem: 2, ativo: true },
+        { codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true, orientacao: null },
+        { codigo: 'PARDA', descricao: 'Parda', ordem: 1, ativo: false, orientacao: null },
+        { codigo: 'BRANCA', descricao: 'Branca', ordem: 2, ativo: true, orientacao: null },
       ],
     });
     const botao = (tela: HTMLElement, codigo: string, acao: string): HTMLButtonElement =>
@@ -754,7 +758,12 @@ describe('FatoCandidatoEdicaoComponent', () => {
     });
 
     it('trocar o tipo de dado limpa também as marcas das contribuições e das condições', async () => {
-      const categorico: FatoCandidatoDto = { ...derivado(), dominio: 'CATEGORICO', fonteValores: 'GLOBAL', valores: [{ codigo: 'A', descricao: null, ordem: 0, ativo: true }] };
+      const categorico: FatoCandidatoDto = {
+        ...derivado(),
+        dominio: 'CATEGORICO',
+        fonteValores: 'GLOBAL',
+        valores: [{ codigo: 'A', descricao: null, ordem: 0, ativo: true, orientacao: null }],
+      };
       const tela = await carregar(categorico);
       controller.expectOne(URL_FASES).flush(FASES);
       await assentar();
@@ -778,7 +787,10 @@ describe('FatoCandidatoEdicaoComponent', () => {
 
     it('depois de trocar o tipo de dado do derivado, as regras em tela são as do servidor', async () => {
       const categorico: FatoCandidatoDto = {
-        ...derivado(), dominio: 'CATEGORICO', fonteValores: 'GLOBAL', valores: [{ codigo: 'A', descricao: null, ordem: 0, ativo: true }],
+        ...derivado(),
+        dominio: 'CATEGORICO',
+        fonteValores: 'GLOBAL',
+        valores: [{ codigo: 'A', descricao: null, ordem: 0, ativo: true, orientacao: null }],
         regrasPadrao: [{ contribui: 'A', quando: [[{ fato: 'QUILOMBOLA', operador: 'IGUAL', valor: true }]] }],
       };
       const tela = await carregar(categorico);

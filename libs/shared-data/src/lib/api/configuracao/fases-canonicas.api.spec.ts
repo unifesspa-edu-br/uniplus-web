@@ -29,6 +29,9 @@ const faseSeed: FaseCanonicaDto = {
   agrupaEtapas: true,
   permiteComplementacao: false,
   baseLegal: null,
+  coletaInscricao: false,
+  coletaSolicitacaoIsencao: false,
+  origemData: 'PROPRIA',
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -40,6 +43,8 @@ const criarCommand: CriarFaseCanonicaCommand = {
   agrupaEtapas: true,
   permiteComplementacao: false,
   baseLegal: null,
+  coletaInscricao: false,
+  coletaSolicitacaoIsencao: false,
 };
 
 describe('FasesCanonicasApi', () => {
@@ -103,6 +108,8 @@ describe('FasesCanonicasApi', () => {
           agrupaEtapas: true,
           permiteComplementacao: false,
           baseLegal: null,
+          coletaInscricao: false,
+          coletaSolicitacaoIsencao: false,
         },
         withIdempotencyKey('k'),
       ),

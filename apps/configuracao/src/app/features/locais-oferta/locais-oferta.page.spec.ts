@@ -8,7 +8,11 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, LocalOfertaDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  LocalOfertaDto,
+  TipoLocalOferta,
+} from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LocaisOfertaPage } from './locais-oferta.page';
@@ -22,7 +26,7 @@ const LIMITE_MAXIMO_API = 100;
 
 const localSeed: LocalOfertaDto = {
   id: '01960000-0000-7000-0000-0000000000d1',
-  tipo: 'poloEad',
+  tipo: TipoLocalOferta.poloEad,
   codigoEmec: '999',
   campusResponsavelId: null,
   cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
@@ -160,7 +164,7 @@ describe('LocaisOfertaPage', () => {
     component['abrirCadastro']();
     await flushCampiLookup();
     component['form'].setValue({
-      tipo: 'poloEad',
+      tipo: TipoLocalOferta.poloEad,
       codigoEmec: '999',
       campusResponsavelId: '',
       endereco: enderecoResolvido,

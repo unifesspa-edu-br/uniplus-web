@@ -81,7 +81,7 @@ describe('AuthService.logout — redireciona ao mount point (Story #447)', () =>
   });
 
   it('redireciona pra document.baseURI (raiz) em standalone-compact/lab', async () => {
-    const logoutSpy = vi.fn(async () => undefined);
+    const logoutSpy = vi.fn<Keycloak['logout']>(async () => undefined);
     vi.spyOn(
       service as unknown as { createKeycloak: () => Keycloak },
       'createKeycloak',
@@ -100,7 +100,7 @@ describe('AuthService.logout — redireciona ao mount point (Story #447)', () =>
     base.href = 'http://localhost:3000/portal/';
     document.head.appendChild(base);
     try {
-      const logoutSpy = vi.fn(async () => undefined);
+      const logoutSpy = vi.fn<Keycloak['logout']>(async () => undefined);
       vi.spyOn(
         service as unknown as { createKeycloak: () => Keycloak },
         'createKeycloak',

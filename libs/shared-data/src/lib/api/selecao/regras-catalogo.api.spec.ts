@@ -19,6 +19,7 @@ const regra: RegraCatalogoDto = {
   esquemaArgs: {},
   invariantes: {},
   baseLegal: 'Lei nº 12.711/2012',
+  modalidadesAdmitidas: null,
   hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
 };
 

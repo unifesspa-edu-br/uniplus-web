@@ -11,7 +11,7 @@ import {
 } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import {
-  AtualizarCondicaoAtendimentoCommand,
+  AtualizarTipoDeficienciaCommand,
   CONFIGURACAO_BASE_PATH,
   TipoDeficienciaDto,
   CriarTipoDeficienciaCommand,
@@ -24,21 +24,25 @@ const TIPO_DEFICIENCIA_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
 
 const tipoDeficienciaSeed: TipoDeficienciaDto = {
   id: TIPO_DEFICIENCIA_ID,
+  codigo: 'VISUAL',
   nome: 'Visual',
   descricao: 'Inclui baixa visão e cegueira',
+  permanente: true,
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
 const criarCommand: CriarTipoDeficienciaCommand = {
+  codigo: 'VISUAL',
   nome: 'Visual',
   descricao: 'Inclui baixa visão e cegueira',
 };
 
-const atualizarCommand: AtualizarCondicaoAtendimentoCommand = {
+const atualizarCommand: AtualizarTipoDeficienciaCommand = {
   id: TIPO_DEFICIENCIA_ID,
-  codigo: 'PCD',
-  nome: 'Pessoa com Deficiência (PCD)',
-  descricao: 'LBI (Lei 13.146/2015), art. 30',
+  codigo: 'VISUAL',
+  nome: 'Visual',
+  descricao: 'Inclui baixa visão, cegueira e visão monocular',
+  permanente: true,
 };
 
 describe('TipoDeficienciaApi', () => {

@@ -39,6 +39,9 @@ const itemMunicipal: DiaNaoUtilCommandItem = {
 const diaMunicipal: DiaNaoUtilDto = {
   id: '019f41cf-69fd-759a-ac6d-09acabc1b100',
   ...itemMunicipal,
+  abrangencia: 'MUNICIPAL',
+  descricao: 'Aniversário de Marabá',
+  uf: null,
 };
 
 const comandoValido: CriarCalendarioDiasUteisCommand = {

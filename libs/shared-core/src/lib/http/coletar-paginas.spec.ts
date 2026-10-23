@@ -2,7 +2,8 @@ import { HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ApiResult, apiFailure, apiOk } from './api-result';
+import { ApiResult, apiOk } from './api-result';
+import { errorResult, mockProblemDetails } from './api-result.testing';
 import { coletarPaginas } from './coletar-paginas';
 import { Cursor, createCursor } from './pagination';
 
@@ -42,10 +43,8 @@ describe('coletarPaginas', () => {
    * e a tela ofereceria menos opções sem que ninguém percebesse.
    */
   it('interrompe na primeira recusa e não entrega coleção parcial', async () => {
-    const recusa = apiFailure(
-      { type: 'about:blank', title: 'Indisponível', status: 503 },
-      503,
-      new HttpHeaders(),
+    const recusa = errorResult(
+      mockProblemDetails({ type: 'about:blank', title: 'Indisponível', status: 503 }),
     );
     const consulta = vi.fn((cursor?: Cursor) =>
       cursor === undefined ? of(pagina(['a'], 'p2')) : of(recusa),

@@ -4,7 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiResult, apiFailure, apiOk } from './api-result';
+import { ApiResult, apiOk } from './api-result';
+import { errorResult, mockProblemDetails } from './api-result.testing';
 import { Cursor, createCursor } from './pagination';
 import { lookupCompleto } from './lookup-completo';
 
@@ -15,10 +16,8 @@ function pagina(dados: readonly string[], proximo?: string): ApiResult<readonly 
   return apiOk<readonly string[]>(dados, 200, headers);
 }
 
-const recusa = apiFailure(
-  { type: 'about:blank', title: 'Indisponível', status: 503 },
-  503,
-  new HttpHeaders(),
+const recusa = errorResult(
+  mockProblemDetails({ type: 'about:blank', title: 'Indisponível', status: 503 }),
 );
 
 describe('lookupCompleto', () => {

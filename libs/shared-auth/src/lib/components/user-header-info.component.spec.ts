@@ -62,12 +62,14 @@ describe('UserHeaderInfoComponent', () => {
     const fixture: ComponentFixture<UserHeaderInfoComponent> =
       TestBed.createComponent(UserHeaderInfoComponent);
     fixture.detectChanges();
-    return { fixture, logout, login, atualizarPerfil };
+    const host: HTMLElement = fixture.nativeElement;
+    return { fixture, host, logout, login, atualizarPerfil };
   }
 
   it('exibe apenas o primeiro nome social + avatar no chip (sem username/perfil)', () => {
-    const { fixture } = setup();
-    const chip = fixture.nativeElement.querySelector<HTMLElement>('button.user-chip');
+    const { host } = setup();
+    const chip = host.querySelector<HTMLElement>('button.user-chip');
+    if (chip === null) throw new Error('chip do usuário não renderizado');
     const name = chip.querySelector<HTMLElement>('[data-testid="auth-user-display-name"]');
     const avatar = chip.querySelector<HTMLElement>('.user-chip__avatar');
     expect(name?.textContent?.trim()).toBe('Candidato');
@@ -80,10 +82,8 @@ describe('UserHeaderInfoComponent', () => {
   });
 
   it('exibe username com prefixo @ no dropdown, não no chip', () => {
-    const { fixture } = setup();
-    const username = fixture.nativeElement.querySelector<HTMLElement>(
-      '[data-testid="auth-user-username"]',
-    );
+    const { host } = setup();
+    const username = host.querySelector<HTMLElement>('[data-testid="auth-user-username"]');
     expect(username?.textContent).toContain('@candidato');
     // A linha de identidade pertence ao menu de conta, não ao chip do topbar.
     expect(username?.closest('.menu')).toBeTruthy();
@@ -91,20 +91,18 @@ describe('UserHeaderInfoComponent', () => {
   });
 
   it('exibe o nome completo no cabeçalho de identidade do dropdown', () => {
-    const { fixture } = setup();
-    const fullName = fixture.nativeElement.querySelector<HTMLElement>(
-      '[data-testid="auth-user-full-name"]',
-    );
+    const { host } = setup();
+    const fullName = host.querySelector<HTMLElement>('[data-testid="auth-user-full-name"]');
     expect(fullName?.textContent?.trim()).toBe('Candidato Teste');
     expect(fullName?.closest('.menu__account')).toBeTruthy();
   });
 
   it('menu de conta expõe aria-label e o cabeçalho é role=presentation', () => {
-    const { fixture } = setup();
-    const menu = fixture.nativeElement.querySelector<HTMLElement>('.menu');
+    const { fixture, host } = setup();
+    const menu = host.querySelector<HTMLElement>('.menu');
     expect(menu?.getAttribute('role')).toBe('menu');
     expect(menu?.getAttribute('aria-label')).toBe('Conta');
-    const account = fixture.nativeElement.querySelector<HTMLElement>('.menu__account');
+    const account = host.querySelector<HTMLElement>('.menu__account');
     expect(account?.getAttribute('role')).toBe('presentation');
     // O cabeçalho de identidade não é navegável — os menuitems são "Meu perfil" e "Sair", nessa ordem.
     const items = fixture.nativeElement.querySelectorAll('[role="menuitem"]');
@@ -145,10 +143,8 @@ describe('UserHeaderInfoComponent', () => {
       ...profileData,
       nomeSocial: undefined,
     };
-    const { fixture } = setup(semNomeSocial);
-    const name = fixture.nativeElement.querySelector<HTMLElement>(
-      '[data-testid="auth-user-display-name"]',
-    );
+    const { host } = setup(semNomeSocial);
+    const name = host.querySelector<HTMLElement>('[data-testid="auth-user-display-name"]');
     expect(name?.textContent?.trim()).toBe('Usuário');
   });
 
@@ -394,10 +390,8 @@ describe('UserHeaderInfoComponent', () => {
       ...profileData,
       nomeSocial: '',
     };
-    const { fixture } = setup(nomeSocialVazio);
-    const name = fixture.nativeElement.querySelector<HTMLElement>(
-      '[data-testid="auth-user-display-name"]',
-    );
+    const { host } = setup(nomeSocialVazio);
+    const name = host.querySelector<HTMLElement>('[data-testid="auth-user-display-name"]');
     expect(name?.textContent?.trim()).toBe('Usuário');
   });
 

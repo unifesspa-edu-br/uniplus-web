@@ -14,6 +14,7 @@ import {
   CriarLocalOfertaCommand,
   LocaisOfertaApi,
   LocalOfertaDto,
+  TipoLocalOferta,
   TIPOS_LOCAL_OFERTA,
 } from './locais-oferta.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
@@ -23,7 +24,7 @@ const ID = '01960000-0000-7000-0000-0000000000d1';
 
 const localSeed: LocalOfertaDto = {
   id: ID,
-  tipo: 'poloEad',
+  tipo: TipoLocalOferta.poloEad,
   codigoEmec: '999',
   campusResponsavelId: null,
   cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
@@ -32,7 +33,7 @@ const localSeed: LocalOfertaDto = {
 };
 
 const criarCommand: CriarLocalOfertaCommand = {
-  tipo: 'poloEad',
+  tipo: TipoLocalOferta.poloEad,
   codigoEmec: '999',
   campusResponsavelId: null,
   cidadeCodigoIbge: '1504208',

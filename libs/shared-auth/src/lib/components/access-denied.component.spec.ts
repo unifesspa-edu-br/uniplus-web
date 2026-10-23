@@ -13,7 +13,6 @@ describe('AccessDeniedComponent', () => {
     username: 'servidor.sem.papel',
     email: 'servidor@teste.unifesspa.edu.br',
     nomeCivil: 'Servidor Sem Papel',
-    nomeSocial: null,
     cpf: '33257350376',
     roles: [],
   };
@@ -99,7 +98,9 @@ describe('AccessDeniedComponent', () => {
 
   /** Um clique duplo não pode disparar duas saídas concorrentes. */
   it('ignora acionamento repetido enquanto a saída corre', async () => {
-    let concluir: () => void;
+    let concluir: () => void = () => {
+      throw new Error('logout não foi chamado');
+    };
     const logout = vi.fn(() => new Promise<void>((resolve) => (concluir = resolve)));
     const { botao, fixture } = montar(logout);
 
@@ -112,7 +113,7 @@ describe('AccessDeniedComponent', () => {
     expect(botao()?.disabled).toBe(true);
     expect(botao()?.getAttribute('aria-busy')).toBe('true');
 
-    concluir!();
+    concluir();
     await fixture.whenStable();
   });
 

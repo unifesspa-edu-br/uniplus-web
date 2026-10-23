@@ -1,5 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClient, HttpHandlerFn, HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpHandlerFn,
+  HttpRequest,
+  HttpResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { tokenInterceptor } from './token.interceptor';
@@ -189,7 +196,7 @@ describe('tokenInterceptor — chamada direta', () => {
     const req = new HttpRequest('GET', 'https://other.example.com/x');
     const next: HttpHandlerFn = (r) => {
       expect(r.headers.has('Authorization')).toBe(false);
-      return of({} as never);
+      return of(new HttpResponse());
     };
 
     TestBed.runInInjectionContext(() => tokenInterceptor(req, next));

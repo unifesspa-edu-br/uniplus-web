@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ApiFailure } from './api-result';
 import type { ProblemDetails } from './problem-details';
+import { errorResult, mockProblemDetails } from './api-result.testing';
 import { IDEMPOTENCY_KEY_TOKEN } from './idempotency';
 
 import { ChaveDeSubstituicao } from './chave-de-substituicao';
@@ -9,17 +10,16 @@ const CORPO = { cobra: true, valor: 80 };
 const OUTRO_CORPO = { cobra: true, valor: 90 };
 
 function falha(problem: Partial<ProblemDetails>): ApiFailure {
-  return {
-    ok: false,
-    problem: {
+  return errorResult(
+    mockProblemDetails({
       type: 'about:blank',
       title: 'Recusado.',
       status: 400,
       code: 'uniplus.selecao.invalido',
       traceId: 'trace-1',
       ...problem,
-    },
-  };
+    }),
+  );
 }
 
 function chaveDe(chave: ChaveDeSubstituicao, corpo: unknown): string | null {
