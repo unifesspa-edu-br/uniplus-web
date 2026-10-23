@@ -11,6 +11,7 @@ import {
   PROCESSO_PUBLICADO_COMPLETO,
   SNAPSHOT_VIGENTE,
 } from '../fixtures/processo-publicado-completo';
+import { conferirObrigatoriedadeDoCampo } from '../support/consulta-do-formulario';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 
@@ -47,7 +48,12 @@ const PASSOS: readonly Passo[] = [
   { numero: 8, rotulo: 'Desempate', esperado: 'Regra do critério' },
   { numero: 9, rotulo: 'Eliminação', esperado: 'Regra de eliminação 1' },
   { numero: 10, rotulo: 'Atend. especial', esperado: 'Prova ampliada' },
-  { numero: 11, rotulo: 'Formulários', esperado: 'Opcional' },
+  {
+    numero: 11,
+    rotulo: 'Formulários',
+    esperado: 'Renda familiar per capita igual ou inferior a um salário mínimo',
+    obrigatoriedade: 'opcional',
+  },
   {
     numero: 12,
     rotulo: 'Revisão e publicação',
@@ -59,6 +65,8 @@ interface Passo {
   readonly numero: number;
   readonly rotulo: string;
   readonly esperado: string;
+  /** No passo Formulários, `esperado` é o nome do campo, e a obrigatoriedade fica na mesma linha. */
+  readonly obrigatoriedade?: string;
 }
 
 /** O que um usuário opera: qualquer um destes, visível, é controle de formulário ou de edição. */
@@ -108,6 +116,9 @@ test.describe('Varredura da consulta — todos os passos, matriz DS @ds', () => 
         await expect(
           page.locator('.wiz-content').getByText(passo.esperado, { exact: true }).first(),
         ).toBeVisible();
+        if (passo.obrigatoriedade) {
+          await conferirObrigatoriedadeDoCampo(page, passo.esperado, passo.obrigatoriedade);
+        }
         expect(await controlesVisiveis(page)).toEqual([]);
         await expect(page.getByRole('button', { name: ACOES_DE_EDICAO })).toHaveCount(0);
       });
