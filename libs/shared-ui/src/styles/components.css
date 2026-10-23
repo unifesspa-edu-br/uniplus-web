@@ -5046,6 +5046,7 @@ ui-steps-responsivo {
   --ui-steps-rotulo-feito: var(--text-primary);
   --ui-steps-rotulo-pendente: var(--text-secondary);
   --ui-steps-pendente-icone: var(--text-primary);
+  --ui-steps-erro: var(--color-danger-500);
 }
 
 .ui-steps--sobreposicao {
@@ -5066,6 +5067,7 @@ ui-steps-responsivo {
   --ui-steps-rotulo-feito: color-mix(in srgb, var(--text-on-inverse) 80%, transparent);
   --ui-steps-rotulo-pendente: color-mix(in srgb, var(--text-on-inverse) 60%, transparent);
   --ui-steps-pendente-icone: var(--text-on-inverse);
+  --ui-steps-erro: var(--text-danger-on-inverse);
 }
 
 /* Quando a coluna aparece (e em que largura) é do consumidor: ele mostra ou esconde o host. */
@@ -5246,18 +5248,19 @@ ui-steps-responsivo {
 }
 
 /*
- * Passo com recusa nas colunas: o círculo e o rótulo em vermelho, além do aviso lido pelo leitor de tela.
- * O vermelho é o de texto, que clareia no tema escuro; o de preenchimento ficaria ilegível sobre a superfície escura.
+ * Passo com recusa nas colunas: a borda do círculo e o rótulo (sublinhado, na sobreposição) em vermelho, que
+ * reforçam o ícone e o aviso lido pelo leitor de tela. O vermelho segue a superfície da variante: o de texto na
+ * lateral, que clareia no tema escuro, e o da superfície invertida na sobreposição, escura também no tema claro.
  */
 .ui-steps--lateral .is-error .ui-steps__num,
 .ui-steps--sobreposicao .is-error .ui-steps__num {
-  border-color: var(--color-danger-500);
+  border-color: var(--ui-steps-erro);
 }
 .ui-steps--lateral .is-error .ui-steps__rotulo {
-  color: var(--color-danger-500);
+  color: var(--ui-steps-erro);
 }
 .ui-steps--sobreposicao .is-error .ui-steps__rotulo {
-  text-decoration: underline wavy var(--color-danger-500);
+  text-decoration: underline wavy var(--ui-steps-erro);
 }
 .ui-steps--chips .is-error .ui-steps__botao {
   border-color: var(--color-danger-500);
