@@ -446,18 +446,19 @@ export const ANCORAS_DA_IDADE = [
 ] as const;
 
 /**
- * Os dois fatos cujo domínio não é vocabulário fechado do catálogo: os valores que o candidato
- * pode escolher saem do que ESTE processo oferta em atendimento especializado.
+ * O fato cujo domínio não é vocabulário fechado do catálogo: os valores que o candidato pode
+ * escolher saem do que ESTE processo oferta em atendimento especializado. O tipo de deficiência
+ * não está aqui: ele oferece os tipos do cadastro em qualquer processo, com ou sem oferta
+ * (UNI-REQ-0012).
  */
 const FATOS_COM_DOMINIO_NA_OFERTA = [
   { codigo: 'CONDICAO_ATENDIMENTO', rotulo: 'a condição de atendimento', lista: 'condicoes' },
-  { codigo: 'TIPO_DEFICIENCIA', rotulo: 'o tipo de deficiência', lista: 'tiposDeficiencia' },
 ] as const;
 
 /**
  * Campos que o formulário pergunta e para os quais a oferta não declara valor nenhum a escolher.
  *
- * O acoplamento é real e a publicação o cobra: um campo de seleção sobre um desses fatos com
+ * O acoplamento é real e a publicação o cobra: um campo de seleção sobre esse fato com
  * oferta vazia é pendência estrutural. Dizê-lo no passo que acrescenta o campo, e no da oferta,
  * evita ao operador descobrir na revisão com o caminho inteiro a refazer.
  */

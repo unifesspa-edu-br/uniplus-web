@@ -523,21 +523,18 @@ describe('campos cujo domínio sai da oferta de atendimento', () => {
       }),
     );
 
-  it('acusa os campos de seleção sem valor nenhum ofertado, na ordem em que a tela os nomeia', () => {
+  it('acusa a condição de atendimento sem valor nenhum ofertado, e não o tipo de deficiência, que vem do cadastro', () => {
     const formulario = comCampos(
-      ['TIPO_DEFICIENCIA', 'SELECAO_MULTIPLA'],
+      ['TIPO_DEFICIENCIA', 'SELECAO_UNICA'],
       ['CONDICAO_ATENDIMENTO', 'SELECAO_UNICA'],
     );
 
-    expect(camposSemValoresOfertados(formulario, semOferta)).toEqual([
-      'a condição de atendimento',
-      'o tipo de deficiência',
-    ]);
+    expect(camposSemValoresOfertados(formulario, semOferta)).toEqual(['a condição de atendimento']);
   });
 
   it('acusa também o campo perguntado em outro formulário do processo', () => {
     const habilitacao = inscricaoGravada({
-      itens: [item('TIPO_DEFICIENCIA', 0, 'S1', { tipoRenderizacao: 'SELECAO_MULTIPLA' })],
+      itens: [item('CONDICAO_ATENDIMENTO', 0, 'S1', { tipoRenderizacao: 'SELECAO_MULTIPLA' })],
     });
     const formulario = {
       ...comCampos(),
@@ -546,7 +543,7 @@ describe('campos cujo domínio sai da oferta de atendimento', () => {
       ],
     };
 
-    expect(camposSemValoresOfertados(formulario, semOferta)).toEqual(['o tipo de deficiência']);
+    expect(camposSemValoresOfertados(formulario, semOferta)).toEqual(['a condição de atendimento']);
   });
 
   it('cala quando a oferta declara ao menos um valor, ou quando o campo não é de seleção', () => {

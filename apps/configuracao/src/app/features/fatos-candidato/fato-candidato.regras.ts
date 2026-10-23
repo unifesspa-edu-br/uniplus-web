@@ -45,6 +45,7 @@ export const FONTES_DE_VALORES: readonly OpcaoDeVocabulario[] = [
   { valor: 'MUNICIPIOS_BONUS', rotulo: 'Municípios do bônus regional' },
   { valor: 'GEO_UF', rotulo: 'Unidades da federação' },
   { valor: 'GEO_MUNICIPIO', rotulo: 'Municípios' },
+  { valor: 'TIPOS_DEFICIENCIA', rotulo: 'Tipos de deficiência do cadastro' },
 ];
 
 export const FORMATOS_DE_TEXTO: readonly OpcaoDeVocabulario[] = [
