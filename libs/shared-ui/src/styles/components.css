@@ -5245,18 +5245,21 @@ ui-steps-responsivo {
   border-color: var(--color-success-solid);
 }
 
-/* Passo com recusa nas colunas: o círculo e o rótulo em vermelho, além do aviso lido pelo leitor de tela. */
+/*
+ * Passo com recusa nas colunas: o círculo e o rótulo em vermelho, além do aviso lido pelo leitor de tela.
+ * O vermelho é o de texto, que clareia no tema escuro; o de preenchimento ficaria ilegível sobre a superfície escura.
+ */
 .ui-steps--lateral .is-error .ui-steps__num,
 .ui-steps--sobreposicao .is-error .ui-steps__num {
-  border-color: var(--color-danger-solid);
+  border-color: var(--color-danger-500);
 }
 .ui-steps--lateral .is-error .ui-steps__rotulo {
-  color: var(--color-danger-solid);
+  color: var(--color-danger-500);
 }
 .ui-steps--sobreposicao .is-error .ui-steps__rotulo {
-  text-decoration: underline wavy var(--color-danger-solid);
+  text-decoration: underline wavy var(--color-danger-500);
 }
 .ui-steps--chips .is-error .ui-steps__botao {
-  border-color: var(--color-danger-solid);
-  color: var(--color-danger-solid);
+  border-color: var(--color-danger-500);
+  color: var(--color-danger-500);
 }
