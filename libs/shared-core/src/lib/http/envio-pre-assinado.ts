@@ -1,4 +1,4 @@
-import { HttpEventType } from '@angular/common/http';
+import { HttpEventType, type HttpResponse } from '@angular/common/http';
 import { isApiOk, type ApiResult } from './api-result';
 import type { ProblemDetails } from './problem-details';
 import type { SignedUploadClient } from './signed-upload';
@@ -28,7 +28,11 @@ export interface EnvioFalhou {
   readonly expirada: boolean;
 }
 
-export type ResultadoEnvio = { readonly ok: true } | EnvioFalhou;
+/**
+ * `etag` é o `ETag` da resposta do PUT, que identifica a versão do objeto gravado; nulo quando o
+ * storage não o expõe ao navegador (CORS sem `ExposeHeaders`).
+ */
+export type ResultadoEnvio = { readonly ok: true; readonly etag: string | null } | EnvioFalhou;
 
 /**
  * O PUT ao storage não passa pelos interceptors nem pelo contrato REST do Uni+: quem responde é o
@@ -52,10 +56,13 @@ export function enviarAoStorage(
   onProgresso: (percentual: number) => void,
 ): Promise<ResultadoEnvio> {
   return new Promise<ResultadoEnvio>((resolve) => {
+    let etag: string | null = null;
     upload.enviar(destino.urlUpload, arquivo, destino.contentTypeExigido).subscribe({
       next: (evento) => {
         if (evento.type === HttpEventType.UploadProgress) {
           onProgresso(percentualDe(evento.loaded, evento.total));
+        } else if (evento.type === HttpEventType.Response) {
+          etag = (evento as HttpResponse<unknown>).headers.get('ETag');
         }
       },
       error: (erro: unknown) => {
@@ -68,7 +75,7 @@ export function enviarAoStorage(
       },
       complete: () => {
         onProgresso(100);
-        resolve({ ok: true });
+        resolve({ ok: true, etag });
       },
     });
   });
