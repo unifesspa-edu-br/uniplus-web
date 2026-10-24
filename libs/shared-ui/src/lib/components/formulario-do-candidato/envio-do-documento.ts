@@ -137,15 +137,22 @@ export class EnvioDoDocumentoComponent {
     const confirmadosPeloEnvio = this.envio()
       .arquivos()
       .filter((a) => a.chave === this.alvo().chave);
-    for (const arquivo of [...this.arquivos(), ...confirmadosPeloEnvio]) {
-      if (!this.removidos().has(arquivo.arquivoId)) doServidor.set(arquivo.arquivoId, arquivo);
+    for (const arquivo of confirmadosPeloEnvio) doServidor.set(arquivo.arquivoId, arquivo);
+    // A avaliação vem depois do envio e traz o resultado da verificação: ela prevalece sobre o que o envio
+    // guardou ao confirmar, mas não conhece o nome nem, enquanto não verificado, o tamanho.
+    for (const arquivo of this.arquivos()) {
+      doServidor.set(
+        arquivo.arquivoId,
+        daAvaliacaoSobreOEnvio(arquivo, doServidor.get(arquivo.arquivoId)),
+      );
     }
+    for (const id of this.removidos()) doServidor.delete(id);
     const confirmados = [...doServidor.values()].map(
       (arquivo): ArquivoEmEnvio => ({
         id: arquivo.arquivoId,
         nome: arquivo.nome || nomeGenerico(arquivo.tipoDeMidia),
-        tamanhoBytes: arquivo.tamanhoBytes,
-        fase: 'confirmado',
+        tamanhoBytes: arquivo.tamanhoBytes ?? undefined,
+        ...faseDaVerificacao(arquivo),
         progresso: 100,
         podeRetirar: this.podeRemover() && !removendo.has(arquivo.arquivoId),
       }),
@@ -246,6 +253,38 @@ export class EnvioDoDocumentoComponent {
     this.emAndamento.update((lista) =>
       lista.map((a) => (a.id === id ? { ...a, ...alteracao } : a)),
     );
+  }
+}
+
+/** O arquivo da avaliação, completado com o nome e o tamanho que o envio desta sessão já conhecia. */
+function daAvaliacaoSobreOEnvio(
+  daAvaliacao: ArquivoEnviado,
+  doEnvio: ArquivoEnviado | undefined,
+): ArquivoEnviado {
+  if (doEnvio === undefined) return daAvaliacao;
+  return {
+    ...daAvaliacao,
+    nome: daAvaliacao.nome || doEnvio.nome,
+    tamanhoBytes: daAvaliacao.tamanhoBytes ?? doEnvio.tamanhoBytes,
+  };
+}
+
+/** A fase e o texto com que a lista mostra a situação da verificação do arquivo. */
+function faseDaVerificacao(
+  arquivo: ArquivoEnviado,
+): Pick<ArquivoEmEnvio, 'fase' | 'mensagem' | 'podeTentarDeNovo'> {
+  switch (arquivo.situacao) {
+    case 'verificado':
+      return { fase: 'confirmado' };
+    case 'emVerificacao':
+      return { fase: 'verificando', mensagem: arquivo.mensagem };
+    case 'pendente':
+      // Os bytes ainda não foram confirmados: o arquivo não chegou à verificação.
+      return { fase: 'iniciando' };
+    case 'recusado':
+    case 'reenvioNecessario':
+      // Trocar o arquivo é remover este e enviar outro: os bytes não estão mais na tela.
+      return { fase: 'erro', mensagem: arquivo.mensagem, podeTentarDeNovo: false };
   }
 }
 

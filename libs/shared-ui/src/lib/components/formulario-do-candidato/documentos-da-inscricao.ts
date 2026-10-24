@@ -11,7 +11,12 @@ import {
 } from './envio-de-documentos';
 import { type ErroDoServidor, mensagemDosErros } from './formulario-do-candidato.model';
 import { ListaDeDocumentosComponent } from '../lista-de-documentos/lista-de-documentos';
-import { type DocumentoNaTela, type NoDeDocumentos, textoDoGrupo } from './documentos-avaliados';
+import {
+  AGUARDE_A_VERIFICACAO,
+  type DocumentoNaTela,
+  type NoDeDocumentos,
+  textoDoGrupo,
+} from './documentos-avaliados';
 import type { AvaliacaoNaTela, PendenciaDaAvaliacao } from './modalidades-avaliadas';
 
 type GrupoDeDocumentos = Exclude<NoDeDocumentos, { tipo: 'DOCUMENTO' }>;
@@ -169,6 +174,10 @@ type Trecho =
         </ul>
       }
 
+      @if (aguardaVerificacao()) {
+        <ui-alert variant="info" [dynamic]="false">{{ aguardeAVerificacao }}</ui-alert>
+      }
+
       @if (avaliacao().erro; as erro) {
         <ui-alert variant="warning" [dynamic]="false">
           {{ erro }}
@@ -206,6 +215,8 @@ export class DocumentosDaInscricaoComponent {
    * entrada, a tela não afirma se a exigência está atendida.
    */
   readonly situacoes = input<Readonly<Partial<Record<string, SituacaoDaExigencia>>>>({});
+  /** Há documento obrigatório em verificação: o aviso diz que a inscrição só segue depois do resultado. */
+  readonly aguardaVerificacao = input(false);
   /** Enviar arquivo vale enquanto a inscrição não está sendo enviada, inclusive na correção. */
   readonly podeEnviar = input(true);
   /** Remover arquivo só vale enquanto a inscrição é rascunho. */
@@ -242,6 +253,7 @@ export class DocumentosDaInscricaoComponent {
     return trechos;
   });
 
+  protected readonly aguardeAVerificacao = AGUARDE_A_VERIFICACAO;
   protected readonly SEM_ARQUIVOS: readonly ArquivoEnviado[] = [];
 
   /** Os arquivos já registrados, agrupados pela exigência e ocorrência a que pertencem. */

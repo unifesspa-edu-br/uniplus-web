@@ -5,7 +5,11 @@ import { of } from 'rxjs';
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { BUSCA_DE_CEP } from '../endereco-geo/endereco-geo.model';
 
-import type { DocumentoAvaliado, DocumentosAvaliados } from './documentos-avaliados';
+import type {
+  ArquivoDoDocumento,
+  DocumentoAvaliado,
+  DocumentosAvaliados,
+} from './documentos-avaliados';
 import type { EnvioDeDocumentos } from './envio-de-documentos';
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
@@ -78,6 +82,15 @@ const documento = (nome: string, outros: Partial<DocumentoAvaliado> = {}): Docum
   ...outros,
 });
 
+const arquivoVerificado = (arquivoId: string): ArquivoDoDocumento => ({
+  arquivoId,
+  apresentacaoId: `apresentacao-${arquivoId}`,
+  tipoDeMidia: 'application/pdf',
+  tamanhoBytes: 2048,
+  situacao: 'verificado',
+  mensagem: null,
+});
+
 const naTela = (
   documentos: DocumentosAvaliados | null,
   outros: Partial<AvaliacaoNaTela> = {},
@@ -113,9 +126,10 @@ describe('Bloco de documentos da inscrição', () => {
     avaliacao: AvaliacaoNaTela | null,
     envioDeDocumentos: EnvioDeDocumentos | null = null,
     ocorrenciasGravadas: ReadonlySet<string> | null = null,
+    formulario: FormularioDoCandidato = FORMULARIO,
   ): HTMLElement => {
     fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
-    fixture.componentRef.setInput('formulario', FORMULARIO);
+    fixture.componentRef.setInput('formulario', formulario);
     fixture.componentRef.setInput('semDocumentos', SEM_DOCUMENTOS);
     fixture.componentRef.setInput('documentos', [
       {
@@ -151,6 +165,79 @@ describe('Bloco de documentos da inscrição', () => {
     expect(nomes(tela)).toEqual(['Laudo médico']);
     expect(bloco(tela).textContent).toContain('Pode ser exigido, conforme as respostas');
     expect(tela.textContent).not.toContain('Lista do certame');
+  });
+
+  describe('com documento obrigatório em verificação', () => {
+    const emVerificacao: ArquivoDoDocumento = {
+      ...arquivoVerificado('a1'),
+      tamanhoBytes: null,
+      situacao: 'emVerificacao',
+      mensagem: 'Arquivo em verificação. Isso costuma levar poucos segundos.',
+    };
+    const AVISO =
+      'Aguarde a verificação completa dos documentos obrigatórios para enviar a inscrição.';
+    /** Os documentos antes de outra seção, para haver para onde avançar. */
+    const DOCUMENTOS_E_CONTATO: FormularioDoCandidato = {
+      ...FORMULARIO,
+      etapas: [
+        FORMULARIO.etapas[1],
+        {
+          codigo: 'FIM',
+          codigoNasRegras: null,
+          ordem: 2,
+          tipo: 'BLOCO',
+          bloco: 'REVISAO_E_ACEITE',
+          titulo: 'Revisão',
+        },
+      ],
+    };
+    const proximaSecao = (tela: HTMLElement): HTMLButtonElement =>
+      [...tela.querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('Próxima seção'),
+      ) as HTMLButtonElement;
+    const tentarAvancar = (arquivos: readonly ArquivoDoDocumento[], obrigatorio = true) => {
+      const tela = montar(
+        naTela(nestaFase(documento('Laudo médico', { obrigatorio, arquivos }))),
+        null,
+        null,
+        DOCUMENTOS_E_CONTATO,
+      );
+      fixture.componentRef.setInput('exigirSecaoValida', true);
+      fixture.detectChanges();
+      proximaSecao(tela).click();
+      fixture.detectChanges();
+      return tela;
+    };
+
+    it('não avança e diz que é preciso aguardar', () => {
+      const tela = tentarAvancar([emVerificacao]);
+
+      expect(bloco(tela)).not.toBeNull();
+      expect(bloco(tela).textContent).toContain(AVISO);
+      expect(tela.textContent).toContain(AVISO);
+      expect(tela.querySelector('ui-steps [aria-current="step"]')?.textContent).toContain(
+        'Documentos',
+      );
+    });
+
+    it('avança quando o arquivo da mesma apresentação já foi verificado', () => {
+      const tela = tentarAvancar(
+        [emVerificacao, arquivoVerificado('a2')].map((a, i) => ({
+          ...a,
+          apresentacaoId: 'apresentacao-unica',
+          arquivoId: `a${i}`,
+        })),
+      );
+
+      expect(bloco(tela)).toBeNull();
+      expect(tela.textContent).not.toContain(AVISO);
+    });
+
+    it('o documento opcional em verificação não impede de avançar', () => {
+      const tela = tentarAvancar([emVerificacao], false);
+
+      expect(bloco(tela)).toBeNull();
+    });
   });
 
   it('sem nada pedido nesta fase, mantém o aviso de quem hospeda', () => {
@@ -328,7 +415,7 @@ describe('Bloco de documentos da inscrição', () => {
               formatosAceitos: ['PDF', 'JPEG'],
               tamanhoMaximoBytes: 3 * 1024 * 1024,
               quantidadeMinima: 2,
-              arquivos: [{ arquivoId: 'a1', tipoDeMidia: 'application/pdf', tamanhoBytes: 2048 }],
+              arquivos: [arquivoVerificado('a1')],
             }),
             documento('Atestado', { situacao: 'PENDENTE' }),
           ),
@@ -446,7 +533,7 @@ describe('Bloco de documentos da inscrição', () => {
           nestaFase(
             documento('Laudo médico', {
               quantidadeMinima: 2,
-              arquivos: [{ arquivoId: 'a1', tipoDeMidia: 'application/pdf', tamanhoBytes: 2048 }],
+              arquivos: [arquivoVerificado('a1')],
             }),
           ),
         ),

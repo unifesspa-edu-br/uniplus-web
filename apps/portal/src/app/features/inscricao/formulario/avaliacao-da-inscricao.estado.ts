@@ -42,6 +42,12 @@ export class AvaliacaoDaInscricaoEstado {
   private readonly documentos = signal<DocumentosAvaliados | null>(null);
   private readonly calculando = signal(false);
   private readonly erro = signal<string | null>(null);
+  private readonly consultasConcluidas = signal(0);
+  /**
+   * Quantas consultas já terminaram, com resultado ou com erro. Quem acompanha a verificação dos arquivos
+   * reage a ela: a avaliação não muda quando a consulta falha, e a próxima ainda precisa ser agendada.
+   */
+  readonly respondidas = this.consultasConcluidas.asReadonly();
 
   /** O estado que os blocos mostram; nulo antes da primeira avaliação. */
   readonly naTela = computed<AvaliacaoNaTela | null>(() => {
@@ -82,6 +88,7 @@ export class AvaliacaoDaInscricaoEstado {
       .subscribe(({ consulta, resultado }) => {
         if (consulta.revisao !== this.revisaoAtual) return;
         this.calculando.set(false);
+        this.consultasConcluidas.update((n) => n + 1);
         if (resultado.ok) {
           this.aplicar(resultado.data);
           return;

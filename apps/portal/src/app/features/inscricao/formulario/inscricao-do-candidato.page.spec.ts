@@ -15,6 +15,7 @@ import {
   type FormularioRenderizavelDto,
   type InscricaoDto,
   type InscricaoRequest,
+  SituacaoDoArquivoDoCandidato,
   SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
 import {
@@ -520,6 +521,94 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(campo).not.toBeNull();
     expect(campo?.disabled).toBe(false);
     expect(secao.textContent).toContain('Exigido pelas suas respostas');
+  });
+
+  /** A avaliação com um documento obrigatório cujo único arquivo está na situação dada. */
+  const comArquivoEm = (situacao: SituacaoDoArquivoDoCandidato): AvaliacaoDaInscricaoDto => ({
+    ...SEM_DERIVACAO,
+    documentos: {
+      fases: [
+        {
+          faseId: FORMULARIO_DE_INSCRICAO_MOCK.faseId ?? '',
+          codigo: 'INSCRICAO',
+          ordem: 1,
+          documentos: [
+            {
+              ...documento('Histórico escolar', 'INSCRICAO'),
+              arquivos: [
+                {
+                  arquivoId: 'arquivo-1',
+                  apresentacaoId: 'apresentacao-1',
+                  exigenciaId: 'exigencia-Histórico escolar',
+                  ocorrenciaId: null,
+                  tipoDeMidia: 'application/pdf',
+                  tamanhoBytes: null,
+                  hashSha256: null,
+                  confirmadoEm: '2026-10-24T10:00:00Z',
+                  situacao,
+                  mensagem:
+                    situacao === SituacaoDoArquivoDoCandidato.verificado
+                      ? null
+                      : 'Arquivo em verificação. Isso costuma levar poucos segundos.',
+                },
+              ],
+            },
+          ],
+          pendencias: [],
+        },
+      ],
+    },
+  });
+  const AGUARDE =
+    'Aguarde a verificação completa dos documentos obrigatórios para enviar a inscrição.';
+
+  it('documento obrigatório em verificação mantém o envio da inscrição inativo, com o aviso de aguardar', async () => {
+    servico.formulario = COM_DOCUMENTOS;
+    servico.inscricao = inscricao({
+      ...RESPONDIDA,
+      avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidato.emVerificacao),
+    });
+    const tela = await abrir();
+
+    expect(tela.querySelector('#inscricao-motivo-envio')?.textContent).toContain(AGUARDE);
+    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+  });
+
+  it('consulta a verificação com espera crescente até o resultado e então libera o envio', async () => {
+    vi.useRealTimers();
+    // A consulta passa por debounce do RxJS, que usa setInterval: o relógio inteiro é simulado.
+    vi.useFakeTimers();
+    const respostas = [
+      comArquivoEm(SituacaoDoArquivoDoCandidato.emVerificacao),
+      comArquivoEm(SituacaoDoArquivoDoCandidato.verificado),
+    ];
+    servico.avaliar = (_: string, request: AvaliacaoDaInscricaoRequest) => {
+      servico.avaliacoes.push(request);
+      return ok(respostas[servico.avaliacoes.length - 1]);
+    };
+    servico.formulario = COM_DOCUMENTOS;
+    servico.inscricao = inscricao({
+      ...RESPONDIDA,
+      avaliacao: comArquivoEm(SituacaoDoArquivoDoCandidato.emVerificacao),
+    });
+    const tela = await abrir();
+    const avancar = async (ms: number): Promise<void> => {
+      await vi.advanceTimersByTimeAsync(ms);
+      fixture.detectChanges();
+    };
+
+    await avancar(1000 + ESPERA_DA_CONSULTA_MS);
+    expect(servico.avaliacoes).toHaveLength(1);
+    expect(tela.querySelector('#inscricao-motivo-envio')?.textContent).toContain(AGUARDE);
+
+    await avancar(2000 + ESPERA_DA_CONSULTA_MS);
+    expect(servico.avaliacoes).toHaveLength(2);
+    expect(tela.textContent).not.toContain(AGUARDE);
+    const secao = await irAosDocumentos(tela);
+    expect(secao.querySelector('.uni-uploader__item.is-success')).not.toBeNull();
+
+    await avancar(60_000);
+    expect(servico.avaliacoes).toHaveLength(2);
   });
 
   const irAsModalidades = async (tela: HTMLElement): Promise<void> =>

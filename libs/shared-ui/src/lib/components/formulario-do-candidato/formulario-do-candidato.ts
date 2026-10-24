@@ -44,7 +44,10 @@ import {
   termoSemAceite,
 } from './formulario-do-candidato.model';
 import {
+  AGUARDE_A_VERIFICACAO,
+  aguardaVerificacaoDeObrigatorio,
   anunciarMudancaDosDocumentos,
+  haArquivoEmVerificacao,
   arvoreDeDocumentos,
   documentosDoFormulario,
   exigenciaAtendida,
@@ -201,6 +204,7 @@ import type {
                             [envioDeDocumentos]="envioDeDocumentos()"
                             [arquivosEnviados]="arquivosDosDocumentos()"
                             [situacoes]="situacoesDosDocumentos()"
+                            [aguardaVerificacao]="aguardaVerificacaoDosDocumentos()"
                             [podeEnviar]="podeEnviarDocumentos()"
                             [podeRemover]="podeRemoverDocumentos()"
                             [ocorrenciasGravadas]="ocorrenciasGravadas()"
@@ -738,6 +742,13 @@ export class FormularioDoCandidatoComponent {
     computation: (atuais, anterior) =>
       atuais === null ? null : conhecidas(atuais) ? atuais : (anterior?.value ?? null),
   });
+  /** Os documentos da fase e da finalidade deste formulário, como a avaliação da API os traz. */
+  private readonly documentosDaFase = computed(() => {
+    const avaliados = this.avaliacao()?.documentos ?? null;
+    if (avaliados === null) return null;
+    const formulario = this.formulario();
+    return documentosDoFormulario(avaliados, formulario.faseId, formulario.finalidade);
+  });
   /**
    * Os documentos que a avaliação pede no próprio formulário: a árvore da escolha e o que falta
    * responder; nulos antes da primeira avaliação dos documentos.
@@ -747,33 +758,33 @@ export class FormularioDoCandidatoComponent {
     readonly pendencias: readonly PendenciaDaAvaliacao[];
   } | null>(
     () => {
-      const avaliados = this.avaliacao()?.documentos ?? null;
-      if (avaliados === null) return null;
-      const formulario = this.formulario();
-      const { documentos, pendencias } = documentosDoFormulario(
-        avaliados,
-        formulario.faseId,
-        formulario.finalidade,
-      );
+      const daFase = this.documentosDaFase();
+      if (daFase === null) return null;
       return {
-        arvore: arvoreDeDocumentos(documentos, formulario.grupos, this.grupos()),
-        pendencias,
+        arvore: arvoreDeDocumentos(daFase.documentos, this.formulario().grupos, this.grupos()),
+        pendencias: daFase.pendencias,
       };
     },
     { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
   );
   /** A situação e os arquivos de cada exigência da fase, como a avaliação da API os traz. */
   private readonly situacaoEArquivos = computed(
-    () => {
-      const formulario = this.formulario();
-      const avaliados = this.avaliacao()?.documentos ?? null;
-      return situacoesEArquivosDosDocumentos(
-        avaliados === null
-          ? []
-          : documentosDoFormulario(avaliados, formulario.faseId, formulario.finalidade).documentos,
-      );
-    },
+    () => situacoesEArquivosDosDocumentos(this.documentosDaFase()?.documentos ?? []),
     { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+  );
+  /**
+   * Há documento obrigatório com o arquivo em verificação: a inscrição só segue depois do resultado
+   * (UNI-REQ-0028). Quem hospeda usa para barrar o envio.
+   */
+  readonly aguardaVerificacaoDosDocumentos = computed(() =>
+    aguardaVerificacaoDeObrigatorio(this.documentosDaFase()?.documentos ?? []),
+  );
+  /**
+   * Algum arquivo da fase, obrigatório ou não, espera o resultado: quem hospeda segue consultando a
+   * avaliação enquanto isso, sobre os mesmos documentos que barram o envio.
+   */
+  readonly haArquivoEmVerificacao = computed(() =>
+    haArquivoEmVerificacao(this.documentosDaFase()?.documentos ?? []),
   );
   protected readonly situacoesDosDocumentos = computed(() => this.situacaoEArquivos().situacoes);
   protected readonly arquivosDosDocumentos = computed(() => this.situacaoEArquivos().arquivos);
@@ -1150,6 +1161,12 @@ export class FormularioDoCandidatoComponent {
       }
       const secao = this.passos().find((p) => p.chave === chave);
       if (!secao) continue;
+      if (secao.bloco === BLOCO_COMPROVACAO_DOCUMENTAL && this.aguardaVerificacaoDosDocumentos()) {
+        this.irAoPasso(chave);
+        this.anuncio();
+        this.anuncio.set(AGUARDE_A_VERIFICACAO);
+        return true;
+      }
       this.concluir([secao]);
       // Relido depois de concluir: a conclusão pode revelar o que ainda falta na seção.
       const passo = this.passos().find((p) => p.chave === chave) ?? secao;

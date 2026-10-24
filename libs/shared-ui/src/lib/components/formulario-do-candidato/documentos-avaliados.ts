@@ -4,8 +4,10 @@ import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada } from './interpretador/regras-do-formulario';
 import {
   type ArquivoEnviado,
+  emVerificacao,
   formatosDaExigencia,
   type SituacaoDaExigencia,
+  type SituacaoDoArquivo,
 } from './envio-de-documentos';
 import type { PendenciaDaAvaliacao } from './modalidades-avaliadas';
 
@@ -44,8 +46,11 @@ export interface GrupoDoDocumento {
 /** Um arquivo já confirmado para a exigência, como a avaliação o devolve. */
 export interface ArquivoDoDocumento {
   readonly arquivoId: string;
+  readonly apresentacaoId: string;
   readonly tipoDeMidia: string;
-  readonly tamanhoBytes: number | string;
+  readonly tamanhoBytes: number | string | null;
+  readonly situacao: SituacaoDoArquivo;
+  readonly mensagem: string | null;
 }
 
 /** Uma exigência documental diante das respostas do candidato, como a API a calcula (ADR-0143). */
@@ -611,13 +616,44 @@ export function situacoesEArquivosDosDocumentos(documentos: readonly DocumentoAv
     for (const arquivo of documento.arquivos) {
       arquivos.push({
         arquivoId: arquivo.arquivoId,
+        apresentacaoId: arquivo.apresentacaoId,
         chave,
         tipoDeMidia: arquivo.tipoDeMidia,
-        tamanhoBytes: Number(arquivo.tamanhoBytes),
+        tamanhoBytes: arquivo.tamanhoBytes === null ? null : Number(arquivo.tamanhoBytes),
+        situacao: arquivo.situacao,
+        mensagem: arquivo.mensagem,
       });
     }
   }
   return { situacoes, arquivos };
+}
+
+/** O que o candidato lê quando a inscrição não pode seguir porque há documento obrigatório em verificação (UNI-REQ-0028). */
+export const AGUARDE_A_VERIFICACAO =
+  'Aguarde a verificação completa dos documentos obrigatórios para enviar a inscrição.';
+
+/** Se algum arquivo, de qualquer exigência, ainda espera o resultado da verificação. */
+export function haArquivoEmVerificacao(documentos: readonly DocumentoAvaliado[]): boolean {
+  return documentos.some((documento) =>
+    documento.arquivos.some((arquivo) => emVerificacao(arquivo.situacao)),
+  );
+}
+
+/**
+ * Se algum documento obrigatório tem arquivo em verificação e nenhum verificado: a API só deixa enviar a
+ * inscrição depois do resultado. Uma apresentação conta uma vez, qualquer que seja o número de arquivos
+ * (frente e verso), e basta um arquivo verificado para ela deixar de esperar.
+ */
+export function aguardaVerificacaoDeObrigatorio(documentos: readonly DocumentoAvaliado[]): boolean {
+  return documentos.some((documento) => {
+    if (!documento.obrigatorio) return false;
+    const verificadas = new Set(
+      documento.arquivos.filter((a) => a.situacao === 'verificado').map((a) => a.apresentacaoId),
+    );
+    return documento.arquivos.some(
+      (a) => emVerificacao(a.situacao) && !verificadas.has(a.apresentacaoId),
+    );
+  });
 }
 
 /**

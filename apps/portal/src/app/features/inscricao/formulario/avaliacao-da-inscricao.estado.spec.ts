@@ -258,6 +258,8 @@ describe('AvaliacaoDaInscricaoEstado', () => {
 
     expect(nomes()).toEqual(['Ampla concorrência']);
     expect(estado.naTela()?.erro).toBe('Não foi possível atualizar agora.');
+    // Quem acompanha a verificação dos arquivos reage ao fim da consulta, mesmo falha.
+    expect(estado.respondidas()).toBe(1);
 
     estado.tentarDeNovo();
     vi.advanceTimersByTime(ESPERA_DA_CONSULTA_MS);

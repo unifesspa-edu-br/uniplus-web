@@ -16,10 +16,13 @@ const ALVO: AlvoDoEnvio = {
 };
 const CONFIRMADO: ArquivoEnviado = {
   arquivoId: 'arquivo-1',
+  apresentacaoId: 'apresentacao-1',
   chave: ALVO.chave,
   nome: 'laudo.pdf',
   tipoDeMidia: 'application/pdf',
   tamanhoBytes: 2048,
+  situacao: 'verificado',
+  mensagem: null,
 };
 
 const arquivo = (nome: string, bytes = 2048): File =>
@@ -165,6 +168,72 @@ describe('Envio do arquivo de um documento exigido', () => {
     await Promise.resolve();
 
     expect(envio.remover).toHaveBeenCalledWith('arquivo-1');
+  });
+
+  it('arquivo em verificação mostra a mensagem da API, sem erro e sem oferecer nova tentativa', () => {
+    const tela = montar({
+      arquivos: [
+        {
+          ...CONFIRMADO,
+          situacao: 'emVerificacao',
+          mensagem: 'Arquivo em verificação. Isso costuma levar poucos segundos.',
+        },
+      ],
+    });
+
+    expect(tela.querySelector('.uni-uploader__item')?.textContent).toContain(
+      'Arquivo em verificação. Isso costuma levar poucos segundos.',
+    );
+    expect(tela.querySelector('[role="alert"]')).toBeNull();
+    expect(tela.querySelector('.uni-uploader__item.is-success')).toBeNull();
+  });
+
+  it('arquivo recusado na verificação mostra a mensagem da API como erro, com a opção de remover', () => {
+    const tela = montar({
+      arquivos: [
+        {
+          ...CONFIRMADO,
+          situacao: 'recusado',
+          mensagem: 'Este PDF está protegido por senha. Envie o arquivo sem senha.',
+        },
+      ],
+    });
+
+    expect(tela.querySelector('[role="alert"]')?.textContent).toContain(
+      'Este PDF está protegido por senha. Envie o arquivo sem senha.',
+    );
+    expect(tela.querySelector('button[aria-label^="Remover"]')).not.toBeNull();
+    expect(tela.querySelector('button[aria-label^="Tentar enviar novamente"]')).toBeNull();
+  });
+
+  it('o resultado da avaliação prevalece sobre o arquivo que o envio guardou em verificação', () => {
+    envio.arquivos.set([
+      {
+        ...CONFIRMADO,
+        situacao: 'emVerificacao',
+        mensagem: 'Em verificação.',
+      },
+    ]);
+    const tela = montar({ arquivos: [CONFIRMADO] });
+
+    expect(tela.querySelectorAll('.uni-uploader__item')).toHaveLength(1);
+    expect(tela.querySelector('.uni-uploader__item.is-success')).not.toBeNull();
+  });
+
+  it('o arquivo da avaliação não apaga o nome e o tamanho que o envio desta sessão já conhecia', () => {
+    envio.arquivos.set([
+      {
+        ...CONFIRMADO,
+        situacao: 'emVerificacao',
+        mensagem: 'Em verificação.',
+      },
+    ]);
+    const tela = montar({
+      arquivos: [{ ...CONFIRMADO, nome: undefined, tamanhoBytes: null }],
+    });
+
+    expect(tela.querySelector('.uni-uploader__item-name')?.textContent).toContain('laudo.pdf');
+    expect(tela.querySelector('.uni-uploader__item-meta')?.textContent).toContain('2,0 KB');
   });
 
   it('anuncia as fases do envio no leitor de tela', async () => {

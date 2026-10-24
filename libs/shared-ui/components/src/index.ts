@@ -114,7 +114,10 @@ export {
   type AvaliacaoNaTela,
   type ModalidadesAvaliadas,
 } from '../../src/lib/components/formulario-do-candidato/modalidades-avaliadas';
-export { type DocumentosAvaliados } from '../../src/lib/components/formulario-do-candidato/documentos-avaliados';
+export {
+  AGUARDE_A_VERIFICACAO,
+  type DocumentosAvaliados,
+} from '../../src/lib/components/formulario-do-candidato/documentos-avaliados';
 export {
   derivadosDoSistema,
   type DerivadoDoSistema,
@@ -199,4 +202,5 @@ export {
   type DesfechoDoEnvio,
   type EnvioDeDocumentos,
   type SituacaoDaExigencia,
+  type SituacaoDoArquivo,
 } from '../../src/lib/components/formulario-do-candidato/envio-de-documentos';

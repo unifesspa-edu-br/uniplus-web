@@ -19,15 +19,39 @@ export interface AlvoDoEnvio {
   readonly nome: string;
 }
 
+/**
+ * Onde o arquivo está na verificação que a API faz depois da confirmação. Só o `verificado` conta para
+ * a exigência; `recusado` e `reenvioNecessario` pedem que o candidato troque o arquivo. Espelha o enum
+ * `SituacaoDoArquivoDoCandidato` do contrato, que esta lib não pode importar: o compilador acusa a
+ * situação nova onde o DTO da API é atribuído a este tipo.
+ */
+export type SituacaoDoArquivo =
+  | 'pendente'
+  | 'emVerificacao'
+  | 'verificado'
+  | 'recusado'
+  | 'reenvioNecessario';
+
+/** Se a verificação do arquivo ainda não terminou. */
+export function emVerificacao(situacao: SituacaoDoArquivo): boolean {
+  return situacao === 'emVerificacao';
+}
+
 /** Um arquivo que a API já registrou como enviado. */
 export interface ArquivoEnviado {
   readonly arquivoId: string;
+  /** O arquivo e o verso dele compartilham a apresentação, que é o que conta para a exigência. */
+  readonly apresentacaoId: string;
+  readonly situacao: SituacaoDoArquivo;
+  /** O que dizer ao candidato sobre a situação, como a API a devolve (UNI-REQ-0027); nulo no verificado. */
+  readonly mensagem: string | null;
   /** A chave do alvo (`AlvoDoEnvio.chave`) a que o arquivo pertence. */
   readonly chave: string;
   /** O nome que o candidato deu ao arquivo; a API não o guarda, então falta nos arquivos relidos. */
   readonly nome?: string | null;
   readonly tipoDeMidia: string;
-  readonly tamanhoBytes: number;
+  /** Só existe no arquivo verificado. */
+  readonly tamanhoBytes: number | null;
 }
 
 export type DesfechoDoEnvio =
