@@ -1,4 +1,5 @@
 export { SELECAO_BASE_PATH } from './tokens';
+export { SituacaoDoArquivoDoCandidato } from './inscricoes.contrato';
 export {
   CERTAMES_PUBLICOS_PATH,
   SituacaoDoCertame,
@@ -24,6 +25,7 @@ export type {
   AcoesDaInscricaoDto,
   ArquivoDaApresentacaoDto,
   CancelamentoDaInscricaoRequest,
+  ConfirmarEnvioDeDocumentoDaInscricaoRequest,
   IniciarEnvioDeDocumentoDaInscricaoDto,
   IniciarEnvioDeDocumentoDaInscricaoRequest,
   ModalidadesDaInscricaoDto,

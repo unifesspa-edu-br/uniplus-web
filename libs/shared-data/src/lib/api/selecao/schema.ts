@@ -882,7 +882,13 @@ export interface paths {
                 };
                 readonly cookie?: never;
             };
-            readonly requestBody?: never;
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["ConfirmarEnvioDeDocumentoDaInscricaoRequest"];
+                    readonly "text/json": components["schemas"]["ConfirmarEnvioDeDocumentoDaInscricaoRequest"];
+                    readonly "application/*+json": components["schemas"]["ConfirmarEnvioDeDocumentoDaInscricaoRequest"];
+                };
+            };
             readonly responses: {
                 /** @description OK */
                 readonly 200: {
@@ -949,6 +955,85 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Mesma Idempotency-Key reusada com corpo diferente (uniplus.idempotency.body_mismatch) — a chave identifica a requisição pelo hash do corpo. */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{id}/inscricao/documentos/arquivos/{arquivoId}/acesso": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                    readonly arquivoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.acesso-arquivo-do-candidato.v1+json": components["schemas"]["AcessoArquivoDoCandidatoDto"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
                 /** @description Unprocessable Entity */
                 readonly 422: {
                     headers: {
@@ -958,17 +1043,10 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Service Unavailable */
-                readonly 503: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
             };
         };
+        readonly put?: never;
+        readonly post?: never;
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -8416,6 +8494,12 @@ export interface components {
             readonly versaoId: string;
             readonly hashVersao: string;
         };
+        readonly AcessoArquivoDoCandidatoDto: {
+            /** Format: uri */
+            readonly url: string;
+            /** Format: date-time */
+            readonly expiraEm: string;
+        };
         readonly AcessoDocumentoAPublicarDto: {
             /** Format: uri */
             readonly url: string;
@@ -8514,10 +8598,12 @@ export interface components {
             readonly ocorrenciaId: null | string;
             readonly tipoDeMidia: string;
             /** Format: int64 */
-            readonly tamanhoBytes: number | string;
-            readonly hashSha256: string;
+            readonly tamanhoBytes: null | number | string;
+            readonly hashSha256: null | string;
             /** Format: date-time */
             readonly confirmadoEm: string;
+            readonly situacao: components["schemas"]["SituacaoDoArquivoDoCandidato"];
+            readonly mensagem: null | string;
         };
         readonly ArquivoDoComprovanteDto: {
             readonly hashSha256: string;
@@ -8887,6 +8973,9 @@ export interface components {
             /** Format: double */
             readonly valor: null | number | string;
             readonly fundamentos: readonly string[];
+        };
+        readonly ConfirmarEnvioDeDocumentoDaInscricaoRequest: {
+            readonly etag: null | string;
         };
         readonly ConformidadeLegalProcessoSeletivoDto: {
             /** Format: uuid */
@@ -10444,6 +10533,8 @@ export interface components {
             readonly visivel: string;
         };
         /** @enum {string} */
+        readonly SituacaoDoArquivoDoCandidato: SituacaoDoArquivoDoCandidato;
+        /** @enum {string} */
         readonly SituacaoDoCertame: SituacaoDoCertame;
         /** @enum {string} */
         readonly SituacaoDoProdutoPrevisto: SituacaoDoProdutoPrevisto;
@@ -10754,6 +10845,13 @@ export enum PredicadoObrigatoriedadeEtapaObrigatoria$tipo {
 }
 export enum PredicadoObrigatoriedadeModalidadesMinimas$tipo {
     modalidadesMinimas = "modalidadesMinimas"
+}
+export enum SituacaoDoArquivoDoCandidato {
+    pendente = "pendente",
+    emVerificacao = "emVerificacao",
+    verificado = "verificado",
+    recusado = "recusado",
+    reenvioNecessario = "reenvioNecessario"
 }
 export enum SituacaoDoCertame {
     emBreve = "emBreve",
