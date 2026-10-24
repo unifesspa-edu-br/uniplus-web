@@ -67,5 +67,12 @@ export type IniciarEnvioDeDocumentoDaInscricaoRequest =
 /** O arquivo pendente e a URL pré-assinada de PUT, de validade curta. */
 export type IniciarEnvioDeDocumentoDaInscricaoDto = Schemas['IniciarEnvioDeDocumentoDaInscricaoDto'];
 
-/** O arquivo confirmado: lido do armazenamento, conferido e selado. */
+/** O ETag do PUT, que fixa a versão do objeto que o verificador confere. */
+export type ConfirmarEnvioDeDocumentoDaInscricaoRequest =
+  Schemas['ConfirmarEnvioDeDocumentoDaInscricaoRequest'];
+
+/** O arquivo confirmado, com a situação da verificação e a mensagem ao candidato. */
 export type ArquivoDaApresentacaoDto = Schemas['ArquivoDaApresentacaoDto'];
+
+/** Onde o arquivo está na verificação feita depois da confirmação. */
+export { SituacaoDoArquivoDoCandidato } from './schema';
