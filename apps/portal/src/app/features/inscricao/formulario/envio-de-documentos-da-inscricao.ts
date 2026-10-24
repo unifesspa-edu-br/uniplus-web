@@ -183,10 +183,14 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     this.tentativas.delete(arquivo);
     const confirmado: ArquivoEnviado = {
       arquivoId: resultado.data.arquivoId,
+      apresentacaoId: resultado.data.apresentacaoId,
       chave: alvo.chave,
       nome: arquivo.name,
       tipoDeMidia: resultado.data.tipoDeMidia,
-      tamanhoBytes: Number(resultado.data.tamanhoBytes),
+      // A API só informa o tamanho depois da verificação: vale o do arquivo escolhido.
+      tamanhoBytes: arquivo.size,
+      situacao: resultado.data.situacao,
+      mensagem: resultado.data.mensagem,
     };
     this.confirmados.update((lista) => [...lista, confirmado]);
     this.contagemDeMudancas.update((n) => n + 1);

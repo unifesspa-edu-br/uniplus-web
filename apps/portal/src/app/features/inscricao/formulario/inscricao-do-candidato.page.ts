@@ -31,6 +31,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { isValidCpf } from '@uniplus/shared-data/utils';
 import {
+  AGUARDE_A_VERIFICACAO,
   AlertComponent,
   type AvaliacaoNaTela,
   derivadosDoSistema,
@@ -59,6 +60,7 @@ import {
   ofertasDaInscricao,
 } from '../oferta-da-inscricao';
 import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
+import { AcompanhamentoDaVerificacao } from './acompanhamento-da-verificacao';
 import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
 import { mensagemDaRecusa, mensagemDaRecusaDaSegundaOpcao } from './recusas-da-inscricao';
@@ -146,8 +148,26 @@ export class InscricaoDoCandidatoPage implements OnInit {
   /** Quantas mudanças do envio a avaliação já levou em conta; o envio nasce sem nenhuma. */
   private mudancasVistas = 0;
   private ultimaReleituraDaRevisao = 0;
+  /** Enquanto um arquivo espera a verificação, a avaliação é pedida de novo até o resultado chegar. */
+  private readonly verificacao = new AcompanhamentoDaVerificacao(() => this.consultarVerificacao());
+  private readonly abaVisivel = signal(true);
 
   constructor() {
+    const doc = inject(DOCUMENT);
+    const aoMudarAVisibilidade = (): void => this.abaVisivel.set(doc.visibilityState !== 'hidden');
+    doc.addEventListener('visibilitychange', aoMudarAVisibilidade);
+    inject(DestroyRef).onDestroy(() => {
+      doc.removeEventListener('visibilitychange', aoMudarAVisibilidade);
+      this.verificacao.parar();
+    });
+    // Cada consulta que termina, com resultado ou com erro, agenda a seguinte enquanto houver arquivo em
+    // verificação na fase do formulário. Com a aba oculta ninguém vê o resultado: espera a volta.
+    effect(() => {
+      this.avaliacao.respondidas();
+      const aguardando =
+        (this.formularioDoCandidato()?.haArquivoEmVerificacao() ?? false) && this.abaVisivel();
+      untracked(() => this.verificacao.aoAvaliar(aguardando));
+    });
     // Enviar ou remover um arquivo muda a situação dos documentos, que só a API calcula. O envio fica
     // fora do componente do passo, então a reavaliação vem dele, mesmo que a tela tenha mudado de passo.
     effect(() => {
@@ -155,6 +175,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
       untracked(() => {
         if (mudancas === this.mudancasVistas) return;
         this.mudancasVistas = mudancas;
+        this.verificacao.recomecar();
         this.atualizarARevisaoEReavaliar();
       });
     });
@@ -570,6 +591,15 @@ export class InscricaoDoCandidatoPage implements OnInit {
       });
   }
 
+  /**
+   * A consulta da verificação não corre sobre uma gravação ou releitura em andamento: a avaliação da
+   * gravação seria descartada pela revisão. Fica para a próxima espera.
+   */
+  private consultarVerificacao(): void {
+    if (this.bloqueada()) this.verificacao.aoAvaliar(true);
+    else this.reavaliarDocumentos();
+  }
+
   /** Os arquivos enviados mudaram: a avaliação é pedida de novo com as respostas que estão na tela. */
   private reavaliarDocumentos(): void {
     const inscricao = this.inscricao();
@@ -618,9 +648,9 @@ export class InscricaoDoCandidatoPage implements OnInit {
 
   /**
    * Por que o envio ainda não segue, ou `null` quando o formulário está válido. Conta as perguntas e os
-   * aceites das seções. Os documentos obrigatórios ficam com a API, que recusa o envio: a situação de
-   * cada documento não basta, porque a alternativa não escolhida de um grupo "um ou outro" atendido
-   * continua pendente.
+   * aceites das seções, e o documento obrigatório ainda em verificação. Os demais documentos obrigatórios
+   * ficam com a API, que recusa o envio: a situação de cada documento não basta, porque a alternativa
+   * não escolhida de um grupo "um ou outro" atendido continua pendente.
    */
   protected readonly motivoDoEnvioBloqueado = computed<string | null>(() => {
     const partes: string[] = [];
@@ -628,6 +658,8 @@ export class InscricaoDoCandidatoPage implements OnInit {
     const total = this.pendenciasDasSecoes().reduce((soma, s) => soma + s.quantidade, 0);
     if (total > 0)
       partes.push(total === 1 ? 'Falta corrigir 1 item.' : `Faltam corrigir ${total} itens.`);
+    if (this.formularioDoCandidato()?.aguardaVerificacaoDosDocumentos())
+      partes.push(AGUARDE_A_VERIFICACAO);
     return partes.length > 0 ? partes.join(' ') : null;
   });
 

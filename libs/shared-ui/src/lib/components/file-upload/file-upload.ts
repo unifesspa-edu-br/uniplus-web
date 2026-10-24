@@ -17,7 +17,13 @@ import { formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 type ValidationResult = { ok: true } | { ok: false; reason: string };
 
 /** Onde o envio de um arquivo está: o componente só exibe, quem envia informa. */
-export type FaseDoArquivo = 'iniciando' | 'enviando' | 'confirmando' | 'confirmado' | 'erro';
+export type FaseDoArquivo =
+  | 'iniciando'
+  | 'enviando'
+  | 'confirmando'
+  | 'verificando'
+  | 'confirmado'
+  | 'erro';
 
 /** Um arquivo da lista, como o consumidor o reporta. */
 export interface ArquivoEmEnvio {
@@ -27,7 +33,7 @@ export interface ArquivoEmEnvio {
   readonly fase: FaseDoArquivo;
   /** Percentual de 0 a 100. */
   readonly progresso: number;
-  /** Texto da falha, exibido quando a fase é `erro`. */
+  /** Texto da falha, exibido quando a fase é `erro`, ou o que se espera, quando é `verificando`. */
   readonly mensagem?: string | null;
   /** `false` quando repetir não adianta; o padrão é oferecer a nova tentativa. */
   readonly podeTentarDeNovo?: boolean;
@@ -376,6 +382,8 @@ export class FileUploadComponent {
         return `Enviando: ${arquivo.progresso}%`;
       case 'confirmando':
         return 'Validando o arquivo';
+      case 'verificando':
+        return arquivo.mensagem || 'Arquivo em verificação';
       case 'confirmado':
         return 'Envio concluído';
       case 'erro':
