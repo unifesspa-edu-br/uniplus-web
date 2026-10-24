@@ -1,4 +1,4 @@
-import { HttpEventType } from '@angular/common/http';
+import { HttpEventType, HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -49,7 +49,9 @@ describe('Envio dos documentos da inscrição', () => {
     vi.resetAllMocks();
     api.iniciarEnvioDeDocumento.mockReturnValue(of(okResult(DESTINO)));
     api.confirmarEnvioDeDocumento.mockReturnValue(of(okResult(CONFIRMADO)));
-    upload.enviar.mockReturnValue(of({ type: HttpEventType.Response }));
+    upload.enviar.mockReturnValue(
+      of({ type: HttpEventType.Response, headers: new HttpHeaders({ ETag: '"abc123"' }) }),
+    );
     TestBed.configureTestingModule({
       providers: [
         EnvioDeDocumentosDaInscricao,
@@ -75,6 +77,7 @@ describe('Envio dos documentos da inscrição', () => {
     expect(api.confirmarEnvioDeDocumento).toHaveBeenCalledWith(
       'processo-1',
       'arquivo-1',
+      { etag: '"abc123"' },
       expect.anything(),
     );
     expect(desfecho).toMatchObject({ ok: true, arquivo: { arquivoId: 'arquivo-1', chave: 'e1:' } });
@@ -84,6 +87,21 @@ describe('Envio dos documentos da inscrição', () => {
       'enviando',
       'confirmando',
     ]);
+  });
+
+  it('resposta do PUT sem ETag é falha do envio: não confirma e a nova tentativa envia de novo', async () => {
+    upload.enviar.mockReturnValueOnce(
+      of({ type: HttpEventType.Response, headers: new HttpHeaders() }),
+    );
+    const envioDoProcesso = envio();
+
+    const primeira = await envioDoProcesso.enviar(ALVO, laudo, andamento);
+    const segunda = await envioDoProcesso.enviar(ALVO, laudo, andamento);
+
+    expect(primeira).toMatchObject({ ok: false, podeTentarDeNovo: true });
+    expect(segunda.ok).toBe(true);
+    expect(upload.enviar).toHaveBeenCalledTimes(2);
+    expect(api.confirmarEnvioDeDocumento).toHaveBeenCalledTimes(1);
   });
 
   it('confirmação que falha por erro do servidor: a nova tentativa só confirma, sem repetir o envio', async () => {

@@ -123,7 +123,13 @@ describe('InscricoesApi', () => {
     const iniciar = firstValueFrom(
       api.iniciarEnvioDeDocumento(
         PROCESSO,
-        { exigenciaId: 'e1', ocorrenciaId: null, apresentacaoId: null, tipoDeMidia: 'application/pdf', tamanhoBytes: 10 },
+        {
+          exigenciaId: 'e1',
+          ocorrenciaId: null,
+          apresentacaoId: null,
+          tipoDeMidia: 'application/pdf',
+          tamanhoBytes: 10,
+        },
         withIdempotencyKey('iniciar-1'),
       ),
     );
@@ -135,11 +141,17 @@ describe('InscricoesApi', () => {
     await iniciar;
 
     const confirmar = firstValueFrom(
-      api.confirmarEnvioDeDocumento(PROCESSO, 'a 1', withIdempotencyKey('confirmar-1')),
+      api.confirmarEnvioDeDocumento(
+        PROCESSO,
+        'a 1',
+        { etag: '"abc"' },
+        withIdempotencyKey('confirmar-1'),
+      ),
     );
     const confirmacao = controller.expectOne(`${rota}/envios/a%201/confirmacao`);
     expect(confirmacao.request.method).toBe('POST');
     expect(confirmacao.request.headers.get('Idempotency-Key')).toBe('confirmar-1');
+    expect(confirmacao.request.body).toEqual({ etag: '"abc"' });
     confirmacao.flush(null);
     await confirmar;
 

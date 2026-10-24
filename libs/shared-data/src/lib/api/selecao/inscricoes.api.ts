@@ -8,6 +8,7 @@ import type {
   AvaliacaoDaInscricaoDto,
   AvaliacaoDaInscricaoRequest,
   CancelamentoDaInscricaoRequest,
+  ConfirmarEnvioDeDocumentoDaInscricaoRequest,
   ComprovanteInscricaoDto,
   IniciarEnvioDeDocumentoDaInscricaoDto,
   IniciarEnvioDeDocumentoDaInscricaoRequest,
@@ -169,17 +170,18 @@ export class InscricoesApi {
   }
 
   /**
-   * POST `…/inscricao/documentos/envios/{arquivoId}/confirmacao` — passo 3: a API lê o arquivo do
-   * armazenamento, confere o conteúdo, passa o antivírus e o sela.
+   * POST `…/inscricao/documentos/envios/{arquivoId}/confirmacao` — passo 3: a API registra o arquivo
+   * com o ETag do PUT e o devolve em verificação; o resultado vem depois, na avaliação da inscrição.
    */
   confirmarEnvioDeDocumento(
     processoSeletivoId: string,
     arquivoId: string,
+    request: ConfirmarEnvioDeDocumentoDaInscricaoRequest,
     context: HttpContext,
   ): Observable<ApiResult<ArquivoDaApresentacaoDto>> {
     return this.http.post<ApiResult<ArquivoDaApresentacaoDto>>(
       `${this.url(processoSeletivoId)}/documentos/envios/${encodeURIComponent(arquivoId)}/confirmacao`,
-      null,
+      request,
       { context },
     );
   }

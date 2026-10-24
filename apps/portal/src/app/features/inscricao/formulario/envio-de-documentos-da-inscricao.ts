@@ -39,6 +39,8 @@ interface Tentativa {
   destino: (DestinoPreAssinado & { readonly arquivoId: string }) | null;
   /** Os bytes já chegaram ao armazenamento: só a confirmação falta. */
   enviado: boolean;
+  /** O ETag do PUT, que a confirmação devolve à API para fixar a versão que o verificador confere. */
+  etag: string | null;
 }
 
 /**
@@ -156,18 +158,24 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
             envio.expirada || envio.status === SEM_RESPOSTA || envio.status >= STATUS_DE_SERVIDOR,
         };
       }
+      // Sem o ETag a API não tem como fixar a versão do objeto que o verificador confere.
+      if (envio.etag === null) {
+        return { ok: false, mensagem: FALHA_NO_ARMAZENAMENTO, podeTentarDeNovo: true };
+      }
       tentativa.enviado = true;
+      tentativa.etag = envio.etag;
     }
 
-    // A URL cumpriu o papel; a confirmação só precisa do id do arquivo.
+    // A URL cumpriu o papel; a confirmação só precisa do id do arquivo e do ETag que o PUT devolveu.
     const arquivoId = tentativa.destino?.arquivoId;
     if (arquivoId === undefined) {
       return { ok: false, mensagem: FALHA_NO_ARMAZENAMENTO, podeTentarDeNovo: true };
     }
     aoAndar('confirmando', 100);
+    const pedido = { etag: tentativa.etag };
     const { resultado, inconclusiva } = await this.naFila(() =>
-      comChave(tentativa.chaveDaConfirmacao, arquivoId, (contexto) =>
-        this.api.confirmarEnvioDeDocumento(this.processoId, arquivoId, contexto),
+      comChave(tentativa.chaveDaConfirmacao, pedido, (contexto) =>
+        this.api.confirmarEnvioDeDocumento(this.processoId, arquivoId, pedido, contexto),
       ),
     );
     if (!isApiOk(resultado)) return this.recusa(resultado.problem, inconclusiva);
@@ -225,6 +233,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
         chaveDaConfirmacao: new ChaveDeSubstituicao(),
         destino: null,
         enviado: false,
+        etag: null,
       };
       this.tentativas.set(arquivo, tentativa);
     }
