@@ -118,6 +118,18 @@ describe('InscricoesApi', () => {
     await Promise.all([comprovante, minhas]);
   });
 
+  it('pede o acesso ao arquivo do candidato no media type próprio, sem corpo', async () => {
+    const promessa = firstValueFrom(api.obterAcessoDoArquivo(PROCESSO, 'a 1'));
+
+    const req = controller.expectOne(`${ROTA}/documentos/arquivos/a%201/acesso`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('acesso-arquivo-do-candidato', 1),
+    );
+    req.flush({});
+    await promessa;
+  });
+
   it('envia o documento em três chamadas, cada uma com a Idempotency-Key de quem chama', async () => {
     const rota = `${ROTA}/documentos`;
     const iniciar = firstValueFrom(

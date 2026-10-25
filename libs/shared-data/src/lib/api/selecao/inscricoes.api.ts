@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import type {
+  AcessoArquivoDoCandidatoDto,
   ArquivoDaApresentacaoDto,
   AvaliacaoDaInscricaoDto,
   AvaliacaoDaInscricaoRequest,
@@ -195,6 +196,20 @@ export class InscricoesApi {
     return this.http.delete<ApiResult<void>>(
       `${this.url(processoSeletivoId)}/documentos/arquivos/${encodeURIComponent(arquivoId)}`,
       { context },
+    );
+  }
+
+  /**
+   * GET `…/inscricao/documentos/arquivos/{arquivoId}/acesso` — a URL de curta validade para baixar o
+   * arquivo verificado do próprio candidato. É credencial: quem a pede a usa na hora e não a guarda.
+   */
+  obterAcessoDoArquivo(
+    processoSeletivoId: string,
+    arquivoId: string,
+  ): Observable<ApiResult<AcessoArquivoDoCandidatoDto>> {
+    return this.http.get<ApiResult<AcessoArquivoDoCandidatoDto>>(
+      `${this.url(processoSeletivoId)}/documentos/arquivos/${encodeURIComponent(arquivoId)}/acesso`,
+      { context: withVendorMime('acesso-arquivo-do-candidato', 1) },
     );
   }
 
