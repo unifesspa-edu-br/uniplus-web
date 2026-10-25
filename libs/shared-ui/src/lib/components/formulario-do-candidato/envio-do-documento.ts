@@ -7,6 +7,7 @@ import {
   input,
   signal,
 } from '@angular/core';
+import { formatarDataBr, formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 
 import { type ArquivoEmEnvio, FileUploadComponent } from '../file-upload/file-upload';
 import { TagComponent } from '../tag/tag';
@@ -17,6 +18,7 @@ import {
   type EnvioDeDocumentos,
   type SituacaoDaExigencia,
   regrasDoArquivo,
+  rotuloDoFormato,
 } from './envio-de-documentos';
 
 const TEXTO_DA_SITUACAO: Readonly<Record<SituacaoDaExigencia, string>> = {
@@ -25,6 +27,9 @@ const TEXTO_DA_SITUACAO: Readonly<Record<SituacaoDaExigencia, string>> = {
 };
 
 const FALHA_AO_REMOVER = 'Não foi possível remover o arquivo. Tente novamente.';
+const FALHA_AO_BAIXAR = 'Não foi possível baixar o arquivo. Tente novamente.';
+/** O arquivo ainda em envio não tem posição: a API a dá ao registrá-lo. */
+const NOME_DO_ARQUIVO_EM_ENVIO = 'Arquivo em envio';
 
 let proximoId = 0;
 
@@ -85,10 +90,12 @@ let proximoId = 0;
         [acceptLabel]="regras().rotulosDosFormatos.join(', ')"
         [maxSizeMb]="regras().tamanhoMaximoMb"
         [descritoPor]="quantidadeMinima() > 1 ? idDaDica : null"
-        [mensagemExterna]="falhaAoRemover() ?? erroDoServidor()"
+        [permitirBaixar]="true"
+        [mensagemExterna]="falhaAoRemover() ?? falhaAoBaixar() ?? erroDoServidor()"
         (arquivosEscolhidos)="enviarTodos($event)"
         (tentarDeNovo)="tentarDeNovo($event)"
         (itemRetirado)="retirar($event)"
+        (itemBaixado)="baixar($event)"
       />
     </div>
   `,
@@ -127,6 +134,9 @@ export class EnvioDoDocumentoComponent {
   /** Os arquivos cuja remoção está em curso: um segundo clique não dispara outra. */
   private readonly removendo = signal<ReadonlySet<string>>(new Set());
   protected readonly falhaAoRemover = signal<string | null>(null);
+  protected readonly falhaAoBaixar = signal<string | null>(null);
+  /** Os arquivos cujo acesso está sendo pedido: um segundo clique não dispara outro download. */
+  private readonly baixando = new Set<string>();
   /** Os bytes de cada arquivo em andamento, para a nova tentativa; não é estado da tela. */
   private readonly bytes = new Map<string, File>();
   private proximoLocal = 0;
@@ -139,7 +149,7 @@ export class EnvioDoDocumentoComponent {
       .filter((a) => a.chave === this.alvo().chave);
     for (const arquivo of confirmadosPeloEnvio) doServidor.set(arquivo.arquivoId, arquivo);
     // A avaliação vem depois do envio e traz o resultado da verificação: ela prevalece sobre o que o envio
-    // guardou ao confirmar, mas não conhece o nome nem, enquanto não verificado, o tamanho.
+    // guardou ao confirmar, mas não conhece, enquanto não verificado, o tamanho.
     for (const arquivo of this.arquivos()) {
       doServidor.set(
         arquivo.arquivoId,
@@ -147,11 +157,12 @@ export class EnvioDoDocumentoComponent {
       );
     }
     for (const id of this.removidos()) doServidor.delete(id);
-    const confirmados = [...doServidor.values()].map(
-      (arquivo): ArquivoEmEnvio => ({
+    // O nome original não é guardado: o arquivo se distingue pela ordem do envio e pela data.
+    const confirmados = [...doServidor.values()].sort(porOrdemDeEnvio).map(
+      (arquivo, indice): ArquivoEmEnvio => ({
         id: arquivo.arquivoId,
-        nome: arquivo.nome || nomeGenerico(arquivo.tipoDeMidia),
-        tamanhoBytes: arquivo.tamanhoBytes ?? undefined,
+        nome: `Arquivo ${indice + 1}`,
+        detalhe: detalheDoArquivo(arquivo),
         ...faseDaVerificacao(arquivo),
         progresso: 100,
         podeRetirar: this.podeRemover() && !removendo.has(arquivo.arquivoId),
@@ -177,12 +188,19 @@ export class EnvioDoDocumentoComponent {
 
   protected enviarTodos(arquivos: readonly File[]): void {
     this.falhaAoRemover.set(null);
+    this.falhaAoBaixar.set(null);
     for (const arquivo of arquivos) {
       const id = `envio-${this.proximoLocal++}`;
       this.bytes.set(id, arquivo);
       this.emAndamento.update((lista) => [
         ...lista,
-        { id, nome: arquivo.name, tamanhoBytes: arquivo.size, fase: 'iniciando', progresso: 0 },
+        {
+          id,
+          nome: NOME_DO_ARQUIVO_EM_ENVIO,
+          tamanhoBytes: arquivo.size,
+          fase: 'iniciando',
+          progresso: 0,
+        },
       ]);
       void this.enviar(id);
     }
@@ -191,11 +209,30 @@ export class EnvioDoDocumentoComponent {
   protected tentarDeNovo(id: string): void {
     if (!this.podeEnviar()) return;
     this.falhaAoRemover.set(null);
+    this.falhaAoBaixar.set(null);
     void this.enviar(id);
+  }
+
+  protected async baixar(id: string): Promise<void> {
+    if (this.baixando.has(id)) return;
+    this.baixando.add(id);
+    this.falhaAoRemover.set(null);
+    this.falhaAoBaixar.set(null);
+    try {
+      const desfecho = await this.envio().baixar(id);
+      if (!this.destruido && !desfecho.ok) {
+        this.falhaAoBaixar.set(desfecho.mensagem || FALHA_AO_BAIXAR);
+      }
+    } catch {
+      if (!this.destruido) this.falhaAoBaixar.set(FALHA_AO_BAIXAR);
+    } finally {
+      this.baixando.delete(id);
+    }
   }
 
   protected async retirar(id: string): Promise<void> {
     this.falhaAoRemover.set(null);
+    this.falhaAoBaixar.set(null);
     if (this.emAndamento().some((a) => a.id === id)) {
       this.bytes.delete(id);
       this.emAndamento.update((lista) => lista.filter((a) => a.id !== id));
@@ -256,7 +293,7 @@ export class EnvioDoDocumentoComponent {
   }
 }
 
-/** O arquivo da avaliação, completado com o nome e o tamanho que o envio desta sessão já conhecia. */
+/** O arquivo da avaliação, completado com o tamanho que o envio desta sessão já conhecia. */
 function daAvaliacaoSobreOEnvio(
   daAvaliacao: ArquivoEnviado,
   doEnvio: ArquivoEnviado | undefined,
@@ -264,7 +301,6 @@ function daAvaliacaoSobreOEnvio(
   if (doEnvio === undefined) return daAvaliacao;
   return {
     ...daAvaliacao,
-    nome: daAvaliacao.nome || doEnvio.nome,
     tamanhoBytes: daAvaliacao.tamanhoBytes ?? doEnvio.tamanhoBytes,
   };
 }
@@ -288,7 +324,22 @@ function faseDaVerificacao(
   }
 }
 
-function nomeGenerico(tipoDeMidia: string): string {
-  const formato = tipoDeMidia.split('/')[1]?.toUpperCase() ?? '';
-  return formato ? `Arquivo enviado (${formato})` : 'Arquivo enviado';
+/** A ordem em que a API registrou os arquivos; o id desempata os do mesmo instante. */
+function porOrdemDeEnvio(a: ArquivoEnviado, b: ArquivoEnviado): number {
+  return (
+    Date.parse(a.confirmadoEm) - Date.parse(b.confirmadoEm) ||
+    a.arquivoId.localeCompare(b.arquivoId)
+  );
+}
+
+/** "PDF · 303,1 KB · enviado em 22/10/2026, 09:33": o formato, o tamanho quando já se sabe e o envio. */
+function detalheDoArquivo(arquivo: ArquivoEnviado): string {
+  const enviadoEm = formatarDataBr(arquivo.confirmadoEm, 'datetime');
+  return [
+    rotuloDoFormato(arquivo.tipoDeMidia),
+    arquivo.tamanhoBytes === null ? null : formatarTamanhoDeArquivo(arquivo.tamanhoBytes),
+    enviadoEm ? `enviado em ${enviadoEm}` : null,
+  ]
+    .filter((parte) => !!parte)
+    .join(' · ');
 }

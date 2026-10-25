@@ -51,6 +51,7 @@ export interface ArquivoDoDocumento {
   readonly tamanhoBytes: number | string | null;
   readonly situacao: SituacaoDoArquivo;
   readonly mensagem: string | null;
+  readonly confirmadoEm: string;
 }
 
 /** Uma exigência documental diante das respostas do candidato, como a API a calcula (ADR-0143). */
@@ -622,6 +623,7 @@ export function situacoesEArquivosDosDocumentos(documentos: readonly DocumentoAv
         tamanhoBytes: arquivo.tamanhoBytes === null ? null : Number(arquivo.tamanhoBytes),
         situacao: arquivo.situacao,
         mensagem: arquivo.mensagem,
+        confirmadoEm: arquivo.confirmadoEm,
       });
     }
   }

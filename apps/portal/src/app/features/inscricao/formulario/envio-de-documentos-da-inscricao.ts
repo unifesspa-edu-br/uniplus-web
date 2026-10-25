@@ -1,10 +1,12 @@
 import { Injectable, type Signal, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import {
   ChaveDeSubstituicao,
   type DestinoPreAssinado,
   ProblemI18nService,
   type ProblemDetails,
   SignedUploadClient,
+  baixarPeloAcesso,
   comChave,
   destinoExpirado,
   enviarAoStorage,
@@ -15,6 +17,7 @@ import {
   type AlvoDoEnvio,
   type ArquivoEnviado,
   type DesfechoDaRemocao,
+  type DesfechoDoDownload,
   type DesfechoDoEnvio,
   type EnvioDeDocumentos,
   tipoDeMidiaDoArquivo,
@@ -96,6 +99,15 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
 
   remover(arquivoId: string): Promise<DesfechoDaRemocao> {
     return this.contando(() => this.removerArquivo(arquivoId));
+  }
+
+  async baixar(arquivoId: string): Promise<DesfechoDoDownload> {
+    const desfecho = await baixarPeloAcesso(() =>
+      firstValueFrom(this.api.obterAcessoDoArquivo(this.processoId, arquivoId)),
+    );
+    return desfecho.situacao === 'iniciado'
+      ? { ok: true }
+      : { ok: false, mensagem: this.explicar(desfecho.problem) };
   }
 
   private async contando<T>(operacao: () => Promise<T>): Promise<T> {
@@ -185,12 +197,12 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
       arquivoId: resultado.data.arquivoId,
       apresentacaoId: resultado.data.apresentacaoId,
       chave: alvo.chave,
-      nome: arquivo.name,
       tipoDeMidia: resultado.data.tipoDeMidia,
       // A API só informa o tamanho depois da verificação: vale o do arquivo escolhido.
       tamanhoBytes: arquivo.size,
       situacao: resultado.data.situacao,
       mensagem: resultado.data.mensagem,
+      confirmadoEm: resultado.data.confirmadoEm,
     };
     this.confirmados.update((lista) => [...lista, confirmado]);
     this.contagemDeMudancas.update((n) => n + 1);

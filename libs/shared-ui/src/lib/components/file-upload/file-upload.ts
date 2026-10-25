@@ -39,6 +39,8 @@ export interface ArquivoEmEnvio {
   readonly podeTentarDeNovo?: boolean;
   /** `false` quando o arquivo não pode mais sair da lista; o padrão é permitir. */
   readonly podeRetirar?: boolean;
+  /** Descreve o arquivo no lugar do tamanho, quando quem envia sabe mais do que ele (formato, data do envio). */
+  readonly detalhe?: string;
 }
 
 const BYTES_POR_MB = 1024 * 1024;
@@ -124,8 +126,8 @@ const PASSO_ANUNCIADO = 25;
             >
               <div class="uni-uploader__item-body">
                 <div class="uni-uploader__item-name" [title]="arquivo.nome">{{ arquivo.nome }}</div>
-                @if (tamanhoDe(arquivo); as tamanho) {
-                  <div class="uni-uploader__item-meta">{{ tamanho }}</div>
+                @if (arquivo.detalhe ?? tamanhoDe(arquivo); as detalhe) {
+                  <div class="uni-uploader__item-meta">{{ detalhe }}</div>
                 }
                 <div
                   class="uni-uploader__progress"
@@ -157,6 +159,16 @@ const PASSO_ANUNCIADO = 25;
                     (click)="repetir(arquivo.id)"
                   >
                     Tentar novamente
+                  </button>
+                }
+                @if (permitirBaixar() && arquivo.fase === 'confirmado') {
+                  <button
+                    type="button"
+                    class="btn btn--tertiary btn--sm"
+                    [attr.aria-label]="'Baixar ' + arquivo.nome + sufixoDoContextoParaBaixar()"
+                    (click)="baixar(arquivo.id)"
+                  >
+                    Baixar
                   </button>
                 }
                 @if (arquivo.podeRetirar !== false) {
@@ -237,6 +249,9 @@ export class FileUploadComponent {
   /** Recusa que nasce no consumidor (por exemplo, uma regra do fluxo) e deve aparecer junto. */
   readonly mensagemExterna = input<string | null>(null);
 
+  /** Oferece Baixar nos arquivos confirmados da lista; desligada, a lista não ganha a ação. */
+  readonly permitirBaixar = input(false);
+
   /** Lista de arquivos reportada pelo consumidor; `null` mantém o modo simples. */
   readonly itens = input<readonly ArquivoEmEnvio[] | null>(null);
 
@@ -244,6 +259,7 @@ export class FileUploadComponent {
   readonly arquivosEscolhidos = output<readonly File[]>();
   readonly itemRetirado = output<string>();
   readonly tentarDeNovo = output<string>();
+  readonly itemBaixado = output<string>();
 
   readonly selectedFile = model<File | null>(null);
   readonly isDragging = signal(false);
@@ -280,6 +296,10 @@ export class FileUploadComponent {
   protected readonly sufixoDoContexto = computed(() => {
     const contexto = this.contexto();
     return contexto ? ` — ${contexto}` : '';
+  });
+  protected readonly sufixoDoContextoParaBaixar = computed(() => {
+    const contexto = this.contexto();
+    return contexto ? ` de ${contexto}` : '';
   });
   readonly describedBy = computed(() => {
     const ids = [
@@ -361,6 +381,10 @@ export class FileUploadComponent {
     this.errors.set([]);
     this.itemRetirado.emit(id);
     this.focarZona();
+  }
+
+  protected baixar(id: string): void {
+    this.itemBaixado.emit(id);
   }
 
   protected repetir(id: string): void {

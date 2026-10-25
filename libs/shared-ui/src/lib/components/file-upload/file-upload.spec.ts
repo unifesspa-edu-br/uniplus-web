@@ -329,9 +329,11 @@ describe('FileUploadComponent no modo controlado', () => {
     const escolhidos: (readonly File[])[] = [];
     const retirados: string[] = [];
     const repetidos: string[] = [];
+    const baixados: string[] = [];
     fixture.componentInstance.arquivosEscolhidos.subscribe((f) => escolhidos.push(f));
     fixture.componentInstance.itemRetirado.subscribe((id) => retirados.push(id));
     fixture.componentInstance.tentarDeNovo.subscribe((id) => repetidos.push(id));
+    fixture.componentInstance.itemBaixado.subscribe((id) => baixados.push(id));
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
 
@@ -341,7 +343,7 @@ describe('FileUploadComponent no modo controlado', () => {
       input.dispatchEvent(new Event('change'));
       fixture.detectChanges();
     };
-    return { fixture, host, escolhidos, retirados, repetidos, escolher };
+    return { fixture, host, escolhidos, retirados, repetidos, baixados, escolher };
   }
 
   const pdf = (nome: string, bytes = 1024) =>
@@ -352,6 +354,30 @@ describe('FileUploadComponent no modo controlado', () => {
     fase: 'enviando',
     progresso: 40,
     ...extra,
+  });
+
+  describe('ação Baixar', () => {
+    const verificado = [item({ id: 'v1', nome: 'Arquivo 1', fase: 'confirmado', progresso: 100 })];
+
+    it('fica desligada por padrão: a lista do administrador não ganha o botão', () => {
+      const { fixture, host } = setup();
+      fixture.componentRef.setInput('itens', verificado);
+      fixture.detectChanges();
+
+      expect(host.querySelector('button[aria-label^="Baixar"]')).toBeNull();
+    });
+
+    it('ligada, oferece Baixar só no arquivo confirmado e emite o id', () => {
+      const { fixture, host, baixados } = setup();
+      fixture.componentRef.setInput('permitirBaixar', true);
+      fixture.componentRef.setInput('itens', [...verificado, item({ id: 'e1', fase: 'enviando' })]);
+      fixture.detectChanges();
+
+      const botoes = host.querySelectorAll('button[aria-label^="Baixar"]');
+      expect(botoes).toHaveLength(1);
+      (botoes[0] as HTMLButtonElement).click();
+      expect(baixados).toEqual(['v1']);
+    });
   });
 
   it('entrega vários arquivos aprovados de uma só vez', () => {
