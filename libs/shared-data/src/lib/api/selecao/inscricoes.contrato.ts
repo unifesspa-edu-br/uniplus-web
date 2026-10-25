@@ -71,6 +71,9 @@ export type IniciarEnvioDeDocumentoDaInscricaoDto = Schemas['IniciarEnvioDeDocum
 export type ConfirmarEnvioDeDocumentoDaInscricaoRequest =
   Schemas['ConfirmarEnvioDeDocumentoDaInscricaoRequest'];
 
+/** A URL de curta validade para baixar o arquivo verificado do candidato. */
+export type AcessoArquivoDoCandidatoDto = Schemas['AcessoArquivoDoCandidatoDto'];
+
 /** O arquivo confirmado, com a situação da verificação e a mensagem ao candidato. */
 export type ArquivoDaApresentacaoDto = Schemas['ArquivoDaApresentacaoDto'];
 

@@ -146,6 +146,27 @@ export async function abrirAcessoEmNovaAba(
   }
 }
 
+/** Como terminou o pedido de download de um arquivo confirmado. */
+export type DesfechoDoDownload =
+  | { readonly situacao: 'iniciado' }
+  | { readonly situacao: 'recusado'; readonly problem: ProblemDetails };
+
+/**
+ * Baixa um arquivo confirmado pedindo o acesso à API no clique. A URL assinada entrega o arquivo
+ * como anexo, então levar a própria janela até ela faz o navegador baixar sem trocar de página; uma
+ * aba nova nasceria em branco. Pelo mesmo motivo de `abrirAcessoEmNovaAba`, a URL é credencial: vai
+ * direto à navegação e nada a retém.
+ */
+export async function baixarPeloAcesso(
+  pedirAcesso: () => Promise<ApiResult<{ readonly url: string }>>,
+  navegar: (url: string) => void = (url) => window.location.assign(url),
+): Promise<DesfechoDoDownload> {
+  const resultado = await pedirAcesso();
+  if (!isApiOk(resultado)) return { situacao: 'recusado', problem: resultado.problem };
+  navegar(resultado.data.url);
+  return { situacao: 'iniciado' };
+}
+
 function percentualDe(loaded: number, total: number | undefined): number {
   if (total === undefined || total <= 0) return 0;
   return Math.min(100, Math.max(0, Math.round((loaded / total) * 100)));
