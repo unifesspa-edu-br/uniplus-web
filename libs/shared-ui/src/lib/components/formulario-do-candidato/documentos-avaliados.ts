@@ -51,6 +51,7 @@ export interface ArquivoDoDocumento {
   readonly tamanhoBytes: number | string | null;
   readonly situacao: SituacaoDoArquivo;
   readonly mensagem: string | null;
+  readonly rotulo: string;
   readonly confirmadoEm: string;
 }
 
@@ -623,6 +624,7 @@ export function situacoesEArquivosDosDocumentos(documentos: readonly DocumentoAv
         tamanhoBytes: arquivo.tamanhoBytes === null ? null : Number(arquivo.tamanhoBytes),
         situacao: arquivo.situacao,
         mensagem: arquivo.mensagem,
+        rotulo: arquivo.rotulo,
         confirmadoEm: arquivo.confirmadoEm,
       });
     }

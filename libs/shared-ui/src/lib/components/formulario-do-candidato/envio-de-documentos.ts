@@ -48,7 +48,9 @@ export interface ArquivoEnviado {
   /** A chave do alvo (`AlvoDoEnvio.chave`) a que o arquivo pertence. */
   readonly chave: string;
   readonly tipoDeMidia: string;
-  /** Quando a API registrou o arquivo (instante ISO): com ele a tela distingue e ordena os arquivos. */
+  /** Como a API chama o arquivo ("Arquivo 2"): o mesmo número do nome com que ele é baixado. */
+  readonly rotulo: string;
+  /** Quando a API registrou o arquivo (instante ISO), mostrado como a data do envio. */
   readonly confirmadoEm: string;
   /** Só existe no arquivo verificado. */
   readonly tamanhoBytes: number | null;

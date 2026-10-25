@@ -8604,6 +8604,8 @@ export interface components {
             readonly confirmadoEm: string;
             readonly situacao: components["schemas"]["SituacaoDoArquivoDoCandidato"];
             readonly mensagem: null | string;
+            readonly rotulo: string;
+            readonly nomeParaDownload: null | string;
         };
         readonly ArquivoDoComprovanteDto: {
             readonly hashSha256: string;

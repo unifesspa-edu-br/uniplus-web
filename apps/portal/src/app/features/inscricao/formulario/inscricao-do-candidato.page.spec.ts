@@ -545,6 +545,8 @@ describe('InscricaoDoCandidatoPage', () => {
                   tamanhoBytes: null,
                   hashSha256: null,
                   confirmadoEm: '2026-10-24T10:00:00Z',
+                  rotulo: 'Arquivo 1',
+                  nomeParaDownload: null,
                   situacao,
                   mensagem:
                     situacao === SituacaoDoArquivoDoCandidato.verificado

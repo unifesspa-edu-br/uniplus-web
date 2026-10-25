@@ -22,6 +22,7 @@ const CONFIRMADO: ArquivoEnviado = {
   tamanhoBytes: 2048,
   situacao: 'verificado',
   mensagem: null,
+  rotulo: 'Arquivo 1',
   // 09:33 no fuso institucional (America/Belem)
   confirmadoEm: '2026-10-22T12:33:00Z',
 };
@@ -261,13 +262,14 @@ describe('Envio do arquivo de um documento exigido', () => {
       expect(baixar(tela)).toBeNull();
     });
 
-    it('arquivos iguais em formato e tamanho se distinguem pela ordem e pela data, sem o nome original', () => {
+    it('mostra o rótulo e a ordem que a API devolve, mesmo fora da ordem cronológica, e a data do envio, sem o nome original', () => {
       const tela = montar({
         arquivos: [
           {
             ...CONFIRMADO,
             arquivoId: 'b',
             apresentacaoId: 'apresentacao-2',
+            rotulo: 'Arquivo 2',
             confirmadoEm: '2026-10-22T13:00:00Z',
           },
           CONFIRMADO,
@@ -276,14 +278,31 @@ describe('Envio do arquivo de um documento exigido', () => {
 
       const itens = Array.from(tela.querySelectorAll('.uni-uploader__item'));
       expect(itens.map((i) => i.querySelector('.uni-uploader__item-name')?.textContent?.trim())).toEqual([
-        'Arquivo 1',
         'Arquivo 2',
+        'Arquivo 1',
       ]);
-      expect(itens[0].querySelector('.uni-uploader__item-meta')?.textContent).toBe(
+      expect(itens[1].querySelector('.uni-uploader__item-meta')?.textContent).toBe(
         'PDF · 2,0 KB · enviado em 22/10/2026, 09:33',
       );
-      expect(itens[1].querySelector('.uni-uploader__item-meta')?.textContent).toContain('10:00');
       expect(tela.textContent).not.toContain('.pdf');
+    });
+
+    it('o que o envio confirmou e a avaliação ainda não trouxe vem depois dos arquivos da avaliação, com o rótulo da confirmação', () => {
+      envio.arquivos.set([{ ...CONFIRMADO, arquivoId: 'novo', rotulo: 'Arquivo 9' }]);
+      const tela = montar({ arquivos: [CONFIRMADO] });
+
+      const nomes = Array.from(tela.querySelectorAll('.uni-uploader__item-name')).map((n) =>
+        n.textContent?.trim(),
+      );
+      expect(nomes).toEqual(['Arquivo 1', 'Arquivo 9']);
+    });
+
+    it('o botão Baixar leva o rótulo da API no nome acessível', () => {
+      const tela = montar({ arquivos: [{ ...CONFIRMADO, rotulo: 'Arquivo 7' }] });
+
+      expect(
+        tela.querySelector('button[aria-label^="Baixar"]')?.getAttribute('aria-label'),
+      ).toBe('Baixar Arquivo 7 de Laudo médico');
     });
 
     it('falha ao obter o acesso: mostra a mensagem com role alert', async () => {

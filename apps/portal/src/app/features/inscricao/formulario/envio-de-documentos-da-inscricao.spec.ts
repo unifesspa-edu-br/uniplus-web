@@ -31,6 +31,8 @@ const CONFIRMADO = {
   tamanhoBytes: 7,
   hashSha256: 'abc',
   confirmadoEm: '2026-10-20T10:00:00Z',
+  rotulo: 'Arquivo 3',
+  nomeParaDownload: null,
 };
 
 describe('Envio dos documentos da inscrição', () => {
@@ -152,6 +154,7 @@ describe('Envio dos documentos da inscrição', () => {
 
     await envioDoProcesso.enviar(ALVO, laudo, andamento);
     expect(envioDoProcesso.arquivos().map((a) => a.arquivoId)).toEqual(['arquivo-1']);
+    expect(envioDoProcesso.arquivos()[0].rotulo).toBe('Arquivo 3');
 
     await envioDoProcesso.remover('arquivo-1');
     expect(envioDoProcesso.arquivos()).toEqual([]);
