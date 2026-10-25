@@ -18,11 +18,12 @@ const CONFIRMADO: ArquivoEnviado = {
   arquivoId: 'arquivo-1',
   apresentacaoId: 'apresentacao-1',
   chave: ALVO.chave,
-  nome: 'laudo.pdf',
   tipoDeMidia: 'application/pdf',
   tamanhoBytes: 2048,
   situacao: 'verificado',
   mensagem: null,
+  // 09:33 no fuso institucional (America/Belem)
+  confirmadoEm: '2026-10-22T12:33:00Z',
 };
 
 const arquivo = (nome: string, bytes = 2048): File =>
@@ -36,6 +37,7 @@ describe('Envio do arquivo de um documento exigido', () => {
     ocupado: ReturnType<typeof signal<boolean>>;
     enviar: ReturnType<typeof vi.fn>;
     remover: ReturnType<typeof vi.fn>;
+    baixar: ReturnType<typeof vi.fn>;
   };
 
   // Como o envio de quem hospeda: o arquivo confirmado fica na lista dele, e a remoção o tira.
@@ -53,6 +55,7 @@ describe('Envio do arquivo de um documento exigido', () => {
         arquivos.update((lista) => lista.filter((a) => a.arquivoId !== id));
         return { ok: true };
       }),
+      baixar: vi.fn().mockResolvedValue({ ok: true }),
     };
   });
 
@@ -82,7 +85,8 @@ describe('Envio do arquivo de um documento exigido', () => {
     await escolher(laudo);
 
     expect(envio.enviar).toHaveBeenCalledWith(ALVO, laudo, expect.any(Function));
-    expect(tela.querySelector('.uni-uploader__item-name')?.textContent).toContain('laudo.pdf');
+    expect(tela.querySelector('.uni-uploader__item-name')?.textContent).toContain('Arquivo 1');
+    expect(tela.textContent).not.toContain('laudo.pdf');
   });
 
   it('arquivo acima do tamanho da exigência: anuncia o erro ligado ao campo e não envia', async () => {
@@ -139,7 +143,7 @@ describe('Envio do arquivo de um documento exigido', () => {
 
     const tela = montar();
 
-    expect(tela.querySelector('.uni-uploader__item-name')?.textContent).toContain('laudo.pdf');
+    expect(tela.querySelector('.uni-uploader__item-name')?.textContent).toContain('Arquivo 1');
   });
 
   it('arquivo retirado enquanto sobe é descartado quando o envio termina', async () => {
@@ -220,7 +224,7 @@ describe('Envio do arquivo de um documento exigido', () => {
     expect(tela.querySelector('.uni-uploader__item.is-success')).not.toBeNull();
   });
 
-  it('o arquivo da avaliação não apaga o nome e o tamanho que o envio desta sessão já conhecia', () => {
+  it('o arquivo da avaliação não apaga o tamanho que o envio desta sessão já conhecia', () => {
     envio.arquivos.set([
       {
         ...CONFIRMADO,
@@ -229,11 +233,101 @@ describe('Envio do arquivo de um documento exigido', () => {
       },
     ]);
     const tela = montar({
-      arquivos: [{ ...CONFIRMADO, nome: undefined, tamanhoBytes: null }],
+      arquivos: [{ ...CONFIRMADO, tamanhoBytes: null }],
     });
 
-    expect(tela.querySelector('.uni-uploader__item-name')?.textContent).toContain('laudo.pdf');
     expect(tela.querySelector('.uni-uploader__item-meta')?.textContent).toContain('2,0 KB');
+  });
+
+  describe('baixar o arquivo enviado', () => {
+    const baixar = (tela: HTMLElement): HTMLButtonElement =>
+      tela.querySelector('button[aria-label^="Baixar"]') as HTMLButtonElement;
+
+    it('arquivo verificado: o botão Baixar tem nome contextual e pede o download do arquivo', async () => {
+      const tela = montar({ arquivos: [CONFIRMADO] });
+
+      expect(baixar(tela).getAttribute('aria-label')).toBe('Baixar Arquivo 1 de Laudo médico');
+      baixar(tela).click();
+      await fixture.whenStable();
+
+      expect(envio.baixar).toHaveBeenCalledWith('arquivo-1');
+    });
+
+    it('arquivo em verificação: não oferece Baixar', () => {
+      const tela = montar({
+        arquivos: [{ ...CONFIRMADO, situacao: 'emVerificacao', mensagem: 'Em verificação.' }],
+      });
+
+      expect(baixar(tela)).toBeNull();
+    });
+
+    it('arquivos iguais em formato e tamanho se distinguem pela ordem e pela data, sem o nome original', () => {
+      const tela = montar({
+        arquivos: [
+          {
+            ...CONFIRMADO,
+            arquivoId: 'b',
+            apresentacaoId: 'apresentacao-2',
+            confirmadoEm: '2026-10-22T13:00:00Z',
+          },
+          CONFIRMADO,
+        ],
+      });
+
+      const itens = Array.from(tela.querySelectorAll('.uni-uploader__item'));
+      expect(itens.map((i) => i.querySelector('.uni-uploader__item-name')?.textContent?.trim())).toEqual([
+        'Arquivo 1',
+        'Arquivo 2',
+      ]);
+      expect(itens[0].querySelector('.uni-uploader__item-meta')?.textContent).toBe(
+        'PDF · 2,0 KB · enviado em 22/10/2026, 09:33',
+      );
+      expect(itens[1].querySelector('.uni-uploader__item-meta')?.textContent).toContain('10:00');
+      expect(tela.textContent).not.toContain('.pdf');
+    });
+
+    it('falha ao obter o acesso: mostra a mensagem com role alert', async () => {
+      envio.baixar.mockResolvedValueOnce({ ok: false, mensagem: 'Arquivo não encontrado.' });
+      const tela = montar({ arquivos: [CONFIRMADO] });
+
+      baixar(tela).click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(tela.querySelector('[role="alert"]')?.textContent).toContain(
+        'Arquivo não encontrado.',
+      );
+    });
+
+    it('o acesso que falha sem resposta também avisa o candidato', async () => {
+      envio.baixar.mockRejectedValueOnce(new Error('rede'));
+      const tela = montar({ arquivos: [CONFIRMADO] });
+
+      baixar(tela).click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(tela.querySelector('[role="alert"]')?.textContent).toContain('Não foi possível baixar');
+    });
+
+    it('imagem JPEG aparece com o rótulo JPG da zona de envio', () => {
+      const tela = montar({ arquivos: [{ ...CONFIRMADO, tipoDeMidia: 'image/jpeg' }] });
+
+      expect(tela.querySelector('.uni-uploader__item-meta')?.textContent).toMatch(/^JPG · /);
+    });
+
+    it('cliques repetidos enquanto o acesso é pedido disparam um download só', async () => {
+      let terminar: (d: unknown) => void = () => undefined;
+      envio.baixar.mockImplementationOnce(() => new Promise((resolve) => (terminar = resolve)));
+      const tela = montar({ arquivos: [CONFIRMADO] });
+
+      baixar(tela).click();
+      baixar(tela).click();
+      terminar({ ok: true });
+      await fixture.whenStable();
+
+      expect(envio.baixar).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('anuncia as fases do envio no leitor de tela', async () => {

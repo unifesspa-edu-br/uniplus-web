@@ -195,10 +195,12 @@ export {
 export { StepsResponsivoComponent } from '../../src/lib/components/steps-responsivo/steps-responsivo.component';
 export {
   regrasDoArquivo,
+  rotuloDoFormato,
   tipoDeMidiaDoArquivo,
   type AlvoDoEnvio,
   type ArquivoEnviado,
   type DesfechoDaRemocao,
+  type DesfechoDoDownload,
   type DesfechoDoEnvio,
   type EnvioDeDocumentos,
   type SituacaoDaExigencia,

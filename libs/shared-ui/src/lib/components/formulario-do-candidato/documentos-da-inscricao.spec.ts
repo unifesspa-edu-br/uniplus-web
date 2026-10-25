@@ -89,6 +89,7 @@ const arquivoVerificado = (arquivoId: string): ArquivoDoDocumento => ({
   tamanhoBytes: 2048,
   situacao: 'verificado',
   mensagem: null,
+  confirmadoEm: '2026-10-22T12:33:00Z',
 });
 
 const naTela = (
@@ -389,6 +390,7 @@ describe('Bloco de documentos da inscrição', () => {
       ocupado: signal(false),
       enviar: vi.fn(),
       remover: vi.fn(),
+      baixar: vi.fn(),
     };
 
     it('oferece o envio só para o que as respostas já exigem', () => {
@@ -427,7 +429,7 @@ describe('Bloco de documentos da inscrição', () => {
       expect(laudo.querySelector('ui-tag')?.textContent?.trim()).toBe('Satisfeita');
       expect(atestado.querySelector('ui-tag')?.textContent?.trim()).toBe('Pendente');
       expect(laudo.querySelector('.uni-uploader__item-name')?.textContent).toContain(
-        'Arquivo enviado',
+        'Arquivo 1',
       );
       expect(laudo.textContent).toContain('Envie 2 arquivos');
       expect(laudo.textContent).toContain('PDF, JPG - tamanho máximo: 3MB');

@@ -47,9 +47,9 @@ export interface ArquivoEnviado {
   readonly mensagem: string | null;
   /** A chave do alvo (`AlvoDoEnvio.chave`) a que o arquivo pertence. */
   readonly chave: string;
-  /** O nome que o candidato deu ao arquivo; a API não o guarda, então falta nos arquivos relidos. */
-  readonly nome?: string | null;
   readonly tipoDeMidia: string;
+  /** Quando a API registrou o arquivo (instante ISO): com ele a tela distingue e ordena os arquivos. */
+  readonly confirmadoEm: string;
   /** Só existe no arquivo verificado. */
   readonly tamanhoBytes: number | null;
 }
@@ -60,6 +60,10 @@ export type DesfechoDoEnvio =
   | { readonly ok: false; readonly mensagem: string; readonly podeTentarDeNovo: boolean };
 
 export type DesfechoDaRemocao =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly mensagem: string };
+
+export type DesfechoDoDownload =
   | { readonly ok: true }
   | { readonly ok: false; readonly mensagem: string };
 
@@ -88,6 +92,8 @@ export interface EnvioDeDocumentos {
   ): Promise<DesfechoDoEnvio>;
   /** Remove um arquivo enviado, enquanto a inscrição é rascunho. */
   remover(arquivoId: string): Promise<DesfechoDaRemocao>;
+  /** Baixa um arquivo verificado, em qualquer situação da inscrição. */
+  baixar(arquivoId: string): Promise<DesfechoDoDownload>;
 }
 
 /** Se a exigência está atendida pelos arquivos enviados; vem da avaliação da API. */
@@ -177,6 +183,11 @@ export function formatosDaExigencia(formatosAceitos: readonly string[]): {
 } {
   const { rotulosDosFormatos } = regrasDoArquivo({ qualquer: false, lista: formatosAceitos }, 0);
   return { qualquer: false, lista: rotulosDosFormatos };
+}
+
+/** O rótulo do formato de um tipo de mídia ("JPG" para image/jpeg), o mesmo que a zona de envio mostra; nulo se não é um formato da inscrição. */
+export function rotuloDoFormato(tipoDeMidia: string): string | null {
+  return FORMATOS_DO_ARMAZENAMENTO.find((f) => f.tiposDeMidia.includes(tipoDeMidia))?.rotulo ?? null;
 }
 
 /** O tipo de mídia que o envio declara, pela extensão; nulo quando o formato não serve à inscrição. */
