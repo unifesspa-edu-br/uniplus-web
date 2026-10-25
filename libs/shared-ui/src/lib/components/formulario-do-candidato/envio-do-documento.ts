@@ -143,25 +143,29 @@ export class EnvioDoDocumentoComponent {
 
   protected readonly itensDaLista = computed<readonly ArquivoEmEnvio[]>(() => {
     const removendo = this.removendo();
+    const confirmadosPeloEnvio = new Map(
+      this.envio()
+        .arquivos()
+        .filter((a) => a.chave === this.alvo().chave)
+        .map((a) => [a.arquivoId, a]),
+    );
+    // A avaliação vem depois do envio e traz o resultado da verificação, na ordem em que a API a devolve: ela
+    // prevalece sobre o que o envio guardou ao confirmar, mas não conhece, enquanto não verificado, o tamanho.
+    // O que o envio confirmou e a avaliação ainda não trouxe vem em seguida.
     const doServidor = new Map<string, ArquivoEnviado>();
-    const confirmadosPeloEnvio = this.envio()
-      .arquivos()
-      .filter((a) => a.chave === this.alvo().chave);
-    for (const arquivo of confirmadosPeloEnvio) doServidor.set(arquivo.arquivoId, arquivo);
-    // A avaliação vem depois do envio e traz o resultado da verificação: ela prevalece sobre o que o envio
-    // guardou ao confirmar, mas não conhece, enquanto não verificado, o tamanho.
     for (const arquivo of this.arquivos()) {
       doServidor.set(
         arquivo.arquivoId,
-        daAvaliacaoSobreOEnvio(arquivo, doServidor.get(arquivo.arquivoId)),
+        daAvaliacaoSobreOEnvio(arquivo, confirmadosPeloEnvio.get(arquivo.arquivoId)),
       );
     }
+    for (const [id, arquivo] of confirmadosPeloEnvio) if (!doServidor.has(id)) doServidor.set(id, arquivo);
     for (const id of this.removidos()) doServidor.delete(id);
-    // O nome original não é guardado: o arquivo se distingue pela ordem do envio e pela data.
-    const confirmados = [...doServidor.values()].sort(porOrdemDeEnvio).map(
-      (arquivo, indice): ArquivoEmEnvio => ({
+    // O nome original não é guardado: o arquivo se identifica pelo rótulo da API e pela data do envio.
+    const confirmados = [...doServidor.values()].map(
+      (arquivo): ArquivoEmEnvio => ({
         id: arquivo.arquivoId,
-        nome: `Arquivo ${indice + 1}`,
+        nome: arquivo.rotulo,
         detalhe: detalheDoArquivo(arquivo),
         ...faseDaVerificacao(arquivo),
         progresso: 100,
@@ -322,14 +326,6 @@ function faseDaVerificacao(
       // Trocar o arquivo é remover este e enviar outro: os bytes não estão mais na tela.
       return { fase: 'erro', mensagem: arquivo.mensagem, podeTentarDeNovo: false };
   }
-}
-
-/** A ordem em que a API registrou os arquivos; o id desempata os do mesmo instante. */
-function porOrdemDeEnvio(a: ArquivoEnviado, b: ArquivoEnviado): number {
-  return (
-    Date.parse(a.confirmadoEm) - Date.parse(b.confirmadoEm) ||
-    a.arquivoId.localeCompare(b.arquivoId)
-  );
 }
 
 /** "PDF · 303,1 KB · enviado em 22/10/2026, 09:33": o formato, o tamanho quando já se sabe e o envio. */

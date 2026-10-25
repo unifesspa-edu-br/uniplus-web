@@ -89,6 +89,7 @@ const arquivoVerificado = (arquivoId: string): ArquivoDoDocumento => ({
   tamanhoBytes: 2048,
   situacao: 'verificado',
   mensagem: null,
+  rotulo: 'Arquivo 1',
   confirmadoEm: '2026-10-22T12:33:00Z',
 });
 

@@ -202,6 +202,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
       tamanhoBytes: arquivo.size,
       situacao: resultado.data.situacao,
       mensagem: resultado.data.mensagem,
+      rotulo: resultado.data.rotulo,
       confirmadoEm: resultado.data.confirmadoEm,
     };
     this.confirmados.update((lista) => [...lista, confirmado]);
