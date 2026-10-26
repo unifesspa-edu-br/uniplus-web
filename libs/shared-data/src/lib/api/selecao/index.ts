@@ -14,6 +14,17 @@ export {
 } from './certames-publicos.request';
 export { RegrasCatalogoApi } from './regras-catalogo.api';
 export { InscricoesApi } from './inscricoes.api';
+export {
+  NotasDoEnemApi,
+  type GeracaoDeEnvioDto,
+  type LeiauteDoInepDto,
+  type LeiauteEscolhido,
+  type LoteDeNotasDoEnemDto,
+  type OcorrenciaDoLoteDto,
+  type AusenteDoLoteDto,
+  type OpcaoDeCursoDoLoteDto,
+  type TipoDeLeiaute,
+} from './notas-do-enem.api';
 export type {
   AceiteDeTermoInput,
   AvaliacaoDaInscricaoDto,
