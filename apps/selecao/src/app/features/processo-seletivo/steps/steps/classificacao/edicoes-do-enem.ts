@@ -25,9 +25,15 @@ export function rotuloDaEdicao(ano: string): string {
 /** As edições gravadas no processo, pela ordem declarada. */
 export function edicoesDoEnemDe(dto: ProcessoSeletivoDto): readonly string[] {
   const declaradas = dto.opcoesDeclaradas.find((o) => o.fatoCodigo === FATO_DA_EDICAO_DO_ENEM);
-  return [...(declaradas?.opcoes ?? [])]
-    .sort((a, b) => Number(a.ordem) - Number(b.ordem))
-    .map((o) => o.codigo);
+  return codigosPelaOrdem(declaradas?.opcoes ?? [], (o) => o.codigo);
+}
+
+/** Os códigos das edições pela ordem declarada; a regra de ordenação é esta, para toda origem. */
+export function codigosPelaOrdem<T extends { readonly ordem: unknown }>(
+  opcoes: readonly T[],
+  codigoDe: (opcao: T) => string,
+): readonly string[] {
+  return [...opcoes].sort((a, b) => Number(a.ordem) - Number(b.ordem)).map(codigoDe);
 }
 
 /**
