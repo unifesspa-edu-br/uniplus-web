@@ -446,13 +446,14 @@ export const ANCORAS_DA_IDADE = [
 ] as const;
 
 /**
- * O fato cujo domínio não é vocabulário fechado do catálogo: os valores que o candidato pode
+ * Os fatos cujo domínio não é vocabulário fechado do catálogo: os valores que o candidato pode
  * escolher saem do que ESTE processo oferta em atendimento especializado. O tipo de deficiência
  * não está aqui: ele oferece os tipos do cadastro em qualquer processo, com ou sem oferta
  * (UNI-REQ-0012).
  */
 const FATOS_COM_DOMINIO_NA_OFERTA = [
   { codigo: 'CONDICAO_ATENDIMENTO', rotulo: 'a condição de atendimento', lista: 'condicoes' },
+  { codigo: 'RECURSO_ACESSIBILIDADE', rotulo: 'o recurso de acessibilidade', lista: 'recursos' },
 ] as const;
 
 /**
