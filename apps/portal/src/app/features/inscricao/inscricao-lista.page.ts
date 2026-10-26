@@ -209,13 +209,20 @@ export class InscricaoListaPage {
     }
   }
 
-  /** As ações que a API permite sobre a inscrição, na ordem em que a lista as mostra. */
+  /**
+   * As ações que a API permite sobre a inscrição, na ordem em que a lista as mostra. Sem edição a
+   * seguir, ver o comprovante é a ação principal.
+   */
   protected acoesDe(item: ItemDaLista): readonly AcaoDaInscricao[] {
     const { acoes } = item;
+    const comprovante =
+      acoes.podeContinuar || acoes.podeCorrigir
+        ? ACAO.comprovante
+        : { ...ACAO.comprovante, variant: 'primary' as const };
     return [
       ...(acoes.podeContinuar ? [ACAO.continuar] : []),
       ...(acoes.podeCorrigir ? [ACAO.corrigir] : []),
-      ...(item.temComprovante ? [ACAO.comprovante] : []),
+      ...(item.temComprovante ? [comprovante] : []),
       ...(acoes.podeCancelar ? [ACAO.cancelar] : []),
       ...(acoes.podeDescartar ? [ACAO.descartar] : []),
     ];

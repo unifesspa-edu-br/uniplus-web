@@ -76,12 +76,11 @@
 
 .inscricao-lista-item__rodape {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-1) 0;
   border-top: 1px solid var(--border-subtle);
-  flex-wrap: wrap;
 }
 
 @media (min-width: 768px) {
@@ -107,11 +106,24 @@
   gap: var(--space-3);
 }
 
+/* Em tela estreita cada ação ocupa a largura toda, uma abaixo da outra. */
+@media (max-width: 599.98px) {
+  .inscricao-acoes {
+    flex-direction: column;
+    align-items: stretch;
+    align-self: stretch;
+  }
+}
+
 /* A ação que desfaz a inscrição é um link em cor de perigo, em linha própria, com alvo de toque inteiro. */
 .inscricao-acao-destrutiva {
   min-height: var(--touch-min);
   padding-inline: 0;
   color: var(--color-danger-600);
+}
+
+.inscricao-acao-destrutiva.btn--tertiary:hover:not([disabled]):not(:disabled) {
+  color: var(--color-danger-700);
 }
 
 .inscricao-cursos {
