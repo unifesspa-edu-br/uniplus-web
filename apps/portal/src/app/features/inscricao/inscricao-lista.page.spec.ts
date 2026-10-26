@@ -304,8 +304,9 @@ describe('InscricaoListaPage', () => {
 
     const dialogo = host().querySelector('dialog');
     expect(dialogo?.textContent).toContain(
-      'você precisará fazer uma nova inscrição, do zero, com o formulário vigente',
+      'Para voltar a participar, você precisará fazer uma nova inscrição, preenchendo novamente todas as informações necessárias ao processo seletivo.',
     );
+    expect(dialogo?.textContent).not.toContain('do zero');
     expect(cancelar).not.toHaveBeenCalled();
 
     const campo = dialogo?.querySelector('textarea') as HTMLTextAreaElement;
