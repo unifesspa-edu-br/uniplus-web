@@ -94,6 +94,22 @@ describe('recurso da etapa no ida-e-volta', () => {
     });
   });
 
+  it('leva a nota máxima declarada ao comando', () => {
+    const detalhe = detalheComRecursoDaEtapa();
+    (detalhe.etapas[0] as unknown as Record<string, unknown>)['notaMaxima'] = 10;
+
+    const etapa = etapasDe(detalhe)[0];
+
+    expect(etapa.notaMaxima).toBe('10');
+    expect(comoComandoDeEtapa(etapa)).toMatchObject({ notaMaxima: 10 });
+  });
+
+  it('manda nota máxima em branco como ausente, não como zero', () => {
+    const etapa = etapasDe(detalheComRecursoDaEtapa())[0];
+
+    expect(comoComandoDeEtapa(etapa)).toMatchObject({ notaMaxima: null });
+  });
+
   /** Instância sem suspensividade continua viajando como ausência declarada, não como zero. */
   it('mantém em branco a instância que não declara suspensividade', () => {
     const etapa = etapasDe(

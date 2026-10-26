@@ -75,7 +75,7 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
  * apontando para ela. Enviar `null` numa etapa que já existe a recriaria com
  * outro id, e as regras que a referenciam ficariam órfãs.
  *
- * Peso e nota mínima seguem em branco quando o campo está vazio — o domínio
+ * Peso, nota mínima e nota máxima seguem em branco quando o campo está vazio — o domínio
  * distingue "não declarado" de zero, e mandar zero faria uma etapa sem peso
  * declarar que não conta para a nota.
  */
@@ -87,6 +87,7 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     tipoEtapaOrigemId: etapa.tipoEtapaOrigemId,
     peso: decimalDoCampo(etapa.peso),
     notaMinima: decimalDoCampo(etapa.notaMinima),
+    notaMaxima: decimalDoCampo(etapa.notaMaxima ?? ''),
     ordem: etapa.ordem,
     faseCodigo: etapa.faseCodigo === '' ? null : etapa.faseCodigo,
     produtos: etapa.produtos.map((produto) => ({

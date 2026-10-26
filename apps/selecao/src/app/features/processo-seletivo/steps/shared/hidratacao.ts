@@ -227,6 +227,7 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
     },
     peso: comoTexto(etapa.peso),
     notaMinima: comoTexto(etapa.notaMinima),
+    notaMaxima: comoTexto(etapa.notaMaxima),
     ordem: comoInteiro(etapa.ordem),
     faseCodigo: etapa.faseCodigo ?? '',
     produtos: (etapa.produtos ?? []).map((produto) => ({

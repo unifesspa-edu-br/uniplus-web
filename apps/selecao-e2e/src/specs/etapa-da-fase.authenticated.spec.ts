@@ -199,6 +199,18 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await expect(etapa.getByLabel('Nota mínima')).toBeVisible();
   });
 
+  /** A nota máxima acompanha a etapa com nota: aparece com o caráter que pontua ou elimina. */
+  test('etapa com nota pede a nota máxima, e a sem nota não', async ({ page }) => {
+    await acrescentarEtapa(page);
+    const etapa = page.locator('.etapa-bloco--aberta').last();
+
+    await etapa.getByLabel('Tipo').selectOption({ label: 'Análise Documental' });
+    await expect(etapa.getByLabel('Nota máxima')).toHaveCount(0);
+
+    await etapa.getByLabel('Caráter').selectOption({ label: 'Eliminatória' });
+    await expect(etapa.getByLabel('Nota máxima')).toBeVisible();
+  });
+
   /** Trocar para um tipo que pontua devolve as três escolhas, e o peso volta a fazer sentido. */
   test('tipo que compõe a nota final oferece os três caracteres', async ({ page }) => {
     await acrescentarEtapa(page);

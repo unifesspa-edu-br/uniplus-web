@@ -472,6 +472,37 @@ const RECUSA_DA_ETAPA_DE_NOTA_DO_ENEM: ReadonlyMap<string, string> = new Map([
   ],
 ]);
 
+/** O campo da etapa onde a recusa da escala da nota aparece. */
+export type CampoDaEscala = 'notaMinima' | 'notaMaxima';
+
+/**
+ * Texto das recusas do servidor à escala da nota — o código termina no que o domínio nomeia, e
+ * o campo vem do próprio erro. Nota mínima acima da máxima é apontada na mínima, que é o que o
+ * operador precisa mexer; a máxima fora do passo e a inválida, na máxima.
+ */
+const RECUSA_DA_ESCALA_DA_ETAPA: ReadonlyMap<string, string> = new Map([
+  ['nota_maxima_invalida', 'A nota máxima precisa ser maior que zero.'],
+  [
+    'nota_minima_acima_da_nota_maxima',
+    'A nota mínima não pode passar da nota máxima da etapa.',
+  ],
+  ['nota_maxima_fora_do_passo', 'A nota máxima precisa ser múltipla do passo do lançamento.'],
+]);
+
+/** A recusa do servidor à escala da etapa, por `posição.campo`, para aparecer sob o campo. */
+export function recusasDaEscalaDasEtapas(
+  erros: readonly { readonly field: string; readonly code: string }[],
+): ReadonlyMap<string, string> {
+  const recusas = new Map<string, string>();
+  for (const erro of erros) {
+    const [, posicao, campo] = /^etapas\[(\d+)\]\.(notaMinima|notaMaxima)$/.exec(erro.field) ?? [];
+    const texto = RECUSA_DA_ESCALA_DA_ETAPA.get(erro.code.split('.').at(-1) ?? erro.code);
+    if (posicao === undefined || campo === undefined || texto === undefined) continue;
+    recusas.set(`${posicao}.${campo}`, texto);
+  }
+  return recusas;
+}
+
 /** O texto da recusa à etapa de nota do ENEM, ou `null` quando a recusa é outra. */
 export function recusaDaEtapaDeNotaDoEnem(codigo: string): string | null {
   return RECUSA_DA_ETAPA_DE_NOTA_DO_ENEM.get(codigo) ?? null;
@@ -731,6 +762,15 @@ function problemasDasEtapas(
   if (etapas.some((etapa) => naoConverte(etapa.notaMinima))) {
     problemas.push(
       'A nota mínima de uma etapa precisa ser um número, com ponto ou vírgula decimal.',
+    );
+  }
+
+  // A nota máxima em branco é estado legítimo de rascunho: quem a cobra é a publicação, e o
+  // resumo de pendências a lista. Zero, negativo e mínima acima da máxima ficam para o
+  // servidor, cuja recusa aparece sob o campo; só o que nem número é, é barrado aqui.
+  if (etapas.some((etapa) => naoConverte(etapa.notaMaxima ?? ''))) {
+    problemas.push(
+      'A nota máxima de uma etapa precisa ser um número, com ponto ou vírgula decimal.',
     );
   }
 

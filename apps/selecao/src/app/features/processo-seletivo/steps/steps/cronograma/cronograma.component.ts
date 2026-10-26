@@ -86,6 +86,8 @@ import {
   descreverFase,
   finalidadesDaFase,
   recusaDaEtapaDeNotaDoEnem,
+  recusasDaEscalaDasEtapas,
+  type CampoDaEscala,
   problemasDoCronograma,
   renumerar,
   type DescricaoDaFase,
@@ -743,6 +745,7 @@ export class CronogramaStepComponent {
   escolherTipoEtapa(grupo: FormGroup<EtapaForm>, tipoEtapaOrigemId: string): void {
     grupo.controls.tipoEtapaOrigemId.setValue(tipoEtapaOrigemId);
     if (this.etapaDeNotaDoEnem(grupo)) this.descartarOQueANotaDoEnemNaoTem(grupo);
+    if (!this.etapaPedeNotaMaxima(grupo)) grupo.controls.notaMaxima.setValue('');
     this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
@@ -751,6 +754,36 @@ export class CronogramaStepComponent {
     this.versaoDoFormulario();
     const etapa = grupo.getRawValue();
     return declaraNotaDoEnem(etapa, this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId));
+  }
+
+  /**
+   * A nota máxima só existe para a etapa com nota que não é do ENEM: a do ENEM é calculada pelo
+   * sistema, e a sem nota não tem escala. É o caráter que diz se a etapa tem nota, como no peso
+   * e na nota mínima.
+   */
+  etapaPedeNotaMaxima(grupo: FormGroup<EtapaForm>): boolean {
+    return (
+      (this.etapaComponeNota(grupo) || this.etapaElimina(grupo)) && !this.etapaDeNotaDoEnem(grupo)
+    );
+  }
+
+  /**
+   * Recusas do servidor à escala da nota, por `posição.campo`, na última gravação das etapas.
+   * Ficam sob o campo que o servidor apontou; somem quando a gravação seguinte dá certo ou quando
+   * o operador altera a etapa, porque a recusa era do valor que ele acabou de trocar.
+   */
+  readonly recusasDaEscala = signal<ReadonlyMap<string, string>>(new Map());
+
+  recusaDaEscala(posicao: number, campo: CampoDaEscala): string | null {
+    return this.recusasDaEscala().get(`${posicao}.${campo}`) ?? null;
+  }
+
+  limparRecusaDaEscala(posicao: number, campo: CampoDaEscala): void {
+    const chave = `${posicao}.${campo}`;
+    if (!this.recusasDaEscala().has(chave)) return;
+    const restantes = new Map(this.recusasDaEscala());
+    restantes.delete(chave);
+    this.recusasDaEscala.set(restantes);
   }
 
   /**
@@ -799,6 +832,7 @@ export class CronogramaStepComponent {
     grupo.controls.carater.setValue(carater as CaraterEscolhido);
     if (!this.etapaComponeNota(grupo)) grupo.controls.peso.setValue('');
     if (!this.etapaElimina(grupo)) grupo.controls.notaMinima.setValue('');
+    if (!this.etapaPedeNotaMaxima(grupo)) grupo.controls.notaMaxima.setValue('');
     this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
@@ -875,6 +909,7 @@ export class CronogramaStepComponent {
       carater: carater?.rotulo ?? '',
       peso: this.etapaComponeNota(grupo) ? controles.peso.value : null,
       notaMinima: this.etapaElimina(grupo) ? controles.notaMinima.value : null,
+      notaMaxima: this.etapaPedeNotaMaxima(grupo) ? controles.notaMaxima.value : null,
       notaDoEnem: this.etapaDeNotaDoEnem(grupo),
       janela,
       parecerIndividual: controles.emiteParecerIndividual.value,
@@ -1258,6 +1293,7 @@ export class CronogramaStepComponent {
         tipoEtapaOrigemId: '',
         peso: '',
         notaMinima: '',
+        notaMaxima: '',
         ordem: this.etapas.length + 1,
         faseCodigo,
         produtos: [],
@@ -1406,7 +1442,10 @@ export class CronogramaStepComponent {
         etapas.map(comoComandoDeEtapa),
       );
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!gravacaoDeEtapas.ok) {
+      if (gravacaoDeEtapas.ok) {
+        this.recusasDaEscala.set(new Map());
+      } else {
+        this.recusasDaEscala.set(recusasDaEscalaDasEtapas(gravacaoDeEtapas.problem.errors ?? []));
         return {
           valid: false,
           messages: [

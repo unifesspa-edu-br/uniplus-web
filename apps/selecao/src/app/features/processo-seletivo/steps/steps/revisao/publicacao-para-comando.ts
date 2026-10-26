@@ -155,6 +155,7 @@ const ROTULO_POR_DIMENSAO: ReadonlyMap<string, string> = new Map<string, string>
   ['distribuicao_vagas', 'Distribuição de vagas'],
   ['cascata_remanejamento', 'Cascata de remanejamento'],
   ['cronograma', 'Cronograma'],
+  ['etapas', 'Etapas'],
   ['exigencias_documentais', 'Exigências documentais'],
   ['contagem_de_prazos', 'Contagem de prazos'],
   ['classificacao', 'Classificação'],
@@ -203,6 +204,8 @@ const PASSO_POR_DIMENSAO: ReadonlyMap<string, RotuloDePasso> = new Map<string, R
   // A cascata é seção do próprio passo Vagas — não um passo à parte.
   ['cascata_remanejamento', 'Vagas'],
   ['cronograma', 'Cronograma'],
+  // As etapas e a escala da nota delas (nota máxima) são declaradas no passo do cronograma.
+  ['etapas', 'Cronograma'],
   // A exigência documental é declarada na superfície da fase, dentro do passo do cronograma.
   ['exigencias_documentais', 'Cronograma'],
   // A convenção de contagem é declarada no cronograma; os demais itens desta dimensão não

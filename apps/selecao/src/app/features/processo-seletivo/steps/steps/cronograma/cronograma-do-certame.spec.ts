@@ -23,6 +23,7 @@ import {
   type TipoDeEtapaDoCatalogo,
   declaraNotaDoEnem,
   recusaDaEtapaDeNotaDoEnem,
+  recusasDaEscalaDasEtapas,
 } from './cronograma-do-certame';
 
 /** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
@@ -118,6 +119,7 @@ function etapa(parcial: Partial<EtapaPontuada>): EtapaPontuada {
     tipoEtapaOrigemId: 'tipo-1',
     peso: '2',
     notaMinima: '',
+    notaMaxima: '',
     ordem: 1,
     faseCodigo: '',
     produtos: [],
@@ -771,6 +773,53 @@ describe('o que impede gravar o cronograma', () => {
     const problemas = problemasDe([faseDeAvaliacao], [notaTorta], catalogo, []);
 
     expect(problemas).toContainEqual(expect.stringContaining('nota mínima'));
+  });
+
+  it('nota máxima malformada é recusada, e em branco é rascunho válido', () => {
+    const base = {
+      nome: 'Prova',
+      carater: CaraterEtapa.classificatoria,
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '1',
+    };
+
+    expect(
+      problemasDe([faseDeAvaliacao], [etapa({ ...base, notaMaxima: '10,,' })], catalogo, []),
+    ).toContainEqual(expect.stringContaining('nota máxima'));
+    expect(
+      problemasDe([faseDeAvaliacao], [etapa({ ...base, notaMaxima: '' })], catalogo, []),
+    ).toEqual([]);
+  });
+
+  /** Mínima acima da máxima e máxima zerada são do servidor: a recusa dele aparece no campo. */
+  it('deixa a nota mínima acima da máxima para a recusa do servidor sob o campo', () => {
+    const acima = etapa({
+      nome: 'Prova',
+      carater: CaraterEtapa.ambas,
+      tipoEtapaOrigemId: 'tipo-1',
+      peso: '1',
+      notaMinima: '8',
+      notaMaxima: '0',
+    });
+
+    expect(problemasDe([faseDeAvaliacao], [acima], catalogo, [])).toEqual([]);
+  });
+
+  it('aponta cada recusa da escala no campo e na etapa que o servidor nomeou', () => {
+    const recusas = recusasDaEscalaDasEtapas([
+      {
+        field: 'etapas[1].notaMinima',
+        code: 'uniplus.selecao.etapa_processo.nota_minima_acima_da_nota_maxima',
+      },
+      {
+        field: 'etapas[0].notaMaxima',
+        code: 'uniplus.selecao.etapa_processo.nota_maxima_invalida',
+      },
+      { field: 'etapas[0].nome', code: 'uniplus.selecao.etapa_processo.nome_obrigatorio' },
+    ]);
+
+    expect([...recusas.keys()].sort()).toEqual(['0.notaMaxima', '1.notaMinima']);
+    expect(recusas.get('1.notaMinima')).toContain('não pode passar da nota máxima');
   });
 
   it('campo numérico vazio continua sendo não declarado, e não erro', () => {

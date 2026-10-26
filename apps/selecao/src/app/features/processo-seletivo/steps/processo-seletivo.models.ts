@@ -319,6 +319,9 @@ export interface EtapaPontuada {
   readonly tipoEtapaOrigemId: string;
   readonly peso: string;
   readonly notaMinima: string;
+  /** Teto da escala de nota da etapa; em branco enquanto não declarado — o rascunho tolera, a publicação cobra. Ausente no
+   * rascunho anterior ao campo. */
+  readonly notaMaxima?: string;
   readonly ordem: number;
   /**
    * Código canônico da fase a que a etapa pertence. É o que permite qualquer fase

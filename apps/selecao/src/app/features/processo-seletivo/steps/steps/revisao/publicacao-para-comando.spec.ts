@@ -549,6 +549,14 @@ describe('destino de cada pendência no painel', () => {
     expect(nomeDoPassoDoItem('cronograma_fases_ausente', 'cronograma')).toBe('Cronograma e etapas');
   });
 
+  /** CA-03: a nota máxima que falta é listada na publicação, com o botão para o cronograma. */
+  it('leva a etapa com nota sem nota máxima ao passo do cronograma', () => {
+    const item = pendente('etapa_com_nota_sem_nota_maxima', 'etapas');
+
+    expect(item.passo?.nome).toBe('Cronograma e etapas');
+    expect(rotuloDaDimensao('etapas')).toBe('Etapas');
+  });
+
   /** Sem destino, a pendência do identificador apareceria na revisão sem botão que a resolva. */
   it('leva o identificador legível ausente ao passo de identificação', () => {
     expect(pendente('identificador_legivel_nao_declarado', 'identificacao').passo?.nome).toBe(

@@ -68,6 +68,7 @@ export interface EtapaForm {
   /** Texto até a conversão: a gramática numérica do editor é do domínio, não do input. */
   readonly peso: FormControl<string>;
   readonly notaMinima: FormControl<string>;
+  readonly notaMaxima: FormControl<string>;
   readonly ordem: FormControl<number>;
   /** Código canônico da fase a que a etapa pertence; vazio enquanto não declarada. */
   readonly faseCodigo: FormControl<string>;
@@ -134,6 +135,8 @@ export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
     tipoEtapaOrigemId: controle(etapa.tipoEtapaOrigemId),
     peso: controle(etapa.peso),
     notaMinima: controle(etapa.notaMinima),
+    // Rascunho anterior à nota máxima não traz o campo: '' é "não declarada".
+    notaMaxima: controle(etapa.notaMaxima ?? ''),
     ordem: controle(etapa.ordem),
     // Etapa vinda de rascunho anterior ao vínculo não traz o campo: '' é o estado
     // "não declara fase", e undefined num FormControl quebraria a comparação.

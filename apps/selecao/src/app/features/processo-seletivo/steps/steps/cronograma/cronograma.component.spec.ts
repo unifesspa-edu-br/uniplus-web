@@ -905,6 +905,32 @@ describe('CronogramaStepComponent', () => {
     expect(etapa.controls.notaMinima.value, 'quem não elimina não tem corte').toBe('');
   });
 
+  /** CA-01: a nota máxima segue a etapa com nota; sem nota o campo some e o valor não viaja. */
+  it('nota máxima só é pedida na etapa com nota', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const etapa = componente.etapas.at(0);
+
+    componente.escolherCarater(etapa, 'classificatoria');
+    expect(componente.etapaPedeNotaMaxima(etapa)).toBe(true);
+    componente.escolherCarater(etapa, 'eliminatoria');
+    expect(componente.etapaPedeNotaMaxima(etapa)).toBe(true);
+
+    etapa.controls.notaMaxima.setValue('10');
+    componente.escolherCarater(etapa, '');
+    expect(componente.etapaPedeNotaMaxima(etapa)).toBe(false);
+    expect(etapa.controls.notaMaxima.value, 'sem nota não há escala').toBe('');
+  });
+
+  it('a recusa da escala sai do campo quando o operador o altera', () => {
+    componente.recusasDaEscala.set(new Map([['0.notaMaxima', 'A nota máxima precisa ser maior que zero.']]));
+    expect(componente.recusaDaEscala(0, 'notaMaxima')).not.toBeNull();
+
+    componente.limparRecusaDaEscala(0, 'notaMaxima');
+
+    expect(componente.recusaDaEscala(0, 'notaMaxima')).toBeNull();
+  });
+
   it('a etapa sem nome aparece na lista mesmo assim', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
