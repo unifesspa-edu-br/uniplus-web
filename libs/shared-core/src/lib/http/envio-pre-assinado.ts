@@ -1,6 +1,7 @@
 import { HttpEventType, type HttpResponse } from '@angular/common/http';
 import { isApiOk, type ApiResult } from './api-result';
 import type { ProblemDetails } from './problem-details';
+import { salvarArquivo } from './salvar-arquivo';
 import type { SignedUploadClient } from './signed-upload';
 
 /**
@@ -186,20 +187,8 @@ async function buscarNoArmazenamento(url: string): Promise<ArquivoBaixado | null
   }
 }
 
-/**
- * Grava o arquivo a partir de um endereço local. O link entra na página para o clique valer em todo
- * navegador, e o endereço só é liberado depois que o download começa.
- */
 function salvarComoArquivo(arquivo: ArquivoBaixado): void {
-  const endereco = URL.createObjectURL(arquivo.conteudo);
-  const link = document.createElement('a');
-  link.href = endereco;
-  link.download = arquivo.nome ?? 'arquivo';
-  link.hidden = true;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(endereco));
+  salvarArquivo(arquivo.conteudo, arquivo.nome ?? 'arquivo');
 }
 
 /**
