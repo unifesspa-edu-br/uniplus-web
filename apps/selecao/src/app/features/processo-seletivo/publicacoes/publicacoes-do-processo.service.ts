@@ -12,17 +12,10 @@ import {
   type ProdutosPrevistosDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 
+import { LENDO, type Leitura } from '../leitura';
 import { hojeNoFusoInstitucional } from '../steps/shared/fuso-institucional';
 import { atosQueAdmitemCorrecao } from './cadeia-de-correcao';
 import { codigosQueCongelam, tiposDeDocumentoAvulso } from './tipos-de-ato-avulso';
-
-/** Onde uma leitura do servidor está: em curso, falhou (com o texto da recusa) ou trouxe os dados. */
-export type Leitura<T> =
-  | { readonly estado: 'lendo' }
-  | { readonly estado: 'falha'; readonly mensagem: string }
-  | { readonly estado: 'lido'; readonly dados: T };
-
-const LENDO: Leitura<never> = { estado: 'lendo' };
 
 /** O que a seção "Previstos no edital" precisa para mostrar os itens e a política a confirmar. */
 export interface PrevistosLidos {
