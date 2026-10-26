@@ -72,21 +72,17 @@
   @for (inscricao of inscricoesFiltradas(); track inscricao.id) {
   <li class="edital-row inscricao-lista-item">
     <div class="inscricao-lista-item__cabecalho">
-      <ui-tag [dot]="true" [variant]="exibeInscricaoStatusVariantLabel(inscricao.situacao)">
-        {{ exibeInscricaoStatusLabel(inscricao.situacao) }}
-      </ui-tag>
+      <ng-container *ngTemplateOutlet="situacaoDaInscricao; context: { $implicit: inscricao }" />
     </div>
     <div class="inscricao-lista-item__corpo">
       <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
+      <ng-container *ngTemplateOutlet="cursosDaInscricao; context: { $implicit: inscricao }" />
+      @if (inscricao.mensagem) {
       <p>{{ inscricao.mensagem }}</p>
-      <p class="ptl-meta">{{ inscricao.candidato }}</p>
+      }
     </div>
     <div class="inscricao-lista-item__rodape">
-      @for (acao of acoesDe(inscricao); track acao.tipo) {
-      <ui-button [variant]="acao.variant" buttonSize="sm" (click)="executar(acao, inscricao)">
-        {{ acao.label }}
-      </ui-button>
-      }
+      <ng-container *ngTemplateOutlet="acoesDaInscricao; context: { $implicit: inscricao }" />
     </div>
   </li>
   }
@@ -96,19 +92,15 @@
   @for(inscricao of inscricoesFiltradas(); track inscricao.id) {
   <article class="card">
     <div class="card__header">
-      <ui-tag [dot]="true" [variant]="exibeInscricaoStatusVariantLabel(inscricao.situacao)">
-        {{ exibeInscricaoStatusLabel(inscricao.situacao) }}
-      </ui-tag>
+      <ng-container *ngTemplateOutlet="situacaoDaInscricao; context: { $implicit: inscricao }" />
     </div>
     <h2 class="inscricao-lista-item__titulo">{{ inscricao.nome }}</h2>
+    <ng-container *ngTemplateOutlet="cursosDaInscricao; context: { $implicit: inscricao }" />
+    @if (inscricao.mensagem) {
     <p>{{ inscricao.mensagem }}</p>
-    <span class="ptl-meta">{{ inscricao.candidato }}</span>
-    <div class="card__footer">
-      @for (acao of acoesDe(inscricao); track acao.tipo) {
-      <ui-button [variant]="acao.variant" buttonSize="sm" (click)="executar(acao, inscricao)">
-        {{ acao.label }}
-      </ui-button>
-      }
+    }
+    <div class="card__footer inscricao-card__rodape">
+      <ng-container *ngTemplateOutlet="acoesDaInscricao; context: { $implicit: inscricao }" />
     </div>
   </article>
   }
@@ -161,3 +153,48 @@
     </ui-button>
   </div>
 </ui-dialog>
+
+<ng-template #situacaoDaInscricao let-inscricao>
+  <ui-tag [dot]="true" [variant]="exibeInscricaoStatusVariantLabel(inscricao.situacao)">
+    {{ exibeInscricaoStatusLabel(inscricao.situacao) }}
+  </ui-tag>
+  @if (inscricao.numero) {
+  <span class="ptl-meta">Nº {{ inscricao.numero }}</span>
+  }
+</ng-template>
+
+<ng-template #cursosDaInscricao let-inscricao>
+  @if (inscricao.cursos.length > 0) {
+  <ul class="inscricao-cursos" role="list">
+    @for (curso of inscricao.cursos; track curso.ordem) {
+    <li class="inscricao-curso">
+      @if (inscricao.cursos.length > 1) {
+      <span class="inscricao-curso__ordem">{{ curso.ordem }}ª opção&nbsp;</span>
+      }
+      <span class="inscricao-curso__nome">{{ curso.nome }}</span>
+    </li>
+    }
+  </ul>
+  } @else {
+  <p class="ptl-meta">Curso ainda não escolhido</p>
+  }
+</ng-template>
+
+<ng-template #acoesDaInscricao let-inscricao>
+  <div class="inscricao-acoes">
+    @for (acao of acoesSegurasDe(inscricao); track acao.tipo) {
+    <ui-button [variant]="acao.variant" buttonSize="sm" (click)="executar(acao, inscricao)">
+      {{ acao.label }}
+    </ui-button>
+    }
+  </div>
+  @if (acaoDestrutivaDe(inscricao); as destrutiva) {
+  <button
+    type="button"
+    class="btn btn--tertiary btn--sm inscricao-acao-destrutiva"
+    (click)="executar(destrutiva, inscricao)"
+  >
+    {{ destrutiva.label }}
+  </button>
+  }
+</ng-template>

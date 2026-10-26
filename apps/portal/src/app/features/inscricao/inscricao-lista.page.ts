@@ -24,6 +24,7 @@ import {
   type UiSegmentedOption,
   UiTagVariant,
 } from '@uniplus/shared-ui/components';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { mediaQuerySignal } from '@uniplus/shared-core/dom';
@@ -82,14 +83,36 @@ export interface AcaoDaInscricao {
   readonly tipo: TipoDeAcao;
   readonly label: string;
   readonly variant: UiButtonVariant;
+  /** Desfaz a inscrição: sai do conjunto das ações e vira link em linha própria. */
+  readonly destrutiva: boolean;
 }
 
 const ACAO: Record<TipoDeAcao, AcaoDaInscricao> = {
-  continuar: { tipo: 'continuar', label: 'Continuar inscrição', variant: 'primary' },
-  corrigir: { tipo: 'corrigir', label: 'Corrigir dados', variant: 'primary' },
-  comprovante: { tipo: 'comprovante', label: 'Ver comprovante', variant: 'tertiary' },
-  cancelar: { tipo: 'cancelar', label: 'Cancelar inscrição', variant: 'secondary' },
-  descartar: { tipo: 'descartar', label: 'Descartar rascunho', variant: 'secondary' },
+  continuar: {
+    tipo: 'continuar',
+    label: 'Continuar inscrição',
+    variant: 'primary',
+    destrutiva: false,
+  },
+  corrigir: { tipo: 'corrigir', label: 'Corrigir dados', variant: 'primary', destrutiva: false },
+  comprovante: {
+    tipo: 'comprovante',
+    label: 'Ver comprovante',
+    variant: 'tertiary',
+    destrutiva: false,
+  },
+  cancelar: {
+    tipo: 'cancelar',
+    label: 'Cancelar inscrição',
+    variant: 'secondary',
+    destrutiva: true,
+  },
+  descartar: {
+    tipo: 'descartar',
+    label: 'Descartar rascunho',
+    variant: 'secondary',
+    destrutiva: true,
+  },
 };
 
 /** O que o diálogo está confirmando: o item e a ação que o abriu. */
@@ -108,6 +131,7 @@ interface Confirmacao {
     EmptyStateComponent,
     FilterBarComponent,
     FormsModule,
+    NgTemplateOutlet,
     SegmentedComponent,
     SpinnerComponent,
     TagComponent,
@@ -195,6 +219,16 @@ export class InscricaoListaPage {
       ...(acoes.podeCancelar ? [ACAO.cancelar] : []),
       ...(acoes.podeDescartar ? [ACAO.descartar] : []),
     ];
+  }
+
+  /** As ações que seguem a inscrição, sem as que a desfazem. */
+  protected acoesSegurasDe(item: ItemDaLista): readonly AcaoDaInscricao[] {
+    return this.acoesDe(item).filter((acao) => !acao.destrutiva);
+  }
+
+  /** A ação que desfaz a inscrição — cancelar ou descartar —, quando a API a permite. */
+  protected acaoDestrutivaDe(item: ItemDaLista): AcaoDaInscricao | undefined {
+    return this.acoesDe(item).find((acao) => acao.destrutiva);
   }
 
   protected executar(acao: AcaoDaInscricao, item: ItemDaLista): void {

@@ -9865,8 +9865,7 @@ export interface components {
             readonly nomeDoProcesso: null | string;
             readonly numeroInscricao: null | string;
             readonly situacao: components["schemas"]["SituacaoInscricao"];
-            readonly nomePreferido: string;
-            readonly cpfMascarado: string;
+            readonly opcoesDeCurso: readonly components["schemas"]["OpcaoDeCursoDaInscricaoDto"][];
             /** Format: date-time */
             readonly canceladaEm: null | string;
             readonly motivoDoCancelamento: null | string;
@@ -10057,6 +10056,12 @@ export interface components {
         readonly OpcaoDeclaradaRequest: {
             readonly codigo: string;
             readonly rotulo: string;
+        };
+        readonly OpcaoDeCursoDaInscricaoDto: {
+            /** Format: int32 */
+            readonly ordem: number | string;
+            readonly cursoNome: string;
+            readonly cursoGrau: string;
         };
         readonly OpcaoDoProcessoDto: {
             readonly codigo: string;
