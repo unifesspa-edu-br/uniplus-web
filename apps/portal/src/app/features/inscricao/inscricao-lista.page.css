@@ -24,7 +24,8 @@
 .inscricoes-grid {
   display: grid;
   gap: var(--space-5);
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: stretch;
 }
 
 .inscricao-lista-item {
@@ -50,6 +51,7 @@
 }
 
 .inscricao-lista-item__cabecalho {
+  padding-inline: var(--space-1);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -57,6 +59,9 @@
 }
 
 .inscricao-lista-item__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   margin: 0;
   padding: var(--space-4) var(--space-1);
 }
@@ -67,7 +72,6 @@
   color: var(--text-heading);
   margin: var(--space-2) var(--space-0);
   line-height: var(--leading-snug);
-  flex: 1 1 100%;
 }
 
 .inscricao-lista-item__rodape {
@@ -75,7 +79,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-4) var(--space-1) 0;
   border-top: 1px solid var(--border-subtle);
   flex-wrap: wrap;
 }
@@ -88,8 +92,52 @@
   }
 }
 
-.card__footer {
-  justify-content: flex-end;
+/* O rodapé fica na base do card, e os cards da mesma linha têm a mesma altura. */
+.inscricao-card__rodape {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  margin-top: auto;
+}
+
+.inscricao-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* A ação que desfaz a inscrição é um link em cor de perigo, em linha própria, com alvo de toque inteiro. */
+.inscricao-acao-destrutiva {
+  min-height: var(--touch-min);
+  padding-inline: 0;
+  color: var(--color-danger-600);
+}
+
+.inscricao-cursos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.inscricao-curso {
+  display: flex;
+  flex-direction: column;
+}
+
+.inscricao-curso__ordem {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.inscricao-curso__nome {
+  font-weight: var(--weight-medium);
+  color: var(--text-heading);
+  overflow-wrap: anywhere;
 }
 
 .inscricao-lista-item__corpo {

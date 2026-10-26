@@ -28,8 +28,7 @@ function inscricao(
     nomeDoProcesso,
     numeroInscricao: situacao === SituacaoInscricao.rascunho ? null : '00000042',
     situacao,
-    nomePreferido: 'Ariel Drumond',
-    cpfMascarado: '***.598.363-**',
+    opcoesDeCurso: rascunho ? [] : [{ ordem: 1, cursoNome: 'Medicina', cursoGrau: 'Bacharelado' }],
     canceladaEm: null,
     motivoDoCancelamento: null,
     acoes: {
@@ -403,13 +402,48 @@ describe('InscricaoListaPage', () => {
     );
   });
 
-  it('cada inscrição mostra o nome que o candidato prefere e só o CPF mascarado (CA-01)', async () => {
-    listagemService.flush(INSCRICOES);
-    await propagate();
-    fixture.detectChanges();
+  it('cada inscrição mostra o curso escolhido, sem repetir o nome nem o CPF do titular (CA-01)', async () => {
+    await carregar(INSCRICOES);
 
-    const item = host().querySelectorAll('li.inscricao-lista-item')[0];
-    expect(item.textContent).toContain('Ariel Drumond · CPF ***.598.363-**');
+    const itens = host().querySelectorAll('li.inscricao-lista-item');
+    expect(itens[1].textContent).toContain('Medicina (Bacharelado)');
+    expect(itens[1].textContent).not.toContain('1ª opção');
+    expect(itens[1].textContent).not.toContain('CPF');
+  });
+
+  it('com duas opções de curso, cada uma sai com a sua ordem', async () => {
+    await carregar([
+      {
+        ...inscricao('p1', SituacaoInscricao.submetida, 'Medicina 2027'),
+        opcoesDeCurso: [
+          { ordem: 1, cursoNome: 'Direito', cursoGrau: 'Bacharelado' },
+          { ordem: 2, cursoNome: 'Medicina', cursoGrau: 'Bacharelado' },
+        ],
+      },
+    ]);
+
+    const cursos = Array.from(host().querySelectorAll('.inscricao-curso')).map((c) =>
+      c.textContent?.replace(/\s+/g, ' ').trim(),
+    );
+    expect(cursos).toEqual(['1ª opção Direito (Bacharelado)', '2ª opção Medicina (Bacharelado)']);
+  });
+
+  it('rascunho que ainda não escolheu curso diz que o curso não foi escolhido', async () => {
+    await carregar([inscricao('p1', SituacaoInscricao.rascunho, 'Auxílio estudantil 2026')]);
+
+    expect(host().querySelector('li.inscricao-lista-item')?.textContent).toContain(
+      'Curso ainda não escolhido',
+    );
+  });
+
+  it('a ação que desfaz a inscrição sai depois das demais, em botão próprio', async () => {
+    await carregar([inscricao('p2', SituacaoInscricao.submetida, 'Bolsa de iniciação científica')]);
+
+    const item = host().querySelector('li.inscricao-lista-item')!;
+    expect(rotulosDe(item)).toEqual(['Corrigir dados', 'Ver comprovante', 'Cancelar inscrição']);
+    expect(item.querySelector('.inscricao-acao-destrutiva')?.textContent?.trim()).toBe(
+      'Cancelar inscrição',
+    );
   });
 
   it('clique no botão de ação chama executar com a ação e a inscrição corretas (CA-16)', async () => {
