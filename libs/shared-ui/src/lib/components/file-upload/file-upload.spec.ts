@@ -218,6 +218,34 @@ describe('FileUploadComponent', () => {
     expect(component.errors()).toEqual([]);
   });
 
+  it('com ocultarZonaComArquivo, a zona some com o arquivo escolhido e o foco segue para Remover e volta', async () => {
+    const { fixture, dropZone, removeButton } = setup();
+    fixture.componentRef.setInput('ocultarZonaComArquivo', true);
+    fixture.detectChanges();
+
+    pickFile(fixture, VALID_PDF());
+    await fixture.whenStable();
+
+    expect(dropZone()).toBeNull();
+    expect(document.activeElement).toBe(removeButton().nativeElement);
+
+    (removeButton().nativeElement as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(dropZone()).not.toBeNull();
+    expect(document.activeElement).toBe(dropZone().nativeElement);
+  });
+
+  it('desabilitada, a zona também desabilita o Remover do arquivo escolhido', () => {
+    const { fixture, removeButton } = setup();
+    pickFile(fixture, VALID_PDF());
+    fixture.componentRef.setInput('disabled', true);
+    fixture.detectChanges();
+
+    expect((removeButton().nativeElement as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('abre o seletor de arquivo nativo ao clicar na área de drop', () => {
     const { fixture, component, dropZone } = setup();
     const inputElement = component.fileInput().nativeElement;
