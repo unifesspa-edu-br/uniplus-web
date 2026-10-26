@@ -61,10 +61,11 @@ const PASSO_ANUNCIADO = 25;
   template: `
     <!-- O contêiner trata o drop que a zona não recebeu (lista, mensagens, ou a zona desabilitada,
          que não recebe eventos): sem isso o navegador abriria o arquivo solto. -->
-    <div class="uni-uploader" (dragover)="aoArrastarSobre($event)" (drop)="aoSoltarForaDaZona($event)">
+    <div class="uni-uploader" [class.uni-uploader--compacto]="compacto()" (dragover)="aoArrastarSobre($event)" (drop)="aoSoltarForaDaZona($event)">
       @if (fieldLabel()) {
         <label [id]="labelId" [attr.for]="inputId" class="field__label">{{ fieldLabel() }}</label>
       }
+      @if (!zonaOculta()) {
       <button
         #dropZone
         type="button"
@@ -85,6 +86,7 @@ const PASSO_ANUNCIADO = 25;
           <span class="uni-uploader__hint">{{ dropHint() }}</span>
         </span>
       </button>
+      }
       <input
         #fileInput
         [id]="inputId"
@@ -107,8 +109,10 @@ const PASSO_ANUNCIADO = 25;
               <span class="uni-uploader__item-name">{{ file.name }}</span>
             </span>
             <button
+              #removerArquivo
               type="button"
               class="btn btn--tertiary btn--sm"
+              [disabled]="disabled()"
               (click)="removeFile()"
               aria-label="Remover arquivo"
             >
@@ -243,6 +247,10 @@ export class FileUploadComponent {
    * é conferido pelo servidor.
    */
   readonly validarSoPelaExtensao = input(false);
+  /** A zona em uma linha (ícone, chamada e restrições), para o formulário sem altura de sobra. */
+  readonly compacto = input(false);
+  /** Com um arquivo escolhido (modo simples), a zona some e volta quando o arquivo é retirado. */
+  readonly ocultarZonaComArquivo = input(false);
   readonly disabled = input(false);
   /** Ids de elementos que descrevem o campo, lidos junto do nome pelo leitor de tela. */
   readonly descritoPor = input<string | null>(null);
@@ -270,7 +278,11 @@ export class FileUploadComponent {
   });
 
   readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
-  private readonly dropZone = viewChild.required<ElementRef<HTMLButtonElement>>('dropZone');
+  private readonly dropZone = viewChild<ElementRef<HTMLButtonElement>>('dropZone');
+  private readonly removerArquivo = viewChild<ElementRef<HTMLButtonElement>>('removerArquivo');
+  protected readonly zonaOculta = computed(
+    () => this.ocultarZonaComArquivo() && this.itens() === null && this.selectedFile() !== null,
+  );
   private readonly lista = viewChild<ElementRef<HTMLElement>>('listaDeArquivos');
   protected readonly comErro = computed(
     () => this.messages().length > 0 || (this.itens() ?? []).some((a) => a.fase === 'erro'),
@@ -432,8 +444,8 @@ export class FileUploadComponent {
   private focarZona(): void {
     afterNextRender(
       () => {
-        const zona = this.dropZone().nativeElement;
-        if (!zona.disabled) {
+        const zona = this.dropZone()?.nativeElement;
+        if (zona !== undefined && !zona.disabled) {
           zona.focus();
           return;
         }
@@ -499,6 +511,12 @@ export class FileUploadComponent {
     this.errors.set([]);
     if (this.itens() === null) this.selectedFile.set(file);
     this.arquivosEscolhidos.emit([file]);
+    // A zona que tinha o foco sai de cena com o arquivo escolhido: o foco vai para o Remover.
+    if (this.zonaOculta()) {
+      afterNextRender(() => this.removerArquivo()?.nativeElement.focus(), {
+        injector: this.injector,
+      });
+    }
   }
 
   private validate(file: File): ValidationResult {
