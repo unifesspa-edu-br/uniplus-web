@@ -532,6 +532,28 @@ describe('campos cujo domínio sai da oferta de atendimento', () => {
     expect(camposSemValoresOfertados(formulario, semOferta)).toEqual(['a condição de atendimento']);
   });
 
+  it('acusa o recurso de acessibilidade perguntado como seleção com a oferta sem recursos', () => {
+    const formulario = comCampos(['RECURSO_ACESSIBILIDADE', 'SELECAO_MULTIPLA']);
+
+    expect(camposSemValoresOfertados(formulario, semOferta)).toEqual([
+      'o recurso de acessibilidade',
+    ]);
+  });
+
+  it('cala o recurso de acessibilidade com ao menos um recurso ofertado, ou fora de seleção', () => {
+    const comRecurso = { ...semOferta, recursos: [{ id: 'r1', codigo: 'LIBRAS', nome: 'Libras' }] };
+
+    expect(
+      camposSemValoresOfertados(
+        comCampos(['RECURSO_ACESSIBILIDADE', 'SELECAO_MULTIPLA']),
+        comRecurso,
+      ),
+    ).toEqual([]);
+    expect(
+      camposSemValoresOfertados(comCampos(['RECURSO_ACESSIBILIDADE', 'TEXTO']), semOferta),
+    ).toEqual([]);
+  });
+
   it('acusa também o campo perguntado em outro formulário do processo', () => {
     const habilitacao = inscricaoGravada({
       itens: [item('CONDICAO_ATENDIMENTO', 0, 'S1', { tipoRenderizacao: 'SELECAO_MULTIPLA' })],
