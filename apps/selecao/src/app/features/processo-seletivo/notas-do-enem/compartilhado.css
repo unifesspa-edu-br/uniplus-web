@@ -1,0 +1,245 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.notas__corpo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+}
+
+.notas__campo {
+  max-width: 36rem;
+}
+
+.notas__ajuda {
+  font-size: var(--text-sm);
+}
+
+.notas__subtitulo {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.notas__lendo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.notas__tentar {
+  display: block;
+  margin-top: var(--space-2);
+}
+
+.notas__texto {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.notas__sucesso {
+  margin: 0;
+  font-weight: 600;
+}
+
+.notas__resultado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.notas__situacao p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.notas__titulo-com-origem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.notas__detalhe-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.notas__leiaute-descricao {
+  flex-basis: 100%;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* Tabela de lotes: a data não quebra, e quem importou fica em texto secundário embaixo. */
+.notas__importacao {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.notas__por {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.notas__situacao-lote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* Contagem de problema maior que zero: aviso discreto; o número já é a informação, a cor reforça. */
+.notas__problema {
+  color: var(--color-warning-700);
+  font-weight: var(--weight-semibold);
+}
+
+@media (min-width: 641px) {
+  .notas__lotes td {
+    vertical-align: middle;
+  }
+
+  .notas__lotes thead th {
+    font-size: var(--text-xs);
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: bottom;
+  }
+
+  .notas__lotes th,
+  .notas__lotes td {
+    padding-inline: var(--space-2);
+  }
+
+  .notas__quando,
+  .notas__situacao-lote ui-tag {
+    white-space: nowrap;
+  }
+}
+
+/* O detalhe de um lote abre abaixo da tabela, separado dela. */
+.notas__detalhe {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.notas__detalhe .notas__subtitulo {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.notas__arquivo {
+  flex: 1 1 24rem;
+  min-width: 0;
+}
+
+/* Com um só leiaute não há campo: o leiaute é descrito nas orientações. */
+:host(.notas__sem-campo) {
+  display: none;
+}
+
+/* Seção de histórico dentro do card: título próprio e tabela que rola sozinha. */
+.notas__historico {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.notas__subtitulo--secao {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+/* A tabela de histórico longo rola dentro do card, com o cabeçalho fixo. */
+.notas__rolagem {
+  max-height: 20rem;
+  overflow: auto;
+}
+
+.notas__rolagem thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.notas__rolagem:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+/* "Não registrado": mesmo tamanho do nome, só em cor secundária. */
+.notas__sem-registro {
+  color: var(--text-secondary);
+}
+
+.notas__linha-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.notas__historico-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.notas__edicao {
+  flex-flow: row wrap;
+  align-items: center;
+  column-gap: var(--space-3);
+}
+
+.notas__edicao .select {
+  width: 14rem;
+  min-height: var(--touch-comfortable);
+  max-width: 100%;
+}
+
+/* Os controles da linha de cima têm a mesma altura e o mesmo centro. */
+.notas__linha-topo .btn {
+  min-height: var(--touch-comfortable);
+}
+
+/* Envios: as duas primeiras colunas medem o conteúdo e a última, o total, fica à direita. */
+@media (min-width: 641px) {
+  .notas__envios th:not(:last-child),
+  .notas__envios td:not(:last-child) {
+    width: 1%;
+    padding-right: var(--space-6);
+    white-space: nowrap;
+  }
+}
+
+/* Em tela estreita a linha de cima quebra e cada controle ocupa a linha inteira; o rótulo da
+   edição vai para cima do select. */
+@media (max-width: 640px) {
+  :host(sel-seletor-de-edicao),
+  .notas__linha-topo > .btn,
+  .notas__arquivo {
+    flex: 1 1 100%;
+  }
+
+  .notas__edicao {
+    flex-direction: column;
+    align-items: stretch;
+    row-gap: var(--space-1);
+  }
+
+  .notas__edicao .select {
+    width: 100%;
+  }
+}

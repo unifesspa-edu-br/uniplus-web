@@ -1,0 +1,69 @@
+<section class="panel notas__cartao" aria-labelledby="notas-envio-titulo">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="notas-envio-titulo">Enviar CPFs ao INEP</h2>
+    </div>
+  </div>
+
+  <div class="notas__corpo">
+    <div class="notas__linha-topo">
+      <sel-seletor-de-edicao
+        idDoCampo="notas-edicao-envio"
+        [valor]="notas.edicaoDeEnvio()"
+        (escolhida)="escolherEdicao($event)"
+      />
+
+      <sel-seletor-de-leiaute
+        idDoCampo="notas-leiaute-envio"
+        rotulo="Leiaute do arquivo de envio"
+        [controle]="leiaute"
+        [catalogo]="notas.leiautesDeEnvio()"
+        [erro]="erroDoLeiaute()"
+        (recarregar)="recarregarCatalogo()"
+      />
+
+      @if (notas.leiautesDeEnvio(); as catalogo) {
+        @if (catalogo.estado === 'lido' && catalogo.dados.length > 0) {
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="notas.escolhidoDeEnvio() === null"
+            [attr.aria-describedby]="
+              notas.escolhidoDeEnvio() === null ? 'notas-envio-motivo' : null
+            "
+            [attr.aria-busy]="gerando() ? 'true' : null"
+            (click)="baixar()"
+          >
+            {{ gerando() ? 'Gerando arquivo…' : 'Baixar arquivo de envio' }}
+          </button>
+        }
+      }
+    </div>
+
+    @if (notas.escolhidoDeEnvio() === null) {
+      <p class="sr-only" id="notas-envio-motivo">
+        Escolha a edição do ENEM para gerar o arquivo de envio.
+      </p>
+    }
+
+    @if (recusa(); as r) {
+      <sel-alerta-de-recusa [recusa]="r" />
+    }
+
+    @let total = gerado();
+    <div class="notas__status" role="status" aria-live="polite">
+      @if (total !== null) {
+        <p class="notas__sucesso">
+          Arquivo de envio gerado com {{ total }} {{ total === 1 ? 'CPF' : 'CPFs' }}. Verifique a
+          pasta de downloads.
+        </p>
+      }
+    </div>
+
+    <sel-orientacoes-do-enem tipo="envio" />
+
+    @if (notas.escolhidoDeEnvio() !== null) {
+      <sel-historico-de-envios />
+    }
+  </div>
+</section>

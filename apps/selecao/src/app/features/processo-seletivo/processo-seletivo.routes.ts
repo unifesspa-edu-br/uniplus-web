@@ -13,7 +13,8 @@ const EDITOR_PROCESSO_SELETIVO = 'editor-processo-seletivo';
 /**
  * A rota base é a listagem administrativa; `novo` inicia um cadastro vazio,
  * `:id` retoma um processo existente, `:id/simulacao/:finalidade` simula um
- * formulário dele e `:id/publicacoes` mostra o que o processo já publicou.
+ * formulário dele, `:id/publicacoes` mostra o que o processo já publicou e `:id/notas-do-enem`
+ * trata do envio ao INEP e da importação das notas do ENEM.
  *
  * `novo` é declarada antes de `:id` porque o roteador casa na ordem — sem
  * isso, `/processo-seletivo/novo` seria lido como um id chamado "novo".
@@ -50,6 +51,14 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
     loadComponent: () =>
       import('./publicacoes/publicacoes-do-processo.page').then((m) => m.PublicacoesDoProcessoPage),
     data: { breadcrumb: 'Publicações' },
+  },
+  {
+    // Notas do ENEM: o envio ao INEP e a importação do retorno. Fora do editor, porque não há
+    // rascunho a guardar.
+    path: ':id/notas-do-enem',
+    loadComponent: () =>
+      import('./notas-do-enem/notas-do-enem.page').then((m) => m.NotasDoEnemPage),
+    data: { breadcrumb: 'Notas do ENEM' },
   },
   {
     path: ':id',

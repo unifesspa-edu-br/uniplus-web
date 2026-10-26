@@ -1,0 +1,69 @@
+<section class="notas__historico" aria-labelledby="notas-envios-titulo">
+  <h3 id="notas-envios-titulo" class="notas__subtitulo notas__subtitulo--secao">
+    Envios gerados desta edição
+  </h3>
+
+  @let envios = notas.envios();
+  @switch (envios.estado) {
+    @case ('lendo') {
+      <p class="notas__lendo" role="status">
+        <ui-spinner spinnerSize="sm" />
+        Carregando os envios…
+      </p>
+    }
+    @case ('falha') {
+      <ui-alert variant="danger" heading="Não foi possível carregar os envios">
+        {{ envios.mensagem }}
+        <span class="notas__tentar">
+          <button type="button" class="btn btn--secondary btn--sm" (click)="notas.recarregarEnvios()">
+            Tentar novamente
+          </button>
+        </span>
+      </ui-alert>
+    }
+    @case ('lido') {
+      @if (envios.dados.length === 0) {
+        <p class="notas__texto">Nenhum envio gerado para esta edição.</p>
+      } @else {
+        <div
+          class="table-responsive notas__rolagem notas__lotes notas__envios"
+          role="region"
+          aria-label="Envios gerados, com rolagem"
+          tabindex="0"
+        >
+          <table>
+            <caption class="sr-only">
+              Envios ao INEP gerados para a edição, com data, quem gerou e total de CPFs
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Gerado em</th>
+                <th scope="col">Gerado por</th>
+                <th scope="col" class="table-responsive__num">Total de CPFs</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (envio of envios.dados; track envio.id) {
+                <tr>
+                  <td data-label="Gerado em" class="notas__quando">
+                    {{ envio.geradoEm | dateBr: 'datetime' }}
+                  </td>
+                  <td data-label="Gerado por">
+                    @if (envio.geradoPorNome; as nome) {
+                      {{ nome }}
+                    } @else {
+                      <span class="notas__sem-registro">Não registrado</span>
+                    }
+                  </td>
+                  <td data-label="Total de CPFs" class="table-responsive__num">
+                    {{ total(envio.totalDeCpfs) }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  }
+</section>

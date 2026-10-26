@@ -1,0 +1,114 @@
+<section class="panel notas__cartao" aria-labelledby="notas-importacao-titulo">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="notas-importacao-titulo">Importar o retorno do INEP</h2>
+    </div>
+  </div>
+
+  <div class="notas__corpo">
+    <div class="notas__linha-topo">
+      <sel-seletor-de-edicao
+        idDoCampo="notas-edicao-retorno"
+        [valor]="notas.edicaoDeRetorno()"
+        (escolhida)="escolherEdicao($event)"
+      />
+
+      <sel-seletor-de-leiaute
+        idDoCampo="notas-leiaute-retorno"
+        rotulo="Leiaute do arquivo de retorno"
+        [controle]="leiaute"
+        [catalogo]="notas.leiautesDeRetorno()"
+        [erro]="erroDoLeiaute()"
+        (recarregar)="recarregarCatalogo()"
+      />
+
+      <div #zonaDeArquivo class="notas__arquivo">
+        <ui-file-upload
+          acceptedFileTypes=".txt,.csv"
+          acceptLabel="Arquivo de texto do INEP (.txt ou .csv)"
+          [maxSizeMb]="10"
+          [compacto]="true"
+          [ocultarZonaComArquivo]="true"
+          [validarSoPelaExtensao]="true"
+          [disabled]="importando()"
+          [mensagemExterna]="erroDoArquivo()"
+          [selectedFile]="arquivo()"
+          (selectedFileChange)="escolherArquivo($event)"
+        />
+      </div>
+
+      @if (notas.leiautesDeRetorno(); as catalogo) {
+        @if (catalogo.estado === 'lido' && catalogo.dados.length > 0) {
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="notas.escolhidoDeRetorno() === null"
+            [attr.aria-describedby]="
+              notas.escolhidoDeRetorno() === null ? 'notas-importacao-ajuda' : null
+            "
+            [attr.aria-busy]="importando() ? 'true' : null"
+            (click)="importar()"
+          >
+            {{ importando() ? 'Importando…' : 'Importar notas' }}
+          </button>
+        }
+      }
+    </div>
+
+    @if (notas.escolhidoDeRetorno() === null) {
+      <p class="sr-only" id="notas-importacao-ajuda">
+        Escolha a edição do ENEM para importar.
+      </p>
+    }
+
+    @if (recusa(); as r) {
+      <sel-alerta-de-recusa [recusa]="r" />
+    }
+
+    <sel-orientacoes-do-enem tipo="retorno" />
+
+    @if (resultado(); as r) {
+      <section class="notas__historico" aria-labelledby="notas-resultado-titulo">
+        <div class="notas__titulo-com-origem">
+          <h3
+            id="notas-resultado-titulo"
+            #tituloDoResultado
+            tabindex="-1"
+            class="notas__subtitulo notas__subtitulo--secao"
+          >
+            Resultado da importação
+          </h3>
+          <sel-origem-do-lote [lote]="r.lote" />
+        </div>
+        <div role="status" class="notas__situacao">
+          @if (r.criado) {
+            <p>
+              Lote importado: {{ frase(r.lote) }}
+              @if (nenhumaNotaCasou(r.lote)) {
+                <!-- O aviso logo abaixo explica o que fazer; a promessa de notas vigentes seria falsa. -->
+              } @else if (r.haviaLoteAnterior) {
+                Estas notas passam a valer no lugar das do lote anterior desta edição.
+              } @else {
+                Estas notas passam a ser as notas vigentes desta edição.
+              }
+            </p>
+          } @else {
+            <p>Este arquivo já é o do lote vigente. Nada mudou.</p>
+          }
+        </div>
+        @if (nenhumaNotaCasou(r.lote)) {
+          <ui-alert variant="warning" heading="Nenhuma nota casou com os inscritos">
+            Nenhuma linha do arquivo corresponde a inscritos desta edição. Confira se o arquivo é da
+            edição escolhida. Este lote passou a ser o vigente: importe o arquivo correto para
+            substituí-lo.
+          </ui-alert>
+        }
+        <sel-lote-de-notas [lote]="r.lote" />
+      </section>
+    }
+
+    @if (notas.escolhidoDeRetorno() !== null) {
+      <sel-historico-de-lotes />
+    }
+  </div>
+</section>
