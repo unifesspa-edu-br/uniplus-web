@@ -149,21 +149,75 @@ export async function abrirAcessoEmNovaAba(
 /** Como terminou o pedido de download de um arquivo confirmado. */
 export type DesfechoDoDownload =
   | { readonly situacao: 'iniciado' }
-  | { readonly situacao: 'recusado'; readonly problem: ProblemDetails };
+  | { readonly situacao: 'recusado'; readonly problem: ProblemDetails }
+  | { readonly situacao: 'falhou' };
+
+/** O que a URL assinada entregou: o conteúdo e o nome que o armazenamento assinou para ele. */
+export interface ArquivoBaixado {
+  readonly conteudo: Blob;
+  readonly nome: string | null;
+}
 
 /**
- * Baixa um arquivo confirmado pedindo o acesso à API no clique. A URL assinada entrega o arquivo
- * como anexo, então levar a própria janela até ela faz o navegador baixar sem trocar de página; uma
- * aba nova nasceria em branco. Pelo mesmo motivo de `abrirAcessoEmNovaAba`, a URL é credencial: vai
- * direto à navegação e nada a retém.
+ * O nome do arquivo na disposição de conteúdo assinada (`filename*=UTF-8''…`, RFC 5987); nulo
+ * quando ela não traz um nome legível.
+ */
+export function nomeDaDisposicao(disposicao: string | null): string | null {
+  const codificado = /filename\*=UTF-8''([^;]+)/i.exec(disposicao ?? '')?.[1];
+  if (codificado === undefined) return null;
+  try {
+    return decodeURIComponent(codificado.trim());
+  } catch {
+    return null;
+  }
+}
+
+/** Busca o arquivo na URL assinada; nulo quando o armazenamento recusa ou não responde. */
+async function buscarNoArmazenamento(url: string): Promise<ArquivoBaixado | null> {
+  try {
+    const resposta = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer' });
+    if (!resposta.ok) return null;
+    return {
+      conteudo: await resposta.blob(),
+      nome: nomeDaDisposicao(resposta.headers.get('Content-Disposition')),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Grava o arquivo a partir de um endereço local. O link entra na página para o clique valer em todo
+ * navegador, e o endereço só é liberado depois que o download começa.
+ */
+function salvarComoArquivo(arquivo: ArquivoBaixado): void {
+  const endereco = URL.createObjectURL(arquivo.conteudo);
+  const link = document.createElement('a');
+  link.href = endereco;
+  link.download = arquivo.nome ?? 'arquivo';
+  link.hidden = true;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(endereco));
+}
+
+/**
+ * Baixa um arquivo confirmado pedindo o acesso à API no clique. O conteúdo vem pela própria página
+ * e é salvo de um endereço local: o armazenamento responde em HTTP e levar a janela até ele faria
+ * o navegador tratar o anexo como download inseguro de uma página HTTPS. Pelo mesmo motivo de
+ * `abrirAcessoEmNovaAba`, a URL é credencial: vive só nesta chamada e nada a retém.
  */
 export async function baixarPeloAcesso(
   pedirAcesso: () => Promise<ApiResult<{ readonly url: string }>>,
-  navegar: (url: string) => void = (url) => window.location.assign(url),
+  buscar: (url: string) => Promise<ArquivoBaixado | null> = buscarNoArmazenamento,
+  salvar: (arquivo: ArquivoBaixado) => void = salvarComoArquivo,
 ): Promise<DesfechoDoDownload> {
   const resultado = await pedirAcesso();
   if (!isApiOk(resultado)) return { situacao: 'recusado', problem: resultado.problem };
-  navegar(resultado.data.url);
+  const arquivo = await buscar(resultado.data.url);
+  if (arquivo === null) return { situacao: 'falhou' };
+  salvar(arquivo);
   return { situacao: 'iniciado' };
 }
 

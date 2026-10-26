@@ -1,9 +1,4 @@
-export {
-  apiFailure,
-  apiOk,
-  isApiFailure,
-  isApiOk,
-} from './api-result';
+export { apiFailure, apiOk, isApiFailure, isApiOk } from './api-result';
 export type { ApiFailure, ApiOk, ApiResult } from './api-result';
 
 export { apiResultInterceptor } from './api-result.interceptor';
@@ -56,20 +51,12 @@ export { STATUS_HTTP } from './status-http';
 export type { StatusHttp } from './status-http';
 
 export { ProblemI18nService } from './problem-i18n.service';
-export type {
-  ProblemAction,
-  ProblemMessage,
-  ProblemOverride,
-} from './problem-i18n.service';
+export type { ProblemAction, ProblemMessage, ProblemOverride } from './problem-i18n.service';
 
 export { useApiResource } from './use-api-resource';
 export type { UseApiResourceRef } from './use-api-resource';
 
-export {
-  buildVendorMimeAccept,
-  VENDOR_MIME_TOKEN,
-  withVendorMime,
-} from './vendor-mime';
+export { buildVendorMimeAccept, VENDOR_MIME_TOKEN, withVendorMime } from './vendor-mime';
 export type { VendorMimeDeclaration } from './vendor-mime';
 
 export { ChaveDeSubstituicao, proximaChave } from './chave-de-substituicao';
@@ -80,6 +67,7 @@ export {
   baixarPeloAcesso,
   destinoExpirado,
   enviarAoStorage,
+  nomeDaDisposicao,
 } from './envio-pre-assinado';
 export type {
   DesfechoDaAbertura,
