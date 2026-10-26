@@ -13,7 +13,7 @@ import { type ItemDaLista, itemDaLista } from './inscricao-lista.model';
 import { InscricaoListaPage } from './inscricao-lista.page';
 import { MinhasInscricoesService } from './minhas-inscricoes.service';
 
-/** Fernanda Drumond, persona fictícia do portal de documentação, que prefere o nome social. */
+/** Um item da lista na situação pedida: com curso quando não é rascunho, e ações conforme `aberta`. */
 function inscricao(
   id: string,
   situacao: SituacaoInscricao,
@@ -439,11 +439,25 @@ describe('InscricaoListaPage', () => {
   it('a ação que desfaz a inscrição sai depois das demais, em botão próprio', async () => {
     await carregar([inscricao('p2', SituacaoInscricao.submetida, 'Bolsa de iniciação científica')]);
 
-    const item = host().querySelector('li.inscricao-lista-item')!;
-    expect(rotulosDe(item)).toEqual(['Corrigir dados', 'Ver comprovante', 'Cancelar inscrição']);
-    expect(item.querySelector('.inscricao-acao-destrutiva')?.textContent?.trim()).toBe(
+    const item = host().querySelector('li.inscricao-lista-item');
+    expect(rotulosDe(item as Element)).toEqual([
+      'Corrigir dados',
+      'Ver comprovante',
+      'Cancelar inscrição',
+    ]);
+    expect(item?.querySelector('.inscricao-acao-destrutiva')?.textContent?.trim()).toBe(
       'Cancelar inscrição',
     );
+  });
+
+  it('sem edição a seguir, ver o comprovante é a ação principal', async () => {
+    await carregar([
+      inscricao('p2', SituacaoInscricao.submetida, 'Bolsa de iniciação científica', false),
+    ]);
+
+    const botao = host().querySelector('li.inscricao-lista-item ui-button button');
+    expect(botao?.textContent?.trim()).toBe('Ver comprovante');
+    expect(botao?.classList.contains('btn--tertiary')).toBe(false);
   });
 
   it('clique no botão de ação chama executar com a ação e a inscrição corretas (CA-16)', async () => {

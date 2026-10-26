@@ -183,7 +183,12 @@
 <ng-template #acoesDaInscricao let-inscricao>
   <div class="inscricao-acoes">
     @for (acao of acoesSegurasDe(inscricao); track acao.tipo) {
-    <ui-button [variant]="acao.variant" buttonSize="sm" (click)="executar(acao, inscricao)">
+    <ui-button
+      [variant]="acao.variant"
+      buttonSize="sm"
+      [full]="isCompacto()"
+      (click)="executar(acao, inscricao)"
+    >
       {{ acao.label }}
     </ui-button>
     }
