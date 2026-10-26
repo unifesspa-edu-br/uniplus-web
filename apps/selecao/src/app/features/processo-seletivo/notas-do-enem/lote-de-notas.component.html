@@ -1,0 +1,166 @@
+@if (ativa(); as aba) {
+  <div class="lote__abas" role="tablist" aria-label="Ocorrências do lote">
+    @for (grupo of grupos(); track grupo.tipo; let i = $index) {
+      <button
+        type="button"
+        role="tab"
+        class="lote__aba"
+        [id]="idDaAba(grupo.tipo)"
+        [attr.aria-selected]="grupo.tipo === aba.tipo ? 'true' : 'false'"
+        [attr.aria-controls]="grupo.tipo === aba.tipo ? idDoPainel(grupo.tipo) : null"
+        [attr.tabindex]="grupo.tipo === aba.tipo ? 0 : -1"
+        (click)="escolher(grupo.tipo)"
+        (keydown)="aoTeclar($event, i)"
+      >
+        {{ grupo.rotulo }}
+        <span class="count-badge" [class.count-badge--active]="grupo.tipo === aba.tipo">{{
+          quantidade(grupo.itens.length)
+        }}</span>
+      </button>
+    }
+  </div>
+
+  <div
+    role="tabpanel"
+    class="lote__painel"
+    [id]="idDoPainel(aba.tipo)"
+    [attr.aria-labelledby]="idDaAba(aba.tipo)"
+    tabindex="0"
+  >
+    <p class="notas__texto">{{ aba.texto }}</p>
+    <div
+      class="table-responsive lote__tabela notas__rolagem"
+      role="region"
+      [attr.aria-label]="aba.rotulo + ', com rolagem'"
+      tabindex="0"
+    >
+      <table>
+        <caption class="sr-only">
+          {{
+            aba.rotulo
+          }}:
+          {{
+            quantidade(aba.itens.length)
+          }}
+        </caption>
+        <thead>
+          <tr>
+            @switch (aba.tipo) {
+              @case ('linhaSemInscrito') {
+                <th scope="col">Linha do arquivo</th>
+                <th scope="col">Nome</th>
+                <th scope="col">Sexo</th>
+                <th scope="col">CPF</th>
+              }
+              @case ('outras') {
+                <th scope="col">Tipo</th>
+                <th scope="col">Nº de inscrição</th>
+                <th scope="col">Linhas</th>
+              }
+              @default {
+                <th scope="col">Nº de inscrição</th>
+                <th scope="col">Candidato</th>
+                <th scope="col">Curso</th>
+                <th scope="col">CPF</th>
+                @if (aba.tipo === 'ausente') {
+                  <th scope="col">Áreas ausentes</th>
+                }
+                @if (aba.tipo === 'conflito') {
+                  <th scope="col">Linhas</th>
+                }
+              }
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of visiveis(); track $index) {
+            <tr>
+              @switch (aba.tipo) {
+                @case ('linhaSemInscrito') {
+                  <th scope="row" tabindex="-1" class="lote__numero">{{ item.linhas[0] }}</th>
+                  <td data-label="Nome">
+                    @if (item.candidato) {
+                      {{ item.candidato }}
+                    } @else {
+                      <span aria-hidden="true">—</span><span class="sr-only">não informado</span>
+                    }
+                  </td>
+                  <td data-label="Sexo">
+                    @if (item.sexo) {
+                      {{ item.sexo }}
+                    } @else {
+                      <span aria-hidden="true">—</span><span class="sr-only">não informado</span>
+                    }
+                  </td>
+                  <td data-label="CPF" class="lote__numero">
+                    @if (item.cpf) {
+                      {{ item.cpf }}
+                    } @else {
+                      <span aria-hidden="true">—</span><span class="sr-only">não informado</span>
+                    }
+                  </td>
+                }
+                @case ('outras') {
+                  <th scope="row" tabindex="-1">{{ item.candidato }}</th>
+                  <td data-label="Nº de inscrição" class="lote__numero">
+                    {{ item.inscricao ?? '—' }}
+                  </td>
+                  <td data-label="Linhas">{{ linhas(item.linhas) }}</td>
+                }
+                @default {
+                  <th scope="row" tabindex="-1" class="lote__numero">{{ item.inscricao }}</th>
+                  <td data-label="Candidato">
+                    @if (item.candidato) {
+                      {{ item.candidato }}
+                    } @else {
+                      <span aria-hidden="true">—</span><span class="sr-only">não informado</span>
+                    }
+                  </td>
+                  <td data-label="Curso">
+                    @if (item.cursos[0]; as primeira) {
+                      <span class="lote__curso">
+                        {{ primeira }}
+                        @if (item.cursos[1]; as segunda) {
+                          <span class="lote__segunda">2ª opção: {{ segunda }}</span>
+                        }
+                      </span>
+                    } @else {
+                      <span aria-hidden="true">—</span><span class="sr-only">não informado</span>
+                    }
+                  </td>
+                  <td data-label="CPF" class="lote__numero">
+                    @if (item.cpf) {
+                      {{ item.cpf }}
+                    } @else {
+                      <span aria-hidden="true">—</span><span class="sr-only">não informado</span>
+                    }
+                  </td>
+                  @if (aba.tipo === 'ausente') {
+                    <td data-label="Áreas ausentes">{{ item.areas.join(', ') }}</td>
+                  }
+                  @if (aba.tipo === 'conflito') {
+                    <td data-label="Linhas">{{ linhas(item.linhas) }}</td>
+                  }
+                }
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (aba.itens.length > itensPorPagina) {
+      <div class="lote__rodape">
+        <p class="notas__texto notas__ajuda" role="status">
+          Mostrando {{ quantidade(visiveis().length) }} de {{ quantidade(aba.itens.length) }}.
+        </p>
+        @if (restantes() > 0) {
+          <button type="button" class="btn btn--secondary btn--sm" (click)="mostrarMais()">
+            Mostrar mais {{ quantidade(proximaPagina()) }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+} @else {
+  <p class="notas__texto">Todos os inscritos da edição receberam nota.</p>
+}

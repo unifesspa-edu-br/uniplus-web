@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+.notas__cartao {
+  display: flex;
+  flex-direction: column;
+}
+
+/* A região de status vazia ocupa uma linha da grade flexível, mas não pode somar dois vãos. */
+.notas__status:empty {
+  margin-block: calc(-1 * var(--space-2));
+}

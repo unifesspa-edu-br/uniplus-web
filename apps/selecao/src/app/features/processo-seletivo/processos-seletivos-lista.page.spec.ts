@@ -369,7 +369,7 @@ describe('ProcessosSeletivosListaPage', () => {
    * Antes da publicação o processo não tem página pública, então não há o que publicar nem o que
    * listar: o atalho só aparece depois dela.
    */
-  it('oferece as publicações só do processo que já foi publicado', async () => {
+  it('oferece as publicações e as notas do ENEM só do processo que já foi publicado', async () => {
     await flushLista([
       processo({ id: 'rascunho', nome: 'Em cadastro', status: StatusProcesso.rascunho }),
       processo({ id: 'publicado', nome: 'No ar', status: StatusProcesso.publicado }),
@@ -383,6 +383,7 @@ describe('ProcessosSeletivosListaPage', () => {
       '/processo-seletivo/rascunho',
       '/processo-seletivo/publicado',
       '/processo-seletivo/publicado/publicacoes',
+      '/processo-seletivo/publicado/notas-do-enem',
     ]);
   });
 

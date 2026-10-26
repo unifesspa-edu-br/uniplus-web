@@ -1,0 +1,50 @@
+<ui-page-header
+  heading="Notas do ENEM"
+  [description]="
+    notas.nomeDoProcesso() !== null
+      ? notas.nomeDoProcesso() + ' — envio dos CPFs ao INEP e importação do arquivo de notas.'
+      : 'Envio dos CPFs ao INEP e importação do arquivo de notas.'
+  "
+>
+  <div uiPageActions>
+    <a class="btn btn--tertiary" routerLink="/processo-seletivo">Voltar aos processos</a>
+  </div>
+</ui-page-header>
+
+@let processo = notas.processo();
+@if (processo.estado === 'falha') {
+  <ui-alert variant="danger" heading="Não foi possível carregar o processo seletivo">
+    {{ processo.mensagem }}
+    <span class="notas__tentar">
+      <button type="button" class="btn btn--secondary btn--sm" (click)="notas.recarregarProcesso()">
+        Tentar novamente
+      </button>
+    </span>
+  </ui-alert>
+} @else if (processo.estado === 'lendo') {
+  <p class="notas__lendo" role="status">
+    <ui-spinner spinnerSize="sm" />
+    Carregando o processo seletivo…
+  </p>
+} @else {
+  @let escopo = notas.escopo();
+  @if (escopo?.situacao === 'rascunho') {
+    <ui-alert variant="info" heading="O processo ainda não foi divulgado" [dynamic]="false">
+      O envio ao INEP e a importação das notas valem para o edital divulgado. Divulgue o processo
+      para começar.
+    </ui-alert>
+  } @else if (escopo?.situacao === 'semEtapa') {
+    <ui-empty-state
+      heading="Este processo não tem etapa de nota do ENEM"
+      description="Só uma etapa cuja nota vem do ENEM recebe o arquivo de retorno do INEP. Revise a configuração das etapas numa retificação."
+    />
+  } @else if (escopo?.situacao === 'semEdicoes') {
+    <ui-empty-state
+      heading="O processo não declara edições do ENEM"
+      description="As edições aceitas pelo processo são declaradas na classificação. Declare ao menos uma numa retificação."
+    />
+  } @else if (notas.escopoPronto()) {
+    <sel-envio-ao-inep />
+    <sel-importacao-de-notas />
+  }
+}

@@ -1,0 +1,97 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.lote__abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.lote__aba {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-comfortable, 44px);
+  padding: var(--space-2) var(--space-1);
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.lote__aba[aria-selected='true'] {
+  border-bottom-color: var(--color-primary);
+  color: var(--text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.lote__aba:hover {
+  color: var(--text-primary);
+}
+
+.lote__aba:focus-visible,
+.lote__painel:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.lote__painel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.lote__numero {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (min-width: 641px) {
+  .lote__tabela td,
+  .lote__tabela th {
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+.lote__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.lote__rodape .notas__texto {
+  margin: 0;
+}
+
+.lote__curso {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lote__segunda {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* Candidato e curso dividem o espaço; o número e o CPF medem o conteúdo. */
+@media (min-width: 641px) {
+  .lote__tabela thead th {
+    white-space: nowrap;
+  }
+
+  .lote__tabela .lote__numero {
+    width: 1%;
+    padding-right: var(--space-5);
+  }
+}

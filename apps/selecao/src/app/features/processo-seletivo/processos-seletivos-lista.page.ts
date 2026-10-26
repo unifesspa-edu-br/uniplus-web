@@ -185,12 +185,18 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
                         tooltip="Abrir processo seletivo"
                         [link]="['/processo-seletivo', processo.id]"
                       />
-                      @if (temPublicacoes(processo.status)) {
+                      @if (foiPublicado(processo.status)) {
                         <ui-icon-button
                           icon="pi-file"
                           [accessibleName]="'Publicações de ' + processo.nome"
                           tooltip="Publicações do processo"
                           [link]="['/processo-seletivo', processo.id, 'publicacoes']"
+                        />
+                        <ui-icon-button
+                          icon="pi-file-import"
+                          [accessibleName]="'Notas do ENEM de ' + processo.nome"
+                          tooltip="Notas do ENEM do processo"
+                          [link]="['/processo-seletivo', processo.id, 'notas-do-enem']"
                         />
                       }
                     </td>
@@ -334,8 +340,11 @@ export class ProcessosSeletivosListaPage {
     return STATUS_LABEL.get(status) ?? status;
   }
 
-  /** Antes da publicação o processo não tem página pública, e portanto nada publicado a mostrar. */
-  protected temPublicacoes(status: string): boolean {
+  /**
+   * Antes da publicação o processo não tem página pública nem edital divulgado: não há o que
+   * listar de publicado nem notas do ENEM a enviar ou importar.
+   */
+  protected foiPublicado(status: string): boolean {
     return status !== StatusProcesso.rascunho;
   }
 

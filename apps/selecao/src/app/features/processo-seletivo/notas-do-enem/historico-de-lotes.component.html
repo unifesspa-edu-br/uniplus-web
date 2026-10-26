@@ -1,0 +1,169 @@
+<section class="notas__historico" aria-labelledby="notas-lotes-titulo">
+  <h3 id="notas-lotes-titulo" class="notas__subtitulo notas__subtitulo--secao">
+    Lotes importados desta edição
+  </h3>
+
+  <div class="notas__historico-corpo">
+    @let lotes = notas.lotes();
+    @switch (lotes.estado) {
+      @case ('lendo') {
+        <p class="notas__lendo" role="status">
+          <ui-spinner spinnerSize="sm" />
+          Carregando os lotes…
+        </p>
+      }
+      @case ('falha') {
+        <ui-alert variant="danger" heading="Não foi possível carregar os lotes">
+          {{ lotes.mensagem }}
+          <span class="notas__tentar">
+            <button type="button" class="btn btn--secondary btn--sm" (click)="notas.recarregarLotes()">
+              Tentar novamente
+            </button>
+          </span>
+        </ui-alert>
+      }
+      @case ('lido') {
+        @if (lotes.dados.length === 0) {
+          <ui-empty-state
+            heading="Nenhum lote importado para esta edição"
+            description="Os arquivos de retorno importados ficam registrados aqui."
+            [level]="3"
+            [showIcon]="false"
+          />
+        } @else {
+          <div
+            class="table-responsive notas__rolagem notas__lotes"
+            role="region"
+            aria-label="Lotes importados, com rolagem"
+            tabindex="0"
+          >
+            <table>
+              <caption class="sr-only">
+                Lotes de notas importados para a edição, com quem importou, as contagens de
+                inscritos e de linhas e a situação
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Importado em</th>
+                  <th scope="col" class="table-responsive__num">Inscritos com nota</th>
+                  <th scope="col" class="table-responsive__num">Sem nota</th>
+                  <th scope="col" class="table-responsive__num">Ausentes</th>
+                  <th scope="col" class="table-responsive__num">Linhas sem inscrito</th>
+                  <th scope="col" class="table-responsive__num">Conflitos</th>
+                  <th scope="col">Situação</th>
+                  <th scope="col"><span class="sr-only">Ações</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (lote of lotes.dados; track lote.id) {
+                  <tr>
+                    <td data-label="Importado em">
+                      <span class="notas__importacao">
+                        <span class="notas__quando">{{ lote.importadoEm | dateBr: 'datetime' }}</span>
+                        <span class="notas__por">
+                          @if (lote.importadoPorNome; as nome) {
+                            por {{ nome }}
+                          } @else {
+                            Não registrado
+                          }
+                        </span>
+                      </span>
+                    </td>
+                    <td data-label="Inscritos com nota" class="table-responsive__num">
+                      {{ total(lote.totalDeInscritosComNota) }}
+                    </td>
+                    <td
+                      data-label="Sem nota"
+                      class="table-responsive__num"
+                      [class.notas__problema]="temOcorrencia(lote.totalDeInscritosSemLinha)"
+                    >
+                      {{ total(lote.totalDeInscritosSemLinha) }}
+                    </td>
+                    <td
+                      data-label="Ausentes"
+                      class="table-responsive__num"
+                      [class.notas__problema]="temOcorrencia(lote.totalDeInscritosAusentes)"
+                    >
+                      {{ total(lote.totalDeInscritosAusentes) }}
+                    </td>
+                    <td
+                      data-label="Linhas sem inscrito"
+                      class="table-responsive__num"
+                      [class.notas__problema]="temOcorrencia(lote.totalDeLinhasSemInscrito)"
+                    >
+                      {{ total(lote.totalDeLinhasSemInscrito) }}
+                    </td>
+                    <td
+                      data-label="Conflitos"
+                      class="table-responsive__num"
+                      [class.notas__problema]="temOcorrencia(lote.totalDeInscritosEmConflito)"
+                    >
+                      {{ total(lote.totalDeInscritosEmConflito) }}
+                    </td>
+                    <td data-label="Situação">
+                      <span class="notas__situacao-lote">
+                        @if (lote.vigente) {
+                          <ui-tag variant="success" [dot]="true">Vigente</ui-tag>
+                        } @else {
+                          <ui-tag variant="neutral">Anterior</ui-tag>
+                        }
+                        @if (semNotaCasada(lote)) {
+                          <ui-tag variant="warning">Nenhuma nota casou com inscritos</ui-tag>
+                        }
+                      </span>
+                    </td>
+                    <td class="table-responsive__actions" data-label="Ações">
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm"
+                        [attr.aria-label]="
+                          'Ver ocorrências do lote importado em ' + (lote.importadoEm | dateBr: 'datetime')
+                        "
+                        [attr.data-lote]="lote.id"
+                        (click)="verOcorrencias(lote)"
+                      >
+                        Ver ocorrências
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    }
+
+    @if (detalhe(); as aberto) {
+      <section class="notas__resultado notas__detalhe" aria-labelledby="notas-detalhe-titulo">
+        <div class="notas__detalhe-cabecalho">
+          <div class="notas__titulo-com-origem">
+            <h4 id="notas-detalhe-titulo" #tituloDoDetalhe class="notas__subtitulo" tabindex="-1">
+              Ocorrências do lote
+            </h4>
+            @if (aberto.estado === 'lido') {
+              <sel-origem-do-lote [lote]="aberto.lote" />
+            }
+          </div>
+          <button type="button" class="btn btn--tertiary btn--sm" (click)="fecharDetalhe()">
+            Ocultar ocorrências
+          </button>
+        </div>
+        @switch (aberto.estado) {
+          @case ('lendo') {
+            <p class="notas__lendo" role="status">
+              <ui-spinner spinnerSize="sm" />
+              Carregando as ocorrências…
+            </p>
+          }
+          @case ('falha') {
+            <sel-alerta-de-recusa [recusa]="aberto.recusa" />
+          }
+          @case ('lido') {
+            <sel-lote-de-notas [lote]="aberto.lote" />
+          }
+        }
+      </section>
+    }
+  </div>
+</section>
