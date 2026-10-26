@@ -232,21 +232,23 @@ interface OfertaCursoForm {
                   </td>
                   <td data-label="Turnos">{{ turnosLabel(oferta.turnos) }}</td>
                   <td data-label="Vagas e-MEC">{{ oferta.vagasAnuaisAutorizadas ?? '—' }}</td>
-                  <td class="table-responsive__actions" data-label="Ações">
-                    <ui-icon-button
-                      icon="pi-pencil"
-                      [accessibleName]="'Editar oferta de curso ' + identificador"
-                      tooltip="Editar oferta de curso"
-                      [isDisabled]="loading()"
-                      (triggered)="abrirEdicao(oferta)"
-                    />
-                    <ui-icon-button
-                      icon="pi-trash"
-                      [accessibleName]="'Remover oferta de curso ' + identificador"
-                      tooltip="Remover oferta de curso"
-                      [isDisabled]="loading()"
-                      (triggered)="pedirRemocao(oferta)"
-                    />
+                  <td data-label="Ações">
+                    <div style="display: flex;">
+                      <ui-icon-button
+                        icon="pi-pencil"
+                        [accessibleName]="'Editar oferta de curso ' + identificador"
+                        tooltip="Editar oferta de curso"
+                        [isDisabled]="loading()"
+                        (triggered)="abrirEdicao(oferta)"
+                      />
+                      <ui-icon-button
+                        icon="pi-trash"
+                        [accessibleName]="'Remover oferta de curso ' + identificador"
+                        tooltip="Remover oferta de curso"
+                        [isDisabled]="loading()"
+                        (triggered)="pedirRemocao(oferta)"
+                      />
+                    </div>
                   </td>
                 </tr>
               }
