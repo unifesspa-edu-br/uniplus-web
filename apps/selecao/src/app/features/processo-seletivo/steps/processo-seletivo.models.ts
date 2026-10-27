@@ -321,11 +321,13 @@ export interface EtapaPontuada {
   readonly notaMinima: string;
   /** Teto da escala de lançamento; vazio quando a etapa não tem nota ou ainda não o declarou. Ausente em rascunho anterior ao campo. */
   readonly notaMaxima?: string;
-  /**
-   * Passo do lançamento. Viaja sem ser editado neste passo: a gravação das etapas substitui
-   * o que está gravado, e omiti-lo apagaria o passo declarado.
-   */
+  /** Passo do lançamento da nota; só a etapa de avaliação humana o declara. */
   readonly passoDoLancamento?: string;
+  /** Token da forma de avaliação (`OBJETIVA` ou `HUMANA`); vazio quando ainda não declarada. */
+  readonly formaDeAvaliacao?: string;
+  /** Regra de consolidação das notas dos avaliadores, do catálogo; vazia fora da forma humana. */
+  readonly regraConsolidacaoCodigo?: string;
+  readonly regraConsolidacaoVersao?: string;
   readonly ordem: number;
   /**
    * Código canônico da fase a que a etapa pertence. É o que permite qualquer fase

@@ -152,6 +152,30 @@ const REGRAS_CONTAGEM = [
   },
 ];
 
+/** O catálogo de consolidação traz os invariantes em prosa: é a descrição que a tela mostra. */
+const REGRAS_CONSOLIDACAO = [
+  {
+    codigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
+    versao: 'v1',
+    tipo: 'regra_consolidacao',
+    esquemaArgs: {},
+    invariantes: ['um só avaliador lança a nota de cada candidato'],
+    baseLegal: 'Decisão institucional da Unifesspa',
+    hash: 'u1',
+    modalidadesAdmitidas: null,
+  },
+  {
+    codigo: 'CONSOLIDACAO-CORRECAO-INDEPENDENTE',
+    versao: 'v1',
+    tipo: 'regra_consolidacao',
+    esquemaArgs: {},
+    invariantes: ['mais de um avaliador corrige cada candidato sem conhecer a nota do outro'],
+    baseLegal: 'Decisão institucional da Unifesspa',
+    hash: 'c1',
+    modalidadesAdmitidas: null,
+  },
+];
+
 /**
  * O processo como o servidor o devolve depois de gravar: a etapa que subiu sem
  * `id` volta com o que ele atribuiu.
@@ -236,6 +260,8 @@ describe('CronogramaStepComponent', () => {
       else if (url.includes('tipos-etapa')) requisicao.flush(TIPOS_ETAPA);
       else if (requisicao.request.params.get('tipo') === 'algoritmo_contagem_prazo') {
         requisicao.flush(REGRAS_CONTAGEM);
+      } else if (requisicao.request.params.get('tipo') === 'regra_consolidacao') {
+        requisicao.flush(REGRAS_CONSOLIDACAO);
       } else requisicao.flush([]);
     }
     detectar();
@@ -785,13 +811,13 @@ describe('CronogramaStepComponent', () => {
       const [, segunda, terceira] = componente.etapas.controls;
 
       await recusarNotaMaximaDaEtapa(1);
-      expect(componente.recusaDaEscala(segunda, 'notaMaxima')).not.toBeNull();
+      expect(componente.recusaDoCampo(segunda, 'notaMaxima')).not.toBeNull();
 
       componente.removerFase(0);
 
       expect(componente.etapas.controls).toEqual([segunda, terceira]);
-      expect(componente.recusaDaEscala(segunda, 'notaMaxima')).not.toBeNull();
-      expect(componente.recusaDaEscala(terceira, 'notaMaxima')).toBeNull();
+      expect(componente.recusaDoCampo(segunda, 'notaMaxima')).not.toBeNull();
+      expect(componente.recusaDoCampo(terceira, 'notaMaxima')).toBeNull();
     });
 
     it('a recusa some quando a troca de caráter esvazia o campo', async () => {
@@ -800,10 +826,10 @@ describe('CronogramaStepComponent', () => {
       etapa.controls.notaMaxima.setValue('10');
 
       await recusarNotaMaximaDaEtapa(0);
-      expect(componente.recusaDaEscala(etapa, 'notaMaxima')).not.toBeNull();
+      expect(componente.recusaDoCampo(etapa, 'notaMaxima')).not.toBeNull();
 
       componente.escolherCarater(etapa, '');
-      expect(componente.recusaDaEscala(etapa, 'notaMaxima')).toBeNull();
+      expect(componente.recusaDoCampo(etapa, 'notaMaxima')).toBeNull();
     });
 
     it('não confere nem envia a escala herdada por etapa do ENEM', async () => {
@@ -874,6 +900,110 @@ describe('CronogramaStepComponent', () => {
       detectar();
       expect(nativo.querySelector('#cr-etapa-nota-maxima-erro-0')).toBeNull();
       expect(nativo.querySelector('#cr-etapa-nota-erro-0')).toBeNull();
+    });
+  });
+
+  describe('forma de avaliação da etapa', () => {
+    function etapaComNota(): FormGroup<EtapaForm> {
+      comFases(ID_AVALIACAO);
+      comEtapasEmFases(['AVALIACAO']);
+      componente.alternarFase(0);
+      componente.alternarEtapa(0);
+      const etapa = componente.etapas.at(0);
+      componente.escolherCarater(etapa, 'classificatoria');
+      detectar();
+      return etapa;
+    }
+
+    function escolher(seletor: string): void {
+      const radio = nativo.querySelector<HTMLInputElement>(seletor);
+      radio?.click();
+      detectar();
+    }
+
+    it('oferece a forma só à etapa com nota e a regra e o passo só na forma humana', () => {
+      const etapa = etapaComNota();
+      expect(nativo.querySelectorAll('input[name="cr-etapa-forma-0"]')).toHaveLength(2);
+      expect(nativo.querySelector('#cr-etapa-passo-0')).toBeNull();
+
+      escolher('input[name="cr-etapa-forma-0"][value="HUMANA"]');
+
+      expect(etapa.controls.formaDeAvaliacao.value).toBe('HUMANA');
+      expect(nativo.querySelectorAll('input[name="cr-etapa-regra-0"]')).toHaveLength(2);
+      expect(nativo.textContent).toContain('mais de um avaliador corrige');
+      expect(nativo.querySelector('#cr-etapa-passo-0')).not.toBeNull();
+
+      componente.escolherCarater(etapa, '');
+      detectar();
+      expect(nativo.querySelector('input[name="cr-etapa-forma-0"]')).toBeNull();
+      expect(etapa.controls.formaDeAvaliacao.value).toBe('');
+    });
+
+    it('a forma objetiva apaga a regra e o passo, e o comando os leva nulos', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      const etapa = etapaComNota();
+      escolher('input[name="cr-etapa-forma-0"][value="HUMANA"]');
+      escolher('input[name="cr-etapa-regra-0"][value="CONSOLIDACAO-AVALIACAO-UNICA"]');
+      etapa.controls.passoDoLancamento.setValue('0,5');
+      expect(etapa.controls.regraConsolidacaoVersao.value).toBe('v1');
+
+      escolher('input[name="cr-etapa-forma-0"][value="OBJETIVA"]');
+
+      expect(etapa.controls.regraConsolidacaoCodigo.value).toBe('');
+      expect(etapa.controls.passoDoLancamento.value).toBe('');
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      const corpo = controller.expectOne(ROTA_ETAPAS).request.body as Record<string, unknown>[];
+      expect(corpo[0]).toMatchObject({
+        formaDeAvaliacao: 'OBJETIVA',
+        regraConsolidacaoCodigo: null,
+        passoDoLancamento: null,
+      });
+      void gravacao;
+    });
+
+    it('mostra a recusa do passo sob o passo e a retira quando a forma muda', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      const etapa = etapaComNota();
+      escolher('input[name="cr-etapa-forma-0"][value="HUMANA"]');
+      etapa.controls.passoDoLancamento.setValue('0,5');
+
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      controller.expectOne(ROTA_ETAPAS).flush(
+        {
+          type: 'about:blank',
+          title: 'Validação',
+          status: 422,
+          code: 'uniplus.validacao',
+          traceId: '00000000000000000000000000000009',
+          errors: [
+            {
+              field: 'etapas[0].passoDoLancamento',
+              code: 'uniplus.selecao.etapa_processo.passo_do_lancamento_invalido',
+              message: 'x',
+            },
+            {
+              field: 'etapas[0].regraConsolidacao',
+              code: 'uniplus.selecao.etapa_processo.regra_de_consolidacao_invalida',
+              message: 'y',
+            },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+      );
+      await gravacao;
+      detectar();
+
+      const passo = nativo.querySelector('#cr-etapa-passo-0');
+      expect(nativo.querySelector('#cr-etapa-passo-erro-0')?.textContent).toContain('maior que zero');
+      expect(passo?.getAttribute('aria-describedby')).toContain('cr-etapa-passo-erro-0');
+      expect(nativo.querySelector('#cr-etapa-regra-erro-0')).not.toBeNull();
+
+      escolher('input[name="cr-etapa-forma-0"][value="OBJETIVA"]');
+      expect(nativo.querySelector('#cr-etapa-regra-erro-0')).toBeNull();
     });
   });
 

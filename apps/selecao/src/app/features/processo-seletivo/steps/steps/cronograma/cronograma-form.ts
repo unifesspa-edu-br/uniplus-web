@@ -69,8 +69,10 @@ export interface EtapaForm {
   readonly peso: FormControl<string>;
   readonly notaMinima: FormControl<string>;
   readonly notaMaxima: FormControl<string>;
-  /** Viaja sem edição neste passo: a gravação substitui a etapa, e omiti-lo apagaria o passo. */
   readonly passoDoLancamento: FormControl<string>;
+  readonly formaDeAvaliacao: FormControl<string>;
+  readonly regraConsolidacaoCodigo: FormControl<string>;
+  readonly regraConsolidacaoVersao: FormControl<string>;
   readonly ordem: FormControl<number>;
   /** Código canônico da fase a que a etapa pertence; vazio enquanto não declarada. */
   readonly faseCodigo: FormControl<string>;
@@ -139,6 +141,9 @@ export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
     notaMinima: controle(etapa.notaMinima),
     notaMaxima: controle(etapa.notaMaxima ?? ''),
     passoDoLancamento: controle(etapa.passoDoLancamento ?? ''),
+    formaDeAvaliacao: controle(etapa.formaDeAvaliacao ?? ''),
+    regraConsolidacaoCodigo: controle(etapa.regraConsolidacaoCodigo ?? ''),
+    regraConsolidacaoVersao: controle(etapa.regraConsolidacaoVersao ?? ''),
     ordem: controle(etapa.ordem),
     // Etapa vinda de rascunho anterior ao vínculo não traz o campo: '' é o estado
     // "não declara fase", e undefined num FormControl quebraria a comparação.

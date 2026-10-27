@@ -141,6 +141,29 @@ const REGRAS_RECURSO = [
   },
 ] as const;
 
+const REGRAS_CONSOLIDACAO = [
+  {
+    codigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
+    versao: 'v1',
+    tipo: 'regra_consolidacao',
+    esquemaArgs: {},
+    invariantes: ['um só avaliador lança a nota de cada candidato na etapa'],
+    baseLegal: 'Decisão institucional da Unifesspa',
+    hash: 'u1',
+    modalidadesAdmitidas: null,
+  },
+  {
+    codigo: 'CONSOLIDACAO-CORRECAO-INDEPENDENTE',
+    versao: 'v1',
+    tipo: 'regra_consolidacao',
+    esquemaArgs: {},
+    invariantes: ['mais de um avaliador corrige cada candidato sem conhecer a nota do outro'],
+    baseLegal: 'Decisão institucional da Unifesspa',
+    hash: 'c1',
+    modalidadesAdmitidas: null,
+  },
+] as const;
+
 test.describe('Etapa da fase — o que ela publica e que recurso admite', () => {
   test.beforeEach(async ({ page }) => {
     await mockarCatalogos(page);
@@ -230,6 +253,48 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await etapa.getByLabel('Nota máxima').fill('10');
     await etapa.getByLabel('Caráter').selectOption({ label: 'Eliminatória' });
     await expect(etapa.getByLabel('Nota máxima')).toHaveValue('10');
+  });
+
+  /**
+   * A forma de avaliação diz como a nota é obtida: a humana pede a regra que consolida as
+   * notas dos avaliadores, que o catálogo da API publica, e o passo do lançamento. A objetiva
+   * não tem nenhum dos dois.
+   */
+  test('a avaliação humana pede a regra de consolidação e o passo', async ({ page }) => {
+    await acrescentarEtapa(page);
+    const etapa = page.locator('.etapa-bloco--aberta').last();
+
+    await etapa.getByLabel('Tipo').selectOption({ label: 'Prova Objetiva' });
+    await expect(etapa.getByRole('group', { name: 'Forma de avaliação' })).toHaveCount(0);
+
+    await etapa.getByLabel('Caráter').selectOption({ label: 'Classificatória' });
+    const forma = etapa.getByRole('group', { name: 'Forma de avaliação' });
+    await expect(forma.getByRole('radio')).toHaveCount(2);
+    await expect(etapa.getByRole('group', { name: 'Regra de consolidação das notas' })).toHaveCount(0);
+    await expect(etapa.getByLabel('Passo do lançamento')).toHaveCount(0);
+
+    await forma.getByText('Humana — banca').click();
+    const regra = etapa.getByRole('group', { name: 'Regra de consolidação das notas' });
+    await expect(regra.getByRole('radio')).toHaveCount(2);
+    await expect(regra).toContainText('mais de um avaliador corrige cada candidato');
+    await regra.getByText(/CONSOLIDACAO-CORRECAO-INDEPENDENTE/).click();
+    await etapa.getByLabel('Nota máxima').fill('10');
+    await etapa.getByLabel('Passo do lançamento').fill('0,25');
+
+    await expect(regra.getByRole('radio', { name: /CORRECAO-INDEPENDENTE/ })).toBeChecked();
+    await expect(etapa.getByLabel('Passo do lançamento')).toHaveValue('0,25');
+
+    await forma.getByText('Objetiva — gabarito ou leitora').click();
+    await expect(etapa.getByRole('group', { name: 'Regra de consolidação das notas' })).toHaveCount(0);
+    await expect(etapa.getByLabel('Passo do lançamento')).toHaveCount(0);
+
+    await forma.getByText('Humana — banca').click();
+    await expect(etapa.getByLabel('Passo do lançamento')).toHaveValue('');
+    await expect(
+      etapa
+        .getByRole('group', { name: 'Regra de consolidação das notas' })
+        .getByRole('radio', { checked: true }),
+    ).toHaveCount(0);
   });
 
   /** Só ato que o catálogo marca como resultado recebe papel no ciclo recursal. */
@@ -467,7 +532,13 @@ async function mockarCatalogos(page: Page): Promise<void> {
       status: 200,
       contentType: 'application/json',
       headers: CORS,
-      body: JSON.stringify(tipo === 'regra_prazo_recurso' ? REGRAS_RECURSO : []),
+      body: JSON.stringify(regrasDoTipo(tipo)),
     });
   });
+}
+
+function regrasDoTipo(tipo: string | null): readonly unknown[] {
+  if (tipo === 'regra_prazo_recurso') return REGRAS_RECURSO;
+  if (tipo === 'regra_consolidacao') return REGRAS_CONSOLIDACAO;
+  return [];
 }

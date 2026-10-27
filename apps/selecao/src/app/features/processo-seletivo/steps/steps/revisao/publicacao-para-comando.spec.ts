@@ -351,6 +351,17 @@ describe('destino de cada pendência no painel', () => {
     expect(rotuloDaDimensao('etapas')).toBe('Etapas');
   });
 
+  /** Forma, regra, passo e banca da etapa são declarados na própria etapa. */
+  it.each([
+    'etapa_com_nota_sem_forma_de_avaliacao',
+    'etapa_sem_nota_com_forma_de_avaliacao',
+    'etapa_humana_sem_regra_de_consolidacao',
+    'etapa_humana_sem_passo_do_lancamento',
+    'etapa_humana_sem_banca',
+  ])('leva ao cronograma a pendência %s', (codigo) => {
+    expect(rotuloDoItem(codigo, 'etapas')).toBe('Cronograma');
+  });
+
   /** A exigência documental é declarada na superfície da fase, dentro do passo do cronograma. */
   it('leva ao cronograma a pendência de exigência documental', () => {
     expect(rotuloDoItem('exigencias_base_legal_nao_resolvida', 'exigencias_documentais')).toBe(

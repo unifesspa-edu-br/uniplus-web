@@ -24,6 +24,8 @@ import {
   declaraNotaDoEnem,
   recusaDaEtapaDeNotaDoEnem,
   localDoErroDaEtapa,
+  etapaComOQueDeclara,
+  recusaDoCampoDaEtapa,
 } from './cronograma-do-certame';
 
 /** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
@@ -795,6 +797,65 @@ describe('o que impede gravar o cronograma', () => {
 
     expect(confere('12')).toContainEqual(expect.stringContaining('não pode passar'));
     expect(confere('10')).not.toContainEqual(expect.stringContaining('não pode passar'));
+  });
+
+  it('recusa o passo do lançamento que não é número ou não passa de zero', () => {
+    const base = {
+      nome: 'Prova',
+      peso: '1',
+      tipoEtapaOrigemId: 'tipo-1',
+      formaDeAvaliacao: 'HUMANA',
+    };
+    const confere = (passoDoLancamento: string) =>
+      problemasDe([faseDeAvaliacao], [etapa({ ...base, passoDoLancamento })], catalogo, []);
+
+    expect(confere('0,')).toContainEqual(expect.stringContaining('passo do lançamento'));
+    expect(confere('0')).toContainEqual(expect.stringContaining('passo do lançamento'));
+    expect(confere('')).not.toContainEqual(expect.stringContaining('passo do lançamento'));
+    expect(confere('0,25')).not.toContainEqual(expect.stringContaining('passo do lançamento'));
+  });
+
+  describe('o que a etapa declara', () => {
+    const humana = etapa({
+      nome: 'Redação',
+      carater: CaraterEtapa.classificatoria,
+      tipoEtapaOrigemId: 'tipo-1',
+      notaMaxima: '10',
+      passoDoLancamento: '0,5',
+      formaDeAvaliacao: 'HUMANA',
+      regraConsolidacaoCodigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
+      regraConsolidacaoVersao: 'v1',
+    });
+
+    it('mantém regra e passo na forma humana', () => {
+      expect(etapaComOQueDeclara(humana, undefined)).toEqual(humana);
+    });
+
+    it('descarta regra e passo quando a forma é objetiva', () => {
+      expect(etapaComOQueDeclara({ ...humana, formaDeAvaliacao: 'OBJETIVA' }, undefined)).toMatchObject({
+        notaMaxima: '10',
+        formaDeAvaliacao: 'OBJETIVA',
+        passoDoLancamento: '',
+        regraConsolidacaoCodigo: '',
+        regraConsolidacaoVersao: '',
+      });
+    });
+
+    it('descarta a avaliação inteira quando a etapa não tem nota', () => {
+      expect(etapaComOQueDeclara({ ...humana, carater: '' }, undefined)).toMatchObject({
+        notaMaxima: '',
+        formaDeAvaliacao: '',
+        passoDoLancamento: '',
+        regraConsolidacaoCodigo: '',
+      });
+    });
+  });
+
+  it('dá texto às recusas de avaliação do servidor e ignora as de outra natureza', () => {
+    expect(
+      recusaDoCampoDaEtapa('uniplus.selecao.etapa_processo.passo_na_forma_objetiva'),
+    ).toContain('avaliação humana');
+    expect(recusaDoCampoDaEtapa('uniplus.selecao.etapa_processo.nome_obrigatorio')).toBeNull();
   });
 
   it('lê a etapa e o campo que a recusa do servidor aponta', () => {
