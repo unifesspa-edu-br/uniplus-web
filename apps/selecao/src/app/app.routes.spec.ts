@@ -104,8 +104,9 @@ describe('appRoutes — entrada de acompanhamento', () => {
 
       await router.navigateByUrl('/inscricoes');
 
+      expect(login).toHaveBeenCalledTimes(1);
       expect(login).toHaveBeenCalledWith('/inscricoes');
-      expect(router.url).not.toBe('/dashboard');
+      expect(router.url).toBe('/');
     });
   });
 });
