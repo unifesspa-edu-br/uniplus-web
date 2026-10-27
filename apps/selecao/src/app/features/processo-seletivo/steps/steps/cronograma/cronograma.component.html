@@ -96,6 +96,27 @@
               @if (etapa.notaMaxima !== null) {
                 <ui-valor-em-consulta rotulo="Nota máxima" [valor]="etapa.notaMaxima" />
               }
+              @if (etapa.formaDeAvaliacao !== null) {
+                <ui-valor-em-consulta
+                  rotulo="Forma de avaliação"
+                  seVazio="Ainda não declarada"
+                  [valor]="etapa.formaDeAvaliacao"
+                />
+              }
+              @if (etapa.regraDeConsolidacao !== null) {
+                <ui-valor-em-consulta
+                  rotulo="Regra de consolidação"
+                  seVazio="Ainda não declarada"
+                  [valor]="etapa.regraDeConsolidacao"
+                />
+              }
+              @if (etapa.passoDoLancamento !== null) {
+                <ui-valor-em-consulta
+                  rotulo="Passo do lançamento"
+                  seVazio="Ainda não declarado"
+                  [valor]="etapa.passoDoLancamento"
+                />
+              }
               @if (etapa.notaDoEnem) {
                 <p class="form-grid__full field__hint">
                   A nota desta etapa é calculada pelo sistema a partir da nota do ENEM do candidato.
@@ -582,7 +603,7 @@
                               </div>
                             }
                             @if (etapaElimina(etapa)) {
-                              @let recusaDaNotaMinima = recusaDaEscala(etapa, 'notaMinima');
+                              @let recusaDaNotaMinima = recusaDoCampo(etapa, 'notaMinima');
                               <div class="form-field">
                                 <label class="label" [attr.for]="'cr-etapa-nota-' + posicao"
                                   >Nota mínima</label
@@ -606,7 +627,7 @@
                               </div>
                             }
                             @if (etapaDeclaraNotaMaxima(etapa)) {
-                              @let recusaDaNotaMaxima = recusaDaEscala(etapa, 'notaMaxima');
+                              @let recusaDaNotaMaxima = recusaDoCampo(etapa, 'notaMaxima');
                               <div class="form-field">
                                 <label class="label" [attr.for]="'cr-etapa-nota-maxima-' + posicao"
                                   >Nota máxima</label
@@ -628,6 +649,116 @@
                                     [id]="'cr-etapa-nota-maxima-erro-' + posicao"
                                   >
                                     {{ recusaDaNotaMaxima }}
+                                  </p>
+                                }
+                              </div>
+                            }
+                            @if (etapaDeclaraNotaMaxima(etapa)) {
+                              @let recusaDaForma = recusaDoCampo(etapa, 'formaDeAvaliacao');
+                              <fieldset
+                                class="field form-grid__full"
+                                [attr.aria-describedby]="
+                                  recusaDaForma ? 'cr-etapa-forma-erro-' + posicao : null
+                                "
+                              >
+                                <legend class="field__label">Forma de avaliação</legend>
+                                @for (forma of formasDeAvaliacao; track forma.valor) {
+                                  <label class="radio">
+                                    <input
+                                      type="radio"
+                                      [attr.name]="'cr-etapa-forma-' + posicao"
+                                      [value]="forma.valor"
+                                      [checked]="etapa.controls.formaDeAvaliacao.value === forma.valor"
+                                      [disabled]="!edicaoLiberada()"
+                                      [attr.aria-invalid]="recusaDaForma ? 'true' : null"
+                                      (change)="escolherFormaDeAvaliacao(etapa, forma.valor)"
+                                    />
+                                    <span class="radio__dot" aria-hidden="true"></span>
+                                    {{ forma.rotulo }}
+                                  </label>
+                                }
+                                @if (recusaDaForma) {
+                                  <p class="field__error" [id]="'cr-etapa-forma-erro-' + posicao">
+                                    {{ recusaDaForma }}
+                                  </p>
+                                }
+                              </fieldset>
+                            }
+                            @if (etapaEhDeAvaliacaoHumana(etapa)) {
+                              @let recusaDaRegra = recusaDoCampo(etapa, 'regraConsolidacao');
+                              <fieldset
+                                class="field form-grid__full"
+                                [attr.aria-describedby]="
+                                  recusaDaRegra ? 'cr-etapa-regra-erro-' + posicao : null
+                                "
+                              >
+                                <legend class="field__label">Regra de consolidação das notas</legend>
+                                @for (regra of regrasDeConsolidacao(); track regra.codigo + regra.versao) {
+                                  <label class="radio">
+                                    <input
+                                      type="radio"
+                                      [attr.name]="'cr-etapa-regra-' + posicao"
+                                      [value]="regra.codigo"
+                                      [checked]="
+                                        etapa.controls.regraConsolidacaoCodigo.value === regra.codigo &&
+                                        etapa.controls.regraConsolidacaoVersao.value === regra.versao
+                                      "
+                                      [disabled]="!edicaoLiberada()"
+                                      [attr.aria-invalid]="recusaDaRegra ? 'true' : null"
+                                      [attr.aria-describedby]="
+                                        regra.descricao.length > 0
+                                          ? 'cr-etapa-regra-desc-' + posicao + '-' + $index
+                                          : null
+                                      "
+                                      (change)="
+                                        escolherRegraDeConsolidacao(etapa, regra.codigo, regra.versao)
+                                      "
+                                    />
+                                    <span class="radio__dot" aria-hidden="true"></span>
+                                    {{ regra.codigo }} ({{ regra.versao }})
+                                  </label>
+                                  @if (regra.descricao.length > 0) {
+                                    <ul
+                                      class="field__hint"
+                                      [id]="'cr-etapa-regra-desc-' + posicao + '-' + $index"
+                                    >
+                                      @for (linha of regra.descricao; track linha) {
+                                        <li>{{ linha }}</li>
+                                      }
+                                    </ul>
+                                  }
+                                }
+                                @if (recusaDaRegra) {
+                                  <p class="field__error" [id]="'cr-etapa-regra-erro-' + posicao">
+                                    {{ recusaDaRegra }}
+                                  </p>
+                                }
+                              </fieldset>
+                              @let recusaDoPasso = recusaDoCampo(etapa, 'passoDoLancamento');
+                              <div class="form-field">
+                                <label class="label" [attr.for]="'cr-etapa-passo-' + posicao"
+                                  >Passo do lançamento</label
+                                >
+                                <input
+                                  class="input"
+                                  type="text"
+                                  inputmode="decimal"
+                                  [attr.id]="'cr-etapa-passo-' + posicao"
+                                  formControlName="passoDoLancamento"
+                                  [attr.aria-invalid]="recusaDoPasso ? 'true' : null"
+                                  [attr.aria-describedby]="
+                                    'cr-etapa-passo-ajuda-' +
+                                    posicao +
+                                    (recusaDoPasso ? ' cr-etapa-passo-erro-' + posicao : '')
+                                  "
+                                />
+                                <p class="field__hint" [id]="'cr-etapa-passo-ajuda-' + posicao">
+                                  Menor variação da nota lançada pelo avaliador, como 0,25. A nota
+                                  máxima precisa ser múltipla dele.
+                                </p>
+                                @if (recusaDoPasso) {
+                                  <p class="field__error" [id]="'cr-etapa-passo-erro-' + posicao">
+                                    {{ recusaDoPasso }}
                                   </p>
                                 }
                               </div>

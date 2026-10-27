@@ -82,6 +82,11 @@ import {
   inicioDeHojeNoFusoInstitucional,
   pisoDoCampoDeData,
 } from '../../shared/fuso-institucional';
+import {
+  FORMA_HUMANA,
+  FORMAS_DE_AVALIACAO,
+  rotuloDaFormaDeAvaliacao,
+} from '../../shared/forma-de-avaliacao';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import {
@@ -89,13 +94,14 @@ import {
   declaraNotaDoEnem,
   descreverFase,
   finalidadesDaFase,
-  recusaDaEscalaDaEtapa,
+  recusaDoCampoDaEtapa,
   recusaDaEtapaDeNotaDoEnem,
   localDoErroDaEtapa,
   declaraNotaMaxima,
+  etapaComOQueDeclara,
   problemasDoCronograma,
   renumerar,
-  type CampoDaEscala,
+  type CampoComRecusa,
   type DescricaoDaFase,
   type ExigenciaDeclarada,
   type GrupoDeclarado,
@@ -113,7 +119,13 @@ import {
 } from './cronograma-form';
 import { comoComandoDeEtapa } from './cronograma-para-comando';
 
-const CAMPOS_DA_ESCALA: readonly CampoDaEscala[] = ['notaMinima', 'notaMaxima'];
+const CAMPOS_COM_RECUSA: readonly CampoComRecusa[] = [
+  'notaMinima',
+  'notaMaxima',
+  'passoDoLancamento',
+  'formaDeAvaliacao',
+  'regraConsolidacao',
+];
 
 /**
  * O que a tela responde enquanto as etapas gravadas estão sem os identificadores
@@ -771,8 +783,7 @@ export class CronogramaStepComponent {
    */
   private descartarOQueANotaDoEnemNaoTem(grupo: FormGroup<EtapaForm>): void {
     grupo.controls.bancas.setValue([]);
-    grupo.controls.notaMaxima.setValue('');
-    grupo.controls.passoDoLancamento.setValue('');
+    this.descartarEscalaEAvaliacao(grupo);
     grupo.controls.produtos.setValue([]);
     grupo.controls.inicio.setValue('');
     grupo.controls.fim.setValue('');
@@ -805,86 +816,137 @@ export class CronogramaStepComponent {
   }
 
   /** A recusa do servidor a um campo da escala da etapa, ou `null`. */
-  recusaDaEscala(grupo: FormGroup<EtapaForm>, campo: CampoDaEscala): string | null {
+  recusaDoCampo(grupo: FormGroup<EtapaForm>, campo: CampoComRecusa): string | null {
     this.versaoDoFormulario();
-    return this.recusasDaEscala.get(grupo)?.recusas.get(campo) ?? null;
+    return this.recusasDosCampos.get(grupo)?.recusas.get(campo) ?? null;
   }
 
   /**
-   * As duas notas se explicam entre si (a mínima acima da máxima se resolve em qualquer uma):
-   * mexer numa apaga a recusa das duas.
+   * Os campos da escala e da avaliação se explicam entre si (a nota máxima fora do passo se
+   * resolve em qualquer um dos dois; a regra recusada depende da forma): mexer em um apaga a
+   * recusa de todos da etapa.
    */
-  esquecerRecusaDaEscala(grupo: FormGroup<EtapaForm>): void {
-    if (this.descartarRecusaDaEscala(grupo)) this.versaoDoFormulario.update((versao) => versao + 1);
+  esquecerRecusasDaEtapa(grupo: FormGroup<EtapaForm>): void {
+    if (this.descartarRecusasDaEtapa(grupo)) this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
-  private descartarRecusaDaEscala(grupo: FormGroup<EtapaForm>): boolean {
-    const atual = this.recusasDaEscala.get(grupo);
+  private descartarRecusasDaEtapa(grupo: FormGroup<EtapaForm>): boolean {
+    const atual = this.recusasDosCampos.get(grupo);
     atual?.assinatura.unsubscribe();
-    return this.recusasDaEscala.delete(grupo);
+    return this.recusasDosCampos.delete(grupo);
   }
 
   /**
    * A recusa fica na etapa que a recebeu, e não na posição: remover ou mover etapas durante a
    * gravação não a leva para outra. Etapa que já saiu do formulário a perde. Ela dura até o
-   * valor de uma das duas notas mudar, por digitação ou não.
+   * valor de um dos campos dela mudar, por digitação ou não.
    */
-  private aplicarRecusasDaEscala(
+  private aplicarRecusasDosCampos(
     enviadas: readonly FormGroup<EtapaForm>[],
     erros: readonly { readonly field: string; readonly code: string }[],
   ): void {
-    const aplicadas = new Map<FormGroup<EtapaForm>, Map<CampoDaEscala, string>>();
+    const aplicadas = new Map<FormGroup<EtapaForm>, Map<CampoComRecusa, string>>();
     for (const erro of erros) {
       const local = localDoErroDaEtapa(erro.field);
-      const texto = recusaDaEscalaDaEtapa(erro.code);
-      const campo = CAMPOS_DA_ESCALA.find((nome) => nome === local?.campo);
+      const texto = recusaDoCampoDaEtapa(erro.code);
+      const campo = CAMPOS_COM_RECUSA.find((nome) => nome === local?.campo);
       const grupo = local === null ? undefined : enviadas[local.indice];
       if (campo === undefined || texto === null || grupo === undefined) continue;
       if (!this.etapas.controls.includes(grupo)) continue;
       aplicadas.set(grupo, (aplicadas.get(grupo) ?? new Map()).set(campo, texto));
     }
     for (const [grupo, recusas] of aplicadas) {
-      this.descartarRecusaDaEscala(grupo);
+      this.descartarRecusasDaEtapa(grupo);
       const assinatura = merge(
         grupo.controls.notaMinima.valueChanges,
         grupo.controls.notaMaxima.valueChanges,
+        grupo.controls.passoDoLancamento.valueChanges,
+        grupo.controls.formaDeAvaliacao.valueChanges,
+        grupo.controls.regraConsolidacaoCodigo.valueChanges,
       )
         .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-        .subscribe(() => this.esquecerRecusaDaEscala(grupo));
-      this.recusasDaEscala.set(grupo, { recusas, assinatura });
+        .subscribe(() => this.esquecerRecusasDaEtapa(grupo));
+      this.recusasDosCampos.set(grupo, { recusas, assinatura });
     }
     this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
-  private readonly recusasDaEscala = new WeakMap<
+  private readonly recusasDosCampos = new WeakMap<
     FormGroup<EtapaForm>,
-    { readonly recusas: ReadonlyMap<CampoDaEscala, string>; readonly assinatura: Subscription }
+    { readonly recusas: ReadonlyMap<CampoComRecusa, string>; readonly assinatura: Subscription }
   >();
 
-  private limparRecusasDaEscala(): void {
+  private limparRecusasDosCampos(): void {
     const algumaApagada = this.etapas.controls
-      .map((grupo) => this.descartarRecusaDaEscala(grupo))
+      .map((grupo) => this.descartarRecusasDaEtapa(grupo))
       .some(Boolean);
     if (algumaApagada) this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
   /**
-   * As etapas como a conferência e o envio as leem: a escala só vale onde a tela a pede.
-   * O que ficou num campo que a etapa não mostra não é conferido nem enviado.
+   * As etapas como a conferência e o envio as leem: a escala e a avaliação só valem onde a tela
+   * as pede. O que ficou num campo que a etapa não mostra não é conferido nem enviado.
    */
   private etapasParaEnvio(): readonly EtapaPontuada[] {
     return this.etapas.controls.map((grupo) => {
       const etapa = etapaDoFormulario(grupo);
-      const tipo = this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId);
-      return declaraNotaMaxima(etapa, tipo)
-        ? etapa
-        : { ...etapa, notaMaxima: '', passoDoLancamento: '' };
+      return etapaComOQueDeclara(etapa, this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId));
     });
   }
 
-  private limparEscalaSeNaoDeclara(grupo: FormGroup<EtapaForm>): void {
-    if (this.etapaDeclaraNotaMaxima(grupo)) return;
+  readonly formasDeAvaliacao = FORMAS_DE_AVALIACAO;
+
+  /** A etapa é avaliada por banca: só nela cabem a regra de consolidação e o passo do lançamento. */
+  etapaEhDeAvaliacaoHumana(grupo: FormGroup<EtapaForm>): boolean {
+    this.versaoDoFormulario();
+    return this.etapaDeclaraNotaMaxima(grupo) && grupo.controls.formaDeAvaliacao.value === FORMA_HUMANA;
+  }
+
+  /**
+   * Trocar a forma apaga a regra e o passo que ela não admite: o servidor os recusa fora da
+   * forma humana, e o que a tela esconde não pode seguir no rascunho.
+   */
+  escolherFormaDeAvaliacao(grupo: FormGroup<EtapaForm>, forma: string): void {
+    grupo.controls.formaDeAvaliacao.setValue(forma);
+    grupo.controls.formaDeAvaliacao.markAsDirty();
+    if (forma !== FORMA_HUMANA) this.descartarRegraEPasso(grupo);
+    this.versaoDoFormulario.update((versao) => versao + 1);
+  }
+
+  /**
+   * As regras de consolidação que o catálogo publica, com a prosa dos invariantes como
+   * descrição. O DTO não tem `nome`: o código é o que identifica, e nenhuma lista é escrita aqui.
+   */
+  readonly regrasDeConsolidacao = computed(() =>
+    this.catalogos.regrasConsolidacao().map((regra) => ({
+      codigo: regra.codigo,
+      versao: regra.versao,
+      descricao: textosDoCatalogo(regra.invariantes),
+    })),
+  );
+
+  /** A regra vai e volta como par código e versão: gravar um com a versão do outro é recusado. */
+  escolherRegraDeConsolidacao(grupo: FormGroup<EtapaForm>, codigo: string, versao: string): void {
+    grupo.controls.regraConsolidacaoCodigo.setValue(codigo);
+    grupo.controls.regraConsolidacaoVersao.setValue(versao);
+    grupo.controls.regraConsolidacaoCodigo.markAsDirty();
+    this.versaoDoFormulario.update((atual) => atual + 1);
+  }
+
+  private limparAvaliacaoSeNaoDeclara(grupo: FormGroup<EtapaForm>): void {
+    if (!this.etapaDeclaraNotaMaxima(grupo)) this.descartarEscalaEAvaliacao(grupo);
+  }
+
+  private descartarEscalaEAvaliacao(grupo: FormGroup<EtapaForm>): void {
     grupo.controls.notaMaxima.setValue('');
+    grupo.controls.formaDeAvaliacao.setValue('');
+    this.descartarRegraEPasso(grupo);
+  }
+
+  /** A regra de consolidação e o passo só existem onde mais de um avaliador lança a nota. */
+  private descartarRegraEPasso(grupo: FormGroup<EtapaForm>): void {
+    grupo.controls.regraConsolidacaoCodigo.setValue('');
+    grupo.controls.regraConsolidacaoVersao.setValue('');
     grupo.controls.passoDoLancamento.setValue('');
   }
 
@@ -906,7 +968,7 @@ export class CronogramaStepComponent {
     grupo.controls.carater.setValue(carater as CaraterEscolhido);
     if (!this.etapaComponeNota(grupo)) grupo.controls.peso.setValue('');
     if (!this.etapaElimina(grupo)) grupo.controls.notaMinima.setValue('');
-    this.limparEscalaSeNaoDeclara(grupo);
+    this.limparAvaliacaoSeNaoDeclara(grupo);
     this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
@@ -985,6 +1047,17 @@ export class CronogramaStepComponent {
       notaMinima: this.etapaElimina(grupo) ? controles.notaMinima.value : null,
       notaMaxima: this.etapaDeclaraNotaMaxima(grupo)
         ? leituraDoCampoDecimal(controles.notaMaxima.value)
+        : null,
+      formaDeAvaliacao: this.etapaDeclaraNotaMaxima(grupo)
+        ? rotuloDaFormaDeAvaliacao(controles.formaDeAvaliacao.value)
+        : null,
+      regraDeConsolidacao: this.etapaEhDeAvaliacaoHumana(grupo)
+        ? controles.regraConsolidacaoCodigo.value
+          ? `${controles.regraConsolidacaoCodigo.value} (${controles.regraConsolidacaoVersao.value})`
+          : ''
+        : null,
+      passoDoLancamento: this.etapaEhDeAvaliacaoHumana(grupo)
+        ? leituraDoCampoDecimal(controles.passoDoLancamento.value)
         : null,
       notaDoEnem: this.etapaDeNotaDoEnem(grupo),
       janela,
@@ -1515,7 +1588,7 @@ export class CronogramaStepComponent {
         };
       }
 
-      this.limparRecusasDaEscala();
+      this.limparRecusasDosCampos();
       const gravacaoDeEtapas = await this.cadastro.definirEtapas(
         processoId,
         etapas.map(comoComandoDeEtapa),
@@ -1523,12 +1596,12 @@ export class CronogramaStepComponent {
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!gravacaoDeEtapas.ok) {
         const problema = gravacaoDeEtapas.problem;
-        this.aplicarRecusasDaEscala(grupos, problema.errors ?? []);
+        this.aplicarRecusasDosCampos(grupos, problema.errors ?? []);
         const daRaiz = recusaDaEtapaDeNotaDoEnem(problema.code);
         const resumo = resumoDaRecusa(
           problema,
           (erro) => {
-            const texto = recusaDaEscalaDaEtapa(erro.code);
+            const texto = recusaDoCampoDaEtapa(erro.code);
             if (texto === null) return recusaDaEtapaDeNotaDoEnem(erro.code);
             const indice = localDoErroDaEtapa(erro.field)?.indice;
             if (indice === undefined) return texto;

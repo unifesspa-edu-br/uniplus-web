@@ -1,6 +1,7 @@
 import type { EtapaProcessoInput, FaseCronogramaInput } from '@uniplus/shared-data/selecao';
 
 import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
+import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { instanciaSuperiorParaComando } from '../../shared/instancia-superior';
 import { instanteDoCampo } from '../../shared/fuso-institucional';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
@@ -80,7 +81,7 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
  * declarar que não conta para a nota.
  */
 export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
-  const notaMaxima = decimalDoCampo(etapa.notaMaxima ?? '');
+  const humana = etapa.formaDeAvaliacao === FORMA_HUMANA;
   return {
     ...(etapa.id === null ? {} : { id: etapa.id }),
     nome: etapa.nome.trim(),
@@ -88,8 +89,12 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     tipoEtapaOrigemId: etapa.tipoEtapaOrigemId,
     peso: decimalDoCampo(etapa.peso),
     notaMinima: decimalDoCampo(etapa.notaMinima),
-    notaMaxima,
-    passoDoLancamento: notaMaxima === null ? null : decimalDoCampo(etapa.passoDoLancamento ?? ''),
+    notaMaxima: decimalDoCampo(etapa.notaMaxima ?? ''),
+    // Regra e passo só existem na avaliação humana, e o servidor recusa os dois fora dela.
+    formaDeAvaliacao: textoOuNulo(etapa.formaDeAvaliacao),
+    regraConsolidacaoCodigo: humana ? textoOuNulo(etapa.regraConsolidacaoCodigo) : null,
+    regraConsolidacaoVersao: humana ? textoOuNulo(etapa.regraConsolidacaoVersao) : null,
+    passoDoLancamento: humana ? decimalDoCampo(etapa.passoDoLancamento ?? '') : null,
     ordem: etapa.ordem,
     faseCodigo: etapa.faseCodigo === '' ? null : etapa.faseCodigo,
     produtos: etapa.produtos.map((produto) => ({
@@ -128,4 +133,8 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
       ...instanciaSuperiorParaComando(recurso),
     })),
   };
+}
+
+function textoOuNulo(valor: string | undefined): string | null {
+  return valor === undefined || valor === '' ? null : valor;
 }

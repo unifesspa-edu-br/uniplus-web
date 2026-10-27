@@ -229,6 +229,9 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
     notaMinima: comoTexto(etapa.notaMinima),
     notaMaxima: comoTexto(etapa.notaMaxima),
     passoDoLancamento: comoTexto(etapa.passoDoLancamento),
+    formaDeAvaliacao: etapa.formaDeAvaliacao ?? '',
+    regraConsolidacaoCodigo: etapa.regraConsolidacao?.codigo ?? '',
+    regraConsolidacaoVersao: etapa.regraConsolidacao?.versao ?? '',
     ordem: comoInteiro(etapa.ordem),
     faseCodigo: etapa.faseCodigo ?? '',
     produtos: (etapa.produtos ?? []).map((produto) => ({

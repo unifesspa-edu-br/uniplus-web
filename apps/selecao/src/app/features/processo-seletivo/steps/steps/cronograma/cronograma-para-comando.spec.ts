@@ -62,19 +62,49 @@ function detalheComRecursoDaEtapa(
   } as unknown as ProcessoSeletivoDto;
 }
 
-describe('escala da etapa no ida-e-volta', () => {
-  /** A gravação das etapas substitui o que está gravado: omitir o passo o apagaria. */
-  it('relê e regrava a nota máxima e o passo do lançamento', () => {
+describe('avaliação da etapa no ida-e-volta', () => {
+  function lida(extra: Record<string, unknown>) {
     const detalhe = detalheComRecursoDaEtapa();
-    const dto = detalhe.etapas[0] as unknown as Record<string, unknown>;
-    dto['notaMaxima'] = 10;
-    dto['passoDoLancamento'] = 0.5;
+    Object.assign(detalhe.etapas[0] as unknown as Record<string, unknown>, extra);
+    return etapasDe(detalhe)[0];
+  }
 
-    const etapa = etapasDe(detalhe)[0];
+  it('relê e regrava a etapa humana com a regra e o passo', () => {
+    const etapa = lida({
+      notaMaxima: 10,
+      passoDoLancamento: 0.5,
+      formaDeAvaliacao: 'HUMANA',
+      regraConsolidacao: { codigo: 'CONSOLIDACAO-AVALIACAO-UNICA', versao: 'v1', hash: 'h' },
+    });
 
-    expect(etapa.notaMaxima).toBe('10');
     expect(etapa.passoDoLancamento).toBe('0.5');
-    expect(comoComandoDeEtapa(etapa)).toMatchObject({ notaMaxima: 10, passoDoLancamento: 0.5 });
+    expect(comoComandoDeEtapa(etapa)).toMatchObject({
+      notaMaxima: 10,
+      passoDoLancamento: 0.5,
+      formaDeAvaliacao: 'HUMANA',
+      regraConsolidacaoCodigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
+      regraConsolidacaoVersao: 'v1',
+    });
+  });
+
+  it('a forma objetiva envia regra e passo nulos, ainda que a etapa os carregue', () => {
+    const etapa = {
+      ...lida({ notaMaxima: 10, formaDeAvaliacao: 'OBJETIVA' }),
+      passoDoLancamento: '0.5',
+      regraConsolidacaoCodigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
+      regraConsolidacaoVersao: 'v1',
+    };
+
+    expect(comoComandoDeEtapa(etapa)).toMatchObject({
+      formaDeAvaliacao: 'OBJETIVA',
+      regraConsolidacaoCodigo: null,
+      regraConsolidacaoVersao: null,
+      passoDoLancamento: null,
+    });
+  });
+
+  it('a etapa sem forma envia a forma nula', () => {
+    expect(comoComandoDeEtapa(lida({}))).toMatchObject({ formaDeAvaliacao: null });
   });
 });
 

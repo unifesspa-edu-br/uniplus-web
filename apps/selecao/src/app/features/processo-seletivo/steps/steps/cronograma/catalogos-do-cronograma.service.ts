@@ -28,6 +28,9 @@ import { vigenteNoDia } from '../../shared/vigencia';
 /** Tipo do `rol_de_regras` que a convenção de contagem referencia. */
 const TIPO_REGRA_CONTAGEM = 'algoritmo_contagem_prazo';
 
+/** Tipo do `rol_de_regras` que a etapa de avaliação humana referencia para consolidar as notas. */
+const TIPO_REGRA_CONSOLIDACAO = 'regra_consolidacao';
+
 /** Tipo do `rol_de_regras` que a regra de recurso de uma fase referencia. */
 const TIPO_REGRA_RECURSO = 'regra_prazo_recurso';
 
@@ -67,6 +70,7 @@ export class CatalogosDoCronogramaService {
   readonly atos = signal<readonly TipoAtoPublicadoDto[]>([]);
   readonly regrasRecurso = signal<readonly RegraCatalogoDto[]>([]);
   readonly regrasContagem = signal<readonly RegraCatalogoDto[]>([]);
+  readonly regrasConsolidacao = signal<readonly RegraCatalogoDto[]>([]);
   readonly tiposDocumento = signal<readonly TipoDocumentoDto[]>([]);
   /**
    * O catálogo de fatos do candidato. Carregado aqui, e não só no passo do formulário, porque
@@ -307,6 +311,9 @@ export class CatalogosDoCronogramaService {
       contagem: coletarPaginas((cursor) =>
         this.regrasApi.listar({ tipo: TIPO_REGRA_CONTAGEM, cursor }),
       ),
+      consolidacao: coletarPaginas((cursor) =>
+        this.regrasApi.listar({ tipo: TIPO_REGRA_CONSOLIDACAO, cursor }),
+      ),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -322,6 +329,7 @@ export class CatalogosDoCronogramaService {
             atos,
             recurso,
             contagem,
+            consolidacao,
           } = resultados;
 
           // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
@@ -336,7 +344,8 @@ export class CatalogosDoCronogramaService {
             !isApiOk(fatos) ||
             !isApiOk(atos) ||
             !isApiOk(recurso) ||
-            !isApiOk(contagem)
+            !isApiOk(contagem) ||
+            !isApiOk(consolidacao)
           ) {
             this.anunciarErro();
             return;
@@ -352,6 +361,7 @@ export class CatalogosDoCronogramaService {
           this.atos.set(atos.data);
           this.regrasRecurso.set(recurso.data);
           this.regrasContagem.set(contagem.data);
+          this.regrasConsolidacao.set(consolidacao.data);
           this.carregando.set(false);
         },
         error: () => this.anunciarErro(),

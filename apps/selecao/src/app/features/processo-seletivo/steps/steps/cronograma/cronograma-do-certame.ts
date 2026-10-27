@@ -7,6 +7,7 @@ import {
   type ProdutoDaFase,
 } from '../../processo-seletivo.models';
 import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
+import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { recursoResolvido } from './cronograma-para-comando';
 import {
   problemasDaFase,
@@ -477,27 +478,45 @@ export function recusaDaEtapaDeNotaDoEnem(codigo: string): string | null {
   return RECUSA_DA_ETAPA_DE_NOTA_DO_ENEM.get(codigo) ?? null;
 }
 
-/** Os campos da escala de nota que a tela da etapa mostra e sob os quais a recusa do servidor aparece. */
-export type CampoDaEscala = 'notaMinima' | 'notaMaxima';
+/** Os campos da etapa sob os quais a recusa do servidor aparece; o nome é o que o servidor aponta. */
+export type CampoComRecusa =
+  | 'notaMinima'
+  | 'notaMaxima'
+  | 'passoDoLancamento'
+  | 'formaDeAvaliacao'
+  | 'regraConsolidacao';
 
-const RECUSA_DA_ESCALA_DA_ETAPA: ReadonlyMap<string, string> = new Map([
-  [
-    'uniplus.selecao.etapa_processo.nota_maxima_invalida',
-    'A nota máxima precisa ser maior que zero.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.nota_minima_acima_da_nota_maxima',
-    'A nota mínima não pode passar da nota máxima.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.nota_maxima_fora_do_passo',
-    'A nota máxima precisa ser múltipla do passo do lançamento.',
-  ],
-]);
+const PREFIXO_DA_RECUSA_DA_ETAPA = 'uniplus.selecao.etapa_processo.';
 
-/** O texto da recusa do servidor à escala da etapa, ou `null` quando a recusa é outra. */
-export function recusaDaEscalaDaEtapa(codigo: string): string | null {
-  return RECUSA_DA_ESCALA_DA_ETAPA.get(codigo) ?? null;
+const RECUSA_DO_CAMPO_DA_ETAPA: ReadonlyMap<string, string> = new Map(
+  [
+    ['nota_maxima_invalida', 'A nota máxima precisa ser maior que zero.'],
+    ['nota_minima_acima_da_nota_maxima', 'A nota mínima não pode passar da nota máxima.'],
+    [
+      'nota_maxima_fora_do_passo',
+      'A nota máxima precisa ser múltipla do passo do lançamento: ajuste uma das duas.',
+    ],
+    ['passo_do_lancamento_invalido', 'O passo do lançamento precisa ser maior que zero.'],
+    ['forma_de_avaliacao_desconhecida', 'Escolha a forma de avaliação: objetiva ou humana.'],
+    [
+      'avaliacao_na_etapa_do_enem',
+      'A etapa de nota do ENEM não declara forma de avaliação nem regra de consolidação: a nota vem do INEP.',
+    ],
+    [
+      'regra_de_consolidacao_fora_da_forma_humana',
+      'A regra de consolidação só vale na avaliação humana.',
+    ],
+    [
+      'regra_de_consolidacao_invalida',
+      'Escolha uma regra de consolidação que o catálogo oferece.',
+    ],
+    ['passo_na_forma_objetiva', 'O passo do lançamento só vale na avaliação humana.'],
+  ].map(([codigo, texto]) => [`${PREFIXO_DA_RECUSA_DA_ETAPA}${codigo}`, texto] as const),
+);
+
+/** O texto da recusa do servidor a um campo da etapa, ou `null` quando a recusa é outra. */
+export function recusaDoCampoDaEtapa(codigo: string): string | null {
+  return RECUSA_DO_CAMPO_DA_ETAPA.get(codigo) ?? null;
 }
 
 /**
@@ -512,14 +531,39 @@ export function localDoErroDaEtapa(
 }
 
 /**
- * A etapa pede nota máxima quando tem nota lançada — compõe a média ou corta por nota mínima,
- * o que o caráter diz — e não é do ENEM, cuja escala vem do INEP.
+ * A etapa declara como a nota é obtida (forma de avaliação) e em que escala (nota máxima) quando
+ * tem nota lançada — compõe a média ou corta por nota mínima, o que o caráter diz — e não é do
+ * ENEM, cuja nota e escala vêm do INEP.
  */
 export function declaraNotaMaxima(
   etapa: Pick<EtapaPontuada, 'carater' | 'tipoEtapaOrigemId' | 'tipoCongelado'>,
   tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
 ): boolean {
   return etapa.carater !== '' && !declaraNotaDoEnem(etapa, tipoDoCadastro);
+}
+
+/**
+ * A etapa como a conferência e o envio a leem: só vale o que a tela pede dela. A que não tem
+ * nota lançada não leva escala nem avaliação; a que não é de avaliação humana não leva regra de
+ * consolidação nem passo, que só existem onde mais de um avaliador lança a nota.
+ */
+export function etapaComOQueDeclara(
+  etapa: EtapaPontuada,
+  tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
+): EtapaPontuada {
+  if (!declaraNotaMaxima(etapa, tipoDoCadastro)) {
+    return {
+      ...etapa,
+      notaMaxima: '',
+      passoDoLancamento: '',
+      formaDeAvaliacao: '',
+      regraConsolidacaoCodigo: '',
+      regraConsolidacaoVersao: '',
+    };
+  }
+  return etapa.formaDeAvaliacao === FORMA_HUMANA
+    ? etapa
+    : { ...etapa, passoDoLancamento: '', regraConsolidacaoCodigo: '', regraConsolidacaoVersao: '' };
 }
 
 export function componeNota(etapa: EtapaPontuada): boolean {
@@ -795,6 +839,15 @@ function problemasDasEtapas(
       // Só o servidor confere a escala inteira, mas recusar aqui evita gravar as fases e só
       // então ter as etapas recusadas.
       problemas.push(`A nota mínima da ${nome} não pode passar da nota máxima dela.`);
+    }
+
+    const passo = etapa.passoDoLancamento ?? '';
+    if (naoConverte(passo)) {
+      problemas.push(
+        `O passo do lançamento da ${nome} precisa ser um número, com ponto ou vírgula decimal.`,
+      );
+    } else if (pesoDeclaradoNaoPositivo(passo)) {
+      problemas.push(`O passo do lançamento da ${nome}, quando declarado, precisa ser maior que zero.`);
     }
   }
 
