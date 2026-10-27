@@ -41,12 +41,16 @@ import {
   eliminacaoAceitaUmaSoVez,
   eliminacaoExigeBaseadoEmEnem,
   eliminacaoUsaAreaEMinimo,
+  eliminacaoUsaEtapa,
   eliminacaoUsaEtapaENotaMinima,
+  eliminacaoUsaSoEtapa,
   ehCampoDaResolucao,
   exigeResolucaoPesoAreaEnem,
   mensagensDeClassificacaoBase,
   TEXTO_DA_PENDENCIA_DA_RESOLUCAO,
 } from '../classificacao/classificacao-para-comando';
+import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { declaraNotaDoEnem } from '../cronograma/cronograma-do-certame';
 import {
   lerChaveDaRegra,
   regrasEscolhiveis,
@@ -99,6 +103,7 @@ export class EliminacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
+  private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly problemI18n = inject(ProblemI18nService);
@@ -135,6 +140,53 @@ export class EliminacaoStepComponent {
     return eliminacaoUsaEtapaENotaMinima(regra.regraCodigo);
   }
 
+  usaSoEtapa(regra: RegraEliminacaoConfigurada): boolean {
+    return eliminacaoUsaSoEtapa(regra.regraCodigo);
+  }
+
+  usaEtapa(regra: RegraEliminacaoConfigurada): boolean {
+    return eliminacaoUsaEtapa(regra.regraCodigo);
+  }
+
+  /**
+   * As etapas oferecidas à regra. A ausência só vale onde há prova a que faltar, e a etapa de nota
+   * do ENEM não tem: fica de fora, e cada etapa é citada por uma regra só. A etapa gravada aparece
+   * mesmo fora das oferecidas, como na área do corte: o operador vê o que está configurado.
+   */
+  etapasEscolhiveis(indice: number): readonly EtapaPontuada[] {
+    const regra = this.regras()[indice];
+    const etapas = this.etapasReferenciaveis();
+    if (!this.usaSoEtapa(regra)) return etapas;
+
+    const oferecidas = etapas.filter((etapa) => this.elegivelParaAusencia(etapa, indice));
+    const gravada = etapas.find((etapa) => etapa.id === regra.etapaRef);
+    return gravada === undefined || oferecidas.includes(gravada)
+      ? oferecidas
+      : [gravada, ...oferecidas];
+  }
+
+  /**
+   * Vale o tipo do catálogo quando o rascunho já trocou o da etapa gravada, como no cronograma: a
+   * tela julga a etapa como o servidor, que confere o tipo que a gravação levaria.
+   */
+  private ehEtapaDoEnem(etapa: EtapaPontuada): boolean {
+    return declaraNotaDoEnem(
+      etapa,
+      this.catalogosDoCronograma.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId),
+    );
+  }
+
+  private citadaPorOutraAusencia(etapaId: string | null, indice: number): boolean {
+    return this.regras().some(
+      (outra, item) => item !== indice && this.usaSoEtapa(outra) && outra.etapaRef === etapaId,
+    );
+  }
+
+  /** A ausência só vale em etapa que não é do ENEM e que nenhuma outra regra de ausência cita. */
+  private elegivelParaAusencia(etapa: EtapaPontuada, indice: number): boolean {
+    return !this.ehEtapaDoEnem(etapa) && !this.citadaPorOutraAusencia(etapa.id, indice);
+  }
+
   usaAreaEMinimo(regra: RegraEliminacaoConfigurada): boolean {
     return eliminacaoUsaAreaEMinimo(regra.regraCodigo);
   }
@@ -145,19 +197,17 @@ export class EliminacaoStepComponent {
    * se for da mesma resolução — é o caso do processo só para consulta. `null` quando não se sabe;
    * `'sem-quadro'` quando a classificação não usa a média ponderada do ENEM.
    */
-  private readonly quadroDoCorte = computed<readonly GrupoDoQuadro[] | 'sem-quadro' | null>(
-    () => {
-      const classificacao = this.classificacao();
-      if (!exigeResolucaoPesoAreaEnem(classificacao)) return 'sem-quadro';
-      const cadastro = this.cadastroDePesos.leitura();
-      if (cadastro.lido) return cadastro.quadroDaResolucaoEscolhida;
-      const gravada = this.store.classificacaoGravada();
-      return gravada.estado === 'com-quadro' &&
-        gravada.resolucao === classificacao.resolucaoPesoAreaEnem
-        ? gravada.grupos
-        : null;
-    },
-  );
+  private readonly quadroDoCorte = computed<readonly GrupoDoQuadro[] | 'sem-quadro' | null>(() => {
+    const classificacao = this.classificacao();
+    if (!exigeResolucaoPesoAreaEnem(classificacao)) return 'sem-quadro';
+    const cadastro = this.cadastroDePesos.leitura();
+    if (cadastro.lido) return cadastro.quadroDaResolucaoEscolhida;
+    const gravada = this.store.classificacaoGravada();
+    return gravada.estado === 'com-quadro' &&
+      gravada.resolucao === classificacao.resolucaoPesoAreaEnem
+      ? gravada.grupos
+      : null;
+  });
 
   /**
    * As áreas que um corte pode citar: com quadro, as que estão em todos os grupos dele; sem quadro,
@@ -232,12 +282,12 @@ export class EliminacaoStepComponent {
    */
   readonly recusasPorCampo = signal<ReadonlyMap<string, string>>(new Map());
 
-  recusaDoCampo(indice: number, campo: CampoDoCorte): string | null {
+  recusaDoCampo(indice: number, campo: CampoDaRegra): string | null {
     return this.recusasPorCampo().get(`${indice}.${campo}`) ?? null;
   }
 
   /** O `aria-describedby` do campo: a recusa, quando há, e a dica, quando há. */
-  descritoPor(indice: number, campo: CampoDoCorte, dica: string | null): string | null {
+  descritoPor(indice: number, campo: CampoDaRegra, dica: string | null): string | null {
     const ids = [
       this.recusaDoCampo(indice, campo) === null ? null : `elim-${campo}-erro-${indice}`,
       dica,
@@ -350,7 +400,8 @@ export class EliminacaoStepComponent {
     const restantes = [...this.recusasPorCampo()].filter(
       ([chave]) => !chave.startsWith(`${indice}.`),
     );
-    if (restantes.length < this.recusasPorCampo().size) this.recusasPorCampo.set(new Map(restantes));
+    if (restantes.length < this.recusasPorCampo().size)
+      this.recusasPorCampo.set(new Map(restantes));
   }
 
   rotuloDeAvanco(): string {
@@ -460,7 +511,7 @@ export class EliminacaoStepComponent {
         return;
       }
 
-      if (this.usaEtapaENotaMinima(regra)) {
+      if (this.usaEtapa(regra)) {
         if (regra.etapaRef === '') {
           messages.push(`Regra de eliminação ${posicao}: selecione a etapa referenciada.`);
         } else if (!idsDeEtapa.has(regra.etapaRef)) {
@@ -468,9 +519,10 @@ export class EliminacaoStepComponent {
             `Regra de eliminação ${posicao}: a etapa referenciada não existe mais no cronograma.`,
           );
         }
-        if (!decimalValido(regra.notaMinima)) {
+        if (this.usaEtapaENotaMinima(regra) && !decimalValido(regra.notaMinima)) {
           messages.push(`Regra de eliminação ${posicao}: informe a nota mínima.`);
         }
+        if (this.usaSoEtapa(regra)) messages.push(...this.mensagensDaAusencia(regra, indice));
       } else if (this.usaAreaEMinimo(regra)) {
         messages.push(...this.mensagensDoCorte(regra, indice));
       }
@@ -494,6 +546,24 @@ export class EliminacaoStepComponent {
     });
 
     return messages.length ? { valid: false, messages } : { valid: true };
+  }
+
+  private mensagensDaAusencia(regra: RegraEliminacaoConfigurada, indice: number): string[] {
+    const posicao = indice + 1;
+    const mensagens: string[] = [];
+    const etapa = this.etapasReferenciaveis().find((item) => item.id === regra.etapaRef);
+    if (etapa === undefined) return mensagens;
+    if (this.ehEtapaDoEnem(etapa)) {
+      mensagens.push(
+        `Regra de eliminação ${posicao}: a ausência não se aplica à etapa de nota do ENEM; escolha outra etapa.`,
+      );
+    }
+    if (this.citadaPorOutraAusencia(etapa.id, indice)) {
+      mensagens.push(
+        `Regra de eliminação ${posicao}: a ausência nesta etapa já foi declarada em outra regra; deixe uma só.`,
+      );
+    }
+    return mensagens;
   }
 
   private mensagensDoCorte(regra: RegraEliminacaoConfigurada, indice: number): string[] {
@@ -773,6 +843,18 @@ const RECUSA_DA_ELIMINACAO: ReadonlyMap<string, string> = new Map([
     'a falta em dia de prova do ENEM já foi declarada em outra regra; deixe uma só',
   ],
   [
+    `${PREFIXO_DA_RECUSA}ausencia_na_etapa_repetida`,
+    'a ausência nesta etapa já foi declarada em outra regra; deixe uma só',
+  ],
+  [
+    'uniplus.selecao.regra_eliminacao.etapa_ref_obrigatorio',
+    'a eliminação por ausência exige a etapa',
+  ],
+  [
+    'uniplus.selecao.processo_seletivo.ausencia_na_etapa_do_enem',
+    'a ausência não se aplica à etapa de nota do ENEM; escolha outra etapa',
+  ],
+  [
     'uniplus.selecao.regra_eliminacao.area_invalida',
     'a área do corte não é uma área do ENEM válida; escolha a área na lista',
   ],
@@ -786,19 +868,21 @@ const RECUSA_DA_ELIMINACAO: ReadonlyMap<string, string> = new Map([
   ],
 ]);
 
-type CampoDoCorte = 'area' | 'minimo';
+type CampoDaRegra = 'etapa' | 'area' | 'minimo';
 
-const CAMPO_DO_CORTE: Readonly<Record<string, CampoDoCorte>> = {
+const CAMPO_DA_REGRA: Readonly<Record<string, CampoDaRegra>> = {
+  etapaRef: 'etapa',
   areaCodigo: 'area',
   minimo: 'minimo',
 };
 
 /**
- * O campo de cada recusa que o servidor aponta só pela regra, sem sufixo: a repetição da área é
- * recusada em `regrasEliminacao[i]`, e é o campo da área que a corrige.
+ * O campo de cada recusa que o servidor aponta só pela regra, sem sufixo: a repetição da área e a
+ * da etapa são recusadas em `regrasEliminacao[i]`, e é o campo delas que as corrige.
  */
-const CAMPO_DA_RECUSA_SEM_SUFIXO: Readonly<Record<string, CampoDoCorte>> = {
+const CAMPO_DA_RECUSA_SEM_SUFIXO: Readonly<Record<string, CampoDaRegra>> = {
   [`${PREFIXO_DA_RECUSA}corte_em_area_repetido`]: 'area',
+  [`${PREFIXO_DA_RECUSA}ausencia_na_etapa_repetida`]: 'etapa',
 };
 
 /** As recusas que o servidor aponta num campo de uma regra, por `índice.campo`. */
@@ -808,8 +892,7 @@ function recusasDoCorte(
   const recusas = new Map<string, string>();
   for (const erro of erros) {
     const [, indice, nome] = /^regrasEliminacao\[(\d+)\](?:\.(\w+))?$/.exec(erro.field) ?? [];
-    const campo =
-      nome === undefined ? CAMPO_DA_RECUSA_SEM_SUFIXO[erro.code] : CAMPO_DO_CORTE[nome];
+    const campo = nome === undefined ? CAMPO_DA_RECUSA_SEM_SUFIXO[erro.code] : CAMPO_DA_REGRA[nome];
     const texto = RECUSA_DA_ELIMINACAO.get(erro.code);
     if (indice === undefined || campo === undefined || texto === undefined) continue;
     recusas.set(`${indice}.${campo}`, `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`);
@@ -817,7 +900,10 @@ function recusasDoCorte(
   return recusas;
 }
 
-function recusaDaEliminacao(erro: { readonly field: string; readonly code: string }): string | null {
+function recusaDaEliminacao(erro: {
+  readonly field: string;
+  readonly code: string;
+}): string | null {
   const texto = RECUSA_DA_ELIMINACAO.get(erro.code);
   if (texto === undefined) return null;
   const indice = /^regrasEliminacao\[(\d+)\]/.exec(erro.field)?.[1];

@@ -43,6 +43,7 @@ const REGRAS_ORDEM_ALOCACAO = [
 const REGRAS_ELIMINACAO = [
   regra('ELIM-ZERO-EM-AREA', 'regra_eliminacao', 'Resolução 805/2020, art. 5º'),
   regra('ELIM-CORTE-EM-AREA', 'regra_eliminacao', 'Resolução 805/2024, art. 6º'),
+  regra('ELIM-AUSENCIA-NA-ETAPA', 'regra_eliminacao', 'Edital do processo'),
 ];
 const REGRAS_BONUS = [
   regra(
@@ -267,9 +268,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
   test.describe('Bônus', () => {
     test('não viola WCAG 2.1 AA com bônus declarado', async ({ page }, testInfo) => {
       await irAoPasso(page, 'Bônus', testInfo);
-      await page
-        .getByLabel('Aplica o bônus regional', { exact: true })
-        .check();
+      await page.getByLabel('Aplica o bônus regional', { exact: true }).check();
       await page
         .getByLabel('Regra do bônus', { exact: true })
         .selectOption('BONUS-MULTIPLICATIVO|1.0');
@@ -284,9 +283,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
 
     test('não viola WCAG 2.1 AA com a conferência acusando', async ({ page }, testInfo) => {
       await irAoPasso(page, 'Bônus', testInfo);
-      await page
-        .getByLabel('Aplica o bônus regional', { exact: true })
-        .check();
+      await page.getByLabel('Aplica o bônus regional', { exact: true }).check();
       await page.getByLabel('Fator', { exact: true }).fill('0');
 
       const resultado = await runAxeWcagAA(page);
@@ -359,6 +356,33 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
 
 const PROCESSO_PUBLICADO_ID = '01960000-0000-7000-0000-000000000898';
 
+const ETAPA_ENTREVISTA_ID = '01960000-0000-7000-0000-0000000008f1';
+
+/** Uma etapa gravada, com o mínimo que a hidratação do rascunho lê. */
+function etapaGravada(id: string, nome: string, ordem: number, notaDeOrigemNoEnem: boolean) {
+  return {
+    id,
+    nome,
+    carater: 'classificatoria',
+    tipoEtapa: {
+      origemId: `01960000-0000-7000-0000-0000000008f${ordem + 1}`,
+      codigo: notaDeOrigemNoEnem ? 'NOTA_ENEM' : 'ENTREVISTA',
+      nome,
+      notaDeOrigemNoEnem,
+    },
+    peso: 1,
+    notaMinima: null,
+    ordem,
+    faseCodigo: null,
+    produtos: [],
+    inicio: null,
+    fim: null,
+    emiteParecerIndividual: false,
+    bancas: [],
+    recursos: [],
+  };
+}
+
 /** A referência congelada de uma regra do catálogo, como o detalhe do processo a devolve. */
 function referencia(codigo: string) {
   return { codigo, versao: '1.0', hash: `hash-${codigo}` };
@@ -389,7 +413,10 @@ const DETALHE_PUBLICADO = {
     cidadeUf: 'PA',
   },
   localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
-  etapas: [],
+  etapas: [
+    etapaGravada(ETAPA_ENTREVISTA_ID, 'Entrevista', 1, false),
+    etapaGravada('01960000-0000-7000-0000-0000000008f9', 'Nota do ENEM', 2, true),
+  ],
   ofertaAtendimento: null,
   distribuicaoVagas: [],
   aplicaBonusRegional: true,
@@ -435,6 +462,14 @@ const DETALHE_PUBLICADO = {
         minimo: null,
         areaCodigo: null,
       },
+      {
+        id: '01960000-0000-7000-0000-0000000008e2',
+        regra: referencia('ELIM-AUSENCIA-NA-ETAPA'),
+        etapaRef: ETAPA_ENTREVISTA_ID,
+        notaMinima: null,
+        minimo: null,
+        areaCodigo: null,
+      },
     ],
     concorrenciaDuplaAplicavel: false,
     baseadoEmEnem: false,
@@ -470,7 +505,11 @@ const LEITURAS: Record<string, Record<string, string>> = {
     'Quem recebe o acréscimo': 'PEDE_O_ACRESCIMO',
   },
   Desempate: { 'Regra do critério': 'DESEMPATE-MAIOR-IDADE — Costume administrativo' },
-  Eliminação: { 'Regra de eliminação 1': 'ELIM-ZERO-EM-AREA — Resolução 805/2020, art. 5º' },
+  Eliminação: {
+    'Regra de eliminação 1': 'ELIM-ZERO-EM-AREA — Resolução 805/2020, art. 5º',
+    'Regra de eliminação 2': 'ELIM-AUSENCIA-NA-ETAPA — Edital do processo',
+    Etapa: 'Entrevista',
+  },
 };
 
 /** As larguras de referência em que a consulta não pode ter rolagem horizontal. */
@@ -631,6 +670,92 @@ test.describe('Fórmula com quadro de pesos em consulta — matriz DS @ds', () =
     for (const largura of LARGURAS_DE_REFERENCIA) {
       await quadroCabeNaLargura(page, testInfo, largura);
     }
+  });
+});
+
+const PROCESSO_AUSENCIA_ID = '01960000-0000-7000-0000-000000000920';
+
+/**
+ * Eliminação por ausência na etapa, em rascunho: a escolha da etapa oferece as que não são do
+ * ENEM, a regra não pede nota mínima, e a recusa do servidor aparece junto do campo da etapa.
+ */
+test.describe('Eliminação por ausência na etapa em edição — matriz DS @ds', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    await mockarCatalogos(page);
+    await mockarProcesso(page, PROCESSO_AUSENCIA_ID, {
+      ...DETALHE_PUBLICADO,
+      id: PROCESSO_AUSENCIA_ID,
+      status: 'rascunho',
+    });
+    await instalarPreferencia(page, temaDoProject(testInfo.project.name));
+    await page.goto(`/processo-seletivo/${PROCESSO_AUSENCIA_ID}`);
+    await expect(page.getByText('Carregando o processo seletivo…')).toBeHidden();
+    await irAoPasso(page, 'Eliminação', testInfo);
+  });
+
+  test('oferece só etapas fora do ENEM, não pede nota mínima e não viola WCAG 2.1 AA', async ({
+    page,
+  }, testInfo) => {
+    await page.getByRole('button', { name: '+ Acrescentar regra de eliminação' }).click();
+    await page.locator('#elim-regra-2').selectOption('ELIM-AUSENCIA-NA-ETAPA|1.0');
+
+    const etapa = page.locator('#elim-etapa-2');
+    await expect(etapa.locator('option')).toHaveText(['— escolher —']);
+    await expect(page.getByLabel('Nota mínima', { exact: true })).toHaveCount(0);
+
+    // A etapa gravada na regra 2 não é oferecida de novo, e a do ENEM nunca.
+    const gravada = page.locator('#elim-etapa-1');
+    await expect(gravada.locator('option')).toHaveText(['— escolher —', 'Entrevista']);
+    await expect(gravada).toHaveValue(ETAPA_ENTREVISTA_ID);
+
+    expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
+    for (const largura of LARGURAS_DE_REFERENCIA) {
+      await page.setViewportSize({ width: largura, height: alturaDoProject(testInfo) });
+      const medida = await medirTransbordoHorizontal(page);
+      expect(medida.documento, `documento em ${largura} px`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test('põe a recusa do servidor junto do campo da etapa', async ({ page }) => {
+    await page.route(
+      `**/api/selecao/processos-seletivos/${PROCESSO_AUSENCIA_ID}/classificacao`,
+      async (route: Route) => {
+        const cabecalhos = { ...CORS_HEADERS, 'access-control-allow-methods': 'PUT, OPTIONS' };
+        if (route.request().method() === 'OPTIONS') {
+          await route.fulfill({ status: 204, headers: cabecalhos });
+          return;
+        }
+        await route.fulfill({
+          status: 422,
+          contentType: 'application/problem+json',
+          headers: cabecalhos,
+          body: JSON.stringify({
+            type: 'about:blank',
+            title: 'Recusada.',
+            status: 422,
+            code: 'uniplus.validacao',
+            traceId: 't',
+            errors: [
+              {
+                field: 'regrasEliminacao[0].etapaRef',
+                code: 'uniplus.selecao.configuracao_classificacao.ausencia_na_etapa_repetida',
+                message: 'repetida',
+              },
+            ],
+          }),
+        });
+      },
+    );
+    // A regra de zero em área só vale no ENEM e travaria a gravação antes de a API ser chamada.
+    await page.getByRole('button', { name: 'Remover regra de eliminação 1' }).click();
+
+    await page.getByRole('button', { name: 'Gravar e avançar' }).click();
+    await page.getByRole('button', { name: 'Gravar classificação' }).click();
+
+    const etapa = page.locator('#elim-etapa-0');
+    await expect(etapa).toHaveAttribute('aria-invalid', 'true');
+    await expect(etapa).toHaveAttribute('aria-describedby', /elim-etapa-erro-0/);
+    await expect(page.locator('#elim-etapa-erro-0')).toContainText('já foi declarada');
   });
 });
 

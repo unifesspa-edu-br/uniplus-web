@@ -1,6 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Type } from '@angular/core';
+import { Type, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
@@ -17,6 +17,7 @@ import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { BonusStepComponent } from '../bonus/bonus.component';
 import { DesempateStepComponent } from '../desempate/desempate.component';
+import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { EliminacaoStepComponent } from '../eliminacao/eliminacao.component';
 import { FormulaStepComponent } from '../formula/formula.component';
 import { AcompanhamentoDoCadastroDePesos } from './acompanhamento-do-cadastro-de-pesos.service';
@@ -53,6 +54,7 @@ async function montar<T>(componente: Type<T>): Promise<Montagem<T>> {
       CadastroInicialService,
       CatalogosDeClassificacaoService,
       AcompanhamentoDoCadastroDePesos,
+      { provide: CatalogosDoCronogramaService, useValue: { tipoEtapaPorId: signal(new Map()) } },
       { provide: ReleituraDoSnapshot, useValue: { reler: async () => true } },
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
