@@ -28,6 +28,12 @@ export interface AppConfig {
    * onde cada app tem porta própria, o runtime-config do app declara.
    */
   readonly configuracaoWebUrl?: string;
+  /**
+   * Liga a navegação de acompanhamento do app Seleção para validação com dados fictícios: o
+   * painel passa a ficar disponível a qualquer usuário autenticado. Opcional: ausente equivale a
+   * `false`. Só habilitar em ambiente controlado; a flag não concede autorização na API.
+   */
+  readonly acompanhamentoValidacaoHabilitada?: boolean;
   readonly oidc: OidcRuntimeConfig;
 }
 
@@ -44,6 +50,15 @@ const CAMINHO_PADRAO_DO_APP_CONFIGURACAO = '/configuracao';
 export function resolveConfiguracaoWebUrl(cfg: AppConfig | null): string {
   const declarada = (cfg?.configuracaoWebUrl ?? '').trim().replace(/\/+$/, '');
   return declarada === '' ? CAMINHO_PADRAO_DO_APP_CONFIGURACAO : declarada;
+}
+
+/**
+ * Se a navegação de acompanhamento para validação está ligada. Só o valor booleano `true` liga;
+ * ausente, texto ou qualquer outro valor contam como desligado. Aceita `null` para quem lê o
+ * sinal da configuração antes de ela carregar.
+ */
+export function resolveAcompanhamentoValidacaoHabilitada(cfg: AppConfig | null): boolean {
+  return cfg?.acompanhamentoValidacaoHabilitada === true;
 }
 
 export function resolveOidcConfig(cfg: AppConfig): OidcRuntimeConfig {
