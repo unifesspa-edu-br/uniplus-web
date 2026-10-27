@@ -1721,6 +1721,29 @@ ui-icon-button {
   display: contents;
 }
 
+/* Acima do ponto de quebra do cartão a célula de ações segue como célula de tabela: com
+   `display: flex` ela deixa de preencher a altura da linha e a borda inferior sai desalinhada das
+   outras colunas. O espaçamento entre os botões é por margem, que vale também quando os botões de
+   texto quebram de linha. A célula só de ícones não quebra. */
+@media (min-width: 768px) {
+  .table-responsive td.table-responsive__actions {
+    text-align: right;
+  }
+
+  .table-responsive td.table-responsive__actions .btn {
+    vertical-align: middle;
+    margin-inline-start: var(--space-2);
+  }
+
+  .table-responsive td.table-responsive__actions:has(> ui-icon-button) {
+    white-space: nowrap;
+  }
+
+  .table-responsive td.table-responsive__actions:not(:has(> ui-icon-button)) .btn {
+    margin-block: var(--space-1);
+  }
+}
+
 .institutional-bar {
   background: var(--color-primary-900);
   color: var(--text-on-inverse);
