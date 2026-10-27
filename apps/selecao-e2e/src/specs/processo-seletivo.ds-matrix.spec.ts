@@ -11,6 +11,7 @@ import {
   rolarAteOMeio,
 } from '../support/rolagem-do-editor';
 import { LARGURA_STEPPER_LATERAL, larguraDoProjeto } from '../support/navega-passo';
+import { responder } from '../support/responder';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 
 /**
@@ -50,6 +51,7 @@ const TIPOS_PROCESSO = [
  */
 test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
   test.beforeEach(async ({ page }, testInfo) => {
+    await mockarCatalogosVazios(page);
     await mockTiposProcesso(page);
     await instalarPreferencia(page, temaDoProject(testInfo.project.name));
     await page.goto('/processo-seletivo/novo');
@@ -301,6 +303,18 @@ async function abrirPasso(page: Page, rotulo: string): Promise<void> {
     );
     botoes.find((botao) => botao.textContent?.includes(procurado))?.click();
   }, rotulo);
+}
+
+/**
+ * Os passos carregam catálogos ao abrir. Sem a API (CI) a conexão é recusada; com a API local
+ * a chamada de outra origem é barrada por CORS. Nos dois casos o passo Vagas mostraria o aviso
+ * de falha, curto demais para as verificações de rolagem. A resposta vazia deixa o passo no
+ * estado lido, igual em qualquer ambiente.
+ *
+ * Registrada antes das rotas específicas: o Playwright consulta da mais recente para a mais antiga.
+ */
+async function mockarCatalogosVazios(page: Page): Promise<void> {
+  await responder(page, /\/api\//, [], CORS_HEADERS);
 }
 
 /**
