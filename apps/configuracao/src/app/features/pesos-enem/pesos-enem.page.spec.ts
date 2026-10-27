@@ -753,6 +753,32 @@ describe('PesosEnemPage', () => {
     ).toBe(3.0);
   });
 
+  it('PesosEnemPage_Salvar_CorteForaDaRedacaoVaiNoItemDaArea', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component['clicarEditarParametros'](RES_805);
+    await propagate();
+
+    areaDo(component['editForm']()?.controls[0], 'MATEMATICA').controls.corte.setValue(450);
+    component['salvarEdicao']();
+    await propagate();
+
+    const requests = [0, 1, 2, 3].map((i) =>
+      controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
+    );
+    const corpo = requests[0]?.request.body as { areas: { codigo: string; peso: number; corte: number | null }[] };
+    expect(corpo.areas.find((a) => a.codigo === 'MATEMATICA')).toEqual({
+      codigo: 'MATEMATICA',
+      peso: 2.5,
+      corte: 450,
+    });
+    // Área em branco segue sem corte.
+    expect(corpo.areas.find((a) => a.codigo === 'CIENCIAS_HUMANAS')?.corte).toBeNull();
+    for (const req of requests) {
+      req.flush(null, { status: 204, statusText: 'No Content' });
+    }
+    await propagate();
+  });
+
   it('PesosEnemPage_PesoZero_Valido_PesoNegativo_InvalidaForm', async () => {
     await carregarUmaPagina([...linhas805]);
     component['clicarEditarParametros'](RES_805);
@@ -1807,7 +1833,8 @@ describe('PesosEnemPage', () => {
       baseLegalGlobal: 'Res. 900/2026 Anexo I',
     });
     const grupo0 = component['pesoLoteForm'].controls.grupos.controls[0];
-    areaDo(grupo0, 'REDACAO').controls.corte.setValue(450);
+    // O corte não é exclusivo da Redação: vai no item da própria área.
+    areaDo(grupo0, 'MATEMATICA').controls.corte.setValue(450);
     areaDo(grupo0, 'MATEMATICA').controls.peso.setValue(2.5);
     component['criarResolucao']();
     await propagate();
@@ -1818,11 +1845,11 @@ describe('PesosEnemPage', () => {
       resolucao: 'Res. 900/2026',
       grupoCurso: 'TECNOLOGICA',
       areas: [
-        { codigo: 'REDACAO', peso: 0, corte: 450 },
+        { codigo: 'REDACAO', peso: 0, corte: null },
         { codigo: 'CIENCIAS_DA_NATUREZA', peso: 0, corte: null },
         { codigo: 'CIENCIAS_HUMANAS', peso: 0, corte: null },
         { codigo: 'LINGUAGENS', peso: 0, corte: null },
-        { codigo: 'MATEMATICA', peso: 2.5, corte: null },
+        { codigo: 'MATEMATICA', peso: 2.5, corte: 450 },
       ],
       baseLegal: 'Res. 900/2026 Anexo I',
     });
@@ -1845,6 +1872,21 @@ describe('PesosEnemPage', () => {
     expect(raiz.querySelectorAll('input[formcontrolname="corte"]').length).toBeGreaterThan(0);
   });
 
+  it('PesosEnemPage_Corte_CadaAreaTemCampoENenhumTextoRestringeARedacao', async () => {
+    await carregarUmaPagina([...linhas805]);
+    component['abrirDrawerCriacao']();
+    await propagate();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.textContent).not.toMatch(/só a Redação/iu);
+    for (const area of AREAS) {
+      expect(
+        raiz.querySelector(`input[aria-label="Corte de ${area.rotulo} — Tecnológica"]`),
+      ).not.toBeNull();
+    }
+  });
+
   it('PesosEnemPage_ErroDoBackendPorArea_VaiAoCampoDaArea', async () => {
     await carregarUmaPagina([...linhas805]);
     component['clicarEditarParametros'](RES_805);
@@ -1856,11 +1898,11 @@ describe('PesosEnemPage', () => {
       controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
     );
     requests[0]?.flush(
-      problem(422, 'uniplus.configuracao.peso_area_enem.corte_fora_da_redacao', 'Corte fora da Redação', [
+      problem(422, 'uniplus.configuracao.peso_area_enem.corte_excede_maximo', 'Corte acima do máximo', [
         {
           field: 'areas[3].corte',
-          code: 'uniplus.configuracao.peso_area_enem.corte_fora_da_redacao',
-          message: 'Por enquanto só a Redação aceita corte; Linguagens e suas Tecnologias deve ficar sem corte.',
+          code: 'uniplus.configuracao.peso_area_enem.corte_excede_maximo',
+          message: 'O corte de Linguagens e suas Tecnologias não pode exceder 1.000.',
         },
         {
           field: 'areas[4].peso',
@@ -1877,7 +1919,7 @@ describe('PesosEnemPage', () => {
 
     const grupo = component['editForm']()?.controls[0];
     expect(component['erroDaArea'](areaDo(grupo, 'LINGUAGENS'), 'corte')).toBe(
-      'Por enquanto só a Redação aceita corte; Linguagens e suas Tecnologias deve ficar sem corte.',
+      'O corte de Linguagens e suas Tecnologias não pode exceder 1.000.',
     );
     expect(component['erroDaArea'](areaDo(grupo, 'MATEMATICA'), 'peso')).toBe(
       'O peso de Matemática e suas Tecnologias não pode exceder 99.99.',
@@ -2167,7 +2209,7 @@ describe('PesosEnemPage', () => {
       controller.expectOne(`${BASE}/api/configuracao/admin/pesos-area-enem/${linhas805[i]?.id}`),
     );
     requests[0]?.flush(
-      problem(422, 'uniplus.configuracao.peso_area_enem.corte_fora_da_redacao', 'Recusa', [
+      problem(422, 'uniplus.configuracao.peso_area_enem.corte_excede_maximo', 'Recusa', [
         { field: 'request.Areas[3].corte', code: 'c1', message: 'Erro no corte de Linguagens.' },
         { field: '$.areas[2]', code: 'c2', message: 'Erro no item de Ciências Humanas.' },
         { field: 'Areas[4].Peso', code: 'c3', message: 'Erro no peso de Matemática.' },
@@ -2245,8 +2287,8 @@ describe('PesosEnemPage', () => {
     recusa422(requests[0], [
       {
         field: 'areas[3].corte',
-        code: 'uniplus.configuracao.peso_area_enem.corte_fora_da_redacao',
-        message: 'Por enquanto só a Redação aceita corte.',
+        code: 'uniplus.configuracao.peso_area_enem.corte_excede_maximo',
+        message: 'O corte não pode exceder 1.000.',
       },
     ]);
     for (const req of requests.slice(1)) {
@@ -2260,7 +2302,7 @@ describe('PesosEnemPage', () => {
 
     const linguagens = areaDo(component['editForm']()?.controls[0], 'LINGUAGENS');
     expect(component['erroDaArea'](linguagens, 'corte')).toBe(
-      'Por enquanto só a Redação aceita corte.',
+      'O corte não pode exceder 1.000.',
     );
     expect(component['editForm']()?.invalid).toBe(true);
   });
