@@ -51,6 +51,25 @@ Os api clients chamam os paths com prefixo de módulo do contrato (ADR-0064) —
 os de geo sem prefixo (`/api/cidades`, `/api/cep`). O gateway roteia ambos; **não
 há reescrita de path** (o shim legado `/api/editais` foi removido).
 
+### Validação do acompanhamento (app Seleção)
+
+O `runtime-config.json` do Seleção aceita o booleano opcional
+`acompanhamentoValidacaoHabilitada`. Ausente equivale a `false` e preserva menus
+e guards atuais; ele não vem ligado em nenhum exemplo ou configuração padrão.
+
+```json
+{ "acompanhamentoValidacaoHabilitada": true }
+```
+
+Ligado, o menu mostra **Acompanhamento → Painel de processos** e **Cadastro →
+Processos seletivos** (este só para `plataforma-admin`). O painel abre para
+qualquer usuário autenticado, e `/inscricoes`, `/homologacao`, `/notas` e
+`/classificacao` redirecionam para `/dashboard`. A opção não concede autorização
+na API: um 403 continua levando a `/acesso-negado`.
+
+Ative somente em ambiente controlado com dados fictícios, nunca em ambiente com
+dados reais.
+
 ## 3. Faça login
 
 Usuários do realm `unifesspa` (senha inicial **temporária** — o Keycloak pede para
