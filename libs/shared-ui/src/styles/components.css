@@ -1715,8 +1715,8 @@ ui-list-footer {
   display: contents;
 }
 
-/* Wrapper puro em volta do `<button>` de ação só-ícone — o `<button>` participa
-   direto do flex da célula `.table-responsive__actions`. */
+/* Wrapper puro em volta do `<button>` de ação só-ícone — o `<button>` participa direto do
+   layout da célula `.table-responsive__actions` (célula de tabela no desktop, flex no cartão). */
 ui-icon-button {
   display: contents;
 }
@@ -1725,13 +1725,17 @@ ui-icon-button {
    `display: flex` ela deixa de preencher a altura da linha e a borda inferior sai desalinhada das
    outras colunas. O espaçamento entre os botões é por margem, que vale também quando os botões de
    texto quebram de linha. A célula só de ícones não quebra. */
-@media (min-width: 768px) {
+@media not all and (max-width: 767px) {
   .table-responsive td.table-responsive__actions {
     text-align: right;
   }
 
   .table-responsive td.table-responsive__actions .btn {
     vertical-align: middle;
+  }
+
+  .table-responsive td.table-responsive__actions > .btn ~ .btn,
+  .table-responsive td.table-responsive__actions > ui-icon-button ~ ui-icon-button > .btn {
     margin-inline-start: var(--space-2);
   }
 
