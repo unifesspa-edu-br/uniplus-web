@@ -1,7 +1,7 @@
 import { HttpEventType, type HttpResponse } from '@angular/common/http';
 import { isApiOk, type ApiResult } from './api-result';
 import type { ProblemDetails } from './problem-details';
-import { salvarArquivo } from './salvar-arquivo';
+import { clicarEmLinkTransitorio } from './link-transitorio';
 import type { SignedUploadClient } from './signed-upload';
 
 /**
@@ -99,9 +99,9 @@ export type DesfechoDaAbertura =
  * Abre um arquivo confirmado numa aba nova, pedindo o acesso à API no clique.
  *
  * A URL assinada é credencial de acesso ao objeto: não vai para o store, não é guardada em campo
- * de componente e não vira `href` de link — o servidor a emite por pedido justamente para que o
- * prazo comece agora e para que ela não sobreviva à ação. Sai daqui direto para a aba e nada mais
- * a retém.
+ * de componente e não vira `href` de link que fique na página — o servidor a emite por pedido
+ * justamente para que o prazo comece agora e para que ela não sobreviva à ação. Sai daqui direto
+ * para a aba e nada mais a retém.
  *
  * Tem de ser chamada dentro do clique: a aba nasce antes do primeiro `await`.
  *
@@ -150,63 +150,33 @@ export async function abrirAcessoEmNovaAba(
 /** Como terminou o pedido de download de um arquivo confirmado. */
 export type DesfechoDoDownload =
   | { readonly situacao: 'iniciado' }
-  | { readonly situacao: 'recusado'; readonly problem: ProblemDetails }
-  | { readonly situacao: 'falhou' };
-
-/** O que a URL assinada entregou: o conteúdo e o nome que o armazenamento assinou para ele. */
-export interface ArquivoBaixado {
-  readonly conteudo: Blob;
-  readonly nome: string | null;
-}
+  | { readonly situacao: 'recusado'; readonly problem: ProblemDetails };
 
 /**
- * O nome do arquivo na disposição de conteúdo assinada (`filename*=UTF-8''…`, RFC 5987); nulo
- * quando ela não traz um nome legível.
+ * Leva a janela até a URL assinada. A resposta de sucesso traz `Content-Disposition: attachment`
+ * com o nome do arquivo, e o navegador baixa sem sair da página. O link existe só durante o clique e
+ * não envia `Referer`: o endereço da tela não tem o que fazer no armazenamento.
  */
-export function nomeDaDisposicao(disposicao: string | null): string | null {
-  const codificado = /filename\*=UTF-8''([^;]+)/i.exec(disposicao ?? '')?.[1];
-  if (codificado === undefined) return null;
-  try {
-    return decodeURIComponent(codificado.trim());
-  } catch {
-    return null;
-  }
-}
-
-/** Busca o arquivo na URL assinada; nulo quando o armazenamento recusa ou não responde. */
-async function buscarNoArmazenamento(url: string): Promise<ArquivoBaixado | null> {
-  try {
-    const resposta = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer' });
-    if (!resposta.ok) return null;
-    return {
-      conteudo: await resposta.blob(),
-      nome: nomeDaDisposicao(resposta.headers.get('Content-Disposition')),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function salvarComoArquivo(arquivo: ArquivoBaixado): void {
-  salvarArquivo(arquivo.conteudo, arquivo.nome ?? 'arquivo');
+function navegarAoDownload(url: string): void {
+  clicarEmLinkTransitorio(url, (link) => (link.rel = 'noreferrer'));
 }
 
 /**
- * Baixa um arquivo confirmado pedindo o acesso à API no clique. O conteúdo vem pela própria página
- * e é salvo de um endereço local: o armazenamento responde em HTTP e levar a janela até ele faria
- * o navegador tratar o anexo como download inseguro de uma página HTTPS. Pelo mesmo motivo de
+ * Baixa um arquivo confirmado pedindo o acesso à API no clique. Pelo mesmo motivo de
  * `abrirAcessoEmNovaAba`, a URL é credencial: vive só nesta chamada e nada a retém.
+ *
+ * Quem responde ao download é o armazenamento, e a página não fica sabendo da resposta. Se ele
+ * recusar ou não responder, a janela sai da tela para a página de erro. É aceito: a URL é emitida no
+ * clique e usada em seguida, dentro do prazo da assinatura, e só um armazenamento fora do ar a
+ * recusaria, situação em que o envio da inscrição também não teria como prosseguir.
  */
 export async function baixarPeloAcesso(
   pedirAcesso: () => Promise<ApiResult<{ readonly url: string }>>,
-  buscar: (url: string) => Promise<ArquivoBaixado | null> = buscarNoArmazenamento,
-  salvar: (arquivo: ArquivoBaixado) => void = salvarComoArquivo,
+  navegar: (url: string) => void = navegarAoDownload,
 ): Promise<DesfechoDoDownload> {
   const resultado = await pedirAcesso();
   if (!isApiOk(resultado)) return { situacao: 'recusado', problem: resultado.problem };
-  const arquivo = await buscar(resultado.data.url);
-  if (arquivo === null) return { situacao: 'falhou' };
-  salvar(arquivo);
+  navegar(resultado.data.url);
   return { situacao: 'iniciado' };
 }
 
