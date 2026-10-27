@@ -9903,6 +9903,8 @@ export interface components {
             readonly recursos: readonly components["schemas"]["RecursoDaEtapaDto"][];
             readonly formaDeAvaliacao: null | string;
             readonly regraConsolidacao: null | components["schemas"]["ReferenciaRegraDto"];
+            readonly itensDeAvaliacao: readonly components["schemas"]["ItemDeAvaliacaoDto"][];
+            readonly escalaDeAtendimento: null | readonly components["schemas"]["NivelDeAtendimentoDto"][];
         };
         readonly EtapaProcessoInput: {
             readonly nome: string;
@@ -9934,6 +9936,8 @@ export interface components {
             readonly formaDeAvaliacao?: null | string;
             readonly regraConsolidacaoCodigo?: null | string;
             readonly regraConsolidacaoVersao?: null | string;
+            readonly itensDeAvaliacao?: null | readonly components["schemas"]["ItemDeAvaliacaoInput"][];
+            readonly escalaDeAtendimento?: null | readonly components["schemas"]["NivelDeAtendimentoInput"][];
         };
         readonly ExigenciaDocumentalCertameDto: {
             readonly rotulo: string;
@@ -10338,6 +10342,20 @@ export interface components {
             readonly mensagem: string;
             readonly ok: boolean;
         };
+        readonly ItemDeAvaliacaoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly rotulo: string;
+            /** Format: double */
+            readonly pontuacaoMaxima: number | string;
+        };
+        readonly ItemDeAvaliacaoInput: {
+            /** Format: uuid */
+            readonly id: null | string;
+            readonly rotulo: string;
+            /** Format: double */
+            readonly pontuacaoMaxima: number | string;
+        };
         readonly ItemDocumentoExigidoInput: {
             /** Format: uuid */
             readonly exigidoNaFaseId: string;
@@ -10538,6 +10556,16 @@ export interface components {
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
+        };
+        readonly NivelDeAtendimentoDto: {
+            readonly rotulo: string;
+            /** Format: double */
+            readonly fracao: number | string;
+        };
+        readonly NivelDeAtendimentoInput: {
+            readonly rotulo: string;
+            /** Format: double */
+            readonly fracao: number | string;
         };
         readonly NoExigenciaDto: {
             /** Format: uuid */
