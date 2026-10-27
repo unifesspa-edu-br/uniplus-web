@@ -270,7 +270,9 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await etapa.getByLabel('Caráter').selectOption({ label: 'Classificatória' });
     const forma = etapa.getByRole('group', { name: 'Forma de avaliação' });
     await expect(forma.getByRole('radio')).toHaveCount(2);
-    await expect(etapa.getByRole('group', { name: 'Regra de consolidação das notas' })).toHaveCount(0);
+    await expect(etapa.getByRole('group', { name: 'Regra de consolidação das notas' })).toHaveCount(
+      0,
+    );
     await expect(etapa.getByLabel('Passo do lançamento')).toHaveCount(0);
 
     await forma.getByText('Humana — banca').click();
@@ -285,7 +287,9 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await expect(etapa.getByLabel('Passo do lançamento')).toHaveValue('0,25');
 
     await forma.getByText('Objetiva — gabarito ou leitora').click();
-    await expect(etapa.getByRole('group', { name: 'Regra de consolidação das notas' })).toHaveCount(0);
+    await expect(etapa.getByRole('group', { name: 'Regra de consolidação das notas' })).toHaveCount(
+      0,
+    );
     await expect(etapa.getByLabel('Passo do lançamento')).toHaveCount(0);
 
     await forma.getByText('Humana — banca').click();
@@ -295,6 +299,65 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
         .getByRole('group', { name: 'Regra de consolidação das notas' })
         .getByRole('radio', { checked: true }),
     ).toHaveCount(0);
+  });
+
+  /**
+   * Os itens dividem a nota da etapa em critérios; a soma é conferida contra a nota máxima. A
+   * escala de atendimento só existe na avaliação humana e com itens, e com ela o passo do
+   * lançamento deixa de existir — a banca escolhe o nível, não digita a nota.
+   */
+  test('a avaliação humana cadastra itens e a escala de atendimento', async ({ page }) => {
+    await acrescentarEtapa(page);
+    const etapa = page.locator('.etapa-bloco--aberta').last();
+
+    await etapa.getByLabel('Tipo').selectOption({ label: 'Prova Objetiva' });
+    await etapa.getByLabel('Caráter').selectOption({ label: 'Classificatória' });
+    await etapa.getByLabel('Nota máxima').fill('10');
+
+    const itens = etapa.getByRole('group', { name: 'Itens de avaliação', exact: true });
+    await itens.getByRole('button', { name: 'Acrescentar item' }).click();
+    const primeiro = itens.getByRole('group', { name: 'Item 1' });
+    await expect(primeiro.getByLabel('Rótulo')).toBeFocused();
+    await primeiro.getByLabel('Rótulo').fill('Clareza');
+    await primeiro.getByLabel('Pontuação máxima').fill('4');
+
+    await expect(itens.getByText('Soma dos itens: 4 de 10')).toBeVisible();
+    await expect(itens.getByText(/precisa ser igual à nota máxima/)).toBeVisible();
+
+    await itens.getByRole('button', { name: 'Acrescentar item' }).click();
+    const segundo = itens.getByRole('group', { name: 'Item 2' });
+    await segundo.getByLabel('Rótulo').fill('Método');
+    await segundo.getByLabel('Pontuação máxima').fill('6');
+
+    await expect(itens.getByText('Soma dos itens: 10 de 10')).toBeVisible();
+    await expect(itens.getByText(/precisa ser igual à nota máxima/)).toHaveCount(0);
+    await expect(itens.getByRole('button', { name: 'Remover o item Método' })).toBeVisible();
+
+    await expect(etapa.getByRole('group', { name: 'Escala de atendimento' })).toHaveCount(0);
+
+    await etapa
+      .getByRole('group', { name: 'Forma de avaliação' })
+      .getByText('Humana — banca')
+      .click();
+    await etapa.getByLabel('Passo do lançamento').fill('0,5');
+    const escala = etapa.getByRole('group', { name: 'Escala de atendimento', exact: true });
+    await escala.getByRole('button', { name: 'Usar a escala sugerida' }).click();
+
+    await expect(escala.getByRole('group', { name: 'Nível 1' }).getByLabel('Rótulo')).toHaveValue(
+      'Atendeu',
+    );
+    await expect(
+      escala.getByRole('group', { name: 'Nível 2' }).getByLabel('Percentual da pontuação'),
+    ).toHaveValue('50');
+    await expect(
+      escala.getByRole('group', { name: 'Nível 3' }).getByLabel('Percentual da pontuação'),
+    ).toHaveValue('0');
+    await expect(etapa.getByLabel('Passo do lançamento')).toHaveCount(0);
+
+    await itens.getByRole('button', { name: 'Remover o item Método' }).click();
+    await itens.getByRole('button', { name: 'Remover o item Clareza' }).click();
+    await expect(etapa.getByRole('group', { name: 'Escala de atendimento' })).toHaveCount(0);
+    await expect(etapa.getByLabel('Passo do lançamento')).toBeVisible();
   });
 
   /** Só ato que o catálogo marca como resultado recebe papel no ciclo recursal. */

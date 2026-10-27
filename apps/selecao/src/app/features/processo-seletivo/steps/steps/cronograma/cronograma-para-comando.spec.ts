@@ -103,6 +103,42 @@ describe('avaliação da etapa no ida-e-volta', () => {
     });
   });
 
+  it('relê os itens com o id e a escala em percentual, e regrava a fração', () => {
+    const etapa = lida({
+      notaMaxima: 10,
+      formaDeAvaliacao: 'HUMANA',
+      itensDeAvaliacao: [
+        { id: '01960000-0000-7000-0000-0000000000i1', rotulo: 'Clareza', pontuacaoMaxima: 4 },
+      ],
+      escalaDeAtendimento: [
+        { rotulo: 'Atendeu', fracao: 1 },
+        { rotulo: 'Parcial', fracao: 0.5 },
+      ],
+    });
+
+    expect(etapa.escalaDeAtendimento?.map((nivel) => nivel.percentual)).toEqual(['100', '50']);
+    expect(comoComandoDeEtapa(etapa)).toMatchObject({
+      itensDeAvaliacao: [
+        { id: '01960000-0000-7000-0000-0000000000i1', rotulo: 'Clareza', pontuacaoMaxima: 4 },
+      ],
+      escalaDeAtendimento: [
+        { rotulo: 'Atendeu', fracao: 1 },
+        { rotulo: 'Parcial', fracao: 0.5 },
+      ],
+    });
+  });
+
+  it('o item novo vai sem id', () => {
+    const etapa = {
+      ...lida({ notaMaxima: 10 }),
+      itensDeAvaliacao: [{ id: null, rotulo: ' Método ', pontuacaoMaxima: '6,5' }],
+    };
+
+    expect(comoComandoDeEtapa(etapa).itensDeAvaliacao).toEqual([
+      { id: null, rotulo: 'Método', pontuacaoMaxima: 6.5 },
+    ]);
+  });
+
   it('a etapa sem forma envia a forma nula', () => {
     expect(comoComandoDeEtapa(lida({}))).toMatchObject({ formaDeAvaliacao: null });
   });

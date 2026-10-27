@@ -117,6 +117,27 @@
                   [valor]="etapa.passoDoLancamento"
                 />
               }
+              @if (etapa.itensDeAvaliacao !== null) {
+                <ui-valor-em-consulta
+                  class="form-grid__full"
+                  rotulo="Itens de avaliação"
+                  seVazio="Nenhum item"
+                  [valor]="etapa.itensDeAvaliacao.linhas"
+                />
+                @if (etapa.itensDeAvaliacao.linhas.length > 0) {
+                  <ui-valor-em-consulta
+                    rotulo="Soma dos itens"
+                    [valor]="etapa.itensDeAvaliacao.soma"
+                  />
+                }
+              }
+              @if (etapa.escalaDeAtendimento !== null) {
+                <ui-valor-em-consulta
+                  class="form-grid__full"
+                  rotulo="Escala de atendimento"
+                  [valor]="etapa.escalaDeAtendimento"
+                />
+              }
               @if (etapa.notaDoEnem) {
                 <p class="form-grid__full field__hint">
                   A nota desta etapa é calculada pelo sistema a partir da nota do ENEM do candidato.
@@ -129,7 +150,10 @@
                   [valor]="etapa.janela"
                 />
               }
-              <ui-valor-em-consulta rotulo="Emite parecer individual" [valor]="etapa.parecerIndividual" />
+              <ui-valor-em-consulta
+                rotulo="Emite parecer individual"
+                [valor]="etapa.parecerIndividual"
+              />
               @if (!etapa.notaDoEnem) {
                 <ui-valor-em-consulta
                   class="form-grid__full"
@@ -374,7 +398,10 @@
                         [attr.id]="'cr-fim-' + item.indice"
                         formControlName="fim"
                         [attr.min]="
-                          pisoDeData(item.grupo.controls.fim.value, item.grupo.controls.inicio.value)
+                          pisoDeData(
+                            item.grupo.controls.fim.value,
+                            item.grupo.controls.inicio.value
+                          )
                         "
                         [attr.aria-describedby]="'cr-fuso-' + item.indice"
                       />
@@ -547,10 +574,14 @@
                             </div>
                             @let notaDoEnem = etapaDeNotaDoEnem(etapa);
                             @if (notaDoEnem) {
-                              <p class="form-grid__full field__hint" [attr.id]="'cr-etapa-enem-' + posicao">
-                                A nota desta etapa é calculada pelo sistema a partir da nota do ENEM do candidato, e
-                                não lançada. Por isso ela não tem banca, publicação nem janela própria: acontece na
-                                janela da fase e sempre compõe a nota final.
+                              <p
+                                class="form-grid__full field__hint"
+                                [attr.id]="'cr-etapa-enem-' + posicao"
+                              >
+                                A nota desta etapa é calculada pelo sistema a partir da nota do ENEM
+                                do candidato, e não lançada. Por isso ela não tem banca, publicação
+                                nem janela própria: acontece na janela da fase e sempre compõe a
+                                nota final.
                               </p>
                             }
                             <div class="form-field">
@@ -640,7 +671,9 @@
                                   formControlName="notaMaxima"
                                   [attr.aria-invalid]="recusaDaNotaMaxima ? 'true' : null"
                                   [attr.aria-describedby]="
-                                    recusaDaNotaMaxima ? 'cr-etapa-nota-maxima-erro-' + posicao : null
+                                    recusaDaNotaMaxima
+                                      ? 'cr-etapa-nota-maxima-erro-' + posicao
+                                      : null
                                   "
                                 />
                                 @if (recusaDaNotaMaxima) {
@@ -668,7 +701,9 @@
                                       type="radio"
                                       [attr.name]="'cr-etapa-forma-' + posicao"
                                       [value]="forma.valor"
-                                      [checked]="etapa.controls.formaDeAvaliacao.value === forma.valor"
+                                      [checked]="
+                                        etapa.controls.formaDeAvaliacao.value === forma.valor
+                                      "
                                       [disabled]="!edicaoLiberada()"
                                       [attr.aria-invalid]="recusaDaForma ? 'true' : null"
                                       (change)="escolherFormaDeAvaliacao(etapa, forma.valor)"
@@ -692,16 +727,23 @@
                                   recusaDaRegra ? 'cr-etapa-regra-erro-' + posicao : null
                                 "
                               >
-                                <legend class="field__label">Regra de consolidação das notas</legend>
-                                @for (regra of regrasDeConsolidacao(); track regra.codigo + regra.versao) {
+                                <legend class="field__label">
+                                  Regra de consolidação das notas
+                                </legend>
+                                @for (
+                                  regra of regrasDeConsolidacao();
+                                  track regra.codigo + regra.versao
+                                ) {
                                   <label class="radio">
                                     <input
                                       type="radio"
                                       [attr.name]="'cr-etapa-regra-' + posicao"
                                       [value]="regra.codigo"
                                       [checked]="
-                                        etapa.controls.regraConsolidacaoCodigo.value === regra.codigo &&
-                                        etapa.controls.regraConsolidacaoVersao.value === regra.versao
+                                        etapa.controls.regraConsolidacaoCodigo.value ===
+                                          regra.codigo &&
+                                        etapa.controls.regraConsolidacaoVersao.value ===
+                                          regra.versao
                                       "
                                       [disabled]="!edicaoLiberada()"
                                       [attr.aria-invalid]="recusaDaRegra ? 'true' : null"
@@ -711,7 +753,11 @@
                                           : null
                                       "
                                       (change)="
-                                        escolherRegraDeConsolidacao(etapa, regra.codigo, regra.versao)
+                                        escolherRegraDeConsolidacao(
+                                          etapa,
+                                          regra.codigo,
+                                          regra.versao
+                                        )
                                       "
                                     />
                                     <span class="radio__dot" aria-hidden="true"></span>
@@ -734,34 +780,45 @@
                                   </p>
                                 }
                               </fieldset>
-                              @let recusaDoPasso = recusaDoCampo(etapa, 'passoDoLancamento');
-                              <div class="form-field">
-                                <label class="label" [attr.for]="'cr-etapa-passo-' + posicao"
-                                  >Passo do lançamento</label
-                                >
-                                <input
-                                  class="input"
-                                  type="text"
-                                  inputmode="decimal"
-                                  [attr.id]="'cr-etapa-passo-' + posicao"
-                                  formControlName="passoDoLancamento"
-                                  [attr.aria-invalid]="recusaDoPasso ? 'true' : null"
-                                  [attr.aria-describedby]="
-                                    'cr-etapa-passo-ajuda-' +
-                                    posicao +
-                                    (recusaDoPasso ? ' cr-etapa-passo-erro-' + posicao : '')
-                                  "
-                                />
-                                <p class="field__hint" [id]="'cr-etapa-passo-ajuda-' + posicao">
-                                  Menor variação da nota lançada pelo avaliador, como 0,25. A nota
-                                  máxima precisa ser múltipla dele.
-                                </p>
-                                @if (recusaDoPasso) {
-                                  <p class="field__error" [id]="'cr-etapa-passo-erro-' + posicao">
-                                    {{ recusaDoPasso }}
+                              @if (!etapaUsaEscalaDeAtendimento(etapa)) {
+                                @let recusaDoPasso = recusaDoCampo(etapa, 'passoDoLancamento');
+                                <div class="form-field">
+                                  <label class="label" [attr.for]="'cr-etapa-passo-' + posicao"
+                                    >Passo do lançamento</label
+                                  >
+                                  <input
+                                    class="input"
+                                    type="text"
+                                    inputmode="decimal"
+                                    [attr.id]="'cr-etapa-passo-' + posicao"
+                                    formControlName="passoDoLancamento"
+                                    [attr.aria-invalid]="recusaDoPasso ? 'true' : null"
+                                    [attr.aria-describedby]="
+                                      'cr-etapa-passo-ajuda-' +
+                                      posicao +
+                                      (recusaDoPasso ? ' cr-etapa-passo-erro-' + posicao : '')
+                                    "
+                                  />
+                                  <p class="field__hint" [id]="'cr-etapa-passo-ajuda-' + posicao">
+                                    Menor variação da nota lançada pelo avaliador, como 0,25. A nota
+                                    máxima precisa ser múltipla dele.
                                   </p>
-                                }
-                              </div>
+                                  @if (recusaDoPasso) {
+                                    <p class="field__error" [id]="'cr-etapa-passo-erro-' + posicao">
+                                      {{ recusaDoPasso }}
+                                    </p>
+                                  }
+                                </div>
+                              }
+                            }
+                            @if (etapaDeclaraNotaMaxima(etapa)) {
+                              <sel-itens-de-avaliacao-da-etapa
+                                class="form-grid__full"
+                                [grupo]="etapa"
+                                [posicao]="posicao"
+                                [habilitado]="edicaoLiberada()"
+                                [recusas]="recusasDaEtapa(etapa)"
+                              />
                             }
                             <!--
                       O que a etapa publica. Mesmo desenho da fase um nível acima: só ato
@@ -785,7 +842,10 @@
                                       [attr.id]="'cr-etapa-ini-' + posicao"
                                       formControlName="inicio"
                                       [attr.min]="
-                                        pisoDeData(etapa.controls.inicio.value, item.grupo.controls.inicio.value)
+                                        pisoDeData(
+                                          etapa.controls.inicio.value,
+                                          item.grupo.controls.inicio.value
+                                        )
                                       "
                                       [attr.max]="item.grupo.controls.fim.value || null"
                                     />
@@ -811,8 +871,9 @@
                                   </div>
                                 </div>
                                 <p class="field__hint">
-                                  Em branco, a etapa acontece na janela da fase. Declare só quando ela
-                                  tem data própria — a prova e a entrevista não caem no mesmo dia.
+                                  Em branco, a etapa acontece na janela da fase. Declare só quando
+                                  ela tem data própria — a prova e a entrevista não caem no mesmo
+                                  dia.
                                 </p>
                               }
                               <label class="checkbox">
@@ -826,8 +887,8 @@
                               </label>
                               @if (notaDoEnem) {
                                 <p class="field__hint">
-                                  Opcional. Aqui o parecer é o espelho do cálculo, gerado pelo sistema. É dele que
-                                  corre o prazo do recurso.
+                                  Opcional. Aqui o parecer é o espelho do cálculo, gerado pelo
+                                  sistema. É dele que corre o prazo do recurso.
                                 </p>
                               } @else {
                                 <p class="field__hint">
@@ -926,7 +987,10 @@
                                   no mesmo ciclo do @for, e o select ainda não as conhece quando
                                   o valor é atribuído.
                                 -->
-                                            @for (ato of catalogos.atosVigentes(); track ato.codigo) {
+                                            @for (
+                                              ato of catalogos.atosVigentes();
+                                              track ato.codigo
+                                            ) {
                                               <option
                                                 [value]="ato.codigo"
                                                 [selected]="ato.codigo === produto.atoCodigo"
@@ -947,7 +1011,8 @@
                                             [attr.id]="'cr-etapa-papel-' + posicao + '-' + $index"
                                             [value]="produto.papel ?? ''"
                                             [disabled]="
-                                              !edicaoLiberada() || !atoEhResultado(produto.atoCodigo)
+                                              !edicaoLiberada() ||
+                                              !atoEhResultado(produto.atoCodigo)
                                             "
                                             (change)="
                                               escolherPapelDaEtapa(
@@ -1183,7 +1248,9 @@
                                           type="text"
                                           inputmode="decimal"
                                           [attr.id]="'cr-rec-susp1-val-' + posicao + '-' + $index"
-                                          [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                          [attr.aria-describedby]="
+                                            'cr-rec-susp-ajuda-' + posicao + '-' + $index
+                                          "
                                           [value]="recurso.suspensividadePrimeiraInstanciaValor"
                                           [disabled]="!edicaoLiberada()"
                                           (input)="
@@ -1205,7 +1272,9 @@
                                         <select
                                           class="select"
                                           [attr.id]="'cr-rec-susp1-un-' + posicao + '-' + $index"
-                                          [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                          [attr.aria-describedby]="
+                                            'cr-rec-susp-ajuda-' + posicao + '-' + $index
+                                          "
                                           [disabled]="!edicaoLiberada()"
                                           (change)="
                                             alterarRecursoDaEtapa(
@@ -1218,19 +1287,27 @@
                                         >
                                           <option
                                             value=""
-                                            [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === ''"
+                                            [selected]="
+                                              recurso.suspensividadePrimeiraInstanciaUnidade === ''
+                                            "
                                           >
                                             Sem suspensividade
                                           </option>
                                           <option
                                             value="diasUteis"
-                                            [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === 'diasUteis'"
+                                            [selected]="
+                                              recurso.suspensividadePrimeiraInstanciaUnidade ===
+                                              'diasUteis'
+                                            "
                                           >
                                             dias úteis
                                           </option>
                                           <option
                                             value="horas"
-                                            [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === 'horas'"
+                                            [selected]="
+                                              recurso.suspensividadePrimeiraInstanciaUnidade ===
+                                              'horas'
+                                            "
                                           >
                                             horas
                                           </option>
@@ -1249,21 +1326,40 @@
                                         [class.is-error]="recurso.admiteInstanciaSuperior === null"
                                         [attr.aria-describedby]="
                                           recurso.admiteInstanciaSuperior === null
-                                            ? 'cr-rec-superior-erro-' + posicao + '-' + $index + ' cr-rec-superior-ajuda-' + posicao + '-' + $index
+                                            ? 'cr-rec-superior-erro-' +
+                                              posicao +
+                                              '-' +
+                                              $index +
+                                              ' cr-rec-superior-ajuda-' +
+                                              posicao +
+                                              '-' +
+                                              $index
                                             : 'cr-rec-superior-ajuda-' + posicao + '-' + $index
                                         "
                                       >
-                                        <legend class="field__label is-required">Admite recurso em instância superior?</legend>
+                                        <legend class="field__label is-required">
+                                          Admite recurso em instância superior?
+                                        </legend>
                                         <label class="radio">
                                           <input
                                             type="radio"
-                                            [attr.name]="'admiteInstanciaSuperior-' + posicao + '-' + $index"
-                                            [attr.formcontrolname]="'admiteInstanciaSuperior-' + posicao + '-' + $index"
+                                            [attr.name]="
+                                              'admiteInstanciaSuperior-' + posicao + '-' + $index
+                                            "
+                                            [attr.formcontrolname]="
+                                              'admiteInstanciaSuperior-' + posicao + '-' + $index
+                                            "
                                             [value]="true"
                                             [checked]="recurso.admiteInstanciaSuperior === true"
                                             [disabled]="!edicaoLiberada()"
-                                            [attr.aria-invalid]="recurso.admiteInstanciaSuperior === null ? 'true' : null"
-                                            (change)="declararInstanciaSuperiorDaEtapa(etapa, $index, true)"
+                                            [attr.aria-invalid]="
+                                              recurso.admiteInstanciaSuperior === null
+                                                ? 'true'
+                                                : null
+                                            "
+                                            (change)="
+                                              declararInstanciaSuperiorDaEtapa(etapa, $index, true)
+                                            "
                                           />
                                           <span class="radio__dot" aria-hidden="true"></span>
                                           Sim
@@ -1271,32 +1367,53 @@
                                         <label class="radio">
                                           <input
                                             type="radio"
-                                            [attr.name]="'admiteInstanciaSuperior-' + posicao + '-' + $index"
-                                            [attr.formcontrolname]="'admiteInstanciaSuperior-' + posicao + '-' + $index"
+                                            [attr.name]="
+                                              'admiteInstanciaSuperior-' + posicao + '-' + $index
+                                            "
+                                            [attr.formcontrolname]="
+                                              'admiteInstanciaSuperior-' + posicao + '-' + $index
+                                            "
                                             [value]="false"
                                             [checked]="recurso.admiteInstanciaSuperior === false"
                                             [disabled]="!edicaoLiberada()"
-                                            [attr.aria-invalid]="recurso.admiteInstanciaSuperior === null ? 'true' : null"
-                                            (change)="declararInstanciaSuperiorDaEtapa(etapa, $index, false)"
+                                            [attr.aria-invalid]="
+                                              recurso.admiteInstanciaSuperior === null
+                                                ? 'true'
+                                                : null
+                                            "
+                                            (change)="
+                                              declararInstanciaSuperiorDaEtapa(etapa, $index, false)
+                                            "
                                           />
                                           <span class="radio__dot" aria-hidden="true"></span>
                                           Não
                                         </label>
-                                        <span class="field__hint" [attr.id]="'cr-rec-superior-ajuda-' + posicao + '-' + $index">
-                                          Não quando a decisão da banca recursal é final; Sim quando cabe recurso a outra instância,
-                                          julgada fora do sistema.
+                                        <span
+                                          class="field__hint"
+                                          [attr.id]="
+                                            'cr-rec-superior-ajuda-' + posicao + '-' + $index
+                                          "
+                                        >
+                                          Não quando a decisão da banca recursal é final; Sim quando
+                                          cabe recurso a outra instância, julgada fora do sistema.
                                         </span>
                                         @if (recurso.admiteInstanciaSuperior === null) {
-                                          <span class="field__erro" [attr.id]="'cr-rec-superior-erro-' + posicao + '-' + $index">{{
-                                            mensagemDaInstanciaSuperiorEmAberto
-                                          }}</span>
+                                          <span
+                                            class="field__erro"
+                                            [attr.id]="
+                                              'cr-rec-superior-erro-' + posicao + '-' + $index
+                                            "
+                                            >{{ mensagemDaInstanciaSuperiorEmAberto }}</span
+                                          >
                                         }
                                       </fieldset>
                                       @if (recurso.admiteInstanciaSuperior === true) {
                                         <div class="form-field">
                                           <label
                                             class="label"
-                                            [attr.for]="'cr-rec-susp2-val-' + posicao + '-' + $index"
+                                            [attr.for]="
+                                              'cr-rec-susp2-val-' + posicao + '-' + $index
+                                            "
                                             >Suspensividade da 2ª instância — prazo</label
                                           >
                                           <input
@@ -1304,7 +1421,9 @@
                                             type="text"
                                             inputmode="decimal"
                                             [attr.id]="'cr-rec-susp2-val-' + posicao + '-' + $index"
-                                            [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                            [attr.aria-describedby]="
+                                              'cr-rec-susp-ajuda-' + posicao + '-' + $index
+                                            "
                                             [value]="recurso.suspensividadeSegundaInstanciaValor"
                                             [disabled]="!edicaoLiberada()"
                                             (input)="
@@ -1326,7 +1445,9 @@
                                           <select
                                             class="select"
                                             [attr.id]="'cr-rec-susp2-un-' + posicao + '-' + $index"
-                                            [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + $index"
+                                            [attr.aria-describedby]="
+                                              'cr-rec-susp-ajuda-' + posicao + '-' + $index
+                                            "
                                             [disabled]="!edicaoLiberada()"
                                             (change)="
                                               alterarRecursoDaEtapa(
@@ -1339,19 +1460,27 @@
                                           >
                                             <option
                                               value=""
-                                              [selected]="recurso.suspensividadeSegundaInstanciaUnidade === ''"
+                                              [selected]="
+                                                recurso.suspensividadeSegundaInstanciaUnidade === ''
+                                              "
                                             >
                                               Sem suspensividade
                                             </option>
                                             <option
                                               value="diasUteis"
-                                              [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'diasUteis'"
+                                              [selected]="
+                                                recurso.suspensividadeSegundaInstanciaUnidade ===
+                                                'diasUteis'
+                                              "
                                             >
                                               dias úteis
                                             </option>
                                             <option
                                               value="horas"
-                                              [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'horas'"
+                                              [selected]="
+                                                recurso.suspensividadeSegundaInstanciaUnidade ===
+                                                'horas'
+                                              "
                                             >
                                               horas
                                             </option>

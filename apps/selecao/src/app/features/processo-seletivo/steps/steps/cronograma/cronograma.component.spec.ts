@@ -893,7 +893,9 @@ describe('CronogramaStepComponent', () => {
       expect(campo?.getAttribute('aria-invalid')).toBe('true');
       expect(campo?.getAttribute('aria-describedby')).toBe('cr-etapa-nota-maxima-erro-0');
 
-      expect(nativo.querySelector('#cr-etapa-nota-erro-0')?.textContent).toContain('não pode passar');
+      expect(nativo.querySelector('#cr-etapa-nota-erro-0')?.textContent).toContain(
+        'não pode passar',
+      );
 
       // A recusa da nota mínima se resolve mudando a máxima, e vice-versa: editar um limpa os dois.
       nativo.querySelector('#cr-etapa-nota-0')?.dispatchEvent(new Event('input'));
@@ -998,12 +1000,249 @@ describe('CronogramaStepComponent', () => {
       detectar();
 
       const passo = nativo.querySelector('#cr-etapa-passo-0');
-      expect(nativo.querySelector('#cr-etapa-passo-erro-0')?.textContent).toContain('maior que zero');
+      expect(nativo.querySelector('#cr-etapa-passo-erro-0')?.textContent).toContain(
+        'maior que zero',
+      );
       expect(passo?.getAttribute('aria-describedby')).toContain('cr-etapa-passo-erro-0');
       expect(nativo.querySelector('#cr-etapa-regra-erro-0')).not.toBeNull();
 
       escolher('input[name="cr-etapa-forma-0"][value="OBJETIVA"]');
       expect(nativo.querySelector('#cr-etapa-regra-erro-0')).toBeNull();
+    });
+  });
+
+  describe('itens de avaliação e escala de atendimento da etapa', () => {
+    function etapaComNota(): FormGroup<EtapaForm> {
+      comFases(ID_AVALIACAO);
+      comEtapasEmFases(['AVALIACAO']);
+      componente.alternarFase(0);
+      componente.alternarEtapa(0);
+      const etapa = componente.etapas.at(0);
+      componente.escolherCarater(etapa, 'classificatoria');
+      etapa.controls.notaMaxima.setValue('10');
+      detectar();
+      return etapa;
+    }
+
+    function clicar(seletor: string): void {
+      nativo.querySelector<HTMLElement>(seletor)?.click();
+      detectar();
+    }
+
+    function digitar(seletor: string, valor: string): void {
+      const campo = nativo.querySelector<HTMLInputElement>(seletor);
+      if (campo === null) throw new Error(`campo ausente: ${seletor}`);
+      campo.value = valor;
+      campo.dispatchEvent(new Event('input'));
+      detectar();
+    }
+
+    function corpoGravado(): Promise<Record<string, unknown>[]> {
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+      return proximoPasso().then(() => {
+        void gravacao;
+        return controller.expectOne(ROTA_ETAPAS).request.body as Record<string, unknown>[];
+      });
+    }
+
+    it('acrescenta e remove itens, mostra a soma contra a nota máxima e leva o foco ao item novo', async () => {
+      etapaComNota();
+      clicar('#cr-etapa-0-item-acrescentar');
+      digitar('#cr-etapa-0-item-0-rotulo', 'Clareza');
+      digitar('#cr-etapa-0-item-0-pontuacao', '4');
+
+      expect(nativo.querySelector('#cr-etapa-0-soma')?.textContent).toContain(
+        'Soma dos itens: 4 de 10',
+      );
+      expect(nativo.querySelector('#cr-etapa-0-soma')?.getAttribute('aria-live')).toBe('polite');
+      expect(nativo.querySelector('#cr-etapa-0-soma-erro')).not.toBeNull();
+
+      clicar('#cr-etapa-0-item-acrescentar');
+      await proximoPasso();
+      expect(document.activeElement?.id).toBe('cr-etapa-0-item-1-rotulo');
+      digitar('#cr-etapa-0-item-1-rotulo', 'Método');
+      digitar('#cr-etapa-0-item-1-pontuacao', '6');
+
+      expect(nativo.querySelector('#cr-etapa-0-soma')?.textContent).toContain(
+        'Soma dos itens: 10 de 10',
+      );
+      expect(nativo.querySelector('#cr-etapa-0-soma-erro')).toBeNull();
+      expect(
+        nativo.querySelectorAll('fieldset[data-teste="item-de-avaliacao"] legend')[1]?.textContent,
+      ).toContain('Item 2');
+      expect(nativo.querySelector('button[aria-label="Remover o item Método"]')).not.toBeNull();
+
+      clicar('button[aria-label="Remover o item Método"]');
+      expect(nativo.querySelectorAll('fieldset[data-teste="item-de-avaliacao"]')).toHaveLength(1);
+    });
+
+    it('atualiza o texto da soma quando só a nota máxima muda', () => {
+      const etapa = etapaComNota();
+      clicar('#cr-etapa-0-item-acrescentar');
+      digitar('#cr-etapa-0-item-0-pontuacao', '4');
+      expect(nativo.querySelector('#cr-etapa-0-soma')?.textContent).toContain('4 de 10');
+
+      etapa.controls.notaMaxima.setValue('12');
+      detectar();
+
+      expect(nativo.querySelector('#cr-etapa-0-soma')?.textContent).toContain('4 de 12');
+    });
+
+    it('ignora a recusa do servidor que não aponta campo da etapa', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      const etapa = etapaComNota();
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      controller.expectOne(ROTA_ETAPAS).flush(
+        {
+          type: 'about:blank',
+          title: 'Validação',
+          status: 422,
+          code: 'uniplus.validacao',
+          traceId: '00000000000000000000000000000011',
+          errors: [
+            {
+              field: 'etapas[0]',
+              code: 'uniplus.selecao.etapa_processo.escala_sem_itens',
+              message: 'x',
+            },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+      );
+      await gravacao;
+
+      expect(componente.recusasDaEtapa(etapa).size).toBe(0);
+    });
+
+    it('mantém o id do item que veio da API ao editar e o envia, e o item novo vai sem id', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      const etapa = etapaComNota();
+      const idDoItem = '01960000-0000-7000-0000-0000000000a1';
+      etapa.controls.itensDeAvaliacao.setValue([
+        { id: idDoItem, rotulo: 'Clareza', pontuacaoMaxima: '4' },
+      ]);
+      detectar();
+
+      digitar('#cr-etapa-0-item-0-rotulo', 'Clareza e coesão');
+      clicar('#cr-etapa-0-item-acrescentar');
+      digitar('#cr-etapa-0-item-1-rotulo', 'Método');
+      digitar('#cr-etapa-0-item-1-pontuacao', '6');
+
+      const corpo = await corpoGravado();
+      expect(corpo[0]['itensDeAvaliacao']).toEqual([
+        { id: idDoItem, rotulo: 'Clareza e coesão', pontuacaoMaxima: 4 },
+        { id: null, rotulo: 'Método', pontuacaoMaxima: 6 },
+      ]);
+    });
+
+    it('oferece a escala só na forma humana e com itens, e com ela o passo some e vai nulo', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      const etapa = etapaComNota();
+      clicar('input[name="cr-etapa-forma-0"][value="HUMANA"]');
+      etapa.controls.passoDoLancamento.setValue('0,5');
+      detectar();
+      expect(nativo.querySelector('#cr-etapa-0-nivel-acrescentar')).toBeNull();
+
+      clicar('#cr-etapa-0-item-acrescentar');
+      digitar('#cr-etapa-0-item-0-rotulo', 'Clareza');
+      digitar('#cr-etapa-0-item-0-pontuacao', '10');
+      expect(nativo.querySelector('#cr-etapa-passo-0')).not.toBeNull();
+
+      clicar('#cr-etapa-0-nivel-acrescentar + button');
+      expect(
+        etapa.controls.escalaDeAtendimento.value.map((n) => `${n.rotulo} ${n.percentual}`),
+      ).toEqual(['Atendeu 100', 'Atendeu parcialmente 50', 'Não atendeu 0']);
+      expect(nativo.querySelector('#cr-etapa-passo-0')).toBeNull();
+      expect(etapa.controls.passoDoLancamento.value).toBe('');
+
+      const corpo = await corpoGravado();
+      expect(corpo[0]).toMatchObject({
+        passoDoLancamento: null,
+        escalaDeAtendimento: [
+          { rotulo: 'Atendeu', fracao: 1 },
+          { rotulo: 'Atendeu parcialmente', fracao: 0.5 },
+          { rotulo: 'Não atendeu', fracao: 0 },
+        ],
+      });
+    });
+
+    it('a forma objetiva apaga a escala e remover o último item também', () => {
+      const etapa = etapaComNota();
+      clicar('input[name="cr-etapa-forma-0"][value="HUMANA"]');
+      clicar('#cr-etapa-0-item-acrescentar');
+      digitar('#cr-etapa-0-item-0-rotulo', 'Clareza');
+      clicar('#cr-etapa-0-nivel-acrescentar + button');
+
+      clicar('input[name="cr-etapa-forma-0"][value="OBJETIVA"]');
+      expect(etapa.controls.escalaDeAtendimento.value).toEqual([]);
+      expect(etapa.controls.itensDeAvaliacao.value).toHaveLength(1);
+
+      clicar('input[name="cr-etapa-forma-0"][value="HUMANA"]');
+      clicar('#cr-etapa-0-nivel-acrescentar + button');
+      clicar('button[aria-label="Remover o item Clareza"]');
+      expect(etapa.controls.escalaDeAtendimento.value).toEqual([]);
+    });
+
+    it('a etapa sem nota ou do ENEM não leva itens nem escala', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      const etapa = etapaComNota();
+      clicar('#cr-etapa-0-item-acrescentar');
+      digitar('#cr-etapa-0-item-0-rotulo', 'Clareza');
+      digitar('#cr-etapa-0-item-0-pontuacao', '10');
+
+      componente.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
+      detectar();
+
+      expect(nativo.querySelector('#cr-etapa-0-item-acrescentar')).toBeNull();
+      expect(etapa.controls.itensDeAvaliacao.value).toEqual([]);
+      const corpo = await corpoGravado();
+      expect(corpo[0]).toMatchObject({ itensDeAvaliacao: [], escalaDeAtendimento: [] });
+    });
+
+    it('mostra a recusa do servidor sob o campo do item e a retira quando o item muda', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      etapaComNota();
+      clicar('input[name="cr-etapa-forma-0"][value="HUMANA"]');
+      digitar('#cr-etapa-passo-0', '0,5');
+      clicar('#cr-etapa-0-item-acrescentar');
+      digitar('#cr-etapa-0-item-0-rotulo', 'Clareza');
+      digitar('#cr-etapa-0-item-0-pontuacao', '10,3');
+
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      controller.expectOne(ROTA_ETAPAS).flush(
+        {
+          type: 'about:blank',
+          title: 'Validação',
+          status: 422,
+          code: 'uniplus.validacao',
+          traceId: '00000000000000000000000000000010',
+          errors: [
+            {
+              field: 'etapas[0].itensDeAvaliacao[0].pontuacaoMaxima',
+              code: 'uniplus.selecao.item_de_avaliacao.pontuacao_fora_do_passo',
+              message: 'x',
+            },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+      );
+      await gravacao;
+      detectar();
+
+      const campo = nativo.querySelector('#cr-etapa-0-item-0-pontuacao');
+      expect(nativo.querySelector('#cr-etapa-0-item-0-pontuacao-erro')?.textContent).toContain(
+        'múltipla do passo',
+      );
+      expect(campo?.getAttribute('aria-invalid')).toBe('true');
+      expect(campo?.getAttribute('aria-describedby')).toBe('cr-etapa-0-item-0-pontuacao-erro');
+
+      digitar('#cr-etapa-0-item-0-pontuacao', '10,5');
+      expect(nativo.querySelector('#cr-etapa-0-item-0-pontuacao-erro')).toBeNull();
     });
   });
 
@@ -1654,14 +1893,18 @@ describe('CronogramaStepComponent', () => {
 
     expect(componente.etapasOrfas().map((orfa) => orfa.rotulo)).toEqual(['Prova objetiva']);
     expect(nativo.textContent ?? '').toContain('Etapas sem a fase que as agrupa');
-    expect(componente.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(true);
+    expect(componente.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(
+      true,
+    );
 
     componente.removerTodasAsEtapas();
     detectar();
 
     expect(componente.etapasOrfas()).toEqual([]);
     expect(store.draft().cronograma.etapas).toEqual([]);
-    expect(componente.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(false);
+    expect(componente.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(
+      false,
+    );
   });
 
   /**
@@ -1990,9 +2233,7 @@ describe('CronogramaStepComponent', () => {
   it('não pré-seleciona nenhuma convenção de contagem de prazo', () => {
     expect(componente.formulario.controls.algoritmoContagemCodigo.value).toBe('');
     expect(componente.formulario.controls.algoritmoContagemVersao.value).toBe('');
-    expect(
-      nativo.querySelector<HTMLSelectElement>('#cr-algoritmo-contagem')?.value ?? '',
-    ).toBe('');
+    expect(nativo.querySelector<HTMLSelectElement>('#cr-algoritmo-contagem')?.value ?? '').toBe('');
   });
 
   /**
@@ -2272,13 +2513,42 @@ describe('CronogramaStepComponent', () => {
       modeloOrigemId: null,
       modeloOrigemCodigo: null,
       etapas: [
-        { codigo: 'DADOS_BASICOS', ordem: 0, tipo: 'SECAO', bloco: null, titulo: 'Dados básicos', descricao: null, aviso: null, exibicao: null },
-        { codigo: 'REVISAO_E_ACEITE', ordem: 1, tipo: 'BLOCO', bloco: 'REVISAO_E_ACEITE', titulo: 'Revisão e aceite', descricao: null, aviso: null, exibicao: null },
+        {
+          codigo: 'DADOS_BASICOS',
+          ordem: 0,
+          tipo: 'SECAO',
+          bloco: null,
+          titulo: 'Dados básicos',
+          descricao: null,
+          aviso: null,
+          exibicao: null,
+        },
+        {
+          codigo: 'REVISAO_E_ACEITE',
+          ordem: 1,
+          tipo: 'BLOCO',
+          bloco: 'REVISAO_E_ACEITE',
+          titulo: 'Revisão e aceite',
+          descricao: null,
+          aviso: null,
+          exibicao: null,
+        },
       ],
       fatosColetados: [
         {
-          fatoCodigo: 'NOME', ordem: 0, rotulo: 'Nome', tipoRenderizacao: 'TEXTO', obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-          precondicao: null, opcoes: null, etapaCodigo: 'DADOS_BASICOS', formato: null, ajuda: null, pedirConfirmacao: false, restricoes: [], impedimento: null,
+          fatoCodigo: 'NOME',
+          ordem: 0,
+          rotulo: 'Nome',
+          tipoRenderizacao: 'TEXTO',
+          obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+          precondicao: null,
+          opcoes: null,
+          etapaCodigo: 'DADOS_BASICOS',
+          formato: null,
+          ajuda: null,
+          pedirConfirmacao: false,
+          restricoes: [],
+          impedimento: null,
         },
       ],
       termos: [],
@@ -2286,11 +2556,20 @@ describe('CronogramaStepComponent', () => {
     };
 
     beforeEach(() => {
-      store.patchObjectSection('identificacao', { origemCandidatos: OrigemCandidatos.inscricaoPropria });
+      store.patchObjectSection('identificacao', {
+        origemCandidatos: OrigemCandidatos.inscricaoPropria,
+      });
       TestBed.inject(CatalogosDoCronogramaService).fatos.set([
         {
-          codigo: 'CONCORRER_PCD', nome: 'Concorrer na reserva para pessoa com deficiência', dominio: 'BOOLEANO', origem: 'DECLARADO',
-          cardinalidade: 'UNIVALORADO', binding: 'CAMPO_INSCRICAO:CONCORRER_PCD', escopo: 'CANDIDATO', fonteValores: null, ativo: true,
+          codigo: 'CONCORRER_PCD',
+          nome: 'Concorrer na reserva para pessoa com deficiência',
+          dominio: 'BOOLEANO',
+          origem: 'DECLARADO',
+          cardinalidade: 'UNIVALORADO',
+          binding: 'CAMPO_INSCRICAO:CONCORRER_PCD',
+          escopo: 'CANDIDATO',
+          fonteValores: null,
+          ativo: true,
           valoresDominio: null,
         } as unknown as FatoCandidatoView,
       ]);
@@ -2298,7 +2577,11 @@ describe('CronogramaStepComponent', () => {
 
     const gravarExigencias = (): Promise<{ valid: boolean; messages?: string[] }> =>
       (
-        componente as unknown as { gravarExigenciasDocumentais(processoId: string): Promise<{ valid: boolean; messages?: string[] }> }
+        componente as unknown as {
+          gravarExigenciasDocumentais(
+            processoId: string,
+          ): Promise<{ valid: boolean; messages?: string[] }>;
+        }
       ).gravarExigenciasDocumentais(PROCESSO_ID);
 
     it('põe a pergunta das regras congeladas no processo com inscrição própria, sem exigência que recorte', async () => {
@@ -2312,10 +2595,16 @@ describe('CronogramaStepComponent', () => {
       });
       await proximoPasso();
 
-      controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO).flush(null, { status: 204, statusText: 'No Content' });
+      controller
+        .expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO)
+        .flush(null, { status: 204, statusText: 'No Content' });
       await proximoPasso();
-      const itens = controller.expectOne((r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`);
-      expect(itens.request.body.itens.map((i: { fatoCodigo: string }) => i.fatoCodigo)).toEqual(['CONCORRER_PCD']);
+      const itens = controller.expectOne(
+        (r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`,
+      );
+      expect(itens.request.body.itens.map((i: { fatoCodigo: string }) => i.fatoCodigo)).toEqual([
+        'CONCORRER_PCD',
+      ]);
       itens.flush(null, { status: 204, statusText: 'No Content' });
       await proximoPasso();
       controller.match((r) => r.method === 'GET' && r.url === ROTA_PROCESSO);
@@ -2328,9 +2617,12 @@ describe('CronogramaStepComponent', () => {
 
     it('sem fase de inscrição, grava o cronograma e deixa as perguntas esperarem pela fase', async () => {
       const gravacao = gravarExigencias();
-      controller
-        .expectOne(ROTA_PROCESSO)
-        .flush({ ...PROCESSO_COM_ETAPA_GRAVADA, formularios: [], distribuicaoVagas: DISTRIBUICAO, regrasDerivacao: [] });
+      controller.expectOne(ROTA_PROCESSO).flush({
+        ...PROCESSO_COM_ETAPA_GRAVADA,
+        formularios: [],
+        distribuicaoVagas: DISTRIBUICAO,
+        regrasDerivacao: [],
+      });
       await proximoPasso();
 
       controller.expectOne(ROTA_DOCUMENTOS).flush(null, { status: 204, statusText: 'No Content' });
@@ -2393,14 +2685,34 @@ describe('CronogramaStepComponent', () => {
     it('acusa o gatilho que cita dado conhecido só depois da fase da exigência, com o que fazer', () => {
       TestBed.inject(CatalogosDoCronogramaService).fatos.set([
         {
-          codigo: 'MODALIDADE_CONVOCACAO', nome: 'Modalidade da convocação', dominio: 'CATEGORICO', origem: 'DERIVADO',
-          cardinalidade: 'ESCALAR', binding: 'CLASSIFICACAO:MODALIDADE_CONVOCACAO', escopo: 'CANDIDATO', fonteValores: 'MODALIDADE',
-          ativo: true, valoresDominio: null, pontoResolucao: 'RESULTADO_FINAL',
+          codigo: 'MODALIDADE_CONVOCACAO',
+          nome: 'Modalidade da convocação',
+          dominio: 'CATEGORICO',
+          origem: 'DERIVADO',
+          cardinalidade: 'ESCALAR',
+          binding: 'CLASSIFICACAO:MODALIDADE_CONVOCACAO',
+          escopo: 'CANDIDATO',
+          fonteValores: 'MODALIDADE',
+          ativo: true,
+          valoresDominio: null,
+          pontoResolucao: 'RESULTADO_FINAL',
         } as unknown as FatoCandidatoView,
       ]);
       comExigenciaDeclarada(
-        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
-        { aplicabilidade: 'CONDICIONAL', condicoes: [{ clausula: 1, fato: 'MODALIDADE_CONVOCACAO', operador: 'IGUAL', valor: '"AC"' }] },
+        [
+          {
+            referencia: 'Lei 12.711/2012',
+            abrangencia: 'FEDERAL',
+            status: 'RESOLVIDO',
+            observacao: '',
+          },
+        ],
+        {
+          aplicabilidade: 'CONDICIONAL',
+          condicoes: [
+            { clausula: 1, fato: 'MODALIDADE_CONVOCACAO', operador: 'IGUAL', valor: '"AC"' },
+          ],
+        },
       );
       comFases(ID_AVALIACAO, ID_RESULTADO);
 
@@ -2416,7 +2728,14 @@ describe('CronogramaStepComponent', () => {
      * saiu do formulário depois de escolhido derrubaria a gravação da árvore inteira.
      */
     it('acusa a repetição por grupo que nenhum formulário tem, com o que fazer', () => {
-      comExigenciaDeclarada([{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }]);
+      comExigenciaDeclarada([
+        {
+          referencia: 'Lei 12.711/2012',
+          abrangencia: 'FEDERAL',
+          status: 'RESOLVIDO',
+          observacao: '',
+        },
+      ]);
       const documentos = store.draft().documentos;
       store.patchSection('documentos', {
         ...documentos,
@@ -2425,22 +2744,34 @@ describe('CronogramaStepComponent', () => {
       detectar();
 
       expect(componente.problemas()).toContainEqual(
-        expect.stringContaining('Nenhum formulário do processo tem mais o grupo “FAMILIA”, pelo qual o documento se repete.'),
+        expect.stringContaining(
+          'Nenhum formulário do processo tem mais o grupo “FAMILIA”, pelo qual o documento se repete.',
+        ),
       );
     });
 
     it('diz o que fazer quando o servidor recusa o gatilho pela fase', async () => {
-      comExigenciaDeclarada([{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }]);
+      comExigenciaDeclarada([
+        {
+          referencia: 'Lei 12.711/2012',
+          abrangencia: 'FEDERAL',
+          status: 'RESOLVIDO',
+          observacao: '',
+        },
+      ]);
 
       const gravacao = (
-        componente as unknown as { gravarExigenciasDocumentais(processoId: string): Promise<{ messages?: string[] }> }
+        componente as unknown as {
+          gravarExigenciasDocumentais(processoId: string): Promise<{ messages?: string[] }>;
+        }
       ).gravarExigenciasDocumentais(PROCESSO_ID);
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
       await proximoPasso();
       controller.expectOne(ROTA_DOCUMENTOS).flush(
         {
           type: 'about:blank',
-          title: 'O fato citado na condição de gatilho só é conhecido numa fase posterior à fase em que o documento é exigido',
+          title:
+            'O fato citado na condição de gatilho só é conhecido numa fase posterior à fase em que o documento é exigido',
           status: 422,
           code: 'uniplus.selecao.documento_exigido.fato_resolvido_em_fase_posterior',
         },
@@ -2455,20 +2786,51 @@ describe('CronogramaStepComponent', () => {
     it('não põe na inscrição o fato que outra finalidade do rascunho, ainda não gravada, já coleta', async () => {
       TestBed.inject(CatalogosDoCronogramaService).fatos.set([
         {
-          codigo: 'RENDA_FAMILIAR', nome: 'Renda familiar', dominio: 'NUMERICO', origem: 'DECLARADO', cardinalidade: 'UNIVALORADO',
-          binding: 'CAMPO_FORMULARIO:RENDA_FAMILIAR', escopo: 'CANDIDATO', fonteValores: null, ativo: true, valoresDominio: null,
+          codigo: 'RENDA_FAMILIAR',
+          nome: 'Renda familiar',
+          dominio: 'NUMERICO',
+          origem: 'DECLARADO',
+          cardinalidade: 'UNIVALORADO',
+          binding: 'CAMPO_FORMULARIO:RENDA_FAMILIAR',
+          escopo: 'CANDIDATO',
+          fonteValores: null,
+          ativo: true,
+          valoresDominio: null,
         } as unknown as FatoCandidatoView,
       ]);
       comExigenciaDeclarada(
-        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
-        { aplicabilidade: 'CONDICIONAL', condicoes: [{ clausula: 0, ordem: 0, fato: 'RENDA_FAMILIAR', operador: 'MENOR_QUE', valor: '1500' }] },
+        [
+          {
+            referencia: 'Lei 12.711/2012',
+            abrangencia: 'FEDERAL',
+            status: 'RESOLVIDO',
+            observacao: '',
+          },
+        ],
+        {
+          aplicabilidade: 'CONDICIONAL',
+          condicoes: [
+            { clausula: 0, ordem: 0, fato: 'RENDA_FAMILIAR', operador: 'MENOR_QUE', valor: '1500' },
+          ],
+        },
       );
-      const habilitacao = { ...conteudoInicial(), itens: [{ fatoCodigo: 'RENDA_FAMILIAR', ordem: 0, etapaCodigo: null } as never] };
-      store.patchObjectSection('formulario', { outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: habilitacao }] });
+      const habilitacao = {
+        ...conteudoInicial(),
+        itens: [{ fatoCodigo: 'RENDA_FAMILIAR', ordem: 0, etapaCodigo: null } as never],
+      };
+      store.patchObjectSection('formulario', {
+        outrasFinalidades: [
+          { finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: habilitacao },
+        ],
+      });
 
       const resultado = await TestBed.inject(CamposPressupostosService).garantirCampos(
         PROCESSO_ID,
-        { formularios: [], cronogramaFases: [], regrasDerivacao: [] } as unknown as ProcessoSeletivoDto,
+        {
+          formularios: [],
+          cronogramaFases: [],
+          regrasDerivacao: [],
+        } as unknown as ProcessoSeletivoDto,
         new Set(['RENDA_FAMILIAR']),
       );
 
@@ -2500,16 +2862,32 @@ describe('CronogramaStepComponent', () => {
       ]);
 
       comExigenciaDeclarada(
-        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        [
+          {
+            referencia: 'Lei 12.711/2012',
+            abrangencia: 'FEDERAL',
+            status: 'RESOLVIDO',
+            observacao: '',
+          },
+        ],
         {
           aplicabilidade: 'CONDICIONAL',
-          condicoes: [{ clausula: 0, ordem: 0, fato: 'RENDA_FAMILIAR', operador: 'MENOR_QUE', valor: '1500' }],
+          condicoes: [
+            { clausula: 0, ordem: 0, fato: 'RENDA_FAMILIAR', operador: 'MENOR_QUE', valor: '1500' },
+          ],
         },
       );
 
       const FASE = { id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true };
       const etapa = (codigo: string, ordem: number, bloco: string | null = null) => ({
-        codigo, ordem, tipo: bloco === null ? 'SECAO' : 'BLOCO', bloco, titulo: codigo, descricao: null, aviso: null, exibicao: null,
+        codigo,
+        ordem,
+        tipo: bloco === null ? 'SECAO' : 'BLOCO',
+        bloco,
+        titulo: codigo,
+        descricao: null,
+        aviso: null,
+        exibicao: null,
       });
       const criado = {
         finalidade: 'INSCRICAO',
@@ -2517,11 +2895,26 @@ describe('CronogramaStepComponent', () => {
         titulo: null,
         modeloOrigemId: null,
         modeloOrigemCodigo: null,
-        etapas: [etapa('DADOS_BASICOS', 0), etapa('OUTROS_DADOS_EXIGIDOS', 1), etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE')],
+        etapas: [
+          etapa('DADOS_BASICOS', 0),
+          etapa('OUTROS_DADOS_EXIGIDOS', 1),
+          etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
+        ],
         fatosColetados: [
           {
-            fatoCodigo: 'NOME', ordem: 0, rotulo: 'Nome', tipoRenderizacao: 'TEXTO', obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-            precondicao: null, opcoes: null, etapaCodigo: 'DADOS_BASICOS', formato: null, ajuda: null, pedirConfirmacao: false, restricoes: [], impedimento: null,
+            fatoCodigo: 'NOME',
+            ordem: 0,
+            rotulo: 'Nome',
+            tipoRenderizacao: 'TEXTO',
+            obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+            precondicao: null,
+            opcoes: null,
+            etapaCodigo: 'DADOS_BASICOS',
+            formato: null,
+            ajuda: null,
+            pedirConfirmacao: false,
+            restricoes: [],
+            impedimento: null,
           },
         ],
         termos: [],
@@ -2531,32 +2924,60 @@ describe('CronogramaStepComponent', () => {
 
       const garantir = TestBed.inject(CamposPressupostosService).garantirCampos(
         PROCESSO_ID,
-        { formularios: [], cronogramaFases: [FASE], regrasDerivacao: [] } as unknown as ProcessoSeletivoDto,
+        {
+          formularios: [],
+          cronogramaFases: [FASE],
+          regrasDerivacao: [],
+        } as unknown as ProcessoSeletivoDto,
         new Set(['RENDA_FAMILIAR']),
       );
 
       const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO);
       expect(cabecalho.request.body).toMatchObject({ faseId: FASE.id });
-      expect(cabecalho.request.body.etapas.map((e: { codigo: string }) => e.codigo)).toEqual(['OUTROS_DADOS_EXIGIDOS', 'REVISAO_E_ACEITE']);
+      expect(cabecalho.request.body.etapas.map((e: { codigo: string }) => e.codigo)).toEqual([
+        'OUTROS_DADOS_EXIGIDOS',
+        'REVISAO_E_ACEITE',
+      ]);
       cabecalho.flush(null, { status: 204, statusText: 'No Content' });
       await proximoPasso();
 
       controller.expectOne(ROTA_PROCESSO).flush({ formularios: [criado], cronogramaFases: [FASE] });
       await proximoPasso();
 
-      const itens = controller.expectOne((r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`);
-      expect(itens.request.body.itens.map((i: { fatoCodigo: string; etapaCodigo: string }) => [i.fatoCodigo, i.etapaCodigo])).toEqual([
-        ['RENDA_FAMILIAR', 'OUTROS_DADOS_EXIGIDOS'],
-      ]);
+      const itens = controller.expectOne(
+        (r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`,
+      );
+      expect(
+        itens.request.body.itens.map((i: { fatoCodigo: string; etapaCodigo: string }) => [
+          i.fatoCodigo,
+          i.etapaCodigo,
+        ]),
+      ).toEqual([['RENDA_FAMILIAR', 'OUTROS_DADOS_EXIGIDOS']]);
       expect(itens.request.body.grupos).toEqual([]);
       itens.flush(null, { status: 204, statusText: 'No Content' });
       await proximoPasso();
 
-      const comCampo = { ...criado, fatosColetados: [...criado.fatosColetados, { ...criado.fatosColetados[0], fatoCodigo: 'RENDA_FAMILIAR', ordem: 1, etapaCodigo: 'OUTROS_DADOS_EXIGIDOS' }] };
-      controller.expectOne(ROTA_PROCESSO).flush({ formularios: [comCampo], cronogramaFases: [FASE] });
+      const comCampo = {
+        ...criado,
+        fatosColetados: [
+          ...criado.fatosColetados,
+          {
+            ...criado.fatosColetados[0],
+            fatoCodigo: 'RENDA_FAMILIAR',
+            ordem: 1,
+            etapaCodigo: 'OUTROS_DADOS_EXIGIDOS',
+          },
+        ],
+      };
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush({ formularios: [comCampo], cronogramaFases: [FASE] });
       await garantir;
 
-      expect(store.draft().formulario.conteudo.itens?.map((c) => c.fatoCodigo)).toEqual(['NOME', 'RENDA_FAMILIAR']);
+      expect(store.draft().formulario.conteudo.itens?.map((c) => c.fatoCodigo)).toEqual([
+        'NOME',
+        'RENDA_FAMILIAR',
+      ]);
       expect(store.draft().formulario.faseCodigo).toBe('INSCRICAO');
       expect(store.camposPostosPelasExigencias().has('RENDA_FAMILIAR')).toBe(true);
     });
@@ -2569,11 +2990,18 @@ describe('CronogramaStepComponent', () => {
      */
     it('conta os documentos da fase antes de removê-la', () => {
       comExigenciaDeclarada([
-        { referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' },
+        {
+          referencia: 'Lei 12.711/2012',
+          abrangencia: 'FEDERAL',
+          status: 'RESOLVIDO',
+          observacao: '',
+        },
       ]);
 
       const indice = componente.fases.controls.findIndex(
-        (grupo) => grupo.controls.codigo.value === FASES_CANONICAS.find((f) => f.id === ID_AVALIACAO)?.codigo,
+        (grupo) =>
+          grupo.controls.codigo.value ===
+          FASES_CANONICAS.find((f) => f.id === ID_AVALIACAO)?.codigo,
       );
       expect(indice).toBeGreaterThanOrEqual(0);
 
@@ -2600,7 +3028,12 @@ describe('CronogramaStepComponent', () => {
     it('não acusa quando alguma das normas declaradas está resolvida', () => {
       comExigenciaDeclarada([
         { referencia: '', abrangencia: 'INTERNA_EDITAL', status: 'RESOLVIDO', observacao: '' },
-        { referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' },
+        {
+          referencia: 'Lei 12.711/2012',
+          abrangencia: 'FEDERAL',
+          status: 'RESOLVIDO',
+          observacao: '',
+        },
       ]);
 
       expect(componente.validate().messages?.join(' ') ?? '').not.toContain('norma');
@@ -2608,7 +3041,12 @@ describe('CronogramaStepComponent', () => {
 
     describe('alcance da exigência sobre as modalidades ofertadas', () => {
       const NORMA_RESOLVIDA = [
-        { referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' },
+        {
+          referencia: 'Lei 12.711/2012',
+          abrangencia: 'FEDERAL',
+          status: 'RESOLVIDO',
+          observacao: '',
+        },
       ];
       const MENSAGEM = 'valer para ao menos uma modalidade';
 
@@ -2678,7 +3116,14 @@ describe('CronogramaStepComponent', () => {
      */
     it('acusa o reenvio declarado em fase que não admite complementação', () => {
       comExigenciaDeclarada(
-        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        [
+          {
+            referencia: 'Lei 12.711/2012',
+            abrangencia: 'FEDERAL',
+            status: 'RESOLVIDO',
+            observacao: '',
+          },
+        ],
         { consequenciaIndeferimento: 'PENDENCIA_REENVIO' },
       );
 
@@ -2693,14 +3138,23 @@ describe('CronogramaStepComponent', () => {
      */
     it('barra o documento cujo formulário declarado a fase não responde mais', () => {
       comExigenciaDeclarada(
-        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        [
+          {
+            referencia: 'Lei 12.711/2012',
+            abrangencia: 'FEDERAL',
+            status: 'RESOLVIDO',
+            observacao: '',
+          },
+        ],
         { faseCodigo: 'COLETA_INSCRICAO', finalidade: 'ISENCAO_TAXA' },
       );
       comFases(ID_INSCRICAO);
 
       const resultado = componente.validate();
       expect(resultado.valid).toBe(false);
-      expect(resultado.messages?.join(' ')).toContain('sem o formulário em que o candidato o apresenta');
+      expect(resultado.messages?.join(' ')).toContain(
+        'sem o formulário em que o candidato o apresenta',
+      );
     });
 
     /**
@@ -2710,7 +3164,14 @@ describe('CronogramaStepComponent', () => {
      */
     it('confere o formulário da cópia na fase acrescentada depois do regime de todas as fases', () => {
       comExigenciaDeclarada(
-        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
+        [
+          {
+            referencia: 'Lei 12.711/2012',
+            abrangencia: 'FEDERAL',
+            status: 'RESOLVIDO',
+            observacao: '',
+          },
+        ],
         { faseCodigo: 'COLETA_INSCRICAO', finalidade: 'INSCRICAO' },
       );
       store.patchSection('documentos', {
@@ -2743,14 +3204,21 @@ describe('CronogramaStepComponent', () => {
 
       const resultado = componente.validate();
       expect(resultado.valid).toBe(false);
-      expect(resultado.messages?.join(' ')).toContain('sem o formulário em que o candidato o apresenta');
+      expect(resultado.messages?.join(' ')).toContain(
+        'sem o formulário em que o candidato o apresenta',
+      );
     });
 
     /** Exigência ancorada em fase que saiu do cronograma é nomeada, não descartada em silêncio. */
     it('acusa a exigência cuja fase saiu do cronograma', () => {
-      comExigenciaDeclarada(
-        [{ referencia: 'Lei 12.711/2012', abrangencia: 'FEDERAL', status: 'RESOLVIDO', observacao: '' }],
-      );
+      comExigenciaDeclarada([
+        {
+          referencia: 'Lei 12.711/2012',
+          abrangencia: 'FEDERAL',
+          status: 'RESOLVIDO',
+          observacao: '',
+        },
+      ]);
       // A fase sai depois de a exigência ter sido declarada nela.
       comFases(ID_INSCRICAO);
 
@@ -2765,7 +3233,9 @@ describe('CronogramaStepComponent', () => {
       comFases(ID_INSCRICAO);
       detectar();
       componente.acrescentarEtapa('COLETA_INSCRICAO');
-      store.remoteSnapshot.set({ status: StatusProcesso.publicado } as unknown as ProcessoSeletivoDto);
+      store.remoteSnapshot.set({
+        status: StatusProcesso.publicado,
+      } as unknown as ProcessoSeletivoDto);
       detectar();
     }
 

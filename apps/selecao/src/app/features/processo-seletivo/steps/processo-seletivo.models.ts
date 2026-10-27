@@ -304,6 +304,23 @@ export interface RecursoDaFase {
 }
 
 /**
+ * Um item de avaliação da etapa. O `id` é o que o servidor atribuiu e congela: o lançamento e o
+ * recurso apontam para ele, então é reenviado quando o item já existe e fica `null` no item novo.
+ */
+export interface ItemDeAvaliacaoDaEtapa {
+  readonly id: string | null;
+  readonly rotulo: string;
+  /** Texto até a conversão, como os demais campos numéricos do editor. */
+  readonly pontuacaoMaxima: string;
+}
+
+/** Um nível da escala de atendimento; o operador digita o percentual, o comando envia a fração. */
+export interface NivelDeAtendimentoDaEtapa {
+  readonly rotulo: string;
+  readonly percentual: string;
+}
+
+/**
  * Uma etapa pontuada do processo — o eixo de nota, distinto do eixo temporal.
  * Não tem janela: quando ela ocorre é a janela da fase que a agrupa.
  *
@@ -328,6 +345,10 @@ export interface EtapaPontuada {
   /** Regra de consolidação das notas dos avaliadores, do catálogo; vazia fora da forma humana. */
   readonly regraConsolidacaoCodigo?: string;
   readonly regraConsolidacaoVersao?: string;
+  /** Critérios ou blocos em que a nota da etapa se divide; vazio quando a etapa não os declara. */
+  readonly itensDeAvaliacao?: readonly ItemDeAvaliacaoDaEtapa[];
+  /** Níveis entre os quais a banca escolhe em cada item; vazio quando a etapa lança nota digitada. */
+  readonly escalaDeAtendimento?: readonly NivelDeAtendimentoDaEtapa[];
   readonly ordem: number;
   /**
    * Código canônico da fase a que a etapa pertence. É o que permite qualquer fase

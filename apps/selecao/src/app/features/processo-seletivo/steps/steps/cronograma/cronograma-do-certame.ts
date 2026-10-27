@@ -8,6 +8,7 @@ import {
 } from '../../processo-seletivo.models';
 import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
+import { escalaVale, fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
 import { recursoResolvido } from './cronograma-para-comando';
 import {
   problemasDaFase,
@@ -373,9 +374,7 @@ export function avisosDosGrupos(grupos: readonly GrupoDeclarado[]): readonly str
     );
 }
 
-function problemasDasExigencias(
-  exigencias: readonly ExigenciaDeclarada[],
-): readonly string[] {
+function problemasDasExigencias(exigencias: readonly ExigenciaDeclarada[]): readonly string[] {
   const problemas: string[] = [...problemasDeAncoragem(exigencias)];
 
   const semNorma = exigencias.filter((e) => e.decideResultado && !e.normaResolvida);
@@ -479,40 +478,136 @@ export function recusaDaEtapaDeNotaDoEnem(codigo: string): string | null {
 }
 
 /** Os campos da etapa sob os quais a recusa do servidor aparece; o nome é o que o servidor aponta. */
-export type CampoComRecusa =
+export type CampoDaEtapaComRecusa =
   | 'notaMinima'
   | 'notaMaxima'
   | 'passoDoLancamento'
   | 'formaDeAvaliacao'
-  | 'regraConsolidacao';
+  | 'regraConsolidacao'
+  | 'itensDeAvaliacao'
+  | 'escalaDeAtendimento';
 
-const PREFIXO_DA_RECUSA_DA_ETAPA = 'uniplus.selecao.etapa_processo.';
+/** Um campo de um item da lista, na chave `itensDeAvaliacao.2.rotulo`. */
+export type CampoDeItemComRecusa =
+  | `itensDeAvaliacao.${number}.${'rotulo' | 'id' | 'pontuacaoMaxima'}`
+  | `escalaDeAtendimento.${number}.${'rotulo' | 'fracao'}`;
 
-const RECUSA_DO_CAMPO_DA_ETAPA: ReadonlyMap<string, string> = new Map(
+export type CampoComRecusa = CampoDaEtapaComRecusa | CampoDeItemComRecusa;
+
+const CAMPOS_DA_ETAPA_COM_RECUSA: ReadonlySet<string> = new Set<CampoDaEtapaComRecusa>([
+  'notaMinima',
+  'notaMaxima',
+  'passoDoLancamento',
+  'formaDeAvaliacao',
+  'regraConsolidacao',
+  'itensDeAvaliacao',
+  'escalaDeAtendimento',
+]);
+
+const CAMPO_DE_ITEM_COM_RECUSA =
+  /^(?:itensDeAvaliacao\.\d+\.(?:rotulo|id|pontuacaoMaxima)|escalaDeAtendimento\.\d+\.(?:rotulo|fracao))$/;
+
+/** A chave sob a qual a tela guarda a recusa do que o servidor apontou, ou `null` quando ela não tem campo. */
+export function campoDaRecusa(
+  local: {
+    readonly campo: string | null;
+    readonly posicao: number | null;
+    readonly subcampo: string | null;
+  } | null,
+): CampoComRecusa | null {
+  if (local?.campo == null) return null;
+  const chave =
+    local.posicao === null ? local.campo : `${local.campo}.${local.posicao}.${local.subcampo}`;
+  if (CAMPOS_DA_ETAPA_COM_RECUSA.has(chave) || CAMPO_DE_ITEM_COM_RECUSA.test(chave)) {
+    return chave as CampoComRecusa;
+  }
+  return null;
+}
+
+const RECUSA_DO_CAMPO_DA_ETAPA: ReadonlyMap<string, string> = new Map([
   [
-    ['nota_maxima_invalida', 'A nota máxima precisa ser maior que zero.'],
-    ['nota_minima_acima_da_nota_maxima', 'A nota mínima não pode passar da nota máxima.'],
-    [
-      'nota_maxima_fora_do_passo',
-      'A nota máxima precisa ser múltipla do passo do lançamento: ajuste uma das duas.',
-    ],
-    ['passo_do_lancamento_invalido', 'O passo do lançamento precisa ser maior que zero.'],
-    ['forma_de_avaliacao_desconhecida', 'Escolha a forma de avaliação: objetiva ou humana.'],
-    [
-      'avaliacao_na_etapa_do_enem',
-      'A etapa de nota do ENEM não declara forma de avaliação nem regra de consolidação: a nota vem do INEP.',
-    ],
-    [
-      'regra_de_consolidacao_fora_da_forma_humana',
-      'A regra de consolidação só vale na avaliação humana.',
-    ],
-    [
-      'regra_de_consolidacao_invalida',
-      'Escolha uma regra de consolidação que o catálogo oferece.',
-    ],
-    ['passo_na_forma_objetiva', 'O passo do lançamento só vale na avaliação humana.'],
-  ].map(([codigo, texto]) => [`${PREFIXO_DA_RECUSA_DA_ETAPA}${codigo}`, texto] as const),
-);
+    'uniplus.selecao.etapa_processo.nota_maxima_invalida',
+    'A nota máxima precisa ser maior que zero.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.nota_minima_acima_da_nota_maxima',
+    'A nota mínima não pode passar da nota máxima.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.nota_maxima_fora_do_passo',
+    'A nota máxima precisa ser múltipla do passo do lançamento: ajuste uma das duas.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.passo_do_lancamento_invalido',
+    'O passo do lançamento precisa ser maior que zero.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.forma_de_avaliacao_desconhecida',
+    'Escolha a forma de avaliação: objetiva ou humana.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.avaliacao_na_etapa_do_enem',
+    'A etapa de nota do ENEM não declara forma de avaliação nem regra de consolidação: a nota vem do INEP.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.regra_de_consolidacao_fora_da_forma_humana',
+    'A regra de consolidação só vale na avaliação humana.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.regra_de_consolidacao_invalida',
+    'Escolha uma regra de consolidação que o catálogo oferece.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.passo_na_forma_objetiva',
+    'O passo do lançamento só vale na avaliação humana.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.itens_na_etapa_do_enem',
+    'A etapa de nota do ENEM não declara itens de avaliação nem escala de atendimento: a nota vem do INEP.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.escala_sem_itens',
+    'A escala de atendimento só vale em etapa com itens de avaliação.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.escala_na_forma_objetiva',
+    'A escala de atendimento só vale na avaliação humana.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.passo_com_escala_de_atendimento',
+    'Com escala de atendimento a banca escolhe o nível e não digita a nota: a etapa não declara passo do lançamento.',
+  ],
+  [
+    'uniplus.selecao.item_de_avaliacao.rotulo_invalido',
+    'Dê ao item um rótulo, de até 300 caracteres.',
+  ],
+  [
+    'uniplus.selecao.item_de_avaliacao.rotulo_duplicado',
+    'Outro item da etapa já tem este rótulo: o rótulo identifica o critério para a banca.',
+  ],
+  ['uniplus.selecao.item_de_avaliacao.id_duplicado', 'Este item aparece mais de uma vez na etapa.'],
+  [
+    'uniplus.selecao.item_de_avaliacao.pontuacao_maxima_invalida',
+    'A pontuação máxima do item precisa ser maior que zero.',
+  ],
+  [
+    'uniplus.selecao.item_de_avaliacao.pontuacao_fora_do_passo',
+    'A pontuação máxima do item precisa ser múltipla do passo do lançamento da etapa: ajuste uma das duas.',
+  ],
+  [
+    'uniplus.selecao.nivel_de_atendimento.rotulo_invalido',
+    'Dê ao nível um rótulo, de até 100 caracteres.',
+  ],
+  [
+    'uniplus.selecao.nivel_de_atendimento.fracao_invalida',
+    'O percentual do nível precisa estar entre 0 e 100.',
+  ],
+  ['uniplus.selecao.nivel_de_atendimento.duplicado', 'Outro nível da escala já tem este rótulo.'],
+  [
+    'uniplus.selecao.nivel_de_atendimento.sem_nivel_completo',
+    'A escala precisa de um nível de 100%: é o que vale a pontuação inteira do item.',
+  ],
+]);
 
 /** O texto da recusa do servidor a um campo da etapa, ou `null` quando a recusa é outra. */
 export function recusaDoCampoDaEtapa(codigo: string): string | null {
@@ -520,14 +615,25 @@ export function recusaDoCampoDaEtapa(codigo: string): string | null {
 }
 
 /**
- * A etapa e o campo que uma recusa do servidor aponta (`etapas[i].campo`); o índice é o da etapa
- * no que foi enviado. `campo` é `null` quando a recusa aponta a etapa inteira.
+ * A etapa e o campo que uma recusa do servidor aponta (`etapas[i].campo`, ou
+ * `etapas[i].lista[j].subcampo` para o item de uma lista); o índice é o da etapa no que foi
+ * enviado. `campo` é `null` quando a recusa aponta a etapa inteira.
  */
-export function localDoErroDaEtapa(
-  field: string,
-): { readonly indice: number; readonly campo: string | null } | null {
-  const [, indice, campo] = /^etapas\[(\d+)\](?:\.(\w+))?$/.exec(field) ?? [];
-  return indice === undefined ? null : { indice: Number(indice), campo: campo ?? null };
+export function localDoErroDaEtapa(field: string): {
+  readonly indice: number;
+  readonly campo: string | null;
+  readonly posicao: number | null;
+  readonly subcampo: string | null;
+} | null {
+  const [, indice, campo, posicao, subcampo] =
+    /^etapas\[(\d+)\](?:\.(\w+)(?:\[(\d+)\]\.(\w+))?)?$/.exec(field) ?? [];
+  if (indice === undefined) return null;
+  return {
+    indice: Number(indice),
+    campo: campo ?? null,
+    posicao: posicao === undefined ? null : Number(posicao),
+    subcampo: subcampo ?? null,
+  };
 }
 
 /**
@@ -559,11 +665,19 @@ export function etapaComOQueDeclara(
       formaDeAvaliacao: '',
       regraConsolidacaoCodigo: '',
       regraConsolidacaoVersao: '',
+      itensDeAvaliacao: [],
+      escalaDeAtendimento: [],
     };
   }
-  return etapa.formaDeAvaliacao === FORMA_HUMANA
+  const humana = etapa.formaDeAvaliacao === FORMA_HUMANA;
+  const comAvaliacao = humana
     ? etapa
     : { ...etapa, passoDoLancamento: '', regraConsolidacaoCodigo: '', regraConsolidacaoVersao: '' };
+  // A escala existe onde a banca atende cada item; com ela a banca escolhe o nível e não digita a
+  // nota, então o passo do lançamento deixa de existir.
+  return escalaVale(comAvaliacao)
+    ? { ...comAvaliacao, passoDoLancamento: '' }
+    : { ...comAvaliacao, escalaDeAtendimento: [] };
 }
 
 export function componeNota(etapa: EtapaPontuada): boolean {
@@ -847,8 +961,12 @@ function problemasDasEtapas(
         `O passo do lançamento da ${nome} precisa ser um número, com ponto ou vírgula decimal.`,
       );
     } else if (pesoDeclaradoNaoPositivo(passo)) {
-      problemas.push(`O passo do lançamento da ${nome}, quando declarado, precisa ser maior que zero.`);
+      problemas.push(
+        `O passo do lançamento da ${nome}, quando declarado, precisa ser maior que zero.`,
+      );
     }
+
+    problemas.push(...problemasDosItensEDaEscala(etapa, nome));
   }
 
   // Zero converte, então a conferência de forma acima o deixa passar, e a
@@ -897,7 +1015,11 @@ function problemasDasEtapas(
   for (const etapa of etapas) {
     const nome = etapa.nome.trim() === '' ? 'sem nome' : `"${etapa.nome.trim()}"`;
 
-    if (etapa.recursos.some((r) => recursoResolvido(r) && fracaoDeDiaUtil(r.prazoValor, r.prazoUnidade))) {
+    if (
+      etapa.recursos.some(
+        (r) => recursoResolvido(r) && fracaoDeDiaUtil(r.prazoValor, r.prazoUnidade),
+      )
+    ) {
       problemas.push(
         `O prazo de recurso da etapa ${nome} está em fração de dia útil. Use valor inteiro, ou declare o prazo em horas.`,
       );
@@ -1000,6 +1122,32 @@ function suspensividadeIncoerente(valor: string, unidade: string): boolean {
 
   const numero = decimalDoCampo(valor);
   return numero === null || numero <= 0;
+}
+
+/**
+ * Só o que não vira número é recusado aqui: o texto que não converte seguiria no comando como
+ * o texto cru e o corpo inteiro seria recusado. O resto (rótulo, soma, passo) quem diz é o
+ * servidor, sob o campo, ou a publicação.
+ */
+function problemasDosItensEDaEscala(etapa: EtapaPontuada, nome: string): readonly string[] {
+  const problemas: string[] = [];
+  const itens = etapa.itensDeAvaliacao ?? [];
+  if (
+    itens.some((item) => item.pontuacaoMaxima.trim() === '' || naoConverte(item.pontuacaoMaxima))
+  ) {
+    problemas.push(
+      `A pontuação máxima de cada item da ${nome} precisa ser um número, com ponto ou vírgula decimal.`,
+    );
+  }
+  if (
+    escalaVale(etapa) &&
+    (etapa.escalaDeAtendimento ?? []).some((nivel) => fracaoDoPercentual(nivel.percentual) === null)
+  ) {
+    problemas.push(
+      `O percentual de cada nível da escala da ${nome} precisa ser um número, com ponto ou vírgula decimal.`,
+    );
+  }
+  return problemas;
 }
 
 /** Peso escrito na etapa que não é maior que zero. */

@@ -2,6 +2,7 @@ import type { EtapaProcessoInput, FaseCronogramaInput } from '@uniplus/shared-da
 
 import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
+import { fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
 import { instanciaSuperiorParaComando } from '../../shared/instancia-superior';
 import { instanteDoCampo } from '../../shared/fuso-institucional';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
@@ -95,6 +96,16 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     regraConsolidacaoCodigo: humana ? textoOuNulo(etapa.regraConsolidacaoCodigo) : null,
     regraConsolidacaoVersao: humana ? textoOuNulo(etapa.regraConsolidacaoVersao) : null,
     passoDoLancamento: humana ? decimalDoCampo(etapa.passoDoLancamento ?? '') : null,
+    // O id do item que a API devolveu volta com ele: é o que mantém o item o mesmo na retificação.
+    itensDeAvaliacao: (etapa.itensDeAvaliacao ?? []).map((item) => ({
+      id: item.id,
+      rotulo: item.rotulo.trim(),
+      pontuacaoMaxima: decimalDoCampo(item.pontuacaoMaxima) ?? item.pontuacaoMaxima,
+    })),
+    escalaDeAtendimento: (etapa.escalaDeAtendimento ?? []).map((nivel) => ({
+      rotulo: nivel.rotulo.trim(),
+      fracao: fracaoDoPercentual(nivel.percentual) ?? nivel.percentual,
+    })),
     ordem: etapa.ordem,
     faseCodigo: etapa.faseCodigo === '' ? null : etapa.faseCodigo,
     produtos: etapa.produtos.map((produto) => ({
@@ -118,7 +129,9 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
       regraCodigo: recurso.regraCodigo,
       regraVersao: recurso.regraVersao,
       prazoValor: decimalDoCampo(recurso.prazoValor) ?? 0,
-      prazoUnidade: recurso.prazoUnidade as NonNullable<EtapaProcessoInput['recursos']>[number]['prazoUnidade'],
+      prazoUnidade: recurso.prazoUnidade as NonNullable<
+        EtapaProcessoInput['recursos']
+      >[number]['prazoUnidade'],
       atoAncoraCodigo: recurso.atoAncoraCodigo === '' ? null : recurso.atoAncoraCodigo,
       // A etapa recorre nas mesmas condições da fase, e o servidor guarda os quatro valores
       // em colunas próprias — mandar `null` fixo apagava o efeito suspensivo declarado a

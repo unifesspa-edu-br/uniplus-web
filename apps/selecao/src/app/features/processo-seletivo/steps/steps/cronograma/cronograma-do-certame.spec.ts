@@ -8,6 +8,13 @@ import type {
   ProdutoDaFase,
   RecursoDaEtapa,
 } from '../../processo-seletivo.models';
+import {
+  fracaoDoPercentual,
+  percentualDaFracao,
+  somaDosItens,
+  somaForaDaNotaMaxima,
+  textoDaSoma,
+} from '../../shared/itens-de-avaliacao';
 import { publicaResultadoDefinitivo, type AtoDoCatalogo } from '../fase/configuracao-da-fase';
 import {
   comoNumero,
@@ -26,6 +33,7 @@ import {
   localDoErroDaEtapa,
   etapaComOQueDeclara,
   recusaDoCampoDaEtapa,
+  campoDaRecusa,
 } from './cronograma-do-certame';
 
 /** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
@@ -488,9 +496,7 @@ describe('o que impede gravar o cronograma', () => {
 
     const problemas = problemasDe([semAvaliacao], [etapaValida], catalogo, []);
 
-    expect(problemas).toContainEqual(
-      expect.stringContaining('não dizem a que fase pertencem'),
-    );
+    expect(problemas).toContainEqual(expect.stringContaining('não dizem a que fase pertencem'));
   });
 
   it('fase com janela própria exige data e hora de início e de fim', () => {
@@ -560,9 +566,7 @@ describe('o que impede gravar o cronograma', () => {
       [],
     );
 
-    expect(problemas).toContainEqual(
-      expect.stringContaining('não compõe a nota final'),
-    );
+    expect(problemas).toContainEqual(expect.stringContaining('não compõe a nota final'));
     expect(problemas).toContainEqual(expect.stringContaining('Análise documental'));
   });
 
@@ -696,7 +700,8 @@ describe('o que impede gravar o cronograma', () => {
   });
 
   it('acusa a condição que cita dado ainda não conhecido na fase, com o que fazer', () => {
-    const orientacao = '“Laudo” só é conhecido na fase Habilitação. Como resolver: exija o documento na fase Habilitação.';
+    const orientacao =
+      '“Laudo” só é conhecido na fase Habilitação. Como resolver: exija o documento na fase Habilitação.';
     const problemas = problemasDoCronograma(
       [faseDeAvaliacao],
       [],
@@ -828,11 +833,16 @@ describe('o que impede gravar o cronograma', () => {
     });
 
     it('mantém regra e passo na forma humana', () => {
-      expect(etapaComOQueDeclara(humana, undefined)).toEqual(humana);
+      expect(etapaComOQueDeclara(humana, undefined)).toMatchObject({
+        passoDoLancamento: '0,5',
+        regraConsolidacaoCodigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
+      });
     });
 
     it('descarta regra e passo quando a forma é objetiva', () => {
-      expect(etapaComOQueDeclara({ ...humana, formaDeAvaliacao: 'OBJETIVA' }, undefined)).toMatchObject({
+      expect(
+        etapaComOQueDeclara({ ...humana, formaDeAvaliacao: 'OBJETIVA' }, undefined),
+      ).toMatchObject({
         notaMaxima: '10',
         formaDeAvaliacao: 'OBJETIVA',
         passoDoLancamento: '',
@@ -851,6 +861,98 @@ describe('o que impede gravar o cronograma', () => {
     });
   });
 
+  describe('itens de avaliação e escala de atendimento', () => {
+    const item = (rotulo: string, pontuacaoMaxima: string) => ({
+      id: null,
+      rotulo,
+      pontuacaoMaxima,
+    });
+    const escala = [
+      { rotulo: 'Atendeu', percentual: '100' },
+      { rotulo: 'Não atendeu', percentual: '0' },
+    ];
+    const humanaComItens = etapa({
+      nome: 'Projeto',
+      carater: CaraterEtapa.classificatoria,
+      tipoEtapaOrigemId: 'tipo-1',
+      notaMaxima: '10',
+      formaDeAvaliacao: 'HUMANA',
+      itensDeAvaliacao: [item('Clareza', '4'), item('Método', '6')],
+      escalaDeAtendimento: escala,
+    });
+
+    it('com escala o passo sai e a escala segue', () => {
+      expect(
+        etapaComOQueDeclara({ ...humanaComItens, passoDoLancamento: '0,5' }, undefined),
+      ).toMatchObject({ passoDoLancamento: '', escalaDeAtendimento: escala });
+    });
+
+    it('descarta a escala fora da forma humana ou sem itens, e mantém os itens', () => {
+      expect(
+        etapaComOQueDeclara({ ...humanaComItens, formaDeAvaliacao: 'OBJETIVA' }, undefined),
+      ).toMatchObject({
+        escalaDeAtendimento: [],
+        itensDeAvaliacao: humanaComItens.itensDeAvaliacao,
+      });
+      expect(
+        etapaComOQueDeclara({ ...humanaComItens, itensDeAvaliacao: [] }, undefined),
+      ).toMatchObject({ escalaDeAtendimento: [] });
+    });
+
+    it('descarta itens e escala da etapa sem nota', () => {
+      expect(etapaComOQueDeclara({ ...humanaComItens, carater: '' }, undefined)).toMatchObject({
+        itensDeAvaliacao: [],
+        escalaDeAtendimento: [],
+      });
+    });
+
+    it('recusa a pontuação do item e o percentual do nível que não são número', () => {
+      const confere = (parcial: Partial<EtapaPontuada>) =>
+        problemasDe([faseDeAvaliacao], [etapa({ ...humanaComItens, ...parcial })], catalogo, []);
+
+      expect(confere({ itensDeAvaliacao: [item('A', '4,')] })).toContainEqual(
+        expect.stringContaining('pontuação máxima de cada item'),
+      );
+      expect(confere({ itensDeAvaliacao: [item('A', '')] })).toContainEqual(
+        expect.stringContaining('pontuação máxima de cada item'),
+      );
+      expect(
+        confere({ escalaDeAtendimento: [{ rotulo: 'A', percentual: 'meio' }] }),
+      ).toContainEqual(expect.stringContaining('percentual de cada nível'));
+      expect(confere({})).not.toContainEqual(expect.stringContaining('de cada'));
+    });
+
+    it('a soma dos itens usa as quatro casas do servidor e não acusa erro de ponto flutuante', () => {
+      expect(somaDosItens([item('A', '0,1'), item('B', '0.2')])).toBe(0.3);
+      expect(somaForaDaNotaMaxima([item('A', '0,1'), item('B', '0.2')], '0,3')).toBe(false);
+      expect(somaForaDaNotaMaxima([item('A', '4')], '10')).toBe(true);
+      expect(somaForaDaNotaMaxima([], '10')).toBe(false);
+      expect(textoDaSoma([item('A', '4'), item('B', '4')], '10')).toBe('Soma dos itens: 8 de 10');
+      expect(textoDaSoma([item('A', '10,0004')], '10')).toBe('Soma dos itens: 10,0004 de 10');
+    });
+
+    it('o percentual vira fração e volta sem sujeira', () => {
+      expect(fracaoDoPercentual('50')).toBe(0.5);
+      expect(fracaoDoPercentual('33,33')).toBe(0.3333);
+      expect(fracaoDoPercentual('meio')).toBeNull();
+      expect(percentualDaFracao(0.3333)).toBe('33.33');
+      expect(percentualDaFracao('1')).toBe('100');
+    });
+
+    it('dá texto às recusas do servidor a item e nível e as aponta no campo', () => {
+      expect(
+        recusaDoCampoDaEtapa('uniplus.selecao.item_de_avaliacao.pontuacao_fora_do_passo'),
+      ).toContain('passo do lançamento');
+      expect(
+        campoDaRecusa(localDoErroDaEtapa('etapas[0].itensDeAvaliacao[1].pontuacaoMaxima')),
+      ).toBe('itensDeAvaliacao.1.pontuacaoMaxima');
+      expect(campoDaRecusa(localDoErroDaEtapa('etapas[0].escalaDeAtendimento'))).toBe(
+        'escalaDeAtendimento',
+      );
+      expect(campoDaRecusa(localDoErroDaEtapa('etapas[0].itensDeAvaliacao[1].outro'))).toBeNull();
+    });
+  });
+
   it('dá texto às recusas de avaliação do servidor e ignora as de outra natureza', () => {
     expect(
       recusaDoCampoDaEtapa('uniplus.selecao.etapa_processo.passo_na_forma_objetiva'),
@@ -859,8 +961,17 @@ describe('o que impede gravar o cronograma', () => {
   });
 
   it('lê a etapa e o campo que a recusa do servidor aponta', () => {
-    expect(localDoErroDaEtapa('etapas[1].notaMaxima')).toEqual({ indice: 1, campo: 'notaMaxima' });
-    expect(localDoErroDaEtapa('etapas[2]')).toEqual({ indice: 2, campo: null });
+    expect(localDoErroDaEtapa('etapas[1].notaMaxima')).toMatchObject({
+      indice: 1,
+      campo: 'notaMaxima',
+    });
+    expect(localDoErroDaEtapa('etapas[2]')).toMatchObject({ indice: 2, campo: null });
+    expect(localDoErroDaEtapa('etapas[0].itensDeAvaliacao[3].pontuacaoMaxima')).toEqual({
+      indice: 0,
+      campo: 'itensDeAvaliacao',
+      posicao: 3,
+      subcampo: 'pontuacaoMaxima',
+    });
     expect(localDoErroDaEtapa('fases[0].codigo')).toBeNull();
   });
 
@@ -970,7 +1081,6 @@ describe('o que impede gravar o cronograma', () => {
       'Na fase Resultado preliminar: Escolha a publicação preliminar de cuja divulgação corre o prazo de recurso. Corrija em Configuração por fase.',
     );
   });
-
 
   /**
    * A janela recursal da etapa. O prazo é obrigatório no comando e o mapeador converte o que
@@ -1191,7 +1301,12 @@ describe('o que a publicação vai cobrar dos grupos', () => {
 });
 
 describe('a janela própria da etapa', () => {
-  const CATALOGO = new Map([['id-aval', faseCanonica({ id: 'id-aval', codigo: 'AVALIACAO', nome: 'Avaliação', agrupaEtapas: true })]]);
+  const CATALOGO = new Map([
+    [
+      'id-aval',
+      faseCanonica({ id: 'id-aval', codigo: 'AVALIACAO', nome: 'Avaliação', agrupaEtapas: true }),
+    ],
+  ]);
 
   /** Fase de 10 a 20 de março, a janela contra a qual a etapa é conferida. */
   const avaliacao = fase({
@@ -1276,7 +1391,12 @@ describe('a janela própria da etapa', () => {
    * obrigação que o cadastro não faz. A coerência interna da etapa continua valendo.
    */
   it('tolera a etapa com janela própria quando a fase não declara a dela', () => {
-    const semJanela = fase({ faseCanonicaId: 'id-aval', codigo: 'AVALIACAO', inicio: null, fim: null });
+    const semJanela = fase({
+      faseCanonicaId: 'id-aval',
+      codigo: 'AVALIACAO',
+      inicio: null,
+      fim: null,
+    });
 
     const problemas = conferir(naAvaliacao('2027-03-12T09:00', '2027-03-14T17:00'), semJanela);
 
@@ -1291,7 +1411,6 @@ describe('a janela própria da etapa', () => {
     );
   });
 });
-
 
 describe('etapa de nota do ENEM', () => {
   const tipoDoEnem = (): TipoDeEtapaDoCatalogo => ({
@@ -1365,7 +1484,9 @@ describe('etapa de nota do ENEM', () => {
 
   it('a recusa do servidor à etapa de nota do ENEM ganha texto próprio', () => {
     expect(
-      recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_nao_compoe_nota'),
+      recusaDaEtapaDeNotaDoEnem(
+        'uniplus.selecao.processo_seletivo.etapa_nota_enem_nao_compoe_nota',
+      ),
     ).toContain('compõe a média');
     expect(
       recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca'),

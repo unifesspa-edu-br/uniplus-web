@@ -28,6 +28,7 @@ import {
 } from '../steps/vagas/distribuicao-de-vagas';
 import { formulariosDoServidor } from '../steps/formulario/formularios-por-finalidade';
 import { exigenciasDe } from './exigencias-documentais';
+import { percentualDaFracao } from './itens-de-avaliacao';
 import { edicoesDoEnemDe } from '../steps/classificacao/edicoes-do-enem';
 import { formatarValorEmReais } from './valor-em-reais';
 
@@ -84,7 +85,10 @@ function formularioDe(dto: ProcessoSeletivoDto): FormularioDeInscricao {
   const referencia = dto.referenciaTemporalFatos;
 
   return {
-    ...formulariosDoServidor({ formularios: dto.formularios ?? [], cronogramaFases: dto.cronogramaFases ?? [] }),
+    ...formulariosDoServidor({
+      formularios: dto.formularios ?? [],
+      cronogramaFases: dto.cronogramaFases ?? [],
+    }),
     referenciaTemporal: {
       tipo: referencia?.tipo ?? '',
       data: referencia?.data ?? '',
@@ -232,13 +236,23 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
     formaDeAvaliacao: etapa.formaDeAvaliacao ?? '',
     regraConsolidacaoCodigo: etapa.regraConsolidacao?.codigo ?? '',
     regraConsolidacaoVersao: etapa.regraConsolidacao?.versao ?? '',
+    itensDeAvaliacao: (etapa.itensDeAvaliacao ?? []).map((item) => ({
+      id: item.id,
+      rotulo: item.rotulo,
+      pontuacaoMaxima: comoTexto(item.pontuacaoMaxima),
+    })),
+    escalaDeAtendimento: (etapa.escalaDeAtendimento ?? []).map((nivel) => ({
+      rotulo: nivel.rotulo,
+      percentual: percentualDaFracao(nivel.fracao),
+    })),
     ordem: comoInteiro(etapa.ordem),
     faseCodigo: etapa.faseCodigo ?? '',
     produtos: (etapa.produtos ?? []).map((produto) => ({
       atoCodigo: produto.atoCodigo,
       papel: produto.papel ?? null,
     })),
-    inicio: etapa.inicio === null || etapa.inicio === undefined ? '' : campoDoInstante(etapa.inicio),
+    inicio:
+      etapa.inicio === null || etapa.inicio === undefined ? '' : campoDoInstante(etapa.inicio),
     fim: etapa.fim === null || etapa.fim === undefined ? '' : campoDoInstante(etapa.fim),
     emiteParecerIndividual: etapa.emiteParecerIndividual ?? false,
     bancas: (etapa.bancas ?? []).map((banca) => banca.tipoBancaOrigemId),
@@ -254,12 +268,14 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
       suspensividadePrimeiraInstanciaValor: comoTexto(
         recurso.args.suspensividadePrimeiraInstanciaValor,
       ),
-      suspensividadePrimeiraInstanciaUnidade: recurso.args.suspensividadePrimeiraInstanciaUnidade ?? '',
+      suspensividadePrimeiraInstanciaUnidade:
+        recurso.args.suspensividadePrimeiraInstanciaUnidade ?? '',
       admiteInstanciaSuperior: recurso.args.admiteInstanciaSuperior,
       suspensividadeSegundaInstanciaValor: comoTexto(
         recurso.args.suspensividadeSegundaInstanciaValor,
       ),
-      suspensividadeSegundaInstanciaUnidade: recurso.args.suspensividadeSegundaInstanciaUnidade ?? '',
+      suspensividadeSegundaInstanciaUnidade:
+        recurso.args.suspensividadeSegundaInstanciaUnidade ?? '',
     })),
   };
 }

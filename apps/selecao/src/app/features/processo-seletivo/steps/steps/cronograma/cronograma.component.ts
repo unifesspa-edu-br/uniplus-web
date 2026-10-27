@@ -74,6 +74,7 @@ import {
   type ProducaoDosFatos,
 } from '../../shared/fase-do-fato';
 import { etapasDe } from '../../shared/hidratacao';
+import { escalaVale, decimalLido, textoDaSoma } from '../../shared/itens-de-avaliacao';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../shared/instancia-superior';
 import { quemCitaNoProcesso } from '../formulario/formulario-de-inscricao';
@@ -94,6 +95,7 @@ import {
   declaraNotaDoEnem,
   descreverFase,
   finalidadesDaFase,
+  campoDaRecusa,
   recusaDoCampoDaEtapa,
   recusaDaEtapaDeNotaDoEnem,
   localDoErroDaEtapa,
@@ -118,14 +120,9 @@ import {
   type FaseForm,
 } from './cronograma-form';
 import { comoComandoDeEtapa } from './cronograma-para-comando';
+import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.component';
 
-const CAMPOS_COM_RECUSA: readonly CampoComRecusa[] = [
-  'notaMinima',
-  'notaMaxima',
-  'passoDoLancamento',
-  'formaDeAvaliacao',
-  'regraConsolidacao',
-];
+const SEM_RECUSAS: ReadonlyMap<CampoComRecusa, string> = new Map();
 
 /**
  * O que a tela responde enquanto as etapas gravadas estão sem os identificadores
@@ -154,7 +151,14 @@ interface FaseNaLinhaDoTempo extends DescricaoDaFase {
 
 @Component({
   selector: 'sel-step-cronograma',
-  imports: [ValorLegivelDirective, ValorEmConsultaComponent, FormsModule, ReactiveFormsModule, FaseStepComponent],
+  imports: [
+    ItensDeAvaliacaoDaEtapaComponent,
+    ValorLegivelDirective,
+    ValorEmConsultaComponent,
+    FormsModule,
+    ReactiveFormsModule,
+    FaseStepComponent,
+  ],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(CronogramaStepComponent)],
@@ -371,9 +375,7 @@ export class CronogramaStepComponent {
    * pessoa lê, se a exigência decide o resultado e se a norma que a sustenta está resolvida.
    */
   private readonly exigenciasDeclaradas = computed<readonly ExigenciaDeclarada[]>(() => {
-    const nomePorId = new Map(
-      this.catalogos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]),
-    );
+    const nomePorId = new Map(this.catalogos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]));
     // Percorre as exigências, não os tipos de documento: a norma é declarada POR exigência,
     // e o mesmo documento pode decidir o resultado numa fase e não na outra. Conferir por
     // documento aprovaria a fase cuja norma ficou pendente por causa da outra.
@@ -433,14 +435,20 @@ export class CronogramaStepComponent {
           exigencia.consequenciaIndeferimento === CONSEQUENCIA_REENVIO && !admiteComplementacao,
         semFormulario:
           fase !== undefined &&
-          faltaOFormulario(exigencia.finalidade, finalidadesDaFase(fase, this.catalogos.fasePorId())) !== null,
+          faltaOFormulario(
+            exigencia.finalidade,
+            finalidadesDaFase(fase, this.catalogos.fasePorId()),
+          ) !== null,
         problemasDeGatilho: problemasDoGatilho(exigencia, fatoPorCodigo, nomePorCodigo),
         problemasDeFase: [
           ...new Set([
             ...problemaDaRepeticao(repeticao, exigencia, producao, nomes),
-            ...recusasDeFaseDoGatilho(exigencia, producao, nomes, camposDaRepeticao(repeticao?.grupo ?? null, producao)).map(
-              (recusa) => recusa.orientacao,
-            ),
+            ...recusasDeFaseDoGatilho(
+              exigencia,
+              producao,
+              nomes,
+              camposDaRepeticao(repeticao?.grupo ?? null, producao),
+            ).map((recusa) => recusa.orientacao),
           ]),
         ],
       };
@@ -483,7 +491,9 @@ export class CronogramaStepComponent {
     const escolhida = this.formulario.controls.algoritmoContagemCodigo.value;
     if (escolhida === '') return '';
 
-    return this.catalogos.regrasContagem().find((item) => item.codigo === escolhida)?.baseLegal ?? '';
+    return (
+      this.catalogos.regrasContagem().find((item) => item.codigo === escolhida)?.baseLegal ?? ''
+    );
   });
 
   /** Quantas etapas compõem a nota final — o que a fórmula vai dividir. */
@@ -530,9 +540,7 @@ export class CronogramaStepComponent {
    */
   readonly etapasOrfas = computed<readonly { indice: number; rotulo: string }[]>(() => {
     this.versaoDoFormulario();
-    const codigosNaLinha = new Set(
-      this.fases.controls.map((grupo) => grupo.controls.codigo.value),
-    );
+    const codigosNaLinha = new Set(this.fases.controls.map((grupo) => grupo.controls.codigo.value));
     const haAgrupadora = this.linhaDoTempo().some((item) => item.exigencias?.agrupaEtapas === true);
 
     return this.etapas.controls
@@ -815,6 +823,12 @@ export class CronogramaStepComponent {
     return declaraNotaMaxima(etapa, this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId));
   }
 
+  /** Todas as recusas do servidor à etapa, por campo; o editor dos itens lê as que são dele. */
+  recusasDaEtapa(grupo: FormGroup<EtapaForm>): ReadonlyMap<CampoComRecusa, string> {
+    this.versaoDoFormulario();
+    return this.recusasDosCampos.get(grupo)?.recusas ?? SEM_RECUSAS;
+  }
+
   /** A recusa do servidor a um campo da escala da etapa, ou `null`. */
   recusaDoCampo(grupo: FormGroup<EtapaForm>, campo: CampoComRecusa): string | null {
     this.versaoDoFormulario();
@@ -849,9 +863,9 @@ export class CronogramaStepComponent {
     for (const erro of erros) {
       const local = localDoErroDaEtapa(erro.field);
       const texto = recusaDoCampoDaEtapa(erro.code);
-      const campo = CAMPOS_COM_RECUSA.find((nome) => nome === local?.campo);
+      const campo = campoDaRecusa(local);
       const grupo = local === null ? undefined : enviadas[local.indice];
-      if (campo === undefined || texto === null || grupo === undefined) continue;
+      if (campo === null || texto === null || grupo === undefined) continue;
       if (!this.etapas.controls.includes(grupo)) continue;
       aplicadas.set(grupo, (aplicadas.get(grupo) ?? new Map()).set(campo, texto));
     }
@@ -863,6 +877,8 @@ export class CronogramaStepComponent {
         grupo.controls.passoDoLancamento.valueChanges,
         grupo.controls.formaDeAvaliacao.valueChanges,
         grupo.controls.regraConsolidacaoCodigo.valueChanges,
+        grupo.controls.itensDeAvaliacao.valueChanges,
+        grupo.controls.escalaDeAtendimento.valueChanges,
       )
         .pipe(take(1), takeUntilDestroyed(this.destroyRef))
         .subscribe(() => this.esquecerRecusasDaEtapa(grupo));
@@ -890,7 +906,10 @@ export class CronogramaStepComponent {
   private etapasParaEnvio(): readonly EtapaPontuada[] {
     return this.etapas.controls.map((grupo) => {
       const etapa = etapaDoFormulario(grupo);
-      return etapaComOQueDeclara(etapa, this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId));
+      return etapaComOQueDeclara(
+        etapa,
+        this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId),
+      );
     });
   }
 
@@ -899,7 +918,9 @@ export class CronogramaStepComponent {
   /** A etapa é avaliada por banca: só nela cabem a regra de consolidação e o passo do lançamento. */
   etapaEhDeAvaliacaoHumana(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    return this.etapaDeclaraNotaMaxima(grupo) && grupo.controls.formaDeAvaliacao.value === FORMA_HUMANA;
+    return (
+      this.etapaDeclaraNotaMaxima(grupo) && grupo.controls.formaDeAvaliacao.value === FORMA_HUMANA
+    );
   }
 
   /**
@@ -909,7 +930,10 @@ export class CronogramaStepComponent {
   escolherFormaDeAvaliacao(grupo: FormGroup<EtapaForm>, forma: string): void {
     grupo.controls.formaDeAvaliacao.setValue(forma);
     grupo.controls.formaDeAvaliacao.markAsDirty();
-    if (forma !== FORMA_HUMANA) this.descartarRegraEPasso(grupo);
+    if (forma !== FORMA_HUMANA) {
+      this.descartarRegraEPasso(grupo);
+      grupo.controls.escalaDeAtendimento.setValue([]);
+    }
     this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
@@ -940,7 +964,15 @@ export class CronogramaStepComponent {
   private descartarEscalaEAvaliacao(grupo: FormGroup<EtapaForm>): void {
     grupo.controls.notaMaxima.setValue('');
     grupo.controls.formaDeAvaliacao.setValue('');
+    grupo.controls.itensDeAvaliacao.setValue([]);
+    grupo.controls.escalaDeAtendimento.setValue([]);
     this.descartarRegraEPasso(grupo);
+  }
+
+  /** Com escala a banca escolhe o nível em vez de digitar a nota, então a etapa não tem passo. */
+  etapaUsaEscalaDeAtendimento(grupo: FormGroup<EtapaForm>): boolean {
+    this.versaoDoFormulario();
+    return this.etapaEhDeAvaliacaoHumana(grupo) && escalaVale(grupo.getRawValue());
   }
 
   /** A regra de consolidação e o passo só existem onde mais de um avaliador lança a nota. */
@@ -1022,6 +1054,18 @@ export class CronogramaStepComponent {
     return hora ? `${dia}/${mes}/${ano} ${hora}` : `${dia}/${mes}/${ano}`;
   }
 
+  /** Os itens como a consulta os lê, com a soma contra a nota máxima da etapa. */
+  private itensLidos(grupo: FormGroup<EtapaForm>): {
+    readonly linhas: readonly string[];
+    readonly soma: string;
+  } {
+    const itens = grupo.controls.itensDeAvaliacao.value;
+    return {
+      linhas: itens.map((item) => `${item.rotulo} — ${decimalLido(item.pontuacaoMaxima)}`),
+      soma: textoDaSoma(itens, grupo.controls.notaMaxima.value),
+    };
+  }
+
   /**
    * A etapa como a consulta a lê: cada declaração em texto, sem o controle que a edita.
    * Peso e nota mínima só aparecem quando o caráter da etapa os admite, como na edição.
@@ -1030,9 +1074,12 @@ export class CronogramaStepComponent {
     const rotulosDosAtos = this.catalogos.rotuloDoAto();
     const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
     const unidade = (valor: string): string => (valor === 'horas' ? 'horas' : 'dias úteis');
-    const par = (valor: string, un: string): string => (valor === '' ? '' : `${valor} ${unidade(un)}`);
+    const par = (valor: string, un: string): string =>
+      valor === '' ? '' : `${valor} ${unidade(un)}`;
     const controles = grupo.controls;
-    const carater = this.caracteresPara(grupo).find((opcao) => opcao.valor === controles.carater.value);
+    const carater = this.caracteresPara(grupo).find(
+      (opcao) => opcao.valor === controles.carater.value,
+    );
     const janela =
       controles.inicio.value || controles.fim.value
         ? `${this.dataHoraLida(controles.inicio.value) || '—'} até ${this.dataHoraLida(controles.fim.value) || '—'}`
@@ -1056,8 +1103,15 @@ export class CronogramaStepComponent {
           ? `${controles.regraConsolidacaoCodigo.value} (${controles.regraConsolidacaoVersao.value})`
           : ''
         : null,
-      passoDoLancamento: this.etapaEhDeAvaliacaoHumana(grupo)
-        ? leituraDoCampoDecimal(controles.passoDoLancamento.value)
+      passoDoLancamento:
+        this.etapaEhDeAvaliacaoHumana(grupo) && !this.etapaUsaEscalaDeAtendimento(grupo)
+          ? leituraDoCampoDecimal(controles.passoDoLancamento.value)
+          : null,
+      itensDeAvaliacao: this.etapaDeclaraNotaMaxima(grupo) ? this.itensLidos(grupo) : null,
+      escalaDeAtendimento: this.etapaUsaEscalaDeAtendimento(grupo)
+        ? controles.escalaDeAtendimento.value.map(
+            (nivel) => `${nivel.rotulo} — ${decimalLido(nivel.percentual)}%`,
+          )
         : null,
       notaDoEnem: this.etapaDeNotaDoEnem(grupo),
       janela,
@@ -1290,7 +1344,10 @@ export class CronogramaStepComponent {
     return this.catalogos.atoPorCodigo().get(atoCodigo)?.ehResultado === true;
   }
 
-  private escreverProdutosDaEtapa(grupo: FormGroup<EtapaForm>, produtos: readonly ProdutoDaFase[]): void {
+  private escreverProdutosDaEtapa(
+    grupo: FormGroup<EtapaForm>,
+    produtos: readonly ProdutoDaFase[],
+  ): void {
     // `valueChanges` do formulário já propaga para o rascunho e incrementa a versão —
     // não há o que marcar aqui além do próprio controle.
     grupo.controls.produtos.setValue(produtos);
@@ -1371,7 +1428,10 @@ export class CronogramaStepComponent {
   }
 
   removerRecursoDaEtapa(grupo: FormGroup<EtapaForm>, posicao: number): void {
-    this.escreverRecursos(grupo, grupo.controls.recursos.value.filter((_, i) => i !== posicao));
+    this.escreverRecursos(
+      grupo,
+      grupo.controls.recursos.value.filter((_, i) => i !== posicao),
+    );
   }
 
   alterarRecursoDaEtapa(
@@ -1677,7 +1737,10 @@ export class CronogramaStepComponent {
    * caber nela; o início da própria janela, para um fim. Passar o valor atual é o que impede o
    * piso de invalidar cronograma já em curso, que é o caso da retificação.
    */
-  pisoDeData(valorAtual: string, ...limites: readonly (string | null | undefined)[]): string | null {
+  pisoDeData(
+    valorAtual: string,
+    ...limites: readonly (string | null | undefined)[]
+  ): string | null {
     return pisoDoCampoDeData(valorAtual, inicioDeHojeNoFusoInstitucional(), ...limites);
   }
 
@@ -1714,7 +1777,9 @@ export class CronogramaStepComponent {
       new Set(detalhe.data.etapas.map((etapa) => etapa.id)),
       // O formulário de cada fase pelas fases que acabaram de ser gravadas: é contra elas que o
       // servidor confere o formulário de cada documento.
-      new Map(detalhe.data.cronogramaFases.map((fase) => [fase.codigo, finalidadesQueAtende(fase)])),
+      new Map(
+        detalhe.data.cronogramaFases.map((fase) => [fase.codigo, finalidadesQueAtende(fase)]),
+      ),
     );
 
     // Os campos do formulário saem ANTES das exigências, e não é preferência de ordem: uma
@@ -1745,7 +1810,10 @@ export class CronogramaStepComponent {
     );
     if (geracao !== this.store.geracao()) return { valid: true };
     if (campos.tipo === 'recusados') {
-      return { valid: false, messages: [`As etapas e o cronograma foram gravados. ${campos.motivo}`] };
+      return {
+        valid: false,
+        messages: [`As etapas e o cronograma foram gravados. ${campos.motivo}`],
+      };
     }
     if (
       campos.tipo === 'semFaseDeInscricao' &&
@@ -1884,8 +1952,7 @@ export class CronogramaStepComponent {
     const algoritmoIgual =
       this.formulario.controls.algoritmoContagemCodigo.value ===
         cronograma.algoritmoContagemCodigo &&
-      this.formulario.controls.algoritmoContagemVersao.value ===
-        cronograma.algoritmoContagemVersao;
+      this.formulario.controls.algoritmoContagemVersao.value === cronograma.algoritmoContagemVersao;
 
     if (
       mesmoConteudo(atuais.fases, cronograma.fases) &&
