@@ -7,6 +7,8 @@ import type {
   BancaRequeridaDaFase,
   EtapaPontuada,
   FaseDoCronograma,
+  ItemDeAvaliacaoDaEtapa,
+  NivelDeAtendimentoDaEtapa,
   ProdutoDaFase,
   RecursoDaEtapa,
   RecursoDaFase,
@@ -73,6 +75,9 @@ export interface EtapaForm {
   readonly formaDeAvaliacao: FormControl<string>;
   readonly regraConsolidacaoCodigo: FormControl<string>;
   readonly regraConsolidacaoVersao: FormControl<string>;
+  /** Viajam como valor, e não como controles por linha: a gravação substitui a lista inteira. */
+  readonly itensDeAvaliacao: FormControl<readonly ItemDeAvaliacaoDaEtapa[]>;
+  readonly escalaDeAtendimento: FormControl<readonly NivelDeAtendimentoDaEtapa[]>;
   readonly ordem: FormControl<number>;
   /** Código canônico da fase a que a etapa pertence; vazio enquanto não declarada. */
   readonly faseCodigo: FormControl<string>;
@@ -144,6 +149,10 @@ export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
     formaDeAvaliacao: controle(etapa.formaDeAvaliacao ?? ''),
     regraConsolidacaoCodigo: controle(etapa.regraConsolidacaoCodigo ?? ''),
     regraConsolidacaoVersao: controle(etapa.regraConsolidacaoVersao ?? ''),
+    itensDeAvaliacao: controle<readonly ItemDeAvaliacaoDaEtapa[]>(etapa.itensDeAvaliacao ?? []),
+    escalaDeAtendimento: controle<readonly NivelDeAtendimentoDaEtapa[]>(
+      etapa.escalaDeAtendimento ?? [],
+    ),
     ordem: controle(etapa.ordem),
     // Etapa vinda de rascunho anterior ao vínculo não traz o campo: '' é o estado
     // "não declara fase", e undefined num FormControl quebraria a comparação.
