@@ -244,6 +244,26 @@ cfg-pesos-enem-page {
   flex-wrap: nowrap;
 }
 
+/* Na tabela (acima do ponto de quebra do cartão do DS) a célula só de ícones continua célula de
+   tabela: com display:flex ela deixa de preencher a altura da linha e a borda inferior sai
+   desalinhada das outras colunas. Abaixo disso a célula vira linha de cartão (flex) e segue a
+   regra acima. Células com botões de texto, que podem quebrar linha, seguem em flex. */
+@media not all and (max-width: 767px) {
+  td.table-responsive__actions:has(> ui-icon-button) {
+    display: table-cell;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  td.table-responsive__actions > ui-icon-button > .btn {
+    vertical-align: middle;
+  }
+
+  td.table-responsive__actions > ui-icon-button + ui-icon-button > .btn {
+    margin-inline-start: var(--space-2);
+  }
+}
+
 .panel > .pager {
   padding: var(--space-3) var(--space-5);
   margin: 0;
