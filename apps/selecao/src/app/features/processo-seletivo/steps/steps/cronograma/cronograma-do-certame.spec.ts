@@ -23,6 +23,7 @@ import {
   type TipoDeEtapaDoCatalogo,
   declaraNotaDoEnem,
   recusaDaEtapaDeNotaDoEnem,
+  localDoErroDaEtapa,
 } from './cronograma-do-certame';
 
 /** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
@@ -771,6 +772,50 @@ describe('o que impede gravar o cronograma', () => {
     const problemas = problemasDe([faseDeAvaliacao], [notaTorta], catalogo, []);
 
     expect(problemas).toContainEqual(expect.stringContaining('nota mínima'));
+  });
+
+  it('recusa nota máxima que não é número ou que não passa de zero', () => {
+    const base = { nome: 'Prova', peso: '1', tipoEtapaOrigemId: 'tipo-1' };
+
+    expect(
+      problemasDe([faseDeAvaliacao], [etapa({ ...base, notaMaxima: '10,' })], catalogo, []),
+    ).toContainEqual(expect.stringContaining('nota máxima'));
+    expect(
+      problemasDe([faseDeAvaliacao], [etapa({ ...base, notaMaxima: '0' })], catalogo, []),
+    ).toContainEqual(expect.stringContaining('nota máxima'));
+    expect(
+      problemasDe([faseDeAvaliacao], [etapa({ ...base, notaMaxima: '' })], catalogo, []),
+    ).not.toContainEqual(expect.stringContaining('nota máxima'));
+  });
+
+  it('recusa localmente a nota mínima acima da nota máxima', () => {
+    const base = { nome: 'Prova', peso: '1', tipoEtapaOrigemId: 'tipo-1', notaMaxima: '10' };
+    const confere = (notaMinima: string) =>
+      problemasDe([faseDeAvaliacao], [etapa({ ...base, notaMinima })], catalogo, []);
+
+    expect(confere('12')).toContainEqual(expect.stringContaining('não pode passar'));
+    expect(confere('10')).not.toContainEqual(expect.stringContaining('não pode passar'));
+  });
+
+  it('lê a etapa e o campo que a recusa do servidor aponta', () => {
+    expect(localDoErroDaEtapa('etapas[1].notaMaxima')).toEqual({ indice: 1, campo: 'notaMaxima' });
+    expect(localDoErroDaEtapa('etapas[2]')).toEqual({ indice: 2, campo: null });
+    expect(localDoErroDaEtapa('fases[0].codigo')).toBeNull();
+  });
+
+  it('não confere a nota máxima herdada por etapa do ENEM nem a mostra como pendência', () => {
+    const doEnem = etapa({
+      nome: 'Nota do ENEM',
+      peso: '1',
+      notaMaxima: '0',
+      notaMinima: '5',
+      tipoCongelado: { origemId: 'tipo-1', notaDeOrigemNoEnem: true },
+    });
+
+    const problemas = problemasDe([faseDeAvaliacao], [doEnem], catalogo, []);
+
+    expect(problemas).not.toContainEqual(expect.stringContaining('nota máxima'));
+    expect(problemas).not.toContainEqual(expect.stringContaining('não pode passar'));
   });
 
   it('campo numérico vazio continua sendo não declarado, e não erro', () => {

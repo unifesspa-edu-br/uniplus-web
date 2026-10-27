@@ -62,6 +62,22 @@ function detalheComRecursoDaEtapa(
   } as unknown as ProcessoSeletivoDto;
 }
 
+describe('escala da etapa no ida-e-volta', () => {
+  /** A gravação das etapas substitui o que está gravado: omitir o passo o apagaria. */
+  it('relê e regrava a nota máxima e o passo do lançamento', () => {
+    const detalhe = detalheComRecursoDaEtapa();
+    const dto = detalhe.etapas[0] as unknown as Record<string, unknown>;
+    dto['notaMaxima'] = 10;
+    dto['passoDoLancamento'] = 0.5;
+
+    const etapa = etapasDe(detalhe)[0];
+
+    expect(etapa.notaMaxima).toBe('10');
+    expect(etapa.passoDoLancamento).toBe('0.5');
+    expect(comoComandoDeEtapa(etapa)).toMatchObject({ notaMaxima: 10, passoDoLancamento: 0.5 });
+  });
+});
+
 describe('recurso da etapa no ida-e-volta', () => {
   /**
    * O efeito suspensivo é persistido pelo servidor em colunas próprias e devolvido na

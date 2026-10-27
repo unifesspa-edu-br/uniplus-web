@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   signal,
@@ -9,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, merge, take, type Subscription } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
@@ -17,6 +18,7 @@ import { ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared
 import {
   PAPEL_DEFINITIVO,
   PAPEL_PRELIMINAR,
+  type EtapaPontuada,
   type ProdutoDaFase,
   type RecursoDaEtapa,
   type StepValidation,
@@ -72,6 +74,7 @@ import {
   type ProducaoDosFatos,
 } from '../../shared/fase-do-fato';
 import { etapasDe } from '../../shared/hidratacao';
+import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../shared/instancia-superior';
 import { quemCitaNoProcesso } from '../formulario/formulario-de-inscricao';
 import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
@@ -79,15 +82,20 @@ import {
   inicioDeHojeNoFusoInstitucional,
   pisoDoCampoDeData,
 } from '../../shared/fuso-institucional';
+import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import {
   componeNota,
   declaraNotaDoEnem,
   descreverFase,
   finalidadesDaFase,
+  recusaDaEscalaDaEtapa,
   recusaDaEtapaDeNotaDoEnem,
+  localDoErroDaEtapa,
+  declaraNotaMaxima,
   problemasDoCronograma,
   renumerar,
+  type CampoDaEscala,
   type DescricaoDaFase,
   type ExigenciaDeclarada,
   type GrupoDeclarado,
@@ -104,6 +112,8 @@ import {
   type FaseForm,
 } from './cronograma-form';
 import { comoComandoDeEtapa } from './cronograma-para-comando';
+
+const CAMPOS_DA_ESCALA: readonly CampoDaEscala[] = ['notaMinima', 'notaMaxima'];
 
 /**
  * O que a tela responde enquanto as etapas gravadas estão sem os identificadores
@@ -138,6 +148,7 @@ interface FaseNaLinhaDoTempo extends DescricaoDaFase {
   providers: [provePassoDoWizard(CronogramaStepComponent)],
 })
 export class CronogramaStepComponent {
+  private readonly destroyRef = inject(DestroyRef);
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDoCronogramaService);
   private readonly cadastro = inject(CadastroInicialService);
@@ -312,7 +323,7 @@ export class CronogramaStepComponent {
     this.versaoDoFormulario();
     return problemasDoCronograma(
       this.fases.controls.map(faseDoFormulario),
-      this.etapas.controls.map(etapaDoFormulario),
+      this.etapasParaEnvio(),
       this.catalogos.fasePorId(),
       this.catalogos.precedencias(),
       this.catalogos.atoPorCodigo(),
@@ -760,6 +771,8 @@ export class CronogramaStepComponent {
    */
   private descartarOQueANotaDoEnemNaoTem(grupo: FormGroup<EtapaForm>): void {
     grupo.controls.bancas.setValue([]);
+    grupo.controls.notaMaxima.setValue('');
+    grupo.controls.passoDoLancamento.setValue('');
     grupo.controls.produtos.setValue([]);
     grupo.controls.inicio.setValue('');
     grupo.controls.fim.setValue('');
@@ -781,6 +794,100 @@ export class CronogramaStepComponent {
     return carater === 'classificatoria' || carater === 'ambas';
   }
 
+  /**
+   * A etapa tem nota lançada por banca: compõe a média ou corta por nota mínima. A etapa sem
+   * nota (apto/inapto) e a do ENEM, cuja escala vem do INEP, não declaram nota máxima.
+   */
+  etapaDeclaraNotaMaxima(grupo: FormGroup<EtapaForm>): boolean {
+    this.versaoDoFormulario();
+    const etapa = grupo.getRawValue();
+    return declaraNotaMaxima(etapa, this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId));
+  }
+
+  /** A recusa do servidor a um campo da escala da etapa, ou `null`. */
+  recusaDaEscala(grupo: FormGroup<EtapaForm>, campo: CampoDaEscala): string | null {
+    this.versaoDoFormulario();
+    return this.recusasDaEscala.get(grupo)?.recusas.get(campo) ?? null;
+  }
+
+  /**
+   * As duas notas se explicam entre si (a mínima acima da máxima se resolve em qualquer uma):
+   * mexer numa apaga a recusa das duas.
+   */
+  esquecerRecusaDaEscala(grupo: FormGroup<EtapaForm>): void {
+    if (this.descartarRecusaDaEscala(grupo)) this.versaoDoFormulario.update((versao) => versao + 1);
+  }
+
+  private descartarRecusaDaEscala(grupo: FormGroup<EtapaForm>): boolean {
+    const atual = this.recusasDaEscala.get(grupo);
+    atual?.assinatura.unsubscribe();
+    return this.recusasDaEscala.delete(grupo);
+  }
+
+  /**
+   * A recusa fica na etapa que a recebeu, e não na posição: remover ou mover etapas durante a
+   * gravação não a leva para outra. Etapa que já saiu do formulário a perde. Ela dura até o
+   * valor de uma das duas notas mudar, por digitação ou não.
+   */
+  private aplicarRecusasDaEscala(
+    enviadas: readonly FormGroup<EtapaForm>[],
+    erros: readonly { readonly field: string; readonly code: string }[],
+  ): void {
+    const aplicadas = new Map<FormGroup<EtapaForm>, Map<CampoDaEscala, string>>();
+    for (const erro of erros) {
+      const local = localDoErroDaEtapa(erro.field);
+      const texto = recusaDaEscalaDaEtapa(erro.code);
+      const campo = CAMPOS_DA_ESCALA.find((nome) => nome === local?.campo);
+      const grupo = local === null ? undefined : enviadas[local.indice];
+      if (campo === undefined || texto === null || grupo === undefined) continue;
+      if (!this.etapas.controls.includes(grupo)) continue;
+      aplicadas.set(grupo, (aplicadas.get(grupo) ?? new Map()).set(campo, texto));
+    }
+    for (const [grupo, recusas] of aplicadas) {
+      this.descartarRecusaDaEscala(grupo);
+      const assinatura = merge(
+        grupo.controls.notaMinima.valueChanges,
+        grupo.controls.notaMaxima.valueChanges,
+      )
+        .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.esquecerRecusaDaEscala(grupo));
+      this.recusasDaEscala.set(grupo, { recusas, assinatura });
+    }
+    this.versaoDoFormulario.update((versao) => versao + 1);
+  }
+
+  private readonly recusasDaEscala = new WeakMap<
+    FormGroup<EtapaForm>,
+    { readonly recusas: ReadonlyMap<CampoDaEscala, string>; readonly assinatura: Subscription }
+  >();
+
+  private limparRecusasDaEscala(): void {
+    const algumaApagada = this.etapas.controls
+      .map((grupo) => this.descartarRecusaDaEscala(grupo))
+      .some(Boolean);
+    if (algumaApagada) this.versaoDoFormulario.update((versao) => versao + 1);
+  }
+
+  /**
+   * As etapas como a conferência e o envio as leem: a escala só vale onde a tela a pede.
+   * O que ficou num campo que a etapa não mostra não é conferido nem enviado.
+   */
+  private etapasParaEnvio(): readonly EtapaPontuada[] {
+    return this.etapas.controls.map((grupo) => {
+      const etapa = etapaDoFormulario(grupo);
+      const tipo = this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId);
+      return declaraNotaMaxima(etapa, tipo)
+        ? etapa
+        : { ...etapa, notaMaxima: '', passoDoLancamento: '' };
+    });
+  }
+
+  private limparEscalaSeNaoDeclara(grupo: FormGroup<EtapaForm>): void {
+    if (this.etapaDeclaraNotaMaxima(grupo)) return;
+    grupo.controls.notaMaxima.setValue('');
+    grupo.controls.passoDoLancamento.setValue('');
+  }
+
   /** A etapa corta candidato — é onde a nota mínima tem o que fazer. */
   etapaElimina(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
@@ -799,6 +906,7 @@ export class CronogramaStepComponent {
     grupo.controls.carater.setValue(carater as CaraterEscolhido);
     if (!this.etapaComponeNota(grupo)) grupo.controls.peso.setValue('');
     if (!this.etapaElimina(grupo)) grupo.controls.notaMinima.setValue('');
+    this.limparEscalaSeNaoDeclara(grupo);
     this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
@@ -875,6 +983,9 @@ export class CronogramaStepComponent {
       carater: carater?.rotulo ?? '',
       peso: this.etapaComponeNota(grupo) ? controles.peso.value : null,
       notaMinima: this.etapaElimina(grupo) ? controles.notaMinima.value : null,
+      notaMaxima: this.etapaDeclaraNotaMaxima(grupo)
+        ? leituraDoCampoDecimal(controles.notaMaxima.value)
+        : null,
       notaDoEnem: this.etapaDeNotaDoEnem(grupo),
       janela,
       parecerIndividual: controles.emiteParecerIndividual.value,
@@ -1258,6 +1369,8 @@ export class CronogramaStepComponent {
         tipoEtapaOrigemId: '',
         peso: '',
         notaMinima: '',
+        notaMaxima: '',
+        passoDoLancamento: '',
         ordem: this.etapas.length + 1,
         faseCodigo,
         produtos: [],
@@ -1377,7 +1490,8 @@ export class CronogramaStepComponent {
     }
 
     const fases = this.fases.controls.map(faseDoFormulario);
-    const etapas = this.etapas.controls.map(etapaDoFormulario);
+    const grupos = [...this.etapas.controls];
+    const etapas = this.etapasParaEnvio();
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
@@ -1401,18 +1515,31 @@ export class CronogramaStepComponent {
         };
       }
 
+      this.limparRecusasDaEscala();
       const gravacaoDeEtapas = await this.cadastro.definirEtapas(
         processoId,
         etapas.map(comoComandoDeEtapa),
       );
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!gravacaoDeEtapas.ok) {
+        const problema = gravacaoDeEtapas.problem;
+        this.aplicarRecusasDaEscala(grupos, problema.errors ?? []);
+        const daRaiz = recusaDaEtapaDeNotaDoEnem(problema.code);
+        const resumo = resumoDaRecusa(
+          problema,
+          (erro) => {
+            const texto = recusaDaEscalaDaEtapa(erro.code);
+            if (texto === null) return recusaDaEtapaDeNotaDoEnem(erro.code);
+            const indice = localDoErroDaEtapa(erro.field)?.indice;
+            if (indice === undefined) return texto;
+            const nome = etapas[indice]?.nome.trim() ?? '';
+            return `${nome === '' ? `Etapa ${indice + 1}` : nome}: ${texto}`;
+          },
+          () => this.problemI18n.resolve(problema).title,
+        );
         return {
           valid: false,
-          messages: [
-            recusaDaEtapaDeNotaDoEnem(gravacaoDeEtapas.problem.code) ??
-              this.problemI18n.resolve(gravacaoDeEtapas.problem).title,
-          ],
+          messages: daRaiz === null || resumo.includes(daRaiz) ? resumo : [daRaiz, ...resumo],
         };
       }
 

@@ -722,6 +722,161 @@ describe('CronogramaStepComponent', () => {
     });
   });
 
+  describe('nota máxima da etapa', () => {
+    function etapaAberta(): FormGroup<EtapaForm> {
+      comFases(ID_AVALIACAO);
+      comEtapasEmFases(['AVALIACAO']);
+      componente.alternarFase(0);
+      componente.alternarEtapa(0);
+      detectar();
+      return componente.etapas.at(0);
+    }
+
+    it('pede a nota máxima da etapa com nota e a omite na etapa sem nota', () => {
+      const etapa = etapaAberta();
+      expect(nativo.querySelector('#cr-etapa-nota-maxima-0')).not.toBeNull();
+
+      componente.escolherCarater(etapa, '');
+      detectar();
+      expect(nativo.querySelector('#cr-etapa-nota-maxima-0')).toBeNull();
+    });
+
+    it('não pede a nota máxima da etapa do ENEM e descarta a que já havia', () => {
+      const etapa = etapaAberta();
+      etapa.controls.notaMaxima.setValue('10');
+      etapa.controls.passoDoLancamento.setValue('0,5');
+
+      componente.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
+      detectar();
+
+      expect(nativo.querySelector('#cr-etapa-nota-maxima-0')).toBeNull();
+      expect(etapa.controls.notaMaxima.value).toBe('');
+      expect(etapa.controls.passoDoLancamento.value).toBe('');
+    });
+
+    async function recusarNotaMaximaDaEtapa(indice: number): Promise<void> {
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      controller.expectOne(ROTA_ETAPAS).flush(
+        {
+          type: 'about:blank',
+          title: 'Validação',
+          status: 422,
+          code: 'uniplus.validacao',
+          traceId: '00000000000000000000000000000008',
+          errors: [
+            {
+              field: `etapas[${indice}].notaMaxima`,
+              code: 'uniplus.selecao.etapa_processo.nota_maxima_invalida',
+              message: 'x',
+            },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+      );
+      await gravacao;
+    }
+
+    it('a recusa acompanha a etapa que a recebeu quando outra sai da lista', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      comFases(ID_INSCRICAO, ID_AVALIACAO);
+      comEtapasEmFases(['COLETA_INSCRICAO', 'AVALIACAO', 'AVALIACAO']);
+      const [, segunda, terceira] = componente.etapas.controls;
+
+      await recusarNotaMaximaDaEtapa(1);
+      expect(componente.recusaDaEscala(segunda, 'notaMaxima')).not.toBeNull();
+
+      componente.removerFase(0);
+
+      expect(componente.etapas.controls).toEqual([segunda, terceira]);
+      expect(componente.recusaDaEscala(segunda, 'notaMaxima')).not.toBeNull();
+      expect(componente.recusaDaEscala(terceira, 'notaMaxima')).toBeNull();
+    });
+
+    it('a recusa some quando a troca de caráter esvazia o campo', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      const etapa = etapaAberta();
+      etapa.controls.notaMaxima.setValue('10');
+
+      await recusarNotaMaximaDaEtapa(0);
+      expect(componente.recusaDaEscala(etapa, 'notaMaxima')).not.toBeNull();
+
+      componente.escolherCarater(etapa, '');
+      expect(componente.recusaDaEscala(etapa, 'notaMaxima')).toBeNull();
+    });
+
+    it('não confere nem envia a escala herdada por etapa do ENEM', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      const etapa = etapaAberta();
+      etapa.controls.tipoCongelado.setValue({ origemId: TIPO_ETAPA, notaDeOrigemNoEnem: true });
+      etapa.controls.notaMaxima.setValue('0');
+      etapa.controls.passoDoLancamento.setValue('0,5');
+
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      const corpo = controller.expectOne(ROTA_ETAPAS).request.body as {
+        notaMaxima: unknown;
+        passoDoLancamento: unknown;
+      }[];
+      expect(corpo[0].notaMaxima).toBeNull();
+      expect(corpo[0].passoDoLancamento).toBeNull();
+      void gravacao;
+    });
+
+    it('mostra a recusa do servidor sob o campo e a retira quando o campo muda', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      const etapa = etapaAberta();
+      componente.escolherCarater(etapa, 'ambas');
+      etapa.controls.notaMaxima.setValue('10');
+      detectar();
+
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      controller.expectOne(ROTA_ETAPAS).flush(
+        {
+          type: 'about:blank',
+          title: 'Validação',
+          status: 422,
+          code: 'uniplus.validacao',
+          traceId: '00000000000000000000000000000006',
+          errors: [
+            {
+              field: 'etapas[0].notaMinima',
+              code: 'uniplus.selecao.etapa_processo.nota_minima_acima_da_nota_maxima',
+              message: 'acima',
+            },
+            {
+              field: 'etapas[0].notaMaxima',
+              code: 'uniplus.selecao.etapa_processo.nota_maxima_fora_do_passo',
+              message: 'fora',
+            },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+      );
+      const resultado = await gravacao;
+      detectar();
+
+      expect(resultado.valid).toBe(false);
+      const campo = nativo.querySelector('#cr-etapa-nota-maxima-0');
+      const erro = nativo.querySelector('#cr-etapa-nota-maxima-erro-0');
+      expect(erro?.textContent).toContain('múltipla do passo');
+      expect(campo?.getAttribute('aria-invalid')).toBe('true');
+      expect(campo?.getAttribute('aria-describedby')).toBe('cr-etapa-nota-maxima-erro-0');
+
+      expect(nativo.querySelector('#cr-etapa-nota-erro-0')?.textContent).toContain('não pode passar');
+
+      // A recusa da nota mínima se resolve mudando a máxima, e vice-versa: editar um limpa os dois.
+      nativo.querySelector('#cr-etapa-nota-0')?.dispatchEvent(new Event('input'));
+      detectar();
+      expect(nativo.querySelector('#cr-etapa-nota-maxima-erro-0')).toBeNull();
+      expect(nativo.querySelector('#cr-etapa-nota-erro-0')).toBeNull();
+    });
+  });
+
   it('abre a etapa pelo resumo, e mais de uma ao mesmo tempo', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO', 'AVALIACAO']);
@@ -1163,6 +1318,39 @@ describe('CronogramaStepComponent', () => {
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.join(' ')).toContain('quem julga o recurso');
+  });
+
+  it('mantém o texto da recusa do ENEM da raiz mesmo com erros de campo', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_ETAPAS).flush(
+      {
+        type: 'about:blank',
+        title: 'Validação',
+        status: 422,
+        code: 'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca',
+        traceId: '00000000000000000000000000000007',
+        errors: [
+          {
+            field: 'etapas[0].notaMaxima',
+            code: 'uniplus.selecao.etapa_processo.nota_maxima_invalida',
+            message: 'x',
+          },
+        ],
+      },
+      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+    );
+
+    const resultado = await gravacao;
+    const texto = resultado.messages?.join(' ');
+    expect(texto).toContain('quem julga o recurso');
+    expect(texto).toContain('Prova objetiva: A nota máxima precisa ser maior que zero.');
   });
 
   /**

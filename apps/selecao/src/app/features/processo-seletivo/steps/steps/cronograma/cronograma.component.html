@@ -93,6 +93,9 @@
               @if (etapa.notaMinima !== null) {
                 <ui-valor-em-consulta rotulo="Nota mínima" [valor]="etapa.notaMinima" />
               }
+              @if (etapa.notaMaxima !== null) {
+                <ui-valor-em-consulta rotulo="Nota máxima" [valor]="etapa.notaMaxima" />
+              }
               @if (etapa.notaDoEnem) {
                 <p class="form-grid__full field__hint">
                   A nota desta etapa é calculada pelo sistema a partir da nota do ENEM do candidato.
@@ -579,6 +582,7 @@
                               </div>
                             }
                             @if (etapaElimina(etapa)) {
+                              @let recusaDaNotaMinima = recusaDaEscala(etapa, 'notaMinima');
                               <div class="form-field">
                                 <label class="label" [attr.for]="'cr-etapa-nota-' + posicao"
                                   >Nota mínima</label
@@ -589,7 +593,43 @@
                                   inputmode="decimal"
                                   [attr.id]="'cr-etapa-nota-' + posicao"
                                   formControlName="notaMinima"
+                                  [attr.aria-invalid]="recusaDaNotaMinima ? 'true' : null"
+                                  [attr.aria-describedby]="
+                                    recusaDaNotaMinima ? 'cr-etapa-nota-erro-' + posicao : null
+                                  "
                                 />
+                                @if (recusaDaNotaMinima) {
+                                  <p class="field__error" [id]="'cr-etapa-nota-erro-' + posicao">
+                                    {{ recusaDaNotaMinima }}
+                                  </p>
+                                }
+                              </div>
+                            }
+                            @if (etapaDeclaraNotaMaxima(etapa)) {
+                              @let recusaDaNotaMaxima = recusaDaEscala(etapa, 'notaMaxima');
+                              <div class="form-field">
+                                <label class="label" [attr.for]="'cr-etapa-nota-maxima-' + posicao"
+                                  >Nota máxima</label
+                                >
+                                <input
+                                  class="input"
+                                  type="text"
+                                  inputmode="decimal"
+                                  [attr.id]="'cr-etapa-nota-maxima-' + posicao"
+                                  formControlName="notaMaxima"
+                                  [attr.aria-invalid]="recusaDaNotaMaxima ? 'true' : null"
+                                  [attr.aria-describedby]="
+                                    recusaDaNotaMaxima ? 'cr-etapa-nota-maxima-erro-' + posicao : null
+                                  "
+                                />
+                                @if (recusaDaNotaMaxima) {
+                                  <p
+                                    class="field__error"
+                                    [id]="'cr-etapa-nota-maxima-erro-' + posicao"
+                                  >
+                                    {{ recusaDaNotaMaxima }}
+                                  </p>
+                                }
                               </div>
                             }
                             <!--

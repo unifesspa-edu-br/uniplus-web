@@ -213,6 +213,25 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await expect(etapa.getByLabel('Peso')).toBeVisible();
   });
 
+  /**
+   * A nota máxima é a escala da etapa com nota lançada: aparece junto do peso ou da nota
+   * mínima, e some quando a etapa não tem nota (apto/inapto).
+   */
+  test('pede a nota máxima só da etapa que tem nota', async ({ page }) => {
+    await acrescentarEtapa(page);
+    const etapa = page.locator('.etapa-bloco--aberta').last();
+
+    await etapa.getByLabel('Tipo').selectOption({ label: 'Prova Objetiva' });
+    await expect(etapa.getByLabel('Nota máxima')).toHaveCount(0);
+
+    await etapa.getByLabel('Caráter').selectOption({ label: 'Classificatória' });
+    await expect(etapa.getByLabel('Nota máxima')).toBeVisible();
+
+    await etapa.getByLabel('Nota máxima').fill('10');
+    await etapa.getByLabel('Caráter').selectOption({ label: 'Eliminatória' });
+    await expect(etapa.getByLabel('Nota máxima')).toHaveValue('10');
+  });
+
   /** Só ato que o catálogo marca como resultado recebe papel no ciclo recursal. */
   test('a etapa declara o que publica, com papel', async ({ page }) => {
     await acrescentarEtapa(page);
