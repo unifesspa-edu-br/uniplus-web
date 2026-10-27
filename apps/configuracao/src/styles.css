@@ -237,16 +237,6 @@ cfg-pesos-enem-page {
 .cfg-modelo-resumo:focus { outline: none; }
 .cfg-modelo-resumo:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 
-/* Abaixo do ponto de quebra o DS faz da célula de ações uma linha de cartão (flex). Os ícones
-   ficam juntos: com quebra, a tabela estreitava a coluna até um ícone por linha. */
-@media (max-width: 767px) {
-  .table-responsive__actions {
-    gap: var(--space-2);
-    justify-content: flex-end;
-    flex-wrap: nowrap;
-  }
-}
-
 .panel > .pager {
   padding: var(--space-3) var(--space-5);
   margin: 0;
