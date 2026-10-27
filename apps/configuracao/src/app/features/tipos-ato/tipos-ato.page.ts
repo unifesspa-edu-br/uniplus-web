@@ -284,7 +284,7 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
                       {{ ato.exigeAtoCorrigido ? 'Sim' : 'Não' }}
                     </span>
                   </td>
-                  <td class="table-responsive__actions cfg-tipos-ato__acoes" data-label="Ações">
+                  <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
                       icon="pi-pencil"
                       [accessibleName]="'Editar tipo de ato ' + identificacaoDaVigencia(ato)"
