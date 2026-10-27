@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveConfiguracaoWebUrl, type AppConfig } from './app-config.model';
+import {
+  resolveAcompanhamentoValidacaoHabilitada,
+  resolveConfiguracaoWebUrl,
+  type AppConfig,
+} from './app-config.model';
 
 const BASE: AppConfig = {
   apiUrl: 'http://localhost:5000',
@@ -32,5 +36,33 @@ describe('resolveConfiguracaoWebUrl', () => {
 
   it('cai no prefixo compartilhado antes de a configuração carregar', () => {
     expect(resolveConfiguracaoWebUrl(null)).toBe('/configuracao');
+  });
+});
+
+describe('resolveAcompanhamentoValidacaoHabilitada', () => {
+  it('fica desligado quando a opção está ausente ou a configuração ainda não carregou', () => {
+    expect(resolveAcompanhamentoValidacaoHabilitada(BASE)).toBe(false);
+    expect(resolveAcompanhamentoValidacaoHabilitada(null)).toBe(false);
+  });
+
+  it('liga somente com o booleano true', () => {
+    expect(
+      resolveAcompanhamentoValidacaoHabilitada({
+        ...BASE,
+        acompanhamentoValidacaoHabilitada: true,
+      }),
+    ).toBe(true);
+    expect(
+      resolveAcompanhamentoValidacaoHabilitada({
+        ...BASE,
+        acompanhamentoValidacaoHabilitada: false,
+      }),
+    ).toBe(false);
+    expect(
+      resolveAcompanhamentoValidacaoHabilitada({
+        ...BASE,
+        acompanhamentoValidacaoHabilitada: 'true',
+      } as unknown as AppConfig),
+    ).toBe(false);
   });
 });
