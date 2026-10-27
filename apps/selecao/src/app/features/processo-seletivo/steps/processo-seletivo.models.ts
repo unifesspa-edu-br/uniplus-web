@@ -319,6 +319,13 @@ export interface EtapaPontuada {
   readonly tipoEtapaOrigemId: string;
   readonly peso: string;
   readonly notaMinima: string;
+  /** Teto da escala de lançamento; vazio quando a etapa não tem nota ou ainda não o declarou. Ausente em rascunho anterior ao campo. */
+  readonly notaMaxima?: string;
+  /**
+   * Passo do lançamento. Viaja sem ser editado neste passo: a gravação das etapas substitui
+   * o que está gravado, e omiti-lo apagaria o passo declarado.
+   */
+  readonly passoDoLancamento?: string;
   readonly ordem: number;
   /**
    * Código canônico da fase a que a etapa pertence. É o que permite qualquer fase

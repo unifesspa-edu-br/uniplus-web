@@ -477,6 +477,51 @@ export function recusaDaEtapaDeNotaDoEnem(codigo: string): string | null {
   return RECUSA_DA_ETAPA_DE_NOTA_DO_ENEM.get(codigo) ?? null;
 }
 
+/** Os campos da escala de nota que a tela da etapa mostra e sob os quais a recusa do servidor aparece. */
+export type CampoDaEscala = 'notaMinima' | 'notaMaxima';
+
+const RECUSA_DA_ESCALA_DA_ETAPA: ReadonlyMap<string, string> = new Map([
+  [
+    'uniplus.selecao.etapa_processo.nota_maxima_invalida',
+    'A nota máxima precisa ser maior que zero.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.nota_minima_acima_da_nota_maxima',
+    'A nota mínima não pode passar da nota máxima.',
+  ],
+  [
+    'uniplus.selecao.etapa_processo.nota_maxima_fora_do_passo',
+    'A nota máxima precisa ser múltipla do passo do lançamento.',
+  ],
+]);
+
+/** O texto da recusa do servidor à escala da etapa, ou `null` quando a recusa é outra. */
+export function recusaDaEscalaDaEtapa(codigo: string): string | null {
+  return RECUSA_DA_ESCALA_DA_ETAPA.get(codigo) ?? null;
+}
+
+/**
+ * A etapa e o campo que uma recusa do servidor aponta (`etapas[i].campo`); o índice é o da etapa
+ * no que foi enviado. `campo` é `null` quando a recusa aponta a etapa inteira.
+ */
+export function localDoErroDaEtapa(
+  field: string,
+): { readonly indice: number; readonly campo: string | null } | null {
+  const [, indice, campo] = /^etapas\[(\d+)\](?:\.(\w+))?$/.exec(field) ?? [];
+  return indice === undefined ? null : { indice: Number(indice), campo: campo ?? null };
+}
+
+/**
+ * A etapa pede nota máxima quando tem nota lançada — compõe a média ou corta por nota mínima,
+ * o que o caráter diz — e não é do ENEM, cuja escala vem do INEP.
+ */
+export function declaraNotaMaxima(
+  etapa: Pick<EtapaPontuada, 'carater' | 'tipoEtapaOrigemId' | 'tipoCongelado'>,
+  tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
+): boolean {
+  return etapa.carater !== '' && !declaraNotaDoEnem(etapa, tipoDoCadastro);
+}
+
 export function componeNota(etapa: EtapaPontuada): boolean {
   const pontua = etapa.carater === 'classificatoria' || etapa.carater === 'ambas';
   const peso = decimalDoCampo(etapa.peso);
@@ -734,6 +779,25 @@ function problemasDasEtapas(
     );
   }
 
+  // Só a etapa que pede nota máxima é conferida: um valor herdado em etapa que não a mostra
+  // bloquearia a gravação com mensagem sobre um campo que o operador não vê.
+  for (const etapa of etapas) {
+    if (!declaraNotaMaxima(etapa, tipoDaEtapa(etapa.tipoEtapaOrigemId))) continue;
+    const nome = `etapa "${etapa.nome.trim()}"`;
+    const maxima = etapa.notaMaxima ?? '';
+    if (naoConverte(maxima)) {
+      problemas.push(
+        `A nota máxima da ${nome} precisa ser um número, com ponto ou vírgula decimal.`,
+      );
+    } else if (pesoDeclaradoNaoPositivo(maxima)) {
+      problemas.push(`A nota máxima da ${nome}, quando declarada, precisa ser maior que zero.`);
+    } else if (notaMinimaAcimaDaMaxima(etapa)) {
+      // Só o servidor confere a escala inteira, mas recusar aqui evita gravar as fases e só
+      // então ter as etapas recusadas.
+      problemas.push(`A nota mínima da ${nome} não pode passar da nota máxima dela.`);
+    }
+  }
+
   // Zero converte, então a conferência de forma acima o deixa passar, e a
   // agregada também: basta outra etapa compor a nota. O domínio exige peso
   // maior que zero em toda etapa que o declara, e recusaria a gravação inteira
@@ -889,6 +953,12 @@ function suspensividadeIncoerente(valor: string, unidade: string): boolean {
 function pesoDeclaradoNaoPositivo(peso: string): boolean {
   const valor = decimalDoCampo(peso);
   return peso.trim() !== '' && valor !== null && valor <= 0;
+}
+
+function notaMinimaAcimaDaMaxima(etapa: EtapaPontuada): boolean {
+  const minima = decimalDoCampo(etapa.notaMinima);
+  const maxima = decimalDoCampo(etapa.notaMaxima ?? '');
+  return minima !== null && maxima !== null && maxima > 0 && minima > maxima;
 }
 
 /** Campo preenchido que a gramática numérica do editor não aceita. */

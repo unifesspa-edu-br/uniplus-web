@@ -80,6 +80,7 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
  * declarar que não conta para a nota.
  */
 export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
+  const notaMaxima = decimalDoCampo(etapa.notaMaxima ?? '');
   return {
     ...(etapa.id === null ? {} : { id: etapa.id }),
     nome: etapa.nome.trim(),
@@ -87,6 +88,8 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     tipoEtapaOrigemId: etapa.tipoEtapaOrigemId,
     peso: decimalDoCampo(etapa.peso),
     notaMinima: decimalDoCampo(etapa.notaMinima),
+    notaMaxima,
+    passoDoLancamento: notaMaxima === null ? null : decimalDoCampo(etapa.passoDoLancamento ?? ''),
     ordem: etapa.ordem,
     faseCodigo: etapa.faseCodigo === '' ? null : etapa.faseCodigo,
     produtos: etapa.produtos.map((produto) => ({

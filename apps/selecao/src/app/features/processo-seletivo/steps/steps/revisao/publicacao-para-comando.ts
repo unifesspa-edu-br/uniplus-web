@@ -162,6 +162,7 @@ const ROTULO_POR_DIMENSAO: ReadonlyMap<string, string> = new Map<string, string>
   ['coleta_de_fatos', 'Coleta de fatos'],
   ['bonus_regional', 'Bônus regional'],
   ['desempate', 'Critérios de desempate'],
+  ['etapas', 'Etapas'],
 ]);
 
 /**
@@ -220,6 +221,8 @@ const PASSO_POR_DIMENSAO: ReadonlyMap<string, RotuloDePasso> = new Map<string, R
   // própria têm passo próprio.
   ['bonus_regional', 'Bônus'],
   ['desempate', 'Desempate'],
+  // A nota máxima é declarada na própria etapa, no passo do cronograma.
+  ['etapas', 'Cronograma'],
 ]);
 
 /**

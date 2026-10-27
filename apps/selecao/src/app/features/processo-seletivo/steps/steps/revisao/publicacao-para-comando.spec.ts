@@ -345,6 +345,12 @@ describe('destino de cada pendência no painel', () => {
     ).toBe('Atend. especial');
   });
 
+  /** A nota máxima da etapa é declarada na própria etapa, no passo do cronograma. */
+  it('leva ao cronograma a falta da nota máxima da etapa com nota', () => {
+    expect(rotuloDoItem('etapa_com_nota_sem_nota_maxima', 'etapas')).toBe('Cronograma');
+    expect(rotuloDaDimensao('etapas')).toBe('Etapas');
+  });
+
   /** A exigência documental é declarada na superfície da fase, dentro do passo do cronograma. */
   it('leva ao cronograma a pendência de exigência documental', () => {
     expect(rotuloDoItem('exigencias_base_legal_nao_resolvida', 'exigencias_documentais')).toBe(
