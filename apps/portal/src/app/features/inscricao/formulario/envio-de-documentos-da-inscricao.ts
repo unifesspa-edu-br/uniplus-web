@@ -25,7 +25,6 @@ import {
 
 const FORMATO_NAO_ACEITO = 'O formato do arquivo não é aceito.';
 const FALHA_NO_ARMAZENAMENTO = 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.';
-const FALHA_AO_BAIXAR = 'Não foi possível baixar o arquivo. Tente novamente.';
 const ENDERECO_VENCIDO =
   'O endereço de envio não é mais válido. Tente novamente para obter um novo.';
 const STATUS_DE_SERVIDOR = 500;
@@ -111,8 +110,6 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
         return { ok: true };
       case 'recusado':
         return { ok: false, mensagem: this.explicar(desfecho.problem) };
-      case 'falhou':
-        return { ok: false, mensagem: FALHA_AO_BAIXAR };
     }
   }
 

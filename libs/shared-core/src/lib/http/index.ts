@@ -68,7 +68,6 @@ export {
   baixarPeloAcesso,
   destinoExpirado,
   enviarAoStorage,
-  nomeDaDisposicao,
 } from './envio-pre-assinado';
 export type {
   DesfechoDaAbertura,

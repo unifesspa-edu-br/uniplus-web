@@ -207,18 +207,4 @@ describe('Envio dos documentos da inscrição', () => {
     expect(primeira.ok).toBe(false);
     expect(api.iniciarEnvioDeDocumento).toHaveBeenCalledTimes(2);
   });
-
-  it('armazenamento que não entrega o arquivo: baixar devolve a falha para a tela, sem salvar nada', async () => {
-    api.obterAcessoDoArquivo.mockReturnValue(of(okResult({ url: 'http://storage/arquivo' })));
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
-
-    try {
-      expect(await envio().baixar('arquivo-1')).toEqual({
-        ok: false,
-        mensagem: 'Não foi possível baixar o arquivo. Tente novamente.',
-      });
-    } finally {
-      vi.unstubAllGlobals();
-    }
-  });
 });
