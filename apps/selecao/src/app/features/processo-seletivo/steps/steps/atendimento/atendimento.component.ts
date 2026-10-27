@@ -380,11 +380,11 @@ export class AtendimentoStepComponent {
 
   /**
    * Os fatos que o formulário de inscrição pergunta ao candidato e cujo domínio sai DESTA
-   * tela — a condição de atendimento. O tipo de deficiência perguntado no formulário oferece os
+   * tela — a condição de atendimento e o recurso de acessibilidade. O tipo de deficiência perguntado no formulário oferece os
    * tipos do cadastro, com ou sem oferta (UNI-REQ-0012).
    *
-   * O acoplamento é real e a publicação o cobra: um campo de seleção sobre esse fato com a lista
-   * de condições vazia é pendência estrutural. Sem dizê-lo aqui, o operador grava a oferta vazia
+   * O acoplamento é real e a publicação o cobra: um campo de seleção sobre um desses fatos com a
+   * lista correspondente da oferta vazia é pendência estrutural. Sem dizê-lo aqui, o operador grava a oferta vazia
    * sem nada indicando o problema, descobre na revisão, e o botão "Ir para Atend. especial" o
    * traz de volta a uma tela que não menciona por que ele veio.
    */
