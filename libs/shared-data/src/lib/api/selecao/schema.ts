@@ -9886,6 +9886,10 @@ export interface components {
             readonly peso: null | number | string;
             /** Format: double */
             readonly notaMinima: null | number | string;
+            /** Format: double */
+            readonly notaMaxima: null | number | string;
+            /** Format: double */
+            readonly passoDoLancamento: null | number | string;
             /** Format: int32 */
             readonly ordem: null | number | string;
             readonly faseCodigo: null | string;
@@ -9921,6 +9925,10 @@ export interface components {
             readonly emiteParecerIndividual: boolean;
             readonly bancas: readonly components["schemas"]["BancaDaEtapaInput"][];
             readonly recursos: readonly components["schemas"]["RecursoDaEtapaInput"][];
+            /** Format: double */
+            readonly notaMaxima?: null | number | string;
+            /** Format: double */
+            readonly passoDoLancamento?: null | number | string;
         };
         readonly ExigenciaDocumentalCertameDto: {
             readonly rotulo: string;
