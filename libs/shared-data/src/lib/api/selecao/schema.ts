@@ -9901,6 +9901,8 @@ export interface components {
             readonly emiteParecerIndividual: boolean;
             readonly bancas: readonly components["schemas"]["BancaDaEtapaDto"][];
             readonly recursos: readonly components["schemas"]["RecursoDaEtapaDto"][];
+            readonly formaDeAvaliacao: null | string;
+            readonly regraConsolidacao: null | components["schemas"]["ReferenciaRegraDto"];
         };
         readonly EtapaProcessoInput: {
             readonly nome: string;
@@ -9929,6 +9931,9 @@ export interface components {
             readonly notaMaxima?: null | number | string;
             /** Format: double */
             readonly passoDoLancamento?: null | number | string;
+            readonly formaDeAvaliacao?: null | string;
+            readonly regraConsolidacaoCodigo?: null | string;
+            readonly regraConsolidacaoVersao?: null | string;
         };
         readonly ExigenciaDocumentalCertameDto: {
             readonly rotulo: string;
