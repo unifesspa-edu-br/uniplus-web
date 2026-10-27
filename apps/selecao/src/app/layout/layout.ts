@@ -10,6 +10,10 @@ import {
 } from '@uniplus/shared-auth/bootstrap';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
 import {
+  AppConfigService,
+  resolveAcompanhamentoValidacaoHabilitada,
+} from '@uniplus/shared-data/config';
+import {
   AppShellComponent,
   UiShellBreadcrumbItem,
   UiShellNavGroup,
@@ -61,6 +65,7 @@ interface SelNavGroup {
 export class LayoutComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly appConfig = inject(AppConfigService);
   protected readonly userContext = inject(UserContextService);
 
   protected readonly breadcrumb = toSignal(
@@ -105,9 +110,31 @@ export class LayoutComponent {
     },
   ];
 
+  /** Menu do modo de validação do acompanhamento; Notas e Classificação não ganham entrada. */
+  private readonly navGroupsAcompanhamento: readonly SelNavGroup[] = [
+    {
+      label: 'Acompanhamento',
+      items: [{ label: 'Painel de processos', icon: 'pi-table', routerLink: '/dashboard' }],
+    },
+    {
+      label: 'Cadastro',
+      items: [
+        {
+          label: 'Processos seletivos',
+          icon: 'pi-file',
+          routerLink: '/processo-seletivo',
+          roles: ['plataforma-admin'],
+        },
+      ],
+    },
+  ];
+
   protected readonly navGroups = computed<readonly UiShellNavGroup[]>(() => {
     const papeis = new Set(this.authService.roles());
-    return this.navGroupsDeclarados
+    const declarados = resolveAcompanhamentoValidacaoHabilitada(this.appConfig.config())
+      ? this.navGroupsAcompanhamento
+      : this.navGroupsDeclarados;
+    return declarados
       .map((grupo) => ({
         ...grupo,
         items: grupo.items.filter(
