@@ -46,8 +46,10 @@
               [rotulo]="'Regra de eliminação ' + (indice + 1)"
               [valor]="leitura.regra"
             />
-            @if (usaEtapaENotaMinima(regra)) {
+            @if (usaEtapa(regra)) {
               <ui-valor-em-consulta rotulo="Etapa" [valor]="leitura.etapa" />
+            }
+            @if (usaEtapaENotaMinima(regra)) {
               <ui-valor-em-consulta rotulo="Nota mínima" [valor]="leitura.notaMinima" />
             }
             @if (usaAreaEMinimo(regra)) {
@@ -110,23 +112,31 @@
               </select>
             </div>
 
-            @if (usaEtapaENotaMinima(regra)) {
+            @if (usaEtapa(regra)) {
+              @let recusaDaEtapa = recusaDoCampo(indice, 'etapa');
               <div class="form-field">
                 <label class="label" [attr.for]="'elim-etapa-' + indice">Etapa</label
                 ><select
                   class="input"
                   [id]="'elim-etapa-' + indice"
                   [disabled]="!store.aceitaEdicao()"
+                  [attr.aria-invalid]="recusaDaEtapa ? 'true' : null"
+                  [attr.aria-describedby]="descritoPor(indice, 'etapa', null)"
                   (change)="alterarEtapaRef(indice, $any($event.target).value)"
                 >
                   <option value="" [selected]="regra.etapaRef === ''">— escolher —</option>
-                  @for (etapa of etapasReferenciaveis(); track etapa.id) {
+                  @for (etapa of etapasEscolhiveis(indice); track etapa.id) {
                     <option [value]="etapa.id" [selected]="etapa.id === regra.etapaRef">
                       {{ etapa.nome || 'Etapa sem nome' }}
                     </option>
                   }
                 </select>
+                @if (recusaDaEtapa) {
+                  <p class="field__error" [id]="'elim-etapa-erro-' + indice">{{ recusaDaEtapa }}</p>
+                }
               </div>
+            }
+            @if (usaEtapaENotaMinima(regra)) {
               <div class="form-field">
                 <label class="label" [attr.for]="'elim-nota-' + indice">Nota mínima</label
                 ><input

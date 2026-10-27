@@ -15,6 +15,7 @@ import {
   eliminacaoExigeBaseadoEmEnem,
   exigeResolucaoPesoAreaEnem,
   eliminacaoUsaEtapaENotaMinima,
+  eliminacaoUsaSoEtapa,
   eliminacaoUsaAreaEMinimo,
   mensagensDeClassificacaoBase,
 } from './classificacao-para-comando';
@@ -234,6 +235,32 @@ describe('shape por código de regra de eliminação (DefinirClassificacaoComman
       notaMinima: null,
       minimo: 400,
       areaCodigo: 'MATEMATICA',
+    });
+  });
+
+  it('ELIM-AUSENCIA-NA-ETAPA usa só etapaRef, sem exigir ENEM', () => {
+    expect(eliminacaoUsaSoEtapa('ELIM-AUSENCIA-NA-ETAPA')).toBe(true);
+    expect(eliminacaoUsaEtapaENotaMinima('ELIM-AUSENCIA-NA-ETAPA')).toBe(false);
+    expect(eliminacaoExigeBaseadoEmEnem('ELIM-AUSENCIA-NA-ETAPA')).toBe(false);
+
+    const comando = comoComandoDeRegraEliminacao(
+      regraEliminacao({
+        regraCodigo: 'ELIM-AUSENCIA-NA-ETAPA',
+        regraVersao: '1.0',
+        etapaRef: 'etapa-1',
+        notaMinima: '5', // resíduo — não pode vazar
+        minimo: '400', // idem
+        areaCodigo: 'REDACAO', // idem
+      }),
+    );
+
+    expect(comando).toEqual({
+      regraCodigo: 'ELIM-AUSENCIA-NA-ETAPA',
+      regraVersao: '1.0',
+      etapaRef: 'etapa-1',
+      notaMinima: null,
+      minimo: null,
+      areaCodigo: null,
     });
   });
 
