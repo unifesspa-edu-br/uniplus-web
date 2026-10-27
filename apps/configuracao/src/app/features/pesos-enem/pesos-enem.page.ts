@@ -181,8 +181,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
       Cada linha representa um grupo de curso de uma resolução do Consepe. Os pesos das áreas são
       definidos pela instituição em cada processo seletivo — não há soma fixa; o sistema registra os valores
       informados sem bloquear. O corte de uma área é a nota mínima exigida nela: é opcional e não entra em
-      cálculo de soma. Por enquanto, só a Redação aceita corte. Estes parâmetros também são congelados por
-      processo seletivo.
+      cálculo de soma. Estes parâmetros também são congelados por processo seletivo.
     </ui-alert>
 
     <!-- Um alerta e um "Tentar novamente" por lista. -->
