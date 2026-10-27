@@ -72,7 +72,8 @@ async function jsonRoute(route: Route, body: unknown, status = 200): Promise<voi
 
 interface Capturado {
   readonly posts: unknown[];
-  readonly puts: unknown[];
+  /** O PUT vai para `/{id}`: o id identifica a linha (o corpo não traz o grupo). */
+  readonly puts: { readonly id: string; readonly corpo: unknown }[];
   readonly deletedIds: string[];
 }
 
@@ -84,14 +85,15 @@ async function mockApi(page: Page, capturado: Capturado, lista: readonly unknown
   let sequencial = 0;
   await page.route(/\/api\/configuracao\/admin\/pesos-area-enem\/[^/?]+$/, async (route) => {
     const method = route.request().method();
+    const partes = route.request().url().split('/');
+    const id = partes[partes.length - 1] ?? '';
     if (method === 'DELETE') {
-      const partes = route.request().url().split('/');
-      capturado.deletedIds.push(partes[partes.length - 1] ?? '');
+      capturado.deletedIds.push(id);
       await route.fulfill({ status: 204, headers: CORS_HEADERS });
       return;
     }
     if (method === 'PUT') {
-      capturado.puts.push(route.request().postDataJSON());
+      capturado.puts.push({ id, corpo: route.request().postDataJSON() });
       await route.fulfill({ status: 204, headers: CORS_HEADERS });
       return;
     }
@@ -148,6 +150,13 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     await expect(page.getByText('Corte de redação')).toHaveCount(0);
   });
 
+  test('nenhum texto restringe o corte à Redação', async ({ page }) => {
+    await mockApi(page, novoCapturado(), SEED);
+    await abrirPagina(page);
+
+    await expect(page.getByText(/só a Redação/i)).toHaveCount(0);
+  });
+
   test('CA-05: cria nova resolução coordenando 4 commands', async ({ page }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, []);
@@ -158,7 +167,8 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     await page.locator('[formControlName="baseLegalGlobal"]').fill('Res. 900/2026 Anexo I');
 
     await page.getByLabel('Peso de Matemática e suas Tecnologias — Tecnológica').fill('2.5');
-    await page.getByLabel('Corte de Redação — Tecnológica').fill('450');
+    // O corte não é exclusivo da Redação: vai no item da própria área.
+    await page.getByLabel('Corte de Matemática e suas Tecnologias — Tecnológica').fill('450');
 
     await page.getByRole('button', { name: 'Criar resolução', exact: true, }).click();
 
@@ -176,12 +186,41 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     expect(posts.map((post) => post.grupoCurso).sort()).toEqual(GRUPOS.map((grupo) => grupo.codigo).sort());
     const tecnologica = posts.find((post) => post.grupoCurso === 'TECNOLOGICA');
     expect(tecnologica?.areas).toEqual([
-      { codigo: 'REDACAO', peso: 0, corte: 450 },
+      { codigo: 'REDACAO', peso: 0, corte: null },
       { codigo: 'CIENCIAS_DA_NATUREZA', peso: 0, corte: null },
       { codigo: 'CIENCIAS_HUMANAS', peso: 0, corte: null },
       { codigo: 'LINGUAGENS', peso: 0, corte: null },
-      { codigo: 'MATEMATICA', peso: 2.5, corte: null },
+      { codigo: 'MATEMATICA', peso: 2.5, corte: 450 },
     ]);
+  });
+
+  test('edição envia o corte de uma área diferente da Redação no item dela', async ({ page }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, SEED);
+    await abrirPagina(page);
+
+    await page.getByRole('button', { name: 'Editar parâmetros', exact: true, }).click();
+    await page.getByLabel('Corte de Matemática e suas Tecnologias — Tecnológica').fill('450');
+    await page.getByRole('button', { name: 'Salvar', exact: true, }).click();
+
+    await expect.poll(() => capturado.puts.length).toBe(4);
+    type CorpoDoPut = { areas: ReadonlyArray<{ codigo: string; peso: number; corte: number | null }> };
+    const corteDeMatematica = (id: string): number | null | undefined =>
+      (capturado.puts.find((put) => put.id === id)?.corpo as CorpoDoPut | undefined)?.areas.find(
+        (area) => area.codigo === 'MATEMATICA',
+      )?.corte;
+    const tecnologica = capturado.puts.find((put) => put.id === String(SEED[0]?.['id']))?.corpo as CorpoDoPut | undefined;
+    expect(tecnologica?.areas).toEqual([
+      { codigo: 'REDACAO', peso: 1, corte: 400 },
+      { codigo: 'CIENCIAS_DA_NATUREZA', peso: 1, corte: null },
+      { codigo: 'CIENCIAS_HUMANAS', peso: 1, corte: null },
+      { codigo: 'LINGUAGENS', peso: 1, corte: null },
+      { codigo: 'MATEMATICA', peso: 2.5, corte: 450 },
+    ]);
+    // Os outros grupos seguem sem corte em Matemática.
+    for (const linhaDoSeed of SEED.slice(1)) {
+      expect(corteDeMatematica(String(linhaDoSeed['id']))).toBeNull();
+    }
   });
 
   test('CA-07: inativar resolução remove o panel após confirmação', async ({ page }) => {
