@@ -220,22 +220,20 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
                         }
                       }
                     </td>
-                    <td data-label="Ações">
-                      <div style="display: flex;">
-                        <ui-icon-button
-                          icon="pi-pencil"
-                          [accessibleName]="'Editar modalidade ' + m.codigo"
-                          tooltip="Editar modalidade"
-                          [link]="[m.id]"
-                        />
-                        <ui-icon-button
-                          icon="pi-trash"
-                          [accessibleName]="'Remover modalidade ' + m.codigo"
-                          tooltip="Remover modalidade"
-                          [isDisabled]="loading()"
-                          (triggered)="pedirRemocao(m)"
-                        />
-                      </div>
+                    <td class="table-responsive__actions" data-label="Ações">
+                      <ui-icon-button
+                        icon="pi-pencil"
+                        [accessibleName]="'Editar modalidade ' + m.codigo"
+                        tooltip="Editar modalidade"
+                        [link]="[m.id]"
+                      />
+                      <ui-icon-button
+                        icon="pi-trash"
+                        [accessibleName]="'Remover modalidade ' + m.codigo"
+                        tooltip="Remover modalidade"
+                        [isDisabled]="loading()"
+                        (triggered)="pedirRemocao(m)"
+                      />
                     </td>
                   </tr>
                 }
