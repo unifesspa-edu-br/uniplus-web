@@ -1,0 +1,60 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  flex-shrink: 0;
+}
+
+.painel__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.painel__espera {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* A região de status existe antes do aviso, para ser anunciada; vazia, não consome o gap do corpo. */
+.painel__espera:empty {
+  margin-block-end: calc(-1 * var(--space-4));
+}
+
+.painel__nova-tentativa {
+  margin-top: var(--space-3);
+}
+
+/* `min(100%, …)` evita que a trilha mínima estoure a viewport de 320 px. */
+.painel__cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.painel__cartao {
+  min-width: 0;
+  justify-content: space-between;
+}
+
+/* Nome sem espaços (ou muito longo) quebra em vez de vazar sobre o vizinho. */
+.painel__nome {
+  overflow-wrap: anywhere;
+}
+
+/* Nova tentativa em espera: aria-disabled mantém o botão focável; o estilo de indisponível do DS só cobre :disabled. */
+.painel__corpo .btn[aria-disabled='true'],
+.painel__corpo .btn[aria-disabled='true']:hover,
+.painel__corpo .btn[aria-disabled='true']:active {
+  cursor: progress;
+  background: var(--surface-disabled);
+  color: var(--text-disabled);
+  border-color: transparent;
+}
