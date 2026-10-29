@@ -79,6 +79,20 @@ describe('appRoutes — acesso pelas permissões efetivas', () => {
     expect(await ir('/')).toBe('/cursos');
   });
 
+  it('abre o pedido de acesso a quem está autenticado e não tem nenhuma permissão', async () => {
+    expect(await ir('/acessos/pedidos')).toBe('/acessos/pedidos');
+    expect(await ir('/acessos/pedidos/novo')).toBe('/acessos/pedidos/novo');
+  });
+
+  it('nega cada tela de administração de acesso sem a permissão dela', async () => {
+    concedidas.set(['autorizacao:pedidos:aprovar-funcional']);
+
+    expect(await ir('/acessos/fila-do-gestor')).toBe('/acessos/fila-do-gestor');
+    expect(await ir('/acessos/fila-da-encarregada')).toBe('/acesso-negado');
+    expect(await ir('/acessos/concessoes')).toBe('/acesso-negado');
+    expect(await ir('/acessos/perfis')).toBe('/acesso-negado');
+  });
+
   it('manda quem não tem sessão ao login', async () => {
     autenticado.set(false);
 

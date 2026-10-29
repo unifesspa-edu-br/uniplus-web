@@ -15,6 +15,7 @@ import {
   UiShellBreadcrumbItem,
   UiShellNavGroup,
 } from '@uniplus/shared-ui/shell';
+import type { CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
 import { CaminhoDeTela, PERMISSOES_DAS_TELAS } from '../acesso/permissoes-das-telas';
 
 interface CfgNavItem {
@@ -177,6 +178,37 @@ export class LayoutComponent {
         },
       ],
     },
+    {
+      label: 'Acesso',
+      items: [
+        { label: 'Meus pedidos', icon: 'pi-inbox', routerLink: '/acessos/pedidos' },
+        {
+          label: 'Fila do gestor',
+          icon: 'pi-check-square',
+          routerLink: '/acessos/fila-do-gestor',
+          exact: true,
+        },
+        {
+          label: 'Fila da encarregada',
+          icon: 'pi-shield',
+          routerLink: '/acessos/fila-da-encarregada',
+          exact: true,
+        },
+        {
+          label: 'Histórico de pedidos',
+          icon: 'pi-history',
+          routerLink: '/acessos/historico',
+          exact: true,
+        },
+        { label: 'Concessões', icon: 'pi-key', routerLink: '/acessos/concessoes', exact: true },
+        {
+          label: 'Perfis de acesso',
+          icon: 'pi-id-card',
+          routerLink: '/acessos/perfis',
+          exact: true,
+        },
+      ],
+    },
   ];
 
   protected readonly navGroups = computed<readonly UiShellNavGroup[]>(() =>
@@ -190,7 +222,9 @@ export class LayoutComponent {
 
   private permitido(item: CfgNavItem): boolean {
     const caminho = item.routerLink?.slice(1) as CaminhoDeTela | undefined;
-    return caminho === undefined || this.permissoes.temAlguma(...PERMISSOES_DAS_TELAS[caminho]);
+    if (caminho === undefined) return true;
+    const exigidas: readonly CodigoDePermissao[] = PERMISSOES_DAS_TELAS[caminho];
+    return exigidas.length === 0 || this.permissoes.temAlguma(...exigidas);
   }
 
   private breadcrumbDaRotaAtiva(): UiShellBreadcrumbItem[] {

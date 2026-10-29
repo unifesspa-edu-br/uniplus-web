@@ -114,6 +114,103 @@ cfg-pesos-enem-page {
   padding: var(--space-4) var(--space-5);
 }
 
+/* Lista de definição (dl) de um painel: rótulo acima do valor no celular, em duas colunas a partir de 40rem. */
+.cfg-descricao {
+  display: grid;
+  gap: var(--space-1) var(--space-5);
+  margin: 0;
+}
+
+.cfg-descricao dt {
+  margin-top: var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cfg-descricao dt:first-child {
+  margin-top: 0;
+}
+
+.cfg-descricao dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 40rem) {
+  .cfg-descricao {
+    grid-template-columns: minmax(9rem, 14rem) 1fr;
+    gap: var(--space-3) var(--space-5);
+  }
+
+  .cfg-descricao dt {
+    margin-top: 0;
+    padding-top: 2px;
+  }
+}
+
+/* Ações de um painel, separadas do conteúdo acima. */
+.cfg-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.cfg-acoes:empty {
+  display: none;
+}
+
+/* Ações em texto numa tabela larga ficam lado a lado, em vez de empilhar numa coluna estreita. */
+@media not all and (max-width: 767px) {
+  .table-responsive td.table-responsive__actions:not(:has(> ui-icon-button)) {
+    white-space: nowrap;
+  }
+}
+
+/* Blocos empilhados dentro de um painel e lista de itens sem marcadores, com divisor entre eles. */
+.cfg-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cfg-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.cfg-lista > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+  overflow-wrap: anywhere;
+}
+
+.cfg-lista > li.cfg-lista__coluna {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.cfg-lista > li:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.cfg-lista > li:last-child {
+  padding-bottom: 0;
+}
+
 .panel-head__title {
   display: flex;
   align-items: center;
@@ -233,9 +330,16 @@ cfg-pesos-enem-page {
 }
 
 /* Edição do modelo de formulário: o resumo das recusas como alvo de foco. */
-.cfg-modelo-cabecalho { margin-bottom: var(--space-4); }
-.cfg-modelo-resumo:focus { outline: none; }
-.cfg-modelo-resumo:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.cfg-modelo-cabecalho {
+  margin-bottom: var(--space-4);
+}
+.cfg-modelo-resumo:focus {
+  outline: none;
+}
+.cfg-modelo-resumo:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
 
 .panel > .pager {
   padding: var(--space-3) var(--space-5);
@@ -352,6 +456,11 @@ cfg-pesos-enem-page {
    * teto de 760px, que é o limite de linha legível do módulo.
    */
   max-width: clamp(20rem, 55vw, 47.5rem);
+}
+
+/* Variante larga, para a trilha da concessão: a tabela cabe sem rolar na horizontal; no celular, a largura toda. */
+.cfg-detail-drawer--ampla .uni-drawer__panel {
+  max-width: clamp(20rem, 80vw, 60rem);
 }
 
 .cfg-detail-drawer .uni-drawer__body {
@@ -814,4 +923,48 @@ cfg-pesos-enem-page {
   background: var(--surface-disabled);
   color: var(--text-disabled);
   border-color: transparent;
+}
+
+/* Trilha de um pedido ou concessão: data, evento e autor numa linha só; o detalhe é cortado com reticências e abre inteiro ao clicar na linha. */
+.cfg-trilha__detalhe {
+  display: block;
+  min-inline-size: 12ch;
+  max-inline-size: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cfg-trilha__texto-completo {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+@media (max-width: 767px) {
+  .cfg-trilha__detalhe {
+    max-inline-size: 100%;
+  }
+}
+
+@media not all and (max-width: 767px) {
+  .cfg-trilha th,
+  .cfg-trilha td {
+    padding-inline: var(--space-3);
+  }
+
+  .cfg-trilha td:not([data-label='Detalhe']) {
+    white-space: nowrap;
+  }
+}
+
+/* Diálogo de revogação: campos com o respiro padrão do formulário, e o título alinhado ao botão de fechar. */
+.cfg-dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-block-end: var(--space-4);
+}
+
+cfg-revogar-concessao-dialog .uni-dialog__header {
+  align-items: center;
 }

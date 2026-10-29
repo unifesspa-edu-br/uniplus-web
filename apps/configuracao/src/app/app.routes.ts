@@ -1,19 +1,26 @@
 import { Routes } from '@angular/router';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
-import { authGuard, permissaoGuard, permissaoNoModuloGuard } from '@uniplus/shared-auth/guards';
+import { authGuard, permissaoGuard } from '@uniplus/shared-auth/guards';
 import { PERMISSOES_DAS_TELAS, entradaPelaPermissao } from './acesso/permissoes-das-telas';
 
 export const appRoutes: Routes = [
   {
     path: 'acesso-negado',
     component: AccessDeniedComponent,
+    data: { rotaDeVolta: '/acessos/pedidos/novo', rotuloDaRotaDeVolta: 'Pedir acesso' },
   },
   {
     path: '',
     loadComponent: () => import('./layout/layout').then((m) => m.LayoutComponent),
-    canActivate: [authGuard, permissaoNoModuloGuard('configuracao', 'organizacao', 'publicacoes')],
+    canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', canActivate: [entradaPelaPermissao], children: [] },
+      {
+        path: 'acessos',
+        data: { breadcrumb: 'Acesso' },
+        loadChildren: () =>
+          import('./features/acessos/acessos.routes').then((m) => m.ACESSOS_ROUTES),
+      },
       {
         path: 'unidades',
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['unidades'])],
