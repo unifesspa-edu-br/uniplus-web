@@ -191,7 +191,6 @@ const FASE_COM_RECURSO = {
   ordem: 2,
   faseCanonicaOrigemId: 'fase-canonica-homologacao',
   codigo: 'HOMOLOGACAO',
-  donoInstitucional: 'CEPS',
   origemData: 'NO_EDITAL',
   agrupaEtapas: false,
   permiteComplementacao: true,

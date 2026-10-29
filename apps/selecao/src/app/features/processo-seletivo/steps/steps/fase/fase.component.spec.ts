@@ -52,7 +52,7 @@ const FASES_CANONICAS = [
     id: ID_AVALIACAO,
     codigo: 'AVALIACAO',
     nome: 'Avaliação',
-    donoTipico: 'CEPS',
+    unidadeSugerida: null,
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: false,
@@ -62,7 +62,7 @@ const FASES_CANONICAS = [
     id: ID_RECURSOS,
     codigo: 'RECURSOS',
     nome: 'Recursos',
-    donoTipico: 'CEPS',
+    unidadeSugerida: null,
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: false,
@@ -163,7 +163,6 @@ function congeladosDaFase(
   parcial: Partial<AtributosCongeladosDaFase> = {},
 ): AtributosCongeladosDaFase {
   return {
-    donoTipico: 'CEPS',
     origemData: 'NO_EDITAL',
     agrupaEtapas: false,
     coletaInscricao: false,

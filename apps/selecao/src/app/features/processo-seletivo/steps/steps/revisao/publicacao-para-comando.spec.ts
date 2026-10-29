@@ -143,7 +143,6 @@ describe('faseQueAncoraOPeriodoDeInscricao / temFaseDeColetaInscricao', () => {
 });
 
 const congeladosBase = {
-  donoTipico: '',
   origemData: '',
   agrupaEtapas: false,
   coletaInscricao: false,

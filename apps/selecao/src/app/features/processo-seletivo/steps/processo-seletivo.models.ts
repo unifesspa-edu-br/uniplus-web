@@ -250,7 +250,6 @@ export const PAPEL_DEFINITIVO = 'DEFINITIVO';
  * `produtos`, e não cópia do catálogo.
  */
 export interface AtributosCongeladosDaFase {
-  readonly donoTipico: string;
   readonly origemData: string;
   readonly agrupaEtapas: boolean;
   readonly coletaInscricao: boolean;

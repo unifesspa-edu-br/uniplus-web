@@ -33,7 +33,7 @@ function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
     codigo,
     nome,
     descricao: null,
-    donoTipico: 'CEPS',
+    unidadeSugerida: null,
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: false,

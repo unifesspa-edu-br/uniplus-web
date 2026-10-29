@@ -10983,7 +10983,8 @@ export interface components {
             readonly id: string;
             readonly nome?: null | string;
             readonly descricao?: null | string;
-            readonly donoTipico?: null | string;
+            /** Format: uuid */
+            readonly unidadeSugeridaId?: null | string;
             /** @default false */
             readonly agrupaEtapas: boolean;
             /** @default false */
@@ -11335,7 +11336,8 @@ export interface components {
             readonly codigo: null | string;
             readonly nome?: null | string;
             readonly descricao?: null | string;
-            readonly donoTipico?: null | string;
+            /** Format: uuid */
+            readonly unidadeSugeridaId?: null | string;
             /** @default false */
             readonly agrupaEtapas: boolean;
             /** @default false */
@@ -11630,13 +11632,19 @@ export interface components {
             readonly itens: readonly components["schemas"]["ItemPortavel"][];
             readonly grupos: readonly components["schemas"]["GrupoPortavel"][];
         };
+        readonly UnidadeSugeridaDaFaseDto: {
+            /** Format: uuid */
+            readonly origemId: string;
+            readonly sigla: string;
+            readonly nome: string;
+        };
         readonly FaseCanonicaDto: {
             /** Format: uuid */
             readonly id: string;
             readonly codigo: string;
             readonly nome: string;
             readonly descricao: null | string;
-            readonly donoTipico: string;
+            readonly unidadeSugerida: null | components["schemas"]["UnidadeSugeridaDaFaseDto"];
             readonly agrupaEtapas: boolean;
             readonly permiteComplementacao: boolean;
             readonly baseLegal: null | string;

@@ -45,9 +45,6 @@ export const CODIGOS_FASE_CANONICA = [
 
 export type CodigoFaseCanonica = (typeof CODIGOS_FASE_CANONICA)[number];
 
-/** Rótulo orientativo do dono típico — não vinculante (UNI-REQ-0064). */
-export const DONOS_TIPICOS_FASE = ['CEPS', 'CRCA', 'MEC', 'CONSEPE'] as const;
-
 /**
  * Origem da data da fase (UNI-REQ-0064). Domínio fechado de dois tokens, com
  * allowlist textual no backend e CHECK em `fase_canonica.origem_data`:

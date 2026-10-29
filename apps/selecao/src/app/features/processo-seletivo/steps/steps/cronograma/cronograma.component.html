@@ -30,7 +30,6 @@
         </p>
       } @else {
         <p class="field__hint">
-          Responsável: {{ item.donoTipico }}.
           @if (item.exigencias.admiteRecurso) {
             Publica resultado preliminar, do qual cabe recurso.
           } @else if (item.publicaResultadoDefinitivo) {
@@ -374,7 +373,6 @@
                 </p>
               } @else {
                 <p class="field__hint">
-                  Responsável: {{ item.donoTipico }}.
                   @if (item.exigencias.admiteRecurso) {
                     Publica resultado preliminar, do qual cabe recurso.
                   } @else if (item.publicaResultadoDefinitivo) {

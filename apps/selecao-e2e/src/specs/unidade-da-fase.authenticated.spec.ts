@@ -92,6 +92,35 @@ const FATOS_DO_CANDIDATO = [
   escopo: 'CANDIDATO',
 }));
 
+const ID_DA_ADMINISTRADORA = '01a07d6a-a0b2-7448-89a6-a2c7867a0e38';
+const UNIDADE_ADMINISTRADORA = {
+  ...UNIDADE_CEPS,
+  id: ID_DA_ADMINISTRADORA,
+  sigla: 'CEPS-ADM',
+  slug: 'ceps-adm',
+  codigo: 'CEPS-ADM',
+};
+
+const FASES_DO_CATALOGO = [
+  ...FASES_CANONICAS,
+  ...[
+    [
+      'HABILITACAO',
+      'Habilitação',
+      { origemId: UNIDADE_CGA.id, sigla: 'CGA', slug: 'cga', nome: UNIDADE_CGA.nome },
+    ],
+    ['MATRICULA', 'Matrícula', null],
+  ].map(([codigo, nome, unidadeSugerida], i) => ({
+    ...FASES_CANONICAS[0],
+    id: `01a0d640-0000-7000-8000-0000000000e${i + 1}`,
+    codigo,
+    nome,
+    unidadeSugerida,
+    agrupaEtapas: false,
+    coletaInscricao: false,
+  })),
+];
+
 const ROTA_DO_PROCESSO = new RegExp(`/api/selecao/processos-seletivos/${ID_DO_PROCESSO_COMPLETO}`);
 
 interface Capturado {
@@ -110,7 +139,11 @@ function novoCapturado(unidadeDaFase: typeof UNIDADE_RESPONSAVEL_DA_FASE | null)
       ...PROCESSO_PUBLICADO_COMPLETO.cronogramaFases[0],
       produtos: [
         ...PROCESSO_PUBLICADO_COMPLETO.cronogramaFases[0].produtos,
-        { id: '01a0d640-0000-7000-8000-0000000000d2', atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+        {
+          id: '01a0d640-0000-7000-8000-0000000000d2',
+          atoCodigo: 'RESULTADO_FINAL',
+          papel: 'DEFINITIVO',
+        },
       ],
       unidadeResponsavel: unidadeDaFase,
     },
@@ -120,17 +153,34 @@ function novoCapturado(unidadeDaFase: typeof UNIDADE_RESPONSAVEL_DA_FASE | null)
 }
 
 function problema(status: number, code: string, title: string, errors?: unknown) {
-  return { type: 'about:blank', title, status, code, traceId: '00000000000000000000000000000001', errors };
+  return {
+    type: 'about:blank',
+    title,
+    status,
+    code,
+    traceId: '00000000000000000000000000000001',
+    errors,
+  };
 }
 
 async function mockarApi(page: Page, capturado: Capturado): Promise<void> {
   await responder(page, /\/api\//, [], CORS);
   await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_DE_PROCESSO, CORS);
-  await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS, CORS);
+  await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_DO_CATALOGO, CORS);
   await responder(page, /\/api\/configuracao\/fatos-candidato(\?.*)?$/, FATOS_DO_CANDIDATO, CORS);
   await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_DE_ATO, CORS);
-  await responder(page, /\/api\/organizacao\/unidades(\?.*)?$/, [UNIDADE_CEPS, UNIDADE_CGA], CORS);
-  await responder(page, new RegExp(`/api/publicacoes/atos/${ATO_PUBLICADO.id}$`), ATO_PUBLICADO, CORS);
+  await responder(
+    page,
+    /\/api\/organizacao\/unidades(\?.*)?$/,
+    [UNIDADE_CEPS, UNIDADE_CGA, UNIDADE_ADMINISTRADORA],
+    CORS,
+  );
+  await responder(
+    page,
+    new RegExp(`/api/publicacoes/atos/${ATO_PUBLICADO.id}$`),
+    ATO_PUBLICADO,
+    CORS,
+  );
 
   await page.route(ROTA_DO_PROCESSO, async (route: Route) => {
     const request = route.request();
@@ -168,11 +218,20 @@ async function mockarApi(page: Page, capturado: Capturado): Promise<void> {
     } else if (caminho.endsWith('/conformidade-legal')) {
       await responderCom(
         route,
-        { processoSeletivoId: ID_DO_PROCESSO_COMPLETO, dataReferencia: '2027-01-01', regras: [], avisos: [] },
+        {
+          processoSeletivoId: ID_DO_PROCESSO_COMPLETO,
+          dataReferencia: '2027-01-01',
+          regras: [],
+          avisos: [],
+        },
         CORS,
       );
     } else if (caminho.endsWith('/conformidade')) {
-      await responderCom(route, { processoSeletivoId: ID_DO_PROCESSO_COMPLETO, itens: [], avisos: [] }, CORS);
+      await responderCom(
+        route,
+        { processoSeletivoId: ID_DO_PROCESSO_COMPLETO, itens: [], avisos: [] },
+        CORS,
+      );
     } else {
       await route.fulfill({ status: 404, headers: CORS });
     }
@@ -209,7 +268,12 @@ async function escrever(route: Route, capturado: Capturado, caminho: string): Pr
     capturado.fase = {
       ...capturado.fase,
       unidadeResponsavel: escolhida
-        ? { origemId: escolhida.id, sigla: escolhida.sigla, slug: escolhida.slug, nome: escolhida.nome }
+        ? {
+            origemId: escolhida.id,
+            sigla: escolhida.sigla,
+            slug: escolhida.slug,
+            nome: escolhida.nome,
+          }
         : null,
     };
     await route.fulfill(sem204);
@@ -283,7 +347,10 @@ test.describe('Unidade responsável da fase no cronograma', () => {
     await unidade.selectOption({ label: 'CGA — Centro de Gestão Acadêmica' });
 
     await page.getByRole('button', { name: /Gravar e avançar/ }).click();
-    await page.getByRole('button', { name: /Confirmar|Gravar/ }).last().click();
+    await page
+      .getByRole('button', { name: /Confirmar|Gravar/ })
+      .last()
+      .click();
 
     await expect.poll(() => capturado.cronogramas.length).toBeGreaterThan(0);
     expect(capturado.cronogramas.at(-1)?.[0]?.unidadeResponsavelId).toBe(UNIDADE_CGA.id);
@@ -311,7 +378,9 @@ test.describe('Unidade responsável da fase no cronograma', () => {
     await page.getByRole('button', { name: 'Publicar', exact: true }).click();
     await page.getByRole('button', { name: 'Publicar processo' }).click();
 
-    const aviso = page.getByText('Toda fase do cronograma precisa de unidade responsável para publicar.');
+    const aviso = page.getByText(
+      'Toda fase do cronograma precisa de unidade responsável para publicar.',
+    );
     await expect(aviso).toBeVisible();
     expect(await runAxeWcagAA(page).then((r) => r.violations.map((v) => v.id))).toEqual([]);
 
@@ -323,8 +392,10 @@ test.describe('Unidade responsável da fase no cronograma', () => {
     await expect(unidade).toHaveAttribute('aria-invalid', 'true');
 
     await unidade.selectOption({ label: 'CGA — Centro de Gestão Acadêmica' });
-    await page.getByRole('navigation', { name: 'Etapas do cadastro' })
-      .getByRole('button', { name: 'Revisão e publicação' }).click();
+    await page
+      .getByRole('navigation', { name: 'Etapas do cadastro' })
+      .getByRole('button', { name: 'Revisão e publicação' })
+      .click();
     await page.getByRole('button', { name: 'Publicar', exact: true }).click();
     await page.getByRole('button', { name: 'Publicar processo' }).click();
 
@@ -344,7 +415,9 @@ test.describe('Unidade responsável da fase no cronograma', () => {
 
     const unidade = page.getByLabel('Unidade responsável');
     await expect(unidade).toHaveAttribute('aria-invalid', 'true');
-    await expect(page.getByRole('alert').filter({ hasText: 'não está mais no cadastro' })).toBeVisible();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'não está mais no cadastro' }),
+    ).toBeVisible();
     expect(await runAxeWcagAA(page).then((r) => r.violations.map((v) => v.id))).toEqual([]);
   });
 
@@ -356,5 +429,23 @@ test.describe('Unidade responsável da fase no cronograma', () => {
     await irAoCronograma(page);
 
     await expect(page.getByText('CEPS — Centro de Processos Seletivos').first()).toBeVisible();
+  });
+
+  test('a fase acrescentada começa pela unidade sugerida, ou pela administradora sem sugestão', async ({
+    page,
+  }) => {
+    await mockarApi(page, novoCapturado(UNIDADE_RESPONSAVEL_DA_FASE));
+    await abrirOProcesso(page);
+    await irAoCronograma(page);
+
+    for (const [indice, fase, esperada] of [
+      [1, 'Habilitação', UNIDADE_CGA.id],
+      [2, 'Matrícula', ID_DA_ADMINISTRADORA],
+    ] as const) {
+      await page.getByLabel('Fase do catálogo').selectOption({ label: fase });
+      await page.getByRole('button', { name: 'Acrescentar à linha do tempo' }).click();
+      await page.getByRole('button', { name: `${indice + 1}. ${fase}`, exact: true }).click();
+      await expect(page.locator(`#cr-unidade-${indice}`)).toHaveValue(esperada);
+    }
   });
 });

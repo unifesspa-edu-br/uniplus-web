@@ -87,7 +87,6 @@ export function descreverFase(
   if (congelados !== null) {
     return {
       nome: canonica?.nome ?? fase.codigo,
-      donoTipico: congelados.donoTipico,
       publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
       coletaInscricao: congelados.coletaInscricao,
       coletaSolicitacaoIsencao: congelados.coletaSolicitacaoIsencao,
@@ -99,7 +98,6 @@ export function descreverFase(
 
   return {
     nome: canonica?.nome ?? fase.codigo,
-    donoTipico: canonica?.donoTipico ?? '—',
     publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
     coletaInscricao: canonica?.coletaInscricao ?? false,
     coletaSolicitacaoIsencao: canonica?.coletaSolicitacaoIsencao ?? false,
@@ -124,7 +122,6 @@ export function finalidadesDaFase(
 /** A fase resolvida, como tela e validação precisam vê-la. */
 export interface DescricaoDaFase {
   readonly nome: string;
-  readonly donoTipico: string;
   readonly publicaResultadoDefinitivo: boolean;
   readonly coletaInscricao: boolean;
   /** Se é nela que o candidato pede isenção da taxa — a fase do formulário de isenção. */

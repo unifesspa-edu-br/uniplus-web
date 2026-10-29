@@ -13691,11 +13691,12 @@
               "string"
             ]
           },
-          "donoTipico": {
+          "unidadeSugeridaId": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "format": "uuid"
           },
           "agrupaEtapas": {
             "type": "boolean",
@@ -15342,11 +15343,12 @@
               "string"
             ]
           },
-          "donoTipico": {
+          "unidadeSugeridaId": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "format": "uuid"
           },
           "agrupaEtapas": {
             "type": "boolean",
@@ -16833,13 +16835,33 @@
           }
         }
       },
+      "UnidadeSugeridaDaFaseDto": {
+        "required": [
+          "origemId",
+          "sigla",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "origemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sigla": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      },
       "FaseCanonicaDto": {
         "required": [
           "id",
           "codigo",
           "nome",
           "descricao",
-          "donoTipico",
+          "unidadeSugerida",
           "agrupaEtapas",
           "permiteComplementacao",
           "baseLegal",
@@ -16866,8 +16888,15 @@
               "string"
             ]
           },
-          "donoTipico": {
-            "type": "string"
+          "unidadeSugerida": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UnidadeSugeridaDaFaseDto"
+              }
+            ]
           },
           "agrupaEtapas": {
             "type": "boolean"

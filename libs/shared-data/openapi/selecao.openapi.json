@@ -15925,7 +15925,6 @@
           "ordem",
           "faseCanonicaOrigemId",
           "codigo",
-          "donoInstitucional",
           "origemData",
           "agrupaEtapas",
           "permiteComplementacao",
@@ -15960,9 +15959,6 @@
             "format": "uuid"
           },
           "codigo": {
-            "type": "string"
-          },
-          "donoInstitucional": {
             "type": "string"
           },
           "origemData": {

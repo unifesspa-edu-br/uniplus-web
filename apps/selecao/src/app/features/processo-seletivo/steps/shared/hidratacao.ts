@@ -144,7 +144,6 @@ function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCro
     // O detalhe traz o que a fase congelou; o catálogo pode não ter mais esta
     // fase, e é isto que mantém a tela sabendo o que ela exige.
     congelados: {
-      donoTipico: fase.donoInstitucional,
       origemData: fase.origemData,
       agrupaEtapas: fase.agrupaEtapas,
       coletaInscricao: fase.coletaInscricao,
