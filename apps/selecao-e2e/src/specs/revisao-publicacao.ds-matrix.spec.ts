@@ -398,8 +398,8 @@ const PENDENCIA_DA_ESCALA = {
 };
 
 /**
- * O processo completo em rascunho, cuja classificação não declara a escala: a gravação dela (PUT)
- * vira a conferência verde.
+ * O processo completo em rascunho, sem a escala na classificação: a publicação é recusada com a
+ * pendência da escala enquanto a classificação gravada (PUT) não a declara, e aceita depois.
  * Devolve o que o servidor recebeu, para o teste conferir o corpo.
  */
 async function mockarPublicacaoComEscalaPendente(page: Page) {
@@ -418,6 +418,7 @@ async function mockarPublicacaoComEscalaPendente(page: Page) {
     });
 
   await page.route(/\/api\//, (route) => responder(route, 200, []));
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
   await page.route(/\/api\/configuracao\/tipos-processo(\?.*)?$/, (route) =>
     responder(route, 200, TIPOS_DE_PROCESSO),
   );
