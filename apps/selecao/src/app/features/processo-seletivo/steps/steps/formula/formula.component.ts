@@ -39,6 +39,11 @@ import {
   rotuloDaEdicao,
 } from '../classificacao/edicoes-do-enem';
 import {
+  FORMATO_DA_ESCALA_DA_NOTA_FINAL,
+  escalaDaNotaFinalIlegivel,
+  leituraDaEscalaDaNotaFinal,
+} from '../classificacao/escala-da-nota-final';
+import {
   lerChaveDaRegra,
   regrasEscolhiveis,
   rotuloDaRegraEscolhida,
@@ -62,6 +67,7 @@ interface ResolucaoEscolhivel {
 
 const ID_DO_CAMPO_RESOLUCAO = 'f-resolucao-peso-area';
 const ID_DO_CAMPO_EDICAO = 'f-edicao-enem';
+const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
 const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 
 /**
@@ -108,6 +114,8 @@ export class FormulaStepComponent {
 
   readonly idDoCampoResolucao = ID_DO_CAMPO_RESOLUCAO;
   readonly idDoCampoEdicao = ID_DO_CAMPO_EDICAO;
+  readonly idDoCampoEscala = ID_DO_CAMPO_ESCALA;
+  readonly formatoDaEscala = FORMATO_DA_ESCALA_DA_NOTA_FINAL;
 
   /** O candidato escolhe a edição na inscrição, entre as que o processo aceita. */
   readonly declaraEdicoes = computed(() => declaraEdicoesDoEnem(this.store.draft()));
@@ -269,6 +277,30 @@ export class FormulaStepComponent {
           .join(' ') || null;
   });
 
+  /**
+   * O que aparece sob a escala: o texto que não é número, depois de "Próximo"; senão a recusa da
+   * gravação (escala que não é maior que zero) ou a pendência de publicação, que só vale enquanto
+   * o campo está vazio.
+   */
+  readonly erroDaEscala = computed<string | null>(() => {
+    const texto = this.store.draft().classificacao.escalaNotaFinal;
+    if (this.invalidFields().has('escalaNotaFinal') && escalaDaNotaFinalIlegivel(texto)) {
+      return FORMATO_DA_ESCALA_DA_NOTA_FINAL;
+    }
+    if (this.store.recusaDaEscalaDaNotaFinal() !== null) {
+      return this.store.recusaDaEscalaDaNotaFinal();
+    }
+    return this.store.escalaDaNotaFinalPendente() && texto.trim() === ''
+      ? 'Declare a escala da nota final para publicar o processo.'
+      : null;
+  });
+
+  readonly descricaoDaEscala = computed(() => {
+    const ids = [`${ID_DO_CAMPO_ESCALA}-dica`];
+    if (this.erroDaEscala() !== null) ids.unshift(`${ID_DO_CAMPO_ESCALA}-erro`);
+    return ids.join(' ');
+  });
+
   readonly descricaoDaResolucao = computed(() => {
     const ids = [`${ID_DO_CAMPO_RESOLUCAO}-dica`];
     if (this.erroDaResolucao() !== null) ids.unshift(`${ID_DO_CAMPO_RESOLUCAO}-erro`);
@@ -320,6 +352,7 @@ export class FormulaStepComponent {
       regraArredondamento: rotuloDaRegraEscolhida(this.regrasArredondamento()),
       casasDecimais: leituraDoCampoDecimal(classificacao.casasArredondamento),
       ordemAlocacao: rotuloDaRegraEscolhida(this.regrasOrdemAlocacao()),
+      escalaNotaFinal: leituraDaEscalaDaNotaFinal(classificacao.escalaNotaFinal),
     };
   });
 
@@ -355,6 +388,7 @@ export class FormulaStepComponent {
       // escolha que o ramo atual não usa.
       ...(local ? {} : { regraArredondamentoCodigo: '', regraArredondamentoVersao: '' }),
     });
+    if (!local) this.store.recusaDaEscalaDaNotaFinal.set(null);
     this.descartarRecusaQueNaoSeAplica();
   }
 
@@ -368,6 +402,12 @@ export class FormulaStepComponent {
 
   alterarCasasArredondamento(valor: string): void {
     this.store.patchObjectSection('classificacao', { casasArredondamento: valor });
+  }
+
+  alterarEscalaNotaFinal(valor: string): void {
+    this.store.patchObjectSection('classificacao', { escalaNotaFinal: valor });
+    // A recusa julgou o valor de antes; o novo ainda não foi ao servidor.
+    this.store.recusaDaEscalaDaNotaFinal.set(null);
   }
 
   escolherRegraOrdemAlocacao(valor: string): void {
@@ -513,6 +553,7 @@ export class FormulaStepComponent {
       if (!classificacao.regraArredondamentoCodigo) invalid.add('regraArredondamento');
       const casas = numero(classificacao.casasArredondamento);
       if (casas === null || casas <= 0) invalid.add('casasArredondamento');
+      if (escalaDaNotaFinalIlegivel(classificacao.escalaNotaFinal)) invalid.add('escalaNotaFinal');
     }
 
     if (!classificacao.regraOrdemAlocacaoCodigo) invalid.add('regraOrdemAlocacao');

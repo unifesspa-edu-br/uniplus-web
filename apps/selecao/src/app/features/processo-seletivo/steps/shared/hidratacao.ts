@@ -28,6 +28,7 @@ import {
 } from '../steps/vagas/distribuicao-de-vagas';
 import { formulariosDoServidor } from '../steps/formulario/formularios-por-finalidade';
 import { exigenciasDe } from './exigencias-documentais';
+import { escalaDaNotaFinalComoTexto } from '../steps/classificacao/escala-da-nota-final';
 import { percentualDaFracao } from './itens-de-avaliacao';
 import { edicoesDoEnemDe } from '../steps/classificacao/edicoes-do-enem';
 import { formatarValorEmReais } from './valor-em-reais';
@@ -299,6 +300,7 @@ function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classificacao']
       regraOrdemAlocacaoCodigo: '',
       regraOrdemAlocacaoVersao: '',
       baseadoEmEnem: false,
+      escalaNotaFinal: '',
       resolucaoPesoAreaEnem: '',
       regrasEliminacao: [],
       edicoesEnem: [],
@@ -314,6 +316,7 @@ function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classificacao']
     regraOrdemAlocacaoCodigo: classificacao.regraOrdemAlocacao.codigo,
     regraOrdemAlocacaoVersao: classificacao.regraOrdemAlocacao.versao,
     baseadoEmEnem: classificacao.baseadoEmEnem,
+    escalaNotaFinal: escalaDaNotaFinalComoTexto(classificacao.escalaNotaFinal),
     resolucaoPesoAreaEnem: classificacao.resolucaoPesoAreaEnem ?? '',
     regrasEliminacao: classificacao.regrasEliminacao.map(regraEliminacaoDe),
     edicoesEnem: edicoesDoEnemDe(dto),

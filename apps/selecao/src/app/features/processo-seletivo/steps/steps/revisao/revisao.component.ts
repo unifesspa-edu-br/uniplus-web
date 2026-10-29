@@ -4,6 +4,7 @@ import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
@@ -306,6 +307,11 @@ export class RevisaoStepComponent {
       });
     });
 
+    // Os outros passos leem da conferência o que lhes cabe; ao sair da Revisão a conferência
+    // deixa de valer para eles.
+    effect(() => this.store.pendenciasDaConferencia.set(this.codigosPendentes()));
+    inject(DestroyRef).onDestroy(() => this.store.pendenciasDaConferencia.set([]));
+
     // Processo publicado: o ato que vale é o do servidor, lido uma vez ao entrar
     // no passo. Uma falha fica visível com "Tentar novamente", em vez de o formulário vazio.
     effect(() => {
@@ -484,6 +490,16 @@ export class RevisaoStepComponent {
         ? this.preflight.estrutural()
         : recusa.pendencias.map((pendencia) => ({ ...pendencia, ok: false }));
     return itens === null ? null : comoGruposDaRevisao(agruparPorDimensao(itens));
+  });
+
+  /** Os códigos dos itens pendentes da conferência em tela. */
+  private readonly codigosPendentes = computed(() => {
+    const recusa = this.ultimaRecusa();
+    const pendentes =
+      recusa === null
+        ? (this.preflight.estrutural() ?? []).filter((item) => !item.ok)
+        : recusa.pendencias;
+    return pendentes.map((item) => item.codigo);
   });
 
   /** Avisos que não impedem publicar: nunca entram em `estruturalOk()` nem em `validate()`. */

@@ -1575,6 +1575,80 @@ describe('EliminacaoStepComponent', () => {
       expect(store.recusaDaResolucaoPesoAreaEnem()).toBe(esperada);
     });
 
+    it('a recusa da escala da nota final vai ao campo do passo Fórmula, e a gravação certa a apaga', async () => {
+      prepararClassificacaoLocal();
+      store.patchObjectSection('classificacao', { escalaNotaFinal: '0' });
+      const codigo = 'uniplus.selecao.configuracao_classificacao.escala_nota_final_invalida';
+
+      const recusada = componente.persistir();
+      controller.expectOne(ROTA_CLASSIFICACAO).flush(
+        {
+          type: 'about:blank',
+          title: 'Escala inválida.',
+          status: 422,
+          code: codigo,
+          traceId: 'trace-1',
+          errors: [
+            {
+              field: 'escalaNotaFinal',
+              code: codigo,
+              message: 'A escala deve ser maior que zero.',
+            },
+          ],
+        },
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+
+      const resultado = await recusada;
+      const esperada = 'A escala deve ser maior que zero.';
+      expect(resultado.messages).toEqual([`Escala da nota final, no passo Fórmula: ${esperada}`]);
+      expect(store.recusaDaEscalaDaNotaFinal()).toBe(esperada);
+
+      store.patchObjectSection('classificacao', { escalaNotaFinal: '100' });
+      const aceita = componente.persistir();
+      controller
+        .expectOne(ROTA_CLASSIFICACAO)
+        .flush(null, { status: 204, statusText: 'No Content' });
+      await aceita;
+      expect(store.recusaDaEscalaDaNotaFinal()).toBeNull();
+    });
+
+    it('uma recusa que não traz erro da escala mantém a recusa guardada dela', async () => {
+      prepararClassificacaoLocal();
+      store.recusaDaEscalaDaNotaFinal.set('Recusa anterior da escala.');
+
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_CLASSIFICACAO).flush(
+        {
+          type: 'about:blank',
+          title: 'Campos inválidos.',
+          status: 422,
+          code: 'uniplus.selecao.validacao',
+          traceId: 'trace-1',
+          errors: [
+            {
+              field: 'casasArredondamento',
+              code: 'uniplus.selecao.configuracao_classificacao.casas_arredondamento_obrigatorio',
+              message: 'As casas decimais de arredondamento são obrigatórias.',
+            },
+          ],
+        },
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+
+      const resultado = await gravacao;
+      expect(store.recusaDaEscalaDaNotaFinal()).toBe('Recusa anterior da escala.');
+      expect(resultado.messages).toEqual(['Campos inválidos.']);
+    });
+
     it('recusas iguais da resolução aparecem uma vez só no resumo', async () => {
       prepararClassificacaoLocal();
       store.patchObjectSection('classificacao', {
@@ -1870,6 +1944,16 @@ describe('EliminacaoStepComponent', () => {
         ?.itens.find((linha) => linha.rotulo === 'Resolução de Peso por Área');
 
       expect(item?.valor).toBe(RESOLUCAO);
+    });
+
+    it('mostra a escala da nota final que vai na gravação', () => {
+      prepararClassificacaoLocal();
+      store.patchObjectSection('classificacao', { escalaNotaFinal: '1000' });
+
+      expect(componente.confirmacaoDeGravacao()?.itens).toContainEqual({
+        rotulo: 'Escala da nota final',
+        valor: '0 a 1000',
+      });
     });
 
     it('lista os critérios de desempate que a classificação grava junto', () => {

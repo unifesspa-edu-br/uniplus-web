@@ -9,6 +9,15 @@ import {
   medirTransbordoHorizontal,
   rolarAteOMeio,
 } from '../support/rolagem-do-editor';
+import { FUNDAMENTOS_DE_ISENCAO, TIPOS_DE_PROCESSO } from '../fixtures/consulta-da-medicina';
+import {
+  ATO_DO_PROCESSO,
+  DOCUMENTO_DO_EDITAL,
+  FASES_CANONICAS,
+  ID_DO_PROCESSO_COMPLETO,
+  PROCESSO_PUBLICADO_COMPLETO,
+  SNAPSHOT_VIGENTE,
+} from '../fixtures/processo-publicado-completo';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
@@ -130,19 +139,33 @@ function atoDoProcesso() {
 }
 
 interface MockarProcessoOpcoes {
+  readonly classificacao?: unknown;
   readonly rascunhoDaPublicacao?: unknown;
   readonly status?: 'rascunho' | 'publicado';
   readonly cronogramaFases?: readonly unknown[];
-  readonly conformidadeItens?: readonly { codigo: string; dimensao: string; mensagem: string; ok: boolean }[];
+  readonly conformidadeItens?: readonly {
+    codigo: string;
+    dimensao: string;
+    mensagem: string;
+    ok: boolean;
+  }[];
   readonly conformidadeAvisos?: readonly { codigo: string; dimensao: string; mensagem: string }[];
   readonly conformidadeLegalRegras?: readonly unknown[];
 }
 
-function processoDto(cronogramaFases: readonly unknown[], status: string) {
+function processoDto(
+  cronogramaFases: readonly unknown[],
+  status: string,
+  classificacao: unknown = null,
+) {
   return {
     id: PROCESSO_ID,
     nome: 'Processo Seletivo de teste',
-    tipoProcesso: { origemId: '01960000-0000-7000-0000-000000000905', codigo: 'GRAD', nome: 'Graduação' },
+    tipoProcesso: {
+      origemId: '01960000-0000-7000-0000-000000000905',
+      codigo: 'GRAD',
+      nome: 'Graduação',
+    },
     // Vocabulário do wire é camelCase, não o nome do enum C# — status: 'Rascunho'
     // faria hidratar() marcar o processo como somente leitura (edicaoPermitida()
     // compara com StatusProcesso.rascunho === 'rascunho') e todo campo do
@@ -167,7 +190,7 @@ function processoDto(cronogramaFases: readonly unknown[], status: string) {
     aplicaBonusRegional: false,
     cascata: null,
     criteriosDesempate: [],
-    classificacao: null,
+    classificacao,
     cronogramaFases,
     documentosExigidos: [],
     raizesExigencia: [],
@@ -306,7 +329,7 @@ async function mockarProcesso(page: Page, opcoes: MockarProcessoOpcoes = {}): Pr
         status: 200,
         contentType: 'application/json',
         headers: CORS_HEADERS,
-        body: JSON.stringify(processoDto(cronogramaFases, status)),
+        body: JSON.stringify(processoDto(cronogramaFases, status, opcoes.classificacao)),
       });
     },
   );
@@ -342,6 +365,175 @@ async function mockarAtoPublicado(page: Page): Promise<void> {
       body: JSON.stringify(ATO_DTO),
     });
   });
+}
+
+const FATOS_DO_FORMULARIO = ['DATA_NASCIMENTO', 'OPTOU_PELAS_COTAS_DA_LEI', 'MODALIDADE'].map(
+  (codigo) => ({
+    id: `fato-${codigo}`,
+    codigo,
+    nome: codigo,
+    descricao: null,
+    dominio: codigo === 'DATA_NASCIMENTO' ? 'DATA' : 'BOOLEANO',
+    origem: 'DECLARADO',
+    cardinalidade: 'ESCALAR',
+    valoresDominio: null,
+    pontoResolucao: 'INSCRICAO',
+    binding: `CAMPO_INSCRICAO:${codigo}`,
+    valoresDominioDeclarados: null,
+  }),
+);
+
+/**
+ * O fixture chama de COLETA_INSCRICAO a fase que o catálogo de fatos situa em INSCRICAO: o teste
+ * unifica o código para o cronograma ter a fase em que a modalidade é conhecida.
+ */
+function comFaseDeInscricao<T>(valor: T): T {
+  return JSON.parse(JSON.stringify(valor).replaceAll('COLETA_INSCRICAO', 'INSCRICAO'));
+}
+
+const PENDENCIA_DA_ESCALA = {
+  codigo: 'classificacao_escala_nota_final_nao_declarada',
+  dimensao: 'classificacao',
+  mensagem: 'Escala da nota final (fórmula local)',
+};
+
+/**
+ * O processo completo em rascunho, cuja classificação não declara a escala: a gravação dela (PUT)
+ * vira a conferência verde.
+ * Devolve o que o servidor recebeu, para o teste conferir o corpo.
+ */
+async function mockarPublicacaoComEscalaPendente(page: Page) {
+  const recebido = { classificacao: null as Record<string, unknown> | null, publicou: false };
+  const responder = async (route: Route, status: number, corpo?: unknown) =>
+    route.fulfill({
+      status,
+      headers: {
+        ...CORS_HEADERS,
+        'access-control-allow-methods': 'GET, PUT, POST, OPTIONS',
+        'access-control-allow-headers': '*',
+      },
+      ...(corpo === undefined
+        ? {}
+        : { contentType: 'application/json', body: JSON.stringify(corpo) }),
+    });
+
+  await page.route(/\/api\//, (route) => responder(route, 200, []));
+  await page.route(/\/api\/configuracao\/tipos-processo(\?.*)?$/, (route) =>
+    responder(route, 200, TIPOS_DE_PROCESSO),
+  );
+  await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (route) =>
+    responder(route, 200, comFaseDeInscricao(FASES_CANONICAS)),
+  );
+  await page.route(/\/api\/selecao\/fundamentos-isencao(\?.*)?$/, (route) =>
+    responder(route, 200, FUNDAMENTOS_DE_ISENCAO),
+  );
+  await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, (route) =>
+    responder(route, 200, FATOS_DO_FORMULARIO),
+  );
+  await mockarTiposAto(page);
+
+  await page.route(
+    new RegExp(`/api/selecao/processos-seletivos/${ID_DO_PROCESSO_COMPLETO}`),
+    async (route) => {
+      const request = route.request();
+      const caminho = new URL(request.url()).pathname;
+      if (request.method() === 'OPTIONS') return responder(route, 204);
+      if (request.method() === 'PUT' && caminho.endsWith('/classificacao')) {
+        recebido.classificacao = request.postDataJSON();
+        return responder(route, 204);
+      }
+      if (request.method() === 'POST' && caminho.endsWith('/distribuicao-vagas/simulacao')) {
+        return responder(route, 200, PROCESSO_PUBLICADO_COMPLETO.distribuicaoVagas);
+      }
+      if (request.method() === 'POST' && caminho.endsWith('/publicacao')) {
+        if (recebido.classificacao?.['escalaNotaFinal'] == null) {
+          return route.fulfill({
+            status: 422,
+            contentType: 'application/problem+json',
+            headers: { ...CORS_HEADERS, 'access-control-allow-headers': '*' },
+            body: JSON.stringify({
+              type: 'about:blank',
+              title: 'O processo tem pendências estruturais',
+              status: 422,
+              code: 'uniplus.selecao.processo_seletivo.conformidade_insuficiente',
+              traceId: 'trace-e2e',
+              pendencias: [PENDENCIA_DA_ESCALA],
+            }),
+          });
+        }
+        recebido.publicou = true;
+        return responder(route, 201);
+      }
+      if (request.method() !== 'GET') return responder(route, 204);
+
+      const escala = recebido.classificacao?.['escalaNotaFinal'] ?? null;
+      if (caminho.endsWith(ID_DO_PROCESSO_COMPLETO)) {
+        return responder(
+          route,
+          200,
+          comFaseDeInscricao({
+            ...PROCESSO_PUBLICADO_COMPLETO,
+            ofertaAtendimento: null,
+            cascata: null,
+            cronogramaFases: PROCESSO_PUBLICADO_COMPLETO.cronogramaFases.map((fase) => ({
+              ...fase,
+              produtos: [
+                ...fase.produtos,
+                {
+                  id: '01960000-0000-7000-0000-0000000009d1',
+                  atoCodigo: 'RESULTADO_DEFINITIVO',
+                  papel: 'DEFINITIVO',
+                },
+              ],
+            })),
+            status: recebido.publicou ? 'publicado' : 'rascunho',
+            classificacao: {
+              ...PROCESSO_PUBLICADO_COMPLETO.classificacao,
+              regrasEliminacao: [],
+              escalaNotaFinal: escala,
+            },
+          }),
+        );
+      }
+      if (caminho.endsWith('/documentos-a-publicar')) {
+        return responder(route, 200, [DOCUMENTO_DO_EDITAL]);
+      }
+      if (caminho.endsWith('/atos')) return responder(route, 200, [ATO_DO_PROCESSO]);
+      if (caminho.endsWith('/snapshot-vigente')) return responder(route, 200, SNAPSHOT_VIGENTE);
+      if (caminho.endsWith('/conformidade-legal')) {
+        return responder(route, 200, {
+          processoSeletivoId: ID_DO_PROCESSO_COMPLETO,
+          dataReferencia: '2027-01-01',
+          regras: [],
+          avisos: [],
+        });
+      }
+      if (caminho.endsWith('/conformidade')) {
+        return responder(route, 200, {
+          processoSeletivoId: ID_DO_PROCESSO_COMPLETO,
+          itens: [],
+          avisos: [],
+        });
+      }
+      return responder(route, 404);
+    },
+  );
+  return recebido;
+}
+
+async function preencherOAtoDaPublicacao(page: Page): Promise<void> {
+  await page.getByLabel('Número do ato (opcional)', { exact: true }).fill('001/2027');
+  await page.getByLabel('Tipo de ato', { exact: true }).selectOption('PORTARIA');
+  await page.getByLabel('Órgão', { exact: true }).fill('Reitoria');
+  await page.getByLabel('Série', { exact: true }).fill('1');
+  await page.getByLabel('Ano', { exact: true }).fill('2027');
+  await page.getByLabel('Data de publicação do ato', { exact: true }).fill('2027-01-15');
+  await page.getByLabel('Assinante', { exact: true }).fill('Reitor');
+}
+
+async function confirmarAPublicacao(page: Page): Promise<void> {
+  const dialogo = page.getByRole('dialog', { name: 'Confirmar a publicação do processo seletivo' });
+  await dialogo.getByRole('button', { name: 'Publicar processo' }).click();
 }
 
 /**
@@ -384,7 +576,9 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
     await irAoPasso(page, 'Revisão e publicação', testInfo);
 
     await expect(page.getByLabel('Início do período de inscrição', { exact: true })).toBeVisible();
-    await page.getByLabel('Início do período de inscrição', { exact: true }).fill('2027-05-01T08:00');
+    await page
+      .getByLabel('Início do período de inscrição', { exact: true })
+      .fill('2027-05-01T08:00');
     await page.getByLabel('Fim do período de inscrição', { exact: true }).fill('2027-05-10T18:00');
     await page.getByLabel('Número do ato (opcional)', { exact: true }).fill('001/2027');
     await page.getByLabel('Tipo de ato', { exact: true }).selectOption('PORTARIA');
@@ -457,6 +651,83 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
 
     const resultado = await runAxeWcagAA(page);
     expect(identificadoresDe(resultado)).toEqual([]);
+  });
+
+  test('a escala da nota final pendente leva ao campo da fórmula, que aponta a falta', async ({
+    page,
+  }, testInfo) => {
+    await mockarProcesso(page, {
+      cronogramaFases: [FASE_DE_COLETA],
+      classificacao: {
+        id: '01960000-0000-7000-0000-0000000009a1',
+        regraCalculo: { codigo: 'FORMULA-MEDIA-PONDERADA', versao: '1.0' },
+        regraArredondamento: { codigo: 'ARRED-TRUNCAR', versao: '1.0' },
+        casasArredondamento: 2,
+        regraOrdemAlocacao: { codigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', versao: '1.0' },
+        regrasEliminacao: [],
+        concorrenciaDuplaAplicavel: false,
+        baseadoEmEnem: false,
+        escalaNotaFinal: null,
+        resolucaoPesoAreaEnem: null,
+        quadroPesoAreaEnem: [],
+      },
+      conformidadeItens: [
+        {
+          codigo: 'classificacao_escala_nota_final_nao_declarada',
+          dimensao: 'classificacao',
+          mensagem: 'Declare a escala da nota final.',
+          ok: false,
+        },
+      ],
+    });
+    await page.goto(`/processo-seletivo/${PROCESSO_ID}`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await irAoPasso(page, 'Revisão e publicação', testInfo);
+
+    await page.getByRole('button', { name: /Ir para Fórmula de classificação/ }).click();
+
+    const escala = page.getByLabel('Escala da nota final', { exact: true });
+    await expect(escala).toHaveAttribute('aria-invalid', 'true');
+    await expect(escala).toHaveAccessibleDescription(/Declare a escala da nota final/);
+    const resultado = await runAxeWcagAA(page);
+    expect(identificadoresDe(resultado)).toEqual([]);
+  });
+
+  test('publicar sem a escala é recusado no campo da Fórmula, e com ela a publicação é aceita', async ({
+    page,
+  }, testInfo) => {
+    const recebido = await mockarPublicacaoComEscalaPendente(page);
+    await page.goto(`/processo-seletivo/${ID_DO_PROCESSO_COMPLETO}`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    await irAoPasso(page, 'Revisão e publicação', testInfo);
+    await expect(page.getByText('Nenhuma pendência estrutural.')).toBeVisible();
+    await preencherOAtoDaPublicacao(page);
+    await irAoPasso(page, 'Vagas', testInfo);
+    await page.getByRole('button', { name: 'Simular o quadro' }).click();
+    await expect(page.getByRole('button', { name: 'Simular o quadro' })).toBeEnabled();
+    await irAoPasso(page, 'Revisão e publicação', testInfo);
+    await page.getByRole('button', { name: 'Publicar' }).click();
+    await confirmarAPublicacao(page);
+
+    await expect(
+      page.locator('.revisao-list').getByText('Escala da nota final (fórmula local)'),
+    ).toBeVisible();
+    expect(recebido.publicou).toBe(false);
+    await page.getByRole('button', { name: /Ir para Fórmula de classificação/ }).click();
+    const escala = page.getByLabel('Escala da nota final', { exact: true });
+    await expect(escala).toHaveAttribute('aria-invalid', 'true');
+    await expect(escala).toHaveAccessibleDescription(/Declare a escala da nota final/);
+
+    await escala.fill('100');
+    await expect(escala).not.toHaveAttribute('aria-invalid', 'true');
+    await irAoPasso(page, 'Revisão e publicação', testInfo);
+    await page.getByRole('button', { name: 'Publicar' }).click();
+    await confirmarAPublicacao(page);
+
+    await expect.poll(() => recebido.classificacao?.['escalaNotaFinal']).toBe(100);
+    await expect.poll(() => recebido.publicou).toBe(true);
+    await expect(page.getByRole('button', { name: 'Publicar' })).toHaveCount(0);
   });
 
   test('não viola WCAG 2.1 AA com aviso de conformidade e checklist conforme', async ({
@@ -580,7 +851,9 @@ test.describe('Revisão e publicação — matriz DS @ds', () => {
     await expect(anexos.getByText('Cronograma detalhado.pdf')).toBeVisible();
     await expect(anexos.getByText('modelo-de-recurso.pdf', { exact: false }).first()).toBeVisible();
     await expect(anexos.getByRole('textbox')).toHaveCount(0);
-    await expect(anexos.getByRole('button', { name: /Abrir o anexo Cronograma detalhado/ })).toBeVisible();
+    await expect(
+      anexos.getByRole('button', { name: /Abrir o anexo Cronograma detalhado/ }),
+    ).toBeVisible();
 
     const resultado = await runAxeWcagAA(page);
     expect(identificadoresDe(resultado)).toEqual([]);

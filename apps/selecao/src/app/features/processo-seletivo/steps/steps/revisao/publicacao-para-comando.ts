@@ -8,8 +8,12 @@ import {
 } from '@uniplus/shared-data/selecao';
 
 import { PASSOS, RotuloDePasso } from '../../processo-seletivo.data';
+import { CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA } from '../classificacao/escala-da-nota-final';
 import { FaseDoCronograma, WizardDraft } from '../../processo-seletivo.models';
-import { comoPedidoDeAnexos, mensagensDosAnexos } from '../../shared/anexos-do-edital/anexos-do-edital';
+import {
+  comoPedidoDeAnexos,
+  mensagensDosAnexos,
+} from '../../shared/anexos-do-edital/anexos-do-edital';
 import { hojeNoFusoInstitucional, instanteDoCampo } from '../../shared/fuso-institucional';
 
 /** Sem catálogo à mão, só o que já foi hidratado do servidor decide — nunca `false` por omissão do parâmetro. */
@@ -27,8 +31,13 @@ const SEM_CATALOGO: ReadonlyMap<string, FaseCanonicaDto> = new Map();
  * o servidor exige `null` — 422 `PeriodoInscricaoNaoInformavel` na
  * publicação mais comum, a de processo com inscrição própria.
  */
-function coletaInscricao(fase: FaseDoCronograma, fasePorId: ReadonlyMap<string, FaseCanonicaDto>): boolean {
-  return fase.congelados?.coletaInscricao ?? fasePorId.get(fase.faseCanonicaId)?.coletaInscricao ?? false;
+function coletaInscricao(
+  fase: FaseDoCronograma,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+): boolean {
+  return (
+    fase.congelados?.coletaInscricao ?? fasePorId.get(fase.faseCanonicaId)?.coletaInscricao ?? false
+  );
 }
 
 /**
@@ -234,8 +243,10 @@ type DestinoDoItem =
   | { readonly passo: null; readonly orientacao: string };
 
 /** Cada passo pelo rótulo, com a posição dele e o nome que o painel mostra. */
-const PASSO_POR_ROTULO: ReadonlyMap<RotuloDePasso, { readonly indice: number; readonly nome: string }> =
-  new Map(PASSOS.map((passo, indice) => [passo.rotulo, { indice, nome: passo.revisao }]));
+const PASSO_POR_ROTULO: ReadonlyMap<
+  RotuloDePasso,
+  { readonly indice: number; readonly nome: string }
+> = new Map(PASSOS.map((passo, indice) => [passo.rotulo, { indice, nome: passo.revisao }]));
 
 /**
  * A mudança feita na fórmula não é gravada pela fórmula: ela vai junto com a classificação,
@@ -303,7 +314,8 @@ const DESTINO_POR_ITEM: ReadonlyMap<string, DestinoDoItem> = new Map<string, Des
     'fuso_institucional_nao_reconhecido',
     {
       passo: null,
-      orientacao: 'O fuso institucional não foi reconhecido pelo servidor. Acione o suporte técnico.',
+      orientacao:
+        'O fuso institucional não foi reconhecido pelo servidor. Acione o suporte técnico.',
     },
   ],
   [
@@ -311,6 +323,13 @@ const DESTINO_POR_ITEM: ReadonlyMap<string, DestinoDoItem> = new Map<string, Des
     {
       passo: 'Fórmula e precisão',
       orientacao: `Escolha a resolução de Peso por Área. A escolha ${GRAVADA_COM_A_CLASSIFICACAO}.`,
+    },
+  ],
+  [
+    CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA,
+    {
+      passo: 'Fórmula e precisão',
+      orientacao: `Declare a escala da nota final. A escala ${GRAVADA_COM_A_CLASSIFICACAO}.`,
     },
   ],
   [
@@ -382,7 +401,10 @@ const DESTINO_POR_ITEM: ReadonlyMap<string, DestinoDoItem> = new Map<string, Des
  * inexistente é defeito de programação: falha alto em vez de devolver um valor que pareça
  * válido.
  */
-function passoPeloRotulo(rotulo: RotuloDePasso): { readonly indice: number; readonly nome: string } {
+function passoPeloRotulo(rotulo: RotuloDePasso): {
+  readonly indice: number;
+  readonly nome: string;
+} {
   const passo = PASSO_POR_ROTULO.get(rotulo);
   if (passo === undefined) throw new Error(`O passo "${rotulo}" não existe no wizard.`);
   return passo;
@@ -606,9 +628,7 @@ export interface ProblemComExtensoesDePublicacao extends ProblemDetails {
   readonly obrigatoriedadesReprovadas?: readonly ObrigatoriedadeReprovadaProblem[];
 }
 
-export function comExtensoesDePublicacao(
-  problem: ProblemDetails,
-): ProblemComExtensoesDePublicacao {
+export function comExtensoesDePublicacao(problem: ProblemDetails): ProblemComExtensoesDePublicacao {
   return problem as ProblemComExtensoesDePublicacao;
 }
 
@@ -673,8 +693,7 @@ export function mensagensDePublicacao(
   const ano = inteiro(publicacao.ato.ano);
   if (ano === null || ano <= 0) mensagens.push('Informe o ano do ato de publicação.');
 
-  if (!publicacao.ato.dataPublicacao.trim())
-    mensagens.push('Informe a data de publicação do ato.');
+  if (!publicacao.ato.dataPublicacao.trim()) mensagens.push('Informe a data de publicação do ato.');
   if (!publicacao.ato.assinante.trim()) mensagens.push('Informe quem assina o ato.');
   if (!publicacao.ato.tipoAtoCodigo.trim()) mensagens.push('Selecione o tipo do ato.');
 
@@ -689,7 +708,11 @@ export function mensagensDePublicacao(
  * órgão com a hierarquia inteira estoura o de duzentos — hoje só no 422, depois de confirmada
  * a publicação.
  */
-const COMPRIMENTO_MAXIMO: readonly { readonly campo: string; readonly rotulo: string; readonly maximo: number }[] = [
+const COMPRIMENTO_MAXIMO: readonly {
+  readonly campo: string;
+  readonly rotulo: string;
+  readonly maximo: number;
+}[] = [
   { campo: 'numero', rotulo: 'O número do ato', maximo: 60 },
   { campo: 'orgao', rotulo: 'O órgão do ato', maximo: 200 },
   { campo: 'serie', rotulo: 'A série do ato', maximo: 100 },

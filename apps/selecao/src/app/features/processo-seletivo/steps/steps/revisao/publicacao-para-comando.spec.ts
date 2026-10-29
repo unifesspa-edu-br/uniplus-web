@@ -45,6 +45,7 @@ function draftVazio(): WizardDraft {
       regraOrdemAlocacaoCodigo: '',
       regraOrdemAlocacaoVersao: '',
       baseadoEmEnem: false,
+      escalaNotaFinal: '',
       resolucaoPesoAreaEnem: '',
       regrasEliminacao: [],
       edicoesEnem: [],

@@ -459,6 +459,7 @@ const CLASSIFICACAO = {
   regraOrdemAlocacao: { codigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA', versao: '1.0' },
   baseadoEmEnem: false,
   concorrenciaDuplaAplicavel: false,
+  escalaNotaFinal: 1000,
   resolucaoPesoAreaEnem: null,
   quadroPesoAreaEnem: [],
   regrasEliminacao: [
@@ -553,6 +554,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
       regraOrdemAlocacaoVersao: '1.0',
       baseadoEmEnem: false,
+      escalaNotaFinal: '1000',
       resolucaoPesoAreaEnem: '',
       regrasEliminacao: [
         {
@@ -592,6 +594,20 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
     const { classificacao } = hidratarDraft(DRAFT, dtoComCronograma({ classificacao: enem }));
 
     expect(classificacao.resolucaoPesoAreaEnem).toBe('Resolução nº 805/2024/Consepe');
+  });
+
+  it('projeta a escala da nota final como o campo a lê, e vazia quando o processo não a declarou', () => {
+    const fracionada = { ...CLASSIFICACAO, escalaNotaFinal: 7.5 };
+    const semEscala = { ...CLASSIFICACAO, escalaNotaFinal: null };
+
+    expect(
+      hidratarDraft(DRAFT, dtoComCronograma({ classificacao: fracionada })).classificacao
+        .escalaNotaFinal,
+    ).toBe('7,5');
+    expect(
+      hidratarDraft(DRAFT, dtoComCronograma({ classificacao: semEscala })).classificacao
+        .escalaNotaFinal,
+    ).toBe('');
   });
 
   /** Sob classificação importada (INV-B8), o arredondamento é ausente — `null`, não zero. */

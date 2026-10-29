@@ -25,6 +25,7 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import { leituraDaEscalaDaNotaFinal } from '../classificacao/escala-da-nota-final';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
@@ -44,6 +45,7 @@ import {
   eliminacaoUsaEtapa,
   eliminacaoUsaEtapaENotaMinima,
   eliminacaoUsaSoEtapa,
+  ehCampoDaEscala,
   ehCampoDaResolucao,
   exigeResolucaoPesoAreaEnem,
   mensagensDeClassificacaoBase,
@@ -442,6 +444,12 @@ export class EliminacaoStepComponent {
             : 'não se aplica (classificação importada)',
         },
         { rotulo: 'Ordem de alocação', valor: classificacao.regraOrdemAlocacaoCodigo },
+        {
+          rotulo: 'Escala da nota final',
+          valor: local
+            ? leituraDaEscalaDaNotaFinal(classificacao.escalaNotaFinal)
+            : 'não se aplica (classificação importada)',
+        },
         { rotulo: 'Baseada em ENEM', valor: classificacao.baseadoEmEnem ? 'Sim' : 'Não' },
         {
           rotulo: 'Resolução de Peso por Área',
@@ -679,6 +687,7 @@ export class EliminacaoStepComponent {
         if (resposta.ok) {
           this.recusasPorCampo.set(new Map());
           this.store.descartarRecusasDaClassificacao();
+          this.store.recusaDaEscalaDaNotaFinal.set(null);
           this.registrarQuadroCongelado(comando.resolucaoPesoAreaEnem ?? null);
         } else if (resposta.inconclusiva) {
           // O servidor pode ter gravado — com ou sem quadro —, e o que ele tem fica desconhecido.
@@ -752,10 +761,17 @@ export class EliminacaoStepComponent {
       );
     }
 
+    const daEscala = (problema.errors ?? []).find((erro) => ehCampoDaEscala(erro.field));
+    const recusaDaEscala = daEscala === undefined ? null : mensagemDaRecusaDaEscala(daEscala);
+    if (recusaDaEscala !== null) this.store.recusaDaEscalaDaNotaFinal.set(recusaDaEscala);
+
     return resumoDaRecusa(
       problema,
       (erro) =>
         recusaDaEliminacao(erro) ??
+        (ehCampoDaEscala(erro.field) && recusaDaEscala !== null
+          ? `Escala da nota final, no passo Fórmula: ${recusaDaEscala}`
+          : null) ??
         recusaDaClassificacaoPeloDesempate(erro) ??
         (ehCampoDaResolucao(erro.field)
           ? `Resolução de Peso por Área, no passo Fórmula: ${mensagemDaRecusaDaResolucao(erro)}`
@@ -910,6 +926,13 @@ function recusaDaEliminacao(erro: {
   return indice === undefined
     ? `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`
     : `Regra de eliminação ${Number(indice) + 1}: ${texto}.`;
+}
+
+/** A tela mostra o que o servidor disse da escala; sem mensagem, orienta pelo campo. */
+function mensagemDaRecusaDaEscala(erro: Pick<ProblemValidationError, 'message'>): string {
+  return (
+    erro.message?.trim() || 'O servidor recusou a escala da nota final. Confira o valor informado.'
+  );
 }
 
 const MENSAGEM_DE_RECUSA_DESCONHECIDA =

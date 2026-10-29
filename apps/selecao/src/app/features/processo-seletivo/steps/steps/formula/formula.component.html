@@ -19,6 +19,7 @@
           [valor]="leitura().regraArredondamento"
         />
         <ui-valor-em-consulta rotulo="Casas decimais" [valor]="leitura().casasDecimais" />
+        <ui-valor-em-consulta rotulo="Escala da nota final" [valor]="leitura().escalaNotaFinal" />
       }
       <ui-valor-em-consulta rotulo="Ordem de alocação" [valor]="leitura().ordemAlocacao" />
       <ui-valor-em-consulta
@@ -92,6 +93,30 @@
             [value]="store.draft().classificacao.casasArredondamento"
             (input)="alterarCasasArredondamento($any($event.target).value)"
           />
+        </div>
+        <div class="form-field">
+          <label class="label" [for]="idDoCampoEscala">Escala da nota final</label
+          ><input
+            class="input"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [id]="idDoCampoEscala"
+            [class.is-invalid]="erroDaEscala() !== null"
+            [attr.aria-invalid]="erroDaEscala() !== null ? 'true' : null"
+            [attr.aria-describedby]="descricaoDaEscala()"
+            [disabled]="!store.aceitaEdicao()"
+            [value]="store.draft().classificacao.escalaNotaFinal"
+            (input)="alterarEscalaNotaFinal($any($event.target).value)"
+          />
+          @if (erroDaEscala(); as erro) {
+            <p class="field__error" [id]="idDoCampoEscala + '-erro'">{{ erro }}</p>
+          }
+          <p class="field__hint" [id]="idDoCampoEscala + '-dica'">
+            A nota final é publicada nesta escala, de zero até o valor informado. A nota de cada etapa
+            é convertida para ela antes dos pesos. {{ formatoDaEscala }} O rascunho pode ficar sem a
+            escala, mas a publicação a exige.
+          </p>
         </div>
       </div>
       @if (avisoDeDivisorInvalido()) {

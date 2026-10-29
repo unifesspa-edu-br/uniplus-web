@@ -203,6 +203,27 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       );
     });
 
+    test('declara a escala da nota final, recusa o texto que não é número e aponta o campo', async ({
+      page,
+    }, testInfo) => {
+      await irAoPasso(page, 'Fórmula e precisão', testInfo);
+      await declararFormulaLocal(page);
+      const escala = page.getByLabel('Escala da nota final', { exact: true });
+
+      await escala.fill('cem');
+      await page.getByRole('button', { name: 'Próximo' }).click();
+
+      await expect(escala).toHaveAttribute('aria-invalid', 'true');
+      await expect(escala).toHaveAccessibleDescription(/Use apenas números/);
+      const comErro = await runAxeWcagAA(page);
+      expect(identificadoresDe(comErro)).toEqual([]);
+
+      await escala.fill('1000');
+      await expect(escala).not.toHaveAttribute('aria-invalid', 'true');
+      const semErro = await runAxeWcagAA(page);
+      expect(identificadoresDe(semErro)).toEqual([]);
+    });
+
     test('nomeia cada campo pelo rótulo visível', async ({ page }, testInfo) => {
       await irAoPasso(page, 'Fórmula e precisão', testInfo);
       await declararFormulaLocal(page);
@@ -211,6 +232,7 @@ test.describe('Classificação, bônus e desempate — matriz DS @ds', () => {
       await expect(page.getByLabel('Regra de arredondamento', { exact: true })).toBeVisible();
       await expect(page.getByLabel('Casas decimais', { exact: true })).toBeVisible();
       await expect(page.getByLabel('Ordem de alocação', { exact: true })).toBeVisible();
+      await expect(page.getByLabel('Escala da nota final', { exact: true })).toBeVisible();
       // O número de opções de curso é do passo Vagas, não da Fórmula.
       await expect(page.getByLabel('Número de opções de curso', { exact: true })).toBeHidden();
     });
@@ -478,6 +500,7 @@ const DETALHE_PUBLICADO = {
     ],
     concorrenciaDuplaAplicavel: false,
     baseadoEmEnem: false,
+    escalaNotaFinal: 100,
     resolucaoPesoAreaEnem: null,
     quadroPesoAreaEnem: [],
   },
@@ -501,6 +524,7 @@ const LEITURAS: Record<string, Record<string, string>> = {
     'Regra de arredondamento': 'ARRED-TRUNCAR — Edital padrão PSIQ',
     'Casas decimais': '2',
     'Ordem de alocação': 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
+    'Escala da nota final': '0 a 100',
   },
   Bônus: {
     'Bônus regional': 'Aplicado neste processo',
@@ -581,6 +605,7 @@ const DETALHE_DESEMPATE_POR_AREA = {
   classificacao: {
     ...DETALHE_PUBLICADO.classificacao,
     baseadoEmEnem: true,
+    escalaNotaFinal: 100,
     resolucaoPesoAreaEnem: RESOLUCAO_PESO_AREA,
     quadroPesoAreaEnem: PESOS_AREA_ENEM.map((linha) => ({
       grupoAreaEnem: linha.grupoCurso,

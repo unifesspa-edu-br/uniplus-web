@@ -741,6 +741,39 @@ describe('RevisaoStepComponent', () => {
       expect(store.remoteSnapshot()).toBeNull();
     });
 
+    it('em 422 com a escala da nota final pendente, avisa o campo do passo Fórmula', async () => {
+      prepararCamposLocais();
+      await criarProcesso();
+      await flushPreflightVerde();
+
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_PUBLICACAO).flush(
+        {
+          type: 'about:blank',
+          title: 'O processo tem pendências estruturais',
+          status: 422,
+          code: 'uniplus.selecao.processo_seletivo.conformidade_insuficiente',
+          traceId: 't1',
+          pendencias: [
+            {
+              codigo: 'classificacao_escala_nota_final_nao_declarada',
+              dimensao: 'classificacao',
+              mensagem: 'A escala da nota final não foi declarada.',
+            },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Entity', headers: { 'Content-Type': 'application/problem+json' } },
+      );
+      await gravacao;
+      TestBed.tick();
+
+      expect(store.escalaDaNotaFinalPendente()).toBe(true);
+
+      // Fora da Revisão a conferência não vale mais: o campo da Fórmula não pode seguir marcado.
+      fixture.destroy();
+      expect(store.escalaDaNotaFinalPendente()).toBe(false);
+    });
+
     it('em 422 de conformidade legal, guarda as obrigatoriedades reprovadas', async () => {
       prepararCamposLocais();
       await criarProcesso();

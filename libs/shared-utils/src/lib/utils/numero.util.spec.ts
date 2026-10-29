@@ -8,6 +8,11 @@ describe('formatarNumeroPtBr', () => {
     expect(formatarNumeroPtBr(1.5)).toBe('1,5');
     expect(formatarNumeroPtBr(400)).toBe('400');
   });
+
+  it('mostra até o máximo de casas pedido', () => {
+    expect(formatarNumeroPtBr(0.0001)).toBe('0');
+    expect(formatarNumeroPtBr(0.0001, 4)).toBe('0,0001');
+  });
 });
 
 describe('numeroDaApi / numeroOuNuloDaApi', () => {

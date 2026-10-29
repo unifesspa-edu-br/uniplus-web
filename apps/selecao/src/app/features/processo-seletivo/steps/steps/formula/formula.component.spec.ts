@@ -133,6 +133,108 @@ describe('FormulaStepComponent', () => {
       expect(componente.avisoDeDivisorInvalido()).toBe(false);
     });
   });
+  describe('escala da nota final', () => {
+    const campo = (): HTMLInputElement =>
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '#f-escala-nota-final',
+      ) as HTMLInputElement;
+    const erro = (): string | undefined =>
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('#f-escala-nota-final-erro')
+        ?.textContent?.trim();
+
+    function passoValidoComEscala(escala: string): void {
+      componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
+      componente.escolherRegraArredondamento('ARRED-TRUNCAR|1.0');
+      componente.alterarCasasArredondamento('2');
+      store.patchObjectSection('classificacao', {
+        regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
+        regraOrdemAlocacaoVersao: '1.0',
+      });
+      componente.alterarEscalaNotaFinal(escala);
+      fixture.detectChanges();
+    }
+
+    it('o campo tem rótulo e dica associados, e o rascunho sem a escala segue válido', () => {
+      passoValidoComEscala('');
+
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector('label[for="f-escala-nota-final"]')
+          ?.textContent,
+      ).toContain('Escala da nota final');
+      expect(campo().getAttribute('aria-describedby')).toBe('f-escala-nota-final-dica');
+      expect(componente.validate().valid).toBe(true);
+    });
+
+    it('sob classificação importada, o campo não aparece e a recusa guardada some', () => {
+      passoValidoComEscala('100');
+      store.recusaDaEscalaDaNotaFinal.set('Recusa antiga.');
+
+      componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
+      fixture.detectChanges();
+
+      expect(campo()).toBeNull();
+      expect(store.recusaDaEscalaDaNotaFinal()).toBeNull();
+    });
+
+    it('o texto que não é número recusa o passo e o erro descreve o campo', () => {
+      passoValidoComEscala('cem');
+
+      const validacao = componente.validate();
+      fixture.detectChanges();
+
+      expect(validacao.valid).toBe(false);
+      expect(campo().getAttribute('aria-invalid')).toBe('true');
+      expect(campo().getAttribute('aria-describedby')).toBe(
+        'f-escala-nota-final-erro f-escala-nota-final-dica',
+      );
+      expect(erro()).toContain('Use apenas números');
+    });
+
+    it('a recusa da gravação aparece no campo e some quando o valor muda', () => {
+      passoValidoComEscala('0');
+
+      store.recusaDaEscalaDaNotaFinal.set(
+        'A escala da nota final deve ser um número maior que zero.',
+      );
+      fixture.detectChanges();
+      expect(erro()).toBe('A escala da nota final deve ser um número maior que zero.');
+      expect(campo().getAttribute('aria-invalid')).toBe('true');
+
+      componente.alterarEscalaNotaFinal('10');
+      fixture.detectChanges();
+      expect(erro()).toBeUndefined();
+    });
+
+    it('a recusa da escala sobrevive a alternar o ENEM, que não a julgou', () => {
+      passoValidoComEscala('0');
+      store.recusaDaEscalaDaNotaFinal.set('A escala deve ser maior que zero.');
+
+      componente.alternarBaseadoEmEnem(true);
+
+      expect(store.recusaDaEscalaDaNotaFinal()).toBe('A escala deve ser maior que zero.');
+    });
+
+    it('a pendência de publicação aparece no campo vazio e não no preenchido', () => {
+      passoValidoComEscala('');
+      store.pendenciasDaConferencia.set(['classificacao_escala_nota_final_nao_declarada']);
+      fixture.detectChanges();
+      expect(erro()).toBe('Declare a escala da nota final para publicar o processo.');
+
+      componente.alterarEscalaNotaFinal('100');
+      fixture.detectChanges();
+      expect(erro()).toBeUndefined();
+    });
+
+    it('em consulta, exibe a faixa da nota final congelada', () => {
+      passoValidoComEscala('1000');
+      store.remoteSnapshot.set({ status: 'publicado' } as never);
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('0 a 1000');
+    });
+  });
+
   describe('edições do ENEM aceitas', () => {
     function processoDeInscricaoComEnem(edicoesEnem: readonly string[]): void {
       store.patchObjectSection('identificacao', {
