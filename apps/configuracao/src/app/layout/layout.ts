@@ -5,6 +5,7 @@ import { filter, map, startWith } from 'rxjs';
 import {
   AuthService,
   DOMAIN_ROLES,
+  PermissoesService,
   ROLE_LABELS,
   UserContextService,
 } from '@uniplus/shared-auth/bootstrap';
@@ -14,6 +15,7 @@ import {
   UiShellBreadcrumbItem,
   UiShellNavGroup,
 } from '@uniplus/shared-ui/shell';
+import { CaminhoDeTela, PERMISSOES_DAS_TELAS } from '../acesso/permissoes-das-telas';
 
 interface CfgNavItem {
   readonly label: string;
@@ -59,6 +61,7 @@ interface CfgNavGroup {
 })
 export class LayoutComponent {
   private readonly authService = inject(AuthService);
+  private readonly permissoes = inject(PermissoesService);
   private readonly router = inject(Router);
   protected readonly userContext = inject(UserContextService);
 
@@ -176,9 +179,19 @@ export class LayoutComponent {
     },
   ];
 
-  protected readonly navGroups = computed<readonly UiShellNavGroup[]>(
-    () => this.navGroupsDeclarados,
+  protected readonly navGroups = computed<readonly UiShellNavGroup[]>(() =>
+    this.navGroupsDeclarados
+      .map((grupo) => ({
+        ...grupo,
+        items: grupo.items.filter((item) => this.permitido(item)),
+      }))
+      .filter((grupo) => grupo.items.length > 0),
   );
+
+  private permitido(item: CfgNavItem): boolean {
+    const caminho = item.routerLink?.slice(1) as CaminhoDeTela | undefined;
+    return caminho === undefined || this.permissoes.temAlguma(...PERMISSOES_DAS_TELAS[caminho]);
+  }
 
   private breadcrumbDaRotaAtiva(): UiShellBreadcrumbItem[] {
     let route: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;

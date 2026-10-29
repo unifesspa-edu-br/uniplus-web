@@ -1,8 +1,9 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, TipoProcessoDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -28,6 +29,8 @@ const tipoInativo: TipoProcessoDto = {
   criadoEm: '2026-05-01T12:00:00Z',
 };
 
+const concedidas = signal<readonly string[]>(['configuracao:tipos-processo:manter']);
+
 const ADMIN_LISTA = `${BASE}/api/configuracao/admin/tipos-processo`;
 
 describe('TiposProcessoPage', () => {
@@ -37,6 +40,7 @@ describe('TiposProcessoPage', () => {
   let appRef: ApplicationRef;
 
   beforeEach(() => {
+    concedidas.set(['configuracao:tipos-processo:manter']);
     TestBed.configureTestingModule({
       imports: [TiposProcessoPage],
       providers: [
@@ -44,6 +48,10 @@ describe('TiposProcessoPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        {
+          provide: PermissoesService,
+          useValue: { tem: (codigo: string) => concedidas().includes(codigo) },
+        },
       ],
     });
     fixture = TestBed.createComponent(TiposProcessoPage);
@@ -90,6 +98,35 @@ describe('TiposProcessoPage', () => {
     expect(fixture.nativeElement.textContent).toContain('SISU');
     expect(fixture.nativeElement.textContent).toContain('Ativo');
     expect(fixture.nativeElement.textContent).toContain('Inativo');
+  });
+
+  it('estado vazio convida a cadastrar só a quem pode manter', async () => {
+    await flushLista([]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Cadastre o primeiro tipo de processo');
+  });
+
+  it('estado vazio não manda cadastrar quem não pode manter', async () => {
+    concedidas.set(['configuracao:tipos-processo:consultar']);
+    await flushLista([]);
+    fixture.detectChanges();
+    const texto = fixture.nativeElement.textContent as string;
+    expect(texto).toContain('Nenhum tipo de processo cadastrado');
+    expect(texto).not.toContain('Cadastre o primeiro');
+  });
+
+  it('sem a permissão de manter, a lista segue visível mas não oferece criar, editar nem inativar', async () => {
+    concedidas.set(['configuracao:tipos-processo:consultar']);
+    await flushLista([tipoSeed, tipoInativo]);
+    fixture.detectChanges();
+    await propagate();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain('SiSU');
+    const botoes = Array.from(host.querySelectorAll('button')).map((b) => b.textContent ?? '');
+    expect(botoes.some((texto) => texto.includes('Novo tipo de processo'))).toBe(false);
+    expect(host.querySelectorAll('td.table-responsive__actions ui-icon-button')).toHaveLength(0);
   });
 
   it('banner de código imutável é visível mesmo com lista vazia', async () => {

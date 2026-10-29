@@ -1,5 +1,7 @@
 import { inject } from '@angular/core';
 import { Router, Routes } from '@angular/router';
+import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
+import { permissaoGuard } from '@uniplus/shared-auth/guards';
 
 /**
  * A lista de modelos, com a criação no drawer, e a edição em tela própria: o formulário inteiro
@@ -20,6 +22,7 @@ export const MODELOS_FORMULARIO_ROUTES: Routes = [
   },
   {
     path: ':id',
+    canActivate: [permissaoGuard(PERMISSAO.configuracao.modelosFormularioManter)],
     data: { breadcrumb: 'Editar modelo' },
     loadComponent: () =>
       import('./modelo-formulario-edicao.page').then((m) => m.ModeloFormularioEdicaoPage),

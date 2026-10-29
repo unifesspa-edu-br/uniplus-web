@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { VENDOR_MIME_TOKEN, apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
@@ -84,12 +85,16 @@ const CASO = {
   pressupostos: {},
 };
 
+const MANTER = 'configuracao:modelos-formulario:manter';
+
 describe('SimuladorDeFormularioPage', () => {
+  let permissoesConcedidas: string[] = [MANTER];
   let harness: RouterTestingHarness;
   let http: HttpTestingController;
   const fixture = { detectChanges: (): void => harness.detectChanges() };
 
   beforeEach(async () => {
+    permissoesConcedidas = [MANTER];
     TestBed.configureTestingModule({
       providers: [
         provideRouter([{ path: 'simulador', component: SimuladorDeFormularioPage }]),
@@ -97,6 +102,10 @@ describe('SimuladorDeFormularioPage', () => {
         provideHttpClientTesting(),
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
         { provide: GEO_BASE_PATH, useValue: BASE },
+        {
+          provide: PermissoesService,
+          useValue: { tem: (codigo: string) => permissoesConcedidas.includes(codigo) },
+        },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -247,6 +256,21 @@ describe('SimuladorDeFormularioPage', () => {
     expect(tela().textContent).toContain('cadastro institucional');
     expect(tela().querySelector('.aviso-de-simulacao')?.textContent).toContain('nada é gravado');
     expect(tela().textContent).toContain('Nome social');
+  });
+
+  it('o link para editar o modelo aparece só com a permissão de manter modelos', async () => {
+    await abrir(`/simulador?modelo=${ID}`);
+    listaDeModelos();
+    renderizavel();
+    expect(tela().textContent).toContain('Editar o modelo');
+  });
+
+  it('sem a permissão de manter modelos, o simulador não oferece editar o modelo', async () => {
+    permissoesConcedidas = ['configuracao:modelos-formulario:consultar'];
+    await abrir(`/simulador?modelo=${ID}`);
+    listaDeModelos();
+    renderizavel();
+    expect(tela().textContent).not.toContain('Editar o modelo');
   });
 
   it('?modelo= de um modelo desativado o mostra escolhido, marcado como desativado', async () => {

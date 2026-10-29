@@ -12,3 +12,4 @@ export {
   WCAG_AAA_APPLICABLE_TAGS,
 } from './lib/a11y';
 export type { AaaVisualContractOptions, RunAxeOptions } from './lib/a11y';
+export { falharPermissoesEfetivas, mockPermissoesEfetivas } from './lib/permissoes-efetivas';
