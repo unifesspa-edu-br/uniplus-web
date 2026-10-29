@@ -42,3 +42,15 @@ export const PERMISSOES_DO_LEANDRO = [
 
 /** Betina só consulta os tipos de processo: não mantém nada. */
 export const PERMISSOES_DA_BETINA = ['configuracao:tipos-processo:consultar'] as const;
+
+/** Diogo é gestor de acessos: aprova a etapa funcional, administra concessões e mantém perfis. */
+export const PERMISSOES_DO_DIOGO = [
+  'autorizacao:pedidos:aprovar-funcional',
+  'autorizacao:concessoes:administrar',
+  'autorizacao:perfis:manter',
+] as const;
+
+/** Betina é a encarregada de dados: aprova a etapa de proteção de dados. */
+export const PERMISSOES_DA_BETINA_ENCARREGADA = [
+  'autorizacao:pedidos:aprovar-protecao-de-dados',
+] as const;
