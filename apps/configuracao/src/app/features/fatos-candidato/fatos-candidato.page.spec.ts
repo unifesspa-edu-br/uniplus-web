@@ -1,8 +1,9 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -14,6 +15,8 @@ const FASES = `${BASE}/api/configuracao/fases-canonicas`;
 const CATALOGO = `${BASE}/api/configuracao/fatos-candidato`;
 const PROBLEMA = (status: number) => ({ status, statusText: 'Recusa', headers: { 'content-type': 'application/problem+json' } });
 
+const concedidas = signal<readonly string[]>(['configuracao:fatos-candidato:manter']);
+
 describe('FatosCandidatoPage', () => {
   let fixture: ComponentFixture<FatosCandidatoPage>;
   let component: FatosCandidatoPage;
@@ -21,6 +24,7 @@ describe('FatosCandidatoPage', () => {
   let appRef: ApplicationRef;
 
   beforeEach(() => {
+    concedidas.set(['configuracao:fatos-candidato:manter']);
     TestBed.configureTestingModule({
       imports: [FatosCandidatoPage],
       providers: [
@@ -28,6 +32,10 @@ describe('FatosCandidatoPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        {
+          provide: PermissoesService,
+          useValue: { tem: (codigo: string) => concedidas().includes(codigo) },
+        },
       ],
     });
     fixture = TestBed.createComponent(FatosCandidatoPage);
@@ -67,6 +75,26 @@ describe('FatosCandidatoPage', () => {
     expect(filtrada.request.params.get('origem')).toBe('DERIVADO');
     expect(filtrada.request.params.has('ativo')).toBe(false);
     filtrada.flush([]);
+  });
+
+  it('sem a permissão de manter, não oferece criar nem editar, e deixa visualizar', async () => {
+    concedidas.set(['configuracao:fatos-candidato:consultar']);
+    atenderFases();
+    controller.expectOne((r) => r.url === LISTA).flush([
+      { id: 'f1', codigo: 'RENDA', nome: 'Renda', origem: 'DECLARADO', dominio: 'NUMERO', sistema: false, ativo: true },
+    ]);
+    await propagar();
+    fixture.detectChanges();
+    await propagar();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const botoes = Array.from(host.querySelectorAll('button')).map((b) => b.textContent ?? '');
+    expect(botoes.some((texto) => texto.includes('Novo fato'))).toBe(false);
+    const rotulos = Array.from(host.querySelectorAll('td.table-responsive__actions button')).map(
+      (b) => b.getAttribute('aria-label') ?? '',
+    );
+    expect(rotulos).toEqual(['Visualizar o fato RENDA']);
   });
 
   it('as três opções de "O que o fato é" formam um grupo de rádio nativo', async () => {

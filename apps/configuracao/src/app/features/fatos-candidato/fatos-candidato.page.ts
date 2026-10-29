@@ -1,4 +1,6 @@
 import { HttpParams } from '@angular/common/http';
+import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
+import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -116,6 +118,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    TemPermissaoDirective,
     AlertComponent,
     ConfirmDialogComponent,
     DrawerComponent,
@@ -175,7 +178,12 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
-        <button type="button" class="btn btn--primary" (click)="abrirCriacao()">
+        <button
+          *authTemPermissao="permissaoDeManter"
+          type="button"
+          class="btn btn--primary"
+          (click)="abrirCriacao()"
+        >
           <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
           Novo fato
         </button>
@@ -218,6 +226,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                       [isDisabled]="loading()"
                       (triggered)="abrirEdicao(fato.id, true)"
                     />
+                    <ng-container *authTemPermissao="permissaoDeManter">
                     <ui-icon-button
                       icon="pi-pencil"
                       [accessibleName]="'Editar o fato ' + fato.codigo"
@@ -255,6 +264,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                         />
                       }
                     }
+                    </ng-container>
                   </td>
                 </tr>
               }
@@ -538,6 +548,7 @@ export class FatosCandidatoPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
+  protected readonly permissaoDeManter = PERMISSAO.configuracao.fatosCandidatoManter;
   protected readonly origens = ORIGENS;
   protected readonly dominios = DOMINIOS;
   protected readonly cardinalidades = CARDINALIDADES;

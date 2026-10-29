@@ -9,6 +9,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink, type ParamMap } from '@angular/router';
+import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
+import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { AvaliacoesDeFormularioApi, ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
 import {
@@ -52,6 +54,7 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
     SimulacaoDeFormularioComponent,
     SpinnerComponent,
     RouterLink,
+    TemPermissaoDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // O campo de município escolhe o município pela busca no Geo, limitada à UF respondida.
@@ -84,7 +87,10 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
           [formControl]="modeloEscolhido"
         />
         @if (modeloId()) {
-          <a class="btn btn--link btn--sm" [routerLink]="['/modelos-formulario', modeloId()]"
+          <a
+            *authTemPermissao="permissaoDeManter"
+            class="btn btn--link btn--sm"
+            [routerLink]="['/modelos-formulario', modeloId()]"
             >Editar o modelo</a
           >
         }
@@ -161,6 +167,8 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
   `,
 })
 export class SimuladorDeFormularioPage {
+  /** A mesma permissão que a rota de edição exige. */
+  protected readonly permissaoDeManter = PERMISSAO.configuracao.modelosFormularioManter;
   private readonly avaliacoes = inject(AvaliacoesDeFormularioApi);
   private readonly modelos = inject(ModelosFormularioApi);
   private readonly problemI18n = inject(ProblemI18nService);

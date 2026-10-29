@@ -1,4 +1,6 @@
 import { HttpParams } from '@angular/common/http';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -76,6 +78,7 @@ interface TipoProcessoForm {
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    TemPermissaoDirective,
     AlertComponent,
     ConfirmDialogComponent,
     DrawerComponent,
@@ -129,7 +132,12 @@ interface TipoProcessoForm {
             <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
-        <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
+        <button
+          *authTemPermissao="permissaoDeManter"
+          type="button"
+          class="btn btn--primary"
+          (click)="abrirCadastro()"
+        >
           <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
           Novo tipo de processo
         </button>
@@ -173,6 +181,7 @@ interface TipoProcessoForm {
                     }
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
+                    <ng-container *authTemPermissao="permissaoDeManter">
                     @if (tipo.ativo) {
                       <ui-icon-button
                         icon="pi-pencil"
@@ -197,6 +206,7 @@ interface TipoProcessoForm {
                         (triggered)="pedirReativacao(tipo)"
                       />
                     }
+                    </ng-container>
                   </td>
                 </tr>
               }
@@ -216,9 +226,14 @@ interface TipoProcessoForm {
         } @else {
           <ui-empty-state
             heading="Nenhum tipo de processo cadastrado"
-            description="Cadastre o primeiro tipo de processo para disponibilizá-lo na criação de Processos Seletivos."
+            [description]="descricaoDoEstadoVazio()"
           >
-            <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
+            <button
+              *authTemPermissao="permissaoDeManter"
+              type="button"
+              class="btn btn--primary"
+              (click)="abrirCadastro()"
+            >
               Novo tipo de processo
             </button>
           </ui-empty-state>
@@ -367,6 +382,13 @@ export class TiposProcessoPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
+  protected readonly permissaoDeManter = PERMISSAO.configuracao.tiposProcessoManter;
+  private readonly permissoes = inject(PermissoesService);
+  protected readonly descricaoDoEstadoVazio = computed(() =>
+    this.permissoes.tem(this.permissaoDeManter)
+      ? 'Cadastre o primeiro tipo de processo para disponibilizá-lo na criação de Processos Seletivos.'
+      : 'Os tipos de processo cadastrados ficam disponíveis na criação de Processos Seletivos.',
+  );
   protected readonly saving = signal(false);
   protected readonly formOpen = signal(false);
   protected readonly confirmOpen = signal(false);

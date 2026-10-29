@@ -1,4 +1,6 @@
 import { HttpParams } from '@angular/common/http';
+import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
+import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -85,6 +87,7 @@ type CampoDaCriacao = keyof CriacaoForm;
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    TemPermissaoDirective,
     AlertComponent,
     DrawerComponent,
     EmptyStateComponent,
@@ -164,7 +167,12 @@ type CampoDaCriacao = keyof CriacaoForm;
             <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
-        <button type="button" class="btn btn--primary" (click)="abrirCriacao()">
+        <button
+          *authTemPermissao="permissaoDeManter"
+          type="button"
+          class="btn btn--primary"
+          (click)="abrirCriacao()"
+        >
           <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
           Novo modelo
         </button>
@@ -208,6 +216,7 @@ type CampoDaCriacao = keyof CriacaoForm;
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
+                      *authTemPermissao="permissaoDeManter"
                       icon="pi-pencil"
                       [accessibleName]="'Editar o modelo ' + modelo.codigo"
                       tooltip="Editar modelo"
@@ -221,6 +230,7 @@ type CampoDaCriacao = keyof CriacaoForm;
                       [queryParams]="{ modelo: modelo.id }"
                       novaAba
                     />
+                    <ng-container *authTemPermissao="permissaoDeManter">
                     @if (modelo.ativo) {
                       <ui-icon-button
                         icon="pi-power-off"
@@ -238,6 +248,7 @@ type CampoDaCriacao = keyof CriacaoForm;
                         (triggered)="ativar(modelo)"
                       />
                     }
+                    </ng-container>
                   </td>
                 </tr>
               }
@@ -415,6 +426,7 @@ export class ModelosFormularioPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
+  protected readonly permissaoDeManter = PERMISSAO.configuracao.modelosFormularioManter;
   protected readonly finalidades = FINALIDADES;
   protected readonly finalidadeChips: readonly UiFilterChipOption[] = [
     { value: '', label: 'Todas' },
