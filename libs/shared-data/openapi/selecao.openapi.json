@@ -13358,7 +13358,8 @@
           "concorrenciaDuplaAplicavel",
           "baseadoEmEnem",
           "resolucaoPesoAreaEnem",
-          "quadroPesoAreaEnem"
+          "quadroPesoAreaEnem",
+          "escalaNotaFinal"
         ],
         "type": "object",
         "properties": {
@@ -13414,6 +13415,15 @@
             "items": {
               "$ref": "#/components/schemas/GrupoPesoAreaEnemCongeladoDto"
             }
+          },
+          "escalaNotaFinal": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },
@@ -14293,6 +14303,15 @@
               "null",
               "string"
             ]
+          },
+          "escalaNotaFinal": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },

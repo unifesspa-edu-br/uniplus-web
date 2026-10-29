@@ -9437,6 +9437,8 @@ export interface components {
             readonly baseadoEmEnem: boolean;
             readonly resolucaoPesoAreaEnem: null | string;
             readonly quadroPesoAreaEnem: readonly components["schemas"]["GrupoPesoAreaEnemCongeladoDto"][];
+            /** Format: double */
+            readonly escalaNotaFinal: null | number | string;
         };
         readonly ConfiguracaoDerivacaoDto: {
             readonly codigoFato: string;
@@ -9620,6 +9622,8 @@ export interface components {
             readonly regrasEliminacao: readonly components["schemas"]["RegraEliminacaoInput"][];
             readonly baseadoEmEnem: boolean;
             readonly resolucaoPesoAreaEnem?: null | string;
+            /** Format: double */
+            readonly escalaNotaFinal?: null | number | string;
         };
         readonly DefinirConfiguracaoDivulgacaoRequest: {
             readonly camposPublicos: null | readonly DefinirConfiguracaoDivulgacaoRequestCamposPublicos[];

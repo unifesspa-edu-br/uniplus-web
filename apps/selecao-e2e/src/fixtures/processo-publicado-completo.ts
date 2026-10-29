@@ -114,6 +114,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
     ],
     concorrenciaDuplaAplicavel: false,
     baseadoEmEnem: false,
+    escalaNotaFinal: 100,
     resolucaoPesoAreaEnem: null,
     quadroPesoAreaEnem: [],
   },
