@@ -36,7 +36,7 @@ import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap'
         }
         <div class="ui-access-denied__acoes">
           @if (rotaDeVolta(); as rota) {
-            <a class="btn btn--tertiary" [routerLink]="rota">Voltar ao início</a>
+            <a class="btn btn--tertiary" [routerLink]="rota">{{ rotuloDaRotaDeVolta() }}</a>
           }
           <button
             type="button"
@@ -64,6 +64,12 @@ export class AccessDeniedComponent {
    */
   protected readonly rotaDeVolta = signal<string | null>(
     (inject(ActivatedRoute).snapshot.data['rotaDeVolta'] as string | undefined) ?? null,
+  ).asReadonly();
+
+  /** Texto do link para a rota de volta; o padrão serve ao início do app. */
+  protected readonly rotuloDaRotaDeVolta = signal<string>(
+    (inject(ActivatedRoute).snapshot.data['rotuloDaRotaDeVolta'] as string | undefined) ??
+      'Voltar ao início',
   ).asReadonly();
 
   /** Encerramento em curso, para não disparar duas vezes no mesmo clique duplo. */

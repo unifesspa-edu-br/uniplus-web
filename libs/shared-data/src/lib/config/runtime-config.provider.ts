@@ -60,7 +60,7 @@ export function resolveGeoBasePath(store: AppConfigService): string {
  *   3. `AuthService.init(authConfig)` — cliente OIDC inicializado com
  *      URLs reais já carregadas.
  *
- * `AUTH_CONFIG`, `SELECAO_BASE_PATH`, `INGRESSO_BASE_PATH`,
+ * `AUTH_CONFIG`, `AUTORIZACAO_BASE_PATH`, `SELECAO_BASE_PATH`, `INGRESSO_BASE_PATH`,
  * `ORGANIZACAO_BASE_PATH`, `CONFIGURACAO_BASE_PATH`, `PUBLICACOES_BASE_PATH`, `PORTAL_BASE_PATH` e
  * `GEO_BASE_PATH` continuam
  * provedidos como factories síncronas que leem do store. São injetados

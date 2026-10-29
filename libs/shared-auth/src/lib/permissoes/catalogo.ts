@@ -3,6 +3,12 @@
  * catálogo da API. Cada tela declara aqui o que exige; a decisão de acesso segue sendo da API.
  */
 export const PERMISSAO = {
+  autorizacao: {
+    concessoesAdministrar: 'autorizacao:concessoes:administrar',
+    pedidosAprovarFuncional: 'autorizacao:pedidos:aprovar-funcional',
+    pedidosAprovarProtecaoDeDados: 'autorizacao:pedidos:aprovar-protecao-de-dados',
+    perfisManter: 'autorizacao:perfis:manter',
+  },
   configuracao: {
     baseLegalBonusRegionalManter: 'configuracao:base-legal-bonus-regional:manter',
     calendariosDiasUteisManter: 'configuracao:calendarios-dias-uteis:manter',

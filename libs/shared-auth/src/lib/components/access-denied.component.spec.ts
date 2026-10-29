@@ -21,6 +21,7 @@ describe('AccessDeniedComponent', () => {
     logout = vi.fn().mockResolvedValue(undefined),
     profile: UserProfile | null = perfil,
     rotaDeVolta: string | null = null,
+    rotulo: string | null = null,
   ) {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -35,7 +36,12 @@ describe('AccessDeniedComponent', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { data: rotaDeVolta === null ? {} : { rotaDeVolta } },
+            snapshot: {
+              data: {
+                ...(rotaDeVolta === null ? {} : { rotaDeVolta }),
+                ...(rotulo === null ? {} : { rotuloDaRotaDeVolta: rotulo }),
+              },
+            },
           } as unknown as ActivatedRoute,
         },
       ],
@@ -79,6 +85,12 @@ describe('AccessDeniedComponent', () => {
     const { volta } = montar(vi.fn().mockResolvedValue(undefined), perfil, '/processos');
 
     expect(volta()?.getAttribute('href')).toBe('/processos');
+  });
+
+  it('usa o rótulo que a rota declara para o link de volta', () => {
+    const { volta } = montar(vi.fn(), perfil, '/acessos/pedidos', 'Pedir acesso');
+
+    expect(volta()?.textContent?.trim()).toBe('Pedir acesso');
   });
 
   it('mantém a saída disponível junto da volta', () => {
