@@ -1,3 +1,4 @@
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -95,6 +96,9 @@ const catalogoVazioStub = {
  */
 const processosSeletivosApiStub = { listarFundamentosIsencao: listarFundamentos };
 
+/** A permissão de publicar é a que o fluxo de publicação exige; as demais ficam negadas. */
+const concedeSoPublicar = (codigo: string): boolean => codigo === 'selecao:processos:publicar';
+
 const PAGE_PROVIDERS = [
   provideRouter([]),
   { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
@@ -137,6 +141,7 @@ const PAGE_PROVIDERS = [
   // E os modelos de que cada formulário pode partir.
   { provide: ModelosFormularioApi, useValue: catalogoVazioStub },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
+  { provide: PermissoesService, useValue: { tem: concedeSoPublicar } },
 ];
 
 describe('ProcessoSeletivoPage — estrutura', () => {
@@ -1185,6 +1190,58 @@ describe('ProcessoSeletivoPage — publicação', () => {
 });
 
 /** Garante que o store exposto pela página é o mesmo instanciado na rota. */
+describe('ProcessoSeletivoPage — permissão de publicar', () => {
+  const ID = '11111111-1111-4111-8111-111111111111';
+
+  async function montarNoUltimoPasso(permissoes: (codigo: string) => boolean) {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [ProcessoSeletivoPage],
+      providers: [
+        ...PAGE_PROVIDERS.filter(
+          (provedor) =>
+            !('provide' in provedor && (provedor.provide as unknown) === PermissoesService),
+        ),
+        { provide: PermissoesService, useValue: { tem: permissoes } },
+      ],
+    }).compileComponents();
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+    fixture.detectChanges();
+    const { store } = fixture.componentInstance;
+    store.processoSeletivoId.set(ID);
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const textoDosBotoes = () =>
+      Array.from(host.querySelectorAll('.wiz-footer button, .rascunho-publicacao button')).map(
+        (botao) => botao.textContent?.trim() ?? '',
+      );
+    return { fixture, page: fixture.componentInstance, store, host, textoDosBotoes };
+  }
+
+  it('com publicar, oferece publicar e gravar o rascunho da publicação', async () => {
+    const { textoDosBotoes } = await montarNoUltimoPasso(concedeSoPublicar);
+
+    expect(textoDosBotoes()).toEqual(expect.arrayContaining(['Salvar rascunho', 'Publicar']));
+  });
+
+  it('só com configurar, não oferece publicar nem gravar o rascunho, e o avanço não publica', async () => {
+    const { fixture, page, store, host, textoDosBotoes } = await montarNoUltimoPasso(
+      (codigo) => codigo === 'selecao:processos:configurar',
+    );
+
+    expect(textoDosBotoes()).not.toContain('Publicar');
+    expect(textoDosBotoes()).not.toContain('Salvar rascunho');
+    expect(host.querySelector('.rascunho-publicacao')).toBeNull();
+
+    await page.nextOrPublish();
+    fixture.detectChanges();
+    expect(store.stepError()).toBeNull();
+  });
+});
+
 describe('ProcessoSeletivoStore — progresso', () => {
   it('substitui o conjunto de concluídos em syncCompleted', () => {
     const store = new ProcessoSeletivoStore();

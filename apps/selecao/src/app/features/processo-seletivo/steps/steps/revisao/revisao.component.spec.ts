@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   apiOk,
   apiResultInterceptor,
@@ -179,6 +180,7 @@ const ATO_PUBLICADO: AtoNormativoDto = {
 };
 
 describe('RevisaoStepComponent', () => {
+  const negadas = signal<readonly string[]>([]);
   let fixture: ComponentFixture<RevisaoStepComponent>;
   let componente: RevisaoStepComponent;
   let store: ProcessoSeletivoStore;
@@ -197,6 +199,7 @@ describe('RevisaoStepComponent', () => {
   };
 
   beforeEach(async () => {
+    negadas.set([]);
     fasePorId = signal(new Map());
     atosLidos = [];
     respostaDoAto = of(apiOk(ATO_PUBLICADO, 200, new HttpHeaders()));
@@ -209,6 +212,7 @@ describe('RevisaoStepComponent', () => {
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: PermissoesService, useValue: { tem: (codigo: string) => !negadas().includes(codigo) } },
         {
           provide: TiposAtoApi,
           useValue: { listar: () => of(apiOk([TIPO_ATO_DTO], 200, new HttpHeaders())) },
@@ -283,6 +287,23 @@ describe('RevisaoStepComponent', () => {
     expect(store.emConsulta()).toBe(true);
     expect(texto).not.toContain('Anexe e confirme o edital');
     expect(texto).not.toContain('Conclua a identificação');
+  });
+
+  it('sem a permissão de publicar, não orienta a anexar o edital que a pessoa não vê', async () => {
+    negadas.set(['selecao:processos:publicar']);
+    await flushMicrotasks();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).not.toContain('Anexe e confirme o edital');
+  });
+
+  it('com a permissão de publicar, orienta a anexar o edital', async () => {
+    await flushMicrotasks();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Anexe e confirme o edital');
   });
 
   describe('documentos exigidos', () => {

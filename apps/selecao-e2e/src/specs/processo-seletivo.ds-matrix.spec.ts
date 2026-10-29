@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import { blocosColados, espacosDeBlocosNovos, ritmoDoPasso } from '../support/ritmo-vertical';
 import {
   conferirFocoForaDasFaixasFixas,
@@ -13,6 +13,7 @@ import {
 import { LARGURA_STEPPER_LATERAL, larguraDoProjeto } from '../support/navega-passo';
 import { responder } from '../support/responder';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 
 /**
  * Fronteiras que estas verificações espelham, cada uma vinda da folha de
@@ -315,6 +316,7 @@ async function abrirPasso(page: Page, rotulo: string): Promise<void> {
  */
 async function mockarCatalogosVazios(page: Page): Promise<void> {
   await responder(page, /\/api\//, [], CORS_HEADERS);
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
 }
 
 /**

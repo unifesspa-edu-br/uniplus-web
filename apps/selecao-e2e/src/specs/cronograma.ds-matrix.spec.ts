@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { elementosForaDoCartao } from '../support/limites-do-cartao';
 import { blocosColados } from '../support/ritmo-vertical';
@@ -7,6 +7,11 @@ import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { responder } from '../support/responder';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
+
+test.beforeEach(async ({ page }) => {
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
+});
 
 /** Larguras em que a grade dos eixos da exigência tem de três a cinco colunas. */
 const LARGURAS_DA_GRADE_DOS_EIXOS = [1440, 1680, 1920, 2200] as const;

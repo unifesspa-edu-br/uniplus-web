@@ -1,13 +1,11 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { authGuard, roleGuard } from '@uniplus/shared-auth/guards';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   AppConfigService,
   resolveAcompanhamentoValidacaoHabilitada,
 } from '@uniplus/shared-data/config';
-
-/** Papéis elegíveis no backoffice da Seleção. */
-export const PAPEIS_DO_BACKOFFICE = ['admin', 'gestor', 'avaliador', 'plataforma-admin'] as const;
+import { PERMISSOES_DAS_TELAS, type CaminhoDeTela } from './permissoes-das-telas';
 
 /** Se a navegação de acompanhamento para validação está ligada neste ambiente. */
 export function acompanhamentoValidacaoHabilitada(): boolean {
@@ -15,24 +13,61 @@ export function acompanhamentoValidacaoHabilitada(): boolean {
 }
 
 /**
- * Entrada de acompanhamento (painel e, adiante, a página contextual do processo). Com a validação
- * ligada, basta estar autenticado; desligada, vale o controle por papel do backoffice. A flag não
- * autoriza nada na API: um 403 continua levando a `/acesso-negado`.
+ * Se a pessoa abre a tela: pela permissão dela em `PERMISSOES_DAS_TELAS` ou, com a validação
+ * ligada, no caso do painel, por estar autenticada (a opção não concede autorização na API: um
+ * 403 continua levando a `/acesso-negado`).
  */
-export const acessoAcompanhamentoGuard: CanActivateFn = (route, state) =>
-  acompanhamentoValidacaoHabilitada()
-    ? authGuard(route, state)
-    : roleGuard(...PAPEIS_DO_BACKOFFICE)(route, state);
+export function podeAbrirTela(
+  permissoes: PermissoesService,
+  tela: CaminhoDeTela,
+  validacaoHabilitada: boolean,
+): boolean {
+  return (
+    (validacaoHabilitada && tela === 'dashboard') ||
+    permissoes.temAlguma(...PERMISSOES_DAS_TELAS[tela])
+  );
+}
+
+/** Guarda do painel: a permissão do acompanhamento, ou só a sessão com a validação ligada. */
+export const acessoAoPainel: CanActivateFn = async () => {
+  const permissoes = inject(PermissoesService);
+  const router = inject(Router);
+  const validacaoHabilitada = acompanhamentoValidacaoHabilitada();
+  await permissoes.garantir();
+  return podeAbrirTela(permissoes, 'dashboard', validacaoHabilitada)
+    ? true
+    : router.createUrlTree(['/acesso-negado']);
+};
+
+/**
+ * Raiz do app: leva à primeira tela, na ordem de `PERMISSOES_DAS_TELAS`, que a pessoa pode abrir.
+ * Sem permissão para nenhuma, `/acesso-negado`.
+ */
+export const entradaDaSelecao: CanActivateFn = async () => {
+  const permissoes = inject(PermissoesService);
+  const router = inject(Router);
+  const validacaoHabilitada = acompanhamentoValidacaoHabilitada();
+  await permissoes.garantir();
+  const caminhos = Object.keys(PERMISSOES_DAS_TELAS) as CaminhoDeTela[];
+  const primeira = caminhos.find((caminho) =>
+    podeAbrirTela(permissoes, caminho, validacaoHabilitada),
+  );
+  return router.createUrlTree([primeira === undefined ? '/acesso-negado' : `/${primeira}`]);
+};
 
 /**
  * Com a validação ligada, as entradas isoladas antigas (`/inscricoes`, `/homologacao`, `/notas`,
- * `/classificacao`) levam ao painel. Vai depois do `roleGuard` da rota, que continua valendo.
- * Só o caminho exato da rota é redirecionado; qualquer subrota segue para o destino existente.
+ * `/classificacao`) levam ao painel, a quem pode abri-lo. Vai depois do `permissaoGuard` da rota,
+ * que continua valendo. Só o caminho exato da rota é redirecionado; qualquer subrota segue para o
+ * destino existente.
  */
-export const redirecionaEntradaAntigaParaPainel: CanActivateFn = (route, state) => {
+export const redirecionaEntradaAntigaParaPainel: CanActivateFn = async (route, state) => {
   const caminho = state.url.split(/[?#]/)[0].replace(/\/+$/, '');
   const entradaExata = caminho === `/${route.routeConfig?.path}`;
-  return acompanhamentoValidacaoHabilitada() && entradaExata
-    ? inject(Router).createUrlTree(['/dashboard'])
-    : true;
+  if (!acompanhamentoValidacaoHabilitada() || !entradaExata) return true;
+
+  const permissoes = inject(PermissoesService);
+  const router = inject(Router);
+  await permissoes.garantir();
+  return podeAbrirTela(permissoes, 'dashboard', true) ? router.createUrlTree(['/dashboard']) : true;
 };

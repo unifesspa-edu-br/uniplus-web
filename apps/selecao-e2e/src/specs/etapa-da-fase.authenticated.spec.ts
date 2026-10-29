@@ -1,5 +1,11 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { responder } from '../support/responder';
+import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
+
+test.beforeEach(async ({ page }) => {
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
+});
 
 /**
  * O que a reformulação do eixo fase → etapa habilita, exercitado de ponta a ponta na

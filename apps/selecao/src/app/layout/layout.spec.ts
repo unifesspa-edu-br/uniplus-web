@@ -1,11 +1,17 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import { AuthService, PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { AppConfigService } from '@uniplus/shared-data/config';
 import { LayoutComponent } from './layout';
 
 const papeis = signal<readonly string[]>([]);
+const concedidas = signal<readonly string[]>([]);
+const menuPrincipal = 'nav[aria-label="Navegação principal"] a';
+const permissoesStub = {
+  tem: (codigo: string) => concedidas().includes(codigo),
+  temAlguma: (...codigos: string[]) => codigos.some((codigo) => concedidas().includes(codigo)),
+};
 const configuracao = signal<{ acompanhamentoValidacaoHabilitada?: boolean } | null>(null);
 const authServiceStub = { roles: papeis, logout: () => undefined };
 const userContextStub = {
@@ -14,25 +20,24 @@ const userContextStub = {
   firstDisplayName: signal('Admin'),
 };
 
-/**
- * A navegação tem de espelhar os `roleGuard` das rotas: item visível que o
- * guard recusa é um clique que sempre termina em `/acesso-negado`.
- */
-describe('LayoutComponent — navegação por papel', () => {
+/** A navegação tem de espelhar as permissões das rotas: item visível que o guard recusa é um clique sem saída. */
+describe('LayoutComponent — navegação por permissão', () => {
   beforeEach(async () => {
     configuracao.set(null);
+    concedidas.set([]);
     await TestBed.configureTestingModule({
       imports: [LayoutComponent],
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: authServiceStub },
         { provide: UserContextService, useValue: userContextStub },
+        { provide: PermissoesService, useValue: permissoesStub },
         { provide: AppConfigService, useValue: { config: configuracao } },
       ],
     }).compileComponents();
   });
 
-  function rotulosDeNavegacao(seletor = 'nav a'): string[] {
+  function rotulosDeNavegacao(seletor = menuPrincipal): string[] {
     const fixture = TestBed.createComponent(LayoutComponent);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
@@ -41,41 +46,23 @@ describe('LayoutComponent — navegação por papel', () => {
       .filter((texto) => texto.length > 0);
   }
 
-  it('oferece o cadastro do certame a quem administra a plataforma', () => {
-    papeis.set(['plataforma-admin']);
+  it('oferece cada entrada só a quem tem a permissão da rota', () => {
+    concedidas.set(['selecao:processos:configurar']);
+    expect(rotulosDeNavegacao().join(' | ')).toBe('Processo seletivo');
 
-    expect(rotulosDeNavegacao().join(' | ')).toContain('Processo seletivo');
+    concedidas.set(['selecao:inscricoes:consultar']);
+    expect(rotulosDeNavegacao().join(' | ')).toBe('Inscrições');
+
+    concedidas.set(['selecao:processos:acompanhar']);
+    expect(rotulosDeNavegacao().join(' | ')).toBe('Painel de processos | Homologação');
   });
 
-  it('esconde o cadastro do certame de um gestor', () => {
-    papeis.set(['gestor']);
-    const rotulos = rotulosDeNavegacao().join(' | ');
-
-    expect(rotulos).not.toContain('Processo seletivo');
-    expect(rotulos).toContain('Inscrições');
-  });
-
-  /** Quem entra só como plataforma-admin não deve ver as telas operacionais. */
-  it('esconde as telas operacionais de quem só administra a plataforma', () => {
-    papeis.set(['plataforma-admin']);
-    const rotulos = rotulosDeNavegacao().join(' | ');
-
-    expect(rotulos).not.toContain('Inscrições');
-    expect(rotulos).not.toContain('Homologação');
-  });
-
-  it('mantém o painel disponível para qualquer papel do backoffice', () => {
-    papeis.set(['avaliador']);
-    const rotulos = rotulosDeNavegacao().join(' | ');
-
-    expect(rotulos).toContain('Painel de processos');
-    expect(rotulos).toContain('Homologação');
+  it('não oferece nada a quem não tem permissão da Seleção', () => {
+    expect(rotulosDeNavegacao()).toEqual([]);
   });
 
   describe('com o acompanhamento de validação habilitado', () => {
     beforeEach(() => configuracao.set({ acompanhamentoValidacaoHabilitada: true }));
-
-    const menuPrincipal = 'nav[aria-label="Navegação principal"] a';
 
     function titulosDeGrupo(): string[] {
       const fixture = TestBed.createComponent(LayoutComponent);
@@ -86,8 +73,8 @@ describe('LayoutComponent — navegação por papel', () => {
         .filter((texto) => texto.length > 0);
     }
 
-    it('organiza Acompanhamento e Cadastro para quem administra a plataforma', () => {
-      papeis.set(['plataforma-admin']);
+    it('organiza Acompanhamento e Cadastro para quem pode configurar processo', () => {
+      concedidas.set(['selecao:processos:configurar', 'selecao:processos:acompanhar']);
 
       expect(rotulosDeNavegacao(menuPrincipal)).toEqual([
         'Painel de processos',
@@ -96,14 +83,22 @@ describe('LayoutComponent — navegação por papel', () => {
       expect(titulosDeGrupo()).toEqual(['Acompanhamento', 'Cadastro']);
     });
 
-    it('oferece só o painel a quem não tem papel de cadastro', () => {
-      papeis.set([]);
+    it('oferece o painel a toda pessoa autenticada, sem permissão da Seleção', () => {
+      expect(rotulosDeNavegacao(menuPrincipal)).toEqual(['Painel de processos']);
+    });
+
+    it('oferece só o painel a quem não tem a permissão de cadastro', () => {
+      concedidas.set(['selecao:processos:acompanhar']);
 
       expect(rotulosDeNavegacao(menuPrincipal)).toEqual(['Painel de processos']);
     });
 
     it('tira Inscrições e Homologação do menu e não cria entrada de Notas nem Classificação', () => {
-      papeis.set(['admin', 'gestor', 'avaliador']);
+      concedidas.set([
+        'selecao:processos:acompanhar',
+        'selecao:inscricoes:consultar',
+        'selecao:notas-enem:importar',
+      ]);
       const rotulos = rotulosDeNavegacao().join(' | ');
 
       expect(rotulos).not.toMatch(/Inscrições|Homologação|Notas|Classificação/);

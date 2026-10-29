@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
-import { AuthService } from '@uniplus/shared-auth/bootstrap';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   ProblemI18nService,
   extractNextCursor,
@@ -237,7 +237,7 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
 })
 export class ProcessosSeletivosListaPage {
   private readonly api = inject(ProcessosSeletivosApi);
-  private readonly authService = inject(AuthService);
+  private readonly permissoes = inject(PermissoesService);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -264,7 +264,7 @@ export class ProcessosSeletivosListaPage {
    * em "Novo Processo" para cair em `/acesso-negado`.
    */
   protected readonly podeCadastrarProcesso = computed(() =>
-    this.authService.roles().includes('plataforma-admin'),
+    this.permissoes.tem(PERMISSAO.selecao.processosConfigurar),
   );
 
   constructor() {
@@ -278,7 +278,11 @@ export class ProcessosSeletivosListaPage {
     this.loading.set(true);
 
     this.api
-      .listar({ cursor: pagina?.cursor, direction: pagina?.direction, limit: primeiraPagina ? this.limite() : undefined })
+      .listar({
+        cursor: pagina?.cursor,
+        direction: pagina?.direction,
+        limit: primeiraPagina ? this.limite() : undefined,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.loading.set(false);

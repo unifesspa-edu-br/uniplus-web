@@ -1,4 +1,6 @@
 import type { Page, Request, Route } from '@playwright/test';
+import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 import { ERICK, FERNANDA, HELENA, KEVIN, type PessoaFicticia } from './arquivo-do-inep-sintetico';
 
 /**
@@ -246,6 +248,7 @@ export async function simularApi(page: Page, cenario: Cenario = {}): Promise<Reg
       body: resposta.body,
     });
   });
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
   return registro;
 }
 

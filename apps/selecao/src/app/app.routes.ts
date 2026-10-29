@@ -1,83 +1,78 @@
 import { Routes } from '@angular/router';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
-import { authGuard, roleGuard } from '@uniplus/shared-auth/guards';
+import { authGuard, permissaoGuard } from '@uniplus/shared-auth/guards';
+import { PERMISSOES_DAS_TELAS } from './acesso/permissoes-das-telas';
 import {
-  PAPEIS_DO_BACKOFFICE,
-  acessoAcompanhamentoGuard,
+  acessoAoPainel,
+  entradaDaSelecao,
   redirecionaEntradaAntigaParaPainel,
 } from './acesso/acompanhamento.guard';
 
 export const appRoutes: Routes = [
   {
-    // Página de 403 — acessível mesmo sem role específica (apenas
-    // exige autenticação prévia via OIDC).
+    // Página de 403 — acessível sem permissão específica (apenas exige autenticação prévia via
+    // OIDC).
     path: 'acesso-negado',
     component: AccessDeniedComponent,
   },
   {
-    // Backoffice Seleção: todas as rotas exigem autenticação. O controle por papel fica em cada
-    // entrada: o acompanhamento tem regra própria (`acessoAcompanhamentoGuard`) e as demais
-    // rotas ficam sob o grupo de papéis do backoffice. Roles elegíveis: admin, gestor, avaliador
-    // e plataforma-admin — este último para a administração do certame, restrita por rota.
+    // Backoffice Seleção: todas as rotas exigem autenticação e, em cada entrada, a permissão
+    // efetiva que a API declara para ela (`PERMISSOES_DAS_TELAS`).
     path: '',
     loadComponent: () => import('./layout/layout').then((m) => m.LayoutComponent),
     canActivate: [authGuard],
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: '', pathMatch: 'full', canActivate: [entradaDaSelecao], children: [] },
       {
         path: 'dashboard',
-        canActivate: [acessoAcompanhamentoGuard],
+        canActivate: [acessoAoPainel],
         loadChildren: () =>
           import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
       },
       {
-        path: '',
-        canActivate: [roleGuard(...PAPEIS_DO_BACKOFFICE)],
-        children: [
-          {
-            // Cadastro e configuração do certame são administração de plataforma:
-            // as rotas correspondentes da API exigem `plataforma-admin`, e sem o
-            // mesmo papel aqui um gestor entraria na tela só para receber 403 na
-            // primeira gravação.
-            path: 'processo-seletivo',
-            canActivate: [roleGuard('plataforma-admin')],
-            loadChildren: () =>
-              import('./features/processo-seletivo/processo-seletivo.routes').then(
-                (m) => m.PROCESSO_SELETIVO_ROUTES,
-              ),
-          },
-          {
-            path: 'inscricoes',
-            canActivate: [roleGuard('admin', 'gestor'), redirecionaEntradaAntigaParaPainel],
-            loadChildren: () =>
-              import('./features/inscricoes/inscricoes.routes').then((m) => m.INSCRICOES_ROUTES),
-          },
-          {
-            path: 'homologacao',
-            canActivate: [
-              roleGuard('admin', 'gestor', 'avaliador'),
-              redirecionaEntradaAntigaParaPainel,
-            ],
-            loadChildren: () =>
-              import('./features/homologacao/homologacao.routes').then((m) => m.HOMOLOGACAO_ROUTES),
-          },
-          {
-            path: 'notas',
-            canActivate: [
-              roleGuard('admin', 'gestor', 'avaliador'),
-              redirecionaEntradaAntigaParaPainel,
-            ],
-            loadChildren: () => import('./features/notas/notas.routes').then((m) => m.NOTAS_ROUTES),
-          },
-          {
-            path: 'classificacao',
-            canActivate: [roleGuard('admin', 'gestor'), redirecionaEntradaAntigaParaPainel],
-            loadChildren: () =>
-              import('./features/classificacao/classificacao.routes').then(
-                (m) => m.CLASSIFICACAO_ROUTES,
-              ),
-          },
+        path: 'processo-seletivo',
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['processo-seletivo'])],
+        loadChildren: () =>
+          import('./features/processo-seletivo/processo-seletivo.routes').then(
+            (m) => m.PROCESSO_SELETIVO_ROUTES,
+          ),
+      },
+      {
+        path: 'inscricoes',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS.inscricoes),
+          redirecionaEntradaAntigaParaPainel,
         ],
+        loadChildren: () =>
+          import('./features/inscricoes/inscricoes.routes').then((m) => m.INSCRICOES_ROUTES),
+      },
+      {
+        path: 'homologacao',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS.homologacao),
+          redirecionaEntradaAntigaParaPainel,
+        ],
+        loadChildren: () =>
+          import('./features/homologacao/homologacao.routes').then((m) => m.HOMOLOGACAO_ROUTES),
+      },
+      {
+        path: 'notas',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS.notas),
+          redirecionaEntradaAntigaParaPainel,
+        ],
+        loadChildren: () => import('./features/notas/notas.routes').then((m) => m.NOTAS_ROUTES),
+      },
+      {
+        path: 'classificacao',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS.classificacao),
+          redirecionaEntradaAntigaParaPainel,
+        ],
+        loadChildren: () =>
+          import('./features/classificacao/classificacao.routes').then(
+            (m) => m.CLASSIFICACAO_ROUTES,
+          ),
       },
     ],
   },

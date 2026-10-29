@@ -67,4 +67,16 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
       (fixture.nativeElement as HTMLElement).querySelectorAll('nav .sidebar__label'),
     ).toHaveLength(0);
   });
+
+  it('aponta o Início do breadcrumb para a entrada, que escolhe uma tela permitida', () => {
+    concedidas.set(['configuracao:tipos-processo:consultar']);
+    const fixture = TestBed.createComponent(LayoutComponent);
+    fixture.detectChanges();
+
+    const inicio = (fixture.nativeElement as HTMLElement).querySelector(
+      'nav[aria-label="Breadcrumb"] a, nav[aria-label*="readcrumb" i] a',
+    );
+
+    expect(inicio?.getAttribute('href')).toBe('/');
+  });
 });

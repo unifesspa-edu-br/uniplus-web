@@ -1,11 +1,12 @@
 import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { responder, responderCom } from '../support/responder';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 
 type CriterioDeIdade = 'DESEMPATE-MAIOR-IDADE' | 'DESEMPATE-IDOSO';
 
@@ -145,6 +146,7 @@ function identificadoresDe(resultado: AxeResults): string[] {
  */
 async function mockarApi(page: Page): Promise<void> {
   await responder(page, /\/api\//, [], CORS_HEADERS);
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
   await responder(
     page,
     /\/api\/configuracao\/fatos-candidato(\?.*)?$/,

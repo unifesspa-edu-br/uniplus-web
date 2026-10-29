@@ -12,6 +12,7 @@ import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service'
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './formula.component';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 
 const BASE = 'http://localhost:5000';
 
@@ -44,6 +45,7 @@ describe('FormulaStepComponent', () => {
     await TestBed.configureTestingModule({
       imports: [FormulaStepComponent],
       providers: [
+        { provide: PermissoesService, useValue: { tem: () => false } },
         ProcessoSeletivoStore,
         CatalogosDeClassificacaoService,
         AcompanhamentoDoCadastroDePesos,

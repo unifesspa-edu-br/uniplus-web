@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { FUNDAMENTOS_DE_ISENCAO, TIPOS_DE_PROCESSO } from '../fixtures/consulta-da-medicina';
 import {
@@ -14,6 +14,7 @@ import {
 import { conferirObrigatoriedadeDoCampo } from '../support/consulta-do-formulario';
 import { blocosColados, espacosEntreBlocos, ritmoDoPasso } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 
 type DsTheme = 'light' | 'dark' | 'contrast';
 type Status = 'rascunho' | 'publicado';
@@ -378,6 +379,7 @@ function temaDoProject(projectName: string): DsTheme {
  */
 async function mockarApi(page: Page, status: Status): Promise<void> {
   await responder(page, /\/api\//, []);
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
   await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_DE_PROCESSO);
   await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS);
   await responder(page, /\/api\/selecao\/fundamentos-isencao(\?.*)?$/, FUNDAMENTOS_DE_ISENCAO);

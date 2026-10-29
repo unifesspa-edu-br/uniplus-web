@@ -1,3 +1,4 @@
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Type, signal } from '@angular/core';
@@ -50,6 +51,7 @@ async function montar<T>(componente: Type<T>): Promise<Montagem<T>> {
   await TestBed.configureTestingModule({
     imports: [componente],
     providers: [
+      { provide: PermissoesService, useValue: { tem: () => false } },
       ProcessoSeletivoStore,
       CadastroInicialService,
       CatalogosDeClassificacaoService,

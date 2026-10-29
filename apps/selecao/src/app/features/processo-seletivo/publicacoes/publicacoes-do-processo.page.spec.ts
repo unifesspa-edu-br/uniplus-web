@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { PUBLICACOES_BASE_PATH, type TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
@@ -118,14 +119,17 @@ function tick(): Promise<void> {
 }
 
 describe('PublicacoesDoProcessoPage', () => {
+  let permissoesConcedidas: readonly string[];
   let fixture: ComponentFixture<PublicacoesDoProcessoPage>;
   let controller: HttpTestingController;
   let host: HTMLElement;
 
   beforeEach(() => {
+    permissoesConcedidas = ['selecao:processos:publicar'];
     TestBed.configureTestingModule({
       imports: [PublicacoesDoProcessoPage],
       providers: [
+        { provide: PermissoesService, useValue: { tem: (c: string) => permissoesConcedidas.includes(c) } },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         provideRouter([]),
@@ -389,5 +393,25 @@ describe('PublicacoesDoProcessoPage', () => {
       (b) => b.textContent?.trim() === 'Publicar documento',
     ) as HTMLButtonElement;
     expect(publicar.disabled).toBe(true);
+  });
+
+  it('sem a permissão de publicar, não oferece publicar nem corrigir, mesmo com o processo publicado', async () => {
+    permissoesConcedidas = ['selecao:processos:configurar', 'selecao:processos:acompanhar'];
+
+    await abrir(StatusProcesso.publicado, [], previstos(item('preliminar')));
+
+    const textos = Array.from(host.querySelectorAll('button')).map((b) => b.textContent?.trim());
+    expect(textos).not.toContain('Publicar documento');
+    expect(botao(linhasDosPrevistos()[0], 'Publicar')).toBeUndefined();
+    expect(host.querySelector('sel-atos-do-processo')?.textContent).not.toContain('Corrigir');
+  });
+
+  it('com a permissão de publicar e o processo publicado, oferece "Publicar documento" habilitado', async () => {
+    await abrir(StatusProcesso.publicado, []);
+
+    const publicar = Array.from(host.querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === 'Publicar documento',
+    ) as HTMLButtonElement;
+    expect(publicar.disabled).toBe(false);
   });
 });

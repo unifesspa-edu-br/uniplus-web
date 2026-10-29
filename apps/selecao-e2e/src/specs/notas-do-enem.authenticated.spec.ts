@@ -25,6 +25,7 @@ import {
   texto,
 } from '../fixtures/notas-do-enem';
 
+
 /**
  * Tela de notas do ENEM do processo (UNI-REQ-0174), com a API simulada: o CI do frontend sobe o
  * Keycloak, mas não a API. Os arquivos de retorno são gerados das personas fictícias do portal.

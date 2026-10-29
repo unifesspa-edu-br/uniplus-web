@@ -1,6 +1,6 @@
 import { test as setup } from '@playwright/test';
 import * as path from 'node:path';
-import { setupKeycloakAuth } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, setupKeycloakAuth } from '@uniplus/shared-e2e';
 
 import { ADMIN_USER, STORAGE_STATE_PATH_ADMIN } from './fixtures/auth.fixture';
 
@@ -17,5 +17,6 @@ setup('autentica admin via OIDC e persiste storageState', async ({}, testInfo) =
     username: ADMIN_USER.username,
     password: ADMIN_USER.password,
     protectedRoute: '/dashboard',
+    preparePage: (page) => mockPermissoesEfetivas(page, ['selecao:processos:acompanhar']),
   });
 });
