@@ -323,8 +323,8 @@ describe('FasesCanonicasPage', () => {
 
       const celulas = Array.from<HTMLElement>(
         fixture.nativeElement.querySelectorAll('td[data-label="Unidade sugerida"]'),
-      ).map((celula) => celula.textContent?.trim());
-      expect(celulas).toEqual(['CGA', '—']);
+      ).map((celula) => celula.textContent?.replace(/\s+/g, ' ').trim());
+      expect(celulas).toEqual(['CGA, Centro de Gestão Acadêmica', '—Sem unidade sugerida']);
     });
 
     it('escolher a unidade no campo a leva ao comando de atualização', async () => {

@@ -29,16 +29,20 @@
           Esta fase não está no catálogo carregado e o processo não guardou os atributos dela.
         </p>
       } @else {
-        <p class="field__hint">
-          @if (item.exigencias.admiteRecurso) {
-            Publica resultado preliminar, do qual cabe recurso.
-          } @else if (item.publicaResultadoDefinitivo) {
-            Publica resultado definitivo.
-          }
-          @if (item.coletaInscricao) {
-            Coleta inscrições.
-          }
-        </p>
+        @if (
+          item.exigencias.admiteRecurso || item.publicaResultadoDefinitivo || item.coletaInscricao
+        ) {
+          <p class="field__hint">
+            @if (item.exigencias.admiteRecurso) {
+              Publica resultado preliminar, do qual cabe recurso.
+            } @else if (item.publicaResultadoDefinitivo) {
+              Publica resultado definitivo.
+            }
+            @if (item.coletaInscricao) {
+              Coleta inscrições.
+            }
+          </p>
+        }
 
         <div class="form-grid">
           <ui-valor-em-consulta
@@ -218,11 +222,25 @@
           class="btn btn--secondary"
           type="button"
           (click)="acrescentarFase()"
-          [disabled]="!edicaoLiberada() || formulario.controls.faseAAcrescentar.value === ''"
+          [disabled]="
+            !edicaoLiberada() ||
+            !catalogos.unidadesCarregadas() ||
+            formulario.controls.faseAAcrescentar.value === ''
+          "
         >
           Acrescentar à linha do tempo
         </button>
       </div>
+      @if (catalogos.erroDeUnidades(); as erroDeUnidades) {
+        <div class="field__erro" role="alert">
+          <p>{{ erroDeUnidades }}</p>
+          <button class="btn btn--tertiary" type="button" (click)="catalogos.carregarUnidades()">
+            Tentar novamente
+          </button>
+        </div>
+      } @else if (!catalogos.unidadesCarregadas()) {
+        <p class="field__hint" role="status">Carregando unidades…</p>
+      }
       <p class="field__hint escolher-e-acrescentar__ajuda" id="cr-nova-fase-ajuda">
         As fases aparecem na ordem que as precedências do cadastro sugerem. Uma fase entra uma vez
         só, e o cronograma não precisa de todas: inclua as que este processo realmente tem.
@@ -372,16 +390,22 @@
                   cronograma.
                 </p>
               } @else {
-                <p class="field__hint">
-                  @if (item.exigencias.admiteRecurso) {
-                    Publica resultado preliminar, do qual cabe recurso.
-                  } @else if (item.publicaResultadoDefinitivo) {
-                    Publica resultado definitivo.
-                  }
-                  @if (item.coletaInscricao) {
-                    Coleta inscrições.
-                  }
-                </p>
+                @if (
+                  item.exigencias.admiteRecurso ||
+                  item.publicaResultadoDefinitivo ||
+                  item.coletaInscricao
+                ) {
+                  <p class="field__hint">
+                    @if (item.exigencias.admiteRecurso) {
+                      Publica resultado preliminar, do qual cabe recurso.
+                    } @else if (item.publicaResultadoDefinitivo) {
+                      Publica resultado definitivo.
+                    }
+                    @if (item.coletaInscricao) {
+                      Coleta inscrições.
+                    }
+                  </p>
+                }
 
                 <div class="form-grid">
                   <div class="form-field form-grid__full">

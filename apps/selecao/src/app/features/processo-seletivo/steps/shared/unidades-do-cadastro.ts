@@ -1,4 +1,4 @@
-import type { UnidadeDto } from '@uniplus/shared-data/organizacao';
+import { rotuloDaUnidade, type UnidadeDto } from '@uniplus/shared-data/organizacao';
 
 /** A unidade como o seletor a oferece: o id de origem e o rótulo que o operador reconhece. */
 export interface OpcaoDeUnidade {
@@ -16,13 +16,6 @@ export interface UnidadeGravada {
 export const UNIDADE_FORA_DO_CADASTRO = 'Unidade não encontrada no cadastro';
 export const UNIDADE_EM_CARGA = 'Carregando unidade…';
 export const UNIDADE_SEM_CADASTRO_CARREGADO = 'Cadastro de unidades indisponível';
-
-export function rotuloDaUnidade(unidade: {
-  readonly sigla: string;
-  readonly nome: string;
-}): string {
-  return `${unidade.sigla} — ${unidade.nome}`;
-}
 
 export function comoOpcaoDeUnidade(unidade: UnidadeDto): OpcaoDeUnidade {
   return { id: unidade.id, rotulo: rotuloDaUnidade(unidade) };
