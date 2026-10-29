@@ -166,6 +166,44 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     expect(capturado.posts).toHaveLength(0);
   });
 
+  for (const [origem, rotulo] of [
+    ['NO_EDITAL', 'Fixada no edital'],
+    ['NA_EXECUCAO', 'Definida na execução'],
+  ] as const) {
+    test(`a origem da data ${rotulo} segue no comando de atualização como ${origem}`, async ({
+      page,
+    }) => {
+      const capturado = novoCapturado();
+      const outra = origem === 'NO_EDITAL' ? 'NA_EXECUCAO' : 'NO_EDITAL';
+      await mockApi(page, capturado, [{ ...faseSeed, origemData: outra }]);
+      await abrirPagina(page);
+
+      await page
+        .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
+        .click();
+      const campo = page.getByLabel('Origem da data');
+      await expect(campo.getByRole('option', { name: 'Fixada no edital' })).toHaveCount(1);
+      await expect(campo.getByRole('option', { name: 'Definida na execução' })).toHaveCount(1);
+      await campo.selectOption({ label: rotulo });
+      await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
+
+      await expect.poll(() => capturado.puts.length).toBe(1);
+      expect(capturado.puts[0]).toMatchObject({ origemData: origem });
+    });
+  }
+
+  test('a ajuda da origem da data não cita terceiro, MEC nem SiSU', async ({ page }) => {
+    await mockApi(page, novoCapturado(), [faseSeed]);
+    await abrirPagina(page);
+
+    await page
+      .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
+      .click();
+    const ajuda = page.locator('label.field', { hasText: 'Origem da data' }).locator('.field__hint');
+    await expect(ajuda).toContainText('Fixada no edital');
+    await expect(ajuda).not.toContainText(/terceiro|MEC|SiSU/i);
+  });
+
   test('editar a fase de isenção deriva a marca de isenção e esconde a coleta de inscrição', async ({
     page,
   }) => {

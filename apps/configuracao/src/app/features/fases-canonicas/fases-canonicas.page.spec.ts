@@ -273,6 +273,24 @@ describe('FasesCanonicasPage', () => {
     await flushLista([faseComColeta]);
   });
 
+  it('oferece a origem da data pelos rótulos novos, e a ajuda não cita terceiro, MEC nem SiSU', async () => {
+    await flushLista([faseAvaliacaoSeed]);
+    component['abrirEdicao'](faseAvaliacaoSeed);
+    fixture.detectChanges();
+
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector(
+      '[formControlName="origemData"]',
+    );
+    expect([...select.options].map((opcao) => opcao.text.trim())).toEqual([
+      'Selecione a origem da data',
+      'Fixada no edital',
+      'Definida na execução',
+    ]);
+    const ajuda = select.closest('label')?.querySelector('.field__hint')?.textContent ?? '';
+    expect(ajuda).toContain('Fixada no edital');
+    expect(ajuda).not.toMatch(/terceiro|MEC|SiSU/i);
+  });
+
   it('CA-10: aviso de código do catálogo é visível mesmo com lista vazia', async () => {
     await flushLista([]);
     fixture.detectChanges();

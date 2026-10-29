@@ -20,6 +20,14 @@ const CATEGORIA_ID = '01a0d640-0000-7000-8000-0000000000c2';
 const PRODUTO_ID = '01a0d640-0000-7000-8000-0000000000d1';
 const BASE_LEGAL_BONUS_REGIONAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
 
+/** A unidade que responde pela fase, como a cópia gravada no processo a devolve. */
+export const UNIDADE_RESPONSAVEL_DA_FASE = {
+  origemId: '01a0d640-0000-7000-8000-0000000000a3',
+  sigla: 'CEPS',
+  slug: 'ceps',
+  nome: 'Centro de Processos Seletivos',
+} as const;
+
 /** A referência congelada de uma regra do catálogo, como o detalhe do processo a devolve. */
 function referencia(codigo: string) {
   return { codigo, versao: '1.0', hash: `hash-${codigo}` };
@@ -162,6 +170,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
       faseCanonicaOrigemId: FASE_CANONICA_ID,
       codigo: CODIGO_DA_FASE,
       donoInstitucional: 'CEPS',
+      unidadeResponsavel: UNIDADE_RESPONSAVEL_DA_FASE,
       origemData: 'NO_EDITAL',
       agrupaEtapas: true,
       permiteComplementacao: false,
