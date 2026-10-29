@@ -827,6 +827,11 @@ export interface WizardDraft {
      */
     baseadoEmEnem: boolean;
     /**
+     * Escala em que o edital publica a nota final, como o operador a escreve (`1000`, `100,5`).
+     * Vazia enquanto não declarada: o rascunho a aceita sem ela, a publicação não.
+     */
+    escalaNotaFinal: string;
+    /**
      * Resolução de Peso por Área que a nota usa — o valor da resolução no cadastro da
      * Configuração, que é a chave pela qual o servidor copia o quadro de pesos para o processo.
      * Vazio enquanto não há escolha. Só é enviada quando a classificação é baseada em ENEM com

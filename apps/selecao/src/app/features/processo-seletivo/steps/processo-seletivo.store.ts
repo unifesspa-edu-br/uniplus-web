@@ -3,6 +3,7 @@ import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { conteudoInicial, type StepStatus } from '@uniplus/shared-ui/components';
 import { STEP_LABELS } from './processo-seletivo.data';
+import { CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA } from './steps/classificacao/escala-da-nota-final';
 import { exigenciasVazias } from './shared/exigencias-documentais';
 import {
   regrasDasModalidadesOfertadas,
@@ -67,6 +68,7 @@ const INITIAL_DRAFT: WizardDraft = {
     regraOrdemAlocacaoCodigo: '',
     regraOrdemAlocacaoVersao: '',
     baseadoEmEnem: false,
+    escalaNotaFinal: '',
     resolucaoPesoAreaEnem: '',
     regrasEliminacao: [],
     edicoesEnem: [],
@@ -240,6 +242,28 @@ export class ProcessoSeletivoStore {
    * ter recusado antes de julgar a resolução.
    */
   readonly recusaDaResolucaoPesoAreaEnem = signal<string | null>(null);
+
+  /**
+   * Recusa do servidor ao campo `escalaNotaFinal`, na última gravação da classificação — a escala
+   * que não é maior que zero. Mostrada sob o campo no passo da fórmula; some quando a escala muda
+   * e quando a gravação seguinte dá certo.
+   */
+  readonly recusaDaEscalaDaNotaFinal = signal<string | null>(null);
+
+  /**
+   * Os códigos dos itens que a conferência de publicação acusa como pendentes. Quem lê a
+   * conferência é a Revisão, que os entrega aqui enquanto está montada e os retira ao sair; os
+   * outros passos derivam daqui o que lhes cabe.
+   */
+  readonly pendenciasDaConferencia = signal<readonly string[]>([]);
+
+  /**
+   * O servidor aponta a escala da nota final como pendência de publicação: a classificação por
+   * fórmula local não a declarou. O campo vive no passo da fórmula.
+   */
+  readonly escalaDaNotaFinalPendente = computed(() =>
+    this.pendenciasDaConferencia().includes(CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA),
+  );
 
   /**
    * Recusa do servidor às edições do ENEM, gravadas pela Eliminação logo depois da classificação.
@@ -595,6 +619,8 @@ export class ProcessoSeletivoStore {
     this.aplicacoesDeModeloEmAberto.set(new Map());
     this.avisoDocumentos.set(null);
     this.recusaDaResolucaoPesoAreaEnem.set(null);
+    this.recusaDaEscalaDaNotaFinal.set(null);
+    this.pendenciasDaConferencia.set([]);
     this.recusaDasEdicoesDoEnem.set(null);
     this.recusaPeloDesempatePorArea.set(null);
     this.classificacaoGravada.set({ estado: 'nunca-gravada' });

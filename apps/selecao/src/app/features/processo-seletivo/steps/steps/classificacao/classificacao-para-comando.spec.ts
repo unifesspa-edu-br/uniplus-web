@@ -30,6 +30,7 @@ function classificacaoBase(): WizardDraft['classificacao'] {
     regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     regraOrdemAlocacaoVersao: '1.0',
     baseadoEmEnem: false,
+    escalaNotaFinal: '',
     resolucaoPesoAreaEnem: '',
     regrasEliminacao: [],
     edicoesEnem: [],
@@ -184,6 +185,44 @@ describe('comoComandoDeClassificacao — resolução de Peso por Área', () => {
       comoComandoDeClassificacao({ ...enemLocal(), resolucaoPesoAreaEnem: '  ' })
         .resolucaoPesoAreaEnem,
     ).toBeNull();
+  });
+});
+
+describe('escala da nota final no comando', () => {
+  const local = (): WizardDraft['classificacao'] => ({
+    ...classificacaoBase(),
+    regraCalculoCodigo: 'FORMULA-MEDIA-PONDERADA',
+    regraCalculoVersao: '1.0',
+    regraArredondamentoCodigo: 'ARRED-TRUNCAR',
+    regraArredondamentoVersao: '1.0',
+    casasArredondamento: '2',
+  });
+
+  it('envia a escala como número, lida na gramática do campo', () => {
+    expect(
+      comoComandoDeClassificacao({ ...local(), escalaNotaFinal: '1000' }).escalaNotaFinal,
+    ).toBe(1000);
+  });
+
+  it('envia null quando o rascunho a deixa vazia', () => {
+    expect(comoComandoDeClassificacao(local()).escalaNotaFinal).toBeNull();
+  });
+
+  it('sob classificação importada, não envia a escala que o rascunho guarda', () => {
+    const comando = comoComandoDeClassificacao({
+      ...local(),
+      regraCalculoCodigo: 'CLASSIFICACAO-IMPORTADA',
+      escalaNotaFinal: '100',
+    });
+
+    expect(comando.escalaNotaFinal).toBeNull();
+  });
+
+  it('recusa o texto que não é número, e aceita o campo vazio', () => {
+    const comTexto = mensagensDeClassificacaoBase({ ...local(), escalaNotaFinal: 'cem' });
+
+    expect(comTexto.some((mensagem) => mensagem.startsWith('Escala da nota final'))).toBe(true);
+    expect(mensagensDeClassificacaoBase(local())).toEqual([]);
   });
 });
 

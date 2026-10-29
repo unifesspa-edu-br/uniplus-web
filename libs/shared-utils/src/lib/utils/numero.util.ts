@@ -3,14 +3,23 @@
  * formatam a cada detecção de mudanças.
  */
 const FORMATADOR_PT_BR = new Intl.NumberFormat('pt-BR');
+const FORMATADORES_POR_CASAS = new Map<number, Intl.NumberFormat>();
 
 /**
  * Número como as telas do Uni+ o mostram: pt-BR, vírgula decimal, sem casas fixas (`2`, `1,5`,
- * `400`). É a forma do cadastro de Peso por Área, e quem mostra o mesmo dado noutro app usa esta
- * mesma função para os dois não divergirem.
+ * `400`). Mostra até três casas decimais, ou até `maximoDeCasas` quando o chamador pede mais.
+ *
+ * É a forma do cadastro de Peso por Área, e quem mostra o mesmo dado noutro app usa esta mesma
+ * função para os dois não divergirem.
  */
-export function formatarNumeroPtBr(valor: number): string {
-  return FORMATADOR_PT_BR.format(valor);
+export function formatarNumeroPtBr(valor: number, maximoDeCasas?: number): string {
+  if (maximoDeCasas === undefined) return FORMATADOR_PT_BR.format(valor);
+  let formatador = FORMATADORES_POR_CASAS.get(maximoDeCasas);
+  if (formatador === undefined) {
+    formatador = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: maximoDeCasas });
+    FORMATADORES_POR_CASAS.set(maximoDeCasas, formatador);
+  }
+  return formatador.format(valor);
 }
 
 /**

@@ -41,6 +41,7 @@ function classificacao(resolucao: string | null): WizardDraft['classificacao'] {
     regraOrdemAlocacaoCodigo: '',
     regraOrdemAlocacaoVersao: '',
     baseadoEmEnem: resolucao !== null,
+    escalaNotaFinal: '',
     resolucaoPesoAreaEnem: resolucao ?? '',
     regrasEliminacao: [],
     edicoesEnem: [],

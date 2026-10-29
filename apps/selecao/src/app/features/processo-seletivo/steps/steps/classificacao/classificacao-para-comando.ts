@@ -6,6 +6,11 @@ import {
   WizardDraft,
 } from '../../processo-seletivo.models';
 import { componeNota } from '../cronograma/cronograma-do-certame';
+import {
+  FORMATO_DA_ESCALA_DA_NOTA_FINAL,
+  escalaDaNotaFinal,
+  escalaDaNotaFinalIlegivel,
+} from './escala-da-nota-final';
 
 /**
  * Código de `RegraCalculoCodigo.ClassificacaoImportada` — a única regra de
@@ -153,6 +158,7 @@ export function comoComandoDeClassificacao(
     regraOrdemAlocacaoVersao: classificacao.regraOrdemAlocacaoVersao,
     regrasEliminacao: local ? classificacao.regrasEliminacao.map(comoComandoDeRegraEliminacao) : [],
     baseadoEmEnem: classificacao.baseadoEmEnem,
+    escalaNotaFinal: local ? escalaDaNotaFinal(classificacao.escalaNotaFinal) : null,
     resolucaoPesoAreaEnem: exigeResolucaoPesoAreaEnem(classificacao)
       ? naoVazio(classificacao.resolucaoPesoAreaEnem)
       : null,
@@ -229,6 +235,9 @@ export function mensagensDeClassificacaoBase(
         'Informe as casas decimais de arredondamento, maior que zero, no passo Fórmula.',
       );
     }
+    if (escalaDaNotaFinalIlegivel(classificacao.escalaNotaFinal)) {
+      messages.push(`Escala da nota final, no passo Fórmula: ${FORMATO_DA_ESCALA_DA_NOTA_FINAL}`);
+    }
   }
 
   if (!classificacao.regraOrdemAlocacaoCodigo) {
@@ -252,6 +261,11 @@ export function mensagensDeClassificacaoBase(
  */
 export function divisorDaMediaValido(etapas: readonly EtapaPontuada[]): boolean {
   return etapas.some(componeNota);
+}
+
+/** O campo da recusa do servidor é o da escala da nota final, nomeado como em `ehCampoDaResolucao`. */
+export function ehCampoDaEscala(campo: string): boolean {
+  return (campo.split('.').at(-1) ?? campo).toLowerCase() === 'escalanotafinal';
 }
 
 /**
