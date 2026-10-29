@@ -49,23 +49,47 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
   it('mostra só as telas cujas permissões a pessoa tem', () => {
     concedidas.set(['configuracao:campi:manter', 'organizacao:unidades:manter']);
 
-    expect(itensDoMenu()).toEqual(['Campus', 'Unidade']);
+    expect(itensDoMenu()).toEqual(['Campus', 'Unidade', 'Meus pedidos']);
   });
 
   it('mostra Tipo de Ato a quem tem a permissão de Publicações', () => {
     concedidas.set(['publicacoes:tipos-ato:manter']);
 
-    expect(itensDoMenu()).toEqual(['Tipo de Ato']);
+    expect(itensDoMenu()).toEqual(['Tipo de Ato', 'Meus pedidos']);
   });
 
-  it('não mostra nenhuma tela, nem grupo vazio, quando a lista de permissões é vazia', () => {
+  it('sem permissão alguma, deixa só o pedido de acesso, que é de toda pessoa autenticada', () => {
     const fixture = TestBed.createComponent(LayoutComponent);
     fixture.detectChanges();
 
-    expect(itensDoMenu()).toEqual([]);
+    expect(itensDoMenu()).toEqual(['Meus pedidos']);
     expect(
       (fixture.nativeElement as HTMLElement).querySelectorAll('nav .sidebar__label'),
-    ).toHaveLength(0);
+    ).toHaveLength(1);
+  });
+
+  it('mostra a administração de acesso conforme a permissão de cada tela', () => {
+    concedidas.set([
+      'autorizacao:pedidos:aprovar-funcional',
+      'autorizacao:pedidos:aprovar-protecao-de-dados',
+      'autorizacao:concessoes:administrar',
+      'autorizacao:perfis:manter',
+    ]);
+
+    expect(itensDoMenu()).toEqual([
+      'Meus pedidos',
+      'Fila do gestor',
+      'Fila da encarregada',
+      'Histórico de pedidos',
+      'Concessões',
+      'Perfis de acesso',
+    ]);
+  });
+
+  it('não oferece a fila da encarregada a quem só aprova como gestor', () => {
+    concedidas.set(['autorizacao:pedidos:aprovar-funcional']);
+
+    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Fila do gestor', 'Histórico de pedidos']);
   });
 
   it('aponta o Início do breadcrumb para a entrada, que escolhe uma tela permitida', () => {

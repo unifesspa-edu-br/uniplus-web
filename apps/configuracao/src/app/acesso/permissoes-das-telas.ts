@@ -3,12 +3,14 @@ import { CanActivateFn, Router } from '@angular/router';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import type { CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
 
-const { configuracao, organizacao, publicacoes } = PERMISSAO;
+const { autorizacao, configuracao, organizacao, publicacoes } = PERMISSAO;
 
 /**
  * Permissões que abrem cada tela, por caminho de rota (basta uma). Rotas e menu leem daqui, para
  * que o item visível seja sempre um clique que a guarda aceita. A ordem é a da primeira tela
  * oferecida a quem entra sem destino.
+ *
+ * Lista vazia libera a tela a toda pessoa autenticada; ela não conta como destino de entrada.
  *
  * Tipo de processo, fato do candidato e modelo de formulário abrem pela consulta; a manutenção é
  * a ação dentro da tela.
@@ -39,6 +41,16 @@ export const PERMISSOES_DAS_TELAS = {
   'tipos-deficiencia': [configuracao.tiposDeficienciaManter],
   'termos-consentimento': [configuracao.termosConsentimentoManter],
   'calendario-dias-uteis': [configuracao.calendariosDiasUteisManter],
+  // Pedir acesso e acompanhar os próprios pedidos é de toda pessoa autenticada: lista vazia.
+  'acessos/pedidos': [],
+  'acessos/fila-do-gestor': [autorizacao.pedidosAprovarFuncional],
+  'acessos/fila-da-encarregada': [autorizacao.pedidosAprovarProtecaoDeDados],
+  'acessos/historico': [
+    autorizacao.pedidosAprovarFuncional,
+    autorizacao.pedidosAprovarProtecaoDeDados,
+  ],
+  'acessos/concessoes': [autorizacao.concessoesAdministrar],
+  'acessos/perfis': [autorizacao.perfisManter],
 } as const satisfies Record<string, readonly CodigoDePermissao[]>;
 
 export type CaminhoDeTela = keyof typeof PERMISSOES_DAS_TELAS;
