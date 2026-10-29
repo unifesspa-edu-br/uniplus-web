@@ -39,7 +39,7 @@ import {
   FasesCanonicasApi,
   type AtualizarFaseCanonicaCommand,
 } from '@uniplus/shared-data/configuracao';
-import { UnidadesApi } from '@uniplus/shared-data/organizacao';
+import { UnidadesApi, rotuloDaUnidade } from '@uniplus/shared-data/organizacao';
 import {
   AlertComponent,
   ConfirmDialogComponent,
@@ -59,10 +59,6 @@ const PAGE_SIZE = 50;
  * é bicondicional com este código no agregado: vale aqui e só aqui, e nunca junto
  * da coleta de inscrição — são janelas com prazos distintos.
  */
-function rotuloDaUnidade(unidade: { sigla: string; nome: string }): string {
-  return `${unidade.sigla} — ${unidade.nome}`;
-}
-
 const CODIGO_SOLICITACAO_ISENCAO = 'SOLICITACAO_ISENCAO';
 
 interface FaseForm {
@@ -187,8 +183,10 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
                   <td data-label="Unidade sugerida">
                     @if (fase.unidadeSugerida; as unidade) {
                       <span class="tag" [attr.title]="unidade.nome">{{ unidade.sigla }}</span>
+                      <span class="sr-only">, {{ unidade.nome }}</span>
                     } @else {
-                      <span aria-label="Sem unidade sugerida">—</span>
+                      <span aria-hidden="true">—</span>
+                      <span class="sr-only">Sem unidade sugerida</span>
                     }
                   </td>
                   <td data-label="Agrupa etapas">
@@ -303,8 +301,8 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
                 }
               </select>
               <span class="field__hint">
-                Opcional. Vira a unidade responsável inicial desta fase no cronograma de um processo
-                novo; o cronograma continua permitindo trocá-la.
+                Opcional. Vira a unidade responsável inicial desta fase quando ela é acrescentada ao
+                cronograma de um processo; o cronograma continua permitindo trocá-la.
               </span>
               @if (unidades.comErro()) {
                 <span class="field__error" role="alert">

@@ -26,12 +26,12 @@ import {
   type StepValidation,
   type WizardDraft,
 } from '../../processo-seletivo.models';
+import { rotuloDaUnidade } from '@uniplus/shared-data/organizacao';
 import { PAPEIS_ESCOLHIVEIS } from '../fase/configuracao-da-fase';
 import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
   opcoesComAsGravadas,
-  rotuloDaUnidade,
   type UnidadeGravada,
   UNIDADE_EM_CARGA,
   UNIDADE_FORA_DO_CADASTRO,
@@ -716,7 +716,11 @@ export class CronogramaStepComponent {
    */
   private unidadeInicialDaFase(faseCanonicaId: string): string | null {
     const sugerida = this.catalogos.fasePorId().get(faseCanonicaId)?.unidadeSugerida?.origemId;
-    if (sugerida !== undefined && this.catalogos.opcoesDeUnidade().some((opcao) => opcao.id === sugerida)) return sugerida;
+    if (
+      sugerida !== undefined &&
+      this.catalogos.opcoesDeUnidade().some((opcao) => opcao.id === sugerida)
+    )
+      return sugerida;
     return this.store.draft().identificacao.unidadeAdministradoraId || null;
   }
 

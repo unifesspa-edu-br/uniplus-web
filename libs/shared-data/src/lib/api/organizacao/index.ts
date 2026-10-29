@@ -1,4 +1,5 @@
 export { ORGANIZACAO_BASE_PATH } from './tokens';
+export { rotuloDaUnidade } from './rotulo-da-unidade';
 export {
   InstituicaoApi,
   type AtualizarInstituicaoCommand,

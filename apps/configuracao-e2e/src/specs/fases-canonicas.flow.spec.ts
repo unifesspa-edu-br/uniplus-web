@@ -246,11 +246,14 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await abrirPagina(page);
 
     await expect(page.getByRole('columnheader', { name: 'Unidade sugerida' })).toBeVisible();
-    await expect(page.locator('td[data-label="Unidade sugerida"]')).toHaveText(['CGA', '—']);
+    await expect(page.locator('td[data-label="Unidade sugerida"]')).toHaveText([
+      /^CGA,\s*Centro de Gestão Acadêmica$/,
+      /^—\s*Sem unidade sugerida$/,
+    ]);
     await expect(page.getByText(/dono típico/i)).toHaveCount(0);
   });
 
-  test('a unidade sugerida escolhida vai no comando, e limpá-la a retira', async ({ page }) => {
+  test('a unidade sugerida escolhida vai no comando', async ({ page }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, [faseSeed]);
     await abrirPagina(page);
@@ -268,6 +271,32 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
     await expect.poll(() => capturado.puts.length).toBe(1);
     expect(capturado.puts[0]).toMatchObject({ unidadeSugeridaId: UNIDADE_CGA.id });
+  });
+
+  test('limpar a unidade sugerida de uma fase que já tem sugestão a retira', async ({ page }) => {
+    const capturado = novoCapturado();
+    const comSugestao = {
+      ...faseSeed,
+      unidadeSugerida: {
+        origemId: UNIDADE_CGA.id,
+        sigla: 'CGA',
+        slug: 'cga',
+        nome: UNIDADE_CGA.nome,
+      },
+    };
+    await mockApi(page, capturado, [comSugestao]);
+    await abrirPagina(page);
+
+    await page
+      .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
+      .click();
+    const campo = page.locator('[formControlName="unidadeSugeridaId"]');
+    await expect(campo).toHaveValue(UNIDADE_CGA.id);
+
+    await campo.selectOption({ label: 'Nenhuma' });
+    await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
+    await expect.poll(() => capturado.puts.length).toBe(1);
+    expect(capturado.puts[0]).toMatchObject({ unidadeSugeridaId: null });
   });
 
   test('editar a fase de isenção deriva a marca de isenção e esconde a coleta de inscrição', async ({

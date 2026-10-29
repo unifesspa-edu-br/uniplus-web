@@ -698,8 +698,16 @@ describe('CronogramaStepComponent', () => {
     const CGA = { id: ID_CGA, sigla: 'CGA', nome: 'Centro de Gestão Acadêmica' };
 
     function comUnidadesNoCadastro(): void {
-      TestBed.inject(CatalogosDoCronogramaService).unidades.set([CEPS, CGA] as never);
+      const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+      catalogos.unidades.set([CEPS, CGA] as never);
+      catalogos.unidadesCarregadas.set(true);
       detectar();
+    }
+
+    function botaoAcrescentar(): HTMLButtonElement {
+      return Array.from(nativo.querySelectorAll<HTMLButtonElement>('button')).find((botao) =>
+        botao.textContent?.includes('Acrescentar à linha do tempo'),
+      ) as HTMLButtonElement;
     }
 
     function unidadeDoSelect(indice: number): HTMLSelectElement {
@@ -742,6 +750,34 @@ describe('CronogramaStepComponent', () => {
     }
 
     describe('unidade inicial da fase acrescentada', () => {
+      it('não deixa acrescentar fase enquanto as unidades ainda carregam', () => {
+        const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+        componente.formulario.controls.faseAAcrescentar.setValue(ID_AVALIACAO);
+        comUnidadesNoCadastro();
+        expect(botaoAcrescentar().disabled).toBe(false);
+
+        catalogos.unidadesCarregadas.set(false);
+        detectar();
+        expect(botaoAcrescentar().disabled).toBe(true);
+      });
+
+      it('mostra o erro e bloqueia acrescentar fase enquanto a carga das unidades falha', () => {
+        const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+        catalogos.unidadesCarregadas.set(false);
+        catalogos.erroDeUnidades.set('falhou');
+        detectar();
+        componente.formulario.controls.faseAAcrescentar.setValue(ID_AVALIACAO);
+        detectar();
+
+        expect(botaoAcrescentar().disabled).toBe(true);
+        expect(nativo.querySelector('[role="alert"]')?.textContent).toContain('falhou');
+
+        catalogos.erroDeUnidades.set(null);
+        catalogos.unidadesCarregadas.set(true);
+        detectar();
+        expect(botaoAcrescentar().disabled).toBe(false);
+      });
+
       function sugerindo(unidadeSugerida: { origemId: string } | null): void {
         const doCatalogo = FASES_CANONICAS.map((fase) =>
           fase.id === ID_AVALIACAO ? { ...fase, unidadeSugerida } : fase,
@@ -787,9 +823,7 @@ describe('CronogramaStepComponent', () => {
       acrescentar(ID_INSCRICAO);
 
       expect(componente.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CEPS);
-      expect(componente.linhaDoTempo()[0]?.unidade).toBe(
-        'CEPS — Centro de Processos Seletivos',
-      );
+      expect(componente.linhaDoTempo()[0]?.unidade).toBe('CEPS — Centro de Processos Seletivos');
     });
 
     it('oferece as unidades do cadastro, e a escolhida segue na gravação', async () => {
@@ -863,9 +897,7 @@ describe('CronogramaStepComponent', () => {
         ],
       } as never);
 
-      expect(componente.linhaDoTempo()[0]?.unidade).toBe(
-        'CECA — Centro de Estudos Acadêmicos',
-      );
+      expect(componente.linhaDoTempo()[0]?.unidade).toBe('CECA — Centro de Estudos Acadêmicos');
     });
 
     it('oferece uma vez só a unidade gravada fora do cadastro que várias fases referenciam', () => {
