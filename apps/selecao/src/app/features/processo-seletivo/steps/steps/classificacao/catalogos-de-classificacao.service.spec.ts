@@ -100,7 +100,9 @@ describe('CatalogosDeClassificacaoService', () => {
 
     expect(servico.regrasCalculo().map((r) => r.codigo)).toEqual(['FORMULA-MEDIA-PONDERADA']);
     expect(servico.regrasArredondamento().map((r) => r.codigo)).toEqual(['ARRED-TRUNCAR']);
-    expect(servico.regrasOrdemAlocacao().map((r) => r.codigo)).toEqual(['ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA']);
+    expect(servico.regrasOrdemAlocacao().map((r) => r.codigo)).toEqual([
+      'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
+    ]);
     expect(servico.regrasEliminacao().map((r) => r.codigo)).toEqual(['ELIM-ZERO-EM-AREA']);
     expect(servico.regrasBonus().map((r) => r.codigo)).toEqual(['BONUS-MULTIPLICATIVO']);
     expect(servico.criteriosDesempate().map((r) => r.codigo)).toEqual(['DESEMPATE-MAIOR-IDADE']);
@@ -142,6 +144,50 @@ describe('CatalogosDeClassificacaoService', () => {
 
     servico.carregar();
     expect(listar).toHaveBeenCalledTimes(12);
+  });
+
+  describe('retentativa de um catálogo', () => {
+    function falhando(status: number, vezes: number) {
+      let falhas = 0;
+      return vi.fn((query: RegrasCatalogoQuery) => {
+        if (query.tipo === 'regra_bonus' && falhas < vezes) {
+          falhas++;
+          return of(errorResult(mockProblemDetails({ status }), status));
+        }
+        return pagina(POR_TIPO[query.tipo ?? ''] ?? []);
+      });
+    }
+
+    it('repete uma vez a falha 5xx e carrega tudo quando a segunda tentativa dá certo', async () => {
+      const { servico, listar } = montar(falhando(503, 1));
+
+      servico.carregar();
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      expect(servico.erro()).toBeNull();
+      expect(servico.carregando()).toBe(false);
+      expect(servico.regrasBonus()).toHaveLength(1);
+      expect(listar).toHaveBeenCalledTimes(7);
+    });
+
+    it('anuncia o erro quando a segunda tentativa também falha', async () => {
+      const { servico } = montar(falhando(503, 2));
+
+      servico.carregar();
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      expect(servico.erro()).toBeTruthy();
+      expect(servico.regrasBonus()).toEqual([]);
+    });
+
+    it('não repete uma recusa 4xx', () => {
+      const { servico, listar } = montar(falhando(403, 1));
+
+      servico.carregar();
+
+      expect(servico.erro()).toBeTruthy();
+      expect(listar).toHaveBeenCalledTimes(6);
+    });
   });
 
   describe('cadastro de Peso por Área', () => {

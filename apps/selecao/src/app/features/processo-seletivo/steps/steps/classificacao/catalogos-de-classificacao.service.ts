@@ -1,7 +1,16 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
-import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
+import {
+  Observable,
+  Subscription,
+  catchError,
+  concatMap,
+  finalize,
+  forkJoin,
+  of,
+  timer,
+} from 'rxjs';
+import { ApiResult, coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
 import {
   AreaPesoAreaEnemDto,
   PesoAreaEnemDto,
@@ -15,6 +24,9 @@ const TIPO_REGRA_ORDEM_ALOCACAO = 'regra_ordem_alocacao';
 const TIPO_REGRA_ELIMINACAO = 'regra_eliminacao';
 const TIPO_REGRA_BONUS = 'regra_bonus';
 const TIPO_CRITERIO_DESEMPATE = 'criterio_desempate';
+
+/** Uma retentativa por catálogo, depois de uma pausa curta: cobre o solavanco, não a queda. */
+const ATRASO_DA_RETENTATIVA_MS = 800;
 
 const COMPARADOR_DE_RESOLUCAO = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
 
@@ -109,22 +121,12 @@ export class CatalogosDeClassificacaoService {
     this.erro.set(null);
 
     forkJoin({
-      calculo: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_CALCULO, cursor }),
-      ),
-      arredondamento: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_ARREDONDAMENTO, cursor }),
-      ),
-      ordemAlocacao: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_ORDEM_ALOCACAO, cursor }),
-      ),
-      eliminacao: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_ELIMINACAO, cursor }),
-      ),
-      bonus: coletarPaginas((cursor) => this.regrasApi.listar({ tipo: TIPO_REGRA_BONUS, cursor })),
-      desempate: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_CRITERIO_DESEMPATE, cursor }),
-      ),
+      calculo: this.catalogo(TIPO_REGRA_CALCULO),
+      arredondamento: this.catalogo(TIPO_REGRA_ARREDONDAMENTO),
+      ordemAlocacao: this.catalogo(TIPO_REGRA_ORDEM_ALOCACAO),
+      eliminacao: this.catalogo(TIPO_REGRA_ELIMINACAO),
+      bonus: this.catalogo(TIPO_REGRA_BONUS),
+      desempate: this.catalogo(TIPO_CRITERIO_DESEMPATE),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -156,6 +158,26 @@ export class CatalogosDeClassificacaoService {
         },
         error: () => this.anunciarErro(),
       });
+  }
+
+  /**
+   * Um catálogo inteiro. Falha de rede ou 5xx é repetida uma vez — a leitura é idempotente — e só
+   * depois vira recusa; 4xx e erros que escapam do envelope não são repetidos. Continua valendo
+   * "ou vêm todos, ou nenhum": a retentativa evita o aviso, não o relaxa.
+   */
+  private catalogo(
+    tipo: string,
+    retentou = false,
+  ): Observable<ApiResult<readonly RegraCatalogoDto[]>> {
+    return coletarPaginas<RegraCatalogoDto>((cursor) =>
+      this.regrasApi.listar({ tipo, cursor }),
+    ).pipe(
+      concatMap((resultado) =>
+        !resultado.ok && !retentou && (resultado.status === 0 || resultado.status >= 500)
+          ? timer(ATRASO_DA_RETENTATIVA_MS).pipe(concatMap(() => this.catalogo(tipo, true)))
+          : of(resultado),
+      ),
+    );
   }
 
   /** Lê o cadastro para a `marca` informada, se nenhuma leitura dela, ou posterior, já foi pedida. */

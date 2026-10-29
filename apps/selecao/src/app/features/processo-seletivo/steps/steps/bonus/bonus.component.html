@@ -3,7 +3,12 @@
   publicar, e "não aplica" é uma resposta válida.
 </p>
 @if (!store.emConsulta() && catalogos.erro(); as erro) {
-  <p class="alert alert--danger" role="alert">{{ erro }}</p>
+  <div class="alert alert--danger" role="alert">
+    <p>{{ erro }}</p>
+    <button class="btn btn--secondary btn--sm" type="button" (click)="catalogos.carregar()">
+      Tentar novamente
+    </button>
+  </div>
 }
 @if (!store.emConsulta() && basesLegaisErro(); as erro) {
   <p class="alert alert--danger" role="alert">

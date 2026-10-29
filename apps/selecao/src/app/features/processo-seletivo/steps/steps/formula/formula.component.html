@@ -3,7 +3,12 @@
   próximo passo.
 </p>
 @if (!store.emConsulta() && catalogos.erro(); as erro) {
-  <p class="alert alert--danger" role="alert">{{ erro }}</p>
+  <div class="alert alert--danger" role="alert">
+    <p>{{ erro }}</p>
+    <button class="btn btn--secondary btn--sm" type="button" (click)="catalogos.carregar()">
+      Tentar novamente
+    </button>
+  </div>
 }
 <div class="step-card">
   @if (store.emConsulta()) {
