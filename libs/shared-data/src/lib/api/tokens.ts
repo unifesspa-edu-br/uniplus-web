@@ -2,6 +2,7 @@
  * Os tokens de base path dos módulos, sem os clientes. Quem roda no carregamento inicial importa daqui:
  * importar do barrel de um módulo leva junto o cliente que uma rota lazy usa.
  */
+export { AUTORIZACAO_BASE_PATH } from './autorizacao/tokens';
 export { CONFIGURACAO_BASE_PATH } from './configuracao/tokens';
 export { GEO_BASE_PATH } from './geo/tokens';
 export { INGRESSO_BASE_PATH } from './ingresso/tokens';
