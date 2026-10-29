@@ -17,6 +17,7 @@ export class AuthService {
   private readonly _authenticated = signal(false);
   private readonly _userProfile = signal<UserProfile | null>(null);
   private readonly _initError = signal<string | null>(null);
+  private readonly _renovacoesDoToken = signal(0);
 
   /**
    * Promise de refresh em voo — compartilhada entre chamadas concorrentes
@@ -29,6 +30,13 @@ export class AuthService {
   readonly authenticated = this._authenticated.asReadonly();
   readonly userProfile = this._userProfile.asReadonly();
   readonly roles = computed(() => this._userProfile()?.roles ?? []);
+  /**
+   * Identifica a sessão corrente: muda no login, na troca de usuário e a cada renovação do token,
+   * e vira `null` sem sessão. Quem guarda estado derivado da sessão reage a este sinal.
+   */
+  readonly sessao = computed(() =>
+    this._authenticated() ? `${this._userProfile()?.id ?? ''}:${this._renovacoesDoToken()}` : null,
+  );
   /**
    * Mensagem de erro quando `init()` falha (ex.: provedor OIDC indisponível).
    * `null` indica init bem-sucedido ou ainda não executado. Consumida
@@ -155,6 +163,7 @@ export class AuthService {
   private async runRefresh(minValidity: number): Promise<boolean> {
     try {
       const refreshed = await this.keycloak?.updateToken(minValidity);
+      if (refreshed) this._renovacoesDoToken.update((total) => total + 1);
       return refreshed ?? false;
     } catch (error) {
       this._authenticated.set(false);

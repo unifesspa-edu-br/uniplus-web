@@ -125,4 +125,36 @@ describe('AuthService — serialização de refreshToken', () => {
     await service.refreshToken(30);
     expect(service._getRefreshInFlight()).toBeNull();
   });
+  describe('sessao', () => {
+    it('é nula sem sessão autenticada', () => {
+      expect(service.sessao()).toBeNull();
+    });
+
+    it('muda a cada renovação efetiva do token e não muda quando o token segue válido', async () => {
+      (service as unknown as { _authenticated: { set(v: boolean): void } })._authenticated.set(true);
+      const antes = service.sessao();
+      attachFakeKeycloak(service, { updateToken: async () => false, logout: async () => undefined });
+
+      await service.refreshToken(30);
+      expect(service.sessao()).toBe(antes);
+
+      attachFakeKeycloak(service, { updateToken: async () => true, logout: async () => undefined });
+      await service.refreshToken(30);
+      expect(service.sessao()).not.toBe(antes);
+    });
+
+    it('volta a ser nula quando a renovação falha e derruba a sessão', async () => {
+      (service as unknown as { _authenticated: { set(v: boolean): void } })._authenticated.set(true);
+      attachFakeKeycloak(service, {
+        updateToken: async () => {
+          throw new Error('Network fail');
+        },
+        logout: async () => undefined,
+      });
+
+      await service.refreshToken(30);
+
+      expect(service.sessao()).toBeNull();
+    });
+  });
 });
