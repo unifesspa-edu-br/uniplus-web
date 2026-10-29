@@ -32,6 +32,8 @@ export interface FaseForm {
   readonly ordem: FormControl<number>;
   readonly inicio: FormControl<string>;
   readonly fim: FormControl<string>;
+  /** Unidade que responde pela fase; vazio enquanto não escolhida. */
+  readonly unidadeResponsavelId: FormControl<string>;
   /**
    * O que a fase publica. Como a regra de recurso, não é editado neste passo e
    * viaja no formulário por isso: a gravação substitui o cronograma inteiro, e
@@ -127,6 +129,7 @@ export function grupoDaFase(fase: FaseDoCronograma): FormGroup<FaseForm> {
     ordem: controle(fase.ordem),
     inicio: controle(fase.inicio === null ? '' : campoDoInstante(fase.inicio)),
     fim: controle(fase.fim === null ? '' : campoDoInstante(fase.fim)),
+    unidadeResponsavelId: controle(fase.unidadeResponsavelId ?? ''),
     produtos: controle<readonly ProdutoDaFase[]>(fase.produtos),
     faseConcluinteCodigo: controle<string | null>(fase.faseConcluinteCodigo),
     emiteParecerIndividual: controle(fase.emiteParecerIndividual),
@@ -176,6 +179,7 @@ export function faseDoFormulario(grupo: FormGroup<FaseForm>): FaseDoCronograma {
     ordem: valor.ordem,
     inicio: valor.inicio === '' ? null : instanteDoCampo(valor.inicio),
     fim: valor.fim === '' ? null : instanteDoCampo(valor.fim),
+    unidadeResponsavelId: valor.unidadeResponsavelId === '' ? null : valor.unidadeResponsavelId,
     produtos: valor.produtos,
     faseConcluinteCodigo: valor.faseConcluinteCodigo,
     emiteParecerIndividual: valor.emiteParecerIndividual,

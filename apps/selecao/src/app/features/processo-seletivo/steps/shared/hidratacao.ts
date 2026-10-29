@@ -162,6 +162,7 @@ function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCro
       atoCodigo: produto.atoCodigo,
       papel: produto.papel ?? null,
     })),
+    unidadeResponsavelId: fase.unidadeResponsavel?.origemId ?? null,
     faseConcluinteCodigo: fase.faseConcluinteCodigo,
     emiteParecerIndividual: fase.emiteParecerIndividual,
     bancasRequeridas: fase.bancasRequeridas.map((banca) => ({

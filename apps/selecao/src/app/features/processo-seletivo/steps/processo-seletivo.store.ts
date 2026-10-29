@@ -24,6 +24,8 @@ import {
   WizardDraft,
 } from './processo-seletivo.models';
 
+const INDICE_DO_CRONOGRAMA = STEP_LABELS.indexOf('Cronograma');
+
 /**
  * O rascunho nasce sem documento nenhum: quais existem é o cadastro de Configuração que
  * diz, e ele cresce sem deploy. Semear a partir de uma lista local fazia o rascunho
@@ -360,6 +362,21 @@ export class ProcessoSeletivoStore {
    * decidir sozinho de novo.
    */
   readonly publicacaoNaoConfirmada = signal(false);
+
+  /**
+   * Código canônico da fase que o passo Cronograma deve abrir ao ser mostrado — o destino de
+   * quem chega de uma recusa que cita a fase. O Cronograma o consome e o limpa.
+   */
+  readonly faseEmFoco = signal<string | null>(null);
+
+  readonly cronogramaVisivel = computed(() => this.currentStep() === INDICE_DO_CRONOGRAMA);
+
+  /** Leva ao passo Cronograma já na fase citada. */
+  irParaFase(codigo: string): void {
+    if (this.operacaoEmAndamento()) return;
+    this.faseEmFoco.set(codigo);
+    this.goTo(INDICE_DO_CRONOGRAMA);
+  }
 
   /**
    * `ProcessoSeletivo.MutacaoPermitida` também aceita processo publicado com

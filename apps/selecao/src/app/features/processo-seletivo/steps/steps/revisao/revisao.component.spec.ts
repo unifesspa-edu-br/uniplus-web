@@ -675,6 +675,7 @@ describe('RevisaoStepComponent', () => {
         ordem: 1,
         inicio: null,
         fim: null,
+        unidadeResponsavelId: null,
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
@@ -764,6 +765,67 @@ describe('RevisaoStepComponent', () => {
       expect(resultado.valid).toBe(false);
       expect(componente.ultimaRecusa()?.obrigatoriedadesReprovadas).toHaveLength(1);
       expect(componente.legalOk()).toBe(false);
+    });
+
+    it('na recusa por fase sem unidade, lista só as fases sem unidade e leva ao Cronograma na fase escolhida', async () => {
+      const fase = (codigo: string, unidadeResponsavelId: string | null): FaseDoCronograma => ({
+        faseCanonicaId: `id-${codigo}`,
+        codigo,
+        ordem: 1,
+        inicio: null,
+        fim: null,
+        unidadeResponsavelId,
+        produtos: [],
+        faseConcluinteCodigo: null,
+        emiteParecerIndividual: false,
+        bancasRequeridas: [],
+        regraRecurso: null,
+        congelados: null,
+      });
+      store.patchObjectSection('cronograma', {
+        fases: [fase('INSCRICAO', 'unidade-ceps'), fase('MATRICULA', null)],
+      });
+      prepararCamposLocais();
+      await criarProcesso();
+      await flushPreflightVerde();
+
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_PUBLICACAO).flush(
+        {
+          type: 'about:blank',
+          title: 'A fase MATRICULA não tem unidade responsável.',
+          status: 422,
+          code: 'uniplus.selecao.processo_seletivo.fase_sem_unidade_responsavel',
+          traceId: 't4',
+        },
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
+      );
+      await gravacao;
+      fixture.detectChanges();
+
+      expect(componente.fasesSemUnidadeDaRecusa()).toEqual([
+        { codigo: 'MATRICULA', nome: 'Fase MATRICULA' },
+      ]);
+      const botao = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+        '#revisao-fase-sem-unidade ~ ul button',
+      );
+      expect(botao?.textContent).toContain('Ir para a fase Fase MATRICULA');
+      expect(botao?.getAttribute('aria-describedby')).toBe('revisao-fase-sem-unidade');
+
+      botao?.click();
+
+      expect(store.faseEmFoco()).toBe('MATRICULA');
+      expect(store.cronogramaVisivel()).toBe(true);
+
+      store.patchObjectSection('cronograma', {
+        fases: [fase('INSCRICAO', 'unidade-ceps'), fase('MATRICULA', 'unidade-ceps')],
+      });
+
+      expect(componente.fasesSemUnidadeDaRecusa()).toEqual([]);
     });
 
     it('em erro nomeado de documento/ato, marca o bloco próprio sem tocar nos dois checklists', async () => {
@@ -1232,6 +1294,7 @@ describe('RevisaoStepComponent', () => {
         ordem: 1,
         inicio: '2026-12-10T03:00:00+00:00',
         fim: '2027-01-11T02:59:00+00:00',
+        unidadeResponsavelId: null,
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,

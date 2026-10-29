@@ -1,9 +1,9 @@
 import { HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, Subject, type Observable } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
+import { apiFailure, apiOk, apiResultInterceptor, type ApiResult } from '@uniplus/shared-core/http';
 import {
   CategoriasDocumentoApi,
   FaseCanonicaDto,
@@ -15,6 +15,7 @@ import {
   TiposDocumentoApi,
   TiposEtapaApi,
 } from '@uniplus/shared-data/configuracao';
+import { UnidadesApi, type UnidadeDto } from '@uniplus/shared-data/organizacao';
 import {
   TipoAtoPublicadoDto,
   TiposAtoApi,
@@ -41,7 +42,7 @@ function fase(codigo: string): FaseCanonicaDto {
     permiteComplementacao: false,
     baseLegal: null,
     coletaInscricao: false,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
     criadoEm: '2026-08-30T12:00:00Z',
   } as FaseCanonicaDto;
 }
@@ -76,6 +77,8 @@ interface Cenario {
   readonly fases?: readonly FaseCanonicaDto[];
   readonly precedencias?: readonly PrecedenciaFaseDto[];
   readonly atos?: readonly TipoAtoPublicadoDto[];
+  readonly unidades?: readonly UnidadeDto[] | 'falha';
+  readonly listarUnidades?: () => Observable<ApiResult<readonly UnidadeDto[]>>;
 }
 
 function montar(cenario: Cenario = {}) {
@@ -95,6 +98,20 @@ function montar(cenario: Cenario = {}) {
         useValue: { listar: () => pagina(cenario.precedencias ?? []) },
       },
       { provide: TiposBancaApi, useValue: { listar: () => pagina([]) } },
+      {
+        provide: UnidadesApi,
+        useValue: {
+          listar: () =>
+            cenario.listarUnidades?.() ??
+            (cenario.unidades === 'falha'
+              ? of(apiFailure(
+                  { type: 'about:blank', title: 'x', status: 500, code: 'uniplus.erro', traceId: '' },
+                  500,
+                  new HttpHeaders(),
+                ))
+              : pagina(cenario.unidades ?? [])),
+        },
+      },
       { provide: CategoriasDocumentoApi, useValue: { listar: () => pagina([]) } },
       { provide: TiposEtapaApi, useValue: { listar: () => pagina([]) } },
       { provide: TiposDocumentoApi, useValue: { listar: () => pagina([]) } },
@@ -248,5 +265,48 @@ describe('CatalogosDoCronogramaService — documentos do cadastro', () => {
 
     expect(doc.descricao).toBeNull();
     expect(doc.orientacao).toBe('Formatos aceitos: pdf.');
+  });
+});
+
+describe('CatalogosDoCronogramaService — unidades', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  const CGA = { id: 'unidade-cga', sigla: 'CGA', nome: 'Centro de Gestão Acadêmica' } as UnidadeDto;
+
+  it('indexa as unidades do cadastro pelo id', () => {
+    const { servico } = montar({ unidades: [CGA] });
+
+    expect(servico.opcoesDeUnidade()).toEqual([
+      { id: 'unidade-cga', rotulo: 'CGA — Centro de Gestão Acadêmica' },
+    ]);
+    expect(servico.erroDeUnidades()).toBeNull();
+  });
+
+  /** A falta das unidades não derruba o editor: só a escolha da unidade fica sem opções. */
+  it('falha ao listar as unidades sem impedir os demais catálogos', () => {
+    const { servico } = montar({ unidades: 'falha', fases: [fase('A')] });
+
+    expect(servico.erroDeUnidades()).toBe('Não foi possível carregar as unidades. Tente novamente.');
+    expect(servico.fases()).toHaveLength(1);
+    expect(servico.erro()).toBeNull();
+  });
+
+  /** Uma resposta atrasada de carregamento anterior não pode desfazer a lista mais nova. */
+  it('descarta a resposta do carregamento anterior quando outro já foi pedido', () => {
+    const respostas: Subject<ApiResult<readonly UnidadeDto[]>>[] = [];
+    const { servico } = montar({
+      listarUnidades: () => {
+        const resposta = new Subject<ApiResult<readonly UnidadeDto[]>>();
+        respostas.push(resposta);
+        return resposta;
+      },
+    });
+    servico.carregarUnidades();
+
+    respostas[1]?.next(apiOk([CGA], 200, new HttpHeaders()));
+    respostas[1]?.complete();
+    respostas[0]?.next(apiOk([], 200, new HttpHeaders()));
+
+    expect(servico.unidades()).toEqual([CGA]);
   });
 });

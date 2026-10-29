@@ -84,6 +84,7 @@ function fase(parcial: Partial<FaseDoCronograma> & { ordem: number }): FaseDoCro
     codigo: `FASE-${parcial.ordem}`,
     inicio: null,
     fim: null,
+    unidadeResponsavelId: null,
     produtos: [],
     faseConcluinteCodigo: null,
     emiteParecerIndividual: false,

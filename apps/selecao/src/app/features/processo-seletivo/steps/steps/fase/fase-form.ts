@@ -52,6 +52,8 @@ export interface FaseConfigForm {
   readonly ordem: FormControl<number>;
   readonly inicio: FormControl<string | null>;
   readonly fim: FormControl<string | null>;
+  /** Não é editada aqui; viaja para a gravação do cronograma não a apagar. */
+  readonly unidadeResponsavelId: FormControl<string | null>;
   readonly produtos: FormControl<readonly ProdutoDaFase[]>;
   /** `''` representa "nenhuma fase declarada como concluinte". */
   readonly faseConcluinteCodigo: FormControl<string>;
@@ -71,6 +73,7 @@ export function grupoDaConfiguracaoDaFase(fase: FaseDoCronograma): FormGroup<Fas
     ordem: controle(fase.ordem),
     inicio: controle<string | null>(fase.inicio),
     fim: controle<string | null>(fase.fim),
+    unidadeResponsavelId: controle<string | null>(fase.unidadeResponsavelId),
     produtos: controle<readonly ProdutoDaFase[]>(fase.produtos),
     faseConcluinteCodigo: controle(fase.faseConcluinteCodigo ?? ''),
     emiteParecerIndividual: controle(fase.emiteParecerIndividual),
@@ -110,6 +113,7 @@ export function faseDaConfiguracao(grupo: FormGroup<FaseConfigForm>): FaseDoCron
     ordem: valor.ordem,
     inicio: valor.inicio,
     fim: valor.fim,
+    unidadeResponsavelId: valor.unidadeResponsavelId,
     produtos: valor.produtos,
     faseConcluinteCodigo: valor.faseConcluinteCodigo === '' ? null : valor.faseConcluinteCodigo,
     emiteParecerIndividual: valor.emiteParecerIndividual,

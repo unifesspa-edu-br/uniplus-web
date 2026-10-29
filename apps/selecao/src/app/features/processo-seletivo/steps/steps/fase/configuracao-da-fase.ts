@@ -668,6 +668,14 @@ const MENSAGEM_POR_CODIGO: ReadonlyMap<string, { campo: CampoDaFase; mensagem: s
   ],
 ]);
 
+/** A unidade responsável escolhida para a fase saiu do cadastro de Organização. */
+export const UNIDADE_RESPONSAVEL_NAO_ENCONTRADA =
+  'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada';
+
+/** A unidade é escolhida no Cronograma; esta tela não tem o seletor, então só orienta aonde ir. */
+const ORIENTACAO_DA_UNIDADE_NAO_ENCONTRADA =
+  'a unidade desta fase saiu do cadastro. Corrija a unidade da fase no passo Cronograma.';
+
 /**
  * Distribui a recusa do servidor pelos campos da fase que está aberta.
  *
@@ -692,6 +700,12 @@ export function traduzirRecusa(
 
   for (const erro of erros) {
     const indice = indiceDaFaseEm(erro.field);
+    if (erro.code === UNIDADE_RESPONSAVEL_NAO_ENCONTRADA) {
+      const onde = indice === null ? 'No cronograma' : `Na fase ${nomeDaFase(indice)}`;
+      gerais.push(`${onde}: ${ORIENTACAO_DA_UNIDADE_NAO_ENCONTRADA}`);
+      continue;
+    }
+
     const conhecido = MENSAGEM_POR_CODIGO.get(erro.code);
     const texto = conhecido?.mensagem ?? problema.title;
 
@@ -716,7 +730,7 @@ export function traduzirRecusa(
 
 /** A posição da fase no `field` da recusa, ou `null` quando ele não a nomeia. */
 function indiceDaFaseEm(field: string): number | null {
-  const casamento = /^fases\[(\d+)\]/.exec(field);
+  const casamento = /^(?:\$\.|request\.)?fases\[(\d+)\]/i.exec(field);
   if (casamento === null) return null;
   const indice = Number(casamento[1]);
   return Number.isInteger(indice) ? indice : null;

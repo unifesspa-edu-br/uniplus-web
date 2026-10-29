@@ -51,10 +51,16 @@ export const DONOS_TIPICOS_FASE = ['CEPS', 'CRCA', 'MEC', 'CONSEPE'] as const;
 /**
  * Origem da data da fase (UNI-REQ-0064). Domínio fechado de dois tokens, com
  * allowlist textual no backend e CHECK em `fase_canonica.origem_data`:
- * `PROPRIA` é data definida pela própria instituição; `DELEGADA` é data
- * definida por terceiro (ex.: cronograma SiSU/MEC).
+ * `NO_EDITAL` é data fixada no edital, com janela obrigatória; `NA_EXECUCAO` é
+ * data definida na execução pela unidade responsável pela fase.
  */
-export const ORIGENS_DATA_FASE = ['PROPRIA', 'DELEGADA'] as const;
+export const ORIGENS_DATA_FASE = ['NO_EDITAL', 'NA_EXECUCAO'] as const;
+
+/** Rótulo de cada origem da data, como a tela a apresenta. */
+export const ROTULO_ORIGEM_DATA_FASE: Readonly<Record<OrigemDataFase, string>> = {
+  NO_EDITAL: 'Fixada no edital',
+  NA_EXECUCAO: 'Definida na execução',
+};
 
 export type OrigemDataFase = (typeof ORIGENS_DATA_FASE)[number];
 

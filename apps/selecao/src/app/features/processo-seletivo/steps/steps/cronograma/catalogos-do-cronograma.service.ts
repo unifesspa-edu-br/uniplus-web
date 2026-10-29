@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { forkJoin, type Subscription } from 'rxjs';
 import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
 import {
   CategoriaDocumentoDto,
@@ -18,11 +18,13 @@ import {
   TiposDocumentoApi,
   TiposEtapaApi,
 } from '@uniplus/shared-data/configuracao';
+import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { TipoAtoPublicadoDto, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
 import type { DocumentoDefinicao, DocumentoGrupo } from '../../processo-seletivo.models';
 import { hojeNoFusoInstitucional } from '../../shared/fuso-institucional';
+import { comoOpcaoDeUnidade } from '../../shared/unidades-do-cadastro';
 import { vigenteNoDia } from '../../shared/vigencia';
 
 /** Tipo do `rol_de_regras` que a convenção de contagem referencia. */
@@ -60,6 +62,7 @@ export class CatalogosDoCronogramaService {
   private readonly regrasApi = inject(RegrasCatalogoApi);
   private readonly tiposDocumentoApi = inject(TiposDocumentoApi);
   private readonly fatosApi = inject(FatosCandidatoApi);
+  private readonly unidadesApi = inject(UnidadesApi);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly fases = signal<readonly FaseCanonicaDto[]>([]);
@@ -106,12 +109,22 @@ export class CatalogosDoCronogramaService {
     }
 
     return [...porCategoria.entries()]
-      .map(([codigo, docs]): DocumentoGrupo => ({
-        label: rotulo.get(codigo) ?? codigo,
-        docs: [...docs].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
-      }))
+      .map(
+        ([codigo, docs]): DocumentoGrupo => ({
+          label: rotulo.get(codigo) ?? codigo,
+          docs: [...docs].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+        }),
+      )
       .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
   });
+
+  /** As unidades do cadastro, a mesma lista que a unidade administradora do processo oferece. */
+  readonly unidades = signal<readonly UnidadeDto[]>([]);
+  readonly erroDeUnidades = signal<string | null>(null);
+  /** Verdadeiro só depois que o cadastro de unidades respondeu com sucesso. */
+  readonly unidadesCarregadas = signal(false);
+
+  readonly opcoesDeUnidade = computed(() => this.unidades().map(comoOpcaoDeUnidade));
 
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
@@ -249,7 +262,9 @@ export class CatalogosDoCronogramaService {
 
     // A fila mantém a ordem do catálogo entre os elegíveis, o que torna o
     // resultado determinístico para o mesmo cadastro.
-    const prontos = fases.filter((fase) => grauDeEntrada.get(fase.codigo) === 0).map((f) => f.codigo);
+    const prontos = fases
+      .filter((fase) => grauDeEntrada.get(fase.codigo) === 0)
+      .map((f) => f.codigo);
     const ordenado: FaseCanonicaDto[] = [];
 
     for (let codigo = prontos.shift(); codigo !== undefined; codigo = prontos.shift()) {
@@ -266,8 +281,7 @@ export class CatalogosDoCronogramaService {
       // Reinsere respeitando a ordem do catálogo, não a de liberação.
       prontos.push(...liberados);
       prontos.sort(
-        (a, b) =>
-          fases.findIndex((f) => f.codigo === a) - fases.findIndex((f) => f.codigo === b),
+        (a, b) => fases.findIndex((f) => f.codigo === a) - fases.findIndex((f) => f.codigo === b),
       );
     }
 
@@ -290,6 +304,7 @@ export class CatalogosDoCronogramaService {
     this.carregando.set(true);
     this.erro.set(null);
     this.diaDeReferencia.set(hojeNoFusoInstitucional());
+    this.carregarUnidades();
 
     forkJoin({
       fases: coletarPaginas((cursor) => this.fasesApi.listar({ cursor })),
@@ -366,6 +381,35 @@ export class CatalogosDoCronogramaService {
         },
         error: () => this.anunciarErro(),
       });
+  }
+
+  /**
+   * Fora do `forkJoin` dos demais catálogos: a falta das unidades não impede editar o
+   * cronograma, só a escolha da unidade de cada fase, e tem o próprio caminho de nova tentativa.
+   */
+  carregarUnidades(): void {
+    this.erroDeUnidades.set(null);
+    this.unidadesCarregadas.set(false);
+    this.carregamentoDeUnidades?.unsubscribe();
+    this.carregamentoDeUnidades = coletarPaginas((cursor) => this.unidadesApi.listar({ cursor }))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resultado) => {
+          if (!isApiOk(resultado)) {
+            this.anunciarErroDeUnidades();
+            return;
+          }
+          this.unidades.set(resultado.data);
+          this.unidadesCarregadas.set(true);
+        },
+        error: () => this.anunciarErroDeUnidades(),
+      });
+  }
+
+  private carregamentoDeUnidades?: Subscription;
+
+  private anunciarErroDeUnidades(): void {
+    this.erroDeUnidades.set('Não foi possível carregar as unidades. Tente novamente.');
   }
 
   private anunciarErro(): void {

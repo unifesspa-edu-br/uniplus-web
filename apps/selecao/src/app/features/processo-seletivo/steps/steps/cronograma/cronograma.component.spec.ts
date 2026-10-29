@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import type { FormGroup } from '@angular/forms';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import {
   CaraterEtapa,
@@ -67,7 +68,7 @@ const FASES_CANONICAS = [
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: true,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
   },
   {
     id: ID_AVALIACAO,
@@ -77,7 +78,7 @@ const FASES_CANONICAS = [
     agrupaEtapas: true,
     permiteComplementacao: false,
     coletaInscricao: false,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
   },
   {
     id: ID_RESULTADO,
@@ -87,7 +88,7 @@ const FASES_CANONICAS = [
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: false,
-    origemData: 'DERIVADA',
+    origemData: 'NA_EXECUCAO',
   },
 ];
 
@@ -240,6 +241,7 @@ describe('CronogramaStepComponent', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
@@ -307,6 +309,7 @@ describe('CronogramaStepComponent', () => {
         ordem: indice + 1,
         inicio: '2026-03-01T08:00:00-03:00',
         fim: '2026-03-10T18:00:00-03:00',
+        unidadeResponsavelId: null,
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
@@ -331,6 +334,7 @@ describe('CronogramaStepComponent', () => {
           ordem: 1,
           inicio: '2026-03-01T08:00:00-03:00',
           fim: '2026-03-10T18:00:00-03:00',
+          unidadeResponsavelId: null,
           produtos,
           faseConcluinteCodigo: 'RECURSOS',
           emiteParecerIndividual: true,
@@ -346,6 +350,7 @@ describe('CronogramaStepComponent', () => {
           ordem: 2,
           inicio: '2026-03-12T08:00:00-03:00',
           fim: '2026-03-20T18:00:00-03:00',
+          unidadeResponsavelId: null,
           produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
           faseConcluinteCodigo: null,
           emiteParecerIndividual: false,
@@ -353,7 +358,7 @@ describe('CronogramaStepComponent', () => {
           regraRecurso: null,
           congelados: {
             donoTipico: 'CEPS',
-            origemData: 'PROPRIA',
+            origemData: 'NO_EDITAL',
             agrupaEtapas: false,
             coletaInscricao: false,
             permiteComplementacao: false,
@@ -377,6 +382,7 @@ describe('CronogramaStepComponent', () => {
         ordem: indice + 1,
         inicio: '2026-03-01T08:00:00-03:00',
         fim: '2026-03-10T18:00:00-03:00',
+        unidadeResponsavelId: null,
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
@@ -384,7 +390,7 @@ describe('CronogramaStepComponent', () => {
         regraRecurso: null,
         congelados: {
           donoTipico: 'CEPS',
-          origemData: 'PROPRIA',
+          origemData: 'NO_EDITAL',
           agrupaEtapas: fase.agrupaEtapas,
           coletaInscricao: false,
           permiteComplementacao: false,
@@ -684,6 +690,321 @@ describe('CronogramaStepComponent', () => {
     detectar();
 
     expect(componente.caracteresPara(etapa)).toHaveLength(3);
+  });
+
+  describe('unidade responsável da fase', () => {
+    const ID_CEPS = '01960000-0000-7000-0000-0000000000a1';
+    const ID_CGA = '01960000-0000-7000-0000-0000000000a2';
+    const ROTA_UNIDADES = `${BASE}/api/organizacao/unidades`;
+    const CEPS = { id: ID_CEPS, sigla: 'CEPS', nome: 'Centro de Processos Seletivos' };
+    const CGA = { id: ID_CGA, sigla: 'CGA', nome: 'Centro de Gestão Acadêmica' };
+
+    function comUnidadesNoCadastro(): void {
+      TestBed.inject(CatalogosDoCronogramaService).unidades.set([CEPS, CGA] as never);
+      detectar();
+    }
+
+    function unidadeDoSelect(indice: number): HTMLSelectElement {
+      return nativo.querySelector<HTMLSelectElement>(`#cr-unidade-${indice}`) as HTMLSelectElement;
+    }
+
+    function fasesDoCorpo(requisicao: { request: { body: unknown } }) {
+      return requisicao.request.body as { unidadeResponsavelId: string | null }[];
+    }
+
+    function acrescentar(faseId: string): void {
+      componente.formulario.controls.faseAAcrescentar.setValue(faseId);
+      componente.acrescentarFase();
+      detectar();
+    }
+
+    async function recusarUnidadeNaFase(indice: number): Promise<{ valid: boolean }> {
+      const gravacao = componente.persistir();
+      controller.expectOne(ROTA_FASES).flush(
+        {
+          type: 'about:blank',
+          title: 'Validação',
+          status: 422,
+          code: 'uniplus.validacao',
+          traceId: '00000000000000000000000000000009',
+          errors: [
+            {
+              field: `fases[${indice}].unidadeResponsavelId`,
+              code: 'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada',
+              message: 'x',
+            },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+      );
+      const resultado = await gravacao;
+      controller.expectOne((req) => req.url === ROTA_UNIDADES).flush([]);
+      detectar();
+      return resultado;
+    }
+
+    it('a fase acrescentada nasce com a unidade administradora do processo', () => {
+      store.patchObjectSection('identificacao', { unidadeAdministradoraId: ID_CEPS });
+      comUnidadesNoCadastro();
+
+      acrescentar(ID_INSCRICAO);
+
+      expect(componente.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CEPS);
+      expect(componente.linhaDoTempo()[0]?.unidade).toBe(
+        'CEPS — Centro de Processos Seletivos',
+      );
+    });
+
+    it('oferece as unidades do cadastro, e a escolhida segue na gravação', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      comUnidadesNoCadastro();
+      comFases(ID_INSCRICAO);
+      componente.alternarFase(0);
+      detectar();
+
+      const opcoes = [...unidadeDoSelect(0).options].map((opcao) => opcao.text);
+      expect(opcoes).toEqual([
+        'Selecione',
+        'CEPS — Centro de Processos Seletivos',
+        'CGA — Centro de Gestão Acadêmica',
+      ]);
+
+      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
+      const gravacao = componente.persistir();
+      const requisicao = controller.expectOne(ROTA_FASES);
+      expect(fasesDoCorpo(requisicao)[0]?.unidadeResponsavelId).toBe(ID_CGA);
+      requisicao.flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      await gravouEtapas();
+      await gravouExigencias();
+      await gravacao;
+    });
+
+    it('a fase sem unidade é sinalizada e o rascunho ainda é gravado', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      comUnidadesNoCadastro();
+      comFases(ID_INSCRICAO);
+      componente.alternarFase(0);
+      detectar();
+
+      expect(componente.linhaDoTempo()[0]?.unidade).toBeNull();
+      expect(nativo.querySelector('#cr-unidade-erro-0')?.textContent).toContain(
+        'sem unidade responsável',
+      );
+      expect(unidadeDoSelect(0).getAttribute('aria-invalid')).toBe('true');
+      expect(unidadeDoSelect(0).getAttribute('aria-describedby')).toContain('cr-unidade-erro-0');
+      expect(nativo.querySelector('.etapa-resumo__marca')?.textContent).toContain(
+        'Sem unidade responsável',
+      );
+
+      const gravacao = componente.persistir();
+      const requisicao = controller.expectOne(ROTA_FASES);
+      expect(fasesDoCorpo(requisicao)[0]?.unidadeResponsavelId).toBeNull();
+      requisicao.flush(null, { status: 204, statusText: 'No Content' });
+      await proximoPasso();
+      await gravouEtapas();
+      await gravouExigencias();
+      await gravacao;
+    });
+
+    it('a cópia gravada no processo nomeia a unidade, mesmo com outro nome no cadastro', () => {
+      comUnidadesNoCadastro();
+      comFases(ID_INSCRICAO);
+      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
+      store.remoteSnapshot.set({
+        ...PROCESSO_COM_ETAPA_GRAVADA,
+        cronogramaFases: [
+          {
+            codigo: 'COLETA_INSCRICAO',
+            unidadeResponsavel: {
+              origemId: ID_CGA,
+              sigla: 'CRCA',
+              slug: 'crca',
+              nome: 'Centro de Registro Acadêmico',
+            },
+          },
+        ],
+      } as never);
+
+      expect(componente.linhaDoTempo()[0]?.unidade).toBe(
+        'CRCA — Centro de Registro Acadêmico',
+      );
+    });
+
+    it('oferece uma vez só a unidade gravada fora do cadastro que várias fases referenciam', () => {
+      comUnidadesNoCadastro();
+      comFases(ID_INSCRICAO, ID_RESULTADO);
+      const gravada = {
+        origemId: '01960000-0000-7000-0000-0000000000a9',
+        sigla: 'CAT',
+        slug: 'cat',
+        nome: 'Coordenação extinta',
+      };
+      store.remoteSnapshot.set({
+        ...PROCESSO_COM_ETAPA_GRAVADA,
+        cronogramaFases: [{ unidadeResponsavel: gravada }, { unidadeResponsavel: gravada }],
+      } as never);
+
+      const ids = componente.unidadesParaEscolha().map((opcao) => opcao.id);
+
+      expect(ids.filter((id) => id === gravada.origemId)).toHaveLength(1);
+    });
+
+    it('nunca mostra o identificador da unidade que não está no cadastro nem no processo', () => {
+      comUnidadesNoCadastro();
+      TestBed.inject(CatalogosDoCronogramaService).unidadesCarregadas.set(true);
+      comFases(ID_INSCRICAO);
+      componente.fases
+        .at(0)
+        .controls.unidadeResponsavelId.setValue('01960000-0000-7000-0000-0000000000f9');
+
+      expect(componente.linhaDoTempo()[0]?.unidade).toBe('Unidade não encontrada no cadastro');
+    });
+
+    it('não afirma que a unidade falta enquanto o cadastro carrega nem se ele falhou', () => {
+      const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+      comFases(ID_INSCRICAO);
+      componente.fases
+        .at(0)
+        .controls.unidadeResponsavelId.setValue('01960000-0000-7000-0000-0000000000f9');
+      catalogos.unidadesCarregadas.set(false);
+
+      expect(componente.linhaDoTempo()[0]?.unidade).toBe('Carregando unidade…');
+
+      catalogos.erroDeUnidades.set('falhou');
+      componente.fases.at(0).controls.unidadeResponsavelId.setValue('outra');
+
+      expect(componente.linhaDoTempo()[0]?.unidade).toBe('Cadastro de unidades indisponível');
+    });
+
+    it('descarta o destino que não é fase do cronograma', async () => {
+      comFases(ID_INSCRICAO);
+      store.irParaFase('FASE_QUE_NAO_EXISTE');
+      detectar();
+      await proximoPasso();
+
+      expect(store.faseEmFoco()).toBeNull();
+      expect(componente.faseExpandida(0)).toBe(false);
+    });
+
+    it('cada fase mostra a cópia que gravou, mesmo com outra cópia da mesma unidade em outra fase', () => {
+      comUnidadesNoCadastro();
+      comFases(ID_INSCRICAO, ID_RESULTADO);
+      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
+      componente.fases.at(1).controls.unidadeResponsavelId.setValue(ID_CGA);
+      const copia = (sigla: string, nome: string) => ({
+        origemId: ID_CGA,
+        sigla,
+        slug: sigla.toLowerCase(),
+        nome,
+      });
+      store.remoteSnapshot.set({
+        ...PROCESSO_COM_ETAPA_GRAVADA,
+        cronogramaFases: [
+          { codigo: 'COLETA_INSCRICAO', unidadeResponsavel: copia('CRCA', 'Registro Acadêmico') },
+          { codigo: 'RESULTADO_FINAL', unidadeResponsavel: copia('CGA', 'Gestão Acadêmica') },
+        ],
+      } as never);
+
+      const [primeira, segunda] = componente.linhaDoTempo();
+
+      expect(primeira?.unidade).toBe('CRCA — Registro Acadêmico');
+      expect(segunda?.unidade).toBe('CGA — Gestão Acadêmica');
+    });
+
+    it('a unidade gravada que saiu do cadastro continua oferecida à fase', () => {
+      comUnidadesNoCadastro();
+      comFases(ID_INSCRICAO);
+      store.remoteSnapshot.set({
+        ...PROCESSO_COM_ETAPA_GRAVADA,
+        cronogramaFases: [
+          {
+            unidadeResponsavel: {
+              origemId: '01960000-0000-7000-0000-0000000000a9',
+              sigla: 'CAT',
+              slug: 'cat',
+              nome: 'Coordenação extinta',
+            },
+          },
+        ],
+      } as never);
+
+      expect(componente.unidadesParaEscolha().map((opcao) => opcao.rotulo)).toContain(
+        'CAT — Coordenação extinta',
+      );
+    });
+
+    it('a recusa de unidade inexistente aparece no campo da fase citada e recarrega a lista', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      comUnidadesNoCadastro();
+      comFases(ID_INSCRICAO, ID_RESULTADO);
+      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CEPS);
+      componente.fases.at(1).controls.unidadeResponsavelId.setValue(ID_CGA);
+
+      const resultado = await recusarUnidadeNaFase(1);
+
+      expect(resultado.valid).toBe(false);
+      expect(componente.unidadeRecusada(componente.fases.at(1))).toBe(true);
+      expect(componente.unidadeRecusada(componente.fases.at(0))).toBe(false);
+      expect(componente.faseExpandida(1)).toBe(true);
+      const erro = nativo.querySelector('#cr-unidade-erro-1');
+      expect(erro?.textContent).toContain('não está mais no cadastro');
+      expect(erro?.getAttribute('role')).toBe('alert');
+      expect(unidadeDoSelect(1).getAttribute('aria-describedby')).toContain('cr-unidade-erro-1');
+      expect(unidadeDoSelect(1).getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it('a recusa da unidade some quando a fase passa a ter outra unidade', async () => {
+      store.processoSeletivoId.set(PROCESSO_ID);
+      comUnidadesNoCadastro();
+      comFases(ID_INSCRICAO);
+      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
+      await recusarUnidadeNaFase(0);
+      expect(componente.unidadeRecusada(componente.fases.at(0))).toBe(true);
+
+      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CEPS);
+      detectar();
+
+      expect(componente.unidadeRecusada(componente.fases.at(0))).toBe(false);
+      expect(nativo.querySelector('#cr-unidade-erro-0')).toBeNull();
+    });
+
+    it('a fase citada só abre quando o passo Cronograma é o visível', async () => {
+      comUnidadesNoCadastro();
+      comFases(ID_INSCRICAO, ID_RESULTADO);
+
+      store.faseEmFoco.set('RESULTADO_FINAL');
+      detectar();
+      await proximoPasso();
+
+      expect(componente.faseExpandida(1)).toBe(false);
+      expect(store.faseEmFoco()).toBe('RESULTADO_FINAL');
+    });
+
+    it('a fase citada pela recusa de publicação abre com o foco na unidade', async () => {
+      comUnidadesNoCadastro();
+      comFases(ID_INSCRICAO, ID_RESULTADO);
+      store.irParaFase('RESULTADO_FINAL');
+      detectar();
+      await proximoPasso();
+
+      expect(componente.faseExpandida(1)).toBe(true);
+      expect(componente.faseExpandida(0)).toBe(false);
+      expect(store.faseEmFoco()).toBeNull();
+      expect(document.activeElement).toBe(unidadeDoSelect(1));
+    });
+
+    it('a fase de data definida na execução não pede início nem fim', () => {
+      comFases(ID_RESULTADO);
+      componente.alternarFase(0);
+      detectar();
+
+      expect(nativo.querySelector('#cr-inicio-0')).toBeNull();
+      expect(nativo.querySelector('#cr-fim-0')).toBeNull();
+      expect(nativo.textContent).toContain(
+        'A data desta fase não consta do edital: a unidade responsável a define na execução.',
+      );
+    });
   });
 
   describe('etapa de nota do ENEM', () => {
@@ -3190,7 +3511,7 @@ describe('CronogramaStepComponent', () => {
             ordem: 2,
             congelados: {
               donoTipico: 'CEPS',
-              origemData: 'PROPRIA',
+              origemData: 'NO_EDITAL',
               agrupaEtapas: false,
               coletaInscricao: true,
               permiteComplementacao: false,

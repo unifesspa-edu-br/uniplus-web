@@ -260,6 +260,7 @@ describe('regra de recurso da fase no comando', () => {
     ordem: 1,
     inicio: null,
     fim: null,
+    unidadeResponsavelId: null,
     produtos: [],
     faseConcluinteCodigo: null,
     emiteParecerIndividual: false,
@@ -267,6 +268,13 @@ describe('regra de recurso da fase no comando', () => {
     regraRecurso,
     congelados: null,
   };
+
+  it('envia a unidade responsável da fase, e nula quando ela não tem', () => {
+    expect(comoComandoDeFase({ ...fase, unidadeResponsavelId: 'unidade-cga' }).unidadeResponsavelId).toBe(
+      'unidade-cga',
+    );
+    expect(comoComandoDeFase(fase).unidadeResponsavelId).toBeNull();
+  });
 
   it('envia a declaração e o tempo de bloqueio quando a janela admite a instância superior', () => {
     expect(comoComandoDeFase(fase).regraRecurso).toMatchObject({
