@@ -64,7 +64,7 @@ const FASES_CANONICAS = [
     id: ID_INSCRICAO,
     codigo: 'COLETA_INSCRICAO',
     nome: 'Inscrição',
-    donoTipico: 'CEPS',
+    unidadeSugerida: null,
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: true,
@@ -74,7 +74,7 @@ const FASES_CANONICAS = [
     id: ID_AVALIACAO,
     codigo: 'AVALIACAO',
     nome: 'Avaliação',
-    donoTipico: 'CEPS',
+    unidadeSugerida: null,
     agrupaEtapas: true,
     permiteComplementacao: false,
     coletaInscricao: false,
@@ -84,7 +84,7 @@ const FASES_CANONICAS = [
     id: ID_RESULTADO,
     codigo: 'RESULTADO_FINAL',
     nome: 'Resultado final',
-    donoTipico: 'CEPS',
+    unidadeSugerida: null,
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: false,
@@ -357,7 +357,6 @@ describe('CronogramaStepComponent', () => {
           bancasRequeridas: [],
           regraRecurso: null,
           congelados: {
-            donoTipico: 'CEPS',
             origemData: 'NO_EDITAL',
             agrupaEtapas: false,
             coletaInscricao: false,
@@ -389,7 +388,6 @@ describe('CronogramaStepComponent', () => {
         bancasRequeridas: [],
         regraRecurso: null,
         congelados: {
-          donoTipico: 'CEPS',
           origemData: 'NO_EDITAL',
           agrupaEtapas: fase.agrupaEtapas,
           coletaInscricao: false,
@@ -743,6 +741,45 @@ describe('CronogramaStepComponent', () => {
       return resultado;
     }
 
+    describe('unidade inicial da fase acrescentada', () => {
+      function sugerindo(unidadeSugerida: { origemId: string } | null): void {
+        const doCatalogo = FASES_CANONICAS.map((fase) =>
+          fase.id === ID_AVALIACAO ? { ...fase, unidadeSugerida } : fase,
+        );
+        TestBed.inject(CatalogosDoCronogramaService).fases.set(doCatalogo as never);
+      }
+
+      it('é a unidade que a fase canônica sugere, quando ela está entre as do cadastro', () => {
+        store.patchObjectSection('identificacao', { unidadeAdministradoraId: ID_CEPS });
+        comUnidadesNoCadastro();
+        sugerindo({ origemId: ID_CGA });
+
+        acrescentar(ID_AVALIACAO);
+
+        expect(componente.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CGA);
+      });
+
+      it('é a administradora quando a sugestão não está entre as unidades do cadastro', () => {
+        store.patchObjectSection('identificacao', { unidadeAdministradoraId: ID_CEPS });
+        comUnidadesNoCadastro();
+        sugerindo({ origemId: '01960000-0000-7000-0000-0000000000a9' });
+
+        acrescentar(ID_AVALIACAO);
+
+        expect(componente.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CEPS);
+      });
+
+      it('é a administradora quando a fase canônica não sugere unidade', () => {
+        store.patchObjectSection('identificacao', { unidadeAdministradoraId: ID_CEPS });
+        comUnidadesNoCadastro();
+        sugerindo(null);
+
+        acrescentar(ID_AVALIACAO);
+
+        expect(componente.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CEPS);
+      });
+    });
+
     it('a fase acrescentada nasce com a unidade administradora do processo', () => {
       store.patchObjectSection('identificacao', { unidadeAdministradoraId: ID_CEPS });
       comUnidadesNoCadastro();
@@ -818,16 +855,16 @@ describe('CronogramaStepComponent', () => {
             codigo: 'COLETA_INSCRICAO',
             unidadeResponsavel: {
               origemId: ID_CGA,
-              sigla: 'CRCA',
-              slug: 'crca',
-              nome: 'Centro de Registro Acadêmico',
+              sigla: 'CECA',
+              slug: 'ceca',
+              nome: 'Centro de Estudos Acadêmicos',
             },
           },
         ],
       } as never);
 
       expect(componente.linhaDoTempo()[0]?.unidade).toBe(
-        'CRCA — Centro de Registro Acadêmico',
+        'CECA — Centro de Estudos Acadêmicos',
       );
     });
 
@@ -901,14 +938,14 @@ describe('CronogramaStepComponent', () => {
       store.remoteSnapshot.set({
         ...PROCESSO_COM_ETAPA_GRAVADA,
         cronogramaFases: [
-          { codigo: 'COLETA_INSCRICAO', unidadeResponsavel: copia('CRCA', 'Registro Acadêmico') },
+          { codigo: 'COLETA_INSCRICAO', unidadeResponsavel: copia('CECA', 'Estudos Acadêmicos') },
           { codigo: 'RESULTADO_FINAL', unidadeResponsavel: copia('CGA', 'Gestão Acadêmica') },
         ],
       } as never);
 
       const [primeira, segunda] = componente.linhaDoTempo();
 
-      expect(primeira?.unidade).toBe('CRCA — Registro Acadêmico');
+      expect(primeira?.unidade).toBe('CECA — Estudos Acadêmicos');
       expect(segunda?.unidade).toBe('CGA — Gestão Acadêmica');
     });
 
@@ -3510,7 +3547,6 @@ describe('CronogramaStepComponent', () => {
             codigo: 'DIVIDIDA',
             ordem: 2,
             congelados: {
-              donoTipico: 'CEPS',
               origemData: 'NO_EDITAL',
               agrupaEtapas: false,
               coletaInscricao: true,

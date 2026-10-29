@@ -36,7 +36,6 @@ const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO
 const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
 
 const CONGELADOS_DA_INSCRICAO: AtributosCongeladosDaFase = {
-  donoTipico: 'CEPS',
   origemData: 'NO_EDITAL',
   agrupaEtapas: false,
   coletaInscricao: true,
@@ -507,7 +506,6 @@ describe('FormularioStepComponent', () => {
       codigo: 'HABILITACAO',
       ordem: 1,
       congelados: {
-        donoTipico: 'CEPS',
         origemData: 'NO_EDITAL',
         agrupaEtapas: false,
         coletaInscricao: false,

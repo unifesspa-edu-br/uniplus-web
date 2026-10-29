@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -24,7 +25,7 @@ const faseSeed = {
   codigo: 'AVALIACAO',
   nome: 'Avaliação',
   descricao: null,
-  donoTipico: 'CEPS',
+  unidadeSugerida: null,
   agrupaEtapas: true,
   permiteComplementacao: false,
   baseLegal: null,
@@ -32,6 +33,24 @@ const faseSeed = {
   coletaSolicitacaoIsencao: false,
   origemData: 'NO_EDITAL',
   criadoEm: '2026-06-10T12:00:00Z',
+};
+
+const UNIDADE_CGA = {
+  id: '01960000-0000-7000-0000-0000000000a2',
+  nome: 'Centro de Gestão Acadêmica',
+  alias: null,
+  slug: 'cga',
+  sigla: 'CGA',
+  codigo: 'CGA',
+  unidadeSuperiorId: null,
+  tipo: 'PROREITORIA',
+  unidadeAcademica: false,
+  vigenciaInicio: '2020-01-01',
+  vigenciaFim: null,
+  criadoEm: '2020-01-01T00:00:00Z',
+  cidadeCodigoIbge: null,
+  cidadeNome: null,
+  cidadeUf: null,
 };
 
 const faseIsencaoSeed = {
@@ -97,7 +116,12 @@ async function mockApi(page: Page, capturado: Capturado, lista: readonly unknown
     }
     await route.fulfill({ status: 204, headers: CORS_HEADERS });
   });
-  await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (route) => jsonRoute(route, lista));
+  await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (route) =>
+    jsonRoute(route, lista),
+  );
+  await page.route(/\/api\/organizacao\/unidades(\?.*)?$/, (route) =>
+    jsonRoute(route, [UNIDADE_CGA]),
+  );
 }
 
 async function abrirPagina(page: Page): Promise<void> {
@@ -199,9 +223,51 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     await page
       .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
       .click();
-    const ajuda = page.locator('label.field', { hasText: 'Origem da data' }).locator('.field__hint');
+    const ajuda = page
+      .locator('label.field', { hasText: 'Origem da data' })
+      .locator('.field__hint');
     await expect(ajuda).toContainText('Fixada no edital');
     await expect(ajuda).not.toContainText(/terceiro|MEC|SiSU/i);
+  });
+
+  test('a lista mostra a unidade sugerida de cada fase, sem dono típico em lugar nenhum', async ({
+    page,
+  }) => {
+    const comSugestao = {
+      ...faseSeed,
+      unidadeSugerida: {
+        origemId: UNIDADE_CGA.id,
+        sigla: 'CGA',
+        slug: 'cga',
+        nome: UNIDADE_CGA.nome,
+      },
+    };
+    await mockApi(page, novoCapturado(), [comSugestao, faseIsencaoSeed]);
+    await abrirPagina(page);
+
+    await expect(page.getByRole('columnheader', { name: 'Unidade sugerida' })).toBeVisible();
+    await expect(page.locator('td[data-label="Unidade sugerida"]')).toHaveText(['CGA', '—']);
+    await expect(page.getByText(/dono típico/i)).toHaveCount(0);
+  });
+
+  test('a unidade sugerida escolhida vai no comando, e limpá-la a retira', async ({ page }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, [faseSeed]);
+    await abrirPagina(page);
+
+    await page
+      .getByRole('button', { name: `Editar fase canônica ${faseSeed.codigo}`, exact: true })
+      .click();
+    const campo = page.locator('[formControlName="unidadeSugeridaId"]');
+    await expect(
+      campo.getByRole('option', { name: 'CGA — Centro de Gestão Acadêmica' }),
+    ).toHaveCount(1);
+    expect((await runAxeWcagAA(page)).violations.map((violacao) => violacao.id)).toEqual([]);
+
+    await campo.selectOption({ label: 'CGA — Centro de Gestão Acadêmica' });
+    await page.getByRole('button', { name: 'Salvar fase canônica' }).click();
+    await expect.poll(() => capturado.puts.length).toBe(1);
+    expect(capturado.puts[0]).toMatchObject({ unidadeSugeridaId: UNIDADE_CGA.id });
   });
 
   test('editar a fase de isenção deriva a marca de isenção e esconde a coleta de inscrição', async ({

@@ -41,7 +41,7 @@ const FASES_CANONICAS = [
     codigo: 'HABILITACAO',
     nome: 'Habilitação',
     descricao: null,
-    donoTipico: 'CRCA',
+    unidadeSugerida: null,
     agrupaEtapas: false,
     permiteComplementacao: false,
     baseLegal: null,

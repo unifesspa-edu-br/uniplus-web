@@ -6,6 +6,7 @@ import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
+import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FasesCanonicasPage } from './fases-canonicas.page';
 
@@ -17,7 +18,7 @@ const faseAvaliacaoSeed: FaseCanonicaDto = {
   codigo: 'AVALIACAO',
   nome: 'Avaliação',
   descricao: null,
-  donoTipico: 'CEPS',
+  unidadeSugerida: null,
   agrupaEtapas: true,
   permiteComplementacao: false,
   baseLegal: null,
@@ -51,6 +52,7 @@ describe('FasesCanonicasPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     });
     fixture = TestBed.createComponent(FasesCanonicasPage);
@@ -71,10 +73,16 @@ describe('FasesCanonicasPage', () => {
     appRef.tick();
   };
 
-  async function flushLista(itens: readonly FaseCanonicaDto[]): Promise<void> {
+  async function flushLista(
+    itens: readonly FaseCanonicaDto[],
+    unidades: readonly unknown[] = [],
+  ): Promise<void> {
     const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`);
     expect(req.request.params.get('limit')).toBe('50');
     req.flush(itens);
+    controller
+      .match((r) => r.url === `${BASE}/api/organizacao/unidades`)
+      .forEach((r) => r.flush(unidades));
     await propagate();
   }
 
@@ -117,17 +125,12 @@ describe('FasesCanonicasPage', () => {
     expect(texto).not.toContain('crie uma nova entrada');
   });
 
-  it('CA-13: filtro de dono típico filtra registros carregados', async () => {
-    const faseCrca: FaseCanonicaDto = {
-      ...faseAvaliacaoSeed,
-      id: 'f2',
-      codigo: 'MATRICULA',
-      donoTipico: 'CRCA',
-    };
-    await flushLista([faseAvaliacaoSeed, faseCrca]);
+  it('CA-13: a busca filtra os registros carregados pelo código', async () => {
+    const faseMatricula: FaseCanonicaDto = { ...faseAvaliacaoSeed, id: 'f2', codigo: 'MATRICULA' };
+    await flushLista([faseAvaliacaoSeed, faseMatricula]);
 
-    component['donoTipicoFiltro'].set('CRCA');
-    expect(component['fasesFiltradas']()).toEqual([faseCrca]);
+    component['termoBusca'].set('matric');
+    expect(component['fasesFiltradas']()).toEqual([faseMatricula]);
   });
 
   it('CA-05: o drawer só abre a partir da edição de uma fase existente', async () => {
@@ -231,9 +234,7 @@ describe('FasesCanonicasPage', () => {
     // inscrição na mesma fase — as duas janelas são exclusivas.
     expect(component['ehFaseDeIsencao']()).toBe(true);
     expect(component['form'].controls.coletaSolicitacaoIsencao.value).toBe(true);
-    expect(
-      fixture.nativeElement.querySelector('[formControlName="coletaInscricao"]'),
-    ).toBeNull();
+    expect(fixture.nativeElement.querySelector('[formControlName="coletaInscricao"]')).toBeNull();
 
     component['salvar']();
     const put = controller.expectOne(
@@ -289,6 +290,126 @@ describe('FasesCanonicasPage', () => {
     const ajuda = select.closest('label')?.querySelector('.field__hint')?.textContent ?? '';
     expect(ajuda).toContain('Fixada no edital');
     expect(ajuda).not.toMatch(/terceiro|MEC|SiSU/i);
+  });
+
+  describe('unidade sugerida', () => {
+    const CGA = {
+      id: '01960000-0000-7000-0000-0000000000a2',
+      sigla: 'CGA',
+      nome: 'Centro de Gestão Acadêmica',
+    };
+    const comSugestao = (origemId = CGA.id): FaseCanonicaDto => ({
+      ...faseAvaliacaoSeed,
+      unidadeSugerida: { origemId, sigla: 'CGA', nome: CGA.nome },
+    });
+    const urlPut = (fase: FaseCanonicaDto) =>
+      `${BASE}/api/configuracao/admin/fases-canonicas/${fase.id}`;
+
+    async function salvarComSucesso(fase: FaseCanonicaDto): Promise<unknown> {
+      component['salvar']();
+      const put = controller.expectOne(urlPut(fase));
+      put.flush(null, { status: 204, statusText: 'No Content' });
+      await propagate();
+      await flushLista([fase], [CGA]);
+      return put.request.body;
+    }
+
+    it('a lista mostra a sigla da unidade sugerida, ou "—" quando não há', async () => {
+      await flushLista(
+        [comSugestao(), { ...faseAvaliacaoSeed, id: 'f2', codigo: 'MATRICULA' }],
+        [CGA],
+      );
+      fixture.detectChanges();
+
+      const celulas = Array.from<HTMLElement>(
+        fixture.nativeElement.querySelectorAll('td[data-label="Unidade sugerida"]'),
+      ).map((celula) => celula.textContent?.trim());
+      expect(celulas).toEqual(['CGA', '—']);
+    });
+
+    it('escolher a unidade no campo a leva ao comando de atualização', async () => {
+      await flushLista([faseAvaliacaoSeed], [CGA]);
+      component['abrirEdicao'](faseAvaliacaoSeed);
+      component['form'].controls.unidadeSugeridaId.setValue(CGA.id);
+
+      expect(await salvarComSucesso(faseAvaliacaoSeed)).toMatchObject({
+        unidadeSugeridaId: CGA.id,
+      });
+    });
+
+    it('limpar a unidade sugerida envia nulo, que retira a sugestão', async () => {
+      const fase = comSugestao();
+      await flushLista([fase], [CGA]);
+      component['abrirEdicao'](fase);
+      component['form'].controls.unidadeSugeridaId.setValue('');
+
+      expect(await salvarComSucesso(fase)).toMatchObject({ unidadeSugeridaId: null });
+    });
+
+    it('a unidade gravada fora das ativas continua como opção, marcada "(inativa)"', async () => {
+      const fase = comSugestao('01960000-0000-7000-0000-0000000000a9');
+      await flushLista([fase], [CGA]);
+      component['abrirEdicao'](fase);
+
+      const [primeira] = component['unidadesParaEscolha']();
+      expect(primeira).toMatchObject({ rotulo: 'CGA — Centro de Gestão Acadêmica', inativa: true });
+      expect(component['form'].controls.unidadeSugeridaId.value).toBe(
+        fase.unidadeSugerida?.origemId,
+      );
+    });
+
+    it('não afirma que a unidade está inativa quando o cadastro de unidades não carregou', async () => {
+      const fase = comSugestao();
+      const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`);
+      req.flush([fase]);
+      controller
+        .match((r) => r.url === `${BASE}/api/organizacao/unidades`)
+        .forEach((r) => r.flush(null, { status: 500, statusText: 'Server Error' }));
+      await propagate();
+      component['abrirEdicao'](fase);
+
+      expect(component['unidadesParaEscolha']()[0]?.inativa).toBe(false);
+    });
+
+    it('a recusa por unidade inexistente ou inativa aparece no campo', async () => {
+      await flushLista([faseAvaliacaoSeed], [CGA]);
+      component['abrirEdicao'](faseAvaliacaoSeed);
+      component['form'].controls.unidadeSugeridaId.setValue(CGA.id);
+
+      component['salvar']();
+      controller.expectOne(urlPut(faseAvaliacaoSeed)).flush(
+        {
+          type: 'about:blank',
+          title: 'Validação',
+          status: 422,
+          code: 'uniplus.validacao',
+          traceId: '00000000000000000000000000000001',
+          errors: [
+            {
+              field: 'unidadeSugeridaId',
+              code: 'uniplus.configuracao.fase_canonica.unidade_sugerida_nao_encontrada',
+              message: 'A unidade sugerida não está entre as unidades ativas.',
+            },
+          ],
+        },
+        {
+          status: 422,
+          statusText: 'Unprocessable Content',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+      await propagate();
+      fixture.detectChanges();
+
+      expect(component['erroDoCampo']('unidadeSugeridaId')).toBe(
+        'A unidade sugerida não está entre as unidades ativas.',
+      );
+      expect(
+        fixture.nativeElement
+          .querySelector('[formControlName="unidadeSugeridaId"]')
+          ?.getAttribute('aria-invalid'),
+      ).toBe('true');
+    });
   });
 
   it('CA-10: aviso de código do catálogo é visível mesmo com lista vazia', async () => {
@@ -399,7 +520,7 @@ describe('FasesCanonicasPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Fases canônicas, com dono típico, agrupamento de etapas e permissão de complementação documental',
+      'Fases canônicas, com unidade sugerida, agrupamento de etapas e permissão de complementação documental',
     );
   });
 });

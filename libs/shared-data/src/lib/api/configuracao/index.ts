@@ -67,7 +67,6 @@ export {
 export {
   FasesCanonicasApi,
   CODIGOS_FASE_CANONICA,
-  DONOS_TIPICOS_FASE,
   ORIGENS_DATA_FASE,
   ROTULO_ORIGEM_DATA_FASE,
   type AtualizarFaseCanonicaCommand,

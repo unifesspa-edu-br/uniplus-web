@@ -710,6 +710,16 @@ export class CronogramaStepComponent {
     }));
   }
 
+  /**
+   * A unidade que a fase canônica sugere, quando está entre as unidades carregadas; senão a
+   * unidade administradora do processo.
+   */
+  private unidadeInicialDaFase(faseCanonicaId: string): string | null {
+    const sugerida = this.catalogos.fasePorId().get(faseCanonicaId)?.unidadeSugerida?.origemId;
+    if (sugerida !== undefined && this.catalogos.opcoesDeUnidade().some((opcao) => opcao.id === sugerida)) return sugerida;
+    return this.store.draft().identificacao.unidadeAdministradoraId || null;
+  }
+
   acrescentarFase(): void {
     const escolhida = this.formulario.controls.faseAAcrescentar.value;
     if (escolhida === '') return;
@@ -721,7 +731,7 @@ export class CronogramaStepComponent {
         ordem: this.fases.length + 1,
         inicio: null,
         fim: null,
-        unidadeResponsavelId: this.store.draft().identificacao.unidadeAdministradoraId || null,
+        unidadeResponsavelId: this.unidadeInicialDaFase(escolhida),
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,

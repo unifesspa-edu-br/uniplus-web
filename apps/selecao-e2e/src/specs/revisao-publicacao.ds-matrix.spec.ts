@@ -45,7 +45,6 @@ const TIPO_ATO_DTO = {
 const FASE_DE_COLETA = {
   faseCanonicaOrigemId: '01960000-0000-7000-0000-000000000904',
   codigo: 'INSCRICAO',
-  donoInstitucional: 'CEPS',
   origemData: 'DECLARADA',
   agrupaEtapas: false,
   coletaInscricao: true,

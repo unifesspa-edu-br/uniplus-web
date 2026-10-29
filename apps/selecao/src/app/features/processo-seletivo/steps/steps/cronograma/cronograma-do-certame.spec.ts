@@ -77,7 +77,7 @@ function faseCanonica(parcial: Partial<FaseCanonicaDto>): FaseCanonicaDto {
     codigo: 'INSCRICAO',
     nome: 'Inscrição',
     descricao: null,
-    donoTipico: 'CEPS',
+    unidadeSugerida: null,
     agrupaEtapas: false,
     permiteComplementacao: false,
     baseLegal: null,
@@ -232,7 +232,6 @@ describe('exigências da fase', () => {
     const congelada = fase({
       produtos: [PRELIMINAR],
       congelados: {
-        donoTipico: 'CEPS',
         origemData: 'NO_EDITAL',
         agrupaEtapas: false,
         coletaInscricao: false,

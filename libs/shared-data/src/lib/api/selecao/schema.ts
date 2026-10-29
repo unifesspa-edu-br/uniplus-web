@@ -9975,7 +9975,6 @@ export interface components {
             /** Format: uuid */
             readonly faseCanonicaOrigemId: string;
             readonly codigo: string;
-            readonly donoInstitucional: string;
             readonly origemData: string;
             readonly agrupaEtapas: boolean;
             readonly permiteComplementacao: boolean;

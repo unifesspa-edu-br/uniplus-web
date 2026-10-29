@@ -33,7 +33,7 @@ const FASES_CANONICAS = [
     codigo: 'HETEROIDENTIFICACAO',
     nome: 'Heteroidentificação',
     descricao: null,
-    donoTipico: 'CEPS',
+    unidadeSugerida: null,
     agrupaEtapas: false,
     permiteComplementacao: false,
     baseLegal: null,

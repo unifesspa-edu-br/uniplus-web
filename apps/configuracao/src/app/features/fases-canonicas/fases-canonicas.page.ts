@@ -13,6 +13,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
+  API_MAX_PAGE_SIZE,
   ApiResult,
   Cursor,
   CursorPagina,
@@ -22,6 +23,7 @@ import {
   cursorToString,
   extractNextCursor,
   extractPrevCursor,
+  lookupCompleto,
   useApiResource,
   withVendorMime,
   STATUS_HTTP,
@@ -30,7 +32,6 @@ import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempot
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
-  DONOS_TIPICOS_FASE,
   ORIGENS_DATA_FASE,
   ROTULO_ORIGEM_DATA_FASE,
   type OrigemDataFase,
@@ -38,13 +39,13 @@ import {
   FasesCanonicasApi,
   type AtualizarFaseCanonicaCommand,
 } from '@uniplus/shared-data/configuracao';
+import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   AlertComponent,
   ConfirmDialogComponent,
   DrawerComponent,
   EmptyStateComponent,
   FilterBarComponent,
-  type UiFiltroAtivo,
   IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
@@ -58,11 +59,15 @@ const PAGE_SIZE = 50;
  * é bicondicional com este código no agregado: vale aqui e só aqui, e nunca junto
  * da coleta de inscrição — são janelas com prazos distintos.
  */
+function rotuloDaUnidade(unidade: { sigla: string; nome: string }): string {
+  return `${unidade.sigla} — ${unidade.nome}`;
+}
+
 const CODIGO_SOLICITACAO_ISENCAO = 'SOLICITACAO_ISENCAO';
 
 interface FaseForm {
   codigo: FormControl<string>;
-  donoTipico: FormControl<string>;
+  unidadeSugeridaId: FormControl<string>;
   nome: FormControl<string>;
   descricao: FormControl<string>;
   baseLegal: FormControl<string>;
@@ -75,7 +80,7 @@ interface FaseForm {
 
 const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
   'codigo',
-  'donoTipico',
+  'unidadeSugeridaId',
   'nome',
   'descricao',
   'baseLegal',
@@ -152,37 +157,21 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
         searchPlaceholder="Buscar por código ou nome…"
         searchAriaLabel="Buscar fase canônica"
         [(searchValue)]="termoBusca"
-        [filtrosAtivos]="filtrosAtivos()"
       >
-        <ng-container uiFilterBarSecondary>
-          <label class="field">
-            <span class="field__label sr-only">Filtrar por dono típico</span>
-            <select
-              class="select"
-              [value]="donoTipicoFiltro()"
-              (change)="donoTipicoFiltro.set($any($event.target).value)"
-            >
-              <option value="">Todos os donos típicos</option>
-              @for (dono of donosTipicos; track dono) {
-                <option [value]="dono">{{ dono }}</option>
-              }
-            </select>
-          </label>
-        </ng-container>
       </ui-filter-bar>
 
       @if (fasesFiltradas().length > 0) {
         <div class="table-responsive">
           <table>
             <caption class="sr-only">
-              Fases canônicas, com dono típico, agrupamento de etapas e permissão de complementação
-              documental
+              Fases canônicas, com unidade sugerida, agrupamento de etapas e permissão de
+              complementação documental
             </caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
                 <th scope="col">Nome</th>
-                <th scope="col">Dono típico</th>
+                <th scope="col">Unidade sugerida</th>
                 <th scope="col">Agrupa etapas</th>
                 <th scope="col">Permite compl.</th>
                 <th scope="col"><span class="sr-only">Ações</span></th>
@@ -195,8 +184,12 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
                     <code>{{ fase.codigo }}</code>
                   </td>
                   <td data-label="Nome">{{ fase.nome }}</td>
-                  <td data-label="Dono típico">
-                    <span class="tag">{{ fase.donoTipico || '—' }}</span>
+                  <td data-label="Unidade sugerida">
+                    @if (fase.unidadeSugerida; as unidade) {
+                      <span class="tag" [attr.title]="unidade.nome">{{ unidade.sigla }}</span>
+                    } @else {
+                      <span aria-label="Sem unidade sugerida">—</span>
+                    }
                   </td>
                   <td data-label="Agrupa etapas">
                     @if (fase.agrupaEtapas) {
@@ -239,7 +232,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
         @if (temFiltro()) {
           <ui-empty-state
             heading="Nenhuma fase encontrada"
-            description="Ajuste a busca ou o filtro de dono típico para ver resultados."
+            description="Ajuste a busca para ver resultados."
           >
             <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
               Limpar filtros
@@ -295,24 +288,34 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
                 <span class="field__error">{{ erroDoCampo('codigo') }}</span>
               }
             </label>
-            <label class="field" [class.is-error]="erroDoCampo('donoTipico')">
-              <span class="field__label is-required">Dono típico</span>
+            <label class="field" [class.is-error]="erroDoCampo('unidadeSugeridaId')">
+              <span class="field__label">Unidade sugerida</span>
               <select
                 class="select"
-                formControlName="donoTipico"
-                [attr.aria-invalid]="erroDoCampo('donoTipico') ? 'true' : null"
+                formControlName="unidadeSugeridaId"
+                [attr.aria-invalid]="erroDoCampo('unidadeSugeridaId') ? 'true' : null"
               >
-                <option value="" disabled>Selecione o dono típico</option>
-                @for (dono of donosTipicos; track dono) {
-                  <option [value]="dono">{{ dono }}</option>
+                <option value="">Nenhuma</option>
+                @for (unidade of unidadesParaEscolha(); track unidade.id) {
+                  <option [value]="unidade.id">
+                    {{ unidade.rotulo }}{{ unidade.inativa ? ' (inativa)' : '' }}
+                  </option>
                 }
               </select>
               <span class="field__hint">
-                Rótulo orientativo, não vinculante. MEC = data delegada SiSU; CONSEPE = recurso de
-                2ª instância.
+                Opcional. Vira a unidade responsável inicial desta fase no cronograma de um processo
+                novo; o cronograma continua permitindo trocá-la.
               </span>
-              @if (erroDoCampo('donoTipico')) {
-                <span class="field__error">{{ erroDoCampo('donoTipico') }}</span>
+              @if (unidades.comErro()) {
+                <span class="field__error" role="alert">
+                  Não foi possível carregar as unidades.
+                  <button type="button" class="cfg-link-button" (click)="unidades.recarregar()">
+                    Tentar novamente
+                  </button>
+                </span>
+              }
+              @if (erroDoCampo('unidadeSugeridaId')) {
+                <span class="field__error">{{ erroDoCampo('unidadeSugeridaId') }}</span>
               }
             </label>
             <label class="field" [class.is-error]="erroDoCampo('nome')">
@@ -468,13 +471,39 @@ export class FasesCanonicasPage {
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
+  private readonly unidadesApi = inject(UnidadesApi);
 
-  protected readonly donosTipicos = DONOS_TIPICOS_FASE;
+  protected readonly unidades = lookupCompleto(
+    (cursor) => this.unidadesApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    this.destroyRef,
+  );
+
   protected readonly origensData = ORIGENS_DATA_FASE;
 
   protected rotuloDaOrigem(origem: OrigemDataFase): string {
     return ROTULO_ORIGEM_DATA_FASE[origem];
   }
+
+  /**
+   * O cadastro e, quando faltar, a unidade já sugerida pela fase em edição, marcada como inativa:
+   * o campo não esvazia sem aviso, e a API recusa salvar com ela. Sem o cadastro carregado não
+   * se afirma que a unidade saiu dele.
+   */
+  protected readonly unidadesParaEscolha = computed<
+    readonly { id: string; rotulo: string; inativa: boolean }[]
+  >(() => {
+    const cadastro = this.unidades
+      .opcoes()
+      .map((unidade) => ({ id: unidade.id, rotulo: rotuloDaUnidade(unidade), inativa: false }));
+    const fase = this.fases().find((item) => item.id === this.faseEmEdicaoId());
+    const sugerida = fase?.unidadeSugerida;
+    if (!sugerida || cadastro.some((unidade) => unidade.id === sugerida.origemId)) return cadastro;
+    const cadastroCarregado = !this.unidades.pendente() && !this.unidades.comErro();
+    return [
+      { id: sugerida.origemId, rotulo: rotuloDaUnidade(sugerida), inativa: cadastroCarregado },
+      ...cadastro,
+    ];
+  });
 
   protected readonly saving = signal(false);
   protected readonly formOpen = signal(false);
@@ -492,11 +521,6 @@ export class FasesCanonicasPage {
   private readonly remocoesEmAndamento = new Set<string>();
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
   protected readonly termoBusca = signal('');
-  protected readonly donoTipicoFiltro = signal('');
-  protected readonly filtrosAtivos = computed<readonly UiFiltroAtivo[]>(() => {
-    const dono = this.donoTipicoFiltro();
-    return dono === '' ? [] : [{ nome: 'Dono típico', valor: dono }];
-  });
 
   private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
@@ -548,25 +572,21 @@ export class FasesCanonicasPage {
     },
   });
 
-  // Busca e filtro de dono típico client-side sobre a página carregada: o
-  // backend (api#592) só pagina por cursor, sem filtro de texto/dono no
+  // Busca client-side sobre a página carregada: o
+  // backend (api#592) só pagina por cursor, sem filtro de texto no
   // contrato (GET /api/configuracao/fases-canonicas aceita só cursor/limit/direction).
   protected readonly fasesFiltradas = computed(() => {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
-    const dono = this.donoTipicoFiltro();
     return this.fases().filter((fase) => {
-      const casaTermo =
+      return (
         termo.length === 0 ||
         fase.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
-        fase.nome.toLocaleLowerCase('pt-BR').includes(termo);
-      const casaDono = dono.length === 0 || fase.donoTipico === dono;
-      return casaTermo && casaDono;
+        fase.nome.toLocaleLowerCase('pt-BR').includes(termo)
+      );
     });
   });
 
-  protected readonly temFiltro = computed(
-    () => this.termoBusca().trim().length > 0 || this.donoTipicoFiltro().length > 0,
-  );
+  protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
 
   protected readonly errorMessage = computed<string | null>(() => {
     const problem = this.lista.problem();
@@ -585,7 +605,7 @@ export class FasesCanonicasPage {
 
   protected readonly form: FormGroup<FaseForm> = new FormGroup<FaseForm>({
     codigo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    donoTipico: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    unidadeSugeridaId: new FormControl('', { nonNullable: true }),
     nome: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(255)],
@@ -619,6 +639,7 @@ export class FasesCanonicasPage {
   );
 
   constructor() {
+    this.unidades.recarregar();
     effect(() => {
       const problem = this.lista.problem();
       if (problem && problem.status >= 500) {
@@ -672,14 +693,13 @@ export class FasesCanonicasPage {
 
   protected limparFiltros(): void {
     this.termoBusca.set('');
-    this.donoTipicoFiltro.set('');
   }
 
   protected abrirEdicao(fase: FaseCanonicaDto): void {
     this.faseEmEdicaoId.set(fase.id);
     this.form.reset({
       codigo: fase.codigo,
-      donoTipico: fase.donoTipico ?? '',
+      unidadeSugeridaId: fase.unidadeSugerida?.origemId ?? '',
       nome: fase.nome,
       descricao: fase.descricao ?? '',
       baseLegal: fase.baseLegal ?? '',
@@ -855,7 +875,7 @@ export class FasesCanonicasPage {
       id: this.faseEmEdicaoId() ?? '',
       nome: raw.nome.trim(),
       descricao: nullIfBlank(raw.descricao),
-      donoTipico: nullIfBlank(raw.donoTipico),
+      unidadeSugeridaId: nullIfBlank(raw.unidadeSugeridaId),
       agrupaEtapas: raw.codigo === 'AVALIACAO' ? raw.agrupaEtapas : false,
       permiteComplementacao:
         raw.codigo === 'HOMOLOGACAO' || raw.codigo === 'RECURSOS'
