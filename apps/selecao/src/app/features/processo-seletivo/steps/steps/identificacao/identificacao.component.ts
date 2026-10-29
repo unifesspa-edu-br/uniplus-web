@@ -13,10 +13,10 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import {
   type ProblemDetails,
   ProblemI18nService,
-  extractNextCursor,
+  coletarPaginas,
   isApiOk,
 } from '@uniplus/shared-core/http';
-import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
+import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import {
@@ -30,17 +30,17 @@ import type { LocalidadeSelecionada } from '../../processo-seletivo.models';
 import { OrigemCandidatosSelecionada, StepValidation } from '../../processo-seletivo.models';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import {
+  comoOpcaoDeUnidade,
+  opcoesComAsGravadas,
+  type OpcaoDeUnidade,
+} from '../../shared/unidades-do-cadastro';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import {
   ehRecusaDoIdentificadorLegivel,
   normalizarIdentificadorLegivel,
   problemaDoIdentificadorLegivel,
 } from '../../shared/identificador-legivel';
-
-interface UnidadeOption {
-  readonly id: string;
-  readonly rotulo: string;
-}
 
 /** Janela do seletor de municípios, igual à do calendário de dias úteis. */
 const MUNICIPIOS_LIMIT = 20;
@@ -111,7 +111,7 @@ export class IdentificacaoStepComponent {
     return 'Nenhum município com esse nome.';
   });
 
-  private readonly catalogoUnidades = signal<readonly UnidadeOption[]>([]);
+  private readonly catalogoUnidades = signal<readonly OpcaoDeUnidade[]>([]);
 
   /**
    * Catálogo vivo mais, quando faltar, a unidade que o processo retomado
@@ -123,14 +123,11 @@ export class IdentificacaoStepComponent {
    * administra o certame. O snapshot devolvido por Seleção traz sigla e nome,
    * e é a única fonte desse rótulo nessa situação.
    */
-  readonly unidades = computed<readonly UnidadeOption[]>(() => {
+  readonly unidades = computed<readonly OpcaoDeUnidade[]>(() => {
     const catalogo = this.catalogoUnidades();
     const snapshot = this.store.remoteSnapshot()?.unidadeAdministradora;
 
-    if (snapshot === undefined) return catalogo;
-    if (catalogo.some((opcao) => opcao.id === snapshot.origemId)) return catalogo;
-
-    return [{ id: snapshot.origemId, rotulo: `${snapshot.sigla} — ${snapshot.nome}` }, ...catalogo];
+    return opcoesComAsGravadas(catalogo, snapshot === undefined ? [] : [snapshot]);
   });
   /**
    * O cadastro como se lê: o que o rascunho guarda, com o rótulo de cada escolha. Serve à
@@ -349,37 +346,23 @@ export class IdentificacaoStepComponent {
   carregarUnidades(): void {
     this.unidadesCarregando.set(true);
     this.unidadesErro.set(null);
-    this.carregarPaginaDeUnidades();
+    this.carregarCatalogoDeUnidades();
   }
 
-  private carregarPaginaDeUnidades(
-    cursor?: string,
-    acumuladas: readonly UnidadeOption[] = [],
-  ): void {
-    const consulta =
-      cursor === undefined
-        ? this.unidadesApi.listar()
-        : this.unidadesApi.listar({ cursor, direction: 'next' });
-
-    consulta.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (result) => {
-        if (!isApiOk(result)) {
-          this.exibirErroDeUnidades();
-          return;
-        }
-
-        const unidades = [...acumuladas, ...result.data.map((item) => toOption(item))];
-        const proximoCursor = extractNextCursor(result.headers.get('Link'));
-        if (proximoCursor !== null) {
-          this.carregarPaginaDeUnidades(proximoCursor, unidades);
-          return;
-        }
-
-        this.catalogoUnidades.set(unidades);
-        this.unidadesCarregando.set(false);
-      },
-      error: () => this.exibirErroDeUnidades(),
-    });
+  private carregarCatalogoDeUnidades(): void {
+    coletarPaginas((cursor) => this.unidadesApi.listar({ cursor }))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          if (!isApiOk(result)) {
+            this.exibirErroDeUnidades();
+            return;
+          }
+          this.catalogoUnidades.set(result.data.map(comoOpcaoDeUnidade));
+          this.unidadesCarregando.set(false);
+        },
+        error: () => this.exibirErroDeUnidades(),
+      });
   }
 
   private exibirErroDeUnidades(): void {
@@ -632,8 +615,4 @@ export class IdentificacaoStepComponent {
    * elege sozinho: adotar o mais recente trocaria o edital do certame sem o
    * operador perceber.
    */
-}
-
-function toOption(unidade: UnidadeDto): UnidadeOption {
-  return { id: unidade.id, rotulo: `${unidade.sigla} — ${unidade.nome}` };
 }

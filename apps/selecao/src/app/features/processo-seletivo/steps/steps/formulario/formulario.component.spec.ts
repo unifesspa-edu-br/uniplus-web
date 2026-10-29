@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import {
@@ -36,7 +37,7 @@ const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
 
 const CONGELADOS_DA_INSCRICAO: AtributosCongeladosDaFase = {
   donoTipico: 'CEPS',
-  origemData: 'PROPRIA',
+  origemData: 'NO_EDITAL',
   agrupaEtapas: false,
   coletaInscricao: true,
   permiteComplementacao: false,
@@ -50,6 +51,7 @@ const FASE_INSCRICAO: FaseDoCronograma = {
   ordem: 0,
   inicio: null,
   fim: null,
+  unidadeResponsavelId: null,
   produtos: [],
   faseConcluinteCodigo: null,
   emiteParecerIndividual: false,
@@ -166,6 +168,7 @@ describe('FormularioStepComponent', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         { provide: GEO_BASE_PATH, useValue: BASE },
       ],
@@ -505,7 +508,7 @@ describe('FormularioStepComponent', () => {
       ordem: 1,
       congelados: {
         donoTipico: 'CEPS',
-        origemData: 'PROPRIA',
+        origemData: 'NO_EDITAL',
         agrupaEtapas: false,
         coletaInscricao: false,
         permiteComplementacao: false,

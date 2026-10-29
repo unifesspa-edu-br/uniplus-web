@@ -32,6 +32,8 @@ import {
   CONFIGURACAO_BASE_PATH,
   DONOS_TIPICOS_FASE,
   ORIGENS_DATA_FASE,
+  ROTULO_ORIGEM_DATA_FASE,
+  type OrigemDataFase,
   FaseCanonicaDto,
   FasesCanonicasApi,
   type AtualizarFaseCanonicaCommand,
@@ -338,12 +340,12 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
               >
                 <option value="" disabled>Selecione a origem da data</option>
                 @for (origem of origensData; track origem) {
-                  <option [value]="origem">{{ origem }}</option>
+                  <option [value]="origem">{{ rotuloDaOrigem(origem) }}</option>
                 }
               </select>
               <span class="field__hint">
-                PROPRIA = data definida pela instituição; DELEGADA = data definida por terceiro,
-                como o cronograma do SiSU.
+                Fixada no edital: a data consta do edital e a janela é obrigatória. Definida na
+                execução: a unidade responsável pela fase define a data durante o processo.
               </span>
               @if (erroDoCampo('origemData')) {
                 <span class="field__error">{{ erroDoCampo('origemData') }}</span>
@@ -469,6 +471,10 @@ export class FasesCanonicasPage {
 
   protected readonly donosTipicos = DONOS_TIPICOS_FASE;
   protected readonly origensData = ORIGENS_DATA_FASE;
+
+  protected rotuloDaOrigem(origem: OrigemDataFase): string {
+    return ROTULO_ORIGEM_DATA_FASE[origem];
+  }
 
   protected readonly saving = signal(false);
   protected readonly formOpen = signal(false);

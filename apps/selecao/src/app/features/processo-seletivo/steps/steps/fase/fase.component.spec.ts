@@ -6,6 +6,7 @@ import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import {
   CaraterEtapa,
@@ -55,7 +56,7 @@ const FASES_CANONICAS = [
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: false,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
   },
   {
     id: ID_RECURSOS,
@@ -65,7 +66,7 @@ const FASES_CANONICAS = [
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: false,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
   },
 ];
 
@@ -163,7 +164,7 @@ function congeladosDaFase(
 ): AtributosCongeladosDaFase {
   return {
     donoTipico: 'CEPS',
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
     agrupaEtapas: false,
     coletaInscricao: false,
     permiteComplementacao: false,
@@ -181,6 +182,7 @@ function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
     ordem: 1,
     inicio: '2026-03-01T08:00:00-03:00',
     fim: '2026-03-10T18:00:00-03:00',
+    unidadeResponsavelId: null,
     produtos: [],
     faseConcluinteCodigo: null,
     emiteParecerIndividual: false,
@@ -210,6 +212,7 @@ describe('FaseStepComponent', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();

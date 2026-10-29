@@ -25,6 +25,7 @@ function fase(parcial: Partial<FaseDoCronograma> = {}): FaseDoCronograma {
     ordem: 1,
     inicio: null,
     fim: null,
+    unidadeResponsavelId: null,
     produtos: [],
     faseConcluinteCodigo: null,
     emiteParecerIndividual: false,
@@ -458,6 +459,24 @@ describe('tradução das recusas do domínio', () => {
 
     expect(traduzida.porCampo.size).toBe(0);
     expect(traduzida.gerais[0]).toContain('Na fase Recursos');
+  });
+
+  it('manda a recusa da unidade ao resumo, orientando a corrigi-la no Cronograma', () => {
+    const traduzida = traduzirRecusa(
+      recusa([
+        {
+          field: '$.fases[1].unidadeResponsavelId',
+          code: 'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada',
+        },
+      ]),
+      0,
+      nomeDaFase,
+    );
+
+    expect(traduzida.porCampo.size).toBe(0);
+    expect(traduzida.gerais).toEqual([
+      'Na fase Recursos: a unidade desta fase saiu do cadastro. Corrija a unidade da fase no passo Cronograma.',
+    ]);
   });
 
   it('traduz a recusa da âncora que não é preliminar da própria fase', () => {

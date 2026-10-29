@@ -31,7 +31,7 @@ const faseSeed: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
-  origemData: 'PROPRIA',
+  origemData: 'NO_EDITAL',
   criadoEm: '2026-06-10T12:00:00Z',
 };
 

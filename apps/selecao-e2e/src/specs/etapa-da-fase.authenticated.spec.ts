@@ -46,7 +46,7 @@ const FASES_CANONICAS = [
     permiteComplementacao: false,
     baseLegal: null,
     coletaInscricao: false,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
     criadoEm: '2026-08-30T12:00:00Z',
   },
 ] as const;

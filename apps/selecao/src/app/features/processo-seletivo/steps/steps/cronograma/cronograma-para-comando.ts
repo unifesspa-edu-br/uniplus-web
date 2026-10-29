@@ -36,6 +36,7 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
     faseCanonicaId: fase.faseCanonicaId,
     inicio: fase.inicio,
     fim: fase.fim,
+    unidadeResponsavelId: fase.unidadeResponsavelId,
     produtos: fase.produtos.map((produto) => ({
       atoCodigo: produto.atoCodigo,
       papel: produto.papel,

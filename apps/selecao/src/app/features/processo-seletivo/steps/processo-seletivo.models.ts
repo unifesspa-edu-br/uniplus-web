@@ -187,10 +187,12 @@ export interface FaseDoCronograma {
   readonly faseCanonicaId: string;
   readonly codigo: string;
   readonly ordem: number;
-  /** `null` só é válido em fase cuja origem de data é delegada. */
+  /** `null` só é válido em fase cuja data é definida na execução. */
   readonly inicio: string | null;
   readonly fim: string | null;
   readonly produtos: readonly ProdutoDaFase[];
+  /** Unidade que responde pela fase; `null` é aceito no rascunho e recusado na publicação. */
+  readonly unidadeResponsavelId: string | null;
   /** Código canônico da fase que conclui o ciclo recursal desta, quando não é ela mesma. */
   readonly faseConcluinteCodigo: string | null;
   readonly emiteParecerIndividual: boolean;

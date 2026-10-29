@@ -520,6 +520,11 @@ export function eErroDeDocumentoOuAto(codigo: string): boolean {
   return CODIGOS_DE_DOCUMENTO_OU_ATO.has(codigo);
 }
 
+/** A recusa de publicar ou retificar com fase do cronograma sem unidade responsável. */
+export function eErroDeFaseSemUnidade(codigo: string): boolean {
+  return codigo === 'uniplus.selecao.processo_seletivo.fase_sem_unidade_responsavel';
+}
+
 /**
  * Recusas de `GET /conformidade-legal` que NÃO são falha de carga: o servidor
  * entendeu o pedido e respondeu que ainda não há como avaliar, porque o

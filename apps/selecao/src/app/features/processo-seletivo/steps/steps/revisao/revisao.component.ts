@@ -42,6 +42,7 @@ import {
   comoComandoDePublicacao,
   dataReferenciaLegalDe,
   eErroDeDocumentoOuAto,
+  eErroDeFaseSemUnidade,
   faseQueAncoraOPeriodoDeInscricao,
   mensagensDePublicacao,
   rotuloDaDimensao as rotularDimensao,
@@ -65,6 +66,8 @@ interface RecusaDePublicacao {
   readonly obrigatoriedadesReprovadas: readonly ObrigatoriedadeReprovadaProblem[] | null;
   /** Preenchido só para os erros nomeados que nenhum dos dois checklists cobre (documento, tipo de ato). */
   readonly documentoOuAto: string | null;
+  /** A recusa cita fase do cronograma sem unidade responsável; a lista é lida do rascunho atual. */
+  readonly citaFaseSemUnidade: boolean;
 }
 
 /**
@@ -550,6 +553,24 @@ export class RevisaoStepComponent {
   });
 
   readonly rotuloDaDimensao = rotularDimensao;
+
+  /** As fases do rascunho sem unidade responsável, com o nome que o operador reconhece. */
+  private fasesSemUnidade(): readonly { readonly codigo: string; readonly nome: string }[] {
+    const nomeDaFase = this.catalogosDoCronograma.nomeDaFase();
+    return this.store
+      .draft()
+      .cronograma.fases.filter((fase) => fase.unidadeResponsavelId === null)
+      .map((fase) => ({ codigo: fase.codigo, nome: nomeDaFase(fase.codigo) }));
+  }
+
+  /** Leva ao Cronograma já na fase citada pela recusa. */
+  irParaFase(codigo: string): void {
+    this.store.irParaFase(codigo);
+  }
+
+  readonly fasesSemUnidadeDaRecusa = computed(() =>
+    this.ultimaRecusa()?.citaFaseSemUnidade ? this.fasesSemUnidade() : [],
+  );
   /** Navega ao passo dono do item, pelo código estável — nunca por comparação de frase (CA-04). */
   irParaSecao(index: number): void {
     this.store.goTo(index);
@@ -717,6 +738,7 @@ export class RevisaoStepComponent {
           documentoOuAto: eErroDeDocumentoOuAto(problem.code)
             ? this.problemI18n.resolve(problem).title
             : null,
+          citaFaseSemUnidade: eErroDeFaseSemUnidade(problem.code),
         });
         return { valid: false, messages: [this.problemI18n.resolve(problem).title] };
       }

@@ -9991,6 +9991,7 @@ export interface components {
             readonly emiteParecerIndividual: boolean;
             readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaDto"][];
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseDto"];
+            readonly unidadeResponsavel: null | components["schemas"]["UnidadeResponsavelDaFaseDto"];
         };
         readonly FaseCronogramaInput: {
             /** Format: int32 */
@@ -10006,6 +10007,8 @@ export interface components {
             readonly emiteParecerIndividual: boolean;
             readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaInput"][];
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseInput"];
+            /** Format: uuid */
+            readonly unidadeResponsavelId?: null | string;
         };
         readonly FaseDosDocumentosDto: {
             /** Format: uuid */
@@ -11281,6 +11284,12 @@ export interface components {
             readonly tipo: string;
             readonly cidadeNome: null | string;
             readonly cidadeUf: null | string;
+        };
+        readonly UnidadeResponsavelDaFaseDto: {
+            /** Format: uuid */
+            readonly origemId: string;
+            readonly sigla: string;
+            readonly nome: string;
         };
         readonly UnidadeAdministradoraSnapshotDto: {
             /** Format: uuid */

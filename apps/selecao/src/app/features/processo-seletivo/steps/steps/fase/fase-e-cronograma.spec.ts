@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
+import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { CaraterEtapa, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
@@ -49,7 +50,7 @@ const FASES_CANONICAS = [
     agrupaEtapas: true,
     permiteComplementacao: false,
     coletaInscricao: false,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
   },
   {
     id: ID_RESULTADO,
@@ -59,7 +60,7 @@ const FASES_CANONICAS = [
     agrupaEtapas: false,
     permiteComplementacao: false,
     coletaInscricao: false,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
   },
 ];
 
@@ -183,6 +184,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
@@ -238,6 +240,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
           ordem: 1,
           inicio: '2026-03-01T08:00:00-03:00',
           fim: '2026-03-10T18:00:00-03:00',
+          unidadeResponsavelId: null,
           produtos: [],
           faseConcluinteCodigo: null,
           emiteParecerIndividual: false,
@@ -251,6 +254,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
           ordem: 2,
           inicio: '2026-04-01T08:00:00-03:00',
           fim: '2026-04-05T18:00:00-03:00',
+          unidadeResponsavelId: null,
           produtos: [],
           faseConcluinteCodigo: null,
           emiteParecerIndividual: false,

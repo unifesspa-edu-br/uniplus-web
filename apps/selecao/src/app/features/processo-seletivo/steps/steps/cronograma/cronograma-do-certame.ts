@@ -13,12 +13,13 @@ import { recursoResolvido } from './cronograma-para-comando';
 import {
   problemasDaFase,
   publicaResultadoDefinitivo,
+  UNIDADE_RESPONSAVEL_NAO_ENCONTRADA,
   type AtoDoCatalogo,
 } from '../fase/configuracao-da-fase';
 import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
 
 /** Origem de data que obriga a fase a declarar janela. */
-export const ORIGEM_DATA_PROPRIA = 'PROPRIA';
+export const ORIGEM_DATA_NO_EDITAL = 'NO_EDITAL';
 
 /**
  * O que a fase escolhida exige — nunca declarado pelo operador. É a diferença
@@ -44,6 +45,8 @@ export interface ExigenciasDaFase {
 interface AtributosDaFaseCanonica {
   readonly origemData: string;
   readonly agrupaEtapas: boolean;
+  readonly coletaInscricao: boolean;
+  readonly coletaSolicitacaoIsencao: boolean;
 }
 
 export function exigenciasDe(
@@ -51,7 +54,10 @@ export function exigenciasDe(
   produtos: readonly ProdutoDaFase[],
 ): ExigenciasDaFase {
   return {
-    janelaObrigatoria: canonica.origemData === ORIGEM_DATA_PROPRIA,
+    janelaObrigatoria:
+      canonica.origemData === ORIGEM_DATA_NO_EDITAL ||
+      canonica.coletaInscricao ||
+      canonica.coletaSolicitacaoIsencao,
     publicaProduto: produtos.length > 0,
     admiteRecurso: produtos.some((produto) => produto.papel === PAPEL_PRELIMINAR),
     agrupaEtapas: canonica.agrupaEtapas,
@@ -634,6 +640,22 @@ export function localDoErroDaEtapa(field: string): {
     posicao: posicao === undefined ? null : Number(posicao),
     subcampo: subcampo ?? null,
   };
+}
+
+/**
+ * As posições, no cronograma enviado, das fases cuja unidade o servidor não encontrou. O campo é
+ * lido sem prefixo de caminho (`$.`, `request.`) e sem caixa, como em `ehCampoDaResolucao`.
+ */
+export function fasesComUnidadeNaoEncontrada(
+  erros: readonly { readonly field: string; readonly code: string }[],
+): readonly number[] {
+  return erros.flatMap((erro) => {
+    const [, indice] =
+      /^(?:\$\.|request\.)?fases\[(\d+)\]\.unidadeResponsavelId$/i.exec(erro.field) ?? [];
+    return indice !== undefined && erro.code === UNIDADE_RESPONSAVEL_NAO_ENCONTRADA
+      ? [Number(indice)]
+      : [];
+  });
 }
 
 /**

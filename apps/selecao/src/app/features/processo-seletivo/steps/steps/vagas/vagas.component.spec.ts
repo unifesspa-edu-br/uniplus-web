@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, type FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { OrigemCandidatos, ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -147,6 +148,7 @@ describe('VagasStepComponent — remoção de oferta do quadro', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -270,6 +272,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -796,6 +799,7 @@ const ROTA_SIMULACAO_TESTE = `${ROTA_DISTRIBUICAO_TESTE}/simulacao`;
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -1263,6 +1267,7 @@ describe('VagasStepComponent — totais do quadro', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -1371,6 +1376,7 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -1684,6 +1690,7 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -1822,6 +1829,7 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -2078,6 +2086,7 @@ describe('VagasStepComponent — consulta', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -2152,6 +2161,7 @@ describe('VagasStepComponent — consulta com o catálogo em falha', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 
@@ -2398,6 +2408,7 @@ describe('VagasStepComponent — número de opções de curso', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();
 

@@ -44,7 +44,7 @@ const FASES_CANONICAS = [
     permiteComplementacao: false,
     baseLegal: null,
     coletaInscricao: true,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
     criadoEm: '2026-08-30T12:00:00Z',
   },
   {
@@ -57,7 +57,7 @@ const FASES_CANONICAS = [
     permiteComplementacao: false,
     baseLegal: null,
     coletaInscricao: false,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
     criadoEm: '2026-08-30T12:00:00Z',
   },
 ] as const;
@@ -539,7 +539,7 @@ const DETALHE_PUBLICADO = {
       faseCanonicaOrigemId: FASES_CANONICAS[0].id,
       codigo: FASES_CANONICAS[0].codigo,
       donoInstitucional: 'CEPS',
-      origemData: 'PROPRIA',
+      origemData: 'NO_EDITAL',
       agrupaEtapas: false,
       permiteComplementacao: false,
       produzResultado: false,

@@ -1,10 +1,12 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
   effect,
   inject,
+  Injector,
   signal,
   untracked,
 } from '@angular/core';
@@ -27,6 +29,14 @@ import {
 import { PAPEIS_ESCOLHIVEIS } from '../fase/configuracao-da-fase';
 import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import {
+  opcoesComAsGravadas,
+  rotuloDaUnidade,
+  type UnidadeGravada,
+  UNIDADE_EM_CARGA,
+  UNIDADE_FORA_DO_CADASTRO,
+  UNIDADE_SEM_CADASTRO_CARREGADO,
+} from '../../shared/unidades-do-cadastro';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import {
@@ -98,6 +108,7 @@ import {
   campoDaRecusa,
   recusaDoCampoDaEtapa,
   recusaDaEtapaDeNotaDoEnem,
+  fasesComUnidadeNaoEncontrada,
   localDoErroDaEtapa,
   declaraNotaMaxima,
   etapaComOQueDeclara,
@@ -147,6 +158,8 @@ const CARATERES = [
 interface FaseNaLinhaDoTempo extends DescricaoDaFase {
   readonly grupo: FormGroup<FaseForm>;
   readonly indice: number;
+  /** Rótulo da unidade responsável, ou `null` com a fase sem unidade. */
+  readonly unidade: string | null;
 }
 
 @Component({
@@ -171,6 +184,7 @@ export class CronogramaStepComponent {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly camposPressupostos = inject(CamposPressupostosService);
+  private readonly injector = inject(Injector);
 
   readonly careteres = CARATERES;
   readonly formulario = novoFormularioDoCronograma();
@@ -237,6 +251,78 @@ export class CronogramaStepComponent {
       this.algoritmoConfirmadoNestaSessao(),
   );
 
+  /**
+   * Unidades oferecidas a cada fase: o cadastro e, quando faltar, a unidade que o processo
+   * guardou — uma unidade que saiu do cadastro continua sendo a da fase gravada.
+   */
+  readonly unidadesParaEscolha = computed(() =>
+    opcoesComAsGravadas(
+      this.catalogos.opcoesDeUnidade(),
+      (this.store.remoteSnapshot()?.cronogramaFases ?? []).flatMap((fase) =>
+        fase.unidadeResponsavel === null ? [] : [fase.unidadeResponsavel],
+      ),
+    ),
+  );
+
+  /** A unidade que o servidor recusou em cada fase; vale enquanto a fase continua com ela. */
+  private readonly unidadesRecusadas = signal<ReadonlyMap<FormGroup<FaseForm>, string>>(new Map());
+
+  unidadeRecusada(grupo: FormGroup<FaseForm>): boolean {
+    return this.unidadesRecusadas().get(grupo) === grupo.controls.unidadeResponsavelId.value;
+  }
+
+  private recusarUnidades(
+    enviadas: readonly FormGroup<FaseForm>[],
+    indices: readonly number[],
+  ): void {
+    if (indices.length === 0) return;
+    const recusadas = indices.flatMap((indice) => {
+      const grupo = enviadas[indice];
+      return grupo === undefined
+        ? []
+        : [[grupo, grupo.controls.unidadeResponsavelId.value] as const];
+    });
+    this.unidadesRecusadas.set(new Map(recusadas));
+    this.fasesExpandidas.update(
+      (abertas) => new Set([...abertas, ...indices.filter((indice) => indice < enviadas.length)]),
+    );
+    this.versaoDoFormulario.update((versao) => versao + 1);
+    this.catalogos.carregarUnidades();
+  }
+
+  /** A cópia da unidade que o processo gravou em cada fase, pelo código da fase. */
+  private readonly gravadaPorFase = computed<ReadonlyMap<string, UnidadeGravada>>(
+    () =>
+      new Map(
+        (this.store.remoteSnapshot()?.cronogramaFases ?? []).flatMap((fase) =>
+          fase.unidadeResponsavel === null ? [] : [[fase.codigo, fase.unidadeResponsavel] as const],
+        ),
+      ),
+  );
+
+  private readonly rotuloNoCadastro = computed<ReadonlyMap<string, string>>(
+    () => new Map(this.unidadesParaEscolha().map((opcao) => [opcao.id, opcao.rotulo] as const)),
+  );
+
+  /**
+   * O rótulo da unidade da fase, ou `null` quando a fase está sem unidade. A cópia gravada na
+   * própria fase prevalece sobre o cadastro, que só nomeia a unidade escolhida e ainda não
+   * gravada nela. Só afirma que a unidade
+   * não está no cadastro depois que o cadastro carregou; antes disso o texto é neutro.
+   */
+  private rotuloDaUnidade(grupo: FormGroup<FaseForm>): string | null {
+    const id = grupo.controls.unidadeResponsavelId.value;
+    if (id === '') return null;
+    const gravada = this.gravadaPorFase().get(grupo.controls.codigo.value);
+    const rotulo =
+      gravada?.origemId === id ? rotuloDaUnidade(gravada) : this.rotuloNoCadastro().get(id);
+    if (rotulo !== undefined) return rotulo;
+    if (this.catalogos.unidadesCarregadas()) return UNIDADE_FORA_DO_CADASTRO;
+    return this.catalogos.erroDeUnidades() === null
+      ? UNIDADE_EM_CARGA
+      : UNIDADE_SEM_CADASTRO_CARREGADO;
+  }
+
   constructor() {
     this.catalogos.carregar();
     this.espelharRascunho(this.store.draft().cronograma);
@@ -246,6 +332,23 @@ export class CronogramaStepComponent {
     effect(() => {
       const cronograma = this.store.draft().cronograma;
       untracked(() => this.espelharRascunho(cronograma));
+    });
+
+    // Quem chega de uma recusa que cita a fase cai nela: aberta e com o foco no campo da unidade.
+    // O foco espera o passo estar visível e a troca de passo devolver o foco ao título.
+    effect(() => {
+      const codigo = this.store.faseEmFoco();
+      if (codigo === null || !this.store.cronogramaVisivel()) return;
+      const alvo = this.linhaDoTempo().find((item) => item.grupo.controls.codigo.value === codigo);
+      untracked(() => this.store.faseEmFoco.set(null));
+      if (alvo === undefined) return;
+      untracked(() => {
+        this.fasesExpandidas.update((abertas) => new Set(abertas).add(alvo.indice));
+        afterNextRender(
+          () => setTimeout(() => document.getElementById(`cr-unidade-${alvo.indice}`)?.focus(), 0),
+          { injector: this.injector },
+        );
+      });
     });
 
     // Formulário → rascunho, que é o que persiste entre passos e alimenta a
@@ -321,6 +424,7 @@ export class CronogramaStepComponent {
       grupo,
       ...descreverFase(faseDoFormulario(grupo), fasePorId),
       indice,
+      unidade: this.rotuloDaUnidade(grupo),
     }));
   });
 
@@ -617,6 +721,7 @@ export class CronogramaStepComponent {
         ordem: this.fases.length + 1,
         inicio: null,
         fim: null,
+        unidadeResponsavelId: this.store.draft().identificacao.unidadeAdministradoraId || null,
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
@@ -1639,15 +1744,21 @@ export class CronogramaStepComponent {
       // fase, essa recusa saiu — qualquer fase se subdivide, e é o vínculo que responde por
       // onde a etapa vive. Remover uma fase também é seguro por aqui: o agregado poda as
       // etapas dela junto.
+      const enviadas = [...this.fases.controls];
       const cronograma = await gravarCronogramaFases(this.cadastro, processoId, fases);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!cronograma.ok) {
+        this.recusarUnidades(
+          enviadas,
+          fasesComUnidadeNaoEncontrada(cronograma.problem.errors ?? []),
+        );
         return {
           valid: false,
           messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
         };
       }
 
+      this.unidadesRecusadas.set(new Map());
       this.limparRecusasDosCampos();
       const gravacaoDeEtapas = await this.cadastro.definirEtapas(
         processoId,

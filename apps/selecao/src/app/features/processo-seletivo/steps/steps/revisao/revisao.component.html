@@ -293,6 +293,31 @@
         Documento e ato de publicação
       </h2>
 
+      @if (fasesSemUnidadeDaRecusa().length > 0) {
+        <div class="alert alert--danger" role="alert">
+          <p id="revisao-fase-sem-unidade">
+            Toda fase do cronograma precisa de unidade responsável para publicar.
+          </p>
+          <ul>
+            @for (fase of fasesSemUnidadeDaRecusa(); track fase.codigo) {
+              <li>
+                {{ fase.nome }}
+                @if (!store.emConsulta()) {
+                  <button
+                    class="btn btn--sm btn--ghost"
+                    type="button"
+                    aria-describedby="revisao-fase-sem-unidade"
+                    (click)="irParaFase(fase.codigo)"
+                  >
+                    Ir para a fase {{ fase.nome }}
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
       @if (ultimaRecusa()?.documentoOuAto; as erroDoc) {
         <p class="alert alert--danger" role="alert">{{ erroDoc }}</p>
       }

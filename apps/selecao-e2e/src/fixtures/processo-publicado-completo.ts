@@ -162,7 +162,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
       faseCanonicaOrigemId: FASE_CANONICA_ID,
       codigo: CODIGO_DA_FASE,
       donoInstitucional: 'CEPS',
-      origemData: 'PROPRIA',
+      origemData: 'NO_EDITAL',
       agrupaEtapas: true,
       permiteComplementacao: false,
       produzResultado: true,
@@ -325,7 +325,7 @@ export const FASES_CANONICAS = [
     permiteComplementacao: false,
     baseLegal: null,
     coletaInscricao: true,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
     criadoEm: '2026-08-30T12:00:00Z',
   },
 ] as const;

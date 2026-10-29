@@ -23,7 +23,7 @@ const faseAvaliacaoSeed: FaseCanonicaDto = {
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
-  origemData: 'PROPRIA',
+  origemData: 'NO_EDITAL',
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -252,12 +252,12 @@ describe('FasesCanonicasPage', () => {
     const faseComColeta: FaseCanonicaDto = {
       ...faseAvaliacaoSeed,
       coletaInscricao: true,
-      origemData: 'DELEGADA',
+      origemData: 'NA_EXECUCAO',
     };
     await flushLista([faseComColeta]);
 
     component['abrirEdicao'](faseComColeta);
-    expect(component['form'].controls.origemData.value).toBe('DELEGADA');
+    expect(component['form'].controls.origemData.value).toBe('NA_EXECUCAO');
     expect(component['form'].controls.coletaInscricao.value).toBe(true);
 
     component['salvar']();
@@ -265,7 +265,7 @@ describe('FasesCanonicasPage', () => {
       `${BASE}/api/configuracao/admin/fases-canonicas/${faseComColeta.id}`,
     );
     expect(put.request.body).toMatchObject({
-      origemData: 'DELEGADA',
+      origemData: 'NA_EXECUCAO',
       coletaInscricao: true,
     });
     put.flush(null, { status: 204, statusText: 'No Content' });

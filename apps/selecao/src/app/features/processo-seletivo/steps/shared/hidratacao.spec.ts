@@ -192,7 +192,7 @@ const FASE_COM_RECURSO = {
   faseCanonicaOrigemId: 'fase-canonica-homologacao',
   codigo: 'HOMOLOGACAO',
   donoInstitucional: 'CEPS',
-  origemData: 'PROPRIA',
+  origemData: 'NO_EDITAL',
   agrupaEtapas: false,
   permiteComplementacao: true,
   produzResultado: true,
@@ -274,6 +274,27 @@ describe('hidratarDraft — cronograma e etapas', () => {
    * O código acompanha o id porque as pendências derivadas e as precedências
    * falam em `INSCRICAO`, não em uuid.
    */
+  it('projeta a unidade responsável pelo id de origem da cópia gravada', () => {
+    const comUnidade = dtoComCronograma({
+      cronogramaFases: [
+        {
+          ...FASE_COM_RECURSO,
+          unidadeResponsavel: { origemId: 'unidade-cga', sigla: 'CGA', slug: 'cga', nome: 'CGA' },
+        },
+      ],
+    });
+
+    expect(hidratarDraft(DRAFT, comUnidade).cronograma.fases[0]?.unidadeResponsavelId).toBe(
+      'unidade-cga',
+    );
+  });
+
+  it('deixa a unidade da fase nula quando o processo não a tem', () => {
+    const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
+
+    expect(fase.unidadeResponsavelId).toBeNull();
+  });
+
   it('guarda o código canônico ao lado do identificador da fase', () => {
     const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
 

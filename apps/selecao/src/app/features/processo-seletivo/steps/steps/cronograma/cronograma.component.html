@@ -42,6 +42,12 @@
         </p>
 
         <div class="form-grid">
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Unidade responsável"
+            seVazio="Sem unidade responsável"
+            [valor]="item.unidade"
+          />
           @if (item.exigencias.janelaObrigatoria) {
             <ui-valor-em-consulta
               rotulo="Início"
@@ -54,8 +60,7 @@
             />
           } @else {
             <p class="field__hint form-grid__full">
-              A janela desta fase é derivada de outra: o sistema a calcula, e ela não é declarada
-              aqui.
+              A data desta fase não consta do edital: a unidade responsável a define na execução.
             </p>
           }
 
@@ -285,6 +290,9 @@
                   @for (marca of marcasDaFase(item.indice); track marca) {
                     <span class="etapa-resumo__marca">{{ marca }}</span>
                   }
+                  @if (item.unidade === null) {
+                    <span class="etapa-resumo__marca">Sem unidade responsável</span>
+                  }
                 </span>
               </button>
             </h2>
@@ -378,6 +386,62 @@
                 </p>
 
                 <div class="form-grid">
+                  <div class="form-field form-grid__full">
+                    <label class="label" [attr.for]="'cr-unidade-' + item.indice"
+                      >Unidade responsável</label
+                    >
+                    <select
+                      class="input"
+                      [attr.id]="'cr-unidade-' + item.indice"
+                      formControlName="unidadeResponsavelId"
+                      [attr.aria-describedby]="
+                        'cr-unidade-dica-' +
+                        item.indice +
+                        (item.unidade === null || unidadeRecusada(item.grupo)
+                          ? ' cr-unidade-erro-' + item.indice
+                          : '')
+                      "
+                      [attr.aria-invalid]="
+                        item.unidade === null || unidadeRecusada(item.grupo) ? 'true' : null
+                      "
+                      [class.is-invalid]="item.unidade === null || unidadeRecusada(item.grupo)"
+                    >
+                      <option value="">Selecione</option>
+                      @for (unidade of unidadesParaEscolha(); track unidade.id) {
+                        <option [value]="unidade.id">{{ unidade.rotulo }}</option>
+                      }
+                    </select>
+                    @if (catalogos.erroDeUnidades(); as erroDeUnidades) {
+                      <div class="field__erro" role="alert">
+                        <p>{{ erroDeUnidades }}</p>
+                        <button
+                          class="btn btn--tertiary"
+                          type="button"
+                          (click)="catalogos.carregarUnidades()"
+                        >
+                          Tentar novamente
+                        </button>
+                      </div>
+                    }
+                    @if (unidadeRecusada(item.grupo)) {
+                      <p
+                        class="field__erro"
+                        role="alert"
+                        [attr.id]="'cr-unidade-erro-' + item.indice"
+                      >
+                        A unidade escolhida para esta fase não está mais no cadastro. Escolha outra
+                        unidade.
+                      </p>
+                    } @else if (item.unidade === null) {
+                      <p class="field__erro" [attr.id]="'cr-unidade-erro-' + item.indice">
+                        Esta fase está sem unidade responsável. Pode salvar o rascunho assim, mas a
+                        publicação exige a unidade.
+                      </p>
+                    }
+                    <p class="field__hint" [attr.id]="'cr-unidade-dica-' + item.indice">
+                      Unidade que decide e registra o que esta fase produz.
+                    </p>
+                  </div>
                   @if (item.exigencias.janelaObrigatoria) {
                     <div class="form-field">
                       <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
@@ -412,8 +476,8 @@
                     </p>
                   } @else {
                     <p class="field__hint form-grid__full">
-                      A janela desta fase é derivada de outra: o sistema a calcula, e ela não é
-                      declarada aqui.
+                      A data desta fase não consta do edital: a unidade responsável a define na
+                      execução.
                     </p>
                   }
 

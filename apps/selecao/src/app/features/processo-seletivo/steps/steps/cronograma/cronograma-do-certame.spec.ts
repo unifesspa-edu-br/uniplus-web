@@ -34,6 +34,7 @@ import {
   etapaComOQueDeclara,
   recusaDoCampoDaEtapa,
   campoDaRecusa,
+  fasesComUnidadeNaoEncontrada,
 } from './cronograma-do-certame';
 
 /** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
@@ -81,7 +82,8 @@ function faseCanonica(parcial: Partial<FaseCanonicaDto>): FaseCanonicaDto {
     permiteComplementacao: false,
     baseLegal: null,
     coletaInscricao: false,
-    origemData: 'PROPRIA',
+    coletaSolicitacaoIsencao: false,
+    origemData: 'NO_EDITAL',
     criadoEm: '2026-08-30T12:00:00Z',
     ...parcial,
   } as FaseCanonicaDto;
@@ -94,6 +96,7 @@ function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
     ordem: 1,
     inicio: null,
     fim: null,
+    unidadeResponsavelId: null,
     produtos: [],
     faseConcluinteCodigo: null,
     emiteParecerIndividual: false,
@@ -167,9 +170,20 @@ const DEFINITIVO: ProdutoDaFase = { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINI
 const AVISO: ProdutoDaFase = { atoCodigo: 'COMUNICADO', papel: null };
 
 describe('exigências da fase', () => {
-  it('data própria obriga janela; delegada não', () => {
-    expect(exigenciasDe(faseCanonica({ origemData: 'PROPRIA' }), []).janelaObrigatoria).toBe(true);
-    expect(exigenciasDe(faseCanonica({ origemData: 'DELEGADA' }), []).janelaObrigatoria).toBe(
+  it('a fase que coleta inscrição ou isenção exige janela mesmo com a data definida na execução', () => {
+    const naExecucao = faseCanonica({ origemData: 'NA_EXECUCAO' });
+
+    expect(exigenciasDe({ ...naExecucao, coletaInscricao: true }, []).janelaObrigatoria).toBe(true);
+    expect(
+      exigenciasDe({ ...naExecucao, coletaSolicitacaoIsencao: true }, []).janelaObrigatoria,
+    ).toBe(true);
+  });
+
+  it('data fixada no edital obriga janela; definida na execução não', () => {
+    expect(exigenciasDe(faseCanonica({ origemData: 'NO_EDITAL' }), []).janelaObrigatoria).toBe(
+      true,
+    );
+    expect(exigenciasDe(faseCanonica({ origemData: 'NA_EXECUCAO' }), []).janelaObrigatoria).toBe(
       false,
     );
   });
@@ -219,7 +233,7 @@ describe('exigências da fase', () => {
       produtos: [PRELIMINAR],
       congelados: {
         donoTipico: 'CEPS',
-        origemData: 'PROPRIA',
+        origemData: 'NO_EDITAL',
         agrupaEtapas: false,
         coletaInscricao: false,
         permiteComplementacao: false,
@@ -440,13 +454,13 @@ describe('o que impede gravar o cronograma', () => {
     codigo: 'AVALIACAO',
     nome: 'Avaliação',
     agrupaEtapas: true,
-    origemData: 'PROPRIA',
+    origemData: 'NO_EDITAL',
   });
   const RESULTADO = faseCanonica({
     id: 'id-resultado',
     codigo: 'RESULTADO_PRELIMINAR',
     nome: 'Resultado preliminar',
-    origemData: 'DERIVADA',
+    origemData: 'NA_EXECUCAO',
   });
   const catalogo = new Map([
     [AVALIACAO.id, AVALIACAO],
@@ -497,6 +511,21 @@ describe('o que impede gravar o cronograma', () => {
     const problemas = problemasDe([semAvaliacao], [etapaValida], catalogo, []);
 
     expect(problemas).toContainEqual(expect.stringContaining('não dizem a que fase pertencem'));
+  });
+
+  it('fase de data definida na execução que coleta inscrição exige a janela', () => {
+    const inscricao = faseCanonica({
+      id: 'id-inscricao',
+      codigo: 'COLETA_INSCRICAO',
+      nome: 'Inscrição',
+      origemData: 'NA_EXECUCAO',
+      coletaInscricao: true,
+    });
+    const semJanela = fase({ faseCanonicaId: inscricao.id, codigo: 'COLETA_INSCRICAO' });
+
+    const problemas = problemasDe([semJanela], [], new Map([[inscricao.id, inscricao]]), []);
+
+    expect(problemas).toContainEqual('A fase Inscrição precisa de data e hora de início e de fim.');
   });
 
   it('fase com janela própria exige data e hora de início e de fim', () => {
@@ -1499,5 +1528,34 @@ describe('etapa de nota do ENEM', () => {
     expect(
       recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_lancamento'),
     ).toBeNull();
+  });
+});
+
+describe('fases cuja unidade o servidor não encontrou', () => {
+  const NAO_ENCONTRADA = 'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada';
+
+  it('devolve a posição de cada fase citada no campo da unidade', () => {
+    expect(
+      fasesComUnidadeNaoEncontrada([
+        { field: 'fases[2].unidadeResponsavelId', code: NAO_ENCONTRADA },
+        { field: 'fases[0].unidadeResponsavelId', code: NAO_ENCONTRADA },
+      ]),
+    ).toEqual([2, 0]);
+  });
+
+  it.each(['$.fases[2].unidadeResponsavelId', 'request.Fases[2].UnidadeResponsavelId'])(
+    'reconhece o campo com prefixo de caminho e caixa diferentes: %s',
+    (field) => {
+      expect(fasesComUnidadeNaoEncontrada([{ field, code: NAO_ENCONTRADA }])).toEqual([2]);
+    },
+  );
+
+  it('ignora outro código ou outro campo da fase', () => {
+    expect(
+      fasesComUnidadeNaoEncontrada([
+        { field: 'fases[1].unidadeResponsavelId', code: 'uniplus.validacao' },
+        { field: 'fases[1].inicio', code: NAO_ENCONTRADA },
+      ]),
+    ).toEqual([]);
   });
 });
