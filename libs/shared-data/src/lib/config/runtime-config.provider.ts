@@ -1,7 +1,12 @@
 import { APP_INITIALIZER, EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
 import { HttpBackend, HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { AUTH_CONFIG, AuthService, PROFILE_BASE_PATH } from '@uniplus/shared-auth/bootstrap';
+import {
+  AUTH_CONFIG,
+  AUTORIZACAO_BASE_PATH,
+  AuthService,
+  PROFILE_BASE_PATH,
+} from '@uniplus/shared-auth/bootstrap';
 import type { AuthConfig } from '@uniplus/shared-auth/bootstrap';
 import {
   CONFIGURACAO_BASE_PATH,
@@ -91,6 +96,11 @@ export function provideRuntimeConfig(): EnvironmentProviders {
     },
     {
       provide: PROFILE_BASE_PATH,
+      useFactory: (store: AppConfigService) => store.get().apiUrl,
+      deps: [AppConfigService],
+    },
+    {
+      provide: AUTORIZACAO_BASE_PATH,
       useFactory: (store: AppConfigService) => store.get().apiUrl,
       deps: [AppConfigService],
     },

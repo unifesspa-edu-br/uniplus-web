@@ -38,3 +38,11 @@ export const AUTH_ALLOWED_URLS = new InjectionToken<readonly string[]>('AUTH_ALL
  * mantém `shared-auth` desacoplado de `shared-data`, como `AUTH_CONFIG`.
  */
 export const PROFILE_BASE_PATH = new InjectionToken<string>('PROFILE_BASE_PATH');
+
+/**
+ * Origin absoluta da API que serve o módulo Autorização (`/api/autorizacao/*`). Provida por
+ * `provideRuntimeConfig()` a partir do `apiUrl`. Vive aqui, e não em `shared-data`, porque as
+ * permissões efetivas são consultadas por `shared-auth`; os clientes do módulo reexportam o mesmo
+ * token.
+ */
+export const AUTORIZACAO_BASE_PATH = new InjectionToken<string>('AUTORIZACAO_BASE_PATH');

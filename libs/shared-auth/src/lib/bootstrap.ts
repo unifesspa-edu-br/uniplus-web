@@ -1,10 +1,14 @@
 export { AuthService } from './services/auth.service';
 export { UserContextService } from './services/user-context.service';
 export { provideAuth } from './providers/auth.provider';
-export { AUTH_ALLOWED_URLS, AUTH_CONFIG, PROFILE_BASE_PATH } from './tokens/auth.tokens';
+export { AUTH_ALLOWED_URLS, AUTH_CONFIG, AUTORIZACAO_BASE_PATH, PROFILE_BASE_PATH } from './tokens/auth.tokens';
 export { LoginErrorCode, classifyLoginError } from './models/login-error.model';
 export type { AuthConfig } from './models/auth-config.model';
 export type { LoginErrorDetails } from './models/login-error.model';
 export type { UniPlusTokenClaims } from './models/token-claims.model';
 export type { UserProfile, UserRole } from './models/user.model';
 export { DOMAIN_ROLES, ROLE_LABELS } from './models/user.model';
+export { PermissoesService } from './services/permissoes.service';
+export type { EstadoDasPermissoes, PermissaoEfetiva } from './services/permissoes.service';
+export { PERMISSAO } from './permissoes/catalogo';
+export type { CodigoDePermissao, ModuloDePermissao } from './permissoes/catalogo';
