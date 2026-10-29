@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import {
   FUNDAMENTOS_DE_ISENCAO,
@@ -11,6 +11,7 @@ import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { responder, responderCom } from '../support/responder';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 
 type Status = 'rascunho' | 'publicado';
 
@@ -114,6 +115,7 @@ function identificadoresDe(resultado: AxeResults): string[] {
  */
 async function mockarApi(page: Page, status: Status): Promise<void> {
   await responder(page, /\/api\//, [], CORS_HEADERS);
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
   await responder(
     page,
     /\/api\/configuracao\/tipos-processo(\?.*)?$/,

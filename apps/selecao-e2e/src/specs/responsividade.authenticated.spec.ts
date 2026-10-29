@@ -1,4 +1,20 @@
 import { test, expect } from '@playwright/test';
+import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
+import { responder } from '../support/responder';
+
+const CORS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, OPTIONS',
+  'access-control-allow-headers': 'authorization, accept',
+  'access-control-expose-headers': 'Link',
+};
+
+test.beforeEach(async ({ page }) => {
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
+  // O catálogo de regras do editor é protegido na API; a suíte não depende de o usuário real tê-lo concedido.
+  await responder(page, /\/api\/selecao\/regras-catalogo(\?.*)?$/, [], CORS);
+});
 
 /**
  * Comportamentos que dependem de uma largura específica e da transição entre
@@ -33,6 +49,7 @@ test.describe('Seleção — comportamento por largura', () => {
   });
 
   test('usa a área útil inteira no shell administrativo em telas grandes', async ({ page }) => {
+    await mockPermissoesEfetivas(page, [...PERMISSOES_DO_LEANDRO, 'selecao:processos:acompanhar']);
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

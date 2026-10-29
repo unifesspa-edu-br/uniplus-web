@@ -5,6 +5,8 @@ import {
 } from '../fixtures/consulta-da-medicina';
 import { CAMPOS_DAS_MODALIDADES_DA_MEDICINA } from '../fixtures/vagas-da-medicina';
 import { responder, responderCom } from '../support/responder';
+import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 
 /**
  * web#1008 — a seção de tipos de deficiência de "Atend. especial" sumia quando o cadastro de
@@ -119,6 +121,7 @@ test.describe('Atendimento sem a condição PCD no cadastro (web#1008)', () => {
 async function mockarApi(page: Page, catalogo: { condicoes: readonly object[] }): Promise<void> {
   // A rota genérica é registrada primeiro: o Playwright consulta da mais recente à mais antiga.
   await responder(page, /\/api\//, () => [], CORS);
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
   await responder(
     page,
     /\/api\/configuracao\/tipos-processo(\?.*)?$/,

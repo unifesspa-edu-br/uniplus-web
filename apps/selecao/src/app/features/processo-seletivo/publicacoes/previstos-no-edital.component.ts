@@ -47,6 +47,8 @@ export class PrevistosNoEditalComponent {
   readonly previstos = input.required<PrevistosLidos>();
   /** O documento cujo acesso está sendo pedido, para o botão anunciar a espera. */
   readonly abrindo = input<string | null>(null);
+  /** Sem a permissão de publicar, a linha não oferece publicar nem corrigir. */
+  readonly podePublicar = input(false);
 
   /** O formulário que o item pede: publicar a primeira vez ou corrigir. */
   readonly publicar = output<ModoDaPublicacao>();
@@ -68,7 +70,7 @@ export class PrevistosNoEditalComponent {
 
   /** O ato que a correção do item aponta, quando o item admite ser corrigido agora. */
   protected corrigivel(item: ProdutoPrevistoDto): AtoDoProcessoDto | null {
-    return atoQueACorrecaoCorrige(item);
+    return this.podePublicar() ? atoQueACorrecaoCorrige(item) : null;
   }
 
   protected publicarItem(item: ProdutoPrevistoDto): void {

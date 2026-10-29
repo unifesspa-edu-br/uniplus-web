@@ -1,10 +1,13 @@
 import { test, expect } from '@playwright/test';
 import {
+  mockPermissoesEfetivas,
   resetPasswords,
   keycloakLogin,
   keycloakLogout,
   expectUserInHeader,
 } from '@uniplus/shared-e2e';
+
+const ACOMPANHA = ['selecao:processos:acompanhar'];
 
 const USERS = {
   admin: { username: 'admin', password: 'E2eTest!123', displayName: 'Admin Teste', roles: ['admin'] },
@@ -31,6 +34,7 @@ test.describe('Autenticação OIDC — Ingresso', () => {
 
   test('admin consegue autenticar e ver dados no header', async ({ page }) => {
     const user = USERS.admin;
+    await mockPermissoesEfetivas(page, ACOMPANHA);
     await page.goto('/dashboard');
     await keycloakLogin(page, user.username, user.password);
 
@@ -41,6 +45,7 @@ test.describe('Autenticação OIDC — Ingresso', () => {
 
   test('gestor consegue autenticar e acessar dashboard', async ({ page }) => {
     const user = USERS.gestor;
+    await mockPermissoesEfetivas(page, ACOMPANHA);
     await page.goto('/dashboard');
     await keycloakLogin(page, user.username, user.password);
 
@@ -49,8 +54,9 @@ test.describe('Autenticação OIDC — Ingresso', () => {
     await expectUserInHeader(page, user.displayName, user.username, user.roles);
   });
 
-  test('candidato autenticado e redirecionado para /acesso-negado', async ({ page }) => {
+  test('quem não tem permissão efetiva é redirecionado para /acesso-negado', async ({ page }) => {
     const user = USERS.candidato;
+    await mockPermissoesEfetivas(page, []);
     await page.goto('/dashboard');
     await keycloakLogin(page, user.username, user.password);
 
@@ -60,6 +66,7 @@ test.describe('Autenticação OIDC — Ingresso', () => {
 
   test('Sair encerra a sessão e rota protegida redireciona ao provedor OIDC', async ({ page }) => {
     const user = USERS.admin;
+    await mockPermissoesEfetivas(page, ACOMPANHA);
     await page.goto('/dashboard');
     await keycloakLogin(page, user.username, user.password);
 

@@ -5,10 +5,13 @@ import { filter, map, startWith } from 'rxjs';
 import {
   AuthService,
   DOMAIN_ROLES,
+  PermissoesService,
   ROLE_LABELS,
   UserContextService,
 } from '@uniplus/shared-auth/bootstrap';
 import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
+import { podeAbrirTela } from '../acesso/acompanhamento.guard';
+import type { CaminhoDeTela } from '../acesso/permissoes-das-telas';
 import {
   AppConfigService,
   resolveAcompanhamentoValidacaoHabilitada,
@@ -24,7 +27,7 @@ interface SelNavItem {
   readonly icon: string;
   readonly routerLink?: string;
   readonly exact?: boolean;
-  readonly roles?: readonly string[];
+  readonly tela: CaminhoDeTela;
 }
 
 interface SelNavGroup {
@@ -64,6 +67,7 @@ interface SelNavGroup {
 })
 export class LayoutComponent {
   private readonly authService = inject(AuthService);
+  private readonly permissoes = inject(PermissoesService);
   private readonly router = inject(Router);
   private readonly appConfig = inject(AppConfigService);
   protected readonly userContext = inject(UserContextService);
@@ -87,24 +91,29 @@ export class LayoutComponent {
     {
       label: 'Painéis',
       items: [
-        { label: 'Painel de processos', icon: 'pi-table', routerLink: '/dashboard' },
+        {
+          label: 'Painel de processos',
+          icon: 'pi-table',
+          routerLink: '/dashboard',
+          tela: 'dashboard',
+        },
         {
           label: 'Processo seletivo',
           icon: 'pi-file',
           routerLink: '/processo-seletivo',
-          roles: ['plataforma-admin'],
+          tela: 'processo-seletivo',
         },
         {
           label: 'Inscrições',
           icon: 'pi-user',
           routerLink: '/inscricoes',
-          roles: ['admin', 'gestor'],
+          tela: 'inscricoes',
         },
         {
           label: 'Homologação',
           icon: 'pi-sitemap',
           routerLink: '/homologacao',
-          roles: ['admin', 'gestor', 'avaliador'],
+          tela: 'homologacao',
         },
       ],
     },
@@ -114,7 +123,14 @@ export class LayoutComponent {
   private readonly navGroupsAcompanhamento: readonly SelNavGroup[] = [
     {
       label: 'Acompanhamento',
-      items: [{ label: 'Painel de processos', icon: 'pi-table', routerLink: '/dashboard' }],
+      items: [
+        {
+          label: 'Painel de processos',
+          icon: 'pi-table',
+          routerLink: '/dashboard',
+          tela: 'dashboard',
+        },
+      ],
     },
     {
       label: 'Cadastro',
@@ -123,22 +139,22 @@ export class LayoutComponent {
           label: 'Processos seletivos',
           icon: 'pi-file',
           routerLink: '/processo-seletivo',
-          roles: ['plataforma-admin'],
+          tela: 'processo-seletivo',
         },
       ],
     },
   ];
 
   protected readonly navGroups = computed<readonly UiShellNavGroup[]>(() => {
-    const papeis = new Set(this.authService.roles());
-    const declarados = resolveAcompanhamentoValidacaoHabilitada(this.appConfig.config())
+    const validacaoHabilitada = resolveAcompanhamentoValidacaoHabilitada(this.appConfig.config());
+    const declarados = validacaoHabilitada
       ? this.navGroupsAcompanhamento
       : this.navGroupsDeclarados;
     return declarados
       .map((grupo) => ({
         ...grupo,
-        items: grupo.items.filter(
-          (item) => item.roles === undefined || item.roles.some((papel) => papeis.has(papel)),
+        items: grupo.items.filter((item) =>
+          podeAbrirTela(this.permissoes, item.tela, validacaoHabilitada),
         ),
       }))
       .filter((grupo) => grupo.items.length > 0);
@@ -152,7 +168,7 @@ export class LayoutComponent {
       if (typeof breadcrumb === 'string') label = breadcrumb;
       route = route.firstChild;
     }
-    return [{ label: 'Início', routerLink: '/dashboard' }, { label }];
+    return [{ label: 'Início', routerLink: '/' }, { label }];
   }
 }
 

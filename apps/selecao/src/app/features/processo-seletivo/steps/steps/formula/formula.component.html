@@ -287,7 +287,7 @@
         <p class="field__hint escolher-e-acrescentar__ajuda" [id]="idDoCampoResolucao + '-dica'">
           Os pesos e os cortes vêm do cadastro de Peso por Área e são copiados para o processo
           quando a classificação é gravada, no passo Eliminação.
-          @if (administraPlataforma()) {
+          @if (podeAbrirCadastroDePesos()) {
             <a [href]="linkDoCadastroDePesos()" target="_blank" rel="noopener"
               >Abrir o cadastro de Peso por Área<span class="sr-only"> (abre em nova aba)</span></a
             >

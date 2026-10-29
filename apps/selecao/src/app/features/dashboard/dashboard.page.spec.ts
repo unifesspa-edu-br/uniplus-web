@@ -1,22 +1,22 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { AuthService } from '@uniplus/shared-auth/bootstrap';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { DashboardPage } from './dashboard.page';
 
-/** Papéis de quem está autenticado — o atalho da listagem depende deles. */
-const papeis = signal<readonly string[]>(['plataforma-admin']);
-const authServiceStub = { roles: papeis };
+/** Permissões de quem está autenticado — o atalho da listagem depende delas. */
+const concedidas = signal<readonly string[]>(['selecao:processos:configurar']);
+const permissoesStub = { tem: (codigo: string) => concedidas().includes(codigo) };
 
 describe('DashboardPage', () => {
   beforeEach(async () => {
-    papeis.set(['plataforma-admin']);
+    concedidas.set(['selecao:processos:configurar']);
 
     await TestBed.configureTestingModule({
       imports: [DashboardPage],
-      providers: [provideRouter([]), { provide: AuthService, useValue: authServiceStub }],
+      providers: [provideRouter([]), { provide: PermissoesService, useValue: permissoesStub }],
     }).compileComponents();
   });
 
@@ -48,11 +48,11 @@ describe('DashboardPage', () => {
   });
 
   /**
-   * O painel é acessível a todo o backoffice; a listagem exige
-   * `plataforma-admin` na rota e na API. Oferecer o atalho a quem não tem o
-   * papel levaria direto ao acesso negado.
+   * O painel é acessível a todo o backoffice; a listagem exige a permissão de
+   * configurar processo na rota e na API. Oferecer o atalho a quem não a tem
+   * levaria direto ao acesso negado.
    */
-  it('leva à listagem quem administra a plataforma', () => {
+  it('leva à listagem quem pode configurar processo', () => {
     const atalho = Array.from(montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).find(
       (a) => a.textContent?.includes('Ver processos seletivos'),
     );
@@ -60,8 +60,8 @@ describe('DashboardPage', () => {
     expect(atalho?.getAttribute('href')).toBe('/processo-seletivo');
   });
 
-  it('esconde o atalho da listagem de quem não administra a plataforma', () => {
-    papeis.set(['avaliador']);
+  it('esconde o atalho da listagem de quem não pode configurar processo', () => {
+    concedidas.set([]);
 
     const atalho = Array.from(montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).find(
       (a) => a.textContent?.includes('Ver processos seletivos'),

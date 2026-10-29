@@ -48,7 +48,7 @@
     <p class="alert alert--info" role="status">
       Há mais de um documento confirmado. Escolha o oficial abaixo antes de publicar.
     </p>
-  } @else if (documentoAPublicarId() === null) {
+  } @else if (documentoAPublicarId() === null && podePublicar()) {
     <p class="alert alert--info" role="status">
       Anexe e confirme o edital em PDF para publicar o processo.
     </p>
@@ -59,9 +59,12 @@
      processo ainda não criado — sempre foi assim, e um componente a menos no
      DOM enquanto o preflight não carrega quebraria quem depende dele nesse
      meio-tempo (retomada em curso, escolha de documento pendente). -->
+<!-- O envio e a leitura dos documentos a publicar são da permissão de publicar. -->
+<ng-container *authTemPermissao="permissaoDePublicar">
 <sel-anexo-edital />
 
 <sel-anexos-do-edital [publicado]="jaPublicado()" [atoId]="atoVigenteId()" />
+</ng-container>
 
 @if (store.processoSeletivoId() === null) {
   @if (!store.emConsulta()) {

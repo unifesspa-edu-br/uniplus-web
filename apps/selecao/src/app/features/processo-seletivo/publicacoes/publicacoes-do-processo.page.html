@@ -8,14 +8,16 @@
 >
   <div uiPageActions class="pub-page__acoes">
     <a class="btn btn--tertiary" routerLink="/processo-seletivo">Voltar aos processos</a>
-    <button
-      type="button"
-      class="btn btn--primary"
-      [disabled]="!podePublicar()"
-      (click)="publicarDocumento()"
-    >
-      Publicar documento
-    </button>
+    @if (temPermissaoDePublicar()) {
+      <button
+        type="button"
+        class="btn btn--primary"
+        [disabled]="!podePublicar()"
+        (click)="publicarDocumento()"
+      >
+        Publicar documento
+      </button>
+    }
   </div>
 </ui-page-header>
 
@@ -92,6 +94,7 @@
         <sel-previstos-no-edital
           [previstos]="previstos.dados"
           [abrindo]="abrindo()"
+          [podePublicar]="temPermissaoDePublicar()"
           (publicar)="abrirFormulario($event)"
           (abrir)="abrir($event)"
         />
@@ -130,7 +133,7 @@
       @case ('lido') {
         <sel-atos-do-processo
           [atos]="atos.dados"
-          [corrigiveis]="publicacoes.atosCorrigiveis()"
+          [corrigiveis]="temPermissaoDePublicar() ? publicacoes.atosCorrigiveis() : []"
           [abrindo]="abrindo()"
           (corrigir)="corrigir($event)"
           (abrir)="abrir($event)"

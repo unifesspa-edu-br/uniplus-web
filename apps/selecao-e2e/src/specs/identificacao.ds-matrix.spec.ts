@@ -1,9 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { responder } from '../support/responder';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
+
+test.beforeEach(async ({ page }) => {
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
+});
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',

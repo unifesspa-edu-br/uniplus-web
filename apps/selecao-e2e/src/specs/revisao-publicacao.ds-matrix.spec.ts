@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import {
   conferirRolagemPorRodaForaDoConteudo,
@@ -11,6 +11,11 @@ import {
 } from '../support/rolagem-do-editor';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
+
+test.beforeEach(async ({ page }) => {
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
+});
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',

@@ -8,7 +8,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { AuthService } from '@uniplus/shared-auth/bootstrap';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { AppConfigService, resolveConfiguracaoWebUrl } from '@uniplus/shared-data/config';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { formatarNumeroPtBr } from '@uniplus/shared-utils';
@@ -96,7 +96,7 @@ export class FormulaStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
   private readonly appConfig = inject(AppConfigService);
-  private readonly authService = inject(AuthService);
+  private readonly permissoes = inject(PermissoesService);
   private readonly injector = inject(Injector);
   private destruida = false;
   private readonly releitura = inject(ReleituraDoSnapshot);
@@ -118,8 +118,10 @@ export class FormulaStepComponent {
 
   readonly avisoDaLista = signal<string | null>(null);
 
-  /** As rotas do cadastro de Peso por Área só admitem quem administra a plataforma. */
-  readonly administraPlataforma = computed(() => this.authService.hasRole('plataforma-admin'));
+  /** As rotas do cadastro de Peso por Área exigem a permissão de manter peso por área. */
+  readonly podeAbrirCadastroDePesos = computed(() =>
+    this.permissoes.tem(PERMISSAO.configuracao.pesosAreaEnemManter),
+  );
 
   /**
    * O cadastro de Peso por Área, no app da Configuração. Abre em outra aba: o rascunho do

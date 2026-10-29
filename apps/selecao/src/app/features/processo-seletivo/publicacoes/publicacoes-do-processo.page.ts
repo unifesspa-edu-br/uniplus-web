@@ -9,6 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { ProblemI18nService, abrirAcessoEmNovaAba } from '@uniplus/shared-core/http';
 import {
   ProcessosSeletivosApi,
@@ -56,6 +57,7 @@ export class PublicacoesDoProcessoPage {
   private readonly rota = inject(ActivatedRoute);
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly permissoes = inject(PermissoesService);
   protected readonly publicacoes = inject(PublicacoesDoProcesso);
 
   private readonly cabecalho = viewChild.required(PageHeaderComponent);
@@ -79,6 +81,11 @@ export class PublicacoesDoProcessoPage {
 
   protected readonly existePendenciaAntiga = computed(() =>
     this.publicacoes.listaDeAtos().some((ato) => ato.pendenciaAcimaDoLimiar),
+  );
+
+  /** Publicar documento é de quem tem a permissão de publicar; as demais permissões não bastam. */
+  protected readonly temPermissaoDePublicar = computed(() =>
+    this.permissoes.tem(PERMISSAO.selecao.processosPublicar),
   );
 
   protected readonly podePublicar = computed(

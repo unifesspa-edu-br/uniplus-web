@@ -1,3 +1,5 @@
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import {
   ChangeDetectionStrategy,
@@ -107,6 +109,7 @@ export type AtoPublicado =
     ReactiveFormsModule,
     RegrasDasModalidadesComponent,
     AvisosDaRevisaoComponent,
+    TemPermissaoDirective,
   ],
   templateUrl: './revisao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -114,6 +117,10 @@ export type AtoPublicado =
 })
 export class RevisaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
+  protected readonly permissaoDePublicar = PERMISSAO.selecao.processosPublicar;
+  private readonly permissoes = inject(PermissoesService);
+  /** Só quem publica vê o campo de anexo; a orientação de anexar não serve a quem não o vê. */
+  protected readonly podePublicar = computed(() => this.permissoes.tem(this.permissaoDePublicar));
   readonly preflight = inject(PreflightDaPublicacaoService);
 
   /**

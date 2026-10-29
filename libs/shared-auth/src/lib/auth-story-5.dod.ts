@@ -63,11 +63,10 @@ export const coverage: readonly DoDItem[] = [
   },
   {
     id: 'guards-tests',
-    description: 'Testes unitários para tokenInterceptor, authGuard, roleGuard',
+    description: 'Testes unitários para tokenInterceptor, authGuard',
     coveredBy: [
       'interceptors/token.interceptor.spec.ts',
       'guards/auth.guard.spec.ts',
-      'guards/role.guard.spec.ts',
     ],
   },
   // --- Hardening (uniplus-api#67) --------------------------------
@@ -85,11 +84,6 @@ export const coverage: readonly DoDItem[] = [
     id: 'h2-lockout-ui',
     description: 'Formulário distingue senha errada vs conta bloqueada',
     coveredBy: ['models/login-error.model.spec.ts', 'components/login-error-banner.component.ts'],
-  },
-  {
-    id: 'h3-forbidden-role',
-    description: 'roleGuard distingue não-autenticado (401) vs sem-role (403)',
-    coveredBy: ['guards/role.guard.spec.ts'],
   },
   {
     id: 'normalized-usernames',

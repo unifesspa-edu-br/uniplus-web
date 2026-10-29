@@ -65,12 +65,12 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
       await expect(header.getByText('Usuário Candidato')).toBeHidden();
     });
 
-    test('candidato acessa /acompanhamento (authGuard sem roleGuard)', async ({ page }) => {
+    test('candidato acessa /acompanhamento (somente authGuard)', async ({ page }) => {
       const user = USERS.candidato;
       await page.goto('/acompanhamento');
       await keycloakLogin(page, user.username, user.password);
 
-      // Portal usa apenas authGuard (sem roleGuard) — qualquer autenticado entra
+      // Portal usa apenas authGuard — qualquer autenticado entra
       await expect(page).toHaveURL(/acompanhamento/);
     });
   });

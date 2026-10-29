@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApplicationRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { AuthService } from '@uniplus/shared-auth/bootstrap';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor, mockProblemDetails } from '@uniplus/shared-core/http';
 import {
   ProcessoSeletivoResumoDto,
@@ -17,9 +17,9 @@ import { ProcessosSeletivosListaPage } from './processos-seletivos-lista.page';
 const BASE = 'http://localhost:5000';
 const URL_LISTA = `${BASE}/api/selecao/processos-seletivos`;
 
-/** Papéis de quem está autenticado — o atalho de cadastro depende deles. */
-const papeis = signal<readonly string[]>(['plataforma-admin']);
-const authServiceStub = { roles: papeis };
+/** Permissões de quem está autenticado — o atalho de cadastro depende delas. */
+const concedidas = signal<readonly string[]>(['selecao:processos:configurar']);
+const permissoesStub = { tem: (codigo: string) => concedidas().includes(codigo) };
 
 function processo(overrides: Partial<ProcessoSeletivoResumoDto> = {}): ProcessoSeletivoResumoDto {
   return {
@@ -43,7 +43,7 @@ describe('ProcessosSeletivosListaPage', () => {
   let appRef: ApplicationRef;
 
   beforeEach(() => {
-    papeis.set(['plataforma-admin']);
+    concedidas.set(['selecao:processos:configurar']);
 
     TestBed.configureTestingModule({
       imports: [ProcessosSeletivosListaPage],
@@ -52,7 +52,7 @@ describe('ProcessosSeletivosListaPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
-        { provide: AuthService, useValue: authServiceStub },
+        { provide: PermissoesService, useValue: permissoesStub },
       ],
     });
 
@@ -398,11 +398,11 @@ describe('ProcessosSeletivosListaPage', () => {
   });
 
   /**
-   * O cadastro do certame é restrito a `plataforma-admin` na rota e na API.
-   * Oferecer o atalho a quem não tem o papel levaria direto ao acesso negado.
+   * O cadastro do certame exige a permissão de configurar processo na rota e na API.
+   * Oferecer o atalho a quem não a tem levaria direto ao acesso negado.
    */
-  it('esconde o atalho de novo processo de quem não administra a plataforma', async () => {
-    papeis.set(['gestor']);
+  it('esconde o atalho de novo processo de quem não pode configurar processo', async () => {
+    concedidas.set([]);
     await flushLista([processo()]);
 
     const atalho = Array.from(host().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).find(

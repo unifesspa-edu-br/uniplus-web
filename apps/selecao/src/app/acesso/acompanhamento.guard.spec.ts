@@ -1,40 +1,39 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, RouterStateSnapshot, Router, UrlTree } from '@angular/router';
-import { provideRouter } from '@angular/router';
-import { AuthService } from '@uniplus/shared-auth/bootstrap';
-import { AppConfigService } from '@uniplus/shared-data/config';
 import {
-  acessoAcompanhamentoGuard,
-  redirecionaEntradaAntigaParaPainel,
-} from './acompanhamento.guard';
+  ActivatedRouteSnapshot,
+  CanActivateFn,
+  Router,
+  RouterStateSnapshot,
+  UrlTree,
+  provideRouter,
+} from '@angular/router';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import { AppConfigService } from '@uniplus/shared-data/config';
+import { entradaDaSelecao, redirecionaEntradaAntigaParaPainel } from './acompanhamento.guard';
 
-const autenticado = signal(true);
-const papeis = signal<readonly string[]>([]);
-const login = vi.fn();
+const permissoes = signal<readonly string[]>([]);
+const permissoesStub = {
+  garantir: (): Promise<void> => Promise.resolve(),
+  tem: (codigo: string) => permissoes().includes(codigo),
+  temAlguma: (...codigos: string[]) => codigos.some((codigo) => permissoes().includes(codigo)),
+};
 const configuracao = signal<{ acompanhamentoValidacaoHabilitada?: boolean } | null>(null);
 
-const authStub = {
-  authenticated: autenticado,
-  hasRole: (papel: string) => papeis().includes(papel),
-  login,
-};
-
-function executar(guard: typeof acessoAcompanhamentoGuard, url = '/dashboard', path = 'dashboard') {
+function executar(guard: CanActivateFn, url = '/', path = 'dashboard') {
   const rotaDaEntrada = { routeConfig: { path } } as ActivatedRouteSnapshot;
   return TestBed.runInInjectionContext(() => guard(rotaDaEntrada, { url } as RouterStateSnapshot));
 }
 
 describe('guards de acompanhamento', () => {
   beforeEach(() => {
-    autenticado.set(true);
-    papeis.set([]);
+    permissoes.set([]);
     configuracao.set(null);
-    login.mockReset();
+    permissoesStub.garantir = () => Promise.resolve();
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: AuthService, useValue: authStub },
+        { provide: PermissoesService, useValue: permissoesStub },
         { provide: AppConfigService, useValue: { config: configuracao } },
       ],
     });
@@ -44,57 +43,95 @@ describe('guards de acompanhamento', () => {
     return TestBed.inject(Router).serializeUrl(resultado as UrlTree);
   }
 
-  describe('acessoAcompanhamentoGuard', () => {
-    it('desligado, mantém o controle por papel do backoffice', () => {
-      papeis.set(['gestor']);
-      expect(executar(acessoAcompanhamentoGuard)).toBe(true);
+  describe('entradaDaSelecao', () => {
+    it('leva quem acompanha processos ao painel', async () => {
+      permissoes.set(['selecao:processos:acompanhar', 'selecao:processos:configurar']);
 
-      papeis.set([]);
-      expect(destino(executar(acessoAcompanhamentoGuard))).toBe('/acesso-negado');
+      expect(destino(await executar(entradaDaSelecao))).toBe('/dashboard');
     });
 
-    it('ligado, admite qualquer usuário autenticado', () => {
-      configuracao.set({ acompanhamentoValidacaoHabilitada: true });
+    it('leva quem só configura processos ao cadastro, não ao acesso negado', async () => {
+      permissoes.set(['selecao:processos:configurar']);
 
-      expect(executar(acessoAcompanhamentoGuard)).toBe(true);
+      expect(destino(await executar(entradaDaSelecao))).toBe('/processo-seletivo');
     });
 
-    it.each([false, true])('com a opção %s, manda o não autenticado ao login', (ligada) => {
-      configuracao.set({ acompanhamentoValidacaoHabilitada: ligada });
-      autenticado.set(false);
+    it('leva quem só consulta inscrições às inscrições, não ao acesso negado', async () => {
+      permissoes.set(['selecao:inscricoes:consultar']);
 
-      expect(executar(acessoAcompanhamentoGuard)).toBe(false);
-      expect(login).toHaveBeenCalledWith('/dashboard');
+      expect(destino(await executar(entradaDaSelecao))).toBe('/inscricoes');
+    });
+
+    it('leva quem só importa notas do ENEM às notas, não ao acesso negado', async () => {
+      permissoes.set(['selecao:notas-enem:importar']);
+
+      expect(destino(await executar(entradaDaSelecao))).toBe('/notas');
+    });
+
+    it('nega quem não tem permissão para nenhuma tela', async () => {
+      permissoes.set(['configuracao:campi:manter']);
+
+      expect(destino(await executar(entradaDaSelecao))).toBe('/acesso-negado');
     });
   });
 
   describe('redirecionaEntradaAntigaParaPainel', () => {
-    it('desligado, deixa a entrada antiga seguir', () => {
-      expect(executar(redirecionaEntradaAntigaParaPainel, '/inscricoes', 'inscricoes')).toBe(true);
+    const acompanha = () => permissoes.set(['selecao:processos:acompanhar']);
+
+    it('desligado, deixa a entrada antiga seguir', async () => {
+      acompanha();
+
+      expect(await executar(redirecionaEntradaAntigaParaPainel, '/inscricoes', 'inscricoes')).toBe(
+        true,
+      );
     });
 
-    it('ligado, leva ao painel', () => {
+    it('ligado, leva ao painel quem pode abri-lo', async () => {
       configuracao.set({ acompanhamentoValidacaoHabilitada: true });
+      acompanha();
 
       expect(
-        destino(executar(redirecionaEntradaAntigaParaPainel, '/inscricoes', 'inscricoes')),
+        destino(await executar(redirecionaEntradaAntigaParaPainel, '/inscricoes', 'inscricoes')),
       ).toBe('/dashboard');
     });
 
-    it.each(['/inscricoes/', '/inscricoes?pagina=2'])('ligado, redireciona %s', (url) => {
+    it('ligado, leva ao painel quem só tem a permissão da entrada antiga, como o menu e a raiz', async () => {
       configuracao.set({ acompanhamentoValidacaoHabilitada: true });
+      permissoes.set(['selecao:inscricoes:consultar']);
 
-      expect(destino(executar(redirecionaEntradaAntigaParaPainel, url, 'inscricoes'))).toBe(
+      expect(
+        destino(await executar(redirecionaEntradaAntigaParaPainel, '/inscricoes', 'inscricoes')),
+      ).toBe('/dashboard');
+    });
+
+    it.each(['/inscricoes/', '/inscricoes?pagina=2'])('ligado, redireciona %s', async (url) => {
+      configuracao.set({ acompanhamentoValidacaoHabilitada: true });
+      acompanha();
+
+      expect(destino(await executar(redirecionaEntradaAntigaParaPainel, url, 'inscricoes'))).toBe(
         '/dashboard',
       );
     });
 
-    it('ligado, não redireciona uma subrota da entrada antiga', () => {
+    it('ligado, não redireciona uma subrota da entrada antiga', async () => {
       configuracao.set({ acompanhamentoValidacaoHabilitada: true });
+      acompanha();
 
-      expect(executar(redirecionaEntradaAntigaParaPainel, '/inscricoes/42', 'inscricoes')).toBe(
-        true,
-      );
+      expect(
+        await executar(redirecionaEntradaAntigaParaPainel, '/inscricoes/42', 'inscricoes'),
+      ).toBe(true);
+    });
+
+    it('ligado, aguarda as permissões carregarem antes de decidir (entrada direta pela URL)', async () => {
+      configuracao.set({ acompanhamentoValidacaoHabilitada: true });
+      permissoesStub.garantir = () => {
+        acompanha();
+        return Promise.resolve();
+      };
+
+      expect(
+        destino(await executar(redirecionaEntradaAntigaParaPainel, '/inscricoes', 'inscricoes')),
+      ).toBe('/dashboard');
     });
   });
 });

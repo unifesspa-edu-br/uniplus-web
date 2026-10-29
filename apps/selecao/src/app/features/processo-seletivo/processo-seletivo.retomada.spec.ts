@@ -1,3 +1,4 @@
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { HttpContext, HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, provideRouter } from '@angular/router';
@@ -55,6 +56,8 @@ import { PROCESSO_SELETIVO_ROUTES } from './processo-seletivo.routes';
 const PROCESSO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
 const TIPO_ORIGEM_ID = '019f41cf-69fd-759a-ac6d-09acabc1b028';
 const UNIDADE_ORIGEM_ID = '019f41cf-69fd-759a-ac6d-09acabc1b029';
+
+const concedeSoPublicar = (codigo: string): boolean => codigo === 'selecao:processos:publicar';
 
 const tiposProcessoApiStub = {
   listar: () => of(apiOk<readonly TipoProcessoDto[]>([], 200, new HttpHeaders())),
@@ -166,6 +169,7 @@ function montar(opts: CenarioOpts = {}) {
   TestBed.configureTestingModule({
     imports: [ProcessoSeletivoPage],
     providers: [
+      { provide: PermissoesService, useValue: { tem: concedeSoPublicar } },
       provideRouter([]),
       {
         provide: TiposProcessoApi,

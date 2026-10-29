@@ -175,10 +175,6 @@ export class AuthService {
     }
   }
 
-  hasRole(role: string): boolean {
-    return this.roles().includes(role);
-  }
-
   /**
    * @internal Ponto de extensão para testes — substituído por spies
    * que retornam duplos de Keycloak com `init()` estubado.

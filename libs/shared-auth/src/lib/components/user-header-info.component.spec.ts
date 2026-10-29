@@ -28,7 +28,6 @@ describe('UserHeaderInfoComponent', () => {
     const authServiceMock = {
       userProfile: signal(profile).asReadonly(),
       authenticated: signal(profile !== null).asReadonly(),
-      hasRole: vi.fn((role: string) => profile?.roles.includes(role) ?? false),
       logout,
       login,
       atualizarPerfil,

@@ -1,4 +1,5 @@
 import {
+  mockPermissoesEfetivas,
   assertAaaVisualContract,
   assertReflowContract,
   assertTextSpacingResilience,
@@ -12,6 +13,7 @@ type AaaFontMode = 'default' | 'legible';
 test.describe('Ingresso — gate AAA aplicável @aaa', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     const { theme, fontMode } = settingsFromProjectName(testInfo.project.name);
+    await mockPermissoesEfetivas(page, ['selecao:processos:acompanhar']);
     await installA11yPreference(page, theme, fontMode);
   });
 

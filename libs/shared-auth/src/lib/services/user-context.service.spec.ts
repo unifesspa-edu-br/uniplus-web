@@ -6,27 +6,10 @@ import { UserContextService } from './user-context.service';
 import type { UserProfile } from '../models/user.model';
 
 // Stub mínimo do AuthService — exercita o contrato consumido por
-// UserContextService (userProfile, authenticated, hasRole), sem subir
-// keycloak-js. Mantém o teste rápido e isolado: o objetivo é provar a
-// lógica de derivação do contexto, não a integração com OIDC.
-//
-// O método `hasRole` é resolvido em duas camadas, em ordem de precedência:
-// 1. Se `hasRoleByLogin` foi configurado, ele decide por login (permite
-//    cenários como "só o role X bate").
-// 2. Caso contrário, devolve `hasRoleResult` (default uniforme).
-// Isso unifica os 2 padrões de mock e mantém a contagem de chamadas
-// centralizada em `hasRoleCalls`.
+// UserContextService (userProfile, authenticated), sem subir keycloak-js.
 class AuthServiceStub {
   readonly userProfile = signal<UserProfile | null>(null);
   readonly authenticated = signal(false);
-  readonly hasRoleCalls: string[] = [];
-  hasRoleResult = false;
-  hasRoleByLogin: ((role: string) => boolean) | null = null;
-
-  hasRole(role: string): boolean {
-    this.hasRoleCalls.push(role);
-    return this.hasRoleByLogin?.(role) ?? this.hasRoleResult;
-  }
 }
 
 function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
@@ -128,47 +111,6 @@ describe('UserContextService', () => {
       authStub.userProfile.set(makeProfile({ nomeCivil: 'Madonna', nomeSocial: undefined }));
 
       expect(service.firstDisplayName()).toBe('Madonna');
-    });
-  });
-
-  describe('hasRole / hasAnyRole — delegação ao AuthService', () => {
-    it('hasRole delega a chamada para AuthService com o mesmo role', () => {
-      authStub.hasRoleResult = true;
-
-      const resultado = service.hasRole('admin');
-
-      expect(resultado).toBe(true);
-      expect(authStub.hasRoleCalls).toEqual(['admin']);
-    });
-
-    it('hasAnyRole retorna true quando pelo menos um role bate', () => {
-      // Simula: usuário é "gestor" mas tenta hasAnyRole('admin','gestor').
-      // O stub responde true só para "gestor" — provamos curto-circuito
-      // sem ler nenhuma chamada extra.
-      authStub.hasRoleByLogin = (role) => role === 'gestor';
-
-      const resultado = service.hasAnyRole('admin', 'gestor', 'avaliador');
-
-      expect(resultado).toBe(true);
-      // `Array.prototype.some` deve parar no primeiro true — não chamou
-      // o terceiro role.
-      expect(authStub.hasRoleCalls).toEqual(['admin', 'gestor']);
-    });
-
-    it('hasAnyRole retorna false quando nenhum role bate', () => {
-      authStub.hasRoleResult = false;
-
-      const resultado = service.hasAnyRole('admin', 'gestor');
-
-      expect(resultado).toBe(false);
-      expect(authStub.hasRoleCalls).toEqual(['admin', 'gestor']);
-    });
-
-    it('hasAnyRole com array vazio retorna false sem chamar AuthService', () => {
-      const resultado = service.hasAnyRole();
-
-      expect(resultado).toBe(false);
-      expect(authStub.hasRoleCalls).toEqual([]);
     });
   });
 });

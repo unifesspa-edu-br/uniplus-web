@@ -201,7 +201,7 @@ export class LayoutComponent {
       if (typeof breadcrumb === 'string') label = breadcrumb;
       route = route.firstChild;
     }
-    return [{ label: 'Início', routerLink: '/unidades' }, { label }];
+    return [{ label: 'Início', routerLink: '/' }, { label }];
   }
 }
 

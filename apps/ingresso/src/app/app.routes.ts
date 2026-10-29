@@ -1,6 +1,14 @@
 import { Routes } from '@angular/router';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
-import { authGuard, roleGuard } from '@uniplus/shared-auth/guards';
+import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
+import type { ModuloDePermissao } from '@uniplus/shared-auth/bootstrap';
+import { authGuard, permissaoNoModuloGuard } from '@uniplus/shared-auth/guards';
+
+/**
+ * O catálogo ainda não tem o módulo Ingresso: o backoffice abre a quem tem permissão em algum
+ * módulo e fecha a quem tem só a sessão (candidato, por exemplo).
+ */
+const MODULOS_DO_CATALOGO = Object.keys(PERMISSAO) as ModuloDePermissao[];
 
 export const appRoutes: Routes = [
   {
@@ -8,11 +16,10 @@ export const appRoutes: Routes = [
     component: AccessDeniedComponent,
   },
   {
-    // Backoffice Ingresso: todas as rotas exigem autenticação.
-    // Roles elegíveis nesta SPA: admin, gestor.
+    // Backoffice Ingresso: todas as rotas exigem autenticação e alguma permissão efetiva.
     path: '',
     loadComponent: () => import('./layout/layout').then((m) => m.LayoutComponent),
-    canActivate: [authGuard, roleGuard('admin', 'gestor')],
+    canActivate: [authGuard, permissaoNoModuloGuard(...MODULOS_DO_CATALOGO)],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {

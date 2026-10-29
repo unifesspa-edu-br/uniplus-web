@@ -1,6 +1,5 @@
 import { Injectable, inject, computed } from '@angular/core';
 import { AuthService } from './auth.service';
-import { UserRole } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class UserContextService {
@@ -14,14 +13,6 @@ export class UserContextService {
   });
   readonly firstDisplayName = computed(() => firstNameFrom(this.displayName()));
   readonly isAuthenticated = this.authService.authenticated;
-
-  hasRole(role: UserRole): boolean {
-    return this.authService.hasRole(role);
-  }
-
-  hasAnyRole(...roles: UserRole[]): boolean {
-    return roles.some((role) => this.authService.hasRole(role));
-  }
 }
 
 function firstNameFrom(name: string): string {

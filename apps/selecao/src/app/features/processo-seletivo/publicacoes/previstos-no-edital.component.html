@@ -82,7 +82,7 @@
             </td>
 
             <td class="table-responsive__actions" data-label="Ações">
-              @if (item.podePublicar) {
+              @if (podePublicar() && item.podePublicar) {
                 <button
                   type="button"
                   class="btn btn--primary btn--sm"

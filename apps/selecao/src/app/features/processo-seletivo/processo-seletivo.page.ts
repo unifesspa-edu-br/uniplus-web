@@ -15,6 +15,7 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   ProblemI18nService,
   isApiOk,
@@ -190,7 +191,11 @@ export class ProcessoSeletivoPage {
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
   private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly permissoes = inject(PermissoesService);
   private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
+
+  /** Publicar, gravar o rascunho da publicação e enviar o edital exigem a permissão de publicar, além da de configurar. */
+  readonly podePublicar = computed(() => this.permissoes.tem(PERMISSAO.selecao.processosPublicar));
 
   protected readonly itensDosPassos = computed<StepItem[]>(() =>
     this.store.labels.map((rotulo, index) => ({
@@ -235,8 +240,10 @@ export class ProcessoSeletivoPage {
     return passo?.rotuloDeAvanco?.() ?? 'Próximo';
   });
 
-  /** No último passo o avanço só publica, e publicar exige rascunho. */
-  readonly ofereceAvanco = computed(() => this.store.edicaoPermitida() || !this.store.isLast());
+  /** No último passo o avanço só publica, e publicar exige rascunho e a permissão de publicar. */
+  readonly ofereceAvanco = computed(
+    () => !this.store.isLast() || (this.store.edicaoPermitida() && this.podePublicar()),
+  );
 
   private readonly etapas = viewChild(StepsResponsivoComponent);
   private readonly rodape = viewChild<ElementRef<HTMLElement>>('wizFooter');
@@ -466,6 +473,7 @@ export class ProcessoSeletivoPage {
     processoSeletivoId: string,
     superada: () => boolean,
   ): Promise<void> {
+    if (!this.podePublicar()) return;
     const resultado = await firstValueFrom(
       this.api.listarDocumentosAPublicar(processoSeletivoId, FinalidadeDoDocumento.documentoDoEdital),
     );
@@ -726,7 +734,7 @@ export class ProcessoSeletivoPage {
     }
 
     if (this.store.isLast()) {
-      await this.publicar();
+      if (this.podePublicar()) await this.publicar();
       return;
     }
 

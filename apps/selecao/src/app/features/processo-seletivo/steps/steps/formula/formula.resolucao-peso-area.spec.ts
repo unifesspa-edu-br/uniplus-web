@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { config as configDoRxjs, throwError } from 'rxjs';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { signal } from '@angular/core';
-import { AuthService } from '@uniplus/shared-auth/bootstrap';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { AppConfigService, type AppConfig } from '@uniplus/shared-data/config';
 import { CONFIGURACAO_BASE_PATH, PesosEnemApi } from '@uniplus/shared-data/configuracao';
 import {
@@ -76,8 +76,8 @@ interface Montagem {
 
 let controllerAtual: HttpTestingController | null = null;
 
-/** Papéis de quem opera o wizard; o link do cadastro depende deles. */
-const papeis = signal<readonly string[]>(['plataforma-admin']);
+/** Permissões de quem opera o wizard; o link do cadastro depende delas. */
+const concedidas = signal<readonly string[]>(['configuracao:pesos-area-enem:manter']);
 
 /** A releitura do detalhe que o botão do aviso aciona; cada teste decide o que ela faz. */
 const releitura = { reler: vi.fn(async () => true) };
@@ -98,8 +98,8 @@ async function montar(
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
       {
-        provide: AuthService,
-        useValue: { roles: papeis, hasRole: (papel: string) => papeis().includes(papel) },
+        provide: PermissoesService,
+        useValue: { tem: (codigo: string) => concedidas().includes(codigo) },
       },
       { provide: ReleituraDoSnapshot, useValue: releitura },
       { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -257,7 +257,7 @@ const QUADRO_CONGELADO = [
 
 describe('FormulaStepComponent — resolução de Peso por Área', () => {
   afterEach(() => {
-    papeis.set(['plataforma-admin']);
+    concedidas.set(['configuracao:pesos-area-enem:manter']);
     releitura.reler.mockReset();
     // Solta a referência antes de conferir: uma falha aqui não pode vazar para o teste seguinte.
     const controller = controllerAtual;
@@ -957,8 +957,8 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       );
     });
 
-    it('sem o papel de administração, não oferece o link e diz quem cadastra as resoluções', async () => {
-      papeis.set(['avaliador']);
+    it('sem a permissão de manter peso por área, não oferece o link e diz quem cadastra as resoluções', async () => {
+      concedidas.set([]);
       const m = await montar();
       marcarEnemComMediaPonderada(m);
       responderPesos(m);

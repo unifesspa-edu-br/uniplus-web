@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import {
   FERNANDA,
@@ -17,6 +17,11 @@ import {
   type Cenario,
 } from '../fixtures/notas-do-enem';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
+
+test.beforeEach(async ({ page }) => {
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
+});
 
 /**
  * Matriz do Uni+ DS para a tela de notas do ENEM, de 320 px a TV e nos temas claro, escuro e de

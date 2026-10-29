@@ -8,7 +8,6 @@ export type { CodigoDePermissao, ModuloDePermissao } from './permissoes/catalogo
 
 // Guards
 export { authGuard } from './guards/auth.guard';
-export { roleGuard } from './guards/role.guard';
 export { permissaoGuard, permissaoNoModuloGuard } from './guards/permissao.guard';
 
 // Interceptors
