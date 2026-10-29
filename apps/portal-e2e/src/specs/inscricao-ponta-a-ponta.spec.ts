@@ -163,7 +163,7 @@ async function preencherDadosDoCandidato(page: Page, persona: Persona = PERSONA)
   await campo(page, 'Nome do pai').fill(persona.pai);
   await escolher(page, 'Estado civil', 'Solteiro(a)');
   // "Sexo civil" também começa por "Sexo": o nome do grupo é conferido inteiro.
-  await escolher(page, /^Sexo \*?$/, 'Feminino');
+  await escolher(page, /^Sexo biológico \*?$/, 'Feminino');
   await escolher(page, 'Cor ou raça', 'Branca');
   await campo(page, 'E-mail').fill(persona.email);
   await campo(page, 'Telefone').fill(persona.celular);
@@ -183,37 +183,13 @@ async function preencherDadosDoCandidato(page: Page, persona: Persona = PERSONA)
 }
 
 /**
- * O pedido de atendimento especializado: com "Sim" aparecem a condição e o recurso, e a condição fora
- * da lista pede descrição; com "Não" os três somem. A inscrição segue com "Não".
+ * O modelo de inscrição sem prova não tem etapa presencial, então o formulário não oferece a seção
+ * de atendimento especializado.
  */
-async function responderAtendimentoEspecializado(page: Page): Promise<void> {
-  const pedido = 'Você precisa de atendimento especializado em alguma etapa presencial do processo';
-  const condicoes = page.getByRole('group', { name: /^Em quais condições você se enquadra/ });
-  const recursos = page.getByRole('group', {
-    name: /^De quais recursos você vai precisar nas etapas presenciais/,
-  });
-  const descricao = campo(page, 'Descreva a sua condição específica');
-
-  await irParaSecao(page, 'Atendimento especializado');
-  // A inscrição retomada já traz a resposta anterior: o "Não" fixa o ponto de partida.
-  await escolher(page, pedido, 'Não');
-  await expect(condicoes).toHaveCount(0);
-  await expect(recursos).toHaveCount(0);
-
-  await escolher(page, pedido, 'Sim');
-  await expect(condicoes).toBeVisible();
-  await expect(recursos).toBeVisible();
-  const outraCondicao = condicoes.getByRole('checkbox', { name: 'Outra condição específica' });
-  if (!(await outraCondicao.isChecked())) {
-    await condicoes.getByText('Outra condição específica', { exact: true }).click();
-  }
-  await expect(outraCondicao).toBeChecked();
-  await expect(descricao).toBeVisible();
-
-  await escolher(page, pedido, 'Não');
-  await expect(condicoes).toHaveCount(0);
-  await expect(recursos).toHaveCount(0);
-  await expect(descricao).toHaveCount(0);
+async function conferirSemAtendimentoEspecializado(page: Page): Promise<void> {
+  const secoes = page.getByRole('navigation', { name: 'Seções do formulário' });
+  await expect(secoes.getByRole('button', { name: 'Dados do candidato' })).toBeVisible();
+  await expect(secoes.getByRole('button', { name: 'Atendimento especializado' })).toHaveCount(0);
 }
 
 const pergunta = (page: Page, rotulo: string): Locator =>
@@ -329,7 +305,7 @@ async function preencherRestante(page: Page): Promise<void> {
   await page.getByRole('radio').last().focus();
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
 
-  await responderAtendimentoEspecializado(page);
+  await conferirSemAtendimentoEspecializado(page);
 
   // Quem cursou o ensino médio em escola privada concorre só na ampla concorrência: a lista é a que a
   // API calcula das respostas, já gravadas ou ainda na tela.
@@ -368,6 +344,8 @@ async function preencherRestante(page: Page): Promise<void> {
 /** O envio pelo teclado: foco no botão e Enter, como quem não usa o mouse. */
 async function enviarPeloTeclado(page: Page): Promise<void> {
   const enviar = page.getByRole('button', { name: 'Enviar inscrição' });
+  // O botão só se ativa com o formulário válido; o foco só se fixa nele depois disso.
+  await expect(enviar).toBeEnabled();
   await enviar.focus();
   await expect(enviar).toBeFocused();
   await page.keyboard.press('Enter');
@@ -476,7 +454,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
         painel.getByRole('heading', { level: 4, name: /^Edital de abertura/ }),
       ).toBeVisible();
       const verDocumento = painel.getByRole('link', {
-        name: /^Ver documento \(PDF\) — Edital de abertura/,
+        name: /^.+\.pdf \(PDF, [^)]+\) , abre em nova aba$/,
       });
       await expect(verDocumento).toHaveAttribute('href', /\/editais\/.+\.pdf$/);
       const pdf = await page.request.get((await verDocumento.getAttribute('href')) ?? '');
@@ -494,12 +472,15 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(page.getByRole('heading', { level: 1, name: 'Inscrição' })).toBeVisible();
     });
 
-    await test.step('o envio com obrigatório em branco não sai: anuncia e liga o campo à mensagem', async () => {
+    await test.step('o envio com obrigatório em branco não sai: fica inativo, aponta a seção e liga o campo à mensagem', async () => {
       await irParaSecao(page, 'Dados do candidato');
       await campo(page, 'Nome da mãe').fill('');
-      await enviarPeloTeclado(page);
-      await expect(page.getByText(/^Há (1 item|\d+ itens) a corrigir\./)).toBeAttached();
-      await irParaSecao(page, 'Dados do candidato');
+      const enviar = page.getByRole('button', { name: 'Enviar inscrição' });
+      await expect(enviar).toBeDisabled();
+      await expect(enviar).toHaveAccessibleDescription(/Falta(m)? corrigir \d+ (item|itens)\./);
+      await page.getByRole('button', { name: /^Dados do candidato\s*:?\s*\(\d+ (item|itens)\)/ }).click();
+      // O foco vai ao primeiro campo que falta, que pode ser outro além do nome da mãe.
+      await expect(page.locator(':focus')).toHaveAttribute('aria-invalid', 'true');
       const mae = campo(page, 'Nome da mãe');
       await expect(mae).toHaveAttribute('aria-invalid', 'true');
       await expect(mae).toHaveAccessibleDescription(/Responda este campo\./);
@@ -618,10 +599,11 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(page.getByRole('link', { name: 'Ver o envio mais recente' })).toBeVisible();
     });
 
-    await test.step('minhas inscrições mostra a inscrição com o nome social', async () => {
+    await test.step('minhas inscrições mostra a inscrição enviada, sem expor o nome civil', async () => {
       await page.getByRole('link', { name: 'Voltar às minhas inscrições' }).first().click();
       const item = inscricaoNaLista(page, processo);
-      await expect(item).toContainText(PERSONA.nomeSocial);
+      await expect(item).toContainText('Enviada');
+      await expect(item.getByRole('button', { name: 'Ver comprovante' })).toBeVisible();
       await expect(item).not.toContainText(PERSONA.nome);
     });
   });
