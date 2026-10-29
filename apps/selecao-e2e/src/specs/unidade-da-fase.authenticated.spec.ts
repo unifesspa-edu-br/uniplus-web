@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import { TIPOS_DE_PROCESSO } from '../fixtures/consulta-da-medicina';
 import {
   ATO_DO_PROCESSO,
@@ -11,6 +11,7 @@ import {
   SNAPSHOT_VIGENTE,
   UNIDADE_RESPONSAVEL_DA_FASE,
 } from '../fixtures/processo-publicado-completo';
+import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 import { responder, responderCom } from '../support/responder';
 
 /**
@@ -165,6 +166,7 @@ function problema(status: number, code: string, title: string, errors?: unknown)
 
 async function mockarApi(page: Page, capturado: Capturado): Promise<void> {
   await responder(page, /\/api\//, [], CORS);
+  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
   await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_DE_PROCESSO, CORS);
   await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_DO_CATALOGO, CORS);
   await responder(page, /\/api\/configuracao\/fatos-candidato(\?.*)?$/, FATOS_DO_CANDIDATO, CORS);
