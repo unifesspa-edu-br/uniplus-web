@@ -33,6 +33,7 @@ import {
   TagComponent,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
+import { ehOBeneficiario } from './beneficiario-do-pedido';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
 import { MotivoDialogComponent } from './motivo-dialog.component';
@@ -284,10 +285,7 @@ export class PedidoDetalhePage {
   private readonly ehBeneficiario = computed(() => {
     const beneficiario = this.pedido()?.beneficiario;
     const eu = this.usuario.user();
-    if (beneficiario === undefined || eu === null) return false;
-    return beneficiario.identidade !== null
-      ? beneficiario.identidade.sub === eu.id
-      : beneficiario.email.toLowerCase() === eu.email.toLowerCase();
+    return beneficiario !== undefined && eu !== null && ehOBeneficiario(beneficiario, eu);
   });
   private readonly semDecisao = computed(() => (this.pedido()?.decisoes.length ?? 0) === 0);
 
