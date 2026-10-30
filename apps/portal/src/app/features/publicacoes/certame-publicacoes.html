@@ -50,8 +50,14 @@
         <div class="publicacao-documentos">
           @if (publicacao.documentos.principal; as principal) {
           <section class="publicacao-documentos__grupo">
-            <h5 class="publicacao-documentos__titulo">Documento principal</h5>
-            <ul class="publicacao-documentos__lista" role="list">
+            <p class="publicacao-documentos__titulo" [id]="'documento-principal-' + publicacao.id">
+              Documento principal
+            </p>
+            <ul
+              class="publicacao-documentos__lista"
+              role="list"
+              [attr.aria-labelledby]="'documento-principal-' + publicacao.id"
+            >
               <li>
                 <ng-container
                   *ngTemplateOutlet="documentoLink; context: { $implicit: principal }"
@@ -61,10 +67,14 @@
           </section>
           } @if (publicacao.documentos.anexos.length > 0) {
           <section class="publicacao-documentos__grupo">
-            <h5 class="publicacao-documentos__titulo">
+            <p class="publicacao-documentos__titulo" [id]="'anexos-' + publicacao.id">
               Anexos ({{ publicacao.documentos.anexos.length }})
-            </h5>
-            <ul class="publicacao-documentos__lista" role="list">
+            </p>
+            <ul
+              class="publicacao-documentos__lista"
+              role="list"
+              [attr.aria-labelledby]="'anexos-' + publicacao.id"
+            >
               @for (anexo of publicacao.documentos.anexos; track $index) {
               <li>
                 <ng-container *ngTemplateOutlet="documentoLink; context: { $implicit: anexo }" />

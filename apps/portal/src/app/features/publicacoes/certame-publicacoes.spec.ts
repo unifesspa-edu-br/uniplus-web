@@ -181,6 +181,19 @@ describe('CertamePublicacoesComponent', () => {
     expect(titulos).toEqual(['Documento principal', 'Anexos (2)']);
   });
 
+  it('cada lista de documentos é nomeada pelo rótulo do seu grupo', () => {
+    criar({ publicacoes: medicina });
+    abrir();
+
+    const nomes = Array.from(host().querySelectorAll('.publicacao-documentos__lista')).map(
+      (lista) =>
+        host()
+          .querySelector(`[id="${lista.getAttribute('aria-labelledby')}"]`)
+          ?.textContent?.trim(),
+    );
+    expect(nomes).toEqual(['Documento principal', 'Anexos (2)']);
+  });
+
   it('ato sem documentos mostra "Documento em processamento", sem link nem grupos', () => {
     criar({ publicacoes: medicina });
     abrir();
