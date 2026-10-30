@@ -12,7 +12,7 @@ import { PedidoDetalhePage } from './pedido-detalhe.page';
 import { EU, concedidas, ok, pedido, recusa, UNIDADES } from './testes';
 
 const GESTOR = 'autorizacao:pedidos:aprovar-funcional';
-const ENCARREGADA = 'autorizacao:pedidos:aprovar-protecao-de-dados';
+const PROTECAO_DE_DADOS = 'autorizacao:pedidos:aprovar-protecao-de-dados';
 
 interface Interna {
   executar(): Promise<void>;
@@ -141,16 +141,16 @@ describe('PedidoDetalhePage', () => {
     expect(pagina.podeDecidir()).toBe(true);
   });
 
-  it('a encarregada não decide pedido que ainda aguarda o gestor', async () => {
-    const { pagina } = await abrir([ENCARREGADA]);
+  it('a proteção de dados não decide pedido que ainda aguarda o gestor', async () => {
+    const { pagina } = await abrir([PROTECAO_DE_DADOS]);
 
     expect(pagina.podeDecidir()).toBe(false);
   });
 
-  it('a encarregada decide o pedido da etapa dela', async () => {
+  it('a proteção de dados decide o pedido da etapa dela', async () => {
     const { pagina } = await abrir(
-      [ENCARREGADA],
-      pedido({ situacao: 'aguardando_encarregada', etapaAtual: 'encarregada' }),
+      [PROTECAO_DE_DADOS],
+      pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' }),
     );
 
     expect(pagina.podeDecidir()).toBe(true);
@@ -167,7 +167,7 @@ describe('PedidoDetalhePage', () => {
     expect(outra.pagina.podeDecidir()).toBe(false);
   });
 
-  it('quem já decidiu como gestor não vê aprovar nem recusar na etapa da encarregada', async () => {
+  it('quem já decidiu como gestor não vê aprovar nem recusar na etapa da proteção de dados', async () => {
     const decisao = {
       etapa: 'gestor',
       decisor: { emissor: 'unifesspa', sub: EU.id },
@@ -178,26 +178,26 @@ describe('PedidoDetalhePage', () => {
       sensibilidadeAvaliada: 'pessoal',
       dispensa: null,
     };
-    const naEtapaDaEncarregada = pedido({
-      situacao: 'aguardando_encarregada',
-      etapaAtual: 'encarregada',
+    const naEtapaDaProtecaoDeDados = pedido({
+      situacao: 'aguardando_protecao_de_dados',
+      etapaAtual: 'protecao_de_dados',
       decisoes: [decisao],
     });
 
-    const { pagina } = await abrir([GESTOR, ENCARREGADA], naEtapaDaEncarregada);
+    const { pagina } = await abrir([GESTOR, PROTECAO_DE_DADOS], naEtapaDaProtecaoDeDados);
     expect(pagina.podeDecidir()).toBe(false);
 
     const outro = await abrir(
-      [GESTOR, ENCARREGADA],
+      [GESTOR, PROTECAO_DE_DADOS],
       pedido({
-        ...naEtapaDaEncarregada,
+        ...naEtapaDaProtecaoDeDados,
         decisoes: [{ ...decisao, decisor: { emissor: 'unifesspa', sub: 'sub-outro-gestor' } }],
       }),
     );
     expect(outro.pagina.podeDecidir()).toBe(true);
   });
 
-  it('depois do perfil alterado, o gestor original reavalia e a encarregada que tentou conclui', async () => {
+  it('depois do perfil alterado, o gestor original reavalia e a proteção de dados que tentou conclui', async () => {
     const decisao = (etapa: string, resultado: string, sub: string) => ({
       etapa,
       decisor: { emissor: 'unifesspa', sub },
@@ -211,36 +211,36 @@ describe('PedidoDetalhePage', () => {
     const devolvido = pedido({
       decisoes: [
         decisao('gestor', 'aprovado', EU.id),
-        decisao('encarregada', 'perfil_alterado', 'sub-outra-pessoa-2'),
+        decisao('protecao_de_dados', 'perfil_alterado', 'sub-outra-pessoa-2'),
       ],
     });
 
     const gestor = await abrir([GESTOR], devolvido);
     expect(gestor.pagina.podeDecidir()).toBe(true);
 
-    const naEtapaDaEncarregada = pedido({
-      situacao: 'aguardando_encarregada',
-      etapaAtual: 'encarregada',
+    const naEtapaDaProtecaoDeDados = pedido({
+      situacao: 'aguardando_protecao_de_dados',
+      etapaAtual: 'protecao_de_dados',
       decisoes: [
         decisao('gestor', 'aprovado', EU.id),
-        decisao('encarregada', 'perfil_alterado', 'sub-encarregada-0'),
+        decisao('protecao_de_dados', 'perfil_alterado', 'sub-protecao-de-dados-0'),
         decisao('gestor', 'aprovado', 'sub-outro-gestor'),
       ],
     });
-    const encarregada = await abrir([ENCARREGADA], naEtapaDaEncarregada, {
-      id: 'sub-encarregada-0',
+    const protecaoDeDados = await abrir([PROTECAO_DE_DADOS], naEtapaDaProtecaoDeDados, {
+      id: 'sub-protecao-de-dados-0',
     });
-    expect(encarregada.pagina.podeDecidir()).toBe(true);
+    expect(protecaoDeDados.pagina.podeDecidir()).toBe(true);
 
-    const mesmoGestor = await abrir([GESTOR, ENCARREGADA], naEtapaDaEncarregada);
+    const mesmoGestor = await abrir([GESTOR, PROTECAO_DE_DADOS], naEtapaDaProtecaoDeDados);
     expect(mesmoGestor.pagina.podeDecidir()).toBe(false);
   });
 
   it('depois de recusa da API, recarrega o pedido e mostra a etapa que a API tem', async () => {
-    const { pagina, host, fixture } = await abrir([GESTOR, ENCARREGADA]);
+    const { pagina, host, fixture } = await abrir([GESTOR, PROTECAO_DE_DADOS]);
     api.aprovar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.perfil_alterado', 409)));
     api.obter.mockReturnValue(
-      of(ok(pedido({ situacao: 'aguardando_encarregada', etapaAtual: 'encarregada' }))),
+      of(ok(pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' }))),
     );
 
     pagina.pedirConfirmacao('aprovar');
@@ -249,7 +249,7 @@ describe('PedidoDetalhePage', () => {
 
     expect(api.obter).toHaveBeenCalledTimes(2);
     expect(pagina.erro()).toBe('Recusado');
-    expect(host.textContent).toContain('Encarregada de dados');
+    expect(host.textContent).toContain('Encarregado(a) pelo tratamento de dados');
   });
 
   it('fecha o diálogo de recusa quando o pedido já não está na etapa da pessoa', async () => {
@@ -257,7 +257,7 @@ describe('PedidoDetalhePage', () => {
     pagina.abrirRecusa();
     api.recusar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.etapa_invalida')));
     api.obter.mockReturnValue(
-      of(ok(pedido({ situacao: 'aguardando_encarregada', etapaAtual: 'encarregada' }))),
+      of(ok(pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' }))),
     );
 
     await pagina.recusar('Motivo.');
@@ -269,7 +269,7 @@ describe('PedidoDetalhePage', () => {
 
   it('aprova e recarrega o pedido', async () => {
     const { pagina } = await abrir([GESTOR]);
-    api.aprovar.mockReturnValue(of(ok(pedido({ situacao: 'aguardando_encarregada' }))));
+    api.aprovar.mockReturnValue(of(ok(pedido({ situacao: 'aguardando_protecao_de_dados' }))));
 
     pagina.pedirConfirmacao('aprovar');
     await pagina.executar();

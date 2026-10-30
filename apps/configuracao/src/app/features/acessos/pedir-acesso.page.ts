@@ -52,7 +52,7 @@ const FASE: Readonly<Record<FaseDoEnvio, string>> = {
 
 /**
  * Pedido de acesso, para si ou para outra pessoa. O pedido não dá acesso: segue para o gestor de
- * acessos e, se o perfil tem dado pessoal ou sensível, para a encarregada de dados.
+ * acessos e, se o perfil tem dado pessoal ou sensível, para a proteção de dados.
  */
 @Component({
   selector: 'cfg-pedir-acesso-page',
@@ -70,7 +70,7 @@ const FASE: Readonly<Record<FaseDoEnvio, string>> = {
   template: `
     <ui-page-header
       heading="Pedir acesso"
-      description="O pedido passa pela aprovação do gestor de acessos e, quando o perfil inclui dado pessoal ou sensível, também pela da encarregada de dados."
+      description="O pedido passa pela aprovação do gestor de acessos e, quando o perfil inclui dado pessoal ou sensível, também pela da proteção de dados."
     />
 
     @if (erro()) {
@@ -197,8 +197,8 @@ const FASE: Readonly<Record<FaseDoEnvio, string>> = {
         [(selectedFile)]="arquivo"
       />
       <p class="field__hint">
-        O documento de designação é obrigatório para os perfis de gestor de acessos e de encarregada
-        de dados. O pedido só segue para aprovação depois que o documento é verificado.
+        O documento de designação é obrigatório para os perfis de gestor de acessos e de proteção de
+        dados de dados. O pedido só segue para aprovação depois que o documento é verificado.
       </p>
 
       @if (faseDoEnvio(); as fase) {
@@ -266,7 +266,7 @@ export class PedirAcessoPage {
   protected readonly perfilSelecionado = computed(
     () => this.perfis().find((perfil) => perfil.id === this.perfilId()) ?? null,
   );
-  /** O perfil de governança (gestor de acessos, encarregada de dados) só se pede com o documento de designação. */
+  /** O perfil de governança (gestor de acessos, proteção de dados) só se pede com o documento de designação. */
   protected readonly exigeDocumento = computed(
     () => (this.perfilSelecionado()?.governanca ?? null) !== null,
   );

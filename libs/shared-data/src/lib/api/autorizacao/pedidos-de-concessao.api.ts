@@ -17,7 +17,7 @@ export type PerfilParaPedidoDto = components['schemas']['PerfilParaPedidoDto'];
 export type CriarPedidoDeConcessaoRequest = components['schemas']['CriarPedidoDeConcessaoRequest'];
 
 /** Fila que a listagem devolve: os pedidos de quem pergunta ou a fila de uma das etapas de aprovação. */
-export type FilaDePedidos = 'meus' | 'gestor' | 'encarregada' | 'todos';
+export type FilaDePedidos = 'meus' | 'gestor' | 'protecao_de_dados' | 'todos';
 
 export interface PedidosQuery extends PaginaQuery {
   readonly fila?: FilaDePedidos;

@@ -88,7 +88,7 @@ describe('appRoutes — acesso pelas permissões efetivas', () => {
     concedidas.set(['autorizacao:pedidos:aprovar-funcional']);
 
     expect(await ir('/acessos/fila-do-gestor')).toBe('/acessos/fila-do-gestor');
-    expect(await ir('/acessos/fila-da-encarregada')).toBe('/acesso-negado');
+    expect(await ir('/acessos/fila-da-protecao-de-dados')).toBe('/acesso-negado');
     expect(await ir('/acessos/concessoes')).toBe('/acesso-negado');
     expect(await ir('/acessos/perfis')).toBe('/acesso-negado');
   });

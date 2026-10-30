@@ -50,7 +50,7 @@ export const PERMISSOES_DO_DIOGO = [
   'autorizacao:perfis:manter',
 ] as const;
 
-/** Betina é a encarregada de dados: aprova a etapa de proteção de dados. */
-export const PERMISSOES_DA_BETINA_ENCARREGADA = [
+/** Betina é da proteção de dados: aprova a etapa de proteção de dados. */
+export const PERMISSOES_DA_BETINA_PROTECAO_DE_DADOS = [
   'autorizacao:pedidos:aprovar-protecao-de-dados',
 ] as const;

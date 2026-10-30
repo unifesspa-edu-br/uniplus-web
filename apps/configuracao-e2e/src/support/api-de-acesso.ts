@@ -113,7 +113,7 @@ function resumo(p: Pedido) {
 }
 
 /**
- * Simula a API de autorização com estado: o pedido percorre gestor e encarregada, a última
+ * Simula a API de autorização com estado: o pedido percorre gestor e proteção de dados, a última
  * aprovação gera a concessão e a revogação a tira das ativas. Quem decide é a tela de quem
  * navega; a API simulada só aplica a transição.
  */
@@ -164,7 +164,7 @@ export async function mockApiDeAcesso(
             nome,
             descricao,
             escopo: 'unidade',
-            exigeEncarregada: false,
+            exigeAprovacaoDeProtecaoDeDados: false,
           })),
         );
       }
@@ -177,8 +177,8 @@ export async function mockApiDeAcesso(
           .filter((p) =>
             fila === 'gestor'
               ? p.situacao === 'aguardando_gestor'
-              : fila === 'encarregada'
-                ? p.situacao === 'aguardando_encarregada'
+              : fila === 'protecao_de_dados'
+                ? p.situacao === 'aguardando_protecao_de_dados'
                 : fila === 'todos'
                   ? true
                   : p.solicitante.sub === eu,
@@ -241,8 +241,8 @@ export async function mockApiDeAcesso(
         if (!alvo) return json(route, {}, 404);
         const sensivel = alvo.perfil.id === PERFIL_SENSIVEL_ID;
         if (alvo.etapaAtual === 'gestor' && sensivel) {
-          alvo.situacao = 'aguardando_encarregada';
-          alvo.etapaAtual = 'encarregada';
+          alvo.situacao = 'aguardando_protecao_de_dados';
+          alvo.etapaAtual = 'protecao_de_dados';
         } else {
           alvo.situacao = 'aprovado';
           alvo.etapaAtual = null;

@@ -21,7 +21,7 @@ describe('PedidosPage', () => {
     });
   });
 
-  function abrir(fila: 'meus' | 'gestor' | 'encarregada' | 'todos') {
+  function abrir(fila: 'meus' | 'gestor' | 'protecao_de_dados' | 'todos') {
     const fixture = TestBed.createComponent(PedidosPage);
     fixture.componentRef.setInput('fila', fila);
     fixture.detectChanges();
@@ -44,10 +44,10 @@ describe('PedidosPage', () => {
   it('pede a fila da etapa e não oferece o pedido de acesso nem o filtro de situação', () => {
     api.listar.mockReturnValue(of(ok([])));
 
-    const { host } = abrir('encarregada');
+    const { host } = abrir('protecao_de_dados');
 
-    expect(api.listar.mock.calls[0]?.[0]).toMatchObject({ fila: 'encarregada' });
-    expect(host.querySelector('h1')?.textContent).toContain('Fila da encarregada de dados');
+    expect(api.listar.mock.calls[0]?.[0]).toMatchObject({ fila: 'protecao_de_dados' });
+    expect(host.querySelector('h1')?.textContent).toContain('Fila da proteção de dados');
     expect(host.querySelector('a[href="/acessos/pedidos/novo"]')).toBeNull();
     expect(host.querySelector('select')).toBeNull();
     expect(host.textContent).toContain('Nenhum pedido aguarda a sua aprovação.');

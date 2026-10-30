@@ -15,7 +15,7 @@ const PERFIL_COMUM = {
   nome: 'Operador de inscrições',
   descricao: 'Opera as inscrições.',
   escopo: 'unidade',
-  exigeEncarregada: false,
+  exigeAprovacaoDeProtecaoDeDados: false,
   governanca: null,
 };
 const PERFIL_INSTITUCIONAL = {
@@ -23,14 +23,14 @@ const PERFIL_INSTITUCIONAL = {
   id: 'perfil-2',
   nome: 'Gestor de acessos',
   escopo: 'instituicao',
-  exigeEncarregada: true,
+  exigeAprovacaoDeProtecaoDeDados: true,
 };
 
 const PERFIL_DE_GOVERNANCA = {
   ...PERFIL_INSTITUCIONAL,
   id: 'perfil-3',
-  nome: 'Encarregada de dados',
-  governanca: 'encarregada',
+  nome: 'Encarregado(a) pelo tratamento de dados',
+  governanca: 'protecao-de-dados',
 };
 
 describe('PedirAcessoPage', () => {
@@ -85,7 +85,7 @@ describe('PedirAcessoPage', () => {
       'Selecione um perfil',
       'Operador de inscrições',
       'Gestor de acessos',
-      'Encarregada de dados',
+      'Encarregado(a) pelo tratamento de dados',
     ]);
     expect(host.querySelector('input[formcontrolname="perfilId"]')).toBeNull();
   });
@@ -143,7 +143,7 @@ describe('PedirAcessoPage', () => {
     const { digitar, enviar, host, fixture } = montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-3');
-    digitar('textarea', 'Designada encarregada de dados da instituição.');
+    digitar('textarea', 'Designada para a proteção de dados da instituição.');
     await enviar();
     await fixture.whenStable();
 
@@ -173,7 +173,7 @@ describe('PedirAcessoPage', () => {
     const { digitar, enviar, fixture } = montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-3');
-    digitar('textarea', 'Designada encarregada de dados da instituição.');
+    digitar('textarea', 'Designada para a proteção de dados da instituição.');
     (fixture.componentInstance as unknown as { arquivo: { set(f: File): void } }).arquivo.set(
       new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }),
     );
