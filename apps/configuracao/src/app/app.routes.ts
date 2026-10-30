@@ -1,12 +1,11 @@
 import { Routes } from '@angular/router';
-import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
 import { authGuard, permissaoGuard } from '@uniplus/shared-auth/guards';
 import { PERMISSOES_DAS_TELAS, entradaPelaPermissao } from './acesso/permissoes-das-telas';
 
 export const appRoutes: Routes = [
   {
     path: 'acesso-negado',
-    component: AccessDeniedComponent,
+    loadComponent: () => import('./acesso/acesso-negado.page').then((m) => m.AcessoNegadoPage),
     data: { rotaDeVolta: '/acessos/pedidos/novo', rotuloDaRotaDeVolta: 'Pedir acesso' },
   },
   {

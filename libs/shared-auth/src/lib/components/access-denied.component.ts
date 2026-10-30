@@ -16,6 +16,9 @@ import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap'
  * administrativos a raiz é protegida pelo mesmo guard que trouxe o usuário
  * aqui, e mandá-lo para lá o traria de volta. Por isso o destino é declarado
  * por quem monta a rota, em `data.rotaDeVolta`, e não presumido.
+ *
+ * O conteúdo projetado aparece antes das ações: quem monta a rota acrescenta
+ * o que for próprio do seu domínio sem que esta lib passe a conhecê-lo.
  */
 @Component({
   selector: 'auth-access-denied',
@@ -34,6 +37,7 @@ import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap'
             >.
           </p>
         }
+        <ng-content />
         <div class="ui-access-denied__acoes">
           @if (rotaDeVolta(); as rota) {
             <a class="btn btn--tertiary" [routerLink]="rota">{{ rotuloDaRotaDeVolta() }}</a>
