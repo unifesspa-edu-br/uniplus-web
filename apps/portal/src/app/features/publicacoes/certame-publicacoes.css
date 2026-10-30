@@ -148,9 +148,15 @@
   border-radius: var(--radius-md);
 }
 
+/*
+ * Sobre o fundo tingido deste cartão, `--text-link` e `--text-secondary` não alcançam o piso de
+ * 7:1 do portão AAA. Sobrescrever os tokens aqui alcança todo consumidor dentro do cartão.
+ */
 .publicacao-timeline__card.is-current {
   background: color-mix(in srgb, var(--color-primary) 12%, var(--surface-card));
   border-color: var(--color-primary-200);
+  --text-secondary: var(--text-primary);
+  --text-link: var(--text-primary);
 }
 
 .publicacao-timeline__head {
@@ -161,7 +167,7 @@
 }
 
 .publicacao-timeline__data {
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
@@ -169,7 +175,8 @@
 
 .publicacao-timeline__evento-titulo {
   margin: 0;
-  font-size: var(--text-md);
+  /* --text-md é fluido e fica abaixo do piso de 18px de título em tela estreita; --text-lg não. */
+  font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   color: var(--text-heading);
   overflow-wrap: anywhere;
@@ -203,7 +210,7 @@
 
 .publicacao-documentos__titulo {
   margin: 0;
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-secondary);
 }
