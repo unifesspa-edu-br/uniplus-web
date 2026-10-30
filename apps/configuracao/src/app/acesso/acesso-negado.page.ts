@@ -6,6 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
@@ -22,6 +23,9 @@ const EM_ABERTO = [
   'aguardando_gestor',
   'aguardando_protecao_de_dados',
 ];
+
+/** Recusa da API a quem não tem e-mail institucional verificado nem a permissão de manter perfis. */
+const SOLICITANTE_NAO_INSTITUCIONAL = 'uniplus.autorizacao.pedido.solicitante_nao_institucional';
 
 const ROTULO_DA_ACAO = {
   aceitar: 'Aceitar o pedido',
@@ -58,7 +62,13 @@ function acaoDo(
   imports: [AccessDeniedComponent, RouterLink, TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <auth-access-denied>
+    <auth-access-denied [ocultarRotaDeVolta]="semEmailInstitucional()">
+      @if (semEmailInstitucional()) {
+        <p class="cfg-orientacao-email-institucional" role="note">
+          Pedir acesso ao Uni+ exige e-mail institucional da Unifesspa verificado na sua conta.
+          Entre com a sua conta institucional para pedir acesso.
+        </p>
+      }
       @if (emAberto().length > 0) {
         <section class="cfg-pedidos-em-aberto" aria-labelledby="cfg-pedidos-em-aberto-titulo">
           <h2 id="cfg-pedidos-em-aberto-titulo" class="u-caption">
@@ -96,10 +106,32 @@ export class AcessoNegadoPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly emAberto = signal<readonly PedidoEmAberto[]>([]);
+  protected readonly semEmailInstitucional = signal(false);
   protected readonly rotulo = situacaoDoPedido;
   protected readonly ROTULO_DA_ACAO = ROTULO_DA_ACAO;
 
   ngOnInit(): void {
+    this.verificarSePodePedirAcesso();
+    this.carregarPedidosEmAberto();
+  }
+
+  /** Só a recusa por e-mail não institucional esconde o pedido; a API segue recusando o indevido. */
+  private verificarSePodePedirAcesso(): void {
+    this.api
+      .perfisParaPedir({ limit: 1 })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resultado) =>
+          this.semEmailInstitucional.set(
+            !resultado.ok &&
+              resultado.status === 403 &&
+              resultado.problem.code === SOLICITANTE_NAO_INSTITUCIONAL,
+          ),
+        error: () => undefined,
+      });
+  }
+
+  private carregarPedidosEmAberto(): void {
     // Uma consulta por situação em aberto: a fila completa é paginada e o pedido em aberto pode
     // estar atrás de uma página de pedidos já encerrados.
     const consulta = forkJoin(

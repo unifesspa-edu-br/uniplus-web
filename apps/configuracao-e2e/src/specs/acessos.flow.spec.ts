@@ -130,6 +130,20 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(page).toHaveURL(/\/acessos\/historico$/);
   });
 
+  test('quem não tem e-mail institucional não vê o pedido de acesso e lê a orientação', async ({
+    page,
+  }) => {
+    await mockApiDeAcesso(page, [], { solicitanteInstitucional: false });
+    await mockPermissoesEfetivas(page, []);
+
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/acesso-negado$/);
+    await expect(
+      page.getByText('exige e-mail institucional da Unifesspa verificado'),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Pedir acesso' })).toHaveCount(0);
+  });
+
   test('Leandro não vê filas, concessões nem perfis, e é levado ao acesso negado ao abri-las', async ({
     page,
   }) => {
