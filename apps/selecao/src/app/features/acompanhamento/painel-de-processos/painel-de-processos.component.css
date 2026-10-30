@@ -1,0 +1,44 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  flex-shrink: 0;
+}
+
+.painel__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.painel__espera {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-secondary);
+}
+
+.painel__nova-tentativa {
+  margin-top: var(--space-3);
+}
+
+/* `min(100%, …)` evita que a trilha mínima estoure a viewport de 320 px. */
+.painel__cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.painel__cartao {
+  min-width: 0;
+  justify-content: space-between;
+}
+
+/* Nome sem espaços (ou muito longo) quebra em vez de vazar sobre o vizinho. */
+.painel__nome {
+  overflow-wrap: anywhere;
+}
