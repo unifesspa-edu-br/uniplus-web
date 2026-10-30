@@ -384,6 +384,18 @@ describe('PedidoDetalhePage', () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
+  it('destaca a pendência e a ação de anexar quando o pedido aguarda o documento', async () => {
+    const { host } = await abrir(
+      [],
+      pedido({ ...solicitadoPorMim(), situacao: 'aguardando_documento', etapaAtual: null }),
+    );
+
+    expect(host.textContent).toContain('Falta o documento de designação');
+    expect(host.textContent).toContain('Aguardando o documento de designação');
+    const botoes = Array.from(host.querySelectorAll('button')).map((b) => b.textContent?.trim());
+    expect(botoes).toContain('Anexar o documento');
+  });
+
   it('anexa o documento do solicitante e recarrega o pedido', async () => {
     const { pagina } = await abrir([], solicitadoPorMim());
     anexos.anexar.mockResolvedValue({ ok: true });

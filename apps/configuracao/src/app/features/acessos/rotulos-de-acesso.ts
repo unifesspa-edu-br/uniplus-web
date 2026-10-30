@@ -6,6 +6,7 @@ interface Rotulo {
 }
 
 const SITUACAO_DO_PEDIDO: Readonly<Record<string, Rotulo>> = {
+  aguardando_documento: { texto: 'Aguardando o documento de designação', variante: 'warning' },
   aguardando_beneficiario: { texto: 'Aguardando o aceite do beneficiário', variante: 'warning' },
   aguardando_gestor: { texto: 'Aguardando o gestor de acessos', variante: 'info' },
   aguardando_encarregada: { texto: 'Aguardando a encarregada de dados', variante: 'info' },

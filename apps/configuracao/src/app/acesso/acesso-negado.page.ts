@@ -16,11 +16,22 @@ import { ehOBeneficiario } from '../features/acessos/beneficiario-do-pedido';
 import { situacaoDoPedido } from '../features/acessos/rotulos-de-acesso';
 
 /** Situações em que o pedido ainda espera alguém; as demais já foram decididas ou canceladas. */
-const EM_ABERTO = ['aguardando_beneficiario', 'aguardando_gestor', 'aguardando_encarregada'];
+const EM_ABERTO = [
+  'aguardando_documento',
+  'aguardando_beneficiario',
+  'aguardando_gestor',
+  'aguardando_encarregada',
+];
+
+const ROTULO_DA_ACAO = {
+  aceitar: 'Aceitar o pedido',
+  anexar: 'Anexar o documento',
+  ver: 'Ver o pedido',
+} as const;
 
 interface PedidoEmAberto {
   readonly pedido: PedidoResumoDto;
-  readonly aceitavel: boolean;
+  readonly acao: 'aceitar' | 'anexar' | 'ver';
 }
 
 /**
@@ -29,6 +40,18 @@ interface PedidoEmAberto {
  * igual, que a API recusaria como duplicado. A consulta que falha não atrapalha: a tela segue
  * como sem pedidos.
  */
+function acaoDo(
+  pedido: PedidoResumoDto,
+  eu: { readonly id: string; readonly email: string } | null,
+): PedidoEmAberto['acao'] {
+  if (pedido.situacao === 'aguardando_documento') return 'anexar';
+  const aceitavel =
+    pedido.situacao === 'aguardando_beneficiario' &&
+    eu !== null &&
+    ehOBeneficiario(pedido.beneficiario, eu);
+  return aceitavel ? 'aceitar' : 'ver';
+}
+
 @Component({
   selector: 'cfg-acesso-negado-page',
   standalone: true,
@@ -52,14 +75,11 @@ interface PedidoEmAberto {
                 </span>
                 <a
                   class="btn btn--sm"
-                  [class.btn--primary]="item.aceitavel"
-                  [class.btn--secondary]="!item.aceitavel"
+                  [class.btn--primary]="item.acao !== 'ver'"
+                  [class.btn--secondary]="item.acao === 'ver'"
                   [routerLink]="['/acessos/pedidos', item.pedido.id]"
-                  [attr.aria-label]="
-                    (item.aceitavel ? 'Aceitar o pedido de ' : 'Ver o pedido de ') +
-                    item.pedido.perfil.nome
-                  "
-                  >{{ item.aceitavel ? 'Aceitar o pedido' : 'Ver o pedido' }}</a
+                  [attr.aria-label]="ROTULO_DA_ACAO[item.acao] + ' de ' + item.pedido.perfil.nome"
+                  >{{ ROTULO_DA_ACAO[item.acao] }}</a
                 >
               </li>
             }
@@ -77,6 +97,7 @@ export class AcessoNegadoPage implements OnInit {
 
   protected readonly emAberto = signal<readonly PedidoEmAberto[]>([]);
   protected readonly rotulo = situacaoDoPedido;
+  protected readonly ROTULO_DA_ACAO = ROTULO_DA_ACAO;
 
   ngOnInit(): void {
     // Uma consulta por situação em aberto: a fila completa é paginada e o pedido em aberto pode
@@ -96,10 +117,7 @@ export class AcessoNegadoPage implements OnInit {
         this.emAberto.set(
           [...porId.values()].map((pedido) => ({
             pedido,
-            aceitavel:
-              pedido.situacao === 'aguardando_beneficiario' &&
-              eu !== null &&
-              ehOBeneficiario(pedido.beneficiario, eu),
+            acao: acaoDo(pedido, eu),
           })),
         );
       },

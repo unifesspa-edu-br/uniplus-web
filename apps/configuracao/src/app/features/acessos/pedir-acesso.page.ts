@@ -34,6 +34,9 @@ import { nomesDeEscopo } from './nomes-de-escopo';
 
 type ParaQuem = 'mim' | 'outra';
 
+const DOCUMENTO_OBRIGATORIO =
+  'O documento de designação é obrigatório para este perfil. Anexe o PDF.';
+
 interface CorpoDoPedido {
   readonly beneficiarioEmail: string | null;
   readonly perfilId: string;
@@ -183,17 +186,19 @@ const FASE: Readonly<Record<FaseDoEnvio, string>> = {
       </label>
 
       <ui-file-upload
-        fieldLabel="Documento (opcional)"
+        [fieldLabel]="exigeDocumento() ? 'Documento de designação' : 'Documento (opcional)'"
+        [isRequired]="exigeDocumento()"
         acceptedFileTypes=".pdf"
         acceptLabel="PDF de até 10 MB"
         [allowedMimeTypes]="['application/pdf']"
         [maxSizeMb]="10"
         [disabled]="enviando()"
+        [mensagemExterna]="erroDoDocumento()"
         [(selectedFile)]="arquivo"
       />
       <p class="field__hint">
         O documento de designação é obrigatório para os perfis de gestor de acessos e de encarregada
-        de dados.
+        de dados. O pedido só segue para aprovação depois que o documento é verificado.
       </p>
 
       @if (faseDoEnvio(); as fase) {
@@ -245,6 +250,7 @@ export class PedirAcessoPage {
   });
 
   protected readonly arquivo = signal<File | null>(null);
+  private readonly tentouEnviar = signal(false);
   protected readonly enviando = signal(false);
   protected readonly erro = signal<string | null>(null);
   protected readonly faseDoEnvio = signal<string | null>(null);
@@ -259,6 +265,15 @@ export class PedirAcessoPage {
   protected readonly unidades = this.escopo.unidades.opcoes;
   protected readonly perfilSelecionado = computed(
     () => this.perfis().find((perfil) => perfil.id === this.perfilId()) ?? null,
+  );
+  /** O perfil de governança (gestor de acessos, encarregada de dados) só se pede com o documento de designação. */
+  protected readonly exigeDocumento = computed(
+    () => (this.perfilSelecionado()?.governanca ?? null) !== null,
+  );
+  protected readonly erroDoDocumento = computed(() =>
+    this.tentouEnviar() && this.exigeDocumento() && this.arquivo() === null
+      ? DOCUMENTO_OBRIGATORIO
+      : null,
   );
   /** O perfil de escopo institucional vale para a instituição, sem unidade. */
   protected readonly exigeUnidade = computed(
@@ -277,7 +292,8 @@ export class PedirAcessoPage {
 
   protected async enviar(): Promise<void> {
     this.aplicarObrigatoriedades();
-    if (this.form.invalid) {
+    this.tentouEnviar.set(true);
+    if (this.form.invalid || this.erroDoDocumento() !== null) {
       this.form.markAllAsTouched();
       this.focarPrimeiroInvalido();
       return;
@@ -341,7 +357,15 @@ export class PedirAcessoPage {
   /** Leva o foco ao primeiro campo com erro depois que a tela o marca, para o leitor de tela anunciá-lo. */
   private focarPrimeiroInvalido(): void {
     afterNextRender(
-      () => this.host.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+      () => {
+        const host = this.host.nativeElement;
+        const alvo =
+          host.querySelector<HTMLElement>('[aria-invalid="true"]:not([type="file"])') ??
+          (this.erroDoDocumento() !== null
+            ? host.querySelector<HTMLElement>('.uni-uploader__drop')
+            : null);
+        alvo?.focus();
+      },
       { injector: this.injector },
     );
   }
