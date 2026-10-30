@@ -23,12 +23,12 @@ describe('mensagens de acesso', () => {
       type: 'x',
       title: 'texto da API',
       status: 422,
-      code: 'uniplus.autorizacao.pedido.documento_obrigatorio',
+      code: 'uniplus.autorizacao.pedido.anexo_nao_verificado',
       traceId: '',
     });
 
     expect(textoDaRecusa(mensagem)).toBe(
-      'O perfil exige o documento de designação. Anexe o PDF do documento de designação e aguarde a verificação antes da aprovação.',
+      'O documento ainda não foi verificado. Aguarde a verificação. Se o documento foi recusado, envie outro arquivo.',
     );
   });
 

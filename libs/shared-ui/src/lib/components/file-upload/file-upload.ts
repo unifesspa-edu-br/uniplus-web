@@ -63,7 +63,7 @@ const PASSO_ANUNCIADO = 25;
          que não recebe eventos): sem isso o navegador abriria o arquivo solto. -->
     <div class="uni-uploader" [class.uni-uploader--compacto]="compacto()" (dragover)="aoArrastarSobre($event)" (drop)="aoSoltarForaDaZona($event)">
       @if (fieldLabel()) {
-        <label [id]="labelId" [attr.for]="inputId" class="field__label">{{ fieldLabel() }}</label>
+        <label [id]="labelId" [attr.for]="inputId" class="field__label" [class.is-required]="isRequired()">{{ fieldLabel() }}</label>
       }
       @if (!zonaOculta()) {
       <button
@@ -97,6 +97,7 @@ const PASSO_ANUNCIADO = 25;
         [disabled]="disabled()"
         [attr.aria-describedby]="describedBy()"
         [attr.aria-invalid]="comErro() ? 'true' : null"
+        [attr.aria-required]="isRequired() ? 'true' : null"
         (change)="onFilesPicked(fileInput)"
       />
       @let lista = itens();
@@ -252,6 +253,7 @@ export class FileUploadComponent {
   /** Com um arquivo escolhido (modo simples), a zona some e volta quando o arquivo é retirado. */
   readonly ocultarZonaComArquivo = input(false);
   readonly disabled = input(false);
+  readonly isRequired = input(false);
   /** Ids de elementos que descrevem o campo, lidos junto do nome pelo leitor de tela. */
   readonly descritoPor = input<string | null>(null);
   /** Recusa que nasce no consumidor (por exemplo, uma regra do fluxo) e deve aparecer junto. */

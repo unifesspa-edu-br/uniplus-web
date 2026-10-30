@@ -16,6 +16,7 @@ const PERFIL_COMUM = {
   descricao: 'Opera as inscrições.',
   escopo: 'unidade',
   exigeEncarregada: false,
+  governanca: null,
 };
 const PERFIL_INSTITUCIONAL = {
   ...PERFIL_COMUM,
@@ -25,13 +26,22 @@ const PERFIL_INSTITUCIONAL = {
   exigeEncarregada: true,
 };
 
+const PERFIL_DE_GOVERNANCA = {
+  ...PERFIL_INSTITUCIONAL,
+  id: 'perfil-3',
+  nome: 'Encarregada de dados',
+  governanca: 'encarregada',
+};
+
 describe('PedirAcessoPage', () => {
   const api = { criar: vi.fn(), perfisParaPedir: vi.fn() };
   const anexos = { anexar: vi.fn() };
   const notificacoes = { success: vi.fn(), warning: vi.fn() };
 
   function montar() {
-    api.perfisParaPedir.mockReturnValue(of(ok([PERFIL_COMUM, PERFIL_INSTITUCIONAL])));
+    api.perfisParaPedir.mockReturnValue(
+      of(ok([PERFIL_COMUM, PERFIL_INSTITUCIONAL, PERFIL_DE_GOVERNANCA])),
+    );
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -71,7 +81,12 @@ describe('PedirAcessoPage', () => {
     const opcoes = Array.from(
       host.querySelectorAll('select[formcontrolname="perfilId"] option'),
     ).map((o) => o.textContent?.trim());
-    expect(opcoes).toEqual(['Selecione um perfil', 'Operador de inscrições', 'Gestor de acessos']);
+    expect(opcoes).toEqual([
+      'Selecione um perfil',
+      'Operador de inscrições',
+      'Gestor de acessos',
+      'Encarregada de dados',
+    ]);
     expect(host.querySelector('input[formcontrolname="perfilId"]')).toBeNull();
   });
 
@@ -122,6 +137,50 @@ describe('PedirAcessoPage', () => {
     const justificativa = host.querySelector('textarea') as HTMLElement;
     expect(justificativa.getAttribute('aria-describedby')).toBe('cfg-pedir-justificativa-erro');
     expect(document.activeElement).toBe(perfil);
+  });
+
+  it('bloqueia o envio de perfil de governança sem o PDF e liga a mensagem ao campo', async () => {
+    const { digitar, enviar, host, fixture } = montar();
+
+    digitar('select[formcontrolname="perfilId"]', 'perfil-3');
+    digitar('textarea', 'Designada encarregada de dados da instituição.');
+    await enviar();
+    await fixture.whenStable();
+
+    expect(api.criar).not.toHaveBeenCalled();
+    expect(host.textContent).toContain('O documento de designação é obrigatório para este perfil.');
+    const arquivo = host.querySelector('input[type="file"]') as HTMLElement;
+    expect(arquivo.getAttribute('aria-invalid')).toBe('true');
+    expect(arquivo.getAttribute('aria-describedby')).toBeTruthy();
+  });
+
+  it('no perfil de governança sem PDF e com justificativa inválida, o foco fica na justificativa', async () => {
+    const { digitar, enviar, host, fixture } = montar();
+
+    digitar('select[formcontrolname="perfilId"]', 'perfil-3');
+    await enviar();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(host.querySelector('textarea'));
+    expect(host.querySelector('label.is-required')?.textContent).toContain(
+      'Documento de designação',
+    );
+  });
+
+  it('envia o perfil de governança quando o PDF está anexado', async () => {
+    api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
+    anexos.anexar.mockResolvedValue({ ok: true });
+    const { digitar, enviar, fixture } = montar();
+
+    digitar('select[formcontrolname="perfilId"]', 'perfil-3');
+    digitar('textarea', 'Designada encarregada de dados da instituição.');
+    (fixture.componentInstance as unknown as { arquivo: { set(f: File): void } }).arquivo.set(
+      new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }),
+    );
+    await enviar();
+
+    expect(api.criar).toHaveBeenCalledTimes(1);
+    expect(anexos.anexar).toHaveBeenCalled();
   });
 
   it('cria o pedido para si, na unidade escolhida, e abre o pedido criado', async () => {

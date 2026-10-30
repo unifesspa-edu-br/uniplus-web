@@ -34,10 +34,6 @@ const MENSAGENS: Readonly<Record<string, Mensagem>> = {
     titulo: 'Quem decide não pode ser parte do pedido.',
     resolver: 'Outra pessoa com o mesmo papel precisa decidir este pedido.',
   },
-  'pedido.documento_obrigatorio': {
-    titulo: 'O perfil exige o documento de designação.',
-    resolver: 'Anexe o PDF do documento de designação e aguarde a verificação antes da aprovação.',
-  },
   'pedido.escopo_invalido': {
     titulo: 'A unidade não combina com o perfil.',
     resolver:

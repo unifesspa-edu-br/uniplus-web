@@ -70,6 +70,20 @@ describe('AcessoNegadoPage', () => {
     );
   });
 
+  it('para o pedido que aguarda o documento, a ação primária é anexá-lo', () => {
+    api.listar.mockReturnValue(
+      of(ok([pedido({ id: 'pedido-doc', situacao: 'aguardando_documento', etapaAtual: null })])),
+    );
+
+    const host = abrir();
+
+    expect(api.listar).toHaveBeenCalledWith({ fila: 'meus', situacao: 'aguardando_documento' });
+    const anexar = host.querySelector('a[href="/acessos/pedidos/pedido-doc"]');
+    expect(anexar?.textContent?.trim()).toBe('Anexar o documento');
+    expect(anexar?.classList).toContain('btn--primary');
+    expect(host.textContent).toContain('Aguardando o documento de designação');
+  });
+
   it('sem pedido em aberto mantém o acesso negado com o link para pedir perfil', () => {
     api.listar.mockReturnValue(of(ok([pedido({ situacao: 'aprovado' })])));
 

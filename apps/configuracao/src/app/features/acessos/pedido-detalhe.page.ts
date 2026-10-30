@@ -89,6 +89,16 @@ type Acao = 'aprovar' | 'recusar' | 'aceitar' | 'cancelar';
     }
 
     @if (pedido(); as p) {
+      @if (aguardandoDocumento()) {
+        <ui-alert variant="warning" heading="Falta o documento de designação">
+          @if (ehSolicitante()) {
+            Anexe o PDF do documento de designação em Documentos, abaixo. O pedido só segue para
+            aprovação depois que o documento for verificado.
+          } @else {
+            O pedido espera o solicitante anexar o documento de designação.
+          }
+        </ui-alert>
+      }
       <section class="panel" aria-labelledby="cfg-pedido-resumo">
         <div class="panel-head">
           <h2 id="cfg-pedido-resumo" class="panel-head__title">Resumo</h2>
@@ -124,6 +134,11 @@ type Acao = 'aprovar' | 'recusar' | 'aceitar' | 'cancelar';
               Aprovar
             </button>
             <button type="button" class="btn btn--danger" (click)="abrirRecusa()">Recusar</button>
+          }
+          @if (aguardandoDocumento() && podeAnexar()) {
+            <button type="button" class="btn btn--primary" (click)="irParaOAnexo()">
+              Anexar o documento
+            </button>
           }
           @if (podeCancelar()) {
             <button type="button" class="btn btn--tertiary" (click)="pedirConfirmacao('cancelar')">
@@ -279,7 +294,10 @@ export class PedidoDetalhePage {
   protected readonly confirmacao = computed(() => CONFIRMACOES[this.acaoPendente()]);
 
   private readonly encerrado = computed(() => ENCERRADOS.includes(this.pedido()?.situacao ?? ''));
-  private readonly ehSolicitante = computed(
+  protected readonly aguardandoDocumento = computed(
+    () => this.pedido()?.situacao === 'aguardando_documento',
+  );
+  protected readonly ehSolicitante = computed(
     () => this.pedido()?.solicitante.sub === this.usuario.user()?.id,
   );
   private readonly ehBeneficiario = computed(() => {
@@ -386,6 +404,14 @@ export class PedidoDetalhePage {
       this.erro.set(this.erroDaRecusa());
       this.recusando.set(false);
     }
+  }
+
+  protected irParaOAnexo(): void {
+    const zona = document.querySelector<HTMLElement>(
+      '[aria-labelledby="cfg-pedido-anexos"] .uni-uploader__drop',
+    );
+    zona?.scrollIntoView({ block: 'center' });
+    zona?.focus();
   }
 
   protected async anexar(arquivo: File | null): Promise<void> {

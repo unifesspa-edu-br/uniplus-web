@@ -2941,6 +2941,7 @@ export interface components {
             readonly descricao: string;
             readonly escopo: string;
             readonly exigeEncarregada: boolean;
+            readonly governanca: null | string;
         };
         readonly PerfilResumoDto: {
             /** Format: uuid */
