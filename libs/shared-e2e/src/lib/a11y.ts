@@ -351,8 +351,12 @@ export async function assertAaaVisualContract(
           element.matches(
             // .tag/.filter-chip__count/.u-eyebrow: rótulos curtos e decorativos
             // (status, contagem, legenda em caixa alta), mesmo racional de .card__meta
-            // e .u-caption — não são texto de corpo.
-            '.u-caption, .card__meta, .table-responsive__meta, .stepper__label, .institutional-bar, .institutional-bar *, .tag, .filter-chip__count, .u-eyebrow',
+            // e .u-caption — não são texto de corpo. .publicacao-documentos__titulo é o
+            // mesmo rótulo curto ("Documento principal", "Anexos (N)"), só que em <h5> pela
+            // hierarquia de headings do acervo — o nível semântico não muda o papel visual.
+            // .publicacao-timeline__data é a data do ato ao lado da tag no cabeçalho do
+            // cartão — mesmo papel de legenda curta que .card__meta já cobre.
+            '.u-caption, .card__meta, .table-responsive__meta, .stepper__label, .institutional-bar, .institutional-bar *, .tag, .filter-chip__count, .u-eyebrow, .publicacao-documentos__titulo, .publicacao-timeline__data',
           )
         ) {
           return 12;
