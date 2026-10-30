@@ -229,22 +229,43 @@ As regras de formato, tipos permitidos e convenções gerais de mensagem estão 
 
 **Escopos válidos neste repositório:**
 
+> Esta tabela é uma lista de apoio, não um conjunto fechado. A regra geral é preferir o nome da **app** ou **lib** afetada — um projeto novo em `apps/` ou `libs/` sem linha aqui usa o nome do próprio diretório, sem esperar que a tabela seja atualizada primeiro.
+
 | Escopo | Quando usar |
 |---|---|
 | `selecao` | App Seleção (`apps/selecao/`) |
+| `selecao-e2e` | Testes E2E Playwright da app Seleção (`apps/selecao-e2e/`) |
 | `ingresso` | App Ingresso (`apps/ingresso/`) |
+| `ingresso-e2e` | Testes E2E Playwright da app Ingresso (`apps/ingresso-e2e/`) |
 | `portal` | App Portal público (`apps/portal/`) |
+| `portal-e2e` | Testes E2E Playwright do Portal (`apps/portal-e2e/`) |
+| `configuracao` | App Configuração — cadastros base e organização institucional (`apps/configuracao/`) |
+| `configuracao-e2e` | Testes E2E Playwright da app Configuração (`apps/configuracao-e2e/`) |
 | `shared-ui` | Componentes reutilizáveis do Uni+ DS (`libs/shared-ui/`) |
+| `shared-core` | Infra HTTP transversal, interceptors, notificações (`libs/shared-core/`) |
 | `shared-data` | API clients, DTOs, utilitários (`libs/shared-data/`) |
+| `shared-auth` | OIDC, `libs/shared-auth/` (guards, interceptor, tokens) |
 | `shared-utils` | Utilitários puros, pipes, helpers (`libs/shared-utils/`) |
+| `shared-e2e` | Fixtures e utilitários Playwright compartilhados (`libs/shared-e2e/`) |
 | `ds` | Tokens, foundation e mapeamento CSS do Uni+ DS |
-| `primeng` | Uso legado/complexo de PrimeNG encapsulado em `ui-*` |
-| `auth` | OIDC, `libs/shared-auth/` (guards, interceptor, tokens) |
+| `poc-primeng` | POC histórica read-only, fora do workspace Nx (`docs/referencias/poc-primeng/`) — ADR-0022 |
+| `poc-primeng-e2e` | Suíte E2E histórica da POC (`docs/referencias/poc-primeng-e2e/`) — ADR-0022 |
+| `routing` | Roteamento que atravessa mais de uma app (base href, redirects, deep links) |
+| `fitness` | Mudança na própria regra de arquitetura (`**/__fitness__/*.fitness.spec.ts`), não no código que ela verifica |
+| `adrs` | Registro ou emenda de Architecture Decision Record (`docs/adrs/`) |
 | `nx` | Configuração Nx (workspace, targets, caching, affected) |
 | `ci` | GitHub Actions, workflows, pipeline |
 | `docker` | Dockerfiles, `docker-compose` |
 | `deps` | Atualização de pacotes npm |
-| `e2e` | Testes E2E Playwright (`apps/*-e2e/`) |
+
+**Sinônimos obsoletos** — aparecem no histórico, não usar em commits novos:
+
+| Obsoleto | Canônico | Motivo |
+|---|---|---|
+| `auth` | `shared-auth` | nome anterior à consolidação da lib em `libs/shared-auth/` |
+| `primeng` | `poc-primeng` (POC histórica) ou `shared-ui` (wrapper `ui-*` encapsulado) | nunca teve uso real; os commits existentes usam `poc-primeng` para a POC e `shared-ui` para o encapsulamento corrente |
+| `e2e` | `<app>-e2e` ou `shared-e2e` | genérico demais desde que cada app ganhou seu próprio projeto `*-e2e` |
+| `adr` | `adrs` | o diretório é `docs/adrs/`, no plural |
 
 Para o Nx monorepo, prefira o nome da **app** ou **lib** afetada. Mudanças transversais de tokens ou estilo global usam `ds` ou `shared-ui`.
 
@@ -252,10 +273,10 @@ Para o Nx monorepo, prefira o nome da **app** ou **lib** afetada. Mudanças tran
 
 ```
 feat(selecao): adiciona formulário de inscrição multi-etapa
-fix(auth): corrige refresh token expirado sem redirect
+fix(shared-auth): corrige refresh token expirado sem redirect
 refactor(shared-ui): extrai componente input cpf para lib compartilhada
 style(ds): ajusta tokens de espaçamento do Uni+ DS
-test(e2e): adiciona testes do fluxo de inscrição no portal
+test(portal-e2e): adiciona testes do fluxo de inscrição no portal
 chore(deps): atualiza dependências Angular
 ```
 
