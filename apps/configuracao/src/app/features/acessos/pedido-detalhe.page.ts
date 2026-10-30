@@ -308,7 +308,7 @@ export class PedidoDetalhePage {
   private readonly semDecisao = computed(() => (this.pedido()?.decisoes.length ?? 0) === 0);
 
   /**
-   * A API recusa só quem aprovou como gestor e agora decidiria como encarregada: a aprovação do gestor
+   * A API recusa só quem aprovou como gestor e agora decidiria como proteção de dados: a aprovação do gestor
    * que o perfil alterado devolveu ao gestor não impede ninguém de decidir de novo na etapa dele.
    */
   private readonly jaAprovouComoGestor = computed(() => {
@@ -331,11 +331,11 @@ export class PedidoDetalhePage {
   protected readonly podeDecidir = computed(() => {
     const etapaAtual = this.pedido()?.etapaAtual;
     if (this.ehSolicitante() || this.ehBeneficiario()) return false;
-    if (etapaAtual === 'encarregada' && this.jaAprovouComoGestor()) return false;
+    if (etapaAtual === 'protecao_de_dados' && this.jaAprovouComoGestor()) return false;
     return (
       (etapaAtual === 'gestor' &&
         this.permissoes.tem(PERMISSAO.autorizacao.pedidosAprovarFuncional)) ||
-      (etapaAtual === 'encarregada' &&
+      (etapaAtual === 'protecao_de_dados' &&
         this.permissoes.tem(PERMISSAO.autorizacao.pedidosAprovarProtecaoDeDados))
     );
   });

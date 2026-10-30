@@ -248,8 +248,8 @@ interface CorpoDoPerfil {
             }
           }
           <span class="field__hint"
-            >Permissão de dado pessoal ou sensível exige a aprovação da encarregada nos pedidos
-            deste perfil.</span
+            >Permissão de dado pessoal ou sensível exige a aprovação da proteção de dados nos
+            pedidos deste perfil.</span
           >
         </fieldset>
       </form>

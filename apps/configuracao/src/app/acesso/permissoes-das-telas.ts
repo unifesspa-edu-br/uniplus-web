@@ -44,7 +44,7 @@ export const PERMISSOES_DAS_TELAS = {
   // Pedir acesso e acompanhar os próprios pedidos é de toda pessoa autenticada: lista vazia.
   'acessos/pedidos': [],
   'acessos/fila-do-gestor': [autorizacao.pedidosAprovarFuncional],
-  'acessos/fila-da-encarregada': [autorizacao.pedidosAprovarProtecaoDeDados],
+  'acessos/fila-da-protecao-de-dados': [autorizacao.pedidosAprovarProtecaoDeDados],
   'acessos/historico': [
     autorizacao.pedidosAprovarFuncional,
     autorizacao.pedidosAprovarProtecaoDeDados,

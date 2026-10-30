@@ -47,8 +47,8 @@ const APRESENTACAO: Readonly<Record<FilaDePedidos, Apresentacao>> = {
     descricao: 'Pedidos que aguardam a sua aprovação da adequação funcional.',
     vazio: 'Nenhum pedido aguarda a sua aprovação.',
   },
-  encarregada: {
-    titulo: 'Fila da encarregada de dados',
+  protecao_de_dados: {
+    titulo: 'Fila da proteção de dados',
     descricao:
       'Pedidos de perfil com dado pessoal ou sensível, já aprovados pelo gestor de acessos, que aguardam a adequação à proteção de dados.',
     vazio: 'Nenhum pedido aguarda a sua aprovação.',

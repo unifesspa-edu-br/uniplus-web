@@ -33,9 +33,9 @@ export const ACESSOS_ROUTES: Routes = [
         loadComponent: () => import('./pedidos.page').then((m) => m.PedidosPage),
       },
       {
-        path: 'fila-da-encarregada',
-        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/fila-da-encarregada'])],
-        data: { breadcrumb: 'Fila da encarregada', fila: 'encarregada' },
+        path: 'fila-da-protecao-de-dados',
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/fila-da-protecao-de-dados'])],
+        data: { breadcrumb: 'Fila da proteção de dados', fila: 'protecao_de_dados' },
         loadComponent: () => import('./pedidos.page').then((m) => m.PedidosPage),
       },
       {

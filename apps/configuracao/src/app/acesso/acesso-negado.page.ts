@@ -20,7 +20,7 @@ const EM_ABERTO = [
   'aguardando_documento',
   'aguardando_beneficiario',
   'aguardando_gestor',
-  'aguardando_encarregada',
+  'aguardando_protecao_de_dados',
 ];
 
 const ROTULO_DA_ACAO = {

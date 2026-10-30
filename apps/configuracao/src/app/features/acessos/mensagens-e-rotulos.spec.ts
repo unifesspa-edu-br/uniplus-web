@@ -45,10 +45,10 @@ describe('rótulos de acesso', () => {
     expect(situacaoDoAnexo('x')).toBe('x');
     expect(tipoDeEvento('pedido_criado')).toBe('Pedido criado');
     expect(sensibilidade('Sensivel')).toBe('Dado sensível');
-    expect(etapa('encarregada')).toBe('Encarregada de dados');
+    expect(etapa('protecao_de_dados')).toBe('Encarregado(a) pelo tratamento de dados');
     expect(etapa(null)).toBe('—');
-    expect(motivoDaDispensa('designacao_da_encarregada')).toBe(
-      'designação da encarregada de dados',
+    expect(motivoDaDispensa('designacao_de_protecao_de_dados')).toBe(
+      'designação de proteção de dados',
     );
     expect(motivoDaDispensa('outro')).toBe('outro');
   });
@@ -75,8 +75,8 @@ describe('detalhe da trilha', () => {
     expect(detalheDaTrilha('Etapa: gestor. Sensibilidade avaliada: pessoal.')).toBe(
       'Etapa: Gestor de acessos. Sensibilidade avaliada: Dado pessoal.',
     );
-    expect(detalheDaTrilha('Motivo: designacao_da_encarregada.')).toBe(
-      'Motivo: designação da encarregada de dados.',
+    expect(detalheDaTrilha('Motivo: designacao_de_protecao_de_dados.')).toBe(
+      'Motivo: designação de proteção de dados.',
     );
     expect(detalheDaTrilha('Motivo: faltou.')).toBe('Motivo: faltou.');
     expect(detalheDaTrilha(null)).toBe('—');

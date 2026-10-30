@@ -7,7 +7,7 @@ import {
   pedidoSeed,
 } from '../support/api-de-acesso';
 import {
-  PERMISSOES_DA_BETINA_ENCARREGADA,
+  PERMISSOES_DA_BETINA_PROTECAO_DE_DADOS,
   PERMISSOES_DO_DIOGO,
   PERMISSOES_DO_LEANDRO,
 } from '../support/permissoes';
@@ -61,7 +61,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(page.getByRole('table').getByText('Cancelado')).toBeVisible();
   });
 
-  test('o pedido de perfil com dado sensível passa pelo gestor e pela encarregada, gera a concessão e ela é revogada', async ({
+  test('o pedido de perfil com dado sensível passa pelo gestor e pela proteção de dados, gera a concessão e ela é revogada', async ({
     page,
   }) => {
     const estado = await mockApiDeAcesso(page, [pedidoSeed()]);
@@ -75,10 +75,10 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(page).toHaveURL(new RegExp(`/acessos/pedidos/${PEDIDO_ID}(\\?.*)?$`));
     await page.getByRole('button', { name: 'Aprovar' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Aprovar' }).click();
-    await expect(page.getByText('Aguardando a encarregada de dados').first()).toBeVisible();
+    await expect(page.getByText('Aguardando a proteção de dados').first()).toBeVisible();
 
-    await mockPermissoesEfetivas(page, PERMISSOES_DA_BETINA_ENCARREGADA);
-    await page.goto('/acessos/fila-da-encarregada');
+    await mockPermissoesEfetivas(page, PERMISSOES_DA_BETINA_PROTECAO_DE_DADOS);
+    await page.goto('/acessos/fila-da-protecao-de-dados');
     await page.getByRole('link', { name: /Visualizar o pedido de Analista de documentos/ }).click();
     await page.getByRole('button', { name: 'Aprovar' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Aprovar' }).click();
@@ -141,7 +141,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(menu.getByRole('link', { name: 'Meus pedidos' })).toBeVisible();
     for (const nome of [
       'Fila do gestor',
-      'Fila da encarregada',
+      'Fila da proteção de dados',
       'Histórico de pedidos',
       'Concessões',
       'Perfis de acesso',

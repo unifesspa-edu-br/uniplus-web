@@ -2940,7 +2940,7 @@ export interface components {
             readonly nome: string;
             readonly descricao: string;
             readonly escopo: string;
-            readonly exigeEncarregada: boolean;
+            readonly exigeAprovacaoDeProtecaoDeDados: boolean;
             readonly governanca: null | string;
         };
         readonly PerfilResumoDto: {

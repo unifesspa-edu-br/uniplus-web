@@ -79,14 +79,14 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     expect(itensDoMenu()).toEqual([
       'Meus pedidos',
       'Fila do gestor',
-      'Fila da encarregada',
+      'Fila da proteção de dados',
       'Histórico de pedidos',
       'Concessões',
       'Perfis de acesso',
     ]);
   });
 
-  it('não oferece a fila da encarregada a quem só aprova como gestor', () => {
+  it('não oferece a fila da proteção de dados a quem só aprova como gestor', () => {
     concedidas.set(['autorizacao:pedidos:aprovar-funcional']);
 
     expect(itensDoMenu()).toEqual(['Meus pedidos', 'Fila do gestor', 'Histórico de pedidos']);

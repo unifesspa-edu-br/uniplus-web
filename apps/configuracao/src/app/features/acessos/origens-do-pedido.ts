@@ -14,7 +14,10 @@ export const ORIGEM_PADRAO: OrigemDoPedido = {
 export const ORIGEM_POR_FILA: Readonly<Record<FilaDePedidos, OrigemDoPedido>> = {
   meus: ORIGEM_PADRAO,
   gestor: { rota: '/acessos/fila-do-gestor', voltar: 'Voltar à fila do gestor' },
-  encarregada: { rota: '/acessos/fila-da-encarregada', voltar: 'Voltar à fila da encarregada' },
+  protecao_de_dados: {
+    rota: '/acessos/fila-da-protecao-de-dados',
+    voltar: 'Voltar à fila da proteção de dados',
+  },
   todos: { rota: '/acessos/historico', voltar: 'Voltar ao histórico de pedidos' },
 };
 

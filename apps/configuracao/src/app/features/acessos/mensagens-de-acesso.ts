@@ -53,7 +53,7 @@ const MENSAGENS: Readonly<Record<string, Mensagem>> = {
   },
   'pedido.mesmo_decisor_nas_duas_etapas': {
     titulo: 'A mesma pessoa não decide as duas etapas.',
-    resolver: 'A segunda etapa precisa ser decidida por outra encarregada de dados.',
+    resolver: 'A segunda etapa precisa ser decidida por outra pessoa da proteção de dados.',
   },
   'pedido.motivo_invalido': {
     titulo: 'O motivo da recusa é inválido.',
@@ -119,7 +119,7 @@ const MENSAGENS: Readonly<Record<string, Mensagem>> = {
   },
   'perfil.governanca_imutavel': {
     titulo: 'Perfil de governança não se altera.',
-    resolver: 'Os perfis de gestor de acessos e de encarregada de dados são fixos.',
+    resolver: 'Os perfis de gestor de acessos e de proteção de dados são fixos.',
   },
 };
 

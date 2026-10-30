@@ -189,9 +189,9 @@ export class LayoutComponent {
           exact: true,
         },
         {
-          label: 'Fila da encarregada',
+          label: 'Fila da proteção de dados',
           icon: 'pi-shield',
-          routerLink: '/acessos/fila-da-encarregada',
+          routerLink: '/acessos/fila-da-protecao-de-dados',
           exact: true,
         },
         {
