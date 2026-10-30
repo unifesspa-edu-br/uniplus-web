@@ -148,9 +148,19 @@
   border-radius: var(--radius-md);
 }
 
+/*
+ * `--text-link` e `--text-secondary` são calibrados contra `--surface-card` branco, não contra o
+ * fundo tingido do cartão atual — no claro caem a 6,07:1–6,27:1 (sob o piso AAA de 7:1); no escuro
+ * `--color-primary-800` (tom claro da dupla light-dark, pensado pra texto sobre superfície escura
+ * comum) cai a 2,29:1 (sob o próprio piso AA de 4,5:1) contra esse tingido mais claro. Sobrescrever
+ * os dois tokens com `--text-primary` aqui alcança todo consumidor do token dentro do cartão
+ * atual, nos dois temas, sem precisar calibrar um tom por tema.
+ */
 .publicacao-timeline__card.is-current {
   background: color-mix(in srgb, var(--color-primary) 12%, var(--surface-card));
   border-color: var(--color-primary-200);
+  --text-secondary: var(--text-primary);
+  --text-link: var(--text-primary);
 }
 
 .publicacao-timeline__head {
@@ -169,7 +179,11 @@
 
 .publicacao-timeline__evento-titulo {
   margin: 0;
-  font-size: var(--text-md);
+  /* É <h4> — precisa de 18px em qualquer viewport, mesmo racional de
+     .portal-steps__title em processos.css: --text-md é fluido (clamp
+     16→18px) e cai abaixo do piso em telas estreitas; --text-lg
+     (clamp 18→20px) nunca fica abaixo de 18px. */
+  font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   color: var(--text-heading);
   overflow-wrap: anywhere;
