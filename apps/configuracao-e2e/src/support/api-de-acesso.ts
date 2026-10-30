@@ -120,6 +120,7 @@ function resumo(p: Pedido) {
 export async function mockApiDeAcesso(
   page: Page,
   pedidosIniciais: Pedido[] = [],
+  { solicitanteInstitucional = true }: { solicitanteInstitucional?: boolean } = {},
 ): Promise<EstadoDaApi> {
   const estado: EstadoDaApi = {
     pedidos: [...pedidosIniciais],
@@ -132,7 +133,7 @@ export async function mockApiDeAcesso(
   const json = (route: Route, corpo: unknown, status = 200) =>
     route.fulfill({
       status,
-      contentType: 'application/json',
+      contentType: status >= 400 ? 'application/problem+json' : 'application/json',
       headers: CORS,
       body: JSON.stringify(corpo),
     });
@@ -155,6 +156,20 @@ export async function mockApiDeAcesso(
       if (metodo === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
 
       if (caminho.endsWith('/perfis')) return json(route, PERFIS);
+
+      if (caminho.endsWith('/perfis-para-pedido') && !solicitanteInstitucional) {
+        return json(
+          route,
+          {
+            type: 'about:blank',
+            title: 'Solicitante sem e-mail institucional',
+            status: 403,
+            code: 'uniplus.autorizacao.pedido.solicitante_nao_institucional',
+            traceId: 'e2e',
+          },
+          403,
+        );
+      }
 
       if (caminho.endsWith('/perfis-para-pedido')) {
         return json(

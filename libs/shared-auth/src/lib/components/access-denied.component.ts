@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 
@@ -40,7 +40,9 @@ import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap'
         <ng-content />
         <div class="ui-access-denied__acoes">
           @if (rotaDeVolta(); as rota) {
-            <a class="btn btn--tertiary" [routerLink]="rota">{{ rotuloDaRotaDeVolta() }}</a>
+            @if (!ocultarRotaDeVolta()) {
+              <a class="btn btn--tertiary" [routerLink]="rota">{{ rotuloDaRotaDeVolta() }}</a>
+            }
           }
           <button
             type="button"
@@ -69,6 +71,12 @@ export class AccessDeniedComponent {
   protected readonly rotaDeVolta = signal<string | null>(
     (inject(ActivatedRoute).snapshot.data['rotaDeVolta'] as string | undefined) ?? null,
   ).asReadonly();
+
+  /**
+   * Suprime o link de volta quando quem monta a rota sabe que ele levaria a outra recusa; o motivo
+   * e a orientação entram pelo conteúdo projetado.
+   */
+  readonly ocultarRotaDeVolta = input(false);
 
   /** Texto do link para a rota de volta; o padrão serve ao início do app. */
   protected readonly rotuloDaRotaDeVolta = signal<string>(

@@ -142,4 +142,14 @@ describe('AccessDeniedComponent', () => {
     expect(botao()?.textContent?.trim()).toBe('Sair');
     expect(host.textContent).not.toContain('Conectado como');
   });
+
+  it('suprime o link de volta quando quem monta a rota pede', () => {
+    const { fixture, volta } = montar(undefined, perfil, '/acessos/pedidos/novo', 'Pedir acesso');
+    expect(volta()?.textContent?.trim()).toBe('Pedir acesso');
+
+    fixture.componentRef.setInput('ocultarRotaDeVolta', true);
+    fixture.detectChanges();
+
+    expect(volta()).toBeNull();
+  });
 });
