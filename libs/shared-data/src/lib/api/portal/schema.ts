@@ -4,46 +4,6 @@
  */
 
 export interface paths {
-    readonly "/api/auth/me": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Retorna o usuário autenticado
-         * @description Retorna informações do usuário extraídas do access token. Requer autenticação.
-         */
-        readonly get: operations["GetAuthenticatedUser"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/profile/me": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Retorna o perfil do usuário autenticado
-         * @description Retorna atributos de identidade e institucionais (CPF, NomeSocial) extraídos do access token. Requer autenticação.
-         */
-        readonly get: operations["GetAuthenticatedUserProfile"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/portal/certames/{identificador}": {
         readonly parameters: {
             readonly query?: never;
@@ -164,14 +124,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        readonly AuthenticatedUserResponse: {
-            readonly userId: null | string;
-            readonly name: null | string;
-            readonly email: null | string;
-            readonly roles: readonly string[];
-            /** Format: date-time */
-            readonly timestamp: string;
-        };
         readonly CertamePublicoResponse: {
             readonly identificador: string;
             readonly nome: string;
@@ -228,17 +180,6 @@ export interface components {
             readonly codigo: string;
             readonly nome: string;
         };
-        readonly UserProfileResponse: {
-            readonly userId: null | string;
-            readonly name: null | string;
-            readonly email: null | string;
-            /** @description CPF (apenas dígitos, sem formatação). PII — sempre mascarar em logs ('***.999.999-**', ADR-0011). */
-            readonly cpf: null | string;
-            readonly nomeSocial: null | string;
-            readonly roles: readonly string[];
-            /** Format: date-time */
-            readonly timestamp: string;
-        };
     };
     responses: never;
     parameters: never;
@@ -247,67 +188,8 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export interface operations {
-    readonly GetAuthenticatedUser: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/json": components["schemas"]["AuthenticatedUserResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    readonly GetAuthenticatedUserProfile: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/json": components["schemas"]["UserProfileResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-}
 export enum PapelDoDocumento {
     principal = "principal",
     anexo = "anexo"
 }
+export type operations = Record<string, never>;
