@@ -3,6 +3,8 @@ export { AuthService } from './services/auth.service';
 export { UserContextService } from './services/user-context.service';
 export { PermissoesService } from './services/permissoes.service';
 export type { EstadoDasPermissoes, PermissaoEfetiva } from './services/permissoes.service';
+export { PerfisDeAcessoService } from './services/perfis-de-acesso.service';
+export type { EstadoDosPerfis } from './services/perfis-de-acesso.service';
 export { PERMISSAO } from './permissoes/catalogo';
 export type { CodigoDePermissao, ModuloDePermissao } from './permissoes/catalogo';
 
@@ -17,6 +19,8 @@ export { authErrorInterceptor } from './interceptors/auth-error.interceptor';
 // Models
 export type { UserProfile } from './models/user.model';
 export type { UserRole } from './models/user.model';
+export type { PerfilConcedido } from './models/perfil-concedido.model';
+export { escopoDoPerfil, prazoDoPerfil, rotuloDoPerfil } from './models/perfil-concedido.model';
 export type { AuthConfig } from './models/auth-config.model';
 
 // Providers
