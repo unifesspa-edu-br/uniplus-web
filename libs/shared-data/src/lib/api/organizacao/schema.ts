@@ -4,26 +4,6 @@
  */
 
 export interface paths {
-    readonly "/api/auth/me": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Retorna o usuário autenticado
-         * @description Retorna informações do usuário extraídas do access token. Requer autenticação.
-         */
-        readonly get: operations["GetAuthenticatedUser"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/profile/me": {
         readonly parameters: {
             readonly query?: never;
@@ -33,7 +13,7 @@ export interface paths {
         };
         /**
          * Retorna o perfil do usuário autenticado
-         * @description Retorna atributos de identidade e institucionais (CPF, NomeSocial) extraídos do access token. Requer autenticação.
+         * @description Retorna a identidade do access token (nome, e-mail, CPF, NomeSocial) e os perfis de acesso que a pessoa tem por concessão vigente, cada um com o escopo (unidade ou instituição) e o prazo. O token identifica a pessoa e não concede acesso. Requer autenticação.
          */
         readonly get: operations["GetAuthenticatedUserProfile"];
         readonly put?: never;
@@ -798,14 +778,6 @@ export interface components {
             readonly cidadeNome?: null | string;
             readonly cidadeUf?: null | string;
         };
-        readonly AuthenticatedUserResponse: {
-            readonly userId: null | string;
-            readonly name: null | string;
-            readonly email: null | string;
-            readonly roles: readonly string[];
-            /** Format: date-time */
-            readonly timestamp: string;
-        };
         readonly CidadeReferenciaDto: {
             readonly codigoIbge: string;
             readonly nome: string;
@@ -918,6 +890,20 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly PerfilConcedidoResponse: {
+            /** Format: uuid */
+            readonly concessaoId: string;
+            /** Format: uuid */
+            readonly perfilId: string;
+            readonly nome: string;
+            readonly escopoTipo: string;
+            /** Format: uuid */
+            readonly unidadeId: null | string;
+            readonly unidadeSigla: null | string;
+            readonly unidadeNome: null | string;
+            /** Format: date-time */
+            readonly validaAte: null | string;
+        };
         readonly ProblemDetails: {
             readonly type?: null | string;
             readonly title?: null | string;
@@ -960,7 +946,7 @@ export interface components {
             /** @description CPF (apenas dígitos, sem formatação). PII — sempre mascarar em logs ('***.999.999-**', ADR-0011). */
             readonly cpf: null | string;
             readonly nomeSocial: null | string;
-            readonly roles: readonly string[];
+            readonly perfis: readonly components["schemas"]["PerfilConcedidoResponse"][];
             /** Format: date-time */
             readonly timestamp: string;
         };
@@ -973,35 +959,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    readonly GetAuthenticatedUser: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/json": components["schemas"]["AuthenticatedUserResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
     readonly GetAuthenticatedUserProfile: {
         readonly parameters: {
             readonly query?: never;
