@@ -34,6 +34,19 @@ test.describe('Autenticação OIDC — Seleção', () => {
       });
       await expect(page.locator('#kc-login')).toBeVisible();
     });
+
+    test('redireciona para o provedor OIDC ao acessar a página de acesso negado sem sessão', async ({
+      page,
+    }) => {
+      await page.goto('/acesso-negado');
+      await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
+        timeout: 10_000,
+      });
+      await expect(page.locator('#kc-login')).toBeVisible();
+      // O login volta à raiz do app, que escolhe a entrada pelas permissões.
+      const voltaDoLogin = new URL(page.url()).searchParams.get('redirect_uri') ?? '';
+      expect(new URL(voltaDoLogin).pathname).toBe('/');
+    });
   });
 
   test.describe('Login com permissão efetiva', () => {

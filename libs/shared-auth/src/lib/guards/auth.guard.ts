@@ -1,14 +1,19 @@
 import { inject } from '@angular/core';
-import { CanActivateFn } from '@angular/router';
+import { CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '@uniplus/shared-auth/bootstrap';
 
-export const authGuard: CanActivateFn = (_route, state) => {
-  const authService = inject(AuthService);
+/** Sem sessão, leva ao login e volta à rota que `rotaDeVolta` escolhe. */
+export function exigeSessao(rotaDeVolta: (state: RouterStateSnapshot) => string): CanActivateFn {
+  return (_route, state) => {
+    const authService = inject(AuthService);
 
-  if (authService.authenticated()) {
-    return true;
-  }
+    if (authService.authenticated()) {
+      return true;
+    }
 
-  void authService.login(state.url);
-  return false;
-};
+    void authService.login(rotaDeVolta(state));
+    return false;
+  };
+}
+
+export const authGuard: CanActivateFn = exigeSessao((state) => state.url);
