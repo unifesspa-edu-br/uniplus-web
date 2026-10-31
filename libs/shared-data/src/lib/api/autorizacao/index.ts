@@ -22,6 +22,7 @@ export {
   PedidosDeConcessaoApi,
   type AnexoDoPedidoDto,
   type AnexoParaEnvioDto,
+  type AprovarPedidoDeConcessaoRequest,
   type CriarPedidoDeConcessaoRequest,
   type DecisaoDoPedidoDto,
   type FilaDePedidos,
