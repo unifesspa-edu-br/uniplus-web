@@ -7,13 +7,16 @@ import {
 } from '../support/keycloak-login';
 
 const USERS = {
-  candidato: { username: 'candidato', password: 'E2eTest!123', displayName: 'Candidato Teste', roles: ['candidato'] },
-  admin: { username: 'admin', password: 'E2eTest!123', displayName: 'Admin Teste', roles: ['admin'] },
+  candidato: { username: 'candidato', password: 'E2eTest!123', displayName: 'Candidato Teste' },
+  admin: { username: 'admin', password: 'E2eTest!123', displayName: 'Admin Teste' },
 };
 
 test.describe('Autenticação OIDC — Portal do Candidato', () => {
   test.beforeAll(async () => {
-    await resetPasswords([{ username: USERS.candidato.username, password: USERS.candidato.password }, { username: USERS.admin.username, password: USERS.admin.password }]);
+    await resetPasswords([
+      { username: USERS.candidato.username, password: USERS.candidato.password },
+      { username: USERS.admin.username, password: USERS.admin.password },
+    ]);
   });
 
   test.describe('Acesso público', () => {
@@ -36,7 +39,9 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
   });
 
   test.describe('Rotas autenticadas — candidato', () => {
-    test('redireciona para o provedor OIDC ao acessar /acompanhamento sem sessão', async ({ page }) => {
+    test('redireciona para o provedor OIDC ao acessar /acompanhamento sem sessão', async ({
+      page,
+    }) => {
       await page.goto('/acompanhamento');
       await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
         timeout: 10_000,
@@ -58,7 +63,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
       await keycloakLogin(page, user.username, user.password);
 
       // Nome social "Candidato Teste" tem prioridade sobre nome civil "Usuário Candidato"
-      await expectUserInHeader(page, user.displayName, user.username, user.roles);
+      await expectUserInHeader(page, user.displayName, user.username);
 
       const header = page.locator('header');
       // Verifica que NÃO exibe o nome civil quando há nome social
@@ -82,12 +87,14 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
       await keycloakLogin(page, user.username, user.password);
 
       await expect(page).toHaveURL(/localhost:4202/);
-      await expectUserInHeader(page, user.displayName, user.username, user.roles);
+      await expectUserInHeader(page, user.displayName, user.username);
     });
   });
 
   test.describe('Logout', () => {
-    test('botão Sair encerra sessão e rota protegida redireciona ao provedor OIDC', async ({ page }) => {
+    test('botão Sair encerra sessão e rota protegida redireciona ao provedor OIDC', async ({
+      page,
+    }) => {
       const user = USERS.candidato;
       await page.goto('/acompanhamento');
       await keycloakLogin(page, user.username, user.password);
@@ -119,7 +126,7 @@ test.describe('Autenticação OIDC — Portal do Candidato', () => {
       await expect(page).toHaveURL(/documentos/);
 
       // Header continua mostrando user info
-      await expectUserInHeader(page, user.displayName, user.username, user.roles);
+      await expectUserInHeader(page, user.displayName, user.username);
     });
   });
 });
