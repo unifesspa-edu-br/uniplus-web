@@ -10,7 +10,6 @@ export const EU = {
   email: 'leandro.teste@unifesspa.edu.br',
   nomeCivil: 'Leandro Teste',
   cpf: '',
-  roles: [],
 };
 
 export function ok<T>(dados: T, link?: string): ApiResult<T> {

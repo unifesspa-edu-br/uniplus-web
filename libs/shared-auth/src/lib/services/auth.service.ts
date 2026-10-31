@@ -29,7 +29,6 @@ export class AuthService {
 
   readonly authenticated = this._authenticated.asReadonly();
   readonly userProfile = this._userProfile.asReadonly();
-  readonly roles = computed(() => this._userProfile()?.roles ?? []);
   /**
    * Identifica a sessão corrente: muda no login, na troca de usuário e a cada renovação do token,
    * e vira `null` sem sessão. Quem guarda estado derivado da sessão reage a este sinal.
@@ -217,7 +216,6 @@ export class AuthService {
       nomeCivil,
       nomeSocial: claims.nomeSocial,
       cpf: claims.cpf ?? '',
-      roles: claims.realm_access?.roles ?? [],
     });
   }
 }

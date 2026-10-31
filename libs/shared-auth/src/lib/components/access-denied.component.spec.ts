@@ -14,7 +14,6 @@ describe('AccessDeniedComponent', () => {
     email: 'servidor@teste.unifesspa.edu.br',
     nomeCivil: 'Servidor Sem Papel',
     cpf: '33257350376',
-    roles: [],
   };
 
   function montar(

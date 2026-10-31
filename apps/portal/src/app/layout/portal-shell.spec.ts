@@ -4,12 +4,17 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import {
+  AuthService,
+  PerfisDeAcessoService,
+  UserContextService,
+} from '@uniplus/shared-auth/bootstrap';
 import { BackToTopComponent } from '@uniplus/shared-ui/components';
 import { PortalShellComponent } from './portal-shell';
 
 const isAuthenticated = signal(false);
 const authServiceStub = { logout: () => undefined, login: () => undefined };
+const perfisStub = { estado: signal('carregada'), rotulos: signal([]), perfis: signal([]) };
 const userContextStub = {
   user: signal(null),
   displayName: signal(''),
@@ -31,6 +36,7 @@ describe('PortalShellComponent — navegação por autenticação', () => {
         provideRouter([]),
         { provide: AuthService, useValue: authServiceStub },
         { provide: UserContextService, useValue: userContextStub },
+        { provide: PerfisDeAcessoService, useValue: perfisStub },
       ],
     }).compileComponents();
   });
@@ -187,6 +193,7 @@ describe('PortalShellComponent — contrato de impressão', () => {
         provideRouter([]),
         { provide: AuthService, useValue: authServiceStub },
         { provide: UserContextService, useValue: userContextStub },
+        { provide: PerfisDeAcessoService, useValue: perfisStub },
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(PortalShellComponent);
@@ -237,6 +244,7 @@ describe('PortalShellComponent — contêiner de rolagem do "Voltar ao topo"', (
         provideRouter([]),
         { provide: AuthService, useValue: authServiceStub },
         { provide: UserContextService, useValue: userContextStub },
+        { provide: PerfisDeAcessoService, useValue: perfisStub },
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(PortalShellComponent);

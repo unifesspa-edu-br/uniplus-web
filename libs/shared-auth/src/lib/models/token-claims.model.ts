@@ -23,8 +23,4 @@ export interface UniPlusTokenClaims extends KeycloakTokenParsed {
   cpf?: string;
   /** Nome social do usuário, injetado pelo scope `uniplus-profile`. */
   nomeSocial?: string;
-  /** Roles do realm para o client/scope corrente. */
-  realm_access?: {
-    roles: string[];
-  };
 }

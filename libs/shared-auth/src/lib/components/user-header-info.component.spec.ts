@@ -8,6 +8,8 @@ import { UserHeaderInfoComponent } from './user-header-info.component';
 import { AuthService } from '../services/auth.service';
 import { UserContextService } from '../services/user-context.service';
 import { UserProfile } from '../models/user.model';
+import { rotuloDoPerfil, type PerfilConcedido } from '../models/perfil-concedido.model';
+import { PerfisDeAcessoService, type EstadoDosPerfis } from '../services/perfis-de-acesso.service';
 
 describe('UserHeaderInfoComponent', () => {
   const profileData: UserProfile = {
@@ -17,13 +19,45 @@ describe('UserHeaderInfoComponent', () => {
     nomeCivil: 'Usuário Candidato',
     nomeSocial: 'Candidato Teste',
     cpf: '69959836371',
-    roles: ['candidato'],
   };
+
+  const estadoDosPerfis = signal<EstadoDosPerfis>('carregada');
+  const concedidos = signal<readonly PerfilConcedido[]>([]);
+  let responderRecarga: (resposta: unknown) => void = () => undefined;
+  const recarregar = vi.fn(
+    () =>
+      new Promise<unknown>((resolver) => {
+        responderRecarga = resolver;
+      }),
+  );
+
+  function perfil(nome: string, sigla: string | null, id = nome): PerfilConcedido {
+    return {
+      concessaoId: `c-${id}`,
+      perfilId: `p-${id}`,
+      nome,
+      escopoTipo: 'unidade',
+      unidadeId: sigla === null ? null : `u-${sigla}`,
+      unidadeSigla: sigla,
+      unidadeNome: null,
+      validaAte: null,
+    };
+  }
 
   function setup(profile: UserProfile | null = profileData) {
     const logout = vi.fn();
     const login = vi.fn();
     const atualizarPerfil = vi.fn();
+
+    estadoDosPerfis.set('carregada');
+    concedidos.set([]);
+    recarregar.mockClear();
+    const perfisMock = {
+      estado: estadoDosPerfis.asReadonly(),
+      perfis: concedidos.asReadonly(),
+      rotulos: computed(() => concedidos().map(rotuloDoPerfil)),
+      recarregar,
+    } as unknown as PerfisDeAcessoService;
 
     const authServiceMock = {
       userProfile: signal(profile).asReadonly(),
@@ -52,6 +86,7 @@ describe('UserHeaderInfoComponent', () => {
       providers: [
         { provide: AuthService, useValue: authServiceMock },
         { provide: UserContextService, useValue: userContextMock },
+        { provide: PerfisDeAcessoService, useValue: perfisMock },
         { provide: PROFILE_BASE_PATH, useValue: 'http://api.test' },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -110,31 +145,58 @@ describe('UserHeaderInfoComponent', () => {
     expect(items[1].textContent).toContain('Sair');
   });
 
-  it('exibe rótulos pt-BR das roles do realm', () => {
-    const { fixture } = setup();
-    const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Candidato');
-  });
+  describe('perfis de acesso no menu', () => {
+    function grupo(host: HTMLElement): HTMLElement | null {
+      return host.querySelector<HTMLElement>('[role="menu"] [role="group"]');
+    }
 
-  it('exibe rótulo pt-BR legível para a role plataforma-admin', () => {
-    const plataformaAdminProfile: UserProfile = {
-      ...profileData,
-      roles: ['plataforma-admin'],
-    };
-    const { fixture } = setup(plataformaAdminProfile);
-    const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Administrador da Plataforma');
-    expect(el.textContent).not.toContain('plataforma-admin');
-  });
+    it('lista cada perfil em texto não interativo dentro de um grupo rotulado, na ordem recebida', () => {
+      const { fixture } = setup();
+      concedidos.set([
+        { ...perfil('Consulta institucional', null), escopoTipo: 'instituicao' },
+        perfil('Gestor de processo seletivo', 'CEPS'),
+      ]);
+      fixture.detectChanges();
 
-  it('exibe múltiplos rótulos de roles separados por vírgula', () => {
-    const multiRoleProfile: UserProfile = {
-      ...profileData,
-      roles: ['admin', 'gestor'],
-    };
-    const { fixture } = setup(multiRoleProfile);
-    const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Administrador, Gestor');
+      const g = grupo(fixture.nativeElement);
+      expect(g?.getAttribute('aria-label')).toBe('Perfis de acesso');
+      expect(g?.textContent).toContain('Consulta institucional — Instituição');
+      expect(g?.textContent).toContain('Gestor de processo seletivo — CEPS');
+      expect(g?.textContent?.indexOf('Consulta')).toBeLessThan(
+        g?.textContent?.indexOf('Gestor') ?? 0,
+      );
+      expect(g?.querySelector('button, a, [role="menuitem"]')).toBeNull();
+      expect(fixture.nativeElement.querySelector('[role="menu"] ul, [role="menu"] ol')).toBeNull();
+    });
+
+    it('mostra só @usuário na linha da conta, sem papel do token', () => {
+      const { host } = setup();
+      const meta = host.querySelector('[data-testid="auth-user-username"]');
+
+      expect(meta?.textContent?.trim()).toBe('@candidato');
+      expect(host.textContent).not.toContain('Candidato ·');
+    });
+
+    it('não mostra o grupo nem aviso quando a pessoa não tem perfil', () => {
+      const { host } = setup();
+
+      expect(grupo(host)).toBeNull();
+      expect(host.querySelector('[data-testid="auth-user-perfis-indisponiveis"]')).toBeNull();
+    });
+
+    it.each<EstadoDosPerfis>(['carregando', 'indisponivel'])(
+      'mostra "Perfis indisponíveis" com a consulta em estado %s',
+      (estado) => {
+        const { fixture, host } = setup();
+        estadoDosPerfis.set(estado);
+        fixture.detectChanges();
+
+        expect(
+          host.querySelector('[data-testid="auth-user-perfis-indisponiveis"]')?.textContent,
+        ).toContain('Perfis indisponíveis');
+        expect(grupo(host)).toBeNull();
+      },
+    );
   });
 
   it('exibe apenas o primeiro nome civil quando nome social é vazio', () => {
@@ -184,33 +246,42 @@ describe('UserHeaderInfoComponent', () => {
       email: 'candidato@teste.unifesspa.edu.br',
       cpf: '69959836371',
       nomeSocial: 'Candidato Teste',
-      roles: ['candidato', 'offline_access'],
+      perfis: [],
       timestamp: '2026-10-05T12:00:00Z',
     };
 
     function abrirPerfil() {
       const ctx = setup();
-      const http = TestBed.inject(HttpTestingController);
       ctx.fixture.nativeElement.querySelector('button.user-chip').click();
       ctx.fixture.detectChanges();
       ctx.fixture.nativeElement.querySelector('[data-testid="auth-user-profile-item"]').click();
       ctx.fixture.detectChanges();
-      return { ...ctx, http };
+      /** Entrega a resposta da consulta única que o serviço faz ao abrir o modal. */
+      const responder = async (resposta: unknown) => {
+        responderRecarga(resposta);
+        await ctx.fixture.whenStable();
+        ctx.fixture.detectChanges();
+      };
+      return { ...ctx, responder };
     }
 
-    it('só consulta /api/profile/me depois de pedir o perfil', () => {
+    it('só consulta o perfil depois de pedir Meu perfil, e uma única vez', () => {
       const { fixture } = setup();
-      const http = TestBed.inject(HttpTestingController);
       fixture.nativeElement.querySelector('button.user-chip').click();
       fixture.detectChanges();
-      http.expectNone('http://api.test/api/profile/me');
+      expect(recarregar).not.toHaveBeenCalled();
       expect(fixture.nativeElement.querySelector('auth-user-profile-dialog')).toBeNull();
+
+      fixture.nativeElement.querySelector('[data-testid="auth-user-profile-item"]').click();
+      fixture.detectChanges();
+
+      expect(recarregar).toHaveBeenCalledOnce();
+      expect(TestBed.inject(HttpTestingController).match(() => true)).toEqual([]);
     });
 
-    it('fecha o menu e abre o modal exibindo os dados retornados pela API', () => {
-      const { fixture, http } = abrirPerfil();
-      http.expectOne('http://api.test/api/profile/me').flush(resposta);
-      fixture.detectChanges();
+    it('fecha o menu e abre o modal exibindo os dados retornados pela API', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder(resposta);
 
       const el: HTMLElement = fixture.nativeElement;
       expect(el.querySelector('.menu')?.hasAttribute('hidden')).toBe(true);
@@ -222,14 +293,11 @@ describe('UserHeaderInfoComponent', () => {
       expect(dados?.textContent).toContain('***.598.363-**');
       expect(dados?.textContent).not.toContain('699.');
       expect(dados?.textContent).not.toContain('-71');
-      expect(dados?.textContent).toContain('Candidato');
-      expect(dados?.textContent).not.toContain('offline_access');
     });
 
-    it('oferece "Alterar nome social" quando a conta tem nome social e abre a atualização do perfil', () => {
-      const { fixture, http, atualizarPerfil } = abrirPerfil();
-      http.expectOne('http://api.test/api/profile/me').flush(resposta);
-      fixture.detectChanges();
+    it('oferece "Alterar nome social" quando a conta tem nome social e abre a atualização do perfil', async () => {
+      const { fixture, atualizarPerfil, responder } = abrirPerfil();
+      await responder(resposta);
 
       const acao = fixture.nativeElement.querySelector(
         '[data-testid="auth-profile-nome-social-acao"]',
@@ -239,10 +307,9 @@ describe('UserHeaderInfoComponent', () => {
       expect(atualizarPerfil).toHaveBeenCalledTimes(1);
     });
 
-    it('oferece "Cadastrar nome social" quando a conta não tem nome social', () => {
-      const { fixture, http } = abrirPerfil();
-      http.expectOne('http://api.test/api/profile/me').flush({ ...resposta, nomeSocial: null });
-      fixture.detectChanges();
+    it('oferece "Cadastrar nome social" quando a conta não tem nome social', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder({ ...resposta, nomeSocial: null });
 
       const acao = fixture.nativeElement.querySelector(
         '[data-testid="auth-profile-nome-social-acao"]',
@@ -250,25 +317,23 @@ describe('UserHeaderInfoComponent', () => {
       expect(acao?.textContent?.trim()).toBe('Cadastrar nome social');
     });
 
-    it('anuncia o carregamento, mas não lê os dados do perfil, com o CPF, sozinho', () => {
-      const { fixture, http } = abrirPerfil();
+    it('anuncia o carregamento, mas não lê os dados do perfil, com o CPF, sozinho', async () => {
+      const { fixture, responder } = abrirPerfil();
       const el: HTMLElement = fixture.nativeElement;
       expect(
         el.querySelector('[data-testid="auth-profile-loading"]')?.closest('[aria-live]'),
       ).not.toBeNull();
 
-      http.expectOne('http://api.test/api/profile/me').flush(resposta);
-      fixture.detectChanges();
+      await responder(resposta);
 
       expect(
         el.querySelector('[data-testid="auth-profile-data"]')?.closest('[aria-live]'),
       ).toBeNull();
     });
 
-    it('revela e volta a ocultar o CPF pelo botão de olho', () => {
-      const { fixture, http } = abrirPerfil();
-      http.expectOne('http://api.test/api/profile/me').flush(resposta);
-      fixture.detectChanges();
+    it('revela e volta a ocultar o CPF pelo botão de olho', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder(resposta);
 
       const el: HTMLElement = fixture.nativeElement;
       const toggle = el.querySelector<HTMLButtonElement>('[data-testid="auth-profile-cpf-toggle"]');
@@ -288,10 +353,9 @@ describe('UserHeaderInfoComponent', () => {
       expect(cpf()).toBe('***.598.363-**');
     });
 
-    it('não oferece o botão de olho quando o CPF não tem 11 dígitos', () => {
-      const { fixture, http } = abrirPerfil();
-      http.expectOne('http://api.test/api/profile/me').flush({ ...resposta, cpf: '123' });
-      fixture.detectChanges();
+    it('não oferece o botão de olho quando o CPF não tem 11 dígitos', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder({ ...resposta, cpf: '123' });
 
       const el: HTMLElement = fixture.nativeElement;
       expect(el.querySelector('[data-testid="auth-profile-cpf-toggle"]')).toBeNull();
@@ -300,10 +364,9 @@ describe('UserHeaderInfoComponent', () => {
       );
     });
 
-    it('volta a mascarar o CPF ao reabrir o modal', () => {
-      const { fixture, http } = abrirPerfil();
-      http.expectOne('http://api.test/api/profile/me').flush(resposta);
-      fixture.detectChanges();
+    it('volta a mascarar o CPF ao reabrir o modal', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder(resposta);
       const el: HTMLElement = fixture.nativeElement;
       el.querySelector<HTMLButtonElement>('[data-testid="auth-profile-cpf-toggle"]')?.click();
       fixture.detectChanges();
@@ -317,18 +380,16 @@ describe('UserHeaderInfoComponent', () => {
       fixture.detectChanges();
       el.querySelector<HTMLButtonElement>('[data-testid="auth-user-profile-item"]')?.click();
       fixture.detectChanges();
-      http.expectOne('http://api.test/api/profile/me').flush(resposta);
-      fixture.detectChanges();
+      await responder(resposta);
 
       expect(el.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim()).toBe(
         '***.598.363-**',
       );
     });
 
-    it('fecha ao clicar fora do painel, mas não ao clicar dentro dele', () => {
-      const { fixture, http } = abrirPerfil();
-      http.expectOne('http://api.test/api/profile/me').flush(resposta);
-      fixture.detectChanges();
+    it('fecha ao clicar fora do painel, mas não ao clicar dentro dele', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder(resposta);
       const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
       expect(dialog.open).toBe(true);
 
@@ -339,21 +400,71 @@ describe('UserHeaderInfoComponent', () => {
       expect(dialog.open).toBe(false);
     });
 
-    it('mostra mensagem de erro quando a API falha', () => {
-      const { fixture, http } = abrirPerfil();
-      http
-        .expectOne('http://api.test/api/profile/me')
-        .flush(null, { status: 500, statusText: 'Server Error' });
+    function perfisDoModal(fixture: ComponentFixture<UserHeaderInfoComponent>): HTMLElement {
+      const el = fixture.nativeElement.querySelector('[data-testid="auth-profile-perfis"]');
+      if (el === null) throw new Error('perfis do modal não renderizados');
+      return el;
+    }
+
+    it('lista os perfis com o escopo e o prazo "até dd/mm/aaaa" quando há prazo', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder(resposta);
+      concedidos.set([
+        {
+          ...perfil('Gestor de processo seletivo', 'CEPS'),
+          validaAte: '2026-12-31T23:59:00-03:00',
+        },
+        perfil('Consulta institucional', null),
+      ]);
       fixture.detectChanges();
+
+      const itens = perfisDoModal(fixture).querySelectorAll('li');
+      expect(itens[0]?.textContent).toContain('Gestor de processo seletivo');
+      expect(itens[0]?.textContent).toContain('CEPS');
+      expect(itens[0]?.textContent).toContain('até 31/12/2026');
+      expect(itens[1]?.textContent).not.toContain('até');
+    });
+
+    it('mostra "Unidade não identificada" para o perfil numa unidade que não existe mais', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder(resposta);
+      concedidos.set([perfil('Gestor de processo seletivo', null)]);
+      fixture.detectChanges();
+
+      expect(perfisDoModal(fixture).textContent).toContain('Unidade não identificada');
+    });
+
+    it('mostra "Nenhum perfil de acesso" e nada de "Candidato" a quem não tem perfil', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder(resposta);
+
+      expect(perfisDoModal(fixture).textContent).toContain('Nenhum perfil de acesso');
+      expect(perfisDoModal(fixture).textContent).not.toContain('Candidato');
+    });
+
+    it('distingue a falha da consulta de perfis de "sem perfil"', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder(resposta);
+      estadoDosPerfis.set('indisponivel');
+      fixture.detectChanges();
+
+      expect(perfisDoModal(fixture).textContent).toContain(
+        'Não foi possível carregar os perfis de acesso',
+      );
+      expect(perfisDoModal(fixture).textContent).not.toContain('Nenhum perfil de acesso');
+    });
+
+    it('mostra mensagem de erro quando a API falha', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder(null);
       expect(
         fixture.nativeElement.querySelector('[data-testid="auth-profile-error"]'),
       ).toBeTruthy();
     });
 
-    it('desmonta o modal e devolve o foco ao chip quando ele fecha', () => {
-      const { fixture, http } = abrirPerfil();
-      http.expectOne('http://api.test/api/profile/me').flush(resposta);
-      fixture.detectChanges();
+    it('desmonta o modal e devolve o foco ao chip quando ele fecha', async () => {
+      const { fixture, responder } = abrirPerfil();
+      await responder(resposta);
 
       const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
       dialog.dispatchEvent(new Event('close'));
@@ -369,17 +480,6 @@ describe('UserHeaderInfoComponent', () => {
     const btn: HTMLButtonElement = fixture.nativeElement.querySelector('button');
     btn.click();
     expect(login).toHaveBeenCalledOnce();
-  });
-
-  it('não exibe seção de roles quando lista está vazia', () => {
-    const semRoles: UserProfile = {
-      ...profileData,
-      roles: [],
-    };
-    const { fixture } = setup(semRoles);
-    const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('@candidato');
-    expect(el.textContent).not.toContain('·');
   });
 
   // --- Edge cases ---
@@ -415,18 +515,6 @@ describe('UserHeaderInfoComponent', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain('@');
     expect(el.querySelector('button')).toBeTruthy();
-  });
-
-  it('filtra roles internas do Keycloak sem quebrar', () => {
-    const rolesInternas: UserProfile = {
-      ...profileData,
-      roles: ['candidato', 'offline_access', 'uma_authorization'],
-    };
-    const { fixture } = setup(rolesInternas);
-    const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Candidato');
-    expect(el.textContent).not.toContain('offline_access');
-    expect(el.textContent).not.toContain('uma_authorization');
   });
 
   it('dispara logout() a cada clique (sem debounce)', () => {
