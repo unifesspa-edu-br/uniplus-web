@@ -19,7 +19,6 @@ function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
     email: 'usuario@exemplo.com',
     nomeCivil: 'Maria das Dores',
     cpf: '33434225927',
-    roles: ['candidato'],
     ...overrides,
   };
 }
@@ -63,9 +62,7 @@ describe('UserContextService', () => {
     });
 
     it('prioriza nome social quando preenchido', () => {
-      authStub.userProfile.set(
-        makeProfile({ nomeCivil: 'João Silva', nomeSocial: 'Joana Silva' }),
-      );
+      authStub.userProfile.set(makeProfile({ nomeCivil: 'João Silva', nomeSocial: 'Joana Silva' }));
       expect(service.displayName()).toBe('Joana Silva');
     });
 
@@ -73,9 +70,7 @@ describe('UserContextService', () => {
       // A prioridade do nome social manda usá-lo, mas string com só espaços não
       // conta como preenchida — usuário cadastrou e depois apagou. O pin
       // garante que `'   '.trim() === ''` continua caindo no fallback.
-      authStub.userProfile.set(
-        makeProfile({ nomeCivil: 'Carlos Pereira', nomeSocial: '   ' }),
-      );
+      authStub.userProfile.set(makeProfile({ nomeCivil: 'Carlos Pereira', nomeSocial: '   ' }));
       expect(service.displayName()).toBe('Carlos Pereira');
     });
   });

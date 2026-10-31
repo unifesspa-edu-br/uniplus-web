@@ -11,16 +11,15 @@ import {
 import { createDisclosureController } from '@uniplus/shared-core/dom';
 import {
   AuthService,
+  PerfisDeAcessoService,
   UserContextService,
-  DOMAIN_ROLES,
-  ROLE_LABELS,
 } from '@uniplus/shared-auth/bootstrap';
 import { UserProfileDialogComponent } from './user-profile-dialog.component';
 
 /**
  * Bloco de identificação do usuário para uso em headers.
- * Autenticado: nome social (ou civil), username, roles do realm e menu de
- * conta. Sem sessão ativa: botão "Entrar" que inicia o login OIDC — seguro
+ * Autenticado: nome social (ou civil), username, perfis de acesso concedidos e
+ * menu de conta. Sem sessão ativa: botão "Entrar" que inicia o login OIDC — seguro
  * para uso em layouts que misturam rotas públicas e autenticadas.
  */
 @Component({
@@ -68,14 +67,7 @@ import { UserProfileDialogComponent } from './user-profile-dialog.component';
           </svg>
         </button>
 
-        <ul
-          #menu
-          class="menu"
-          role="menu"
-          [id]="menuId"
-          aria-label="Conta"
-          [hidden]="!menuOpen()"
-        >
+        <ul #menu class="menu" role="menu" [id]="menuId" aria-label="Conta" [hidden]="!menuOpen()">
           <li class="menu__account" role="presentation">
             <span class="menu__account-info">
               <strong class="menu__account-name" data-testid="auth-user-full-name">{{
@@ -83,14 +75,24 @@ import { UserProfileDialogComponent } from './user-profile-dialog.component';
               }}</strong>
               <span class="menu__account-meta" data-testid="auth-user-username">
                 &#64;{{ profile.username }}
-                @if (domainRoles(profile.roles); as roles) {
-                  @if (roles.length) {
-                    · {{ roles.join(', ') }}
-                  }
-                }
               </span>
             </span>
           </li>
+          @if (perfis.estado() !== 'carregada') {
+            <li class="menu__account menu__perfis" role="presentation">
+              <span class="menu__account-meta" data-testid="auth-user-perfis-indisponiveis">
+                Perfis indisponíveis
+              </span>
+            </li>
+          } @else if (perfis.rotulos().length) {
+            <li class="menu__account menu__perfis" role="presentation">
+              <div role="group" aria-label="Perfis de acesso" data-testid="auth-user-perfis">
+                @for (rotulo of perfis.rotulos(); track $index) {
+                  <span class="menu__account-meta menu__perfil">{{ rotulo }}</span>
+                }
+              </div>
+            </li>
+          }
           <li class="menu__divider" role="separator"></li>
           <li role="none">
             <button
@@ -143,11 +145,21 @@ import { UserProfileDialogComponent } from './user-profile-dialog.component';
       <button type="button" class="btn btn--sm" (click)="login()">Entrar</button>
     }
   `,
+  styles: `
+    /* Continua o bloco da conta: sem o respiro duplo entre a linha do @usuário e os perfis. */
+    .menu__perfis {
+      padding-top: 0;
+    }
+    .menu__perfil {
+      display: block;
+    }
+  `,
 })
 export class UserHeaderInfoComponent {
   private static idSeed = 0;
 
   protected readonly userContext = inject(UserContextService);
+  protected readonly perfis = inject(PerfisDeAcessoService);
   private readonly authService = inject(AuthService);
   private readonly document = inject(DOCUMENT);
   private readonly host = inject(ElementRef<HTMLElement>);
@@ -165,10 +177,6 @@ export class UserHeaderInfoComponent {
   protected readonly profileOpen = signal(false);
   protected readonly buttonId = `auth-user-menu-button-${++UserHeaderInfoComponent.idSeed}`;
   protected readonly menuId = `auth-user-menu-${UserHeaderInfoComponent.idSeed}`;
-
-  protected domainRoles(roles: string[]): string[] {
-    return roles.filter((r) => DOMAIN_ROLES.has(r)).map((r) => ROLE_LABELS[r] ?? r);
-  }
 
   protected initials(name: string): string {
     return name

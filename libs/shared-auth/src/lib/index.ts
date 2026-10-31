@@ -18,8 +18,7 @@ export { authErrorInterceptor } from './interceptors/auth-error.interceptor';
 
 // Models
 export type { UserProfile } from './models/user.model';
-export type { UserRole } from './models/user.model';
-export type { PerfilConcedido } from './models/perfil-concedido.model';
+export type { PerfilConcedido, RespostaDoPerfil } from './models/perfil-concedido.model';
 export { escopoDoPerfil, prazoDoPerfil, rotuloDoPerfil } from './models/perfil-concedido.model';
 export type { AuthConfig } from './models/auth-config.model';
 
@@ -27,7 +26,12 @@ export type { AuthConfig } from './models/auth-config.model';
 export { provideAuth } from './providers/auth.provider';
 
 // Tokens
-export { AUTH_ALLOWED_URLS, AUTH_CONFIG, AUTORIZACAO_BASE_PATH, PROFILE_BASE_PATH } from './tokens/auth.tokens';
+export {
+  AUTH_ALLOWED_URLS,
+  AUTH_CONFIG,
+  AUTORIZACAO_BASE_PATH,
+  PROFILE_BASE_PATH,
+} from './tokens/auth.tokens';
 
 // Components
 export { AuthErrorBannerComponent } from './components/auth-error-banner.component';

@@ -16,7 +16,7 @@ const permissoesStub = {
 const configuracao = signal<{ acompanhamentoValidacaoHabilitada?: boolean } | null>(null);
 const login = vi.fn();
 
-const authStub = { authenticated: autenticado, roles: signal<readonly string[]>([]), login };
+const authStub = { authenticated: autenticado, login };
 
 const ROTAS_E_PERMISSOES = [
   ['/dashboard', 'selecao:processos:acompanhar'],

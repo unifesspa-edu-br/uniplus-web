@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -10,31 +9,19 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import type { ApiResult } from '@uniplus/shared-core/http';
 import {
   AuthService,
-  DOMAIN_ROLES,
-  PROFILE_BASE_PATH,
-  ROLE_LABELS,
+  PerfisDeAcessoService,
+  escopoDoPerfil,
+  prazoDoPerfil,
+  type RespostaDoPerfil,
 } from '@uniplus/shared-auth/bootstrap';
 import { cpfRevelavel, type TrechoMascarado } from '@uniplus/shared-utils';
-
-/** Resposta de `GET /api/profile/me` (`UserProfileResponse` da uniplus-api). */
-interface ProfileResponse {
-  readonly userId: string | null;
-  readonly name: string | null;
-  readonly email: string | null;
-  readonly cpf: string | null;
-  readonly nomeSocial: string | null;
-  readonly roles: readonly string[];
-  readonly timestamp: string;
-}
 
 type Estado =
   | { readonly tipo: 'carregando' }
   | { readonly tipo: 'erro' }
-  | { readonly tipo: 'pronto'; readonly perfil: ProfileResponse };
+  | { readonly tipo: 'pronto'; readonly perfil: RespostaDoPerfil };
 
 /**
  * Modal "Meu perfil": exibe os dados devolvidos por `GET /api/profile/me`.
@@ -145,7 +132,34 @@ type Estado =
               </div>
               <div>
                 <dt>Perfis de acesso</dt>
-                <dd>{{ perfisDeAcesso(p.roles) }}</dd>
+                <dd data-testid="auth-profile-perfis">
+                  @switch (perfis.estado()) {
+                    @case ('carregada') {
+                      @if (perfis.perfis().length) {
+                        <ul class="auth-profile__perfis">
+                          @for (perfil of perfis.perfis(); track perfil.concessaoId) {
+                            <li data-testid="auth-profile-perfil">
+                              <strong>{{ perfil.nome }}</strong> — {{ escopo(perfil) }}
+                              @if (prazo(perfil); as ate) {
+                                · até {{ ate }}
+                              }
+                            </li>
+                          }
+                        </ul>
+                      } @else {
+                        <span data-testid="auth-profile-perfis-vazio">Nenhum perfil de acesso</span>
+                      }
+                    }
+                    @case ('carregando') {
+                      <span>Carregando…</span>
+                    }
+                    @default {
+                      <span role="alert" data-testid="auth-profile-perfis-erro">
+                        Não foi possível carregar os perfis de acesso
+                      </span>
+                    }
+                  }
+                </dd>
               </div>
             </dl>
           }
@@ -181,6 +195,11 @@ type Estado =
       align-items: center;
       gap: var(--space-2);
     }
+    .auth-profile__perfis {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
     .auth-profile__list dd {
       margin: 0;
       color: var(--text-primary);
@@ -189,19 +208,21 @@ type Estado =
   `,
 })
 export class UserProfileDialogComponent {
-  private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(AuthService);
-  private readonly basePath = inject(PROFILE_BASE_PATH);
+  protected readonly perfis = inject(PerfisDeAcessoService);
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   readonly closed = output<void>();
+
+  private destruido = false;
 
   /** O CPF abre mascarado (LGPD); o olho revela, e o modal recém-aberto volta a ocultar. */
   protected readonly cpfVisivel = signal(false);
   protected readonly estado = signal<Estado>({ tipo: 'carregando' });
 
   constructor() {
+    this.destroyRef.onDestroy(() => (this.destruido = true));
     afterNextRender(() => {
       const dialog = this.dialogRef().nativeElement;
       // Listener nativo: o clique no backdrop é conveniência de mouse (Esc e o
@@ -216,10 +237,12 @@ export class UserProfileDialogComponent {
         dialog.setAttribute('open', '');
       }
     });
-    this.carregar();
+    // Abrir Meu perfil é o momento de ver uma concessão recém-revogada ou concedida: a mesma
+    // consulta traz os dados do modal e atualiza os perfis.
+    void this.carregar();
   }
 
-  protected perfil(): ProfileResponse | null {
+  protected perfil(): RespostaDoPerfil | null {
     const estado = this.estado();
     return estado.tipo === 'pronto' ? estado.perfil : null;
   }
@@ -253,21 +276,12 @@ export class UserProfileDialogComponent {
     return visivel && dado.revelado ? [{ texto: dado.revelado, oculto: false }] : dado.mascarado;
   }
 
-  protected perfisDeAcesso(roles: readonly string[]): string {
-    const rotulos = roles.filter((r) => DOMAIN_ROLES.has(r)).map((r) => ROLE_LABELS[r] ?? r);
-    return rotulos.length ? rotulos.join(', ') : '—';
-  }
+  protected readonly escopo = escopoDoPerfil;
+  protected readonly prazo = prazoDoPerfil;
 
-  private carregar(): void {
-    this.http
-      .get<ApiResult<ProfileResponse>>(`${this.basePath}/api/profile/me`)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (resultado) =>
-          this.estado.set(
-            resultado.ok ? { tipo: 'pronto', perfil: resultado.data } : { tipo: 'erro' },
-          ),
-        error: () => this.estado.set({ tipo: 'erro' }),
-      });
+  private async carregar(): Promise<void> {
+    const resposta = await this.perfis.recarregar();
+    if (this.destruido) return;
+    this.estado.set(resposta === null ? { tipo: 'erro' } : { tipo: 'pronto', perfil: resposta });
   }
 }

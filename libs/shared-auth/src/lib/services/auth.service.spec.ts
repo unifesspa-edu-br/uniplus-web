@@ -16,8 +16,4 @@ describe('AuthService', () => {
   it('should not be authenticated initially', () => {
     expect(service.authenticated()).toBe(false);
   });
-
-  it('should have empty roles initially', () => {
-    expect(service.roles()).toEqual([]);
-  });
 });
