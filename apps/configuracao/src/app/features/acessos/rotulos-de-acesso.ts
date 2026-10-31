@@ -32,6 +32,7 @@ const TIPO_DE_EVENTO: Readonly<Record<string, string>> = {
   aprovado: 'Aprovação',
   recusado: 'Recusa',
   perfil_alterado_entre_etapas: 'Perfil alterado entre as etapas',
+  prazo_vencido_entre_etapas: 'Prazo vencido entre as etapas',
   segunda_aprovacao_dispensada: 'Segunda aprovação dispensada',
   cancelado: 'Pedido cancelado',
   concedida: 'Acesso concedido',

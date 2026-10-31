@@ -139,6 +139,62 @@ describe('PedirAcessoPage', () => {
     expect(document.activeElement).toBe(perfil);
   });
 
+  describe('prazo sugerido', () => {
+    const preencher = (digitar: (s: string, v: string) => void) => {
+      digitar('select[formcontrolname="perfilId"]', 'perfil-1');
+      digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
+      digitar('textarea', 'Atendo a comissão do processo seletivo.');
+    };
+
+    it('não oferece o campo ao perfil de governança', () => {
+      const { digitar, campo } = montar();
+      expect(campo('input[formcontrolname="validaAteSugerida"]')).not.toBeNull();
+
+      digitar('select[formcontrolname="perfilId"]', 'perfil-3');
+
+      expect(campo('input[formcontrolname="validaAteSugerida"]')).toBeNull();
+    });
+
+    it('recusa data passada, liga o erro ao campo e não envia', async () => {
+      const { digitar, enviar, campo, host } = montar();
+      preencher(digitar);
+      digitar('input[formcontrolname="validaAteSugerida"]', '2020-01-01');
+
+      await enviar();
+
+      expect(api.criar).not.toHaveBeenCalled();
+      expect(
+        campo('input[formcontrolname="validaAteSugerida"]').getAttribute('aria-describedby'),
+      ).toContain('cfg-pedir-validaAteSugerida-erro');
+      expect(host.querySelector('#cfg-pedir-validaAteSugerida-erro')?.textContent).toContain(
+        'já passou',
+      );
+    });
+
+    it('envia o fim do dia escolhido, no fuso local e com deslocamento', async () => {
+      api.criar.mockReturnValue(of(ok(pedido())));
+      const { digitar, enviar } = montar();
+      preencher(digitar);
+      digitar('input[formcontrolname="validaAteSugerida"]', '2099-06-15');
+
+      await enviar();
+
+      expect(api.criar.mock.calls[0]?.[0].validaAteSugerida).toMatch(
+        /^2099-06-15T23:59:59[+-]\d{2}:\d{2}$/,
+      );
+    });
+
+    it('sem prazo, o corpo não leva validaAteSugerida', async () => {
+      api.criar.mockReturnValue(of(ok(pedido())));
+      const { digitar, enviar } = montar();
+      preencher(digitar);
+
+      await enviar();
+
+      expect(api.criar.mock.calls[0]?.[0]).not.toHaveProperty('validaAteSugerida');
+    });
+  });
+
   it('bloqueia o envio de perfil de governança sem o PDF e liga a mensagem ao campo', async () => {
     const { digitar, enviar, host, fixture } = montar();
 

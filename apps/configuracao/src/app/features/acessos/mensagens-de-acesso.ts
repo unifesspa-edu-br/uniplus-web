@@ -71,6 +71,11 @@ const MENSAGENS: Readonly<Record<string, Mensagem>> = {
     titulo: 'Já existe um pedido igual em andamento.',
     resolver: 'Acompanhe o pedido que já existe, ou cancele-o antes de pedir de novo.',
   },
+  'pedido.prazo_vencido': {
+    titulo:
+      'O prazo definido pelo gestor de acessos venceu antes da aprovação da proteção de dados.',
+    resolver: 'O pedido voltou ao gestor de acessos, sem prazo. Aguarde uma nova decisão.',
+  },
   'pedido.perfil_alterado': {
     titulo: 'O perfil mudou durante a análise.',
     resolver: 'O pedido voltou ao gestor de acessos. Aguarde uma nova decisão.',
@@ -83,6 +88,11 @@ const MENSAGENS: Readonly<Record<string, Mensagem>> = {
     titulo: 'O e-mail da sessão não é institucional verificado.',
     resolver:
       'Entre com a conta institucional para listar os perfis e pedir acesso a outra pessoa; o pedido para si também exige o e-mail institucional.',
+  },
+  'pedido.validade_invalida': {
+    titulo: 'O prazo informado não é válido.',
+    resolver:
+      'Informe uma data de hoje em diante. Os perfis de gestor de acessos e de proteção de dados não têm prazo, e a proteção de dados não define prazo.',
   },
   'pedido.situacao_invalida': {
     titulo: 'A ação não vale para a situação atual do pedido.',

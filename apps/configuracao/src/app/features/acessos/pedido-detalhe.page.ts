@@ -2,13 +2,16 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   effect,
   inject,
   input,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PERMISSAO, PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
@@ -39,6 +42,14 @@ import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
 import { MotivoDialogComponent } from './motivo-dialog.component';
 import { nomesDeEscopo } from './nomes-de-escopo';
 import { origemDaFila } from './origens-do-pedido';
+import {
+  PRAZO_NO_PASSADO,
+  diaDoInstante,
+  diaNoPassado,
+  fimDoDia,
+  hojeNoFuso,
+  prazoNoPassado,
+} from './prazo-de-vigencia';
 import { autorDoEvento, TrilhaDeAcessoComponent } from './trilha-de-acesso.component';
 import {
   etapa,
@@ -58,6 +69,7 @@ type Acao = 'aprovar' | 'recusar' | 'aceitar' | 'cancelar';
   selector: 'cfg-pedido-detalhe-page',
   standalone: true,
   imports: [
+    ReactiveFormsModule,
     RouterLink,
     AlertComponent,
     ConfirmDialogComponent,
@@ -121,7 +133,41 @@ type Acao = 'aprovar' | 'recusar' | 'aceitar' | 'cancelar';
           }
           <dt>Justificativa</dt>
           <dd>{{ p.justificativa }}</dd>
+          @if (p.validaAteSugerida) {
+            <dt>Prazo sugerido pelo solicitante</dt>
+            <dd>{{ p.validaAteSugerida | dateBr }}</dd>
+          }
+          @if (p.validaAte) {
+            <dt>Fim de vigência definido pelo gestor</dt>
+            <dd>{{ p.validaAte | dateBr }}</dd>
+          }
         </dl>
+
+        @if (informaPrazo()) {
+          <div class="panel-body">
+            <label class="field" [class.is-error]="prazoInvalido()">
+              <span class="field__label">Fim de vigência (opcional)</span>
+              <input
+                class="input"
+                #campoPrazo
+                type="date"
+                [formControl]="prazo"
+                [min]="hoje()"
+                [attr.aria-invalid]="prazoInvalido() ? 'true' : null"
+                [attr.aria-describedby]="
+                  'cfg-pedido-prazo-dica' + (prazoInvalido() ? ' cfg-pedido-prazo-erro' : '')
+                "
+              />
+              <span class="field__hint" id="cfg-pedido-prazo-dica"
+                >Último dia de validade da concessão. Deixe em branco para um acesso sem fim
+                previsto.</span
+              >
+              @if (prazoInvalido()) {
+                <span class="field__error" id="cfg-pedido-prazo-erro">{{ mensagemDoPrazo }}</span>
+              }
+            </label>
+          </div>
+        }
 
         <div class="cfg-acoes panel-body">
           @if (podeAceitar()) {
@@ -285,6 +331,13 @@ export class PedidoDetalhePage {
   protected readonly confirmando = signal(false);
   protected readonly recusando = signal(false);
   protected readonly acaoPendente = signal<Acao>('aprovar');
+  protected readonly hoje = hojeNoFuso;
+  protected readonly mensagemDoPrazo = PRAZO_NO_PASSADO;
+  protected readonly prazo = new FormControl('', {
+    nonNullable: true,
+    validators: [prazoNoPassado],
+  });
+  private readonly campoPrazo = viewChild<ElementRef<HTMLInputElement>>('campoPrazo');
 
   protected readonly rotuloDaSituacao = computed(() =>
     situacaoDoPedido(this.pedido()?.situacao ?? ''),
@@ -321,6 +374,14 @@ export class PedidoDetalhePage {
     );
   });
 
+  /** O prazo se define na aprovação do gestor; a proteção de dados só vê o que ele definiu. */
+  protected readonly informaPrazo = computed(
+    () =>
+      this.podeDecidir() &&
+      this.pedido()?.etapaAtual === 'gestor' &&
+      this.pedido()?.admitePrazo === true,
+  );
+
   protected readonly podeAceitar = computed(
     () => this.pedido()?.situacao === 'aguardando_beneficiario' && this.ehBeneficiario(),
   );
@@ -355,10 +416,15 @@ export class PedidoDetalhePage {
         this.pedido.set(null);
         this.trilha.set([]);
         this.erro.set(null);
+        this.prazo.reset('');
         this.chave.renovar();
         void this.carregar();
       });
     });
+  }
+
+  protected prazoInvalido(): boolean {
+    return this.prazo.invalid && (this.prazo.touched || this.prazo.dirty);
   }
 
   protected rotuloDaDecisao(resultado: string): string {
@@ -366,6 +432,15 @@ export class PedidoDetalhePage {
   }
 
   protected pedirConfirmacao(acao: Acao): void {
+    if (acao === 'aprovar' && this.informaPrazo()) {
+      // O dia pode ter virado desde que o valor foi digitado.
+      this.prazo.updateValueAndValidity();
+      if (this.prazo.invalid) {
+        this.prazo.markAsTouched();
+        this.campoPrazo()?.nativeElement.focus();
+        return;
+      }
+    }
     this.acaoPendente.set(acao);
     this.confirmando.set(true);
   }
@@ -377,9 +452,15 @@ export class PedidoDetalhePage {
       return;
     }
     const id = this.id();
+    const validaAte =
+      acao === 'aprovar' && this.informaPrazo() && this.prazo.value !== ''
+        ? fimDoDia(this.prazo.value)
+        : null;
     await this.decidir(() =>
-      comChave(this.chave, { acao, id }, (contexto) =>
-        acao === 'aceitar' ? this.api.aceitar(id, contexto) : this.api.aprovar(id, contexto),
+      comChave(this.chave, { acao, id, validaAte }, (contexto) =>
+        acao === 'aceitar'
+          ? this.api.aceitar(id, contexto)
+          : this.api.aprovar(id, contexto, validaAte),
       ),
     );
   }
@@ -479,6 +560,7 @@ export class PedidoDetalhePage {
         return false;
       }
       this.notificacoes.success('Pedido atualizado');
+      this.prazo.reset('');
       await this.carregar();
       return true;
     } catch {
@@ -506,6 +588,11 @@ export class PedidoDetalhePage {
         return;
       }
       this.pedido.set(pedido.data);
+      // A sugestão do solicitante pré-preenche o campo, se ainda vale; o que o gestor já digitou não se perde numa recarga.
+      if (this.prazo.pristine) {
+        const sugerido = diaDoInstante(pedido.data.validaAteSugerida);
+        this.prazo.setValue(diaNoPassado(sugerido) ? '' : sugerido);
+      }
       this.trilha.set(trilha.ok ? trilha.data : []);
     } catch {
       if (atual()) this.erro.set(FALHA_INESPERADA);
