@@ -3,3 +3,4 @@ export { AuthErrorBannerComponent } from '../../src/lib/components/auth-error-ba
 export { LoginErrorBannerComponent } from '../../src/lib/components/login-error-banner.component';
 export { UserHeaderInfoComponent } from '../../src/lib/components/user-header-info.component';
 export { TemPermissaoDirective } from '../../src/lib/components/tem-permissao.directive';
+export { PerfisDaBarraComponent } from '../../src/lib/components/perfis-da-barra.component';

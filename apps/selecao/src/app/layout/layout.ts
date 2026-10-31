@@ -2,14 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
-import {
-  AuthService,
-  DOMAIN_ROLES,
-  PermissoesService,
-  ROLE_LABELS,
-  UserContextService,
-} from '@uniplus/shared-auth/bootstrap';
-import { UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
+import { PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import { PerfisDaBarraComponent, UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
 import { podeAbrirTela } from '../acesso/acompanhamento.guard';
 import type { CaminhoDeTela } from '../acesso/permissoes-das-telas';
 import {
@@ -38,7 +32,7 @@ interface SelNavGroup {
 @Component({
   selector: 'sel-layout',
   standalone: true,
-  imports: [RouterOutlet, AppShellComponent, UserHeaderInfoComponent],
+  imports: [RouterOutlet, AppShellComponent, UserHeaderInfoComponent, PerfisDaBarraComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-app-shell
@@ -57,7 +51,7 @@ interface SelNavGroup {
           </div>
           <div class="sidebar__user-info">
             <strong>{{ userContext.displayName() }}</strong>
-            <span>{{ sidebarUserRole() || '@' + profile.username }}</span>
+            <auth-perfis-da-barra [username]="profile.username" />
           </div>
         }
       </ng-container>
@@ -66,7 +60,6 @@ interface SelNavGroup {
   `,
 })
 export class LayoutComponent {
-  private readonly authService = inject(AuthService);
   private readonly permissoes = inject(PermissoesService);
   private readonly router = inject(Router);
   private readonly appConfig = inject(AppConfigService);
@@ -82,10 +75,6 @@ export class LayoutComponent {
   );
 
   protected readonly sidebarUserInitials = computed(() => initials(this.userContext.displayName()));
-  protected readonly sidebarUserRole = computed(() => {
-    const role = this.authService.roles().find((value) => DOMAIN_ROLES.has(value));
-    return role ? (ROLE_LABELS[role] ?? role) : '';
-  });
 
   private readonly navGroupsDeclarados: readonly SelNavGroup[] = [
     {
