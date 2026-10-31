@@ -18,7 +18,6 @@ const USER = {
   username: 'candidato',
   password: 'E2eTest!123',
   displayName: 'Candidato Teste',
-  roles: ['candidato'],
 };
 
 test.describe('Autenticação OIDC sob subpath — Portal (/portal/)', () => {
@@ -40,7 +39,9 @@ test.describe('Autenticação OIDC sob subpath — Portal (/portal/)', () => {
     // se a Story #448 regredir, os assets 404am e o app não chega a
     // renderizar o heading abaixo.
     await expect(page).toHaveURL(/localhost:4212\/portal\/processos/);
-    await expect(page.getByRole('heading', { name: 'Processos Seletivos', level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Processos Seletivos', level: 1 }),
+    ).toBeVisible();
   });
 
   test('login PKCE completo redireciona de volta ao subpath /portal/, não à raiz do host', async ({
@@ -58,7 +59,7 @@ test.describe('Autenticação OIDC sob subpath — Portal (/portal/)', () => {
     // do host (sem o segmento /portal/) — cobriria tanto um redirect_uri
     // mal configurado quanto um base href não reescrito.
     await expect(page).not.toHaveURL(/^http:\/\/localhost:4212\/$/);
-    await expectUserInHeader(page, USER.displayName, USER.username, USER.roles);
+    await expectUserInHeader(page, USER.displayName, USER.username);
   });
 
   test('silent check-SSO reconhece a sessão em um novo carregamento, sem exigir login de novo', async ({
@@ -74,7 +75,7 @@ test.describe('Autenticação OIDC sob subpath — Portal (/portal/)', () => {
     // #446/#448) apontar pro arquivo real sob /portal/assets/.
     await page.goto('processos');
     await expect(page).toHaveURL(/localhost:4212\/portal\/processos/);
-    await expectUserInHeader(page, USER.displayName, USER.username, USER.roles);
+    await expectUserInHeader(page, USER.displayName, USER.username);
   });
 
   test('logout redireciona ao subpath /portal/, não à raiz do host (Story #447)', async ({

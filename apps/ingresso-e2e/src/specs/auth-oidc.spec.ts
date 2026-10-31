@@ -10,9 +10,9 @@ import {
 const ACOMPANHA = ['selecao:processos:acompanhar'];
 
 const USERS = {
-  admin: { username: 'admin', password: 'E2eTest!123', displayName: 'Admin Teste', roles: ['admin'] },
-  gestor: { username: 'gestor', password: 'E2eTest!123', displayName: 'Gestor Teste', roles: ['gestor'] },
-  candidato: { username: 'candidato', password: 'E2eTest!123', displayName: 'Candidato Teste', roles: ['candidato'] },
+  admin: { username: 'admin', password: 'E2eTest!123', displayName: 'Admin Teste' },
+  gestor: { username: 'gestor', password: 'E2eTest!123', displayName: 'Gestor Teste' },
+  candidato: { username: 'candidato', password: 'E2eTest!123', displayName: 'Candidato Teste' },
 };
 
 test.describe('Autenticação OIDC — Ingresso', () => {
@@ -24,7 +24,9 @@ test.describe('Autenticação OIDC — Ingresso', () => {
     ]);
   });
 
-  test('redireciona para o provedor OIDC ao acessar rota protegida sem sessão', async ({ page }) => {
+  test('redireciona para o provedor OIDC ao acessar rota protegida sem sessão', async ({
+    page,
+  }) => {
     await page.goto('/dashboard');
     await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
       timeout: 10_000,
@@ -40,7 +42,7 @@ test.describe('Autenticação OIDC — Ingresso', () => {
 
     await expect(page).toHaveURL(/localhost:4201/);
     await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
-    await expectUserInHeader(page, user.displayName, user.username, user.roles);
+    await expectUserInHeader(page, user.displayName, user.username);
   });
 
   test('gestor consegue autenticar e acessar dashboard', async ({ page }) => {
@@ -51,7 +53,7 @@ test.describe('Autenticação OIDC — Ingresso', () => {
 
     await expect(page).toHaveURL(/dashboard/);
     await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
-    await expectUserInHeader(page, user.displayName, user.username, user.roles);
+    await expectUserInHeader(page, user.displayName, user.username);
   });
 
   test('quem não tem permissão efetiva é redirecionado para /acesso-negado', async ({ page }) => {
@@ -70,7 +72,7 @@ test.describe('Autenticação OIDC — Ingresso', () => {
     await page.goto('/dashboard');
     await keycloakLogin(page, user.username, user.password);
 
-    await expectUserInHeader(page, user.displayName, user.username, user.roles);
+    await expectUserInHeader(page, user.displayName, user.username);
     await keycloakLogout(page);
 
     await page.goto('/dashboard');

@@ -9,7 +9,7 @@ Helpers reutilizáveis pelos `apps/*-e2e` do workspace. Atualmente foca em auten
 - `keycloakLogin(page, username, password)` — preenche o formulário do Keycloak, trata password update se temporária, espera redirect.
 - `keycloakLogout(page)` — abre o menu de conta, clica em "Sair" e espera redirect.
 - `resetPasswords([{ username, password }])` — Admin API para resetar senhas em batch (idempotente, serializado por lock local e com retry de 500 do Hibernate).
-- `expectUserInHeader(page, name, username, roles)` — assertion do header autenticado.
+- `expectUserInHeader(page, name, username)` — assertion do header autenticado.
 
 ### Setup de `storageState` autenticado (F9)
 

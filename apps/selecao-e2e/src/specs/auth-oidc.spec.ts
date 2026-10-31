@@ -8,9 +8,9 @@ import {
 } from '../support/keycloak-login';
 
 const USERS = {
-  admin: { username: 'admin', password: 'E2eTest!123', displayName: 'Admin Teste', roles: ['admin'] },
-  gestor: { username: 'gestor', password: 'E2eTest!123', displayName: 'Gestor Teste', roles: ['gestor'] },
-  candidato: { username: 'candidato', password: 'E2eTest!123', displayName: 'Candidato Teste', roles: ['candidato'] },
+  admin: { username: 'admin', password: 'E2eTest!123', displayName: 'Admin Teste' },
+  gestor: { username: 'gestor', password: 'E2eTest!123', displayName: 'Gestor Teste' },
+  candidato: { username: 'candidato', password: 'E2eTest!123', displayName: 'Candidato Teste' },
 };
 
 test.describe('Autenticação OIDC — Seleção', () => {
@@ -25,7 +25,9 @@ test.describe('Autenticação OIDC — Seleção', () => {
   const ACOMPANHA = ['selecao:processos:acompanhar'];
 
   test.describe('Redirecionamento ao provedor OIDC', () => {
-    test('redireciona para o provedor OIDC ao acessar rota protegida sem sessão', async ({ page }) => {
+    test('redireciona para o provedor OIDC ao acessar rota protegida sem sessão', async ({
+      page,
+    }) => {
       await page.goto('/dashboard');
       await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
         timeout: 10_000,
@@ -43,7 +45,7 @@ test.describe('Autenticação OIDC — Seleção', () => {
 
       // keycloakLogin já aguarda waitForURL + load completo; assertion abaixo confirma o estado final.
       await expect(page).toHaveURL(/localhost:4200/);
-      await expectUserInHeader(page, user.displayName, user.username, user.roles);
+      await expectUserInHeader(page, user.displayName, user.username);
     });
 
     test('gestor consegue autenticar e acessar inscrições', async ({ page }) => {
@@ -53,7 +55,7 @@ test.describe('Autenticação OIDC — Seleção', () => {
       await keycloakLogin(page, user.username, user.password);
 
       await expect(page).toHaveURL(/inscricoes/);
-      await expectUserInHeader(page, user.displayName, user.username, user.roles);
+      await expectUserInHeader(page, user.displayName, user.username);
     });
   });
 
@@ -77,7 +79,7 @@ test.describe('Autenticação OIDC — Seleção', () => {
       await page.goto('/dashboard');
       await keycloakLogin(page, user.username, user.password);
 
-      await expectUserInHeader(page, user.displayName, user.username, user.roles);
+      await expectUserInHeader(page, user.displayName, user.username);
 
       await keycloakLogout(page);
 
@@ -91,7 +93,9 @@ test.describe('Autenticação OIDC — Seleção', () => {
   });
 
   test.describe('Resiliência', () => {
-    test('app carrega mesmo se o provedor OIDC estiver lento (check-sso timeout)', async ({ page }) => {
+    test('app carrega mesmo se o provedor OIDC estiver lento (check-sso timeout)', async ({
+      page,
+    }) => {
       await page.goto('/');
       const url = page.url();
       expect(url).toMatch(/realms\/unifesspa|localhost:4200/);

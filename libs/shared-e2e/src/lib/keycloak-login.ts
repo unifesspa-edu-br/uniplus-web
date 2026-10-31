@@ -180,7 +180,6 @@ export async function expectUserInHeader(
   page: Page,
   expectedName: string,
   expectedUsername: string,
-  _expectedRoles: string[],
 ): Promise<void> {
   // Verificar presença do componente de user info no DOM (sem scoping ao <header>,
   // porque Angular custom elements podem criar fronteiras inesperadas para locators)
@@ -195,7 +194,7 @@ export async function expectUserInHeader(
   });
   await expect(trigger).toBeVisible();
   await trigger.click();
-  // Identidade completa (nome completo + @username · perfil) aparece só ao abrir o menu.
+  // Identidade completa (nome completo + @username) aparece só ao abrir o menu.
   await expect(userInfo.getByTestId('auth-user-full-name')).toHaveText(expectedName);
   await expect(userInfo.getByTestId('auth-user-username')).toContainText(`@${expectedUsername}`);
   await expect(page.getByRole('menuitem', { name: 'Sair' })).toBeVisible();
