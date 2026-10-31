@@ -578,6 +578,7 @@ async function mockarCatalogos(page: Page): Promise<void> {
   await responder(page, /\/api\/configuracao\/tipos-processo(\?.*)?$/, TIPOS_PROCESSO, CORS);
   await responder(page, /\/api\/configuracao\/fases-canonicas(\?.*)?$/, FASES_CANONICAS, CORS);
   await responder(page, /\/api\/configuracao\/precedencias-fase(\?.*)?$/, [], CORS);
+  await responder(page, /\/api\/organizacao\/unidades(\?.*)?$/, [], CORS);
   await responder(page, /\/api\/configuracao\/tipos-banca(\?.*)?$/, TIPOS_BANCA, CORS);
   await responder(
     page,
