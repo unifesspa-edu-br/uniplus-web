@@ -1,5 +1,5 @@
 /**
- * Códigos de permissão que a interface consulta, no formato `{módulo}:{recurso}:{ação}` do
+ * Códigos de permissão que a interface consulta, no formato `{módulo}:{resource}:{ação}` do
  * catálogo da API. Cada tela declara aqui o que exige; a decisão de acesso segue sendo da API.
  */
 export const PERMISSAO = {

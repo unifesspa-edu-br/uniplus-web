@@ -223,10 +223,10 @@ interface CorpoDoPerfil {
             </ui-alert>
           }
           @for (modulo of catalogo.opcoes(); track modulo.modulo) {
-            @for (recurso of modulo.recursos; track recurso.recurso) {
+            @for (resource of modulo.resources; track resource.resource) {
               <fieldset class="field">
-                <legend class="field__label">{{ modulo.modulo }} · {{ recurso.recurso }}</legend>
-                @for (permissao of recurso.permissoes; track permissao.codigo) {
+                <legend class="field__label">{{ modulo.modulo }} · {{ resource.resource }}</legend>
+                @for (permissao of resource.permissoes; track permissao.codigo) {
                   <label class="checkbox">
                     <input
                       type="checkbox"

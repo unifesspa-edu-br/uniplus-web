@@ -33,7 +33,7 @@ export interface paths {
         };
         /**
          * Lista o catálogo de permissões
-         * @description Permissões da plataforma agrupadas por módulo e recurso, com código, nome, descrição e sensibilidade. Exige a permissão autorizacao:permissoes:consultar-catalogo.
+         * @description Permissões da plataforma agrupadas por módulo e resource, com código, nome, descrição e sensibilidade. Exige a permissão autorizacao:permissoes:consultar-catalogo.
          */
         readonly get: operations["ConsultarCatalogoDePermissoes"];
         readonly put?: never;
@@ -2870,7 +2870,7 @@ export interface components {
         };
         readonly ModuloDoCatalogoResponse: {
             readonly modulo: string;
-            readonly recursos: readonly components["schemas"]["RecursoDoCatalogoResponse"][];
+            readonly resources: readonly components["schemas"]["ResourceDoCatalogoResponse"][];
         };
         readonly OrigemDto: {
             readonly tipo: string;
@@ -2976,12 +2976,12 @@ export interface components {
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
             readonly retryable?: boolean;
         };
-        readonly RecursoDoCatalogoResponse: {
-            readonly recurso: string;
-            readonly permissoes: readonly components["schemas"]["PermissaoDoCatalogoResponse"][];
-        };
         readonly RecusarPedidoDeConcessaoRequest: {
             readonly motivo: null | string;
+        };
+        readonly ResourceDoCatalogoResponse: {
+            readonly resource: string;
+            readonly permissoes: readonly components["schemas"]["PermissaoDoCatalogoResponse"][];
         };
         readonly RevogarConcessaoRequest: {
             readonly motivo: null | string;

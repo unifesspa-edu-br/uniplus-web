@@ -8,7 +8,7 @@ export {
   type ModuloDoCatalogoDto,
   type PermissaoDoCatalogoDto,
   type PermissaoDoPerfilDto,
-  type RecursoDoCatalogoDto,
+  type ResourceDoCatalogoDto,
 } from './perfis.api';
 export {
   ConcessoesApi,
