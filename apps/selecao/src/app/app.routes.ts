@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
-import { authGuard, permissaoGuard } from '@uniplus/shared-auth/guards';
+import { acessoNegadoGuard, authGuard, permissaoGuard } from '@uniplus/shared-auth/guards';
 import { PERMISSOES_DAS_TELAS } from './acesso/permissoes-das-telas';
 import {
   acessoAoPainel,
@@ -10,9 +10,9 @@ import {
 
 export const appRoutes: Routes = [
   {
-    // Página de 403 — acessível sem permissão específica (apenas exige autenticação prévia via
-    // OIDC).
+    // Página de 403 — acessível sem permissão específica, só com sessão.
     path: 'acesso-negado',
+    canActivate: [acessoNegadoGuard],
     component: AccessDeniedComponent,
   },
   {

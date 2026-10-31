@@ -1,10 +1,11 @@
 import { Routes } from '@angular/router';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
-import { authGuard } from '@uniplus/shared-auth/guards';
+import { acessoNegadoGuard, authGuard } from '@uniplus/shared-auth/guards';
 
 export const appRoutes: Routes = [
   {
     path: 'acesso-negado',
+    canActivate: [acessoNegadoGuard],
     component: AccessDeniedComponent,
     // A raiz do portal leva à consulta pública de processos, alcançável sem
     // autenticação — aqui existe volta, ao contrário dos apps administrativos,

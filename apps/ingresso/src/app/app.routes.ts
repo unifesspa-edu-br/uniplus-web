@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import type { ModuloDePermissao } from '@uniplus/shared-auth/bootstrap';
-import { authGuard, permissaoNoModuloGuard } from '@uniplus/shared-auth/guards';
+import { acessoNegadoGuard, authGuard, permissaoNoModuloGuard } from '@uniplus/shared-auth/guards';
 
 /**
  * O catálogo ainda não tem o módulo Ingresso: o backoffice abre a quem tem permissão em algum
@@ -13,6 +13,7 @@ const MODULOS_DO_CATALOGO = Object.keys(PERMISSAO) as ModuloDePermissao[];
 export const appRoutes: Routes = [
   {
     path: 'acesso-negado',
+    canActivate: [acessoNegadoGuard],
     component: AccessDeniedComponent,
   },
   {
