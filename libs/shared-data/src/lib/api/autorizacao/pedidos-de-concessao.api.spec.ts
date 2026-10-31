@@ -85,6 +85,15 @@ describe('PedidosDeConcessaoApi', () => {
     expect(controller.expectOne(`${RAIZ}/${ID}/aceite`).request.body).toBeNull();
   });
 
+  it('aprova levando o fim de vigência no corpo quando o gestor o define', () => {
+    void firstValueFrom(
+      api.aprovar(ID, withIdempotencyKey('chave-3b'), '2027-03-31T23:59:59-03:00'),
+    );
+    expect(controller.expectOne(`${RAIZ}/${ID}/aprovacoes`).request.body).toEqual({
+      validaAte: '2027-03-31T23:59:59-03:00',
+    });
+  });
+
   it('cancela pelo DELETE do pedido', () => {
     void firstValueFrom(api.cancelar(ID));
     const req = controller.expectOne(`${RAIZ}/${ID}`);

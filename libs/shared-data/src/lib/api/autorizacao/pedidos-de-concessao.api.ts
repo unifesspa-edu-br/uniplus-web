@@ -14,6 +14,8 @@ export type AnexoParaEnvioDto = components['schemas']['AnexoParaEnvioDto'];
 export type LeituraDoAnexoDto = components['schemas']['LeituraDoAnexoDto'];
 export type DecisaoDoPedidoDto = components['schemas']['DecisaoDoPedidoDto'];
 export type PerfilParaPedidoDto = components['schemas']['PerfilParaPedidoDto'];
+export type AprovarPedidoDeConcessaoRequest =
+  components['schemas']['AprovarPedidoDeConcessaoRequest'];
 export type CriarPedidoDeConcessaoRequest = components['schemas']['CriarPedidoDeConcessaoRequest'];
 
 /** Fila que a listagem devolve: os pedidos de quem pergunta ou a fila de uma das etapas de aprovação. */
@@ -90,11 +92,19 @@ export class PedidosDeConcessaoApi {
     );
   }
 
-  /** POST `.../{id}/aprovacoes` — aprova a etapa que o pedido aguarda. */
-  aprovar(id: string, context: HttpContext): Observable<ApiResult<PedidoDeConcessaoDto>> {
+  /**
+   * POST `.../{id}/aprovacoes` — aprova a etapa que o pedido aguarda. O fim de vigência só vale na etapa do
+   * gestor; sem ele o corpo vai vazio e a concessão fica sem prazo.
+   */
+  aprovar(
+    id: string,
+    context: HttpContext,
+    validaAte: string | null = null,
+  ): Observable<ApiResult<PedidoDeConcessaoDto>> {
+    const corpo: AprovarPedidoDeConcessaoRequest | null = validaAte === null ? null : { validaAte };
     return this.http.post<ApiResult<PedidoDeConcessaoDto>>(
       `${this.raiz}/${encodeURIComponent(id)}/aprovacoes`,
-      null,
+      corpo,
       { context },
     );
   }

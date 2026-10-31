@@ -1986,7 +1986,13 @@ export interface paths {
                 };
                 readonly cookie?: never;
             };
-            readonly requestBody?: never;
+            readonly requestBody?: {
+                readonly content: {
+                    readonly "application/json": null | components["schemas"]["AprovarPedidoDeConcessaoRequest"];
+                    readonly "text/json": null | components["schemas"]["AprovarPedidoDeConcessaoRequest"];
+                    readonly "application/*+json": null | components["schemas"]["AprovarPedidoDeConcessaoRequest"];
+                };
+            };
             readonly responses: {
                 /** @description OK */
                 readonly 200: {
@@ -2732,6 +2738,10 @@ export interface components {
             /** Format: date-time */
             readonly expiraEm: string;
         };
+        readonly AprovarPedidoDeConcessaoRequest: {
+            /** Format: date-time */
+            readonly validaAte?: null | string;
+        };
         readonly AtualizarPerfilCommand: {
             /** Format: uuid */
             readonly id: string;
@@ -2777,6 +2787,8 @@ export interface components {
             /** Format: uuid */
             readonly unidadeId: null | string;
             readonly justificativa: null | string;
+            /** Format: date-time */
+            readonly validaAteSugerida?: null | string;
         };
         readonly CriarPerfilCommand: {
             readonly nome: null | string;
@@ -2875,6 +2887,11 @@ export interface components {
             readonly perfil: components["schemas"]["PerfilResumoDto"];
             readonly escopo: components["schemas"]["EscopoDto"];
             readonly justificativa: string;
+            /** Format: date-time */
+            readonly validaAteSugerida: null | string;
+            /** Format: date-time */
+            readonly validaAte: null | string;
+            readonly admitePrazo: boolean;
             /** Format: date-time */
             readonly criadoEm: string;
             /** Format: date-time */
