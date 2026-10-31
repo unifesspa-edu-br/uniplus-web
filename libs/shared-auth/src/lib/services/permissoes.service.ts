@@ -67,7 +67,7 @@ export class PermissoesService {
     return codigos.some((codigo) => concedidas.has(codigo));
   }
 
-  /** Há alguma permissão do módulo (ex.: `configuracao:`), qualquer que seja o recurso. */
+  /** Há alguma permissão do módulo (ex.: `configuracao:`), qualquer que seja o resource. */
   temNoModulo(...modulos: readonly ModuloDePermissao[]): boolean {
     const prefixos = modulos.map((modulo) => `${modulo}:`);
     for (const codigo of this._codigos()) {

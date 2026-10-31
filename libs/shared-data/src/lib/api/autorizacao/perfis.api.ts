@@ -9,7 +9,7 @@ import { AUTORIZACAO_BASE_PATH } from './tokens';
 export type PerfilDto = components['schemas']['PerfilDto'];
 export type PermissaoDoPerfilDto = components['schemas']['PermissaoDoPerfilDto'];
 export type PermissaoDoCatalogoDto = components['schemas']['PermissaoDoCatalogoResponse'];
-export type RecursoDoCatalogoDto = components['schemas']['RecursoDoCatalogoResponse'];
+export type ResourceDoCatalogoDto = components['schemas']['ResourceDoCatalogoResponse'];
 export type ModuloDoCatalogoDto = components['schemas']['ModuloDoCatalogoResponse'];
 export type CriarPerfilCommand = components['schemas']['CriarPerfilCommand'];
 export type AtualizarPerfilCommand = components['schemas']['AtualizarPerfilCommand'];
@@ -31,7 +31,7 @@ export class PerfisApi {
     );
   }
 
-  /** GET `/api/autorizacao/permissoes` — catálogo de permissões, agrupado por módulo e recurso. */
+  /** GET `/api/autorizacao/permissoes` — catálogo de permissões, agrupado por módulo e resource. */
   catalogoDePermissoes(): Observable<ApiResult<readonly ModuloDoCatalogoDto[]>> {
     return this.http.get<ApiResult<readonly ModuloDoCatalogoDto[]>>(
       `${this.basePath}/api/autorizacao/permissoes`,

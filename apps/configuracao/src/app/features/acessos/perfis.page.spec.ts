@@ -31,9 +31,9 @@ const GOVERNANCA: PerfilDto = {
 const CATALOGO = [
   {
     modulo: 'selecao',
-    recursos: [
+    resources: [
       {
-        recurso: 'processos',
+        resource: 'processos',
         permissoes: [
           {
             codigo: 'selecao:processos:configurar',
@@ -44,7 +44,7 @@ const CATALOGO = [
         ],
       },
       {
-        recurso: 'inscricoes',
+        resource: 'inscricoes',
         permissoes: [
           {
             codigo: 'selecao:inscricoes:consultar',
@@ -113,7 +113,7 @@ describe('PerfisPage', () => {
     expect(host.textContent).toContain('Governança');
   });
 
-  it('oferece as permissões do catálogo agrupadas por módulo e recurso', () => {
+  it('oferece as permissões do catálogo agrupadas por módulo e resource', () => {
     const { fixture, host, pagina } = abrir();
 
     pagina.abrirCriacao();
