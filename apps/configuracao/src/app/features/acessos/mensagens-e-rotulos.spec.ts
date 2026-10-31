@@ -32,6 +32,16 @@ describe('mensagens de acesso', () => {
     );
   });
 
+  it('orienta nos dois códigos do fim de vigência', () => {
+    TestBed.configureTestingModule({ providers: [provideMensagensDeAcesso()] });
+    const problemas = TestBed.inject(ProblemI18nService);
+    const resolver = (code: string) =>
+      textoDaRecusa(problemas.resolve({ type: 'x', title: 'API', status: 422, code, traceId: '' }));
+
+    expect(resolver('uniplus.autorizacao.pedido.validade_invalida')).toContain('prazo');
+    expect(resolver('uniplus.autorizacao.pedido.prazo_vencido')).toContain('voltou ao gestor');
+  });
+
   it('mantém o título da API quando o código não tem orientação própria', () => {
     expect(textoDaRecusa({ title: 'Falhou' })).toBe('Falhou');
   });
@@ -44,6 +54,7 @@ describe('rótulos de acesso', () => {
     expect(situacaoDoAnexo('em_verificacao')).toBe('Em verificação');
     expect(situacaoDoAnexo('x')).toBe('x');
     expect(tipoDeEvento('pedido_criado')).toBe('Pedido criado');
+    expect(tipoDeEvento('prazo_vencido_entre_etapas')).toBe('Prazo vencido entre as etapas');
     expect(sensibilidade('Sensivel')).toBe('Dado sensível');
     expect(etapa('protecao_de_dados')).toBe('Encarregado(a) pelo tratamento de dados');
     expect(etapa(null)).toBe('—');

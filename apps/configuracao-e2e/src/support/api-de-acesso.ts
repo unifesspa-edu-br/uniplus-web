@@ -50,6 +50,9 @@ interface Pedido {
   concessaoId: string | null;
   anexos: unknown[];
   decisoes: unknown[];
+  admitePrazo: boolean;
+  validaAteSugerida: string | null;
+  validaAte: string | null;
 }
 
 interface Concessao {
@@ -59,7 +62,7 @@ interface Concessao {
   escopo: { tipo: string; unidadeId: string | null };
   origem: { tipo: string; id: string };
   concedidaEm: string;
-  validaAte: null;
+  validaAte: string | null;
   revogadaEm: string | null;
   revogadaPor: null;
   motivoRevogacao: string | null;
@@ -72,6 +75,7 @@ export interface EstadoDaApi {
   concessoes: Concessao[];
   criacoes: unknown[];
   recusas: unknown[];
+  aprovacoes: unknown[];
   revogacoes: unknown[];
 }
 
@@ -103,6 +107,9 @@ export function pedidoSeed(parcial: Partial<Pedido> = {}): Pedido {
     concessaoId: null,
     anexos: [],
     decisoes: [],
+    admitePrazo: true,
+    validaAteSugerida: null,
+    validaAte: null,
     ...parcial,
   };
 }
@@ -127,6 +134,7 @@ export async function mockApiDeAcesso(
     concessoes: [],
     criacoes: [],
     recusas: [],
+    aprovacoes: [],
     revogacoes: [],
   };
 
@@ -208,6 +216,7 @@ export async function mockApiDeAcesso(
           unidadeId: string | null;
           justificativa: string;
           beneficiarioEmail: string | null;
+          validaAteSugerida?: string;
         };
         estado.criacoes.push(corpo);
         const sub = subDe(route);
@@ -222,6 +231,7 @@ export async function mockApiDeAcesso(
           perfil: PERFIS.find((p) => p.id === corpo.perfilId) ?? PERFIS[0]!,
           escopo: { tipo: 'unidade', unidadeId: corpo.unidadeId },
           justificativa: corpo.justificativa,
+          validaAteSugerida: corpo.validaAteSugerida ?? null,
         });
         estado.pedidos.push(novo);
         return json(route, novo, 201);
@@ -255,6 +265,9 @@ export async function mockApiDeAcesso(
         const alvo = pedidoDe(caminho);
         if (!alvo) return json(route, {}, 404);
         const sensivel = alvo.perfil.id === PERFIL_SENSIVEL_ID;
+        const corpo = requisicao.postDataJSON() as { validaAte?: string } | null;
+        estado.aprovacoes.push(corpo);
+        if (alvo.etapaAtual === 'gestor') alvo.validaAte = corpo?.validaAte ?? null;
         if (alvo.etapaAtual === 'gestor' && sensivel) {
           alvo.situacao = 'aguardando_protecao_de_dados';
           alvo.etapaAtual = 'protecao_de_dados';
@@ -269,7 +282,7 @@ export async function mockApiDeAcesso(
             escopo: alvo.escopo,
             origem: { tipo: 'pedido', id: alvo.id },
             concedidaEm: '2026-10-29T10:00:00Z',
-            validaAte: null,
+            validaAte: alvo.validaAte,
             revogadaEm: null,
             revogadaPor: null,
             motivoRevogacao: null,

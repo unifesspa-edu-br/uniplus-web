@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import {
+  PERFIL_COMUM_ID,
   PERFIL_SENSIVEL_ID,
   UNIDADE_ID,
   mockApiDeAcesso,
@@ -104,6 +105,30 @@ test.describe('Configuração — administração de acesso @flow', () => {
     expect(estado.revogacoes).toEqual([
       { motivo: 'Deixou a função na unidade.', confirmacaoEmail: 'betina.teste@unifesspa.edu.br' },
     ]);
+  });
+
+  test('o gestor define o fim de vigência ao aprovar e a concessão aparece com a data', async ({
+    page,
+  }) => {
+    const estado = await mockApiDeAcesso(page, [
+      pedidoSeed({ perfil: { id: PERFIL_COMUM_ID, nome: 'Operador de inscrições' } }),
+    ]);
+    await mockPermissoesEfetivas(page, PERMISSOES_DO_DIOGO);
+
+    await page.goto(`/acessos/pedidos/${PEDIDO_ID}`);
+    await page.getByLabel('Fim de vigência (opcional)').fill('2099-12-31');
+    await page.getByRole('button', { name: 'Aprovar' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Aprovar' }).click();
+    await expect(page.getByText('Aprovado').first()).toBeVisible();
+
+    expect(estado.aprovacoes).toEqual([
+      { validaAte: expect.stringMatching(/^2099-12-31T23:59:59/u) },
+    ]);
+
+    await page.goto('/acessos/concessoes');
+    const linha = page.getByRole('row', { name: /Operador de inscrições/ });
+    await expect(linha).toContainText('31/12/2099');
+    await expect(linha).not.toContainText('Sem prazo');
   });
 
   test('o gestor recusa o pedido com motivo e a recusa fica registrada', async ({ page }) => {

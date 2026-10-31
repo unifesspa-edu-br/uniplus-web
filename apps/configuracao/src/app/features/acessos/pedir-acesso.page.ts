@@ -31,6 +31,7 @@ import {
 import { AnexoDoPedidoService, type FaseDoEnvio } from './anexo-do-pedido.service';
 import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
 import { nomesDeEscopo } from './nomes-de-escopo';
+import { PRAZO_NO_PASSADO, fimDoDia, hojeNoFuso, prazoNoPassado } from './prazo-de-vigencia';
 
 type ParaQuem = 'mim' | 'outra';
 
@@ -42,6 +43,7 @@ interface CorpoDoPedido {
   readonly perfilId: string;
   readonly unidadeId: string | null;
   readonly justificativa: string;
+  readonly validaAteSugerida?: string;
 }
 
 const FASE: Readonly<Record<FaseDoEnvio, string>> = {
@@ -185,6 +187,32 @@ const FASE: Readonly<Record<FaseDoEnvio, string>> = {
         }
       </label>
 
+      @if (!exigeDocumento()) {
+        <label class="field" [class.is-error]="invalido('validaAteSugerida')">
+          <span class="field__label">Prazo sugerido (opcional)</span>
+          <input
+            class="input"
+            type="date"
+            formControlName="validaAteSugerida"
+            [min]="hoje()"
+            [attr.aria-invalid]="invalido('validaAteSugerida') ? 'true' : null"
+            [attr.aria-describedby]="
+              'cfg-pedir-validaAteSugerida-dica' +
+              (invalido('validaAteSugerida') ? ' cfg-pedir-validaAteSugerida-erro' : '')
+            "
+          />
+          <span class="field__hint" id="cfg-pedir-validaAteSugerida-dica"
+            >Último dia em que o acesso deve valer. O gestor de acessos decide o prazo; sem
+            sugestão, o acesso não tem fim previsto.</span
+          >
+          @if (invalido('validaAteSugerida')) {
+            <span class="field__error" id="cfg-pedir-validaAteSugerida-erro">{{
+              mensagemDoPrazo
+            }}</span>
+          }
+        </label>
+      }
+
       <ui-file-upload
         [fieldLabel]="exigeDocumento() ? 'Documento de designação' : 'Documento (opcional)'"
         [isRequired]="exigeDocumento()"
@@ -233,6 +261,9 @@ export class PedirAcessoPage {
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly hoje = hojeNoFuso;
+  protected readonly mensagemDoPrazo = PRAZO_NO_PASSADO;
+
   protected readonly perfis = signal<readonly PerfilParaPedidoDto[]>([]);
   /** A recusa da leitura dos perfis (por exemplo, e-mail não institucional), já em texto para a pessoa. */
   protected readonly perfisIndisponiveis = signal<string | null>(null);
@@ -247,6 +278,7 @@ export class PedirAcessoPage {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(10), Validators.maxLength(2000)],
     }),
+    validaAteSugerida: new FormControl('', { nonNullable: true, validators: [prazoNoPassado] }),
   });
 
   protected readonly arquivo = signal<File | null>(null);
@@ -308,6 +340,9 @@ export class PedirAcessoPage {
       perfilId: valor.perfilId,
       unidadeId: this.exigeUnidade() && valor.unidadeId !== '' ? valor.unidadeId : null,
       justificativa: valor.justificativa.trim(),
+      ...(this.exigeDocumento() || valor.validaAteSugerida === ''
+        ? {}
+        : { validaAteSugerida: fimDoDia(valor.validaAteSugerida) }),
     };
     try {
       const resultado = await firstValueFrom(
@@ -419,5 +454,9 @@ export class PedirAcessoPage {
     const unidade = this.form.controls.unidadeId;
     unidade.setValidators(this.exigeUnidade() ? [Validators.required] : []);
     unidade.updateValueAndValidity({ emitEvent: false });
+
+    const prazo = this.form.controls.validaAteSugerida;
+    prazo.setValidators(this.exigeDocumento() ? [] : [prazoNoPassado]);
+    prazo.updateValueAndValidity({ emitEvent: false });
   }
 }
