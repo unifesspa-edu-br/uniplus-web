@@ -1,11 +1,18 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { AuthService, PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import {
+  AuthService,
+  PerfisDeAcessoService,
+  PermissoesService,
+  UserContextService,
+  type EstadoDosPerfis,
+} from '@uniplus/shared-auth/bootstrap';
 import { AppConfigService } from '@uniplus/shared-data/config';
 import { LayoutComponent } from './layout';
 
-const papeis = signal<readonly string[]>([]);
+const estadoDosPerfis = signal<EstadoDosPerfis>('carregada');
+const rotulosDosPerfis = signal<readonly string[]>([]);
 const concedidas = signal<readonly string[]>([]);
 const menuPrincipal = 'nav[aria-label="Navegação principal"] a';
 const permissoesStub = {
@@ -13,9 +20,15 @@ const permissoesStub = {
   temAlguma: (...codigos: string[]) => codigos.some((codigo) => concedidas().includes(codigo)),
 };
 const configuracao = signal<{ acompanhamentoValidacaoHabilitada?: boolean } | null>(null);
-const authServiceStub = { roles: papeis, logout: () => undefined };
+const authServiceStub = { logout: () => undefined };
+const perfisStub = { estado: estadoDosPerfis, rotulos: rotulosDosPerfis, perfis: signal([]) };
 const userContextStub = {
-  user: signal({ id: 'u-1', nome: 'Admin Teste', email: 'admin@teste.br', roles: [] }),
+  user: signal({
+    id: 'u-1',
+    username: 'leandro.viana',
+    nome: 'Admin Teste',
+    email: 'admin@teste.br',
+  }),
   displayName: signal('Admin Teste'),
   firstDisplayName: signal('Admin'),
 };
@@ -25,6 +38,8 @@ describe('LayoutComponent — navegação por permissão', () => {
   beforeEach(async () => {
     configuracao.set(null);
     concedidas.set([]);
+    estadoDosPerfis.set('carregada');
+    rotulosDosPerfis.set([]);
     await TestBed.configureTestingModule({
       imports: [LayoutComponent],
       providers: [
@@ -32,6 +47,7 @@ describe('LayoutComponent — navegação por permissão', () => {
         { provide: AuthService, useValue: authServiceStub },
         { provide: UserContextService, useValue: userContextStub },
         { provide: PermissoesService, useValue: permissoesStub },
+        { provide: PerfisDeAcessoService, useValue: perfisStub },
         { provide: AppConfigService, useValue: { config: configuracao } },
       ],
     }).compileComponents();
@@ -103,5 +119,28 @@ describe('LayoutComponent — navegação por permissão', () => {
 
       expect(rotulos).not.toMatch(/Inscrições|Homologação|Notas|Classificação/);
     });
+  });
+});
+
+describe('LayoutComponent — perfil na barra lateral', () => {
+  it('usa o componente compartilhado, com o username para o @usuário', async () => {
+    await TestBed.configureTestingModule({
+      imports: [LayoutComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: authServiceStub },
+        { provide: UserContextService, useValue: userContextStub },
+        { provide: PermissoesService, useValue: permissoesStub },
+        { provide: PerfisDeAcessoService, useValue: perfisStub },
+        { provide: AppConfigService, useValue: { config: configuracao } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(LayoutComponent);
+    fixture.detectChanges();
+
+    const barra = (fixture.nativeElement as HTMLElement).querySelector('.sidebar__user-info');
+    expect(barra?.querySelector('auth-perfis-da-barra')?.textContent?.trim()).toBe(
+      '@leandro.viana',
+    );
   });
 });

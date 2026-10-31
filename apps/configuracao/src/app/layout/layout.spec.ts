@@ -1,20 +1,28 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { AuthService, PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import {
+  AuthService,
+  PerfisDeAcessoService,
+  PermissoesService,
+  UserContextService,
+  type EstadoDosPerfis,
+} from '@uniplus/shared-auth/bootstrap';
 import { LayoutComponent } from './layout';
 
 const concedidas = signal<readonly string[]>([]);
 const permissoesStub = {
   temAlguma: (...codigos: string[]) => codigos.some((codigo) => concedidas().includes(codigo)),
 };
+const estadoDosPerfis = signal<EstadoDosPerfis>('carregada');
+const rotulosDosPerfis = signal<readonly string[]>([]);
+const perfisStub = { estado: estadoDosPerfis, rotulos: rotulosDosPerfis, perfis: signal([]) };
 const userContextStub = {
   user: signal({
     id: 'u-1',
     username: 'leandro',
     nome: 'Leandro',
     email: 'leandro@exemplo.test',
-    roles: [],
   }),
   displayName: signal('Leandro'),
   firstDisplayName: signal('Leandro'),
@@ -23,11 +31,14 @@ const userContextStub = {
 describe('LayoutComponent — menu pelas permissões efetivas', () => {
   beforeEach(async () => {
     concedidas.set([]);
+    estadoDosPerfis.set('carregada');
+    rotulosDosPerfis.set([]);
     await TestBed.configureTestingModule({
       imports: [LayoutComponent],
       providers: [
         provideRouter([]),
-        { provide: AuthService, useValue: { roles: signal([]), logout: () => undefined } },
+        { provide: AuthService, useValue: { logout: () => undefined } },
+        { provide: PerfisDeAcessoService, useValue: perfisStub },
         { provide: UserContextService, useValue: userContextStub },
         { provide: PermissoesService, useValue: permissoesStub },
       ],
@@ -102,5 +113,13 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     );
 
     expect(inicio?.getAttribute('href')).toBe('/');
+  });
+
+  it('usa o componente compartilhado do perfil na barra lateral, com o username', () => {
+    const fixture = TestBed.createComponent(LayoutComponent);
+    fixture.detectChanges();
+
+    const barra = (fixture.nativeElement as HTMLElement).querySelector('.sidebar__user-info');
+    expect(barra?.querySelector('auth-perfis-da-barra')?.textContent?.trim()).toBe('@leandro');
   });
 });
