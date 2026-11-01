@@ -24,6 +24,46 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/autorizacao/permissoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /**
+         * Lista o catálogo de permissões
+         * @description Permissões da plataforma agrupadas por módulo e pelo alvo de cada permissão, com código, nome, descrição e sensibilidade. Exige a permissão autorizacao:permissoes:consultar-catalogo.
+         */
+        readonly get: operations["ConsultarCatalogoDePermissoes"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/autorizacao/permissoes/efetivas": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /**
+         * Lista as permissões efetivas do usuário logado
+         * @description Código e nome de cada permissão que o token concede. Informa o que pode aparecer na interface; a decisão de acesso continua sendo tomada em cada requisição.
+         */
+        readonly get: operations["ConsultarPermissoesEfetivas"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/base-legal-bonus-regional": {
         readonly parameters: {
             readonly query?: never;
@@ -3693,105 +3733,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/configuracao/admin/fatos-candidato/{id}/ativacao": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put?: never;
-        readonly post: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/configuracao/admin/fatos-candidato/{id}/definicao": {
         readonly parameters: {
             readonly query?: never;
@@ -3899,7 +3840,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/configuracao/admin/fatos-candidato/{id}/valores": {
+    readonly "/api/configuracao/admin/fatos-candidato/{id}/aceite-da-recomendacao": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -3920,13 +3861,7 @@ export interface paths {
                 };
                 readonly cookie?: never;
             };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["ValorDominioInput"];
-                    readonly "text/json": components["schemas"]["ValorDominioInput"];
-                    readonly "application/*+json": components["schemas"]["ValorDominioInput"];
-                };
-            };
+            readonly requestBody?: never;
             readonly responses: {
                 /** @description No Content */
                 readonly 204: {
@@ -3935,14 +3870,12 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description Bad Request */
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
                 readonly 400: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
+                    content?: never;
                 };
                 /** @description Unauthorized */
                 readonly 401: {
@@ -4006,7 +3939,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/configuracao/admin/fatos-candidato/{id}/valores/{codigo}/ativacao": {
+    readonly "/api/configuracao/admin/fatos-candidato/{id}/ativacao": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -4024,7 +3957,6 @@ export interface paths {
                 };
                 readonly path: {
                     readonly id: string;
-                    readonly codigo: string;
                 };
                 readonly cookie?: never;
             };
@@ -4043,6 +3975,113 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/admin/fatos-candidato/{id}/valores": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["ValorDominioInput"];
+                    readonly "text/json": components["schemas"]["ValorDominioInput"];
+                    readonly "application/*+json": components["schemas"]["ValorDominioInput"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
                 };
                 /** @description Unauthorized */
                 readonly 401: {
@@ -4274,6 +4313,213 @@ export interface paths {
                 };
             };
         };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/admin/fatos-candidato/{id}/ordem-dos-valores": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["OrdemDosValoresInput"];
+                    readonly "text/json": components["schemas"]["OrdemDosValoresInput"];
+                    readonly "application/*+json": components["schemas"]["OrdemDosValoresInput"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/admin/fatos-candidato/{id}/valores/{codigo}/ativacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                    readonly codigo: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
         readonly patch?: never;
@@ -5731,6 +5977,15 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
             };
         };
         readonly delete?: never;
@@ -7056,6 +7311,262 @@ export interface paths {
                 };
             };
         };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/admin/protecao-do-catalogo": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: {
+                    readonly situacao?: string;
+                };
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.protecao-do-catalogo.v1+json": readonly components["schemas"]["ItemDaProtecaoDoCatalogoDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DecidirProtecaoDoCatalogoCommand"];
+                    readonly "text/json": components["schemas"]["DecidirProtecaoDoCatalogoCommand"];
+                    readonly "application/*+json": components["schemas"]["DecidirProtecaoDoCatalogoCommand"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/admin/protecao-do-catalogo/solicitacoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["SolicitacaoDaProtecaoDto"];
+                        readonly "application/json": components["schemas"]["SolicitacaoDaProtecaoDto"];
+                        readonly "text/json": components["schemas"]["SolicitacaoDaProtecaoDto"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
         readonly patch?: never;
@@ -9626,6 +10137,105 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/admin/tipos-documento/{id}/aceite-da-recomendacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/tipos-etapa": {
         readonly parameters: {
             readonly query?: never;
@@ -10793,113 +11403,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/configuracao/admin/fatos-candidato/{id}/ordem-dos-valores": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["OrdemDosValoresInput"];
-                    readonly "text/json": components["schemas"]["OrdemDosValoresInput"];
-                    readonly "application/*+json": components["schemas"]["OrdemDosValoresInput"];
-                };
-            };
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unauthorized */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -10909,6 +11412,16 @@ export interface components {
             readonly grupoCodigo: string;
             readonly fatoDeMembro: string;
             readonly operacao: string;
+        };
+        readonly AprovacaoDaProtecaoDto: {
+            readonly situacao: string;
+            /** Format: date-time */
+            readonly solicitadaEm: null | string;
+            /** Format: date-time */
+            readonly decididaEm: null | string;
+            readonly classificacaoRecomendada: null | string;
+            /** Format: date-time */
+            readonly aceitaEm: null | string;
         };
         readonly AreaPesoAreaEnemDto: {
             readonly codigo: string;
@@ -10963,8 +11476,6 @@ export interface components {
             readonly id: string;
             readonly nome?: null | string;
             readonly descricao?: null | string;
-            /** Format: uuid */
-            readonly unidadeSugeridaId?: null | string;
             /** @default false */
             readonly agrupaEtapas: boolean;
             /** @default false */
@@ -10975,6 +11486,8 @@ export interface components {
             /** @default false */
             readonly coletaSolicitacaoIsencao: boolean;
             readonly origemData?: null | string;
+            /** Format: uuid */
+            readonly unidadeSugeridaId?: null | string;
         };
         readonly AtualizarLocalOfertaCommand: {
             /** Format: uuid */
@@ -11074,6 +11587,9 @@ export interface components {
             /** Format: int32 */
             readonly tamanhoMaximoMb?: null | number | string;
             readonly tipoEquivalente?: null | string;
+            readonly classificacaoProtecao?: null | string;
+            readonly finalidadeTratamento?: null | string;
+            readonly hipoteseLegal?: null | string;
         };
         readonly AtualizarTipoEtapaCommand: {
             /** Format: uuid */
@@ -11242,16 +11758,6 @@ export interface components {
             readonly operador: string;
             readonly valor: components["schemas"]["JsonElement"];
         };
-        readonly CondicaoRegraPadraoDto: {
-            readonly fato: string;
-            readonly operador: string;
-            readonly valor: components["schemas"]["JsonElement"];
-        };
-        readonly CondicaoRegraPadraoInput: {
-            readonly fato: string;
-            readonly operador: string;
-            readonly valor: components["schemas"]["JsonElement"];
-        };
         readonly ConteudoDoModeloInput: {
             readonly titulo: null | string;
             readonly etapas: null | readonly components["schemas"]["EtapaFormularioInput"][];
@@ -11260,6 +11766,10 @@ export interface components {
             readonly pressupostos: null | readonly string[];
             readonly grupos?: null | readonly components["schemas"]["GrupoColetadoInput"][];
             readonly documentosExigidos?: null | readonly components["schemas"]["DocumentoExigidoDoModeloInput"][];
+        };
+        readonly CorrecaoDeValorDominioInput: {
+            readonly descricao: null | string;
+            readonly orientacao: null | string;
         };
         readonly CriarBaseLegalBonusRegionalCommand: {
             readonly tipoInstrumento: null | string;
@@ -11308,8 +11818,6 @@ export interface components {
             readonly codigo: null | string;
             readonly nome?: null | string;
             readonly descricao?: null | string;
-            /** Format: uuid */
-            readonly unidadeSugeridaId?: null | string;
             /** @default false */
             readonly agrupaEtapas: boolean;
             /** @default false */
@@ -11320,6 +11828,8 @@ export interface components {
             /** @default false */
             readonly coletaSolicitacaoIsencao: boolean;
             readonly origemData?: null | string;
+            /** Format: uuid */
+            readonly unidadeSugeridaId?: null | string;
         };
         readonly CriarFatoAgregadoCommand: {
             readonly codigo: string;
@@ -11330,6 +11840,7 @@ export interface components {
             readonly classificacaoProtecao: string;
             readonly finalidadeTratamento: string;
             readonly hipoteseLegal: string;
+            readonly componenteExibicao?: null | string;
         };
         readonly CriarFatoCandidatoCommand: {
             readonly codigo: string;
@@ -11344,6 +11855,7 @@ export interface components {
             readonly classificacaoProtecao: string;
             readonly finalidadeTratamento: string;
             readonly hipoteseLegal: string;
+            readonly componenteExibicao?: null | string;
         };
         readonly CriarFatoDerivadoCommand: {
             readonly codigo: string;
@@ -11355,6 +11867,7 @@ export interface components {
             readonly classificacaoProtecao: string;
             readonly finalidadeTratamento: string;
             readonly hipoteseLegal: string;
+            readonly componenteExibicao?: null | string;
         };
         readonly CriarLocalOfertaCommand: {
             readonly tipo: components["schemas"]["TipoLocalOferta"];
@@ -11461,6 +11974,9 @@ export interface components {
             /** Format: int32 */
             readonly tamanhoMaximoMb?: null | number | string;
             readonly tipoEquivalente?: null | string;
+            readonly classificacaoProtecao?: null | string;
+            readonly finalidadeTratamento?: null | string;
+            readonly hipoteseLegal?: null | string;
         };
         readonly CriarTipoEtapaCommand: {
             readonly codigo: null | string;
@@ -11488,10 +12004,15 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
-        readonly DerivacaoPortavel: {
-            readonly fatoCodigo: string;
-            readonly booleano: boolean;
-            readonly regras: readonly components["schemas"]["RegraDerivacaoPortavel"][];
+        readonly DecidirProtecaoDoCatalogoCommand: {
+            readonly cadastro: null | string;
+            /** Format: uuid */
+            readonly itemId: string;
+            readonly decisao: null | string;
+            readonly classificacaoProtecao: null | string;
+            readonly hipoteseLegal: null | string;
+            readonly finalidadeTratamento: null | string;
+            readonly classificacaoRecomendada?: null | string;
         };
         readonly DefinicaoDoFatoInput: {
             readonly pontoResolucao: string;
@@ -11504,9 +12025,15 @@ export interface components {
             readonly formato?: null | string;
             readonly escopo?: null | string;
         };
+        readonly DerivacaoPortavel: {
+            readonly fatoCodigo: string;
+            readonly booleano: boolean;
+            readonly regras: readonly components["schemas"]["RegraDerivacaoPortavel"][];
+        };
         readonly DescritivoDoFatoInput: {
             readonly nome: string;
             readonly descricao: null | string;
+            readonly componenteExibicao?: null | string;
         };
         readonly DiaNaoUtilCommandItem: {
             readonly abrangencia: null | string;
@@ -11537,6 +12064,7 @@ export interface components {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly consequenciaIndeferimento: string;
             readonly basesLegais: null | readonly components["schemas"]["BaseLegalDoModeloInput"][];
+            readonly porOpcao?: null | components["schemas"]["ExigenciaPorOpcaoInput"];
         };
         readonly EdicaoDoModeloInput: {
             readonly nome: string;
@@ -11583,6 +12111,11 @@ export interface components {
             readonly nivelResolucao: null | string;
             readonly origem: null | string;
         };
+        readonly EnvioSimuladoInput: {
+            /** Format: date-time */
+            readonly instante: string;
+            readonly fuso: string;
+        };
         readonly EtapaAvaliada: {
             readonly codigo: string;
             readonly visivel: string;
@@ -11604,11 +12137,9 @@ export interface components {
             readonly itens: readonly components["schemas"]["ItemPortavel"][];
             readonly grupos: readonly components["schemas"]["GrupoPortavel"][];
         };
-        readonly UnidadeSugeridaDaFaseDto: {
-            /** Format: uuid */
-            readonly origemId: string;
-            readonly sigla: string;
-            readonly nome: string;
+        readonly ExigenciaPorOpcaoInput: {
+            readonly fatoCodigo: string;
+            readonly exceto: null | readonly string[];
         };
         readonly FaseCanonicaDto: {
             /** Format: uuid */
@@ -11616,13 +12147,13 @@ export interface components {
             readonly codigo: string;
             readonly nome: string;
             readonly descricao: null | string;
-            readonly unidadeSugerida: null | components["schemas"]["UnidadeSugeridaDaFaseDto"];
             readonly agrupaEtapas: boolean;
             readonly permiteComplementacao: boolean;
             readonly baseLegal: null | string;
             readonly coletaInscricao: boolean;
             readonly coletaSolicitacaoIsencao: boolean;
             readonly origemData: string;
+            readonly unidadeSugerida: null | components["schemas"]["UnidadeSugeridaDto"];
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {
@@ -11638,7 +12169,8 @@ export interface components {
             readonly id: string;
             readonly codigo: string;
             readonly nome: string;
-            readonly descricao: null | string;
+            readonly descricao: string;
+            readonly componenteExibicao: null | string;
             readonly dominio: string;
             readonly origem: string;
             readonly cardinalidade: string;
@@ -11654,13 +12186,14 @@ export interface components {
             readonly ativo: boolean;
             readonly valores: readonly components["schemas"]["FatoValorDominioDto"][];
             readonly regrasPadrao: readonly components["schemas"]["RegraPadraoDto"][];
+            readonly aprovacao: components["schemas"]["AprovacaoDaProtecaoDto"];
         };
         readonly FatoCandidatoView: {
             /** Format: uuid */
             readonly id: string;
             readonly codigo: string;
             readonly nome: string;
-            readonly descricao: null | string;
+            readonly descricao: string;
             readonly dominio: string;
             readonly origem: string;
             readonly cardinalidade: string;
@@ -11670,9 +12203,14 @@ export interface components {
             readonly valoresDominioDeclarados: null | readonly components["schemas"]["FatoValorDominioViewItem"][];
             readonly fonteValores: null | string;
             readonly ativo: boolean;
+            readonly classificacaoProtecao: string;
+            readonly hipoteseLegal: string;
+            readonly finalidadeTratamento: string;
+            readonly protecaoAprovada: boolean;
             readonly formato?: null | string;
             /** @default CANDIDATO */
             readonly escopo: string;
+            readonly componenteExibicao?: null | string;
         };
         readonly FatoColetadoInput: {
             readonly fatoCodigo: string;
@@ -11768,6 +12306,15 @@ export interface components {
             readonly incluiCandidato: boolean;
             readonly subitens: readonly components["schemas"]["ItemPortavel"][];
         };
+        readonly GrupoPreVisualizadoDto: {
+            readonly codigo: string;
+            readonly etapaCodigo: string;
+            readonly visivel: string;
+            readonly obrigatorio: string;
+            readonly contagemValida: boolean;
+            readonly ocorrenciaDoCandidatoValida: boolean;
+            readonly ocorrencias: readonly components["schemas"]["OcorrenciaPreVisualizadaDto"][];
+        };
         readonly GrupoRenderizavel: {
             readonly codigo: string;
             /** Format: int32 */
@@ -11784,6 +12331,17 @@ export interface components {
         readonly ImpedimentoInput: {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly mensagem: null | string;
+        };
+        readonly ItemDaProtecaoDoCatalogoDto: {
+            readonly tipo: string;
+            /** Format: uuid */
+            readonly id: string;
+            readonly codigo: string;
+            readonly nome: string;
+            readonly classificacaoProtecao: string;
+            readonly finalidadeTratamento: string;
+            readonly hipoteseLegal: string;
+            readonly aprovacao: components["schemas"]["AprovacaoDaProtecaoDto"];
         };
         readonly ItemPortavel: {
             readonly fatoCodigo: string;
@@ -11803,8 +12361,18 @@ export interface components {
             readonly restricoesVioladas: readonly string[];
             readonly impedido: string;
             readonly mensagemDoImpedimento: null | string;
+            readonly opcoes: null | components["schemas"]["OpcoesPreVisualizadasDto"];
         };
         readonly JsonElement: unknown;
+        readonly LimiteDeDataInput: {
+            readonly ancora: string;
+            /** Format: date */
+            readonly data?: null | string;
+            /** Format: int32 */
+            readonly anos?: null | number | string;
+            /** Format: int32 */
+            readonly dias?: null | number | string;
+        };
         readonly LocalOfertaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -11853,10 +12421,18 @@ export interface components {
             readonly ativo: boolean;
             readonly conteudo: components["schemas"]["ConteudoDoModeloInput"];
         };
+        readonly ModuloDoCatalogoResponse: {
+            readonly modulo: string;
+            readonly resources: readonly components["schemas"]["ResourceDoCatalogoResponse"][];
+        };
         readonly OcorrenciaAvaliada: {
             readonly id: string;
             readonly estado: string;
             readonly campos: readonly components["schemas"]["CampoAvaliado"][];
+        };
+        readonly OcorrenciaPreVisualizadaDto: {
+            readonly id: string;
+            readonly itens: readonly components["schemas"]["ItemPreVisualizadoDto"][];
         };
         readonly OcorrenciaRecebida: {
             readonly id: null | string;
@@ -11891,9 +12467,40 @@ export interface components {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly valores: readonly string[];
         };
+        readonly OpcoesPreVisualizadasDto: {
+            readonly codigos: readonly string[];
+            readonly definitivas: boolean;
+        };
         readonly OpcoesVigentes: {
             readonly codigos?: null | readonly string[];
             readonly definitivas: boolean;
+        };
+        readonly OrdemDosValoresInput: {
+            readonly codigos: readonly string[];
+        };
+        readonly PerfilConcedidoResponse: {
+            /** Format: uuid */
+            readonly concessaoId: string;
+            /** Format: uuid */
+            readonly perfilId: string;
+            readonly nome: string;
+            readonly escopoTipo: string;
+            /** Format: uuid */
+            readonly unidadeId: null | string;
+            readonly unidadeSigla: null | string;
+            readonly unidadeNome: null | string;
+            /** Format: date-time */
+            readonly validaAte: null | string;
+        };
+        readonly PermissaoDoCatalogoResponse: {
+            readonly codigo: string;
+            readonly nome: string;
+            readonly descricao: string;
+            readonly sensibilidade: string;
+        };
+        readonly PermissaoEfetivaResponse: {
+            readonly codigo: string;
+            readonly nome: string;
         };
         readonly PesoAreaEnemAreaCommand: {
             readonly codigo: null | string;
@@ -11946,11 +12553,16 @@ export interface components {
         readonly PreVisualizacaoDoModeloDto: {
             readonly itens: readonly components["schemas"]["ItemPreVisualizadoDto"][];
             readonly termos: readonly components["schemas"]["TermoPreVisualizadoDto"][];
+            readonly grupos: readonly components["schemas"]["GrupoPreVisualizadoDto"][];
+            readonly secoes: readonly components["schemas"]["SecaoPreVisualizadaDto"][];
         };
         readonly PreVisualizacaoDoModeloInput: {
             readonly respostas: null | Record<string, never>;
             readonly etapasConcluidas: null | readonly string[];
             readonly pressupostos: null | Record<string, never>;
+            readonly grupos?: null | {
+                readonly [key: string]: readonly components["schemas"]["OcorrenciaRecebida"][];
+            };
         };
         readonly ProblemDetails: {
             readonly type?: null | string;
@@ -11997,14 +12609,18 @@ export interface components {
         };
         readonly RegraPadraoDto: {
             readonly contribui: null | string;
-            readonly quando: readonly (readonly components["schemas"]["CondicaoRegraPadraoDto"][])[];
+            readonly quando: readonly (readonly components["schemas"]["CondicaoDoPredicadoDto"][])[];
         };
         readonly RegraPadraoInput: {
             readonly contribui: null | string;
-            readonly quando: null | readonly (readonly components["schemas"]["CondicaoRegraPadraoInput"][])[];
+            readonly quando: null | readonly (readonly components["schemas"]["CondicaoDoPredicadoInput"][])[];
         };
         readonly RegrasPadraoInput: {
             readonly regras: readonly components["schemas"]["RegraPadraoInput"][];
+        };
+        readonly ResourceDoCatalogoResponse: {
+            readonly resource: string;
+            readonly permissoes: readonly components["schemas"]["PermissaoDoCatalogoResponse"][];
         };
         readonly RestricaoValorInput: {
             readonly tipo: string;
@@ -12017,6 +12633,10 @@ export interface components {
             readonly dataMinima?: null | components["schemas"]["LimiteDeDataInput"];
             readonly dataMaxima?: null | components["schemas"]["LimiteDeDataInput"];
         };
+        readonly SecaoPreVisualizadaDto: {
+            readonly codigo: string;
+            readonly visivel: string;
+        };
         readonly SecaoRenderizavel: {
             readonly codigo: string;
             readonly codigoNasRegras: null | string;
@@ -12027,6 +12647,12 @@ export interface components {
             readonly titulo: string;
             readonly descricao: null | string;
             readonly aviso: null | string;
+        };
+        readonly SolicitacaoDaProtecaoDto: {
+            /** Format: int32 */
+            readonly tiposDeDocumento: number | string;
+            /** Format: int32 */
+            readonly fatos: number | string;
         };
         readonly TermoAvaliado: {
             readonly codigo: string;
@@ -12151,8 +12777,12 @@ export interface components {
             /** Format: int32 */
             readonly tamanhoMaximoMb: null | number | string;
             readonly tipoEquivalente: null | string;
+            readonly classificacaoProtecao: string;
+            readonly finalidadeTratamento: string;
+            readonly hipoteseLegal: string;
             /** Format: date-time */
             readonly criadoEm: string;
+            readonly protecaoAprovada: boolean;
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
@@ -12200,6 +12830,12 @@ export interface components {
             readonly nome: string;
             readonly tipo: string;
         };
+        readonly UnidadeSugeridaDto: {
+            /** Format: uuid */
+            readonly origemId: string;
+            readonly sigla: string;
+            readonly nome: string;
+        };
         readonly UserProfileResponse: {
             readonly userId: null | string;
             readonly name: null | string;
@@ -12224,41 +12860,6 @@ export interface components {
             /** Format: int32 */
             readonly ordem: number | string;
             readonly orientacao?: null | string;
-        };
-        readonly EnvioSimuladoInput: {
-            /** Format: date-time */
-            readonly instante: string;
-            readonly fuso: string;
-        };
-        readonly LimiteDeDataInput: {
-            readonly ancora: string;
-            /** Format: date */
-            readonly data?: null | string;
-            /** Format: int32 */
-            readonly anos?: null | number | string;
-            /** Format: int32 */
-            readonly dias?: null | number | string;
-        };
-        readonly CorrecaoDeValorDominioInput: {
-            readonly descricao: null | string;
-            readonly orientacao: null | string;
-        };
-        readonly OrdemDosValoresInput: {
-            readonly codigos: readonly string[];
-        };
-        readonly PerfilConcedidoResponse: {
-            /** Format: uuid */
-            readonly concessaoId: string;
-            /** Format: uuid */
-            readonly perfilId: string;
-            readonly nome: string;
-            readonly escopoTipo: string;
-            /** Format: uuid */
-            readonly unidadeId: null | string;
-            readonly unidadeSigla: null | string;
-            readonly unidadeNome: null | string;
-            /** Format: date-time */
-            readonly validaAte: null | string;
         };
     };
     responses: never;
@@ -12289,6 +12890,91 @@ export interface operations {
             };
             /** @description Unauthorized */
             readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ConsultarCatalogoDePermissoes: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.permissao-catalogo.v1+json": readonly components["schemas"]["ModuloDoCatalogoResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    readonly ConsultarPermissoesEfetivas: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description OK */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/vnd.uniplus.permissao-efetiva.v1+json": readonly components["schemas"]["PermissaoEfetivaResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Acceptable */
+            readonly 406: {
                 headers: {
                     readonly [name: string]: unknown;
                 };

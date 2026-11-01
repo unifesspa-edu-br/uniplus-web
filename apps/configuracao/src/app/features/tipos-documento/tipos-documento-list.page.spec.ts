@@ -45,6 +45,10 @@ const rgSeed: TipoDocumentoDto = {
   formatosAceitos: 'pdf,jpg',
   tamanhoMaximoMb: 10,
   tipoEquivalente: 'CIN',
+  classificacaoProtecao: 'PESSOAL',
+  finalidadeTratamento: 'Conferir o documento do candidato.',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  protecaoAprovada: true,
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
@@ -57,6 +61,10 @@ const laudoSeed: TipoDocumentoDto = {
   formatosAceitos: null,
   tamanhoMaximoMb: null,
   tipoEquivalente: null,
+  classificacaoProtecao: 'PESSOAL',
+  finalidadeTratamento: 'Conferir o documento do candidato.',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  protecaoAprovada: true,
   criadoEm: '2026-06-11T12:00:00Z',
 };
 
@@ -70,6 +78,10 @@ const diplomaSeed: TipoDocumentoDto = {
   formatosAceitos: 'pdf',
   tamanhoMaximoMb: null,
   tipoEquivalente: null,
+  classificacaoProtecao: 'PESSOAL',
+  finalidadeTratamento: 'Conferir o documento do candidato.',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  protecaoAprovada: true,
   criadoEm: '2026-08-30T12:00:00Z',
 };
 
@@ -83,6 +95,10 @@ const orfaoSeed: TipoDocumentoDto = {
   formatosAceitos: null,
   tamanhoMaximoMb: null,
   tipoEquivalente: null,
+  classificacaoProtecao: 'PESSOAL',
+  finalidadeTratamento: 'Conferir o documento do candidato.',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  protecaoAprovada: true,
   criadoEm: '2026-08-30T13:00:00Z',
 };
 

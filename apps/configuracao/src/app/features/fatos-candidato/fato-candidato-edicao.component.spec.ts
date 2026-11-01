@@ -14,7 +14,8 @@ const corRaca = (sistema: boolean): FatoCandidatoDto => ({
   id: ID,
   codigo: 'COR_RACA',
   nome: 'Cor ou raça',
-  descricao: null,
+  descricao: '',
+  componenteExibicao: null,
   dominio: 'CATEGORICO',
   origem: 'DECLARADO',
   cardinalidade: 'ESCALAR',
@@ -30,6 +31,7 @@ const corRaca = (sistema: boolean): FatoCandidatoDto => ({
   ativo: true,
   valores: [{ codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true, orientacao: null }],
   regrasPadrao: [],
+  aprovacao: { situacao: 'APROVADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, aceitaEm: null },
 });
 
 const URL_FASES = `${BASE}/api/configuracao/fases-canonicas?limit=100`;

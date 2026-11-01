@@ -7,7 +7,7 @@ export function fatoDoCatalogo(
   return {
     id: over.codigo,
     nome: over.codigo,
-    descricao: null,
+    descricao: '',
     dominio: 'BOOLEANO',
     origem: 'DECLARADO',
     cardinalidade: 'ESCALAR',
@@ -18,6 +18,10 @@ export function fatoDoCatalogo(
     fonteValores: null,
     ativo: true,
     escopo: 'CANDIDATO',
+    classificacaoProtecao: 'INTERNO',
+    hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+    finalidadeTratamento: 'Aplicar a regra do certame.',
+    protecaoAprovada: true,
     ...over,
   };
 }

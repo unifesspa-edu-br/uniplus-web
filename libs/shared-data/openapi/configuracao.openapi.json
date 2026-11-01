@@ -62,6 +62,116 @@
         ]
       }
     },
+    "/api/autorizacao/permissoes": {
+      "get": {
+        "tags": [
+          "Autoriza\u00E7\u00E3o"
+        ],
+        "summary": "Lista o cat\u00E1logo de permiss\u00F5es",
+        "description": "Permiss\u00F5es da plataforma agrupadas por m\u00F3dulo e pelo alvo de cada permiss\u00E3o, com c\u00F3digo, nome, descri\u00E7\u00E3o e sensibilidade. Exige a permiss\u00E3o autorizacao:permissoes:consultar-catalogo.",
+        "operationId": "ConsultarCatalogoDePermissoes",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.permissao-catalogo.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModuloDoCatalogoResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/autorizacao/permissoes/efetivas": {
+      "get": {
+        "tags": [
+          "Autoriza\u00E7\u00E3o"
+        ],
+        "summary": "Lista as permiss\u00F5es efetivas do usu\u00E1rio logado",
+        "description": "C\u00F3digo e nome de cada permiss\u00E3o que o token concede. Informa o que pode aparecer na interface; a decis\u00E3o de acesso continua sendo tomada em cada requisi\u00E7\u00E3o.",
+        "operationId": "ConsultarPermissoesEfetivas",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.permissao-efetiva.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PermissaoEfetivaResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/configuracao/base-legal-bonus-regional": {
       "get": {
         "tags": [
@@ -88,7 +198,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -104,7 +214,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -567,7 +677,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -583,7 +693,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -1192,7 +1302,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -1208,7 +1318,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -2082,7 +2192,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -2098,7 +2208,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -2587,7 +2697,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -2603,7 +2713,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -3076,7 +3186,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -3092,7 +3202,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -3650,7 +3760,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -3666,7 +3776,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -4564,110 +4674,6 @@
         "x-uniplus-idempotent": true
       }
     },
-    "/api/configuracao/admin/fatos-candidato/{id}/ativacao": {
-      "post": {
-        "tags": [
-          "FatosCandidato"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
-            "required": true,
-            "schema": {
-              "maxLength": 255,
-              "minLength": 1,
-              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inv\u00E1lido."
-          },
-          "413": {
-            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "x-uniplus-idempotent": true
-      }
-    },
     "/api/configuracao/admin/fatos-candidato/{id}/definicao": {
       "put": {
         "tags": [
@@ -4799,6 +4805,214 @@
         "x-uniplus-idempotent": true
       }
     },
+    "/api/configuracao/admin/fatos-candidato/{id}/aceite-da-recomendacao": {
+      "post": {
+        "tags": [
+          "FatosCandidato"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inv\u00E1lido."
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/configuracao/admin/fatos-candidato/{id}/ativacao": {
+      "post": {
+        "tags": [
+          "FatosCandidato"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inv\u00E1lido."
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
     "/api/configuracao/admin/fatos-candidato/{id}/valores": {
       "post": {
         "tags": [
@@ -4910,118 +5124,6 @@
                 }
               }
             }
-          },
-          "413": {
-            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "x-uniplus-idempotent": true
-      }
-    },
-    "/api/configuracao/admin/fatos-candidato/{id}/valores/{codigo}/ativacao": {
-      "post": {
-        "tags": [
-          "FatosCandidato"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "codigo",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
-            "required": true,
-            "schema": {
-              "maxLength": 255,
-              "minLength": 1,
-              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inv\u00E1lido."
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
@@ -5265,6 +5367,249 @@
         ]
       }
     },
+    "/api/configuracao/admin/fatos-candidato/{id}/ordem-dos-valores": {
+      "put": {
+        "tags": [
+          "FatosCandidato"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrdemDosValoresInput"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrdemDosValoresInput"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/OrdemDosValoresInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/configuracao/admin/fatos-candidato/{id}/valores/{codigo}/ativacao": {
+      "post": {
+        "tags": [
+          "FatosCandidato"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inv\u00E1lido."
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
     "/api/configuracao/locais-oferta": {
       "get": {
         "tags": [
@@ -5291,7 +5636,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -5307,7 +5652,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -5780,7 +6125,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -5796,7 +6141,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -6290,7 +6635,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -6306,7 +6651,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -7074,6 +7419,16 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7246,7 +7601,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -7262,7 +7617,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -7275,7 +7630,7 @@
                 }
               },
               "X-Total-Count": {
-                "description": "Total de registros que atendem \u00E0 consulta \u2014 filtros e busca inclusive, nunca a tabela inteira. Presente apenas na resposta de quem pediu `include_total=true`; ausente nas demais (ADR-0026).",
+                "description": "Total de registros que atendem \u00E0 consulta \u2014 filtros e busca inclusive, nunca a tabela inteira. Presente apenas na resposta de quem pediu \u0060include_total=true\u0060; ausente nas demais (ADR-0026).",
                 "schema": {
                   "type": "integer",
                   "format": "int32"
@@ -7732,7 +8087,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -7748,7 +8103,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -8243,7 +8598,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -8259,7 +8614,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -8696,6 +9051,311 @@
         ]
       }
     },
+    "/api/configuracao/admin/protecao-do-catalogo": {
+      "get": {
+        "tags": [
+          "ProtecaoDoCatalogo"
+        ],
+        "parameters": [
+          {
+            "name": "situacao",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.protecao-do-catalogo.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemDaProtecaoDoCatalogoDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "ProtecaoDoCatalogo"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecidirProtecaoDoCatalogoCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecidirProtecaoDoCatalogoCommand"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/DecidirProtecaoDoCatalogoCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
+    "/api/configuracao/admin/protecao-do-catalogo/solicitacoes": {
+      "post": {
+        "tags": [
+          "ProtecaoDoCatalogo"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitacaoDaProtecaoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitacaoDaProtecaoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitacaoDaProtecaoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
     "/api/configuracao/recursos-acessibilidade": {
       "get": {
         "tags": [
@@ -8722,7 +9382,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -8738,7 +9398,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -9201,7 +9861,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -9217,7 +9877,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -9688,7 +10348,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -9704,7 +10364,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -10387,7 +11047,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -10403,7 +11063,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -10866,7 +11526,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -10882,7 +11542,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -11345,7 +12005,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -11361,7 +12021,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -11798,6 +12458,110 @@
         ]
       }
     },
+    "/api/configuracao/admin/tipos-documento/{id}/aceite-da-recomendacao": {
+      "post": {
+        "tags": [
+          "TiposDocumento"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inv\u00E1lido."
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
     "/api/configuracao/tipos-etapa": {
       "get": {
         "tags": [
@@ -11824,7 +12588,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -11840,7 +12604,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -12313,7 +13077,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -12329,7 +13093,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -12481,7 +13245,7 @@
           {
             "name": "direction",
             "in": "query",
-            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\"prev\"/rel=\"next\" do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
             "schema": {
               "enum": [
                 "next",
@@ -12497,7 +13261,7 @@
             "description": "OK",
             "headers": {
               "Link": {
-                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\"self\" sempre presente; rel=\"prev\"/rel=\"next\" quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro `cursor` e o `direction` correspondente (ADR-0026).",
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
                 "schema": {
                   "type": "string"
                 }
@@ -13232,137 +13996,6 @@
           }
         }
       }
-    },
-    "/api/configuracao/admin/fatos-candidato/{id}/ordem-dos-valores": {
-      "put": {
-        "tags": [
-          "FatosCandidato"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
-            "required": true,
-            "schema": {
-              "maxLength": 255,
-              "minLength": 1,
-              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OrdemDosValoresInput"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OrdemDosValoresInput"
-              }
-            },
-            "application/*\u002Bjson": {
-              "schema": {
-                "$ref": "#/components/schemas/OrdemDosValoresInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "No Content"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "x-uniplus-idempotent": true
-      }
     }
   },
   "components": {
@@ -13387,6 +14020,48 @@
           },
           "operacao": {
             "type": "string"
+          }
+        }
+      },
+      "AprovacaoDaProtecaoDto": {
+        "required": [
+          "situacao",
+          "solicitadaEm",
+          "decididaEm",
+          "classificacaoRecomendada",
+          "aceitaEm"
+        ],
+        "type": "object",
+        "properties": {
+          "situacao": {
+            "type": "string"
+          },
+          "solicitadaEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "decididaEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "classificacaoRecomendada": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "aceitaEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -13654,13 +14329,6 @@
               "string"
             ]
           },
-          "unidadeSugeridaId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
-          },
           "agrupaEtapas": {
             "type": "boolean",
             "default": false
@@ -13688,6 +14356,13 @@
               "null",
               "string"
             ]
+          },
+          "unidadeSugeridaId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -14172,6 +14847,24 @@
             "format": "int32"
           },
           "tipoEquivalente": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "classificacaoProtecao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "finalidadeTratamento": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hipoteseLegal": {
             "type": [
               "null",
               "string"
@@ -14878,44 +15571,6 @@
           }
         }
       },
-      "CondicaoRegraPadraoDto": {
-        "required": [
-          "fato",
-          "operador",
-          "valor"
-        ],
-        "type": "object",
-        "properties": {
-          "fato": {
-            "type": "string"
-          },
-          "operador": {
-            "type": "string"
-          },
-          "valor": {
-            "$ref": "#/components/schemas/JsonElement"
-          }
-        }
-      },
-      "CondicaoRegraPadraoInput": {
-        "required": [
-          "fato",
-          "operador",
-          "valor"
-        ],
-        "type": "object",
-        "properties": {
-          "fato": {
-            "type": "string"
-          },
-          "operador": {
-            "type": "string"
-          },
-          "valor": {
-            "$ref": "#/components/schemas/JsonElement"
-          }
-        }
-      },
       "ConteudoDoModeloInput": {
         "required": [
           "titulo",
@@ -14985,6 +15640,27 @@
             "items": {
               "$ref": "#/components/schemas/DocumentoExigidoDoModeloInput"
             }
+          }
+        }
+      },
+      "CorrecaoDeValorDominioInput": {
+        "required": [
+          "descricao",
+          "orientacao"
+        ],
+        "type": "object",
+        "properties": {
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "orientacao": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -15266,13 +15942,6 @@
               "string"
             ]
           },
-          "unidadeSugeridaId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
-          },
           "agrupaEtapas": {
             "type": "boolean",
             "default": false
@@ -15300,6 +15969,13 @@
               "null",
               "string"
             ]
+          },
+          "unidadeSugeridaId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -15342,6 +16018,12 @@
           },
           "hipoteseLegal": {
             "type": "string"
+          },
+          "componenteExibicao": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -15406,6 +16088,12 @@
           },
           "hipoteseLegal": {
             "type": "string"
+          },
+          "componenteExibicao": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -15452,6 +16140,12 @@
           },
           "hipoteseLegal": {
             "type": "string"
+          },
+          "componenteExibicao": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -16026,6 +16720,24 @@
               "null",
               "string"
             ]
+          },
+          "classificacaoProtecao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "finalidadeTratamento": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hipoteseLegal": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -16150,25 +16862,56 @@
           }
         }
       },
-      "DerivacaoPortavel": {
+      "DecidirProtecaoDoCatalogoCommand": {
         "required": [
-          "fatoCodigo",
-          "booleano",
-          "regras"
+          "cadastro",
+          "itemId",
+          "decisao",
+          "classificacaoProtecao",
+          "hipoteseLegal",
+          "finalidadeTratamento"
         ],
         "type": "object",
         "properties": {
-          "fatoCodigo": {
-            "type": "string"
+          "cadastro": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
-          "booleano": {
-            "type": "boolean"
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
           },
-          "regras": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RegraDerivacaoPortavel"
-            }
+          "decisao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "classificacaoProtecao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hipoteseLegal": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "finalidadeTratamento": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "classificacaoRecomendada": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -16225,6 +16968,28 @@
           }
         }
       },
+      "DerivacaoPortavel": {
+        "required": [
+          "fatoCodigo",
+          "booleano",
+          "regras"
+        ],
+        "type": "object",
+        "properties": {
+          "fatoCodigo": {
+            "type": "string"
+          },
+          "booleano": {
+            "type": "boolean"
+          },
+          "regras": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegraDerivacaoPortavel"
+            }
+          }
+        }
+      },
       "DescritivoDoFatoInput": {
         "required": [
           "nome",
@@ -16236,6 +17001,12 @@
             "type": "string"
           },
           "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "componenteExibicao": {
             "type": [
               "null",
               "string"
@@ -16392,6 +17163,16 @@
             "items": {
               "$ref": "#/components/schemas/BaseLegalDoModeloInput"
             }
+          },
+          "porOpcao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ExigenciaPorOpcaoInput"
+              }
+            ]
           }
         }
       },
@@ -16644,6 +17425,22 @@
           }
         }
       },
+      "EnvioSimuladoInput": {
+        "required": [
+          "instante",
+          "fuso"
+        ],
+        "type": "object",
+        "properties": {
+          "instante": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fuso": {
+            "type": "string"
+          }
+        }
+      },
       "EtapaAvaliada": {
         "required": [
           "codigo",
@@ -16758,23 +17555,24 @@
           }
         }
       },
-      "UnidadeSugeridaDaFaseDto": {
+      "ExigenciaPorOpcaoInput": {
         "required": [
-          "origemId",
-          "sigla",
-          "nome"
+          "fatoCodigo",
+          "exceto"
         ],
         "type": "object",
         "properties": {
-          "origemId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "sigla": {
+          "fatoCodigo": {
             "type": "string"
           },
-          "nome": {
-            "type": "string"
+          "exceto": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -16784,13 +17582,13 @@
           "codigo",
           "nome",
           "descricao",
-          "unidadeSugerida",
           "agrupaEtapas",
           "permiteComplementacao",
           "baseLegal",
           "coletaInscricao",
           "coletaSolicitacaoIsencao",
           "origemData",
+          "unidadeSugerida",
           "criadoEm"
         ],
         "type": "object",
@@ -16809,16 +17607,6 @@
             "type": [
               "null",
               "string"
-            ]
-          },
-          "unidadeSugerida": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/UnidadeSugeridaDaFaseDto"
-              }
             ]
           },
           "agrupaEtapas": {
@@ -16841,6 +17629,16 @@
           },
           "origemData": {
             "type": "string"
+          },
+          "unidadeSugerida": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UnidadeSugeridaDto"
+              }
+            ]
           },
           "criadoEm": {
             "type": "string",
@@ -16878,6 +17676,7 @@
           "codigo",
           "nome",
           "descricao",
+          "componenteExibicao",
           "dominio",
           "origem",
           "cardinalidade",
@@ -16892,7 +17691,8 @@
           "sistema",
           "ativo",
           "valores",
-          "regrasPadrao"
+          "regrasPadrao",
+          "aprovacao"
         ],
         "type": "object",
         "properties": {
@@ -16907,6 +17707,9 @@
             "type": "string"
           },
           "descricao": {
+            "type": "string"
+          },
+          "componenteExibicao": {
             "type": [
               "null",
               "string"
@@ -16968,6 +17771,9 @@
             "items": {
               "$ref": "#/components/schemas/RegraPadraoDto"
             }
+          },
+          "aprovacao": {
+            "$ref": "#/components/schemas/AprovacaoDaProtecaoDto"
           }
         }
       },
@@ -16985,7 +17791,11 @@
           "binding",
           "valoresDominioDeclarados",
           "fonteValores",
-          "ativo"
+          "ativo",
+          "classificacaoProtecao",
+          "hipoteseLegal",
+          "finalidadeTratamento",
+          "protecaoAprovada"
         ],
         "type": "object",
         "properties": {
@@ -17000,10 +17810,7 @@
             "type": "string"
           },
           "descricao": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string"
           },
           "dominio": {
             "type": "string"
@@ -17047,6 +17854,18 @@
           "ativo": {
             "type": "boolean"
           },
+          "classificacaoProtecao": {
+            "type": "string"
+          },
+          "hipoteseLegal": {
+            "type": "string"
+          },
+          "finalidadeTratamento": {
+            "type": "string"
+          },
+          "protecaoAprovada": {
+            "type": "boolean"
+          },
           "formato": {
             "type": [
               "null",
@@ -17056,6 +17875,12 @@
           "escopo": {
             "type": "string",
             "default": "CANDIDATO"
+          },
+          "componenteExibicao": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -17558,6 +18383,44 @@
           }
         }
       },
+      "GrupoPreVisualizadoDto": {
+        "required": [
+          "codigo",
+          "etapaCodigo",
+          "visivel",
+          "obrigatorio",
+          "contagemValida",
+          "ocorrenciaDoCandidatoValida",
+          "ocorrencias"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "etapaCodigo": {
+            "type": "string"
+          },
+          "visivel": {
+            "type": "string"
+          },
+          "obrigatorio": {
+            "type": "string"
+          },
+          "contagemValida": {
+            "type": "boolean"
+          },
+          "ocorrenciaDoCandidatoValida": {
+            "type": "boolean"
+          },
+          "ocorrencias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OcorrenciaPreVisualizadaDto"
+            }
+          }
+        }
+      },
       "GrupoRenderizavel": {
         "required": [
           "codigo",
@@ -17646,6 +18509,46 @@
           }
         }
       },
+      "ItemDaProtecaoDoCatalogoDto": {
+        "required": [
+          "tipo",
+          "id",
+          "codigo",
+          "nome",
+          "classificacaoProtecao",
+          "finalidadeTratamento",
+          "hipoteseLegal",
+          "aprovacao"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "classificacaoProtecao": {
+            "type": "string"
+          },
+          "finalidadeTratamento": {
+            "type": "string"
+          },
+          "hipoteseLegal": {
+            "type": "string"
+          },
+          "aprovacao": {
+            "$ref": "#/components/schemas/AprovacaoDaProtecaoDto"
+          }
+        }
+      },
       "ItemPortavel": {
         "required": [
           "fatoCodigo",
@@ -17729,7 +18632,8 @@
           "obrigatorio",
           "restricoesVioladas",
           "impedido",
-          "mensagemDoImpedimento"
+          "mensagemDoImpedimento",
+          "opcoes"
         ],
         "type": "object",
         "properties": {
@@ -17759,10 +18663,56 @@
               "null",
               "string"
             ]
+          },
+          "opcoes": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/OpcoesPreVisualizadasDto"
+              }
+            ]
           }
         }
       },
       "JsonElement": {},
+      "LimiteDeDataInput": {
+        "required": [
+          "ancora"
+        ],
+        "type": "object",
+        "properties": {
+          "ancora": {
+            "type": "string"
+          },
+          "data": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "anos": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "dias": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "LocalOfertaDto": {
         "required": [
           "id",
@@ -17977,6 +18927,24 @@
           }
         }
       },
+      "ModuloDoCatalogoResponse": {
+        "required": [
+          "modulo",
+          "resources"
+        ],
+        "type": "object",
+        "properties": {
+          "modulo": {
+            "type": "string"
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceDoCatalogoResponse"
+            }
+          }
+        }
+      },
       "OcorrenciaAvaliada": {
         "required": [
           "id",
@@ -17995,6 +18963,24 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CampoAvaliado"
+            }
+          }
+        }
+      },
+      "OcorrenciaPreVisualizadaDto": {
+        "required": [
+          "id",
+          "itens"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemPreVisualizadoDto"
             }
           }
         }
@@ -18148,6 +19134,24 @@
           }
         }
       },
+      "OpcoesPreVisualizadasDto": {
+        "required": [
+          "codigos",
+          "definitivas"
+        ],
+        "type": "object",
+        "properties": {
+          "codigos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "definitivas": {
+            "type": "boolean"
+          }
+        }
+      },
       "OpcoesVigentes": {
         "required": [
           "definitivas"
@@ -18165,6 +19169,113 @@
           },
           "definitivas": {
             "type": "boolean"
+          }
+        }
+      },
+      "OrdemDosValoresInput": {
+        "required": [
+          "codigos"
+        ],
+        "type": "object",
+        "properties": {
+          "codigos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PerfilConcedidoResponse": {
+        "required": [
+          "concessaoId",
+          "perfilId",
+          "nome",
+          "escopoTipo",
+          "unidadeId",
+          "unidadeSigla",
+          "unidadeNome",
+          "validaAte"
+        ],
+        "type": "object",
+        "properties": {
+          "concessaoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "perfilId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "escopoTipo": {
+            "type": "string"
+          },
+          "unidadeId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "unidadeSigla": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "unidadeNome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "validaAte": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "PermissaoDoCatalogoResponse": {
+        "required": [
+          "codigo",
+          "nome",
+          "descricao",
+          "sensibilidade"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "sensibilidade": {
+            "type": "string"
+          }
+        }
+      },
+      "PermissaoEfetivaResponse": {
+        "required": [
+          "codigo",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
           }
         }
       },
@@ -18373,7 +19484,9 @@
       "PreVisualizacaoDoModeloDto": {
         "required": [
           "itens",
-          "termos"
+          "termos",
+          "grupos",
+          "secoes"
         ],
         "type": "object",
         "properties": {
@@ -18387,6 +19500,18 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TermoPreVisualizadoDto"
+            }
+          },
+          "grupos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrupoPreVisualizadoDto"
+            }
+          },
+          "secoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SecaoPreVisualizadaDto"
             }
           }
         }
@@ -18419,6 +19544,18 @@
               "null",
               "object"
             ]
+          },
+          "grupos": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/OcorrenciaRecebida"
+              }
+            }
           }
         }
       },
@@ -18460,7 +19597,7 @@
           },
           "retryable": {
             "type": "boolean",
-            "description": "Presente e `true` quando o conflito descreve uma corrida que j\u00E1 passou: a mesma requisi\u00E7\u00E3o, repetida sem altera\u00E7\u00E3o, pode agora ser aceita. A aus\u00EAncia \u00E9 o default conservador do servidor \u2014 diz que o conflito n\u00E3o foi declarado retent\u00E1vel, n\u00E3o que repetir esteja descartado; nesse caso vale a descri\u00E7\u00E3o da pr\u00F3pria resposta."
+            "description": "Presente e \u0060true\u0060 quando o conflito descreve uma corrida que j\u00E1 passou: a mesma requisi\u00E7\u00E3o, repetida sem altera\u00E7\u00E3o, pode agora ser aceita. A aus\u00EAncia \u00E9 o default conservador do servidor \u2014 diz que o conflito n\u00E3o foi declarado retent\u00E1vel, n\u00E3o que repetir esteja descartado; nesse caso vale a descri\u00E7\u00E3o da pr\u00F3pria resposta."
           }
         }
       },
@@ -18608,7 +19745,7 @@
             "items": {
               "type": "array",
               "items": {
-                "$ref": "#/components/schemas/CondicaoRegraPadraoDto"
+                "$ref": "#/components/schemas/CondicaoDoPredicadoDto"
               }
             }
           }
@@ -18635,7 +19772,7 @@
             "items": {
               "type": "array",
               "items": {
-                "$ref": "#/components/schemas/CondicaoRegraPadraoInput"
+                "$ref": "#/components/schemas/CondicaoDoPredicadoInput"
               }
             }
           }
@@ -18651,6 +19788,24 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RegraPadraoInput"
+            }
+          }
+        }
+      },
+      "ResourceDoCatalogoResponse": {
+        "required": [
+          "resource",
+          "permissoes"
+        ],
+        "type": "object",
+        "properties": {
+          "resource": {
+            "type": "string"
+          },
+          "permissoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissaoDoCatalogoResponse"
             }
           }
         }
@@ -18722,6 +19877,21 @@
           }
         }
       },
+      "SecaoPreVisualizadaDto": {
+        "required": [
+          "codigo",
+          "visivel"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "visivel": {
+            "type": "string"
+          }
+        }
+      },
       "SecaoRenderizavel": {
         "required": [
           "codigo",
@@ -18775,6 +19945,31 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "SolicitacaoDaProtecaoDto": {
+        "required": [
+          "tiposDeDocumento",
+          "fatos"
+        ],
+        "type": "object",
+        "properties": {
+          "tiposDeDocumento": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "fatos": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -19227,7 +20422,11 @@
           "formatosAceitos",
           "tamanhoMaximoMb",
           "tipoEquivalente",
-          "criadoEm"
+          "classificacaoProtecao",
+          "finalidadeTratamento",
+          "hipoteseLegal",
+          "criadoEm",
+          "protecaoAprovada"
         ],
         "type": "object",
         "properties": {
@@ -19271,9 +20470,21 @@
               "string"
             ]
           },
+          "classificacaoProtecao": {
+            "type": "string"
+          },
+          "finalidadeTratamento": {
+            "type": "string"
+          },
+          "hipoteseLegal": {
+            "type": "string"
+          },
           "criadoEm": {
             "type": "string",
             "format": "date-time"
+          },
+          "protecaoAprovada": {
+            "type": "boolean"
           },
           "_links": {
             "type": [
@@ -19443,6 +20654,26 @@
           }
         }
       },
+      "UnidadeSugeridaDto": {
+        "required": [
+          "origemId",
+          "sigla",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "origemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sigla": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      },
       "UserProfileResponse": {
         "required": [
           "userId",
@@ -19564,154 +20795,12 @@
             ]
           }
         }
-      },
-      "EnvioSimuladoInput": {
-        "required": [
-          "instante",
-          "fuso"
-        ],
-        "type": "object",
-        "properties": {
-          "instante": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "fuso": {
-            "type": "string"
-          }
-        }
-      },
-      "LimiteDeDataInput": {
-        "required": [
-          "ancora"
-        ],
-        "type": "object",
-        "properties": {
-          "ancora": {
-            "type": "string"
-          },
-          "data": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date"
-          },
-          "anos": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "dias": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          }
-        }
-      },
-      "CorrecaoDeValorDominioInput": {
-        "required": [
-          "descricao",
-          "orientacao"
-        ],
-        "type": "object",
-        "properties": {
-          "descricao": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "orientacao": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "OrdemDosValoresInput": {
-        "required": [
-          "codigos"
-        ],
-        "type": "object",
-        "properties": {
-          "codigos": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "PerfilConcedidoResponse": {
-        "required": [
-          "concessaoId",
-          "perfilId",
-          "nome",
-          "escopoTipo",
-          "unidadeId",
-          "unidadeSigla",
-          "unidadeNome",
-          "validaAte"
-        ],
-        "type": "object",
-        "properties": {
-          "concessaoId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "perfilId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "nome": {
-            "type": "string"
-          },
-          "escopoTipo": {
-            "type": "string"
-          },
-          "unidadeId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
-          },
-          "unidadeSigla": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "unidadeNome": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "validaAte": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          }
-        }
       }
     },
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
-        "description": "Token JWT emitido pelo provedor de identidade institucional (Keycloak). Cole apenas o token: o prefixo \"Bearer\" \u00E9 acrescentado ao cabe\u00E7alho Authorization automaticamente. As rotas administrativas exigem, al\u00E9m da autentica\u00E7\u00E3o, a role plataforma-admin no token.",
+        "description": "Token JWT emitido pelo provedor de identidade institucional (Keycloak). Cole apenas o token: o prefixo \u0022Bearer\u0022 \u00E9 acrescentado ao cabe\u00E7alho Authorization automaticamente. As rotas administrativas exigem, al\u00E9m da autentica\u00E7\u00E3o, a role plataforma-admin no token.",
         "scheme": "bearer",
         "bearerFormat": "JWT"
       }
@@ -19720,6 +20809,9 @@
   "tags": [
     {
       "name": "Profile"
+    },
+    {
+      "name": "Autoriza\u00E7\u00E3o"
     },
     {
       "name": "BaseLegalBonusRegional"
@@ -19762,6 +20854,9 @@
     },
     {
       "name": "PrecedenciasFase"
+    },
+    {
+      "name": "ProtecaoDoCatalogo"
     },
     {
       "name": "RecursosAcessibilidade"
