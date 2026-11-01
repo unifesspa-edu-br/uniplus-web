@@ -30,7 +30,7 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
 import { RevogarConcessaoDialogComponent } from './revogar-concessao-dialog.component';
 import { nomesDeEscopo } from './nomes-de-escopo';
-import { PaginaPorCursor } from './pagina-por-cursor';
+import { PaginaPorCursor } from '../../shared/pagina-por-cursor';
 import { autorDoEvento, TrilhaDeAcessoComponent } from './trilha-de-acesso.component';
 
 /** Recusa da API ao e-mail que não é o do beneficiário; aparece no campo, não no topo do diálogo. */

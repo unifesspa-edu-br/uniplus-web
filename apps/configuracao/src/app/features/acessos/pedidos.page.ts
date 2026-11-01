@@ -26,7 +26,7 @@ import {
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { nomesDeEscopo } from './nomes-de-escopo';
-import { PaginaPorCursor } from './pagina-por-cursor';
+import { PaginaPorCursor } from '../../shared/pagina-por-cursor';
 import { OPCOES_DE_SITUACAO_DO_PEDIDO, situacaoDoPedido } from './rotulos-de-acesso';
 import { textoDaRecusa } from './mensagens-de-acesso';
 

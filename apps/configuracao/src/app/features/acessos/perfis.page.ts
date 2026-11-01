@@ -29,7 +29,7 @@ import {
   TagComponent,
 } from '@uniplus/shared-ui/components';
 import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
-import { PaginaPorCursor } from './pagina-por-cursor';
+import { PaginaPorCursor } from '../../shared/pagina-por-cursor';
 import { sensibilidade } from './rotulos-de-acesso';
 
 interface CorpoDoPerfil {
