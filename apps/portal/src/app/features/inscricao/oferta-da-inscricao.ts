@@ -1,23 +1,9 @@
-import { TURNOS_OFERTA } from '@uniplus/shared-data/configuracao';
-import type { InscricaoDto } from '@uniplus/shared-data/selecao';
-
-type OfertaPublicada = InscricaoDto['ofertas'][number];
+import { nomeDaOferta, type InscricaoDto } from '@uniplus/shared-data/selecao';
 
 /** Uma oferta de curso que o candidato escolhe na inscrição, com o nome congelado na publicação. */
 export interface OfertaDaInscricao {
   readonly id: string;
   readonly nome: string;
-}
-
-const ROTULO_DO_TURNO = new Map(TURNOS_OFERTA.map((t) => [t.value, t.label]));
-
-/** O nome da oferta como foi congelado na publicação: curso e grau, unidade e turnos. */
-export function nomeDaOferta(oferta: OfertaPublicada): string {
-  return [
-    `${oferta.cursoNome} (${oferta.cursoGrau})`,
-    oferta.unidadeOfertanteNome,
-    oferta.turnos.map((t) => ROTULO_DO_TURNO.get(t) ?? t).join(' e '),
-  ].join(' — ');
 }
 
 /**
