@@ -27,9 +27,11 @@ import {
 import {
   AlertComponent,
   DialogComponent,
+  DrawerComponent,
   EmptyStateComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
 import {
   CLASSIFICACOES_DE_PROTECAO,
   HIPOTESES_LEGAIS,
@@ -48,7 +50,7 @@ interface NegativaEmCurso {
 const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item_fora_de_solicitacao';
 
 /**
- * A aprovação da proteção de dados do catálogo (UNI-REQ-0205): lista o que o administrador
+ * A aprovação da proteção de dados do catálogo: lista o que o administrador
  * enviou na solicitação e deixa a proteção de dados aprovar ou negar cada item. A decisão vale
  * sobre a proteção que a tela mostrou: se o item foi editado depois, a API recusa e a lista é relida.
  */
@@ -59,7 +61,9 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
     ReactiveFormsModule,
     TemPermissaoDirective,
     AlertComponent,
+    DetalheDaProtecaoComponent,
     DialogComponent,
+    DrawerComponent,
     EmptyStateComponent,
     SpinnerComponent,
   ],
@@ -69,10 +73,7 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
       <div class="page-header__content">
         <h1 class="page-header__title">Proteção de Dados do Catálogo</h1>
         <p class="page-header__desc">
-          A classificação, a hipótese legal e a finalidade de cada tipo de documento e de cada fato
-          do catálogo, enviadas para a sua aprovação. O item aprovado pode ser usado na configuração
-          de um processo seletivo; o negado volta ao administrador com a classificação que você
-          recomendar. UNI-REQ-0205.
+          Os tipos de documento e os fatos do catálogo que aguardam a sua decisão sobre a proteção de dados.
         </p>
       </div>
     </div>
@@ -103,53 +104,34 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
       </div>
 
       @if (itens().length > 0) {
-        <div class="table-responsive table-responsive--acoes-fixas" role="region" tabindex="0" aria-label="Itens aguardando a decisão">
+        <div class="table-responsive" role="region" tabindex="0" aria-label="Itens aguardando a decisão">
           <table>
             <caption class="sr-only">
-              Itens do catálogo aguardando a decisão da proteção de dados, com a proteção declarada de cada um
+              Itens do catálogo aguardando a decisão da proteção de dados. Use o nome para abrir o detalhe.
             </caption>
             <thead>
               <tr>
                 <th scope="col">Cadastro</th>
                 <th scope="col">Item</th>
-                <th scope="col">Classificação</th>
-                <th scope="col">Hipótese legal</th>
-                <th scope="col">Finalidade</th>
-                <th scope="col" class="table-responsive__actions"><span class="sr-only">Ações</span></th>
+                <th scope="col">Sensibilidade</th>
               </tr>
             </thead>
             <tbody>
               @for (item of itens(); track item.id) {
                 <tr>
-                  <td data-label="Cadastro">{{ cadastro(item) }}</td>
-                  <td data-label="Item">
-                    {{ item.nome }}
-                    <div class="table-responsive__meta"><code>{{ item.codigo }}</code></div>
+                  <td data-label="Cadastro" class="u-nowrap-desktop">{{ cadastro(item) }}</td>
+                  <td data-label="Item" class="u-nowrap-desktop">
+                    <button
+                      type="button"
+                      class="table-responsive__alvo"
+                      [attr.aria-label]="'Ver o detalhe de ' + item.nome"
+                      (click)="abrirDetalhe(item)"
+                    >
+                      {{ item.nome }}
+                    </button>
                   </td>
-                  <td data-label="Classificação">{{ rotulo(classificacoes, item.classificacaoProtecao) }}</td>
-                  <td data-label="Hipótese legal">{{ rotulo(hipoteses, item.hipoteseLegal) }}</td>
-                  <td data-label="Finalidade">{{ item.finalidadeTratamento }}</td>
-                  <td class="table-responsive__actions" data-label="Ações">
-                    <ng-container *authTemPermissao="permissaoDeAprovar">
-                      <button
-                        type="button"
-                        class="btn btn--primary btn--sm"
-                        [attr.aria-label]="'Aprovar ' + item.nome"
-                        [disabled]="decidindo()"
-                        (click)="aprovar(item)"
-                      >
-                        Aprovar
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn--secondary btn--sm"
-                        [attr.aria-label]="'Negar ' + item.nome"
-                        [disabled]="decidindo()"
-                        (click)="abrirNegativa(item)"
-                      >
-                        Negar
-                      </button>
-                    </ng-container>
+                  <td data-label="Sensibilidade" class="u-nowrap-desktop">
+                    {{ rotulo(classificacoes, item.classificacaoProtecao) }}
                   </td>
                 </tr>
               }
@@ -163,6 +145,37 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
         />
       }
     </section>
+
+    <ui-drawer
+      class="cfg-form-drawer"
+      [(visible)]="detalheAberto"
+      [heading]="detalhe()?.nome ?? 'Item do catálogo'"
+      ariaLabel="Detalhe do item aguardando a decisão"
+      focoInicial="titulo"
+      position="right"
+    >
+      @if (detalheAberto() && detalhe(); as item) {
+        <div class="cfg-form">
+          <cfg-detalhe-da-protecao titulo="Proposta de proteção" [protecao]="item" />
+          <p class="u-caption">
+            Código no sistema: <code>{{ item.codigo }}</code>
+          </p>
+        </div>
+        <div class="cfg-form-footer">
+          <button type="button" class="btn btn--tertiary btn--rect" [disabled]="decidindo()" (click)="detalheAberto.set(false)">
+            Fechar
+          </button>
+          <ng-container *authTemPermissao="permissaoDeAprovar">
+            <button type="button" class="btn btn--secondary" [disabled]="decidindo()" (click)="abrirNegativa(item)">
+              Negar
+            </button>
+            <button type="button" class="btn btn--primary" [disabled]="decidindo()" (click)="aprovar(item)">
+              Aprovar
+            </button>
+          </ng-container>
+        </div>
+      }
+    </ui-drawer>
 
     <ui-dialog
       [(visible)]="negativaAberta"
@@ -240,6 +253,14 @@ export class ProtecaoDoCatalogoPage {
   protected readonly erroDaDecisao = signal<string | null>(null);
   protected readonly decidindo = signal(false);
 
+  protected readonly detalheAberto = signal(false);
+  private readonly detalheId = signal<string | null>(null);
+  /** O item aberto no detalhe, lido da lista: a releitura depois de uma decisão o tira. */
+  protected readonly detalhe = computed(() => {
+    const id = this.detalheId();
+    return id === null ? null : (this.itens().find((item) => item.id === id) ?? null);
+  });
+
   protected readonly negativaAberta = signal(false);
   protected readonly negativa = signal<NegativaEmCurso | null>(null);
   protected readonly erroDaNegativa = signal<string | null>(null);
@@ -307,6 +328,11 @@ export class ProtecaoDoCatalogoPage {
 
   protected cadastro(item: ItemDaProtecaoDoCatalogoDto): string {
     return nomeDoCadastro(item.tipo);
+  }
+
+  protected abrirDetalhe(item: ItemDaProtecaoDoCatalogoDto): void {
+    this.detalheId.set(item.id);
+    this.detalheAberto.set(true);
   }
 
   protected carregar(): void {
@@ -380,6 +406,7 @@ export class ProtecaoDoCatalogoPage {
           this.intencaoDaDecisao = null;
           this.notifications.success(sucesso, item.codigo);
           this.negativaAberta.set(false);
+          this.detalheAberto.set(false);
           this.carregar();
           afterNextRender(() => this.titulo()?.nativeElement.focus(), { injector: this.injector });
           return;
@@ -404,6 +431,7 @@ export class ProtecaoDoCatalogoPage {
       // A situação do item não é a que a tela mostrava (proteção editada, decisão de outra pessoa, item fora da solicitação): a lista relida traz a atual ou tira o item. Repetir a mesma decisão não dá certo.
       if (problem.status === 422 && problem.code !== ITEM_FORA_DE_SOLICITACAO) return this.mostrarRecusa(mensagem, problem, naNegativa);
       this.negativaAberta.set(false);
+      this.detalheAberto.set(false);
       this.erroDaDecisao.set(`${mensagem}. A lista foi atualizada; confira o item e decida de novo.`);
       this.carregar();
       return;
