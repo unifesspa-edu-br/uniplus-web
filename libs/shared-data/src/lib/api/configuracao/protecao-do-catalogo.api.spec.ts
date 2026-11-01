@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
-import { ProtecaoDoCatalogoApi } from './protecao-do-catalogo.api';
+import { ProtecaoDoCatalogoApi, type DecidirProtecaoDoCatalogoRequest } from './protecao-do-catalogo.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -39,26 +39,41 @@ describe('ProtecaoDoCatalogoApi', () => {
     await promise;
   });
 
-  it('solicitar() envia todos os pendentes, sem corpo e com Idempotency-Key', async () => {
-    const promise = firstValueFrom(api.solicitar(withIdempotencyKey('k')));
+  it('detalhar() usa o segmento do cadastro e o tipo de mídia do detalhe', async () => {
+    const promise = firstValueFrom(api.detalhar('TIPO_DOCUMENTO', ID));
+    const req = controller.expectOne(`${URL}/tipos-documento/${ID}`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-detalhe', 1));
+    req.flush({});
+    await promise;
+
+    const fato = firstValueFrom(api.detalhar('FATO', ID));
+    controller.expectOne(`${URL}/fatos/${ID}`).flush({});
+    await fato;
+  });
+
+  it('solicitar() envia só os itens escolhidos, com Idempotency-Key', async () => {
+    const itens = [{ cadastro: 'FATO', id: ID }] as const;
+    const promise = firstValueFrom(api.solicitar(itens, withIdempotencyKey('k')));
     const req = controller.expectOne(`${URL}/solicitacoes`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toBeNull();
+    expect(req.request.body).toEqual({ itens });
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
-    req.flush({ tiposDeDocumento: 2, fatos: 0 });
+    req.flush({ tiposDeDocumento: 0, fatos: 1 });
     await promise;
   });
 
-  it('decidir() leva a proteção conferida e a recomendação, com Idempotency-Key', async () => {
+  it('decidir() leva a proteção conferida, a recomendação e a justificativa, com Idempotency-Key', async () => {
     const command = {
       cadastro: 'TIPO_DOCUMENTO',
       itemId: ID,
-      decisao: 'NEGADA',
+      decisao: 'RECOMENDAR_AJUSTE',
       classificacaoProtecao: 'INTERNO',
       hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
       finalidadeTratamento: 'Conferir o laudo.',
       classificacaoRecomendada: 'SENSIVEL',
-    };
+      justificativa: 'O laudo traz dado de saúde.',
+    } as const satisfies DecidirProtecaoDoCatalogoRequest;
     const promise = firstValueFrom(api.decidir(command, withIdempotencyKey('k')));
     const req = controller.expectOne(URL);
     expect(req.request.method).toBe('POST');

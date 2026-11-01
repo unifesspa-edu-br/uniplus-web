@@ -7394,9 +7394,9 @@ export interface paths {
             };
             readonly requestBody: {
                 readonly content: {
-                    readonly "application/json": components["schemas"]["DecidirProtecaoDoCatalogoCommand"];
-                    readonly "text/json": components["schemas"]["DecidirProtecaoDoCatalogoCommand"];
-                    readonly "application/*+json": components["schemas"]["DecidirProtecaoDoCatalogoCommand"];
+                    readonly "application/json": components["schemas"]["DecidirProtecaoDoCatalogoRequest"];
+                    readonly "text/json": components["schemas"]["DecidirProtecaoDoCatalogoRequest"];
+                    readonly "application/*+json": components["schemas"]["DecidirProtecaoDoCatalogoRequest"];
                 };
             };
             readonly responses: {
@@ -7478,6 +7478,80 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/admin/protecao-do-catalogo/{cadastro}/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly cadastro: string;
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.protecao-do-catalogo-detalhe.v1+json": components["schemas"]["DetalheDaProtecaoDoCatalogoDto"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/admin/protecao-do-catalogo/solicitacoes": {
         readonly parameters: {
             readonly query?: never;
@@ -7497,7 +7571,13 @@ export interface paths {
                 readonly path?: never;
                 readonly cookie?: never;
             };
-            readonly requestBody?: never;
+            readonly requestBody?: {
+                readonly content: {
+                    readonly "application/json": null | components["schemas"]["SolicitarAprovacaoDaProtecaoRequest"];
+                    readonly "text/json": null | components["schemas"]["SolicitarAprovacaoDaProtecaoRequest"];
+                    readonly "application/*+json": null | components["schemas"]["SolicitarAprovacaoDaProtecaoRequest"];
+                };
+            };
             readonly responses: {
                 /** @description OK */
                 readonly 200: {
@@ -11420,6 +11500,7 @@ export interface components {
             /** Format: date-time */
             readonly decididaEm: null | string;
             readonly classificacaoRecomendada: null | string;
+            readonly justificativa: null | string;
             /** Format: date-time */
             readonly aceitaEm: null | string;
         };
@@ -12004,15 +12085,18 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
-        readonly DecidirProtecaoDoCatalogoCommand: {
-            readonly cadastro: null | string;
+        readonly DecidirProtecaoDoCatalogoRequest: {
+            /** @enum {null|string} */
+            readonly cadastro: DecidirProtecaoDoCatalogoRequestCadastro;
             /** Format: uuid */
             readonly itemId: string;
-            readonly decisao: null | string;
+            /** @enum {null|string} */
+            readonly decisao: DecidirProtecaoDoCatalogoRequestDecisao;
             readonly classificacaoProtecao: null | string;
             readonly hipoteseLegal: null | string;
             readonly finalidadeTratamento: null | string;
             readonly classificacaoRecomendada?: null | string;
+            readonly justificativa?: null | string;
         };
         readonly DefinicaoDoFatoInput: {
             readonly pontoResolucao: string;
@@ -12034,6 +12118,38 @@ export interface components {
             readonly nome: string;
             readonly descricao: null | string;
             readonly componenteExibicao?: null | string;
+        };
+        readonly DetalheDaProtecaoDoCatalogoDto: {
+            readonly tipo: string;
+            /** Format: uuid */
+            readonly id: string;
+            readonly codigo: string;
+            readonly nome: string;
+            readonly descricao: null | string;
+            readonly classificacaoProtecao: string;
+            readonly hipoteseLegal: string;
+            readonly finalidadeTratamento: string;
+            readonly aprovacao: components["schemas"]["AprovacaoDaProtecaoDto"];
+            readonly fato: null | components["schemas"]["DetalheDoFatoDto"];
+            readonly tipoDocumento: null | components["schemas"]["DetalheDoTipoDeDocumentoDto"];
+        };
+        readonly DetalheDoFatoDto: {
+            readonly dominio: string;
+            readonly cardinalidade: string;
+            readonly sistema: boolean;
+            readonly componenteExibicao: null | string;
+            readonly valores: readonly components["schemas"]["DetalheDoValorDoFatoDto"][];
+        };
+        readonly DetalheDoTipoDeDocumentoDto: {
+            readonly categoria: string;
+            readonly formatosAceitos: null | string;
+            /** Format: int32 */
+            readonly tamanhoMaximoMb: null | number | string;
+        };
+        readonly DetalheDoValorDoFatoDto: {
+            readonly codigo: string;
+            readonly descricao: null | string;
+            readonly orientacao: null | string;
         };
         readonly DiaNaoUtilCommandItem: {
             readonly abrangencia: null | string;
@@ -12342,6 +12458,12 @@ export interface components {
             readonly finalidadeTratamento: string;
             readonly hipoteseLegal: string;
             readonly aprovacao: components["schemas"]["AprovacaoDaProtecaoDto"];
+        };
+        readonly ItemParaSolicitarRequest: {
+            /** @enum {null|string} */
+            readonly cadastro: ItemParaSolicitarRequestCadastro;
+            /** Format: uuid */
+            readonly id: string;
         };
         readonly ItemPortavel: {
             readonly fatoCodigo: string;
@@ -12653,6 +12775,9 @@ export interface components {
             readonly tiposDeDocumento: number | string;
             /** Format: int32 */
             readonly fatos: number | string;
+        };
+        readonly SolicitarAprovacaoDaProtecaoRequest: {
+            readonly itens: null | readonly components["schemas"]["ItemParaSolicitarRequest"][];
         };
         readonly TermoAvaliado: {
             readonly codigo: string;
@@ -13130,6 +13255,19 @@ export enum PathsApiConfiguracaoTiposProcessoGetParametersQueryDirection {
 export enum PathsApiConfiguracaoAdminTiposProcessoGetParametersQueryDirection {
     next = "next",
     prev = "prev"
+}
+export enum DecidirProtecaoDoCatalogoRequestCadastro {
+    TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
+    FATO = "FATO"
+}
+export enum DecidirProtecaoDoCatalogoRequestDecisao {
+    APROVAR = "APROVAR",
+    RECOMENDAR_AJUSTE = "RECOMENDAR_AJUSTE",
+    REPROVAR = "REPROVAR"
+}
+export enum ItemParaSolicitarRequestCadastro {
+    TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
+    FATO = "FATO"
 }
 export enum TipoLocalOferta {
     nenhum = "nenhum",

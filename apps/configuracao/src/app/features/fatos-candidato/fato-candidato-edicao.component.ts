@@ -235,7 +235,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
       }
       <div class="cfg-fato-aprovacao">
         <span class="field__label">Aprovação da proteção de dados</span>
-        <cfg-situacao-da-aprovacao [situacao]="f.aprovacao.situacao" [classificacaoRecomendada]="f.aprovacao.classificacaoRecomendada" />
+        <cfg-situacao-da-aprovacao [situacao]="f.aprovacao.situacao" [classificacaoRecomendada]="f.aprovacao.classificacaoRecomendada" [justificativa]="f.aprovacao.justificativa" />
       </div>
 
       <form class="cfg-fato-descritivo" [formGroup]="descritivo" id="cfg-fato-descritivo" (ngSubmit)="salvarDescritivo()" novalidate>

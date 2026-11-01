@@ -886,6 +886,7 @@ describe('TiposDocumentoListPage', () => {
       solicitadaEm: null,
       decididaEm: null,
       classificacaoRecomendada: null,
+      justificativa: null,
       aceitaEm: null,
       ...aprovacao,
     },
@@ -954,7 +955,9 @@ describe('TiposDocumentoListPage', () => {
       expect(texto).toContain('Pessoal');
       expect(texto).toContain('Execução de políticas públicas');
       expect(texto).toContain('Conferir o documento do candidato.');
-      expect(texto).toContain('Aguardando a proteção de dados');
+      expect(texto).toContain('Em análise');
+      expect(texto).toContain('Cadastrado em');
+      expect(texto).toContain('10/06/2026');
       expect(
         fixture.nativeElement.querySelector('dialog[aria-label="Detalhe do tipo de documento"] input, dialog[aria-label="Detalhe do tipo de documento"] textarea'),
       ).toBeNull();
@@ -983,7 +986,7 @@ describe('TiposDocumentoListPage', () => {
     it('oferece "Aceitar recomendação" só com a recomendação do tipo negado', async () => {
       await flushLista(
         [rgSeed, laudoSeed],
-        [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' })],
+        [item(laudoSeed, { situacao: 'AJUSTE_RECOMENDADO', classificacaoRecomendada: 'SENSIVEL' })],
       );
       fixture.detectChanges();
 
@@ -998,12 +1001,28 @@ describe('TiposDocumentoListPage', () => {
       fixture.detectChanges();
       expect(rodape()).toEqual(['Fechar', 'Aceitar recomendação', 'Editar']);
       expect(painel()).toContain('Classificação recomendada: Pessoal sensível');
-      expect(painel()).toContain('Negada pela proteção de dados');
+      expect(painel()).toContain('Ajuste recomendado');
+    });
+
+    it('no tipo reprovado mostra a justificativa e oferece "Editar", sem "Aceitar recomendação"', async () => {
+      await flushLista(
+        [laudoSeed],
+        [item(laudoSeed, { situacao: 'REPROVADA', justificativa: 'O laudo traz dado de saúde.' })],
+      );
+      fixture.detectChanges();
+
+      alvo().click();
+      fixture.detectChanges();
+
+      expect(rodape()).toEqual(['Fechar', 'Editar']);
+      expect(painel()).toContain('Reprovada');
+      expect(painel()).toContain('Justificativa: O laudo traz dado de saúde.');
+      expect(painel()).not.toContain('Classificação recomendada');
     });
 
     it('sem a permissão de manter, só consulta e fecha', async () => {
       concedidas.set([]);
-      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' })]);
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'AJUSTE_RECOMENDADO', classificacaoRecomendada: 'SENSIVEL' })]);
       fixture.detectChanges();
 
       alvo().click();
@@ -1025,14 +1044,14 @@ describe('TiposDocumentoListPage', () => {
       await flushLista(
         [rgSeed, laudoSeed, diplomaSeed],
         [
-          item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' }),
+          item(laudoSeed, { situacao: 'AJUSTE_RECOMENDADO', classificacaoRecomendada: 'SENSIVEL' }),
           item(diplomaSeed, { situacao: 'SOLICITADA' }),
         ],
       );
       fixture.detectChanges();
 
       expect(texto()).toContain('Aprovada');
-      expect(texto()).toContain('Negada');
+      expect(texto()).toContain('Ajuste recomendado');
       expect(texto()).not.toContain('Classificação recomendada');
       expect(texto()).toContain('Em análise');
     });
@@ -1043,7 +1062,7 @@ describe('TiposDocumentoListPage', () => {
       expect(botao('Enviar solicitação')).toBeDefined();
     });
 
-    it('o diálogo de envio é largo e lista Cadastro, Item e Sensibilidade, sem o código técnico', async () => {
+    it('o diálogo de envio é largo e lista Item e Sensibilidade, sem o código técnico nem o cadastro repetido', async () => {
       await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'PENDENTE' })]);
       fixture.detectChanges();
       botao('Enviar solicitação')?.click();
@@ -1052,7 +1071,7 @@ describe('TiposDocumentoListPage', () => {
       const dialogo = fixture.nativeElement.querySelector('cfg-solicitacao-da-protecao-dialog dialog') as HTMLDialogElement;
       expect(dialogo.classList.contains('uni-dialog--largo')).toBe(true);
       expect(Array.from(dialogo.querySelectorAll('thead th')).map((th) => th.textContent?.trim())).toEqual([
-        'Cadastro',
+        'Enviar',
         'Item',
         'Sensibilidade',
       ]);
@@ -1060,6 +1079,72 @@ describe('TiposDocumentoListPage', () => {
       expect(texto).toContain('Laudo médico — PcD');
       expect(texto).not.toContain('LAUDO_MEDICO');
       expect(texto).not.toMatch(/aprova ou nega/u);
+    });
+
+    describe('envio por seleção', () => {
+      const abrirDialogo = async (): Promise<HTMLDialogElement> => {
+        await flushLista(
+          [laudoSeed, diplomaSeed],
+          [item(laudoSeed, { situacao: 'PENDENTE' }), item(diplomaSeed, { situacao: 'PENDENTE' })],
+        );
+        fixture.detectChanges();
+        botao('Enviar solicitação')?.click();
+        fixture.detectChanges();
+        // A seleção inicial (todos marcados) é escrita por um efeito, que pede uma segunda passada.
+        fixture.detectChanges();
+        return fixture.nativeElement.querySelector('cfg-solicitacao-da-protecao-dialog dialog') as HTMLDialogElement;
+      };
+      const caixas = (dialogo: HTMLDialogElement): HTMLInputElement[] =>
+        Array.from(dialogo.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]'));
+      const todos = (dialogo: HTMLDialogElement): HTMLInputElement =>
+        dialogo.querySelector<HTMLInputElement>('thead input[type="checkbox"]') as HTMLInputElement;
+      const enviar = (dialogo: HTMLDialogElement): HTMLButtonElement =>
+        Array.from(dialogo.querySelectorAll<HTMLButtonElement>('button')).find((b) =>
+          /^Enviar \d+ it/u.test(b.textContent?.trim() ?? ''),
+        ) as HTMLButtonElement;
+
+      it('abre com todos marcados, cada caixa com o nome do item, e o botão diz quantos vão', async () => {
+        const dialogo = await abrirDialogo();
+
+        expect(caixas(dialogo).map((c) => c.checked)).toEqual([true, true]);
+        expect(caixas(dialogo).map((c) => c.getAttribute('aria-label'))).toEqual([
+          `Enviar ${laudoSeed.nome}`,
+          `Enviar ${diplomaSeed.nome}`,
+        ]);
+        expect(todos(dialogo).checked).toBe(true);
+        expect(todos(dialogo).indeterminate).toBe(false);
+        expect(enviar(dialogo).textContent?.trim()).toBe('Enviar 2 itens');
+      });
+
+      it('desmarcar um item deixa "marcar todos" em estado misto e envia só o marcado', async () => {
+        const dialogo = await abrirDialogo();
+
+        caixas(dialogo)[1].click();
+        fixture.detectChanges();
+
+        expect(todos(dialogo).indeterminate).toBe(true);
+        expect(enviar(dialogo).textContent?.trim()).toBe('Enviar 1 item');
+        enviar(dialogo).click();
+        const post = controller.expectOne(`${URL_PROTECAO}/solicitacoes`);
+        expect(post.request.body).toEqual({ itens: [{ cadastro: 'TIPO_DOCUMENTO', id: laudoSeed.id }] });
+        post.flush({ tiposDeDocumento: 1, fatos: 0 });
+        await propagate();
+        flushProtecao([]);
+        await propagate();
+      });
+
+      it('"marcar todos" desmarca tudo, desabilita o envio e volta a marcar tudo', async () => {
+        const dialogo = await abrirDialogo();
+
+        todos(dialogo).click();
+        fixture.detectChanges();
+        expect(caixas(dialogo).map((c) => c.checked)).toEqual([false, false]);
+        expect(dialogo.querySelector('.uni-dialog__footer .btn--primary')?.hasAttribute('disabled')).toBe(true);
+
+        todos(dialogo).click();
+        fixture.detectChanges();
+        expect(caixas(dialogo).map((c) => c.checked)).toEqual([true, true]);
+      });
     });
 
     it('não oferece "Enviar solicitação" sem item pendente', async () => {
@@ -1074,7 +1159,7 @@ describe('TiposDocumentoListPage', () => {
         [laudoSeed, diplomaSeed],
         [
           item(laudoSeed, { situacao: 'PENDENTE' }),
-          item(diplomaSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' }),
+          item(diplomaSeed, { situacao: 'AJUSTE_RECOMENDADO', classificacaoRecomendada: 'SENSIVEL' }),
         ],
       );
       fixture.detectChanges();
@@ -1092,7 +1177,7 @@ describe('TiposDocumentoListPage', () => {
         fixture.nativeElement.querySelectorAll('cfg-solicitacao-da-protecao-dialog button'),
       );
       expect(texto()).toContain(laudoSeed.nome);
-      noDialogo.find((b) => b.textContent?.includes('Enviar solicitação'))?.click();
+      noDialogo.find((b) => /^Enviar \d+ it/u.test(b.textContent?.trim() ?? ''))?.click();
 
       const post = controller.expectOne(`${URL_PROTECAO}/solicitacoes`);
       expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
@@ -1115,7 +1200,7 @@ describe('TiposDocumentoListPage', () => {
       Array.from<HTMLButtonElement>(
         fixture.nativeElement.querySelectorAll('cfg-solicitacao-da-protecao-dialog button'),
       )
-        .find((b) => b.textContent?.includes('Enviar solicitação'))
+        .find((b) => /^Enviar \d+ it/u.test(b.textContent?.trim() ?? ''))
         ?.click();
       controller.expectOne(`${URL_PROTECAO}/solicitacoes`).flush(
         JSON.stringify({
@@ -1136,7 +1221,7 @@ describe('TiposDocumentoListPage', () => {
     it('aceita a recomendação do tipo negado, e ele sai da lista de pendências', async () => {
       await flushLista(
         [laudoSeed],
-        [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' })],
+        [item(laudoSeed, { situacao: 'AJUSTE_RECOMENDADO', classificacaoRecomendada: 'SENSIVEL' })],
       );
       fixture.detectChanges();
 
@@ -1170,7 +1255,7 @@ describe('TiposDocumentoListPage', () => {
     it('a recusa do aceite fica no diálogo, com a mensagem da API', async () => {
       await flushLista(
         [laudoSeed],
-        [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'PUBLICO' })],
+        [item(laudoSeed, { situacao: 'AJUSTE_RECOMENDADO', classificacaoRecomendada: 'PUBLICO' })],
       );
       component['pedirAceite'](laudoSeed);
       component['confirmarAceite']();
@@ -1227,7 +1312,7 @@ describe('TiposDocumentoListPage', () => {
     it('o aceite que falha por erro do servidor repete a mesma Idempotency-Key; a recusa 4xx troca a chave', async () => {
       await flushLista(
         [laudoSeed],
-        [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' })],
+        [item(laudoSeed, { situacao: 'AJUSTE_RECOMENDADO', classificacaoRecomendada: 'SENSIVEL' })],
       );
       const url = `${BASE}/api/configuracao/admin/tipos-documento/${laudoSeed.id}/aceite-da-recomendacao`;
       const falha = (status: number) =>
@@ -1296,7 +1381,7 @@ describe('TiposDocumentoListPage', () => {
     });
 
     it('a recusa do aceite relê a situação e a lista, que podem ter mudado em outra sessão', async () => {
-      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' })]);
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'AJUSTE_RECOMENDADO', classificacaoRecomendada: 'SENSIVEL' })]);
       component['pedirAceite'](laudoSeed);
       component['confirmarAceite']();
       controller

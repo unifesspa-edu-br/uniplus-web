@@ -93,7 +93,7 @@ describe('FatosCandidatoPage', () => {
       {
         ...fatoDoAdministrador,
         id: 'f1', codigo: 'RENDA', nome: 'Renda',
-        aprovacao: { situacao: 'NEGADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: 'SENSIVEL', aceitaEm: null },
+        aprovacao: { situacao: 'AJUSTE_RECOMENDADO', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: 'SENSIVEL', justificativa: null, aceitaEm: null },
       },
     ]);
     await propagar();
@@ -169,6 +169,53 @@ describe('FatosCandidatoPage', () => {
       expect(texto).toContain('Execução de políticas públicas');
       expect(texto).toContain('Aprovada');
       expect(host.querySelector('dialog[aria-label="Detalhe do fato do candidato"] input, dialog[aria-label="Detalhe do fato do candidato"] textarea')).toBeNull();
+    });
+
+    it('mostra as regras padrão do derivado, para quem só consulta também', async () => {
+      concedidas.set(['configuracao:fatos-candidato:consultar']);
+      atenderFases();
+      controller.expectOne((r) => r.url === LISTA).flush([
+        {
+          ...fatoCategorico,
+          origem: 'DERIVADO',
+          regrasPadrao: [{ contribui: 'MULHER_CIS', quando: [[{ fato: 'RENDA', operador: 'MAIOR_IGUAL', valor: 1000 }]] }],
+        },
+      ]);
+      await propagar();
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+
+      (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      // Os nomes dos fatos vêm do catálogo; sem ele a regra se lê pelo que o editor sabe dizer.
+      controller.match((r) => r.url === `${BASE}/api/configuracao/fatos-candidato`).forEach((req) => req.flush([]));
+      await propagar();
+      fixture.detectChanges();
+
+      const texto = host.querySelector('dialog[aria-label="Detalhe do fato do candidato"]')?.textContent?.replace(/\s+/gu, ' ') ?? '';
+      expect(texto).toContain('Regras padrão');
+      expect(texto).toContain('Contribui "Mulher cis" quando:');
+      expect(host.querySelector('dialog[aria-label="Detalhe do fato do candidato"] .cfg-form-footer')?.textContent).not.toContain('Editar');
+    });
+
+    it('no fato reprovado mostra a justificativa e oferece "Editar", sem "Aceitar recomendação"', async () => {
+      atenderFases();
+      controller.expectOne((r) => r.url === LISTA).flush([
+        {
+          ...fatoCategorico,
+          aprovacao: { situacao: 'REPROVADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, justificativa: 'Falta base legal.', aceitaEm: null },
+        },
+      ]);
+      await propagar();
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+
+      (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      const drawer = host.querySelector('dialog[aria-label="Detalhe do fato do candidato"]');
+      expect(drawer?.textContent?.replace(/\s+/gu, ' ')).toContain('Justificativa: Falta base legal.');
+      expect(Array.from(drawer?.querySelectorAll('.cfg-form-footer button') ?? []).map((b) => b.textContent?.trim())).toEqual(['Fechar', 'Editar']);
     });
 
     it('"Editar" fecha o detalhe e abre a edição do mesmo fato', async () => {
@@ -323,7 +370,7 @@ describe('FatosCandidatoPage', () => {
     ativo: true,
     valores: [],
     regrasPadrao: [],
-    aprovacao: { situacao: 'APROVADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, aceitaEm: null },
+    aprovacao: { situacao: 'APROVADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, justificativa: null, aceitaEm: null },
   };
 
   it('a descrição é obrigatória no cadastro: em branco o fato não é enviado e o campo é anunciado como obrigatório', async () => {
@@ -503,7 +550,7 @@ describe('FatosCandidatoPage', () => {
   describe('aprovação da proteção de dados', () => {
     const fatoCom = (situacao: string, classificacaoRecomendada: string | null = null) => ({
       ...fatoDoAdministrador,
-      aprovacao: { situacao, solicitadaEm: null, decididaEm: null, classificacaoRecomendada, aceitaEm: null },
+      aprovacao: { situacao, solicitadaEm: null, decididaEm: null, classificacaoRecomendada, justificativa: null, aceitaEm: null },
     });
     const pendencia = (id: string) => ({
       tipo: 'FATO',
@@ -513,7 +560,7 @@ describe('FatosCandidatoPage', () => {
       classificacaoProtecao: 'PESSOAL',
       finalidadeTratamento: 'Classificar a reserva de vagas.',
       hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
-      aprovacao: { situacao: 'PENDENTE', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, aceitaEm: null },
+      aprovacao: { situacao: 'PENDENTE', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, justificativa: null, aceitaEm: null },
     });
     const botaoDaPagina = (host: HTMLElement, rotulo: string) =>
       Array.from<HTMLButtonElement>(host.querySelectorAll('.panel-head__actions button, .cfg-form-footer button')).find((b) =>
@@ -535,9 +582,9 @@ describe('FatosCandidatoPage', () => {
     }
 
     it('diz a situação como texto e, na negativa, a classificação recomendada, inclusive no fato de sistema', async () => {
-      const host = await carregarCom([{ ...fatoCom('NEGADA', 'SENSIVEL'), sistema: true }]);
+      const host = await carregarCom([{ ...fatoCom('AJUSTE_RECOMENDADO', 'SENSIVEL'), sistema: true }]);
 
-      expect(host.querySelector('tbody')?.textContent).toContain('Negada');
+      expect(host.querySelector('tbody')?.textContent).toContain('Ajuste recomendado');
       expect(host.querySelector('tbody')?.textContent).not.toContain('Classificação recomendada');
       abrirDetalhe(host);
       const texto = host.textContent?.replace(/\s+/gu, ' ') ?? '';
@@ -546,7 +593,7 @@ describe('FatosCandidatoPage', () => {
     });
 
     it('a recusa do aceite relê a lista e a situação, e reabre o diálogo com a mensagem da API', async () => {
-      const host = await carregarCom([fatoCom('NEGADA', 'SENSIVEL')]);
+      const host = await carregarCom([fatoCom('AJUSTE_RECOMENDADO', 'SENSIVEL')]);
       abrirDetalhe(host);
       botaoDaPagina(host, 'Aceitar recomendação')?.click();
       component['confirmarAceite']();
@@ -564,7 +611,7 @@ describe('FatosCandidatoPage', () => {
     });
 
     it('aceita a recomendação do fato negado e recarrega a lista', async () => {
-      const host = await carregarCom([fatoCom('NEGADA', 'SENSIVEL')]);
+      const host = await carregarCom([fatoCom('AJUSTE_RECOMENDADO', 'SENSIVEL')]);
       abrirDetalhe(host);
       botaoDaPagina(host, 'Aceitar recomendação')?.click();
       fixture.detectChanges();
@@ -586,7 +633,7 @@ describe('FatosCandidatoPage', () => {
 
     it('sem a permissão de manter não oferece "Aceitar recomendação" nem "Enviar solicitação"', async () => {
       concedidas.set(['configuracao:fatos-candidato:consultar']);
-      const host = await carregarCom([fatoCom('NEGADA', 'SENSIVEL')], [pendencia(fatoDoAdministrador.id)]);
+      const host = await carregarCom([fatoCom('AJUSTE_RECOMENDADO', 'SENSIVEL')], [pendencia(fatoDoAdministrador.id)]);
       abrirDetalhe(host);
 
       expect(botaoDaPagina(host, 'Aceitar recomendação')).toBeUndefined();
@@ -600,7 +647,7 @@ describe('FatosCandidatoPage', () => {
 
       expect(host.querySelector('cfg-solicitacao-da-protecao-dialog')?.textContent).toContain('Trabalha');
       Array.from<HTMLButtonElement>(host.querySelectorAll('cfg-solicitacao-da-protecao-dialog button'))
-        .find((b) => b.textContent?.includes('Enviar solicitação'))
+        .find((b) => /^Enviar \d+ it/u.test(b.textContent?.trim() ?? ''))
         ?.click();
 
       const post = controller.expectOne(`${PROTECAO}/solicitacoes`);
@@ -641,7 +688,7 @@ describe('FatosCandidatoPage', () => {
       botaoDaPagina(host, 'Enviar solicitação')?.click();
       fixture.detectChanges();
       Array.from<HTMLButtonElement>(host.querySelectorAll('cfg-solicitacao-da-protecao-dialog button'))
-        .find((b) => b.textContent?.includes('Enviar solicitação'))
+        .find((b) => /^Enviar \d+ it/u.test(b.textContent?.trim() ?? ''))
         ?.click();
       controller.expectOne(`${PROTECAO}/solicitacoes`).flush({ tiposDeDocumento: 0, fatos: 1 });
       await propagar();

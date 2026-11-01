@@ -10,18 +10,20 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, switchMap } from 'rxjs';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Subject, map, switchMap } from 'rxjs';
+import { AbstractControl, FormControl, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
-import { ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
+import { ProblemDetails, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { deveRotacionarIdempotencyKey, idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
-  FatosCandidatoApi,
   ProtecaoDoCatalogoApi,
-  type DecidirProtecaoDoCatalogoCommand,
+  type CadastroDoCatalogo,
+  type DecidirProtecaoDoCatalogoRequest,
+  type DecisaoDaProtecao,
+  type DetalheDaProtecaoDoCatalogoDto,
   type ItemDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
 import {
@@ -31,28 +33,39 @@ import {
   EmptyStateComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { CatalogoCategoriasDocumento } from '../../shared/categorias-documento';
 import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
 import {
   CLASSIFICACOES_DE_PROTECAO,
-  HIPOTESES_LEGAIS,
+  SituacaoDaAprovacaoComponent,
   hipotesesDaClassificacao,
   nomeDoCadastro,
   rotuloDe,
 } from '../../shared/protecao-do-catalogo';
-import { classificacoesDoDominio } from '../fatos-candidato/fato-candidato.regras';
-
-/** O item que a proteção de dados está negando: o diálogo pede a classificação recomendada. */
-interface NegativaEmCurso {
-  readonly item: ItemDaProtecaoDoCatalogoDto;
-}
+import {
+  CARDINALIDADES,
+  COMPONENTES_DE_EXIBICAO,
+  DOMINIOS,
+  ROTULO_DO_COMPONENTE_PADRAO,
+  classificacoesDoDominio,
+} from '../fatos-candidato/fato-candidato.regras';
 
 /** Código da API para o item que já saiu da solicitação (decidido por outra pessoa ou editado). */
 const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item_fora_de_solicitacao';
 
+/** O tamanho máximo da justificativa que a API aceita. */
+const JUSTIFICATIVA_MAXIMA = 2000;
+
+/** A justificativa em branco conta como ausente: a API apara o texto antes de conferir. */
+function justificativaPreenchida(controle: AbstractControl<string>): ValidationErrors | null {
+  return controle.value.trim().length > 0 ? null : { required: true };
+}
+
 /**
- * A aprovação da proteção de dados do catálogo: lista o que o administrador
- * enviou na solicitação e deixa a proteção de dados aprovar ou negar cada item. A decisão vale
- * sobre a proteção que a tela mostrou: se o item foi editado depois, a API recusa e a lista é relida.
+ * A aprovação da proteção de dados do catálogo: lista o que o administrador enviou na solicitação e
+ * abre cada item num drawer com o que ele é, para a proteção de dados aprovar, recomendar ajuste ou
+ * reprovar. A decisão vale sobre a proteção que a tela mostrou: se o item foi editado depois, a API
+ * recusa e a lista é relida.
  */
 @Component({
   selector: 'cfg-protecao-do-catalogo-page',
@@ -65,6 +78,7 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
     DialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    SituacaoDaAprovacaoComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -119,7 +133,7 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
             <tbody>
               @for (item of itens(); track item.id) {
                 <tr>
-                  <td data-label="Cadastro" class="u-nowrap-desktop">{{ cadastro(item) }}</td>
+                  <td data-label="Cadastro" class="u-nowrap-desktop">{{ cadastro(item.tipo) }}</td>
                   <td data-label="Item" class="u-nowrap-desktop">
                     <button
                       type="button"
@@ -149,85 +163,211 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
     <ui-drawer
       class="cfg-form-drawer"
       [(visible)]="detalheAberto"
-      [heading]="detalhe()?.nome ?? 'Item do catálogo'"
+      [heading]="itemAberto()?.nome ?? 'Item do catálogo'"
       ariaLabel="Detalhe do item aguardando a decisão"
       focoInicial="titulo"
       position="right"
     >
-      @if (detalheAberto() && detalhe(); as item) {
-        <div class="cfg-form" role="region" tabindex="0" aria-label="Dados do item">
-          <cfg-detalhe-da-protecao titulo="Proposta de proteção" [protecao]="item" />
-          <p class="u-caption">
-            Código no sistema: <code>{{ item.codigo }}</code>
-          </p>
+      @if (detalheAberto()) {
+        <div class="cfg-form" role="region" tabindex="0" aria-label="Dados do item" [attr.aria-busy]="carregandoDetalhe()">
+          @if (carregandoDetalhe()) {
+            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando o item</span>
+          }
+          @if (erroDaDecisaoNoDrawer()) {
+            <ui-alert variant="danger" heading="A decisão não foi registrada">{{ erroDaDecisaoNoDrawer() }}</ui-alert>
+          }
+          @if (erroDoDetalhe(); as erro) {
+            <ui-alert variant="danger" [heading]="naoEncontrado() ? 'Item não encontrado' : 'Não foi possível carregar o item'">
+              {{ erro }}
+              @if (!naoEncontrado()) {
+                <div class="cfg-list__retry">
+                  <button type="button" class="btn btn--secondary btn--sm" (click)="recarregarDetalhe()">Tentar novamente</button>
+                </div>
+              }
+            </ui-alert>
+          }
+          @if (detalhe(); as d) {
+            <cfg-situacao-da-aprovacao
+              [situacao]="d.aprovacao.situacao"
+              [classificacaoRecomendada]="d.aprovacao.classificacaoRecomendada"
+              [justificativa]="d.aprovacao.justificativa"
+            />
+            <cfg-detalhe-da-protecao titulo="Proposta de proteção" [protecao]="d" />
+            <section class="cfg-detalhe-secao">
+              <h3 class="cfg-detalhe-secao__titulo">O que é o item</h3>
+              <dl class="cfg-detalhe">
+                <div>
+                  <dt>Cadastro</dt>
+                  <dd>{{ cadastro(d.tipo) }}</dd>
+                </div>
+                <div>
+                  <dt>Descrição</dt>
+                  <dd>{{ d.descricao || '—' }}</dd>
+                </div>
+                @if (d.fato; as fato) {
+                  <div>
+                    <dt>Tipo do dado</dt>
+                    <dd>{{ rotulo(dominios, fato.dominio) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Cardinalidade</dt>
+                    <dd>{{ rotulo(cardinalidades, fato.cardinalidade) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Componente de exibição</dt>
+                    <dd>{{ fato.componenteExibicao ? rotulo(componentes, fato.componenteExibicao) : rotuloDoPadrao }}</dd>
+                  </div>
+                }
+                @if (d.tipoDocumento; as documento) {
+                  <div>
+                    <dt>Categoria</dt>
+                    <dd>{{ categoriaDe(documento.categoria) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Formatos aceitos</dt>
+                    <dd>{{ documento.formatosAceitos || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Tamanho máximo</dt>
+                    <dd>{{ documento.tamanhoMaximoMb ? documento.tamanhoMaximoMb + ' MB' : '—' }}</dd>
+                  </div>
+                }
+              </dl>
+            </section>
+            @if (d.fato?.valores?.length) {
+              <section class="cfg-detalhe-secao">
+                <h3 class="cfg-detalhe-secao__titulo">Valores possíveis</h3>
+                <ul class="cfg-detalhe-valores">
+                  @for (valor of d.fato?.valores; track valor.codigo) {
+                    <li>
+                      <div>{{ valor.descricao || valor.codigo }}</div>
+                      @if (valor.orientacao) {
+                        <p class="cfg-detalhe-valores__orientacao">{{ valor.orientacao }}</p>
+                      }
+                    </li>
+                  }
+                </ul>
+              </section>
+            }
+            <p class="u-caption">
+              Código no sistema: <code>{{ d.codigo }}</code>
+            </p>
+          }
         </div>
         <div class="cfg-form-footer">
           <button type="button" class="btn btn--tertiary btn--rect" [disabled]="decidindo()" (click)="detalheAberto.set(false)">
             Fechar
           </button>
-          <ng-container *authTemPermissao="permissaoDeAprovar">
-            <button type="button" class="btn btn--secondary" [disabled]="decidindo()" (click)="abrirNegativa(item)">
-              Negar
-            </button>
-            <button type="button" class="btn btn--primary" [disabled]="decidindo()" (click)="aprovar(item)">
-              Aprovar
-            </button>
-          </ng-container>
+          @if (detalhe(); as d) {
+            <ng-container *authTemPermissao="permissaoDeAprovar">
+              @if (d.aprovacao.situacao === 'SOLICITADA') {
+                <button type="button" class="btn btn--danger" [disabled]="decidindo()" (click)="abrirDecisao('REPROVAR')">
+                  Reprovar
+                </button>
+                <button type="button" class="btn btn--secondary" [disabled]="decidindo()" (click)="abrirDecisao('RECOMENDAR_AJUSTE')">
+                  Recomendar ajuste
+                </button>
+                <button type="button" class="btn btn--primary" [disabled]="decidindo()" (click)="aprovar()">
+                  @if (decidindo() && decisaoEmCurso() === 'APROVAR') {
+                    <ui-spinner size="sm" />
+                  }
+                  Aprovar
+                </button>
+              }
+            </ng-container>
+          }
         </div>
       }
     </ui-drawer>
 
     <ui-dialog
-      [(visible)]="negativaAberta"
-      heading="Negar a proteção de dados do item"
+      [(visible)]="decisaoAberta"
+      [heading]="decisaoEmCurso() === 'REPROVAR' ? 'Reprovar a proteção de dados do item' : 'Recomendar ajuste da proteção de dados'"
       [dismissible]="!decidindo()"
     >
-      @if (negativa(); as n) {
-        @if (erroDaNegativa()) {
-          <ui-alert variant="danger" heading="Não foi possível negar o item">{{ erroDaNegativa() }}</ui-alert>
+      @if (detalhe(); as d) {
+        @if (erroDaDecisaoNoDialogo()) {
+          <ui-alert variant="danger" heading="A decisão não foi registrada">{{ erroDaDecisaoNoDialogo() }}</ui-alert>
         }
-        <p id="cfg-negativa-item">
-          {{ cadastro(n.item) }}: <strong>{{ n.item.nome }}</strong> (<code>{{ n.item.codigo }}</code>). A
-          classificação declarada é {{ rotulo(classificacoes, n.item.classificacaoProtecao) }}.
+        <p>
+          {{ cadastro(d.tipo) }}: <strong>{{ d.nome }}</strong>. A classificação proposta é
+          {{ rotulo(classificacoes, d.classificacaoProtecao) }}.
         </p>
-        <label class="field" [class.is-error]="tentouNegar() && recomendada.invalid">
-          <span class="field__label is-required">Classificação recomendada</span>
-          <select
-            #campoDaRecomendacao
-            class="select"
-            [formControl]="recomendada"
-            [attr.aria-invalid]="tentouNegar() && recomendada.invalid ? 'true' : null"
-            [attr.aria-describedby]="tentouNegar() && recomendada.invalid ? 'cfg-negativa-ajuda cfg-negativa-erro' : 'cfg-negativa-ajuda'"
-          >
-            <option value="">Selecione…</option>
-            @for (opcao of opcoesDaRecomendacao(); track opcao.valor) {
-              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
-            }
-          </select>
-          <span class="field__hint" id="cfg-negativa-ajuda">
-            O administrador vê a classificação recomendada e escolhe aceitá-la ou editar o item. Ela
-            deve combinar com a hipótese legal declarada.
-          </span>
-          @if (opcoesDaRecomendacao().length === 0) {
-            <span class="field__error">
-              Nenhuma outra classificação combina com a hipótese legal declarada. Cancele e deixe o item
-              com o administrador, que pode editar a hipótese.
+        @if (decisaoEmCurso() === 'RECOMENDAR_AJUSTE') {
+          <label class="field" [class.is-error]="tentouDecidir() && recomendada.invalid">
+            <span class="field__label is-required">Classificação recomendada</span>
+            <select
+              #campoDaRecomendacao
+              class="select"
+              [formControl]="recomendada"
+              [attr.aria-invalid]="tentouDecidir() && recomendada.invalid ? 'true' : null"
+              [attr.aria-describedby]="tentouDecidir() && recomendada.invalid ? 'cfg-ajuste-ajuda cfg-ajuste-erro' : 'cfg-ajuste-ajuda'"
+            >
+              <option value="">Selecione…</option>
+              @for (opcao of opcoesDaRecomendacao(); track opcao.valor) {
+                <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+              }
+            </select>
+            <span class="field__hint" id="cfg-ajuste-ajuda">
+              O administrador vê a classificação recomendada e escolhe aceitá-la ou editar o item. Ela
+              deve combinar com a hipótese legal declarada.
             </span>
-          }
-          @if (tentouNegar() && recomendada.invalid) {
-            <span class="field__error" id="cfg-negativa-erro">Indique a classificação recomendada.</span>
+            @if (opcoesDaRecomendacao().length === 0) {
+              <span class="field__error">
+                Nenhuma outra classificação combina com a hipótese legal declarada. Cancele e reprove o item
+                ou deixe-o com o administrador, que pode editar a hipótese.
+              </span>
+            }
+            @if (tentouDecidir() && recomendada.invalid) {
+              <span class="field__error" id="cfg-ajuste-erro">Indique a classificação recomendada.</span>
+            }
+          </label>
+        }
+        <label class="field" [class.is-error]="erroDaJustificativa()">
+          <span class="field__label" [class.is-required]="decisaoEmCurso() === 'REPROVAR'">Justificativa</span>
+          <textarea
+            #campoDaJustificativa
+            class="textarea"
+            rows="4"
+            [maxlength]="justificativaMaxima"
+            [formControl]="justificativa"
+            [attr.aria-required]="decisaoEmCurso() === 'REPROVAR' ? 'true' : null"
+            [attr.aria-invalid]="erroDaJustificativa() ? 'true' : null"
+            [attr.aria-describedby]="
+              erroDaJustificativa()
+                ? 'cfg-justificativa-ajuda cfg-justificativa-contador cfg-justificativa-erro'
+                : 'cfg-justificativa-ajuda cfg-justificativa-contador'
+            "
+          ></textarea>
+          <span class="field__hint" id="cfg-justificativa-ajuda">
+            {{
+              decisaoEmCurso() === 'REPROVAR'
+                ? 'Obrigatória. Explique o motivo da reprovação; o administrador a lê ao editar o item.'
+                : 'Opcional. Explique ao administrador por que a classificação deve mudar.'
+            }}
+          </span>
+          <span class="field__hint" id="cfg-justificativa-contador">{{ tamanhoDaJustificativa() }} de 2.000</span>
+          @if (erroDaJustificativa(); as erro) {
+            <span class="field__error" id="cfg-justificativa-erro">{{ erro }}</span>
           }
         </label>
       }
       <ng-container uiDialogFooter>
-        <button type="button" class="btn btn--tertiary btn--rect" [disabled]="decidindo()" (click)="negativaAberta.set(false)">
+        <button type="button" class="btn btn--tertiary btn--rect" [disabled]="decidindo()" (click)="decisaoAberta.set(false)">
           Cancelar
         </button>
-        <button type="button" class="btn btn--danger" [disabled]="decidindo()" (click)="negar()">
+        <button
+          type="button"
+          class="btn"
+          [class.btn--danger]="decisaoEmCurso() === 'REPROVAR'"
+          [class.btn--primary]="decisaoEmCurso() !== 'REPROVAR'"
+          [disabled]="decidindo()"
+          (click)="confirmarDecisao()"
+        >
           @if (decidindo()) {
             <ui-spinner size="sm" />
           }
-          Negar item
+          {{ decisaoEmCurso() === 'REPROVAR' ? 'Reprovar item' : 'Recomendar ajuste' }}
         </button>
       </ng-container>
     </ui-dialog>
@@ -236,7 +376,7 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
 })
 export class ProtecaoDoCatalogoPage {
   private readonly api = inject(ProtecaoDoCatalogoApi);
-  private readonly fatosApi = inject(FatosCandidatoApi);
+  private readonly categorias = inject(CatalogoCategoriasDocumento);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
@@ -244,8 +384,12 @@ export class ProtecaoDoCatalogoPage {
 
   protected readonly permissaoDeAprovar = PERMISSAO.configuracao.protecaoDoCatalogoAprovar;
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
-  protected readonly hipoteses = HIPOTESES_LEGAIS;
+  protected readonly dominios = DOMINIOS;
+  protected readonly cardinalidades = CARDINALIDADES;
+  protected readonly componentes = COMPONENTES_DE_EXIBICAO;
+  protected readonly rotuloDoPadrao = ROTULO_DO_COMPONENTE_PADRAO;
   protected readonly rotulo = rotuloDe;
+  protected readonly justificativaMaxima = JUSTIFICATIVA_MAXIMA;
 
   protected readonly itens = signal<readonly ItemDaProtecaoDoCatalogoDto[]>([]);
   protected readonly carregando = signal(false);
@@ -254,38 +398,46 @@ export class ProtecaoDoCatalogoPage {
   protected readonly decidindo = signal(false);
 
   protected readonly detalheAberto = signal(false);
-  private readonly detalheId = signal<string | null>(null);
-  /** O item aberto no detalhe, lido da lista: a releitura depois de uma decisão o tira. */
-  protected readonly detalhe = computed(() => {
-    const id = this.detalheId();
+  private readonly itemAbertoId = signal<string | null>(null);
+  /** O item da lista que o drawer abriu: dá o título enquanto o detalhe carrega. */
+  protected readonly itemAberto = computed(() => {
+    const id = this.itemAbertoId();
     return id === null ? null : (this.itens().find((item) => item.id === id) ?? null);
   });
+  protected readonly detalhe = signal<DetalheDaProtecaoDoCatalogoDto | null>(null);
+  protected readonly carregandoDetalhe = signal(false);
+  protected readonly erroDoDetalhe = signal<string | null>(null);
+  protected readonly naoEncontrado = signal(false);
 
-  protected readonly negativaAberta = signal(false);
-  protected readonly negativa = signal<NegativaEmCurso | null>(null);
-  protected readonly erroDaNegativa = signal<string | null>(null);
-  protected readonly tentouNegar = signal(false);
+  protected readonly decisaoAberta = signal(false);
+  protected readonly decisaoEmCurso = signal<DecisaoDaProtecao>('APROVAR');
+  protected readonly erroDaDecisaoNoDialogo = signal<string | null>(null);
+  protected readonly erroDaDecisaoNoDrawer = signal<string | null>(null);
+  protected readonly tentouDecidir = signal(false);
   protected readonly recomendada = new FormControl('', { nonNullable: true });
+  protected readonly justificativa = new FormControl('', { nonNullable: true });
+  protected readonly tamanhoDaJustificativa = toSignal(
+    this.justificativa.valueChanges.pipe(map((texto) => texto.length)),
+    { initialValue: 0 },
+  );
 
   /** A chave acompanha a intenção da decisão: repetir a mesma (rede, 5xx) reusa a chave; outra decisão ganha chave nova. */
   private chaveDaDecisao = idempotencyKey.create();
   private intencaoDaDecisao: string | null = null;
 
-  private readonly dominiosDosFatos = signal<ReadonlyMap<string, string>>(new Map());
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
   private readonly campoDaRecomendacao = viewChild<ElementRef<HTMLSelectElement>>('campoDaRecomendacao');
+  private readonly campoDaJustificativa = viewChild<ElementRef<HTMLTextAreaElement>>('campoDaJustificativa');
 
   /**
    * Só a classificação que a API aceitaria: não a que o item já tem, só a que admite a hipótese legal
    * declarada (art. 7º ou art. 11 da LGPD) e, no fato, só a que o tipo de dado comporta (texto, data e
-   * endereço nunca ficam abaixo de pessoal) — as mesmas regras do cadastro. Sem o tipo de dado conhecido,
-   * a API confere.
+   * endereço nunca ficam abaixo de pessoal) — as mesmas regras do cadastro.
    */
   protected readonly opcoesDaRecomendacao = computed(() => {
-    const item = this.negativa()?.item;
-    if (item === undefined) return [];
-    const dominio = item.tipo === 'FATO' ? this.dominiosDosFatos().get(item.codigo) : undefined;
-    const doDominio = dominio === undefined ? null : new Set(classificacoesDoDominio(dominio).map((opcao) => opcao.valor));
+    const item = this.detalhe();
+    if (item === null) return [];
+    const doDominio = item.fato === null ? null : new Set(classificacoesDoDominio(item.fato.dominio).map((opcao) => opcao.valor));
     return CLASSIFICACOES_DE_PROTECAO.filter(
       (opcao) =>
         opcao.valor !== item.classificacaoProtecao &&
@@ -294,8 +446,20 @@ export class ProtecaoDoCatalogoPage {
     );
   });
 
+  /** O erro da justificativa só aparece depois da tentativa de decidir ou quando passa do limite digitado. */
+  protected readonly erroDaJustificativa = computed<string | null>(() => {
+    const tamanho = this.tamanhoDaJustificativa();
+    if (tamanho > JUSTIFICATIVA_MAXIMA) return 'A justificativa aceita até 2.000 caracteres.';
+    if (this.tentouDecidir() && this.decisaoEmCurso() === 'REPROVAR' && this.justificativa.invalid) {
+      return 'Informe a justificativa da reprovação.';
+    }
+    return null;
+  });
+
   /** Cada leitura cancela a anterior: a resposta velha que chega depois não sobrescreve a nova. */
   private readonly leituras = new Subject<void>();
+  private readonly leiturasDoDetalhe = new Subject<{ readonly cadastro: CadastroDoCatalogo; readonly id: string }>();
+  private ultimoDetalhePedido: { readonly cadastro: CadastroDoCatalogo; readonly id: string } | null = null;
 
   constructor() {
     this.leituras
@@ -316,66 +480,120 @@ export class ProtecaoDoCatalogoPage {
         this.itens.set([]);
         this.erroDeCarga.set(this.problemI18n.resolve(resultado.problem).title);
       });
-    // O tipo de dado do fato não vem na lista; o catálogo público o informa para a regra do mínimo por domínio.
-    this.fatosApi
-      .listar()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.leiturasDoDetalhe
+      .pipe(
+        switchMap((pedido) => {
+          this.carregandoDetalhe.set(true);
+          this.erroDoDetalhe.set(null);
+          this.naoEncontrado.set(false);
+          this.detalhe.set(null);
+          return this.api.detalhar(pedido.cadastro, pedido.id);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe((resultado) => {
-        if (resultado.ok) this.dominiosDosFatos.set(new Map(resultado.data.map((fato) => [fato.codigo, fato.dominio])));
+        this.carregandoDetalhe.set(false);
+        if (resultado.ok) {
+          this.detalhe.set(resultado.data);
+          return;
+        }
+        this.naoEncontrado.set(resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO);
+        this.erroDoDetalhe.set(
+          this.naoEncontrado() ? 'O item não existe mais no catálogo.' : this.problemI18n.resolve(resultado.problem).title,
+        );
       });
     this.carregar();
   }
 
-  protected cadastro(item: ItemDaProtecaoDoCatalogoDto): string {
-    return nomeDoCadastro(item.tipo);
+  protected cadastro(tipo: string): string {
+    return nomeDoCadastro(tipo);
   }
 
-  protected abrirDetalhe(item: ItemDaProtecaoDoCatalogoDto): void {
-    this.detalheId.set(item.id);
-    this.detalheAberto.set(true);
+  protected categoriaDe(codigo: string): string {
+    return this.categorias.porCodigo().get(codigo)?.nome ?? codigo;
   }
 
   protected carregar(): void {
     this.leituras.next();
   }
 
-  protected aprovar(item: ItemDaProtecaoDoCatalogoDto): void {
-    this.decidir(item, { ...this.comando(item), decisao: 'APROVADA' }, 'Item aprovado', null);
+  protected abrirDetalhe(item: ItemDaProtecaoDoCatalogoDto): void {
+    this.itemAbertoId.set(item.id);
+    this.erroDaDecisaoNoDrawer.set(null);
+    if (item.tipo === 'TIPO_DOCUMENTO') this.categorias.garantirCarregado();
+    this.ultimoDetalhePedido = { cadastro: item.tipo as CadastroDoCatalogo, id: item.id };
+    this.detalheAberto.set(true);
+    this.leiturasDoDetalhe.next(this.ultimoDetalhePedido);
   }
 
-  protected abrirNegativa(item: ItemDaProtecaoDoCatalogoDto): void {
-    this.negativa.set({ item });
-    this.erroDaNegativa.set(null);
-    this.tentouNegar.set(false);
-    this.recomendada.reset('');
-    this.negativaAberta.set(true);
+  protected recarregarDetalhe(): void {
+    if (this.ultimoDetalhePedido !== null) this.leiturasDoDetalhe.next(this.ultimoDetalhePedido);
   }
 
-  protected negar(): void {
-    const negativa = this.negativa();
-    if (negativa === null || this.decidindo()) return;
-    this.tentouNegar.set(true);
-    const recomendada = this.recomendada.value;
-    if (recomendada === '') {
-      this.recomendada.setErrors({ required: true });
-      // O foco vai ao campo com o erro associado: sem isso, o leitor de tela não sabe por que nada aconteceu.
-      afterNextRender(() => this.campoDaRecomendacao()?.nativeElement.focus(), { injector: this.injector });
-      return;
-    }
-    this.decidir(
-      negativa.item,
-      { ...this.comando(negativa.item), decisao: 'NEGADA', classificacaoRecomendada: recomendada },
-      'Item negado',
-      (mensagem) => this.erroDaNegativa.set(mensagem),
+  protected aprovar(): void {
+    const item = this.detalhe();
+    if (item === null) return;
+    this.decisaoEmCurso.set('APROVAR');
+    this.decidir(item, { ...this.comando(item), decisao: 'APROVAR' }, 'Item aprovado', (mensagem) =>
+      this.erroDaDecisaoNoDrawer.set(mensagem),
     );
   }
 
+  protected abrirDecisao(decisao: Exclude<DecisaoDaProtecao, 'APROVAR'>): void {
+    this.decisaoEmCurso.set(decisao);
+    this.erroDaDecisaoNoDialogo.set(null);
+    this.tentouDecidir.set(false);
+    this.recomendada.reset('');
+    this.justificativa.reset('');
+    this.justificativa.setValidators(decisao === 'REPROVAR' ? [justificativaPreenchida] : []);
+    this.justificativa.updateValueAndValidity();
+    this.decisaoAberta.set(true);
+  }
+
+  protected confirmarDecisao(): void {
+    const item = this.detalhe();
+    if (item === null || this.decidindo()) return;
+    this.tentouDecidir.set(true);
+    const decisao = this.decisaoEmCurso();
+    const justificativa = this.justificativa.value.trim();
+    if (justificativa.length > JUSTIFICATIVA_MAXIMA) {
+      this.focarDepois(this.campoDaJustificativa);
+      return;
+    }
+    if (decisao === 'RECOMENDAR_AJUSTE' && this.recomendada.value === '') {
+      this.recomendada.setErrors({ required: true });
+      // O foco vai ao campo com o erro associado: sem isso, o leitor de tela não sabe por que nada aconteceu.
+      this.focarDepois(this.campoDaRecomendacao);
+      return;
+    }
+    if (decisao === 'REPROVAR' && justificativa.length === 0) {
+      this.focarDepois(this.campoDaJustificativa);
+      return;
+    }
+    const comando: DecidirProtecaoDoCatalogoRequest =
+      decisao === 'REPROVAR'
+        ? { ...this.comando(item), decisao, justificativa }
+        : {
+            ...this.comando(item),
+            decisao,
+            classificacaoRecomendada: this.recomendada.value,
+            justificativa: justificativa.length > 0 ? justificativa : null,
+          };
+    this.decidir(item, comando, decisao === 'REPROVAR' ? 'Item reprovado' : 'Ajuste recomendado', (mensagem) =>
+      this.erroDaDecisaoNoDialogo.set(mensagem),
+    );
+  }
+
+  private focarDepois(campo: () => ElementRef<HTMLElement> | undefined): void {
+    afterNextRender(() => campo()?.nativeElement.focus(), { injector: this.injector });
+  }
+
   /** O comando leva a proteção que a tela mostrou, para a API recusar a decisão sobre uma proteção que já mudou. */
-  private comando(item: ItemDaProtecaoDoCatalogoDto): DecidirProtecaoDoCatalogoCommand {
+  private comando(item: DetalheDaProtecaoDoCatalogoDto): DecidirProtecaoDoCatalogoRequest {
     return {
-      cadastro: item.tipo,
+      cadastro: item.tipo as CadastroDoCatalogo,
       itemId: item.id,
-      decisao: null,
+      decisao: 'APROVAR',
       classificacaoProtecao: item.classificacaoProtecao,
       hipoteseLegal: item.hipoteseLegal,
       finalidadeTratamento: item.finalidadeTratamento,
@@ -383,20 +601,22 @@ export class ProtecaoDoCatalogoPage {
   }
 
   /**
-   * Registra a decisão. No sucesso o item sai da lista e o foco vai ao título, porque o botão que o
-   * tinha desaparece com a linha. Na recusa a mensagem da API fica junto de onde a decisão foi
-   * tomada; quando a proteção mudou ou outra gravação venceu, a lista é relida, porque repetir a
+   * Registra a decisão. No sucesso o item sai da lista, o drawer fecha e o foco vai ao título, porque o
+   * botão que o tinha desaparece com a linha. Na recusa a mensagem da API fica junto de onde a decisão
+   * foi tomada; quando a proteção mudou ou outra gravação venceu, a lista é relida, porque repetir a
    * mesma decisão não dá certo.
    */
   private decidir(
-    item: ItemDaProtecaoDoCatalogoDto,
-    comando: DecidirProtecaoDoCatalogoCommand,
+    item: DetalheDaProtecaoDoCatalogoDto,
+    comando: DecidirProtecaoDoCatalogoRequest,
     sucesso: string,
-    naNegativa: ((mensagem: string) => void) | null,
+    aoRecusar: (mensagem: string) => void,
   ): void {
     if (this.decidindo()) return;
     this.decidindo.set(true);
     this.erroDaDecisao.set(null);
+    this.erroDaDecisaoNoDrawer.set(null);
+    this.erroDaDecisaoNoDialogo.set(null);
     this.api
       .decidir(comando, withIdempotencyKey(this.chaveDaIntencao(comando)))
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -404,19 +624,19 @@ export class ProtecaoDoCatalogoPage {
         this.decidindo.set(false);
         if (resultado.ok) {
           this.intencaoDaDecisao = null;
-          this.notifications.success(sucesso, item.codigo);
-          this.negativaAberta.set(false);
+          this.notifications.success(sucesso, item.nome);
+          this.decisaoAberta.set(false);
           this.detalheAberto.set(false);
           this.carregar();
           afterNextRender(() => this.titulo()?.nativeElement.focus(), { injector: this.injector });
           return;
         }
         if (deveRotacionarIdempotencyKey(resultado.problem)) this.intencaoDaDecisao = null;
-        this.recusar(resultado.problem, naNegativa);
+        this.recusar(resultado.problem, aoRecusar);
       });
   }
 
-  private chaveDaIntencao(comando: DecidirProtecaoDoCatalogoCommand): string {
+  private chaveDaIntencao(comando: DecidirProtecaoDoCatalogoRequest): string {
     const intencao = JSON.stringify(comando);
     if (intencao !== this.intencaoDaDecisao) {
       this.chaveDaDecisao = idempotencyKey.create();
@@ -425,26 +645,22 @@ export class ProtecaoDoCatalogoPage {
     return this.chaveDaDecisao;
   }
 
-  private recusar(problem: ProblemDetails, naNegativa: ((mensagem: string) => void) | null): void {
+  private recusar(problem: ProblemDetails, aoRecusar: (mensagem: string) => void): void {
     const mensagem = this.problemI18n.resolve(problem).title;
     if (problem.status === 409 || problem.status === 422) {
       // A situação do item não é a que a tela mostrava (proteção editada, decisão de outra pessoa, item fora da solicitação): a lista relida traz a atual ou tira o item. Repetir a mesma decisão não dá certo.
-      if (problem.status === 422 && problem.code !== ITEM_FORA_DE_SOLICITACAO) return this.mostrarRecusa(mensagem, problem, naNegativa);
-      this.negativaAberta.set(false);
+      if (problem.status === 422 && problem.code !== ITEM_FORA_DE_SOLICITACAO) return this.mostrarRecusa(mensagem, problem, aoRecusar);
+      this.decisaoAberta.set(false);
       this.detalheAberto.set(false);
       this.erroDaDecisao.set(`${mensagem}. A lista foi atualizada; confira o item e decida de novo.`);
       this.carregar();
       return;
     }
-    this.mostrarRecusa(mensagem, problem, naNegativa);
+    this.mostrarRecusa(mensagem, problem, aoRecusar);
   }
 
-  private mostrarRecusa(mensagem: string, problem: ProblemDetails, naNegativa: ((mensagem: string) => void) | null): void {
-    if (naNegativa === null) {
-      this.erroDaDecisao.set(mensagem);
-    } else {
-      naNegativa(mensagem);
-    }
+  private mostrarRecusa(mensagem: string, problem: ProblemDetails, aoRecusar: (mensagem: string) => void): void {
+    aoRecusar(mensagem);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem, { title: mensagem });
   }
 }

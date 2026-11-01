@@ -355,6 +355,7 @@ interface TipoDocumentoForm {
             <cfg-situacao-da-aprovacao
               [situacao]="situacao.situacao"
               [classificacaoRecomendada]="situacao.classificacaoRecomendada"
+              [justificativa]="situacao.justificativa"
             />
           }
           <section class="cfg-detalhe-secao">
@@ -390,6 +391,10 @@ interface TipoDocumentoForm {
                 <dt>Tamanho máximo</dt>
                 <dd>{{ tamanhoLabel(tipo.tamanhoMaximoMb) }}</dd>
               </div>
+              <div>
+                <dt>Cadastrado em</dt>
+                <dd>{{ dataDe(tipo.criadoEm) }}</dd>
+              </div>
             </dl>
           </section>
           <cfg-detalhe-da-protecao [protecao]="tipo" />
@@ -399,7 +404,7 @@ interface TipoDocumentoForm {
             Fechar
           </button>
           <ng-container *authTemPermissao="permissaoDeManter">
-            @if (aprovacao.aprovacaoDe(tipo.id)?.situacao === 'NEGADA') {
+            @if (aprovacao.aprovacaoDe(tipo.id)?.situacao === 'AJUSTE_RECOMENDADO') {
               <button type="button" class="btn btn--secondary" [disabled]="loading() || aceitando()" (click)="aceitarDoDetalhe(tipo)">
                 Aceitar recomendação
               </button>
@@ -438,10 +443,20 @@ interface TipoDocumentoForm {
         </ui-alert>
       }
 
-      @if (negadoEmEdicao(); as negado) {
-        <ui-alert variant="info" heading="Negado pela proteção de dados">
-          A classificação recomendada é {{ rotulo(classificacoes, negado.classificacaoRecomendada) }}.
-          Ajuste a proteção de dados abaixo e salve, ou feche e use "Aceitar recomendação" na lista.
+      @if (decididoEmEdicao(); as decisao) {
+        <ui-alert
+          variant="info"
+          [heading]="decisao.situacao === 'REPROVADA' ? 'Reprovado pela proteção de dados' : 'Ajuste recomendado pela proteção de dados'"
+        >
+          @if (decisao.situacao === 'AJUSTE_RECOMENDADO') {
+            A classificação recomendada é {{ rotulo(classificacoes, decisao.classificacaoRecomendada) }}.
+          }
+          @if (decisao.justificativa) {
+            <span class="cfg-justificativa">Justificativa: {{ decisao.justificativa }}</span>
+          }
+          Ajuste a proteção de dados abaixo e salve{{
+            decisao.situacao === 'AJUSTE_RECOMENDADO' ? ', ou feche e use "Aceitar recomendação" no detalhe' : ''
+          }}.
         </ui-alert>
       }
       @if (avisaNovaAprovacao()) {
@@ -1000,11 +1015,11 @@ export class TiposDocumentoListPage {
     hipotesesDaClassificacao(this.formValue().classificacaoProtecao),
   );
 
-  /** O tipo em edição que a proteção de dados negou: a recomendação aparece junto do formulário. */
-  protected readonly negadoEmEdicao = computed<AprovacaoDaProtecaoDto | null>(() => {
+  /** O tipo em edição que a proteção de dados recomendou ajustar ou reprovou: a decisão aparece junto do formulário. */
+  protected readonly decididoEmEdicao = computed<AprovacaoDaProtecaoDto | null>(() => {
     const id = this.tipoEmEdicaoId();
     const situacao = id === null || this.modo() !== 'editar' ? null : this.aprovacao.aprovacaoDe(id);
-    return situacao?.situacao === 'NEGADA' ? situacao : null;
+    return situacao?.situacao === 'AJUSTE_RECOMENDADO' || situacao?.situacao === 'REPROVADA' ? situacao : null;
   });
 
   /**
@@ -1119,6 +1134,11 @@ export class TiposDocumentoListPage {
     }
     return 'Vem do cadastro de categorias. Congelada no snapshot do edital.';
   });
+
+  /** A data do cadastro no fuso da Unifesspa, para o servidor em UTC não adiantar o dia. */
+  protected dataDe(instante: string): string {
+    return new Date(instante).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' });
+  }
 
   protected tamanhoLabel(valor: number | string | null): string {
     const normalizado = normalizarTamanhoMaximo(valor);

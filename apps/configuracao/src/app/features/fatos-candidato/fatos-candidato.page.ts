@@ -47,6 +47,9 @@ import {
   PagerComponent,
   SpinnerComponent,
   TagComponent,
+  deClausulasDoWire,
+  fatosParaLeitura,
+  resumoDaRegra,
   type UiFilterChipOption,
   type UiLookupFalho,
 } from '@uniplus/shared-ui/components';
@@ -337,6 +340,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             <cfg-situacao-da-aprovacao
               [situacao]="fato.aprovacao.situacao"
               [classificacaoRecomendada]="fato.aprovacao.classificacaoRecomendada"
+              [justificativa]="fato.aprovacao.justificativa"
             />
             <ui-tag [variant]="fato.ativo ? 'success' : 'neutral'">{{ fato.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
             @if (fato.sistema) {
@@ -411,12 +415,22 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
               </ul>
             </section>
           }
+          @if (fato.regrasPadrao.length > 0) {
+            <section class="cfg-detalhe-secao">
+              <h3 class="cfg-detalhe-secao__titulo">Regras padrão</h3>
+              <ul class="cfg-detalhe-valores">
+                @for (regra of fato.regrasPadrao; track $index) {
+                  <li>{{ descricaoDaRegra(fato, regra) }}</li>
+                }
+              </ul>
+            </section>
+          }
           <cfg-detalhe-da-protecao [protecao]="fato" />
         </div>
         <div class="cfg-form-footer">
           <button type="button" class="btn btn--tertiary btn--rect" (click)="detalheAberto.set(false)">Fechar</button>
           <ng-container *authTemPermissao="permissaoDeManter">
-            @if (fato.aprovacao.situacao === 'NEGADA') {
+            @if (fato.aprovacao.situacao === 'AJUSTE_RECOMENDADO') {
               <button type="button" class="btn btn--secondary" [disabled]="loading() || aceitando()" (click)="aceitarDoDetalhe(fato)">
                 Aceitar recomendação
               </button>
@@ -841,10 +855,16 @@ export class FatosCandidatoPage {
    * está aberta, e cada abertura busca de novo: o fato de membro pode ter sido criado há pouco.
    */
   protected readonly catalogo = useApiResource<readonly FatoCandidatoView[]>(() =>
-    this.drawerAberto() && this.fatoEmEdicao() === null && this.agregado()
+    (this.drawerAberto() && this.fatoEmEdicao() === null && this.agregado()) || this.detalheComRegras()
       ? { url: `${this.basePath}/api/configuracao/fatos-candidato`, context: withVendorMime('fato-candidato', 1) }
       : undefined,
   );
+  /** O catálogo nomeia os fatos que as regras padrão citam; só é pedido quando o detalhe aberto tem regra. */
+  private readonly detalheComRegras = computed(() => this.detalheAberto() && (this.detalhe()?.regrasPadrao.length ?? 0) > 0);
+  private readonly fatosNomeados = computed(() => {
+    const views = this.catalogo.data();
+    return views == null ? null : fatosParaLeitura(views);
+  });
   protected readonly catalogoComErro = computed(() => this.catalogo.problem() !== null || this.catalogo.error() !== undefined);
   protected readonly fatosDeMembro = computed(() => fatosDeMembroAgregaveis(this.catalogo.data() ?? []));
   protected readonly membroEscolhido = computed(
@@ -987,6 +1007,13 @@ export class FatosCandidatoPage {
     this.erroDaCriacao.set(null);
     this.chaveDaCriacao = idempotencyKey.create();
     this.drawerAberto.set(true);
+  }
+
+  /** A regra padrão em prosa: o valor que contribui e as condições, com os nomes do catálogo quando ele chegou. */
+  protected descricaoDaRegra(fato: FatoCandidatoDto, regra: FatoCandidatoDto['regrasPadrao'][number]): string {
+    const valor = regra.contribui === null ? null : (fato.valores.find((v) => v.codigo === regra.contribui)?.descricao ?? regra.contribui);
+    const quando = resumoDaRegra(deClausulasDoWire(regra.quando), this.fatosNomeados());
+    return `${valor === null ? 'É "sim"' : `Contribui "${valor}"`} quando: ${quando}`;
   }
 
   protected abrirDetalhe(fato: FatoCandidatoDto): void {

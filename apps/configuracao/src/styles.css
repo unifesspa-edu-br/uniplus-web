@@ -1048,3 +1048,14 @@ cfg-revogar-concessao-dialog .uni-dialog__header {
   align-items: flex-start;
   gap: var(--space-2);
 }
+
+.cfg-justificativa {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* Coluna da caixa de seleção: só o necessário para o alvo de toque. */
+.cfg-selecao {
+  width: 1%;
+  white-space: nowrap;
+}

@@ -26,6 +26,7 @@ const APROVADA: AprovacaoDaProtecaoDto = {
   solicitadaEm: null,
   decididaEm: null,
   classificacaoRecomendada: null,
+  justificativa: null,
   aceitaEm: null,
 };
 
