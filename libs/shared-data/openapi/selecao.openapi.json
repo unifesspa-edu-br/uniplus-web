@@ -18113,6 +18113,7 @@
       },
       "InscricaoAdministrativaDto": {
         "required": [
+          "id",
           "secoes",
           "derivados",
           "arquivos"
@@ -18120,10 +18121,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "format": "uuid"
           },
           "situacao": {
@@ -18197,13 +18195,13 @@
         }
       },
       "InscricaoDoProcessoDto": {
+        "required": [
+          "id"
+        ],
         "type": "object",
         "properties": {
           "id": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "format": "uuid"
           },
           "numeroInscricao": {
@@ -18237,9 +18235,13 @@
             "format": "uuid"
           },
           "nome": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NomeClassificadoDto"
+              }
             ]
           },
           "cpf": {
@@ -18494,7 +18496,6 @@
           "descricao",
           "tipo",
           "componente",
-          "valor",
           "podeRevelar"
         ],
         "type": "object",
@@ -23121,6 +23122,17 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "NomeClassificadoDto": {
+        "required": [
+          "valor"
+        ],
+        "type": "object",
+        "properties": {
+          "valor": {
+            "type": "string"
           }
         }
       }

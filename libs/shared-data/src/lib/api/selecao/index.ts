@@ -44,6 +44,7 @@ export type {
   InscricaoAdministrativaDto,
   InscricaoDoProcessoDto,
   ItemDeRespostaDto,
+  NomeClassificadoDto,
   OcorrenciaDaInscricaoDto,
   SecaoDaInscricaoDto,
   InscricaoDto,

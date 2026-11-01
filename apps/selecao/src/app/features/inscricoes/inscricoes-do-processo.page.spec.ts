@@ -66,7 +66,7 @@ const FERNANDA: InscricaoDoProcessoDto = {
   situacao: SituacaoInscricao.submetida,
   ofertaCursoId: OFERTA_MEDICINA,
   ofertaCursoSegundaOpcaoId: OFERTA_DIREITO,
-  nome: 'Fernanda Laura Nicole Drumond',
+  nome: { valor: 'Fernanda Laura Nicole Drumond' },
   cpf: { valor: '***.598.363-**', podeRevelar: false },
   submetidaEm: '2026-12-10T15:00:00Z',
 };
@@ -191,7 +191,7 @@ describe('InscricoesDoProcessoPage', () => {
     controller.expectNone((r) => r.url.startsWith(`${ROTA_LISTA}/`));
   });
 
-  it('não deixa marca do campo que a API omitiu, nem coluna que nenhuma linha traz', async () => {
+  it('na avaliação cega mostra só o público, sem nome nem CPF e sem marca de campo oculto', async () => {
     await abrir([
       { id: 'insc-leandro', situacao: SituacaoInscricao.submetida, ofertaCursoId: OFERTA_DIREITO },
     ]);
@@ -207,12 +207,23 @@ describe('InscricoesDoProcessoPage', () => {
     expect(cabecalhos()).toEqual(['1ª opção de curso', 'Ações']);
   });
 
-  it('mostra a linha sem conteúdo de quem só tem o acesso às inscrições', async () => {
-    await abrir([{}]);
+  it('mantém o link da linha de quem só tem o acesso às inscrições, sem dado visível', async () => {
+    await abrir([{ id: 'insc-manoel' }]);
 
     expect(cabecalhos()).toEqual(['Ações']);
     expect(celulas()).toEqual(['']);
-    expect(host().querySelector('tbody a')).toBeNull();
+    expect(host().querySelector('tbody a')?.getAttribute('href')).toBe(
+      `/processo-seletivo/${PROCESSO_ID}/inscricoes/insc-manoel`,
+    );
+    expect(nomesDosLinks()).toEqual([`${NOME_DA_INSCRICAO_SEM_DADOS}, 1ª da página`]);
+    expect(nomesDosLinks()[0]).toContain('Abrir inscrição');
+  });
+
+  it('mostra o CPF mascarado de quem não vê o nome, e o nome acessível do link o dispensa', async () => {
+    await abrir([{ id: 'insc-diogo', cpf: { valor: '***.598.363-**', podeRevelar: false } }]);
+
+    expect(cabecalhos()).toEqual(['CPF', 'Ações']);
+    expect(nomesDosLinks()).toEqual(['Abrir inscrição 1ª da página']);
   });
 
   it('leva cada linha ao detalhe da inscrição, pelo número no nome do link', async () => {

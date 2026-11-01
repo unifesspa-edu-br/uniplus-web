@@ -90,6 +90,9 @@ export { SituacaoDoArquivoDoCandidato } from './schema';
  */
 export type InscricaoDoProcessoDto = Schemas['InscricaoDoProcessoDto'];
 
+/** O nome do candidato na listagem: item classificado, que leva só o `valor`; a classificação não sai no JSON. */
+export type NomeClassificadoDto = Schemas['NomeClassificadoDto'];
+
 /** O CPF no padrão `***.999.999-**`; `podeRevelar` é sempre falso na listagem, porque a revelação é no detalhe. */
 export type CpfMascaradoDto = Schemas['CpfMascaradoDto'];
 
@@ -109,7 +112,8 @@ export type OcorrenciaDaInscricaoDto = Schemas['OcorrenciaDaInscricaoDto'];
 
 /**
  * Uma resposta do formulário. O `tipo` diz como ler o `valor` e o `componente`, como exibi-lo; o
- * `valor` do identificador já vem mascarado.
+ * `valor` do identificador já vem mascarado. Quem só pode revelar o identificador recebe o item sem
+ * `valor` e com `podeRevelar` verdadeiro.
  */
 export type ItemDeRespostaDto = Schemas['ItemDeRespostaDto'];
 

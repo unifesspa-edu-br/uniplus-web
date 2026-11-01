@@ -10664,7 +10664,7 @@ export interface components {
         };
         readonly InscricaoAdministrativaDto: {
             /** Format: uuid */
-            readonly id?: null | string;
+            readonly id: string;
             readonly situacao?: null | components["schemas"]["SituacaoInscricao"];
             /** Format: uuid */
             readonly ofertaCursoId?: null | string;
@@ -10682,14 +10682,14 @@ export interface components {
         };
         readonly InscricaoDoProcessoDto: {
             /** Format: uuid */
-            readonly id?: null | string;
+            readonly id: string;
             readonly numeroInscricao?: null | string;
             readonly situacao?: null | components["schemas"]["SituacaoInscricao"];
             /** Format: uuid */
             readonly ofertaCursoId?: null | string;
             /** Format: uuid */
             readonly ofertaCursoSegundaOpcaoId?: null | string;
-            readonly nome?: null | string;
+            readonly nome?: null | components["schemas"]["NomeClassificadoDto"];
             readonly cpf?: null | components["schemas"]["CpfMascaradoDto"];
             /** Format: date-time */
             readonly submetidaEm?: null | string;
@@ -10756,7 +10756,7 @@ export interface components {
             readonly descricao: string;
             readonly tipo: string;
             readonly componente: string;
-            readonly valor: components["schemas"]["JsonElement"];
+            readonly valor?: components["schemas"]["JsonElement"];
             readonly podeRevelar: boolean;
         };
         readonly ItemDocumentoExigidoInput: {
@@ -11778,6 +11778,9 @@ export interface components {
             /** Format: int32 */
             readonly ordem: number | string;
             readonly orientacao?: null | string;
+        };
+        readonly NomeClassificadoDto: {
+            readonly valor: string;
         };
     };
     responses: never;
