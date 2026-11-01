@@ -11,4 +11,10 @@ export const INSCRICOES_DO_PROCESSO_ROUTES: Routes = [
       import('./inscricoes-do-processo.page').then((m) => m.InscricoesDoProcessoPage),
     data: { breadcrumb: 'Inscrições' },
   },
+  {
+    path: ':inscricaoId',
+    loadComponent: () =>
+      import('./detalhe-da-inscricao.page').then((m) => m.DetalheDaInscricaoPage),
+    data: { breadcrumb: 'Inscrição' },
+  },
 ];

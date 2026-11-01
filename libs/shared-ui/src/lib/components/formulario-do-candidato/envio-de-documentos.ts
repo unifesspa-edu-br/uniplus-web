@@ -1,4 +1,5 @@
 import type { Signal } from '@angular/core';
+import { formatarDataBr, formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 
 import type { FaseDoArquivo } from '../file-upload/file-upload';
 import type { DocumentoExigido } from '../lista-de-documentos/lista-de-documentos';
@@ -190,6 +191,28 @@ export function formatosDaExigencia(formatosAceitos: readonly string[]): {
 /** O rótulo do formato de um tipo de mídia ("JPG" para image/jpeg), o mesmo que a zona de envio mostra; nulo se não é um formato da inscrição. */
 export function rotuloDoFormato(tipoDeMidia: string): string | null {
   return FORMATOS_DO_ARMAZENAMENTO.find((f) => f.tiposDeMidia.includes(tipoDeMidia))?.rotulo ?? null;
+}
+
+/** O que se sabe de um arquivo enviado para dizer o que ele é: o formato, o tamanho e o envio. */
+export interface DadosDoArquivoEnviado {
+  readonly tipoDeMidia: string;
+  readonly tamanhoBytes?: number | string | null;
+  readonly confirmadoEm: string;
+}
+
+/**
+ * "PDF · 303,1 KB · enviado em 22/10/2026, 09:33": o formato, o tamanho quando já se sabe e o envio.
+ * O formato que o envio não conhece é omitido, e não mostrado como tipo de mídia cru.
+ */
+export function detalheDoArquivoEnviado(arquivo: DadosDoArquivoEnviado): string {
+  const enviadoEm = formatarDataBr(arquivo.confirmadoEm, 'datetime');
+  return [
+    rotuloDoFormato(arquivo.tipoDeMidia),
+    arquivo.tamanhoBytes == null ? null : formatarTamanhoDeArquivo(arquivo.tamanhoBytes),
+    enviadoEm ? `enviado em ${enviadoEm}` : null,
+  ]
+    .filter((parte) => !!parte)
+    .join(' · ');
 }
 
 /** O tipo de mídia que o envio declara, pela extensão; nulo quando o formato não serve à inscrição. */

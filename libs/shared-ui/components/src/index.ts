@@ -32,7 +32,11 @@ export {
   ListaDeDocumentosComponent,
   type DocumentoExigido,
 } from '../../src/lib/components/lista-de-documentos/lista-de-documentos';
-export { FileUploadComponent, type ArquivoEmEnvio, type FaseDoArquivo } from '../../src/lib/components/file-upload/file-upload';
+export {
+  FileUploadComponent,
+  type ArquivoEmEnvio,
+  type FaseDoArquivo,
+} from '../../src/lib/components/file-upload/file-upload';
 export {
   FilterBarComponent,
   type UiFiltroAtivo,
@@ -172,6 +176,7 @@ export {
   ValorEmConsultaComponent,
   type UiValorEmConsulta,
 } from '../../src/lib/components/valor-em-consulta/valor-em-consulta';
+export { ValorApresentadoComponent } from '../../src/lib/components/lista-de-dados/valor-apresentado';
 export { DadoDirective } from '../../src/lib/components/lista-de-dados/dado';
 export {
   ListaDeDadosComponent,
@@ -195,10 +200,12 @@ export {
 } from '../../src/lib/components/steps/steps.component';
 export { StepsResponsivoComponent } from '../../src/lib/components/steps-responsivo/steps-responsivo.component';
 export {
+  detalheDoArquivoEnviado,
   regrasDoArquivo,
   rotuloDoFormato,
   tipoDeMidiaDoArquivo,
   type AlvoDoEnvio,
+  type DadosDoArquivoEnviado,
   type ArquivoEnviado,
   type DesfechoDaRemocao,
   type DesfechoDoDownload,

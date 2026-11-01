@@ -7,7 +7,6 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { formatarDataBr, formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 
 import { type ArquivoEmEnvio, FileUploadComponent } from '../file-upload/file-upload';
 import { TagComponent } from '../tag/tag';
@@ -17,8 +16,8 @@ import {
   type ArquivoEnviado,
   type EnvioDeDocumentos,
   type SituacaoDaExigencia,
+  detalheDoArquivoEnviado,
   regrasDoArquivo,
-  rotuloDoFormato,
 } from './envio-de-documentos';
 
 const TEXTO_DA_SITUACAO: Readonly<Record<SituacaoDaExigencia, string>> = {
@@ -166,7 +165,7 @@ export class EnvioDoDocumentoComponent {
       (arquivo): ArquivoEmEnvio => ({
         id: arquivo.arquivoId,
         nome: arquivo.rotulo,
-        detalhe: detalheDoArquivo(arquivo),
+        detalhe: detalheDoArquivoEnviado(arquivo),
         ...faseDaVerificacao(arquivo),
         progresso: 100,
         podeRetirar: this.podeRemover() && !removendo.has(arquivo.arquivoId),
@@ -328,14 +327,3 @@ function faseDaVerificacao(
   }
 }
 
-/** "PDF · 303,1 KB · enviado em 22/10/2026, 09:33": o formato, o tamanho quando já se sabe e o envio. */
-function detalheDoArquivo(arquivo: ArquivoEnviado): string {
-  const enviadoEm = formatarDataBr(arquivo.confirmadoEm, 'datetime');
-  return [
-    rotuloDoFormato(arquivo.tipoDeMidia),
-    arquivo.tamanhoBytes === null ? null : formatarTamanhoDeArquivo(arquivo.tamanhoBytes),
-    enviadoEm ? `enviado em ${enviadoEm}` : null,
-  ]
-    .filter((parte) => !!parte)
-    .join(' · ');
-}
