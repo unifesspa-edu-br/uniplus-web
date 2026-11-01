@@ -114,11 +114,13 @@ interface CorpoDoPerfil {
               @for (perfil of pagina.itens(); track perfil.id) {
                 <tr>
                   <td data-label="Nome">
-                    {{ perfil.nome }}
-                    @if (perfil.governanca) {
-                      <ui-tag variant="info">Governança</ui-tag>
-                    }
-                    <br /><small>{{ perfil.descricao }}</small>
+                    <div>
+                      {{ perfil.nome }}
+                      @if (perfil.governanca) {
+                        <ui-tag variant="info">Governança</ui-tag>
+                      }
+                      <div class="table-responsive__meta">{{ perfil.descricao }}</div>
+                    </div>
                   </td>
                   <td data-label="Permissões">{{ perfil.permissoes.length }}</td>
                   <td data-label="Sensibilidade">{{ sensibilidadeDe(perfil.sensibilidade) }}</td>
@@ -237,10 +239,10 @@ interface CorpoDoPerfil {
                     <span class="checkbox__box" aria-hidden="true"></span>
                     <span>
                       {{ permissao.nome }}
-                      <small>
+                      <span class="field__hint">
                         · {{ sensibilidadeDe(permissao.sensibilidade) }} ·
-                        <code>{{ permissao.codigo }}</code>
-                      </small>
+                        <code class="ui-code">{{ permissao.codigo }}</code>
+                      </span>
                     </span>
                   </label>
                 }

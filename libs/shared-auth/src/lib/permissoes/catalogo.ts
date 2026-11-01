@@ -43,7 +43,10 @@ export const PERMISSAO = {
     tiposAtoManter: 'publicacoes:tipos-ato:manter',
   },
   selecao: {
+    documentosIdentificadoresConsultar: 'selecao:documentos-identificadores:consultar',
+    documentosInternosConsultar: 'selecao:documentos-internos:consultar',
     documentosPessoaisConsultar: 'selecao:documentos-pessoais:consultar',
+    documentosPublicosConsultar: 'selecao:documentos-publicos:consultar',
     documentosSensiveisConsultar: 'selecao:documentos-sensiveis:consultar',
     enviosInepGerar: 'selecao:envios-inep:gerar',
     inscricoesConsultar: 'selecao:inscricoes:consultar',
