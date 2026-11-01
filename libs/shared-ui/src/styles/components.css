@@ -2655,6 +2655,19 @@ ui-icon-button {
   }
 }
 
+/* Tabela de muitas colunas: recuo lateral menor nas células, para os valores curtos caberem numa linha
+   sem rolagem horizontal. Só vale na tabela; o cartão (< 768 px) mantém o recuo próprio. */
+@media (min-width: 768px) {
+  .table-responsive--compacta thead th,
+  .table-responsive--compacta td {
+    padding-inline: var(--space-2);
+  }
+  /* O código técnico é o valor mais largo da linha: menor, deixa mais largura para o nome. */
+  .table-responsive--compacta td code {
+    font-size: var(--text-xs);
+  }
+}
+
 /* Linha clicável por alvo estendido. O nome do item é um <button class="table-responsive__alvo">
    que abre o detalhe; o ::after dele cobre a linha inteira (a <tr> é o bloco de referência), sem
    `(click)` na <tr>. As ações da linha ficam acima do alvo e seguem clicáveis. Na tabela e no
