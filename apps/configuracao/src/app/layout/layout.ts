@@ -93,6 +93,12 @@ export class LayoutComponent {
           exact: true,
         },
         {
+          label: 'Proteção de Dados do Catálogo',
+          icon: 'pi-verified',
+          routerLink: '/protecao-do-catalogo',
+          exact: true,
+        },
+        {
           label: 'Fato do Candidato',
           icon: 'pi-list',
           routerLink: '/fatos-candidato',

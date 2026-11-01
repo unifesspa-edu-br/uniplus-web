@@ -68,6 +68,14 @@ describe('appRoutes — acesso pelas permissões efetivas', () => {
     expect(await ir('/modelos-formulario/abc')).toBe('/acesso-negado');
   });
 
+  it('abre a aprovação da proteção do catálogo só com a permissão de aprovar, e não a de manter o cadastro', async () => {
+    concedidas.set(['configuracao:tipos-documento:manter']);
+    expect(await ir('/protecao-do-catalogo')).toBe('/acesso-negado');
+
+    concedidas.set(['configuracao:protecao-do-catalogo:aprovar']);
+    expect(await ir('/protecao-do-catalogo')).toBe('/protecao-do-catalogo');
+  });
+
   it('sem nenhuma permissão, não abre o módulo e não quebra', async () => {
     expect(await ir('/')).toBe('/acesso-negado');
     expect(await ir('/campi')).toBe('/acesso-negado');

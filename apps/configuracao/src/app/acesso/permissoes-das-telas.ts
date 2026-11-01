@@ -35,6 +35,7 @@ export const PERMISSOES_DAS_TELAS = {
   'modelos-formulario': [configuracao.modelosFormularioConsultar],
   'simulador-de-formulario': [configuracao.modelosFormularioConsultar],
   'tipos-documento': [configuracao.tiposDocumentoManter],
+  'protecao-do-catalogo': [configuracao.protecaoDoCatalogoAprovar],
   'base-legal-bonus-regional': [configuracao.baseLegalBonusRegionalManter],
   'condicoes-atendimento': [configuracao.condicoesAtendimentoManter],
   'recursos-acessibilidade': [configuracao.recursosAcessibilidadeManter],

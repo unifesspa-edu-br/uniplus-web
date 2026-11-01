@@ -1202,6 +1202,7 @@ export class TiposDocumentoListPage {
           this.confirmAceiteAberto.set(false);
           this.tipoParaAceitar.set(null);
           this.aprovacao.carregar();
+          this.recarregar();
           this.focarTituloDaLista();
           return;
         }

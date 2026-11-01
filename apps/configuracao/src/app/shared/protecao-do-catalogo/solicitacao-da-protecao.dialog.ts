@@ -9,19 +9,14 @@ import {
   type SolicitacaoDaProtecaoDto,
 } from '@uniplus/shared-data/configuracao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { CLASSIFICACOES_DE_PROTECAO, rotuloDe } from './protecao-de-dados';
-
-const NOME_DO_CADASTRO: Readonly<Record<string, string>> = {
-  TIPO_DOCUMENTO: 'Tipo de documento',
-  FATO: 'Fato do candidato',
-};
+import { CLASSIFICACOES_DE_PROTECAO, nomeDoCadastro, rotuloDe } from './protecao-de-dados';
 
 /**
  * A solicitação de aprovação da proteção de dados (UNI-REQ-0205): mostra os itens pendentes que
  * seguem juntos e os envia de uma vez. Só depois do envio a proteção de dados é avisada.
  *
- * O foco não volta ao botão que abriu o diálogo: com a solicitação enviada o botão some, e quem
- * hospeda leva o foco ao título da lista pelo evento `enviada`.
+ * Ao cancelar o foco volta ao botão que abriu o diálogo; com a solicitação enviada o botão some, e
+ * quem hospeda leva o foco ao título da lista pelo evento `enviada`.
  */
 @Component({
   selector: 'cfg-solicitacao-da-protecao-dialog',
@@ -33,7 +28,6 @@ const NOME_DO_CADASTRO: Readonly<Record<string, string>> = {
       [(visible)]="visible"
       heading="Enviar solicitação de aprovação"
       [dismissible]="!enviando()"
-      [restoreFocus]="false"
     >
       @if (erro()) {
         <ui-alert variant="danger" heading="Não foi possível enviar a solicitação">{{ erro() }}</ui-alert>
@@ -108,7 +102,7 @@ export class SolicitacaoDaProtecaoDialogComponent {
   }
 
   protected cadastro(item: ItemDaProtecaoDoCatalogoDto): string {
-    return NOME_DO_CADASTRO[item.tipo] ?? item.tipo;
+    return nomeDoCadastro(item.tipo);
   }
 
   protected classificacao(item: ItemDaProtecaoDoCatalogoDto): string {

@@ -76,3 +76,13 @@ export function esvaziarSeForaDas(controle: FormControl<string>, opcoes: readonl
     controle.setValue('');
   }
 }
+
+const NOME_DO_CADASTRO: Readonly<Record<string, string>> = {
+  TIPO_DOCUMENTO: 'Tipo de documento',
+  FATO: 'Fato do candidato',
+};
+
+/** O nome que a tela dá ao cadastro de um item do catálogo. */
+export function nomeDoCadastro(cadastro: string): string {
+  return NOME_DO_CADASTRO[cadastro] ?? cadastro;
+}

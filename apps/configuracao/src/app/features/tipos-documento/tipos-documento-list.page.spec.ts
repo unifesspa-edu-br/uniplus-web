@@ -965,6 +965,33 @@ describe('TiposDocumentoListPage', () => {
       expect(texto()).toContain('Aguardando a proteção de dados');
     });
 
+    it('a solicitação sem quem a aprove fica no diálogo, com a mensagem da API, e não recarrega a lista', async () => {
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'PENDENTE' })]);
+      fixture.detectChanges();
+      botao('Enviar solicitação')?.click();
+      fixture.detectChanges();
+
+      Array.from<HTMLButtonElement>(
+        fixture.nativeElement.querySelectorAll('cfg-solicitacao-da-protecao-dialog button'),
+      )
+        .find((b) => b.textContent?.includes('Enviar solicitação'))
+        ?.click();
+      controller.expectOne(`${URL_PROTECAO}/solicitacoes`).flush(
+        JSON.stringify({
+          status: 422,
+          code: 'uniplus.configuracao.protecao_do_catalogo.sem_quem_aprove',
+          title: 'Ninguém tem a permissão de aprovar a proteção de dados do catálogo',
+        }),
+        { status: 422, statusText: 'Recusa', headers: { 'content-type': 'application/problem+json' } },
+      );
+      await propagate();
+      fixture.detectChanges();
+
+      expect(component['solicitacaoAberta']()).toBe(true);
+      expect(texto()).toContain('Ninguém tem a permissão de aprovar a proteção de dados do catálogo');
+      expect(botao('Enviar solicitação')).toBeDefined();
+    });
+
     it('aceita a recomendação do tipo negado, e ele sai da lista de pendências', async () => {
       await flushLista(
         [laudoSeed],
@@ -984,6 +1011,10 @@ describe('TiposDocumentoListPage', () => {
       expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
       post.flush(null, { status: 204, statusText: 'No Content' });
       await propagate();
+      // A classificação aceita muda o tipo: a lista é relida, senão a edição regravaria a antiga.
+      controller
+        .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`)
+        .flush([{ ...laudoSeed, classificacaoProtecao: 'SENSIVEL' }]);
       flushProtecao([]);
       await propagate();
       fixture.detectChanges();
