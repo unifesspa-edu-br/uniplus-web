@@ -19,10 +19,10 @@ import {
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
-  CURSO_INDISPONIVEL,
   InscricoesDoProcessoPage,
   NOME_DA_INSCRICAO_SEM_DADOS,
 } from './inscricoes-do-processo.page';
+import { CURSO_INDISPONIVEL } from './nome-da-oferta';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
@@ -287,6 +287,8 @@ describe('InscricoesDoProcessoPage', () => {
 
     botao('Tentar novamente').click();
     await propagar();
+    expect(botao('Tentar novamente').disabled).toBe(true);
+    expect(host().querySelector('[role="status"]')?.textContent).toContain('Recarregando');
     doCertame().flush(certame());
     await propagar();
 

@@ -15,20 +15,13 @@ import {
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
+import { AvisoDoCertameComponent } from './aviso-do-certame.component';
 import { InscricoesDoProcesso } from './inscricoes-do-processo.service';
-import { OFERTA_NAO_IDENTIFICADA } from './nome-da-oferta';
+import { cursoExibido, type CursoExibido } from './nome-da-oferta';
 import { rotuloDaSituacao, varianteDaSituacao } from './situacao-da-inscricao';
 
 /** Nome do link de uma linha em que a pessoa não vê o número nem o curso. */
 export const NOME_DA_INSCRICAO_SEM_DADOS = 'Inscrição sem dados visíveis';
-
-/** O curso como a célula o mostra: `texto` nulo é o certame ainda carregando. */
-interface CursoExibido {
-  readonly texto: string | null;
-}
-
-/** Texto da célula do curso quando o certame, que o nomeia, não pôde ser lido. */
-export const CURSO_INDISPONIVEL = 'Nome do curso indisponível';
 
 /** Uma linha pronta para a tabela: cada campo é o que a API devolveu, ou `null` quando ela o omitiu. */
 interface LinhaDaInscricao {
@@ -84,6 +77,7 @@ function nomeDoLink(
     NgTemplateOutlet,
     RouterLink,
     AlertComponent,
+    AvisoDoCertameComponent,
     DateBrPipe,
     EmptyStateComponent,
     IconButtonComponent,
@@ -120,21 +114,10 @@ function nomeDoLink(
         </ui-alert>
       }
       @if (inscricoes.situacaoDoCertame() === 'falha') {
-        <ui-alert
-          variant="warning"
-          heading="Não foi possível carregar o nome do processo e dos cursos"
-        >
-          Os cursos aparecem sem nome até a leitura dar certo.
-          <span class="insc-page__tentar">
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              (click)="inscricoes.recarregarCertame()"
-            >
-              Tentar novamente
-            </button>
-          </span>
-        </ui-alert>
+        <sel-aviso-do-certame
+          [carregando]="inscricoes.carregandoCertame()"
+          (tentar)="inscricoes.recarregarCertame()"
+        />
       }
       @if (situacao.estado === 'falha') {
         <ui-alert variant="danger" heading="Não foi possível carregar as inscrições">
@@ -365,17 +348,11 @@ export class InscricoesDoProcessoPage {
   }
 
   private curso(ofertaId: string | null | undefined): CursoExibido | null {
-    if (ofertaId == null) return null;
-    switch (this.inscricoes.situacaoDoCertame()) {
-      case 'lendo':
-        return { texto: null };
-      case 'falha':
-        return { texto: CURSO_INDISPONIVEL };
-      case 'lido':
-        return {
-          texto: this.inscricoes.nomesDasOfertas().get(ofertaId) ?? OFERTA_NAO_IDENTIFICADA,
-        };
-    }
+    return cursoExibido(
+      this.inscricoes.situacaoDoCertame(),
+      this.inscricoes.nomesDasOfertas(),
+      ofertaId,
+    );
   }
 
   private linha(inscricao: InscricaoDoProcessoDto, indice: number): LinhaDaInscricao {
