@@ -185,6 +185,12 @@ describe('InscricoesDoProcessoPage', () => {
     expect(host().textContent).not.toContain('Revelar');
   });
 
+  it('não consulta o detalhe de nenhuma inscrição ao listar', async () => {
+    await abrir([FERNANDA]);
+
+    controller.expectNone((r) => r.url.startsWith(`${ROTA_LISTA}/`));
+  });
+
   it('não deixa marca do campo que a API omitiu, nem coluna que nenhuma linha traz', async () => {
     await abrir([
       { id: 'insc-leandro', situacao: SituacaoInscricao.submetida, ofertaCursoId: OFERTA_DIREITO },
