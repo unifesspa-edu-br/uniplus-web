@@ -14,7 +14,7 @@ const corRaca = (sistema: boolean): FatoCandidatoDto => ({
   id: ID,
   codigo: 'COR_RACA',
   nome: 'Cor ou raça',
-  descricao: '',
+  descricao: 'Cor ou raça autodeclarada.',
   componenteExibicao: null,
   dominio: 'CATEGORICO',
   origem: 'DECLARADO',
@@ -90,6 +90,7 @@ describe('FatoCandidatoEdicaoComponent', () => {
     expect(tela.textContent).not.toContain('Acrescentar valor');
     expect(tela.textContent).not.toContain('Desativar');
     expect((tela.querySelector('input[formcontrolname="nome"]') as HTMLInputElement).readOnly).toBe(true);
+    expect(tela.querySelector<HTMLSelectElement>('select[formcontrolname="componenteExibicao"]')?.disabled).toBe(true);
     const definicao = tela.querySelector('ui-recolhivel button') as HTMLButtonElement;
     expect(definicao.getAttribute('aria-expanded')).toBe('true');
   });
@@ -102,6 +103,73 @@ describe('FatoCandidatoEdicaoComponent', () => {
     fixture.detectChanges();
 
     controller.expectNone(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}`);
+  });
+
+  async function recarregar(): Promise<void> {
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    controller.match(`${BASE}/api/configuracao/admin/fatos-candidato/${ID}`).forEach((r) => r.flush(corRaca(false)));
+    controller.match(`${BASE}/api/configuracao/fatos-candidato`).forEach((r) => r.flush([]));
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+  }
+
+  it('a edição é integral: salva nome, descrição e componente, e o componente vazio é enviado como nulo', async () => {
+    const tela = await carregar({ ...corRaca(false), componenteExibicao: 'MOEDA' });
+    const select = tela.querySelector<HTMLSelectElement>('select[formcontrolname="componenteExibicao"]');
+    expect(Array.from(select?.options ?? []).map((o) => o.textContent?.trim())).toEqual(['Padrão (pelo tipo do dado)', 'Moeda', 'Situação']);
+    expect(select?.value).toBe('MOEDA');
+
+    fixture.componentInstance['salvarDescritivo']();
+    const mantido = controller.expectOne((r) => r.method === 'PUT' && r.url.endsWith(`/fatos-candidato/${ID}`));
+    expect(mantido.request.body).toEqual({ nome: 'Cor ou raça', descricao: 'Cor ou raça autodeclarada.', componenteExibicao: 'MOEDA' });
+    mantido.flush(null, { status: 204, statusText: 'No Content' });
+    await Promise.resolve();
+    await recarregar();
+
+    fixture.componentInstance['descritivo'].controls.componenteExibicao.setValue('');
+    fixture.componentInstance['salvarDescritivo']();
+    const limpo = controller.expectOne((r) => r.method === 'PUT' && r.url.endsWith(`/fatos-candidato/${ID}`));
+    expect(limpo.request.body).toMatchObject({ componenteExibicao: null });
+    limpo.flush(null, { status: 204, statusText: 'No Content' });
+    await Promise.resolve();
+    await recarregar();
+  });
+
+  it('a descrição em branco não salva, é anunciada como obrigatória e o erro fica associado ao campo', async () => {
+    const tela = await carregar(corRaca(false));
+    fixture.componentInstance['descritivo'].controls.descricao.setValue('   ');
+
+    fixture.componentInstance['salvarDescritivo']();
+    fixture.detectChanges();
+
+    controller.expectNone((r) => r.method === 'PUT');
+    const campo = tela.querySelector<HTMLTextAreaElement>('textarea[formcontrolname="descricao"]');
+    expect(campo?.getAttribute('aria-required')).toBe('true');
+    expect(campo?.getAttribute('aria-invalid')).toBe('true');
+    expect(tela.querySelector(`#${campo?.getAttribute('aria-describedby')}`)?.textContent?.trim()).not.toBe('');
+  });
+
+  it('o fato sem descrição abre com o campo vazio e obrigatório, sem quebrar a validação', async () => {
+    const tela = await carregar({ ...corRaca(false), descricao: null } as unknown as FatoCandidatoDto);
+
+    expect(tela.querySelector<HTMLTextAreaElement>('textarea[formcontrolname="descricao"]')?.value).toBe('');
+    expect(fixture.componentInstance['descritivo'].controls.descricao.hasError('required')).toBe(true);
+  });
+
+  it('no fato de sistema nome, descrição e componente são editáveis, e o aviso cita os quatro itens', async () => {
+    const tela = await carregar({ ...corRaca(true), componenteExibicao: 'SITUACAO' });
+
+    expect(tela.textContent).toContain('Só o nome, a descrição, o componente de exibição e a proteção de dados podem ser alterados');
+    expect(tela.querySelector<HTMLSelectElement>('select[formcontrolname="componenteExibicao"]')?.disabled).toBe(false);
+    expect(tela.querySelector<HTMLTextAreaElement>('textarea[formcontrolname="descricao"]')?.readOnly).toBe(false);
+    expect(tela.querySelector('.cfg-fato-definicao')?.textContent).toContain('Situação');
+  });
+
+  it('o resumo do fato mostra o rótulo do padrão quando não há componente declarado', async () => {
+    const tela = await carregar(corRaca(true));
+
+    expect(tela.querySelector('.cfg-fato-definicao')?.textContent).toContain('Componente de exibiçãoPadrão (pelo tipo do dado)');
   });
 
   it('CA-03: no fato do administrador, os valores se acrescentam e desativam', async () => {

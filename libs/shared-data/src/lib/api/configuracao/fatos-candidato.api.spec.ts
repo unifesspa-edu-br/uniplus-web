@@ -37,7 +37,7 @@ describe('FatosCandidatoApi', () => {
     ['criarAgregado', () => api.criarAgregado({} as never, chave()), 'POST', `${ADMIN}/agregados`],
     [
       'atualizarDescritivo',
-      () => api.atualizarDescritivo(ID, { nome: 'N', descricao: null }, chave()),
+      () => api.atualizarDescritivo(ID, { nome: 'N', descricao: 'D', componenteExibicao: null }, chave()),
       'PUT',
       `${ADMIN}/${ID}`,
     ],

@@ -42,7 +42,10 @@ import {
   ESCOPOS,
   FONTES_DE_VALORES,
   FORMATOS_DE_TEXTO,
+  COMPONENTES_DE_EXIBICAO,
   ORIGENS,
+  obrigatorioNaoEmBranco,
+  ROTULO_DO_COMPONENTE_PADRAO,
   DOMINIOS_DO_DERIVADO,
   campoDaRecusa,
   citacoesDaRecusa,
@@ -208,6 +211,8 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
             }
             <dt>Escopo</dt>
             <dd>{{ rotulo(escopos, f.escopo) }}</dd>
+            <dt>Componente de exibição</dt>
+            <dd>{{ f.componenteExibicao ? rotulo(componentes, f.componenteExibicao) : rotuloDoPadrao }}</dd>
             <dt>Conhecido a partir da fase</dt>
             <dd><code>{{ f.pontoResolucao }}</code></dd>
             @if (comProtecao) {
@@ -225,7 +230,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
     @if (fato(); as f) {
       @if (f.sistema) {
         <ui-alert variant="info" heading="Fato de sistema">
-          Este fato é resolvido pelo próprio sistema. Só o nome, a descrição e a proteção de dados podem ser alterados; a proteção passa pela aprovação da proteção de dados.
+          Este fato é resolvido pelo próprio sistema. Só o nome, a descrição, o componente de exibição e a proteção de dados podem ser alterados; a proteção passa pela aprovação da proteção de dados.
         </ui-alert>
       }
       <div class="cfg-fato-aprovacao">
@@ -242,15 +247,27 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
           }
         </label>
         <label class="field" [class.is-error]="erroDescritivo('descricao')">
-          <span class="field__label">Descrição</span>
-          <textarea class="textarea" rows="3" formControlName="descricao" [readonly]="somenteLeitura()" [attr.aria-invalid]="erroDescritivo('descricao') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('descricao') ? 'cfg-fato-ed-descricao-erro' : null"></textarea>
+          <span class="field__label is-required">Descrição</span>
+          <textarea class="textarea" rows="3" formControlName="descricao" [readonly]="somenteLeitura()" aria-required="true" [attr.aria-invalid]="erroDescritivo('descricao') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('descricao') ? 'cfg-fato-ed-descricao-erro' : null"></textarea>
           @if (erroDescritivo('descricao')) {
             <span class="field__error" id="cfg-fato-ed-descricao-erro">{{ erroDescritivo('descricao') }}</span>
           }
         </label>
+        <label class="field" [class.is-error]="erroDescritivo('componenteExibicao')">
+          <span class="field__label">Componente de exibição</span>
+          <select class="select" formControlName="componenteExibicao" [attr.aria-invalid]="erroDescritivo('componenteExibicao') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('componenteExibicao') ? 'cfg-fato-ed-componente-erro' : null">
+            <option value="">{{ rotuloDoPadrao }}</option>
+            @for (opcao of componentes; track opcao.valor) {
+              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          @if (erroDescritivo('componenteExibicao')) {
+            <span class="field__error" id="cfg-fato-ed-componente-erro">{{ erroDescritivo('componenteExibicao') }}</span>
+          }
+        </label>
         @if (!somenteLeitura()) {
           <div class="cfg-form-actions">
-            <button type="submit" class="btn btn--primary btn--sm" [disabled]="ocupado()">Salvar nome e descrição</button>
+            <button type="submit" class="btn btn--primary btn--sm" [disabled]="ocupado()">Salvar nome, descrição e componente</button>
           </div>
         }
       </form>
@@ -382,7 +399,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
         } @else if (f.sistema && !somenteLeitura()) {
           <ng-container *ngTemplateOutlet="leituraDaDefinicao; context: { $implicit: f, comProtecao: false }" />
           <p class="u-caption" id="cfg-fato-def-aviso">
-            Só a proteção de dados se altera no fato de sistema, e a mudança passa pela aprovação da proteção de dados.
+            Na definição, só a proteção de dados se altera no fato de sistema, e a mudança passa pela aprovação da proteção de dados.
           </p>
           <form class="cfg-fato-descritivo" [formGroup]="definicao" id="cfg-fato-definicao" (ngSubmit)="salvarDefinicao()" novalidate>
             <ng-container *ngTemplateOutlet="protecaoDeDados" />
@@ -613,6 +630,8 @@ export class FatoCandidatoEdicaoComponent {
   /** Avisa a lista de que o fato mudou. */
   readonly alterado = output<void>();
 
+  protected readonly componentes = COMPONENTES_DE_EXIBICAO;
+  protected readonly rotuloDoPadrao = ROTULO_DO_COMPONENTE_PADRAO;
   protected readonly origens = ORIGENS;
   protected readonly dominios = DOMINIOS;
   protected readonly cardinalidades = CARDINALIDADES;
@@ -784,7 +803,8 @@ export class FatoCandidatoEdicaoComponent {
 
   protected readonly descritivo = new FormGroup({
     nome: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
-    descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
+    descricao: new FormControl('', { nonNullable: true, validators: [obrigatorioNaoEmBranco, Validators.maxLength(1000)] }),
+    componenteExibicao: new FormControl('', { nonNullable: true }),
   });
 
   protected readonly definicao = new FormGroup({
@@ -856,6 +876,13 @@ export class FatoCandidatoEdicaoComponent {
   private recopiarDefinicao = false;
 
   constructor() {
+    // Só para consultar o componente não se escolhe; o valor segue no formulário.
+    effect(() => {
+      const select = this.descritivo.controls.componenteExibicao;
+      if (this.somenteLeitura()) select.disable({ emitEvent: false });
+      else select.enable({ emitEvent: false });
+    });
+
     effect(() => {
       const fato = this.fato();
       // A recarga falhou: não há lista nova a esperar.
@@ -869,7 +896,7 @@ export class FatoCandidatoEdicaoComponent {
           this.edicaoDoValor.reset();
         }
         if (outroFato || this.recopiarDescritivo) {
-          this.descritivo.reset({ nome: fato.nome, descricao: fato.descricao ?? '' });
+          this.descritivo.reset({ nome: fato.nome, descricao: fato.descricao ?? '', componenteExibicao: fato.componenteExibicao ?? '' });
         }
         if (outroFato || this.recopiarDefinicao) {
           this.definicao.reset({
@@ -959,7 +986,7 @@ export class FatoCandidatoEdicaoComponent {
   /** Finalidade só com espaços não é finalidade: a API a recusaria depois de aparar. */
   private exigirTextoNaFinalidade(): void {
     const controle = this.definicao.controls.finalidadeTratamento;
-    if (controle.value.trim() === '') {
+    if (obrigatorioNaoEmBranco(controle) !== null) {
       controle.setErrors({ required: true });
       controle.markAsTouched();
     }
@@ -1011,10 +1038,15 @@ export class FatoCandidatoEdicaoComponent {
       this.descritivo.markAllAsTouched();
       return;
     }
-    const { nome, descricao } = this.descritivo.getRawValue();
+    const { nome, descricao, componenteExibicao } = this.descritivo.getRawValue();
+    // A edição é integral: o componente vai sempre, e o vazio o limpa.
     this.executar(
-      this.api.atualizarDescritivo(this.id(), { nome: nome.trim(), descricao: descricao.trim() || null }, withIdempotencyKey(this.chaveDe('descritivo'))),
-      'Nome e descrição salvos',
+      this.api.atualizarDescritivo(
+        this.id(),
+        { nome: nome.trim(), descricao: descricao.trim(), componenteExibicao: componenteExibicao || null },
+        withIdempotencyKey(this.chaveDe('descritivo')),
+      ),
+      'Nome, descrição e componente salvos',
       () => {
         this.rotacionar('descritivo');
         this.recopiarDescritivo = true;
@@ -1056,7 +1088,7 @@ export class FatoCandidatoEdicaoComponent {
 
   /** Descrição só com espaços não é descrição: no fato declarado vale como vazia. */
   private exigirDescricaoDoDeclarado(controle: FormControl<string>): void {
-    if (this.fato()?.origem === 'DECLARADO' && controle.value.trim() === '') {
+    if (this.fato()?.origem === 'DECLARADO' && obrigatorioNaoEmBranco(controle) !== null) {
       controle.setErrors({ required: true });
       controle.markAsTouched();
     }
@@ -1260,7 +1292,7 @@ export class FatoCandidatoEdicaoComponent {
     );
   }
 
-  protected erroDescritivo(campo: 'nome' | 'descricao'): string | null {
+  protected erroDescritivo(campo: keyof typeof this.descritivo.controls): string | null {
     return mensagemDoControle(this.descritivo.controls[campo]);
   }
 
