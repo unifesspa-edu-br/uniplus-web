@@ -15,6 +15,8 @@ export {
 export { RegrasCatalogoApi } from './regras-catalogo.api';
 export { nomeDaOferta, type OfertaDeCursoCertameDto } from './nome-da-oferta';
 export { InscricoesApi } from './inscricoes.api';
+export { ArquivosDaInscricaoDoProcessoApi } from './arquivos-da-inscricao-do-processo.api';
+export { inscricaoAdministrativaRequest } from './inscricao-administrativa.request';
 export {
   inscricoesDoProcessoRequest,
   type InscricoesDoProcessoQuery,
@@ -35,8 +37,14 @@ export type {
   AvaliacaoDaInscricaoDto,
   AvaliacaoDaInscricaoRequest,
   ComprovanteInscricaoDto,
+  ArquivoAdministrativoDto,
   CpfMascaradoDto,
+  GrupoDaInscricaoDto,
+  InscricaoAdministrativaDto,
   InscricaoDoProcessoDto,
+  ItemDeRespostaDto,
+  OcorrenciaDaInscricaoDto,
+  SecaoDaInscricaoDto,
   InscricaoDto,
   InscricaoRequest,
   MinhaInscricaoDto,

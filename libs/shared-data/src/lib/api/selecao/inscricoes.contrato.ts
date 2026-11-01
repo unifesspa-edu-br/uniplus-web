@@ -89,3 +89,26 @@ export type InscricaoDoProcessoDto = Schemas['InscricaoDoProcessoDto'];
 
 /** O CPF no padrão `***.999.999-**`; `podeRevelar` é sempre falso na listagem, porque a revelação é no detalhe. */
 export type CpfMascaradoDto = Schemas['CpfMascaradoDto'];
+
+/**
+ * A inscrição na consulta de quem opera o processo. A API projeta cada item pela permissão da sua
+ * classe e omite o que a pessoa não pode ver, sem indicação: os campos fixos são opcionais e as
+ * listas só trazem o que foi permitido.
+ */
+export type InscricaoAdministrativaDto = Schemas['InscricaoAdministrativaDto'];
+
+/** Uma seção do formulário com as respostas fora de grupo e os grupos repetíveis. */
+export type SecaoDaInscricaoDto = Schemas['SecaoDaInscricaoDto'];
+
+export type GrupoDaInscricaoDto = Schemas['GrupoDaInscricaoDto'];
+
+export type OcorrenciaDaInscricaoDto = Schemas['OcorrenciaDaInscricaoDto'];
+
+/**
+ * Uma resposta do formulário. O `tipo` diz como ler o `valor` e o `componente`, como exibi-lo; o
+ * `valor` do identificador já vem mascarado.
+ */
+export type ItemDeRespostaDto = Schemas['ItemDeRespostaDto'];
+
+/** Os metadados de um arquivo enviado; o nome original e a chave do objeto nunca saem. */
+export type ArquivoAdministrativoDto = Schemas['ArquivoAdministrativoDto'];
