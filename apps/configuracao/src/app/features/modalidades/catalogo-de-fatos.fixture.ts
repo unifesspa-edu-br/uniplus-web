@@ -7,7 +7,7 @@ export function fatoDoCatalogo(
   return {
     id: over.codigo,
     nome: over.codigo,
-    descricao: '',
+    descricao: 'Dado do candidato.',
     dominio: 'BOOLEANO',
     origem: 'DECLARADO',
     cardinalidade: 'ESCALAR',

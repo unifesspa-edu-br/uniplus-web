@@ -190,6 +190,7 @@ describe('FatosCandidatoPage', () => {
     component['form'].patchValue({
       tipo: 'DERIVADO',
       nome: 'Perfil socioeconômico',
+      descricao: 'Perfil que define a reserva de vagas.',
       codigo: 'PERFIL',
       dominio: 'BOOLEANO',
       pontoResolucao: 'INSCRICAO',
@@ -230,7 +231,7 @@ describe('FatosCandidatoPage', () => {
     id: '01960000-0000-7000-0000-0000000000a1',
     codigo: 'TRABALHA',
     nome: 'Trabalha',
-    descricao: '',
+    descricao: 'Se o candidato trabalha.',
     componenteExibicao: null,
     dominio: 'BOOLEANO',
     origem: 'DECLARADO',
@@ -249,6 +250,60 @@ describe('FatosCandidatoPage', () => {
     regrasPadrao: [],
     aprovacao: { situacao: 'APROVADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, aceitaEm: null },
   };
+
+  it('a descrição é obrigatória no cadastro: em branco o fato não é enviado e o campo é anunciado como obrigatório', async () => {
+    atenderFases();
+    controller.expectOne((r) => r.url === LISTA).flush([]);
+    await propagar();
+    component['abrirCriacao']();
+    fixture.detectChanges();
+    component['form'].patchValue({ tipo: 'DERIVADO', nome: 'Perfil socioeconômico', codigo: 'PERFIL', descricao: '  ' });
+
+    component['criar']();
+    fixture.detectChanges();
+
+    controller.expectNone(`${LISTA}/derivados`);
+    expect(component['erro']('descricao')).not.toBeNull();
+    const campo = fixture.nativeElement.ownerDocument.querySelector('textarea[formcontrolname="descricao"]') as HTMLTextAreaElement;
+    expect(campo.getAttribute('aria-required')).toBe('true');
+    expect(campo.getAttribute('aria-describedby')).toBe('cfg-fato-descricao-erro');
+  });
+
+  it('o componente de exibição vai no cadastro, e a recusa dele chega ao campo', async () => {
+    atenderFases();
+    controller.expectOne((r) => r.url === LISTA).flush([]);
+    await propagar();
+    component['abrirCriacao']();
+    fixture.detectChanges();
+    component['form'].patchValue({
+      tipo: 'DERIVADO',
+      nome: 'Renda familiar bruta',
+      descricao: 'Renda bruta mensal da família.',
+      componenteExibicao: 'MOEDA',
+      codigo: 'RENDA_FAMILIAR',
+      dominio: 'BOOLEANO',
+      pontoResolucao: 'INSCRICAO',
+      classificacaoProtecao: 'PESSOAL',
+      finalidadeTratamento: 'Classificar a reserva de vagas.',
+      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+    });
+
+    component['criar']();
+    const pedido = controller.expectOne(`${LISTA}/derivados`);
+    expect(pedido.request.body).toMatchObject({ descricao: 'Renda bruta mensal da família.', componenteExibicao: 'MOEDA' });
+    pedido.flush(
+      JSON.stringify({
+        status: 422,
+        code: 'uniplus.validation_failed',
+        title: 'Requisição inválida',
+        errors: [{ field: 'ComponenteExibicao', code: 'uniplus.configuracao.fato_candidato.componente_exibicao_invalido', message: 'Componente de exibição inválido.' }],
+      }),
+      PROBLEMA(422),
+    );
+    await propagar();
+
+    expect(component['erro']('componenteExibicao')).toBe('Componente de exibição inválido.');
+  });
 
   it('CA-01: o agregado vai à API com o fato de membro, sem tipo de dado nem escopo, e a recusa do membro chega ao campo', async () => {
     atenderFases();
@@ -270,6 +325,7 @@ describe('FatosCandidatoPage', () => {
     await propagar();
     component['form'].patchValue({
       nome: 'Família com quem trabalha',
+      descricao: 'Há alguém da família que trabalha.',
       codigo: 'FAMILIA_TRABALHA',
       fatoDeMembro: 'MEMBRO_TRABALHA',
       pontoResolucao: 'INSCRICAO',
@@ -283,7 +339,8 @@ describe('FatosCandidatoPage', () => {
     expect(agregado.request.body).toEqual({
       codigo: 'FAMILIA_TRABALHA',
       nome: 'Família com quem trabalha',
-      descricao: null,
+      descricao: 'Há alguém da família que trabalha.',
+      componenteExibicao: null,
       fatoDeMembro: 'MEMBRO_TRABALHA',
       pontoResolucao: 'INSCRICAO',
       classificacaoProtecao: 'PESSOAL',

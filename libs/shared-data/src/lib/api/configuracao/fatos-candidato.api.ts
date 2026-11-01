@@ -27,7 +27,7 @@ export type OrdemDosValoresInput = components['schemas']['OrdemDosValoresInput']
  * O catálogo é administrável (ADR-0136): o administrador cadastra fatos declarados, derivados
  * por regra e agregados de grupo, mantém os valores de domínio e as regras padrão dos derivados.
  * Os fatos de sistema — os que o código resolve, como modalidade e faixa etária — só têm nome,
- * descrição e proteção de dados editáveis; a proteção passa pela aprovação da proteção de dados.
+ * descrição, componente de exibição e proteção de dados editáveis; a proteção passa pela aprovação da proteção de dados.
  *
  * A leitura pública (`listar`) devolve o catálogo inteiro na forma que os editores de condição
  * precisam; a administrativa (`obter`, e a listagem paginada da página) devolve o fato completo, com proteção de
@@ -86,7 +86,7 @@ export class FatosCandidatoApi {
     });
   }
 
-  /** PUT `/api/configuracao/admin/fatos-candidato/{id}` — altera nome e descrição, os únicos campos editáveis. */
+  /** PUT `/api/configuracao/admin/fatos-candidato/{id}` — altera nome, descrição e componente de exibição; a edição é integral, e o componente omitido é limpo. */
   atualizarDescritivo(
     id: string,
     input: DescritivoDoFatoInput,

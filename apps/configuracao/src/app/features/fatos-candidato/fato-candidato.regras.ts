@@ -1,4 +1,4 @@
-import { Validators, type FormControl, type FormGroup } from '@angular/forms';
+import { Validators, type AbstractControl, type FormControl, type FormGroup, type ValidationErrors } from '@angular/forms';
 import type { DefinicaoDoFatoInput, FatoCandidatoDto, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { CLASSIFICACOES_DE_PROTECAO, type OpcaoDeVocabulario } from '../../shared/protecao-do-catalogo/protecao-de-dados';
 
@@ -56,6 +56,19 @@ export const ESCOPOS: readonly OpcaoDeVocabulario[] = [
   { valor: 'CANDIDATO', rotulo: 'Candidato' },
   { valor: 'MEMBRO_GRUPO', rotulo: 'Membro de grupo (ex.: composição familiar)' },
 ];
+
+/** Texto só de espaços é texto em branco: a API o recusa, e a tela já o marca como obrigatório. */
+export function obrigatorioNaoEmBranco(controle: AbstractControl<string | null>): ValidationErrors | null {
+  return (controle.value ?? '').trim() === '' ? { required: true } : null;
+}
+
+/** Como a consulta da inscrição exibe o valor do fato; sem declaração, exibe pelo tipo do dado. */
+export const COMPONENTES_DE_EXIBICAO: readonly OpcaoDeVocabulario[] = [
+  { valor: 'MOEDA', rotulo: 'Moeda' },
+  { valor: 'SITUACAO', rotulo: 'Situação' },
+];
+
+export const ROTULO_DO_COMPONENTE_PADRAO = 'Padrão (pelo tipo do dado)';
 
 /**
  * As classificações que cabem no domínio: texto, data e endereço identificam ou localizam a pessoa

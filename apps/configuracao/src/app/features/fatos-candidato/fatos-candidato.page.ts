@@ -59,6 +59,7 @@ import {
   FONTES_DE_VALORES,
   FORMATOS_DE_TEXTO,
   ORIGENS,
+  obrigatorioNaoEmBranco,
   acaoDeAtivacao,
   campoDaRecusa,
   classificacoesDoDominio,
@@ -66,6 +67,8 @@ import {
   exigirSe,
   fatosDeMembroAgregaveis,
   resumoDoAgregado,
+  COMPONENTES_DE_EXIBICAO,
+  ROTULO_DO_COMPONENTE_PADRAO,
   temFonteDeValores,
   temFormato,
   type AcaoDeAtivacao,
@@ -102,6 +105,7 @@ interface CriacaoForm {
   codigo: FormControl<string>;
   nome: FormControl<string>;
   descricao: FormControl<string>;
+  componenteExibicao: FormControl<string>;
   dominio: FormControl<string>;
   fatoDeMembro: FormControl<string>;
   cardinalidade: FormControl<string>;
@@ -390,10 +394,23 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
           </div>
 
           <label class="field form-grid__full" [class.is-error]="erro('descricao')">
-            <span class="field__label">Descrição</span>
-            <textarea class="textarea" rows="2" formControlName="descricao" [attr.aria-invalid]="erro('descricao') ? 'true' : null" [attr.aria-describedby]="erro('descricao') ? 'cfg-fato-descricao-erro' : null"></textarea>
+            <span class="field__label is-required">Descrição</span>
+            <textarea class="textarea" rows="2" formControlName="descricao" aria-required="true" [attr.aria-invalid]="erro('descricao') ? 'true' : null" [attr.aria-describedby]="erro('descricao') ? 'cfg-fato-descricao-erro' : null"></textarea>
             @if (erro('descricao')) {
               <span class="field__error" id="cfg-fato-descricao-erro">{{ erro('descricao') }}</span>
+            }
+          </label>
+
+          <label class="field form-grid__full" [class.is-error]="erro('componenteExibicao')">
+            <span class="field__label">Componente de exibição</span>
+            <select class="select" formControlName="componenteExibicao" [attr.aria-invalid]="erro('componenteExibicao') ? 'true' : null" [attr.aria-describedby]="erro('componenteExibicao') ? 'cfg-fato-componente-erro' : null">
+              <option value="">{{ rotuloDoPadrao }}</option>
+              @for (opcao of componentes; track opcao.valor) {
+                <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+              }
+            </select>
+            @if (erro('componenteExibicao')) {
+              <span class="field__error" id="cfg-fato-componente-erro">{{ erro('componenteExibicao') }}</span>
             }
           </label>
 
@@ -613,6 +630,8 @@ export class FatosCandidatoPage {
   protected readonly escopos = ESCOPOS;
   protected readonly rotulo = rotuloDe;
   protected readonly resumo = resumoDoAgregado;
+  protected readonly componentes = COMPONENTES_DE_EXIBICAO;
+  protected readonly rotuloDoPadrao = ROTULO_DO_COMPONENTE_PADRAO;
   protected readonly acaoDeAtivacao = acaoDeAtivacao;
 
   protected readonly origemChips: readonly UiFilterChipOption[] = [
@@ -792,7 +811,8 @@ export class FatosCandidatoPage {
       validators: [Validators.required, Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO), Validators.pattern(CODIGO_CADASTRO_FORMATO)],
     }),
     nome: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
-    descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
+    descricao: new FormControl('', { nonNullable: true, validators: [obrigatorioNaoEmBranco, Validators.maxLength(1000)] }),
+    componenteExibicao: new FormControl('', { nonNullable: true }),
     dominio: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     fatoDeMembro: new FormControl('', { nonNullable: true }),
     cardinalidade: new FormControl('ESCALAR', { nonNullable: true }),
@@ -888,7 +908,8 @@ export class FatosCandidatoPage {
     const identificacao = {
       codigo: v.codigo.trim(),
       nome: v.nome.trim(),
-      descricao: v.descricao.trim() || null,
+      descricao: v.descricao.trim(),
+      componenteExibicao: v.componenteExibicao || null,
       pontoResolucao: v.pontoResolucao,
       classificacaoProtecao: v.classificacaoProtecao,
       finalidadeTratamento: v.finalidadeTratamento.trim(),
