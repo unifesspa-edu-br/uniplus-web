@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Observable, firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { FatosCandidatoApi } from './fatos-candidato.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
@@ -85,6 +85,15 @@ describe('FatosCandidatoApi', () => {
     const req = controller.expectOne(`${ADMIN}/${ID}/valores/ATE%201%2FSM`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
+    await promise;
+  });
+
+  it('atosDaProtecao() lê o histórico do fato no tipo de mídia do ato', async () => {
+    const promise = firstValueFrom(api.atosDaProtecao(ID));
+    const req = controller.expectOne(`${ADMIN}/${ID}/protecao/atos`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-ato', 1));
+    req.flush([]);
     await promise;
   });
 });

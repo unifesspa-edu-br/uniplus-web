@@ -126,6 +126,15 @@ describe('TiposDocumentoApi', () => {
     expect(isApiOk((await promise) as ApiResult<void>)).toBe(true);
   });
 
+  it('atosDaProtecao() lê o histórico do tipo no tipo de mídia do ato', async () => {
+    const promise = firstValueFrom(api.atosDaProtecao(ID));
+    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento/${ID}/protecao/atos`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-ato', 1));
+    req.flush([]);
+    await promise;
+  });
+
   it('remover() faz DELETE /api/configuracao/admin/tipos-documento/{id}', async () => {
     const promise = firstValueFrom(api.remover(ID));
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento/${ID}`);
