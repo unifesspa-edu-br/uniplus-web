@@ -241,14 +241,14 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
       <form class="cfg-fato-descritivo" [formGroup]="descritivo" id="cfg-fato-descritivo" (ngSubmit)="salvarDescritivo()" novalidate>
         <label class="field" [class.is-error]="erroDescritivo('nome')">
           <span class="field__label is-required">Nome</span>
-          <input class="input" type="text" formControlName="nome" [readonly]="somenteLeitura()" [attr.aria-invalid]="erroDescritivo('nome') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('nome') ? 'cfg-fato-ed-nome-erro' : null" />
+          <input class="input" type="text" formControlName="nome" [attr.aria-invalid]="erroDescritivo('nome') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('nome') ? 'cfg-fato-ed-nome-erro' : null" />
           @if (erroDescritivo('nome')) {
             <span class="field__error" id="cfg-fato-ed-nome-erro">{{ erroDescritivo('nome') }}</span>
           }
         </label>
         <label class="field" [class.is-error]="erroDescritivo('descricao')">
           <span class="field__label is-required">Descrição</span>
-          <textarea class="textarea" rows="3" formControlName="descricao" [readonly]="somenteLeitura()" aria-required="true" [attr.aria-invalid]="erroDescritivo('descricao') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('descricao') ? 'cfg-fato-ed-descricao-erro' : null"></textarea>
+          <textarea class="textarea" rows="3" formControlName="descricao" aria-required="true" [attr.aria-invalid]="erroDescritivo('descricao') ? 'true' : null" [attr.aria-describedby]="erroDescritivo('descricao') ? 'cfg-fato-ed-descricao-erro' : null"></textarea>
           @if (erroDescritivo('descricao')) {
             <span class="field__error" id="cfg-fato-ed-descricao-erro">{{ erroDescritivo('descricao') }}</span>
           }
@@ -265,15 +265,13 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
             <span class="field__error" id="cfg-fato-ed-componente-erro">{{ erroDescritivo('componenteExibicao') }}</span>
           }
         </label>
-        @if (!somenteLeitura()) {
-          <div class="cfg-form-actions">
-            <button type="submit" class="btn btn--primary btn--sm" [disabled]="ocupado()">Salvar nome, descrição e componente</button>
-          </div>
-        }
+        <div class="cfg-form-actions">
+          <button type="submit" class="btn btn--primary btn--sm" [disabled]="ocupado()">Salvar nome, descrição e componente</button>
+        </div>
       </form>
 
-      <ui-recolhivel titulo="Definição" [aberto]="somenteLeitura()">
-        @if (definicaoEditavel() && !somenteLeitura()) {
+      <ui-recolhivel titulo="Definição">
+        @if (definicaoEditavel()) {
           <dl class="cfg-detail-list cfg-fato-definicao">
             <dt>Código</dt>
             <dd><code>{{ f.codigo }}</code></dd>
@@ -396,7 +394,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
               <button type="submit" id="cfg-fato-def-salvar" class="btn btn--primary btn--sm" [disabled]="bloqueado()">Salvar definição</button>
             </div>
           </form>
-        } @else if (f.sistema && !somenteLeitura()) {
+        } @else if (f.sistema) {
           <ng-container *ngTemplateOutlet="leituraDaDefinicao; context: { $implicit: f, comProtecao: false }" />
           <p class="u-caption" id="cfg-fato-def-aviso">
             Na definição, só a proteção de dados se altera no fato de sistema, e a mudança passa pela aprovação da proteção de dados.
@@ -414,7 +412,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
       </ui-recolhivel>
 
       @if (temValores() || f.valores.length > 0) {
-        <ui-recolhivel titulo="Valores" [aberto]="somenteLeitura()">
+        <ui-recolhivel titulo="Valores">
           @if (f.valores.length > 0) {
             <div class="table-responsive">
               <table>
@@ -464,7 +462,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
                         <ui-tag [variant]="valor.ativo ? 'success' : 'neutral'">{{ valor.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
                       </td>
                       <td class="table-responsive__actions" data-label="Ações">
-                        @if (temValores() && !somenteLeitura()) {
+                        @if (temValores()) {
                           @if (editando() === valor.codigo) {
                             <button type="submit" class="btn btn--primary btn--sm" [attr.form]="idDoValor(valor.codigo, 'form')" [disabled]="bloqueado()">
                               Salvar<span class="sr-only"> a correção do valor {{ valor.codigo }}</span>
@@ -503,7 +501,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
             <p class="u-caption">Nenhum valor cadastrado.</p>
           }
 
-          @if (temValores() && !somenteLeitura()) {
+          @if (temValores()) {
           <form [formGroup]="novoValor" (ngSubmit)="acrescentarValor()" novalidate>
             <div class="form-grid">
               <label class="field" [class.is-error]="erroNovoValor('codigo')">
@@ -564,7 +562,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
                   <span class="field__label is-required">Valor que a regra acrescenta</span>
                   <select
                     class="select"
-                    [disabled]="bloqueado() || somenteLeitura()"
+                    [disabled]="bloqueado()"
                     [attr.aria-invalid]="contribuicoesFaltando().has(i) ? 'true' : null"
                     [attr.aria-describedby]="contribuicoesFaltando().has(i) ? 'cfg-fato-regra-' + i + '-erro' : null"
                     (change)="trocarContribuicao(i, valorDoSelect($event))"
@@ -581,26 +579,22 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
                 [fatos]="fatosDaRegra()"
                 [idBase]="'cfg-fato-regra-' + i"
                 legenda="Quando"
-                [disabled]="bloqueado() || somenteLeitura()"
+                [disabled]="bloqueado()"
                 [erros]="errosDasCondicoes()[i] ?? {}"
                 (condicoesChange)="trocarCondicoes(i, $event)"
               />
               @if (errosDasRegras()[i]; as erro) {
                 <span class="field__error" role="alert" [id]="'cfg-fato-regra-' + i + '-erro'">{{ erro }}</span>
               }
-              @if (!somenteLeitura()) {
-                <button type="button" class="btn btn--tertiary btn--sm" [disabled]="bloqueado()" (click)="removerRegra(i)">
-                  Remover a regra {{ i + 1 }}
-                </button>
-              }
+              <button type="button" class="btn btn--tertiary btn--sm" [disabled]="bloqueado()" (click)="removerRegra(i)">
+                Remover a regra {{ i + 1 }}
+              </button>
             </fieldset>
           }
-          @if (!somenteLeitura()) {
-            <div class="cfg-form-actions">
-              <button type="button" class="btn btn--secondary btn--sm" [disabled]="bloqueado()" (click)="acrescentarRegra()">Acrescentar regra</button>
-              <button type="button" class="btn btn--primary btn--sm" [disabled]="bloqueado()" (click)="salvarRegras()">Salvar regras</button>
-            </div>
-          }
+          <div class="cfg-form-actions">
+            <button type="button" class="btn btn--secondary btn--sm" [disabled]="bloqueado()" (click)="acrescentarRegra()">Acrescentar regra</button>
+            <button type="button" class="btn btn--primary btn--sm" [disabled]="bloqueado()" (click)="salvarRegras()">Salvar regras</button>
+          </div>
         </section>
       }
 
@@ -625,8 +619,6 @@ export class FatoCandidatoEdicaoComponent {
 
   /** O fato em edição. */
   readonly id = input.required<string>();
-  /** Só para consultar: os campos não se editam, as ações somem e a definição chega aberta. */
-  readonly somenteLeitura = input(false);
   /** Avisa a lista de que o fato mudou. */
   readonly alterado = output<void>();
 
@@ -703,7 +695,7 @@ export class FatoCandidatoEdicaoComponent {
 
   /** As fases do ponto de resolução: só pedidas quando o formulário da definição está na tela. */
   protected readonly fases = useApiResource<readonly FaseCanonicaDto[]>(() =>
-    this.definicaoEditavel() && !this.somenteLeitura()
+    this.definicaoEditavel()
       ? {
           url: `${this.basePath}/api/configuracao/fases-canonicas`,
           params: new HttpParams().set('limit', '100'),
@@ -876,13 +868,6 @@ export class FatoCandidatoEdicaoComponent {
   private recopiarDefinicao = false;
 
   constructor() {
-    // Só para consultar o componente não se escolhe; o valor segue no formulário.
-    effect(() => {
-      const select = this.descritivo.controls.componenteExibicao;
-      if (this.somenteLeitura()) select.disable({ emitEvent: false });
-      else select.enable({ emitEvent: false });
-    });
-
     effect(() => {
       const fato = this.fato();
       // A recarga falhou: não há lista nova a esperar.
@@ -960,7 +945,7 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected salvarDefinicao(): void {
-    if (this.somenteLeitura() || !this.protecaoEditavel() || this.bloqueado()) return;
+    if (!this.protecaoEditavel() || this.bloqueado()) return;
     descartarRecusasDoServidor(this.definicao);
     this.exigirTextoNaFinalidade();
     if (this.definicao.invalid) {
@@ -1033,7 +1018,6 @@ export class FatoCandidatoEdicaoComponent {
 
   protected salvarDescritivo(): void {
     // Só para consultar, nada se grava — nem pelo Enter que envia o formulário.
-    if (this.somenteLeitura()) return;
     if (this.descritivo.invalid) {
       this.descritivo.markAllAsTouched();
       return;
@@ -1057,7 +1041,7 @@ export class FatoCandidatoEdicaoComponent {
 
   protected acrescentarValor(): void {
     // A ordem sai do total de valores: com o fato recarregado ainda a caminho, o total está velho.
-    if (this.somenteLeitura() || this.bloqueado()) return;
+    if (this.bloqueado()) return;
     // A descrição do valor é obrigatória no fato declarado: é o nome da opção que o candidato lê.
     this.exigirDescricaoDoDeclarado(this.novoValor.controls.descricao);
     if (this.novoValor.invalid) {
@@ -1095,7 +1079,7 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected desativarValor(codigo: string): void {
-    if (this.somenteLeitura() || this.bloqueado() || this.editando() !== null) return;
+    if (this.bloqueado() || this.editando() !== null) return;
     this.executar(this.api.desativarValor(this.id(), codigo), `Valor ${codigo} desativado`, () => {
       this.focoAposRecarga = this.idDaAcaoDoValor(codigo);
     });
@@ -1103,7 +1087,7 @@ export class FatoCandidatoEdicaoComponent {
 
   /** Reativa um valor desativado: condições novas voltam a poder citá-lo. */
   protected reativarValor(codigo: string): void {
-    if (this.somenteLeitura() || this.bloqueado() || this.editando() !== null) return;
+    if (this.bloqueado() || this.editando() !== null) return;
     this.executar(
       this.api.reativarValor(this.id(), codigo, withIdempotencyKey(this.chaveDe('reativacao', codigo))),
       `Valor ${codigo} reativado`,
@@ -1116,7 +1100,7 @@ export class FatoCandidatoEdicaoComponent {
 
   protected editarValor(codigo: string): void {
     const valor = this.fato()?.valores.find((item) => item.codigo === codigo);
-    if (this.somenteLeitura() || valor === undefined || this.bloqueado() || this.editando() !== null) return;
+    if (valor === undefined || this.bloqueado() || this.editando() !== null) return;
     this.edicaoDoValor.reset({ descricao: valor.descricao ?? '', orientacao: valor.orientacao ?? '' });
     this.erro.set(null);
     this.editando.set(codigo);
@@ -1132,7 +1116,7 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected salvarEdicaoDoValor(codigo: string): void {
-    if (this.somenteLeitura() || this.bloqueado()) return;
+    if (this.bloqueado()) return;
     this.exigirDescricaoDoDeclarado(this.edicaoDoValor.controls.descricao);
     if (this.edicaoDoValor.invalid) {
       this.edicaoDoValor.markAllAsTouched();
@@ -1157,7 +1141,7 @@ export class FatoCandidatoEdicaoComponent {
    * desativados inclusive, porque a ordem é do fato e não só do que aparece para o candidato.
    */
   protected moverValor(codigo: string, sentido: -1 | 1): void {
-    if (this.somenteLeitura() || this.bloqueado() || this.editando() !== null) return;
+    if (this.bloqueado() || this.editando() !== null) return;
     const codigos = (this.fato()?.valores ?? []).map((valor) => valor.codigo);
     const de = codigos.indexOf(codigo);
     const para = de + sentido;
@@ -1244,7 +1228,7 @@ export class FatoCandidatoEdicaoComponent {
 
   protected salvarRegras(): void {
     // Com o fato recarregado a caminho, as regras na tela podem ser as do tipo de dado anterior.
-    if (this.somenteLeitura() || this.bloqueado()) return;
+    if (this.bloqueado()) return;
     const fatosPorCodigo = new Map(this.fatosDaRegra().map((fato) => [fato.codigo, fato]));
     const problemas: Record<number, string> = {};
     const contribuicoesFaltando = new Set<number>();

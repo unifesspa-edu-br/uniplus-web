@@ -50,6 +50,7 @@ import {
   type UiFilterChipOption,
   type UiLookupFalho,
 } from '@uniplus/shared-ui/components';
+import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
 import { FatoCandidatoEdicaoComponent } from './fato-candidato-edicao.component';
 import {
   CARDINALIDADES,
@@ -133,6 +134,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
     TemPermissaoDirective,
     AlertComponent,
     ConfirmDialogComponent,
+    DetalheDaProtecaoComponent,
     DrawerComponent,
     EmptyStateComponent,
     FatoCandidatoEdicaoComponent,
@@ -214,7 +216,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
       @if (fatosBuscados().length > 0) {
         <div class="table-responsive table-responsive--acoes-fixas" role="region" tabindex="0" aria-label="Lista de fatos do candidato">
           <table>
-            <caption class="sr-only">Fatos do candidato, com origem, tipo de dado, situação e proteção de dados</caption>
+            <caption class="sr-only">Fatos do candidato, com origem, tipo de dado, situação, sensibilidade e aprovação da proteção de dados. Use o nome para abrir o detalhe.</caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
@@ -222,7 +224,8 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                 <th scope="col">Origem</th>
                 <th scope="col">Tipo de dado</th>
                 <th scope="col">Situação</th>
-                <th scope="col">Proteção de dados</th>
+                <th scope="col">Sensibilidade</th>
+                <th scope="col">Aprovação</th>
                 <th scope="col" class="table-responsive__actions"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
@@ -231,7 +234,14 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                 <tr>
                   <td data-label="Código"><code>{{ fato.codigo }}</code></td>
                   <td data-label="Nome">
-                    {{ fato.nome }}
+                    <button
+                      type="button"
+                      class="table-responsive__alvo"
+                      [attr.aria-label]="'Ver o detalhe de ' + fato.nome"
+                      (click)="abrirDetalhe(fato)"
+                    >
+                      {{ fato.nome }}
+                    </button>
                     @if (fato.sistema) {
                       <ui-tag variant="primary">Sistema</ui-tag>
                     }
@@ -241,34 +251,16 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                   <td data-label="Situação">
                     <ui-tag [variant]="fato.ativo ? 'success' : 'neutral'">{{ fato.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
                   </td>
-                  <td data-label="Proteção de dados">
-                    <div>{{ rotulo(classificacoes, fato.classificacaoProtecao) }}</div>
+                  <td data-label="Sensibilidade" class="u-nowrap-desktop">
+                    {{ rotulo(classificacoes, fato.classificacaoProtecao) }}
+                  </td>
+                  <td data-label="Aprovação" class="u-nowrap-desktop">
                     <cfg-situacao-da-aprovacao
                       [situacao]="fato.aprovacao.situacao"
-                      [classificacaoRecomendada]="fato.aprovacao.classificacaoRecomendada"
+                      [comRecomendada]="false"
                     />
-                    @if (fato.aprovacao.situacao === 'NEGADA') {
-                      <ng-container *authTemPermissao="permissaoDeManter">
-                        <button
-                          type="button"
-                          class="btn btn--secondary btn--sm"
-                          [attr.aria-label]="'Aceitar recomendação do fato ' + fato.codigo"
-                          [disabled]="loading() || aceitando()"
-                          (click)="pedirAceite(fato)"
-                        >
-                          Aceitar recomendação
-                        </button>
-                      </ng-container>
-                    }
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
-                    <ui-icon-button
-                      icon="pi-eye"
-                      [accessibleName]="'Visualizar o fato ' + fato.codigo"
-                      tooltip="Visualizar fato"
-                      [isDisabled]="loading()"
-                      (triggered)="abrirEdicao(fato.id, true)"
-                    />
                     <ng-container *authTemPermissao="permissaoDeManter">
                     <ui-icon-button
                       icon="pi-pencil"
@@ -331,10 +323,114 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
       }
     </section>
 
+    <ui-drawer
+      class="cfg-form-drawer"
+      [(visible)]="detalheAberto"
+      [heading]="detalhe()?.nome ?? 'Fato do candidato'"
+      ariaLabel="Detalhe do fato do candidato"
+      focoInicial="titulo"
+      position="right"
+    >
+      @if (detalheAberto() && detalhe(); as fato) {
+        <div class="cfg-form">
+          <div class="cfg-detalhe-situacoes">
+            <cfg-situacao-da-aprovacao
+              [situacao]="fato.aprovacao.situacao"
+              [classificacaoRecomendada]="fato.aprovacao.classificacaoRecomendada"
+            />
+            <ui-tag [variant]="fato.ativo ? 'success' : 'neutral'">{{ fato.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
+            @if (fato.sistema) {
+              <ui-tag variant="primary">Sistema</ui-tag>
+            }
+          </div>
+          <section class="cfg-detalhe-secao">
+            <h3 class="cfg-detalhe-secao__titulo">O fato</h3>
+            <dl class="cfg-detalhe">
+              <div>
+                <dt>Código</dt>
+                <dd><code>{{ fato.codigo }}</code></dd>
+              </div>
+              <div>
+                <dt>Descrição</dt>
+                <dd>{{ fato.descricao || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Origem</dt>
+                <dd>{{ rotulo(origens, fato.origem) }}</dd>
+              </div>
+              <div>
+                <dt>Tipo de dado</dt>
+                <dd>{{ rotulo(dominios, fato.dominio) }}</dd>
+              </div>
+              <div>
+                <dt>Cardinalidade</dt>
+                <dd>{{ rotulo(cardinalidades, fato.cardinalidade) }}</dd>
+              </div>
+              @if (fato.fonteValores) {
+                <div>
+                  <dt>Fonte dos valores</dt>
+                  <dd>{{ rotulo(fontes, fato.fonteValores) }}</dd>
+                </div>
+              }
+              @if (fato.formato) {
+                <div>
+                  <dt>Formato do texto</dt>
+                  <dd>{{ rotulo(formatos, fato.formato) }}</dd>
+                </div>
+              }
+              <div>
+                <dt>Escopo</dt>
+                <dd>{{ rotulo(escopos, fato.escopo) }}</dd>
+              </div>
+              <div>
+                <dt>Componente de exibição</dt>
+                <dd>{{ fato.componenteExibicao ? rotulo(componentes, fato.componenteExibicao) : rotuloDoPadrao }}</dd>
+              </div>
+            </dl>
+          </section>
+          @if (fato.valores.length > 0) {
+            <section class="cfg-detalhe-secao">
+              <h3 class="cfg-detalhe-secao__titulo">Valores possíveis</h3>
+              <ul class="cfg-detalhe-valores">
+                @for (valor of fato.valores; track valor.codigo) {
+                  <li>
+                    <div>
+                      <code>{{ valor.codigo }}</code>
+                      @if (valor.descricao) {
+                        — {{ valor.descricao }}
+                      }
+                      @if (!valor.ativo) {
+                        <ui-tag variant="neutral">Desativado</ui-tag>
+                      }
+                    </div>
+                    @if (valor.orientacao) {
+                      <p class="cfg-detalhe-valores__orientacao">{{ valor.orientacao }}</p>
+                    }
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+          <cfg-detalhe-da-protecao [protecao]="fato" />
+        </div>
+        <div class="cfg-form-footer">
+          <button type="button" class="btn btn--tertiary btn--rect" (click)="detalheAberto.set(false)">Fechar</button>
+          <ng-container *authTemPermissao="permissaoDeManter">
+            @if (fato.aprovacao.situacao === 'NEGADA') {
+              <button type="button" class="btn btn--secondary" [disabled]="loading() || aceitando()" (click)="aceitarDoDetalhe(fato)">
+                Aceitar recomendação
+              </button>
+            }
+            <button type="button" class="btn btn--primary" [disabled]="loading()" (click)="editarDoDetalhe(fato)">Editar</button>
+          </ng-container>
+        </div>
+      }
+    </ui-drawer>
+
     <ui-drawer class="cfg-form-drawer" [(visible)]="drawerAberto" [heading]="tituloDoDrawer()" ariaLabel="Fato do candidato" position="right">
       <!-- O conteúdo só existe com o drawer aberto: reabrir o mesmo fato recarrega do servidor e descarta o rascunho fechado. -->
       @if (drawerAberto() && fatoEmEdicao(); as id) {
-        <cfg-fato-candidato-edicao [id]="id" [somenteLeitura]="somenteLeitura()" (alterado)="recarregar()" />
+        <cfg-fato-candidato-edicao [id]="id" (alterado)="recarregar()" />
         <div class="cfg-form-footer">
           <button type="button" class="btn btn--secondary btn--rect" (click)="drawerAberto.set(false)">Fechar</button>
         </div>
@@ -669,9 +765,14 @@ export class FatosCandidatoPage {
   });
 
   protected readonly drawerAberto = signal(false);
+  protected readonly detalheAberto = signal(false);
+  private readonly detalheId = signal<string | null>(null);
+  /** O fato aberto no detalhe, lido da lista: a releitura depois de uma escrita o atualiza. */
+  protected readonly detalhe = computed(() => {
+    const id = this.detalheId();
+    return id === null ? null : ((this.lista.data() ?? []).find((fato) => fato.id === id) ?? null);
+  });
   protected readonly fatoEmEdicao = signal<string | null>(null);
-  /** O fato aberto só para consultar, pela ação de visualizar. */
-  protected readonly somenteLeitura = signal(false);
   protected readonly salvando = signal(false);
   protected readonly erroDaCriacao = signal<string | null>(null);
   private chaveDaCriacao = idempotencyKey.create();
@@ -881,7 +982,6 @@ export class FatosCandidatoPage {
 
   protected abrirCriacao(): void {
     this.fatoEmEdicao.set(null);
-    this.somenteLeitura.set(false);
     this.form.reset();
     this.ultimaSugestao = '';
     this.erroDaCriacao.set(null);
@@ -889,9 +989,23 @@ export class FatosCandidatoPage {
     this.drawerAberto.set(true);
   }
 
-  protected abrirEdicao(id: string, somenteLeitura = false): void {
+  protected abrirDetalhe(fato: FatoCandidatoDto): void {
+    this.detalheId.set(fato.id);
+    this.detalheAberto.set(true);
+  }
+
+  protected editarDoDetalhe(fato: FatoCandidatoDto): void {
+    this.detalheAberto.set(false);
+    this.abrirEdicao(fato.id);
+  }
+
+  protected aceitarDoDetalhe(fato: FatoCandidatoDto): void {
+    this.detalheAberto.set(false);
+    this.pedirAceite(fato);
+  }
+
+  protected abrirEdicao(id: string): void {
     this.fatoEmEdicao.set(id);
-    this.somenteLeitura.set(somenteLeitura);
     this.drawerAberto.set(true);
   }
 
