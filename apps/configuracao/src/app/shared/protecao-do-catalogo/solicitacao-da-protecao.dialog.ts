@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
 import { deveRotacionarIdempotencyKey, idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -40,6 +40,18 @@ const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${i
         Os itens marcados vão para a proteção de dados, que aprova, recomenda ajuste ou reprova cada um. O
         item que não for aprovado não pode ser usado na configuração de um processo seletivo.
       </p>
+      <label class="checkbox cfg-marcar-todos-cartao">
+        <input
+          type="checkbox"
+          aria-label="Marcar todos os itens"
+          [checked]="todosMarcados()"
+          [indeterminate]="algunsMarcados()"
+          [disabled]="enviando()"
+          (change)="marcarTodos($any($event.target).checked)"
+        />
+        <span class="checkbox__box" aria-hidden="true"></span>
+        Marcar todos
+      </label>
       <div class="table-responsive">
         <table aria-describedby="cfg-solicitacao-descricao">
           <caption class="sr-only">Itens que vão na solicitação, com a sensibilidade de cada um</caption>
@@ -67,13 +79,15 @@ const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${i
             </tr>
           </thead>
           <tbody>
-            @for (item of pendentes(); track item.id) {
+            @for (item of pendentes(); track chaveDe(item)) {
               <tr>
                 <td data-label="Enviar" class="cfg-selecao">
                   <label class="checkbox">
                     <input
                       type="checkbox"
                       [attr.aria-label]="'Enviar ' + item.nome"
+                      [attr.aria-invalid]="recusaDe(item) ? 'true' : null"
+                      [attr.aria-describedby]="recusaDe(item) ? idDaRecusa(item) : null"
                       [checked]="marcado(item)"
                       [disabled]="enviando()"
                       (change)="marcar(item, $any($event.target).checked)"
@@ -84,7 +98,12 @@ const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${i
                 @if (variosCadastros()) {
                   <td data-label="Cadastro">{{ cadastro(item) }}</td>
                 }
-                <td data-label="Item">{{ item.nome }}</td>
+                <td data-label="Item">
+                  {{ item.nome }}
+                  @if (recusaDe(item); as recusa) {
+                    <div class="field__error" [id]="idDaRecusa(item)">{{ recusa }}</div>
+                  }
+                </td>
                 <td data-label="Sensibilidade">{{ classificacao(item) }}</td>
               </tr>
             }
@@ -115,6 +134,11 @@ export class SolicitacaoDaProtecaoDialogComponent {
   /** Os itens pendentes que a pessoa pode escolher para a solicitação: só dos cadastros que ela mantém. */
   readonly pendentes = input.required<readonly ItemDaProtecaoDoCatalogoDto[]>();
   readonly enviada = output<SolicitacaoDaProtecaoDto>();
+  /** A API recusou itens que já não estão pendentes: quem hospeda relê a situação, e o item sai da lista. */
+  readonly desatualizada = output<void>();
+
+  /** O que a API recusou em cada item da última tentativa, pela chave do item. */
+  private readonly recusas = signal<ReadonlyMap<string, string>>(new Map());
 
   /** As chaves dos itens que a pessoa deixou marcados; a cada abertura todos voltam marcados. */
   private readonly chavesMarcadas = signal<ReadonlySet<string>>(new Set());
@@ -128,6 +152,7 @@ export class SolicitacaoDaProtecaoDialogComponent {
     return total === 1 ? 'Enviar 1 item' : `Enviar ${total} itens`;
   });
 
+  protected readonly chaveDe = chaveDe;
   protected readonly enviando = signal(false);
   protected readonly erro = signal<string | null>(null);
   private chave = idempotencyKey.create();
@@ -140,8 +165,17 @@ export class SolicitacaoDaProtecaoDialogComponent {
         this.erro.set(null);
         this.chave = idempotencyKey.create();
         this.chavesMarcadas.set(new Set(this.pendentes().map(chaveDe)));
+        this.recusas.set(new Map());
       });
     });
+  }
+
+  protected recusaDe(item: ItemDaProtecaoDoCatalogoDto): string | null {
+    return this.recusas().get(chaveDe(item)) ?? null;
+  }
+
+  protected idDaRecusa(item: ItemDaProtecaoDoCatalogoDto): string {
+    return `cfg-recusa-${chaveDe(item)}`;
   }
 
   protected marcado(item: ItemDaProtecaoDoCatalogoDto): boolean {
@@ -149,6 +183,7 @@ export class SolicitacaoDaProtecaoDialogComponent {
   }
 
   protected marcar(item: ItemDaProtecaoDoCatalogoDto, marcado: boolean): void {
+    this.chave = idempotencyKey.create();
     this.chavesMarcadas.update((chaves) => {
       const proximas = new Set(chaves);
       if (marcado) proximas.add(chaveDe(item));
@@ -158,6 +193,7 @@ export class SolicitacaoDaProtecaoDialogComponent {
   }
 
   protected marcarTodos(marcado: boolean): void {
+    this.chave = idempotencyKey.create();
     this.chavesMarcadas.set(marcado ? new Set(this.pendentes().map(chaveDe)) : new Set());
   }
 
@@ -174,6 +210,8 @@ export class SolicitacaoDaProtecaoDialogComponent {
     if (this.enviando() || itens.length === 0) return;
     this.enviando.set(true);
     this.erro.set(null);
+    this.recusas.set(new Map());
+    const enviados = this.marcados();
     this.api
       .solicitar(itens, withIdempotencyKey(this.chave))
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -188,8 +226,28 @@ export class SolicitacaoDaProtecaoDialogComponent {
         }
         if (deveRotacionarIdempotencyKey(resultado.problem)) this.chave = idempotencyKey.create();
         const titulo = this.problemI18n.resolve(resultado.problem).title;
+        this.marcarRecusados(resultado.problem, enviados);
         this.erro.set(titulo);
         if (resultado.problem.status >= 500) this.notifications.errorFromProblem(resultado.problem, { title: titulo });
       });
+  }
+
+  /**
+   * A API aponta o item recusado por `itens[i].id`, com `i` a posição dele na solicitação enviada. O item
+   * recusado fica sinalizado na linha e sai da marcação, para a pessoa reenviar os demais.
+   */
+  private marcarRecusados(problem: ProblemDetails, enviados: readonly ItemDaProtecaoDoCatalogoDto[]): void {
+    const recusas = new Map<string, string>();
+    for (const erro of problem.errors ?? []) {
+      const indice = /^itens\[(\d+)\]\.id$/u.exec(erro.field)?.[1];
+      const item = indice === undefined ? undefined : enviados[Number(indice)];
+      if (item !== undefined) recusas.set(chaveDe(item), erro.message);
+    }
+    if (recusas.size === 0) return;
+    this.recusas.set(recusas);
+    // O corpo mudou: a mesma chave com outro corpo seria recusada.
+    this.chave = idempotencyKey.create();
+    this.chavesMarcadas.update((chaves) => new Set([...chaves].filter((chave) => !recusas.has(chave))));
+    this.desatualizada.emit();
   }
 }

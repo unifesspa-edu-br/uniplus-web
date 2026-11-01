@@ -45,7 +45,7 @@ import {
   TipoDocumentoDto,
   TiposDocumentoApi,
 } from '@uniplus/shared-data/configuracao';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
+import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO, formatarDataBr } from '@uniplus/shared-utils';
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
 import {
   AprovacaoDoCatalogo,
@@ -280,9 +280,10 @@ interface TipoDocumentoForm {
                   <td data-label="Situação" class="u-nowrap-desktop">
                     @if (aprovacao.aprovacaoDe(tipo.id); as situacao) {
                       <cfg-situacao-da-aprovacao [situacao]="situacao.situacao" [emLista]="true" />
+                    } @else if (aprovacao.comErro()) {
+                      <span class="u-caption">Não foi possível ler a situação</span>
                     } @else {
-                      <span aria-hidden="true">—</span>
-                      <span class="sr-only">Situação indisponível</span>
+                      <span class="u-caption">—</span>
                     }
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
@@ -393,7 +394,7 @@ interface TipoDocumentoForm {
               </div>
               <div>
                 <dt>Cadastrado em</dt>
-                <dd>{{ dataDe(tipo.criadoEm) }}</dd>
+                <dd>{{ formatarData(tipo.criadoEm) }}</dd>
               </div>
             </dl>
           </section>
@@ -698,6 +699,7 @@ interface TipoDocumentoForm {
       [(visible)]="solicitacaoAberta"
       [pendentes]="aprovacao.solicitaveis()"
       (enviada)="aposEnviarSolicitacao()"
+      (desatualizada)="aprovacao.carregar()"
     />
   `,
   host: { class: 'cfg-page' },
@@ -715,6 +717,8 @@ export class TiposDocumentoListPage {
   protected readonly permissaoDeManter = PERMISSAO.configuracao.tiposDocumentoManter;
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly rotulo = rotuloDe;
+  /** Datas no padrão das telas, no fuso institucional. */
+  protected readonly formatarData = formatarDataBr;
 
   protected readonly formatosAceitosOpcoes = FORMATOS_ACEITOS_OPCOES;
 
@@ -1134,11 +1138,6 @@ export class TiposDocumentoListPage {
     }
     return 'Vem do cadastro de categorias. Congelada no snapshot do edital.';
   });
-
-  /** A data do cadastro no fuso da Unifesspa, para o servidor em UTC não adiantar o dia. */
-  protected dataDe(instante: string): string {
-    return new Date(instante).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' });
-  }
 
   protected tamanhoLabel(valor: number | string | null): string {
     const normalizado = normalizarTamanhoMaximo(valor);

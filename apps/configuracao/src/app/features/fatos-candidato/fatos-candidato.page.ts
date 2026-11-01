@@ -249,8 +249,8 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                       <ui-tag variant="primary">Sistema</ui-tag>
                     }
                   </td>
-                  <td data-label="Origem" class="u-nowrap-desktop">{{ rotulo(origens, fato.origem) }}</td>
-                  <td data-label="Tipo de dado" class="u-nowrap-desktop">{{ rotulo(dominios, fato.dominio) }}</td>
+                  <td data-label="Origem">{{ rotulo(origens, fato.origem) }}</td>
+                  <td data-label="Tipo de dado">{{ rotulo(dominios, fato.dominio) }}</td>
                   <td data-label="Situação" class="u-nowrap-desktop">
                     <ui-tag [variant]="fato.ativo ? 'success' : 'neutral'">{{ fato.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
                   </td>
@@ -717,6 +717,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
       [(visible)]="solicitacaoAberta"
       [pendentes]="aprovacao.solicitaveis()"
       (enviada)="aposEnviarSolicitacao()"
+      (desatualizada)="aprovacao.carregar()"
     />
   `,
   host: { class: 'cfg-page' },
