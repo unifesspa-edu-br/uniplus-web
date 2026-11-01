@@ -164,6 +164,15 @@ export const appRoutes: Routes = [
           ),
       },
       {
+        path: 'protecao-do-catalogo',
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['protecao-do-catalogo'])],
+        data: { breadcrumb: 'Proteção de Dados do Catálogo' },
+        loadChildren: () =>
+          import('./features/protecao-do-catalogo/protecao-do-catalogo.routes').then(
+            (m) => m.PROTECAO_DO_CATALOGO_ROUTES,
+          ),
+      },
+      {
         path: 'tipos-documento',
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['tipos-documento'])],
         data: { breadcrumb: 'Tipo de Documento' },
