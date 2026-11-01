@@ -2,11 +2,12 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import {
   CONFIGURACAO_BASE_PATH,
+  type DecisaoDaProtecaoDto,
   type DetalheDaProtecaoDoCatalogoDto,
   type ItemDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
@@ -62,6 +63,7 @@ const detalheDoFato = (extra: Partial<DetalheDaProtecaoDoCatalogoDto> = {}): Det
   ...rural,
   descricao: 'Se o candidato mora em área rural.',
   tipoDocumento: null,
+  atos: [],
   fato: {
     dominio: 'CATEGORICO',
     cardinalidade: 'ESCALAR',
@@ -72,7 +74,6 @@ const detalheDoFato = (extra: Partial<DetalheDaProtecaoDoCatalogoDto> = {}): Det
       { codigo: 'NAO_RURAL', descricao: 'Não mora em área rural', orientacao: null },
     ],
   },
-  atos: [],
   ...extra,
 });
 
@@ -575,5 +576,354 @@ describe('ProtecaoDoCatalogoPage', () => {
     expect(botaoDoRodape(tela, 'Recomendar ajuste')).toBeUndefined();
     expect(botaoDoRodape(tela, 'Reprovar')).toBeUndefined();
     expect(drawer(tela)?.querySelector('.uni-drawer__title')?.textContent?.trim()).toBe('Laudo médico complementar');
+  });
+
+  describe('abas e a lista de aguardando', () => {
+    const router = (): Router => TestBed.inject(Router);
+
+    it('ao abrir direto em ?aba=decisoes não lê a lista de aguardando decisão', async () => {
+      controller.expectOne((r) => r.url === URL).flush([]);
+      await router().navigateByUrl('/?aba=decisoes');
+      await fixture.whenStable();
+      controller.expectOne((r) => r.url === `${URL}/decisoes`).flush([]);
+
+      const outra = TestBed.createComponent(ProtecaoDoCatalogoPage);
+      outra.detectChanges();
+      await outra.whenStable();
+
+      expect(controller.match((r) => r.url === URL)).toHaveLength(0);
+      controller.match((r) => r.url === `${URL}/decisoes`).forEach((req) => req.flush([]));
+    });
+
+    it('ao voltar para "Aguardando decisão" relê a lista', async () => {
+      controller.expectOne((r) => r.url === URL).flush([]);
+      await router().navigateByUrl('/?aba=decisoes');
+      await fixture.whenStable();
+      controller.expectOne((r) => r.url === `${URL}/decisoes`).flush([]);
+      await assentar();
+
+      const botao = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button')).find(
+        (b) => b.textContent?.trim() === 'Aguardando decisão',
+      );
+      botao?.click();
+      await fixture.whenStable();
+      await assentar();
+
+      controller.expectOne((r) => r.url === URL && r.params.get('situacao') === 'SOLICITADA').flush([laudo]);
+      await assentar();
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Laudo médico complementar');
+    });
+  });
+
+  describe('aba Decisões', () => {
+    const DECISOES = `${URL}/decisoes`;
+    const decisaoDoFato: DecisaoDaProtecaoDto = {
+      cadastro: 'FATO',
+      itemId: rural.id,
+      itemCodigo: 'RENDA_FAMILIAR_BRUTA',
+      itemNome: 'Renda familiar bruta',
+      ato: 'REPROVACAO',
+      instante: '2026-10-31T13:00:00Z',
+      atorNome: 'Betina Albuquerque',
+      classificacaoProtecao: 'PESSOAL',
+      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      finalidadeTratamento: 'Conferir a renda familiar.',
+      classificacaoRecomendada: null,
+      justificativa: 'A renda familiar é dado sensível.',
+    };
+    const decisaoDoTipo: DecisaoDaProtecaoDto = {
+      ...decisaoDoFato,
+      cadastro: 'TIPO_DOCUMENTO',
+      itemId: laudo.id,
+      itemCodigo: laudo.codigo,
+      itemNome: laudo.nome,
+      ato: 'AJUSTE_RECOMENDADO',
+      instante: '2026-10-30T15:00:00Z',
+      atorNome: 'Caroline Ribeiro',
+      classificacaoProtecao: 'INTERNO',
+      classificacaoRecomendada: 'PESSOAL',
+      justificativa: 'O laudo identifica o candidato.',
+    };
+    const LINK = '</api/x?cursor=PROX&direction=next>; rel="next"';
+
+    const router = (): Router => TestBed.inject(Router);
+    /** A navegação do roteador termina em outra tarefa: espera por ela antes de olhar a tela. */
+    const navegar = async (): Promise<void> => {
+      await fixture.whenStable();
+      await assentar();
+    };
+    const esperar = (ms: number): Promise<void> => new Promise((resolver) => setTimeout(resolver, ms));
+
+    /** Abre a aba pelo endereço, como o link ou o botão de voltar a trazem, e atende a primeira página. */
+    async function abrirAba(
+      consulta: string,
+      itens: readonly DecisaoDaProtecaoDto[] = [decisaoDoFato, decisaoDoTipo],
+      cabecalhos: Record<string, string> = {},
+    ): Promise<HTMLElement> {
+      controller.expectOne((r) => r.url === URL).flush([]);
+      await router().navigateByUrl(`/${consulta}`);
+      await navegar();
+      controller.expectOne((r) => r.url === DECISOES).flush(itens, { headers: cabecalhos });
+      await assentar();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    const botoes = (tela: HTMLElement, texto: string): HTMLButtonElement[] =>
+      Array.from(tela.querySelectorAll<HTMLButtonElement>('button')).filter((b) => b.textContent?.trim() === texto);
+    const decisoesPendentes = () => controller.match((r) => r.url === DECISOES);
+
+    it('abre em "Aguardando decisão" e a troca de aba vai para a query string', async () => {
+      const tela = await carregar([laudo]);
+      expect(botoes(tela, 'Aguardando decisão')[0].getAttribute('aria-pressed')).toBe('true');
+      expect(botoes(tela, 'Decisões')[0].getAttribute('aria-pressed')).toBe('false');
+      expect(tela.querySelector('cfg-decisoes-da-protecao')).toBeNull();
+
+      botoes(tela, 'Decisões')[0].click();
+      await navegar();
+
+      expect(router().url).toBe('/?aba=decisoes');
+      expect(botoes(tela, 'Decisões')[0].getAttribute('aria-pressed')).toBe('true');
+      expect(tela.querySelector('.page-header__desc')?.textContent).toContain('decisões já registradas');
+      const pedido = controller.expectOne((r) => r.url === DECISOES);
+      expect(pedido.request.params.get('limit')).toBe('25');
+      expect(pedido.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-decisao', 1));
+      pedido.flush([]);
+    });
+
+    it('lista Item, Cadastro, Decisão, Sensibilidade conferida e Data, sem quebra de linha no desktop', async () => {
+      const tela = await abrirAba('?aba=decisoes');
+
+      expect(Array.from(tela.querySelectorAll('thead th')).map((th) => th.textContent?.trim())).toEqual([
+        'Item',
+        'Cadastro',
+        'Decisão',
+        'Sensibilidade conferida',
+        'Data',
+      ]);
+      const linha = Array.from(tela.querySelectorAll('tbody tr')).map((tr) => tr.textContent?.replace(/\s+/gu, ' ').trim());
+      expect(linha[0]).toBe('Renda familiar bruta Fato do candidato Reprovação Pessoal 31/10/2026');
+      expect(linha[1]).toContain('Ajuste recomendado');
+      expect(Array.from(tela.querySelectorAll('tbody td')).every((td) => td.classList.contains('u-nowrap-desktop'))).toBe(true);
+      expect(tela.querySelector('tbody .table-responsive__alvo')?.getAttribute('aria-label')).toBe(
+        'Ver a decisão sobre Renda familiar bruta',
+      );
+    });
+
+    it('lê os filtros da URL, manda-os à API e os mostra marcados', async () => {
+      controller.expectOne((r) => r.url === URL).flush([]);
+      await router().navigateByUrl(
+        '/?aba=decisoes&ato=REPROVACAO&ato=AJUSTE_RECOMENDADO&cadastro=FATO&de=2026-10-01&ate=2026-10-31&busca=renda&minhas=true&ato=INVALIDO',
+      );
+      await assentar();
+      const pedido = controller.expectOne((r) => r.url === DECISOES);
+      expect(pedido.request.params.getAll('ato')).toEqual(['AJUSTE_RECOMENDADO', 'REPROVACAO']);
+      expect(pedido.request.params.get('cadastro')).toBe('FATO');
+      expect(pedido.request.params.get('de')).toBe('2026-10-01');
+      expect(pedido.request.params.get('ate')).toBe('2026-10-31');
+      expect(pedido.request.params.get('busca')).toBe('renda');
+      expect(pedido.request.params.get('minhas')).toBe('true');
+      pedido.flush([decisaoDoFato]);
+      await assentar();
+
+      const tela = fixture.nativeElement as HTMLElement;
+      expect(botoes(tela, 'Reprovado')[0].getAttribute('aria-pressed')).toBe('true');
+      expect(botoes(tela, 'Ajuste recomendado')[0].getAttribute('aria-pressed')).toBe('true');
+      expect(botoes(tela, 'Aprovado')[0].getAttribute('aria-pressed')).toBe('false');
+      expect(botoes(tela, 'Fato do candidato')[0].getAttribute('aria-pressed')).toBe('true');
+      expect(tela.querySelector<HTMLInputElement>('input[type="search"]')?.value).toBe('renda');
+      expect(tela.querySelector<HTMLInputElement>('.checkbox input')?.checked).toBe(true);
+      const datas = Array.from(tela.querySelectorAll<HTMLInputElement>('input[type="date"]')).map((i) => i.value);
+      expect(datas).toEqual(['2026-10-01', '2026-10-31']);
+      expect(tela.querySelector('.filter-bar__titulo')?.parentElement?.getAttribute('aria-label')).toContain('4 ativos');
+    });
+
+    it('escolher uma decisão, um cadastro e "só as minhas" atualiza a URL e relê a primeira página', async () => {
+      const tela = await abrirAba('?aba=decisoes');
+
+      botoes(tela, 'Reprovado')[0].click();
+      await navegar();
+      const reprovado = controller.expectOne((r) => r.url === DECISOES);
+      expect(reprovado.request.params.getAll('ato')).toEqual(['REPROVACAO']);
+      reprovado.flush([decisaoDoFato]);
+      await assentar();
+      expect(router().url).toBe('/?aba=decisoes&ato=REPROVACAO');
+
+      botoes(tela, 'Fato do candidato')[0].click();
+      await navegar();
+      controller.expectOne((r) => r.url === DECISOES && r.params.get('cadastro') === 'FATO').flush([decisaoDoFato]);
+      await assentar();
+
+      tela.querySelector<HTMLInputElement>('.checkbox input')?.click();
+      await navegar();
+      controller.expectOne((r) => r.url === DECISOES && r.params.get('minhas') === 'true').flush([]);
+      await assentar();
+      expect(router().url).toBe('/?aba=decisoes&ato=REPROVACAO&cadastro=FATO&minhas=true');
+
+      botoes(tela, 'Reprovado')[0].click();
+      await navegar();
+      expect(router().url).toBe('/?aba=decisoes&cadastro=FATO&minhas=true');
+      controller.expectOne((r) => r.url === DECISOES && !r.params.has('ato')).flush([]);
+    });
+
+    it('o período invertido cancela a busca em voo, zera a carga e o "Tentar novamente" não consulta', async () => {
+      const tela = await abrirAba('?aba=decisoes');
+      const [de, ate] = Array.from(tela.querySelectorAll<HTMLInputElement>('input[type="date"]'));
+
+      de.value = '2026-10-15';
+      de.dispatchEvent(new Event('change'));
+      await navegar();
+      const emVoo = controller.expectOne((r) => r.url === DECISOES && r.params.get('de') === '2026-10-15');
+      ate.value = '2026-10-01';
+      ate.dispatchEvent(new Event('change'));
+      await navegar();
+
+      expect(emVoo.cancelled).toBe(true);
+      expect(tela.querySelector('[aria-busy="true"]')).toBeNull();
+      expect(tela.querySelector('tbody')).toBeNull();
+      expect(decisoesPendentes()).toHaveLength(0);
+    });
+
+    it('o período vai à API e a data final antes da inicial avisa sem pedir', async () => {
+      const tela = await abrirAba('?aba=decisoes');
+      const [de, ate] = Array.from(tela.querySelectorAll<HTMLInputElement>('input[type="date"]'));
+
+      de.value = '2026-10-15';
+      de.dispatchEvent(new Event('change'));
+      await navegar();
+      controller.expectOne((r) => r.url === DECISOES && r.params.get('de') === '2026-10-15').flush([]);
+      await assentar();
+
+      ate.value = '2026-10-01';
+      ate.dispatchEvent(new Event('change'));
+      await navegar();
+      expect(decisoesPendentes()).toHaveLength(0);
+      expect(tela.querySelector('#cfg-dec-periodo-erro')?.textContent).toContain('igual ou posterior');
+      expect(ate.getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it('a busca espera a pessoa parar de digitar e vai à URL', async () => {
+      const tela = await abrirAba('?aba=decisoes');
+      const campo = tela.querySelector<HTMLInputElement>('input[type="search"]') as HTMLInputElement;
+
+      campo.value = 'ren';
+      campo.dispatchEvent(new Event('input'));
+      campo.value = 'renda';
+      campo.dispatchEvent(new Event('input'));
+      await esperar(50);
+      expect(decisoesPendentes()).toHaveLength(0);
+
+      await esperar(400);
+      await assentar();
+      controller.expectOne((r) => r.url === DECISOES && r.params.get('busca') === 'renda').flush([decisaoDoFato]);
+      await assentar();
+      expect(router().url).toBe('/?aba=decisoes&busca=renda');
+    });
+
+    it('pagina pelo cursor do Link, reenviando os filtros, e volta pelo anterior', async () => {
+      const tela = await abrirAba('?aba=decisoes&cadastro=FATO', [decisaoDoFato], { Link: LINK });
+
+      botoes(tela, 'Próximo')[0]?.click();
+      await assentar();
+      const proxima = controller.expectOne((r) => r.url === DECISOES);
+      expect(proxima.request.params.get('cursor')).toBe('PROX');
+      expect(proxima.request.params.get('direction')).toBe('next');
+      expect(proxima.request.params.get('cadastro')).toBe('FATO');
+      expect(proxima.request.params.has('limit')).toBe(false);
+      proxima.flush([decisaoDoTipo], { headers: { Link: '</api/x?cursor=ANT&direction=prev>; rel="prev"' } });
+      await assentar();
+      expect(tela.querySelector('tbody')?.textContent).toContain('Laudo médico complementar');
+
+      botoes(tela, 'Anterior')[0]?.click();
+      await assentar();
+      const anterior = controller.expectOne((r) => r.url === DECISOES);
+      expect(anterior.request.params.get('cursor')).toBe('ANT');
+      expect(anterior.request.params.get('direction')).toBe('prev');
+      anterior.flush([decisaoDoFato]);
+    });
+
+    it('trocar os itens por página relê a primeira página com o novo limit', async () => {
+      const tela = await abrirAba('?aba=decisoes', [decisaoDoFato], { Link: LINK });
+
+      const seletor = tela.querySelector<HTMLSelectElement>('ui-list-footer select');
+      expect(seletor).not.toBeNull();
+      (seletor as HTMLSelectElement).value = '50';
+      (seletor as HTMLSelectElement).dispatchEvent(new Event('change'));
+      await navegar();
+      expect(controller.expectOne((r) => r.url === DECISOES).request.params.get('limit')).toBe('50');
+    });
+
+    it('sem resultado, com filtro, oferece limpar os filtros e a URL volta ao início da aba', async () => {
+      const tela = await abrirAba('?aba=decisoes&cadastro=FATO&minhas=true', []);
+      expect(tela.textContent).toContain('Nenhuma decisão encontrada');
+
+      botoes(tela, 'Limpar filtros')[0].click();
+      await navegar();
+      expect(router().url).toBe('/?aba=decisoes');
+      controller.expectOne((r) => r.url === DECISOES && !r.params.has('cadastro') && !r.params.has('minhas')).flush([]);
+      await assentar();
+      expect(tela.textContent).toContain('Nenhuma decisão registrada');
+    });
+
+    it('na falha mostra o motivo e tenta de novo', async () => {
+      controller.expectOne((r) => r.url === URL).flush([]);
+      await router().navigateByUrl('/?aba=decisoes');
+      await assentar();
+      controller.expectOne((r) => r.url === DECISOES).flush(...recusa(403, 'uniplus.auth.proibido', 'Sem permissão'));
+      await assentar();
+      const tela = fixture.nativeElement as HTMLElement;
+      expect(tela.textContent).toContain('Não foi possível carregar as decisões');
+
+      botoes(tela, 'Tentar novamente')[0].click();
+      await assentar();
+      controller.expectOne((r) => r.url === DECISOES).flush([decisaoDoFato]);
+      await assentar();
+      expect(tela.querySelector('tbody')?.textContent).toContain('Renda familiar bruta');
+    });
+
+    it('clicar na linha abre a decisão, a proteção conferida e o histórico completo lido do detalhe', async () => {
+      const tela = await abrirAba('?aba=decisoes', [decisaoDoTipo]);
+
+      tela.querySelector<HTMLButtonElement>('tbody .table-responsive__alvo')?.click();
+      await assentar();
+      const detalhe = controller.expectOne(`${URL}/tipos-documento/${laudo.id}`);
+      expect(detalhe.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-detalhe', 1));
+      detalhe.flush({
+        ...detalheDoLaudo,
+        atos: [
+          { ...decisaoDoTipo, ato: 'SOLICITACAO', atorNome: 'Isabella Moura', classificacaoRecomendada: null, justificativa: null },
+          decisaoDoTipo,
+          { ...decisaoDoTipo, ato: 'ACEITE', atorNome: 'Isabella Moura', classificacaoRecomendada: null, justificativa: null },
+        ],
+      });
+      await assentar();
+
+      const painel = tela.querySelector('dialog[aria-label="Detalhe da decisão"]');
+      const texto = painel?.textContent?.replace(/\s+/gu, ' ') ?? '';
+      expect(painel?.querySelector('.uni-drawer__title')?.textContent?.trim()).toBe('Laudo médico complementar');
+      expect(texto).toContain('Ajuste recomendado');
+      expect(texto).toContain('Decidido porCaroline Ribeiro');
+      expect(texto).toContain('Classificação recomendadaPessoal');
+      expect(texto).toContain('JustificativaO laudo identifica o candidato.');
+      expect(texto).toContain('Proteção conferida');
+      expect(texto).toContain('Execução de políticas públicas');
+      const historico = Array.from(painel?.querySelectorAll('.cfg-atos__item') ?? []).map((i) => i.textContent?.replace(/\s+/gu, ' '));
+      expect(historico).toHaveLength(3);
+      expect(historico[0]).toContain('Solicitação');
+      expect(historico[2]).toContain('Aceite da recomendação');
+      expect(painel?.querySelector('.cfg-form-footer button')?.textContent?.trim()).toBe('Fechar');
+    });
+
+    it('se o item não existe mais, mantém a decisão e explica no histórico', async () => {
+      const tela = await abrirAba('?aba=decisoes', [decisaoDoTipo]);
+
+      tela.querySelector<HTMLButtonElement>('tbody .table-responsive__alvo')?.click();
+      await assentar();
+      controller.expectOne(`${URL}/tipos-documento/${laudo.id}`).flush(...recusa(404, 'uniplus.nao_encontrado', 'Não encontrado'));
+      await assentar();
+
+      const texto = tela.querySelector('dialog[aria-label="Detalhe da decisão"]')?.textContent?.replace(/\s+/gu, ' ') ?? '';
+      expect(texto).toContain('Decidido porCaroline Ribeiro');
+      expect(texto).toContain('O item não existe mais no catálogo.');
+    });
   });
 });

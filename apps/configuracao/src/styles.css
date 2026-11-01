@@ -1100,3 +1100,16 @@ cfg-revogar-concessao-dialog .uni-dialog__header {
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+/* Período do filtro de decisões: as duas datas lado a lado, quebrando em tela estreita. */
+.cfg-filtro-periodo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* Abas da proteção de dados do catálogo: o segmentado ocupa a linha e respira dos blocos vizinhos. */
+.cfg-abas {
+  display: block;
+  margin-block: var(--space-4);
+}
