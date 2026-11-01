@@ -10,8 +10,8 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
 
-const APROVADA = { situacao: 'APROVADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, aceitaEm: null };
-const NEGADA = { ...APROVADA, situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' };
+const APROVADA = { situacao: 'APROVADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, justificativa: null, aceitaEm: null };
+const AJUSTE = { ...APROVADA, situacao: 'AJUSTE_RECOMENDADO', classificacaoRecomendada: 'SENSIVEL', justificativa: 'O dado revela a identidade de gênero.' };
 const PENDENTE = { ...APROVADA, situacao: 'PENDENTE' };
 const SOLICITADA = { ...APROVADA, situacao: 'SOLICITADA' };
 
@@ -86,7 +86,7 @@ const FATOS = [
       { codigo: 'HOMEM_TRANS', descricao: 'Homem trans', ordem: 2, ativo: true, orientacao: null },
     ],
     regrasPadrao: [],
-    aprovacao: NEGADA,
+    aprovacao: AJUSTE,
   },
   {
     id: '01960000-0000-7000-0000-0000000000f2',
@@ -132,6 +132,14 @@ async function mockApi(page: Page, situacaoDaFila: 'PENDENTE' | 'SOLICITADA'): P
   await page.route(/\/api\/configuracao\/admin\/fatos-candidato(\?.*)?$/, (route) => json(route, FATOS));
   await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, (route) => json(route, []));
   await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (route) => json(route, []));
+  await page.route(/\/api\/configuracao\/admin\/protecao-do-catalogo\/(tipos-documento|fatos)\/[^/?]+$/, (route) => {
+    const fato = route.request().url().includes('/fatos/');
+    const item = PENDENCIAS.find((p) => route.request().url().endsWith(p.id)) ?? PENDENCIAS[0];
+    const detalhe = fato
+      ? { ...item, aprovacao: SOLICITADA, descricao: 'Soma da renda mensal bruta dos membros da família.', tipoDocumento: null, fato: { dominio: 'NUMERICO', cardinalidade: 'ESCALAR', sistema: false, componenteExibicao: 'MOEDA', valores: [] } }
+      : { ...item, aprovacao: SOLICITADA, descricao: 'Laudo que complementa o pedido de atendimento especializado.', fato: null, tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf,jpg,png,tiff', tamanhoMaximoMb: 10 } };
+    return json(route, detalhe);
+  });
   await page.route(/\/api\/configuracao\/admin\/protecao-do-catalogo(\?.*)?$/, (route) => {
     const url = new URL(route.request().url());
     const fila = url.searchParams.get('situacao') === 'SOLICITADA' ? SOLICITADOS : PENDENCIAS;
@@ -188,6 +196,11 @@ async function clicarNaCelula(page: Page, celula: Locator): Promise<void> {
   const caixa = await celula.boundingBox();
   expect(caixa, 'a célula está visível').not.toBeNull();
   await page.mouse.click((caixa?.x ?? 0) + (caixa?.width ?? 0) / 2, (caixa?.y ?? 0) + (caixa?.height ?? 0) / 2);
+}
+
+/** A caixa de seleção do DS fica escondida: quem recebe o clique é o rótulo que a envolve. */
+function caixa(dialogo: Locator, nome: string): Locator {
+  return dialogo.locator('label.checkbox').filter({ has: dialogo.page().getByRole('checkbox', { name: nome }) });
 }
 
 async function aoAbrirPeloTeclado(page: Page, nome: string, ariaDoDrawer: string): Promise<void> {
@@ -284,6 +297,7 @@ test.describe('Listas do catálogo — linha clicável e detalhe no drawer', () 
     await expect(drawer.getByRole('heading', { name: 'Identidade de gênero', level: 2 })).toBeFocused();
     await expect(drawer.getByText('Marque se a identidade coincide com o sexo de nascimento.')).toBeVisible();
     await expect(drawer.getByText('Classificação recomendada: Pessoal sensível')).toBeVisible();
+    await expect(drawer.getByText('Justificativa: O dado revela a identidade de gênero.')).toBeVisible();
     await expect(drawer.getByRole('button', { name: 'Aceitar recomendação' })).toBeVisible();
     const axe = await runAxeWcagAA(page);
     expect(axe.violations, JSON.stringify(axe.violations, null, 2)).toEqual([]);
@@ -306,8 +320,11 @@ test.describe('Listas do catálogo — linha clicável e detalhe no drawer', () 
     const drawer = page.getByRole('dialog', { name: 'Detalhe do item aguardando a decisão' });
     await expect(drawer.getByRole('heading', { name: 'Laudo médico complementar', level: 2 })).toBeFocused();
     await expect(drawer.getByText('Proposta de proteção')).toBeVisible();
+    await expect(drawer.getByText('O que é o item')).toBeVisible();
     await expect(drawer.getByText('LAUDO_MEDICO')).toBeVisible();
     await expect(drawer.getByRole('button', { name: 'Aprovar' })).toBeVisible();
+    await expect(drawer.getByRole('button', { name: 'Recomendar ajuste' })).toBeVisible();
+    await expect(drawer.getByRole('button', { name: 'Reprovar' })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('protecao-drawer.png') });
     await page.keyboard.press('Escape');
     await expect(drawer).toBeHidden();
@@ -336,14 +353,58 @@ test.describe('Listas do catálogo — linha clicável e detalhe no drawer', () 
     }
   });
 
+  test('Proteção de Dados do Catálogo: reprovar exige a justificativa, com contador e erro associado', async ({ page }, testInfo) => {
+    await page.goto('/protecao-do-catalogo');
+    const drawer = page.getByRole('dialog', { name: 'Detalhe do item aguardando a decisão' });
+    await page.getByRole('button', { name: 'Ver o detalhe de Laudo médico complementar', exact: true }).click();
+    await expect(drawer.getByRole('button', { name: 'Reprovar' })).toBeVisible();
+    await drawer.getByRole('button', { name: 'Reprovar' }).click();
+
+    const dialogo = page.getByRole('dialog', { name: 'Reprovar a proteção de dados do item' });
+    await expect(dialogo).toBeVisible();
+    await expect(dialogo).not.toContainText('LAUDO_MEDICO');
+    const campo = dialogo.getByRole('textbox', { name: 'Justificativa' });
+    await expect(dialogo.getByText('0 de 2.000')).toBeVisible();
+    await dialogo.getByRole('button', { name: 'Reprovar item' }).click();
+    await expect(dialogo.getByText('Informe a justificativa da reprovação.')).toBeVisible();
+    await expect(campo).toBeFocused();
+    await expect(campo).toHaveAttribute('aria-invalid', 'true');
+    await campo.fill('Falta a base legal.');
+    await expect(dialogo.getByText('19 de 2.000')).toBeVisible();
+    const axe = await runAxeWcagAA(page);
+    expect(axe.violations, JSON.stringify(axe.violations, null, 2)).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath('protecao-reprovar.png') });
+
+    await page.keyboard.press('Escape');
+    await expect(dialogo).toBeHidden();
+    await drawer.getByRole('button', { name: 'Recomendar ajuste' }).click();
+    const ajuste = page.getByRole('dialog', { name: 'Recomendar ajuste da proteção de dados' });
+    await expect(ajuste.getByRole('combobox', { name: 'Classificação recomendada' })).toBeVisible();
+    await expect(ajuste.getByRole('textbox', { name: 'Justificativa' })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('protecao-recomendar-ajuste.png') });
+  });
+
   test('Enviar solicitação: o diálogo largo cabe sem rolagem horizontal e sem código técnico', async ({ page }, testInfo) => {
     await page.goto('/tipos-documento');
     await page.getByRole('button', { name: 'Enviar solicitação', exact: true }).click();
     const dialogo = page.getByRole('dialog', { name: 'Enviar solicitação de aprovação' });
     await expect(dialogo).toBeVisible();
-    await expect(dialogo.locator('thead th')).toHaveText(['Cadastro', 'Item', 'Sensibilidade']);
+    await expect(dialogo.locator('thead th')).toHaveText(['Enviar', 'Cadastro', 'Item', 'Sensibilidade']);
+    await expect(dialogo.getByRole('button', { name: 'Enviar 2 itens' })).toBeEnabled();
+    await expect(dialogo.getByRole('checkbox', { name: 'Enviar Laudo médico complementar' })).toBeChecked();
+    await caixa(dialogo, 'Enviar Renda familiar bruta').click();
+    await expect(dialogo.getByRole('button', { name: 'Enviar 1 item' })).toBeEnabled();
+    await expect(dialogo.getByRole('checkbox', { name: 'Marcar todos os itens' })).toHaveJSProperty('indeterminate', true);
+    // Do estado misto, o "marcar todos" marca tudo; só então desmarca tudo.
+    await caixa(dialogo, 'Marcar todos os itens').click();
+    await expect(dialogo.getByRole('button', { name: 'Enviar 2 itens' })).toBeEnabled();
+    await caixa(dialogo, 'Marcar todos os itens').click();
+    await expect(dialogo.getByRole('button', { name: 'Enviar 0 itens' })).toBeDisabled();
+    await caixa(dialogo, 'Marcar todos os itens').click();
+    await expect(dialogo.getByRole('button', { name: 'Enviar 2 itens' })).toBeEnabled();
     await expect(dialogo).not.toContainText('LAUDO_MEDICO');
     await expect(dialogo).not.toContainText('aprova ou nega');
+    await expect(dialogo).toContainText('Os itens marcados vão para a proteção de dados');
     const tabela = dialogo.locator('.table-responsive');
     const rola = await tabela.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
     expect(rola).toBe(false);

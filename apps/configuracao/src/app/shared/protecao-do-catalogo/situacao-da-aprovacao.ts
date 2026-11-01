@@ -8,18 +8,11 @@ interface Rotulo {
 }
 
 const SITUACOES: Readonly<Record<string, Rotulo>> = {
-  PENDENTE: { texto: 'Pendente de solicitação', variante: 'warning' },
-  SOLICITADA: { texto: 'Aguardando a proteção de dados', variante: 'info' },
+  PENDENTE: { texto: 'Pendente', variante: 'warning' },
+  SOLICITADA: { texto: 'Em análise', variante: 'info' },
   APROVADA: { texto: 'Aprovada', variante: 'success' },
-  NEGADA: { texto: 'Negada pela proteção de dados', variante: 'danger' },
-};
-
-/** O rótulo curto da lista, em que a tag cabe numa linha; o detalhe traz o texto por extenso. */
-const SITUACOES_EM_LISTA: Readonly<Record<string, string>> = {
-  PENDENTE: 'Pendente',
-  SOLICITADA: 'Em análise',
-  APROVADA: 'Aprovada',
-  NEGADA: 'Negada',
+  AJUSTE_RECOMENDADO: { texto: 'Ajuste recomendado', variante: 'warning' },
+  REPROVADA: { texto: 'Reprovada', variante: 'danger' },
 };
 
 /** O rótulo da situação de aprovação, ou o próprio token quando o vocabulário não o conhece. */
@@ -29,7 +22,8 @@ export function rotuloDaSituacao(situacao: string): Rotulo {
 
 /**
  * Onde o item do catálogo está no circuito de aprovação da proteção de dados. A situação sai
- * sempre como texto, e a negativa traz a classificação que a proteção de dados recomendou.
+ * sempre como texto; o ajuste recomendado traz a classificação que a proteção de dados indicou, e
+ * ele e a reprovação trazem a justificativa quando houver. Na lista só a tag aparece.
  */
 @Component({
   selector: 'cfg-situacao-da-aprovacao',
@@ -38,24 +32,26 @@ export function rotuloDaSituacao(situacao: string): Rotulo {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-tag [variant]="rotulo().variante">{{ rotulo().texto }}</ui-tag>
-    @if (!emLista() && recomendada(); as classificacao) {
-      <div class="table-responsive__meta">Classificação recomendada: {{ classificacao }}</div>
+    @if (!emLista()) {
+      @if (recomendada(); as classificacao) {
+        <div class="table-responsive__meta">Classificação recomendada: {{ classificacao }}</div>
+      }
+      @if (justificativa(); as texto) {
+        <div class="table-responsive__meta cfg-justificativa">Justificativa: {{ texto }}</div>
+      }
     }
   `,
 })
 export class SituacaoDaAprovacaoComponent {
   readonly situacao = input.required<string>();
   readonly classificacaoRecomendada = input<string | null>(null);
-  /** Na célula da lista a situação ocupa uma linha só: rótulo curto e sem a recomendação, que fica no detalhe. */
+  readonly justificativa = input<string | null>(null);
+  /** Na célula da lista a situação ocupa uma linha só: sem a recomendação nem a justificativa, que ficam no detalhe. */
   readonly emLista = input(false);
 
-  protected readonly rotulo = computed(() => {
-    const completo = rotuloDaSituacao(this.situacao());
-    const curto = SITUACOES_EM_LISTA[this.situacao()];
-    return this.emLista() && curto !== undefined ? { ...completo, texto: curto } : completo;
-  });
+  protected readonly rotulo = computed(() => rotuloDaSituacao(this.situacao()));
   protected readonly recomendada = computed(() => {
     const token = this.classificacaoRecomendada();
-    return this.situacao() === 'NEGADA' && token ? rotuloDe(CLASSIFICACOES_DE_PROTECAO, token) : null;
+    return this.situacao() === 'AJUSTE_RECOMENDADO' && token ? rotuloDe(CLASSIFICACOES_DE_PROTECAO, token) : null;
   });
 }

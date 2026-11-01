@@ -31,7 +31,7 @@ const corRaca = (sistema: boolean): FatoCandidatoDto => ({
   ativo: true,
   valores: [{ codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true, orientacao: null }],
   regrasPadrao: [],
-  aprovacao: { situacao: 'APROVADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, aceitaEm: null },
+  aprovacao: { situacao: 'APROVADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, justificativa: null, aceitaEm: null },
 });
 
 const URL_FASES = `${BASE}/api/configuracao/fases-canonicas?limit=100`;
@@ -924,7 +924,7 @@ describe('FatoCandidatoEdicaoComponent', () => {
     const URL = `${BASE}/api/configuracao/admin/fatos-candidato/${ID}`;
     const comAprovacao = (fato: FatoCandidatoDto, situacao: string, classificacaoRecomendada: string | null = null): FatoCandidatoDto => ({
       ...fato,
-      aprovacao: { situacao, solicitadaEm: null, decididaEm: null, classificacaoRecomendada, aceitaEm: null },
+      aprovacao: { situacao, solicitadaEm: null, decididaEm: null, classificacaoRecomendada, justificativa: null, aceitaEm: null },
     });
     const definicao = () => fixture.componentInstance['definicao'];
 
@@ -992,9 +992,9 @@ describe('FatoCandidatoEdicaoComponent', () => {
     });
 
     it('mostra a situação como texto e a classificação que a proteção de dados recomendou', async () => {
-      const tela = await carregar(comAprovacao(corRaca(true), 'NEGADA', 'IDENTIFICADOR'));
+      const tela = await carregar(comAprovacao(corRaca(true), 'AJUSTE_RECOMENDADO', 'IDENTIFICADOR'));
 
-      expect(tela.textContent).toContain('Negada pela proteção de dados');
+      expect(tela.textContent).toContain('Ajuste recomendado');
       expect(tela.textContent).toContain('Classificação recomendada: Identificador');
     });
   });

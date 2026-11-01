@@ -9148,17 +9148,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecidirProtecaoDoCatalogoCommand"
+                "$ref": "#/components/schemas/DecidirProtecaoDoCatalogoRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/DecidirProtecaoDoCatalogoCommand"
+                "$ref": "#/components/schemas/DecidirProtecaoDoCatalogoRequest"
               }
             },
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/DecidirProtecaoDoCatalogoCommand"
+                "$ref": "#/components/schemas/DecidirProtecaoDoCatalogoRequest"
               }
             }
           },
@@ -9247,6 +9247,90 @@
         "x-uniplus-idempotent": true
       }
     },
+    "/api/configuracao/admin/protecao-do-catalogo/{cadastro}/{id}": {
+      "get": {
+        "tags": [
+          "ProtecaoDoCatalogo"
+        ],
+        "parameters": [
+          {
+            "name": "cadastro",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^(tipos-documento|fatos)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.protecao-do-catalogo-detalhe.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalheDaProtecaoDoCatalogoDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/configuracao/admin/protecao-do-catalogo/solicitacoes": {
       "post": {
         "tags": [
@@ -9266,6 +9350,46 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SolicitarAprovacaoDaProtecaoRequest"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SolicitarAprovacaoDaProtecaoRequest"
+                  }
+                ]
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SolicitarAprovacaoDaProtecaoRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -14029,6 +14153,7 @@
           "solicitadaEm",
           "decididaEm",
           "classificacaoRecomendada",
+          "justificativa",
           "aceitaEm"
         ],
         "type": "object",
@@ -14051,6 +14176,12 @@
             "format": "date-time"
           },
           "classificacaoRecomendada": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "justificativa": {
             "type": [
               "null",
               "string"
@@ -16862,7 +16993,7 @@
           }
         }
       },
-      "DecidirProtecaoDoCatalogoCommand": {
+      "DecidirProtecaoDoCatalogoRequest": {
         "required": [
           "cadastro",
           "itemId",
@@ -16874,6 +17005,10 @@
         "type": "object",
         "properties": {
           "cadastro": {
+            "enum": [
+              "TIPO_DOCUMENTO",
+              "FATO"
+            ],
             "type": [
               "null",
               "string"
@@ -16884,6 +17019,11 @@
             "format": "uuid"
           },
           "decisao": {
+            "enum": [
+              "APROVAR",
+              "RECOMENDAR_AJUSTE",
+              "REPROVAR"
+            ],
             "type": [
               "null",
               "string"
@@ -16908,6 +17048,12 @@
             ]
           },
           "classificacaoRecomendada": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "justificativa": {
             "type": [
               "null",
               "string"
@@ -17007,6 +17153,161 @@
             ]
           },
           "componenteExibicao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "DetalheDaProtecaoDoCatalogoDto": {
+        "required": [
+          "tipo",
+          "id",
+          "codigo",
+          "nome",
+          "descricao",
+          "classificacaoProtecao",
+          "hipoteseLegal",
+          "finalidadeTratamento",
+          "aprovacao",
+          "fato",
+          "tipoDocumento"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "classificacaoProtecao": {
+            "type": "string"
+          },
+          "hipoteseLegal": {
+            "type": "string"
+          },
+          "finalidadeTratamento": {
+            "type": "string"
+          },
+          "aprovacao": {
+            "$ref": "#/components/schemas/AprovacaoDaProtecaoDto"
+          },
+          "fato": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DetalheDoFatoDto"
+              }
+            ]
+          },
+          "tipoDocumento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DetalheDoTipoDeDocumentoDto"
+              }
+            ]
+          }
+        }
+      },
+      "DetalheDoFatoDto": {
+        "required": [
+          "dominio",
+          "cardinalidade",
+          "sistema",
+          "componenteExibicao",
+          "valores"
+        ],
+        "type": "object",
+        "properties": {
+          "dominio": {
+            "type": "string"
+          },
+          "cardinalidade": {
+            "type": "string"
+          },
+          "sistema": {
+            "type": "boolean"
+          },
+          "componenteExibicao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "valores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DetalheDoValorDoFatoDto"
+            }
+          }
+        }
+      },
+      "DetalheDoTipoDeDocumentoDto": {
+        "required": [
+          "categoria",
+          "formatosAceitos",
+          "tamanhoMaximoMb"
+        ],
+        "type": "object",
+        "properties": {
+          "categoria": {
+            "type": "string"
+          },
+          "formatosAceitos": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tamanhoMaximoMb": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DetalheDoValorDoFatoDto": {
+        "required": [
+          "codigo",
+          "descricao",
+          "orientacao"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "orientacao": {
             "type": [
               "null",
               "string"
@@ -18549,6 +18850,29 @@
           }
         }
       },
+      "ItemParaSolicitarRequest": {
+        "required": [
+          "cadastro",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "cadastro": {
+            "enum": [
+              "TIPO_DOCUMENTO",
+              "FATO"
+            ],
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "ItemPortavel": {
         "required": [
           "fatoCodigo",
@@ -19970,6 +20294,23 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "SolicitarAprovacaoDaProtecaoRequest": {
+        "required": [
+          "itens"
+        ],
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ItemParaSolicitarRequest"
+            }
           }
         }
       },

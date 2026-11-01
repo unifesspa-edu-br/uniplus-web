@@ -122,8 +122,9 @@ a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
 .btn--danger {
   --btn-bg: var(--color-danger-solid);
   --btn-fg: var(--color-neutral-0);
-  --btn-bg-hover: var(--color-danger-700);
-  --btn-bg-active: var(--color-danger-700);
+  /* Escurece o próprio fundo: `--color-danger-700` é claro no tema escuro e deixava o texto branco ilegível. */
+  --btn-bg-hover: color-mix(in srgb, var(--color-danger-solid), #000 18%);
+  --btn-bg-active: color-mix(in srgb, var(--color-danger-solid), #000 18%);
 }
 [data-theme='contrast'] .btn--danger {
   --btn-fg: var(--text-on-primary);
