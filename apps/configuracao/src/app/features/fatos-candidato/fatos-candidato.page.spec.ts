@@ -215,7 +215,8 @@ describe('FatosCandidatoPage', () => {
     id: '01960000-0000-7000-0000-0000000000a1',
     codigo: 'TRABALHA',
     nome: 'Trabalha',
-    descricao: null,
+    descricao: '',
+    componenteExibicao: null,
     dominio: 'BOOLEANO',
     origem: 'DECLARADO',
     cardinalidade: 'ESCALAR',
@@ -231,6 +232,7 @@ describe('FatosCandidatoPage', () => {
     ativo: true,
     valores: [],
     regrasPadrao: [],
+    aprovacao: { situacao: 'APROVADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, aceitaEm: null },
   };
 
   it('CA-01: o agregado vai à API com o fato de membro, sem tipo de dado nem escopo, e a recusa do membro chega ao campo', async () => {

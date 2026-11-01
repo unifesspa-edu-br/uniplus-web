@@ -119,6 +119,10 @@ const TIPOS_DOCUMENTO = [
     formatosAceitos: 'pdf,jpg',
     tamanhoMaximoMb: 10,
     tipoEquivalente: null,
+    classificacaoProtecao: 'PESSOAL',
+    finalidadeTratamento: 'Conferir a identidade do candidato.',
+    hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+    protecaoAprovada: true,
     criadoEm: '2026-08-30T12:00:00Z',
   },
 ];
@@ -832,7 +836,7 @@ describe('FaseStepComponent', () => {
         id: '01960000-0000-7000-0000-0000000000e1',
         codigo: 'LAUDO_RECENTE',
         nome: 'Laudo recente',
-        descricao: null,
+        descricao: '',
         dominio: 'BOOLEANO',
         origem: 'DECLARADO',
         cardinalidade: 'ESCALAR',
@@ -843,6 +847,10 @@ describe('FaseStepComponent', () => {
         fonteValores: null,
         ativo: true,
         escopo: 'CANDIDATO',
+        classificacaoProtecao: 'PESSOAL',
+        hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+        finalidadeTratamento: 'Conferir o laudo do candidato.',
+        protecaoAprovada: true,
       };
 
       beforeEach(() => {
@@ -923,7 +931,7 @@ describe('FaseStepComponent', () => {
         id: '01960000-0000-7000-0000-0000000000e2',
         codigo: 'PARENTESCO',
         nome: 'Parentesco',
-        descricao: null,
+        descricao: '',
         dominio: 'CATEGORICO',
         origem: 'DECLARADO',
         cardinalidade: 'ESCALAR',
@@ -934,6 +942,10 @@ describe('FaseStepComponent', () => {
         fonteValores: null,
         ativo: true,
         escopo: 'MEMBRO_GRUPO',
+        classificacaoProtecao: 'PESSOAL',
+        hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+        finalidadeTratamento: 'Compor a renda familiar.',
+        protecaoAprovada: true,
       };
       const SUBITEM = {
         fatoCodigo: 'PARENTESCO',

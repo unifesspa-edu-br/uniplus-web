@@ -30,6 +30,10 @@ const tipoDocumentoSeed: TipoDocumentoDto = {
   formatosAceitos: 'pdf,jpg,png',
   tamanhoMaximoMb: 10,
   tipoEquivalente: 'CIN',
+  classificacaoProtecao: 'PESSOAL',
+  finalidadeTratamento: 'Conferir a identidade do candidato.',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  protecaoAprovada: true,
   criadoEm: '2026-06-10T12:00:00Z',
 };
 

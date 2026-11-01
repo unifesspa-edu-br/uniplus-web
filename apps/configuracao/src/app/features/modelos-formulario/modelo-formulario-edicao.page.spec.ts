@@ -26,7 +26,7 @@ const fato = (codigo: string): FatoCandidatoView => ({
   id: codigo,
   codigo,
   nome: codigo,
-  descricao: null,
+  descricao: '',
   dominio: 'BOOLEANO',
   origem: 'DECLARADO',
   cardinalidade: 'ESCALAR',
@@ -37,6 +37,10 @@ const fato = (codigo: string): FatoCandidatoView => ({
   fonteValores: null,
   ativo: true,
   escopo: 'CANDIDATO',
+  classificacaoProtecao: 'INTERNO',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  finalidadeTratamento: 'Aplicar a regra do certame.',
+  protecaoAprovada: true,
 });
 
 /**
