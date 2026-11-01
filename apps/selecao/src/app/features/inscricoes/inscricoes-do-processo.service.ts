@@ -12,13 +12,11 @@ import {
 } from '@uniplus/shared-core/http';
 import {
   SELECAO_BASE_PATH,
-  certamePublicoRequest,
   inscricoesDoProcessoRequest,
-  type CertamePublicadoDto,
   type InscricaoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 
-import { nomesDasOfertas } from './nome-da-oferta';
+import { useCertameDoProcesso } from './certame-do-processo';
 
 /** Itens por página iniciais. */
 export const PAGE_SIZE_INICIAL = 50;
@@ -29,9 +27,6 @@ export type SituacaoDaLista =
   | { readonly estado: 'nao-encontrado' }
   | { readonly estado: 'falha'; readonly mensagem: string }
   | { readonly estado: 'lido' };
-
-/** Onde a leitura do certame publicado está; dela vêm o nome do processo e dos cursos. */
-export type SituacaoDoCertame = 'lendo' | 'falha' | 'lido';
 
 interface PaginaLida {
   readonly itens: readonly InscricaoDoProcessoDto[];
@@ -72,10 +67,7 @@ export class InscricoesDoProcesso {
     });
   });
 
-  private readonly certame = useApiResource<CertamePublicadoDto>(() => {
-    const id = this.processoId();
-    return id === null ? undefined : certamePublicoRequest(this.basePath, id);
-  });
+  private readonly certame = useCertameDoProcesso(this.processoId);
 
   private readonly ultimaPagina = linkedSignal<
     {
@@ -124,20 +116,11 @@ export class InscricoesDoProcesso {
     return this.lista.value() === undefined ? { estado: 'lendo' } : { estado: 'lido' };
   });
 
-  readonly situacaoDoCertame = computed<SituacaoDoCertame>(() => {
-    if (this.certame.problem() !== null || this.certame.error() !== undefined) return 'falha';
-    return this.certame.data() === null ? 'lendo' : 'lido';
-  });
-
-  readonly nomeDoProcesso = computed(() => this.certame.data()?.nome ?? null);
-  readonly nomesDasOfertas = computed(() => {
-    const certame = this.certame.data();
-    return certame === null ? new Map<string, string>() : nomesDasOfertas(certame);
-  });
-  /** O certame diz se o processo admite a 2ª opção de curso; sem ele, não se afirma que admite. */
-  readonly admiteSegundaOpcao = computed(
-    () => Number(this.certame.data()?.opcoesDeCurso.numero ?? 1) >= 2,
-  );
+  readonly situacaoDoCertame = this.certame.situacao;
+  readonly carregandoCertame = this.certame.carregando;
+  readonly nomeDoProcesso = this.certame.nomeDoProcesso;
+  readonly nomesDasOfertas = this.certame.nomesDasOfertas;
+  readonly admiteSegundaOpcao = this.certame.admiteSegundaOpcao;
 
   constructor() {
     // O cursor deixou de continuar a consulta: repeti-lo repetiria a recusa, então recomeça.
@@ -181,10 +164,10 @@ export class InscricoesDoProcesso {
   /** Relê a lista e, se o certame também falhou, o certame. */
   tentarNovamente(): void {
     this.lista.reload();
-    if (this.situacaoDoCertame() === 'falha') this.certame.reload();
+    if (this.situacaoDoCertame() === 'falha') this.certame.recarregar();
   }
 
   recarregarCertame(): void {
-    this.certame.reload();
+    this.certame.recarregar();
   }
 }
