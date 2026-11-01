@@ -86,13 +86,13 @@ describe('FatosCandidatoPage', () => {
     filtrada.flush([]);
   });
 
-  it('sem a permissão de manter, não oferece criar nem editar, e deixa visualizar', async () => {
+  it('sem a permissão de manter, não oferece criar nem editar, e deixa abrir o detalhe', async () => {
     concedidas.set(['configuracao:fatos-candidato:consultar']);
     atenderFases();
     controller.expectOne((r) => r.url === LISTA).flush([
       {
-        id: 'f1', codigo: 'RENDA', nome: 'Renda', origem: 'DECLARADO', dominio: 'NUMERO', sistema: false, ativo: true,
-        classificacaoProtecao: 'PESSOAL',
+        ...fatoDoAdministrador,
+        id: 'f1', codigo: 'RENDA', nome: 'Renda',
         aprovacao: { situacao: 'NEGADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: 'SENSIVEL', aceitaEm: null },
       },
     ]);
@@ -104,12 +104,87 @@ describe('FatosCandidatoPage', () => {
     const host = fixture.nativeElement as HTMLElement;
     const botoes = Array.from(host.querySelectorAll('button')).map((b) => b.textContent ?? '');
     expect(botoes.some((texto) => texto.includes('Novo fato'))).toBe(false);
-    const botoesDaLinha = Array.from(host.querySelectorAll('td button')).map((b) => b.textContent ?? '');
-    expect(botoesDaLinha.some((texto) => texto.includes('Aceitar recomendação'))).toBe(false);
-    const rotulos = Array.from(host.querySelectorAll('td.table-responsive__actions button')).map(
-      (b) => b.getAttribute('aria-label') ?? '',
-    );
-    expect(rotulos).toEqual(['Visualizar o fato RENDA']);
+    expect(host.querySelectorAll('td.table-responsive__actions button')).toHaveLength(0);
+
+    (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const rodape = Array.from(host.querySelectorAll('.cfg-form-footer button')).map((b) => b.textContent?.trim());
+    expect(rodape).toEqual(['Fechar']);
+  });
+
+  describe('detalhe do fato', () => {
+    const fatoCategorico = {
+      ...fatoDoAdministrador,
+      id: '01960000-0000-7000-0000-0000000000b1',
+      codigo: 'IDENTIDADE_GENERO',
+      nome: 'Identidade de gênero',
+      descricao: 'Como o candidato se identifica.',
+      dominio: 'CATEGORICO',
+      fonteValores: 'GLOBAL',
+      valores: [
+        { codigo: 'MULHER_CIS', descricao: 'Mulher cis', ordem: 1, ativo: true, orientacao: 'Marque se a identidade coincide com o sexo de nascimento.' },
+        { codigo: 'ANTIGO', descricao: 'Valor antigo', ordem: 2, ativo: false, orientacao: null },
+      ],
+    };
+
+    async function abrir(): Promise<HTMLElement> {
+      atenderFases();
+      controller.expectOne((r) => r.url === LISTA).flush([fatoCategorico]);
+      await propagar();
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('o nome da linha é um botão nativo, alcançável por Tab, com nome acessível', async () => {
+      const host = await abrir();
+
+      const alvo = host.querySelector('tbody .table-responsive__alvo') as HTMLButtonElement;
+      expect(alvo.tagName).toBe('BUTTON');
+      expect(alvo.type).toBe('button');
+      expect(alvo.disabled).toBe(false);
+      expect(alvo.tabIndex).toBeGreaterThanOrEqual(0);
+      expect(alvo.getAttribute('aria-label')).toBe('Ver o detalhe de Identidade de gênero');
+      expect(host.querySelector('tbody tr')?.hasAttribute('onclick')).toBe(false);
+    });
+
+    it('abre o drawer só de leitura com os campos, os valores possíveis e a orientação', async () => {
+      const host = await abrir();
+
+      (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(component['detalheAberto']()).toBe(true);
+      const titulo = host.querySelector('dialog[aria-label="Detalhe do fato do candidato"] .uni-drawer__title');
+      expect(titulo?.textContent?.trim()).toBe('Identidade de gênero');
+      const texto = host.querySelector('dialog[aria-label="Detalhe do fato do candidato"]')?.textContent?.replace(/\s+/gu, ' ') ?? '';
+      expect(texto).toContain('IDENTIDADE_GENERO');
+      expect(texto).toContain('Como o candidato se identifica.');
+      expect(texto).toContain('Declarado pelo candidato');
+      expect(texto).toContain('Lista de valores');
+      expect(texto).toContain('MULHER_CIS');
+      expect(texto).toContain('Marque se a identidade coincide com o sexo de nascimento.');
+      expect(texto).toContain('Valor antigo');
+      expect(texto).toContain('Desativado');
+      expect(texto).toContain('Pessoal');
+      expect(texto).toContain('Execução de políticas públicas');
+      expect(texto).toContain('Aprovada');
+      expect(host.querySelector('dialog[aria-label="Detalhe do fato do candidato"] input, dialog[aria-label="Detalhe do fato do candidato"] textarea')).toBeNull();
+    });
+
+    it('"Editar" fecha o detalhe e abre a edição do mesmo fato', async () => {
+      const host = await abrir();
+      (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      const editar = Array.from<HTMLButtonElement>(host.querySelectorAll('.cfg-form-footer button')).find((b) => b.textContent?.trim() === 'Editar');
+      editar?.click();
+      fixture.detectChanges();
+      controller.match(() => true).forEach((req) => req.flush(null));
+
+      expect(component['detalheAberto']()).toBe(false);
+      expect(component['drawerAberto']()).toBe(true);
+      expect(component['fatoEmEdicao']()).toBe(fatoCategorico.id);
+    });
   });
 
   it('as três opções de "O que o fato é" formam um grupo de rádio nativo', async () => {
@@ -373,27 +448,17 @@ describe('FatosCandidatoPage', () => {
     expect(tela.querySelector('[aria-label^="Reativar"]')).toBeNull();
   });
 
-  it('visualizar abre o fato só para consultar; editar, para alterar', async () => {
+  it('editar pela linha abre a edição do fato', async () => {
     atenderFases();
     controller.expectOne((r) => r.url === LISTA).flush([fatoDoAdministrador]);
     await propagar();
     fixture.detectChanges();
     const tela = fixture.nativeElement as HTMLElement;
 
-    (tela.querySelector('[aria-label^="Visualizar"]') as HTMLButtonElement).click();
-    expect(component['drawerAberto']()).toBe(true);
-    expect(component['somenteLeitura']()).toBe(true);
-    fixture.detectChanges();
-    const fechar = Array.from(
-      tela.querySelectorAll('.cfg-form-footer button') as NodeListOf<HTMLButtonElement>,
-    ).find((b) => b.textContent?.trim() === 'Fechar');
-    fechar?.click();
-    expect(component['drawerAberto']()).toBe(false);
-    controller.match(() => true).forEach((req) => req.flush(null));
-
-    component['drawerAberto'].set(false);
     (tela.querySelector('[aria-label^="Editar"]') as HTMLButtonElement).click();
-    expect(component['somenteLeitura']()).toBe(false);
+    expect(component['drawerAberto']()).toBe(true);
+    expect(component['fatoEmEdicao']()).toBe(fatoDoAdministrador.id);
+    controller.match(() => true).forEach((req) => req.flush(null));
   });
 
   it('CA-02: desativar confirmado vai à API e recarrega a lista; o foco passa ao título dela', async () => {
@@ -451,9 +516,14 @@ describe('FatosCandidatoPage', () => {
       aprovacao: { situacao: 'PENDENTE', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, aceitaEm: null },
     });
     const botaoDaPagina = (host: HTMLElement, rotulo: string) =>
-      Array.from<HTMLButtonElement>(host.querySelectorAll('.panel-head__actions button, td button')).find((b) =>
+      Array.from<HTMLButtonElement>(host.querySelectorAll('.panel-head__actions button, .cfg-form-footer button')).find((b) =>
         b.textContent?.includes(rotulo),
       );
+
+    const abrirDetalhe = (host: HTMLElement): void => {
+      (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
+      fixture.detectChanges();
+    };
 
     async function carregarCom(fatos: readonly unknown[], pendencias: readonly unknown[] = []): Promise<HTMLElement> {
       atenderFases();
@@ -467,14 +537,17 @@ describe('FatosCandidatoPage', () => {
     it('diz a situação como texto e, na negativa, a classificação recomendada, inclusive no fato de sistema', async () => {
       const host = await carregarCom([{ ...fatoCom('NEGADA', 'SENSIVEL'), sistema: true }]);
 
+      expect(host.querySelector('tbody')?.textContent).toContain('Negada pela proteção de dados');
+      expect(host.querySelector('tbody')?.textContent).not.toContain('Classificação recomendada');
+      abrirDetalhe(host);
       const texto = host.textContent?.replace(/\s+/gu, ' ') ?? '';
-      expect(texto).toContain('Negada pela proteção de dados');
       expect(texto).toContain('Classificação recomendada: Pessoal sensível');
       expect(botaoDaPagina(host, 'Aceitar recomendação')).toBeDefined();
     });
 
     it('a recusa do aceite relê a lista e a situação, e reabre o diálogo com a mensagem da API', async () => {
       const host = await carregarCom([fatoCom('NEGADA', 'SENSIVEL')]);
+      abrirDetalhe(host);
       botaoDaPagina(host, 'Aceitar recomendação')?.click();
       component['confirmarAceite']();
       controller.expectOne(`${LISTA}/${fatoDoAdministrador.id}/aceite-da-recomendacao`).flush(
@@ -492,6 +565,7 @@ describe('FatosCandidatoPage', () => {
 
     it('aceita a recomendação do fato negado e recarrega a lista', async () => {
       const host = await carregarCom([fatoCom('NEGADA', 'SENSIVEL')]);
+      abrirDetalhe(host);
       botaoDaPagina(host, 'Aceitar recomendação')?.click();
       fixture.detectChanges();
       expect(component['mensagemDoAceite']()).toContain('Pessoal sensível');
@@ -513,6 +587,7 @@ describe('FatosCandidatoPage', () => {
     it('sem a permissão de manter não oferece "Aceitar recomendação" nem "Enviar solicitação"', async () => {
       concedidas.set(['configuracao:fatos-candidato:consultar']);
       const host = await carregarCom([fatoCom('NEGADA', 'SENSIVEL')], [pendencia(fatoDoAdministrador.id)]);
+      abrirDetalhe(host);
 
       expect(botaoDaPagina(host, 'Aceitar recomendação')).toBeUndefined();
       expect(botaoDaPagina(host, 'Enviar solicitação')).toBeUndefined();
