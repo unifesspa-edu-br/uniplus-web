@@ -63,7 +63,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'npx nx run configuracao:serve',
-    url: 'http://localhost:4203',
+    url: baseURL,
     reuseExistingServer: !isGithubActions,
     cwd: workspaceRoot,
   },

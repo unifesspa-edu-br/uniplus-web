@@ -104,13 +104,15 @@ const AAA_PROJECTS = AAA_VIEWPORTS.flatMap((viewport) =>
 
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
+  // As specs contra o backend real compartilham o cenário e o catálogo da API: uma por vez.
+  ...(RODAR_CONTRA_BACKEND_REAL ? { workers: 1 } : {}),
   use: {
     baseURL,
     trace: 'on-first-retry',
   },
   webServer: {
     command: 'npx nx run selecao:serve',
-    url: 'http://localhost:4200',
+    url: baseURL,
     reuseExistingServer: !isGithubActions,
     cwd: workspaceRoot,
   },
@@ -159,6 +161,7 @@ export default defineConfig({
       ? [
           {
             name: 'selecao-backend-real',
+            fullyParallel: false,
             testMatch: /.*\.backend\.spec\.ts/,
             dependencies: ['auth-setup'],
             use: {
