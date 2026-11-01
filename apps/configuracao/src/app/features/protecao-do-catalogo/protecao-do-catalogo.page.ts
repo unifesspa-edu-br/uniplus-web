@@ -155,7 +155,7 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
       position="right"
     >
       @if (detalheAberto() && detalhe(); as item) {
-        <div class="cfg-form">
+        <div class="cfg-form" role="region" tabindex="0" aria-label="Dados do item">
           <cfg-detalhe-da-protecao titulo="Proposta de proteção" [protecao]="item" />
           <p class="u-caption">
             Código no sistema: <code>{{ item.codigo }}</code>

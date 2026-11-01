@@ -229,7 +229,7 @@ interface TipoDocumentoForm {
       <ui-lookup-alert [falhas]="lookupsComFalha()" />
 
       @if (documentosFiltrados().length > 0) {
-        <div class="table-responsive table-responsive--acoes-fixas" role="region" tabindex="0" aria-label="Lista de tipos de documento">
+        <div class="table-responsive table-responsive--acoes-fixas table-responsive--compacta" role="region" tabindex="0" aria-label="Lista de tipos de documento">
           <table>
             <caption class="sr-only">
               Tipos de documento, com categoria, formatos aceitos, sensibilidade e situação da aprovação. Use o nome para abrir o detalhe.
@@ -266,12 +266,12 @@ interface TipoDocumentoForm {
                       </div>
                     }
                   </td>
-                  <td data-label="Categoria">
+                  <td data-label="Categoria" class="u-nowrap-desktop">
                     <ui-tag>
                       <ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)" />
                     </ui-tag>
                   </td>
-                  <td data-label="Formatos aceitos" class="u-caption">
+                  <td data-label="Formatos aceitos" class="u-caption u-nowrap-desktop">
                     {{ tipo.formatosAceitos || '—' }}
                   </td>
                   <td data-label="Sensibilidade" class="u-nowrap-desktop">
@@ -279,7 +279,7 @@ interface TipoDocumentoForm {
                   </td>
                   <td data-label="Situação" class="u-nowrap-desktop">
                     @if (aprovacao.aprovacaoDe(tipo.id); as situacao) {
-                      <cfg-situacao-da-aprovacao [situacao]="situacao.situacao" [comRecomendada]="false" />
+                      <cfg-situacao-da-aprovacao [situacao]="situacao.situacao" [emLista]="true" />
                     } @else {
                       <span aria-hidden="true">—</span>
                       <span class="sr-only">Situação indisponível</span>
@@ -350,7 +350,7 @@ interface TipoDocumentoForm {
       position="right"
     >
       @if (detalheAberto() && detalhe(); as tipo) {
-        <div class="cfg-form">
+        <div class="cfg-form" role="region" tabindex="0" aria-label="Dados do tipo de documento">
           @if (aprovacao.aprovacaoDe(tipo.id); as situacao) {
             <cfg-situacao-da-aprovacao
               [situacao]="situacao.situacao"

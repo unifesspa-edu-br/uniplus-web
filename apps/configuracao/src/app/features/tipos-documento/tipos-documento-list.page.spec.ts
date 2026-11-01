@@ -998,6 +998,7 @@ describe('TiposDocumentoListPage', () => {
       fixture.detectChanges();
       expect(rodape()).toEqual(['Fechar', 'Aceitar recomendação', 'Editar']);
       expect(painel()).toContain('Classificação recomendada: Pessoal sensível');
+      expect(painel()).toContain('Negada pela proteção de dados');
     });
 
     it('sem a permissão de manter, só consulta e fecha', async () => {
@@ -1031,15 +1032,34 @@ describe('TiposDocumentoListPage', () => {
       fixture.detectChanges();
 
       expect(texto()).toContain('Aprovada');
-      expect(texto()).toContain('Negada pela proteção de dados');
+      expect(texto()).toContain('Negada');
       expect(texto()).not.toContain('Classificação recomendada');
-      expect(texto()).toContain('Aguardando a proteção de dados');
+      expect(texto()).toContain('Em análise');
     });
 
     it('oferece "Enviar solicitação" só com item pendente e permissão de manter', async () => {
       await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'PENDENTE' })]);
       fixture.detectChanges();
       expect(botao('Enviar solicitação')).toBeDefined();
+    });
+
+    it('o diálogo de envio é largo e lista Cadastro, Item e Sensibilidade, sem o código técnico', async () => {
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'PENDENTE' })]);
+      fixture.detectChanges();
+      botao('Enviar solicitação')?.click();
+      fixture.detectChanges();
+
+      const dialogo = fixture.nativeElement.querySelector('cfg-solicitacao-da-protecao-dialog dialog') as HTMLDialogElement;
+      expect(dialogo.classList.contains('uni-dialog--largo')).toBe(true);
+      expect(Array.from(dialogo.querySelectorAll('thead th')).map((th) => th.textContent?.trim())).toEqual([
+        'Cadastro',
+        'Item',
+        'Sensibilidade',
+      ]);
+      const texto = dialogo.textContent?.replace(/\s+/gu, ' ') ?? '';
+      expect(texto).toContain('Laudo médico — PcD');
+      expect(texto).not.toContain('LAUDO_MEDICO');
+      expect(texto).not.toMatch(/aprova ou nega/u);
     });
 
     it('não oferece "Enviar solicitação" sem item pendente', async () => {
@@ -1083,7 +1103,7 @@ describe('TiposDocumentoListPage', () => {
       fixture.detectChanges();
 
       expect(botao('Enviar solicitação')).toBeUndefined();
-      expect(texto()).toContain('Aguardando a proteção de dados');
+      expect(texto()).toContain('Em análise');
     });
 
     it('a solicitação sem quem a aprove fica no diálogo, com a mensagem da API, e não recarrega a lista', async () => {
@@ -1190,7 +1210,7 @@ describe('TiposDocumentoListPage', () => {
 
     it('releitura que falha depois de uma boa não devolve "Aprovada" ao tipo que saiu da lista', async () => {
       await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'SOLICITADA' })]);
-      expect(texto()).toContain('Aguardando a proteção de dados');
+      expect(texto()).toContain('Em análise');
 
       component['aprovacao'].carregar();
       for (const req of controller.match((r) => r.url === URL_PROTECAO)) {
