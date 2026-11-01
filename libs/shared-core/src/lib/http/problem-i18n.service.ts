@@ -30,6 +30,21 @@ export interface ProblemOverride {
 }
 
 /**
+ * Traduções de códigos genéricos, que valem em qualquer tela. Um override registrado para o mesmo
+ * código prevalece.
+ */
+const TRADUCOES_PADRAO: ReadonlyMap<string, ProblemOverride> = new Map([
+  [
+    'uniplus.vinculo_catalogo.fato_com_protecao_pendente',
+    {
+      title: 'O dado aguarda a aprovação da proteção de dados e não aceita vínculo novo',
+      detail:
+        'Retire-o do formulário, da regra ou da condição que o cita, ou espere a proteção de dados aprová-lo ou o administrador do catálogo aceitar a recomendação dela.',
+    },
+  ],
+]);
+
+/**
  * Hook de internacionalização por `problem.code` (ADR-0011/0012).
  *
  * Comportamento padrão (sem override): renderiza `title`/`detail` que vêm do
@@ -55,7 +70,7 @@ export class ProblemI18nService {
   }
 
   resolve(problem: ProblemDetails): ProblemMessage {
-    const override = this.overrides.get(problem.code);
+    const override = this.overrides.get(problem.code) ?? TRADUCOES_PADRAO.get(problem.code);
     if (!override) {
       return { title: problem.title, detail: problem.detail };
     }

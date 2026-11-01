@@ -66,6 +66,7 @@ import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   ComboboxComponent,
   EditorDeCondicoesComponent,
+  MOTIVO_DA_PROTECAO_PENDENTE,
   type UiComboboxGroup,
   ValorEmConsultaComponent,
   ValorLegivelDirective,
@@ -138,6 +139,7 @@ const UNIDADES = [
 
 /** A opção que deixa o documento fora de formulário, na fase que não responde nenhum. */
 const SEM_FORMULARIO = 'SEM_FORMULARIO';
+
 
 /** O gatilho sem condição recusada pela fase — a mesma referência, para o editor não se redesenhar. */
 const SEM_ERROS: Readonly<Record<number, string>> = {};
@@ -798,6 +800,7 @@ export class FaseStepComponent {
    */
   readonly documentosDisponiveis = computed<readonly UiComboboxGroup[]>(() => {
     const jaExigidos = new Set(this.documentosDaFase().map((doc) => doc.id));
+    const aguardandoProtecao = this.catalogos.tiposAguardandoProtecao();
 
     return this.catalogos
       .documentosPorCategoria()
@@ -805,7 +808,11 @@ export class FaseStepComponent {
         label: grupo.label,
         options: grupo.docs
           .filter((doc) => !jaExigidos.has(doc.id))
-          .map((doc) => ({ value: doc.id, label: doc.nome })),
+          .map((doc) =>
+            aguardandoProtecao.has(doc.id)
+              ? { value: doc.id, label: `${doc.nome} — ${MOTIVO_DA_PROTECAO_PENDENTE}`, disabled: true }
+              : { value: doc.id, label: doc.nome },
+          ),
       }))
       .filter((grupo) => grupo.options.length > 0);
   });

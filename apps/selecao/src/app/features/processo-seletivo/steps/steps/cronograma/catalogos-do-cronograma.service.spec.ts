@@ -14,6 +14,7 @@ import {
   FatosCandidatoApi,
   TiposDocumentoApi,
   TiposEtapaApi,
+  type TipoDocumentoDto,
 } from '@uniplus/shared-data/configuracao';
 import { UnidadesApi, type UnidadeDto } from '@uniplus/shared-data/organizacao';
 import {
@@ -79,6 +80,7 @@ interface Cenario {
   readonly atos?: readonly TipoAtoPublicadoDto[];
   readonly unidades?: readonly UnidadeDto[] | 'falha';
   readonly listarUnidades?: () => Observable<ApiResult<readonly UnidadeDto[]>>;
+  readonly tiposDocumento?: readonly TipoDocumentoDto[];
 }
 
 function montar(cenario: Cenario = {}) {
@@ -114,7 +116,7 @@ function montar(cenario: Cenario = {}) {
       },
       { provide: CategoriasDocumentoApi, useValue: { listar: () => pagina([]) } },
       { provide: TiposEtapaApi, useValue: { listar: () => pagina([]) } },
-      { provide: TiposDocumentoApi, useValue: { listar: () => pagina([]) } },
+      { provide: TiposDocumentoApi, useValue: { listar: () => pagina(cenario.tiposDocumento ?? []) } },
   // O catálogo de fatos entra junto: é dele que sai o campo de formulário que uma exigência
   // condicionada pressupõe.
   { provide: FatosCandidatoApi, useValue: { listar: () => of({ ok: true, data: [] }) } },
@@ -308,5 +310,32 @@ describe('CatalogosDoCronogramaService — unidades', () => {
     respostas[0]?.next(apiOk([], 200, new HttpHeaders()));
 
     expect(servico.unidades()).toEqual([CGA]);
+  });
+});
+
+describe('CatalogosDoCronogramaService — tipos que aguardam a proteção de dados', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  const tipo = (id: string, protecaoAprovada: boolean): TipoDocumentoDto => ({
+    id,
+    codigo: id.toUpperCase(),
+    nome: id,
+    descricao: null,
+    categoria: 'SAUDE',
+    formatosAceitos: null,
+    tamanhoMaximoMb: null,
+    tipoEquivalente: null,
+    classificacaoProtecao: 'SENSIVEL',
+    finalidadeTratamento: 'Conferir o laudo do candidato.',
+    hipoteseLegal: 'TUTELA_DA_SAUDE',
+    protecaoAprovada,
+    criadoEm: '2026-08-30T12:00:00Z',
+  });
+
+  it('marca o tipo pendente pela situação do próprio tipo, sem consultar permissão nem fila de aprovação', () => {
+    // Nenhum PermissoesService nem ProtecaoDoCatalogoApi é provido: quem não mantém nem aprova o catálogo vê a mesma marca.
+    const { servico } = montar({ tiposDocumento: [tipo('laudo', false), tipo('rg', true)] });
+
+    expect([...servico.tiposAguardandoProtecao()]).toEqual(['laudo']);
   });
 });

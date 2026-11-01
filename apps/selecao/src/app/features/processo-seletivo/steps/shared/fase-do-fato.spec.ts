@@ -392,6 +392,12 @@ describe('a recusa do servidor sobre onde o documento é cobrado', () => {
     expect(recusa('uniplus.selecao.documento_exigido.outra')).toBeNull();
   });
 
+  it('diz que o tipo de documento que aguarda a proteção de dados não aceita vínculo', () => {
+    expect(recusa('uniplus.selecao.documento_exigido.tipo_documento_com_protecao_pendente')).toContain(
+      'aguarda a aprovação da proteção de dados',
+    );
+  });
+
   it('as recusas do formulário do documento apontam o campo “Formulário”, venham no problema ou num erro dele', () => {
     const CAMPO = 'no campo “Formulário” do documento';
     expect(recusa('uniplus.selecao.documento_exigido.finalidade_obrigatoria')).toContain(CAMPO);
