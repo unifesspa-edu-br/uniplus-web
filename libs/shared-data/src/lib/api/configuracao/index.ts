@@ -190,6 +190,16 @@ export {
   type TipoInstrumentoNormativoVocabularioDto,
 } from './tipos-instrumento-normativo.api';
 
+export {
+  ProtecaoDoCatalogoApi,
+  type AprovacaoDaProtecaoDto,
+  type CadastroDoCatalogo,
+  type DecidirProtecaoDoCatalogoCommand,
+  type ItemDaProtecaoDoCatalogoDto,
+  type SituacaoDaAprovacao,
+  type SolicitacaoDaProtecaoDto,
+} from './protecao-do-catalogo.api';
+
 export { FatosCandidatoApi } from './fatos-candidato.api';
 export type {
   CriarFatoAgregadoCommand,

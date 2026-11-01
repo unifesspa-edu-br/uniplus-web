@@ -43,6 +43,12 @@ describe('FatosCandidatoApi', () => {
     ],
     ['ativar', () => api.ativar(ID, chave()), 'POST', `${ADMIN}/${ID}/ativacao`],
     [
+      'aceitarRecomendacao',
+      () => api.aceitarRecomendacao(ID, chave()),
+      'POST',
+      `${ADMIN}/${ID}/aceite-da-recomendacao`,
+    ],
+    [
       'definirRegrasPadrao',
       () => api.definirRegrasPadrao(ID, { regras: [] }, chave()),
       'PUT',
