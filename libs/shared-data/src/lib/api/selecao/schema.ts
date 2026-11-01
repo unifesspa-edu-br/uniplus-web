@@ -10672,6 +10672,8 @@ export interface components {
             readonly ofertaCursoSegundaOpcaoId?: null | string;
             readonly numeroInscricao?: null | string;
             /** Format: date-time */
+            readonly submetidaEm?: null | string;
+            /** Format: date-time */
             readonly canceladaEm?: null | string;
             readonly motivoDoCancelamento?: null | string;
             readonly secoes: readonly components["schemas"]["SecaoDaInscricaoDto"][];
@@ -11599,6 +11601,7 @@ export interface components {
         };
         readonly SecaoDaInscricaoDto: {
             readonly codigo: string;
+            readonly titulo?: null | string;
             readonly itens: readonly components["schemas"]["ItemDeRespostaDto"][];
             readonly grupos: readonly components["schemas"]["GrupoDaInscricaoDto"][];
         };
