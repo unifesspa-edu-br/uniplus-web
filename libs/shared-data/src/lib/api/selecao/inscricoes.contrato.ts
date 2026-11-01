@@ -75,6 +75,9 @@ export type ConfirmarEnvioDeDocumentoDaInscricaoRequest =
 /** A URL de curta validade para baixar o arquivo verificado do candidato. */
 export type AcessoArquivoDoCandidatoDto = Schemas['AcessoArquivoDoCandidatoDto'];
 
+/** O valor de um campo revelado a pedido de quem opera o processo. */
+export type CampoReveladoDto = Schemas['CampoReveladoDto'];
+
 /** O arquivo confirmado, com a situação da verificação e a mensagem ao candidato. */
 export type ArquivoDaApresentacaoDto = Schemas['ArquivoDaApresentacaoDto'];
 
