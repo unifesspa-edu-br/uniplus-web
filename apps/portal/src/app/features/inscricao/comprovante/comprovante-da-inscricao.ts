@@ -1,8 +1,9 @@
-import type {
-  CertamePublicadoDto,
-  ComprovanteInscricaoDto,
-  FormularioRenderizavelDto,
-  MinhaInscricaoDto,
+import {
+  nomeDaOferta,
+  type CertamePublicadoDto,
+  type ComprovanteInscricaoDto,
+  type FormularioRenderizavelDto,
+  type MinhaInscricaoDto,
 } from '@uniplus/shared-data/selecao';
 import {
   type CampoExibido,
@@ -13,7 +14,7 @@ import {
 } from '@uniplus/shared-ui/components';
 
 import { formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
-import { nomeDaOferta, numeroDeOpcoesDeCurso } from '../oferta-da-inscricao';
+import { numeroDeOpcoesDeCurso } from '../oferta-da-inscricao';
 
 export interface RespostaDoComprovante {
   readonly rotulo: string;
