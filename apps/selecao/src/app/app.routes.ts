@@ -1,7 +1,10 @@
 import { Routes } from '@angular/router';
 import { AccessDeniedComponent } from '@uniplus/shared-auth/components';
 import { acessoNegadoGuard, authGuard, permissaoGuard } from '@uniplus/shared-auth/guards';
-import { PERMISSOES_DAS_TELAS } from './acesso/permissoes-das-telas';
+import {
+  PERMISSOES_DAS_INSCRICOES_DO_PROCESSO,
+  PERMISSOES_DAS_TELAS,
+} from './acesso/permissoes-das-telas';
 import {
   acessoAoPainel,
   entradaDaSelecao,
@@ -30,6 +33,16 @@ export const appRoutes: Routes = [
           import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
       },
       {
+        // Antes de `processo-seletivo`, que exige configurar o processo: ver as inscrições tem
+        // permissão própria.
+        path: 'processo-seletivo/:id/inscricoes',
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_INSCRICOES_DO_PROCESSO)],
+        loadChildren: () =>
+          import('./features/inscricoes/inscricoes.routes').then(
+            (m) => m.INSCRICOES_DO_PROCESSO_ROUTES,
+          ),
+      },
+      {
         path: 'processo-seletivo',
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['processo-seletivo'])],
         loadChildren: () =>
@@ -37,15 +50,8 @@ export const appRoutes: Routes = [
             (m) => m.PROCESSO_SELETIVO_ROUTES,
           ),
       },
-      {
-        path: 'inscricoes',
-        canActivate: [
-          permissaoGuard(...PERMISSOES_DAS_TELAS.inscricoes),
-          redirecionaEntradaAntigaParaPainel,
-        ],
-        loadChildren: () =>
-          import('./features/inscricoes/inscricoes.routes').then((m) => m.INSCRICOES_ROUTES),
-      },
+      // A entrada isolada, sem processo na URL, deixou de existir: leva à entrada da Seleção.
+      { path: 'inscricoes', pathMatch: 'full', redirectTo: '' },
       {
         path: 'homologacao',
         canActivate: [

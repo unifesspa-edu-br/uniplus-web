@@ -1,0 +1,32 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  /* Sem `min-height: 0`: como filho flex de `.page`, o host encolheria abaixo do conteúdo e o
+     `.panel` (overflow: hidden) cortaria a tabela. */
+  flex-shrink: 0;
+}
+
+.insc-page__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.insc-page__tentar {
+  display: block;
+  margin-top: var(--space-2);
+}
+
+.insc-page__lendo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+}
+
+/* A máscara do CPF é um valor só: quebrar no meio dela parece truncamento. */
+.insc-page__cpf {
+  white-space: nowrap;
+}

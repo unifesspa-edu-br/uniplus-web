@@ -387,6 +387,47 @@ describe('ProcessosSeletivosListaPage', () => {
     ]);
   });
 
+  it('oferece as inscrições do processo publicado só a quem pode consultá-las', async () => {
+    const hrefs = (): (string | null)[] =>
+      Array.from(host().querySelectorAll<HTMLAnchorElement>('tbody tr [data-label="Ações"] a')).map(
+        (a) => a.getAttribute('href'),
+      );
+
+    await flushLista([processo({ id: 'publicado', status: StatusProcesso.publicado })]);
+    expect(hrefs()).not.toContain('/processo-seletivo/publicado/inscricoes');
+
+    fixture.destroy();
+    concedidas.set(['selecao:processos:configurar', 'selecao:inscricoes:consultar']);
+    fixture = TestBed.createComponent(ProcessosSeletivosListaPage);
+    fixture.detectChanges();
+    await flushLista([processo({ id: 'publicado', status: StatusProcesso.publicado })]);
+
+    expect(hrefs()).toContain('/processo-seletivo/publicado/inscricoes');
+  });
+
+  it('mostra a quem só consulta inscrições apenas a ação das inscrições, nos publicados', async () => {
+    controller.expectOne((r) => r.url === URL_LISTA).flush([]);
+    fixture.destroy();
+    concedidas.set(['selecao:inscricoes:consultar']);
+    fixture = TestBed.createComponent(ProcessosSeletivosListaPage);
+    fixture.detectChanges();
+    await flushLista([
+      processo({ id: 'rascunho', status: StatusProcesso.rascunho }),
+      processo({ id: 'publicado', status: StatusProcesso.publicado }),
+    ]);
+
+    const hrefs = Array.from(
+      host().querySelectorAll<HTMLAnchorElement>('tbody tr [data-label="Ações"] a'),
+    ).map((a) => a.getAttribute('href'));
+
+    expect(hrefs).toEqual(['/processo-seletivo/publicado/inscricoes']);
+    expect(host().textContent).not.toContain('Novo Processo');
+
+    const [rascunho, publicado] = Array.from(host().querySelectorAll('tbody tr'));
+    expect(rascunho.textContent).toContain('Inscrições disponíveis após a publicação');
+    expect(publicado.textContent).not.toContain('Inscrições disponíveis após a publicação');
+  });
+
   it('leva ao cadastro pelo atalho de novo processo', async () => {
     await flushLista([processo()]);
 

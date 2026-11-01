@@ -21,7 +21,7 @@ const authStub = { authenticated: autenticado, login };
 const ROTAS_E_PERMISSOES = [
   ['/dashboard', 'selecao:processos:acompanhar'],
   ['/processo-seletivo', 'selecao:processos:configurar'],
-  ['/inscricoes', 'selecao:inscricoes:consultar'],
+  ['/processo-seletivo/abc/inscricoes', 'selecao:inscricoes:consultar'],
   ['/notas', 'selecao:notas-enem:importar'],
   ['/homologacao', 'selecao:processos:acompanhar'],
   ['/classificacao', 'selecao:processos:acompanhar'],
@@ -80,6 +80,41 @@ describe('appRoutes — permissões efetivas', () => {
       expect(await ir('/')).toBe('/processo-seletivo');
     });
 
+    it('leva a entrada isolada /inscricoes, sem processo, à entrada da Seleção', async () => {
+      permissoes.set(['selecao:processos:acompanhar', 'selecao:inscricoes:consultar']);
+
+      expect(await ir('/inscricoes')).toBe('/dashboard');
+    });
+
+    it('leva a raiz de quem só consulta inscrições à lista de processos, que ele abre', async () => {
+      permissoes.set(['selecao:inscricoes:consultar']);
+
+      expect(await ir('/')).toBe('/processo-seletivo');
+    });
+
+    it('abre as inscrições do processo a quem só as consulta, sem abrir o que configura', async () => {
+      permissoes.set(['selecao:inscricoes:consultar']);
+
+      expect(await ir('/processo-seletivo/abc/inscricoes')).toBe(
+        '/processo-seletivo/abc/inscricoes',
+      );
+      for (const url of [
+        '/processo-seletivo/novo',
+        '/processo-seletivo/abc',
+        '/processo-seletivo/abc/publicacoes',
+        '/processo-seletivo/abc/notas-do-enem',
+        '/processo-seletivo/abc/simulacao/inscricao',
+      ]) {
+        expect(await ir(url)).toBe('/acesso-negado');
+      }
+    });
+
+    it('nega as inscrições do processo a quem só configura processos', async () => {
+      permissoes.set(['selecao:processos:configurar']);
+
+      expect(await ir('/processo-seletivo/abc/inscricoes')).toBe('/acesso-negado');
+    });
+
     it('leva a raiz de quem não tem nenhuma das duas ao acesso negado', async () => {
       expect(await ir('/')).toBe('/acesso-negado');
     });
@@ -88,7 +123,7 @@ describe('appRoutes — permissões efetivas', () => {
   describe('com a opção ligada', () => {
     beforeEach(() => configuracao.set({ acompanhamentoValidacaoHabilitada: true }));
 
-    it.each(['/inscricoes', '/homologacao', '/notas', '/classificacao'])(
+    it.each(['/homologacao', '/notas', '/classificacao'])(
       'redireciona %s ao painel de quem o acompanha, sem loop',
       async (url) => {
         permissoes.set([
@@ -109,7 +144,7 @@ describe('appRoutes — permissões efetivas', () => {
     it('respeita a permissão da rota antes de redirecionar', async () => {
       permissoes.set(['selecao:processos:acompanhar']);
 
-      expect(await ir('/inscricoes')).toBe('/acesso-negado');
+      expect(await ir('/notas')).toBe('/acesso-negado');
     });
 
     it.each([
@@ -127,10 +162,10 @@ describe('appRoutes — permissões efetivas', () => {
     it('manda o não autenticado ao login, inclusive em acesso direto', async () => {
       autenticado.set(false);
 
-      await router.navigateByUrl('/inscricoes');
+      await router.navigateByUrl('/notas');
 
       expect(login).toHaveBeenCalledTimes(1);
-      expect(login).toHaveBeenCalledWith('/inscricoes');
+      expect(login).toHaveBeenCalledWith('/notas');
       expect(router.url).toBe('/');
     });
   });

@@ -56,10 +56,10 @@ describe('guards de acompanhamento', () => {
       expect(destino(await executar(entradaDaSelecao))).toBe('/processo-seletivo');
     });
 
-    it('leva quem só consulta inscrições às inscrições, não ao acesso negado', async () => {
+    it('leva quem só consulta inscrições à lista de processos, de onde chega às inscrições', async () => {
       permissoes.set(['selecao:inscricoes:consultar']);
 
-      expect(destino(await executar(entradaDaSelecao))).toBe('/inscricoes');
+      expect(destino(await executar(entradaDaSelecao))).toBe('/processo-seletivo');
     });
 
     it('leva quem só importa notas do ENEM às notas, não ao acesso negado', async () => {
@@ -81,9 +81,9 @@ describe('guards de acompanhamento', () => {
     it('desligado, deixa a entrada antiga seguir', async () => {
       acompanha();
 
-      expect(await executar(redirecionaEntradaAntigaParaPainel, '/inscricoes', 'inscricoes')).toBe(
-        true,
-      );
+      expect(
+        await executar(redirecionaEntradaAntigaParaPainel, '/homologacao', 'homologacao'),
+      ).toBe(true);
     });
 
     it('ligado, leva ao painel quem pode abri-lo', async () => {
@@ -91,24 +91,24 @@ describe('guards de acompanhamento', () => {
       acompanha();
 
       expect(
-        destino(await executar(redirecionaEntradaAntigaParaPainel, '/inscricoes', 'inscricoes')),
+        destino(await executar(redirecionaEntradaAntigaParaPainel, '/homologacao', 'homologacao')),
       ).toBe('/dashboard');
     });
 
     it('ligado, leva ao painel quem só tem a permissão da entrada antiga, como o menu e a raiz', async () => {
       configuracao.set({ acompanhamentoValidacaoHabilitada: true });
-      permissoes.set(['selecao:inscricoes:consultar']);
+      permissoes.set(['selecao:notas-enem:importar']);
 
-      expect(
-        destino(await executar(redirecionaEntradaAntigaParaPainel, '/inscricoes', 'inscricoes')),
-      ).toBe('/dashboard');
+      expect(destino(await executar(redirecionaEntradaAntigaParaPainel, '/notas', 'notas'))).toBe(
+        '/dashboard',
+      );
     });
 
-    it.each(['/inscricoes/', '/inscricoes?pagina=2'])('ligado, redireciona %s', async (url) => {
+    it.each(['/homologacao/', '/homologacao?pagina=2'])('ligado, redireciona %s', async (url) => {
       configuracao.set({ acompanhamentoValidacaoHabilitada: true });
       acompanha();
 
-      expect(destino(await executar(redirecionaEntradaAntigaParaPainel, url, 'inscricoes'))).toBe(
+      expect(destino(await executar(redirecionaEntradaAntigaParaPainel, url, 'homologacao'))).toBe(
         '/dashboard',
       );
     });
@@ -118,7 +118,7 @@ describe('guards de acompanhamento', () => {
       acompanha();
 
       expect(
-        await executar(redirecionaEntradaAntigaParaPainel, '/inscricoes/42', 'inscricoes'),
+        await executar(redirecionaEntradaAntigaParaPainel, '/homologacao/42', 'homologacao'),
       ).toBe(true);
     });
 
@@ -130,7 +130,7 @@ describe('guards de acompanhamento', () => {
       };
 
       expect(
-        destino(await executar(redirecionaEntradaAntigaParaPainel, '/inscricoes', 'inscricoes')),
+        destino(await executar(redirecionaEntradaAntigaParaPainel, '/homologacao', 'homologacao')),
       ).toBe('/dashboard');
     });
   });
