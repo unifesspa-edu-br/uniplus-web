@@ -16,6 +16,8 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
 export interface UiComboboxOption {
   readonly value: string;
   readonly label: string;
+  /** A opção aparece na lista, mas não pode ser escolhida; o rótulo deve dizer o motivo. */
+  readonly disabled?: boolean;
 }
 
 /** Escolhas sob um título — a categoria do cadastro, o tipo, o que agrupar signifique. */
@@ -88,9 +90,11 @@ let comboboxIdSeed = 0;
                     role="option"
                     [id]="opcaoId(opcao.value)"
                     [class.is-destacada]="destacada() === opcao.value"
+                    [class.is-desabilitada]="indisponivel(opcao)"
                     [attr.aria-selected]="marcada(opcao.value)"
-                    (mousedown)="escolherComOMouse($event, opcao.value)"
-                    (mousemove)="destacada.set(opcao.value)"
+                    [attr.aria-disabled]="indisponivel(opcao) ? 'true' : null"
+                    (mousedown)="escolherComOMouse($event, opcao)"
+                    (mousemove)="indisponivel(opcao) ? null : destacada.set(opcao.value)"
                   >
                     {{ opcao.label }}
                   </li>
@@ -98,7 +102,7 @@ let comboboxIdSeed = 0;
               </ul>
             </li>
           }
-          @if (alcancadas() === 0) {
+          @if (exibidas() === 0) {
             <li class="combobox__vazio" role="presentation">{{ textoSemResultado() }}</li>
           }
         </ul>
@@ -187,6 +191,14 @@ export class ComboboxComponent {
     return this.todasAsOpcoes().find((opcao) => opcao.value === escolhido)?.label ?? '';
   });
 
+  /**
+   * Se a opção não pode ser acionada. No modo múltiplo a opção já marcada continua acionável mesmo
+   * desabilitada: a pessoa precisa poder desmarcar o que não vale mais.
+   */
+  protected indisponivel(opcao: UiComboboxOption): boolean {
+    return opcao.disabled === true && !(this.multiplo() && this.marcada(opcao.value));
+  }
+
   /** Se a opção está marcada — no modo simples, a escolha; no múltiplo, uma das escolhas. */
   protected marcada(value: string): boolean {
     return this.multiplo() ? this.values().includes(value) : this.value() === value;
@@ -215,8 +227,14 @@ export class ComboboxComponent {
       .filter((grupo) => grupo.options.length > 0);
   });
 
-  protected readonly alcancadas = computed(() =>
+  /** Quantas opções a lista mostra, inclusive as que não se podem escolher. */
+  protected readonly exibidas = computed(() =>
     this.gruposVisiveis().reduce((total, grupo) => total + grupo.options.length, 0),
+  );
+
+  /** Quantas a pessoa pode escolher: é o que o leitor de tela ouve, sem as indisponíveis (WCAG 4.1.3). */
+  protected readonly alcancadas = computed(() =>
+    this.gruposVisiveis().reduce((total, grupo) => total + grupo.options.filter((opcao) => !this.indisponivel(opcao)).length, 0),
   );
 
   protected readonly contagem = computed(() => {
@@ -229,13 +247,14 @@ export class ComboboxComponent {
     if (this.buscaExterna() && estado !== null) return estado;
     // Na busca externa, a lista vazia pode ser busca em curso ou termo curto demais, e só o
     // hospedeiro sabe dizer qual.
+    if (total === 0 && this.exibidas() > 0) return `Nenhuma opção disponível para “${termo}”.`;
     if (total === 0) return this.buscaExterna() ? this.textoSemResultado() : `Nada encontrado para “${termo}”.`;
     return total === 1 ? `1 opção casa com “${termo}”.` : `${total} opções casam com “${termo}”.`;
   });
 
   /** A lista, achatada na ordem em que aparece — é por ela que as setas andam. */
   private readonly navegaveis = computed<readonly string[]>(() =>
-    this.gruposVisiveis().flatMap((grupo) => grupo.options.map((opcao) => opcao.value)),
+    this.gruposVisiveis().flatMap((grupo) => grupo.options.filter((opcao) => !this.indisponivel(opcao)).map((opcao) => opcao.value)),
   );
 
   protected opcaoId(value: string): string {
@@ -269,9 +288,10 @@ export class ComboboxComponent {
    * `mousedown`, e não `click`: o clique só chega depois que o campo perde o foco, e é o
    * `blur` que fecha a lista — a opção sairia debaixo do cursor antes de ser escolhida.
    */
-  protected escolherComOMouse(evento: MouseEvent, value: string): void {
+  protected escolherComOMouse(evento: MouseEvent, opcao: UiComboboxOption): void {
     evento.preventDefault();
-    this.escolher(value);
+    if (this.indisponivel(opcao)) return;
+    this.escolher(opcao.value);
   }
 
   protected teclar(evento: KeyboardEvent): void {
@@ -300,6 +320,9 @@ export class ComboboxComponent {
       const alvo = this.destacada();
       if (!this.aberto() || alvo === null) return;
       evento.preventDefault();
+      // A opção apontada pode ter ficado indisponível depois de apontada; a marcada segue removível.
+      const opcao = this.todasAsOpcoes().find((candidata) => candidata.value === alvo);
+      if (opcao === undefined || this.indisponivel(opcao)) return;
       this.escolher(alvo);
       return;
     }

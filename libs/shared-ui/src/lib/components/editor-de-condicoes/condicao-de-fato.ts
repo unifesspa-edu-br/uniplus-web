@@ -1,3 +1,4 @@
+import { MOTIVO_DA_PROTECAO_PENDENTE } from './motivo-da-protecao-pendente';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { ComboboxComponent, type UiComboboxGroup } from '../combobox/combobox';
@@ -54,8 +55,12 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
           <option value="" [selected]="condicao().fato === ''">Escolha o fato</option>
         }
         @for (fato of fatos(); track fato.codigo) {
-          <option [value]="fato.codigo" [selected]="fato.codigo === condicao().fato">
-            {{ fato.nome }}
+          <option
+            [value]="fato.codigo"
+            [selected]="fato.codigo === condicao().fato"
+            [disabled]="fato.aguardaProtecao === true && fato.codigo !== condicao().fato"
+          >
+            {{ fato.nome }}{{ fato.aguardaProtecao ? ' — ' + motivoDoFatoPendente : '' }}
           </option>
         }
         @if (condicao().fato !== '' && fatoAtual() === undefined) {
@@ -218,6 +223,7 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
   `,
 })
 export class CondicaoDeFatoComponent {
+  protected readonly motivoDoFatoPendente = MOTIVO_DA_PROTECAO_PENDENTE;
   readonly condicao = input.required<CondicaoDeFato>();
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
   /** Prefixo dos ids dos controles — único na tela, para os rótulos apontarem para eles. */

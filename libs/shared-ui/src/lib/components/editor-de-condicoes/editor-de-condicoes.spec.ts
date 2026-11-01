@@ -182,6 +182,45 @@ describe('EditorDeCondicoesComponent', () => {
     fixture.detectChanges();
   }
 
+  describe('fato que aguarda a aprovação da proteção de dados', () => {
+    const PENDENTES = fatosEscolhiveis(
+      CATALOGO.map((fato) => (fato.codigo === 'PCD' ? { ...fato, protecaoAprovada: false } : fato)),
+      new Map(),
+      ['MODALIDADE'],
+    );
+
+    const opcao = (codigo: string): HTMLOptionElement =>
+      raiz.querySelector(`#teste-0-fato option[value="${codigo}"]`) as HTMLOptionElement;
+
+    it('aparece indisponível, com o motivo, mas segue selecionado onde a condição já o cita', () => {
+      fixture.componentInstance.fatos.set(PENDENTES);
+      fixture.componentInstance.condicoes.set([condicao(1, 'SEXO')]);
+      fixture.detectChanges();
+
+      expect(opcao('PCD').disabled).toBe(true);
+      expect(opcao('PCD').textContent).toContain('aguarda a aprovação da proteção de dados');
+
+      fixture.componentInstance.condicoes.set([condicao(1, 'PCD')]);
+      fixture.detectChanges();
+      expect(opcao('PCD').disabled, 'o já citado continua escolhido e visível').toBe(false);
+      expect(opcao('PCD').selected).toBe(true);
+    });
+
+    it('a condição nova não nasce citando o fato pendente', () => {
+      // O fato pendente vem primeiro na lista: é ele que uma condição nova receberia sem o filtro.
+      fixture.componentInstance.fatos.set([...PENDENTES].sort((a) => (a.codigo === 'PCD' ? -1 : 1)));
+      fixture.componentInstance.condicoes.set([condicao(1, 'SEXO')]);
+      fixture.detectChanges();
+
+      botao('Acrescentar condição').click();
+      fixture.detectChanges();
+
+      const novas = fixture.componentInstance.condicoes().map((item) => item.fato);
+      expect(novas).toHaveLength(2);
+      expect(novas).not.toContain('PCD');
+    });
+  });
+
   it('todo controle tem rótulo associado e os ids não se repetem', () => {
     botao('Acrescentar alternativa').click();
     fixture.detectChanges();

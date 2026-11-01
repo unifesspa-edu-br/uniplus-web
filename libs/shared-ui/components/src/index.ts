@@ -71,6 +71,7 @@ export {
 export { SelectComponent, type UiSelectOption } from '../../src/lib/components/select/select';
 export { CondicaoDeFatoComponent } from '../../src/lib/components/editor-de-condicoes/condicao-de-fato';
 export { EditorDeCondicoesComponent } from '../../src/lib/components/editor-de-condicoes/editor-de-condicoes';
+export * from '../../src/lib/components/editor-de-condicoes/motivo-da-protecao-pendente';
 export * from '../../src/lib/components/editor-de-condicoes/condicoes-de-fatos';
 export * from '../../src/lib/components/editor-de-condicoes/leitura-de-condicoes';
 export {

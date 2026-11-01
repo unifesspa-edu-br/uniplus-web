@@ -560,6 +560,12 @@ ui-lista-de-dados {
   font-weight: var(--weight-semibold);
 }
 
+/* Opção que aparece mas não se escolhe: o rótulo diz o motivo, então o texto continua legível. */
+.combobox__opcao[aria-disabled='true'] {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
 .combobox__opcao[aria-selected='true']::after {
   content: ' ✓';
   color: var(--color-primary);

@@ -38,6 +38,8 @@ export interface FatoDoCatalogo {
   readonly fonteValores?: string | null;
   /** Os valores do categórico com a descrição que o cadastro deu a cada um, quando há. */
   readonly valoresDominioDeclarados?: readonly ValorDoCatalogo[] | null;
+  /** Se a proteção de dados aprovou a proteção do fato; sem a aprovação, o fato não aceita vínculo novo. */
+  readonly protecaoAprovada?: boolean;
 }
 
 /** Um valor do domínio declarado no catálogo, com a descrição que a tela mostra no lugar do código. */
@@ -68,6 +70,8 @@ export interface FatoEscolhivel {
    * é enumerado: o servidor confere só a forma do código (ADR-0090).
    */
   readonly municipio?: boolean;
+  /** A proteção de dados do fato aguarda aprovação: ele aparece na escolha, mas só se mantém onde já está citado. */
+  readonly aguardaProtecao?: boolean;
 }
 
 /** Um operador (ou resposta) oferecido para um fato, com a leitura que a tela faz dele. */
@@ -142,6 +146,7 @@ export function fatoEscolhivel(fato: FatoDoCatalogo): FatoEscolhivel | null {
     tipoDominio,
     valores: tipoDominio === 'CATEGORICO_ESTATICO' ? [...(valores ?? [])] : [],
     coletavel: BINDINGS_DE_CAMPO.some((prefixo) => fato.binding.startsWith(prefixo)),
+    ...(fato.protecaoAprovada === false ? { aguardaProtecao: true } : {}),
     ...(rotulos.size > 0 ? { rotulos } : {}),
   };
 }

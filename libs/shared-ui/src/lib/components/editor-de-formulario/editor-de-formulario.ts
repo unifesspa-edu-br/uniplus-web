@@ -79,12 +79,25 @@ import { focarDepois } from './foco';
 import { GrupoDoFormularioComponent } from './grupo-do-formulario';
 import { ItemDoFormularioComponent } from './item-do-formulario';
 import { SecaoDoFormularioComponent } from './secao-do-formulario';
+import { MOTIVO_DA_PROTECAO_PENDENTE } from '../editor-de-condicoes/motivo-da-protecao-pendente';
 import { TermoDoFormularioComponent } from './termo-do-formulario';
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
-/** Os fatos sob um título só: o catálogo não os classifica, e a busca do campo é pelo nome. */
+/**
+ * Os fatos sob um título só: o catálogo não os classifica, e a busca do campo é pelo nome. O fato
+ * cuja proteção de dados ainda não foi aprovada aparece indisponível, com o motivo no rótulo.
+ */
 function emGrupo(fatos: readonly FatoDoFormulario[]): readonly UiComboboxGroup[] {
-  return [{ label: 'Fatos do candidato', options: fatos.map((fato) => ({ value: fato.codigo, label: fato.nome })) }];
+  return [
+    {
+      label: 'Fatos do candidato',
+      options: fatos.map((fato) =>
+        fato.protecaoAprovada === false
+          ? { value: fato.codigo, label: `${fato.nome} — ${MOTIVO_DA_PROTECAO_PENDENTE}`, disabled: true }
+          : { value: fato.codigo, label: fato.nome },
+      ),
+    },
+  ];
 }
 
 const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
