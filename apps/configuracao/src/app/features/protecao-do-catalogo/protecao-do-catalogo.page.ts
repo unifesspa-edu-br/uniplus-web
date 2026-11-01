@@ -6,16 +6,19 @@ import {
   Injector,
   afterNextRender,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, map, switchMap } from 'rxjs';
 import { AbstractControl, FormControl, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
-import { ProblemDetails, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
+import { ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
 import { deveRotacionarIdempotencyKey, idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -31,10 +34,12 @@ import {
   DialogComponent,
   DrawerComponent,
   EmptyStateComponent,
+  SegmentedComponent,
   SpinnerComponent,
+  type UiSegmentedOption,
 } from '@uniplus/shared-ui/components';
 import { CatalogoCategoriasDocumento } from '../../shared/categorias-documento';
-import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
+import { DetalheDaProtecaoComponent, LeituraDoDetalhe } from '../../shared/detalhe-do-catalogo';
 import {
   CLASSIFICACOES_DE_PROTECAO,
   SituacaoDaAprovacaoComponent,
@@ -42,6 +47,7 @@ import {
   nomeDoCadastro,
   rotuloDe,
 } from '../../shared/protecao-do-catalogo';
+import { DecisoesDaProtecaoComponent } from './decisoes-da-protecao.component';
 import {
   CARDINALIDADES,
   COMPONENTES_DE_EXIBICAO,
@@ -52,6 +58,13 @@ import {
 
 /** Código da API para o item que já saiu da solicitação (decidido por outra pessoa ou editado). */
 const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item_fora_de_solicitacao';
+
+type Aba = 'aguardando' | 'decisoes';
+
+const ABAS: readonly UiSegmentedOption<Aba>[] = [
+  { value: 'aguardando', label: 'Aguardando decisão' },
+  { value: 'decisoes', label: 'Decisões' },
+];
 
 /** O tamanho máximo da justificativa que a API aceita. */
 const JUSTIFICATIVA_MAXIMA = 2000;
@@ -74,10 +87,12 @@ function justificativaPreenchida(controle: AbstractControl<string>): ValidationE
     ReactiveFormsModule,
     TemPermissaoDirective,
     AlertComponent,
+    DecisoesDaProtecaoComponent,
     DetalheDaProtecaoComponent,
     DialogComponent,
     DrawerComponent,
     EmptyStateComponent,
+    SegmentedComponent,
     SituacaoDaAprovacaoComponent,
     SpinnerComponent,
   ],
@@ -87,10 +102,26 @@ function justificativaPreenchida(controle: AbstractControl<string>): ValidationE
       <div class="page-header__content">
         <h1 class="page-header__title">Proteção de Dados do Catálogo</h1>
         <p class="page-header__desc">
-          Os tipos de documento e os fatos do catálogo que aguardam a sua decisão sobre a proteção de dados.
+          {{
+            aba() === 'decisoes'
+              ? 'As decisões já registradas sobre a proteção de dados dos tipos de documento e dos fatos do catálogo.'
+              : 'Os tipos de documento e os fatos do catálogo que aguardam a sua decisão sobre a proteção de dados.'
+          }}
         </p>
       </div>
     </div>
+
+    <ui-segmented
+      class="cfg-abas"
+      accessibleName="Mostrar"
+      [choices]="abas"
+      [selectedValue]="aba()"
+      (selectedValueChange)="trocarAba($event)"
+    />
+
+    @if (aba() === 'decisoes') {
+      <cfg-decisoes-da-protecao />
+    } @else {
 
     @if (erroDeCarga()) {
       <ui-alert variant="danger" heading="Não foi possível carregar os itens">
@@ -371,6 +402,7 @@ function justificativaPreenchida(controle: AbstractControl<string>): ValidationE
         </button>
       </ng-container>
     </ui-dialog>
+    }
   `,
   host: { class: 'cfg-page' },
 })
@@ -381,6 +413,15 @@ export class ProtecaoDoCatalogoPage {
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  protected readonly abas = ABAS;
+  /** A aba ativa fica na query string: o link e o botão de voltar levam à mesma aba. */
+  protected readonly aba = toSignal(
+    this.route.queryParamMap.pipe(map((params): Aba => (params.get('aba') === 'decisoes' ? 'decisoes' : 'aguardando'))),
+    { initialValue: this.route.snapshot.queryParamMap.get('aba') === 'decisoes' ? 'decisoes' : 'aguardando' },
+  );
 
   protected readonly permissaoDeAprovar = PERMISSAO.configuracao.protecaoDoCatalogoAprovar;
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
@@ -404,10 +445,11 @@ export class ProtecaoDoCatalogoPage {
     const id = this.itemAbertoId();
     return id === null ? null : (this.itens().find((item) => item.id === id) ?? null);
   });
-  protected readonly detalhe = signal<DetalheDaProtecaoDoCatalogoDto | null>(null);
-  protected readonly carregandoDetalhe = signal(false);
-  protected readonly erroDoDetalhe = signal<string | null>(null);
-  protected readonly naoEncontrado = signal(false);
+  private readonly leituraDoDetalhe = new LeituraDoDetalhe(this.api, this.problemI18n, this.destroyRef);
+  protected readonly detalhe = this.leituraDoDetalhe.detalhe;
+  protected readonly carregandoDetalhe = this.leituraDoDetalhe.carregando;
+  protected readonly erroDoDetalhe = this.leituraDoDetalhe.erro;
+  protected readonly naoEncontrado = this.leituraDoDetalhe.naoEncontrado;
 
   protected readonly decisaoAberta = signal(false);
   protected readonly decisaoEmCurso = signal<DecisaoDaProtecao>('APROVAR');
@@ -458,8 +500,6 @@ export class ProtecaoDoCatalogoPage {
 
   /** Cada leitura cancela a anterior: a resposta velha que chega depois não sobrescreve a nova. */
   private readonly leituras = new Subject<void>();
-  private readonly leiturasDoDetalhe = new Subject<{ readonly cadastro: CadastroDoCatalogo; readonly id: string }>();
-  private ultimoDetalhePedido: { readonly cadastro: CadastroDoCatalogo; readonly id: string } | null = null;
 
   constructor() {
     this.leituras
@@ -480,29 +520,20 @@ export class ProtecaoDoCatalogoPage {
         this.itens.set([]);
         this.erroDeCarga.set(this.problemI18n.resolve(resultado.problem).title);
       });
-    this.leiturasDoDetalhe
-      .pipe(
-        switchMap((pedido) => {
-          this.carregandoDetalhe.set(true);
-          this.erroDoDetalhe.set(null);
-          this.naoEncontrado.set(false);
-          this.detalhe.set(null);
-          return this.api.detalhar(pedido.cadastro, pedido.id);
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((resultado) => {
-        this.carregandoDetalhe.set(false);
-        if (resultado.ok) {
-          this.detalhe.set(resultado.data);
-          return;
-        }
-        this.naoEncontrado.set(resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO);
-        this.erroDoDetalhe.set(
-          this.naoEncontrado() ? 'O item não existe mais no catálogo.' : this.problemI18n.resolve(resultado.problem).title,
-        );
-      });
-    this.carregar();
+    // A lista só é lida com a aba aberta, e relida ao voltar a ela: a decisão pode ter saído pelo drawer da outra aba.
+    effect(() => {
+      if (this.aba() === 'aguardando') untracked(() => this.carregar());
+    });
+  }
+
+  /** Cada aba abre no seu estado inicial: trocar de aba tira da URL os filtros da outra. */
+  protected trocarAba(aba: Aba | null): void {
+    if (aba === null || aba === this.aba()) return;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { aba: aba === 'decisoes' ? 'decisoes' : null, ato: null, cadastro: null, de: null, ate: null, busca: null, minhas: null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   protected cadastro(tipo: string): string {
@@ -521,13 +552,12 @@ export class ProtecaoDoCatalogoPage {
     this.itemAbertoId.set(item.id);
     this.erroDaDecisaoNoDrawer.set(null);
     if (item.tipo === 'TIPO_DOCUMENTO') this.categorias.garantirCarregado();
-    this.ultimoDetalhePedido = { cadastro: item.tipo as CadastroDoCatalogo, id: item.id };
     this.detalheAberto.set(true);
-    this.leiturasDoDetalhe.next(this.ultimoDetalhePedido);
+    this.leituraDoDetalhe.ler(item.tipo as CadastroDoCatalogo, item.id);
   }
 
   protected recarregarDetalhe(): void {
-    if (this.ultimoDetalhePedido !== null) this.leiturasDoDetalhe.next(this.ultimoDetalhePedido);
+    this.leituraDoDetalhe.recarregar();
   }
 
   protected aprovar(): void {
