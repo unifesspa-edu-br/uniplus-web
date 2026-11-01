@@ -44,6 +44,7 @@ export const PERMISSAO = {
     tiposAtoManter: 'publicacoes:tipos-ato:manter',
   },
   selecao: {
+    dadosIdentificadoresConsultar: 'selecao:dados-identificadores:consultar',
     dadosIdentificadoresRevelar: 'selecao:dados-identificadores:revelar',
     dadosInternosConsultar: 'selecao:dados-internos:consultar',
     dadosPessoaisConsultar: 'selecao:dados-pessoais:consultar',

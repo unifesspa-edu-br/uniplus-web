@@ -91,6 +91,12 @@ const CATALOGO = [
         resource: 'dados-identificadores',
         permissoes: [
           {
+            codigo: 'selecao:dados-identificadores:consultar',
+            nome: 'Consultar dados de identificação mascarados',
+            descricao: '',
+            sensibilidade: 'identificador',
+          },
+          {
             codigo: 'selecao:dados-identificadores:revelar',
             nome: 'Revelar dados de identificação',
             descricao: '',
@@ -188,6 +194,7 @@ describe('PerfisPage', () => {
     ]);
     expect(host.textContent).toContain('selecao:inscricoes:consultar');
     expect(host.textContent).toContain('Consultar dados pessoais');
+    expect(host.textContent).toContain('selecao:dados-identificadores:consultar');
     expect(host.textContent).toContain('selecao:dados-identificadores:revelar');
   });
 
