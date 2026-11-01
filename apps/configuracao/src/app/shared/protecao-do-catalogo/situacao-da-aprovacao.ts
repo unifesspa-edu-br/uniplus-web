@@ -30,7 +30,7 @@ export function rotuloDaSituacao(situacao: string): Rotulo {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-tag [variant]="rotulo().variante">{{ rotulo().texto }}</ui-tag>
-    @if (recomendada(); as classificacao) {
+    @if (comRecomendada() && recomendada(); as classificacao) {
       <div class="table-responsive__meta">Classificação recomendada: {{ classificacao }}</div>
     }
   `,
@@ -38,6 +38,8 @@ export function rotuloDaSituacao(situacao: string): Rotulo {
 export class SituacaoDaAprovacaoComponent {
   readonly situacao = input.required<string>();
   readonly classificacaoRecomendada = input<string | null>(null);
+  /** Falso na célula da lista, em que a situação ocupa uma linha só; a recomendação fica no detalhe. */
+  readonly comRecomendada = input(true);
 
   protected readonly rotulo = computed(() => rotuloDaSituacao(this.situacao()));
   protected readonly recomendada = computed(() => {
