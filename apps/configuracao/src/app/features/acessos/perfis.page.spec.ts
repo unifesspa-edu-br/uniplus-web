@@ -77,6 +77,28 @@ const CATALOGO = [
         ],
       },
       {
+        resource: 'dados-pessoais',
+        permissoes: [
+          {
+            codigo: 'selecao:dados-pessoais:consultar',
+            nome: 'Consultar dados pessoais',
+            descricao: '',
+            sensibilidade: 'pessoal',
+          },
+        ],
+      },
+      {
+        resource: 'dados-identificadores',
+        permissoes: [
+          {
+            codigo: 'selecao:dados-identificadores:revelar',
+            nome: 'Revelar dados de identificação',
+            descricao: '',
+            sensibilidade: 'identificador',
+          },
+        ],
+      },
+      {
         resource: 'inscricoes',
         permissoes: [
           {
@@ -160,9 +182,13 @@ describe('PerfisPage', () => {
       'selecao · documentos-identificadores',
       'selecao · documentos-internos',
       'selecao · documentos-publicos',
+      'selecao · dados-pessoais',
+      'selecao · dados-identificadores',
       'selecao · inscricoes',
     ]);
     expect(host.textContent).toContain('selecao:inscricoes:consultar');
+    expect(host.textContent).toContain('Consultar dados pessoais');
+    expect(host.textContent).toContain('selecao:dados-identificadores:revelar');
   });
 
   it('mostra a sensibilidade das permissões de arquivo e permite marcá-las na tela', async () => {
