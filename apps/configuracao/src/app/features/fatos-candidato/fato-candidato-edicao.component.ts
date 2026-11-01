@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -37,12 +38,10 @@ import {
 } from '@uniplus/shared-ui/components';
 import {
   CARDINALIDADES,
-  CLASSIFICACOES_DE_PROTECAO,
   DOMINIOS,
   ESCOPOS,
   FONTES_DE_VALORES,
   FORMATOS_DE_TEXTO,
-  HIPOTESES_LEGAIS,
   ORIGENS,
   DOMINIOS_DO_DERIVADO,
   campoDaRecusa,
@@ -52,19 +51,26 @@ import {
   ehCitacao,
   eixosDoTipo,
   eixosEditaveis,
-  esvaziarSeForaDas,
   descartarRecusasDoServidor,
   exigirSe,
   fatoDeMembroDoBinding,
   fatosCitaveisPelaRegra,
-  hipotesesDaClassificacao,
   indiceDaRegra,
   podeEditarDefinicao,
   podeTerRegras,
   podeTerValores,
-  rotuloDe,
   tipoDoFato,
 } from './fato-candidato.regras';
+import {
+  AvisoDeNovaAprovacaoComponent,
+  CLASSIFICACOES_DE_PROTECAO,
+  HIPOTESES_LEGAIS,
+  SituacaoDaAprovacaoComponent,
+  esvaziarSeForaDas,
+  hipotesesDaClassificacao,
+  protecaoMudou,
+  rotuloDe,
+} from '../../shared/protecao-do-catalogo';
 
 type AcaoComChave = 'descritivo' | 'valor' | 'regras' | 'reativacao' | 'correcao' | 'ordem' | 'definicao';
 
@@ -102,7 +108,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
 @Component({
   selector: 'cfg-fato-candidato-edicao',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent, EditorDeCondicoesComponent, RecolhivelComponent, SpinnerComponent, TagComponent],
+  imports: [NgTemplateOutlet, ReactiveFormsModule, AlertComponent, AvisoDeNovaAprovacaoComponent, EditorDeCondicoesComponent, RecolhivelComponent, SituacaoDaAprovacaoComponent, SpinnerComponent, TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // O corpo do drawer não rola: o host ocupa a altura dele e o .cfg-form de dentro é o único
   // container de rolagem, com o recuo do conteúdo.
@@ -112,17 +118,120 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
     '.cfg-fato-definicao { padding: 0; grid-template-columns: minmax(8rem, max-content) 1fr; }',
     '.cfg-fato-definicao dd { overflow-wrap: anywhere; }',
     '.cfg-fato-descritivo { display: grid; gap: var(--space-4); }',
+    '.cfg-fato-aprovacao { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }',
     // Cada valor tem até cinco ações: em 320 px e com zoom de 200% elas quebram linha em vez de vazar.
     '.table-responsive__actions { flex-wrap: wrap; }',
   ],
   template: `
+    <ng-template #protecaoDeDados>
+      <div [formGroup]="definicao" class="form-grid__full">
+        @if (avisaNovaAprovacao()) {
+          <cfg-aviso-de-nova-aprovacao />
+        }
+            <fieldset class="field form-grid__full">
+              <legend class="form-section__title">Proteção de dados (LGPD)</legend>
+              <div class="form-grid">
+                <label class="field" [class.is-error]="erroDefinicao('classificacaoProtecao')">
+                  <span class="field__label is-required">Classificação</span>
+                  <select class="select" formControlName="classificacaoProtecao" [attr.aria-invalid]="erroDefinicao('classificacaoProtecao') ? 'true' : null" [attr.aria-describedby]="descritorDe('classificacaoProtecao')">
+                    <option value="">Selecione…</option>
+                    @for (opcao of classificacoesDaDefinicao(); track opcao.valor) {
+                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                    }
+                  </select>
+                  @if (erroDefinicao('classificacaoProtecao')) {
+                    <span class="field__error" id="cfg-fato-def-classificacaoProtecao-erro">{{ erroDefinicao('classificacaoProtecao') }}</span>
+                  }
+                </label>
+                <label class="field" [class.is-error]="erroDefinicao('hipoteseLegal')">
+                  <span class="field__label is-required">Hipótese legal</span>
+                  <select class="select" formControlName="hipoteseLegal" [attr.aria-invalid]="erroDefinicao('hipoteseLegal') ? 'true' : null" [attr.aria-describedby]="descritorDe('hipoteseLegal')">
+                    <option value="">Selecione…</option>
+                    @for (opcao of hipotesesDaDefinicao(); track opcao.valor) {
+                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                    }
+                  </select>
+                  @if (erroDefinicao('hipoteseLegal')) {
+                    <span class="field__error" id="cfg-fato-def-hipoteseLegal-erro">{{ erroDefinicao('hipoteseLegal') }}</span>
+                  }
+                </label>
+              </div>
+              <label class="field form-grid__full" [class.is-error]="erroDefinicao('finalidadeTratamento')">
+                <span class="field__label is-required">Finalidade do tratamento</span>
+                <textarea class="textarea" rows="2" formControlName="finalidadeTratamento" [attr.aria-invalid]="erroDefinicao('finalidadeTratamento') ? 'true' : null" [attr.aria-describedby]="descritorDe('finalidadeTratamento')"></textarea>
+                @if (erroDefinicao('finalidadeTratamento')) {
+                  <span class="field__error" id="cfg-fato-def-finalidadeTratamento-erro">{{ erroDefinicao('finalidadeTratamento') }}</span>
+                }
+              </label>
+            </fieldset>
+      </div>
+    </ng-template>
+
+    <ng-template #recusasDaDefinicao>
+            @if (citacoes().length > 0) {
+              <div id="cfg-fato-def-citacoes" tabindex="-1">
+                <ui-alert variant="danger" heading="A alteração deixaria de valer o que já usa este fato">
+                  <p>Nada foi gravado. Ajuste o que está listado, ou escolha outra definição, e salve de novo.</p>
+                  @for (grupo of citacoes(); track grupo.tipo) {
+                    <p><strong>{{ grupo.titulo }}</strong></p>
+                    <ul>
+                      @for (item of grupo.itens; track item.codigo) {
+                        <li><code>{{ item.codigo }}</code>: {{ item.mensagem }}</li>
+                      }
+                    </ul>
+                  }
+                </ui-alert>
+              </div>
+            }
+            @if (recusaDaDefinicao(); as recusa) {
+              <div id="cfg-fato-def-recusa" role="alert" tabindex="-1">
+                <ui-alert variant="danger" heading="A definição não foi salva">{{ recusa }}</ui-alert>
+              </div>
+            }
+    </ng-template>
+
+    <ng-template #leituraDaDefinicao let-f let-comProtecao="comProtecao">
+          <dl class="cfg-detail-list cfg-fato-definicao">
+            <dt>Código</dt>
+            <dd><code>{{ f.codigo }}</code></dd>
+            <dt>Origem</dt>
+            <dd>{{ rotulo(origens, f.origem) }}</dd>
+            <dt>Tipo de dado</dt>
+            <dd>{{ rotulo(dominios, f.dominio) }} ({{ rotulo(cardinalidades, f.cardinalidade) }})</dd>
+            @if (f.fonteValores) {
+              <dt>Fonte dos valores</dt>
+              <dd>{{ rotulo(fontes, f.fonteValores) }}</dd>
+            }
+            @if (f.formato) {
+              <dt>Formato</dt>
+              <dd>{{ rotulo(formatos, f.formato) }}</dd>
+            }
+            <dt>Escopo</dt>
+            <dd>{{ rotulo(escopos, f.escopo) }}</dd>
+            <dt>Conhecido a partir da fase</dt>
+            <dd><code>{{ f.pontoResolucao }}</code></dd>
+            @if (comProtecao) {
+              <dt>Proteção de dados</dt>
+              <dd>{{ rotulo(classificacoes, f.classificacaoProtecao) }}</dd>
+              <dt>Base legal</dt>
+              <dd>{{ rotulo(hipoteses, f.hipoteseLegal) }}</dd>
+              <dt>Finalidade do tratamento</dt>
+              <dd>{{ f.finalidadeTratamento }}</dd>
+            }
+          </dl>
+    </ng-template>
+
     <div class="cfg-form">
     @if (fato(); as f) {
       @if (f.sistema) {
         <ui-alert variant="info" heading="Fato de sistema">
-          Este fato é resolvido pelo próprio sistema. Só o nome e a descrição podem ser alterados.
+          Este fato é resolvido pelo próprio sistema. Só o nome, a descrição e a proteção de dados podem ser alterados; a proteção passa pela aprovação da proteção de dados.
         </ui-alert>
       }
+      <div class="cfg-fato-aprovacao">
+        <span class="field__label">Aprovação da proteção de dados</span>
+        <cfg-situacao-da-aprovacao [situacao]="f.aprovacao.situacao" [classificacaoRecomendada]="f.aprovacao.classificacaoRecomendada" />
+      </div>
 
       <form class="cfg-fato-descritivo" [formGroup]="descritivo" id="cfg-fato-descritivo" (ngSubmit)="salvarDescritivo()" novalidate>
         <label class="field" [class.is-error]="erroDescritivo('nome')">
@@ -264,93 +373,26 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
                 }
               </label>
             </div>
-            <fieldset class="field form-grid__full">
-              <legend class="field__label">Proteção de dados (LGPD)</legend>
-              <div class="form-grid">
-                <label class="field" [class.is-error]="erroDefinicao('classificacaoProtecao')">
-                  <span class="field__label is-required">Classificação</span>
-                  <select class="select" formControlName="classificacaoProtecao" [attr.aria-invalid]="erroDefinicao('classificacaoProtecao') ? 'true' : null" [attr.aria-describedby]="descritorDe('classificacaoProtecao')">
-                    <option value="">Selecione…</option>
-                    @for (opcao of classificacoesDaDefinicao(); track opcao.valor) {
-                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
-                    }
-                  </select>
-                  @if (erroDefinicao('classificacaoProtecao')) {
-                    <span class="field__error" id="cfg-fato-def-classificacaoProtecao-erro">{{ erroDefinicao('classificacaoProtecao') }}</span>
-                  }
-                </label>
-                <label class="field" [class.is-error]="erroDefinicao('hipoteseLegal')">
-                  <span class="field__label is-required">Hipótese legal</span>
-                  <select class="select" formControlName="hipoteseLegal" [attr.aria-invalid]="erroDefinicao('hipoteseLegal') ? 'true' : null" [attr.aria-describedby]="descritorDe('hipoteseLegal')">
-                    <option value="">Selecione…</option>
-                    @for (opcao of hipotesesDaDefinicao(); track opcao.valor) {
-                      <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
-                    }
-                  </select>
-                  @if (erroDefinicao('hipoteseLegal')) {
-                    <span class="field__error" id="cfg-fato-def-hipoteseLegal-erro">{{ erroDefinicao('hipoteseLegal') }}</span>
-                  }
-                </label>
-              </div>
-              <label class="field form-grid__full" [class.is-error]="erroDefinicao('finalidadeTratamento')">
-                <span class="field__label is-required">Finalidade do tratamento</span>
-                <textarea class="textarea" rows="2" formControlName="finalidadeTratamento" [attr.aria-invalid]="erroDefinicao('finalidadeTratamento') ? 'true' : null" [attr.aria-describedby]="descritorDe('finalidadeTratamento')"></textarea>
-                @if (erroDefinicao('finalidadeTratamento')) {
-                  <span class="field__error" id="cfg-fato-def-finalidadeTratamento-erro">{{ erroDefinicao('finalidadeTratamento') }}</span>
-                }
-              </label>
-            </fieldset>
-            @if (citacoes().length > 0) {
-              <div id="cfg-fato-def-citacoes" tabindex="-1">
-                <ui-alert variant="danger" heading="A alteração deixaria de valer o que já usa este fato">
-                  <p>Nada foi gravado. Ajuste o que está listado, ou escolha outra definição, e salve de novo.</p>
-                  @for (grupo of citacoes(); track grupo.tipo) {
-                    <p><strong>{{ grupo.titulo }}</strong></p>
-                    <ul>
-                      @for (item of grupo.itens; track item.codigo) {
-                        <li><code>{{ item.codigo }}</code>: {{ item.mensagem }}</li>
-                      }
-                    </ul>
-                  }
-                </ui-alert>
-              </div>
-            }
-            @if (recusaDaDefinicao(); as recusa) {
-              <div id="cfg-fato-def-recusa" role="alert" tabindex="-1">
-                <ui-alert variant="danger" heading="A definição não foi salva">{{ recusa }}</ui-alert>
-              </div>
-            }
+            <ng-container *ngTemplateOutlet="protecaoDeDados" />
+            <ng-container *ngTemplateOutlet="recusasDaDefinicao" />
             <div class="cfg-form-actions">
               <button type="submit" id="cfg-fato-def-salvar" class="btn btn--primary btn--sm" [disabled]="bloqueado()">Salvar definição</button>
             </div>
           </form>
+        } @else if (f.sistema && !somenteLeitura()) {
+          <ng-container *ngTemplateOutlet="leituraDaDefinicao; context: { $implicit: f, comProtecao: false }" />
+          <p class="u-caption" id="cfg-fato-def-aviso">
+            Só a proteção de dados se altera no fato de sistema, e a mudança passa pela aprovação da proteção de dados.
+          </p>
+          <form class="cfg-fato-descritivo" [formGroup]="definicao" id="cfg-fato-definicao" (ngSubmit)="salvarDefinicao()" novalidate>
+            <ng-container *ngTemplateOutlet="protecaoDeDados" />
+            <ng-container *ngTemplateOutlet="recusasDaDefinicao" />
+            <div class="cfg-form-actions">
+              <button type="submit" id="cfg-fato-def-salvar" class="btn btn--primary btn--sm" [disabled]="bloqueado()">Salvar proteção de dados</button>
+            </div>
+          </form>
         } @else {
-          <dl class="cfg-detail-list cfg-fato-definicao">
-            <dt>Código</dt>
-            <dd><code>{{ f.codigo }}</code></dd>
-            <dt>Origem</dt>
-            <dd>{{ rotulo(origens, f.origem) }}</dd>
-            <dt>Tipo de dado</dt>
-            <dd>{{ rotulo(dominios, f.dominio) }} ({{ rotulo(cardinalidades, f.cardinalidade) }})</dd>
-            @if (f.fonteValores) {
-              <dt>Fonte dos valores</dt>
-              <dd>{{ rotulo(fontes, f.fonteValores) }}</dd>
-            }
-            @if (f.formato) {
-              <dt>Formato</dt>
-              <dd>{{ rotulo(formatos, f.formato) }}</dd>
-            }
-            <dt>Escopo</dt>
-            <dd>{{ rotulo(escopos, f.escopo) }}</dd>
-            <dt>Conhecido a partir da fase</dt>
-            <dd><code>{{ f.pontoResolucao }}</code></dd>
-            <dt>Proteção de dados</dt>
-            <dd>{{ rotulo(classificacoes, f.classificacaoProtecao) }}</dd>
-            <dt>Base legal</dt>
-            <dd>{{ rotulo(hipoteses, f.hipoteseLegal) }}</dd>
-            <dt>Finalidade do tratamento</dt>
-            <dd>{{ f.finalidadeTratamento }}</dd>
-          </dl>
+          <ng-container *ngTemplateOutlet="leituraDaDefinicao; context: { $implicit: f, comProtecao: true }" />
         }
       </ui-recolhivel>
 
@@ -616,9 +658,22 @@ export class FatoCandidatoEdicaoComponent {
     return fato !== null && podeEditarDefinicao(fato);
   });
 
+  /** A proteção de dados se altera no fato do administrador e também no de sistema, que trava o resto da definição. */
+  protected readonly protecaoEditavel = computed(() => this.definicaoEditavel() || this.fato()?.sistema === true);
+
+  /**
+   * Salvar devolve o fato a pendente quando muda a classificação, a hipótese legal ou a finalidade de
+   * um fato que não está pendente; nome, descrição e demais eixos não pedem nova aprovação.
+   */
+  protected readonly avisaNovaAprovacao = computed(() => {
+    const fato = this.fato();
+    return fato !== null && fato.aprovacao.situacao !== 'PENDENTE' && protecaoMudou(fato, this.valoresDaDefinicao());
+  });
+
+  /** O fato de sistema não edita eixo nenhum, qualquer seja o vínculo dele: só a proteção de dados. */
   private readonly tipo = computed(() => {
     const fato = this.fato();
-    return fato === null ? 'OUTRO' : tipoDoFato(fato);
+    return fato === null || fato.sistema ? 'OUTRO' : tipoDoFato(fato);
   });
 
   /** O agregado mostra o fato de membro que resume, sem poder trocá-lo. */
@@ -854,8 +909,15 @@ export class FatoCandidatoEdicaoComponent {
       const eixos = this.eixos();
       const doTipo = eixosDoTipo(this.tipo());
       untracked(() => {
-        esvaziarSeForaDas(this.definicao.controls.classificacaoProtecao, classificacoes);
-        esvaziarSeForaDas(this.definicao.controls.hipoteseLegal, hipoteses);
+        // A proteção que veio do servidor fica como está ao abrir: só se esvazia o que a pessoa tornou incompatível
+        // ao trocar o domínio ou a classificação.
+        const servidor = this.fato();
+        const dominioMudou = servidor !== null && this.definicao.controls.dominio.value !== servidor.dominio;
+        const classificacaoMudou = servidor !== null && this.definicao.controls.classificacaoProtecao.value !== servidor.classificacaoProtecao;
+        if (dominioMudou || classificacaoMudou || servidor === null) esvaziarSeForaDas(this.definicao.controls.classificacaoProtecao, classificacoes);
+        if (classificacaoMudou || servidor === null || this.definicao.controls.hipoteseLegal.value !== servidor.hipoteseLegal) {
+          esvaziarSeForaDas(this.definicao.controls.hipoteseLegal, hipoteses);
+        }
         // Eixo que o tipo do fato não edita guarda o valor do servidor: nem se exige, nem se esvazia.
         exigirSe(this.definicao.controls.dominio, eixos.dominio, doTipo.dominio);
         exigirSe(this.definicao.controls.fonteValores, eixos.fonteValores, doTipo.fonteValores);
@@ -871,7 +933,7 @@ export class FatoCandidatoEdicaoComponent {
   }
 
   protected salvarDefinicao(): void {
-    if (this.somenteLeitura() || !this.definicaoEditavel() || this.bloqueado()) return;
+    if (this.somenteLeitura() || !this.protecaoEditavel() || this.bloqueado()) return;
     descartarRecusasDoServidor(this.definicao);
     this.exigirTextoNaFinalidade();
     if (this.definicao.invalid) {

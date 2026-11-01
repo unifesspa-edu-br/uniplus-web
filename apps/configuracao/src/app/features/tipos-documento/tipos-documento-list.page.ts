@@ -1,11 +1,17 @@
 import { HttpParams } from '@angular/common/http';
+import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
+import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  Injector,
+  afterNextRender,
   computed,
   effect,
+  ElementRef,
   inject,
+  viewChild,
   linkedSignal,
   signal,
   untracked,
@@ -29,9 +35,10 @@ import {
   CursorPagina,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
-import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
+import { deveRotacionarIdempotencyKey, idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
+  AprovacaoDaProtecaoDto,
   AtualizarTipoDocumentoCommand,
   CONFIGURACAO_BASE_PATH,
   CriarTipoDocumentoCommand,
@@ -40,6 +47,18 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
+import {
+  AprovacaoDoCatalogo,
+  AvisoDeNovaAprovacaoComponent,
+  CLASSIFICACOES_DE_PROTECAO,
+  SituacaoDaAprovacaoComponent,
+  SolicitacaoDaProtecaoDialogComponent,
+  esvaziarSeForaDas,
+  hipotesesDaClassificacao,
+  protecaoMudou,
+  rotuloDe,
+  type ProtecaoDoItem,
+} from '../../shared/protecao-do-catalogo';
 import { CatalogoCategoriasDocumento } from '../../shared/categorias-documento';
 import {
   AlertComponent,
@@ -107,6 +126,9 @@ interface TipoDocumentoForm {
   formatoPng: FormControl<boolean>;
   formatoTiff: FormControl<boolean>;
   tamanhoMaximoMb: FormControl<number | null>;
+  classificacaoProtecao: FormControl<string>;
+  hipoteseLegal: FormControl<string>;
+  finalidadeTratamento: FormControl<string>;
 }
 
 @Component({
@@ -114,7 +136,9 @@ interface TipoDocumentoForm {
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    TemPermissaoDirective,
     AlertComponent,
+    AvisoDeNovaAprovacaoComponent,
     ConfirmDialogComponent,
     DrawerComponent,
     EmptyStateComponent,
@@ -124,9 +148,12 @@ interface TipoDocumentoForm {
     LookupAlertComponent,
     LookupLabelComponent,
     PagerComponent,
+    SituacaoDaAprovacaoComponent,
+    SolicitacaoDaProtecaoDialogComponent,
     SpinnerComponent,
     TagComponent,
   ],
+  providers: [AprovacaoDoCatalogo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-header">
@@ -177,15 +204,24 @@ interface TipoDocumentoForm {
     <section class="panel" aria-labelledby="cfg-tipos-documento-list-title">
       <div class="panel-head">
         <div class="panel-head__title">
-          <h2 id="cfg-tipos-documento-list-title">Tipos de documento</h2>
+          <h2 #tituloDaLista id="cfg-tipos-documento-list-title" tabindex="-1">Tipos de documento</h2>
           @if (loading()) {
             <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
-        <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
-          <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-          Novo tipo
-        </button>
+        <div class="panel-head__actions">
+          <ng-container *authTemPermissao="permissaoDeManter">
+            @if (aprovacao.solicitaveis().length > 0) {
+              <button type="button" class="btn btn--secondary" (click)="solicitacaoAberta.set(true)">
+                Enviar solicitação
+              </button>
+            }
+          </ng-container>
+          <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
+            <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+            Novo tipo
+          </button>
+        </div>
       </div>
 
       <ui-lookup-alert [falhas]="lookupsComFalha()" />
@@ -194,7 +230,7 @@ interface TipoDocumentoForm {
         <div class="table-responsive">
           <table>
             <caption class="sr-only">
-              Tipos de documento, com categoria, formatos aceitos e tamanho máximo de arquivo
+              Tipos de documento, com categoria, formatos aceitos, tamanho máximo de arquivo e situação da proteção de dados
             </caption>
             <thead>
               <tr>
@@ -203,6 +239,7 @@ interface TipoDocumentoForm {
                 <th scope="col">Categoria</th>
                 <th scope="col">Formatos aceitos</th>
                 <th scope="col">Tam. máx.</th>
+                <th scope="col">Proteção de dados</th>
                 <th scope="col"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
@@ -230,6 +267,32 @@ interface TipoDocumentoForm {
                   </td>
                   <td data-label="Tam. máx." class="u-caption">
                     {{ tamanhoLabel(tipo.tamanhoMaximoMb) }}
+                  </td>
+                  <td data-label="Proteção de dados">
+                    <div>{{ rotulo(classificacoes, tipo.classificacaoProtecao) }}</div>
+                    @if (aprovacao.aprovacaoDe(tipo.id); as situacao) {
+                      <cfg-situacao-da-aprovacao
+                        [situacao]="situacao.situacao"
+                        [classificacaoRecomendada]="situacao.classificacaoRecomendada"
+                      />
+                      @if (situacao.situacao === 'NEGADA') {
+                        <ng-container *authTemPermissao="permissaoDeManter">
+                          <button
+                            type="button"
+                            class="btn btn--secondary btn--sm"
+                            [attr.aria-label]="'Aceitar recomendação do tipo de documento ' + tipo.codigo"
+                            [disabled]="loading() || aceitando()"
+                            (click)="pedirAceite(tipo)"
+                          >
+                            Aceitar recomendação
+                          </button>
+                        </ng-container>
+                      }
+                    } @else if (aprovacao.comErro()) {
+                      <span class="u-caption">Não foi possível ler a situação</span>
+                    } @else {
+                      <span class="u-caption">—</span>
+                    }
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
@@ -311,6 +374,16 @@ interface TipoDocumentoForm {
             </button>
           </div>
         </ui-alert>
+      }
+
+      @if (negadoEmEdicao(); as negado) {
+        <ui-alert variant="info" heading="Negado pela proteção de dados">
+          A classificação recomendada é {{ rotulo(classificacoes, negado.classificacaoRecomendada) }}.
+          Ajuste a proteção de dados abaixo e salve, ou feche e use "Aceitar recomendação" na lista.
+        </ui-alert>
+      }
+      @if (avisaNovaAprovacao()) {
+        <cfg-aviso-de-nova-aprovacao />
       }
 
       <form
@@ -448,6 +521,59 @@ interface TipoDocumentoForm {
             <span class="field__error">{{ erroDoCampo('tamanhoMaximoMb') }}</span>
           }
         </label>
+
+        <fieldset class="field form-grid__full">
+          <legend class="form-section__title">Proteção de dados (LGPD)</legend>
+          <div class="form-grid">
+            <label class="field" [class.is-error]="erroDoCampo('classificacaoProtecao')">
+              <span class="field__label is-required">Classificação</span>
+              <select
+                class="select"
+                formControlName="classificacaoProtecao"
+                [attr.aria-invalid]="erroDoCampo('classificacaoProtecao') ? 'true' : null"
+                [attr.aria-describedby]="erroDoCampo('classificacaoProtecao') ? 'cfg-tdoc-classificacao-erro' : null"
+              >
+                <option value="">Selecione…</option>
+                @for (opcao of classificacoes; track opcao.valor) {
+                  <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                }
+              </select>
+              @if (erroDoCampo('classificacaoProtecao')) {
+                <span class="field__error" id="cfg-tdoc-classificacao-erro">{{ erroDoCampo('classificacaoProtecao') }}</span>
+              }
+            </label>
+            <label class="field" [class.is-error]="erroDoCampo('hipoteseLegal')">
+              <span class="field__label is-required">Hipótese legal</span>
+              <select
+                class="select"
+                formControlName="hipoteseLegal"
+                [attr.aria-invalid]="erroDoCampo('hipoteseLegal') ? 'true' : null"
+                [attr.aria-describedby]="erroDoCampo('hipoteseLegal') ? 'cfg-tdoc-hipotese-erro' : null"
+              >
+                <option value="">Selecione…</option>
+                @for (opcao of hipotesesPermitidas(); track opcao.valor) {
+                  <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                }
+              </select>
+              @if (erroDoCampo('hipoteseLegal')) {
+                <span class="field__error" id="cfg-tdoc-hipotese-erro">{{ erroDoCampo('hipoteseLegal') }}</span>
+              }
+            </label>
+          </div>
+          <label class="field form-grid__full" [class.is-error]="erroDoCampo('finalidadeTratamento')">
+            <span class="field__label is-required">Finalidade do tratamento</span>
+            <textarea
+              class="textarea"
+              rows="2"
+              formControlName="finalidadeTratamento"
+              [attr.aria-invalid]="erroDoCampo('finalidadeTratamento') ? 'true' : null"
+              [attr.aria-describedby]="erroDoCampo('finalidadeTratamento') ? 'cfg-tdoc-finalidade-erro' : null"
+            ></textarea>
+            @if (erroDoCampo('finalidadeTratamento')) {
+              <span class="field__error" id="cfg-tdoc-finalidade-erro">{{ erroDoCampo('finalidadeTratamento') }}</span>
+            }
+          </label>
+        </fieldset>
       </form>
 
       <div class="cfg-form-footer">
@@ -482,6 +608,20 @@ interface TipoDocumentoForm {
       confirmVariant="danger"
       (confirmed)="confirmarRemocao()"
     />
+
+    <ui-confirm-dialog
+      [(visible)]="confirmAceiteAberto"
+      heading="Aceitar a recomendação"
+      [message]="confirmAceiteMensagem()"
+      confirmLabel="Aceitar recomendação"
+      (confirmed)="confirmarAceite()"
+    />
+
+    <cfg-solicitacao-da-protecao-dialog
+      [(visible)]="solicitacaoAberta"
+      [pendentes]="aprovacao.solicitaveis()"
+      (enviada)="aposEnviarSolicitacao()"
+    />
   `,
   host: { class: 'cfg-page' },
 })
@@ -490,8 +630,14 @@ export class TiposDocumentoListPage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
   protected readonly categorias = inject(CatalogoCategoriasDocumento);
+  protected readonly aprovacao = inject(AprovacaoDoCatalogo);
+
+  protected readonly permissaoDeManter = PERMISSAO.configuracao.tiposDocumentoManter;
+  protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
+  protected readonly rotulo = rotuloDe;
 
   protected readonly formatosAceitosOpcoes = FORMATOS_ACEITOS_OPCOES;
 
@@ -506,6 +652,16 @@ export class TiposDocumentoListPage {
   protected readonly confirmRemoverAberto = signal(false);
   protected readonly tipoParaRemover = signal<TipoDocumentoDto | null>(null);
   protected readonly confirmError = signal<string | null>(null);
+
+  protected readonly solicitacaoAberta = signal(false);
+  protected readonly confirmAceiteAberto = signal(false);
+  protected readonly tipoParaAceitar = signal<TipoDocumentoDto | null>(null);
+  protected readonly confirmAceiteError = signal<string | null>(null);
+  protected readonly aceitando = signal(false);
+  private readonly idempotencyKeyDoAceite = signal(idempotencyKey.create());
+  private readonly tituloDaLista = viewChild<ElementRef<HTMLElement>>('tituloDaLista');
+  /** A proteção que o tipo em edição tinha ao abrir o formulário: a base de comparação do aviso. */
+  private readonly protecaoOriginal = signal<ProtecaoDoItem | null>(null);
 
   private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
@@ -668,11 +824,14 @@ export class TiposDocumentoListPage {
     return registros.filter((tipo) => tipo.categoria === categoria);
   });
 
-  protected readonly lookupsComFalha = computed<readonly UiLookupFalho[]>(() =>
-    this.categorias.comErro()
+  protected readonly lookupsComFalha = computed<readonly UiLookupFalho[]>(() => [
+    ...(this.categorias.comErro()
       ? [{ nome: 'categorias', recarregar: () => this.categorias.recarregar() }]
-      : [],
-  );
+      : []),
+    ...(this.aprovacao.comErro()
+      ? [{ nome: 'situação da proteção de dados', recarregar: () => this.aprovacao.carregar() }]
+      : []),
+  ]);
 
   protected readonly temFiltro = computed(
     () => this.termoBusca().trim().length > 0 || this.filtroCategoria() !== '',
@@ -733,6 +892,12 @@ export class TiposDocumentoListPage {
     tamanhoMaximoMb: new FormControl<number | null>(null, {
       validators: [Validators.min(TAMANHO_MAXIMO_MB_MINIMO)],
     }),
+    classificacaoProtecao: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    hipoteseLegal: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    finalidadeTratamento: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(500)],
+    }),
   });
   private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
     this.form.controls,
@@ -761,10 +926,50 @@ export class TiposDocumentoListPage {
     return equivalente.length > 0 && equivalente === codigo;
   });
 
+  /** As hipóteses legais que cabem na classificação escolhida (art. 7º ou art. 11 da LGPD). */
+  protected readonly hipotesesPermitidas = computed(() =>
+    hipotesesDaClassificacao(this.formValue().classificacaoProtecao),
+  );
+
+  /** O tipo em edição que a proteção de dados negou: a recomendação aparece junto do formulário. */
+  protected readonly negadoEmEdicao = computed<AprovacaoDaProtecaoDto | null>(() => {
+    const id = this.tipoEmEdicaoId();
+    const situacao = id === null || this.modo() !== 'editar' ? null : this.aprovacao.aprovacaoDe(id);
+    return situacao?.situacao === 'NEGADA' ? situacao : null;
+  });
+
+  /**
+   * Salvar devolve a pendente o tipo que já passou pela aprovação (ou está nela) quando muda a
+   * classificação, a hipótese legal ou a finalidade; nome, descrição e demais campos não mudam.
+   */
+  protected readonly avisaNovaAprovacao = computed(() => {
+    const id = this.tipoEmEdicaoId();
+    const original = this.protecaoOriginal();
+    if (id === null || original === null || this.modo() !== 'editar') return false;
+    const situacao = this.aprovacao.aprovacaoDe(id)?.situacao;
+    return situacao !== undefined && situacao !== 'PENDENTE' && protecaoMudou(original, this.formValue());
+  });
+
   constructor() {
     // O catálogo é do injector raiz: a primeira tela do cadastro que o pedir
     // paga a requisição, e as demais reaproveitam o que já está em memória.
     this.categorias.garantirCarregado();
+    this.aprovacao.carregar();
+
+    // A hipótese que deixou de caber na classificação que a pessoa escolheu se esvazia: ficaria no controle, invisível.
+    // A que veio do servidor ao abrir a edição fica como está; quem decide é a API.
+    effect(() => {
+      const hipoteses = this.hipotesesPermitidas();
+      untracked(() => {
+        const original = this.protecaoOriginal();
+        const controles = this.form.controls;
+        const pessoaMudou =
+          original === null ||
+          controles.classificacaoProtecao.value !== original.classificacaoProtecao ||
+          controles.hipoteseLegal.value !== original.hipoteseLegal;
+        if (pessoaMudou) esvaziarSeForaDas(controles.hipoteseLegal, hipoteses);
+      });
+    });
 
     effect(() => {
       const problem = this.lista.problem();
@@ -885,7 +1090,11 @@ export class TiposDocumentoListPage {
       formatoPng: false,
       formatoTiff: false,
       tamanhoMaximoMb: null,
+      classificacaoProtecao: '',
+      hipoteseLegal: '',
+      finalidadeTratamento: '',
     });
+    this.protecaoOriginal.set(null);
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
     this.formOpen.set(true);
@@ -906,6 +1115,14 @@ export class TiposDocumentoListPage {
       formatoPng: formatos.formatoPng,
       formatoTiff: formatos.formatoTiff,
       tamanhoMaximoMb: normalizarTamanhoMaximo(tipo.tamanhoMaximoMb),
+      classificacaoProtecao: tipo.classificacaoProtecao,
+      hipoteseLegal: tipo.hipoteseLegal,
+      finalidadeTratamento: tipo.finalidadeTratamento,
+    });
+    this.protecaoOriginal.set({
+      classificacaoProtecao: tipo.classificacaoProtecao,
+      hipoteseLegal: tipo.hipoteseLegal,
+      finalidadeTratamento: tipo.finalidadeTratamento,
     });
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -933,6 +1150,7 @@ export class TiposDocumentoListPage {
           this.notifications.success('Tipo de documento removido', tipo.codigo);
           this.confirmRemoverAberto.set(false);
           this.tipoParaRemover.set(null);
+          this.aprovacao.carregar();
           this.recarregar();
           return;
         }
@@ -946,6 +1164,68 @@ export class TiposDocumentoListPage {
           this.notifications.errorFromProblem(result.problem, { title: titulo });
         }
       });
+  }
+
+  protected pedirAceite(tipo: TipoDocumentoDto): void {
+    this.tipoParaAceitar.set(tipo);
+    this.confirmAceiteError.set(null);
+    this.idempotencyKeyDoAceite.set(idempotencyKey.create());
+    this.confirmAceiteAberto.set(true);
+  }
+
+  protected readonly confirmAceiteMensagem = computed(() => {
+    const erro = this.confirmAceiteError();
+    if (erro !== null) {
+      return erro;
+    }
+    const tipo = this.tipoParaAceitar();
+    const recomendada = tipo === null ? null : this.aprovacao.aprovacaoDe(tipo.id)?.classificacaoRecomendada;
+    return tipo && recomendada
+      ? `Aceitar a classificação "${rotuloDe(CLASSIFICACOES_DE_PROTECAO, recomendada)}" para "${tipo.nome}" (${tipo.codigo})? ` +
+          'O tipo fica aprovado com ela, sem nova solicitação, e a proteção de dados é avisada.'
+      : 'Aceitar a classificação recomendada pela proteção de dados?';
+  });
+
+  protected confirmarAceite(): void {
+    const tipo = this.tipoParaAceitar();
+    if (tipo === null || this.aceitando()) {
+      return;
+    }
+    this.aceitando.set(true);
+    this.api
+      .aceitarRecomendacao(tipo.id, withIdempotencyKey(this.idempotencyKeyDoAceite()))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.aceitando.set(false);
+        if (result.ok) {
+          this.notifications.success('Recomendação aceita', tipo.codigo);
+          this.confirmAceiteAberto.set(false);
+          this.tipoParaAceitar.set(null);
+          this.aprovacao.carregar();
+          this.focarTituloDaLista();
+          return;
+        }
+        // O diálogo fecha ao emitir `confirmed`, antes da resposta: reabre com a recusa da API.
+        const titulo = this.problemI18n.resolve(result.problem).title;
+        if (deveRotacionarIdempotencyKey(result.problem)) this.idempotencyKeyDoAceite.set(idempotencyKey.create());
+        // A recusa pode vir de um item que mudou em outra sessão: a situação e a lista são relidas.
+        this.aprovacao.carregar();
+        this.recarregar();
+        this.confirmAceiteError.set(titulo);
+        this.confirmAceiteAberto.set(true);
+        if (result.problem.status >= 500) {
+          this.notifications.errorFromProblem(result.problem, { title: titulo });
+        }
+      });
+  }
+
+  protected aposEnviarSolicitacao(): void {
+    this.aprovacao.carregar();
+    this.focarTituloDaLista();
+  }
+
+  private focarTituloDaLista(): void {
+    afterNextRender(() => this.tituloDaLista()?.nativeElement.focus(), { injector: this.injector });
   }
 
   protected salvar(): void {
@@ -1023,6 +1303,7 @@ export class TiposDocumentoListPage {
       );
       this.formOpen.set(false);
       this.idempotencyKeyAtual.set(idempotencyKey.create());
+      this.aprovacao.carregar();
       this.recarregar();
       return;
     }
@@ -1094,6 +1375,9 @@ export class TiposDocumentoListPage {
       formatosAceitos: serializarFormatosAceitos(raw),
       tamanhoMaximoMb: raw.tamanhoMaximoMb,
       tipoEquivalente: nullIfBlank(raw.tipoEquivalente),
+      classificacaoProtecao: raw.classificacaoProtecao,
+      hipoteseLegal: raw.hipoteseLegal,
+      finalidadeTratamento: raw.finalidadeTratamento.trim(),
     };
   }
 
@@ -1109,6 +1393,9 @@ const TIPO_DOCUMENTO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof TipoDocu
   'descricao',
   'tipoEquivalente',
   'tamanhoMaximoMb',
+  'classificacaoProtecao',
+  'hipoteseLegal',
+  'finalidadeTratamento',
 ]);
 
 function controlNameFromBackendField(field: string): keyof TipoDocumentoForm | null {

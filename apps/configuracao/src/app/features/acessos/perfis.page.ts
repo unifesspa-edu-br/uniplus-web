@@ -211,7 +211,7 @@ interface CorpoDoPerfil {
         </label>
 
         <fieldset class="field">
-          <legend class="field__label">Permissões</legend>
+          <legend class="form-section__title">Permissões</legend>
           @if (catalogo.comErro()) {
             <ui-alert variant="warning" heading="Catálogo indisponível">
               Não foi possível carregar o catálogo de permissões.
@@ -227,7 +227,9 @@ interface CorpoDoPerfil {
           @for (modulo of catalogo.opcoes(); track modulo.modulo) {
             @for (resource of modulo.resources; track resource.resource) {
               <fieldset class="field">
-                <legend class="field__label">{{ modulo.modulo }} · {{ resource.resource }}</legend>
+                <legend class="field__label cfg-form__grupo-titulo">
+                  {{ modulo.modulo }} · {{ resource.resource }}
+                </legend>
                 @for (permissao of resource.permissoes; track permissao.codigo) {
                   <label class="checkbox">
                     <input
