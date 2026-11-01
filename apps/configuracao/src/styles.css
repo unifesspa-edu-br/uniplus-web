@@ -1059,3 +1059,14 @@ cfg-revogar-concessao-dialog .uni-dialog__header {
   width: 1%;
   white-space: nowrap;
 }
+
+/* No cartão a linha de cabeçalho da tabela some: o "marcar todos" passa para cima da lista. */
+.cfg-marcar-todos-cartao {
+  margin-block: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .cfg-marcar-todos-cartao {
+    display: none;
+  }
+}

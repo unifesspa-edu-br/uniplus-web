@@ -1133,6 +1133,68 @@ describe('TiposDocumentoListPage', () => {
         await propagate();
       });
 
+      it('item recusado como não pendente fica sinalizado na linha, sai da marcação e a situação é relida', async () => {
+        const dialogo = await abrirDialogo();
+        enviar(dialogo).click();
+
+        controller.expectOne(`${URL_PROTECAO}/solicitacoes`).flush(
+          JSON.stringify({
+            status: 422,
+            code: 'uniplus.configuracao.protecao_do_catalogo.item_nao_pendente',
+            title: 'O item da solicitação não existe ou não está pendente',
+            errors: [
+              {
+                field: 'itens[1].id',
+                code: 'uniplus.configuracao.protecao_do_catalogo.item_nao_pendente',
+                message: 'O item da solicitação não existe ou não está pendente',
+              },
+            ],
+          }),
+          { status: 422, statusText: 'Recusa', headers: { 'content-type': 'application/problem+json' } },
+        );
+        await propagate();
+        fixture.detectChanges();
+
+        const recusado = caixas(dialogo)[1];
+        expect(recusado.checked).toBe(false);
+        expect(recusado.getAttribute('aria-invalid')).toBe('true');
+        const mensagem = dialogo.querySelector(`[id="${recusado.getAttribute('aria-describedby')}"]`);
+        expect(mensagem?.textContent).toContain('não existe ou não está pendente');
+        expect(caixas(dialogo)[0].checked).toBe(true);
+        expect(enviar(dialogo).textContent?.trim()).toBe('Enviar 1 item');
+        // A situação é relida: o item recusado deixa de ser pendente.
+        flushProtecao([item(laudoSeed, { situacao: 'PENDENTE' })]);
+      });
+
+      it('troca a Idempotency-Key quando a seleção muda depois de uma falha', async () => {
+        const dialogo = await abrirDialogo();
+        enviar(dialogo).click();
+        const primeira = controller.expectOne(`${URL_PROTECAO}/solicitacoes`);
+        const chave = primeira.request.headers.get('Idempotency-Key');
+        primeira.flush({ title: 'Falha', status: 503 }, { status: 503, statusText: 'Falha' });
+        await propagate();
+        fixture.detectChanges();
+
+        // Mesma seleção: repete a chave. Outra seleção: chave nova.
+        enviar(dialogo).click();
+        const repetida = controller.expectOne(`${URL_PROTECAO}/solicitacoes`);
+        expect(repetida.request.headers.get('Idempotency-Key')).toBe(chave);
+        repetida.flush({ title: 'Falha', status: 503 }, { status: 503, statusText: 'Falha' });
+        await propagate();
+        fixture.detectChanges();
+
+        caixas(dialogo)[1].click();
+        fixture.detectChanges();
+        enviar(dialogo).click();
+        const outra = controller.expectOne(`${URL_PROTECAO}/solicitacoes`);
+        expect(outra.request.headers.get('Idempotency-Key')).not.toBe(chave);
+        expect(outra.request.body.itens).toHaveLength(1);
+        outra.flush({ tiposDeDocumento: 1, fatos: 0 });
+        await propagate();
+        flushProtecao([]);
+        await propagate();
+      });
+
       it('"marcar todos" desmarca tudo, desabilita o envio e volta a marcar tudo', async () => {
         const dialogo = await abrirDialogo();
 
@@ -1290,7 +1352,7 @@ describe('TiposDocumentoListPage', () => {
       fixture.detectChanges();
 
       expect(texto()).not.toContain('Aprovada');
-      expect(texto()).toContain('Situação indisponível');
+      expect(texto()).toContain('Não foi possível ler a situação');
     });
 
     it('releitura que falha depois de uma boa não devolve "Aprovada" ao tipo que saiu da lista', async () => {
