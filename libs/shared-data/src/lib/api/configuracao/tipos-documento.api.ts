@@ -2,6 +2,7 @@ import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/commo
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import type { AtoDaProtecaoDto } from './protecao-do-catalogo.api';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -86,6 +87,14 @@ export class TiposDocumentoApi {
       `${this.basePath}/api/configuracao/admin/tipos-documento/${encodeURIComponent(id)}/aceite-da-recomendacao`,
       null,
       { context },
+    );
+  }
+
+  /** GET `/api/configuracao/admin/tipos-documento/{id}/protecao/atos` — os atos da proteção de dados do tipo, em ordem cronológica. Exige a permissão de manter tipos de documento. */
+  atosDaProtecao(id: string): Observable<ApiResult<readonly AtoDaProtecaoDto[]>> {
+    return this.http.get<ApiResult<readonly AtoDaProtecaoDto[]>>(
+      `${this.basePath}/api/configuracao/admin/tipos-documento/${encodeURIComponent(id)}/protecao/atos`,
+      { context: withVendorMime('protecao-do-catalogo-ato', 1) },
     );
   }
 

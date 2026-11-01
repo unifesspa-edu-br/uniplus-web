@@ -2,6 +2,7 @@ import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import type { AtoDaProtecaoDto } from './protecao-do-catalogo.api';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -113,6 +114,13 @@ export class FatosCandidatoApi {
   aceitarRecomendacao(id: string, context: HttpContext): Observable<ApiResult<void>> {
     return this.http.post<ApiResult<void>>(this.admin(id, 'aceite-da-recomendacao'), null, {
       context,
+    });
+  }
+
+  /** GET `/api/configuracao/admin/fatos-candidato/{id}/protecao/atos` — os atos da proteção de dados do fato, em ordem cronológica. Exige a permissão de consultar fatos. */
+  atosDaProtecao(id: string): Observable<ApiResult<readonly AtoDaProtecaoDto[]>> {
+    return this.http.get<ApiResult<readonly AtoDaProtecaoDto[]>>(this.admin(id, 'protecao', 'atos'), {
+      context: withVendorMime('protecao-do-catalogo-ato', 1),
     });
   }
 

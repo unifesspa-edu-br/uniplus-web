@@ -3939,6 +3939,79 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/admin/fatos-candidato/{id}/protecao/atos": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.protecao-do-catalogo-ato.v1+json": readonly components["schemas"]["AtoDaProtecaoDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/admin/fatos-candidato/{id}/ativacao": {
         readonly parameters: {
             readonly query?: never;
@@ -7478,6 +7551,118 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/admin/protecao-do-catalogo/decisoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: {
+                    /** @description Decisão: APROVACAO, AJUSTE_RECOMENDADO ou REPROVACAO. Repetível; sem o parâmetro, as três. */
+                    readonly ato?: readonly string[];
+                    /** @description Cadastro do item: TIPO_DOCUMENTO ou FATO. */
+                    readonly cadastro?: string;
+                    /** @description Data inicial da decisão, inclusive (AAAA-MM-DD), no fuso de Belém. */
+                    readonly de?: string;
+                    /** @description Data final da decisão, inclusive (AAAA-MM-DD), no fuso de Belém. */
+                    readonly ate?: string;
+                    /** @description Trecho do nome ou do código do item. Insensível a caixa e a acentuação. Até 200 caracteres. */
+                    readonly busca?: string;
+                    /** @description Quando verdadeiro, só as decisões de quem consulta. */
+                    readonly minhas?: boolean;
+                    /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
+                    readonly cursor?: string;
+                    /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
+                    readonly limit?: number;
+                    /** @description Direção de navegação keyset (ADR-0089): 'next' (default) avança, 'prev' retrocede. Normalmente o cliente apenas segue o cursor opaco do rel="prev"/rel="next" do header Link — que já inclui o direction correto. */
+                    readonly direction?: PathsApiConfiguracaoAdminProtecaoDoCatalogoDecisoesGetParametersQueryDirection;
+                };
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        /** @description Links de navegação da paginação (RFC 5988/8288). rel="self" sempre presente; rel="prev"/rel="next" quando há página anterior/próxima (ADR-0089). Cada link carrega o cursor opaco no parâmetro `cursor` e o `direction` correspondente (ADR-0026). */
+                        readonly Link?: string;
+                        /** @description Quantidade de itens retornados na página atual (sempre menor ou igual ao limit efetivo). */
+                        readonly "X-Page-Size"?: number;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.protecao-do-catalogo-decisao.v1+json": readonly components["schemas"]["DecisaoDaProtecaoDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Gone */
+                readonly 410: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/admin/protecao-do-catalogo/{cadastro}/{id}": {
         readonly parameters: {
             readonly query?: never;
@@ -10316,6 +10501,79 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/admin/tipos-documento/{id}/protecao/atos": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.protecao-do-catalogo-ato.v1+json": readonly components["schemas"]["AtoDaProtecaoDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/tipos-etapa": {
         readonly parameters: {
             readonly query?: never;
@@ -11508,6 +11766,17 @@ export interface components {
             readonly codigo: string;
             readonly rotulo: string;
         };
+        readonly AtoDaProtecaoDto: {
+            readonly ato: string;
+            /** Format: date-time */
+            readonly instante: string;
+            readonly atorNome: null | string;
+            readonly classificacaoProtecao: string;
+            readonly hipoteseLegal: string;
+            readonly finalidadeTratamento: string;
+            readonly classificacaoRecomendada: null | string;
+            readonly justificativa: null | string;
+        };
         readonly AtualizarBaseLegalBonusRegionalCommand: {
             /** Format: uuid */
             readonly id: string;
@@ -12098,6 +12367,22 @@ export interface components {
             readonly classificacaoRecomendada?: null | string;
             readonly justificativa?: null | string;
         };
+        readonly DecisaoDaProtecaoDto: {
+            readonly cadastro: string;
+            /** Format: uuid */
+            readonly itemId: string;
+            readonly itemCodigo: string;
+            readonly itemNome: string;
+            readonly ato: string;
+            /** Format: date-time */
+            readonly instante: string;
+            readonly atorNome: null | string;
+            readonly classificacaoProtecao: string;
+            readonly hipoteseLegal: string;
+            readonly finalidadeTratamento: string;
+            readonly classificacaoRecomendada: null | string;
+            readonly justificativa: null | string;
+        };
         readonly DefinicaoDoFatoInput: {
             readonly pontoResolucao: string;
             readonly classificacaoProtecao: string;
@@ -12132,6 +12417,7 @@ export interface components {
             readonly aprovacao: components["schemas"]["AprovacaoDaProtecaoDto"];
             readonly fato: null | components["schemas"]["DetalheDoFatoDto"];
             readonly tipoDocumento: null | components["schemas"]["DetalheDoTipoDeDocumentoDto"];
+            readonly atos: readonly components["schemas"]["AtoDaProtecaoDto"][];
         };
         readonly DetalheDoFatoDto: {
             readonly dominio: string;
@@ -13217,6 +13503,10 @@ export enum PathsApiConfiguracaoPesosAreaEnemGetParametersQueryDirection {
     prev = "prev"
 }
 export enum PathsApiConfiguracaoPrecedenciasFaseGetParametersQueryDirection {
+    next = "next",
+    prev = "prev"
+}
+export enum PathsApiConfiguracaoAdminProtecaoDoCatalogoDecisoesGetParametersQueryDirection {
     next = "next",
     prev = "prev"
 }

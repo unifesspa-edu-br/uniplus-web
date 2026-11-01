@@ -9,6 +9,8 @@ export type ItemDaProtecaoDoCatalogoDto = components['schemas']['ItemDaProtecaoD
 export type AprovacaoDaProtecaoDto = components['schemas']['AprovacaoDaProtecaoDto'];
 export type SolicitacaoDaProtecaoDto = components['schemas']['SolicitacaoDaProtecaoDto'];
 export type DetalheDaProtecaoDoCatalogoDto = components['schemas']['DetalheDaProtecaoDoCatalogoDto'];
+export type DecisaoDaProtecaoDto = components['schemas']['DecisaoDaProtecaoDto'];
+export type AtoDaProtecaoDto = components['schemas']['AtoDaProtecaoDto'];
 export type DetalheDoFatoDto = components['schemas']['DetalheDoFatoDto'];
 export type DetalheDoTipoDeDocumentoDto = components['schemas']['DetalheDoTipoDeDocumentoDto'];
 export type DetalheDoValorDoFatoDto = components['schemas']['DetalheDoValorDoFatoDto'];
@@ -37,6 +39,28 @@ export type DecidirProtecaoDoCatalogoRequest = Omit<
 export type ItemParaSolicitarRequest = Omit<components['schemas']['ItemParaSolicitarRequest'], 'cadastro'> & {
   readonly cadastro: CadastroDoCatalogo;
 };
+
+/** O ato que fica registrado na proteção de um item: o pedido, a decisão da proteção de dados e o aceite do administrador. */
+export type AtoDaProtecao = 'SOLICITACAO' | 'APROVACAO' | 'AJUSTE_RECOMENDADO' | 'REPROVACAO' | 'ACEITE';
+
+/** Os atos de decisão, que a lista de decisões traz. */
+export type AtoDeDecisao = Extract<AtoDaProtecao, 'APROVACAO' | 'AJUSTE_RECOMENDADO' | 'REPROVACAO'>;
+
+/** Filtros e janela da lista de decisões (cursor, ADR-0026). Os filtros vão em toda página. */
+export interface DecisoesQuery {
+  readonly cursor?: string;
+  readonly direction?: 'next' | 'prev';
+  readonly limit?: number;
+  readonly ato?: readonly AtoDeDecisao[];
+  readonly cadastro?: CadastroDoCatalogo;
+  /** Data inicial, no formato AAAA-MM-DD. */
+  readonly de?: string;
+  /** Data final, no formato AAAA-MM-DD. */
+  readonly ate?: string;
+  readonly busca?: string;
+  /** Só as decisões de quem consulta. */
+  readonly minhas?: boolean;
+}
 
 /** O segmento da rota de detalhe de cada cadastro. */
 const SEGMENTO_DO_CADASTRO: Readonly<Record<CadastroDoCatalogo, string>> = {
@@ -68,6 +92,30 @@ export class ProtecaoDoCatalogoApi {
     return this.http.get<ApiResult<readonly ItemDaProtecaoDoCatalogoDto[]>>(this.url(), {
       params,
       context: withVendorMime('protecao-do-catalogo', 1),
+    });
+  }
+
+  /**
+   * GET `/api/configuracao/admin/protecao-do-catalogo/decisoes` — as decisões registradas (aprovação,
+   * ajuste recomendado, reprovação), da mais recente à mais antiga, paginadas por cursor. Exige a
+   * permissão de aprovar.
+   */
+  listarDecisoes(query: DecisoesQuery = {}): Observable<ApiResult<readonly DecisaoDaProtecaoDto[]>> {
+    let params = new HttpParams();
+    for (const ato of query.ato ?? []) params = params.append('ato', ato);
+    if (query.cadastro !== undefined) params = params.set('cadastro', query.cadastro);
+    if (query.de) params = params.set('de', query.de);
+    if (query.ate) params = params.set('ate', query.ate);
+    const busca = query.busca?.trim();
+    if (busca) params = params.set('busca', busca);
+    if (query.minhas) params = params.set('minhas', 'true');
+    params =
+      query.cursor !== undefined
+        ? params.set('cursor', query.cursor).set('direction', query.direction ?? 'next')
+        : params.set('limit', String(query.limit ?? 25));
+    return this.http.get<ApiResult<readonly DecisaoDaProtecaoDto[]>>(`${this.url()}/decisoes`, {
+      params,
+      context: withVendorMime('protecao-do-catalogo-decisao', 1),
     });
   }
 

@@ -54,6 +54,7 @@ const detalheDoLaudo: DetalheDaProtecaoDoCatalogoDto = {
   descricao: 'Laudo que complementa o pedido de atendimento especializado.',
   fato: null,
   tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf,jpg', tamanhoMaximoMb: 10 },
+  atos: [],
 };
 
 /** O detalhe do fato de texto, que não admite classificação abaixo de pessoal. */
@@ -71,6 +72,7 @@ const detalheDoFato = (extra: Partial<DetalheDaProtecaoDoCatalogoDto> = {}): Det
       { codigo: 'NAO_RURAL', descricao: 'Não mora em área rural', orientacao: null },
     ],
   },
+  atos: [],
   ...extra,
 });
 
