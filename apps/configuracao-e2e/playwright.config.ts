@@ -18,7 +18,15 @@ const isCI = !!process.env['CI'];
 const isGithubActions = !!process.env['GITHUB_ACTIONS'];
 
 const storageStateAdmin = path.resolve(__dirname, STORAGE_STATE_PATH_ADMIN);
-const EXCLUDED_FROM_UI_LOGIN_PROJECTS = /(.*\.visual\.spec\.ts|.*\.flow\.spec\.ts|auth\.setup\.ts)$/;
+const EXCLUDED_FROM_UI_LOGIN_PROJECTS =
+  /(.*\.visual\.spec\.ts|.*\.flow\.spec\.ts|.*\.backend\.spec\.ts|auth\.setup\.ts)$/;
+
+/**
+ * Specs `*.backend.spec.ts` exercitam a API, o Keycloak e o Kafka de verdade e entram como cada
+ * persona do portal pelo login real, sem `storageState`. O CI só provisiona o Keycloak, então o
+ * project fica atrás de `E2E_BACKEND_REAL=1`. Ver `docs/guia-testar-frontend-com-backend-local.md`.
+ */
+const RODAR_CONTRA_BACKEND_REAL = process.env['E2E_BACKEND_REAL'] === '1';
 
 const VISUAL_VIEWPORTS = [
   { name: 'mobile', viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true },
@@ -55,6 +63,8 @@ const VISUAL_PROJECTS = VISUAL_VIEWPORTS.flatMap((viewport) =>
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  // As specs contra o backend real compartilham o cenário e o catálogo da API: uma por vez.
+  ...(RODAR_CONTRA_BACKEND_REAL ? { workers: 1 } : {}),
   use: {
     baseURL,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
@@ -100,6 +110,17 @@ export default defineConfig({
             name: 'webkit',
             testIgnore: EXCLUDED_FROM_UI_LOGIN_PROJECTS,
             use: { ...devices['Desktop Safari'] },
+          },
+        ]
+      : []),
+
+    ...(RODAR_CONTRA_BACKEND_REAL
+      ? [
+          {
+            name: 'configuracao-backend-real',
+            fullyParallel: false,
+            testMatch: /.*\.backend\.spec\.ts$/,
+            use: { ...devices['Desktop Chrome'] },
           },
         ]
       : []),
