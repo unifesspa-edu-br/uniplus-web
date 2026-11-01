@@ -26,8 +26,8 @@ export type OrdemDosValoresInput = components['schemas']['OrdemDosValoresInput']
  *
  * O catálogo é administrável (ADR-0136): o administrador cadastra fatos declarados, derivados
  * por regra e agregados de grupo, mantém os valores de domínio e as regras padrão dos derivados.
- * Os fatos de sistema — os que o código resolve, como modalidade e faixa etária — só têm nome e
- * descrição editáveis.
+ * Os fatos de sistema — os que o código resolve, como modalidade e faixa etária — só têm nome,
+ * descrição e proteção de dados editáveis; a proteção passa pela aprovação da proteção de dados.
  *
  * A leitura pública (`listar`) devolve o catálogo inteiro na forma que os editores de condição
  * precisam; a administrativa (`obter`, e a listagem paginada da página) devolve o fato completo, com proteção de
@@ -95,7 +95,7 @@ export class FatosCandidatoApi {
     return this.http.put<ApiResult<void>>(this.admin(id), input, { context });
   }
 
-  /** PUT `/api/configuracao/admin/fatos-candidato/{id}/definicao` — corrige a definição do fato do administrador. */
+  /** PUT `/api/configuracao/admin/fatos-candidato/{id}/definicao` — corrige a definição do fato; no de sistema, só a proteção de dados. */
   alterarDefinicao(
     id: string,
     input: DefinicaoDoFatoInput,
@@ -107,6 +107,13 @@ export class FatosCandidatoApi {
   /** DELETE `/api/configuracao/admin/fatos-candidato/{id}` — desativa: vínculo novo deixa de aceitar o fato. */
   desativar(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(this.admin(id));
+  }
+
+  /** POST `/api/configuracao/admin/fatos-candidato/{id}/aceite-da-recomendacao` — aprova o fato, inclusive o de sistema, com a classificação que a proteção de dados recomendou. */
+  aceitarRecomendacao(id: string, context: HttpContext): Observable<ApiResult<void>> {
+    return this.http.post<ApiResult<void>>(this.admin(id, 'aceite-da-recomendacao'), null, {
+      context,
+    });
   }
 
   /** POST `/api/configuracao/admin/fatos-candidato/{id}/ativacao` — reativa o fato. */

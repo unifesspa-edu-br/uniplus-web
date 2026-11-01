@@ -115,6 +115,17 @@ describe('TiposDocumentoApi', () => {
     expect(isApiOk(result)).toBe(true);
   });
 
+  it('aceitarRecomendacao() faz POST em /aceite-da-recomendacao com Idempotency-Key', async () => {
+    const promise = firstValueFrom(api.aceitarRecomendacao(ID, withIdempotencyKey('k')));
+    const req = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-documento/${ID}/aceite-da-recomendacao`,
+    );
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('k');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    expect(isApiOk((await promise) as ApiResult<void>)).toBe(true);
+  });
+
   it('remover() faz DELETE /api/configuracao/admin/tipos-documento/{id}', async () => {
     const promise = firstValueFrom(api.remover(ID));
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento/${ID}`);

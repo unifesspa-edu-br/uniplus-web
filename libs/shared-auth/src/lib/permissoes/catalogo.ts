@@ -25,6 +25,7 @@ export const PERMISSAO = {
     ofertasCursoManter: 'configuracao:ofertas-curso:manter',
     pesosAreaEnemManter: 'configuracao:pesos-area-enem:manter',
     precedenciasFaseManter: 'configuracao:precedencias-fase:manter',
+    protecaoDoCatalogoAprovar: 'configuracao:protecao-do-catalogo:aprovar',
     recursosAcessibilidadeManter: 'configuracao:recursos-acessibilidade:manter',
     referenciasReservaDemograficaManter: 'configuracao:referencias-reserva-demografica:manter',
     termosConsentimentoManter: 'configuracao:termos-consentimento:manter',
