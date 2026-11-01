@@ -48,7 +48,9 @@ const TIPO_DE_EVENTO: Readonly<Record<string, string>> = {
 };
 
 const SENSIBILIDADE: Readonly<Record<string, string>> = {
+  publico: 'Pública',
   interno: 'Interna',
+  identificador: 'Dado identificador',
   pessoal: 'Dado pessoal',
   sensivel: 'Dado sensível',
 };

@@ -44,6 +44,39 @@ const CATALOGO = [
         ],
       },
       {
+        resource: 'documentos-identificadores',
+        permissoes: [
+          {
+            codigo: 'selecao:documentos-identificadores:consultar',
+            nome: 'Consultar documentos de identificação',
+            descricao: '',
+            sensibilidade: 'identificador',
+          },
+        ],
+      },
+      {
+        resource: 'documentos-internos',
+        permissoes: [
+          {
+            codigo: 'selecao:documentos-internos:consultar',
+            nome: 'Consultar documentos internos',
+            descricao: '',
+            sensibilidade: 'interno',
+          },
+        ],
+      },
+      {
+        resource: 'documentos-publicos',
+        permissoes: [
+          {
+            codigo: 'selecao:documentos-publicos:consultar',
+            nome: 'Consultar documentos públicos',
+            descricao: '',
+            sensibilidade: 'publico',
+          },
+        ],
+      },
+      {
         resource: 'inscricoes',
         permissoes: [
           {
@@ -122,8 +155,43 @@ describe('PerfisPage', () => {
     const grupos = [...host.querySelectorAll('fieldset fieldset legend')].map((l) =>
       l.textContent?.trim(),
     );
-    expect(grupos).toEqual(['selecao · processos', 'selecao · inscricoes']);
+    expect(grupos).toEqual([
+      'selecao · processos',
+      'selecao · documentos-identificadores',
+      'selecao · documentos-internos',
+      'selecao · documentos-publicos',
+      'selecao · inscricoes',
+    ]);
     expect(host.textContent).toContain('selecao:inscricoes:consultar');
+  });
+
+  it('mostra a sensibilidade das permissões de arquivo e permite marcá-las na tela', async () => {
+    const { fixture, host, pagina } = abrir();
+    api.criar.mockReturnValue(of(ok('novo')));
+
+    pagina.abrirCriacao();
+    pagina.form.patchValue({ nome: 'Habilitação', descricao: 'Confere os documentos.' });
+    fixture.detectChanges();
+
+    const codigos = [
+      'selecao:documentos-identificadores:consultar',
+      'selecao:documentos-internos:consultar',
+      'selecao:documentos-publicos:consultar',
+    ];
+    const rotulos: string[] = [];
+    for (const codigo of codigos) {
+      const rotulo = [...host.querySelectorAll('label.checkbox')].find((l) =>
+        l.querySelector('code')?.textContent?.includes(codigo),
+      );
+      rotulos.push(rotulo?.querySelector('.field__hint')?.textContent?.split('·')[1]?.trim() ?? '');
+      const caixa = rotulo?.querySelector('input') as HTMLInputElement;
+      caixa.checked = true;
+      caixa.dispatchEvent(new Event('change'));
+    }
+    await pagina.salvar();
+
+    expect(rotulos).toEqual(['Dado identificador', 'Interna', 'Pública']);
+    expect(api.criar.mock.calls[0]?.[0].permissoes).toEqual(codigos);
   });
 
   it('cria o perfil com as permissões marcadas', async () => {
