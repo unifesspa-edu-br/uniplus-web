@@ -1,7 +1,7 @@
 import { HttpParams } from '@angular/common/http';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs';
@@ -43,10 +43,12 @@ import {
   type UiFiltroAtivo,
   FilterChipsComponent,
   IconButtonComponent,
+  LookupAlertComponent,
   PagerComponent,
   SpinnerComponent,
   TagComponent,
   type UiFilterChipOption,
+  type UiLookupFalho,
 } from '@uniplus/shared-ui/components';
 import { FatoCandidatoEdicaoComponent } from './fato-candidato-edicao.component';
 import {
@@ -60,17 +62,23 @@ import {
   acaoDeAtivacao,
   campoDaRecusa,
   classificacoesDoDominio,
-  esvaziarSeForaDas,
   descartarRecusasDoServidor,
   exigirSe,
   fatosDeMembroAgregaveis,
-  hipotesesDaClassificacao,
   resumoDoAgregado,
-  rotuloDe,
   temFonteDeValores,
   temFormato,
   type AcaoDeAtivacao,
 } from './fato-candidato.regras';
+import {
+  AprovacaoDoCatalogo,
+  CLASSIFICACOES_DE_PROTECAO,
+  SituacaoDaAprovacaoComponent,
+  SolicitacaoDaProtecaoDialogComponent,
+  esvaziarSeForaDas,
+  hipotesesDaClassificacao,
+  rotuloDe,
+} from '../../shared/protecao-do-catalogo';
 
 const PAGE_SIZE = 50;
 
@@ -127,10 +135,14 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
     FilterBarComponent,
     FilterChipsComponent,
     IconButtonComponent,
+    LookupAlertComponent,
     PagerComponent,
+    SituacaoDaAprovacaoComponent,
+    SolicitacaoDaProtecaoDialogComponent,
     SpinnerComponent,
     TagComponent,
   ],
+  providers: [AprovacaoDoCatalogo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page-header">
@@ -178,21 +190,27 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
-        <button
-          *authTemPermissao="permissaoDeManter"
-          type="button"
-          class="btn btn--primary"
-          (click)="abrirCriacao()"
-        >
-          <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-          Novo fato
-        </button>
+        <div class="panel-head__actions">
+          <ng-container *authTemPermissao="permissaoDeManter">
+            @if (aprovacao.solicitaveis().length > 0) {
+              <button type="button" class="btn btn--secondary" (click)="solicitacaoAberta.set(true)">
+                Enviar solicitação
+              </button>
+            }
+            <button type="button" class="btn btn--primary" (click)="abrirCriacao()">
+              <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+              Novo fato
+            </button>
+          </ng-container>
+        </div>
       </div>
+
+      <ui-lookup-alert [falhas]="lookupsComFalha()" />
 
       @if (fatosBuscados().length > 0) {
         <div class="table-responsive">
           <table>
-            <caption class="sr-only">Fatos do candidato, com origem, tipo de dado e situação</caption>
+            <caption class="sr-only">Fatos do candidato, com origem, tipo de dado, situação e proteção de dados</caption>
             <thead>
               <tr>
                 <th scope="col">Código</th>
@@ -200,6 +218,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                 <th scope="col">Origem</th>
                 <th scope="col">Tipo de dado</th>
                 <th scope="col">Situação</th>
+                <th scope="col">Proteção de dados</th>
                 <th scope="col"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
@@ -217,6 +236,26 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                   <td data-label="Tipo de dado">{{ rotulo(dominios, fato.dominio) }}</td>
                   <td data-label="Situação">
                     <ui-tag [variant]="fato.ativo ? 'success' : 'neutral'">{{ fato.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
+                  </td>
+                  <td data-label="Proteção de dados">
+                    <div>{{ rotulo(classificacoes, fato.classificacaoProtecao) }}</div>
+                    <cfg-situacao-da-aprovacao
+                      [situacao]="fato.aprovacao.situacao"
+                      [classificacaoRecomendada]="fato.aprovacao.classificacaoRecomendada"
+                    />
+                    @if (fato.aprovacao.situacao === 'NEGADA') {
+                      <ng-container *authTemPermissao="permissaoDeManter">
+                        <button
+                          type="button"
+                          class="btn btn--secondary btn--sm"
+                          [attr.aria-label]="'Aceitar recomendação do fato ' + fato.codigo"
+                          [disabled]="loading() || aceitando()"
+                          (click)="pedirAceite(fato)"
+                        >
+                          Aceitar recomendação
+                        </button>
+                      </ng-container>
+                    }
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
                     <ui-icon-button
@@ -481,7 +520,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
           </div>
 
           <fieldset class="field form-grid__full">
-            <legend class="field__label">Proteção de dados (LGPD)</legend>
+            <legend class="form-section__title">Proteção de dados (LGPD)</legend>
             <div class="form-grid">
               <label class="field" [class.is-error]="erro('classificacaoProtecao')">
                 <span class="field__label is-required">Classificação</span>
@@ -538,17 +577,34 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
       [confirmVariant]="pedidoDeAtivacao()?.acao === 'REATIVAR' ? 'primary' : 'danger'"
       (confirmed)="confirmarAtivacao()"
     />
+
+    <ui-confirm-dialog
+      [(visible)]="confirmAceiteAberto"
+      heading="Aceitar a recomendação"
+      [message]="mensagemDoAceite()"
+      confirmLabel="Aceitar recomendação"
+      (confirmed)="confirmarAceite()"
+    />
+
+    <cfg-solicitacao-da-protecao-dialog
+      [(visible)]="solicitacaoAberta"
+      [pendentes]="aprovacao.solicitaveis()"
+      (enviada)="aposEnviarSolicitacao()"
+    />
   `,
   host: { class: 'cfg-page' },
 })
 export class FatosCandidatoPage {
   private readonly api = inject(FatosCandidatoApi);
+  private readonly injector = inject(Injector);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
   protected readonly permissaoDeManter = PERMISSAO.configuracao.fatosCandidatoManter;
+  protected readonly aprovacao = inject(AprovacaoDoCatalogo);
+  protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly origens = ORIGENS;
   protected readonly dominios = DOMINIOS;
   protected readonly cardinalidades = CARDINALIDADES;
@@ -608,6 +664,30 @@ export class FatosCandidatoPage {
   private readonly erroDaAtivacao = signal<string | null>(null);
   private chaveDaAtivacao = idempotencyKey.create();
   private readonly tituloDaLista = viewChild<ElementRef<HTMLElement>>('tituloDaLista');
+
+  protected readonly solicitacaoAberta = signal(false);
+  protected readonly confirmAceiteAberto = signal(false);
+  private readonly fatoParaAceitar = signal<FatoCandidatoDto | null>(null);
+  private readonly erroDoAceite = signal<string | null>(null);
+  protected readonly aceitando = signal(false);
+  private chaveDoAceite = idempotencyKey.create();
+
+  protected readonly lookupsComFalha = computed<readonly UiLookupFalho[]>(() =>
+    this.aprovacao.comErro()
+      ? [{ nome: 'itens que aguardam a proteção de dados', recarregar: () => this.aprovacao.carregar() }]
+      : [],
+  );
+
+  protected readonly mensagemDoAceite = computed(() => {
+    const erro = this.erroDoAceite();
+    if (erro !== null) return erro;
+    const fato = this.fatoParaAceitar();
+    const recomendada = fato?.aprovacao.classificacaoRecomendada;
+    return fato && recomendada
+      ? `Aceitar a classificação "${rotuloDe(CLASSIFICACOES_DE_PROTECAO, recomendada)}" para "${fato.nome}" (${fato.codigo})? ` +
+          'O fato fica aprovado com ela, sem nova solicitação, e a proteção de dados é avisada.'
+      : 'Aceitar a classificação recomendada pela proteção de dados?';
+  });
 
   private readonly lista = useApiResource<readonly FatoCandidatoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/admin/fatos-candidato`,
@@ -738,6 +818,7 @@ export class FatosCandidatoPage {
   protected readonly hipotesesPermitidas = computed(() => hipotesesDaClassificacao(this.valores().classificacaoProtecao));
 
   constructor() {
+    this.aprovacao.carregar();
     this.form.controls.nome.valueChanges.pipe(takeUntilDestroyed()).subscribe((nome) => this.sugerirCodigo(nome));
     this.form.controls.codigo.valueChanges.pipe(takeUntilDestroyed()).subscribe((codigo) => this.normalizarCaixaDoCodigo(codigo));
 
@@ -883,6 +964,49 @@ export class FatosCandidatoPage {
     });
   }
 
+  protected pedirAceite(fato: FatoCandidatoDto): void {
+    this.fatoParaAceitar.set(fato);
+    this.erroDoAceite.set(null);
+    this.chaveDoAceite = idempotencyKey.create();
+    this.confirmAceiteAberto.set(true);
+  }
+
+  /**
+   * Aceita a recomendação do fato negado, inclusive o de sistema. No sucesso o foco vai ao título
+   * da lista, porque o botão some com a aprovação; na recusa o diálogo reabre com a mensagem da API.
+   */
+  protected confirmarAceite(): void {
+    const fato = this.fatoParaAceitar();
+    if (fato === null || this.aceitando()) return;
+    this.aceitando.set(true);
+    this.api
+      .aceitarRecomendacao(fato.id, withIdempotencyKey(this.chaveDoAceite))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultado) => {
+        this.aceitando.set(false);
+        if (resultado.ok) {
+          this.notifications.success('Recomendação aceita', fato.codigo);
+          this.fatoParaAceitar.set(null);
+          this.recarregar();
+          this.tituloDaLista()?.nativeElement.focus();
+          return;
+        }
+        if (deveRotacionarIdempotencyKey(resultado.problem)) this.chaveDoAceite = idempotencyKey.create();
+        // A recusa pode vir de um fato que mudou em outra sessão: a lista e a situação são relidas.
+        this.recarregar();
+        const titulo = this.problemI18n.resolve(resultado.problem).title;
+        this.erroDoAceite.set(titulo);
+        this.confirmAceiteAberto.set(true);
+        if (resultado.problem.status >= 500) this.notifications.errorFromProblem(resultado.problem, { title: titulo });
+      });
+  }
+
+  /** O foco vai ao título só depois do fechamento do diálogo, que devolveria o foco ao botão que some com a releitura. */
+  protected aposEnviarSolicitacao(): void {
+    this.recarregar();
+    afterNextRender(() => this.tituloDaLista()?.nativeElement.focus(), { injector: this.injector });
+  }
+
   protected nomeDaFase(codigo: string): string {
     return this.fasesCanonicas().find((fase) => fase.codigo === codigo)?.nome ?? codigo;
   }
@@ -898,7 +1022,9 @@ export class FatosCandidatoPage {
     return 'Valor inválido.';
   }
 
+  /** Relê a lista e a situação de aprovação: criar ou editar um fato muda o que a solicitação leva. */
   protected recarregar(): void {
+    this.aprovacao.carregar();
     if (this.pagina() === undefined) {
       this.lista.reload();
     } else {

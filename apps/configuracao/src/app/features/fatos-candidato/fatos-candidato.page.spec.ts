@@ -13,6 +13,7 @@ const BASE = 'http://localhost:5000';
 const LISTA = `${BASE}/api/configuracao/admin/fatos-candidato`;
 const FASES = `${BASE}/api/configuracao/fases-canonicas`;
 const CATALOGO = `${BASE}/api/configuracao/fatos-candidato`;
+const PROTECAO = `${BASE}/api/configuracao/admin/protecao-do-catalogo`;
 const PROBLEMA = (status: number) => ({ status, statusText: 'Recusa', headers: { 'content-type': 'application/problem+json' } });
 
 const concedidas = signal<readonly string[]>(['configuracao:fatos-candidato:manter']);
@@ -45,7 +46,15 @@ describe('FatosCandidatoPage', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => controller.verify());
+  /** Atende a lista do que aguarda a proteção de dados; os testes que não a inspecionam a deixam vazia. */
+  function atenderPendencias(itens: readonly unknown[] = []): void {
+    for (const req of controller.match((r) => r.url === PROTECAO).filter((pedido) => !pedido.cancelled)) req.flush(itens);
+  }
+
+  afterEach(() => {
+    atenderPendencias();
+    controller.verify();
+  });
 
   const propagar = async (): Promise<void> => {
     await Promise.resolve();
@@ -81,7 +90,11 @@ describe('FatosCandidatoPage', () => {
     concedidas.set(['configuracao:fatos-candidato:consultar']);
     atenderFases();
     controller.expectOne((r) => r.url === LISTA).flush([
-      { id: 'f1', codigo: 'RENDA', nome: 'Renda', origem: 'DECLARADO', dominio: 'NUMERO', sistema: false, ativo: true },
+      {
+        id: 'f1', codigo: 'RENDA', nome: 'Renda', origem: 'DECLARADO', dominio: 'NUMERO', sistema: false, ativo: true,
+        classificacaoProtecao: 'PESSOAL',
+        aprovacao: { situacao: 'NEGADA', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: 'SENSIVEL', aceitaEm: null },
+      },
     ]);
     await propagar();
     fixture.detectChanges();
@@ -91,6 +104,8 @@ describe('FatosCandidatoPage', () => {
     const host = fixture.nativeElement as HTMLElement;
     const botoes = Array.from(host.querySelectorAll('button')).map((b) => b.textContent ?? '');
     expect(botoes.some((texto) => texto.includes('Novo fato'))).toBe(false);
+    const botoesDaLinha = Array.from(host.querySelectorAll('td button')).map((b) => b.textContent ?? '');
+    expect(botoesDaLinha.some((texto) => texto.includes('Aceitar recomendação'))).toBe(false);
     const rotulos = Array.from(host.querySelectorAll('td.table-responsive__actions button')).map(
       (b) => b.getAttribute('aria-label') ?? '',
     );
@@ -361,5 +376,156 @@ describe('FatosCandidatoPage', () => {
 
     expect(component['confirmacaoAberta']()).toBe(true);
     expect(component['mensagemDaConfirmacao']()).not.toContain('Deseja reativar');
+  });
+
+  describe('aprovação da proteção de dados', () => {
+    const fatoCom = (situacao: string, classificacaoRecomendada: string | null = null) => ({
+      ...fatoDoAdministrador,
+      aprovacao: { situacao, solicitadaEm: null, decididaEm: null, classificacaoRecomendada, aceitaEm: null },
+    });
+    const pendencia = (id: string) => ({
+      tipo: 'FATO',
+      id,
+      codigo: 'TRABALHA',
+      nome: 'Trabalha',
+      classificacaoProtecao: 'PESSOAL',
+      finalidadeTratamento: 'Classificar a reserva de vagas.',
+      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      aprovacao: { situacao: 'PENDENTE', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, aceitaEm: null },
+    });
+    const botaoDaPagina = (host: HTMLElement, rotulo: string) =>
+      Array.from<HTMLButtonElement>(host.querySelectorAll('.panel-head__actions button, td button')).find((b) =>
+        b.textContent?.includes(rotulo),
+      );
+
+    async function carregarCom(fatos: readonly unknown[], pendencias: readonly unknown[] = []): Promise<HTMLElement> {
+      atenderFases();
+      controller.expectOne((r) => r.url === LISTA).flush(fatos);
+      atenderPendencias(pendencias);
+      await propagar();
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('diz a situação como texto e, na negativa, a classificação recomendada, inclusive no fato de sistema', async () => {
+      const host = await carregarCom([{ ...fatoCom('NEGADA', 'SENSIVEL'), sistema: true }]);
+
+      const texto = host.textContent?.replace(/\s+/gu, ' ') ?? '';
+      expect(texto).toContain('Negada pela proteção de dados');
+      expect(texto).toContain('Classificação recomendada: Pessoal sensível');
+      expect(botaoDaPagina(host, 'Aceitar recomendação')).toBeDefined();
+    });
+
+    it('a recusa do aceite relê a lista e a situação, e reabre o diálogo com a mensagem da API', async () => {
+      const host = await carregarCom([fatoCom('NEGADA', 'SENSIVEL')]);
+      botaoDaPagina(host, 'Aceitar recomendação')?.click();
+      component['confirmarAceite']();
+      controller.expectOne(`${LISTA}/${fatoDoAdministrador.id}/aceite-da-recomendacao`).flush(
+        JSON.stringify({ status: 409, code: 'uniplus.configuracao.protecao_do_catalogo.conflito_de_concorrencia', title: 'O fato foi alterado ao mesmo tempo' }),
+        { status: 409, statusText: 'Conflito', headers: { 'content-type': 'application/problem+json' } },
+      );
+      await propagar();
+
+      controller.expectOne((r) => r.url === LISTA).flush([fatoCom('PENDENTE')]);
+      atenderPendencias();
+      await propagar();
+      expect(component['confirmAceiteAberto']()).toBe(true);
+      expect(component['mensagemDoAceite']()).toBe('O fato foi alterado ao mesmo tempo');
+    });
+
+    it('aceita a recomendação do fato negado e recarrega a lista', async () => {
+      const host = await carregarCom([fatoCom('NEGADA', 'SENSIVEL')]);
+      botaoDaPagina(host, 'Aceitar recomendação')?.click();
+      fixture.detectChanges();
+      expect(component['mensagemDoAceite']()).toContain('Pessoal sensível');
+
+      component['confirmarAceite']();
+      const post = controller.expectOne(`${LISTA}/${fatoDoAdministrador.id}/aceite-da-recomendacao`);
+      expect(post.request.method).toBe('POST');
+      expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
+      post.flush(null, { status: 204, statusText: 'No Content' });
+      await propagar();
+
+      controller.expectOne((r) => r.url === LISTA).flush([fatoCom('APROVADA')]);
+      atenderPendencias();
+      await propagar();
+      fixture.detectChanges();
+      expect(botaoDaPagina(host, 'Aceitar recomendação')).toBeUndefined();
+    });
+
+    it('sem a permissão de manter não oferece "Aceitar recomendação" nem "Enviar solicitação"', async () => {
+      concedidas.set(['configuracao:fatos-candidato:consultar']);
+      const host = await carregarCom([fatoCom('NEGADA', 'SENSIVEL')], [pendencia(fatoDoAdministrador.id)]);
+
+      expect(botaoDaPagina(host, 'Aceitar recomendação')).toBeUndefined();
+      expect(botaoDaPagina(host, 'Enviar solicitação')).toBeUndefined();
+    });
+
+    it('oferece "Enviar solicitação" com fato pendente e a envia de uma vez', async () => {
+      const host = await carregarCom([fatoCom('PENDENTE')], [pendencia(fatoDoAdministrador.id)]);
+      botaoDaPagina(host, 'Enviar solicitação')?.click();
+      fixture.detectChanges();
+
+      expect(host.querySelector('cfg-solicitacao-da-protecao-dialog')?.textContent).toContain('Trabalha');
+      Array.from<HTMLButtonElement>(host.querySelectorAll('cfg-solicitacao-da-protecao-dialog button'))
+        .find((b) => b.textContent?.includes('Enviar solicitação'))
+        ?.click();
+
+      const post = controller.expectOne(`${PROTECAO}/solicitacoes`);
+      expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
+      post.flush({ tiposDeDocumento: 0, fatos: 1 });
+      await propagar();
+
+      controller.expectOne((r) => r.url === LISTA).flush([fatoCom('SOLICITADA')]);
+      atenderPendencias();
+      await propagar();
+      fixture.detectChanges();
+      expect(botaoDaPagina(host, 'Enviar solicitação')).toBeUndefined();
+    });
+
+    it('quem só consulta não pede a lista de pendências, que a API recusa e levaria ao acesso negado', async () => {
+      concedidas.set(['configuracao:fatos-candidato:consultar']);
+      await carregarCom([fatoCom('APROVADA')]);
+
+      controller.expectNone((r) => r.url === PROTECAO);
+    });
+
+    it('criar ou editar um fato relê as pendências, e "Enviar solicitação" aparece com o fato novo', async () => {
+      const host = await carregarCom([]);
+      expect(botaoDaPagina(host, 'Enviar solicitação')).toBeUndefined();
+
+      component['recarregar']();
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA).flush([fatoCom('PENDENTE')]);
+      atenderPendencias([pendencia(fatoDoAdministrador.id)]);
+      await propagar();
+      fixture.detectChanges();
+
+      expect(botaoDaPagina(host, 'Enviar solicitação')).toBeDefined();
+    });
+
+    it('depois do envio, o foco vai ao título da lista, e não ao botão que some com a releitura', async () => {
+      const host = await carregarCom([fatoCom('PENDENTE')], [pendencia(fatoDoAdministrador.id)]);
+      botaoDaPagina(host, 'Enviar solicitação')?.click();
+      fixture.detectChanges();
+      Array.from<HTMLButtonElement>(host.querySelectorAll('cfg-solicitacao-da-protecao-dialog button'))
+        .find((b) => b.textContent?.includes('Enviar solicitação'))
+        ?.click();
+      controller.expectOne(`${PROTECAO}/solicitacoes`).flush({ tiposDeDocumento: 0, fatos: 1 });
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA).flush([fatoCom('SOLICITADA')]);
+      atenderPendencias();
+      await propagar();
+      fixture.detectChanges();
+      await propagar();
+
+      expect(document.activeElement?.id).toBe('cfg-fatos-list-title');
+    });
+
+    it('não oferece "Enviar solicitação" sem fato pendente', async () => {
+      const host = await carregarCom([fatoCom('SOLICITADA')]);
+
+      expect(botaoDaPagina(host, 'Enviar solicitação')).toBeUndefined();
+    });
   });
 });

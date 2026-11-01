@@ -670,11 +670,13 @@ describe('FatoCandidatoEdicaoComponent', () => {
       expect(document.activeElement).toBe(lista);
     });
 
-    it('o fato de sistema mantém a definição só para leitura, sem formulário', async () => {
+    it('o fato de sistema trava a definição e oferece só a proteção de dados', async () => {
       const tela = await carregar(corRaca(true));
 
       expect(tela.textContent).toContain('Fato de sistema');
-      expect(tela.querySelector('#cfg-fato-definicao')).toBeNull();
+      expect(tela.querySelector('#cfg-fato-definicao select[formcontrolname="classificacaoProtecao"]')).not.toBeNull();
+      expect(tela.querySelector('#cfg-fato-definicao select[formcontrolname="dominio"]')).toBeNull();
+      expect(tela.querySelector('#cfg-fato-definicao select[formcontrolname="pontoResolucao"]')).toBeNull();
       expect(tela.textContent).toContain('Conhecido a partir da fase');
     });
 
@@ -870,6 +872,85 @@ describe('FatoCandidatoEdicaoComponent', () => {
       await assentar();
 
       controller.expectOne(`${URL}/definicao`);
+    });
+  });
+
+  describe('aprovação da proteção de dados', () => {
+    const URL = `${BASE}/api/configuracao/admin/fatos-candidato/${ID}`;
+    const comAprovacao = (fato: FatoCandidatoDto, situacao: string, classificacaoRecomendada: string | null = null): FatoCandidatoDto => ({
+      ...fato,
+      aprovacao: { situacao, solicitadaEm: null, decididaEm: null, classificacaoRecomendada, aceitaEm: null },
+    });
+    const definicao = () => fixture.componentInstance['definicao'];
+
+    async function assentar(): Promise<void> {
+      await Promise.resolve();
+      TestBed.inject(ApplicationRef).tick();
+      fixture.detectChanges();
+    }
+
+    it('no fato de sistema envia só o ponto de resolução atual e a proteção, sem nenhum eixo', async () => {
+      const tela = await carregar(corRaca(true));
+      definicao().controls.classificacaoProtecao.setValue('PESSOAL');
+      definicao().controls.hipoteseLegal.setValue('EXECUCAO_POLITICAS_PUBLICAS');
+
+      (tela.querySelector('#cfg-fato-definicao') as HTMLFormElement).dispatchEvent(new Event('submit'));
+      const pedido = controller.expectOne(`${URL}/definicao`);
+
+      expect(pedido.request.body).toEqual({
+        pontoResolucao: 'INSCRICAO',
+        classificacaoProtecao: 'PESSOAL',
+        finalidadeTratamento: 'Reserva de vagas.',
+        hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      });
+      pedido.flush(null, { status: 204, statusText: 'No Content' });
+    });
+
+    it('ao abrir, não apaga a proteção que o servidor tem, ainda que a regra do domínio hoje não a admita', async () => {
+      // Texto não admite classificação interna, e SENSIVEL não admite interesse legítimo: o servidor é quem decide.
+      const sistema: FatoCandidatoDto = { ...corRaca(true), dominio: 'TEXTO', classificacaoProtecao: 'INTERNO', hipoteseLegal: 'INTERESSE_LEGITIMO' };
+      await carregar(sistema);
+
+      expect(definicao().controls.classificacaoProtecao.value).toBe('INTERNO');
+      expect(definicao().controls.hipoteseLegal.value).toBe('INTERESSE_LEGITIMO');
+    });
+
+    it('esvazia a hipótese que a pessoa tornou incompatível ao trocar a classificação', async () => {
+      await carregar({ ...corRaca(true), dominio: 'BOOLEANO', classificacaoProtecao: 'PESSOAL', hipoteseLegal: 'INTERESSE_LEGITIMO' });
+      definicao().controls.classificacaoProtecao.setValue('SENSIVEL');
+      await assentar();
+
+      expect(definicao().controls.hipoteseLegal.value).toBe('');
+    });
+
+    it('avisa que o fato aprovado volta a pendente ao mudar a classificação, e não ao mudar o nome', async () => {
+      const tela = await carregar(comAprovacao(corRaca(false), 'APROVADA'));
+      controller.expectOne(URL_FASES).flush(FASES);
+      await assentar();
+
+      fixture.componentInstance['descritivo'].controls.nome.setValue('Cor ou raça declarada');
+      await assentar();
+      expect(tela.textContent).not.toContain('O item volta a pendente');
+
+      definicao().controls.classificacaoProtecao.setValue('PESSOAL');
+      definicao().controls.hipoteseLegal.setValue('EXECUCAO_POLITICAS_PUBLICAS');
+      await assentar();
+      expect(tela.textContent).toContain('O item volta a pendente');
+    });
+
+    it('não avisa quando o fato já está pendente', async () => {
+      const tela = await carregar(comAprovacao(corRaca(true), 'PENDENTE'));
+      definicao().controls.classificacaoProtecao.setValue('PESSOAL');
+      await assentar();
+
+      expect(tela.textContent).not.toContain('O item volta a pendente');
+    });
+
+    it('mostra a situação como texto e a classificação que a proteção de dados recomendou', async () => {
+      const tela = await carregar(comAprovacao(corRaca(true), 'NEGADA', 'IDENTIFICADOR'));
+
+      expect(tela.textContent).toContain('Negada pela proteção de dados');
+      expect(tela.textContent).toContain('Classificação recomendada: Identificador');
     });
   });
 });

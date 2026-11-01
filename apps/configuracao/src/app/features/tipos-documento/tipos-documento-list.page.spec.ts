@@ -1,12 +1,14 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   CONFIGURACAO_BASE_PATH,
   type CategoriaDocumentoDto,
+  type ItemDaProtecaoDoCatalogoDto,
   TipoDocumentoDto,
 } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -14,6 +16,16 @@ import { TiposDocumentoListPage } from './tipos-documento-list.page';
 
 const BASE = 'http://localhost:5000';
 const URL_CATEGORIAS = `${BASE}/api/configuracao/categorias-documento`;
+const URL_PROTECAO = `${BASE}/api/configuracao/admin/protecao-do-catalogo`;
+
+/** A proteção de dados que o formulário exige, preenchida como Isabella faria. */
+const PROTECAO_PREENCHIDA = {
+  classificacaoProtecao: 'PESSOAL',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  finalidadeTratamento: 'Conferir o documento do candidato.',
+};
+
+const concedidas = signal<readonly string[]>([]);
 
 /** As dez categorias semeadas pelo cadastro (uniplus-api#1342). */
 const CATEGORIAS: readonly CategoriaDocumentoDto[] = [
@@ -109,6 +121,7 @@ describe('TiposDocumentoListPage', () => {
   let appRef: ApplicationRef;
 
   beforeEach(() => {
+    concedidas.set(['configuracao:tipos-documento:manter']);
     TestBed.configureTestingModule({
       imports: [TiposDocumentoListPage],
       providers: [
@@ -116,6 +129,10 @@ describe('TiposDocumentoListPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        {
+          provide: PermissoesService,
+          useValue: { tem: (codigo: string) => concedidas().includes(codigo) },
+        },
       ],
     });
     fixture = TestBed.createComponent(TiposDocumentoListPage);
@@ -125,7 +142,14 @@ describe('TiposDocumentoListPage', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => controller.verify());
+  afterEach(() => {
+    flushProtecao();
+    // A recusa do aceite relê a lista; os testes que não a inspecionam a deixam vazia.
+    for (const req of controller.match((r) => r.url === `${BASE}/api/configuracao/tipos-documento`)) {
+      if (!req.cancelled) req.flush([]);
+    }
+    controller.verify();
+  });
 
   const propagate = async (): Promise<void> => {
     await Promise.resolve();
@@ -153,8 +177,19 @@ describe('TiposDocumentoListPage', () => {
     }
   }
 
-  async function flushLista(itens: readonly TipoDocumentoDto[]): Promise<void> {
+  /** Atende a lista do que aguarda a proteção de dados; o que não está nela está aprovado. */
+  function flushProtecao(itens: readonly ItemDaProtecaoDoCatalogoDto[] = []): void {
+    for (const req of controller.match((r) => r.url === URL_PROTECAO).filter((p) => !p.cancelled)) {
+      req.flush(itens);
+    }
+  }
+
+  async function flushLista(
+    itens: readonly TipoDocumentoDto[],
+    aguardando: readonly ItemDaProtecaoDoCatalogoDto[] = [],
+  ): Promise<void> {
     flushCategorias();
+    flushProtecao(aguardando);
     const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`);
     req.flush(itens);
     await propagate();
@@ -281,7 +316,8 @@ describe('TiposDocumentoListPage', () => {
   it('CA-04: código fora do formato fechado é recusado no cliente, sem chamar o backend', async () => {
     await flushLista([]);
     component['abrirCadastro']();
-    component['form'].patchValue({ codigo: '01', nome: 'Certificado', categoria: 'ESCOLARIDADE' });
+    component['form'].patchValue({
+      ...PROTECAO_PREENCHIDA, codigo: '01', nome: 'Certificado', categoria: 'ESCOLARIDADE' });
     fixture.detectChanges();
 
     component['salvar']();
@@ -310,6 +346,7 @@ describe('TiposDocumentoListPage', () => {
     await flushLista([]);
     component['abrirCadastro']();
     component['form'].patchValue({
+      ...PROTECAO_PREENCHIDA,
       codigo: 'RG',
       nome: 'Registro Geral (dup)',
       categoria: 'IDENTIFICACAO',
@@ -386,6 +423,7 @@ describe('TiposDocumentoListPage', () => {
     await flushLista([]);
     component['abrirCadastro']();
     component['form'].patchValue({
+      ...PROTECAO_PREENCHIDA,
       codigo: 'DECL',
       nome: 'Declaração',
       categoria: 'OUTROS',
@@ -398,6 +436,7 @@ describe('TiposDocumentoListPage', () => {
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento`);
     expect(post.request.body.formatosAceitos).toBe('pdf,jpg,png');
+    expect(post.request.body).toMatchObject(PROTECAO_PREENCHIDA);
     post.flush('new-id', { status: 201, statusText: 'Created' });
     await propagate();
     await flushLista([]);
@@ -408,7 +447,8 @@ describe('TiposDocumentoListPage', () => {
     component['abrirCadastro']();
     // `Validators.required` aceita espaços em branco: sem normalizar, o payload
     // levaria '' e o backend responderia sobre formato, não sobre ausência.
-    component['form'].patchValue({ codigo: 'DECL3', nome: '   ', categoria: 'OUTROS' });
+    component['form'].patchValue({
+      ...PROTECAO_PREENCHIDA, codigo: 'DECL3', nome: '   ', categoria: 'OUTROS' });
     component['salvar']();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento`);
@@ -421,7 +461,8 @@ describe('TiposDocumentoListPage', () => {
   it('nenhum formato marcado serializa para null', async () => {
     await flushLista([]);
     component['abrirCadastro']();
-    component['form'].patchValue({ codigo: 'DECL2', nome: 'Declaração 2', categoria: 'OUTROS' });
+    component['form'].patchValue({
+      ...PROTECAO_PREENCHIDA, codigo: 'DECL2', nome: 'Declaração 2', categoria: 'OUTROS' });
     component['salvar']();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-documento`);
@@ -459,6 +500,7 @@ describe('TiposDocumentoListPage', () => {
     await flushLista([]);
     component['abrirCadastro']();
     component['form'].patchValue({
+      ...PROTECAO_PREENCHIDA,
       codigo: 'DECL_LIDERANCA',
       nome: 'Declaração de liderança',
       categoria: 'OUTROS',
@@ -487,6 +529,7 @@ describe('TiposDocumentoListPage', () => {
     await flushLista([]);
     component['abrirCadastro']();
     component['form'].patchValue({
+      ...PROTECAO_PREENCHIDA,
       codigo: 'RG',
       nome: 'Registro Geral',
       categoria: 'IDENTIFICACAO',
@@ -521,6 +564,7 @@ describe('TiposDocumentoListPage', () => {
     await flushLista([]);
     component['abrirCadastro']();
     component['form'].patchValue({
+      ...PROTECAO_PREENCHIDA,
       codigo: 'RG',
       nome: 'Registro Geral',
       categoria: 'IDENTIFICACAO',
@@ -597,6 +641,8 @@ describe('TiposDocumentoListPage', () => {
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
+    // Remover o tipo muda o que aguarda a proteção de dados: as pendências são relidas.
+    expect(controller.match((r) => r.url === URL_PROTECAO).filter((p) => !p.cancelled)).toHaveLength(1);
     await flushLista([]);
     expect(component['confirmRemoverAberto']()).toBe(false);
   });
@@ -626,6 +672,7 @@ describe('TiposDocumentoListPage', () => {
     await flushLista([]);
     component['abrirCadastro']();
     component['form'].patchValue({
+      ...PROTECAO_PREENCHIDA,
       codigo: 'RECURSO_ADMINISTRATIVO',
       nome: 'Recurso administrativo',
       categoria: 'DOCUMENTO_PROCESSUAL',
@@ -819,7 +866,291 @@ describe('TiposDocumentoListPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
-      'Tipos de documento, com categoria, formatos aceitos e tamanho máximo de arquivo',
+      'Tipos de documento, com categoria, formatos aceitos, tamanho máximo de arquivo e situação da proteção de dados',
     );
+  });
+
+  describe('aprovação da proteção de dados', () => {
+    const item = (
+      tipo: TipoDocumentoDto,
+      aprovacao: Partial<ItemDaProtecaoDoCatalogoDto['aprovacao']>,
+    ): ItemDaProtecaoDoCatalogoDto => ({
+      tipo: 'TIPO_DOCUMENTO',
+      id: tipo.id,
+      codigo: tipo.codigo,
+      nome: tipo.nome,
+      classificacaoProtecao: tipo.classificacaoProtecao,
+      finalidadeTratamento: tipo.finalidadeTratamento,
+      hipoteseLegal: tipo.hipoteseLegal,
+      aprovacao: {
+        situacao: 'PENDENTE',
+        solicitadaEm: null,
+        decididaEm: null,
+        classificacaoRecomendada: null,
+        aceitaEm: null,
+        ...aprovacao,
+      },
+    });
+
+    const texto = (): string => fixture.nativeElement.textContent.replace(/\s+/gu, ' ');
+    /** Os botões da página, fora dos diálogos, que ficam no DOM mesmo fechados. */
+    const botao = (rotulo: string): HTMLButtonElement | undefined =>
+      Array.from<HTMLButtonElement>(
+        fixture.nativeElement.querySelectorAll('.panel-head__actions button, td button'),
+      ).find((b) => b.textContent?.includes(rotulo));
+
+    it('diz a situação como texto, e a negativa traz a classificação recomendada', async () => {
+      await flushLista(
+        [rgSeed, laudoSeed, diplomaSeed],
+        [
+          item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' }),
+          item(diplomaSeed, { situacao: 'SOLICITADA' }),
+        ],
+      );
+      fixture.detectChanges();
+
+      expect(texto()).toContain('Aprovada');
+      expect(texto()).toContain('Negada pela proteção de dados');
+      expect(texto()).toContain('Classificação recomendada: Pessoal sensível');
+      expect(texto()).toContain('Aguardando a proteção de dados');
+    });
+
+    it('oferece "Enviar solicitação" só com item pendente e permissão de manter', async () => {
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'PENDENTE' })]);
+      fixture.detectChanges();
+      expect(botao('Enviar solicitação')).toBeDefined();
+    });
+
+    it('não oferece "Enviar solicitação" sem item pendente', async () => {
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'SOLICITADA' })]);
+      fixture.detectChanges();
+      expect(botao('Enviar solicitação')).toBeUndefined();
+    });
+
+    it('não oferece "Enviar solicitação" nem "Aceitar recomendação" sem a permissão de manter', async () => {
+      concedidas.set([]);
+      await flushLista(
+        [laudoSeed, diplomaSeed],
+        [
+          item(laudoSeed, { situacao: 'PENDENTE' }),
+          item(diplomaSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' }),
+        ],
+      );
+      fixture.detectChanges();
+      expect(botao('Enviar solicitação')).toBeUndefined();
+      expect(botao('Aceitar recomendação')).toBeUndefined();
+    });
+
+    it('envia a solicitação de todos os pendentes e recarrega a situação', async () => {
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'PENDENTE' })]);
+      fixture.detectChanges();
+
+      botao('Enviar solicitação')?.click();
+      fixture.detectChanges();
+      const noDialogo = Array.from<HTMLButtonElement>(
+        fixture.nativeElement.querySelectorAll('cfg-solicitacao-da-protecao-dialog button'),
+      );
+      expect(texto()).toContain(laudoSeed.nome);
+      noDialogo.find((b) => b.textContent?.includes('Enviar solicitação'))?.click();
+
+      const post = controller.expectOne(`${URL_PROTECAO}/solicitacoes`);
+      expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
+      post.flush({ tiposDeDocumento: 1, fatos: 0 });
+      await propagate();
+      flushProtecao([item(laudoSeed, { situacao: 'SOLICITADA' })]);
+      await propagate();
+      fixture.detectChanges();
+
+      expect(botao('Enviar solicitação')).toBeUndefined();
+      expect(texto()).toContain('Aguardando a proteção de dados');
+    });
+
+    it('aceita a recomendação do tipo negado, e ele sai da lista de pendências', async () => {
+      await flushLista(
+        [laudoSeed],
+        [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' })],
+      );
+      fixture.detectChanges();
+
+      botao('Aceitar recomendação')?.click();
+      fixture.detectChanges();
+      expect(component['confirmAceiteMensagem']()).toContain('Pessoal sensível');
+      component['confirmarAceite']();
+
+      const post = controller.expectOne(
+        `${BASE}/api/configuracao/admin/tipos-documento/${laudoSeed.id}/aceite-da-recomendacao`,
+      );
+      expect(post.request.method).toBe('POST');
+      expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
+      post.flush(null, { status: 204, statusText: 'No Content' });
+      await propagate();
+      flushProtecao([]);
+      await propagate();
+      fixture.detectChanges();
+
+      expect(botao('Aceitar recomendação')).toBeUndefined();
+      expect(texto()).toContain('Aprovada');
+    });
+
+    it('a recusa do aceite fica no diálogo, com a mensagem da API', async () => {
+      await flushLista(
+        [laudoSeed],
+        [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'PUBLICO' })],
+      );
+      component['pedirAceite'](laudoSeed);
+      component['confirmarAceite']();
+
+      controller
+        .expectOne(
+          `${BASE}/api/configuracao/admin/tipos-documento/${laudoSeed.id}/aceite-da-recomendacao`,
+        )
+        .flush(
+          JSON.stringify({
+            status: 422,
+            code: 'uniplus.configuracao.protecao_do_catalogo.recomendacao_incompativel_com_a_hipotese_legal',
+            title: 'A base legal do item não cabe na classificação recomendada',
+          }),
+          { status: 422, statusText: 'Recusa', headers: { 'content-type': 'application/problem+json' } },
+        );
+      await propagate();
+
+      expect(component['confirmAceiteAberto']()).toBe(true);
+      expect(component['confirmAceiteMensagem']()).toBe(
+        'A base legal do item não cabe na classificação recomendada',
+      );
+    });
+
+    it('quando a leitura da situação falha, não diz "Aprovada" e avisa que não leu', async () => {
+      flushCategorias();
+      for (const req of controller.match((r) => r.url === URL_PROTECAO)) {
+        req.flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Indisponível' });
+      }
+      controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`).flush([rgSeed]);
+      await propagate();
+      fixture.detectChanges();
+
+      expect(texto()).not.toContain('Aprovada');
+      expect(texto()).toContain('Não foi possível ler a situação');
+    });
+
+    it('releitura que falha depois de uma boa não devolve "Aprovada" ao tipo que saiu da lista', async () => {
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'SOLICITADA' })]);
+      expect(texto()).toContain('Aguardando a proteção de dados');
+
+      component['aprovacao'].carregar();
+      for (const req of controller.match((r) => r.url === URL_PROTECAO)) {
+        req.flush({ title: 'Indisponível', status: 503 }, { status: 503, statusText: 'Indisponível' });
+      }
+      await propagate();
+      fixture.detectChanges();
+
+      expect(texto()).not.toContain('Aprovada');
+      expect(component['aprovacao'].aprovacaoDe(laudoSeed.id)).toBeNull();
+      expect(component['aprovacao'].solicitaveis(), 'estado desconhecido não oferece o envio').toEqual([]);
+    });
+
+    it('o aceite que falha por erro do servidor repete a mesma Idempotency-Key; a recusa 4xx troca a chave', async () => {
+      await flushLista(
+        [laudoSeed],
+        [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' })],
+      );
+      const url = `${BASE}/api/configuracao/admin/tipos-documento/${laudoSeed.id}/aceite-da-recomendacao`;
+      const falha = (status: number) =>
+        [
+          JSON.stringify({ status, title: 'Falha' }),
+          { status, statusText: 'Falha', headers: { 'content-type': 'application/problem+json' } },
+        ] as const;
+
+      component['pedirAceite'](laudoSeed);
+      component['confirmarAceite']();
+      const primeira = controller.expectOne(url);
+      const chave = primeira.request.headers.get('Idempotency-Key');
+      primeira.flush(...falha(503));
+      await propagate();
+
+      component['confirmarAceite']();
+      const segunda = controller.expectOne(url);
+      expect(segunda.request.headers.get('Idempotency-Key')).toBe(chave);
+      segunda.flush(...falha(422));
+      await propagate();
+
+      component['confirmarAceite']();
+      const terceira = controller.expectOne(url);
+      expect(terceira.request.headers.get('Idempotency-Key')).not.toBe(chave);
+      terceira.flush(null, { status: 204, statusText: 'No Content' });
+      await propagate();
+      controller.match((r) => r.url === `${BASE}/api/configuracao/tipos-documento`).forEach((r) => r.flush([laudoSeed]));
+    });
+
+    it('avisa que o tipo aprovado volta a pendente ao mudar a classificação, e não ao mudar o nome', async () => {
+      await flushLista([rgSeed]);
+      component['abrirEdicao'](rgSeed);
+      fixture.detectChanges();
+
+      component['form'].controls.nome.setValue('Registro Geral revisado');
+      expect(component['avisaNovaAprovacao']()).toBe(false);
+
+      component['form'].controls.classificacaoProtecao.setValue('SENSIVEL');
+      fixture.detectChanges();
+      expect(component['avisaNovaAprovacao']()).toBe(true);
+      expect(texto()).toContain('O item volta a pendente');
+    });
+
+    it('não avisa quando o tipo já está pendente', async () => {
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'PENDENTE' })]);
+      component['abrirEdicao'](laudoSeed);
+      component['form'].controls.classificacaoProtecao.setValue('SENSIVEL');
+
+      expect(component['avisaNovaAprovacao']()).toBe(false);
+    });
+
+    it('ao abrir a edição, mantém a hipótese que veio do servidor; só esvazia a que a pessoa tornou incompatível', async () => {
+      const antigo = { ...rgSeed, classificacaoProtecao: 'SENSIVEL', hipoteseLegal: 'INTERESSE_LEGITIMO' };
+      await flushLista([antigo]);
+      component['abrirEdicao'](antigo);
+      fixture.detectChanges();
+      await propagate();
+      expect(component['form'].controls.hipoteseLegal.value).toBe('INTERESSE_LEGITIMO');
+
+      // A pessoa escolhe uma classificação e, depois, uma hipótese que ela não admite (prevenção à fraude é só do art. 11).
+      component['form'].controls.classificacaoProtecao.setValue('PESSOAL');
+      fixture.detectChanges();
+      component['form'].controls.hipoteseLegal.setValue('PREVENCAO_A_FRAUDE');
+      fixture.detectChanges();
+      expect(component['form'].controls.hipoteseLegal.value).toBe('');
+    });
+
+    it('a recusa do aceite relê a situação e a lista, que podem ter mudado em outra sessão', async () => {
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' })]);
+      component['pedirAceite'](laudoSeed);
+      component['confirmarAceite']();
+      controller
+        .expectOne(`${BASE}/api/configuracao/admin/tipos-documento/${laudoSeed.id}/aceite-da-recomendacao`)
+        .flush(JSON.stringify({ status: 409, title: 'Conflito' }), {
+          status: 409,
+          statusText: 'Conflito',
+          headers: { 'content-type': 'application/problem+json' },
+        });
+      await propagate();
+
+      expect(controller.match((r) => r.url === URL_PROTECAO)).toHaveLength(1);
+      await flushLista([laudoSeed]);
+    });
+
+    it('esvazia a hipótese legal que não cabe na nova classificação', async () => {
+      await flushLista([rgSeed]);
+      component['abrirCadastro']();
+      component['form'].patchValue({
+        classificacaoProtecao: 'PESSOAL',
+        hipoteseLegal: 'INTERESSE_LEGITIMO',
+      });
+      fixture.detectChanges();
+      expect(component['form'].controls.hipoteseLegal.value).toBe('INTERESSE_LEGITIMO');
+
+      component['form'].controls.classificacaoProtecao.setValue('SENSIVEL');
+      fixture.detectChanges();
+
+      expect(component['form'].controls.hipoteseLegal.value).toBe('');
+    });
   });
 });

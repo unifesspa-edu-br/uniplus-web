@@ -535,6 +535,19 @@ cfg-pesos-enem-page {
   font-weight: var(--weight-bold);
 }
 
+/* Título de grupo dentro do formulário: o legend não participa do gap do flex, então o respiro
+   antes dele vem da margem. */
+fieldset.field > legend:is(.form-section__title, .cfg-form__grupo-titulo) {
+  margin-block-start: var(--space-5);
+}
+
+/* Subgrupo sob o título do grupo: um nível abaixo, ainda com tamanho e peso de título. */
+fieldset.field > legend.cfg-form__grupo-titulo {
+  color: var(--text-heading);
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+}
+
 .cfg-form__checkbox {
   align-self: start;
 }
@@ -967,4 +980,11 @@ cfg-pesos-enem-page {
 
 cfg-revogar-concessao-dialog .uni-dialog__header {
   align-items: center;
+}
+
+.panel-head__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
