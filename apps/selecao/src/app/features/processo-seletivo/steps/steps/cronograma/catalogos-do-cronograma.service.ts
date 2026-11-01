@@ -76,6 +76,13 @@ export class CatalogosDoCronogramaService {
   readonly regrasConsolidacao = signal<readonly RegraCatalogoDto[]>([]);
   readonly tiposDocumento = signal<readonly TipoDocumentoDto[]>([]);
   /**
+   * Os tipos de documento cuja proteção de dados ainda não foi aprovada (UNI-REQ-0205): não aceitam
+   * vínculo novo. A situação vem do próprio tipo, que a API informa a todo usuário.
+   */
+  readonly tiposAguardandoProtecao = computed<ReadonlySet<string>>(
+    () => new Set(this.tiposDocumento().filter((tipo) => !tipo.protecaoAprovada).map((tipo) => tipo.id)),
+  );
+  /**
    * O catálogo de fatos do candidato. Carregado aqui, e não só no passo do formulário, porque
    * é a gravação das exigências que precisa dele: um gatilho que cita um fato obriga o certame
    * a coletá-lo, e sintetizar esse campo exige saber o nome e o domínio do fato.

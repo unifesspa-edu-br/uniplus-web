@@ -54,6 +54,23 @@ describe('ProblemI18nService', () => {
     expect(message.title).toBe('Versão 1 é a única suportada');
   });
 
+  it('traduz o vínculo com fato que aguarda a proteção de dados em qualquer tela, sem registro', () => {
+    const message = service.resolve(
+      mockProblemDetails({ code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente', status: 422 }),
+    );
+
+    expect(message.title).toContain('aguarda a aprovação da proteção de dados');
+    expect(message.detail).toContain('Retire-o do formulário, da regra ou da condição');
+  });
+
+  it('o override registrado prevalece sobre a tradução padrão', () => {
+    service.register('uniplus.vinculo_catalogo.fato_com_protecao_pendente', { title: 'Texto da tela' });
+
+    expect(
+      service.resolve(mockProblemDetails({ code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente' })).title,
+    ).toBe('Texto da tela');
+  });
+
   it('encaixa action quando override declarado', () => {
     service.register('uniplus.idempotency.body_mismatch', {
       title: 'A requisição mudou, gere uma nova chave',

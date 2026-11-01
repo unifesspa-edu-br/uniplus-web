@@ -488,6 +488,10 @@ const RECUSA_DA_EXIGENCIA_DO_SERVIDOR: ReadonlyMap<string, string> = new Map([
     'Uma condição de documento exigido cita dado que só é conhecido numa fase que o cronograma não tem. Acrescente essa fase ao cronograma e exija o documento nela ou em fase posterior, ou retire a condição.',
   ],
   [
+    'uniplus.selecao.documento_exigido.tipo_documento_com_protecao_pendente',
+    'Um documento exigido é de um tipo que aguarda a aprovação da proteção de dados e não aceita vínculo novo. Retire o documento da lista, ou espere a proteção de dados aprovar o tipo ou o administrador do catálogo aceitar a recomendação dela.',
+  ],
+  [
     'uniplus.selecao.documento_exigido.finalidade_obrigatoria',
     `Um documento exigido em fase que responde formulário está sem o formulário em que o candidato o apresenta. Escolha-o ${CAMPO_DO_FORMULARIO} em que ele é exigido.`,
   ],

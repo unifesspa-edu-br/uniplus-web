@@ -1641,6 +1641,19 @@ describe('FaseStepComponent', () => {
       expect(componente.documentoAAcrescentar(), 'o campo volta ao estado neutro').toBe('');
     });
 
+    it('mostra indisponível, com o motivo, o tipo cuja proteção de dados aguarda aprovação', () => {
+      TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([{ ...TIPOS_DOCUMENTO[0], protecaoAprovada: false }]);
+      comCronograma(fase({}));
+
+      const opcao = componente
+        .documentosDisponiveis()
+        .flatMap((grupo) => grupo.options)
+        .find((o) => o.value === ID_CPF);
+
+      expect(opcao?.disabled).toBe(true);
+      expect(opcao?.label).toContain('aguarda a aprovação da proteção de dados');
+    });
+
     /**
      * O tipo inativado no cadastro sai do catálogo vivo, e a exigência que o cita continua no
      * rascunho — a gravação seguinte a reenvia inteira. Sem sintetizar a linha, ela sumia da

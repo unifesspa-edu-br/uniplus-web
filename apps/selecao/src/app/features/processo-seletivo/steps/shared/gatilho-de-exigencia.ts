@@ -124,6 +124,7 @@ export function dominiosDoGatilho(
 /** Como a opção nomeia o fato que a condição já cita e que esta exigência não pode citar. */
 const MARCA_DO_FATO_NAO_CITAVEL = ' (não citável nesta exigência)';
 
+
 /**
  * Os fatos que o gatilho de uma exigência oferece onde ela é cobrada: os que o processo resolve — de
  * qualquer formulário, derivados e produzidos pela classificação — e que já são conhecidos até a

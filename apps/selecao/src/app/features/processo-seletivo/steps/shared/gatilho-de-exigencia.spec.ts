@@ -614,6 +614,17 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
     expect(oferecidos[1]?.nome).toBe('Laudo recente (não citável nesta exigência)');
   });
 
+  it('o fato que aguarda a aprovação da proteção de dados segue na lista, sinalizado para o editor tratá-lo como indisponível', () => {
+    const pendente: FatoCandidatoView = { ...DEFICIENCIA, protecaoAprovada: false };
+    const catalogo = FATOS.map((fato) => (fato.codigo === 'PCD' ? pendente : fato));
+    const producao: ProducaoDosFatos = { ...PRODUCAO, catalogo: new Map(catalogo.map((fato) => [fato.codigo, fato])) };
+
+    const oferecidos = fatosDoGatilhoNaFase(catalogo, na('INSCRICAO'), producao, DOMINIOS);
+
+    expect(codigos(oferecidos)).toEqual(['PCD']);
+    expect(oferecidos[0]?.aguardaProtecao).toBe(true);
+  });
+
   it('as modalidades valem para todo fato cujos valores são modalidades, não só pelo código', () => {
     expect(DOMINIOS.get('MODALIDADE_CONVOCACAO')).toEqual(MODALIDADES);
     expect(DOMINIOS.get('MODALIDADE')).toEqual(MODALIDADES);
