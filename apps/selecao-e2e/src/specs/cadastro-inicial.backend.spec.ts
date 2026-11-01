@@ -1,11 +1,19 @@
-import { expect, test } from '../fixtures/auth.fixture';
+import { test } from '@playwright/test';
+import {
+  SEGUNDO_GESTOR_DE_ACESSOS,
+  chamarApi,
+  entrarComoPersona,
+  garantirConcessao,
+  garantirPerfil,
+} from '@uniplus/shared-e2e';
+import { expect } from '../fixtures/auth.fixture';
 
 /**
  * Exercita o cadastro inicial do Processo Seletivo contra a API real: criação
  * do agregado, upload do edital direto ao storage por URL pré-assinada e
  * confirmação server-side. O que este teste cobre e o unitário não: CORS do
- * storage, a assinatura do PUT (o content type entra na assinatura), o papel
- * exigido pelas rotas administrativas e o encadeamento real das três fases.
+ * storage, a assinatura do PUT (o content type entra na assinatura), a permissão
+ * exigida pelas rotas administrativas e o encadeamento real das três fases.
  *
  * Roda apenas com `E2E_BACKEND_REAL=1` e a stack do `uniplus-api` no ar — o CI
  * provisiona só o Keycloak. Como escreve de verdade (cria processo e sobe
@@ -15,14 +23,57 @@ import { expect, test } from '../fixtures/auth.fixture';
  * E2E_BACKEND_REAL=1 npx nx e2e selecao-e2e --project=selecao-backend-real
  * ```
  *
- * Duas dependências do ambiente, ambas verificáveis no seed:
- * a unidade administradora escolhida precisa ter cidade cadastrada, e o papel
- * administrativo precisa chegar no token do client `selecao-web`.
+ * O acesso é por permissão efetiva na unidade dona do certame, o CEPS: criar o
+ * processo exige `selecao:processos:configurar` e anexar o edital exige
+ * `selecao:processos:publicar`. A spec entra como persona fictícia do portal e
+ * garante, pelo fluxo real de pedido, um perfil com as duas permissões no CEPS.
+ * O assistente também lê o catálogo de modelos de formulário da Configuração, que
+ * é permissão institucional e, por isso, vai em perfil à parte: a API não deixa
+ * um perfil misturar permissão de unidade com permissão institucional.
+ *
+ * A única dependência do ambiente é o roteiro da stack
+ * (`scripts/roteiro-processo-teste-inscricao.sh` da uniplus-api), que cria o CEPS
+ * com cidade — a API recusa a criação do processo sem ela. Sem o roteiro, a spec
+ * falha dizendo isso.
  *
  * O conteúdo exercitado é o do certame de Medicina 2027 do CEPS — o mesmo que a
  * coleção Newman de cadastro monta chamando a API direto. Aqui ele passa pela
  * interface, que é o que a coleção não cobre.
  */
+
+const APP = process.env['BASE_URL'] ?? 'http://localhost:4200';
+
+/** Persona fictícia do portal sem outra concessão nas specs de backend real. */
+const PERSONA = 'helena.rezende';
+const SIGLA_DO_CERTAME = 'CEPS';
+const PERMISSOES = ['selecao:processos:configurar', 'selecao:processos:publicar'];
+/** Institucional: o perfil não mistura com as de unidade. */
+const PERMISSOES_INSTITUCIONAIS = ['configuracao:modelos-formulario:consultar'];
+
+/**
+ * Resolve o CEPS pela API, pela sigla, como o roteiro da stack o cria: o id muda a cada base.
+ * `E2E_UNIDADE_ID`, quando definido, só é conferido contra o resultado.
+ */
+async function resolverUnidadeDoCertame(): Promise<string> {
+  const resposta = await chamarApi<{ id: string; sigla: string }[]>(
+    SEGUNDO_GESTOR_DE_ACESSOS,
+    'GET',
+    '/api/organizacao/unidades?limit=100',
+  );
+  const unidade = Array.isArray(resposta.corpo)
+    ? resposta.corpo.find((u) => u.sigla === SIGLA_DO_CERTAME)
+    : undefined;
+  if (unidade === undefined) {
+    throw new Error(
+      `A unidade ${SIGLA_DO_CERTAME} não existe nesta base. Rode scripts/roteiro-processo-teste-inscricao.sh da uniplus-api antes da spec.`,
+    );
+  }
+  const informada = process.env['E2E_UNIDADE_ID'];
+  if (informada !== undefined && informada !== unidade.id) {
+    throw new Error(`E2E_UNIDADE_ID=${informada} não é o ${SIGLA_DO_CERTAME} desta base (${unidade.id}).`);
+  }
+  return unidade.id;
+}
 
 /** PDF mínimo válido: a API confere a assinatura `%PDF-` do conteúdo. */
 const PDF_MINIMO = Buffer.from(
@@ -34,10 +85,33 @@ const PDF_MINIMO = Buffer.from(
 );
 
 test.describe('Cadastro inicial do processo seletivo', () => {
-  test('cria o processo e anexa o edital pelo fluxo real de upload', async ({ page }) => {
-    const sufixo = `${Date.now()}`;
+  // O preparo de perfil e concessão é compartilhado e não é seguro rodar em dois workers ao mesmo tempo.
+  test.describe.configure({ mode: 'serial' });
 
-    await page.goto('/processo-seletivo/novo');
+  let unidadeId = '';
+
+  test.beforeAll(async () => {
+    // O pedido de concessão passa por quatro personas e leva além dos 30 s padrão.
+    test.setTimeout(180_000);
+    unidadeId = await resolverUnidadeDoCertame();
+    const perfilId = await garantirPerfil(
+      'E2E cadastro inicial — Configuração e publicação do CEPS',
+      'Perfil da spec do cadastro inicial: cria o processo e anexa o edital.',
+      PERMISSOES,
+    );
+    await garantirConcessao(PERSONA, perfilId, unidadeId);
+    const perfilInstitucional = await garantirPerfil(
+      'E2E cadastro inicial — Consulta dos cadastros do assistente',
+      'Perfil da spec do cadastro inicial: lê os cadastros que o assistente oferece.',
+      PERMISSOES_INSTITUCIONAIS,
+    );
+    await garantirConcessao(PERSONA, perfilInstitucional, unidadeId);
+  });
+
+  test('cria o processo e anexa o edital pelo fluxo real de upload', async ({ browser }) => {
+    const sufixo = `${Date.now()}`;
+    const page = await entrarComoPersona(browser, APP, PERSONA, '/processo-seletivo/novo');
+
     await expect(page.getByRole('heading', { level: 1, name: /Tipo do processo/i })).toBeVisible();
 
     // Passo 1 — o tipo vem do catálogo de Configuração; o rascunho guarda o UUID.
@@ -56,19 +130,12 @@ test.describe('Cadastro inicial do processo seletivo', () => {
     // de uma rodada anterior contra o mesmo banco.
     await page.locator('#f-identificador').fill(`medicina-2027-e2e-${sufixo}`);
 
-    // A unidade precisa ter cidade cadastrada: a API recusa a criação sem ela
-    // (`ProcessoSeletivo.UnidadeAdministradoraSemCidade`). A Pró-Reitoria de
-    // Ensino de Graduação, em Marabá, é a administradora do certame.
+    // O CEPS administra o certame e tem cidade cadastrada pelo roteiro da stack: a API recusa a
+    // criação sem ela (`ProcessoSeletivo.UnidadeAdministradoraSemCidade`). A opção é escolhida pelo
+    // id resolvido na API, não pelo texto.
     const unidade = page.locator('#f-unidade');
-    const opcaoComCidade = unidade.locator('option', { hasText: 'PROEG' });
-    await expect(opcaoComCidade).toHaveCount(1, { timeout: 15_000 });
-    // O value é o UUID da unidade, gerado pelo seed — daí a leitura, em vez de
-    // um valor fixo no teste.
-    const valorUnidade = await opcaoComCidade.evaluate(
-      (option) => (option as HTMLOptionElement).value,
-    );
-    expect(valorUnidade).toBeTruthy();
-    await unidade.selectOption(valorUnidade);
+    await expect(unidade.locator(`option[value="${unidadeId}"]`)).toHaveCount(1, { timeout: 15_000 });
+    await unidade.selectOption(unidadeId);
     await page.locator('#f-origem').selectOption('inscricaoPropria');
 
     // O município que rege os prazos é declarado, não deduzido da unidade: o
@@ -119,11 +186,12 @@ test.describe('Cadastro inicial do processo seletivo', () => {
   });
 
   /**
-   * A recusa de formato acontece no cliente. O que ela protege mudou de lugar
-   * junto com o anexo: antes impedia a criação do processo, agora impede a
-   * iniciação do documento — que é o passo que sela um PDF como imutável.
+   * A recusa de formato acontece no cliente e impede a iniciação do documento, o passo que sela
+   * um PDF como imutável. O campo do edital aparece para quem tem `selecao:processos:publicar`,
+   * mesmo sem processo criado, então o teste vai direto à revisão e publicação.
    */
-  test('recusa arquivo que não é PDF antes de qualquer requisição', async ({ page }) => {
+  test('recusa arquivo que não é PDF antes de qualquer requisição', async ({ browser }) => {
+    const page = await entrarComoPersona(browser, APP, PERSONA, '/processo-seletivo/novo');
     const requisicoesDeDocumento: string[] = [];
     page.on('request', (req) => {
       if (req.method() === 'POST' && req.url().includes('/documentos-a-publicar')) {
@@ -131,7 +199,6 @@ test.describe('Cadastro inicial do processo seletivo', () => {
       }
     });
 
-    await page.goto('/processo-seletivo/novo');
     const primeiroTipo = page.locator('.type-card').first();
     await expect(primeiroTipo).toBeVisible({ timeout: 15_000 });
     await primeiroTipo.click();
