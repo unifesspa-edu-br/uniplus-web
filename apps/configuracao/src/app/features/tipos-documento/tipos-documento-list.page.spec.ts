@@ -866,37 +866,158 @@ describe('TiposDocumentoListPage', () => {
     expect(caption).not.toBeNull();
     expect(caption?.classList.contains('sr-only')).toBe(true);
     expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
-      'Tipos de documento, com categoria, formatos aceitos, tamanho máximo de arquivo e situação da proteção de dados',
+      'Tipos de documento, com categoria, formatos aceitos, sensibilidade e situação da aprovação. Use o nome para abrir o detalhe.',
     );
   });
 
-  describe('aprovação da proteção de dados', () => {
-    const item = (
-      tipo: TipoDocumentoDto,
-      aprovacao: Partial<ItemDaProtecaoDoCatalogoDto['aprovacao']>,
-    ): ItemDaProtecaoDoCatalogoDto => ({
-      tipo: 'TIPO_DOCUMENTO',
-      id: tipo.id,
-      codigo: tipo.codigo,
-      nome: tipo.nome,
-      classificacaoProtecao: tipo.classificacaoProtecao,
-      finalidadeTratamento: tipo.finalidadeTratamento,
-      hipoteseLegal: tipo.hipoteseLegal,
-      aprovacao: {
-        situacao: 'PENDENTE',
-        solicitadaEm: null,
-        decididaEm: null,
-        classificacaoRecomendada: null,
-        aceitaEm: null,
-        ...aprovacao,
-      },
+  const item = (
+    tipo: TipoDocumentoDto,
+    aprovacao: Partial<ItemDaProtecaoDoCatalogoDto['aprovacao']>,
+  ): ItemDaProtecaoDoCatalogoDto => ({
+    tipo: 'TIPO_DOCUMENTO',
+    id: tipo.id,
+    codigo: tipo.codigo,
+    nome: tipo.nome,
+    classificacaoProtecao: tipo.classificacaoProtecao,
+    finalidadeTratamento: tipo.finalidadeTratamento,
+    hipoteseLegal: tipo.hipoteseLegal,
+    aprovacao: {
+      situacao: 'PENDENTE',
+      solicitadaEm: null,
+      decididaEm: null,
+      classificacaoRecomendada: null,
+      aceitaEm: null,
+      ...aprovacao,
+    },
+  });
+
+  it('a tabela tem Sensibilidade e Situação em colunas próprias, sem Tam. máx. nem a célula combinada', async () => {
+    await flushLista([rgSeed]);
+    fixture.detectChanges();
+
+    const colunas = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.panel thead th')).map((th) =>
+      th.textContent?.trim(),
+    );
+    expect(colunas).toEqual([
+      'Código', 'Nome', 'Categoria', 'Formatos aceitos', 'Sensibilidade', 'Situação', 'Ações',
+    ]);
+    const celulas = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.panel tbody td')).map((td) =>
+      td.getAttribute('data-label'),
+    );
+    expect(celulas).not.toContain('Tam. máx.');
+    expect(celulas).not.toContain('Proteção de dados');
+    expect(fixture.nativeElement.querySelector('td[data-label="Sensibilidade"]').classList).toContain('u-nowrap-desktop');
+    expect(fixture.nativeElement.querySelector('td[data-label="Situação"]').classList).toContain('u-nowrap-desktop');
+  });
+
+  describe('detalhe do tipo de documento', () => {
+    const alvo = (): HTMLButtonElement => fixture.nativeElement.querySelector('tbody .table-responsive__alvo');
+    const painel = (): string =>
+      (fixture.nativeElement.querySelector('dialog[aria-label="Detalhe do tipo de documento"]')?.textContent ?? '').replace(
+        /\s+/gu,
+        ' ',
+      );
+    const rodape = (): string[] =>
+      Array.from<HTMLElement>(
+        fixture.nativeElement.querySelectorAll('dialog[aria-label="Detalhe do tipo de documento"] .cfg-form-footer button'),
+      ).map((b) => b.textContent?.trim() ?? '');
+
+    it('o nome da linha é um botão nativo com nome acessível, e não há clique na linha', async () => {
+      await flushLista([rgSeed]);
+      fixture.detectChanges();
+
+      expect(alvo().tagName).toBe('BUTTON');
+      expect(alvo().type).toBe('button');
+      expect(alvo().tabIndex).toBeGreaterThanOrEqual(0);
+      expect(alvo().getAttribute('aria-label')).toBe('Ver o detalhe de Registro Geral');
+      expect(fixture.nativeElement.querySelector('tbody tr').hasAttribute('onclick')).toBe(false);
     });
 
+    it('abre o drawer só de leitura com todos os campos que a consulta devolve', async () => {
+      await flushLista([rgSeed], [item(rgSeed, { situacao: 'SOLICITADA' })]);
+      fixture.detectChanges();
+
+      alvo().click();
+      fixture.detectChanges();
+
+      expect(component['detalheAberto']()).toBe(true);
+      expect(
+        fixture.nativeElement.querySelector('dialog[aria-label="Detalhe do tipo de documento"] .uni-drawer__title').textContent.trim(),
+      ).toBe('Registro Geral');
+      const texto = painel();
+      expect(texto).toContain('RG');
+      expect(texto).toContain('Documento de identificação civil.');
+      expect(texto).toContain('Identificação');
+      expect(texto).toContain('CIN');
+      expect(texto).toContain('pdf,jpg');
+      expect(texto).toContain('10 MB');
+      expect(texto).toContain('Pessoal');
+      expect(texto).toContain('Execução de políticas públicas');
+      expect(texto).toContain('Conferir o documento do candidato.');
+      expect(texto).toContain('Aguardando a proteção de dados');
+      expect(
+        fixture.nativeElement.querySelector('dialog[aria-label="Detalhe do tipo de documento"] input, dialog[aria-label="Detalhe do tipo de documento"] textarea'),
+      ).toBeNull();
+    });
+
+    it('"Editar" fecha o detalhe e abre a edição do mesmo tipo', async () => {
+      await flushLista([rgSeed], [item(rgSeed, { situacao: 'APROVADA' })]);
+      fixture.detectChanges();
+      alvo().click();
+      fixture.detectChanges();
+      expect(rodape()).toEqual(['Fechar', 'Editar']);
+
+      Array.from<HTMLButtonElement>(
+        fixture.nativeElement.querySelectorAll('dialog[aria-label="Detalhe do tipo de documento"] .cfg-form-footer button'),
+      )
+        .find((b) => b.textContent?.trim() === 'Editar')
+        ?.click();
+      fixture.detectChanges();
+
+      expect(component['detalheAberto']()).toBe(false);
+      expect(component['formOpen']()).toBe(true);
+      expect(component['modo']()).toBe('editar');
+      expect(component['form'].controls.codigo.value).toBe('RG');
+    });
+
+    it('oferece "Aceitar recomendação" só com a recomendação do tipo negado', async () => {
+      await flushLista(
+        [rgSeed, laudoSeed],
+        [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' })],
+      );
+      fixture.detectChanges();
+
+      const alvos = fixture.nativeElement.querySelectorAll('tbody .table-responsive__alvo');
+      alvos[0].click();
+      fixture.detectChanges();
+      expect(rodape()).toEqual(['Fechar', 'Editar']);
+      component['detalheAberto'].set(false);
+      fixture.detectChanges();
+
+      alvos[1].click();
+      fixture.detectChanges();
+      expect(rodape()).toEqual(['Fechar', 'Aceitar recomendação', 'Editar']);
+      expect(painel()).toContain('Classificação recomendada: Pessoal sensível');
+    });
+
+    it('sem a permissão de manter, só consulta e fecha', async () => {
+      concedidas.set([]);
+      await flushLista([laudoSeed], [item(laudoSeed, { situacao: 'NEGADA', classificacaoRecomendada: 'SENSIVEL' })]);
+      fixture.detectChanges();
+
+      alvo().click();
+      fixture.detectChanges();
+
+      expect(rodape()).toEqual(['Fechar']);
+    });
+  });
+
+  describe('aprovação da proteção de dados', () => {
     const texto = (): string => fixture.nativeElement.textContent.replace(/\s+/gu, ' ');
     /** Os botões da página, fora dos diálogos, que ficam no DOM mesmo fechados. */
     const botao = (rotulo: string): HTMLButtonElement | undefined =>
       Array.from<HTMLButtonElement>(
-        fixture.nativeElement.querySelectorAll('.panel-head__actions button, td button'),
+        fixture.nativeElement.querySelectorAll('.panel-head__actions button, .cfg-form-footer button'),
       ).find((b) => b.textContent?.includes(rotulo));
 
     it('diz a situação como texto, e a negativa traz a classificação recomendada', async () => {
@@ -911,7 +1032,7 @@ describe('TiposDocumentoListPage', () => {
 
       expect(texto()).toContain('Aprovada');
       expect(texto()).toContain('Negada pela proteção de dados');
-      expect(texto()).toContain('Classificação recomendada: Pessoal sensível');
+      expect(texto()).not.toContain('Classificação recomendada');
       expect(texto()).toContain('Aguardando a proteção de dados');
     });
 
@@ -999,8 +1120,11 @@ describe('TiposDocumentoListPage', () => {
       );
       fixture.detectChanges();
 
+      (fixture.nativeElement.querySelector('tbody .table-responsive__alvo') as HTMLButtonElement).click();
+      fixture.detectChanges();
       botao('Aceitar recomendação')?.click();
       fixture.detectChanges();
+      expect(component['detalheAberto']()).toBe(false);
       expect(component['confirmAceiteMensagem']()).toContain('Pessoal sensível');
       component['confirmarAceite']();
 
@@ -1061,7 +1185,7 @@ describe('TiposDocumentoListPage', () => {
       fixture.detectChanges();
 
       expect(texto()).not.toContain('Aprovada');
-      expect(texto()).toContain('Não foi possível ler a situação');
+      expect(texto()).toContain('Situação indisponível');
     });
 
     it('releitura que falha depois de uma boa não devolve "Aprovada" ao tipo que saiu da lista', async () => {
