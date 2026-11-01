@@ -21,7 +21,10 @@ import { formatarDataBr } from '@uniplus/shared-utils';
 import { AvisoDoCertameComponent } from './aviso-do-certame.component';
 import { DetalheDaInscricao } from './detalhe-da-inscricao.service';
 import { cursoExibido, type CursoExibido } from './nome-da-oferta';
-import { RespostasDaInscricaoComponent } from './respostas-da-inscricao.component';
+import {
+  RespostasDaInscricaoComponent,
+  type PedidoDeRevelacao,
+} from './respostas-da-inscricao.component';
 import { rotuloDaSituacao, varianteDaSituacao } from './situacao-da-inscricao';
 import { rotuloDaSituacaoDoArquivo, varianteDaSituacaoDoArquivo } from './situacao-do-arquivo';
 
@@ -116,7 +119,8 @@ function ocorrenciasConhecidas(
  */
 function arquivosExibidos(inscricao: InscricaoAdministrativaDto | null): ArquivoExibido[] {
   const arquivos = inscricao?.arquivos ?? [];
-  const conhecidas = inscricao === null ? new Map<string, OcorrenciaConhecida>() : ocorrenciasConhecidas(inscricao);
+  const conhecidas =
+    inscricao === null ? new Map<string, OcorrenciaConhecida>() : ocorrenciasConhecidas(inscricao);
   const chave = (a: ArquivoAdministrativoDto): string => {
     if (a.ocorrenciaId == null) return `${a.exigenciaId}|`;
     return conhecidas.has(a.ocorrenciaId)
@@ -285,7 +289,12 @@ function arquivosExibidos(inscricao: InscricaoAdministrativaDto | null): Arquivo
                       <h3 class="insc-det__secao-titulo">{{ tituloDaSecao }}</h3>
                     }
                     @if (secao.itens.length > 0) {
-                      <sel-respostas-da-inscricao [itens]="secao.itens" />
+                      <sel-respostas-da-inscricao
+                        [itens]="secao.itens"
+                        [revelacoes]="detalhe.revelacoes()"
+                        (revelar)="revelar($event)"
+                        (ocultar)="ocultar($event)"
+                      />
                     }
                     @for (grupo of secao.grupos; track grupo.codigo) {
                       <section
@@ -308,7 +317,13 @@ function arquivosExibidos(inscricao: InscricaoAdministrativaDto | null): Arquivo
                           >
                             {{ $index + 1 }}ª ocorrência
                           </div>
-                          <sel-respostas-da-inscricao [itens]="ocorrencia.itens" />
+                          <sel-respostas-da-inscricao
+                            [itens]="ocorrencia.itens"
+                            [ocorrenciaId]="ocorrencia.id"
+                            [revelacoes]="detalhe.revelacoes()"
+                            (revelar)="revelar($event)"
+                            (ocultar)="ocultar($event)"
+                          />
                         }
                       </section>
                     }
@@ -326,7 +341,12 @@ function arquivosExibidos(inscricao: InscricaoAdministrativaDto | null): Arquivo
                 </div>
               </div>
               <div class="insc-det__corpo">
-                <sel-respostas-da-inscricao [itens]="insc.derivados" />
+                <sel-respostas-da-inscricao
+                  [itens]="insc.derivados"
+                  [revelacoes]="detalhe.revelacoes()"
+                  (revelar)="revelar($event)"
+                  (ocultar)="ocultar($event)"
+                />
               </div>
             </section>
           }
@@ -442,6 +462,14 @@ export class DetalheDaInscricaoPage {
       this.abrindo.set(null);
       this.detalhe.abrir(processo, inscricao);
     });
+  }
+
+  protected ocultar(pedido: PedidoDeRevelacao): void {
+    this.detalhe.ocultar(pedido.fatoCodigo, pedido.ocorrenciaId);
+  }
+
+  protected revelar(pedido: PedidoDeRevelacao): void {
+    void this.detalhe.revelar(pedido.fatoCodigo, pedido.ocorrenciaId);
   }
 
   /** Tem de rodar dentro do clique: a aba do arquivo nasce antes do primeiro `await`. */

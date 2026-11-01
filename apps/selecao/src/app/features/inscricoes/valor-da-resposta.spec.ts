@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatarDecimalExato, valorExibido } from './valor-da-resposta';
+import { formatarDecimalExato, formatarMoeda, valorExibido } from './valor-da-resposta';
 
 const SEM_VALOR = { valor: null };
 
@@ -102,5 +102,30 @@ describe('valorExibido', () => {
   it('não inventa valor para a forma que o tipo não admite e não é texto', () => {
     expect(valorExibido('opcao', { sem: 'rotulo' })).toEqual(SEM_VALOR);
     expect(valorExibido('endereco', [1, 2])).toEqual(SEM_VALOR);
+  });
+
+  it('mostra o componente moeda em reais a partir do decimal exato, string ou número JSON', () => {
+    expect(valorExibido('numero', '1234.56', 'moeda')).toEqual({ valor: 'R$ 1.234,56' });
+    expect(valorExibido('numero', 1234.5, 'moeda')).toEqual({ valor: 'R$ 1.234,50' });
+    expect(valorExibido('numero', '7', 'moeda')).toEqual({ valor: 'R$ 7,00' });
+    expect(formatarMoeda('12345678901234567890.123')).toBe('R$ 12.345.678.901.234.567.890,123');
+    expect(formatarMoeda('-1000.5')).toBe('-R$ 1.000,50');
+    expect(formatarMoeda('abc')).toBe('abc');
+  });
+
+  it('mostra o CPF e o identificador como a API os devolve, qualquer que seja o tipo', () => {
+    expect(valorExibido('texto', '***.598.363-**', 'cpf')).toEqual({ valor: '***.598.363-**' });
+    expect(valorExibido('numero', '*********', 'identificador')).toEqual({ valor: '*********' });
+  });
+
+  it('entrega o componente situacao para a etiqueta de situação', () => {
+    expect(valorExibido('texto', 'submetida', 'situacao')).toEqual({ situacao: 'submetida' });
+    expect(valorExibido('texto', 'deferida', 'situacao')).toEqual({ valor: 'deferida' });
+  });
+
+  it('volta à exibição pelo tipo no componente padrão, desconhecido ou sem a forma dele', () => {
+    expect(valorExibido('numero', '1234.56', 'padrao')).toEqual({ valor: '1234,56' });
+    expect(valorExibido('numero', '1234.56', 'novo-componente')).toEqual({ valor: '1234,56' });
+    expect(valorExibido('numero', true, 'moeda')).toEqual({ valor: true });
   });
 });

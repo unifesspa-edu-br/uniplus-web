@@ -14,6 +14,11 @@ const VARIANTE = new Map<string, UiTagVariant>([
   [SituacaoInscricao.cancelada, 'danger'],
 ]);
 
+/** Se a tela conhece a situação; a que não conhece não vira etiqueta com o código cru. */
+export function ehSituacaoConhecida(situacao: string): boolean {
+  return ROTULO.has(situacao);
+}
+
 /** O rótulo da situação; uma situação que a tela não conhece aparece como a API a devolveu. */
 export function rotuloDaSituacao(situacao: string): string {
   return ROTULO.get(situacao) ?? situacao;

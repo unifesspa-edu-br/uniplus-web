@@ -1,17 +1,21 @@
 import type { UiValorEmConsulta } from '@uniplus/shared-ui/components';
 import { formatarDataBr } from '@uniplus/shared-utils';
 
+import { ehSituacaoConhecida } from './situacao-da-inscricao';
+
 /**
  * O valor de uma resposta pronto para a tela: o endereço sai em linhas; o resto, no valor em
  * consulta, cuja apresentação (Sim/Não, lista, "Não informado") é do `ui-valor-apresentado`.
  */
 export type ValorExibido =
   | { readonly linhas: readonly string[] }
+  | { readonly situacao: string }
   | { readonly valor: UiValorEmConsulta };
 
 const SEM_VALOR: ValorExibido = { valor: null };
 
 const DECIMAL_EXATO = /^(-?)(\d+)(?:\.(\d+))?$/;
+const MILHAR = /\B(?=(\d{3})+(?!\d))/g;
 const HORA_DO_DIA = /^\d{2}:\d{2}(?::\d{2})?$/;
 /** Dia fixo para ler a hora de parede pelo formatador de data, que só lê instante ou data e hora. */
 const DIA_DA_HORA = '1970-01-01';
@@ -34,6 +38,17 @@ export function formatarDecimalExato(decimal: string): string {
   if (partes === null) return decimal;
   const [, sinal, inteiro, fracao] = partes;
   return `${sinal}${inteiro}${fracao === undefined ? '' : `,${fracao}`}`;
+}
+
+/**
+ * O decimal exato da API como valor em reais, "R$ 1.234,56", por manipulação do texto: sem `Number`,
+ * a precisão do contrato se mantém. Ao menos duas casas decimais; texto que não é decimal volta como veio.
+ */
+export function formatarMoeda(decimal: string): string {
+  const partes = DECIMAL_EXATO.exec(decimal.trim());
+  if (partes === null) return decimal;
+  const [, sinal, inteiro, fracao = ''] = partes;
+  return `${sinal}R$ ${inteiro.replace(MILHAR, '.')},${fracao.padEnd(2, '0')}`;
 }
 
 function opcaoRotulo(valor: unknown): string | null {
@@ -93,15 +108,35 @@ function lidoPeloTipo(tipo: string, valor: unknown): ValorExibido | undefined {
   }
 }
 
+function lidoPeloComponente(componente: string, valor: unknown): ValorExibido | undefined {
+  switch (componente) {
+    case 'cpf':
+    case 'identificador':
+      return typeof valor === 'string' ? { valor } : undefined;
+    case 'moeda':
+      return typeof valor === 'string' || typeof valor === 'number'
+        ? { valor: formatarMoeda(String(valor)) }
+        : undefined;
+    case 'situacao':
+      return typeof valor === 'string' && ehSituacaoConhecida(valor)
+        ? { situacao: valor }
+        : undefined;
+    default:
+      return undefined;
+  }
+}
+
 /**
- * O valor de uma resposta segundo o `tipo` que a API declara. O identificador chega mascarado, em
- * texto, qualquer que seja o `tipo`: o valor que não tem a forma do tipo, ou de um tipo que a tela
- * não conhece, passa ao componente de valor quando é texto, número ou booleano, e some quando não
- * há o que mostrar (objeto ou lista sem forma conhecida).
+ * O valor de uma resposta segundo o `componente` e o `tipo` que a API declara. O componente
+ * específico (CPF e identificador, que chegam já mascarados e a tela exibe como vieram; moeda;
+ * situação) vale quando o valor tem a forma dele; senão, e no `padrao` ou em componente que a tela
+ * não conhece, a exibição é a do `tipo`. O valor que não tem a forma do tipo, ou de um tipo que a
+ * tela não conhece, passa ao componente de valor quando é texto, número ou booleano, e some quando
+ * não há o que mostrar (objeto ou lista sem forma conhecida).
  */
-export function valorExibido(tipo: string, valor: unknown): ValorExibido {
+export function valorExibido(tipo: string, valor: unknown, componente = 'padrao'): ValorExibido {
   if (valor === null || valor === undefined) return SEM_VALOR;
-  const lido = lidoPeloTipo(tipo, valor);
+  const lido = lidoPeloComponente(componente, valor) ?? lidoPeloTipo(tipo, valor);
   if (lido !== undefined) return lido;
   return typeof valor === 'string' || typeof valor === 'number' || typeof valor === 'boolean'
     ? { valor }
