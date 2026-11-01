@@ -208,7 +208,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
       <ui-lookup-alert [falhas]="lookupsComFalha()" />
 
       @if (fatosBuscados().length > 0) {
-        <div class="table-responsive">
+        <div class="table-responsive table-responsive--acoes-fixas" role="region" tabindex="0" aria-label="Lista de fatos do candidato">
           <table>
             <caption class="sr-only">Fatos do candidato, com origem, tipo de dado, situação e proteção de dados</caption>
             <thead>
@@ -219,7 +219,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                 <th scope="col">Tipo de dado</th>
                 <th scope="col">Situação</th>
                 <th scope="col">Proteção de dados</th>
-                <th scope="col"><span class="sr-only">Ações</span></th>
+                <th scope="col" class="table-responsive__actions"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody>

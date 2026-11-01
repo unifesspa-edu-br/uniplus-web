@@ -2647,6 +2647,27 @@ ui-icon-button {
   }
 }
 
+
+/* Tabela larga: a coluna de ações fica fixa na borda direita da área rolável, para a ação
+   principal da linha ficar à vista sem rolar. Só vale na tabela; no cartão (< 768 px) as ações já ficam na pilha. */
+@media not all and (max-width: 767px) {
+  .table-responsive--acoes-fixas :is(td, th).table-responsive__actions {
+    position: sticky;
+    inset-inline-end: 0;
+    /* Com `border-collapse: collapse` a borda da célula não acompanha a rolagem: a divisória é
+       sombra, que também sinaliza o conteúdo escondido por baixo da coluna fixa. */
+    box-shadow:
+      -1px 0 0 var(--border-subtle),
+      -8px 0 8px -6px var(--shadow-3-cor);
+  }
+  .table-responsive--acoes-fixas td.table-responsive__actions {
+    background: var(--surface-card);
+  }
+  .table-responsive--acoes-fixas tbody tr:hover td.table-responsive__actions {
+    background: var(--surface-page);
+  }
+}
+
 .ui-code {
   font-family: var(--font-mono);
   font-size: var(--text-xs);

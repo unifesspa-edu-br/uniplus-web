@@ -96,7 +96,12 @@ interface CorpoDoPerfil {
       </div>
 
       @if (pagina.itens().length > 0) {
-        <div class="table-responsive">
+        <div
+          class="table-responsive table-responsive--acoes-fixas"
+          role="region"
+          tabindex="0"
+          aria-label="Lista de perfis de acesso"
+        >
           <table>
             <caption class="sr-only">
               Perfis de acesso
@@ -107,7 +112,7 @@ interface CorpoDoPerfil {
                 <th scope="col">Permissões</th>
                 <th scope="col">Sensibilidade</th>
                 <th scope="col">Situação</th>
-                <th scope="col"><span class="sr-only">Ações</span></th>
+                <th scope="col" class="table-responsive__actions"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody>
