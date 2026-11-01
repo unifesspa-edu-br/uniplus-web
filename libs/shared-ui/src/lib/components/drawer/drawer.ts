@@ -30,7 +30,7 @@ let openDrawerCount = 0;
     >
       <div class="uni-drawer__panel">
         <div class="uni-drawer__header">
-          <h2 class="uni-drawer__title">{{ heading() }}</h2>
+          <h2 #title class="uni-drawer__title" tabindex="-1">{{ heading() }}</h2>
           <button
             #closeButton
             type="button"
@@ -61,10 +61,16 @@ export class DrawerComponent implements OnDestroy {
    * formulário já desmontado). O consumidor ainda fecha programaticamente via `visible`.
    */
   readonly closable = input<boolean>(true);
+  /**
+   * Onde o foco cai ao abrir. `fechar` (padrão) serve ao formulário; `titulo` serve ao painel de
+   * leitura, em que o leitor de tela começa pelo nome do que está sendo mostrado.
+   */
+  readonly focoInicial = input<'fechar' | 'titulo'>('fechar');
   readonly closed = output<void>();
 
   private readonly drawerRef = viewChild<ElementRef<HTMLDialogElement>>('drawer');
   private readonly closeButtonRef = viewChild<ElementRef<HTMLButtonElement>>('closeButton');
+  private readonly titleRef = viewChild<ElementRef<HTMLElement>>('title');
   private lastFocusedElement: HTMLElement | null = null;
   private bodyScrollLocked = false;
   private readonly autoDrawerId = `ui-drawer-${++drawerIdSeed}`;
@@ -100,9 +106,22 @@ export class DrawerComponent implements OnDestroy {
       this.visible.set(false);
     }
     this.unlockBodyScroll();
-    this.lastFocusedElement?.focus();
+    if (this.focoEstaLivre()) {
+      this.lastFocusedElement?.focus();
+    }
     this.lastFocusedElement = null;
     this.closed.emit();
+  }
+
+  /**
+   * O foco só volta ao elemento de origem quando ninguém o tomou: no corpo da página ou ainda dentro
+   * do drawer. Um fechamento que chega depois de a pessoa já ter seguido para outro controle não
+   * pode arrancá-la de lá.
+   */
+  private focoEstaLivre(): boolean {
+    const ativo = document.activeElement;
+    const drawer = this.drawerRef()?.nativeElement;
+    return ativo === null || ativo === document.body || (drawer?.contains(ativo) ?? false);
   }
 
   private openDrawer(drawer: HTMLDialogElement): void {
@@ -116,7 +135,10 @@ export class DrawerComponent implements OnDestroy {
       drawer.setAttribute('open', '');
     }
     this.lockBodyScroll();
-    queueMicrotask(() => this.closeButtonRef()?.nativeElement.focus());
+    queueMicrotask(() => {
+      const alvo = this.focoInicial() === 'titulo' ? this.titleRef() : this.closeButtonRef();
+      alvo?.nativeElement.focus();
+    });
   }
 
   private closeDrawer(drawer: HTMLDialogElement): void {

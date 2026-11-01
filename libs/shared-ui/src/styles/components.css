@@ -2647,6 +2647,49 @@ ui-icon-button {
   }
 }
 
+/* Linha clicável por alvo estendido. O nome do item é um <button class="table-responsive__alvo">
+   que abre o detalhe; o ::after dele cobre a linha inteira (a <tr> é o bloco de referência), sem
+   `(click)` na <tr>. As ações da linha ficam acima do alvo e seguem clicáveis. Na tabela e no
+   cartão (< 768 px) o mecanismo é o mesmo. */
+.table-responsive tbody tr:has(.table-responsive__alvo) {
+  position: relative;
+  cursor: pointer;
+}
+.table-responsive__alvo {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: var(--weight-medium);
+  color: var(--color-primary);
+  text-align: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.table-responsive__alvo:hover {
+  text-decoration-thickness: 2px;
+}
+.table-responsive__alvo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+/* O foco do botão pequeno some sob o alvo estendido: a linha inteira ganha o anel. */
+.table-responsive tbody tr:has(.table-responsive__alvo:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(var(--focus-ring-width) * -1);
+}
+.table-responsive__alvo:focus-visible {
+  outline: none;
+}
+.table-responsive tr:has(.table-responsive__alvo) td.table-responsive__actions .btn {
+  position: relative;
+  z-index: 1;
+}
+
 
 /* Tabela larga: a coluna de ações fica fixa na borda direita da área rolável, para a ação
    principal da linha ficar à vista sem rolar. Só vale na tabela; no cartão (< 768 px) as ações já ficam na pilha. */

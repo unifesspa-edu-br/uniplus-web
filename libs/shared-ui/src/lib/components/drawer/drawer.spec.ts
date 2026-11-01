@@ -69,4 +69,55 @@ describe('DrawerComponent', () => {
     const dialog = fixture.debugElement.query(By.css('dialog')).nativeElement as HTMLDialogElement;
     expect(dialog.id).toBe('meu-drawer-fixo');
   });
+
+  it('leva o foco ao botão de fechar por padrão', async () => {
+    fixture.componentRef.setInput('visible', true);
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Fechar');
+  });
+
+  it('leva o foco ao título quando focoInicial é "titulo"', async () => {
+    fixture.componentRef.setInput('focoInicial', 'titulo');
+    fixture.componentRef.setInput('heading', 'Registro Geral');
+    fixture.componentRef.setInput('visible', true);
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(document.activeElement?.textContent?.trim()).toBe('Registro Geral');
+  });
+
+  it('devolve o foco ao elemento que abriu o drawer ao fechar', () => {
+    const origem = document.createElement('button');
+    document.body.appendChild(origem);
+    origem.focus();
+
+    fixture.componentRef.setInput('visible', true);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('visible', false);
+    fixture.detectChanges();
+    fixture.debugElement.query(By.css('dialog')).nativeElement.dispatchEvent(new Event('close'));
+
+    expect(document.activeElement).toBe(origem);
+    origem.remove();
+  });
+
+  it('não arranca o foco de quem já seguiu para outro controle quando o fechamento chega', () => {
+    const origem = document.createElement('button');
+    const outro = document.createElement('button');
+    document.body.append(origem, outro);
+    origem.focus();
+
+    fixture.componentRef.setInput('visible', true);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('visible', false);
+    fixture.detectChanges();
+    outro.focus();
+    fixture.debugElement.query(By.css('dialog')).nativeElement.dispatchEvent(new Event('close'));
+
+    expect(document.activeElement).toBe(outro);
+    origem.remove();
+    outro.remove();
+  });
 });
