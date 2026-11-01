@@ -56,7 +56,7 @@ export const entradaDaSelecao: CanActivateFn = async () => {
 };
 
 /**
- * Com a validação ligada, as entradas isoladas antigas (`/inscricoes`, `/homologacao`, `/notas`,
+ * Com a validação ligada, as entradas isoladas antigas (`/homologacao`, `/notas`,
  * `/classificacao`) levam ao painel, a quem pode abri-lo. Vai depois do `permissaoGuard` da rota,
  * que continua valendo. Só o caminho exato da rota é redirecionado; qualquer subrota segue para o
  * destino existente.

@@ -61,13 +61,15 @@ test.describe('Autenticação OIDC — Seleção', () => {
       await expectUserInHeader(page, user.displayName, user.username);
     });
 
-    test('gestor consegue autenticar e acessar inscrições', async ({ page }) => {
+    test('gestor consegue autenticar e acessar a lista de processos, de onde chega às inscrições', async ({
+      page,
+    }) => {
       const user = USERS.gestor;
       await mockPermissoesEfetivas(page, ['selecao:inscricoes:consultar']);
-      await page.goto('/inscricoes');
+      await page.goto('/');
       await keycloakLogin(page, user.username, user.password);
 
-      await expect(page).toHaveURL(/inscricoes/);
+      await expect(page).toHaveURL(/\/processo-seletivo$/);
       await expectUserInHeader(page, user.displayName, user.username);
     });
   });

@@ -97,7 +97,7 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
         <p class="page-header__desc">Processos seletivos cadastrados no sistema.</p>
       </div>
 
-      @if (podeCadastrarProcesso()) {
+      @if (podeConfigurarProcesso()) {
         <a class="btn btn--primary" routerLink="/processo-seletivo/novo">
           <i class="pi pi-plus" aria-hidden="true"></i>
           Novo Processo
@@ -179,25 +179,40 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
                     </td>
 
                     <td class="table-responsive__actions" data-label="Ações">
-                      <ui-icon-button
-                        icon="pi-folder-open"
-                        [accessibleName]="'Abrir ' + processo.nome"
-                        tooltip="Abrir processo seletivo"
-                        [link]="['/processo-seletivo', processo.id]"
-                      />
+                      @if (podeConfigurarProcesso()) {
+                        <ui-icon-button
+                          icon="pi-folder-open"
+                          [accessibleName]="'Abrir ' + processo.nome"
+                          tooltip="Abrir processo seletivo"
+                          [link]="['/processo-seletivo', processo.id]"
+                        />
+                      }
+                      @if (!foiPublicado(processo.status) && !podeConfigurarProcesso()) {
+                        <span>Inscrições disponíveis após a publicação</span>
+                      }
                       @if (foiPublicado(processo.status)) {
-                        <ui-icon-button
-                          icon="pi-file"
-                          [accessibleName]="'Publicações de ' + processo.nome"
-                          tooltip="Publicações do processo"
-                          [link]="['/processo-seletivo', processo.id, 'publicacoes']"
-                        />
-                        <ui-icon-button
-                          icon="pi-file-import"
-                          [accessibleName]="'Notas do ENEM de ' + processo.nome"
-                          tooltip="Notas do ENEM do processo"
-                          [link]="['/processo-seletivo', processo.id, 'notas-do-enem']"
-                        />
+                        @if (podeConfigurarProcesso()) {
+                          <ui-icon-button
+                            icon="pi-file"
+                            [accessibleName]="'Publicações de ' + processo.nome"
+                            tooltip="Publicações do processo"
+                            [link]="['/processo-seletivo', processo.id, 'publicacoes']"
+                          />
+                          <ui-icon-button
+                            icon="pi-file-import"
+                            [accessibleName]="'Notas do ENEM de ' + processo.nome"
+                            tooltip="Notas do ENEM do processo"
+                            [link]="['/processo-seletivo', processo.id, 'notas-do-enem']"
+                          />
+                        }
+                        @if (podeConsultarInscricoes()) {
+                          <ui-icon-button
+                            icon="pi-users"
+                            [accessibleName]="'Inscrições de ' + processo.nome"
+                            tooltip="Inscrições do processo"
+                            [link]="['/processo-seletivo', processo.id, 'inscricoes']"
+                          />
+                        }
                       }
                     </td>
                   </tr>
@@ -210,7 +225,7 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
             heading="Nenhum processo seletivo cadastrado"
             description="Cadastre um processo seletivo para iniciar sua configuração."
           >
-            @if (podeCadastrarProcesso()) {
+            @if (podeConfigurarProcesso()) {
               <a class="btn btn--primary" routerLink="/processo-seletivo/novo">Novo Processo</a>
             }
           </ui-empty-state>
@@ -260,11 +275,16 @@ export class ProcessosSeletivosListaPage {
   protected readonly nextCursor = computed(() => this.cursores().next);
 
   /**
-   * O atalho só aparece para quem a rota admite — sem isso, um gestor clicaria
-   * em "Novo Processo" para cair em `/acesso-negado`.
+   * As ações que configuram o processo (novo, abrir, publicações, notas do ENEM) só aparecem para
+   * quem as rotas admitem — sem isso, a pessoa clicaria para cair em `/acesso-negado`.
    */
-  protected readonly podeCadastrarProcesso = computed(() =>
+  protected readonly podeConfigurarProcesso = computed(() =>
     this.permissoes.tem(PERMISSAO.selecao.processosConfigurar),
+  );
+
+  /** A entrada das inscrições do processo só aparece a quem a rota admite. */
+  protected readonly podeConsultarInscricoes = computed(() =>
+    this.permissoes.tem(PERMISSAO.selecao.inscricoesConsultar),
   );
 
   constructor() {

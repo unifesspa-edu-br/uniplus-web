@@ -9,7 +9,7 @@ export class InscricaoPage {
     this.heading = page.getByRole('heading', { level: 1 });
   }
 
-  async goto(): Promise<void> {
-    await this.page.goto('/inscricoes');
+  async goto(processoId: string): Promise<void> {
+    await this.page.goto(`/processo-seletivo/${processoId}/inscricoes`);
   }
 }

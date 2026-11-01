@@ -67,7 +67,7 @@ describe('LayoutComponent — navegação por permissão', () => {
     expect(rotulosDeNavegacao().join(' | ')).toBe('Processo seletivo');
 
     concedidas.set(['selecao:inscricoes:consultar']);
-    expect(rotulosDeNavegacao().join(' | ')).toBe('Inscrições');
+    expect(rotulosDeNavegacao().join(' | ')).toBe('Processo seletivo');
 
     concedidas.set(['selecao:processos:acompanhar']);
     expect(rotulosDeNavegacao().join(' | ')).toBe('Painel de processos | Homologação');
@@ -109,7 +109,7 @@ describe('LayoutComponent — navegação por permissão', () => {
       expect(rotulosDeNavegacao(menuPrincipal)).toEqual(['Painel de processos']);
     });
 
-    it('tira Inscrições e Homologação do menu e não cria entrada de Notas nem Classificação', () => {
+    it('tira Homologação do menu e não cria entrada de Notas nem Classificação', () => {
       concedidas.set([
         'selecao:processos:acompanhar',
         'selecao:inscricoes:consultar',
@@ -117,7 +117,7 @@ describe('LayoutComponent — navegação por permissão', () => {
       ]);
       const rotulos = rotulosDeNavegacao().join(' | ');
 
-      expect(rotulos).not.toMatch(/Inscrições|Homologação|Notas|Classificação/);
+      expect(rotulos).not.toMatch(/Homologação|Notas|Classificação/);
     });
   });
 });

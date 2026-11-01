@@ -93,12 +93,6 @@ export class LayoutComponent {
           tela: 'processo-seletivo',
         },
         {
-          label: 'Inscrições',
-          icon: 'pi-user',
-          routerLink: '/inscricoes',
-          tela: 'inscricoes',
-        },
-        {
           label: 'Homologação',
           icon: 'pi-sitemap',
           routerLink: '/homologacao',

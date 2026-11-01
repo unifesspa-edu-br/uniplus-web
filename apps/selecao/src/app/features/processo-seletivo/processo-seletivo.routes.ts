@@ -1,8 +1,16 @@
 import { Routes } from '@angular/router';
+import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
+import { permissaoGuard } from '@uniplus/shared-auth/guards';
 import { ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { ProcessosSeletivosListaPage } from './processos-seletivos-lista.page';
 import { rascunhoNaoGravadoGuard } from './steps/shared/rascunho-nao-gravado.guard';
+
+/**
+ * A lista de processos é aberta também a quem só consulta inscrições (a guarda da rota-mãe admite as
+ * duas permissões); toda outra rota configura o processo e exige a permissão de configurar.
+ */
+const CONFIGURAR_PROCESSO = [permissaoGuard(PERMISSAO.selecao.processosConfigurar)];
 
 /**
  * As duas rotas do editor são a mesma tela: a criação acontece no meio do
@@ -29,6 +37,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
   },
   {
     path: 'novo',
+    canActivate: CONFIGURAR_PROCESSO,
     component: ProcessoSeletivoPage,
     canDeactivate: [rascunhoNaoGravadoGuard],
     data: {
@@ -40,6 +49,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
     // A simulação abre fora do editor, em nova aba: não reaproveita a tela do editor nem tem
     // rascunho a guardar.
     path: ':id/simulacao/:finalidade',
+    canActivate: CONFIGURAR_PROCESSO,
     loadComponent: () =>
       import('./simulacao/simulacao-do-processo.page').then((m) => m.SimulacaoDoProcessoPage),
     data: { breadcrumb: 'Simulação do formulário' },
@@ -48,6 +58,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
     // Publicações do processo: o que ele já publicou e a publicação de documento avulso. Fora do
     // editor, porque não há rascunho a guardar.
     path: ':id/publicacoes',
+    canActivate: CONFIGURAR_PROCESSO,
     loadComponent: () =>
       import('./publicacoes/publicacoes-do-processo.page').then((m) => m.PublicacoesDoProcessoPage),
     data: { breadcrumb: 'Publicações' },
@@ -56,12 +67,14 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
     // Notas do ENEM: o envio ao INEP e a importação do retorno. Fora do editor, porque não há
     // rascunho a guardar.
     path: ':id/notas-do-enem',
+    canActivate: CONFIGURAR_PROCESSO,
     loadComponent: () =>
       import('./notas-do-enem/notas-do-enem.page').then((m) => m.NotasDoEnemPage),
     data: { breadcrumb: 'Notas do ENEM' },
   },
   {
     path: ':id',
+    canActivate: CONFIGURAR_PROCESSO,
     component: ProcessoSeletivoPage,
     canDeactivate: [rascunhoNaoGravadoGuard],
     data: {
