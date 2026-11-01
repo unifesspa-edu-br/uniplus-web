@@ -51,6 +51,7 @@ import {
   AprovacaoDoCatalogo,
   AvisoDeNovaAprovacaoComponent,
   CLASSIFICACOES_DE_PROTECAO,
+  HistoricoDaProtecaoComponent,
   SituacaoDaAprovacaoComponent,
   SolicitacaoDaProtecaoDialogComponent,
   esvaziarSeForaDas,
@@ -142,6 +143,7 @@ interface TipoDocumentoForm {
     AvisoDeNovaAprovacaoComponent,
     ConfirmDialogComponent,
     DetalheDaProtecaoComponent,
+    HistoricoDaProtecaoComponent,
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
@@ -399,6 +401,9 @@ interface TipoDocumentoForm {
             </dl>
           </section>
           <cfg-detalhe-da-protecao [protecao]="tipo" />
+          <ng-container *authTemPermissao="permissaoDeManter">
+            <cfg-historico-da-protecao cadastro="TIPO_DOCUMENTO" [itemId]="tipo.id" />
+          </ng-container>
         </div>
         <div class="cfg-form-footer">
           <button type="button" class="btn btn--tertiary btn--rect" (click)="detalheAberto.set(false)">

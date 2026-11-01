@@ -80,6 +80,7 @@ import {
 import {
   AprovacaoDoCatalogo,
   CLASSIFICACOES_DE_PROTECAO,
+  HistoricoDaProtecaoComponent,
   SituacaoDaAprovacaoComponent,
   SolicitacaoDaProtecaoDialogComponent,
   esvaziarSeForaDas,
@@ -138,6 +139,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
     AlertComponent,
     ConfirmDialogComponent,
     DetalheDaProtecaoComponent,
+    HistoricoDaProtecaoComponent,
     DrawerComponent,
     EmptyStateComponent,
     FatoCandidatoEdicaoComponent,
@@ -426,6 +428,9 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             </section>
           }
           <cfg-detalhe-da-protecao [protecao]="fato" />
+          <ng-container *authTemPermissao="permissaoDeConsultar">
+            <cfg-historico-da-protecao cadastro="FATO" [itemId]="fato.id" />
+          </ng-container>
         </div>
         <div class="cfg-form-footer">
           <button type="button" class="btn btn--tertiary btn--rect" (click)="detalheAberto.set(false)">Fechar</button>
@@ -730,6 +735,7 @@ export class FatosCandidatoPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
+  protected readonly permissaoDeConsultar = PERMISSAO.configuracao.fatosCandidatoConsultar;
   protected readonly permissaoDeManter = PERMISSAO.configuracao.fatosCandidatoManter;
   protected readonly aprovacao = inject(AprovacaoDoCatalogo);
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;

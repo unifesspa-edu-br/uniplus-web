@@ -49,6 +49,7 @@ describe('FatosCandidatoPage', () => {
   /** Atende a lista do que aguarda a proteção de dados; os testes que não a inspecionam a deixam vazia. */
   function atenderPendencias(itens: readonly unknown[] = []): void {
     for (const req of controller.match((r) => r.url === PROTECAO).filter((pedido) => !pedido.cancelled)) req.flush(itens);
+    for (const req of controller.match((r) => r.url.endsWith('/protecao/atos')).filter((pedido) => !pedido.cancelled)) req.flush([]);
   }
 
   afterEach(() => {
@@ -169,6 +170,64 @@ describe('FatosCandidatoPage', () => {
       expect(texto).toContain('Execução de políticas públicas');
       expect(texto).toContain('Aprovada');
       expect(host.querySelector('dialog[aria-label="Detalhe do fato do candidato"] input, dialog[aria-label="Detalhe do fato do candidato"] textarea')).toBeNull();
+    });
+
+    describe('histórico da proteção', () => {
+      const ATOS = `${LISTA}/${fatoCategorico.id}/protecao/atos`;
+      const atoDoFato = {
+        ato: 'REPROVACAO',
+        instante: '2026-10-31T13:00:00Z',
+        atorNome: 'Betina Albuquerque',
+        classificacaoProtecao: 'PESSOAL',
+        hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+        finalidadeTratamento: 'Conferir a renda.',
+        classificacaoRecomendada: null,
+        justificativa: 'A renda familiar é dado sensível.',
+      };
+      const secao = (host: HTMLElement): string =>
+        (host.querySelector('dialog[aria-label="Detalhe do fato do candidato"]')?.textContent ?? '').replace(/\s+/gu, ' ');
+
+      it('lê os atos só ao abrir o drawer e os mostra a quem consulta', async () => {
+        concedidas.set(['configuracao:fatos-candidato:consultar']);
+        const host = await abrir();
+        controller.expectNone(ATOS);
+
+        (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
+        fixture.detectChanges();
+        controller.expectOne(ATOS).flush([atoDoFato]);
+        await propagar();
+        fixture.detectChanges();
+
+        expect(secao(host)).toContain('Histórico da proteção');
+        expect(secao(host)).toContain('Reprovação');
+        expect(secao(host)).toContain('31/10/2026');
+        expect(secao(host)).toContain('Betina Albuquerque');
+        expect(secao(host)).toContain('Justificativa: A renda familiar é dado sensível.');
+      });
+
+      it('sem atos diz que o item ainda não passou pela proteção de dados', async () => {
+        concedidas.set(['configuracao:fatos-candidato:consultar']);
+        const host = await abrir();
+
+        (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
+        fixture.detectChanges();
+        controller.expectOne(ATOS).flush([]);
+        await propagar();
+        fixture.detectChanges();
+
+        expect(secao(host)).toContain('Este item ainda não passou pela proteção de dados.');
+      });
+
+      it('sem a permissão de consultar não mostra a seção nem lê os atos', async () => {
+        concedidas.set([]);
+        const host = await abrir();
+
+        (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
+        fixture.detectChanges();
+
+        controller.expectNone(ATOS);
+        expect(secao(host)).not.toContain('Histórico da proteção');
+      });
     });
 
     it('mostra as regras padrão do derivado, para quem só consulta também', async () => {

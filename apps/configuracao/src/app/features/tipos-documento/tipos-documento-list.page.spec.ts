@@ -144,6 +144,9 @@ describe('TiposDocumentoListPage', () => {
 
   afterEach(() => {
     flushProtecao();
+    for (const req of controller.match((r) => r.url.endsWith('/protecao/atos'))) {
+      if (!req.cancelled) req.flush([]);
+    }
     // A recusa do aceite relê a lista; os testes que não a inspecionam a deixam vazia.
     for (const req of controller.match((r) => r.url === `${BASE}/api/configuracao/tipos-documento`)) {
       if (!req.cancelled) req.flush([]);
@@ -1018,6 +1021,69 @@ describe('TiposDocumentoListPage', () => {
       expect(painel()).toContain('Reprovada');
       expect(painel()).toContain('Justificativa: O laudo traz dado de saúde.');
       expect(painel()).not.toContain('Classificação recomendada');
+    });
+
+    describe('histórico da proteção', () => {
+      const ATOS = `${BASE}/api/configuracao/admin/tipos-documento/${rgSeed.id}/protecao/atos`;
+      const ato = (extra: object) => ({
+        ato: 'SOLICITACAO',
+        instante: '2026-10-30T15:00:00Z',
+        atorNome: 'Isabella Moura',
+        classificacaoProtecao: 'PESSOAL',
+        hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+        finalidadeTratamento: 'Conferir o documento do candidato.',
+        classificacaoRecomendada: null,
+        justificativa: null,
+        ...extra,
+      });
+
+      it('lê os atos só ao abrir o drawer e os mostra em ordem', async () => {
+        await flushLista([rgSeed], [item(rgSeed, { situacao: 'APROVADA' })]);
+        fixture.detectChanges();
+        controller.expectNone(ATOS);
+
+        alvo().click();
+        fixture.detectChanges();
+        controller.expectOne(ATOS).flush([
+          ato({}),
+          ato({ ato: 'AJUSTE_RECOMENDADO', atorNome: 'Caroline Ribeiro', classificacaoRecomendada: 'SENSIVEL', justificativa: 'Há dado de saúde.' }),
+          ato({ ato: 'ACEITE' }),
+        ]);
+        await propagate();
+        fixture.detectChanges();
+
+        const texto = painel();
+        expect(texto).toContain('Histórico da proteção');
+        expect(texto.indexOf('Solicitação')).toBeLessThan(texto.indexOf('Ajuste recomendado'));
+        expect(texto.indexOf('Ajuste recomendado')).toBeLessThan(texto.indexOf('Aceite da recomendação'));
+        expect(texto).toContain('Caroline Ribeiro');
+        expect(texto).toContain('Justificativa: Há dado de saúde.');
+      });
+
+      it('sem atos diz que o item ainda não passou pela proteção de dados', async () => {
+        await flushLista([rgSeed], [item(rgSeed, { situacao: 'PENDENTE' })]);
+        fixture.detectChanges();
+
+        alvo().click();
+        fixture.detectChanges();
+        controller.expectOne(ATOS).flush([]);
+        await propagate();
+        fixture.detectChanges();
+
+        expect(painel()).toContain('Este item ainda não passou pela proteção de dados.');
+      });
+
+      it('sem a permissão de manter não mostra a seção nem lê os atos', async () => {
+        concedidas.set([]);
+        await flushLista([rgSeed], [item(rgSeed, { situacao: 'APROVADA' })]);
+        fixture.detectChanges();
+
+        alvo().click();
+        fixture.detectChanges();
+
+        controller.expectNone(ATOS);
+        expect(painel()).not.toContain('Histórico da proteção');
+      });
     });
 
     it('sem a permissão de manter, só consulta e fecha', async () => {
