@@ -103,7 +103,7 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
       </div>
 
       @if (itens().length > 0) {
-        <div class="table-responsive">
+        <div class="table-responsive table-responsive--acoes-fixas" role="region" tabindex="0" aria-label="Itens aguardando a decisão">
           <table>
             <caption class="sr-only">
               Itens do catálogo aguardando a decisão da proteção de dados, com a proteção declarada de cada um
@@ -115,7 +115,7 @@ const ITEM_FORA_DE_SOLICITACAO = 'uniplus.configuracao.protecao_do_catalogo.item
                 <th scope="col">Classificação</th>
                 <th scope="col">Hipótese legal</th>
                 <th scope="col">Finalidade</th>
-                <th scope="col"><span class="sr-only">Ações</span></th>
+                <th scope="col" class="table-responsive__actions"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody>

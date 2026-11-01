@@ -227,7 +227,7 @@ interface TipoDocumentoForm {
       <ui-lookup-alert [falhas]="lookupsComFalha()" />
 
       @if (documentosFiltrados().length > 0) {
-        <div class="table-responsive">
+        <div class="table-responsive table-responsive--acoes-fixas" role="region" tabindex="0" aria-label="Lista de tipos de documento">
           <table>
             <caption class="sr-only">
               Tipos de documento, com categoria, formatos aceitos, tamanho máximo de arquivo e situação da proteção de dados
@@ -240,7 +240,7 @@ interface TipoDocumentoForm {
                 <th scope="col">Formatos aceitos</th>
                 <th scope="col">Tam. máx.</th>
                 <th scope="col">Proteção de dados</th>
-                <th scope="col"><span class="sr-only">Ações</span></th>
+                <th scope="col" class="table-responsive__actions"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody>
