@@ -118,6 +118,63 @@ const PENDENCIAS = [
 
 const SOLICITADOS = PENDENCIAS.map((item) => ({ ...item, aprovacao: SOLICITADA }));
 
+const ATO = { classificacaoRecomendada: null, justificativa: null, ...PROTECAO };
+
+/** Os atos de cada item, em ordem cronológica, com as personas fictícias do portal. */
+const ATOS_DO_TIPO = [
+  { ato: 'SOLICITACAO', instante: '2026-10-29T15:00:00Z', atorNome: 'Isabella Priscila Figueiredo', ...ATO, classificacaoProtecao: 'INTERNO' },
+  {
+    ato: 'AJUSTE_RECOMENDADO',
+    instante: '2026-10-30T13:30:00Z',
+    atorNome: 'Caroline Stefany Jesus',
+    ...ATO,
+    classificacaoProtecao: 'INTERNO',
+    classificacaoRecomendada: 'PESSOAL',
+    justificativa: 'O laudo identifica o candidato e traz dado de saúde.',
+  },
+  { ato: 'ACEITE', instante: '2026-10-31T10:15:00Z', atorNome: 'Isabella Priscila Figueiredo', ...ATO, classificacaoProtecao: 'PESSOAL' },
+];
+
+const ATOS_DO_FATO = [
+  { ato: 'SOLICITACAO', instante: '2026-10-28T14:00:00Z', atorNome: 'Isabella Priscila Figueiredo', ...ATO },
+  {
+    ato: 'REPROVACAO',
+    instante: '2026-10-29T09:20:00Z',
+    atorNome: 'Betina Marina Valentina das Neves',
+    ...ATO,
+    justificativa: 'A renda familiar bruta é dado pessoal que exige a finalidade declarada com mais precisão.',
+  },
+  { ato: 'SOLICITACAO', instante: '2026-10-30T16:45:00Z', atorNome: 'Isabella Priscila Figueiredo', ...ATO },
+];
+
+const DECISOES = [
+  {
+    cadastro: 'FATO',
+    itemId: FATOS[1].id,
+    itemCodigo: FATOS[1].codigo,
+    itemNome: FATOS[1].nome,
+    ...ATOS_DO_FATO[1],
+  },
+  {
+    cadastro: 'TIPO_DOCUMENTO',
+    itemId: TIPOS[1].id,
+    itemCodigo: TIPOS[1].codigo,
+    itemNome: TIPOS[1].nome,
+    ...ATOS_DO_TIPO[1],
+  },
+  {
+    cadastro: 'FATO',
+    itemId: FATOS[0].id,
+    itemCodigo: FATOS[0].codigo,
+    itemNome: FATOS[0].nome,
+    ato: 'APROVACAO',
+    instante: '2026-10-27T11:00:00Z',
+    atorNome: 'Caroline Stefany Jesus',
+    ...ATO,
+    classificacaoProtecao: 'SENSIVEL',
+  },
+];
+
 async function json(route: Route, body: unknown): Promise<void> {
   if (route.request().method() === 'OPTIONS') {
     await route.fulfill({ status: 204, headers: CORS_HEADERS });
@@ -132,12 +189,37 @@ async function mockApi(page: Page, situacaoDaFila: 'PENDENTE' | 'SOLICITADA'): P
   await page.route(/\/api\/configuracao\/admin\/fatos-candidato(\?.*)?$/, (route) => json(route, FATOS));
   await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, (route) => json(route, []));
   await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (route) => json(route, []));
+  await page.route(/\/api\/configuracao\/admin\/tipos-documento\/[^/?]+\/protecao\/atos$/, (route) => json(route, ATOS_DO_TIPO));
+  await page.route(/\/api\/configuracao\/admin\/fatos-candidato\/[^/?]+\/protecao\/atos$/, (route) => json(route, ATOS_DO_FATO));
+  await page.route(/\/api\/configuracao\/admin\/protecao-do-catalogo\/decisoes(\?.*)?$/, async (route) => {
+    if (route.request().method() === 'OPTIONS') return json(route, null);
+    const url = new URL(route.request().url());
+    const atos = url.searchParams.getAll('ato');
+    const cadastro = url.searchParams.get('cadastro');
+    const busca = (url.searchParams.get('busca') ?? '').toLowerCase();
+    const lista = DECISOES.filter(
+      (d) =>
+        (atos.length === 0 || atos.includes(d.ato)) &&
+        (cadastro === null || d.cadastro === cadastro) &&
+        d.itemNome.toLowerCase().includes(busca),
+    );
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: {
+        ...CORS_HEADERS,
+        'access-control-expose-headers': 'Link',
+        Link: '<http://localhost:5000/api/configuracao/admin/protecao-do-catalogo/decisoes?cursor=PROX&direction=next>; rel="next"',
+      },
+      body: JSON.stringify(lista),
+    });
+  });
   await page.route(/\/api\/configuracao\/admin\/protecao-do-catalogo\/(tipos-documento|fatos)\/[^/?]+$/, (route) => {
     const fato = route.request().url().includes('/fatos/');
     const item = PENDENCIAS.find((p) => route.request().url().endsWith(p.id)) ?? PENDENCIAS[0];
     const detalhe = fato
-      ? { ...item, aprovacao: SOLICITADA, descricao: 'Soma da renda mensal bruta dos membros da família.', tipoDocumento: null, fato: { dominio: 'NUMERICO', cardinalidade: 'ESCALAR', sistema: false, componenteExibicao: 'MOEDA', valores: [] } }
-      : { ...item, aprovacao: SOLICITADA, descricao: 'Laudo que complementa o pedido de atendimento especializado.', fato: null, tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf,jpg,png,tiff', tamanhoMaximoMb: 10 } };
+      ? { ...item, atos: ATOS_DO_FATO, aprovacao: SOLICITADA, descricao: 'Soma da renda mensal bruta dos membros da família.', tipoDocumento: null, fato: { dominio: 'NUMERICO', cardinalidade: 'ESCALAR', sistema: false, componenteExibicao: 'MOEDA', valores: [] } }
+      : { ...item, atos: ATOS_DO_TIPO, aprovacao: SOLICITADA, descricao: 'Laudo que complementa o pedido de atendimento especializado.', fato: null, tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf,jpg,png,tiff', tamanhoMaximoMb: 10 } };
     return json(route, detalhe);
   });
   await page.route(/\/api\/configuracao\/admin\/protecao-do-catalogo(\?.*)?$/, (route) => {
@@ -382,6 +464,119 @@ test.describe('Listas do catálogo — linha clicável e detalhe no drawer', () 
     await expect(ajuste.getByRole('combobox', { name: 'Classificação recomendada' })).toBeVisible();
     await expect(ajuste.getByRole('textbox', { name: 'Justificativa' })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('protecao-recomendar-ajuste.png') });
+  });
+
+  test('Tipo de Documento: o drawer mostra o histórico da proteção em ordem, com quem agiu e a justificativa', async ({ page }, testInfo) => {
+    await page.goto('/tipos-documento');
+    await page.getByRole('button', { name: 'Ver o detalhe de Laudo médico complementar', exact: true }).click();
+    const drawer = page.getByRole('dialog', { name: 'Detalhe do tipo de documento' });
+    const secao = drawer.locator('section', { has: page.getByRole('heading', { name: 'Histórico da proteção', level: 3 }) });
+    await expect(secao.locator('.cfg-atos__item')).toHaveCount(3);
+    await expect(secao.locator('.cfg-atos__item').nth(0)).toContainText('Solicitação');
+    await expect(secao.locator('.cfg-atos__item').nth(1)).toContainText('Ajuste recomendado');
+    await expect(secao.locator('.cfg-atos__item').nth(1)).toContainText('Caroline Stefany Jesus');
+    await expect(secao.locator('.cfg-atos__item').nth(1)).toContainText('Classificação recomendada: Pessoal');
+    await expect(secao.locator('.cfg-atos__item').nth(1)).toContainText('O laudo identifica o candidato e traz dado de saúde.');
+    await expect(secao.locator('.cfg-atos__item').nth(2)).toContainText('Aceite da recomendação');
+    await expect(secao.locator('.cfg-atos__item').nth(2)).toContainText('31/10/2026');
+    await semRolagemHorizontal(page, drawer.locator('.uni-drawer__body'));
+    const axe = await runAxeWcagAA(page);
+    expect(axe.violations, JSON.stringify(axe.violations, null, 2)).toEqual([]);
+    await secao.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath('tipos-documento-historico.png') });
+  });
+
+  test('Fato do Candidato: o drawer mostra o histórico, inclusive a reprovação que a correção não apagou', async ({ page }, testInfo) => {
+    await page.goto('/fatos-candidato');
+    await page.getByRole('button', { name: 'Ver o detalhe de Renda familiar bruta', exact: true }).click();
+    const drawer = page.getByRole('dialog', { name: 'Detalhe do fato do candidato' });
+    const secao = drawer.locator('section', { has: page.getByRole('heading', { name: 'Histórico da proteção', level: 3 }) });
+    await expect(secao.locator('.cfg-atos__item')).toHaveCount(3);
+    await expect(secao.locator('.cfg-atos__item').nth(1)).toContainText('Reprovação');
+    await expect(secao.locator('.cfg-atos__item').nth(1)).toContainText('Betina Marina Valentina das Neves');
+    await expect(secao.locator('.cfg-atos__item').nth(1)).toContainText('Justificativa: A renda familiar bruta');
+    await semRolagemHorizontal(page, drawer.locator('.uni-drawer__body'));
+    const axe = await runAxeWcagAA(page);
+    expect(axe.violations, JSON.stringify(axe.violations, null, 2)).toEqual([]);
+    await secao.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath('fatos-historico.png') });
+  });
+
+  test('Proteção de Dados do Catálogo: abas, filtros na URL e lista de decisões de uma só linha', async ({ page }, testInfo) => {
+    await page.goto('/protecao-do-catalogo');
+    const abas = page.getByRole('group', { name: 'Mostrar' });
+    await expect(abas.getByRole('button', { name: 'Aguardando decisão' })).toHaveAttribute('aria-pressed', 'true');
+    await abas.getByRole('button', { name: 'Decisões' }).click();
+    await expect(page).toHaveURL(/[?&]aba=decisoes/u);
+    await expect(page.getByRole('heading', { name: 'Decisões registradas', level: 2 })).toBeVisible();
+
+    await conferirLista(
+      page,
+      testInfo,
+      ['Item', 'Cadastro', 'Decisão', 'Sensibilidade conferida', 'Data'],
+      'altura-das-linhas-decisoes',
+      false,
+    );
+    await expect(page.locator('.panel tbody tr')).toHaveCount(3);
+
+    // Os filtros ficam na URL e a lista os respeita; o bloco recolhido resume os ativos.
+    await page.getByRole('button', { name: /^Filtros/u }).click();
+    await page.getByRole('button', { name: 'Reprovado', exact: true }).click();
+    await expect(page).toHaveURL(/ato=REPROVACAO/u);
+    await expect(page.locator('.panel tbody tr')).toHaveCount(1);
+    await expect(page.locator('.panel tbody')).toContainText('Renda familiar bruta');
+    await expect(page.getByRole('button', { name: 'Reprovado', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Fato do candidato', exact: true }).click();
+    await expect(page).toHaveURL(/cadastro=FATO/u);
+    await expect(page.getByLabel('Decidido a partir de')).toBeVisible();
+    await expect(page.getByLabel('Decidido até')).toBeVisible();
+    await expect(page.getByLabel('Só as minhas')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação das decisões' })).toBeVisible();
+    const axe = await runAxeWcagAA(page);
+    expect(axe.violations, JSON.stringify(axe.violations, null, 2)).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath('decisoes-filtros.png') });
+
+    // Recarregar a página volta ao mesmo recorte.
+    await page.reload();
+    await expect(page.getByRole('button', { name: /^Filtros/u })).toContainText('Reprovação');
+    await page.getByRole('button', { name: /^Filtros/u }).click();
+    await expect(page.getByRole('button', { name: 'Reprovado', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.panel tbody tr')).toHaveCount(1);
+  });
+
+  test('Proteção de Dados do Catálogo: o drawer da decisão traz a proteção conferida e o histórico do item', async ({ page }, testInfo) => {
+    await page.goto('/protecao-do-catalogo?aba=decisoes');
+    await clicarNaCelula(page, page.locator('.panel tbody tr').first().locator('td[data-label="Cadastro"]'));
+    const drawer = page.getByRole('dialog', { name: 'Detalhe da decisão' });
+    await expect(drawer.getByRole('heading', { name: 'Renda familiar bruta', level: 2 })).toBeFocused();
+    await expect(drawer.getByText('Decidido por')).toBeVisible();
+    await expect(drawer.getByText('Betina Marina Valentina das Neves').first()).toBeVisible();
+    await expect(drawer.getByText('Proteção conferida')).toBeVisible();
+    await expect(drawer.getByRole('heading', { name: 'Histórico do item', level: 3 })).toBeVisible();
+    await expect(drawer.locator('.cfg-atos__item')).toHaveCount(3);
+    await semRolagemHorizontal(page, drawer.locator('.uni-drawer__body'));
+    const axe = await runAxeWcagAA(page);
+    expect(axe.violations, JSON.stringify(axe.violations, null, 2)).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath('decisoes-drawer.png') });
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Ver a decisão sobre Renda familiar bruta', exact: true })).toBeFocused();
+  });
+
+  test('cartão a 320 px: as decisões e o histórico não estouram a largura', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto('/protecao-do-catalogo?aba=decisoes');
+    await expect(page.getByRole('button', { name: 'Ver a decisão sobre Renda familiar bruta', exact: true })).toBeVisible();
+    await semRolagemHorizontal(page, page.locator('html'));
+    await page.screenshot({ path: testInfo.outputPath('320-decisoes.png') });
+    await clicarNaCelula(page, page.locator('.panel tbody tr').first().locator('td').nth(1));
+    const drawer = page.getByRole('dialog', { name: 'Detalhe da decisão' });
+    await expect(drawer).toBeVisible();
+    await expect(drawer.locator('.cfg-atos__item')).toHaveCount(3);
+    const largura = await drawer.locator('.uni-drawer__panel').evaluate((el) => el.getBoundingClientRect().width);
+    expect(largura).toBeLessThanOrEqual(320);
+    await semRolagemHorizontal(page, drawer.locator('.uni-drawer__body'));
+    await page.screenshot({ path: testInfo.outputPath('320-decisoes-drawer.png') });
   });
 
   test('Enviar solicitação: o diálogo largo cabe sem rolagem horizontal e sem código técnico', async ({ page }, testInfo) => {
