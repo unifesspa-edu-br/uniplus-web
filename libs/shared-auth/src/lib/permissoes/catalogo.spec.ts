@@ -16,4 +16,21 @@ describe('PERMISSAO.selecao', () => {
       'selecao:documentos-sensiveis:consultar',
     ]);
   });
+
+  it('declara a consulta de dado por classe e a revelação de identificador, sem a revelação de CPF antiga', () => {
+    expect([
+      PERMISSAO.selecao.dadosPublicosConsultar,
+      PERMISSAO.selecao.dadosInternosConsultar,
+      PERMISSAO.selecao.dadosPessoaisConsultar,
+      PERMISSAO.selecao.dadosSensiveisConsultar,
+      PERMISSAO.selecao.dadosIdentificadoresRevelar,
+    ]).toEqual([
+      'selecao:dados-publicos:consultar',
+      'selecao:dados-internos:consultar',
+      'selecao:dados-pessoais:consultar',
+      'selecao:dados-sensiveis:consultar',
+      'selecao:dados-identificadores:revelar',
+    ]);
+    expect(Object.values(PERMISSAO.selecao)).not.toContain('selecao:inscricoes:revelar-cpf');
+  });
 });
