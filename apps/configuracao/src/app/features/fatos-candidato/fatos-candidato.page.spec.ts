@@ -537,7 +537,7 @@ describe('FatosCandidatoPage', () => {
     it('diz a situação como texto e, na negativa, a classificação recomendada, inclusive no fato de sistema', async () => {
       const host = await carregarCom([{ ...fatoCom('NEGADA', 'SENSIVEL'), sistema: true }]);
 
-      expect(host.querySelector('tbody')?.textContent).toContain('Negada pela proteção de dados');
+      expect(host.querySelector('tbody')?.textContent).toContain('Negada');
       expect(host.querySelector('tbody')?.textContent).not.toContain('Classificação recomendada');
       abrirDetalhe(host);
       const texto = host.textContent?.replace(/\s+/gu, ' ') ?? '';

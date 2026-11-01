@@ -214,7 +214,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
       <ui-lookup-alert [falhas]="lookupsComFalha()" />
 
       @if (fatosBuscados().length > 0) {
-        <div class="table-responsive table-responsive--acoes-fixas" role="region" tabindex="0" aria-label="Lista de fatos do candidato">
+        <div class="table-responsive table-responsive--acoes-fixas table-responsive--compacta" role="region" tabindex="0" aria-label="Lista de fatos do candidato">
           <table>
             <caption class="sr-only">Fatos do candidato, com origem, tipo de dado, situação, sensibilidade e aprovação da proteção de dados. Use o nome para abrir o detalhe.</caption>
             <thead>
@@ -246,9 +246,9 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                       <ui-tag variant="primary">Sistema</ui-tag>
                     }
                   </td>
-                  <td data-label="Origem">{{ rotulo(origens, fato.origem) }}</td>
-                  <td data-label="Tipo de dado">{{ rotulo(dominios, fato.dominio) }}</td>
-                  <td data-label="Situação">
+                  <td data-label="Origem" class="u-nowrap-desktop">{{ rotulo(origens, fato.origem) }}</td>
+                  <td data-label="Tipo de dado" class="u-nowrap-desktop">{{ rotulo(dominios, fato.dominio) }}</td>
+                  <td data-label="Situação" class="u-nowrap-desktop">
                     <ui-tag [variant]="fato.ativo ? 'success' : 'neutral'">{{ fato.ativo ? 'Ativo' : 'Desativado' }}</ui-tag>
                   </td>
                   <td data-label="Sensibilidade" class="u-nowrap-desktop">
@@ -257,7 +257,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
                   <td data-label="Aprovação" class="u-nowrap-desktop">
                     <cfg-situacao-da-aprovacao
                       [situacao]="fato.aprovacao.situacao"
-                      [comRecomendada]="false"
+                      [emLista]="true"
                     />
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
@@ -332,7 +332,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
       position="right"
     >
       @if (detalheAberto() && detalhe(); as fato) {
-        <div class="cfg-form">
+        <div class="cfg-form" role="region" tabindex="0" aria-label="Dados do fato do candidato">
           <div class="cfg-detalhe-situacoes">
             <cfg-situacao-da-aprovacao
               [situacao]="fato.aprovacao.situacao"
