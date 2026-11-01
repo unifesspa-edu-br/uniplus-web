@@ -845,6 +845,58 @@ describe('DetalheDaInscricaoPage', () => {
       expect(document.activeElement).toBe(dd('CPF')?.querySelector('.resposta__aviso'));
     });
 
+    describe('identificador que a pessoa só pode revelar', () => {
+      const SEM_VALOR: ItemDeRespostaDto = {
+        fatoCodigo: 'RG',
+        rotulo: 'RG',
+        descricao: '',
+        tipo: 'texto',
+        componente: 'identificador',
+        podeRevelar: true,
+      };
+
+      it('mostra "Não exibido" com o Revelar e, depois de revelar, o valor completo', async () => {
+        await abrir(comIdentificadores([SEM_VALOR]));
+
+        expect(dado('RG')).toBe('Não exibido Revelar');
+
+        await pedir('RG');
+        controller.expectOne(revelacao('RG')).flush({ fatoCodigo: 'RG', valor: '2345678 SSP-PA' });
+        await propagar();
+
+        expect(valorNaTela('RG')).toBe('2345678 SSP-PA');
+      });
+
+      it('volta a "Não exibido" ao ocultar o valor revelado', async () => {
+        await abrir(comIdentificadores([SEM_VALOR]));
+        await pedir('RG');
+        controller.expectOne(revelacao('RG')).flush({ fatoCodigo: 'RG', valor: '2345678 SSP-PA' });
+        await propagar();
+
+        dd('RG')?.querySelector<HTMLButtonElement>('button[aria-label="Ocultar RG"]')?.click();
+        await propagar();
+
+        expect(dado('RG')).toBe('Não exibido Revelar');
+      });
+
+      it('mostra a recusa existente no 404, sem valor', async () => {
+        await abrir(comIdentificadores([SEM_VALOR]));
+
+        await pedir('RG');
+        controller
+          .expectOne(revelacao('RG'))
+          .flush(
+            { title: 'Não encontrado', status: 404 },
+            { status: 404, statusText: 'Not Found' },
+          );
+        await propagar();
+
+        expect(dado('RG')).toContain('Não exibido');
+        expect(dado('RG')).toContain('Dado não disponível');
+        expect(host().querySelector('button[aria-label="Revelar RG"]')).toBeNull();
+      });
+    });
+
     it('anuncia o dado indisponível na mesma região viva que já estava no campo', async () => {
       await abrir(comIdentificadores());
       const regiaoAntes = dd('CPF')?.querySelector('.resposta__aviso');
