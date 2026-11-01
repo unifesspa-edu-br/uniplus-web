@@ -4592,6 +4592,13 @@ body.ui-overlay-open {
   white-space: nowrap;
 }
 @media (min-width: 1024px) {
+  /* A quebra de linha só vale com o menu aberto e estável: durante a troca de largura e com o
+     menu recolhido o rótulo fica numa linha só, senão quebra letra a letra. */
+  .admin-shell[data-sidebar-desktop='open'] .sidebar a,
+  .admin-shell[data-sidebar-desktop='open'] .sidebar__link {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
   .admin-shell[data-sidebar-desktop='closed'] .sidebar a,
   .admin-shell[data-sidebar-desktop='closed'] .sidebar__link {
     justify-content: center;
