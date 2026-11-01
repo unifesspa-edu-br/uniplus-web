@@ -2561,6 +2561,14 @@ ui-icon-button {
   font-size: var(--text-xs);
   margin-top: var(--space-1);
 }
+/* Vários valores numa célula (rótulo, situação, ação): empilham em vez de se alinhar lado a lado. */
+.table-responsive__pilha {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+}
 @media (max-width: 767px) {
   .table-responsive {
     overflow: visible;
@@ -2580,17 +2588,9 @@ ui-icon-button {
   }
   .table-responsive tbody {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-3);
   }
-  /* A linha de totais é o último cartão da pilha. Deixada como grupo de rodapé, ela
-     encolhia à largura do próprio conteúdo e saía do alinhamento dos cartões. */
-  .table-responsive tfoot {
-    margin-top: var(--space-3);
-  }
-  .table-responsive tbody tr,
-    grid-template-columns: minmax(0, 1fr);
-  .table-responsive tfoot tr {
-    background: var(--surface-card);
   /* Sem largura mínima própria, o conteúdo mais largo de uma célula alargaria a coluna do grid de
      todos os cartões. */
   .table-responsive tr,
@@ -2601,6 +2601,14 @@ ui-icon-button {
     align-items: flex-end;
     text-align: right;
   }
+  /* A linha de totais é o último cartão da pilha. Deixada como grupo de rodapé, ela
+     encolhia à largura do próprio conteúdo e saía do alinhamento dos cartões. */
+  .table-responsive tfoot {
+    margin-top: var(--space-3);
+  }
+  .table-responsive tbody tr,
+  .table-responsive tfoot tr {
+    background: var(--surface-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
     padding: var(--space-4) var(--space-5);

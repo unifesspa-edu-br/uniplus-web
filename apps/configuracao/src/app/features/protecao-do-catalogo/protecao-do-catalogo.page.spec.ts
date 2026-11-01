@@ -94,18 +94,65 @@ describe('ProtecaoDoCatalogoPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  const botao = (tela: HTMLElement, nome: string): HTMLButtonElement | null =>
-    tela.querySelector<HTMLButtonElement>(`td button[aria-label="${nome}"]`);
+  /** Abre o detalhe do item pelo nome na linha e devolve o botão do rodapé do drawer, ou nulo se ele não existe. */
+  const botao = (tela: HTMLElement, rotulo: string): HTMLButtonElement | null => {
+    const [acao, ...resto] = rotulo.split(' ');
+    tela.querySelector<HTMLButtonElement>(`td button[aria-label="Ver o detalhe de ${resto.join(' ')}"]`)?.click();
+    fixture.detectChanges();
+    return (
+      Array.from(tela.querySelectorAll<HTMLButtonElement>('dialog[aria-label^="Detalhe do item"] .cfg-form-footer button')).find(
+        (b) => b.textContent?.trim() === acao,
+      ) ?? null
+    );
+  };
 
   it('lista a proteção declarada de cada item que aguarda a decisão', async () => {
     const tela = await carregar([laudo, comprovante]);
 
-    const texto = tela.textContent?.replace(/\s+/gu, ' ') ?? '';
-    expect(texto).toContain('Laudo médico complementar');
+    const colunas = Array.from(tela.querySelectorAll('thead th')).map((th) => th.textContent?.trim());
+    expect(colunas).toEqual(['Cadastro', 'Item', 'Sensibilidade']);
+    const lista = tela.querySelector('.table-responsive')?.textContent?.replace(/\s+/gu, ' ') ?? '';
+    expect(lista).toContain('Laudo médico complementar');
+    expect(lista).toContain('Interno');
+    expect(lista).toContain('Fato do candidato');
+    expect(lista).not.toContain('LAUDO_MEDICO_COMPLEMENTAR');
+    expect(lista).not.toContain('Execução de políticas públicas');
+    expect(lista).not.toContain('Conferir o laudo');
+    expect(tela.querySelector('td button.btn')).toBeNull();
+    const celulas = Array.from(tela.querySelectorAll('tbody td'));
+    expect(celulas.every((td) => td.classList.contains('u-nowrap-desktop'))).toBe(true);
+  });
+
+  it('o texto de abertura é curto e não cita o rótulo interno do requisito', async () => {
+    const tela = await carregar([laudo]);
+
+    const abertura = tela.querySelector('.page-header__desc')?.textContent ?? '';
+    expect(abertura).not.toContain('UNI-REQ');
+    expect(abertura.trim().split('.').filter(Boolean)).toHaveLength(1);
+  });
+
+  it('abrir pelo nome mostra a proposta de proteção, o código ao fim e as ações da decisão', async () => {
+    const tela = await carregar([laudo]);
+    const alvo = tela.querySelector<HTMLButtonElement>('td .table-responsive__alvo');
+    expect(alvo?.tagName).toBe('BUTTON');
+    expect(alvo?.tabIndex).toBeGreaterThanOrEqual(0);
+
+    alvo?.click();
+    fixture.detectChanges();
+
+    const drawer = tela.querySelector('dialog[aria-label^="Detalhe do item"]');
+    expect(drawer?.querySelector('.uni-drawer__title')?.textContent?.trim()).toBe('Laudo médico complementar');
+    const texto = drawer?.textContent?.replace(/\s+/gu, ' ') ?? '';
+    expect(texto).toContain('Proposta de proteção');
     expect(texto).toContain('Interno');
     expect(texto).toContain('Execução de políticas públicas');
     expect(texto).toContain('Conferir o laudo do candidato com deficiência.');
-    expect(texto).toContain('Fato do candidato');
+    expect(texto).toContain('Código no sistema: LAUDO_MEDICO_COMPLEMENTAR');
+    expect(Array.from(drawer?.querySelectorAll('.cfg-form-footer button') ?? []).map((b) => b.textContent?.trim())).toEqual([
+      'Fechar',
+      'Negar',
+      'Aprovar',
+    ]);
   });
 
   it('aprovar leva a proteção conferida, com Idempotency-Key, e relê a lista', async () => {
@@ -128,6 +175,7 @@ describe('ProtecaoDoCatalogoPage', () => {
     controller.expectOne((r) => r.method === 'GET' && r.url === URL).flush([]);
     await assentar();
     expect(tela.textContent).toContain('Nenhum item aguardando a sua decisão');
+    expect(component['detalheAberto']()).toBe(false);
     expect(document.activeElement?.id).toBe('cfg-protecao-titulo');
   });
 
@@ -308,5 +356,8 @@ describe('ProtecaoDoCatalogoPage', () => {
 
     expect(botao(tela, 'Aprovar Laudo médico complementar')).toBeNull();
     expect(botao(tela, 'Negar Laudo médico complementar')).toBeNull();
+    expect(tela.querySelector('dialog[aria-label^="Detalhe do item"] .uni-drawer__title')?.textContent?.trim()).toBe(
+      'Laudo médico complementar',
+    );
   });
 });
