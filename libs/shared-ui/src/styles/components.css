@@ -2771,6 +2771,10 @@ ui-icon-button {
     animation: uni-fade-in var(--duration-base) var(--ease-emphasized);
   }
 }
+/* Variante larga: o diálogo com tabela cabe sem rolagem horizontal a 1366 px. */
+.uni-dialog--largo .uni-dialog__panel {
+  max-width: min(60rem, 100vw);
+}
 .uni-dialog__header {
   display: flex;
   align-items: flex-start;

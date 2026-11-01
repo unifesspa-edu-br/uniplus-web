@@ -107,4 +107,13 @@ describe('DialogComponent', () => {
     expect(document.activeElement).not.toBe(disparador);
     disparador.remove();
   });
+
+  it('aplica a variante larga só quando size é "largo"', () => {
+    fixture.detectChanges();
+    expect(elementoDialogo().classList.contains('uni-dialog--largo')).toBe(false);
+
+    fixture.componentRef.setInput('size', 'largo');
+    fixture.detectChanges();
+    expect(elementoDialogo().classList.contains('uni-dialog--largo')).toBe(true);
+  });
 });

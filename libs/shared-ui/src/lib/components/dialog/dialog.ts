@@ -19,6 +19,7 @@ let dialogIdSeed = 0;
     <dialog
       #dialog
       class="uni-dialog"
+      [class.uni-dialog--largo]="size() === 'largo'"
       role="dialog"
       aria-modal="true"
       [attr.aria-labelledby]="headingId"
@@ -55,6 +56,8 @@ export class DialogComponent {
   readonly visible = model<boolean>(false);
   readonly heading = input<string>('Janela');
   readonly hasFooter = input<boolean>(true);
+  /** `largo` alarga o painel para o diálogo que traz uma tabela (até 60 rem em tela larga). */
+  readonly size = input<'padrao' | 'largo'>('padrao');
 
   /**
    * Se o diálogo pode ser dispensado por quem o vê. `false` fecha os três
