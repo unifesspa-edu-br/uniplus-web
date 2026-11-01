@@ -27,6 +27,7 @@ import { CLASSIFICACOES_DE_PROTECAO, nomeDoCadastro, rotuloDe } from './protecao
     <ui-dialog
       [(visible)]="visible"
       heading="Enviar solicitação de aprovação"
+      size="largo"
       [dismissible]="!enviando()"
     >
       @if (erro()) {
@@ -34,28 +35,25 @@ import { CLASSIFICACOES_DE_PROTECAO, nomeDoCadastro, rotuloDe } from './protecao
       }
       <p id="cfg-solicitacao-descricao">
         {{ pendentes().length === 1 ? 'O item abaixo vai' : 'Os ' + pendentes().length + ' itens abaixo vão' }}
-        de uma vez para a proteção de dados, que aprova ou nega cada um. Enquanto o item não for
-        aprovado, ele não pode ser usado na configuração de um processo seletivo.
+        para a proteção de dados, que aprova, recomenda ajuste ou reprova cada um. O item que não for
+        aprovado não pode ser usado na configuração de um processo seletivo.
       </p>
       <div class="table-responsive">
         <table aria-describedby="cfg-solicitacao-descricao">
-          <caption class="sr-only">Itens que vão na solicitação, com a proteção de dados de cada um</caption>
+          <caption class="sr-only">Itens que vão na solicitação, com a sensibilidade de cada um</caption>
           <thead>
             <tr>
               <th scope="col">Cadastro</th>
               <th scope="col">Item</th>
-              <th scope="col">Classificação</th>
+              <th scope="col">Sensibilidade</th>
             </tr>
           </thead>
           <tbody>
             @for (item of pendentes(); track item.id) {
               <tr>
                 <td data-label="Cadastro">{{ cadastro(item) }}</td>
-                <td data-label="Item">
-                  {{ item.nome }}
-                  <div class="table-responsive__meta"><code>{{ item.codigo }}</code></div>
-                </td>
-                <td data-label="Classificação">{{ classificacao(item) }}</td>
+                <td data-label="Item">{{ item.nome }}</td>
+                <td data-label="Sensibilidade">{{ classificacao(item) }}</td>
               </tr>
             }
           </tbody>
