@@ -2588,8 +2588,19 @@ ui-icon-button {
     margin-top: var(--space-3);
   }
   .table-responsive tbody tr,
+    grid-template-columns: minmax(0, 1fr);
   .table-responsive tfoot tr {
     background: var(--surface-card);
+  /* Sem largura mínima própria, o conteúdo mais largo de uma célula alargaria a coluna do grid de
+     todos os cartões. */
+  .table-responsive tr,
+  .table-responsive td {
+    min-width: 0;
+  }
+  .table-responsive__pilha {
+    align-items: flex-end;
+    text-align: right;
+  }
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
     padding: var(--space-4) var(--space-5);
@@ -2607,6 +2618,7 @@ ui-icon-button {
     gap: var(--space-3);
     padding: var(--space-1) 0;
     text-align: right;
+    overflow-wrap: anywhere;
   }
   .table-responsive td::before,
   .table-responsive tbody th[scope='row'][data-label]::before {
@@ -2617,6 +2629,9 @@ ui-icon-button {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-align: left;
+    /* O rótulo herdaria o `anywhere` do valor e quebraria no meio da palavra: só o valor quebra
+       em qualquer ponto; o rótulo, se não couber, quebra entre palavras. */
+    overflow-wrap: normal;
   }
   /* th[scope="row"] SEM data-label encabeça o cartão. */
   .table-responsive tbody th[scope='row']:not([data-label]),
