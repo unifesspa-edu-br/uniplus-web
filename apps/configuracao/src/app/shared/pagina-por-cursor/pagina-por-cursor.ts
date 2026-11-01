@@ -61,6 +61,16 @@ export class PaginaPorCursor<T> {
     });
   }
 
+  /** Abandona a busca em voo e esvazia a lista, sem recusa nem carga. */
+  cancelar(): void {
+    this.assinatura?.unsubscribe();
+    this.carregando.set(false);
+    this.problema.set(null);
+    this.itens.set([]);
+    this.anterior.set(null);
+    this.proximo.set(null);
+  }
+
   private recusar(problema: ProblemDetails): void {
     this.problema.set(problema);
     this.itens.set([]);

@@ -1,8 +1,8 @@
 import { DestroyRef } from '@angular/core';
 import type { ApiResult, Cursor, CursorPagina } from '@uniplus/shared-core/http';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
-import { PaginaPorCursor } from './pagina-por-cursor';
+import { PaginaPorCursor } from '../../shared/pagina-por-cursor';
 import { ok, recusa } from './testes';
 
 const LINK =
@@ -70,5 +70,21 @@ describe('PaginaPorCursor', () => {
     expect(pagina.carregando()).toBe(false);
     expect(pagina.problema()?.title).toBe('Não foi possível carregar a lista. Tente novamente.');
     expect(pagina.itens()).toEqual([]);
+  });
+
+  it('cancelar abandona a busca em voo e esvazia a lista, sem recusa nem carga', () => {
+    const resposta = new Subject<ApiResult<readonly string[]>>();
+    const pagina = criar(vi.fn((_pagina?: CursorPagina) => resposta));
+    pagina.itens.set(['velho']);
+    pagina.carregar();
+    expect(pagina.carregando()).toBe(true);
+
+    pagina.cancelar();
+    resposta.next(ok(['atrasado'], LINK));
+
+    expect(pagina.carregando()).toBe(false);
+    expect(pagina.problema()).toBeNull();
+    expect(pagina.itens()).toEqual([]);
+    expect(pagina.proximo()).toBeNull();
   });
 });
