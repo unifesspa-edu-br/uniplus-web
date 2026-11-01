@@ -88,6 +88,19 @@ describe('EditorDeFormularioComponent', () => {
     expect(status()).toBe('“Campo B” cita “A”, que ficaria depois. Mova primeiro o campo citado.');
   });
 
+  it('o fato que aguarda a aprovação da proteção de dados aparece indisponível, com o motivo, e não se escolhe', () => {
+    fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), { ...fato('RENDA'), protecaoAprovada: false }]);
+    fixture.detectChanges();
+
+    const ofertados = ofertadosEm('f-etapa-S1-acrescentar');
+    expect(ofertados).toEqual(['RENDA — aguarda a aprovação da proteção de dados']);
+    expect(tela().querySelector('#f-etapa-S1-acrescentar [role="option"]')?.getAttribute('aria-disabled')).toBe('true');
+
+    escolherEm('f-etapa-S1-acrescentar', 'RENDA — aguarda a aprovação da proteção de dados');
+    acrescentarCampo();
+    expect(emitidos).toEqual([]);
+  });
+
   it('anuncia a posição nova do campo movido', () => {
     clicar('f-item-C-subir');
     fixture.detectChanges();

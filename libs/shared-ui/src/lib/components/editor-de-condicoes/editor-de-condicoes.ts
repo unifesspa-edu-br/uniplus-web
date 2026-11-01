@@ -81,7 +81,7 @@ import {
             <button
               class="btn btn--tertiary btn--sm"
               type="button"
-              [disabled]="disabled() || fatos().length === 0"
+              [disabled]="disabled() || disponiveis().length === 0"
               (click)="acrescentarCondicao(clausula.numero)"
             >
               Acrescentar condição que também precisa valer
@@ -105,7 +105,7 @@ import {
       <button
         class="btn btn--tertiary btn--sm"
         type="button"
-        [disabled]="disabled() || fatos().length === 0"
+        [disabled]="disabled() || disponiveis().length === 0"
         (click)="acrescentarAlternativa()"
       >
         Acrescentar alternativa
@@ -117,6 +117,8 @@ export class EditorDeCondicoesComponent {
   /** Todas as condições do predicado, inclusive as do recorte que o editor não mostra. */
   readonly condicoes = input.required<readonly CondicaoEmClausula[]>();
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
+  /** Os fatos que uma condição nova pode citar: o que aguarda a aprovação da proteção de dados só se mantém onde já está. */
+  protected readonly disponiveis = computed(() => this.fatos().filter((fato) => fato.aguardaProtecao !== true));
   /** Prefixo dos ids dos controles — único na tela, para os rótulos apontarem para eles. */
   readonly idBase = input.required<string>();
   readonly disabled = input<boolean>(false);
@@ -148,7 +150,7 @@ export class EditorDeCondicoesComponent {
 
   /** Acrescenta uma condição à alternativa — ela precisa valer JUNTO com as outras de lá. */
   protected acrescentarCondicao(clausula: number): void {
-    const [primeiro] = this.fatos();
+    const [primeiro] = this.disponiveis();
     if (primeiro === undefined) return;
 
     this.condicoesChange.emit(comCondicaoEm(this.condicoes(), clausula, primeiro));
@@ -159,7 +161,7 @@ export class EditorDeCondicoesComponent {
    * combinação.
    */
   protected acrescentarAlternativa(): void {
-    const [primeiro] = this.fatos();
+    const [primeiro] = this.disponiveis();
     if (primeiro === undefined) return;
 
     this.condicoesChange.emit(comClausulaEm(this.condicoes(), primeiro, this.fatoDoRecorte()));

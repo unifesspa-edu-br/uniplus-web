@@ -245,6 +245,72 @@ describe('ComboboxComponent', () => {
     expect(campo().value).toBe('');
   });
 
+  describe('opção indisponível', () => {
+    const COM_INDISPONIVEL: readonly UiComboboxGroup[] = [
+      {
+        label: 'Identificação',
+        options: [
+          { value: 'rg', label: 'RG' },
+          { value: 'cnh', label: 'CNH — aguarda a aprovação da proteção de dados', disabled: true },
+          { value: 'cpf', label: 'CPF' },
+        ],
+      },
+    ];
+
+    beforeEach(() => {
+      fixture.componentInstance.grupos.set(COM_INDISPONIVEL);
+      fixture.detectChanges();
+      campo().dispatchEvent(new Event('focus'));
+      fixture.detectChanges();
+    });
+
+    function opcao(rotulo: string): HTMLElement {
+      return Array.from(nativo.querySelectorAll<HTMLElement>('[role="option"]')).find((o) =>
+        o.textContent?.includes(rotulo),
+      ) as HTMLElement;
+    }
+
+    it('aparece com o motivo e anunciada como desabilitada', () => {
+      expect(opcao('CNH').textContent).toContain('aguarda a aprovação da proteção de dados');
+      expect(opcao('CNH').getAttribute('aria-disabled')).toBe('true');
+      expect(opcao('RG').getAttribute('aria-disabled')).toBeNull();
+    });
+
+    it('a contagem anunciada só conta o que se pode escolher', () => {
+      expect(nativo.querySelector('[role="status"]')?.textContent?.trim()).toBe('2 opções disponíveis.');
+    });
+
+    it('o clique nela não escolhe', () => {
+      opcao('CNH').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.escolhido()).toBe('');
+    });
+
+    it('Enter não escolhe a opção que ficou indisponível depois de apontada', () => {
+      campo().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      campo().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      fixture.componentInstance.grupos.set([
+        { label: 'Identificação', options: [{ value: 'rg', label: 'RG' }, { value: 'cpf', label: 'CPF — aguarda', disabled: true }] },
+      ]);
+      fixture.detectChanges();
+
+      campo().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.escolhido()).toBe('');
+    });
+
+    it('as setas pulam a opção indisponível', () => {
+      campo().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      campo().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      campo().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.escolhido()).toBe('cpf');
+    });
+  });
+
   describe('múltipla escolha', () => {
     @Component({
       standalone: true,
@@ -344,6 +410,41 @@ describe('ComboboxComponent', () => {
       teclarNoMulti('Escape');
 
       expect(campoMulti().value).toBe('Contracheque');
+    });
+
+    it('a opção marcada que ficou desabilitada continua removível, com o mouse e com o teclado', () => {
+      multi.componentInstance.grupos.set([
+        {
+          label: 'Modalidades',
+          options: [
+            { value: 'ac', label: 'Ampla concorrência' },
+            { value: 'ppi', label: 'PPI — aguarda a aprovação da proteção de dados', disabled: true },
+          ],
+        },
+      ]);
+      multi.componentInstance.escolhidas.set(['ppi']);
+      multi.detectChanges();
+      abrir();
+
+      const opcao = [...nativoMulti.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent?.includes('PPI'));
+      expect(opcao?.getAttribute('aria-disabled')).toBeNull();
+
+      campoMulti().dispatchEvent(new KeyboardEvent('keydown', { key: 'End' }));
+      campoMulti().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      multi.detectChanges();
+
+      expect(multi.componentInstance.escolhidas()).toEqual([]);
+    });
+
+    it('a opção desabilitada que não está marcada segue fora do alcance no modo múltiplo', () => {
+      multi.componentInstance.grupos.set([
+        { label: 'Modalidades', options: [{ value: 'ppi', label: 'PPI — aguarda', disabled: true }] },
+      ]);
+      multi.detectChanges();
+      abrir();
+      marcar('PPI — aguarda');
+
+      expect(multi.componentInstance.escolhidas()).toEqual([]);
     });
 
     it('clicar de novo desmarca', () => {
