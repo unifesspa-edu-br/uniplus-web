@@ -62,6 +62,116 @@
         ]
       }
     },
+    "/api/autorizacao/permissoes": {
+      "get": {
+        "tags": [
+          "Autoriza\u00E7\u00E3o"
+        ],
+        "summary": "Lista o cat\u00E1logo de permiss\u00F5es",
+        "description": "Permiss\u00F5es da plataforma agrupadas por m\u00F3dulo e pelo alvo de cada permiss\u00E3o, com c\u00F3digo, nome, descri\u00E7\u00E3o e sensibilidade. Exige a permiss\u00E3o autorizacao:permissoes:consultar-catalogo.",
+        "operationId": "ConsultarCatalogoDePermissoes",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.permissao-catalogo.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModuloDoCatalogoResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/autorizacao/permissoes/efetivas": {
+      "get": {
+        "tags": [
+          "Autoriza\u00E7\u00E3o"
+        ],
+        "summary": "Lista as permiss\u00F5es efetivas do usu\u00E1rio logado",
+        "description": "C\u00F3digo e nome de cada permiss\u00E3o que o token concede. Informa o que pode aparecer na interface; a decis\u00E3o de acesso continua sendo tomada em cada requisi\u00E7\u00E3o.",
+        "operationId": "ConsultarPermissoesEfetivas",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.permissao-efetiva.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PermissaoEfetivaResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/selecao/processos-seletivos/{processoSeletivoId}/atos": {
       "post": {
         "tags": [
@@ -3639,6 +3749,447 @@
         ]
       }
     },
+    "/api/selecao/processos-seletivos/{id}/inscricoes": {
+      "get": {
+        "tags": [
+          "InscricoesDoProcesso"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Cursor opaco AES-GCM emitido pelo servidor no header Link da p\u00E1gina anterior. Ausente na primeira p\u00E1gina. Cliente trata como string opaca \u2014 n\u00E3o decodificar (ADR-0026, ADR-0031).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Tamanho m\u00E1ximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026).",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Dire\u00E7\u00E3o de navega\u00E7\u00E3o keyset (ADR-0089): \u0027next\u0027 (default) avan\u00E7a, \u0027prev\u0027 retrocede. Normalmente o cliente apenas segue o cursor opaco do rel=\u0022prev\u0022/rel=\u0022next\u0022 do header Link \u2014 que j\u00E1 inclui o direction correto.",
+            "schema": {
+              "enum": [
+                "next",
+                "prev"
+              ],
+              "type": "string",
+              "default": "next"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "Link": {
+                "description": "Links de navega\u00E7\u00E3o da pagina\u00E7\u00E3o (RFC 5988/8288). rel=\u0022self\u0022 sempre presente; rel=\u0022prev\u0022/rel=\u0022next\u0022 quando h\u00E1 p\u00E1gina anterior/pr\u00F3xima (ADR-0089). Cada link carrega o cursor opaco no par\u00E2metro \u0060cursor\u0060 e o \u0060direction\u0060 correspondente (ADR-0026).",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Page-Size": {
+                "description": "Quantidade de itens retornados na p\u00E1gina atual (sempre menor ou igual ao limit efetivo).",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "content": {
+              "application/vnd.uniplus.inscricao-do-processo.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InscricaoDoProcessoDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-paginated": true
+      }
+    },
+    "/api/selecao/processos-seletivos/{id}/inscricoes/{inscricaoId}": {
+      "get": {
+        "tags": [
+          "InscricoesDoProcesso"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "inscricaoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.inscricao-administrativa.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/InscricaoAdministrativaDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/selecao/processos-seletivos/{id}/inscricoes/{inscricaoId}/campos/{fatoCodigo}/revelacao": {
+      "post": {
+        "tags": [
+          "InscricoesDoProcesso"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "inscricaoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "fatoCodigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Z][A-Z0-9_]{0,59}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "ocorrencia",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.campo-revelado-da-inscricao.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampoReveladoDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/selecao/processos-seletivos/{id}/inscricoes/{inscricaoId}/documentos/arquivos/{arquivoId}/acesso": {
+      "get": {
+        "tags": [
+          "InscricoesDoProcesso"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "inscricaoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "arquivoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.acesso-arquivo-da-inscricao.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcessoArquivoDoCandidatoDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/selecao/processos-seletivos/{processoSeletivoId}/modelos-de-documento": {
       "post": {
         "tags": [
@@ -6083,33 +6634,8 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "x-uniplus-paginated": true
       }
     },
@@ -6140,6 +6666,16 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -6159,33 +6695,8 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/api/selecao/processos-seletivos/{id}/etapas": {
@@ -10942,6 +11453,16 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -10971,33 +11492,8 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/api/selecao/processos-seletivos/{processoSeletivoId}/produtos-previstos": {
@@ -11953,6 +12449,72 @@
           }
         }
       },
+      "ArquivoAdministrativoDto": {
+        "required": [
+          "arquivoId",
+          "exigenciaId",
+          "nomeDoDocumento",
+          "tipoDeMidia",
+          "situacao",
+          "confirmadoEm",
+          "classificacaoProtecao"
+        ],
+        "type": "object",
+        "properties": {
+          "arquivoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "exigenciaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ocorrenciaId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "nomeDoDocumento": {
+            "type": "string"
+          },
+          "tipoDeMidia": {
+            "type": "string"
+          },
+          "classificacaoProtecao": {
+            "enum": [
+              "PUBLICO",
+              "INTERNO",
+              "PESSOAL",
+              "IDENTIFICADOR",
+              "SENSIVEL"
+            ],
+            "type": "string"
+          },
+          "situacao": {
+            "$ref": "#/components/schemas/SituacaoDoArquivoDoCandidato"
+          },
+          "tamanhoBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "hashSha256": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "confirmadoEm": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ArquivoDaApresentacaoDto": {
         "required": [
           "arquivoId",
@@ -12620,6 +13182,21 @@
           },
           "pedirConfirmacao": {
             "type": "boolean"
+          }
+        }
+      },
+      "CampoReveladoDto": {
+        "required": [
+          "fatoCodigo",
+          "valor"
+        ],
+        "type": "object",
+        "properties": {
+          "fatoCodigo": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "string"
           }
         }
       },
@@ -13714,6 +14291,21 @@
             "items": {
               "$ref": "#/components/schemas/AvisoConformidadeDto"
             }
+          }
+        }
+      },
+      "CpfMascaradoDto": {
+        "required": [
+          "valor",
+          "podeRevelar"
+        ],
+        "type": "object",
+        "properties": {
+          "valor": {
+            "type": "string"
+          },
+          "podeRevelar": {
+            "type": "boolean"
           }
         }
       },
@@ -14952,7 +15544,11 @@
           "tamanhoMaximoBytes",
           "exigidoNaEtapaId",
           "modelo",
-          "finalidade"
+          "finalidade",
+          "classificacaoProtecao",
+          "finalidadeTratamento",
+          "hipoteseLegal",
+          "fatosComprovados"
         ],
         "type": "object",
         "properties": {
@@ -15045,6 +15641,21 @@
               "null",
               "string"
             ]
+          },
+          "classificacaoProtecao": {
+            "type": "string"
+          },
+          "finalidadeTratamento": {
+            "type": "string"
+          },
+          "hipoteseLegal": {
+            "type": "string"
+          },
+          "fatosComprovados": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -15972,7 +16583,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/UnidadeResponsavelDaFaseDto"
+                "$ref": "#/components/schemas/UnidadeResponsavelDto"
               }
             ]
           }
@@ -16293,8 +16904,6 @@
       "FecharRetificacaoRequest": {
         "required": [
           "numero",
-          "periodoInscricaoInicio",
-          "periodoInscricaoFim",
           "documentoEditalId",
           "ato"
         ],
@@ -16305,20 +16914,6 @@
               "null",
               "string"
             ]
-          },
-          "periodoInscricaoInicio": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "periodoInscricaoFim": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
           },
           "documentoEditalId": {
             "type": "string",
@@ -16335,6 +16930,20 @@
             "items": {
               "$ref": "#/components/schemas/AnexoDoEditalRequest"
             }
+          },
+          "periodoInscricaoInicio": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "periodoInscricaoFim": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -16946,6 +17555,28 @@
           }
         }
       },
+      "GrupoDaInscricaoDto": {
+        "required": [
+          "codigo",
+          "rotulo",
+          "ocorrencias"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "rotulo": {
+            "type": "string"
+          },
+          "ocorrencias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OcorrenciaDaInscricaoDto"
+            }
+          }
+        }
+      },
       "GrupoPesoAreaEnemCongeladoDto": {
         "required": [
           "grupoAreaEnem",
@@ -17480,6 +18111,149 @@
           }
         }
       },
+      "InscricaoAdministrativaDto": {
+        "required": [
+          "secoes",
+          "derivados",
+          "arquivos"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "situacao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SituacaoInscricao"
+              }
+            ]
+          },
+          "ofertaCursoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "ofertaCursoSegundaOpcaoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "numeroInscricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "canceladaEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "motivoDoCancelamento": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "secoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SecaoDaInscricaoDto"
+            }
+          },
+          "derivados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemDeRespostaDto"
+            }
+          },
+          "arquivos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArquivoAdministrativoDto"
+            }
+          }
+        }
+      },
+      "InscricaoDoProcessoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "numeroInscricao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "situacao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SituacaoInscricao"
+              }
+            ]
+          },
+          "ofertaCursoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "ofertaCursoSegundaOpcaoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "nome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cpf": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CpfMascaradoDto"
+              }
+            ]
+          },
+          "submetidaEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "InscricaoDto": {
         "required": [
           "id",
@@ -17706,6 +18480,41 @@
           }
         }
       },
+      "ItemDeRespostaDto": {
+        "required": [
+          "fatoCodigo",
+          "rotulo",
+          "descricao",
+          "tipo",
+          "componente",
+          "valor",
+          "podeRevelar"
+        ],
+        "type": "object",
+        "properties": {
+          "fatoCodigo": {
+            "type": "string"
+          },
+          "rotulo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "componente": {
+            "type": "string"
+          },
+          "valor": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "podeRevelar": {
+            "type": "boolean"
+          }
+        }
+      },
       "ItemDocumentoExigidoInput": {
         "required": [
           "exigidoNaFaseId",
@@ -17801,6 +18610,15 @@
               "null",
               "string"
             ]
+          },
+          "fatosComprovados": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -18562,6 +19380,24 @@
           }
         }
       },
+      "ModuloDoCatalogoResponse": {
+        "required": [
+          "modulo",
+          "resources"
+        ],
+        "type": "object",
+        "properties": {
+          "modulo": {
+            "type": "string"
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceDoCatalogoResponse"
+            }
+          }
+        }
+      },
       "MotivoDecisaoIsencaoDto": {
         "required": [
           "id",
@@ -18924,6 +19760,24 @@
           }
         }
       },
+      "OcorrenciaDaInscricaoDto": {
+        "required": [
+          "id",
+          "itens"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemDeRespostaDto"
+            }
+          }
+        }
+      },
       "OcorrenciaDeGrupoInscricaoInput": {
         "required": [
           "id",
@@ -19188,27 +20042,7 @@
           }
         }
       },
-      "OpcaoDeCursoDoLoteDto": {
-        "required": [
-          "ordem",
-          "oferta"
-        ],
-        "type": "object",
-        "properties": {
-          "ordem": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "oferta": {
-            "type": "string"
-          }
-        }
-      },
-            "OpcaoDeclaradaRequest": {
+      "OpcaoDeclaradaRequest": {
         "required": [
           "codigo",
           "rotulo"
@@ -19243,6 +20077,26 @@
             "type": "string"
           },
           "cursoGrau": {
+            "type": "string"
+          }
+        }
+      },
+      "OpcaoDeCursoDoLoteDto": {
+        "required": [
+          "ordem",
+          "oferta"
+        ],
+        "type": "object",
+        "properties": {
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "oferta": {
             "type": "string"
           }
         }
@@ -19518,6 +20372,44 @@
           "fim": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "PermissaoDoCatalogoResponse": {
+        "required": [
+          "codigo",
+          "nome",
+          "descricao",
+          "sensibilidade"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "sensibilidade": {
+            "type": "string"
+          }
+        }
+      },
+      "PermissaoEfetivaResponse": {
+        "required": [
+          "codigo",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
           }
         }
       },
@@ -20333,8 +21225,6 @@
       "PublicarProcessoSeletivoRequest": {
         "required": [
           "numero",
-          "periodoInscricaoInicio",
-          "periodoInscricaoFim",
           "documentoEditalId",
           "ato"
         ],
@@ -20345,20 +21235,6 @@
               "null",
               "string"
             ]
-          },
-          "periodoInscricaoInicio": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "periodoInscricaoFim": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
           },
           "documentoEditalId": {
             "type": "string",
@@ -20375,6 +21251,20 @@
             "items": {
               "$ref": "#/components/schemas/AnexoDoEditalRequest"
             }
+          },
+          "periodoInscricaoInicio": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "periodoInscricaoFim": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -21152,6 +22042,24 @@
           }
         }
       },
+      "ResourceDoCatalogoResponse": {
+        "required": [
+          "resource",
+          "permissoes"
+        ],
+        "type": "object",
+        "properties": {
+          "resource": {
+            "type": "string"
+          },
+          "permissoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissaoDoCatalogoResponse"
+            }
+          }
+        }
+      },
       "RestricaoValorDto": {
         "required": [
           "tipo",
@@ -21369,8 +22277,6 @@
         "required": [
           "motivo",
           "numero",
-          "periodoInscricaoInicio",
-          "periodoInscricaoFim",
           "documentoEditalId",
           "ato"
         ],
@@ -21384,20 +22290,6 @@
               "null",
               "string"
             ]
-          },
-          "periodoInscricaoInicio": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "periodoInscricaoFim": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
           },
           "documentoEditalId": {
             "type": "string",
@@ -21414,6 +22306,20 @@
             "items": {
               "$ref": "#/components/schemas/AnexoDoEditalRequest"
             }
+          },
+          "periodoInscricaoInicio": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "periodoInscricaoFim": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -21434,6 +22340,31 @@
           },
           "conteudo": {
             "$ref": "#/components/schemas/JsonElement"
+          }
+        }
+      },
+      "SecaoDaInscricaoDto": {
+        "required": [
+          "codigo",
+          "itens",
+          "grupos"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemDeRespostaDto"
+            }
+          },
+          "grupos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrupoDaInscricaoDto"
+            }
           }
         }
       },
@@ -21963,26 +22894,6 @@
           }
         }
       },
-      "UnidadeResponsavelDaFaseDto": {
-        "required": [
-          "origemId",
-          "sigla",
-          "nome"
-        ],
-        "type": "object",
-        "properties": {
-          "origemId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "sigla": {
-            "type": "string"
-          },
-          "nome": {
-            "type": "string"
-          }
-        }
-      },
       "UnidadeAdministradoraSnapshotDto": {
         "required": [
           "origemId",
@@ -22040,6 +22951,26 @@
           "diasUteis"
         ],
         "type": "string"
+      },
+      "UnidadeResponsavelDto": {
+        "required": [
+          "origemId",
+          "sigla",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "origemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sigla": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
       },
       "UserProfileResponse": {
         "required": [
@@ -22195,6 +23126,9 @@
       "name": "Profile"
     },
     {
+      "name": "Autoriza\u00E7\u00E3o"
+    },
+    {
       "name": "AtosDoProcesso"
     },
     {
@@ -22211,6 +23145,9 @@
     },
     {
       "name": "Inscricoes"
+    },
+    {
+      "name": "InscricoesDoProcesso"
     },
     {
       "name": "ModelosDeDocumento"
