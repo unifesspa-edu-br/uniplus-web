@@ -490,6 +490,17 @@ ui-lista-de-dados {
   border-width: 0 2px 2px 0;
   transform: rotate(45deg) translate(-1px, -1px);
 }
+/* Estado misto ("marcar todos" com parte dos itens marcados): traço em vez de marca. */
+.checkbox input:indeterminate ~ .checkbox__box {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.checkbox input:indeterminate ~ .checkbox__box::after {
+  content: '';
+  width: 10px;
+  height: 2px;
+  background: var(--color-neutral-0);
+}
 .radio input:checked ~ .radio__dot {
   border-color: var(--color-primary);
 }
