@@ -20,12 +20,12 @@ import { InscricoesDoProcesso } from './inscricoes-do-processo.service';
 import { cursoExibido, type CursoExibido } from './nome-da-oferta';
 import { rotuloDaSituacao, varianteDaSituacao } from './situacao-da-inscricao';
 
-/** Nome do link de uma linha em que a pessoa não vê o número nem o curso. */
-export const NOME_DA_INSCRICAO_SEM_DADOS = 'Inscrição sem dados visíveis';
+/** Nome do link de uma linha sem dado visível; começa pelo texto visível do botão (WCAG 2.5.3). */
+export const NOME_DA_INSCRICAO_SEM_DADOS = 'Abrir inscrição sem dados visíveis';
 
 /** Uma linha pronta para a tabela: cada campo é o que a API devolveu, ou `null` quando ela o omitiu. */
 interface LinhaDaInscricao {
-  readonly id: string | null;
+  readonly id: string;
   readonly numero: string | null;
   readonly nome: string | null;
   readonly cpf: string | null;
@@ -191,7 +191,7 @@ function nomeDoLink(
                     </tr>
                   </thead>
                   <tbody>
-                    @for (linha of linhas(); track linha.id ?? $index) {
+                    @for (linha of linhas(); track linha.id) {
                       <tr>
                         @if (col.numero) {
                           <td [attr.data-label]="linha.numero !== null ? 'Inscrição' : null">
@@ -257,19 +257,17 @@ function nomeDoLink(
                           </td>
                         }
                         <td class="table-responsive__actions">
-                          @if (linha.id !== null) {
-                            <ui-icon-button
-                              icon="pi-folder-open"
-                              [accessibleName]="linha.nomeDoLink"
-                              tooltip="Abrir inscrição"
-                              [link]="[
-                                '/processo-seletivo',
-                                inscricoes.processoId(),
-                                'inscricoes',
-                                linha.id,
-                              ]"
-                            />
-                          }
+                          <ui-icon-button
+                            icon="pi-folder-open"
+                            [accessibleName]="linha.nomeDoLink"
+                            tooltip="Abrir inscrição"
+                            [link]="[
+                              '/processo-seletivo',
+                              inscricoes.processoId(),
+                              'inscricoes',
+                              linha.id,
+                            ]"
+                          />
                         </td>
                       </tr>
                     }
@@ -357,9 +355,9 @@ export class InscricoesDoProcessoPage {
 
   private linha(inscricao: InscricaoDoProcessoDto, indice: number): LinhaDaInscricao {
     const campos = {
-      id: inscricao.id ?? null,
+      id: inscricao.id,
       numero: inscricao.numeroInscricao ?? null,
-      nome: inscricao.nome ?? null,
+      nome: inscricao.nome?.valor ?? null,
       cpf: inscricao.cpf?.valor ?? null,
       primeiraOpcao: this.curso(inscricao.ofertaCursoId),
       segundaOpcao: this.curso(inscricao.ofertaCursoSegundaOpcaoId),
