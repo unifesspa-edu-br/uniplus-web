@@ -132,7 +132,7 @@ export async function garantirPerfil(
   const atuais = existente.permissoes.map((p) => p.codigo).sort();
   if (JSON.stringify(atuais) !== JSON.stringify([...permissoes].sort())) {
     const atualizado = await chamarApi(SEGUNDO_GESTOR_DE_ACESSOS, 'PUT', `/api/autorizacao/perfis/${existente.id}`, {
-      corpo: { nome, descricao, permissoes },
+      corpo: { id: existente.id, nome, descricao, permissoes },
     });
     expect(atualizado.status, `atualizar o perfil "${nome}"`).toBeLessThan(300);
   }
