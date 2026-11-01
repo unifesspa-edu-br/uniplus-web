@@ -59,6 +59,7 @@ import {
   rotuloDe,
   type ProtecaoDoItem,
 } from '../../shared/protecao-do-catalogo';
+import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
 import { CatalogoCategoriasDocumento } from '../../shared/categorias-documento';
 import {
   AlertComponent,
@@ -140,6 +141,7 @@ interface TipoDocumentoForm {
     AlertComponent,
     AvisoDeNovaAprovacaoComponent,
     ConfirmDialogComponent,
+    DetalheDaProtecaoComponent,
     DrawerComponent,
     EmptyStateComponent,
     FilterBarComponent,
@@ -230,7 +232,7 @@ interface TipoDocumentoForm {
         <div class="table-responsive table-responsive--acoes-fixas" role="region" tabindex="0" aria-label="Lista de tipos de documento">
           <table>
             <caption class="sr-only">
-              Tipos de documento, com categoria, formatos aceitos, tamanho máximo de arquivo e situação da proteção de dados
+              Tipos de documento, com categoria, formatos aceitos, sensibilidade e situação da aprovação. Use o nome para abrir o detalhe.
             </caption>
             <thead>
               <tr>
@@ -238,8 +240,8 @@ interface TipoDocumentoForm {
                 <th scope="col">Nome</th>
                 <th scope="col">Categoria</th>
                 <th scope="col">Formatos aceitos</th>
-                <th scope="col">Tam. máx.</th>
-                <th scope="col">Proteção de dados</th>
+                <th scope="col">Sensibilidade</th>
+                <th scope="col">Situação</th>
                 <th scope="col" class="table-responsive__actions"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
@@ -250,7 +252,14 @@ interface TipoDocumentoForm {
                     <code>{{ tipo.codigo }}</code>
                   </td>
                   <td data-label="Nome">
-                    {{ tipo.nome }}
+                    <button
+                      type="button"
+                      class="table-responsive__alvo"
+                      [attr.aria-label]="'Ver o detalhe de ' + tipo.nome"
+                      (click)="abrirDetalhe(tipo)"
+                    >
+                      {{ tipo.nome }}
+                    </button>
                     @if (tipo.tipoEquivalente) {
                       <div class="table-responsive__meta">
                         Equiv.: <code>{{ tipo.tipoEquivalente }}</code>
@@ -265,33 +274,15 @@ interface TipoDocumentoForm {
                   <td data-label="Formatos aceitos" class="u-caption">
                     {{ tipo.formatosAceitos || '—' }}
                   </td>
-                  <td data-label="Tam. máx." class="u-caption">
-                    {{ tamanhoLabel(tipo.tamanhoMaximoMb) }}
+                  <td data-label="Sensibilidade" class="u-nowrap-desktop">
+                    {{ rotulo(classificacoes, tipo.classificacaoProtecao) }}
                   </td>
-                  <td data-label="Proteção de dados">
-                    <div>{{ rotulo(classificacoes, tipo.classificacaoProtecao) }}</div>
+                  <td data-label="Situação" class="u-nowrap-desktop">
                     @if (aprovacao.aprovacaoDe(tipo.id); as situacao) {
-                      <cfg-situacao-da-aprovacao
-                        [situacao]="situacao.situacao"
-                        [classificacaoRecomendada]="situacao.classificacaoRecomendada"
-                      />
-                      @if (situacao.situacao === 'NEGADA') {
-                        <ng-container *authTemPermissao="permissaoDeManter">
-                          <button
-                            type="button"
-                            class="btn btn--secondary btn--sm"
-                            [attr.aria-label]="'Aceitar recomendação do tipo de documento ' + tipo.codigo"
-                            [disabled]="loading() || aceitando()"
-                            (click)="pedirAceite(tipo)"
-                          >
-                            Aceitar recomendação
-                          </button>
-                        </ng-container>
-                      }
-                    } @else if (aprovacao.comErro()) {
-                      <span class="u-caption">Não foi possível ler a situação</span>
+                      <cfg-situacao-da-aprovacao [situacao]="situacao.situacao" [comRecomendada]="false" />
                     } @else {
-                      <span class="u-caption">—</span>
+                      <span aria-hidden="true">—</span>
+                      <span class="sr-only">Situação indisponível</span>
                     }
                   </td>
                   <td class="table-responsive__actions" data-label="Ações">
@@ -349,6 +340,77 @@ interface TipoDocumentoForm {
         />
       }
     </section>
+
+    <ui-drawer
+      class="cfg-form-drawer"
+      [(visible)]="detalheAberto"
+      [heading]="detalhe()?.nome ?? 'Tipo de documento'"
+      ariaLabel="Detalhe do tipo de documento"
+      focoInicial="titulo"
+      position="right"
+    >
+      @if (detalheAberto() && detalhe(); as tipo) {
+        <div class="cfg-form">
+          @if (aprovacao.aprovacaoDe(tipo.id); as situacao) {
+            <cfg-situacao-da-aprovacao
+              [situacao]="situacao.situacao"
+              [classificacaoRecomendada]="situacao.classificacaoRecomendada"
+            />
+          }
+          <section class="cfg-detalhe-secao">
+            <h3 class="cfg-detalhe-secao__titulo">O documento</h3>
+            <dl class="cfg-detalhe">
+              <div>
+                <dt>Código</dt>
+                <dd><code>{{ tipo.codigo }}</code></dd>
+              </div>
+              <div>
+                <dt>Descrição</dt>
+                <dd>{{ tipo.descricao || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Categoria</dt>
+                <dd><ui-lookup-label [resolucao]="categoriaDoTipo(tipo.categoria)" /></dd>
+              </div>
+              <div>
+                <dt>Tipo equivalente</dt>
+                <dd>
+                  @if (tipo.tipoEquivalente) {
+                    <code>{{ tipo.tipoEquivalente }}</code>
+                  } @else {
+                    —
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt>Formatos aceitos</dt>
+                <dd>{{ tipo.formatosAceitos || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Tamanho máximo</dt>
+                <dd>{{ tamanhoLabel(tipo.tamanhoMaximoMb) }}</dd>
+              </div>
+            </dl>
+          </section>
+          <cfg-detalhe-da-protecao [protecao]="tipo" />
+        </div>
+        <div class="cfg-form-footer">
+          <button type="button" class="btn btn--tertiary btn--rect" (click)="detalheAberto.set(false)">
+            Fechar
+          </button>
+          <ng-container *authTemPermissao="permissaoDeManter">
+            @if (aprovacao.aprovacaoDe(tipo.id)?.situacao === 'NEGADA') {
+              <button type="button" class="btn btn--secondary" [disabled]="loading() || aceitando()" (click)="aceitarDoDetalhe(tipo)">
+                Aceitar recomendação
+              </button>
+            }
+            <button type="button" class="btn btn--primary" [disabled]="loading()" (click)="editarDoDetalhe(tipo)">
+              Editar
+            </button>
+          </ng-container>
+        </div>
+      }
+    </ui-drawer>
 
     <ui-drawer
       class="cfg-form-drawer"
@@ -654,6 +716,13 @@ export class TiposDocumentoListPage {
   protected readonly confirmError = signal<string | null>(null);
 
   protected readonly solicitacaoAberta = signal(false);
+  protected readonly detalheAberto = signal(false);
+  private readonly detalheId = signal<string | null>(null);
+  /** O tipo aberto no detalhe, lido da lista: a releitura depois de uma escrita o atualiza. */
+  protected readonly detalhe = computed(() => {
+    const id = this.detalheId();
+    return id === null ? null : (this.tiposDocumento().find((tipo) => tipo.id === id) ?? null);
+  });
   protected readonly confirmAceiteAberto = signal(false);
   protected readonly tipoParaAceitar = signal<TipoDocumentoDto | null>(null);
   protected readonly confirmAceiteError = signal<string | null>(null);
@@ -1074,6 +1143,21 @@ export class TiposDocumentoListPage {
     if (!this.loading()) {
       this.lista.reload();
     }
+  }
+
+  protected abrirDetalhe(tipo: TipoDocumentoDto): void {
+    this.detalheId.set(tipo.id);
+    this.detalheAberto.set(true);
+  }
+
+  protected editarDoDetalhe(tipo: TipoDocumentoDto): void {
+    this.detalheAberto.set(false);
+    this.abrirEdicao(tipo);
+  }
+
+  protected aceitarDoDetalhe(tipo: TipoDocumentoDto): void {
+    this.detalheAberto.set(false);
+    this.pedirAceite(tipo);
   }
 
   protected abrirCadastro(): void {
