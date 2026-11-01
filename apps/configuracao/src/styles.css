@@ -988,3 +988,63 @@ cfg-revogar-concessao-dialog .uni-dialog__header {
   gap: var(--space-2);
   flex-wrap: wrap;
 }
+
+/* Detalhe de um item do catálogo, só leitura, dentro do drawer. */
+.cfg-detalhe-secao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cfg-detalhe-secao__titulo {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+}
+
+.cfg-detalhe {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.cfg-detalhe > div {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.cfg-detalhe dt {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.cfg-detalhe dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cfg-detalhe-valores {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cfg-detalhe-valores__orientacao {
+  margin: var(--space-1) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.cfg-detalhe-situacoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
