@@ -18156,6 +18156,13 @@
               "string"
             ]
           },
+          "submetidaEm": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
           "canceladaEm": {
             "type": [
               "null",
@@ -22353,6 +22360,12 @@
         "properties": {
           "codigo": {
             "type": "string"
+          },
+          "titulo": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "itens": {
             "type": "array",
