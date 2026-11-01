@@ -65,7 +65,8 @@ export type IniciarEnvioDeDocumentoDaInscricaoRequest =
   Schemas['IniciarEnvioDeDocumentoDaInscricaoRequest'];
 
 /** O arquivo pendente e a URL pré-assinada de PUT, de validade curta. */
-export type IniciarEnvioDeDocumentoDaInscricaoDto = Schemas['IniciarEnvioDeDocumentoDaInscricaoDto'];
+export type IniciarEnvioDeDocumentoDaInscricaoDto =
+  Schemas['IniciarEnvioDeDocumentoDaInscricaoDto'];
 
 /** O ETag do PUT, que fixa a versão do objeto que o verificador confere. */
 export type ConfirmarEnvioDeDocumentoDaInscricaoRequest =
@@ -79,3 +80,12 @@ export type ArquivoDaApresentacaoDto = Schemas['ArquivoDaApresentacaoDto'];
 
 /** Onde o arquivo está na verificação feita depois da confirmação. */
 export { SituacaoDoArquivoDoCandidato } from './schema';
+
+/**
+ * Uma inscrição na listagem de quem opera o processo. A API omite o campo que a permissão da pessoa
+ * não alcança, sem indicar a omissão: cada campo é opcional.
+ */
+export type InscricaoDoProcessoDto = Schemas['InscricaoDoProcessoDto'];
+
+/** O CPF no padrão `***.999.999-**`; `podeRevelar` é sempre falso na listagem, porque a revelação é no detalhe. */
+export type CpfMascaradoDto = Schemas['CpfMascaradoDto'];

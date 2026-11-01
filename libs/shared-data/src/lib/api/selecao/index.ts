@@ -13,7 +13,12 @@ export {
   type TipoCatalogadoCertameDto,
 } from './certames-publicos.request';
 export { RegrasCatalogoApi } from './regras-catalogo.api';
+export { nomeDaOferta, type OfertaDeCursoCertameDto } from './nome-da-oferta';
 export { InscricoesApi } from './inscricoes.api';
+export {
+  inscricoesDoProcessoRequest,
+  type InscricoesDoProcessoQuery,
+} from './inscricoes-do-processo.request';
 export {
   NotasDoEnemApi,
   type GeracaoDeEnvioDto,
@@ -30,6 +35,8 @@ export type {
   AvaliacaoDaInscricaoDto,
   AvaliacaoDaInscricaoRequest,
   ComprovanteInscricaoDto,
+  CpfMascaradoDto,
+  InscricaoDoProcessoDto,
   InscricaoDto,
   InscricaoRequest,
   MinhaInscricaoDto,
