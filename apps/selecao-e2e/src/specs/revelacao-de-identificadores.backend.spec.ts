@@ -45,9 +45,8 @@ test.describe('Revelação de identificadores', () => {
 
   test('revela o CPF de Fernanda só naquele campo, e o RG continua oculto', async ({ browser }) => {
     const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', rota);
-    // Quem só pode revelar não recebe nem o valor mascarado: o campo mostra que não é exibido.
-    await expect(pagina.getByText('Não exibido').first()).toBeVisible();
-    await expect(pagina.getByText('***.598.363-**')).toHaveCount(0);
+    // Quem revela também consulta a classe: o campo chega mascarado, com a revelação oferecida.
+    await expect(pagina.getByText('***.598.363-**').first()).toBeVisible();
 
     await pagina.getByRole('button', { name: 'Revelar CPF' }).click();
 
@@ -108,7 +107,7 @@ test.describe('Revelação de identificadores', () => {
     await pagina.getByRole('button', { name: 'Revelar CPF' }).click();
 
     await expect(pagina.getByText('Dado não disponível')).toBeVisible();
-    await expect(pagina.getByText('Não exibido').first()).toBeVisible();
+    await expect(pagina.getByText('***.598.363-**').first()).toBeVisible();
     await expect(pagina.getByText(cenario.fernanda.cpf)).toHaveCount(0);
   });
 

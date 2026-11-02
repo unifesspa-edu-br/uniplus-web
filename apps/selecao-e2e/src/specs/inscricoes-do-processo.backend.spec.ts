@@ -20,7 +20,7 @@ test.describe('Inscrições do processo seletivo (listagem)', () => {
     cenario = await cenarioDaProjecao();
   });
 
-  test('servidor com dados pessoais lista as inscrições com nome, ofertas e situação, sem o CPF', async ({ browser }) => {
+  test('servidor com dados pessoais lista as inscrições com nome, ofertas, situação e o CPF mascarado', async ({ browser }) => {
     const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', `/processo-seletivo/${cenario.processoId}/inscricoes`);
 
     await expect(pagina.getByRole('heading', { level: 2, name: 'Inscrições enviadas' })).toBeVisible();
@@ -28,12 +28,12 @@ test.describe('Inscrições do processo seletivo (listagem)', () => {
     for (const coluna of ['Inscrição', 'Nome', 'Ofertas', 'Situação', 'Enviada em']) {
       await expect(pagina.getByRole('columnheader', { name: coluna })).toBeVisible();
     }
-    // O número do documento é do identificador: dados pessoais não o trazem, nem a permissão de revelar.
-    await expect(pagina.getByRole('columnheader', { name: 'CPF' })).toHaveCount(0);
+    // O número do documento é do identificador: vem mascarado para quem consulta a classe, e nunca em claro.
+    await expect(pagina.getByRole('columnheader', { name: 'CPF' })).toBeVisible();
     const linhaDeErick = pagina.getByRole('row', { name: /Erick Isaac Ramos/ });
     await expect(linhaDeErick).toContainText('Medicina');
-    await expect(pagina.getByRole('button', { name: /Revelar/ })).toHaveCount(0);
-    await expect(pagina.locator('main')).not.toContainText(/\*\*\*\.\d{3}\.\d{3}-\*\*|334\.342\.259-27/);
+    await expect(linhaDeErick).toContainText(/\*\*\*\.\d{3}\.\d{3}-\*\*/);
+    await expect(pagina.locator('main')).not.toContainText(/334\.342\.259-27/);
     await expect(pagina.getByRole('row', { name: /Ariel Drumond/ })).toBeVisible();
   });
 
