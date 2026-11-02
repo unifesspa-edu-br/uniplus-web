@@ -1,8 +1,8 @@
-import type {
-  AusenteDoLoteDto,
-  LoteDeNotasDoEnemDto,
-  OcorrenciaDoLoteDto,
-  OpcaoDeCursoDoLoteDto,
+import {
+  ofertasEmOrdem,
+  type AusenteDoLoteDto,
+  type LoteDeNotasDoEnemDto,
+  type OcorrenciaDoLoteDto,
 } from '@uniplus/shared-data/selecao';
 import { formatarNumeroPtBr, numeroDaApi } from '@uniplus/shared-utils';
 
@@ -146,10 +146,8 @@ function linhasEmOrdem(ocorrencia: OcorrenciaDoLoteDto): number[] {
   return (ocorrencia.numerosDasLinhas ?? []).map(numeroDaApi).sort((a, b) => a - b);
 }
 
-function cursosEmOrdem(opcoes: readonly OpcaoDeCursoDoLoteDto[] | null | undefined): string[] {
-  return [...(opcoes ?? [])]
-    .sort((a, b) => numeroDaApi(a.ordem) - numeroDaApi(b.ordem))
-    .map((o) => o.oferta);
+function cursosEmOrdem(ofertas: Parameters<typeof ofertasEmOrdem>[0]): string[] {
+  return ofertasEmOrdem(ofertas).map((o) => o.nome);
 }
 
 const SEXOS: Readonly<Record<string, string>> = { F: 'Feminino', M: 'Masculino' };
@@ -165,7 +163,7 @@ function daOcorrencia(ocorrencia: OcorrenciaDoLoteDto): LinhaDeOcorrencia {
     candidato: ocorrencia.nomeDoCandidato,
     cpf: ocorrencia.cpfMascarado,
     sexo: rotuloDoSexo(ocorrencia.sexo),
-    cursos: cursosEmOrdem(ocorrencia.opcoesDeCurso),
+    cursos: cursosEmOrdem(ocorrencia.ofertas),
     linhas: linhasEmOrdem(ocorrencia),
     areas: [],
   };
@@ -177,7 +175,7 @@ function doAusente(ausente: AusenteDoLoteDto): LinhaDeOcorrencia {
     candidato: ausente.nomeDoCandidato,
     cpf: ausente.cpfMascarado,
     sexo: null,
-    cursos: cursosEmOrdem(ausente.opcoesDeCurso),
+    cursos: cursosEmOrdem(ausente.ofertas),
     linhas: [],
     areas: ausente.areas.map(nomeCurtoDaArea),
   };

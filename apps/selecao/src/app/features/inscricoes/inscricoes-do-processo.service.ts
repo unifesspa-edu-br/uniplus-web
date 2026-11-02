@@ -16,8 +16,6 @@ import {
   type InscricaoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 
-import { useCertameDoProcesso } from './certame-do-processo';
-
 /** Itens por página iniciais. */
 export const PAGE_SIZE_INICIAL = 50;
 
@@ -36,8 +34,8 @@ interface PaginaLida {
 const SEM_PAGINA: PaginaLida = { itens: [], cursores: { anterior: null, proximo: null } };
 
 /**
- * O que a página das inscrições do processo sabe: a página corrente da lista, os cursores e o que
- * dá nome ao processo e aos cursos. Provido pela página, porque descreve um processo só.
+ * O que a página das inscrições do processo sabe: a página corrente da lista, os cursores e o nome
+ * do processo, que a própria lista traz. Provido pela página, porque descreve um processo só.
  *
  * A lista mostra o que a API devolve; a decisão de visibilidade é dela. As leituras são
  * `useApiResource` (ADR-0018): trocar a página ou o limite cancela a leitura em curso, então a
@@ -66,8 +64,6 @@ export class InscricoesDoProcesso {
       limit: pagina === undefined ? this.limite() : undefined,
     });
   });
-
-  private readonly certame = useCertameDoProcesso(this.processoId);
 
   private readonly ultimaPagina = linkedSignal<
     {
@@ -116,11 +112,8 @@ export class InscricoesDoProcesso {
     return this.lista.value() === undefined ? { estado: 'lendo' } : { estado: 'lido' };
   });
 
-  readonly situacaoDoCertame = this.certame.situacao;
-  readonly carregandoCertame = this.certame.carregando;
-  readonly nomeDoProcesso = this.certame.nomeDoProcesso;
-  readonly nomesDasOfertas = this.certame.nomesDasOfertas;
-  readonly admiteSegundaOpcao = this.certame.admiteSegundaOpcao;
+  /** O processo vem em cada linha; a lista vazia não tem de onde tirar o nome. */
+  readonly nomeDoProcesso = computed(() => this.inscricoes()[0]?.processo.nome ?? null);
 
   constructor() {
     // O cursor deixou de continuar a consulta: repeti-lo repetiria a recusa, então recomeça.
@@ -161,13 +154,7 @@ export class InscricoesDoProcesso {
     this.pagina.set(undefined);
   }
 
-  /** Relê a lista e, se o certame também falhou, o certame. */
   tentarNovamente(): void {
     this.lista.reload();
-    if (this.situacaoDoCertame() === 'falha') this.certame.recarregar();
-  }
-
-  recarregarCertame(): void {
-    this.certame.recarregar();
   }
 }

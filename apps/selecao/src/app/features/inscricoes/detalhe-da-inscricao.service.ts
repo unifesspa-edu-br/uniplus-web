@@ -14,8 +14,6 @@ import {
   type InscricaoAdministrativaDto,
 } from '@uniplus/shared-data/selecao';
 
-import { useCertameDoProcesso } from './certame-do-processo';
-
 /** Onde a leitura do detalhe está; `ocioso` é a tela ainda sem inscrição a ler; `nao-encontrada` é o 404 da API, que a tela diz com texto próprio. */
 export type SituacaoDoDetalhe =
   | { readonly estado: 'ocioso' }
@@ -67,8 +65,8 @@ export function chaveDoCampo(fatoCodigo: string, ocorrenciaId: string | null): s
 const SEM_REVELACOES: ReadonlyMap<string, RevelacaoDoCampo> = new Map();
 
 /**
- * O que a página do detalhe da inscrição sabe: a inscrição que a API devolveu e o que dá nome ao
- * processo e aos cursos. Provido pela página, porque descreve uma inscrição só.
+ * O que a página do detalhe da inscrição sabe: a inscrição que a API devolveu, que já traz o processo
+ * e as ofertas pelo nome. Provido pela página, porque descreve uma inscrição só.
  *
  * A tela mostra o que a API devolve; a decisão de visibilidade é dela. A leitura é um
  * `useApiResource` (ADR-0018) e só sai quando a tela abre a inscrição: trocar de inscrição cancela
@@ -104,8 +102,6 @@ export class DetalheDaInscricao {
       : inscricaoAdministrativaRequest(this.basePath, processo, inscricao);
   });
 
-  private readonly certame = useCertameDoProcesso(this.processoId);
-
   readonly inscricao = this.detalhe.data;
   readonly carregando = this.detalhe.isLoading;
 
@@ -123,10 +119,7 @@ export class DetalheDaInscricao {
     return this.detalhe.data() === null ? { estado: 'lendo' } : { estado: 'lida' };
   });
 
-  readonly situacaoDoCertame = this.certame.situacao;
-  readonly carregandoCertame = this.certame.carregando;
-  readonly nomeDoProcesso = this.certame.nomeDoProcesso;
-  readonly nomesDasOfertas = this.certame.nomesDasOfertas;
+  readonly nomeDoProcesso = computed(() => this.detalhe.data()?.processo.nome ?? null);
 
   /** Lê a inscrição indicada; trocar de inscrição descarta a anterior. */
   abrir(processoId: string, inscricaoId: string): void {
@@ -193,11 +186,6 @@ export class DetalheDaInscricao {
   tentarNovamente(): void {
     this.esquecerRevelacoes();
     this.detalhe.reload();
-    if (this.situacaoDoCertame() === 'falha') this.certame.recarregar();
-  }
-
-  recarregarCertame(): void {
-    this.certame.recarregar();
   }
 
   /**

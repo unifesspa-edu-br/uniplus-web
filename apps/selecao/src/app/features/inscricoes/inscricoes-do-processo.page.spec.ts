@@ -13,7 +13,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   SELECAO_BASE_PATH,
   SituacaoInscricao,
-  type CertamePublicadoDto,
+  type OfertaEscolhidaDto,
   type InscricaoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -22,50 +22,31 @@ import {
   InscricoesDoProcessoPage,
   NOME_DA_INSCRICAO_SEM_DADOS,
 } from './inscricoes-do-processo.page';
-import { CURSO_INDISPONIVEL } from './nome-da-oferta';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
 const ROTA_LISTA = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/inscricoes`;
-const ROTA_CERTAME = `${BASE}/api/selecao/certames/${PROCESSO_ID}`;
 const OFERTA_MEDICINA = '01960000-0000-7000-0000-00000000aaa1';
-const OFERTA_DIREITO = '01960000-0000-7000-0000-00000000aaa2';
 
 const concedidas = signal<readonly string[]>([]);
 const permissoesStub = { tem: (codigo: string) => concedidas().includes(codigo) };
 
-function certame(opcoes = 2): CertamePublicadoDto {
-  return {
-    nome: 'PSR 2027',
-    opcoesDeCurso: { numero: opcoes },
-    ofertas: [
-      {
-        ofertaCursoOrigemId: OFERTA_MEDICINA,
-        cursoNome: 'Medicina',
-        cursoGrau: 'Bacharelado',
-        unidadeOfertanteNome: 'Faculdade de Medicina',
-        turnos: ['INTEGRAL'],
-      },
-      {
-        ofertaCursoOrigemId: OFERTA_DIREITO,
-        cursoNome: 'Direito',
-        cursoGrau: 'Bacharelado',
-        unidadeOfertanteNome: 'Faculdade de Direito',
-        turnos: ['NOTURNO'],
-      },
-    ],
-  } as unknown as CertamePublicadoDto;
-}
-
+const PROCESSO = { id: PROCESSO_ID, nome: 'PSR 2027' };
 const MEDICINA = 'Medicina (Bacharelado) — Faculdade de Medicina — INTEGRAL';
 const DIREITO = 'Direito (Bacharelado) — Faculdade de Direito — Noturno';
 
+const oferta = (ordem: number, nome: string | null): OfertaEscolhidaDto => ({
+  id: `${OFERTA_MEDICINA.slice(0, -1)}${ordem}`,
+  nome,
+  ordem,
+});
+
 const FERNANDA: InscricaoDoProcessoDto = {
   id: 'insc-fernanda',
+  processo: PROCESSO,
   numeroInscricao: '2027-000101',
   situacao: SituacaoInscricao.submetida,
-  ofertaCursoId: OFERTA_MEDICINA,
-  ofertaCursoSegundaOpcaoId: OFERTA_DIREITO,
+  ofertas: [oferta(1, MEDICINA), oferta(2, DIREITO)],
   nome: { valor: 'Fernanda Laura Nicole Drumond' },
   cpf: { valor: '***.598.363-**', podeRevelar: false },
   submetidaEm: '2026-12-10T15:00:00Z',
@@ -121,18 +102,17 @@ describe('InscricoesDoProcessoPage', () => {
     await propagar();
   }
 
-  const doCertame = (): TestRequest => controller.expectOne(ROTA_CERTAME);
   const daLista = (filtro: (r: TestRequest['request']) => boolean = () => true): TestRequest =>
     controller.expectOne((r) => r.url === ROTA_LISTA && filtro(r));
 
-  /** Abre a página e responde o certame e a primeira página da lista. */
+  /** Abre a página e responde a primeira página da lista. */
   async function abrir(
-    itens: readonly InscricaoDoProcessoDto[],
-    opcoes: { link?: string; certame?: CertamePublicadoDto } = {},
+    itens: readonly Partial<InscricaoDoProcessoDto>[],
+    opcoes: { link?: string } = {},
   ): Promise<void> {
     await criarPagina();
-    doCertame().flush(opcoes.certame ?? certame());
-    daLista().flush(itens, { headers: opcoes.link ? { Link: opcoes.link } : undefined });
+    const comProcesso = itens.map((item) => ({ processo: PROCESSO, ...item }));
+    daLista().flush(comProcesso, { headers: opcoes.link ? { Link: opcoes.link } : undefined });
     await propagar();
   }
 
@@ -158,15 +138,14 @@ describe('InscricoesDoProcessoPage', () => {
   const nomesDosLinks = (): (string | null)[] =>
     Array.from(host().querySelectorAll('tbody a')).map((a) => a.getAttribute('aria-label'));
 
-  it('lista o que a API devolve, com o curso pelo nome do certame e o CPF mascarado', async () => {
+  it('lista o que a API devolve, com as ofertas pelo nome e o CPF mascarado', async () => {
     await abrir([FERNANDA]);
 
     expect(cabecalhos()).toEqual([
       'Inscrição',
       'Nome',
       'CPF',
-      '1ª opção de curso',
-      '2ª opção de curso',
+      'Ofertas',
       'Situação',
       'Enviada em',
       'Ações',
@@ -175,14 +154,45 @@ describe('InscricoesDoProcessoPage', () => {
       '2027-000101',
       'Fernanda Laura Nicole Drumond',
       '***.598.363-**',
-      MEDICINA,
-      DIREITO,
+      `${MEDICINA}${DIREITO}`,
       'Enviada',
       '10/12/2026, 12:00',
       '',
     ]);
-    expect(host().textContent).toContain('PSR 2027');
+    expect(host().textContent).toContain('PSR 2027 — inscrições enviadas neste processo seletivo.');
     expect(host().textContent).not.toContain('Revelar');
+  });
+
+  it('numera as ofertas pela ordem da escolha, mesmo chegando invertidas', async () => {
+    await abrir([{ id: 'i-1', ofertas: [oferta(2, DIREITO), oferta(1, MEDICINA)] }]);
+
+    const itens = Array.from(host().querySelectorAll<HTMLLIElement>('tbody ol li'));
+    expect(itens.map((li) => [li.value, li.textContent?.trim()])).toEqual([
+      [1, MEDICINA],
+      [2, DIREITO],
+    ]);
+  });
+
+  it('mostra a oferta única sem número', async () => {
+    await abrir([{ id: 'i-1', ofertas: [oferta(1, DIREITO)] }]);
+
+    expect(host().querySelector('tbody ol')).toBeNull();
+    expect(celulas()[0]).toBe(DIREITO);
+  });
+
+  it('diz que a oferta não foi identificada quando a API não a nomeia', async () => {
+    await abrir([{ id: 'i-1', ofertas: [oferta(1, MEDICINA), oferta(2, null)] }]);
+
+    const itens = Array.from(host().querySelectorAll('tbody ol li')).map((li) =>
+      li.textContent?.trim(),
+    );
+    expect(itens).toEqual([MEDICINA, 'Oferta não identificada']);
+  });
+
+  it('não lê o certame para listar', async () => {
+    await abrir([FERNANDA]);
+
+    controller.expectNone((r) => r.url.includes('/certames/'));
   });
 
   it('não consulta o detalhe de nenhuma inscrição ao listar', async () => {
@@ -193,18 +203,12 @@ describe('InscricoesDoProcessoPage', () => {
 
   it('na avaliação cega mostra só o público, sem nome nem CPF e sem marca de campo oculto', async () => {
     await abrir([
-      { id: 'insc-leandro', situacao: SituacaoInscricao.submetida, ofertaCursoId: OFERTA_DIREITO },
+      { id: 'insc-leandro', situacao: SituacaoInscricao.submetida, ofertas: [oferta(1, DIREITO)] },
     ]);
 
-    expect(cabecalhos()).toEqual(['1ª opção de curso', '2ª opção de curso', 'Situação', 'Ações']);
+    expect(cabecalhos()).toEqual(['Ofertas', 'Situação', 'Ações']);
     expect(host().textContent).not.toMatch(/oculto|restrito|protegido/i);
     expect(host().querySelector('[data-label="Nome"]')).toBeNull();
-  });
-
-  it('não abre coluna de 2ª opção em processo de opção única, salvo linha que a traga', async () => {
-    await abrir([{ id: 'i-1', ofertaCursoId: OFERTA_DIREITO }], { certame: certame(1) });
-
-    expect(cabecalhos()).toEqual(['1ª opção de curso', 'Ações']);
   });
 
   it('mantém o link da linha de quem só tem o acesso às inscrições, sem dado visível', async () => {
@@ -237,7 +241,7 @@ describe('InscricoesDoProcessoPage', () => {
   });
 
   it('nomeia o link pelo que a linha mostra, com a posição, quando o número não vem', async () => {
-    await abrir([{ id: 'i-1', ofertaCursoId: OFERTA_DIREITO }]);
+    await abrir([{ id: 'i-1', ofertas: [oferta(1, DIREITO)] }]);
 
     expect(nomesDosLinks()).toEqual([`Abrir inscrição 1ª da página, ${DIREITO}`]);
   });
@@ -258,65 +262,13 @@ describe('InscricoesDoProcessoPage', () => {
     expect(celulas()[0]).toBe('Cancelada');
   });
 
-  it('não põe texto de curso indisponível no nome do link quando o certame falhou', async () => {
-    await criarPagina();
-    doCertame().flush({}, { status: 500, statusText: 'Server Error' });
-    daLista().flush([{ id: 'i-1', ofertaCursoId: OFERTA_DIREITO }]);
-    await propagar();
-
-    expect(celulas()[0]).toBe(CURSO_INDISPONIVEL);
-    expect(nomesDosLinks()).toEqual(['Abrir inscrição 1ª da página']);
-  });
-
-  it('não afirma "curso não identificado" enquanto o certame carrega', async () => {
-    await criarPagina();
-    daLista().flush([{ id: 'i-1', ofertaCursoId: OFERTA_DIREITO }]);
-    await propagar();
-
-    expect(host().textContent).not.toContain('Curso não identificado');
-    expect(host().textContent).toContain('Carregando o nome do curso');
-    expect(nomesDosLinks()).toEqual(['Abrir inscrição 1ª da página']);
-
-    doCertame().flush(certame());
-    await propagar();
-
-    expect(celulas()[0]).toContain(DIREITO);
-    expect(nomesDosLinks()).toEqual([`Abrir inscrição 1ª da página, ${DIREITO}`]);
-  });
-
-  it('diz que o curso não foi identificado só com o certame lido e sem a oferta nele', async () => {
-    await abrir([{ id: 'i-1', ofertaCursoId: 'oferta-fora-do-certame' }]);
-
-    expect(celulas()[0]).toContain('Curso não identificado');
-  });
-
-  it('avisa a falha do certame, lista mesmo assim e relê o certame na nova tentativa', async () => {
-    await criarPagina();
-    doCertame().flush({}, { status: 500, statusText: 'Server Error' });
-    daLista().flush([FERNANDA]);
-    await propagar();
-
-    expect(host().textContent).toContain(
-      'Não foi possível carregar o nome do processo e dos cursos',
-    );
-    expect(celulas()[3]).toBe(CURSO_INDISPONIVEL);
-    expect(host().textContent).not.toContain('Curso não identificado');
-
-    botao('Tentar novamente').click();
-    await propagar();
-    expect(botao('Tentar novamente').disabled).toBe(true);
-    expect(host().querySelector('[role="status"]')?.textContent).toContain('Recarregando');
-    doCertame().flush(certame());
-    await propagar();
-
-    expect(host().textContent).not.toContain('Não foi possível carregar o nome');
-    expect(celulas()[3]).toBe(MEDICINA);
-  });
-
   it('diz que não há inscrição enviada quando a lista vem vazia', async () => {
     await abrir([]);
 
     expect(host().textContent).toContain('Nenhuma inscrição enviada');
+    expect(host().querySelector('ui-page-header')?.textContent).toContain(
+      'Inscrições do processo seletivo',
+    );
     expect(host().querySelector('table')).toBeNull();
   });
 
@@ -325,7 +277,6 @@ describe('InscricoesDoProcessoPage', () => {
 
     expect(host().querySelector('ui-spinner')).not.toBeNull();
     expect(host().querySelector('[aria-busy="true"]')).not.toBeNull();
-    doCertame().flush(certame());
     daLista().flush([]);
     await propagar();
   });
@@ -364,7 +315,6 @@ describe('InscricoesDoProcessoPage', () => {
 
   it('diz que o processo não foi encontrado no 404, com retorno', async () => {
     await criarPagina();
-    doCertame().flush({}, { status: 404, statusText: 'Not Found' });
     daLista().flush(
       { title: 'Não encontrado', status: 404 },
       { status: 404, statusText: 'Not Found' },
@@ -389,7 +339,6 @@ describe('InscricoesDoProcessoPage', () => {
 
   it('oferece nova tentativa na falha e recupera a lista', async () => {
     await criarPagina();
-    doCertame().flush(certame());
     daLista().flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Server Error' });
     await propagar();
 
@@ -409,7 +358,6 @@ describe('InscricoesDoProcessoPage', () => {
 
   it('mantém o seletor de tamanho da página na falha, para trocar um limite recusado', async () => {
     await criarPagina();
-    doCertame().flush(certame());
     daLista().flush(
       { title: 'Requisição inválida', status: 400 },
       { status: 400, statusText: 'Bad Request' },

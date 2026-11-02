@@ -7,7 +7,7 @@ import { SELECAO_BASE_PATH } from './tokens';
 
 export type LeiauteDoInepDto = components['schemas']['LeiauteDoInepDto'];
 export type GeracaoDeEnvioDto = components['schemas']['GeracaoDeEnvioDto'];
-export type OpcaoDeCursoDoLoteDto = components['schemas']['OpcaoDeCursoDoLoteDto'];
+export type OfertaEscolhidaDto = components['schemas']['OfertaEscolhidaDto'];
 export type AusenteDoLoteDto = components['schemas']['AusenteDoLoteDto'];
 export type OcorrenciaDoLoteDto = components['schemas']['OcorrenciaDoLoteDto'];
 export type LoteDeNotasDoEnemDto = components['schemas']['LoteDeNotasDoEnemDto'];

@@ -21,7 +21,7 @@ function ocorrencia(
     nomeDoCandidato: null,
     cpfMascarado: null,
     sexo: null,
-    opcoesDeCurso: null,
+    ofertas: null,
     ...extra,
   };
 }
@@ -41,7 +41,7 @@ function ausente(
     nomeDoCandidato: null,
     cpfMascarado: null,
     areas,
-    opcoesDeCurso: null,
+    ofertas: null,
     ...extra,
   };
 }
@@ -135,15 +135,30 @@ describe('agruparOcorrencias', () => {
     const [grupo] = agruparOcorrencias(
       lote([
         ocorrencia('INSCRITO_SEM_LINHA', 'INS-1', null, {
-          opcoesDeCurso: [
-            { ordem: '2', oferta: 'Medicina — Marabá' },
-            { ordem: '1', oferta: 'Medicina — Xinguara' },
+          ofertas: [
+            { id: '01a188d4-0000-4000-8000-000000000002', nome: 'Medicina — Marabá', ordem: 2 },
+            { id: '01a188d4-0000-4000-8000-000000000001', nome: 'Medicina — Xinguara', ordem: 1 },
           ],
         }),
       ]),
     );
 
     expect(grupo.itens[0].cursos).toEqual(['Medicina — Xinguara', 'Medicina — Marabá']);
+  });
+
+  it('a oferta sem nome aparece como não identificada, sem perder a posição', () => {
+    const [grupo] = agruparOcorrencias(
+      lote([
+        ocorrencia('INSCRITO_SEM_LINHA', 'INS-1', null, {
+          ofertas: [
+            { id: '01a188d4-0000-4000-8000-000000000001', nome: 'Medicina — Xinguara', ordem: 1 },
+            { id: '01a188d4-0000-4000-8000-000000000002', nome: null, ordem: 2 },
+          ],
+        }),
+      ]),
+    );
+
+    expect(grupo.itens[0].cursos).toEqual(['Medicina — Xinguara', 'Oferta não identificada']);
   });
 
   it('sem ocorrências não há grupos', () => {
