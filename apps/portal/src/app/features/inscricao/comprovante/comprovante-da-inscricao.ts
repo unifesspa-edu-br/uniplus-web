@@ -49,8 +49,8 @@ interface CampoDoFormulario extends CampoExibido {
  */
 const FATOS_DO_CARTAO_DO_CANDIDATO = new Set(['NOME', 'NOME_SOCIAL', 'DESEJA_NOME_SOCIAL', 'CPF']);
 
-const pelaOrdem = <T extends { readonly ordem: number | string }>(itens: readonly T[]): T[] =>
-  [...itens].sort((a, b) => Number(a.ordem) - Number(b.ordem));
+const pelaOrdem = <T extends { readonly ordem: number }>(itens: readonly T[]): T[] =>
+  [...itens].sort((a, b) => a.ordem - b.ordem);
 
 const respondido = (respostas: Readonly<Record<string, unknown>>, fato: string): boolean =>
   respostas[fato] !== undefined && respostas[fato] !== null;
@@ -277,14 +277,14 @@ export function numeroDoComprovante(
   emitidos: readonly ComprovanteEmitido[],
   pedido: number | null,
 ): number | null {
-  const numeros = emitidos.map((e) => Number(e.numero));
+  const numeros = emitidos.map((e) => e.numero);
   if (pedido === null) return numeros.at(-1) ?? null;
   return numeros.includes(pedido) ? pedido : null;
 }
 
 /** O comprovante anterior e o seguinte, na ordem em que foram emitidos. */
 export function vizinhos(emitidos: readonly ComprovanteEmitido[], numero: number): Vizinhos {
-  const numeros = emitidos.map((e) => Number(e.numero));
+  const numeros = emitidos.map((e) => e.numero);
   const i = numeros.indexOf(numero);
   return { anterior: numeros[i - 1] ?? null, seguinte: numeros[i + 1] ?? null };
 }
@@ -301,7 +301,7 @@ export function envioDoComprovante(
   emitidos: readonly ComprovanteEmitido[],
   numero: number,
 ): EnvioDoComprovante {
-  const numeros = emitidos.map((e) => Number(e.numero));
+  const numeros = emitidos.map((e) => e.numero);
   const maisRecente = numeros.at(-1) ?? numero;
   return {
     ordem: numeros.indexOf(numero) + 1,

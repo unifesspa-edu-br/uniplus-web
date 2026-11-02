@@ -1144,9 +1144,8 @@ export class TiposDocumentoListPage {
     return 'Vem do cadastro de categorias. Congelada no snapshot do edital.';
   });
 
-  protected tamanhoLabel(valor: number | string | null): string {
-    const normalizado = normalizarTamanhoMaximo(valor);
-    return normalizado === null ? '—' : `${normalizado} MB`;
+  protected tamanhoLabel(valor: number | null): string {
+    return valor === null ? '—' : `${valor} MB`;
   }
 
   protected proximaPagina(): void {
@@ -1222,7 +1221,7 @@ export class TiposDocumentoListPage {
       formatoJpeg: formatos.formatoJpeg,
       formatoPng: formatos.formatoPng,
       formatoTiff: formatos.formatoTiff,
-      tamanhoMaximoMb: normalizarTamanhoMaximo(tipo.tamanhoMaximoMb),
+      tamanhoMaximoMb: tipo.tamanhoMaximoMb,
       classificacaoProtecao: tipo.classificacaoProtecao,
       hipoteseLegal: tipo.hipoteseLegal,
       finalidadeTratamento: tipo.finalidadeTratamento,
@@ -1522,18 +1521,6 @@ function controlNameFromBackendField(field: string): keyof TipoDocumentoForm | n
 function nullIfBlank(value: string): string | null {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
-}
-
-// `tamanhoMaximoMb` é `int32` no contrato, mas o `schema.ts` gerado tipa como
-// `number | string | null` (mesmo padrão de `OfertaCursoDto.vagasAnuaisAutorizadas`)
-// — o form (`FormControl<number | null>`) preserva o valor mesmo quando o
-// backend serializa como string.
-function normalizarTamanhoMaximo(valor: number | string | null | undefined): number | null {
-  if (valor === null || valor === undefined) {
-    return null;
-  }
-  const numero = typeof valor === 'number' ? valor : Number(valor);
-  return Number.isFinite(numero) ? numero : null;
 }
 
 /** Serializa os checkboxes marcados para a string orientativa `"pdf,jpg,png"` (§5.5 da issue #392). */

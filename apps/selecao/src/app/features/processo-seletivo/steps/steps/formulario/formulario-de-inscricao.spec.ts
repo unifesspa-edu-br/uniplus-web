@@ -267,7 +267,7 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       [],
     );
 
-    const etapas = [...(resultado.etapas ?? [])].sort((a, b) => Number(a.ordem) - Number(b.ordem));
+    const etapas = [...(resultado.etapas ?? [])].sort((a, b) => a.ordem - b.ordem);
     expect(etapas.map((e) => e.codigo)).toEqual([
       'DADOS_BASICOS',
       'S1',

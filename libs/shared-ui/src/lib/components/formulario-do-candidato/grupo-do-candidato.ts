@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { CampoDoCandidatoComponent } from './campo-do-candidato';
 import {
   type CampoNoPasso,
-  comoInteiro,
   fatoDaUf,
   type ErroDoServidor,
   type GrupoNoPasso,
@@ -181,12 +180,9 @@ export class GrupoDoCandidatoComponent {
     () => this.noPasso().avaliado.obrigatorio === 'VERDADEIRO',
   );
   private readonly lista = computed(() => this.ocorrencias() ?? []);
-  /** O mínimo e o máximo de ocorrências, como números; o máximo nulo é sem limite. */
-  protected readonly minimo = computed(() => comoInteiro(this.grupo().minimo));
-  protected readonly maximo = computed(() => {
-    const maximo = this.grupo().maximo;
-    return maximo === null || maximo === undefined ? null : comoInteiro(maximo);
-  });
+  /** O mínimo e o máximo de ocorrências; o máximo nulo é sem limite. */
+  protected readonly minimo = computed(() => this.grupo().minimo);
+  protected readonly maximo = computed(() => this.grupo().maximo ?? null);
   protected readonly cheio = computed(() => {
     const maximo = this.maximo();
     return maximo !== null && this.lista().length >= maximo;
@@ -215,7 +211,7 @@ export class GrupoDoCandidatoComponent {
   protected readonly naTela = computed<readonly OcorrenciaNaTela[]>(() => {
     const { grupo, avaliado, regras } = this.noPasso();
     const subitens = [...grupo.subitens].sort(
-      (a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem),
+      (a, b) => a.ordem - b.ordem,
     );
     const indiceDoCandidato = this.indiceDoCandidato();
     const titulos = titulosDasOcorrencias(

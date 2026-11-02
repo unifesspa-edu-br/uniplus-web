@@ -196,7 +196,7 @@ export function rotuloDoFormato(tipoDeMidia: string): string | null {
 /** O que se sabe de um arquivo enviado para dizer o que ele é: o formato, o tamanho e o envio. */
 export interface DadosDoArquivoEnviado {
   readonly tipoDeMidia: string;
-  readonly tamanhoBytes?: number | string | null;
+  readonly tamanhoBytes?: number | null;
   readonly confirmadoEm: string;
 }
 

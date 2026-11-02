@@ -1,5 +1,5 @@
 import type { DocumentoExigido } from '../lista-de-documentos/lista-de-documentos';
-import { comoInteiro, type GrupoRenderizavel, type Inteiro } from './formulario-do-candidato.model';
+import type { GrupoRenderizavel } from './formulario-do-candidato.model';
 import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada } from './interpretador/regras-do-formulario';
 import {
@@ -38,7 +38,7 @@ export interface GrupoDoDocumento {
   /** `E` ou `OU`. */
   readonly tipo: string;
   /** Quantos itens do `OU` bastam; nulo no `E`. */
-  readonly minimo: Inteiro | null;
+  readonly minimo: number | null;
   /** O grupo de integrantes pelo qual este nó se repete: a escolha dele é feita integrante a integrante. */
   readonly repetePorEntidade: string | null;
 }
@@ -48,7 +48,7 @@ export interface ArquivoDoDocumento {
   readonly arquivoId: string;
   readonly apresentacaoId: string;
   readonly tipoDeMidia: string;
-  readonly tamanhoBytes: number | string | null;
+  readonly tamanhoBytes: number | null;
   readonly situacao: SituacaoDoArquivo;
   readonly mensagem: string | null;
   readonly rotulo: string;
@@ -67,9 +67,9 @@ export interface DocumentoAvaliado {
   /** Os formatos que o envio aceita para a exigência (PDF, JPEG, PNG). */
   readonly formatosAceitos: readonly string[];
   /** O menor limite de tamanho efetivo entre os formatos aceitos. */
-  readonly tamanhoMaximoBytes: number | string;
+  readonly tamanhoMaximoBytes: number;
   /** Quantas apresentações a exigência pede, no mínimo. */
-  readonly quantidadeMinima: number | string;
+  readonly quantidadeMinima: number;
   /** Os arquivos confirmados desta exigência e ocorrência. */
   readonly arquivos: readonly ArquivoDoDocumento[];
   readonly situacao: string;
@@ -90,7 +90,7 @@ export interface DocumentoAvaliado {
 export interface FaseDosDocumentosAvaliados {
   readonly faseId: string;
   readonly codigo: string;
-  readonly ordem: Inteiro;
+  readonly ordem: number;
   readonly documentos: readonly DocumentoAvaliado[];
   readonly pendencias: readonly PendenciaDaAvaliacao[];
 }
@@ -248,7 +248,7 @@ function grupoEm(
   const novo: GrupoEmMontagem = {
     tipo: grupo.tipo === GRUPO_OU ? GRUPO_OU : GRUPO_E,
     chave: identidade.chave,
-    minimo: grupo.minimo === null ? 1 : comoInteiro(grupo.minimo),
+    minimo: grupo.minimo ?? 1,
     integrante: identidade.integrante,
     deCadaIntegrante: identidade.deCadaIntegrante,
     itens: [],
@@ -397,8 +397,8 @@ function paraALista(documento: DocumentoAvaliado, rotulo: string): DocumentoNaTe
     formatos: formatosDaExigencia(documento.formatosAceitos),
     modelo: documento.modelo,
     formatosAceitos: documento.formatosAceitos,
-    tamanhoMaximoBytes: Number(documento.tamanhoMaximoBytes),
-    quantidadeMinima: Number(documento.quantidadeMinima),
+    tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
+    quantidadeMinima: documento.quantidadeMinima,
   };
 }
 
@@ -621,7 +621,7 @@ export function situacoesEArquivosDosDocumentos(documentos: readonly DocumentoAv
         apresentacaoId: arquivo.apresentacaoId,
         chave,
         tipoDeMidia: arquivo.tipoDeMidia,
-        tamanhoBytes: arquivo.tamanhoBytes === null ? null : Number(arquivo.tamanhoBytes),
+        tamanhoBytes: arquivo.tamanhoBytes,
         situacao: arquivo.situacao,
         mensagem: arquivo.mensagem,
         rotulo: arquivo.rotulo,

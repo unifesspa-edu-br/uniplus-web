@@ -51,6 +51,7 @@ import {
   ehRecusaDeDocumento,
   fatosCitaveisPelosTermos,
   fatosOferecidos,
+  conteudoParaEnvio,
   semDadosBasicos,
   termoDisponivelDe,
   type ConteudoDoFormulario,
@@ -452,7 +453,11 @@ export class ModeloFormularioEdicaoPage {
       this.form.markAllAsTouched();
       return;
     }
-    const enviado = semDadosBasicos(conteudo);
+    const enviado = conteudoParaEnvio(semDadosBasicos(conteudo));
+    if (enviado === null) {
+      this.notifications.warning('Há campos que não são números', 'Corrija os limites e os deslocamentos indicados antes de salvar.');
+      return;
+    }
     const v = this.form.getRawValue();
     this.salvando.set(true);
     // O cabeçalho trava com o editor: a resposta relê o modelo e apagaria o que mudasse durante a gravação.

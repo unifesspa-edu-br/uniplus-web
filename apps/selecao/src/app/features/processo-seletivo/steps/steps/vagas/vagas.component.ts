@@ -971,7 +971,7 @@ export class VagasStepComponent {
   readonly ofertasComEstouro = computed(() =>
     this.distribuicoes()
       .map((distribuicao) => ({ distribuicao, calculado: this.calculado(distribuicao) }))
-      .filter(({ calculado }) => Number(calculado?.estouro ?? 0) > 0),
+      .filter(({ calculado }) => (calculado?.estouro ?? 0) > 0),
   );
 
   // ── totais do quadro ────────────────────────────────────────────────────
@@ -994,7 +994,7 @@ export class VagasStepComponent {
    */
   readonly totalGeralPublicado = computed(() =>
     this.distribuicoes().reduce(
-      (soma, item) => soma + inteiroOuZero(String(this.calculado(item)?.totalPublicado ?? '')),
+      (soma, item) => soma + (this.calculado(item)?.totalPublicado ?? 0),
       0,
     ),
   );

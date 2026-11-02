@@ -471,9 +471,8 @@ export class ProcessosComponent {
     return documentoUrl ? { documentoUrl } : null;
   }
 
-  /** `totalDeVagas` chega como `number | string` (contrato usa `pattern` no int32). */
-  protected vagasFormatadas(totalDeVagas: number | string): string {
-    return Number(totalDeVagas).toLocaleString('pt-BR');
+  protected vagasFormatadas(totalDeVagas: number): string {
+    return totalDeVagas.toLocaleString('pt-BR');
   }
 
   protected setVisao(visao: VisaoCertames | null): void {

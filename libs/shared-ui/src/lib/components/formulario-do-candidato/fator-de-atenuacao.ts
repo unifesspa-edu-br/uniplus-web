@@ -1,7 +1,6 @@
 import type { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
 
 import {
-  comoInteiro,
   type CampoRenderizavel,
   type DependenciasDaAvaliacao,
   type PassoDoFormulario,
@@ -72,7 +71,7 @@ export function resumoDoFator(
         lista.map((o) => o.respostas),
       );
       const subitensNaOrdem = [...grupo.subitens].sort(
-        (a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem),
+        (a, b) => a.ordem - b.ordem,
       );
       for (const ocorrencia of avaliado.ocorrencias) {
         const indice = lista.findIndex((o) => o.id === ocorrencia.id);

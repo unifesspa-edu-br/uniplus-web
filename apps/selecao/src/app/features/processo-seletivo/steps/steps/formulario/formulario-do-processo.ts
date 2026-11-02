@@ -9,6 +9,7 @@ import {
   conteudoInicial,
   etapasEmOrdem,
   FINALIDADE_INSCRICAO,
+  conteudoParaEnvio,
   semDadosBasicos,
   todosOsCampos,
   type ConteudoDoFormulario,
@@ -52,7 +53,7 @@ function restricaoDoDto(restricao: FatoColetadoDto['restricoes'][number]): Restr
 function itemDoDto(fato: FatoColetadoDto): ItemDoFormulario {
   return {
     fatoCodigo: fato.fatoCodigo,
-    ordem: Number(fato.ordem),
+    ordem: fato.ordem,
     rotulo: fato.rotulo,
     tipoRenderizacao: fato.tipoRenderizacao,
     obrigatoriedade: fato.obrigatoriedade.tipo,
@@ -75,18 +76,18 @@ export function conteudoDoFormulario(dto: FormularioDto): ConteudoDoFormulario {
     titulo: dto.titulo,
     etapas: dto.etapas.map((etapa) => ({
       ...etapa,
-      ordem: Number(etapa.ordem),
+      ordem: etapa.ordem,
       exibicao: predicado(etapa.exibicao),
     })),
     itens: dto.fatosColetados.map(itemDoDto),
     grupos: dto.grupos.map(
       (grupo): GrupoDoFormulario => ({
         codigo: grupo.codigo,
-        ordem: Number(grupo.ordem),
+        ordem: grupo.ordem,
         rotulo: grupo.rotulo,
         etapaCodigo: grupo.etapaCodigo,
-        minimo: Number(grupo.minimo),
-        maximo: grupo.maximo === null ? null : Number(grupo.maximo),
+        minimo: grupo.minimo,
+        maximo: grupo.maximo,
         exibicao: predicado(grupo.exibicao),
         obrigatoriedade: grupo.obrigatoriedade.tipo,
         predicadoObrigatoriedade: predicado(grupo.obrigatoriedade.predicado),
@@ -97,7 +98,7 @@ export function conteudoDoFormulario(dto: FormularioDto): ConteudoDoFormulario {
     termos: dto.termos.map(
       (termo): TermoDoFormulario => ({
         codigo: termo.codigo,
-        ordem: Number(termo.ordem),
+        ordem: termo.ordem,
         termoId: termo.termoId,
         versaoId: termo.versaoId,
         exibicao: predicado(termo.exibicao),
@@ -120,13 +121,15 @@ export function cabecalhoParaEnvio(
 /**
  * Os itens e os grupos para o PUT, sem os dados básicos. `semSecao` tira a seção de todos — o
  * rascunho aceita item sem seção —, para gravar os itens antes de um cabeçalho que muda as seções.
- * `grupos` vai sempre como lista: nulo manteria os grupos gravados.
+ * `grupos` vai sempre como lista: nulo manteria os grupos gravados. Nulo quando algum limite digitado
+ * não é número: a API recusa número em texto, então o corpo não se monta.
  */
 export function itensParaEnvio(
   conteudo: ConteudoDoFormulario,
   semSecao = false,
-): DefinirItensDoFormularioRequest {
-  const enviado = semDadosBasicos(conteudo);
+): DefinirItensDoFormularioRequest | null {
+  const enviado = conteudoParaEnvio(semDadosBasicos(conteudo));
+  if (enviado === null) return null;
   return {
     itens: (enviado.itens ?? []).map((item) => (semSecao ? { ...item, etapaCodigo: null } : item)),
     grupos: (enviado.grupos ?? []).map((grupo) =>
@@ -197,7 +200,9 @@ export function planoDeGravacao(
     const enviados = itensParaEnvio(desejado.conteudo);
     return comTermos([
       'cabecalho',
-      ...(enviados.itens.length + (enviados.grupos ?? []).length > 0 ? (['itens'] as const) : []),
+      ...(enviados === null || enviados.itens.length + (enviados.grupos ?? []).length > 0
+        ? (['itens'] as const)
+        : []),
     ]);
   }
 

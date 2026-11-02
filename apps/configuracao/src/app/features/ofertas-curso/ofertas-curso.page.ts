@@ -1233,7 +1233,7 @@ export class OfertasCursoPage {
       turnos: ordenarTurnosCanonicamente(oferta.turnos),
       eMecCodigo: oferta.eMecCodigo ?? '',
       codigoSga: oferta.codigoSga ?? '',
-      vagasAnuaisAutorizadas: normalizarVagas(oferta.vagasAnuaisAutorizadas),
+      vagasAnuaisAutorizadas: oferta.vagasAnuaisAutorizadas,
       baseLegal: oferta.baseLegal ?? '',
       atoAutorizacaoMec: oferta.atoAutorizacaoMec ?? '',
     });
@@ -1592,16 +1592,4 @@ function controlNameFromBackendField(field: string): keyof OfertaCursoForm | nul
 function nullIfBlank(value: string): string | null {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
-}
-
-// `vagasAnuaisAutorizadas` é `int32` no contrato, mas o `schema.ts` gerado
-// tipa como `number | string | null` (mesmo padrão de `PesoAreaEnemDto`) — o
-// form (`FormControl<number | null>`) preserva o valor mesmo quando o backend
-// serializa como string.
-function normalizarVagas(valor: number | string | null | undefined): number | null {
-  if (valor === null || valor === undefined) {
-    return null;
-  }
-  const numero = typeof valor === 'number' ? valor : Number(valor);
-  return Number.isFinite(numero) ? numero : null;
 }

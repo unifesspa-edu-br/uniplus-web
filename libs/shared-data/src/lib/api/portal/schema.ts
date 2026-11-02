@@ -141,7 +141,7 @@ export interface components {
             readonly nome: string;
             readonly tipoDeMidia: string;
             /** Format: int64 */
-            readonly tamanhoBytes: number | string;
+            readonly tamanhoBytes: number;
             /** Format: uri */
             readonly url: string;
         };
@@ -153,7 +153,7 @@ export interface components {
             readonly titulo: string;
             readonly numero: null | string;
             /** Format: int32 */
-            readonly ano: number | string;
+            readonly ano: number;
             readonly tipo: components["schemas"]["TipoDoEventoResponse"];
             readonly descricao: null | string;
             /** Format: uri */
@@ -171,7 +171,7 @@ export interface components {
             readonly type?: null | string;
             readonly title?: null | string;
             /** Format: int32 */
-            readonly status?: null | number | string;
+            readonly status?: null | number;
             readonly detail?: null | string;
             readonly instance?: null | string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */

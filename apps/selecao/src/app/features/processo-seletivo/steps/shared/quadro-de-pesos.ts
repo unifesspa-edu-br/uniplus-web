@@ -1,6 +1,5 @@
 import type { PesoAreaEnemDto } from '@uniplus/shared-data/configuracao';
 import type { ConfiguracaoClassificacaoDto } from '@uniplus/shared-data/selecao';
-import { numeroDaApi, numeroOuNuloDaApi } from '@uniplus/shared-utils';
 
 export interface AreaDoQuadro {
   readonly codigo: string;
@@ -162,14 +161,14 @@ export function colunasDoQuadro(
 function areaDo(area: {
   readonly codigo: string;
   readonly rotulo: string;
-  readonly peso: number | string;
-  readonly corte: null | number | string;
+  readonly peso: number;
+  readonly corte: null | number;
 }): AreaDoQuadro {
   return {
     codigo: area.codigo,
     rotulo: area.rotulo,
-    peso: numeroDaApi(area.peso),
-    corte: numeroOuNuloDaApi(area.corte),
+    peso: area.peso,
+    corte: area.corte,
   };
 }
 

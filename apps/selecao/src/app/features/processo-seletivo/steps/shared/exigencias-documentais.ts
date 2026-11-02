@@ -61,13 +61,12 @@ const FORMATO_DO_WIRE = new Map([
 const BYTES_POR_MB = 1024 * 1024;
 
 /**
- * A restrição de arquivo que o cadastro publica para um tipo de documento. O tamanho chega
- * como número ou texto — o contrato o descreve como inteiro de 32 bits, e o gerador admite as
- * duas formas.
+ * A restrição de arquivo que o cadastro publica para um tipo de documento. O tamanho é um inteiro
+ * de 32 bits.
  */
 export interface RestricaoDeArquivo {
   readonly formatosAceitos?: string | null;
-  readonly tamanhoMaximoMb?: number | string | null;
+  readonly tamanhoMaximoMb?: number | null;
 }
 
 /**
@@ -79,12 +78,11 @@ export interface RestricaoDeArquivo {
  * causa de um documento. Acima do teto, o campo viaja ausente — "o cadastro não restringe o
  * tamanho" é mais verdadeiro que um número truncado.
  */
-function tetoEmBytes(tamanhoMaximoMb: number | string | null | undefined): number | null {
+function tetoEmBytes(tamanhoMaximoMb: number | null | undefined): number | null {
   if (tamanhoMaximoMb === null || tamanhoMaximoMb === undefined) return null;
-  const mb = typeof tamanhoMaximoMb === 'number' ? tamanhoMaximoMb : Number(tamanhoMaximoMb);
-  if (!Number.isFinite(mb) || mb <= 0) return null;
+  if (!Number.isFinite(tamanhoMaximoMb) || tamanhoMaximoMb <= 0) return null;
 
-  const bytes = mb * BYTES_POR_MB;
+  const bytes = tamanhoMaximoMb * BYTES_POR_MB;
   return bytes > MAIOR_INTEIRO_DE_32_BITS ? null : bytes;
 }
 
@@ -993,7 +991,7 @@ function comoNo(no: NoDeExigencia): NoExigenciaInput {
   return {
     tipo: no.tipo,
     documento: null,
-    quantidadeMinima: comoNumero(no.quantidadeMinima),
+    quantidadeMinima: no.quantidadeMinima ?? null,
     consequencia: no.consequencia,
     basesLegais: no.basesLegais === null ? null : no.basesLegais.map(comoBaseLegal),
     filhos: null,
@@ -1234,7 +1232,7 @@ function noDe(no: NoExigenciaDto, codigoPorFaseId: ReadonlyMap<string, string>):
 
 function camposDoNo(no: NoExigenciaDto): Omit<NoDeExigencia, 'tipo' | 'documento' | 'filhos'> {
   return {
-    quantidadeMinima: comoNumero(no.quantidadeMinima),
+    quantidadeMinima: no.quantidadeMinima ?? null,
     consequencia: no.consequencia,
     // A leitura devolve lista vazia para o nó que não tem norma própria; a escrita distingue
     // "sem norma" de "lista vazia" — o contrato só aceita a coleção quando há consequência
@@ -1271,7 +1269,7 @@ function documentoDe(
     obrigatorio: dto.obrigatorio,
     consequenciaIndeferimento: dto.consequenciaIndeferimento ?? '',
     condicoes: dto.condicoes.map((condicao) => ({
-      clausula: comoNumero(condicao.clausula) ?? 1,
+      clausula: condicao.clausula ?? 1,
       fato: condicao.fato,
       operador: condicao.operador,
       valor: condicao.valor,
@@ -1281,7 +1279,7 @@ function documentoDe(
       dto.idadeMaximaEmissao === null || dto.idadeMaximaEmissao === undefined
         ? null
         : {
-            valor: comoNumero(dto.idadeMaximaEmissao.valor),
+            valor: dto.idadeMaximaEmissao.valor ?? null,
             unidade: dto.idadeMaximaEmissao.unidade,
             referenciaTipo: dto.idadeMaximaEmissao.referenciaTipo,
             data: dto.idadeMaximaEmissao.data,
@@ -1292,7 +1290,7 @@ function documentoDe(
                 : (codigoPorFaseId.get(dto.idadeMaximaEmissao.referenciaFaseId) ?? null),
           },
     formatosPermitidos: dto.formatosPermitidos,
-    tamanhoMaximoBytes: comoNumero(dto.tamanhoMaximoBytes),
+    tamanhoMaximoBytes: dto.tamanhoMaximoBytes ?? null,
     modelo:
       dto.modelo === null || dto.modelo === undefined
         ? null
@@ -1303,17 +1301,6 @@ function documentoDe(
             hashSha256: dto.modelo.hashSha256,
           },
   };
-}
-
-/**
- * Numérico do contrato como número. O gerador tipa alguns inteiros do wire como
- * `string | number` porque o schema os descreve com formato, e o rascunho guarda número —
- * coagir na entrada evita espalhar a união por toda a tela.
- */
-function comoNumero(valor: string | number | null | undefined): number | null {
-  if (valor === null || valor === undefined) return null;
-  const numero = typeof valor === 'number' ? valor : Number(valor);
-  return Number.isFinite(numero) ? numero : null;
 }
 
 /** As quatro colunas da norma, `observacao` inclusive — que antes nunca era lida. */

@@ -4,7 +4,7 @@ import {
   type LoteDeNotasDoEnemDto,
   type OcorrenciaDoLoteDto,
 } from '@uniplus/shared-data/selecao';
-import { formatarNumeroPtBr, numeroDaApi } from '@uniplus/shared-utils';
+import { formatarNumeroPtBr } from '@uniplus/shared-utils';
 
 /** Os totais do lote já como números, na ordem em que a tela os apresenta. */
 export interface TotaisDoLote {
@@ -19,19 +19,19 @@ export interface TotaisDoLote {
 
 export function totaisDoLote(lote: LoteDeNotasDoEnemDto): TotaisDoLote {
   return {
-    linhasLidas: numeroDaApi(lote.totalDeLinhas),
-    inscritosComNota: numeroDaApi(lote.totalDeInscritosComNota),
-    notasLancadas: numeroDaApi(lote.totalDeLancamentos),
-    inscritosSemNota: numeroDaApi(lote.totalDeInscritosSemLinha),
-    linhasSemInscrito: numeroDaApi(lote.totalDeLinhasSemInscrito),
-    inscritosEmConflito: numeroDaApi(lote.totalDeInscritosEmConflito),
-    inscritosAusentes: numeroDaApi(lote.totalDeInscritosAusentes),
+    linhasLidas: lote.totalDeLinhas,
+    inscritosComNota: lote.totalDeInscritosComNota,
+    notasLancadas: lote.totalDeLancamentos,
+    inscritosSemNota: lote.totalDeInscritosSemLinha,
+    linhasSemInscrito: lote.totalDeLinhasSemInscrito,
+    inscritosEmConflito: lote.totalDeInscritosEmConflito,
+    inscritosAusentes: lote.totalDeInscritosAusentes,
   };
 }
 
-/** Um total da API, que chega como número ou texto, no formato pt-BR das telas. */
-export function formatarTotal(valor: number | string): string {
-  return formatarNumeroPtBr(numeroDaApi(valor));
+/** Um total da API no formato pt-BR das telas. */
+export function formatarTotal(valor: number): string {
+  return formatarNumeroPtBr(valor);
 }
 
 function quantos(n: number, singular: string, plural: string): string {
@@ -143,7 +143,7 @@ const comparaInscricao = (a: string | null, b: string | null): number => {
 };
 
 function linhasEmOrdem(ocorrencia: OcorrenciaDoLoteDto): number[] {
-  return (ocorrencia.numerosDasLinhas ?? []).map(numeroDaApi).sort((a, b) => a - b);
+  return [...(ocorrencia.numerosDasLinhas ?? [])].sort((a, b) => a - b);
 }
 
 function cursosEmOrdem(ofertas: Parameters<typeof ofertasEmOrdem>[0]): string[] {

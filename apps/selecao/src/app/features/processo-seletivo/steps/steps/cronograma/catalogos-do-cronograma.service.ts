@@ -433,10 +433,10 @@ export class CatalogosDoCronogramaService {
 /** Os formatos e o tamanho que o cadastro declara, só com as partes presentes; `null` sem nenhuma. */
 function formatosDe(tipo: TipoDocumentoDto): string | null {
   const formatos = tipo.formatosAceitos?.trim() ?? '';
-  const tamanho = Number(tipo.tamanhoMaximoMb);
+  const tamanho = tipo.tamanhoMaximoMb;
   const partes = [
     formatos === '' ? null : `Formatos aceitos: ${formatos}.`,
-    Number.isFinite(tamanho) && tamanho > 0 ? `Até ${tamanho.toLocaleString('pt-BR')} MB.` : null,
+    tamanho !== null && tamanho !== undefined && tamanho > 0 ? `Até ${tamanho.toLocaleString('pt-BR')} MB.` : null,
   ].filter((parte) => parte !== null);
   return partes.length === 0 ? null : partes.join(' ');
 }

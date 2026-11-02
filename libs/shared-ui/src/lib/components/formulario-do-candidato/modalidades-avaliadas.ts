@@ -1,8 +1,6 @@
 import type { DocumentosAvaliados } from './documentos-avaliados';
 import {
-  comoInteiro,
   type DependenciasDaAvaliacao,
-  type Inteiro,
   type PassoDoFormulario,
 } from './formulario-do-candidato.model';
 
@@ -17,7 +15,7 @@ export interface ModalidadeAvaliada {
   readonly codigo: string;
   /** O nome congelado na publicação do processo. */
   readonly nome: string;
-  readonly ordem: Inteiro;
+  readonly ordem: number;
 }
 
 /** Uma pergunta visível sem resposta de que a avaliação depende. */
@@ -70,7 +68,7 @@ export function nomesNaOrdem(modalidades: ModalidadesAvaliadas | null): readonly
 
 /** Os nomes de um conjunto de modalidades, na ordem da oferta: o código nunca vai à tela. */
 export function nomesPelaOrdem(itens: readonly ModalidadeAvaliada[]): readonly string[] {
-  return [...itens].sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem)).map((m) => m.nome);
+  return [...itens].sort((a, b) => a.ordem - b.ordem).map((m) => m.nome);
 }
 
 /**

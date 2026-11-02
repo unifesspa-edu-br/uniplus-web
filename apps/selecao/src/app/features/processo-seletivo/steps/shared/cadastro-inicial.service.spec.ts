@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
+import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
 
 import { CadastroInicialService } from './cadastro-inicial.service';
 import { ChaveDeSubstituicao } from '@uniplus/shared-core/http';
@@ -47,5 +48,50 @@ describe('CadastroInicialService — descarte do cadastro em andamento', () => {
     const sobreviventes = [...antes].filter(([nome, chave]) => depois.get(nome) === chave).map(([nome]) => nome);
 
     expect(sobreviventes, 'chaves que atravessaram a troca de processo').toEqual([]);
+  });
+});
+
+describe('CadastroInicialService — gravação do formulário', () => {
+  it('não envia nenhum passo quando um limite digitado não é número', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        CadastroInicialService,
+        { provide: SELECAO_BASE_PATH, useValue: '/api/selecao' },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    });
+    const servico = TestBed.inject(CadastroInicialService);
+    const http = TestBed.inject(HttpTestingController);
+    const conteudo: ConteudoDoFormulario = {
+      titulo: 'Inscrição',
+      etapas: [
+        { codigo: 'S1', ordem: 1, tipo: 'SECAO', bloco: null, titulo: 'S1', descricao: null, aviso: null },
+      ],
+      itens: [
+        {
+          fatoCodigo: 'IDADE',
+          ordem: 1,
+          rotulo: 'Idade',
+          tipoRenderizacao: 'NUMERO',
+          obrigatoriedade: 'SEMPRE',
+          precondicao: null,
+          etapaCodigo: 'S1',
+          pedirConfirmacao: false,
+          restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 'abc' }],
+        },
+      ],
+      termos: [],
+      pressupostos: [],
+      grupos: [],
+    };
+
+    const resultado = await servico.gravarFormulario('p1', 'INSCRICAO', null, {
+      faseId: 'F1',
+      conteudo,
+    });
+
+    expect(resultado.ok).toBe(false);
+    http.expectNone(() => true);
   });
 });

@@ -63,7 +63,7 @@ describe('LoteDeNotasComponent', () => {
     abrir(
       lote([
         ocorrencia('LINHA_SEM_INSCRITO', {
-          numerosDasLinhas: ['14'],
+          numerosDasLinhas: [14],
           nomeDoCandidato: 'Fernanda Laura Nicole Drumond',
           sexo: 'F',
           cpfMascarado: '***.836.371-**',
@@ -144,8 +144,8 @@ describe('LoteDeNotasComponent', () => {
     abrir(
       lote([
         ocorrencia('INSCRITO_SEM_LINHA', { numeroDeInscricao: 'INS-0001' }),
-        ocorrencia('LINHA_SEM_INSCRITO', { numerosDasLinhas: ['3'] }),
-        ocorrencia('CONFLITO', { numeroDeInscricao: 'INS-0002', numerosDasLinhas: ['5'] }),
+        ocorrencia('LINHA_SEM_INSCRITO', { numerosDasLinhas: [3] }),
+        ocorrencia('CONFLITO', { numeroDeInscricao: 'INS-0002', numerosDasLinhas: [5] }),
       ]),
     );
     const selecionada = (): string | null =>

@@ -12,7 +12,6 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk } from '@uniplus/shared-core/http';
-import { numeroDaApi } from '@uniplus/shared-utils';
 import { NotasDoEnemApi, type LoteDeNotasDoEnemDto } from '@uniplus/shared-data/selecao';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import {
@@ -60,10 +59,10 @@ export class HistoricoDeLotesComponent {
   protected readonly total = formatarTotal;
 
   /** A contagem de um tipo de problema só pede atenção quando passa de zero. */
-  protected readonly temOcorrencia = (valor: number | string): boolean => numeroDaApi(valor) > 0;
+  protected readonly temOcorrencia = (valor: number): boolean => valor > 0;
   /** O lote vigente sem nenhuma nota casada com inscritos costuma ser o arquivo de outra edição. */
   protected readonly semNotaCasada = (lote: LoteDeNotasDoEnemDto): boolean =>
-    lote.vigente && numeroDaApi(lote.totalDeInscritosComNota) === 0;
+    lote.vigente && lote.totalDeInscritosComNota === 0;
 
   protected readonly detalhe = signal<DetalheDoLote | null>(null);
   private readonly tituloDoDetalhe = viewChild<ElementRef<HTMLElement>>('tituloDoDetalhe');

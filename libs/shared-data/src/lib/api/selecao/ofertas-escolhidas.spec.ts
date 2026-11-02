@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { OFERTA_NAO_IDENTIFICADA, ofertasEmOrdem } from './ofertas-escolhidas';
 
 describe('ofertasEmOrdem', () => {
-  it('ordena pela ordem da escolha, também quando ela chega como texto', () => {
+  it('ordena pela ordem da escolha', () => {
     const ofertas = ofertasEmOrdem([
-      { id: 'b', nome: 'Enfermagem', ordem: '2' },
+      { id: 'b', nome: 'Enfermagem', ordem: 2 },
       { id: 'a', nome: 'Medicina', ordem: 1 },
     ]);
 
@@ -15,10 +15,10 @@ describe('ofertasEmOrdem', () => {
     ]);
   });
 
-  it('ordena numericamente ordens de dois dígitos que chegam como texto', () => {
+  it('ordena numericamente ordens de dois dígitos', () => {
     const ofertas = ofertasEmOrdem([
-      { id: 'a', nome: 'Décima', ordem: '10' },
-      { id: 'b', nome: 'Segunda', ordem: '2' },
+      { id: 'a', nome: 'Décima', ordem: 10 },
+      { id: 'b', nome: 'Segunda', ordem: 2 },
       { id: 'c', nome: 'Primeira', ordem: 1 },
     ]);
 

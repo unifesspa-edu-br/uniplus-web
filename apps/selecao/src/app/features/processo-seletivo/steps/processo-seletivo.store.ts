@@ -704,7 +704,7 @@ export class ProcessoSeletivoStore {
   /** O número de opções de curso, lido do detalhe. */
   registrarVagasGravadas(dto: ProcessoSeletivoDto): void {
     const numero = dto.opcoesDeCurso?.numero;
-    this.opcoesDeCursoGravadas.set(numero === undefined || numero === null ? null : Number(numero));
+    this.opcoesDeCursoGravadas.set(numero ?? null);
     this.vagasGravadasDefasadas.set(false);
   }
 

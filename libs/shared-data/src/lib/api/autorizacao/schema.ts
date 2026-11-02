@@ -2697,7 +2697,7 @@ export interface components {
             readonly id: string;
             readonly situacao: string;
             /** Format: int64 */
-            readonly tamanhoDeclarado: number | string;
+            readonly tamanhoDeclarado: number;
             /** Format: date-time */
             readonly enviadoEm: null | string;
         };
@@ -2781,7 +2781,7 @@ export interface components {
         };
         readonly EnviarAnexoDoPedidoRequest: {
             /** Format: int64 */
-            readonly tamanhoDoPdf: number | string;
+            readonly tamanhoDoPdf: number;
         };
         readonly EscopoDto: {
             readonly tipo: string;
@@ -2810,7 +2810,7 @@ export interface components {
             readonly gestores: null | readonly components["schemas"]["IdentidadeInformadaDto"][];
             readonly numeroDoDocumento: null | string;
             /** Format: int64 */
-            readonly tamanhoDoPdf: number | string;
+            readonly tamanhoDoPdf: number;
         };
         readonly InstalacaoDto: {
             /** Format: uuid */
@@ -2823,7 +2823,7 @@ export interface components {
             /** Format: date-time */
             readonly codigoExpiraEm: null | string;
             /** Format: int32 */
-            readonly tentativasRestantes: null | number | string;
+            readonly tentativasRestantes: null | number;
         };
         readonly InstalacaoIniciadaDto: {
             /** Format: uuid */
@@ -2943,7 +2943,7 @@ export interface components {
             readonly type?: null | string;
             readonly title?: null | string;
             /** Format: int32 */
-            readonly status?: null | number | string;
+            readonly status?: null | number;
             readonly detail?: null | string;
             readonly instance?: null | string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */

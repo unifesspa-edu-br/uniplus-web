@@ -27,7 +27,7 @@ describe('detalheDoArquivoEnviado', () => {
     expect(
       detalheDoArquivoEnviado({
         tipoDeMidia: 'application/x-segredo',
-        tamanhoBytes: '2048',
+        tamanhoBytes: 2048,
         confirmadoEm: '2026-10-22T12:33:00Z',
       }),
     ).toBe('2,0 KB · enviado em 22/10/2026, 09:33');

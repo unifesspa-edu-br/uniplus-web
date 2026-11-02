@@ -292,7 +292,7 @@ describe('EnvioAoInepComponent', () => {
       leiauteVersao: 'v1',
       geradoPor: 'usuario-opaco',
       geradoEm: '2026-10-26T12:00:00Z',
-      totalDeCpfs: '1300',
+      totalDeCpfs: 1300,
     };
     await escolherEdicao(controller, tela, 'envio', '2025', [
       { ...envio, geradoPorNome: 'Diogo Bruno Filipe Souza' },
