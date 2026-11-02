@@ -21,7 +21,6 @@ describe('ofertas da inscrição', () => {
 
   it('o número de opções é 2 só quando a versão fixada admite 2', () => {
     expect(numeroDeOpcoesDeCurso(2)).toBe(2);
-    expect(numeroDeOpcoesDeCurso('2')).toBe(2);
     expect(numeroDeOpcoesDeCurso(1)).toBe(1);
   });
 });

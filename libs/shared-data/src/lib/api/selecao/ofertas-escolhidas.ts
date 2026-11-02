@@ -1,11 +1,9 @@
-import { numeroDaApi } from '@uniplus/shared-utils';
-
 import type { OfertaEscolhidaDto } from './notas-do-enem.api';
 
 /** Texto da oferta que a inscrição escolheu e a versão do formulário não nomeia. */
 export const OFERTA_NAO_IDENTIFICADA = 'Oferta não identificada';
 
-/** A oferta como a tela a mostra: o nome sempre presente e a ordem já como número. */
+/** A oferta como a tela a mostra: o nome sempre presente. */
 export interface OfertaExibida {
   readonly id: string;
   readonly nome: string;
@@ -24,7 +22,7 @@ export function ofertasEmOrdem(
     .map((oferta) => ({
       id: oferta.id,
       nome: oferta.nome ?? OFERTA_NAO_IDENTIFICADA,
-      ordem: numeroDaApi(oferta.ordem),
+      ordem: oferta.ordem,
     }))
     .sort((a, b) => a.ordem - b.ordem);
 }

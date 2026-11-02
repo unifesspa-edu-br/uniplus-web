@@ -811,7 +811,7 @@ export interface components {
             readonly orgao: string;
             readonly serie: string;
             /** Format: int32 */
-            readonly ano: number | string;
+            readonly ano: number;
             readonly numero: null | string;
             readonly tipoCodigo: string;
             readonly tipoNome: null | string;
@@ -891,7 +891,7 @@ export interface components {
             readonly type?: null | string;
             readonly title?: null | string;
             /** Format: int32 */
-            readonly status?: null | number | string;
+            readonly status?: null | number;
             readonly detail?: null | string;
             readonly instance?: null | string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
@@ -901,7 +901,7 @@ export interface components {
             readonly orgao: string;
             readonly serie: string;
             /** Format: int32 */
-            readonly ano: number | string;
+            readonly ano: number;
             readonly numero: null | string;
             readonly tipoCodigo: string;
             /** Format: date */

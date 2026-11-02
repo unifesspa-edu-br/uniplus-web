@@ -240,9 +240,7 @@ export class CatalogosDeDistribuicaoService {
   }
 }
 
-/** O contrato admite o inteiro como texto; fora disso, não há teto conhecido. */
-function comoInteiro(valor: number | string | null | undefined): number | null {
-  if (typeof valor === 'number') return Number.isInteger(valor) ? valor : null;
-  if (typeof valor === 'string' && /^\d+$/.test(valor.trim())) return Number(valor.trim());
-  return null;
+/** Sem inteiro, não há teto conhecido. */
+function comoInteiro(valor: number | null | undefined): number | null {
+  return typeof valor === 'number' && Number.isInteger(valor) ? valor : null;
 }

@@ -219,7 +219,7 @@ export class SolicitacaoDaProtecaoDialogComponent {
         this.enviando.set(false);
         if (resultado.ok) {
           const { tiposDeDocumento, fatos } = resultado.data;
-          this.notifications.success('Solicitação enviada', `${Number(tiposDeDocumento) + Number(fatos)} item(ns) aguardam a proteção de dados.`);
+          this.notifications.success('Solicitação enviada', `${tiposDeDocumento + fatos} item(ns) aguardam a proteção de dados.`);
           this.visible.set(false);
           this.enviada.emit(resultado.data);
           return;

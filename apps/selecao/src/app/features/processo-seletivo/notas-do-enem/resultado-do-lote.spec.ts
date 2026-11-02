@@ -10,7 +10,7 @@ import { agruparOcorrencias, fraseDoLote, listaDeLinhas, totaisDoLote } from './
 function ocorrencia(
   tipo: string,
   numeroDeInscricao: string | null,
-  linhas: (number | string)[] | null = null,
+  linhas: number[] | null = null,
   extra: Partial<OcorrenciaDoLoteDto> = {},
 ): OcorrenciaDoLoteDto {
   return {
@@ -64,7 +64,7 @@ describe('agruparOcorrencias', () => {
   it('a linha sem inscrito vira um item por linha, em ordem, com nome, sexo por extenso e CPF', () => {
     const grupos = agruparOcorrencias(
       lote([
-        ocorrencia('LINHA_SEM_INSCRITO', null, ['30', 4], {
+        ocorrencia('LINHA_SEM_INSCRITO', null, [30, 4], {
           nomeDoCandidato: 'Fernanda Laura Nicole Drumond',
           sexo: 'F',
           cpfMascarado: '***.836.371-**',
@@ -95,7 +95,7 @@ describe('agruparOcorrencias', () => {
   });
 
   it('o conflito traz o inscrito e as linhas em conflito', () => {
-    const [grupo] = agruparOcorrencias(lote([ocorrencia('CONFLITO', 'INS-1', ['9', 3])]));
+    const [grupo] = agruparOcorrencias(lote([ocorrencia('CONFLITO', 'INS-1', [9, 3])]));
 
     expect(grupo.itens[0]).toMatchObject({ inscricao: 'INS-1', linhas: [3, 9] });
     expect(grupo.texto).toContain('até o CEPS conferir');
@@ -170,15 +170,15 @@ describe('agruparOcorrencias', () => {
 
 describe('totaisDoLote e fraseDoLote', () => {
   const lote = {
-    totalDeLinhas: '1300',
-    totalDeInscritosComNota: '1230',
+    totalDeLinhas: 1300,
+    totalDeInscritosComNota: 1230,
     totalDeLancamentos: 6150,
-    totalDeInscritosSemLinha: '12',
+    totalDeInscritosSemLinha: 12,
     totalDeLinhasSemInscrito: 1,
-    totalDeInscritosEmConflito: '0',
+    totalDeInscritosEmConflito: 0,
   } as unknown as LoteDeNotasDoEnemDto;
 
-  it('converte os totais que chegam como texto', () => {
+  it('reúne os totais do lote na ordem em que a tela os apresenta', () => {
     expect(totaisDoLote(lote)).toMatchObject({
       linhasLidas: 1300,
       inscritosComNota: 1230,

@@ -58,7 +58,7 @@ import {
   SpinnerComponent,
   TagComponent,
 } from '@uniplus/shared-ui/components';
-import { formatarNumeroPtBr, numeroDaApi, numeroOuNuloDaApi } from '@uniplus/shared-utils';
+import { formatarNumeroPtBr } from '@uniplus/shared-utils';
 
 import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
 import { contadorDeFalhas } from '../../shared/contador-de-falhas';
@@ -873,8 +873,8 @@ export class PesosEnemPage {
   /** O corte da área como texto em pt-BR, ou `null` quando a área não tem corte (o
    *  zero é corte válido e aparece). */
   protected corteExibido(valor: PesoAreaEnemAreaDto | undefined): string | null {
-    const corte = numeroOuNuloDaApi(valor?.corte);
-    return corte === null ? null : formatarNumeroPtBr(corte);
+    const corte = valor?.corte;
+    return corte === null || corte === undefined ? null : formatarNumeroPtBr(corte);
   }
 
   protected tentarNovamente(): void {
@@ -1673,8 +1673,8 @@ function criarPesoEdicaoGrupoForm(
         const valor = linha.areas.find((existente) => existente.codigo?.trim() === area.codigo);
         return criarAreaForm(
           area.codigo,
-          valor === undefined ? 0 : numeroDaApi(valor.peso),
-          numeroOuNuloDaApi(valor?.corte),
+          valor === undefined ? 0 : valor.peso,
+          valor?.corte ?? null,
         );
       }),
     ),

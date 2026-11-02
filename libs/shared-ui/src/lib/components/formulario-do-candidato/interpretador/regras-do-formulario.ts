@@ -38,26 +38,20 @@ export interface OpcoesCondicionadasDasRegras {
 }
 
 /**
- * Um número do contrato. O tipo gerado aceita também o número escrito em texto, como a API lê o corpo;
- * a leitura das regras o converte.
- */
-export type NumeroDoContrato = number | string;
-
-/**
  * Um limite da faixa de data: `DATA_FIXA` com a data `AAAA-MM-DD`, ou `ENVIO` com os anos e os dias
  * somados ao dia do envio — o que falta vale zero.
  */
 export interface LimiteDeDataDasRegras {
   readonly ancora: string;
   readonly data?: string | null;
-  readonly anos?: NumeroDoContrato | null;
-  readonly dias?: NumeroDoContrato | null;
+  readonly anos?: number | null;
+  readonly dias?: number | null;
 }
 
 export interface RestricaoDasRegras {
   readonly tipo: string;
-  readonly minimo?: NumeroDoContrato | null;
-  readonly maximo?: NumeroDoContrato | null;
+  readonly minimo?: number | null;
+  readonly maximo?: number | null;
   readonly entradas?: readonly OpcoesCondicionadasDasRegras[] | null;
   readonly fatos?: readonly string[] | null;
   readonly dataMinima?: LimiteDeDataDasRegras | null;
@@ -85,8 +79,8 @@ export interface GrupoDasRegras {
   readonly exibicao?: PredicadoDasRegras;
   readonly obrigatoriedade: string;
   readonly predicadoObrigatoriedade?: PredicadoDasRegras;
-  readonly minimo: NumeroDoContrato;
-  readonly maximo?: NumeroDoContrato | null;
+  readonly minimo: number;
+  readonly maximo?: number | null;
   readonly incluiCandidato: boolean;
   readonly subitens?: readonly ItemDasRegras[] | null;
 }

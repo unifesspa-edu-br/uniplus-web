@@ -101,11 +101,12 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     itensDeAvaliacao: (etapa.itensDeAvaliacao ?? []).map((item) => ({
       id: item.id,
       rotulo: item.rotulo.trim(),
-      pontuacaoMaxima: decimalDoCampo(item.pontuacaoMaxima) ?? item.pontuacaoMaxima,
+      // A validação do passo recusa antes o que não é número.
+      pontuacaoMaxima: decimalDoCampo(item.pontuacaoMaxima) ?? 0,
     })),
     escalaDeAtendimento: (etapa.escalaDeAtendimento ?? []).map((nivel) => ({
       rotulo: nivel.rotulo.trim(),
-      fracao: fracaoDoPercentual(nivel.percentual) ?? nivel.percentual,
+      fracao: fracaoDoPercentual(nivel.percentual) ?? 0,
     })),
     ordem: etapa.ordem,
     faseCodigo: etapa.faseCodigo === '' ? null : etapa.faseCodigo,

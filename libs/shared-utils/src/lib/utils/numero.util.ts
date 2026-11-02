@@ -21,16 +21,3 @@ export function formatarNumeroPtBr(valor: number, maximoDeCasas?: number): strin
   }
   return formatador.format(valor);
 }
-
-/**
- * Decimal como a API o serializa: número, ou texto quando o valor não cabe sem perda num `number`
- * do JSON (o contrato declara `number | string`).
- */
-export function numeroDaApi(valor: number | string): number {
-  return typeof valor === 'number' ? valor : Number(valor);
-}
-
-/** O mesmo, para campo opcional: ausente ou `null` continua `null`. */
-export function numeroOuNuloDaApi(valor: number | string | null | undefined): number | null {
-  return valor === null || valor === undefined ? null : numeroDaApi(valor);
-}

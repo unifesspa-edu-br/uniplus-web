@@ -3540,11 +3540,7 @@
             "type": "string"
           },
           "tamanhoDeclarado": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int64"
           },
           "enviadoEm": {
@@ -3904,11 +3900,7 @@
         "type": "object",
         "properties": {
           "tamanhoDoPdf": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int64"
           }
         }
@@ -4037,11 +4029,7 @@
             ]
           },
           "tamanhoDoPdf": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int64"
           }
         }
@@ -4086,11 +4074,9 @@
             "format": "date-time"
           },
           "tentativasRestantes": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           }
@@ -4540,11 +4526,9 @@
             ]
           },
           "status": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },

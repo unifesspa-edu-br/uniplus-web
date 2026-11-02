@@ -964,7 +964,7 @@ describe('o que impede gravar o cronograma', () => {
       expect(fracaoDoPercentual('33,33')).toBe(0.3333);
       expect(fracaoDoPercentual('meio')).toBeNull();
       expect(percentualDaFracao(0.3333)).toBe('33.33');
-      expect(percentualDaFracao('1')).toBe('100');
+      expect(percentualDaFracao(1)).toBe('100');
     });
 
     it('dá texto às recusas do servidor a item e nível e as aponta no campo', () => {

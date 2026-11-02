@@ -341,7 +341,7 @@ export interface paths {
             readonly parameters: {
                 readonly query?: {
                     readonly q?: string;
-                    readonly tipo?: readonly (number | string)[];
+                    readonly tipo?: readonly number[];
                     /** @description Cursor opaco AES-GCM emitido pelo servidor no header Link da página anterior. Ausente na primeira página. Cliente trata como string opaca — não decodificar (ADR-0026, ADR-0031). */
                     readonly cursor?: string;
                     /** @description Tamanho máximo da janela de resultados. Limites configurados em CursorPaginationOptions; valores fora do range retornam 422 com code uniplus.pagination.limit_invalido (ADR-0026). */
@@ -840,9 +840,9 @@ export interface components {
             readonly distrito: null | string;
             readonly cidade: components["schemas"]["CidadeReferenciaDto"];
             /** Format: double */
-            readonly latitude: null | number | string;
+            readonly latitude: null | number;
             /** Format: double */
-            readonly longitude: null | number | string;
+            readonly longitude: null | number;
             readonly nivelResolucao: string;
             readonly origem: string;
             /** Format: date-time */
@@ -857,9 +857,9 @@ export interface components {
             readonly distrito: null | string;
             readonly cidade: null | components["schemas"]["CidadeReferenciaInput"];
             /** Format: double */
-            readonly latitude: null | number | string;
+            readonly latitude: null | number;
             /** Format: double */
-            readonly longitude: null | number | string;
+            readonly longitude: null | number;
             readonly nivelResolucao: null | string;
             readonly origem: null | string;
         };
@@ -908,7 +908,7 @@ export interface components {
             readonly type?: null | string;
             readonly title?: null | string;
             /** Format: int32 */
-            readonly status?: null | number | string;
+            readonly status?: null | number;
             readonly detail?: null | string;
             readonly instance?: null | string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */

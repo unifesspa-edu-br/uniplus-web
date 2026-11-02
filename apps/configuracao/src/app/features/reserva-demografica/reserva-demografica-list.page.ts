@@ -524,10 +524,9 @@ export class ReservaDemograficaListPage {
     });
   }
 
-  /** Formata o percentual (contrato `number | string`) com 2 casas. */
-  protected pct(valor: number | string): string {
-    const numero = typeof valor === 'string' ? Number(valor) : valor;
-    return Number.isFinite(numero) ? numero.toFixed(2) : String(valor);
+  /** Formata o percentual com 2 casas. */
+  protected pct(valor: number): string {
+    return Number.isFinite(valor) ? valor.toFixed(2) : String(valor);
   }
 
   protected proximaPagina(): void {
@@ -571,9 +570,9 @@ export class ReservaDemograficaListPage {
     this.idEmEdicao.set(ref.id);
     this.form.reset({
       censoReferencia: ref.censoReferencia,
-      ppiPercentual: Number(ref.ppiPercentual),
-      quilombolaPercentual: Number(ref.quilombolaPercentual),
-      pcdPercentual: Number(ref.pcdPercentual),
+      ppiPercentual: ref.ppiPercentual,
+      quilombolaPercentual: ref.quilombolaPercentual,
+      pcdPercentual: ref.pcdPercentual,
       baseLegal: ref.baseLegal,
     });
     // censoReferencia é imutável (chave de negócio) — exibido read-only e fora do command.

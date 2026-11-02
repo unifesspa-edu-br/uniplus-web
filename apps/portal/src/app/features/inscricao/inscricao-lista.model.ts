@@ -55,7 +55,7 @@ export function itemDaLista(inscricao: MinhaInscricaoDto): ItemDaLista {
     numero: inscricao.numeroInscricao,
     mensagem: mensagemDa(inscricao),
     cursos: inscricao.opcoesDeCurso.map((o) => ({
-      ordem: Number(o.ordem),
+      ordem: o.ordem,
       nome: `${o.cursoNome} (${o.cursoGrau})`,
     })),
     acoes: inscricao.acoes,

@@ -8,9 +8,8 @@ describe('formatarTamanhoDeArquivo', () => {
     expect(formatarTamanhoDeArquivo(2.5 * 1024 * 1024)).toBe('2,5 MB');
   });
 
-  it('aceita número em texto e recusa o que não é número', () => {
-    expect(formatarTamanhoDeArquivo('4096')).toBe('4,0 KB');
+  it('recusa o que não é número finito', () => {
     expect(formatarTamanhoDeArquivo(null)).toBe('tamanho indisponível');
-    expect(formatarTamanhoDeArquivo('abc')).toBe('tamanho indisponível');
+    expect(formatarTamanhoDeArquivo(Number.NaN)).toBe('tamanho indisponível');
   });
 });

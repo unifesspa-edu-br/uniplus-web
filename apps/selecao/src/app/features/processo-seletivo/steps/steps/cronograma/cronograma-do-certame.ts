@@ -1144,8 +1144,8 @@ function suspensividadeIncoerente(valor: string, unidade: string): boolean {
 }
 
 /**
- * Só o que não vira número é recusado aqui: o texto que não converte seguiria no comando como
- * o texto cru e o corpo inteiro seria recusado. O resto (rótulo, soma, passo) quem diz é o
+ * Só o que não vira número é recusado aqui: o texto que não converte não tem número a enviar
+ * no comando. O resto (rótulo, soma, passo) quem diz é o
  * servidor, sob o campo, ou a publicação.
  */
 function problemasDosItensEDaEscala(etapa: EtapaPontuada, nome: string): readonly string[] {

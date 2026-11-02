@@ -14,7 +14,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk } from '@uniplus/shared-core/http';
-import { numeroDaApi } from '@uniplus/shared-utils';
 import { NotasDoEnemApi, type LoteDeNotasDoEnemDto } from '@uniplus/shared-data/selecao';
 import { AlertComponent, FileUploadComponent } from '@uniplus/shared-ui/components';
 
@@ -103,7 +102,7 @@ export class ImportacaoDeNotasComponent {
   }
 
   protected nenhumaNotaCasou(lote: LoteDeNotasDoEnemDto): boolean {
-    return numeroDaApi(lote.totalDeInscritosComNota) === 0;
+    return lote.totalDeInscritosComNota === 0;
   }
 
   protected escolherArquivo(arquivo: File | null): void {

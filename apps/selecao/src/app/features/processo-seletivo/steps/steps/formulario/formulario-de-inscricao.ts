@@ -286,7 +286,7 @@ function comSecaoDeOutrosDados(conteudo: ConteudoDoFormulario): ConteudoDoFormul
       {
         codigo: SECAO_OUTROS_DADOS,
         ordem:
-          primeiroBloco === undefined ? Number.MAX_SAFE_INTEGER : Number(primeiroBloco.ordem) - 0.5,
+          primeiroBloco === undefined ? Number.MAX_SAFE_INTEGER : primeiroBloco.ordem - 0.5,
         tipo: TIPO_SECAO,
         bloco: null,
         titulo: TITULO_SECAO_OUTROS_DADOS,

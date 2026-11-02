@@ -50,8 +50,8 @@ export function fracaoDoPercentual(percentual: string): number | null {
 }
 
 /** A fração gravada como o percentual que o operador lê e edita. */
-export function percentualDaFracao(fracao: number | string): string {
-  return String(Math.round(Number(fracao) * 1e6) / 1e4);
+export function percentualDaFracao(fracao: number): string {
+  return String(Math.round(fracao * 1e6) / 1e4);
 }
 
 /**

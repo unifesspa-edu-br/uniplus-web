@@ -38,6 +38,7 @@ import {
   removerItem,
   renderizacaoDe,
   semDadosBasicos,
+  conteudoParaEnvio,
   type ConteudoDoFormulario,
   type EtapaDoFormulario,
   type FatoDoFormulario,
@@ -852,5 +853,52 @@ describe('faixa de datas', () => {
 
     expect(recusasDaRestricao(recusas.porRestricao.get('NASCIMENTO') ?? [], 'FAIXA_DE_DATA')).toEqual(['A data mínima fica depois da data máxima.']);
     expect(recusasDaRestricao(recusas.porRestricao.get('FILHO') ?? [], 'FAIXA_DE_DATA')).toEqual(['A faixa de data precisa de ao menos um limite.']);
+  });
+});
+
+describe('conteudoParaEnvio', () => {
+  const comLimites = (minimo: number | string, anos: number | string, minimoDoGrupo: number | string = 1) =>
+    conteudo({
+      itens: [
+        item('IDADE', 0, 'S1', {
+          restricoes: [
+            { tipo: 'FAIXA_NUMERICA', minimo, maximo: null },
+            { tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos, dias: 0 }, dataMaxima: null },
+          ],
+        }),
+      ],
+      grupos: [{ ...grupo(), minimo: minimoDoGrupo, maximo: '3' }],
+    });
+
+  function grupo(): GrupoDoFormulario {
+    return {
+      codigo: 'G',
+      ordem: 1,
+      rotulo: 'Grupo',
+      etapaCodigo: 'S1',
+      minimo: 1,
+      maximo: null,
+      exibicao: null,
+      obrigatoriedade: null,
+      predicadoObrigatoriedade: null,
+      subitens: [],
+      incluiCandidato: false,
+    };
+  }
+
+  it('converte o número digitado em texto e mantém o que já é número', () => {
+    const enviado = conteudoParaEnvio(comLimites('18', -18));
+
+    expect(enviado?.itens?.[0].restricoes?.[0].minimo).toBe(18);
+    expect(enviado?.itens?.[0].restricoes?.[1].dataMinima?.anos).toBe(-18);
+    expect(enviado?.grupos?.[0].maximo).toBe(3);
+  });
+
+  it.each([
+    ['limite da faixa', comLimites('abc', 0)],
+    ['deslocamento da data', comLimites(1, 'dez')],
+    ['mínimo do grupo', comLimites(1, 0, ' ')],
+  ])('recusa o %s que não é número, em vez de mandá-lo em texto', (_nome, rascunho) => {
+    expect(conteudoParaEnvio(rascunho)).toBeNull();
   });
 });

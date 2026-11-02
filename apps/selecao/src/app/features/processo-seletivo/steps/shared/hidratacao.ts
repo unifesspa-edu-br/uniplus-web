@@ -419,24 +419,18 @@ function atendimentoDe(dto: ProcessoSeletivoDto): WizardDraft['atendimento'] {
   return { condicoes, recursos, tiposDeficiencia };
 }
 
-/** O contrato admite número ou texto; ausente vira campo vazio, não zero. */
-function comoTexto(valor: number | string | null | undefined): string {
+/** Ausente vira campo vazio, não zero. */
+function comoTexto(valor: number | null | undefined): string {
   if (valor === null || valor === undefined) return '';
   return String(valor);
 }
 
 /**
- * A ordem é posição na lista, e o contrato a admite como número ou texto.
- * Ausente vira zero — que a validação recusa, e é o que se quer: ordem não
+ * A ordem é posição na lista. Ausente vira zero — que a validação recusa, e é o que se quer: ordem não
  * declarada precisa aparecer como pendência, não passar despercebida.
  */
-function comoInteiro(valor: number | string | null | undefined): number {
-  if (typeof valor === 'number') return valor;
-  if (typeof valor === 'string') {
-    const numero = Number(valor);
-    return Number.isFinite(numero) ? numero : 0;
-  }
-  return 0;
+function comoInteiro(valor: number | null | undefined): number {
+  return valor ?? 0;
 }
 
 /**
@@ -528,7 +522,7 @@ function cascataDe(dto: ProcessoSeletivoDto): CascataSelecionada | null {
  * percentual. Devolver o ponto de `String(0.5)` faria a tela reabrir mostrando
  * grafia diferente da que ela mesma pediu.
  */
-function comoDecimalPtBr(valor: number | string): string {
+function comoDecimalPtBr(valor: number): string {
   return String(valor).replace('.', ',');
 }
 
@@ -555,14 +549,11 @@ function pagamentoDe(dto: ProcessoSeletivoDto): WizardDraft['pagamento'] {
 }
 
 /**
- * O valor gravado chega como número ou como texto no formato do JSON, com
- * ponto decimal — que é wire format, não a escrita do operador. `Number` é o
- * leitor certo aqui, ao contrário do campo, onde `1.000` significa mil.
+ * O valor gravado chega como número do JSON, não como a escrita do operador.
  */
-function valorGravadoComoTexto(valor: string | number | null | undefined): string {
+function valorGravadoComoTexto(valor: number | null | undefined): string {
   if (valor === null || valor === undefined) return '';
-  const numero = typeof valor === 'number' ? valor : Number(valor);
-  return Number.isFinite(numero) ? formatarValorEmReais(numero) : '';
+  return Number.isFinite(valor) ? formatarValorEmReais(valor) : '';
 }
 
 /**

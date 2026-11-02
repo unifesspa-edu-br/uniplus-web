@@ -162,6 +162,24 @@ describe('enderecoParaCommand (mapeamento para o command — CA-04)', () => {
     expect(part.endereco?.nivelResolucao).toBe('logradouro');
   });
 
+  it('envia a latitude e a longitude do campo de texto como número', () => {
+    const part = enderecoParaCommand({
+      cep: '68507590',
+      logradouro: 'Folha 31',
+      numero: 's/n',
+      complemento: null,
+      bairro: 'Nova Marabá',
+      distrito: null,
+      cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+      latitude: '-5.368',
+      longitude: '-49.118',
+      nivelResolucao: 'logradouro',
+      origem: 'geo-api',
+    });
+    expect(part.endereco?.latitude).toBe(-5.368);
+    expect(part.endereco?.longitude).toBe(-49.118);
+  });
+
   it('sem CEP envia só a cidade top-level e endereco nulo (fluxo sem CEP)', () => {
     const part = enderecoParaCommand({
       cep: null,

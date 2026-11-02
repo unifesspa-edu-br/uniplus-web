@@ -19,6 +19,6 @@ export function ofertasDaInscricao(
 }
 
 /** Quantas opções de curso a versão da inscrição admite, do número que a API devolve: uma ou duas. */
-export function numeroDeOpcoesDeCurso(numero: number | string): 1 | 2 {
-  return Number(numero) >= 2 ? 2 : 1;
+export function numeroDeOpcoesDeCurso(numero: number): 1 | 2 {
+  return numero >= 2 ? 2 : 1;
 }

@@ -40,7 +40,7 @@ describe('escala da nota final', () => {
   it('devolve ao campo a escala do servidor', () => {
     expect(escalaDaNotaFinalComoTexto(null)).toBe('');
     expect(escalaDaNotaFinalComoTexto(100)).toBe('100');
-    expect(escalaDaNotaFinalComoTexto('100.5')).toBe('100,5');
+    expect(escalaDaNotaFinalComoTexto(100.5)).toBe('100,5');
     expect(escalaDaNotaFinalComoTexto(1000.125)).toBe('1000,125');
   });
 

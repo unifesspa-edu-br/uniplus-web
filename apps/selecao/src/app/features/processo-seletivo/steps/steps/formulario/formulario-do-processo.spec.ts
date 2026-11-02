@@ -87,6 +87,7 @@ describe('formulário do processo no editor', () => {
 
   it('o envio dos itens vai sem os dados básicos, que a API repõe, e sempre com a lista de grupos', () => {
     const enviado = itensParaEnvio(conteudoDoFormulario(inscricao));
+    if (enviado === null) throw new Error('Esperava o corpo dos itens.');
 
     expect(enviado.itens.map((i) => i.fatoCodigo)).toEqual(['A', 'B']);
     expect(enviado.grupos?.map((g) => g.codigo)).toEqual(['FAMILIA']);
@@ -155,6 +156,7 @@ describe('planoDeGravacao', () => {
 
   it('os itens sem seção vão sem seção também nos grupos', () => {
     const enviado = itensParaEnvio(servidor.conteudo, true);
+    if (enviado === null) throw new Error('Esperava o corpo dos itens.');
     expect(
       [...enviado.itens, ...(enviado.grupos ?? [])].every(
         (entrada) => entrada.etapaCodigo === null,
@@ -194,7 +196,21 @@ describe('planoDeGravacao', () => {
     };
 
     const enviado = itensParaEnvio(conteudoDoFormulario(comFaixa));
+    if (enviado === null) throw new Error('Esperava o corpo dos itens.');
 
     expect(enviado.itens[0].restricoes).toEqual([faixa]);
+  });
+
+  it('não monta o corpo dos itens quando um limite digitado não é número', () => {
+    const conteudo = conteudoDoFormulario(inscricao);
+    const comTexto = {
+      ...conteudo,
+      itens: (conteudo.itens ?? []).map((item) => ({
+        ...item,
+        restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 'abc' }],
+      })),
+    };
+
+    expect(itensParaEnvio(comTexto)).toBeNull();
   });
 });

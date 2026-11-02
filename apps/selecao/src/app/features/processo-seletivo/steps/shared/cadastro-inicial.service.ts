@@ -83,6 +83,15 @@ export type ResultadoIniciacao =
   | { readonly ok: true; readonly iniciacao: IniciarEnvioDoDocumentoAPublicarDto }
   | FalhaOperacao;
 
+/** Limite digitado no formulário que não é número: a gravação nem sai, porque a API recusa número em texto. */
+const LIMITE_QUE_NAO_E_NUMERO: ProblemDetails = {
+  type: 'about:blank',
+  title: 'Há limites ou deslocamentos do formulário que não são números.',
+  status: STATUS_HTTP.RECUSA_DE_NEGOCIO,
+  code: 'uniplus.client.numero_invalido',
+  traceId: '',
+};
+
 /**
  * Resposta que chegou depois de o editor passar a outro cadastro. Não descreve
  * uma recusa do servidor — é o resultado de um comando que já não pertence ao
@@ -589,6 +598,10 @@ export class CadastroInicialService {
     servidor: FormularioParaGravar | null,
     desejado: FormularioParaGravar & { readonly faseId: string },
   ): Promise<ResultadoGravacao> {
+    // Antes do primeiro passo: o cabeçalho não pode ser gravado se os itens não puderem.
+    if (itensParaEnvio(desejado.conteudo) === null) {
+      return { ok: false, problem: LIMITE_QUE_NAO_E_NUMERO };
+    }
     for (const passo of planoDeGravacao(servidor, desejado)) {
       const resultado = await this.gravarPassoDoFormulario(
         processoSeletivoId,
@@ -620,6 +633,7 @@ export class CadastroInicialService {
       case 'itensSemSecao':
       case 'itens': {
         const corpo = itensParaEnvio(desejado.conteudo, passo === 'itensSemSecao');
+        if (corpo === null) return { ok: false, problem: LIMITE_QUE_NAO_E_NUMERO };
         return this.gravarComChave(this.chaveItensDoFormulario, { finalidade, corpo }, (contexto) =>
           this.api.definirItensDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
         );

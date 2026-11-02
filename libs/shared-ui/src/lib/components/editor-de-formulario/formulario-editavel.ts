@@ -41,25 +41,31 @@ export interface OpcoesCondicionadas {
 }
 
 /**
- * Um limite da faixa de data: `DATA_FIXA` com a data `AAAA-MM-DD`, ou `ENVIO` com os anos e os dias
- * somados ao dia do envio. O deslocamento viaja como texto quando o administrador digitou o que não é
- * número, para o problema dizer o quê.
+ * O número de um campo de texto do editor: o que o administrador digitou e não é número fica como
+ * texto, para o problema dizer o quê. Só existe no rascunho; `conteudoParaEnvio` o converte e recusa o
+ * que não for número, então o corpo da gravação nunca leva número em texto.
  */
-export interface LimiteDeDataNoWire {
+export type NumeroDigitado = number | string;
+
+/**
+ * Um limite da faixa de data: `DATA_FIXA` com a data `AAAA-MM-DD`, ou `ENVIO` com os anos e os dias
+ * somados ao dia do envio.
+ */
+export interface LimiteDeDataNoWire<N = NumeroDigitado> {
   readonly ancora: string;
   readonly data?: null | string;
-  readonly anos?: null | number | string;
-  readonly dias?: null | number | string;
+  readonly anos?: null | N;
+  readonly dias?: null | N;
 }
 
-export interface RestricaoDeValor {
+export interface RestricaoDeValor<N = NumeroDigitado> {
   readonly tipo: string;
-  readonly minimo?: null | number | string;
-  readonly maximo?: null | number | string;
+  readonly minimo?: null | N;
+  readonly maximo?: null | N;
   readonly entradas?: null | readonly OpcoesCondicionadas[];
   readonly fatos?: null | readonly string[];
-  readonly dataMinima?: null | LimiteDeDataNoWire;
-  readonly dataMaxima?: null | LimiteDeDataNoWire;
+  readonly dataMinima?: null | LimiteDeDataNoWire<N>;
+  readonly dataMaxima?: null | LimiteDeDataNoWire<N>;
 }
 
 export interface Impedimento {
@@ -67,9 +73,9 @@ export interface Impedimento {
   readonly mensagem: null | string;
 }
 
-export interface ItemDoFormulario {
+export interface ItemDoFormulario<N = NumeroDigitado> {
   readonly fatoCodigo: string;
-  readonly ordem: number | string;
+  readonly ordem: number;
   readonly rotulo: string;
   readonly tipoRenderizacao: string;
   readonly obrigatoriedade: null | string;
@@ -79,13 +85,13 @@ export interface ItemDoFormulario {
   readonly predicadoObrigatoriedade?: PredicadoNoWire;
   readonly ajuda?: null | string;
   readonly pedirConfirmacao: boolean;
-  readonly restricoes?: null | readonly RestricaoDeValor[];
+  readonly restricoes?: null | readonly RestricaoDeValor<N>[];
   readonly impedimento?: null | Impedimento;
 }
 
 export interface EtapaDoFormulario {
   readonly codigo: string;
-  readonly ordem: number | string;
+  readonly ordem: number;
   readonly tipo: string;
   readonly bloco: null | string;
   readonly titulo: string;
@@ -94,23 +100,23 @@ export interface EtapaDoFormulario {
   readonly exibicao?: PredicadoNoWire;
 }
 
-export interface GrupoDoFormulario {
+export interface GrupoDoFormulario<N = NumeroDigitado> {
   readonly codigo: string;
-  readonly ordem: number | string;
+  readonly ordem: number;
   readonly rotulo: string;
   readonly etapaCodigo: null | string;
-  readonly minimo: number | string;
-  readonly maximo: null | number | string;
+  readonly minimo: N;
+  readonly maximo: null | N;
   readonly exibicao: PredicadoNoWire;
   readonly obrigatoriedade: null | string;
   readonly predicadoObrigatoriedade: PredicadoNoWire;
-  readonly subitens: readonly ItemDoFormulario[];
+  readonly subitens: readonly ItemDoFormulario<N>[];
   readonly incluiCandidato: boolean;
 }
 
 export interface TermoDoFormulario {
   readonly codigo: string;
-  readonly ordem: number | string;
+  readonly ordem: number;
   readonly termoId: string;
   readonly versaoId: string;
   readonly exibicao: PredicadoNoWire;
@@ -118,13 +124,13 @@ export interface TermoDoFormulario {
   readonly predicadoObrigatoriedade: PredicadoNoWire;
 }
 
-export interface ConteudoDoFormulario {
+export interface ConteudoDoFormulario<N = NumeroDigitado> {
   readonly titulo: null | string;
   readonly etapas: null | readonly EtapaDoFormulario[];
-  readonly itens: null | readonly ItemDoFormulario[];
+  readonly itens: null | readonly ItemDoFormulario<N>[];
   readonly termos: null | readonly TermoDoFormulario[];
   readonly pressupostos: null | readonly string[];
-  readonly grupos?: null | readonly GrupoDoFormulario[];
+  readonly grupos?: null | readonly GrupoDoFormulario<N>[];
   /** O conjunto padrão de documentos exigidos; o PUT substitui o conteúdo inteiro, então ele viaja a cada gravação. */
   readonly documentosExigidos?: null | readonly DocumentoExigidoDoFormulario[];
 }
@@ -205,7 +211,7 @@ export function blocosAdmitidos(finalidade: string): readonly OpcaoDoFormulario[
  * O conteúdo com que um formulário nasce: só a revisão e aceite, que toda finalidade exige como
  * última etapa. Na inscrição, a API acrescenta a seção dos dados básicos.
  */
-export function conteudoInicial(): ConteudoDoFormulario {
+export function conteudoInicial(): ConteudoDoFormulario<number> {
   return {
     titulo: null,
     etapas: [
@@ -292,7 +298,7 @@ export function fatosParaAcrescentar(
 
 /** As etapas em ordem. */
 export function etapasEmOrdem(conteudo: ConteudoDoFormulario): readonly EtapaDoFormulario[] {
-  return [...(conteudo.etapas ?? [])].sort((a, b) => Number(a.ordem) - Number(b.ordem));
+  return [...(conteudo.etapas ?? [])].sort((a, b) => a.ordem - b.ordem);
 }
 
 /** Um item ou um grupo de uma seção, na posição que ocupa nela. */
@@ -346,7 +352,7 @@ export function acrescentarItem(
   const novo: ItemDoFormulario = {
     fatoCodigo: fato.codigo,
     // Logo depois da última entrada da seção — ou no começo dela, se vazia —; a renumeração fecha o buraco.
-    ordem: ultima !== undefined ? ordemDa(ultima) + 0.5 : primeiraOrdemDaEtapa(conteudo, Number(etapa?.ordem ?? 0)) - 0.5,
+    ordem: ultima !== undefined ? ordemDa(ultima) + 0.5 : primeiraOrdemDaEtapa(conteudo, etapa?.ordem ?? 0) - 0.5,
     rotulo: fato.nome.slice(0, LIMITES_DO_FORMULARIO.rotulo),
     tipoRenderizacao: renderizacaoDe(fato) ?? '',
     obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
@@ -392,11 +398,11 @@ export function ufsAnteriores(
   catalogo: readonly FatoDoFormulario[],
   fatoCodigo: string,
 ): readonly FatoDoFormulario[] {
-  const ordem = Number((conteudo.itens ?? []).find((item) => item.fatoCodigo === fatoCodigo)?.ordem ?? Infinity);
+  const ordem = (conteudo.itens ?? []).find((item) => item.fatoCodigo === fatoCodigo)?.ordem ?? Infinity;
   const porCodigo = new Map(catalogo.map((fato) => [fato.codigo, fato]));
   const anteriores = [...(conteudo.itens ?? [])]
-    .filter((item) => Number(item.ordem) < ordem)
-    .sort((a, b) => Number(a.ordem) - Number(b.ordem))
+    .filter((item) => item.ordem < ordem)
+    .sort((a, b) => a.ordem - b.ordem)
     .map((item) => item.fatoCodigo);
   return [...(conteudo.pressupostos ?? []), ...anteriores].flatMap((codigo) => {
     const fato = porCodigo.get(codigo);
@@ -588,14 +594,14 @@ export function removerEtapa(conteudo: ConteudoDoFormulario, codigo: string): Re
  */
 export function fatosCitaveisPeloItem(conteudo: ConteudoDoFormulario, fatoCodigo: string): ReadonlySet<string> {
   const item = (conteudo.itens ?? []).find((i) => i.fatoCodigo === fatoCodigo);
-  const limite = item === undefined ? -Infinity : Number(item.ordem);
+  const limite = item === undefined ? -Infinity : item.ordem;
   return citaveisAntesDe(conteudo, limite, fatoCodigo);
 }
 
 /** Os fatos que a exibição de uma seção pode citar: os das seções anteriores e os pressupostos. */
 export function fatosCitaveisPelaSecao(conteudo: ConteudoDoFormulario, etapaCodigo: string): ReadonlySet<string> {
   const etapa = (conteudo.etapas ?? []).find((e) => e.codigo === etapaCodigo);
-  const limite = etapa === undefined ? -Infinity : primeiraOrdemDaEtapa(conteudo, Number(etapa.ordem));
+  const limite = etapa === undefined ? -Infinity : primeiraOrdemDaEtapa(conteudo, etapa.ordem);
   return citaveisAntesDe(conteudo, limite, null);
 }
 
@@ -627,7 +633,7 @@ export function fatosCitaveisPelosTermos(conteudo: ConteudoDoFormulario): Readon
 
 /** Os termos em ordem. */
 export function termosEmOrdem(conteudo: ConteudoDoFormulario): readonly TermoDoFormulario[] {
-  return [...(conteudo.termos ?? [])].sort((a, b) => Number(a.ordem) - Number(b.ordem));
+  return [...(conteudo.termos ?? [])].sort((a, b) => a.ordem - b.ordem);
 }
 
 /** Os termos que ainda podem ser exigidos: os que têm versão promovida e o formulário não exige. */
@@ -648,7 +654,7 @@ export function acrescentarTermo(conteudo: ConteudoDoFormulario, termo: TermoDis
   const novo: TermoDoFormulario = {
     codigo: codigoLivre(codigoDoNome(termo.nome, 'TERMO'), new Set(termos.map((t) => t.codigo))),
     // Depois da maior ordem gravada: a gravada pode ter buraco, e ordem repetida é recusada.
-    ordem: Math.max(-1, ...termos.map((t) => Number(t.ordem))) + 1,
+    ordem: Math.max(-1, ...termos.map((t) => t.ordem)) + 1,
     termoId: termo.termoId,
     versaoId: termo.versoes[0]?.versaoId ?? '',
     exibicao: null,
@@ -990,7 +996,7 @@ export function acrescentarGrupo(
   const etapa = (conteudo.etapas ?? []).find((e) => e.codigo === etapaCodigo);
   const grupo: GrupoDoFormulario = {
     codigo: codigoLivre(codigoDoNome(rotulo, 'GRUPO'), usados),
-    ordem: ultima !== undefined ? ordemDa(ultima) + 0.5 : primeiraOrdemDaEtapa(conteudo, Number(etapa?.ordem ?? 0)) - 0.5,
+    ordem: ultima !== undefined ? ordemDa(ultima) + 0.5 : primeiraOrdemDaEtapa(conteudo, etapa?.ordem ?? 0) - 0.5,
     rotulo: rotulo.trim().slice(0, LIMITES_DO_FORMULARIO.rotulo),
     etapaCodigo,
     minimo: 0,
@@ -1016,7 +1022,7 @@ export function removerGrupo(conteudo: ConteudoDoFormulario, codigo: string): Co
 
 /** Os campos do grupo em ordem. */
 export function camposDoGrupo(grupo: GrupoDoFormulario): readonly ItemDoFormulario[] {
-  return [...grupo.subitens].sort((a, b) => Number(a.ordem) - Number(b.ordem));
+  return [...grupo.subitens].sort((a, b) => a.ordem - b.ordem);
 }
 
 /**
@@ -1115,14 +1121,14 @@ export function fatosCitaveisPeloCampoDoGrupo(conteudo: ConteudoDoFormulario, gr
   const campos = camposDoGrupo(grupo);
   const posicao = campos.findIndex((campo) => campo.fatoCodigo === fatoCodigo);
   return new Set([
-    ...citaveisAntesDe(conteudo, Number(grupo.ordem), null),
+    ...citaveisAntesDe(conteudo, grupo.ordem, null),
     ...campos.slice(0, Math.max(posicao, 0)).map((campo) => campo.fatoCodigo),
   ]);
 }
 
 /** Os fatos que a exibição e a obrigatoriedade do grupo podem citar: os conhecidos antes dele. */
 export function fatosCitaveisPeloGrupo(conteudo: ConteudoDoFormulario, grupo: GrupoDoFormulario): ReadonlySet<string> {
-  return citaveisAntesDe(conteudo, Number(grupo.ordem), null);
+  return citaveisAntesDe(conteudo, grupo.ordem, null);
 }
 
 /**
@@ -1241,6 +1247,57 @@ export function semDadosBasicos(conteudo: ConteudoDoFormulario): ConteudoDoFormu
   };
 }
 
+class NaoENumero extends Error {}
+
+function comoNumero(valor: NumeroDigitado): number;
+function comoNumero(valor: NumeroDigitado | null): number | null;
+function comoNumero(valor: NumeroDigitado | null | undefined): number | null | undefined;
+function comoNumero(valor: NumeroDigitado | null | undefined): number | null | undefined {
+  if (valor === null || valor === undefined || typeof valor === 'number') return valor;
+  if (valor.trim() === '' || !Number.isFinite(Number(valor))) throw new NaoENumero();
+  return Number(valor);
+}
+
+function limiteParaEnvio(limite: LimiteDeDataNoWire | null | undefined): LimiteDeDataNoWire<number> | null | undefined {
+  return limite === null || limite === undefined ? limite : { ...limite, anos: comoNumero(limite.anos), dias: comoNumero(limite.dias) };
+}
+
+function itemParaEnvio(item: ItemDoFormulario): ItemDoFormulario<number> {
+  return {
+    ...item,
+    restricoes: item.restricoes?.map((restricao) => ({
+      ...restricao,
+      minimo: comoNumero(restricao.minimo),
+      maximo: comoNumero(restricao.maximo),
+      dataMinima: limiteParaEnvio(restricao.dataMinima),
+      dataMaxima: limiteParaEnvio(restricao.dataMaxima),
+    })),
+  };
+}
+
+/**
+ * O conteúdo com todo número como número, para a gravação. O texto digitado que não é número (limites,
+ * deslocamentos, mínimo e máximo do grupo) não se converte: devolve `null`, em vez de mandar número em
+ * texto à API.
+ */
+export function conteudoParaEnvio(conteudo: ConteudoDoFormulario): ConteudoDoFormulario<number> | null {
+  try {
+    return {
+      ...conteudo,
+      itens: conteudo.itens?.map(itemParaEnvio) ?? null,
+      grupos: conteudo.grupos?.map((grupo) => ({
+        ...grupo,
+        minimo: comoNumero(grupo.minimo),
+        maximo: comoNumero(grupo.maximo),
+        subitens: grupo.subitens.map(itemParaEnvio),
+      })),
+    };
+  } catch (erro) {
+    if (erro instanceof NaoENumero) return null;
+    throw erro;
+  }
+}
+
 /**
  * A recusa que aponta uma restrição do campo. A API aponta pela posição na lista enviada
  * (`restricoes[0].entradas[1].quando`), que muda quando o administrador remove uma restrição ou um
@@ -1356,7 +1413,7 @@ function acumular(mapa: Map<string, string[]>, chave: string, mensagem: string):
 }
 
 function ordemDa(entrada: EntradaDaSecao): number {
-  return Number(entrada.tipo === 'item' ? entrada.item.ordem : entrada.grupo.ordem);
+  return entrada.tipo === 'item' ? entrada.item.ordem : entrada.grupo.ordem;
 }
 
 /**
@@ -1365,21 +1422,21 @@ function ordemDa(entrada: EntradaDaSecao): number {
  */
 function primeiraOrdemDaEtapa(conteudo: ConteudoDoFormulario, ordemDaEtapa: number): number {
   const ordens = etapasEmOrdem(conteudo)
-    .filter((etapa) => Number(etapa.ordem) >= ordemDaEtapa)
+    .filter((etapa) => etapa.ordem >= ordemDaEtapa)
     .flatMap((etapa) => entradasDaSecao(conteudo, etapa.codigo).map(ordemDa));
   return ordens.length > 0 ? Math.min(...ordens) : Number.MAX_SAFE_INTEGER;
 }
 
 function acrescentarEtapaAntesDaRevisao(conteudo: ConteudoDoFormulario, nova: EtapaDoFormulario): ConteudoDoFormulario {
   const revisao = (conteudo.etapas ?? []).find((etapa) => etapa.bloco === BLOCO_REVISAO_E_ACEITE);
-  const ordem = revisao === undefined ? Number.MAX_SAFE_INTEGER : Number(revisao.ordem) - 0.5;
+  const ordem = revisao === undefined ? Number.MAX_SAFE_INTEGER : revisao.ordem - 0.5;
   return renumerar({ ...conteudo, etapas: [...(conteudo.etapas ?? []), { ...nova, ordem }] });
 }
 
 function citaveisAntesDe(conteudo: ConteudoDoFormulario, limite: number, excluido: string | null): ReadonlySet<string> {
   const fatos = new Set(conteudo.pressupostos ?? []);
   for (const item of conteudo.itens ?? []) {
-    if (Number(item.ordem) < limite) fatos.add(item.fatoCodigo);
+    if (item.ordem < limite) fatos.add(item.fatoCodigo);
   }
   if (excluido !== null) fatos.delete(excluido);
   return fatos;
@@ -1479,25 +1536,25 @@ function quemCita(conteudo: ConteudoDoFormulario, fato: string): readonly Citant
  * derivado — cuja posição depende das dependências dele — fica com a API.
  */
 function conferirOrdem(conteudo: ConteudoDoFormulario, nomes: ReadonlyMap<string, string>): ResultadoDaEdicao {
-  const posicao = new Map((conteudo.itens ?? []).map((item) => [item.fatoCodigo, Number(item.ordem)]));
+  const posicao = new Map((conteudo.itens ?? []).map((item) => [item.fatoCodigo, item.ordem]));
   const pressupostos = new Set(conteudo.pressupostos ?? []);
   const depoisDe = (fato: string, ordem: number): boolean =>
     !pressupostos.has(fato) && (posicao.get(fato) ?? -Infinity) >= ordem;
 
   const verificacoes: { readonly ordem: number; readonly citados: readonly string[]; readonly descricao: string }[] = [
     ...(conteudo.itens ?? []).map((item) => ({
-      ordem: Number(item.ordem),
+      ordem: item.ordem,
       citados: fatosCitadosPeloCampo(item).filter((fato) => fato !== item.fatoCodigo),
       descricao: `“${item.rotulo}”`,
     })),
     ...(conteudo.grupos ?? []).map((grupo) => ({
-      ordem: Number(grupo.ordem),
+      ordem: grupo.ordem,
       // Os campos do grupo também citam: o fato de membro não tem posição e não entra na conta.
       citados: [...[grupo.exibicao, grupo.predicadoObrigatoriedade].flatMap(fatosDoPredicado), ...grupo.subitens.flatMap(fatosCitadosPeloCampo)],
       descricao: `O grupo “${grupo.rotulo}”`,
     })),
     ...etapasEmOrdem(conteudo).map((etapa) => ({
-      ordem: primeiraOrdemDaEtapa(conteudo, Number(etapa.ordem)),
+      ordem: primeiraOrdemDaEtapa(conteudo, etapa.ordem),
       citados: fatosDoPredicado(etapa.exibicao ?? null),
       descricao: `A seção “${etapa.titulo}”`,
     })),

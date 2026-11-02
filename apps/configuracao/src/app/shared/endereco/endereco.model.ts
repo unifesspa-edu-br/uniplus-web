@@ -14,8 +14,8 @@ export interface EnderecoGeoLeitura {
   readonly bairro: string | null;
   readonly distrito: string | null;
   readonly cidade: CidadeRef | null;
-  readonly latitude: string | number | null;
-  readonly longitude: string | number | null;
+  readonly latitude: number | null;
+  readonly longitude: number | null;
   readonly nivelResolucao: string | null;
   readonly origem: string | null;
 }
@@ -29,8 +29,8 @@ export interface EnderecoGeoEnvio {
   readonly bairro: string | null;
   readonly distrito: string | null;
   readonly cidade: CidadeRef;
-  readonly latitude: string | null;
-  readonly longitude: string | null;
+  readonly latitude: number | null;
+  readonly longitude: number | null;
   readonly nivelResolucao: string;
   readonly origem: string;
 }
@@ -43,12 +43,23 @@ export interface EnderecoCommandPart {
   readonly endereco: EnderecoGeoEnvio | null;
 }
 
-function coagirTexto(valor: string | number | null | undefined): string | null {
+function coagirTexto(valor: string | null | undefined): string | null {
   if (valor === null || valor === undefined) {
     return null;
   }
-  const texto = String(valor).trim();
+  const texto = valor.trim();
   return texto.length > 0 ? texto : null;
+}
+
+function coordenadaComoTexto(valor: number | null): string | null {
+  return valor === null ? null : String(valor);
+}
+
+/** A coordenada do campo de texto do endereço como número; o que não é número segue como ausente. */
+function coordenadaComoNumero(texto: string | null): number | null {
+  if (texto === null || texto.trim() === '') return null;
+  const numero = Number(texto);
+  return Number.isFinite(numero) ? numero : null;
 }
 
 /**
@@ -71,8 +82,8 @@ export function enderecoEstruturadoDe(
       bairro: coagirTexto(endereco.bairro),
       distrito: coagirTexto(endereco.distrito),
       cidade: cid ? { codigoIbge: cid.codigoIbge, nome: cid.nome, uf: cid.uf } : null,
-      latitude: coagirTexto(endereco.latitude),
-      longitude: coagirTexto(endereco.longitude),
+      latitude: coordenadaComoTexto(endereco.latitude),
+      longitude: coordenadaComoTexto(endereco.longitude),
       nivelResolucao: endereco.nivelResolucao ?? null,
       origem: endereco.origem ?? null,
     };
@@ -122,8 +133,8 @@ export function enderecoParaCommand(e: EnderecoEstruturado | null): EnderecoComm
           bairro: e.bairro,
           distrito: e.distrito,
           cidade,
-          latitude: e.latitude,
-          longitude: e.longitude,
+          latitude: coordenadaComoNumero(e.latitude),
+          longitude: coordenadaComoNumero(e.longitude),
           nivelResolucao: e.nivelResolucao ?? 'cidade',
           origem: e.origem ?? ORIGEM_MANUAL,
         }

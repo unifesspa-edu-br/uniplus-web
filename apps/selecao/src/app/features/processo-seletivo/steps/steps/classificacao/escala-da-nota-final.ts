@@ -1,4 +1,3 @@
-import { numeroOuNuloDaApi } from '@uniplus/shared-utils';
 
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 
@@ -33,9 +32,8 @@ export function escalaDaNotaFinalIlegivel(texto: string): boolean {
 }
 
 /** A escala que o servidor devolve, escrita como o campo a lê. */
-export function escalaDaNotaFinalComoTexto(valor: number | string | null | undefined): string {
-  const numero = numeroOuNuloDaApi(valor);
-  return numero === null ? '' : String(numero).replace('.', ',');
+export function escalaDaNotaFinalComoTexto(valor: number | null | undefined): string {
+  return valor === null || valor === undefined ? '' : String(valor).replace('.', ',');
 }
 
 /** A faixa da nota final, escrita como o campo a lê (sem separador de milhar): de zero até a escala declarada, ou `null` sem escala legível e maior que zero. */

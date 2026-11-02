@@ -11763,7 +11763,7 @@ export interface components {
             readonly nome: null | string;
             readonly descricao?: null | string;
             /** Format: int32 */
-            readonly ordem?: null | number | string;
+            readonly ordem?: null | number;
         };
         readonly AtualizarCondicaoAtendimentoCommand: {
             /** Format: uuid */
@@ -11837,7 +11837,7 @@ export interface components {
             readonly eMecCodigo?: null | string;
             readonly codigoSga?: null | string;
             /** Format: int32 */
-            readonly vagasAnuaisAutorizadas?: null | number | string;
+            readonly vagasAnuaisAutorizadas?: null | number;
             readonly baseLegal?: null | string;
             readonly atoAutorizacaoMec?: null | string;
         };
@@ -11864,11 +11864,11 @@ export interface components {
             readonly id: string;
             readonly censoReferencia: null | string;
             /** Format: double */
-            readonly ppiPercentual: number | string;
+            readonly ppiPercentual: number;
             /** Format: double */
-            readonly quilombolaPercentual: number | string;
+            readonly quilombolaPercentual: number;
             /** Format: double */
-            readonly pcdPercentual: number | string;
+            readonly pcdPercentual: number;
             readonly baseLegal: null | string;
         };
         readonly AtualizarTipoBancaCommand: {
@@ -11895,7 +11895,7 @@ export interface components {
             readonly descricao?: null | string;
             readonly formatosAceitos?: null | string;
             /** Format: int32 */
-            readonly tamanhoMaximoMb?: null | number | string;
+            readonly tamanhoMaximoMb?: null | number;
             readonly tipoEquivalente?: null | string;
             readonly classificacaoProtecao?: null | string;
             readonly finalidadeTratamento?: null | string;
@@ -11991,7 +11991,7 @@ export interface components {
         readonly CampoRenderizavel: {
             readonly fatoCodigo: string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             readonly rotulo: string;
             readonly tipoRenderizacao: string;
             readonly valoresSelecionaveis: null | readonly components["schemas"]["ValorSelecionavel"][];
@@ -12021,7 +12021,7 @@ export interface components {
             readonly nome: string;
             readonly descricao: null | string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             /** Format: date-time */
             readonly criadoEm: string;
             readonly _links?: null | {
@@ -12110,7 +12110,7 @@ export interface components {
             readonly nome: null | string;
             readonly descricao?: null | string;
             /** Format: int32 */
-            readonly ordem?: null | number | string;
+            readonly ordem?: null | number;
         };
         readonly CriarCondicaoAtendimentoCommand: {
             readonly codigo: null | string;
@@ -12226,7 +12226,7 @@ export interface components {
             readonly eMecCodigo?: null | string;
             readonly codigoSga?: null | string;
             /** Format: int32 */
-            readonly vagasAnuaisAutorizadas?: null | number | string;
+            readonly vagasAnuaisAutorizadas?: null | number;
             readonly baseLegal?: null | string;
             readonly atoAutorizacaoMec?: null | string;
         };
@@ -12250,11 +12250,11 @@ export interface components {
         readonly CriarReferenciaReservaDemograficaCommand: {
             readonly censoReferencia: null | string;
             /** Format: double */
-            readonly ppiPercentual: number | string;
+            readonly ppiPercentual: number;
             /** Format: double */
-            readonly quilombolaPercentual: number | string;
+            readonly quilombolaPercentual: number;
             /** Format: double */
-            readonly pcdPercentual: number | string;
+            readonly pcdPercentual: number;
             readonly baseLegal: null | string;
         };
         readonly CriarTermoConsentimentoCommand: {
@@ -12282,7 +12282,7 @@ export interface components {
             readonly descricao?: null | string;
             readonly formatosAceitos?: null | string;
             /** Format: int32 */
-            readonly tamanhoMaximoMb?: null | number | string;
+            readonly tamanhoMaximoMb?: null | number;
             readonly tipoEquivalente?: null | string;
             readonly classificacaoProtecao?: null | string;
             readonly finalidadeTratamento?: null | string;
@@ -12390,7 +12390,7 @@ export interface components {
             readonly categoria: string;
             readonly formatosAceitos: null | string;
             /** Format: int32 */
-            readonly tamanhoMaximoMb: null | number | string;
+            readonly tamanhoMaximoMb: null | number;
         };
         readonly DetalheDoValorDoFatoDto: {
             readonly codigo: string;
@@ -12450,9 +12450,9 @@ export interface components {
             readonly distrito: null | string;
             readonly cidade: components["schemas"]["CidadeReferenciaDto"];
             /** Format: double */
-            readonly latitude: null | number | string;
+            readonly latitude: null | number;
             /** Format: double */
-            readonly longitude: null | number | string;
+            readonly longitude: null | number;
             readonly nivelResolucao: string;
             readonly origem: string;
             /** Format: date-time */
@@ -12467,9 +12467,9 @@ export interface components {
             readonly distrito: null | string;
             readonly cidade: null | components["schemas"]["CidadeReferenciaInput"];
             /** Format: double */
-            readonly latitude: null | number | string;
+            readonly latitude: null | number;
             /** Format: double */
-            readonly longitude: null | number | string;
+            readonly longitude: null | number;
             readonly nivelResolucao: null | string;
             readonly origem: null | string;
         };
@@ -12485,7 +12485,7 @@ export interface components {
         readonly EtapaFormularioInput: {
             readonly codigo: string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             readonly tipo: string;
             readonly bloco: null | string;
             readonly titulo: string;
@@ -12577,7 +12577,7 @@ export interface components {
         readonly FatoColetadoInput: {
             readonly fatoCodigo: string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             readonly rotulo: string;
             readonly tipoRenderizacao: string;
             readonly obrigatoriedade: null | string;
@@ -12594,7 +12594,7 @@ export interface components {
             readonly codigo: string;
             readonly descricao: null | string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             readonly ativo: boolean;
             readonly orientacao: null | string;
         };
@@ -12602,7 +12602,7 @@ export interface components {
             readonly codigo: string;
             readonly descricao: null | string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             readonly ativo: boolean;
             readonly orientacao?: null | string;
         };
@@ -12642,13 +12642,13 @@ export interface components {
         readonly GrupoColetadoInput: {
             readonly codigo: string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             readonly rotulo: string;
             readonly etapaCodigo: null | string;
             /** Format: int32 */
-            readonly minimo: number | string;
+            readonly minimo: number;
             /** Format: int32 */
-            readonly maximo: null | number | string;
+            readonly maximo: null | number;
             readonly exibicao: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly obrigatoriedade: null | string;
             readonly predicadoObrigatoriedade: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
@@ -12662,9 +12662,9 @@ export interface components {
             readonly obrigatoriedade: string;
             readonly predicadoObrigatoriedade: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             /** Format: int32 */
-            readonly minimo: number | string;
+            readonly minimo: number;
             /** Format: int32 */
-            readonly maximo: null | number | string;
+            readonly maximo: null | number;
             readonly incluiCandidato: boolean;
             readonly subitens: readonly components["schemas"]["ItemPortavel"][];
         };
@@ -12680,13 +12680,13 @@ export interface components {
         readonly GrupoRenderizavel: {
             readonly codigo: string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             readonly etapaCodigo: null | string;
             readonly rotulo: string;
             /** Format: int32 */
-            readonly minimo: number | string;
+            readonly minimo: number;
             /** Format: int32 */
-            readonly maximo: null | number | string;
+            readonly maximo: null | number;
             readonly incluiCandidato: boolean;
             readonly subitens: readonly components["schemas"]["CampoRenderizavel"][];
         };
@@ -12737,9 +12737,9 @@ export interface components {
             /** Format: date */
             readonly data?: null | string;
             /** Format: int32 */
-            readonly anos?: null | number | string;
+            readonly anos?: null | number;
             /** Format: int32 */
-            readonly dias?: null | number | string;
+            readonly dias?: null | number;
         };
         readonly LocalOfertaDto: {
             /** Format: uuid */
@@ -12818,7 +12818,7 @@ export interface components {
             readonly eMecCodigo: null | string;
             readonly codigoSga: null | string;
             /** Format: int32 */
-            readonly vagasAnuaisAutorizadas: null | number | string;
+            readonly vagasAnuaisAutorizadas: null | number;
             readonly baseLegal: null | string;
             readonly atoAutorizacaoMec: null | string;
             /** Format: date-time */
@@ -12859,17 +12859,17 @@ export interface components {
         readonly PesoAreaEnemAreaCommand: {
             readonly codigo: null | string;
             /** Format: double */
-            readonly peso: number | string;
+            readonly peso: number;
             /** Format: double */
-            readonly corte?: null | number | string;
+            readonly corte?: null | number;
         };
         readonly PesoAreaEnemAreaDto: {
             readonly codigo: string;
             readonly rotulo: string;
             /** Format: double */
-            readonly peso: number | string;
+            readonly peso: number;
             /** Format: double */
-            readonly corte: null | number | string;
+            readonly corte: null | number;
         };
         readonly PesoAreaEnemDto: {
             /** Format: uuid */
@@ -12922,7 +12922,7 @@ export interface components {
             readonly type?: null | string;
             readonly title?: null | string;
             /** Format: int32 */
-            readonly status?: null | number | string;
+            readonly status?: null | number;
             readonly detail?: null | string;
             readonly instance?: null | string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
@@ -12945,11 +12945,11 @@ export interface components {
             readonly id: string;
             readonly censoReferencia: string;
             /** Format: double */
-            readonly ppiPercentual: number | string;
+            readonly ppiPercentual: number;
             /** Format: double */
-            readonly quilombolaPercentual: number | string;
+            readonly quilombolaPercentual: number;
             /** Format: double */
-            readonly pcdPercentual: number | string;
+            readonly pcdPercentual: number;
             readonly baseLegal: string;
             /** Format: date-time */
             readonly criadoEm: string;
@@ -12975,9 +12975,9 @@ export interface components {
         readonly RestricaoValorInput: {
             readonly tipo: string;
             /** Format: double */
-            readonly minimo?: null | number | string;
+            readonly minimo?: null | number;
             /** Format: double */
-            readonly maximo?: null | number | string;
+            readonly maximo?: null | number;
             readonly entradas?: null | readonly components["schemas"]["OpcoesCondicionadasInput"][];
             readonly fatos?: null | readonly string[];
             readonly dataMinima?: null | components["schemas"]["LimiteDeDataInput"];
@@ -12991,7 +12991,7 @@ export interface components {
             readonly codigo: string;
             readonly codigoNasRegras: null | string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             readonly tipo: string;
             readonly bloco: null | string;
             readonly titulo: string;
@@ -13000,9 +13000,9 @@ export interface components {
         };
         readonly SolicitacaoDaProtecaoDto: {
             /** Format: int32 */
-            readonly tiposDeDocumento: number | string;
+            readonly tiposDeDocumento: number;
             /** Format: int32 */
-            readonly fatos: number | string;
+            readonly fatos: number;
         };
         readonly SolicitarAprovacaoDaProtecaoRequest: {
             readonly itens: null | readonly components["schemas"]["ItemParaSolicitarRequest"][];
@@ -13054,7 +13054,7 @@ export interface components {
         readonly TermoExigidoInput: {
             readonly codigo: string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             /** Format: uuid */
             readonly termoId: string;
             /** Format: uuid */
@@ -13078,7 +13078,7 @@ export interface components {
             readonly codigo: string;
             readonly codigoNasRegras: string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             /** Format: uuid */
             readonly termoId: string;
             /** Format: uuid */
@@ -13128,7 +13128,7 @@ export interface components {
             readonly categoria: string;
             readonly formatosAceitos: null | string;
             /** Format: int32 */
-            readonly tamanhoMaximoMb: null | number | string;
+            readonly tamanhoMaximoMb: null | number;
             readonly tipoEquivalente: null | string;
             readonly classificacaoProtecao: string;
             readonly finalidadeTratamento: string;
@@ -13204,14 +13204,14 @@ export interface components {
             readonly codigo: string;
             readonly descricao: null | string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             readonly orientacao?: null | string;
         };
         readonly ValorSelecionavel: {
             readonly codigo: string;
             readonly descricao: null | string;
             /** Format: int32 */
-            readonly ordem: number | string;
+            readonly ordem: number;
             readonly orientacao?: null | string;
         };
     };

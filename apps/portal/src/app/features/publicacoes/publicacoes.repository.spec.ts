@@ -61,7 +61,7 @@ function pagina(certame: CertameParaPublicacoes): CertamePublicoResponse {
             papel: PapelDoDocumento.principal,
             nome: 'retificacao.pdf',
             tipoDeMidia: 'application/pdf',
-            tamanhoBytes: '1258291',
+            tamanhoBytes: 1258291,
             url: `${ACERVO}/${certame.identificadorLegivel}/retificacao.pdf`,
           },
         ],
