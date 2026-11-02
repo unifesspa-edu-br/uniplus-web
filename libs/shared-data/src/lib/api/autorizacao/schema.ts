@@ -24,46 +24,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/autorizacao/permissoes": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Lista o catálogo de permissões
-         * @description Permissões da plataforma agrupadas por módulo e resource, com código, nome, descrição e sensibilidade. Exige a permissão autorizacao:permissoes:consultar-catalogo.
-         */
-        readonly get: operations["ConsultarCatalogoDePermissoes"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/autorizacao/permissoes/efetivas": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Lista as permissões efetivas do usuário logado
-         * @description Código e nome de cada permissão que o token concede. Informa o que pode aparecer na interface; a decisão de acesso continua sendo tomada em cada requisição.
-         */
-        readonly get: operations["ConsultarPermissoesEfetivas"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/autorizacao/concessoes": {
         readonly parameters: {
             readonly query?: never;
@@ -1382,15 +1342,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Not Found */
                 readonly 404: {
                     headers: {
@@ -1440,7 +1391,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                /** @description Forbidden */
                 readonly 403: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -1512,15 +1463,6 @@ export interface paths {
                 };
                 /** @description Unauthorized */
                 readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -1717,7 +1659,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                /** @description Forbidden */
                 readonly 403: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -1829,7 +1771,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                /** @description Forbidden */
                 readonly 403: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -1912,15 +1854,6 @@ export interface paths {
                 };
                 /** @description Unauthorized */
                 readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -2710,6 +2643,46 @@ export interface paths {
                 };
             };
         };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/autorizacao/permissoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /**
+         * Lista o catálogo de permissões
+         * @description Permissões da plataforma agrupadas por módulo e pelo alvo de cada permissão, com código, nome, descrição e sensibilidade. Exige a permissão autorizacao:permissoes:consultar-catalogo.
+         */
+        readonly get: operations["ConsultarCatalogoDePermissoes"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/autorizacao/permissoes/efetivas": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /**
+         * Lista as permissões efetivas do usuário logado
+         * @description Código e nome de cada permissão que o token concede. Informa o que pode aparecer na interface; a decisão de acesso continua sendo tomada em cada requisição.
+         */
+        readonly get: operations["ConsultarPermissoesEfetivas"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
         readonly patch?: never;

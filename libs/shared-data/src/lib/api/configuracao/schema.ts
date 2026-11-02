@@ -24,46 +24,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/autorizacao/permissoes": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Lista o catálogo de permissões
-         * @description Permissões da plataforma agrupadas por módulo e pelo alvo de cada permissão, com código, nome, descrição e sensibilidade. Exige a permissão autorizacao:permissoes:consultar-catalogo.
-         */
-        readonly get: operations["ConsultarCatalogoDePermissoes"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/autorizacao/permissoes/efetivas": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Lista as permissões efetivas do usuário logado
-         * @description Código e nome de cada permissão que o token concede. Informa o que pode aparecer na interface; a decisão de acesso continua sendo tomada em cada requisição.
-         */
-        readonly get: operations["ConsultarPermissoesEfetivas"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/configuracao/base-legal-bonus-regional": {
         readonly parameters: {
             readonly query?: never;
@@ -12829,10 +12789,6 @@ export interface components {
             readonly ativo: boolean;
             readonly conteudo: components["schemas"]["ConteudoDoModeloInput"];
         };
-        readonly ModuloDoCatalogoResponse: {
-            readonly modulo: string;
-            readonly resources: readonly components["schemas"]["ResourceDoCatalogoResponse"][];
-        };
         readonly OcorrenciaAvaliada: {
             readonly id: string;
             readonly estado: string;
@@ -12899,16 +12855,6 @@ export interface components {
             readonly unidadeNome: null | string;
             /** Format: date-time */
             readonly validaAte: null | string;
-        };
-        readonly PermissaoDoCatalogoResponse: {
-            readonly codigo: string;
-            readonly nome: string;
-            readonly descricao: string;
-            readonly sensibilidade: string;
-        };
-        readonly PermissaoEfetivaResponse: {
-            readonly codigo: string;
-            readonly nome: string;
         };
         readonly PesoAreaEnemAreaCommand: {
             readonly codigo: null | string;
@@ -13025,10 +12971,6 @@ export interface components {
         };
         readonly RegrasPadraoInput: {
             readonly regras: readonly components["schemas"]["RegraPadraoInput"][];
-        };
-        readonly ResourceDoCatalogoResponse: {
-            readonly resource: string;
-            readonly permissoes: readonly components["schemas"]["PermissaoDoCatalogoResponse"][];
         };
         readonly RestricaoValorInput: {
             readonly tipo: string;
@@ -13301,91 +13243,6 @@ export interface operations {
             };
             /** @description Unauthorized */
             readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    readonly ConsultarCatalogoDePermissoes: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/vnd.uniplus.permissao-catalogo.v1+json": readonly components["schemas"]["ModuloDoCatalogoResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            readonly 403: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Acceptable */
-            readonly 406: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    readonly ConsultarPermissoesEfetivas: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/vnd.uniplus.permissao-efetiva.v1+json": readonly components["schemas"]["PermissaoEfetivaResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Acceptable */
-            readonly 406: {
                 headers: {
                     readonly [name: string]: unknown;
                 };

@@ -21,6 +21,8 @@ const atoSeed: AtoNormativoDto = {
   ano: 2026,
   numero: '001/2026',
   tipoCodigo: 'EDITAL_ABERTURA',
+  tipoNome: null,
+  anexos: [],
   congelaConfiguracao: true,
   efeitoIrreversivel: false,
   unicoPorObjeto: true,

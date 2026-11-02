@@ -2,7 +2,7 @@ import { HttpResourceRequest } from '@angular/common/http';
 import { withVendorMime } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 
-export { PapelDoDocumento } from './schema';
+export { PapelDoDocumento, SituacaoDaInscricao } from './schema';
 
 export type CertamePublicoResponse = components['schemas']['CertamePublicoResponse'];
 export type EventoDaLinhaDoTempoResponse = components['schemas']['EventoDaLinhaDoTempoResponse'];

@@ -6,6 +6,7 @@ import {
   type CertamePublicoResponse,
   PapelDoDocumento,
   PORTAL_BASE_PATH,
+  SituacaoDaInscricao,
 } from '@uniplus/shared-data/portal';
 import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -34,6 +35,7 @@ function pagina(certame: CertameParaPublicacoes): CertamePublicoResponse {
     identificador: certame.identificadorLegivel,
     nome: 'Processo Seletivo',
     numeroEdital: 'XX/2026',
+    situacao: SituacaoDaInscricao.inscricoesAbertas,
     documentoEditalUrl: `${ACERVO}/${certame.identificadorLegivel}/retificacao.pdf`,
     dataPublicacao: '2026-10-20',
     aviso: null,

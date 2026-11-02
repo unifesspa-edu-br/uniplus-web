@@ -795,6 +795,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        readonly AnexoDoAtoDto: {
+            readonly nome: string;
+            readonly tipoMidia: string;
+            readonly hash: string;
+        };
+        readonly AnexoDoAtoInput: {
+            readonly nome: string;
+            readonly tipoMidia: string;
+            readonly hash: string;
+        };
         readonly AtoNormativoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -804,6 +814,7 @@ export interface components {
             readonly ano: number | string;
             readonly numero: null | string;
             readonly tipoCodigo: string;
+            readonly tipoNome: null | string;
             readonly congelaConfiguracao: boolean;
             readonly efeitoIrreversivel: boolean;
             readonly unicoPorObjeto: boolean;
@@ -819,6 +830,7 @@ export interface components {
             /** Format: uuid */
             readonly atoRetificadoId: null | string;
             readonly motivoRetificacao: null | string;
+            readonly anexos: readonly components["schemas"]["AnexoDoAtoDto"][];
             readonly avisos?: null | readonly components["schemas"]["AvisoNumeracao"][];
             readonly _links?: null | {
                 readonly [key: string]: string;
@@ -882,6 +894,8 @@ export interface components {
             readonly status?: null | number | string;
             readonly detail?: null | string;
             readonly instance?: null | string;
+            /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
+            readonly retryable?: boolean;
         };
         readonly RegistrarAtoNormativoCommand: {
             readonly orgao: string;
@@ -901,6 +915,7 @@ export interface components {
             readonly atoRetificadoId?: null | string;
             readonly motivoRetificacao?: null | string;
             readonly vinculos?: null | readonly components["schemas"]["VinculoEntidadeInput"][];
+            readonly anexos?: null | readonly components["schemas"]["AnexoDoAtoInput"][];
         };
         readonly RegistrarAtoNormativoResult: {
             /** Format: uuid */
