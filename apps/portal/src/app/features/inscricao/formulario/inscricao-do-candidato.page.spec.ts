@@ -22,6 +22,7 @@ import {
   type ArquivoEnviado,
   BUSCA_DE_CEP,
   BUSCA_DE_MUNICIPIOS,
+  LEITURA_DE_MUNICIPIO_POR_CODIGO,
 } from '@uniplus/shared-ui/components';
 
 import type { OfertaDaInscricao } from '../oferta-da-inscricao';
@@ -192,6 +193,7 @@ describe('InscricaoDoCandidatoPage', () => {
   let fixture: ComponentFixture<InscricaoDoCandidatoPage>;
   let servico: ServicoDublê;
   const conta = signal<Record<string, string | undefined>>({});
+  const leituraDeMunicipio = vi.fn();
 
   /** O instante que o relógio da página devolve. */
   let agora = new Date('2026-12-11T13:30:00Z');
@@ -203,6 +205,7 @@ describe('InscricaoDoCandidatoPage', () => {
     mudancasDoEnvio.set(0);
     ocupadoDoEnvio.set(false);
     servico = new ServicoDublê();
+    leituraDeMunicipio.mockReset();
     conta.set({ cpf: CPF_DA_CONTA });
     TestBed.configureTestingModule({
       imports: [InscricaoDoCandidatoPage],
@@ -226,6 +229,7 @@ describe('InscricaoDoCandidatoPage', () => {
         { provide: UserContextService, useValue: { user: conta } },
         { provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) },
         { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },
+        { provide: LEITURA_DE_MUNICIPIO_POR_CODIGO, useValue: leituraDeMunicipio },
         { provide: RELOGIO, useValue: () => agora },
       ],
     });
@@ -321,6 +325,85 @@ describe('InscricaoDoCandidatoPage', () => {
 
     await clicar(botao(tela, 'Salvar rascunho'));
     expect(servico.salvos[0].respostas?.['NOME']).toBe(NOME_DA_CONTA);
+  });
+
+  /** O formulário de teste que também coleta o município de nascimento. */
+  const COM_MUNICIPIO: FormularioRenderizavelDto = {
+    ...FORMULARIO_DE_INSCRICAO_MOCK,
+    fatosColetados: [
+      ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados,
+      {
+        ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados[0],
+        fatoCodigo: 'NATURALIDADE_MUNICIPIO',
+        ordem: 8,
+        rotulo: 'Município de nascimento',
+        tipoRenderizacao: 'MUNICIPIO',
+        formato: null,
+      },
+    ],
+    regras: {
+      ...FORMULARIO_DE_INSCRICAO_MOCK.regras,
+      etapas: FORMULARIO_DE_INSCRICAO_MOCK.regras.etapas.map((e, i) =>
+        i === 0
+          ? {
+              ...e,
+              itens: [
+                ...e.itens,
+                { ...e.itens[0], fatoCodigo: 'NATURALIDADE_MUNICIPIO', formato: null },
+              ],
+            }
+          : e,
+      ),
+    },
+  };
+  const SALVADOR = { codigoIbge: '2927408', nome: 'Salvador', uf: 'BA' };
+  const NAO_ENCONTRADO = apiFailure(
+    { type: 'about:blank', title: 'Falha', status: 503, code: 'falha', traceId: '' },
+    503,
+    new HttpHeaders(),
+  );
+
+  it('reabre a inscrição enviada com o nome gravado do município e reenvia só o código', async () => {
+    servico.formulario = COM_MUNICIPIO;
+    servico.inscricao = inscricao({
+      ...RESPONDIDA,
+      situacao: SituacaoInscricao.submetida,
+      respostas: {
+        ...RESPONDIDA.respostas,
+        NATURALIDADE_MUNICIPIO: { codigo: '2927408', rotulo: 'Salvador' },
+      },
+    });
+    const tela = await abrir();
+
+    expect(campoDe(tela, 'NATURALIDADE_MUNICIPIO').value).toBe('Salvador (BA)');
+    expect(leituraDeMunicipio).not.toHaveBeenCalled();
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+    expect(servico.enviados[0].respostas?.['NATURALIDADE_MUNICIPIO']).toBe('2927408');
+  });
+
+  it('dá nome ao município do rascunho lendo o código uma só vez', async () => {
+    leituraDeMunicipio.mockReturnValue(ok(SALVADOR));
+    servico.formulario = COM_MUNICIPIO;
+    servico.inscricao = inscricao({ respostas: { NATURALIDADE_MUNICIPIO: '2927408' } });
+    const tela = await abrir();
+
+    expect(campoDe(tela, 'NATURALIDADE_MUNICIPIO').value).toBe('Salvador (BA)');
+    expect(leituraDeMunicipio).toHaveBeenCalledTimes(1);
+    expect(leituraDeMunicipio).toHaveBeenCalledWith('2927408');
+  });
+
+  it('com o Geo fora do ar, o rascunho diz que o nome não foi carregado e mantém o código', async () => {
+    leituraDeMunicipio.mockReturnValue(of(NAO_ENCONTRADO));
+    servico.formulario = COM_MUNICIPIO;
+    servico.inscricao = inscricao({ respostas: { NATURALIDADE_MUNICIPIO: '2927408' } });
+    const tela = await abrir();
+
+    expect(campoDe(tela, 'NATURALIDADE_MUNICIPIO').value).toBe(
+      'Nome do município não carregado (código IBGE 2927408)',
+    );
+    await clicar(botao(tela, 'Salvar rascunho'));
+    expect(servico.salvos[0].respostas?.['NATURALIDADE_MUNICIPIO']).toBe('2927408');
   });
 
   const desejaDe = (tela: HTMLElement): HTMLInputElement[] =>

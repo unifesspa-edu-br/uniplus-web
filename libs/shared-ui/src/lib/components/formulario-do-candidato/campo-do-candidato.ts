@@ -176,6 +176,7 @@ const ENTRADA_DO_FORMATO: Readonly<
           [rotulo]="campo().rotulo"
           [values]="municipios()"
           [uf]="uf()"
+          [rotulosGravados]="rotulosGravados()"
           [disabled]="esperaAUf() && municipios().length === 0"
           [invalido]="problemas().length > 0"
           [descritoPor]="descritoPor()"
@@ -266,6 +267,8 @@ export class CampoDoCandidatoComponent {
   readonly id = input.required<string>();
   /** A seção foi dada como concluída: o obrigatório sem resposta passa a mostrar a pendência. */
   readonly mostrarPendencia = input<boolean>(false);
+  /** O nome gravado do município respondido, com a UF; nulo sem nome gravado ou com outro código. */
+  readonly rotuloGravado = input<string | null>(null);
   /** A resposta que o candidato não altera; o campo só a mostra. */
   readonly fixa = input<RespostaFixa | null>(null);
   /** A recusa do servidor a esta resposta, até o candidato mudá-la. */
@@ -372,6 +375,11 @@ export class CampoDoCandidatoComponent {
   protected readonly municipios = computed(() =>
     typeof this.resposta() === 'string' ? [this.resposta() as string] : [],
   );
+  protected readonly rotulosGravados = computed<Readonly<Record<string, string>>>(() => {
+    const [codigo] = this.municipios();
+    const rotulo = this.rotuloGravado();
+    return codigo !== undefined && rotulo !== null ? { [codigo]: rotulo } : {};
+  });
 
   /** Os limites da faixa de data do campo no dia do envio, quando ele a declara. */
   private readonly limitesDeData = computed(() =>

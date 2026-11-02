@@ -1,7 +1,11 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
+import {
+  BUSCA_DE_MUNICIPIOS,
+  NomesDeMunicipios,
+  type MunicipioEncontrado,
+} from '../editor-de-condicoes/valor-de-municipio';
 import { BUSCA_DE_CEP } from '../endereco-geo/endereco-geo.model';
 
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
@@ -11,6 +15,7 @@ import type {
   RespostaFixa,
 } from './formulario-do-candidato.model';
 import type { ValorJson } from './interpretador/regras-do-formulario';
+import type { MunicipiosGravados } from './valor-de-municipio-gravado';
 
 /** A Revisão e aceite resume o pedido do Fator de Atenuação (UNI-REQ-0150) com os rótulos do formulário. */
 const SOLICITA = 'PEDE_BENEFICIO_X';
@@ -180,11 +185,15 @@ const comOGrupo = (base: FormularioDoCandidato): FormularioDoCandidato => ({
 
 describe('Resumo do Fator de Atenuação na Revisão', () => {
   let fixture: ComponentFixture<FormularioDoCandidatoComponent>;
+  let gravados: MunicipiosGravados = {};
+  let achadosPelaBusca: readonly MunicipioEncontrado[] = [];
 
   beforeEach(() => {
+    gravados = {};
+    achadosPelaBusca = [];
     TestBed.configureTestingModule({
       providers: [
-        { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },
+        { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: achadosPelaBusca }) },
         { provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) },
       ],
     });
@@ -207,6 +216,7 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
         : formulario(comFator, dependencias, municipioPorBusca);
     fixture.componentRef.setInput('formulario', ajuste(comGrupo ? comOGrupo(base) : base));
     fixture.componentRef.setInput('respostasFixas', fixas);
+    fixture.componentRef.setInput('municipiosGravados', gravados);
     fixture.componentRef.setInput('inicial', {
       respostas,
       grupos,
@@ -216,12 +226,15 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
     });
     fixture.detectChanges();
     const tela = fixture.nativeElement as HTMLElement;
+    irParaARevisao(tela);
+    return tela;
+  };
+  const irParaARevisao = (tela: HTMLElement): void => {
     const revisao = [...tela.querySelectorAll('ui-steps .ui-steps__botao')].find((b) =>
       b.textContent?.includes('Revisão e aceite'),
     ) as HTMLButtonElement;
     revisao.click();
     fixture.detectChanges();
-    return tela;
   };
   const resumo = (tela: HTMLElement): HTMLElement | null =>
     tela.querySelector('ui-fator-de-atenuacao-da-inscricao');
@@ -260,7 +273,59 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
     const tela = naRevisao(true, { [SOLICITA]: true, [MUNICIPIO]: '2105302' }, undefined, true);
 
     const texto = resumo(tela)?.textContent ?? '';
-    expect(texto).toContain('Município de código IBGE 2105302');
+    expect(texto).toContain('Nome do município não carregado (código IBGE 2105302)');
+  });
+
+  it('o município gravado no envio aparece com a UF, mesmo que uma busca devolva outro nome', () => {
+    TestBed.inject(NomesDeMunicipios).lembrar([
+      { codigoIbge: '2927408', nome: 'Salvador da Bahia', uf: 'BA' },
+    ]);
+    gravados = { [MUNICIPIO]: { codigo: '2927408', rotulo: 'Salvador' } };
+
+    const tela = naRevisao(true, { [SOLICITA]: true, [MUNICIPIO]: '2927408' }, undefined, true);
+
+    const texto = resumo(tela)?.textContent ?? '';
+    expect(texto).toContain('Salvador (BA)');
+    expect(texto).not.toContain('Salvador da Bahia');
+  });
+
+  it('o município trocado depois da abertura mostra o nome da busca, não o gravado', () => {
+    vi.useFakeTimers();
+    try {
+      achadosPelaBusca = [{ codigoIbge: '2105302', nome: 'Imperatriz', uf: 'MA' }];
+      gravados = { [MUNICIPIO]: { codigo: '2927408', rotulo: 'Salvador' } };
+      fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
+      fixture.componentRef.setInput('formulario', formulario(true, undefined, true));
+      fixture.componentRef.setInput('municipiosGravados', gravados);
+      fixture.componentRef.setInput('inicial', {
+        respostas: { [SOLICITA]: true, [MUNICIPIO]: '2927408' },
+        etapasConcluidas: [],
+      });
+      fixture.detectChanges();
+      const tela = fixture.nativeElement as HTMLElement;
+      const campo = (): HTMLInputElement =>
+        tela.querySelector(
+          `[data-campo="${MUNICIPIO}"] input[role="combobox"]`,
+        ) as HTMLInputElement;
+      expect(campo().value).toBe('Salvador (BA)');
+
+      campo().value = 'Imp';
+      campo().dispatchEvent(new Event('input'));
+      vi.advanceTimersByTime(300);
+      fixture.detectChanges();
+      const opcao = [...tela.querySelectorAll<HTMLElement>('[role="option"]')].find((o) =>
+        o.textContent?.includes('Imperatriz (MA)'),
+      );
+      opcao?.dispatchEvent(new MouseEvent('mousedown'));
+      fixture.detectChanges();
+
+      expect(campo().value).toBe('Imperatriz (MA)');
+      irParaARevisao(tela);
+      expect(resumo(tela)?.textContent).toContain('Imperatriz (MA)');
+      expect(resumo(tela)?.textContent).not.toContain('Salvador');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('o link do resumo volta à seção em que o candidato respondeu', () => {

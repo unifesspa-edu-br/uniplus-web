@@ -10,6 +10,11 @@ import {
 import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
 import { respostaExibida } from './resposta-exibida';
+import {
+  chaveDaResposta,
+  rotuloGravadoDa,
+  type MunicipiosGravados,
+} from './valor-de-municipio-gravado';
 
 export interface LinhaDoFator {
   readonly rotulo: string;
@@ -33,6 +38,7 @@ export function resumoDoFator(
   passos: readonly PassoDoFormulario[],
   respostas: Readonly<Record<string, ValorJson | undefined>>,
   municipios: NomesDeMunicipios,
+  gravados: MunicipiosGravados,
   dependencias: DependenciasDaAvaliacao | null | undefined,
   ocorrencias: Readonly<Record<string, readonly OcorrenciaSimulada[]>> = {},
   fixas: Readonly<Partial<Record<string, RespostaFixa>>> = {},
@@ -50,7 +56,13 @@ export function resumoDoFator(
       // A resposta fixa aparece como o campo a mostra (o CPF mascarado), nunca pelo valor.
       const valor = fixa
         ? fixa.exibicao || null
-        : textoDa(campo.campo, respostas[campo.campo.fatoCodigo], municipios);
+        : textoDa(
+            campo.campo,
+            respostas[campo.campo.fatoCodigo],
+            municipios,
+            chaveDaResposta(campo.campo.fatoCodigo),
+            gravados,
+          );
       if (valor !== null) linhas.push({ rotulo: campo.campo.rotulo, valor });
     }
     for (const { grupo, avaliado } of passo.grupos) {
@@ -71,7 +83,13 @@ export function resumoDoFator(
           );
           if (avaliadoDoSubitem?.visivel !== 'VERDADEIRO') continue;
           if (!fatos.has(`${grupo.codigo}.${subitem.fatoCodigo}`)) continue;
-          const valor = textoDa(subitem, lista[indice].respostas?.[subitem.fatoCodigo], municipios);
+          const valor = textoDa(
+            subitem,
+            lista[indice].respostas?.[subitem.fatoCodigo],
+            municipios,
+            chaveDaResposta(subitem.fatoCodigo, { grupo: grupo.codigo, id: ocorrencia.id }),
+            gravados,
+          );
           if (valor !== null)
             linhas.push({
               rotulo: `${grupo.rotulo} (${titulos[indice]}): ${subitem.rotulo}`,
@@ -89,10 +107,12 @@ function textoDa(
   campo: CampoRenderizavel,
   valor: ValorJson | undefined,
   municipios: NomesDeMunicipios,
+  chave: string,
+  gravados: MunicipiosGravados,
 ): string | null {
   if (valor === undefined || valor === null || valor === '') return null;
   if (Array.isArray(valor) && valor.length === 0) return null;
   if (typeof valor === 'string' && campo.tipoRenderizacao === 'MUNICIPIO')
-    return municipios.rotulo(valor);
+    return rotuloGravadoDa(gravados, chave, valor) ?? municipios.rotulo(valor);
   return respostaExibida(campo, valor);
 }

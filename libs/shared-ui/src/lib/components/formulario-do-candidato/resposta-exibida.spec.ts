@@ -51,12 +51,25 @@ describe('respostaExibida de número', () => {
 });
 
 describe('respostaExibida de município', () => {
-  it('mostra o nome que o Geo devolveu; sem ele, o código com o rótulo', () => {
-    const campo = { tipoRenderizacao: 'MUNICIPIO' };
+  const campo = { tipoRenderizacao: 'MUNICIPIO' };
 
-    expect(respostaExibida(campo, '5002704', new Map([['5002704', 'Campo Grande — MS']]))).toBe(
-      'Campo Grande — MS',
-    );
-    expect(respostaExibida(campo, '5002704', new Map())).toBe('Código IBGE 5002704');
+  it('mostra só o nome que ficou gravado no envio', () => {
+    expect(respostaExibida(campo, { codigo: '2927408', rotulo: 'Salvador' })).toBe('Salvador');
+  });
+
+  it('diz que o nome não foi carregado quando o município vem só com o código', () => {
+    const aviso = 'Nome do município não carregado (código IBGE 2927408)';
+
+    expect(respostaExibida(campo, '2927408')).toBe(aviso);
+    expect(respostaExibida(campo, { codigo: '2927408', rotulo: '' })).toBe(aviso);
+  });
+
+  it('mostra a cidade do endereço como veio gravada', () => {
+    expect(
+      respostaExibida(
+        { tipoRenderizacao: 'ENDERECO' },
+        { cep: '40020000', cidade: { codigoIbge: '2927408', nome: 'Salvador', uf: 'BA' } },
+      ),
+    ).toBe('Salvador/BA — CEP 40020000');
   });
 });

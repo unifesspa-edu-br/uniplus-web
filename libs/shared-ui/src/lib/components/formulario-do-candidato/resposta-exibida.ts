@@ -1,5 +1,7 @@
 import { formatarDataBr, formatarTelefone } from '@uniplus/shared-utils';
 
+import { lerMunicipio, municipioParaExibir } from './valor-de-municipio-gravado';
+
 /** O que o comprovante precisa saber do campo para mostrar a resposta. */
 export interface CampoExibido {
   readonly tipoRenderizacao?: string | null;
@@ -22,18 +24,11 @@ interface EnderecoRespondido {
   readonly cidade?: CidadeDoEndereco | null;
 }
 
-/** Os municípios pelo código IBGE, como "Nome — UF". */
-export type NomesDosMunicipios = ReadonlyMap<string, string>;
-
 /**
  * A resposta como texto, pelo tipo do campo; a opção aparece pelo nome quando o formulário o traz, e o
- * município quando o Geo o devolveu.
+ * município pelo nome que ficou gravado no envio.
  */
-export function respostaExibida(
-  campo: CampoExibido,
-  valor: unknown,
-  municipios: NomesDosMunicipios = new Map(),
-): string {
+export function respostaExibida(campo: CampoExibido, valor: unknown): string {
   switch (campo.tipoRenderizacao) {
     case 'BOOLEANO':
       return valor === true ? 'Sim' : 'Não';
@@ -47,12 +42,17 @@ export function respostaExibida(
         .map((c) => opcao(campo, String(c)))
         .join(', ');
     case 'MUNICIPIO':
-      return municipios.get(String(valor)) ?? `Código IBGE ${String(valor)}`;
+      return municipioExibido(valor);
     case 'ENDERECO':
       return endereco(valor as EnderecoRespondido);
     default:
       return campo.formato === 'TELEFONE' ? formatarTelefone(String(valor)) : String(valor);
   }
+}
+
+function municipioExibido(valor: unknown): string {
+  const municipio = lerMunicipio(valor);
+  return municipio ? municipioParaExibir(municipio) : String(valor);
 }
 
 function opcao(campo: CampoExibido, codigo: string): string {

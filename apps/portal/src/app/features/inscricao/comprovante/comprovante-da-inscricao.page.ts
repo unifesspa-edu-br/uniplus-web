@@ -29,7 +29,6 @@ import {
   DadoRevelavelComponent,
   DocumentoComponent,
   ListaDeDadosComponent,
-  type NomesDosMunicipios,
   SecaoDeDocumentoComponent,
   SkeletonComponent,
   TagComponent,
@@ -43,7 +42,6 @@ import {
   envioDoComprovante,
   modalidadesDoComprovante,
   opcoesDoComprovante,
-  municipiosDoComprovante,
   numeroDoComprovante,
   secoesDoComprovante,
   termosAceitos,
@@ -65,7 +63,6 @@ interface Carregado {
   readonly inscricao: MinhaInscricaoDto;
   readonly processo: CertamePublicadoDto | null;
   readonly vizinhos: Vizinhos;
-  readonly municipios: NomesDosMunicipios;
 }
 
 type Leitura =
@@ -168,11 +165,11 @@ export class ComprovanteDaInscricaoPage {
   });
   protected readonly secoes = computed(() => {
     const c = this.carregado();
-    return c?.formulario ? secoesDoComprovante(c.formulario, c.comprovante, c.municipios) : [];
+    return c?.formulario ? secoesDoComprovante(c.formulario, c.comprovante) : [];
   });
   protected readonly derivados = computed(() => {
     const c = this.carregado();
-    return c?.formulario ? derivadosDoComprovante(c.formulario, c.comprovante, c.municipios) : [];
+    return c?.formulario ? derivadosDoComprovante(c.formulario, c.comprovante) : [];
   });
   protected readonly documentos = computed(() => {
     const c = this.carregado();
@@ -265,31 +262,21 @@ export class ComprovanteDaInscricaoPage {
       processo: this.servico.certame(processoId),
       comprovante: this.servico.comprovante(inscricao.inscricaoId, numero),
     }).pipe(
-      switchMap(({ formulario, processo, comprovante }): Observable<Leitura> => {
-        if (!formulario.ok) return of({ tipo: 'falha', falha: formulario });
-        if (!processo.ok) return of({ tipo: 'falha', falha: processo });
-        if (!comprovante.ok) return of({ tipo: 'falha', falha: comprovante });
-        const campos = formulario.data;
-        return (
-          campos
-            ? this.servico.nomesDosMunicipios(municipiosDoComprovante(campos, comprovante.data))
-            : of(new Map<string, string>())
-        ).pipe(
-          map(
-            (municipios): Leitura => ({
-              tipo: 'pronto',
-              carregado: {
-                numero,
-                comprovante: comprovante.data,
-                formulario: campos,
-                inscricao,
-                processo: processo.data,
-                vizinhos: vizinhos(inscricao.comprovantes, numero),
-                municipios,
-              },
-            }),
-          ),
-        );
+      map(({ formulario, processo, comprovante }): Leitura => {
+        if (!formulario.ok) return { tipo: 'falha', falha: formulario };
+        if (!processo.ok) return { tipo: 'falha', falha: processo };
+        if (!comprovante.ok) return { tipo: 'falha', falha: comprovante };
+        return {
+          tipo: 'pronto',
+          carregado: {
+            numero,
+            comprovante: comprovante.data,
+            formulario: formulario.data,
+            inscricao,
+            processo: processo.data,
+            vizinhos: vizinhos(inscricao.comprovantes, numero),
+          },
+        };
       }),
     );
   }

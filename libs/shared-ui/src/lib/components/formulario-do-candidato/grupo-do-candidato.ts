@@ -17,6 +17,11 @@ import {
   titulosDasOcorrencias,
 } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
+import {
+  chaveDaResposta,
+  rotuloGravadoDa,
+  type MunicipiosGravados,
+} from './valor-de-municipio-gravado';
 
 interface OcorrenciaNaTela {
   readonly id: string;
@@ -71,6 +76,7 @@ interface OcorrenciaNaTela {
               [noPasso]="campo"
               [id]="id() + '-' + i + '-' + campo.campo.fatoCodigo"
               [resposta]="ocorrencia.respostas[campo.campo.fatoCodigo]"
+              [rotuloGravado]="rotuloGravado(ocorrencia, campo.campo.fatoCodigo)"
               [respostaDaUf]="respostaDaUf(campo, ocorrencia.respostas)"
               [mostrarPendencia]="mostrarPendencia()"
               [diaDoEnvio]="diaDoEnvio()"
@@ -152,6 +158,8 @@ export class GrupoDoCandidatoComponent {
   readonly ocorrencias = input<readonly OcorrenciaSimulada[] | undefined>(undefined);
   /** As respostas do candidato fora do grupo, para a UF de um campo de município. */
   readonly respostasDoCandidato = input<Readonly<Record<string, ValorJson>>>({});
+  /** O nome gravado de cada município da inscrição enviada, pela chave da resposta. */
+  readonly municipiosGravados = input<MunicipiosGravados>({});
   readonly id = input.required<string>();
   readonly mostrarPendencia = input<boolean>(false);
   /** O dia do envio, `AAAA-MM-DD`, que os campos de data usam para dizer os limites. */
@@ -277,6 +285,14 @@ export class GrupoDoCandidatoComponent {
   });
 
   protected readonly mensagemDosErros = mensagemDosErros;
+
+  protected rotuloGravado(ocorrencia: OcorrenciaNaTela, fato: string): string | null {
+    return rotuloGravadoDa(
+      this.municipiosGravados(),
+      chaveDaResposta(fato, { grupo: this.grupo().codigo, id: ocorrencia.id }),
+      ocorrencia.respostas[fato],
+    );
+  }
 
   /** Como o servidor nomeia o campo de uma ocorrência. */
   protected campoNoServidor(ocorrencia: string, fato: string): string {
