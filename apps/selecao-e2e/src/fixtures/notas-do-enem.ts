@@ -105,8 +105,8 @@ export function cpfMascarado(cpf: string): string {
   return `***.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-**`;
 }
 
-function curso(ordem: number, oferta: string): unknown {
-  return { ordem, oferta };
+function oferta(ordem: number, nome: string): unknown {
+  return { id: `01960000-0000-7000-0000-00000000070${ordem}`, nome, ordem };
 }
 
 function doInscrito(pessoa: PessoaFicticia): Record<string, unknown> {
@@ -114,9 +114,9 @@ function doInscrito(pessoa: PessoaFicticia): Record<string, unknown> {
     inscricaoId: null,
     nomeDoCandidato: pessoa.nome,
     cpfMascarado: cpfMascarado(pessoa.cpf),
-    opcoesDeCurso: [
-      curso(1, 'Medicina — Marabá — Integral'),
-      curso(2, 'Enfermagem — Marabá — Integral'),
+    ofertas: [
+      oferta(1, 'Medicina — Marabá — Integral'),
+      oferta(2, 'Enfermagem — Marabá — Integral'),
     ],
   };
 }
@@ -171,7 +171,7 @@ export function lote(sobrescritas: Record<string, unknown> = {}): Record<string,
         nomeDoCandidato: ERICK.nome,
         cpfMascarado: cpfMascarado(ERICK.cpf),
         sexo: 'M',
-        opcoesDeCurso: null,
+        ofertas: null,
       },
     ],
     ausentes: [
