@@ -1056,6 +1056,24 @@ export class ProcessoSeletivoPage {
     });
   }
 
+  private campoInvalidoParaFoco(): HTMLElement | null {
+    const visivel = (campo: HTMLElement): boolean => campo.closest('[hidden]') === null;
+    const ativo = document.activeElement;
+    if (
+      ativo instanceof HTMLElement &&
+      this.root.nativeElement.contains(ativo) &&
+      ativo.getAttribute('aria-invalid') === 'true' &&
+      visivel(ativo)
+    ) {
+      return ativo;
+    }
+    return (
+      Array.from(
+        this.root.nativeElement.querySelectorAll<HTMLElement>('.step-pane:not([hidden]) [aria-invalid="true"]'),
+      ).find(visivel) ?? null
+    );
+  }
+
   /**
    * Traz o aviso de pendências para a vista e o entrega ao leitor de tela. O
    * resumo do último passo rola em 320 px e com zoom alto: sem isto, quem
@@ -1065,17 +1083,19 @@ export class ProcessoSeletivoPage {
     // `setTimeout` e não `queueMicrotask`: o aviso só existe no DOM depois que
     // o Angular processa a mudança do signal, o que ocorre após a fila de
     // microtarefas.
-    setTimeout(() => {
+    setTimeout(async () => {
       const alerta = this.root.nativeElement.querySelector<HTMLElement>('.step-error');
       if (alerta === null) return;
 
       alerta.setAttribute('tabindex', '-1');
 
+      // O passo em tela sabe abrir a aba ou a seção que guarda o campo recusado.
+      if (await this.stepValidatorAt(this.store.currentStep())?.revelarCampoInvalido?.()) return;
+
       // Com campo inválido no passo em tela, o foco vai a ele e a rolagem o traz para a vista:
       // foco fora da tela não é foco visível. O aviso segue anunciado pela região aria-live.
-      const campo = this.root.nativeElement.querySelector<HTMLElement>(
-        '.step-pane:not([hidden]) [aria-invalid="true"]',
-      );
+      // O campo de aba ou seção escondida não recebe foco; quem já está num campo inválido fica nele.
+      const campo = this.campoInvalidoParaFoco();
       if (campo !== null) {
         campo.scrollIntoView?.({ block: 'center' });
         campo.focus({ preventScroll: true });

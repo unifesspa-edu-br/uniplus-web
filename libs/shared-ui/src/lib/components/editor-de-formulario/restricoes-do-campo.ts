@@ -13,8 +13,11 @@ import {
   RESTRICOES,
   entradaDeOpcoesNova,
   limiteDeDataNovo,
+  numeroDigitadoInvalido,
   problemaDaRestricao,
   problemaDoLimiteDeData,
+  problemaDosAnos,
+  problemaDosDias,
   recusasDaRestricao,
   recusasDoGrupoDeOpcoes,
   restricaoNova,
@@ -66,11 +69,11 @@ interface CampoCitavel {
                 <div class="form-grid form-grid--pair">
                   <div class="field">
                     <label class="field__label" [for]="idDe(restricao, 'minimo')">Mínimo</label>
-                    <input class="input" type="text" inputmode="decimal" [id]="idDe(restricao, 'minimo')" [value]="restricao.minimo ?? ''" [disabled]="disabled()" (change)="trocarLimite(indice, 'minimo', $event)" />
+                    <input class="input" type="text" inputmode="decimal" [id]="idDe(restricao, 'minimo')" [value]="restricao.minimo ?? ''" [disabled]="disabled()" [attr.aria-invalid]="limiteInvalido(restricao.minimo) ? 'true' : null" [attr.aria-describedby]="limiteInvalido(restricao.minimo) ? idDe(restricao, 'erro') : null" (change)="trocarLimite(indice, 'minimo', $event)" />
                   </div>
                   <div class="field">
                     <label class="field__label" [for]="idDe(restricao, 'maximo')">Máximo</label>
-                    <input class="input" type="text" inputmode="decimal" [id]="idDe(restricao, 'maximo')" [value]="restricao.maximo ?? ''" [disabled]="disabled()" (change)="trocarLimite(indice, 'maximo', $event)" />
+                    <input class="input" type="text" inputmode="decimal" [id]="idDe(restricao, 'maximo')" [value]="restricao.maximo ?? ''" [disabled]="disabled()" [attr.aria-invalid]="limiteInvalido(restricao.maximo) ? 'true' : null" [attr.aria-describedby]="limiteInvalido(restricao.maximo) ? idDe(restricao, 'erro') : null" (change)="trocarLimite(indice, 'maximo', $event)" />
                   </div>
                 </div>
               }
@@ -101,11 +104,17 @@ interface CampoCitavel {
                           <div class="form-grid form-grid--pair">
                             <div class="field">
                               <label class="field__label" [for]="idDe(restricao, parte.limite + '-anos')">Anos a somar ao dia do envio</label>
-                              <input class="input" type="text" [id]="idDe(restricao, parte.limite + '-anos')" [value]="limite.anos ?? ''" [disabled]="disabled()" [attr.aria-invalid]="problemaDoLimite(restricao, parte.limite) ? 'true' : null" [attr.aria-describedby]="descricaoDoLimite(restricao, parte.limite)" (change)="trocarDeslocamento(indice, parte.limite, 'anos', $event)" />
+                              <input class="input" type="text" [id]="idDe(restricao, parte.limite + '-anos')" [value]="limite.anos ?? ''" [disabled]="disabled()" [attr.aria-invalid]="problemaDosAnos(limite.anos) ? 'true' : null" [attr.aria-describedby]="descricaoDoLimite(restricao, parte.limite, problemaDosAnos(limite.anos) ? idDe(restricao, parte.limite + '-anos-erro') : null)" (change)="trocarDeslocamento(indice, parte.limite, 'anos', $event)" />
+                              @if (problemaDosAnos(limite.anos); as texto) {
+                                <p class="field__error" [id]="idDe(restricao, parte.limite + '-anos-erro')">{{ texto }}</p>
+                              }
                             </div>
                             <div class="field">
                               <label class="field__label" [for]="idDe(restricao, parte.limite + '-dias')">Dias a somar ao dia do envio</label>
-                              <input class="input" type="text" [id]="idDe(restricao, parte.limite + '-dias')" [value]="limite.dias ?? ''" [disabled]="disabled()" [attr.aria-invalid]="problemaDoLimite(restricao, parte.limite) ? 'true' : null" [attr.aria-describedby]="descricaoDoLimite(restricao, parte.limite)" (change)="trocarDeslocamento(indice, parte.limite, 'dias', $event)" />
+                              <input class="input" type="text" [id]="idDe(restricao, parte.limite + '-dias')" [value]="limite.dias ?? ''" [disabled]="disabled()" [attr.aria-invalid]="problemaDosDias(limite.dias) ? 'true' : null" [attr.aria-describedby]="descricaoDoLimite(restricao, parte.limite, problemaDosDias(limite.dias) ? idDe(restricao, parte.limite + '-dias-erro') : null)" (change)="trocarDeslocamento(indice, parte.limite, 'dias', $event)" />
+                              @if (problemaDosDias(limite.dias); as texto) {
+                                <p class="field__error" [id]="idDe(restricao, parte.limite + '-dias-erro')">{{ texto }}</p>
+                              }
                             </div>
                           </div>
                         }
@@ -133,11 +142,11 @@ interface CampoCitavel {
                 <div class="form-grid form-grid--pair">
                   <div class="field">
                     <label class="field__label" [for]="idDe(restricao, 'minimo')">Mínimo de caracteres</label>
-                    <input class="input" type="text" inputmode="numeric" [id]="idDe(restricao, 'minimo')" [value]="restricao.minimo ?? ''" [disabled]="disabled()" (change)="trocarLimite(indice, 'minimo', $event)" />
+                    <input class="input" type="text" inputmode="numeric" [id]="idDe(restricao, 'minimo')" [value]="restricao.minimo ?? ''" [disabled]="disabled()" [attr.aria-invalid]="limiteInvalido(restricao.minimo) ? 'true' : null" [attr.aria-describedby]="limiteInvalido(restricao.minimo) ? idDe(restricao, 'erro') : null" (change)="trocarLimite(indice, 'minimo', $event)" />
                   </div>
                   <div class="field">
                     <label class="field__label" [for]="idDe(restricao, 'maximo')">Máximo de caracteres</label>
-                    <input class="input" type="text" inputmode="numeric" [id]="idDe(restricao, 'maximo')" [value]="restricao.maximo ?? ''" [disabled]="disabled()" (change)="trocarLimite(indice, 'maximo', $event)" />
+                    <input class="input" type="text" inputmode="numeric" [id]="idDe(restricao, 'maximo')" [value]="restricao.maximo ?? ''" [disabled]="disabled()" [attr.aria-invalid]="limiteInvalido(restricao.maximo) ? 'true' : null" [attr.aria-describedby]="limiteInvalido(restricao.maximo) ? idDe(restricao, 'erro') : null" (change)="trocarLimite(indice, 'maximo', $event)" />
                   </div>
                 </div>
               }
@@ -255,6 +264,9 @@ export class RestricoesDoCampoComponent {
   protected readonly dasRespostas = RESTRICAO_OPCOES_DAS_RESPOSTAS;
   protected readonly municipios = RESTRICAO_MUNICIPIOS_DA_UF;
   protected readonly problema = problemaDaRestricao;
+  protected readonly limiteInvalido = numeroDigitadoInvalido;
+  protected readonly problemaDosAnos = problemaDosAnos;
+  protected readonly problemaDosDias = problemaDosDias;
 
   protected readonly escolhida = signal('');
   protected readonly restricoes = computed(() => this.item().restricoes ?? []);
@@ -294,17 +306,20 @@ export class RestricoesDoCampoComponent {
     return restricao[limite] ?? null;
   }
 
+  /** O problema do limite como um todo; o deslocamento do dia do envio mostra o de cada campo, junto dele. */
   protected problemaDoLimite(restricao: RestricaoDeValor, limite: LimiteDaFaixa): string | null {
-    return problemaDoLimiteDeData(this.limiteDe(restricao, limite));
+    const atual = this.limiteDe(restricao, limite);
+    return atual?.ancora === ANCORA_ENVIO ? null : problemaDoLimiteDeData(atual);
   }
 
   /**
    * A dica da faixa e o erro ou a recusa que o controle do limite cita. A API aponta a faixa inteira
    * (`restricoes[i]`), sem dizer o limite: o problema e a recusa da faixa valem para os dois limites.
    */
-  protected descricaoDoLimite(restricao: RestricaoDeValor, limite: LimiteDaFaixa): string | null {
+  protected descricaoDoLimite(restricao: RestricaoDeValor, limite: LimiteDaFaixa, doCampo: string | null = null): string | null {
     const ids = [
       this.idDe(restricao, 'dica'),
+      doCampo,
       this.problemaDoLimite(restricao, limite) === null ? null : this.idDe(restricao, limite + '-erro'),
       this.problema(restricao) === null ? null : this.idDe(restricao, 'erro'),
       this.recusasDaRestricao(restricao).length > 0 ? this.idDe(restricao, 'recusas') : null,

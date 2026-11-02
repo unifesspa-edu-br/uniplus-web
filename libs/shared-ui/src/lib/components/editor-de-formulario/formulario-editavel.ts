@@ -820,6 +820,21 @@ export function problemaDaRestricao(restricao: RestricaoDeValor): string | null 
 /** Deslocamento ausente ou zero: não precisa ser conferido como número inteiro. */
 const ZERO_OU_AUSENTE = (valor: null | number | string | undefined): boolean => valor === null || valor === undefined || Number(valor) === 0;
 
+const deslocamentoNaoInteiro = (valor: null | number | string | undefined): boolean => !ZERO_OU_AUSENTE(valor) && !Number.isInteger(Number(valor));
+const acimaDoTeto = (valor: null | number | string | undefined, teto: number): boolean => Math.abs(Number(valor ?? 0)) > teto;
+
+/** O que impede os anos do deslocamento de serem gravados, pelo valor deles; nulo quando nada. */
+export function problemaDosAnos(valor: null | number | string | undefined): string | null {
+  if (deslocamentoNaoInteiro(valor)) return 'Os anos são um número inteiro.';
+  return acimaDoTeto(valor, TETO_DE_ANOS) ? `Os anos vão até ${TETO_DE_ANOS}, para mais ou para menos.` : null;
+}
+
+/** O que impede os dias do deslocamento de serem gravados, pelo valor deles; nulo quando nada. */
+export function problemaDosDias(valor: null | number | string | undefined): string | null {
+  if (deslocamentoNaoInteiro(valor)) return 'Os dias são um número inteiro.';
+  return acimaDoTeto(valor, TETO_DE_DIAS) ? `Os dias vão até ${TETO_DE_DIAS}, para mais ou para menos.` : null;
+}
+
 /**
  * O que impede o limite da faixa de data de ser gravado, nos termos da API; nulo quando nada. Mostrado
  * no controle do limite, e não na restrição.
@@ -832,9 +847,8 @@ export function problemaDoLimiteDeData(limite: LimiteDeDataNoWire | null | undef
     if (diaDoCalendario(data) === null) return 'Use uma data do calendário, no formato dia/mês/ano.';
     return data === '0001-01-01' ? 'A data não pode ser 01/01/0001.' : null;
   }
-  const deslocamentos = [limite.anos, limite.dias];
-  if (deslocamentos.some((valor) => !ZERO_OU_AUSENTE(valor) && !Number.isInteger(Number(valor)))) return 'Os anos e os dias são números inteiros.';
-  if (Math.abs(Number(limite.anos ?? 0)) > TETO_DE_ANOS || Math.abs(Number(limite.dias ?? 0)) > TETO_DE_DIAS) {
+  if ([limite.anos, limite.dias].some(deslocamentoNaoInteiro)) return 'Os anos e os dias são números inteiros.';
+  if (acimaDoTeto(limite.anos, TETO_DE_ANOS) || acimaDoTeto(limite.dias, TETO_DE_DIAS)) {
     return `O deslocamento vai até ${TETO_DE_ANOS} anos ou ${TETO_DE_DIAS} dias, para mais ou para menos.`;
   }
   return null;
@@ -1253,9 +1267,13 @@ function comoNumero(valor: NumeroDigitado): number;
 function comoNumero(valor: NumeroDigitado | null): number | null;
 function comoNumero(valor: NumeroDigitado | null | undefined): number | null | undefined;
 function comoNumero(valor: NumeroDigitado | null | undefined): number | null | undefined {
-  if (valor === null || valor === undefined || typeof valor === 'number') return valor;
-  if (valor.trim() === '' || !Number.isFinite(Number(valor))) throw new NaoENumero();
-  return Number(valor);
+  if (numeroDigitadoInvalido(valor)) throw new NaoENumero();
+  return valor === null || valor === undefined ? valor : Number(valor);
+}
+
+/** O que foi digitado e não é número: o texto vazio, ou o que não se converte. Ausente não é inválido. */
+export function numeroDigitadoInvalido(valor: NumeroDigitado | null | undefined): boolean {
+  return typeof valor === 'string' && (valor.trim() === '' || !Number.isFinite(Number(valor)));
 }
 
 function limiteParaEnvio(limite: LimiteDeDataNoWire | null | undefined): LimiteDeDataNoWire<number> | null | undefined {

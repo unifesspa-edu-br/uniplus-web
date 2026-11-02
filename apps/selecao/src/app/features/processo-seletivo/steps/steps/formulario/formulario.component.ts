@@ -11,6 +11,7 @@ import {
   linkedSignal,
   signal,
   untracked,
+  viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
@@ -38,6 +39,7 @@ import {
   OBRIGATORIEDADES,
   ValorEmConsultaComponent,
   conteudoInicial,
+  conteudoParaEnvio,
   distribuirRecusas,
   entradasDaSecao,
   etapasEmOrdem,
@@ -162,6 +164,7 @@ export class FormularioStepComponent {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly editores = viewChildren(EditorDeFormularioComponent);
 
   protected readonly ancoras = ANCORAS_DA_IDADE;
 
@@ -523,6 +526,21 @@ export class FormularioStepComponent {
       };
     });
   });
+
+  private abasComNumeroInvalido() {
+    return this.abas().filter((aba) => conteudoParaEnvio(semDadosBasicos(aba.conteudo)) === null);
+  }
+
+  /** Abre a primeira aba com número inválido e leva o foco ao campo marcado, depois que ela aparece. */
+  async revelarCampoInvalido(): Promise<boolean> {
+    const aba = this.abasComNumeroInvalido()[0];
+    if (aba === undefined) return false;
+    this.selecionarAba(aba.finalidade);
+    await new Promise<void>((resolve) => afterNextRender(() => resolve(), { injector: this.injector }));
+    return (
+      (await this.editores().find((editor) => editor.idBase() === aba.idBase)?.focarPrimeiroCampoInvalido()) ?? false
+    );
+  }
 
   selecionarAba(finalidade: string): void {
     this.abaEscolhida.set(finalidade);
@@ -1038,6 +1056,10 @@ export class FormularioStepComponent {
         ),
       ...[...this.store.aplicacoesDeModeloEmAberto()].map(([finalidade, emAberto]) =>
         textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto),
+      ),
+      ...this.abasComNumeroInvalido().map(
+        (aba) =>
+          `O formulário de ${aba.nome} tem campos que não são números: veja os campos marcados na aba dele.`,
       ),
       ...problemasDoFormulario(
         draft.formulario,
