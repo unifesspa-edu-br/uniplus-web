@@ -14,7 +14,7 @@ import {
   SituacaoDoArquivoDoCandidato,
   SituacaoInscricao,
   type ArquivoAdministrativoDto,
-  type CertamePublicadoDto,
+  type OfertaEscolhidaDto,
   type InscricaoAdministrativaDto,
   type ItemDeRespostaDto,
 } from '@uniplus/shared-data/selecao';
@@ -23,7 +23,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DetalheDaInscricaoPage } from './detalhe-da-inscricao.page';
 import { DetalheDaInscricao } from './detalhe-da-inscricao.service';
 import { INSCRICOES_DO_PROCESSO_ROUTES } from './inscricoes.routes';
-import { CURSO_INDISPONIVEL } from './nome-da-oferta';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
@@ -31,9 +30,7 @@ const INSCRICAO_ID = '01960000-0000-7000-0000-0000000006b1';
 const OUTRA_INSCRICAO_ID = '01960000-0000-7000-0000-0000000006b2';
 const ROTA_DETALHE = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/inscricoes/${INSCRICAO_ID}`;
 const ROTA_OUTRA = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/inscricoes/${OUTRA_INSCRICAO_ID}`;
-const ROTA_CERTAME = `${BASE}/api/selecao/certames/${PROCESSO_ID}`;
 const OFERTA_MEDICINA = '01960000-0000-7000-0000-00000000aaa1';
-const OFERTA_DIREITO = '01960000-0000-7000-0000-00000000aaa2';
 const LAUDO_ID = '01960000-0000-7000-0000-0000000007c1';
 const OUTRO_ARQUIVO_ID = '01960000-0000-7000-0000-0000000007c3';
 const SEGUNDO_ARQUIVO_OMITIDO_ID = '01960000-0000-7000-0000-0000000007c4';
@@ -41,28 +38,15 @@ const COMPROVANTE_ID = '01960000-0000-7000-0000-0000000007c2';
 const EXIGENCIA_ID = '01960000-0000-7000-0000-0000000008d1';
 const OUTRA_EXIGENCIA_ID = '01960000-0000-7000-0000-0000000008d2';
 
-function certame(): CertamePublicadoDto {
-  return {
-    nome: 'PSR 2027',
-    opcoesDeCurso: { numero: 2 },
-    ofertas: [
-      {
-        ofertaCursoOrigemId: OFERTA_MEDICINA,
-        cursoNome: 'Medicina',
-        cursoGrau: 'Bacharelado',
-        unidadeOfertanteNome: 'Faculdade de Medicina',
-        turnos: ['INTEGRAL'],
-      },
-      {
-        ofertaCursoOrigemId: OFERTA_DIREITO,
-        cursoNome: 'Direito',
-        cursoGrau: 'Bacharelado',
-        unidadeOfertanteNome: 'Faculdade de Direito',
-        turnos: ['NOTURNO'],
-      },
-    ],
-  } as unknown as CertamePublicadoDto;
-}
+const PROCESSO = { id: PROCESSO_ID, nome: 'PSR 2027' };
+const MEDICINA = 'Medicina (Bacharelado) — Faculdade de Medicina — INTEGRAL';
+const DIREITO = 'Direito (Bacharelado) — Faculdade de Direito — Noturno';
+
+const oferta = (ordem: number, nome: string | null): OfertaEscolhidaDto => ({
+  id: `${OFERTA_MEDICINA.slice(0, -1)}${ordem}`,
+  nome,
+  ordem,
+});
 
 function item(
   fatoCodigo: string,
@@ -103,9 +87,9 @@ function arquivo(
 
 const FERNANDA: InscricaoAdministrativaDto = {
   id: INSCRICAO_ID,
+  processo: PROCESSO,
   situacao: SituacaoInscricao.submetida,
-  ofertaCursoId: OFERTA_MEDICINA,
-  ofertaCursoSegundaOpcaoId: OFERTA_DIREITO,
+  ofertas: [oferta(1, MEDICINA), oferta(2, DIREITO)],
   numeroInscricao: '2027-000101',
   submetidaEm: '2026-12-10T15:00:00Z',
   secoes: [
@@ -209,18 +193,9 @@ describe('DetalheDaInscricaoPage', () => {
   }
 
   const doDetalhe = (rota = ROTA_DETALHE): TestRequest => controller.expectOne(rota);
-  const doCertame = (): TestRequest => controller.expectOne(ROTA_CERTAME);
 
-  async function abrir(
-    inscricao: InscricaoAdministrativaDto,
-    opcoes: { certameQuebra?: boolean } = {},
-  ): Promise<void> {
+  async function abrir(inscricao: InscricaoAdministrativaDto): Promise<void> {
     await criarPagina();
-    if (opcoes.certameQuebra === true) {
-      doCertame().flush({}, { status: 500, statusText: 'Server Error' });
-    } else {
-      doCertame().flush(certame());
-    }
     doDetalhe().flush(inscricao);
     await propagar();
   }
@@ -257,10 +232,11 @@ describe('DetalheDaInscricaoPage', () => {
     expect(host().querySelector('h1')?.textContent).toContain('Inscrição 2027-000101');
     expect(dado('Número')).toBe('2027-000101');
     expect(dado('Situação')).toBe('Enviada');
-    expect(dado('1ª opção de curso')).toBe(
-      'Medicina (Bacharelado) — Faculdade de Medicina — INTEGRAL',
+    expect(itensDe('Ofertas escolhidas')).toEqual([MEDICINA, DIREITO]);
+    expect(dado('Oferta escolhida')).toBeNull();
+    expect(host().querySelector('.page-header__desc')?.textContent).toContain(
+      'PSR 2027 — inscrição enviada neste processo seletivo.',
     );
-    expect(dado('2ª opção de curso')).toContain('Direito');
     expect(dado('Nome completo')).toBe('Fernanda Laura Nicole Drumond');
     expect(dado('CPF')).toContain('***.598.363-**');
     expect(dado('Município de residência')).toContain('Marabá');
@@ -396,18 +372,19 @@ describe('DetalheDaInscricaoPage', () => {
     expect(texto()).not.toMatch(/oculto|restrito|protegido|sem permissão|omitid/i);
   });
 
-  it('sem dados pessoais mostra só curso e situação, sem painel vazio nem marca', async () => {
+  it('sem dados pessoais mostra só a oferta e a situação, sem painel vazio nem marca', async () => {
     await abrir({
       id: INSCRICAO_ID,
+      processo: PROCESSO,
       situacao: SituacaoInscricao.submetida,
-      ofertaCursoId: OFERTA_DIREITO,
+      ofertas: [oferta(1, DIREITO)],
       secoes: [],
       derivados: [],
       arquivos: [],
     });
 
     expect(dado('Situação')).toBe('Enviada');
-    expect(dado('1ª opção de curso')).toContain('Direito');
+    expect(dado('Oferta escolhida')).toBe(DIREITO);
     expect(dado('Número')).toBeNull();
     expect(dado('Nome completo')).toBeNull();
     expect(host().querySelector('#insc-det-respostas')).toBeNull();
@@ -435,7 +412,6 @@ describe('DetalheDaInscricaoPage', () => {
     await criarPagina();
 
     expect(controller.match(ROTA_DETALHE)).toHaveLength(1);
-    controller.match(ROTA_CERTAME);
   });
 
   it('sem inscrição a ler não fica carregando para sempre', async () => {
@@ -449,7 +425,6 @@ describe('DetalheDaInscricaoPage', () => {
 
   it('diz que a inscrição não foi encontrada no 404, com retorno à listagem', async () => {
     await criarPagina();
-    doCertame().flush(certame());
     doDetalhe().flush(
       { title: 'Não encontrada', status: 404 },
       { status: 404, statusText: 'Not Found' },
@@ -471,7 +446,6 @@ describe('DetalheDaInscricaoPage', () => {
     const subtitulo = (): string => host().querySelector('.page-header__desc')?.textContent ?? '';
     expect(subtitulo()).not.toContain('inscrição enviada');
 
-    doCertame().flush(certame());
     doDetalhe().flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Server Error' });
     await propagar();
     expect(subtitulo()).not.toContain('inscrição enviada');
@@ -485,7 +459,6 @@ describe('DetalheDaInscricaoPage', () => {
 
   it('anuncia o carregamento na região viva quando a falha é relida', async () => {
     await criarPagina();
-    doCertame().flush(certame());
     doDetalhe().flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Server Error' });
     await propagar();
     const regiao = host().querySelector('[role="status"]');
@@ -503,7 +476,6 @@ describe('DetalheDaInscricaoPage', () => {
 
   it('mostra a falha e relê ao tentar novamente', async () => {
     await criarPagina();
-    doCertame().flush(certame());
     doDetalhe().flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Server Error' });
     await propagar();
 
@@ -522,7 +494,6 @@ describe('DetalheDaInscricaoPage', () => {
 
     const regiao = host().querySelector('[role="status"]');
     expect(regiao?.textContent).toContain('Carregando a inscrição');
-    doCertame().flush(certame());
     doDetalhe().flush(FERNANDA);
     await propagar();
 
@@ -530,26 +501,36 @@ describe('DetalheDaInscricaoPage', () => {
     expect(regiao?.textContent?.trim()).toBe('');
   });
 
-  it('diz que o curso está indisponível quando o certame falha, sem esconder o resto', async () => {
-    await abrir(FERNANDA, { certameQuebra: true });
+  it('numera as ofertas pela ordem da escolha, mesmo chegando invertidas', async () => {
+    await abrir({ ...FERNANDA, ofertas: [oferta(2, DIREITO), oferta(1, MEDICINA)] });
 
-    expect(dado('1ª opção de curso')).toBe(CURSO_INDISPONIVEL);
-    expect(dado('Número')).toBe('2027-000101');
-    expect(texto()).toContain('Não foi possível carregar o nome do processo e dos cursos');
+    expect(itensDe('Ofertas escolhidas')).toEqual([MEDICINA, DIREITO]);
+    const numeros = Array.from(dd('Ofertas escolhidas')?.querySelectorAll('li') ?? []).map(
+      (li) => li.value,
+    );
+    expect(numeros).toEqual([1, 2]);
   });
 
-  it('desabilita a nova tentativa do certame e avisa que recarrega enquanto relê', async () => {
-    await abrir(FERNANDA, { certameQuebra: true });
+  it('com uma oferta só mostra "Oferta escolhida", sem número', async () => {
+    await abrir({ ...FERNANDA, ofertas: [oferta(1, MEDICINA)] });
 
-    botao('Tentar novamente').click();
-    await propagar();
-    expect(botao('Tentar novamente').disabled).toBe(true);
-    expect(host().textContent).toContain('Recarregando o nome do processo e dos cursos');
-    doCertame().flush(certame());
-    await propagar();
+    expect(dado('Oferta escolhida')).toBe(MEDICINA);
+    expect(dd('Oferta escolhida')?.querySelector('li')).toBeNull();
+    expect(dado('Ofertas escolhidas')).toBeNull();
+  });
 
-    expect(host().textContent).not.toContain('Não foi possível carregar o nome');
-    expect(dado('1ª opção de curso')).toContain('Medicina');
+  it('mostra "Oferta não identificada" para a oferta sem nome, sem perder a escolha', async () => {
+    await abrir({ ...FERNANDA, ofertas: [oferta(1, null)] });
+
+    expect(dado('Oferta escolhida')).toBe('Oferta não identificada');
+  });
+
+  it('sem ofertas na resposta, o rótulo não aparece', async () => {
+    await abrir({ ...FERNANDA, ofertas: undefined });
+
+    expect(dado('Oferta escolhida')).toBeNull();
+    expect(dado('Ofertas escolhidas')).toBeNull();
+    expect(dado('Número')).toBe('2027-000101');
   });
 
   it('na troca de inscrição nada da anterior aparece', async () => {
@@ -1219,7 +1200,7 @@ describe('rota do detalhe da inscrição', () => {
     harness.detectChanges();
 
     expect(controller.expectOne(ROTA_DETALHE).request.method).toBe('GET');
-    controller.expectOne(ROTA_CERTAME);
+    controller.expectNone((r) => r.url.includes('/certames/'));
     controller.expectNone(`${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/inscricoes`);
     controller.verify();
   });

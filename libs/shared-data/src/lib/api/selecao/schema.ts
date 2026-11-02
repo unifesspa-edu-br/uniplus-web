@@ -24,46 +24,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/autorizacao/permissoes": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Lista o catálogo de permissões
-         * @description Permissões da plataforma agrupadas por módulo e pelo alvo de cada permissão, com código, nome, descrição e sensibilidade. Exige a permissão autorizacao:permissoes:consultar-catalogo.
-         */
-        readonly get: operations["ConsultarCatalogoDePermissoes"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/autorizacao/permissoes/efetivas": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        /**
-         * Lista as permissões efetivas do usuário logado
-         * @description Código e nome de cada permissão que o token concede. Informa o que pode aparecer na interface; a decisão de acesso continua sendo tomada em cada requisição.
-         */
-        readonly get: operations["ConsultarPermissoesEfetivas"];
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/atos": {
         readonly parameters: {
             readonly query?: never;
@@ -3172,7 +3132,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                /** @description Forbidden */
                 readonly 403: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -5074,7 +5034,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                /** @description Forbidden */
                 readonly 403: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -9532,7 +9492,7 @@ export interface components {
             readonly nomeDoCandidato: null | string;
             readonly cpfMascarado: null | string;
             readonly areas: readonly string[];
-            readonly opcoesDeCurso: null | readonly components["schemas"]["OpcaoDeCursoDoLoteDto"][];
+            readonly ofertas: null | readonly components["schemas"]["OfertaEscolhidaDto"][];
         };
         readonly AvaliacaoDaInscricaoDto: {
             readonly modalidades: components["schemas"]["ModalidadesDaInscricaoDto"];
@@ -10665,11 +10625,9 @@ export interface components {
         readonly InscricaoAdministrativaDto: {
             /** Format: uuid */
             readonly id: string;
+            readonly processo: components["schemas"]["ProcessoDaInscricaoDto"];
             readonly situacao?: null | components["schemas"]["SituacaoInscricao"];
-            /** Format: uuid */
-            readonly ofertaCursoId?: null | string;
-            /** Format: uuid */
-            readonly ofertaCursoSegundaOpcaoId?: null | string;
+            readonly ofertas?: null | readonly components["schemas"]["OfertaEscolhidaDto"][];
             readonly numeroInscricao?: null | string;
             /** Format: date-time */
             readonly submetidaEm?: null | string;
@@ -10683,12 +10641,10 @@ export interface components {
         readonly InscricaoDoProcessoDto: {
             /** Format: uuid */
             readonly id: string;
+            readonly processo: components["schemas"]["ProcessoDaInscricaoDto"];
             readonly numeroInscricao?: null | string;
             readonly situacao?: null | components["schemas"]["SituacaoInscricao"];
-            /** Format: uuid */
-            readonly ofertaCursoId?: null | string;
-            /** Format: uuid */
-            readonly ofertaCursoSegundaOpcaoId?: null | string;
+            readonly ofertas?: null | readonly components["schemas"]["OfertaEscolhidaDto"][];
             readonly nome?: null | components["schemas"]["NomeClassificadoDto"];
             readonly cpf?: null | components["schemas"]["CpfMascaradoDto"];
             /** Format: date-time */
@@ -10756,7 +10712,7 @@ export interface components {
             readonly descricao: string;
             readonly tipo: string;
             readonly componente: string;
-            readonly valor?: components["schemas"]["JsonElement"];
+            readonly valor?: null | components["schemas"]["JsonElement"];
             readonly podeRevelar: boolean;
         };
         readonly ItemDocumentoExigidoInput: {
@@ -10949,10 +10905,6 @@ export interface components {
             /** Format: uri */
             readonly urlDownload: string;
         };
-        readonly ModuloDoCatalogoResponse: {
-            readonly modulo: string;
-            readonly resources: readonly components["schemas"]["ResourceDoCatalogoResponse"][];
-        };
         readonly MotivoDecisaoIsencaoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -11005,6 +10957,9 @@ export interface components {
             readonly ocorrenciasEsperadas?: null | readonly string[];
             readonly repetePorEntidade?: null | string;
         };
+        readonly NomeClassificadoDto: {
+            readonly valor: string;
+        };
         readonly ObrigatoriedadeDto: {
             readonly tipo: string;
             readonly predicado: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
@@ -11047,7 +11002,7 @@ export interface components {
             readonly nomeDoCandidato: null | string;
             readonly cpfMascarado: null | string;
             readonly sexo: null | string;
-            readonly opcoesDeCurso: null | readonly components["schemas"]["OpcaoDeCursoDoLoteDto"][];
+            readonly ofertas: null | readonly components["schemas"]["OfertaEscolhidaDto"][];
         };
         readonly OcorrenciaSimuladaDto: {
             readonly id: string;
@@ -11080,6 +11035,13 @@ export interface components {
             readonly unidadeOfertanteNome: string;
             readonly turnos: readonly string[];
         };
+        readonly OfertaEscolhidaDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly nome: null | string;
+            /** Format: int32 */
+            readonly ordem: number | string;
+        };
         readonly OfertaRecursoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -11104,11 +11066,6 @@ export interface components {
             readonly ordem: number | string;
             readonly cursoNome: string;
             readonly cursoGrau: string;
-        };
-        readonly OpcaoDeCursoDoLoteDto: {
-            /** Format: int32 */
-            readonly ordem: number | string;
-            readonly oferta: string;
         };
         readonly OpcaoDoProcessoDto: {
             readonly codigo: string;
@@ -11172,16 +11129,6 @@ export interface components {
             readonly inicio: string;
             /** Format: date-time */
             readonly fim: string;
-        };
-        readonly PermissaoDoCatalogoResponse: {
-            readonly codigo: string;
-            readonly nome: string;
-            readonly descricao: string;
-            readonly sensibilidade: string;
-        };
-        readonly PermissaoEfetivaResponse: {
-            readonly codigo: string;
-            readonly nome: string;
         };
         readonly PredicadoObrigatoriedade: components["schemas"]["PredicadoObrigatoriedadeEtapaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeModalidadesMinimas"] | components["schemas"]["PredicadoObrigatoriedadeDesempateDeveIncluir"] | components["schemas"]["PredicadoObrigatoriedadeDocumentoObrigatorioParaModalidade"] | components["schemas"]["PredicadoObrigatoriedadeAtendimentoDisponivel"] | components["schemas"]["PredicadoObrigatoriedadeConcorrenciaDuplaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeCustomizado"];
         readonly PredicadoObrigatoriedadeAtendimentoDisponivel: {
@@ -11248,6 +11195,11 @@ export interface components {
             readonly instance?: null | string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
             readonly retryable?: boolean;
+        };
+        readonly ProcessoDaInscricaoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly nome: string;
         };
         readonly ProcessoSeletivoDto: {
             /** Format: uuid */
@@ -11534,10 +11486,6 @@ export interface components {
             readonly suspensividadeSegundaInstanciaValor: null | number | string;
             readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
         };
-        readonly ResourceDoCatalogoResponse: {
-            readonly resource: string;
-            readonly permissoes: readonly components["schemas"]["PermissaoDoCatalogoResponse"][];
-        };
         readonly RestricaoValorDto: {
             readonly tipo: string;
             /** Format: double */
@@ -11779,9 +11727,6 @@ export interface components {
             readonly ordem: number | string;
             readonly orientacao?: null | string;
         };
-        readonly NomeClassificadoDto: {
-            readonly valor: string;
-        };
     };
     responses: never;
     parameters: never;
@@ -11811,91 +11756,6 @@ export interface operations {
             };
             /** @description Unauthorized */
             readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    readonly ConsultarCatalogoDePermissoes: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/vnd.uniplus.permissao-catalogo.v1+json": readonly components["schemas"]["ModuloDoCatalogoResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            readonly 403: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Acceptable */
-            readonly 406: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    readonly ConsultarPermissoesEfetivas: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly requestBody?: never;
-        readonly responses: {
-            /** @description OK */
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/vnd.uniplus.permissao-efetiva.v1+json": readonly components["schemas"]["PermissaoEfetivaResponse"][];
-                };
-            };
-            /** @description Unauthorized */
-            readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Acceptable */
-            readonly 406: {
                 headers: {
                     readonly [name: string]: unknown;
                 };

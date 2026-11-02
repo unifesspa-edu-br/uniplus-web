@@ -1,10 +1,11 @@
-import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import type {
-  ArquivoAdministrativoDto,
-  InscricaoAdministrativaDto,
+import {
+  ofertasEmOrdem,
+  type ArquivoAdministrativoDto,
+  type InscricaoAdministrativaDto,
+  type OfertaExibida,
 } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
@@ -18,9 +19,8 @@ import {
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { formatarDataBr } from '@uniplus/shared-utils';
 
-import { AvisoDoCertameComponent } from './aviso-do-certame.component';
 import { DetalheDaInscricao } from './detalhe-da-inscricao.service';
-import { cursoExibido, type CursoExibido } from './nome-da-oferta';
+import { OfertasEscolhidasComponent } from './ofertas-escolhidas.component';
 import {
   RespostasDaInscricaoComponent,
   type PedidoDeRevelacao,
@@ -41,8 +41,8 @@ interface ArquivoExibido {
 interface IdentificacaoExibida {
   readonly numero: string | null;
   readonly situacao: string | null;
-  readonly primeiraOpcao: CursoExibido | null;
-  readonly segundaOpcao: CursoExibido | null;
+  /** Vazia quando a API omitiu as ofertas; a tela então não mostra o rótulo. */
+  readonly ofertas: readonly OfertaExibida[];
   readonly enviadaEm: string | null;
   readonly canceladaEm: string | null;
   readonly motivoDoCancelamento: string | null;
@@ -150,13 +150,12 @@ function arquivosExibidos(inscricao: InscricaoAdministrativaDto | null): Arquivo
   selector: 'sel-detalhe-da-inscricao',
   standalone: true,
   imports: [
-    NgTemplateOutlet,
     RouterLink,
     AlertComponent,
-    AvisoDoCertameComponent,
     DadoDirective,
     DateBrPipe,
     ListaDeDadosComponent,
+    OfertasEscolhidasComponent,
     PageHeaderComponent,
     RespostasDaInscricaoComponent,
     SpinnerComponent,
@@ -205,13 +204,6 @@ function arquivosExibidos(inscricao: InscricaoAdministrativaDto | null): Arquivo
         </ui-alert>
       }
       @case ('lida') {
-        @if (detalhe.situacaoDoCertame() === 'falha') {
-          <sel-aviso-do-certame
-            [carregando]="detalhe.carregandoCertame()"
-            (tentar)="detalhe.recarregarCertame()"
-          />
-        }
-
         @if (inscricao(); as insc) {
           @if (identificacao(); as ident) {
             <section class="panel" aria-labelledby="insc-det-identificacao">
@@ -221,14 +213,6 @@ function arquivosExibidos(inscricao: InscricaoAdministrativaDto | null): Arquivo
                 </div>
               </div>
               <div class="insc-det__corpo">
-                <ng-template #nomeDoCurso let-curso>
-                  @if (curso.texto !== null) {
-                    {{ curso.texto }}
-                  } @else {
-                    <ui-spinner spinnerSize="sm" />
-                    <span class="sr-only">Carregando o nome do curso</span>
-                  }
-                </ng-template>
                 <ui-lista-de-dados [colunas]="2">
                   @if (ident.numero; as numero) {
                     <ng-template uiDado rotulo="Número" [valor]="numero" />
@@ -240,18 +224,14 @@ function arquivosExibidos(inscricao: InscricaoAdministrativaDto | null): Arquivo
                       </ui-tag>
                     </ng-template>
                   }
-                  @if (ident.primeiraOpcao; as curso) {
-                    <ng-template uiDado rotulo="1ª opção de curso">
-                      <ng-container
-                        *ngTemplateOutlet="nomeDoCurso; context: { $implicit: curso }"
-                      />
-                    </ng-template>
-                  }
-                  @if (ident.segundaOpcao; as curso) {
-                    <ng-template uiDado rotulo="2ª opção de curso">
-                      <ng-container
-                        *ngTemplateOutlet="nomeDoCurso; context: { $implicit: curso }"
-                      />
+                  @if (ident.ofertas.length > 0) {
+                    <ng-template
+                      uiDado
+                      [rotulo]="
+                        ident.ofertas.length === 1 ? 'Oferta escolhida' : 'Ofertas escolhidas'
+                      "
+                    >
+                      <sel-ofertas-escolhidas [ofertas]="ident.ofertas" />
                     </ng-template>
                   }
                   @if (ident.enviadaEm; as enviadaEm) {
@@ -412,13 +392,10 @@ export class DetalheDaInscricaoPage {
 
   protected readonly inscricao = this.detalhe.inscricao;
 
-  /** Só com a inscrição em tela o cabeçalho a descreve como enviada; sem ela, só situa o processo. */
+  /** O nome do processo vem na própria inscrição; sem ela, o cabeçalho não descreve nada. */
   protected readonly descricaoDoCabecalho = computed(() => {
     const processo = this.detalhe.nomeDoProcesso();
-    if (this.inscricao() === null) return processo ?? '';
-    return processo !== null
-      ? `${processo} — inscrição enviada neste processo seletivo.`
-      : 'Inscrição enviada neste processo seletivo.';
+    return processo === null ? '' : `${processo} — inscrição enviada neste processo seletivo.`;
   });
 
   protected readonly titulo = computed(() => {
@@ -433,18 +410,18 @@ export class DetalheDaInscricaoPage {
   protected readonly identificacao = computed<IdentificacaoExibida | null>(() => {
     const i = this.inscricao();
     if (i === null) return null;
-    const situacao = this.detalhe.situacaoDoCertame();
-    const nomes = this.detalhe.nomesDasOfertas();
     const campos: IdentificacaoExibida = {
       numero: i.numeroInscricao || null,
       situacao: i.situacao ?? null,
-      primeiraOpcao: cursoExibido(situacao, nomes, i.ofertaCursoId),
-      segundaOpcao: cursoExibido(situacao, nomes, i.ofertaCursoSegundaOpcaoId),
+      ofertas: ofertasEmOrdem(i.ofertas),
       enviadaEm: i.submetidaEm ?? null,
       canceladaEm: i.canceladaEm ?? null,
       motivoDoCancelamento: i.motivoDoCancelamento || null,
     };
-    return Object.values(campos).some((valor) => valor !== null) ? campos : null;
+    const algumCampo = Object.values(campos).some((valor) =>
+      Array.isArray(valor) ? valor.length > 0 : valor !== null,
+    );
+    return algumCampo ? campos : null;
   });
 
   protected readonly arquivos = computed(() => arquivosExibidos(this.inscricao()));

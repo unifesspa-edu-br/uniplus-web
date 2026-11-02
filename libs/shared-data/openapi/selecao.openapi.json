@@ -62,116 +62,6 @@
         ]
       }
     },
-    "/api/autorizacao/permissoes": {
-      "get": {
-        "tags": [
-          "Autoriza\u00E7\u00E3o"
-        ],
-        "summary": "Lista o cat\u00E1logo de permiss\u00F5es",
-        "description": "Permiss\u00F5es da plataforma agrupadas por m\u00F3dulo e pelo alvo de cada permiss\u00E3o, com c\u00F3digo, nome, descri\u00E7\u00E3o e sensibilidade. Exige a permiss\u00E3o autorizacao:permissoes:consultar-catalogo.",
-        "operationId": "ConsultarCatalogoDePermissoes",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.uniplus.permissao-catalogo.v1\u002Bjson": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ModuloDoCatalogoResponse"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "406": {
-            "description": "Not Acceptable",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/api/autorizacao/permissoes/efetivas": {
-      "get": {
-        "tags": [
-          "Autoriza\u00E7\u00E3o"
-        ],
-        "summary": "Lista as permiss\u00F5es efetivas do usu\u00E1rio logado",
-        "description": "C\u00F3digo e nome de cada permiss\u00E3o que o token concede. Informa o que pode aparecer na interface; a decis\u00E3o de acesso continua sendo tomada em cada requisi\u00E7\u00E3o.",
-        "operationId": "ConsultarPermissoesEfetivas",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.uniplus.permissao-efetiva.v1\u002Bjson": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PermissaoEfetivaResponse"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "406": {
-            "description": "Not Acceptable",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
     "/api/selecao/processos-seletivos/{processoSeletivoId}/atos": {
       "post": {
         "tags": [
@@ -4132,6 +4022,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -4164,16 +4064,6 @@
           },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -6472,6 +6362,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "O identificador leg\u00EDvel informado j\u00E1 \u00E9 usado por outro processo seletivo (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Tamb\u00E9m responde 409 quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
             "content": {
@@ -6504,16 +6404,6 @@
           },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -12832,7 +12722,7 @@
           "nomeDoCandidato",
           "cpfMascarado",
           "areas",
-          "opcoesDeCurso"
+          "ofertas"
         ],
         "type": "object",
         "properties": {
@@ -12864,13 +12754,13 @@
               "type": "string"
             }
           },
-          "opcoesDeCurso": {
+          "ofertas": {
             "type": [
               "null",
               "array"
             ],
             "items": {
-              "$ref": "#/components/schemas/OpcaoDeCursoDoLoteDto"
+              "$ref": "#/components/schemas/OfertaEscolhidaDto"
             }
           }
         }
@@ -18114,6 +18004,7 @@
       "InscricaoAdministrativaDto": {
         "required": [
           "id",
+          "processo",
           "secoes",
           "derivados",
           "arquivos"
@@ -18123,6 +18014,9 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "processo": {
+            "$ref": "#/components/schemas/ProcessoDaInscricaoDto"
           },
           "situacao": {
             "oneOf": [
@@ -18134,19 +18028,14 @@
               }
             ]
           },
-          "ofertaCursoId": {
+          "ofertas": {
             "type": [
               "null",
-              "string"
+              "array"
             ],
-            "format": "uuid"
-          },
-          "ofertaCursoSegundaOpcaoId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
+            "items": {
+              "$ref": "#/components/schemas/OfertaEscolhidaDto"
+            }
           },
           "numeroInscricao": {
             "type": [
@@ -18196,13 +18085,17 @@
       },
       "InscricaoDoProcessoDto": {
         "required": [
-          "id"
+          "id",
+          "processo"
         ],
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "processo": {
+            "$ref": "#/components/schemas/ProcessoDaInscricaoDto"
           },
           "numeroInscricao": {
             "type": [
@@ -18220,19 +18113,14 @@
               }
             ]
           },
-          "ofertaCursoId": {
+          "ofertas": {
             "type": [
               "null",
-              "string"
+              "array"
             ],
-            "format": "uuid"
-          },
-          "ofertaCursoSegundaOpcaoId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
+            "items": {
+              "$ref": "#/components/schemas/OfertaEscolhidaDto"
+            }
           },
           "nome": {
             "oneOf": [
@@ -18516,7 +18404,14 @@
             "type": "string"
           },
           "valor": {
-            "$ref": "#/components/schemas/JsonElement"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonElement"
+              }
+            ]
           },
           "podeRevelar": {
             "type": "boolean"
@@ -19388,24 +19283,6 @@
           }
         }
       },
-      "ModuloDoCatalogoResponse": {
-        "required": [
-          "modulo",
-          "resources"
-        ],
-        "type": "object",
-        "properties": {
-          "modulo": {
-            "type": "string"
-          },
-          "resources": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ResourceDoCatalogoResponse"
-            }
-          }
-        }
-      },
       "MotivoDecisaoIsencaoDto": {
         "required": [
           "id",
@@ -19664,6 +19541,17 @@
           }
         }
       },
+      "NomeClassificadoDto": {
+        "required": [
+          "valor"
+        ],
+        "type": "object",
+        "properties": {
+          "valor": {
+            "type": "string"
+          }
+        }
+      },
       "ObrigatoriedadeDto": {
         "required": [
           "tipo",
@@ -19813,7 +19701,7 @@
           "nomeDoCandidato",
           "cpfMascarado",
           "sexo",
-          "opcoesDeCurso"
+          "ofertas"
         ],
         "type": "object",
         "properties": {
@@ -19865,13 +19753,13 @@
               "string"
             ]
           },
-          "opcoesDeCurso": {
+          "ofertas": {
             "type": [
               "null",
               "array"
             ],
             "items": {
-              "$ref": "#/components/schemas/OpcaoDeCursoDoLoteDto"
+              "$ref": "#/components/schemas/OfertaEscolhidaDto"
             }
           }
         }
@@ -20004,6 +19892,34 @@
           }
         }
       },
+      "OfertaEscolhidaDto": {
+        "required": [
+          "id",
+          "nome",
+          "ordem"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ordem": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "OfertaRecursoDto": {
         "required": [
           "id",
@@ -20085,26 +20001,6 @@
             "type": "string"
           },
           "cursoGrau": {
-            "type": "string"
-          }
-        }
-      },
-      "OpcaoDeCursoDoLoteDto": {
-        "required": [
-          "ordem",
-          "oferta"
-        ],
-        "type": "object",
-        "properties": {
-          "ordem": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "oferta": {
             "type": "string"
           }
         }
@@ -20380,44 +20276,6 @@
           "fim": {
             "type": "string",
             "format": "date-time"
-          }
-        }
-      },
-      "PermissaoDoCatalogoResponse": {
-        "required": [
-          "codigo",
-          "nome",
-          "descricao",
-          "sensibilidade"
-        ],
-        "type": "object",
-        "properties": {
-          "codigo": {
-            "type": "string"
-          },
-          "nome": {
-            "type": "string"
-          },
-          "descricao": {
-            "type": "string"
-          },
-          "sensibilidade": {
-            "type": "string"
-          }
-        }
-      },
-      "PermissaoEfetivaResponse": {
-        "required": [
-          "codigo",
-          "nome"
-        ],
-        "type": "object",
-        "properties": {
-          "codigo": {
-            "type": "string"
-          },
-          "nome": {
-            "type": "string"
           }
         }
       },
@@ -20735,6 +20593,22 @@
           "retryable": {
             "type": "boolean",
             "description": "Presente e \u0060true\u0060 quando o conflito descreve uma corrida que j\u00E1 passou: a mesma requisi\u00E7\u00E3o, repetida sem altera\u00E7\u00E3o, pode agora ser aceita. A aus\u00EAncia \u00E9 o default conservador do servidor \u2014 diz que o conflito n\u00E3o foi declarado retent\u00E1vel, n\u00E3o que repetir esteja descartado; nesse caso vale a descri\u00E7\u00E3o da pr\u00F3pria resposta."
+          }
+        }
+      },
+      "ProcessoDaInscricaoDto": {
+        "required": [
+          "id",
+          "nome"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nome": {
+            "type": "string"
           }
         }
       },
@@ -22050,24 +21924,6 @@
           }
         }
       },
-      "ResourceDoCatalogoResponse": {
-        "required": [
-          "resource",
-          "permissoes"
-        ],
-        "type": "object",
-        "properties": {
-          "resource": {
-            "type": "string"
-          },
-          "permissoes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PermissaoDoCatalogoResponse"
-            }
-          }
-        }
-      },
       "RestricaoValorDto": {
         "required": [
           "tipo",
@@ -23124,17 +22980,6 @@
             ]
           }
         }
-      },
-      "NomeClassificadoDto": {
-        "required": [
-          "valor"
-        ],
-        "type": "object",
-        "properties": {
-          "valor": {
-            "type": "string"
-          }
-        }
       }
     },
     "securitySchemes": {
@@ -23149,9 +22994,6 @@
   "tags": [
     {
       "name": "Profile"
-    },
-    {
-      "name": "Autoriza\u00E7\u00E3o"
     },
     {
       "name": "AtosDoProcesso"

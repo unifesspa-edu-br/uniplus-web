@@ -17,7 +17,7 @@ function ocorrencia(tipo: string, extra: Partial<OcorrenciaDoLoteDto> = {}): Oco
     nomeDoCandidato: null,
     cpfMascarado: null,
     sexo: null,
-    opcoesDeCurso: null,
+    ofertas: null,
     ...extra,
   };
 }
@@ -87,9 +87,9 @@ describe('LoteDeNotasComponent', () => {
           numeroDeInscricao: 'INS-0001',
           nomeDoCandidato: 'Diogo Bruno Filipe Souza',
           cpfMascarado: '***.836.371-**',
-          opcoesDeCurso: [
-            { ordem: '2', oferta: 'Medicina — Marabá' },
-            { ordem: '1', oferta: 'Medicina — Xinguara' },
+          ofertas: [
+            { id: '01a188d4-0000-4000-8000-000000000002', nome: 'Medicina — Marabá', ordem: 2 },
+            { id: '01a188d4-0000-4000-8000-000000000001', nome: 'Medicina — Xinguara', ordem: 1 },
           ],
         }),
       ]),

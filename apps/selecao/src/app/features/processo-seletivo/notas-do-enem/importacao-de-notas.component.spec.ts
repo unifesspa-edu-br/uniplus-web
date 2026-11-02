@@ -46,7 +46,7 @@ function lote(sobrescritas: Partial<LoteDeNotasDoEnemDto> = {}): LoteDeNotasDoEn
         nomeDoCandidato: null,
         cpfMascarado: null,
         sexo: null,
-        opcoesDeCurso: null,
+        ofertas: null,
       },
       {
         tipo: 'LINHA_SEM_INSCRITO',
@@ -56,7 +56,7 @@ function lote(sobrescritas: Partial<LoteDeNotasDoEnemDto> = {}): LoteDeNotasDoEn
         nomeDoCandidato: null,
         cpfMascarado: null,
         sexo: null,
-        opcoesDeCurso: null,
+        ofertas: null,
       },
     ],
     ...sobrescritas,

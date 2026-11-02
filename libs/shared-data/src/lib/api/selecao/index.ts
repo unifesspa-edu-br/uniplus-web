@@ -14,6 +14,7 @@ export {
 } from './certames-publicos.request';
 export { RegrasCatalogoApi } from './regras-catalogo.api';
 export { nomeDaOferta, type OfertaDeCursoCertameDto } from './nome-da-oferta';
+export { OFERTA_NAO_IDENTIFICADA, ofertasEmOrdem, type OfertaExibida } from './ofertas-escolhidas';
 export { InscricoesApi } from './inscricoes.api';
 export { ArquivosDaInscricaoDoProcessoApi } from './arquivos-da-inscricao-do-processo.api';
 export { CamposDaInscricaoDoProcessoApi } from './campos-da-inscricao-do-processo.api';
@@ -30,7 +31,7 @@ export {
   type LoteDeNotasDoEnemDto,
   type OcorrenciaDoLoteDto,
   type AusenteDoLoteDto,
-  type OpcaoDeCursoDoLoteDto,
+  type OfertaEscolhidaDto,
   type TipoDeLeiaute,
 } from './notas-do-enem.api';
 export type {
