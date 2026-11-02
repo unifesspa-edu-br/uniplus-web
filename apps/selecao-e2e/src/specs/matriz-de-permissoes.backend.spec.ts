@@ -64,7 +64,8 @@ const DADOS = [
   { persona: 'ayla.luz', permissao: 'selecao:dados-pessoais:consultar', classes: ['PESSOAL'], mascarado: false, revela: false },
   { persona: 'barbara.porto', permissao: 'selecao:dados-sensiveis:consultar', classes: ['SENSIVEL'], mascarado: false, revela: false },
   { persona: 'helena.rezende', permissao: 'selecao:dados-identificadores:consultar', classes: ['IDENTIFICADOR'], mascarado: true, revela: false },
-  { persona: 'benjamin.drumond', permissao: 'selecao:dados-identificadores:revelar', classes: ['IDENTIFICADOR'], mascarado: false, revela: true },
+  // Revelar sozinho não dá a classe: sem consultar o identificador, nada dele chega e nada se oferece a revelar.
+  { persona: 'benjamin.drumond', permissao: 'selecao:dados-identificadores:revelar', classes: [], mascarado: false, revela: false },
 ] as const;
 
 const DOCUMENTOS = [
@@ -119,11 +120,8 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
       expect(status).toBe(200);
       expect([...classes].sort()).toEqual([...caso.classes].sort());
       expect(corpo.arquivos ?? []).toHaveLength(0);
-      // Só a permissão de revelar oferece a revelação; só a de consultar o identificador traz o valor mascarado.
+      // Só a de consultar o identificador traz o valor mascarado; a revelação também exige a permissão de revelar.
       expect(itens.every((i) => i.podeRevelar === caso.revela)).toBe(true);
-      if (caso.revela) {
-        expect(itens.every((i) => i.valor === undefined)).toBe(true);
-      }
       if (caso.mascarado) {
         expect(itens.find((i) => i.fatoCodigo === 'CPF')?.valor).toBe('***.598.363-**');
       }
@@ -204,14 +202,14 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
     expect(pagina.corpo.every((linha) => linha.id !== undefined && linha.processo?.id === cenario.processoId)).toBe(true);
   });
 
-  // UNI-REQ-0208: revelar independe de ver o valor mascarado; a permissão de revelar basta para a rota.
-  test('só a permissão de revelar já revela o CPF pela rota, sem o detalhe mostrar o campo', async () => {
-    const revelacao = await chamarApi(
+  test('só a permissão de revelar, sem a classe do identificador, é recusada como campo não encontrado', async () => {
+    const revelacao = await chamarApi<{ code: string }>(
       'benjamin.drumond',
       'POST',
       `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes/${cenario.fernanda.inscricaoId}/campos/CPF/revelacao`,
     );
 
-    expect(revelacao.status).toBe(200);
+    expect(revelacao.status).toBe(404);
+    expect(revelacao.corpo.code).toBe('uniplus.selecao.inscricao.campo_nao_encontrado');
   });
 });

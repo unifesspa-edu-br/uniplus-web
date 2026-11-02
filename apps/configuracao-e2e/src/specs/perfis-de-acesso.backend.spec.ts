@@ -67,6 +67,7 @@ test.describe('Administração de perfis de acesso', () => {
       'selecao:documentos-internos:consultar',
       'selecao:documentos-publicos:consultar',
       'selecao:dados-pessoais:consultar',
+      'selecao:dados-identificadores:consultar',
       'selecao:dados-identificadores:revelar',
     ]) {
       await pagina.locator('label.checkbox', { has: pagina.getByText(codigo, { exact: true }) }).click();
@@ -76,6 +77,7 @@ test.describe('Administração de perfis de acesso', () => {
     await expect(pagina.getByRole('cell', { name: nome }).first()).toBeVisible();
     const gravado = await acharNaListagem<PerfilGravado>('diogo.souza', '/api/autorizacao/perfis?limit=100', (p) => p.nome === nome);
     expect(gravado?.permissoes.map((p) => p.codigo).sort()).toEqual([
+      'selecao:dados-identificadores:consultar',
       'selecao:dados-identificadores:revelar',
       'selecao:dados-pessoais:consultar',
       'selecao:documentos-identificadores:consultar',

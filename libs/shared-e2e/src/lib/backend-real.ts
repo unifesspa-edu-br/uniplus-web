@@ -263,9 +263,10 @@ const ACESSO = ['selecao:inscricoes:consultar', 'selecao:processos:acompanhar'];
 export const ACESSOS_DA_SIMULACAO = [
   {
     persona: 'diogo.souza',
-    nome: `${PROJECAO}Operação completa do CEPS`,
+    nome: `${PROJECAO}Operação completa do CEPS, com a classe do identificador`,
     permissoes: [
-      ...ACESSO, ...DADOS_ATE_PESSOAL, 'selecao:dados-sensiveis:consultar', 'selecao:dados-identificadores:revelar',
+      ...ACESSO, ...DADOS_ATE_PESSOAL, 'selecao:dados-sensiveis:consultar',
+      'selecao:dados-identificadores:consultar', 'selecao:dados-identificadores:revelar',
       ...DOCUMENTOS_ATE_PESSOAL, 'selecao:documentos-identificadores:consultar', 'selecao:documentos-sensiveis:consultar',
     ],
   },
