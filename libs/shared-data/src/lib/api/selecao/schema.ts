@@ -9649,7 +9649,9 @@ export interface components {
             readonly ofertaCursoId: null | string;
             /** Format: uuid */
             readonly ofertaCursoSegundaOpcaoId: null | string;
+            /** @description As respostas por código do fato. O município vem como objeto { "codigo", "rotulo" }, com o nome que o Geo conferiu no envio; a cidade do endereço conferido pelo CEP traz o nome do Geo. */
             readonly respostas: Record<string, never>;
+            /** @description O que o sistema calculou das respostas. O município de residência vem na mesma forma do município das respostas: { "codigo", "rotulo" } na inscrição enviada. */
             readonly derivados: Record<string, never>;
             readonly grupos: {
                 readonly [key: string]: readonly components["schemas"]["OcorrenciaDeGrupoInscricaoInput"][];
@@ -10666,7 +10668,9 @@ export interface components {
             /** Format: int32 */
             readonly numeroDeOpcoesDeCurso: number | string;
             readonly ofertas: readonly components["schemas"]["OfertaDeCursoCertameDto"][];
+            /** @description As respostas por código do fato. O município vem como texto, o código IBGE, no rascunho, e como objeto { "codigo", "rotulo" } na inscrição enviada, com o nome que o Geo conferiu no envio. */
             readonly respostas: Record<string, never>;
+            /** @description O que o sistema calculou das respostas. O município de residência vem na mesma forma do município das respostas: { "codigo", "rotulo" } na inscrição enviada. */
             readonly derivados: Record<string, never>;
             readonly grupos: {
                 readonly [key: string]: readonly components["schemas"]["OcorrenciaDeGrupoInscricaoInput"][];
