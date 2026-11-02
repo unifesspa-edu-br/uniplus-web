@@ -448,6 +448,28 @@ describe('FormularioStepComponent', () => {
     expect(store.draft().formulario.faseCodigo).toBe('INSCRICAO');
   });
 
+  it('recusa o limite que não é número e diz em que formulário está', () => {
+    const conteudo = store.draft().formulario.conteudo;
+    store.patchObjectSection('formulario', {
+      conteudo: {
+        ...conteudo,
+        itens:
+          conteudo.itens?.map((i) =>
+            i.fatoCodigo === 'PCD'
+              ? { ...i, restricoes: [{ tipo: 'TAMANHO_TEXTO', minimo: 'dez', maximo: null }] }
+              : i,
+          ) ?? [],
+      },
+    });
+
+    expect(fixture.componentInstance.validate()).toEqual({
+      valid: false,
+      messages: [
+        'O formulário de inscrição tem campos que não são números: veja os campos marcados na aba dele.',
+      ],
+    });
+  });
+
   it('a recusa de um item vai para ele, pelo índice da lista enviada sem os dados básicos', async () => {
     const conteudo = store.draft().formulario.conteudo;
     store.patchObjectSection('formulario', {

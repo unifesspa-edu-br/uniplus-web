@@ -37,6 +37,8 @@ import { ItemDoFormularioComponent } from './item-do-formulario';
 import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
+const ids = (lista: readonly (string | null)[]): string | null => lista.filter((id) => id !== null).join(' ') || null;
+
 /**
  * Um grupo repetível do formulário (UNI-REQ-0146): o candidato responde os mesmos campos para cada
  * membro — a composição familiar, por exemplo. Edita o rótulo, quantas ocorrências, se o próprio
@@ -110,7 +112,7 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
         </div>
       </div>
 
-      <fieldset class="editor-formulario__restricao" [attr.aria-describedby]="problemaDasOcorrencias() ? idDe('ocorrencias-erro') : null">
+      <fieldset class="editor-formulario__restricao" [attr.aria-describedby]="descricaoDasOcorrencias()">
         <legend class="field__label">Ocorrências</legend>
         <div class="form-grid form-grid--pair">
           <div class="field">
@@ -122,7 +124,8 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
               [id]="idDe('minimo')"
               [value]="grupo().minimo"
               [disabled]="disabled() || grupo().incluiCandidato"
-              [attr.aria-describedby]="grupo().incluiCandidato ? idDe('candidato-nota') : null"
+              [attr.aria-invalid]="problemaDoMinimo() ? 'true' : null"
+              [attr.aria-describedby]="descricaoDoMinimo()"
               (change)="trocarContagem('minimo', $event)"
             />
           </div>
@@ -135,13 +138,20 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
               [id]="idDe('maximo')"
               [value]="grupo().maximo ?? ''"
               [disabled]="disabled()"
-              [attr.aria-describedby]="idDe('maximo-nota')"
+              [attr.aria-invalid]="problemaDoMaximo() || problemaDaRelacao() ? 'true' : null"
+              [attr.aria-describedby]="descricaoDoMaximo()"
               (change)="trocarContagem('maximo', $event)"
             />
             <span class="field__hint" [id]="idDe('maximo-nota')">Em branco: sem limite de ocorrências.</span>
           </div>
         </div>
-        @if (problemaDasOcorrencias(); as problema) {
+        @if (problemaDoMinimo(); as problema) {
+          <p class="field__error" [id]="idDe('minimo-erro')">{{ problema }}</p>
+        }
+        @if (problemaDoMaximo(); as problema) {
+          <p class="field__error" [id]="idDe('maximo-erro')">{{ problema }}</p>
+        }
+        @if (problemaDaRelacao(); as problema) {
           <p class="field__error" [id]="idDe('ocorrencias-erro')">{{ problema }}</p>
         }
         <label class="checkbox">
@@ -341,13 +351,41 @@ export class GrupoDoFormularioComponent {
     );
   });
 
-  protected readonly problemaDasOcorrencias = computed(() => {
-    const minimo = Number(this.grupo().minimo);
-    const maximo = this.grupo().maximo === null ? null : Number(this.grupo().maximo);
-    if (!Number.isInteger(minimo) || minimo < 0) return 'O mínimo é um número inteiro, a partir de zero.';
-    if (maximo !== null && (!Number.isInteger(maximo) || maximo < 1)) return 'O máximo é um número inteiro, a partir de um.';
-    return maximo !== null && maximo < minimo ? 'O máximo não pode ficar abaixo do mínimo.' : null;
+  private readonly minimo = computed(() => Number(this.grupo().minimo));
+  private readonly maximo = computed(() => (this.grupo().maximo === null ? null : Number(this.grupo().maximo)));
+
+  protected readonly problemaDoMinimo = computed(() =>
+    !Number.isInteger(this.minimo()) || this.minimo() < 0 ? 'O mínimo é um número inteiro, a partir de zero.' : null,
+  );
+
+  protected readonly problemaDoMaximo = computed(() => {
+    const maximo = this.maximo();
+    return maximo !== null && (!Number.isInteger(maximo) || maximo < 1) ? 'O máximo é um número inteiro, a partir de um.' : null;
   });
+
+  /** A relação entre os dois só se confere quando cada um é válido; o erro dela fica no máximo. */
+  protected readonly problemaDaRelacao = computed(() => {
+    const maximo = this.maximo();
+    return this.problemaDoMinimo() === null && this.problemaDoMaximo() === null && maximo !== null && maximo < this.minimo()
+      ? 'O máximo não pode ficar abaixo do mínimo.'
+      : null;
+  });
+
+  protected readonly descricaoDoMinimo = computed(() =>
+    ids([this.grupo().incluiCandidato ? this.idDe('candidato-nota') : null, this.problemaDoMinimo() === null ? null : this.idDe('minimo-erro')]),
+  );
+
+  protected readonly descricaoDoMaximo = computed(() =>
+    ids([
+      this.idDe('maximo-nota'),
+      this.problemaDoMaximo() === null ? null : this.idDe('maximo-erro'),
+      this.problemaDaRelacao() === null ? null : this.idDe('ocorrencias-erro'),
+    ]) ?? '',
+  );
+
+  protected readonly descricaoDasOcorrencias = computed(() =>
+    ids([this.problemaDoMinimo() === null ? null : this.idDe('minimo-erro'), this.problemaDoMaximo() === null ? null : this.idDe('maximo-erro'), this.problemaDaRelacao() === null ? null : this.idDe('ocorrencias-erro')]),
+  );
 
   protected readonly condicoesDaExibicao = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
     source: () => this.grupo().exibicao,

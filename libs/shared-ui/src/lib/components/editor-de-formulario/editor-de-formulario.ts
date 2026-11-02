@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   Injector,
+  afterNextRender,
   computed,
   inject,
   input,
@@ -488,6 +490,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
 })
 export class EditorDeFormularioComponent {
   private readonly injector = inject(Injector);
+  private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef);
   /** As condições citam município só quando o hospedeiro provê a busca de onde sai o valor. */
   private readonly comMunicipios = inject(BUSCA_DE_MUNICIPIOS, { optional: true }) !== null;
 
@@ -957,5 +960,34 @@ export class EditorDeFormularioComponent {
     focarDepois(this.injector, mesmo, oposto);
   }
 
+  /**
+   * Leva o foco ao primeiro campo marcado como inválido, para quem tentou gravar saber por onde
+   * começar. A seção recolhida que o guarda é aberta antes. Resolve para `true` só quando o foco
+   * chegou ao campo; o desabilitado fica de fora, porque não recebe foco.
+   */
+  focarPrimeiroCampoInvalido(): Promise<boolean> {
+    const campo = this.primeiroCampoInvalido();
+    if (campo === null) return Promise.resolve(false);
+    const corpo = campo.closest<HTMLElement>('.editor-formulario__corpo[hidden]');
+    if (corpo === null) {
+      campo.focus();
+      return Promise.resolve(document.activeElement === campo);
+    }
+    const etapa = this.etapas().find((candidata) => `${this.idDaEtapa(candidata)}-corpo` === corpo.id);
+    if (etapa !== undefined) this.alternarEtapa(etapa);
+    return new Promise((resolve) => {
+      afterNextRender(
+        () => {
+          const aberto = this.primeiroCampoInvalido();
+          aberto?.focus();
+          resolve(aberto !== null && document.activeElement === aberto);
+        },
+        { injector: this.injector },
+      );
+    });
+  }
 
+  private primeiroCampoInvalido(): HTMLElement | null {
+    return this.raiz.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]:not(:disabled)');
+  }
 }

@@ -307,6 +307,7 @@ export class ModeloFormularioEdicaoPage {
 
   private readonly id = this.route.snapshot.paramMap.get('id') ?? '';
   private readonly resumo = viewChild<ElementRef<HTMLElement>>('resumo');
+  private readonly editor = viewChild(EditorDeFormularioComponent);
 
   protected readonly modelo = signal<ModeloFormularioView | null>(null);
   protected readonly conteudo = signal<ConteudoDoFormulario | null>(null);
@@ -455,7 +456,8 @@ export class ModeloFormularioEdicaoPage {
     }
     const enviado = conteudoParaEnvio(semDadosBasicos(conteudo));
     if (enviado === null) {
-      this.notifications.warning('Há campos que não são números', 'Corrija os limites e os deslocamentos indicados antes de salvar.');
+      this.notifications.warning('Há campos que não são números', 'Corrija os campos marcados no formulário antes de salvar.');
+      void this.editor()?.focarPrimeiroCampoInvalido();
       return;
     }
     const v = this.form.getRawValue();

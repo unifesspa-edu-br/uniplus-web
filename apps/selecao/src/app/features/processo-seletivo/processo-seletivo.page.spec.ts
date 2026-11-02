@@ -1,5 +1,6 @@
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { HttpHeaders } from '@angular/common/http';
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { StepsResponsivoComponent } from '@uniplus/shared-ui/components';
@@ -480,6 +481,100 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(campo).not.toBeNull();
     expect(rolagem).toHaveBeenCalledWith({ block: 'center' });
     expect(document.activeElement).toBe(campo);
+  });
+
+  it('não leva o foco a campo inválido escondido e mantém o campo inválido que já tem o foco', async () => {
+    const { fixture, page, store } = montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const painel = document.createElement('div');
+    painel.className = 'step-pane';
+    painel.innerHTML =
+      '<div hidden><input id="escondido" aria-invalid="true" /></div><input id="atual" aria-invalid="true" /><input id="outro" aria-invalid="true" />';
+    raiz.appendChild(painel);
+    const atual = painel.querySelector<HTMLInputElement>('#atual') as HTMLInputElement;
+    atual.focus();
+
+    store.goTo(store.totalSteps - 1);
+    fixture.detectChanges();
+    await page.nextOrPublish();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(document.activeElement).toBe(atual);
+    painel.remove();
+  });
+
+  describe('número inválido no formulário', () => {
+    const conteudoComLimiteInvalido = () => ({
+      titulo: null,
+      etapas: [
+        { codigo: 'S1', ordem: 0, tipo: 'SECAO', bloco: null, titulo: 'Escolaridade', descricao: null, aviso: null },
+      ],
+      itens: [
+        {
+          fatoCodigo: 'NOTA',
+          ordem: 0,
+          rotulo: 'Nota',
+          tipoRenderizacao: 'TEXTO',
+          obrigatoriedade: 'SEMPRE',
+          precondicao: null,
+          etapaCodigo: 'S1',
+          pedirConfirmacao: false,
+          restricoes: [{ tipo: 'TAMANHO_TEXTO', minimo: 'dez', maximo: null }],
+        },
+      ],
+      termos: [],
+      pressupostos: [],
+      grupos: [],
+    });
+
+    /** Avança e deixa as renderizações que o foco espera (aba aberta, seção aberta) acontecerem. */
+    async function tentarAvancar(fixture: { detectChanges(): void }, page: { nextOrPublish(): Promise<void> }) {
+      await page.nextOrPublish();
+      fixture.detectChanges();
+      for (let volta = 0; volta < 4; volta++) {
+        await new Promise((resolve) => setTimeout(resolve));
+        TestBed.inject(ApplicationRef).tick();
+      }
+    }
+
+    async function avancarDoFormulario(outraAba: boolean) {
+      const { fixture, page, store } = montar();
+      const invalido = conteudoComLimiteInvalido() as never;
+      const valido = { ...conteudoComLimiteInvalido(), itens: [] } as never;
+      store.patchObjectSection('formulario', {
+        conteudo: outraAba ? valido : invalido,
+        outrasFinalidades: outraAba
+          ? [{ finalidade: 'HABILITACAO', faseCodigo: '', conteudo: invalido, modeloOrigemCodigo: null }]
+          : [],
+      });
+      store.goTo(STEP_LABELS.indexOf('Formulários'));
+      fixture.detectChanges();
+      const raiz = fixture.nativeElement as HTMLElement;
+      const campo = (): HTMLInputElement | null =>
+        raiz.querySelector<HTMLInputElement>('input[aria-invalid="true"]');
+      await tentarAvancar(fixture, page);
+      return { fixture, page, raiz, campo };
+    }
+
+    it('abre a seção recolhida e leva o foco ao limite inválido ao avançar', async () => {
+      const { fixture, page, raiz, campo } = await avancarDoFormulario(false);
+      for (const botao of raiz.querySelectorAll<HTMLButtonElement>('.editor-formulario__alternar')) botao.click();
+      fixture.detectChanges();
+      expect(campo()?.closest('[hidden]')).not.toBeNull();
+
+      await tentarAvancar(fixture, page);
+
+      expect(campo()?.closest('[hidden]')).toBeNull();
+      expect(document.activeElement).toBe(campo());
+    });
+
+    it('abre a aba que guarda o limite inválido e leva o foco a ele ao avançar', async () => {
+      const { campo } = await avancarDoFormulario(true);
+
+      expect(campo()?.closest('[hidden]')).toBeNull();
+      expect(document.activeElement).toBe(campo());
+    });
   });
 
   it('identifica cada pendência pelo passo de origem', async () => {

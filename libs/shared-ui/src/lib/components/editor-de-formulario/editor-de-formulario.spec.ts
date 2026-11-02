@@ -1,3 +1,4 @@
+import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { EMPTY } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -99,6 +100,49 @@ describe('EditorDeFormularioComponent', () => {
     escolherEm('f-etapa-S1-acrescentar', 'RENDA — aguarda a aprovação da proteção de dados');
     acrescentarCampo();
     expect(emitidos).toEqual([]);
+  });
+
+  const comGrupo = (minimo: number | string, maximo: number | string | null): void => {
+    fixture.componentRef.setInput('conteudo', {
+      ...conteudo,
+      grupos: [
+        {
+          codigo: 'FAMILIA', ordem: 3, rotulo: 'Família', etapaCodigo: 'S1', minimo, maximo, exibicao: null, obrigatoriedade: 'SEMPRE',
+          predicadoObrigatoriedade: null, incluiCandidato: false, subitens: [],
+        },
+      ],
+    });
+    fixture.detectChanges();
+  };
+
+  it('dá a cada campo das ocorrências a mensagem do próprio erro', () => {
+    comGrupo(-1, 'dez');
+
+    const minimo = tela().querySelector('#f-grupo-FAMILIA-minimo') as HTMLInputElement;
+    const maximo = tela().querySelector('#f-grupo-FAMILIA-maximo') as HTMLInputElement;
+    const doMinimo = tela().querySelector('#f-grupo-FAMILIA-minimo-erro') as HTMLElement;
+    const doMaximo = tela().querySelector('#f-grupo-FAMILIA-maximo-erro') as HTMLElement;
+
+    expect(doMinimo.textContent).toContain('O mínimo é um número inteiro, a partir de zero.');
+    expect(doMaximo.textContent).toContain('O máximo é um número inteiro, a partir de um.');
+    expect(minimo.getAttribute('aria-describedby')).toBe(doMinimo.id);
+    expect(maximo.getAttribute('aria-describedby')).toContain(doMaximo.id);
+    expect(maximo.getAttribute('aria-describedby')).not.toContain(doMinimo.id);
+  });
+
+  it('abre a seção recolhida que guarda o campo inválido e leva o foco a ele', async () => {
+    comGrupo(1, 'dez');
+    (tela().querySelector('#f-etapa-S1-nome button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect((tela().querySelector('#f-etapa-S1-corpo') as HTMLElement).hidden).toBe(true);
+
+    const chegou = fixture.componentInstance.focarPrimeiroCampoInvalido();
+    fixture.detectChanges();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(await chegou).toBe(true);
+    expect((tela().querySelector('#f-etapa-S1-corpo') as HTMLElement).hidden).toBe(false);
+    expect(document.activeElement).toBe(tela().querySelector('#f-grupo-FAMILIA-maximo'));
   });
 
   it('anuncia a posição nova do campo movido', () => {
@@ -335,13 +379,76 @@ describe('EditorDeFormularioComponent', () => {
     it('mostra o problema do limite no controle dele, associado e marcado como inválido', () => {
       comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: 'abc', dias: 0 }, dataMaxima: null }]);
 
-      const erro = limite('NASCIMENTO', 'Data mínima').querySelector('.field__error') as HTMLElement;
+      const erro = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos-erro') as HTMLElement;
       const anos = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos') as HTMLInputElement;
 
-      expect(erro.textContent).toContain('Os anos e os dias são números inteiros.');
+      expect(erro.textContent).toContain('Os anos são um número inteiro.');
       expect(anos.getAttribute('aria-describedby')).toContain(erro.id);
       expect(anos.getAttribute('aria-invalid')).toBe('true');
       expect(limite('NASCIMENTO', 'Data máxima').querySelector('.field__error')).toBeNull();
+    });
+
+    it('dá a cada deslocamento a mensagem do próprio problema', () => {
+      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: 151, dias: 1.5 }, dataMaxima: null }]);
+
+      const texto = (parte: string): string => {
+        const campo = tela().querySelector(`#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-${parte}`) as HTMLInputElement;
+        const ids = (campo.getAttribute('aria-describedby') ?? '').split(' ').filter((id) => id.endsWith(`-${parte}-erro`));
+        return ids.map((id) => tela().querySelector(`#${id}`)?.textContent).join('|');
+      };
+
+      expect(texto('anos')).toBe('Os anos vão até 150, para mais ou para menos.');
+      expect(texto('dias')).toBe('Os dias são um número inteiro.');
+    });
+
+    it('marca o limite da faixa que não é número e o liga à mensagem, e o foco vai ao primeiro campo inválido', async () => {
+      fixture.componentRef.setInput('catalogo', [fato('A'), data('IDADE')]);
+      fixture.componentRef.setInput('conteudo', {
+        ...conteudo,
+        itens: [item('A', 0), item('IDADE', 1, { tipoRenderizacao: 'TEXTO', restricoes: [{ tipo: 'TAMANHO_TEXTO', minimo: 'dez', maximo: 20 }] })],
+      });
+      fixture.detectChanges();
+
+      const minimo = tela().querySelector('#f-item-IDADE-TAMANHO_TEXTO-minimo') as HTMLInputElement;
+      const maximo = tela().querySelector('#f-item-IDADE-TAMANHO_TEXTO-maximo') as HTMLInputElement;
+      const erro = tela().querySelector('.field__error') as HTMLElement;
+
+      expect(erro.textContent).toContain('Os limites são números inteiros, a partir de zero.');
+      expect(minimo.getAttribute('aria-invalid')).toBe('true');
+      expect(minimo.getAttribute('aria-describedby')).toContain(erro.id);
+      expect(maximo.getAttribute('aria-invalid')).toBeNull();
+      expect(await fixture.componentInstance.focarPrimeiroCampoInvalido()).toBe(true);
+      expect(document.activeElement).toBe(minimo);
+    });
+
+    it('marca só o deslocamento que não é número, e a mensagem dele fica ligada só a ele', () => {
+      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: 0, dias: 'dez' }, dataMaxima: null }]);
+
+      const anos = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos') as HTMLInputElement;
+      const dias = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-dias') as HTMLInputElement;
+      const erro = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-dias-erro') as HTMLElement;
+
+      expect(anos.getAttribute('aria-invalid')).toBeNull();
+      expect(dias.getAttribute('aria-invalid')).toBe('true');
+      expect(dias.getAttribute('aria-describedby')).toContain(erro.id);
+      expect(anos.getAttribute('aria-describedby')).not.toContain(erro.id);
+    });
+
+    it.each([
+      ['anos fracionários', 1.5, 0, 'anos'],
+      ['dias fracionários', 0, 1.5, 'dias'],
+      ['anos acima do limite', 100000, 0, 'anos'],
+      ['dias acima do limite', 0, 10000000, 'dias'],
+    ])('marca só o deslocamento com problema próprio: %s', (_nome, anosDigitados, diasDigitados, marcado) => {
+      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: anosDigitados, dias: diasDigitados }, dataMaxima: null }]);
+
+      const marca = (parte: string): string | null =>
+        (tela().querySelector(`#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-${parte}`) as HTMLInputElement).getAttribute('aria-invalid');
+      const outro = marcado === 'anos' ? 'dias' : 'anos';
+
+      expect(limite('NASCIMENTO', 'Data mínima').querySelector('.field__error')).not.toBeNull();
+      expect(marca(marcado)).toBe('true');
+      expect(marca(outro)).toBeNull();
     });
 
     it('mostra a mínima depois da máxima no controle da data máxima', () => {

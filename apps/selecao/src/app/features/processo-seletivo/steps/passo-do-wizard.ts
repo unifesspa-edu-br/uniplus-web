@@ -41,6 +41,12 @@ export interface PassoDoWizard {
   /** Grava na API antes de liberar o avanço. */
   persistir?(gravacao?: GravacaoDoPasso): Promise<StepValidation>;
 
+  /**
+   * Leva o foco ao primeiro campo que `validate()` recusou, abrindo a aba ou a seção que o guarda.
+   * Resolve para `true` só quando o foco chegou ao campo; sem isso o wizard cai no aviso.
+   */
+  revelarCampoInvalido?(): Promise<boolean>;
+
   /** Rótulo do botão de avanço enquanto este passo estiver aberto. */
   rotuloDeAvanco?(): string;
 

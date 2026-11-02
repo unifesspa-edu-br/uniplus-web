@@ -360,6 +360,59 @@ describe('ModeloFormularioEdicaoPage', () => {
     ).toBe(false);
   });
 
+  function digitarNoMaximoDoGrupo(tela: HTMLElement, texto: string): HTMLInputElement {
+    const campo = tela.querySelector<HTMLInputElement>('input[id$="-FAMILIA-maximo"]') as HTMLInputElement;
+    campo.value = texto;
+    campo.dispatchEvent(new Event('change'));
+    return campo;
+  }
+
+  it('marca junto do campo o número inválido, leva o foco a ele e não grava', async () => {
+    const tela = await carregar();
+    const campo = digitarNoMaximoDoGrupo(tela, 'dez');
+    await propagar();
+
+    salvar(tela);
+    await propagar();
+
+    expect(campo.getAttribute('aria-invalid')).toBe('true');
+    const erro = tela.ownerDocument.getElementById(
+      (campo.getAttribute('aria-describedby') ?? '').split(' ').find((id) => id.endsWith('-maximo-erro')) ?? '',
+    );
+    expect(erro?.textContent).toContain('O máximo é um número inteiro, a partir de um.');
+    expect(tela.ownerDocument.activeElement).toBe(campo);
+    controller.expectNone((r) => r.method === 'PUT');
+  });
+
+  it('abre a seção recolhida e leva o foco ao campo inválido ao tentar salvar', async () => {
+    const tela = await carregar();
+    const campo = digitarNoMaximoDoGrupo(tela, 'dez');
+    await propagar();
+    (tela.querySelector('#cfg-modelo-etapa-SECAO_1-nome button') as HTMLButtonElement).click();
+    await propagar();
+    expect((tela.querySelector('#cfg-modelo-etapa-SECAO_1-corpo') as HTMLElement).hidden).toBe(true);
+
+    salvar(tela);
+    await propagar();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect((tela.querySelector('#cfg-modelo-etapa-SECAO_1-corpo') as HTMLElement).hidden).toBe(false);
+    expect(tela.ownerDocument.activeElement).toBe(campo);
+    controller.expectNone((r) => r.method === 'PUT');
+  });
+
+  it('tira a marca do campo quando o número é corrigido', async () => {
+    const tela = await carregar();
+    const campo = digitarNoMaximoDoGrupo(tela, 'dez');
+    await propagar();
+
+    digitarNoMaximoDoGrupo(tela, '3');
+    await propagar();
+
+    expect(campo.getAttribute('aria-invalid')).toBeNull();
+    expect(campo.getAttribute('aria-describedby')).not.toContain('maximo-erro');
+  });
+
   it('marca junto da condição o fato que o modelo não coleta, antes de enviar', async () => {
     const [laudo] = modelo.conteudo.documentosExigidos ?? [];
     const tela = await carregar({
