@@ -275,6 +275,11 @@ export const ACESSOS_DA_SIMULACAO = [
     nome: `${PROJECAO}Operação sem sensível e sem revelação`,
     permissoes: [...ACESSO, ...DADOS_ATE_PESSOAL, ...DOCUMENTOS_ATE_PESSOAL],
   },
+  {
+    persona: 'helena.rezende',
+    nome: `${PROJECAO}Só o número mascarado`,
+    permissoes: [...ACESSO, 'selecao:dados-identificadores:consultar'],
+  },
   { persona: 'manoel.aparicio', nome: `${PROJECAO}Só o acesso às inscrições`, permissoes: ['selecao:inscricoes:consultar'] },
   {
     persona: 'isabella.figueiredo',
