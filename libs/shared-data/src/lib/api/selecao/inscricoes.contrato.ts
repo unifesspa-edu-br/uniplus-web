@@ -4,7 +4,8 @@ type Schemas = components['schemas'];
 
 /**
  * As respostas pelo código do fato, com o valor em JSON. O schema gerado tipa esses dicionários como
- * `Record<string, never>`; o resto de cada tipo vem dele.
+ * `Record<string, never>`; o resto de cada tipo vem dele. O município vem como o código IBGE, em texto,
+ * no rascunho, e como `{ codigo, rotulo }` (`MunicipioGravado`, de `@uniplus/shared-utils`) na inscrição enviada e no comprovante.
  */
 export type RespostasDaInscricao = Readonly<Record<string, unknown>>;
 

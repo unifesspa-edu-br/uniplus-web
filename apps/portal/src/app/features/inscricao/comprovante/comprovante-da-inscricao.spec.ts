@@ -8,55 +8,8 @@ import {
   derivadosDoComprovante,
   documentosDoComprovante,
   envioDoComprovante,
-  municipiosDoComprovante,
   secoesDoComprovante,
 } from './comprovante-da-inscricao';
-
-const municipio = (fatoCodigo: string) => ({
-  fatoCodigo,
-  ordem: 0,
-  rotulo: fatoCodigo,
-  tipoRenderizacao: 'MUNICIPIO',
-});
-
-describe('municipiosDoComprovante', () => {
-  it('reúne os códigos distintos dos campos de município, nos itens, nos grupos e nos derivados', () => {
-    const formulario = {
-      fatosColetados: [
-        municipio('NATURALIDADE_MUNICIPIO'),
-        { ...municipio('UF'), tipoRenderizacao: 'SELECAO_UNICA' },
-      ],
-      grupos: [{ codigo: 'DEPENDENTES', subitens: [municipio('MUNICIPIO_DO_DEPENDENTE')] }],
-      // O derivado do sistema vem com o rótulo e o tipo que a versão congelou do catálogo.
-      pressupostos: [
-        {
-          fatoCodigo: 'MUNICIPIO_RESIDENCIA',
-          rotulo: 'Município de residência',
-          tipoRenderizacao: 'MUNICIPIO',
-          formato: null,
-          valoresSelecionaveis: null,
-          calculadoDe: ['ENDERECO_RESIDENCIAL'],
-        },
-      ],
-    } as unknown as FormularioRenderizavelDto;
-    const comprovante = {
-      respostas: { NATURALIDADE_MUNICIPIO: '5002704', UF: 'MS' },
-      grupos: {
-        DEPENDENTES: [
-          { id: 'm1', respostas: { MUNICIPIO_DO_DEPENDENTE: '3550308' } },
-          { id: 'm2', respostas: { MUNICIPIO_DO_DEPENDENTE: '5002704' } },
-        ],
-      },
-      derivados: { MUNICIPIO_RESIDENCIA: '1504208' },
-    } as unknown as ComprovanteInscricaoDto;
-
-    expect(municipiosDoComprovante(formulario, comprovante)).toEqual([
-      '5002704',
-      '3550308',
-      '1504208',
-    ]);
-  });
-});
 
 describe('derivadosDoComprovante', () => {
   const formulario = {
@@ -72,14 +25,14 @@ describe('derivadosDoComprovante', () => {
     ],
   } as unknown as FormularioRenderizavelDto;
 
-  it('mostra o derivado que o formulário descreve, pelo rótulo e com o nome do município', () => {
+  it('mostra o derivado que o formulário descreve, pelo rótulo e com o nome gravado do município', () => {
     const comprovante = {
-      derivados: { MUNICIPIO_RESIDENCIA: '5002704' },
+      derivados: { MUNICIPIO_RESIDENCIA: { codigo: '2927408', rotulo: 'Salvador' } },
     } as unknown as ComprovanteInscricaoDto;
 
-    expect(
-      derivadosDoComprovante(formulario, comprovante, new Map([['5002704', 'Campo Grande — MS']])),
-    ).toEqual([{ rotulo: 'Município de residência', valor: 'Campo Grande — MS' }]);
+    expect(derivadosDoComprovante(formulario, comprovante)).toEqual([
+      { rotulo: 'Município de residência', valor: 'Salvador' },
+    ]);
   });
 
   it('não mostra o derivado que nenhuma regra do processo cita, nem pelo código do fato', () => {
@@ -90,6 +43,67 @@ describe('derivadosDoComprovante', () => {
     expect(derivadosDoComprovante(formulario, comprovante).map((d) => d.rotulo)).toEqual([
       'Município de residência',
     ]);
+  });
+});
+
+describe('secoesDoComprovante: município', () => {
+  const formulario = {
+    etapas: [{ codigo: 'DADOS', ordem: 0, titulo: 'Dados do candidato' }],
+    fatosColetados: [
+      {
+        fatoCodigo: 'NATURALIDADE_MUNICIPIO',
+        ordem: 0,
+        rotulo: 'Município de nascimento',
+        etapaCodigo: 'DADOS',
+        tipoRenderizacao: 'MUNICIPIO',
+      },
+    ],
+    grupos: [
+      {
+        codigo: 'FAMILIA',
+        ordem: 0,
+        rotulo: 'Composição familiar',
+        etapaCodigo: 'DADOS',
+        incluiCandidato: false,
+        subitens: [
+          {
+            fatoCodigo: 'MUNICIPIO_DO_INTEGRANTE',
+            ordem: 0,
+            rotulo: 'Município do integrante',
+            tipoRenderizacao: 'MUNICIPIO',
+          },
+        ],
+      },
+    ],
+    pressupostos: [],
+  } as unknown as FormularioRenderizavelDto;
+  const comprovanteCom = (naturalidade: unknown, integrante: unknown) =>
+    ({
+      respostas: { NATURALIDADE_MUNICIPIO: naturalidade },
+      grupos: { FAMILIA: [{ id: 'a', respostas: { MUNICIPIO_DO_INTEGRANTE: integrante } }] },
+      derivados: {},
+    }) as unknown as ComprovanteInscricaoDto;
+
+  it('mostra o município só pelo nome gravado, nas respostas e nos subitens de grupo', () => {
+    const [secao] = secoesDoComprovante(
+      formulario,
+      comprovanteCom(
+        { codigo: '2927408', rotulo: 'Salvador' },
+        { codigo: '1501402', rotulo: 'Belém' },
+      ),
+    );
+
+    expect(secao.respostas.map((r) => r.valor)).toEqual(['Salvador']);
+    expect(secao.grupos[0].ocorrencias[0].respostas.map((r) => r.valor)).toEqual(['Belém']);
+  });
+
+  it('avisa que o nome não foi carregado quando o município vem só com o código', () => {
+    const [secao] = secoesDoComprovante(formulario, comprovanteCom('2927408', '1501402'));
+
+    expect(secao.respostas[0].valor).toBe('Nome do município não carregado (código IBGE 2927408)');
+    expect(secao.grupos[0].ocorrencias[0].respostas[0].valor).toBe(
+      'Nome do município não carregado (código IBGE 1501402)',
+    );
   });
 });
 

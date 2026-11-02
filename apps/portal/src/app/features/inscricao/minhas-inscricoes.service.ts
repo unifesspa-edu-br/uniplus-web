@@ -1,13 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { forkJoin, map, type Observable, of, switchMap, tap } from 'rxjs';
+import { map, type Observable, of, switchMap, tap } from 'rxjs';
 import { type ApiResult, apiOk } from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
   idempotencyKey,
   withIdempotencyKey,
 } from '@uniplus/shared-core/idempotency';
-import { GeoApi } from '@uniplus/shared-data/geo';
 import {
   certamePublicoRequest,
   type CertamePublicadoDto,
@@ -22,7 +21,6 @@ import {
 @Injectable({ providedIn: 'root' })
 export class MinhasInscricoesService {
   private readonly api = inject(InscricoesApi);
-  private readonly geo = inject(GeoApi);
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(SELECAO_BASE_PATH);
   private cancelamentoEmCurso: { readonly chave: string; readonly assinatura: string } | null =
@@ -53,25 +51,6 @@ export class MinhasInscricoesService {
   /** O formulário da versão que a inscrição fixou: dá os rótulos do que o comprovante mostra. */
   formulario(processoId: string): Observable<ApiResult<FormularioRenderizavelDto>> {
     return this.api.obterFormulario(processoId);
-  }
-
-  /**
-   * Os municípios pelo código IBGE, como "Nome — UF", com uma leitura por código. O que o Geo não
-   * devolve fica de fora: quem mostra cai no código.
-   */
-  nomesDosMunicipios(codigos: readonly string[]): Observable<ReadonlyMap<string, string>> {
-    if (codigos.length === 0) return of(new Map());
-    return forkJoin(
-      codigos.map((codigo) =>
-        this.geo
-          .obterCidade(codigo)
-          .pipe(
-            map((cidade) =>
-              cidade.ok ? [[codigo, `${cidade.data.nome} — ${cidade.data.uf}`] as const] : [],
-            ),
-          ),
-      ),
-    ).pipe(map((nomes) => new Map(nomes.flat())));
   }
 
   /** O comprovante do envio `numero` da inscrição `inscricaoId`, também a cancelada. */

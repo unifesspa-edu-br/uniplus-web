@@ -509,7 +509,12 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(comprovante(page)).toContainText(PERSONA.celular);
       await expect(comprovante(page)).not.toContainText(PERSONA.rg);
       // Município pelo nome, e nenhum código de fato ou IBGE cru na tela.
-      await expect(comprovante(page)).toContainText(`${PERSONA.cidade} — MS`);
+      await expect(
+        comprovante(page).locator('dl > div', {
+          has: page.getByText('Município de nascimento', { exact: true }),
+        }),
+      ).toHaveText(new RegExp(`^\\s*Município de nascimento\\s*${PERSONA.cidade}\\s*$`));
+      await expect(comprovante(page)).not.toContainText(`${PERSONA.cidade} — MS`);
       await expect(comprovante(page)).toContainText(`${PERSONA.cidade}/MS`);
       await expect(comprovante(page)).toContainText(EDICAO_DO_ENEM);
       await expect(comprovante(page)).toContainText(MUNICIPIO_DO_FATOR);

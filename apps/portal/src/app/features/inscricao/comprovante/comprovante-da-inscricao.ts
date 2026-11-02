@@ -7,7 +7,6 @@ import {
 } from '@uniplus/shared-data/selecao';
 import {
   type CampoExibido,
-  type NomesDosMunicipios,
   nomesPelaOrdem,
   respostaExibida,
   titulosDasOcorrencias,
@@ -67,48 +66,19 @@ const derivadosDescritos = (formulario: FormularioRenderizavelDto): CampoDoFormu
 function respondidos(
   campos: readonly CampoDoFormulario[],
   respostas: Readonly<Record<string, unknown>>,
-  municipios: NomesDosMunicipios,
 ): RespostaDoComprovante[] {
   return campos
     .filter((c) => respondido(respostas, c.fatoCodigo))
     .map((c) => ({
       rotulo: c.rotulo,
-      valor: respostaExibida(c, respostas[c.fatoCodigo], municipios),
+      valor: respostaExibida(c, respostas[c.fatoCodigo]),
     }));
-}
-
-/**
- * Os códigos IBGE distintos que o comprovante mostra como município: os das respostas e dos derivados
- * cujo campo, no formulário da versão fixada, é de município.
- */
-export function municipiosDoComprovante(
-  formulario: FormularioRenderizavelDto,
-  comprovante: ComprovanteInscricaoDto,
-): string[] {
-  const deMunicipio = (c: CampoExibido): boolean => c.tipoRenderizacao === 'MUNICIPIO';
-  const codigos = (
-    campos: readonly CampoDoFormulario[],
-    respostas: Readonly<Record<string, unknown>>,
-  ) =>
-    campos
-      .filter((c) => deMunicipio(c) && respondido(respostas, c.fatoCodigo))
-      .map((c) => String(respostas[c.fatoCodigo]));
-  return [
-    ...new Set([
-      ...codigos(formulario.fatosColetados, comprovante.respostas),
-      ...formulario.grupos.flatMap((g) =>
-        (comprovante.grupos[g.codigo] ?? []).flatMap((o) => codigos(g.subitens, o.respostas ?? {})),
-      ),
-      ...codigos(derivadosDescritos(formulario), comprovante.derivados),
-    ]),
-  ];
 }
 
 /** As respostas do comprovante pelas seções do formulário da versão fixada, com os rótulos de lá. */
 export function secoesDoComprovante(
   formulario: FormularioRenderizavelDto,
   comprovante: ComprovanteInscricaoDto,
-  municipios: NomesDosMunicipios = new Map(),
 ): SecaoDoComprovante[] {
   return pelaOrdem(formulario.etapas)
     .map((etapa) => ({
@@ -122,7 +92,6 @@ export function secoesDoComprovante(
           ),
         ),
         comprovante.respostas,
-        municipios,
       ),
       grupos: pelaOrdem(formulario.grupos.filter((g) => g.etapaCodigo === etapa.codigo))
         .map((grupo) => {
@@ -135,7 +104,7 @@ export function secoesDoComprovante(
             rotulo: grupo.rotulo,
             ocorrencias: ocorrencias.map((o, i) => ({
               titulo: titulos[i],
-              respostas: respondidos(pelaOrdem(grupo.subitens), o.respostas ?? {}, municipios),
+              respostas: respondidos(pelaOrdem(grupo.subitens), o.respostas ?? {}),
             })),
           };
         })
@@ -148,9 +117,8 @@ export function secoesDoComprovante(
 export function derivadosDoComprovante(
   formulario: FormularioRenderizavelDto,
   comprovante: ComprovanteInscricaoDto,
-  municipios: NomesDosMunicipios = new Map(),
 ): RespostaDoComprovante[] {
-  return respondidos(derivadosDescritos(formulario), comprovante.derivados, municipios);
+  return respondidos(derivadosDescritos(formulario), comprovante.derivados);
 }
 
 /**

@@ -38,10 +38,14 @@ import {
   type EnvioDasRespostas,
   type ErroDoServidor,
   FormularioDoCandidatoComponent,
+  LEITURA_DE_MUNICIPIO_POR_CODIGO,
+  type MunicipiosGravados,
+  NomesDeMunicipios,
   PageHeaderComponent,
   type PendenciaDaSecao,
   type PassoPrefixado,
   type RespostaFixa,
+  separarMunicipiosGravados,
   type SimulacaoDoFormulario,
   SpinnerComponent,
   type ValorJson,
@@ -128,6 +132,8 @@ export class InscricaoDoCandidatoPage implements OnInit {
   private readonly problemas = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly nomes = inject(NomesDeMunicipios);
+  private readonly lerMunicipio = inject(LEITURA_DE_MUNICIPIO_POR_CODIGO);
   protected readonly avaliacao = inject(AvaliacaoDaInscricaoEstado);
 
   readonly processoId = input.required<string>();
@@ -212,6 +218,8 @@ export class InscricaoDoCandidatoPage implements OnInit {
   private readonly inscricao = signal<InscricaoDto | null>(null);
   /** A partida do formulário: as respostas e os aceites da inscrição como chegaram ao abrir a página. */
   protected readonly inicial = signal<SimulacaoDoFormulario | null>(null);
+  /** O nome que a inscrição enviada guardou de cada município, para o campo e a revisão o mostrarem. */
+  protected readonly municipiosGravados = signal<MunicipiosGravados>({});
   protected readonly termosAceitosIniciais = signal<readonly string[]>([]);
 
   private readonly simulacao = signal<SimulacaoDoFormulario>({});
@@ -428,16 +436,20 @@ export class InscricaoDoCandidatoPage implements OnInit {
             const numeroDeOpcoes = numeroDeOpcoesDeCurso(inscricao.data.numeroDeOpcoesDeCurso);
             this.inscricao.set(inscricao.data);
             // As respostas chegam em JSON: são os valores que o formulário lê.
-            const inicial: SimulacaoDoFormulario = {
+            const gravadas = inscricao.data.respostas as Readonly<Record<string, ValorJson>>;
+            const municipios = separarMunicipiosGravados(formulario.data, {
               respostas: {
-                ...this.respostasDoNomeSocial(
-                  inscricao.data.respostas as Readonly<Record<string, ValorJson>>,
-                  formulario.data,
-                ),
-                ...(inscricao.data.respostas as Readonly<Record<string, ValorJson>>),
+                ...this.respostasDoNomeSocial(gravadas, formulario.data),
+                ...gravadas,
               },
-              grupos: inscricao.data.grupos as SimulacaoDoFormulario['grupos'],
+              grupos: inscricao.data.grupos as NonNullable<SimulacaoDoFormulario['grupos']>,
+            });
+            const inicial: SimulacaoDoFormulario = {
+              respostas: municipios.respostas,
+              grupos: municipios.grupos,
             };
+            this.nomes.carregar(municipios.semNome, this.lerMunicipio);
+            this.municipiosGravados.set(municipios.gravados);
             this.inicial.set(inicial);
             // Com uma oferta só, ela é a escolha — mesmo que a gravada seja de outra que saiu do
             // processo —, para o cabeçalho e o envio dizerem o mesmo curso.

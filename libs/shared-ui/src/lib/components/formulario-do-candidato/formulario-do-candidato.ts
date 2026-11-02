@@ -73,6 +73,11 @@ import {
   secoesQueDefinemAsModalidades,
 } from './modalidades-avaliadas';
 import { ModalidadesDaInscricaoComponent } from './modalidades-da-inscricao';
+import {
+  chaveDaResposta,
+  rotuloGravadoDa,
+  type MunicipiosGravados,
+} from './valor-de-municipio-gravado';
 import { estaVazia } from './interpretador/logica';
 import { interpretarFormulario, lerEnvio } from './interpretador/interpretador';
 import type {
@@ -231,6 +236,7 @@ import type {
                         [noPasso]="campo"
                         [id]="idBase() + '-' + campo.campo.fatoCodigo"
                         [resposta]="respostasComAsFixas()[campo.campo.fatoCodigo]"
+                        [rotuloGravado]="rotuloGravado(campo.campo.fatoCodigo)"
                         [respostaDaUf]="respostaDaUf(campo)"
                         [mostrarPendencia]="mostraPendencia(passo)"
                         [fixa]="respostasFixas()[campo.campo.fatoCodigo] ?? null"
@@ -252,6 +258,7 @@ import type {
                         [id]="idBase() + '-' + grupo.grupo.codigo"
                         [ocorrencias]="grupos()[grupo.grupo.codigo]"
                         [respostasDoCandidato]="respostasComAsFixas()"
+                        [municipiosGravados]="municipiosGravados()"
                         [mostrarPendencia]="mostraPendencia(passo)"
                         [errosDoServidor]="errosEm(grupo.grupo.codigo)"
                         [diaDoEnvio]="diaDoEnvio()"
@@ -383,6 +390,8 @@ export class FormularioDoCandidatoComponent {
   readonly inicial = input<SimulacaoDoFormulario | null>(null);
   /** Os fatos que vêm de fora do formulário — respostas de outro formulário, valores calculados. */
   readonly pressupostos = input<Readonly<Record<string, ValorJson>>>({});
+  /** O nome que ficou gravado de cada município da inscrição enviada; vale enquanto o código for o gravado. */
+  readonly municipiosGravados = input<MunicipiosGravados>({});
   /**
    * A lista do bloco de comprovação documental, como o certame a publica; nula quando quem hospeda não a
    * tem. Com avaliação, o bloco mostra os documentos que ela calcula.
@@ -713,6 +722,7 @@ export class FormularioDoCandidatoComponent {
       this.passos(),
       this.respostasComAsFixas(),
       this.municipios,
+      this.municipiosGravados(),
       this.formulario().dependenciasDoFator,
       this.grupos(),
       this.respostasFixas(),
@@ -1029,6 +1039,10 @@ export class FormularioDoCandidatoComponent {
   protected respostaDaUf(campo: CampoNoPasso): ValorJson | undefined {
     const fato = fatoDaUf(campo.regra);
     return fato === null ? undefined : this.respostasComAsFixas()[fato];
+  }
+
+  protected rotuloGravado(fato: string): string | null {
+    return rotuloGravadoDa(this.municipiosGravados(), chaveDaResposta(fato), this.respostas()[fato]);
   }
 
   protected confirmar(caminho: string, texto: string): void {

@@ -1,8 +1,10 @@
 import { HttpHeaders } from '@angular/common/http';
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { ApiResult } from '@uniplus/shared-core/http';
 
 import { CondicaoDeFatoComponent } from './condicao-de-fato';
 import {
@@ -13,6 +15,7 @@ import {
 } from './condicoes-de-fatos';
 import {
   BUSCA_DE_MUNICIPIOS,
+  NomesDeMunicipios,
   ValorDeMunicipioComponent,
   type MunicipioEncontrado,
 } from './valor-de-municipio';
@@ -146,5 +149,78 @@ describe('o campo de município limitado à UF', () => {
 
     expect(busca).toHaveBeenLastCalledWith('Mar', 'MA');
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Marabá');
+  });
+});
+
+describe('o nome do município escolhido', () => {
+  const SALVADOR = { codigoIbge: '2927408', nome: 'Salvador', uf: 'BA' };
+  const semBusca = () => of({ ok: true as const, data: [] });
+
+  beforeEach(() =>
+    TestBed.configureTestingModule({
+      providers: [{ provide: BUSCA_DE_MUNICIPIOS, useValue: semBusca }],
+    }),
+  );
+
+  function campoCom(rotulosGravados: Record<string, string> = {}) {
+    const fixture = TestBed.createComponent(ValorDeMunicipioComponent);
+    fixture.componentRef.setInput('rotulo', 'Município de nascimento');
+    fixture.componentRef.setInput('values', ['2927408']);
+    fixture.componentRef.setInput('rotulosGravados', rotulosGravados);
+    fixture.detectChanges();
+    return (fixture.nativeElement as HTMLElement).querySelector(
+      'input[role="combobox"]',
+    ) as HTMLInputElement;
+  }
+
+  it('é o nome gravado, mesmo que a busca da sessão conheça o código com outro nome', () => {
+    TestBed.inject(NomesDeMunicipios).lembrar([{ ...SALVADOR, nome: 'Salvador da Bahia' }]);
+
+    expect(campoCom({ '2927408': 'Salvador (BA)' }).value).toBe('Salvador (BA)');
+  });
+
+  it('diz que o nome não foi carregado, com o código, quando nada o dá', () => {
+    expect(campoCom().value).toBe('Nome do município não carregado (código IBGE 2927408)');
+  });
+});
+
+describe('a leitura dos nomes por código', () => {
+  const SALVADOR = { codigoIbge: '2927408', nome: 'Salvador', uf: 'BA' };
+  const ok = (data: MunicipioEncontrado) => of({ ok: true as const, data });
+  const falha = of({ ok: false as const });
+
+  it('lê cada código uma só vez e não lê o que a busca da sessão já trouxe', () => {
+    const nomes = TestBed.inject(NomesDeMunicipios);
+    nomes.lembrar([MARABA]);
+    const ler = vi.fn(() => ok(SALVADOR));
+
+    nomes.carregar(['2927408', '2927408', MARABA.codigoIbge], ler as never);
+    nomes.carregar(['2927408'], ler as never);
+
+    expect(ler).toHaveBeenCalledTimes(1);
+    expect(ler).toHaveBeenCalledWith('2927408');
+    expect(nomes.rotulo('2927408')).toBe('Salvador (BA)');
+  });
+
+  it('a leitura pendente não sobrescreve o nome que uma busca gravou enquanto ela corria', () => {
+    const nomes = TestBed.inject(NomesDeMunicipios);
+    const pendente = new Subject<ApiResult<MunicipioEncontrado>>();
+
+    nomes.carregar(['2927408'], () => pendente);
+    nomes.lembrar([{ ...SALVADOR, nome: 'Salvador da Bahia' }]);
+    pendente.next({ ok: true as const, data: SALVADOR } as ApiResult<MunicipioEncontrado>);
+
+    expect(nomes.rotulo('2927408')).toBe('Salvador da Bahia (BA)');
+  });
+
+  it('com o Geo fora do ar o código segue sem nome e pode ser lido de novo', () => {
+    const nomes = TestBed.inject(NomesDeMunicipios);
+    const ler = vi.fn().mockReturnValueOnce(falha).mockReturnValueOnce(ok(SALVADOR));
+
+    nomes.carregar(['2927408'], ler as never);
+    expect(nomes.rotulo('2927408')).toBe('Nome do município não carregado (código IBGE 2927408)');
+
+    nomes.carregar(['2927408'], ler as never);
+    expect(nomes.rotulo('2927408')).toBe('Salvador (BA)');
   });
 });

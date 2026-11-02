@@ -80,7 +80,10 @@ export * from '../../src/lib/components/editor-de-condicoes/condicoes-de-fatos';
 export * from '../../src/lib/components/editor-de-condicoes/leitura-de-condicoes';
 export {
   BUSCA_DE_MUNICIPIOS,
+  LEITURA_DE_MUNICIPIO_POR_CODIGO,
+  NomesDeMunicipios,
   type BuscaDeMunicipios,
+  type LeituraDeMunicipio,
   type MunicipioEncontrado,
 } from '../../src/lib/components/editor-de-condicoes/valor-de-municipio';
 export { EnderecoGeoComponent } from '../../src/lib/components/endereco-geo/endereco-geo';
@@ -140,9 +143,13 @@ export {
 export { PressupostosDaSimulacaoComponent } from '../../src/lib/components/formulario-do-candidato/pressupostos-da-simulacao';
 export {
   type CampoExibido,
-  type NomesDosMunicipios,
   respostaExibida,
 } from '../../src/lib/components/formulario-do-candidato/resposta-exibida';
+export {
+  separarMunicipiosGravados,
+  type MunicipiosGravados,
+  type MunicipiosSeparados,
+} from '../../src/lib/components/formulario-do-candidato/valor-de-municipio-gravado';
 export { baixarJson } from '../../src/lib/components/formulario-do-candidato/baixar-json';
 export {
   divergenciasEntre,

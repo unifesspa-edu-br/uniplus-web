@@ -43,6 +43,22 @@ export type BuscaDeMunicipios = (
  */
 export const BUSCA_DE_MUNICIPIOS = new InjectionToken<BuscaDeMunicipios>('BUSCA_DE_MUNICIPIOS');
 
+/** Lê um município pelo código IBGE, com o nome e a UF. */
+export type LeituraDeMunicipio = (codigoIbge: string) => Observable<ApiResult<MunicipioEncontrado>>;
+
+/**
+ * A leitura de município por código que o formulário usa para dar nome ao código do rascunho. Quem
+ * hospeda o formulário a provê; sem ela, o código sem nome gravado fica sem nome.
+ */
+export const LEITURA_DE_MUNICIPIO_POR_CODIGO = new InjectionToken<LeituraDeMunicipio>(
+  'LEITURA_DE_MUNICIPIO_POR_CODIGO',
+);
+
+/** O texto de um município cujo nome não está disponível: nunca o código sozinho como se fosse o nome. */
+export function nomeDoMunicipioNaoCarregado(codigoIbge: string): string {
+  return `Nome do município não carregado (código IBGE ${codigoIbge})`;
+}
+
 /** O termo mais curto que vale buscar: com menos, a busca alcançaria centenas de nomes. */
 const TERMO_MINIMO = 3;
 /** A espera depois da última tecla, para não buscar a cada letra. */
@@ -56,6 +72,7 @@ const ESPERA_DA_DIGITACAO_MS = 300;
 @Injectable({ providedIn: 'root' })
 export class NomesDeMunicipios {
   private readonly municipios = signal<ReadonlyMap<string, MunicipioEncontrado>>(new Map());
+  private readonly lidos = new Set<string>();
 
   lembrar(municipios: readonly MunicipioEncontrado[]): void {
     this.municipios.update(
@@ -68,18 +85,34 @@ export class NomesDeMunicipios {
     return this.municipios().get(codigoIbge) ?? null;
   }
 
-  /**
-   * O nome do município, ou o código quando ele não passou pela busca nesta sessão — é o caso da
-   * condição gravada antes: o Geo não tem leitura por código, e o código é o que a regra compara.
-   */
+  /** O nome do município com a UF, ou o texto de nome não carregado quando ele ainda não se conhece. */
   rotulo(codigoIbge: string): string {
     const municipio = this.municipio(codigoIbge);
-    return municipio ? rotuloDe(municipio) : `Município de código IBGE ${codigoIbge}`;
+    return municipio
+      ? nomeComUf(municipio.nome, municipio.uf)
+      : nomeDoMunicipioNaoCarregado(codigoIbge);
+  }
+
+  /**
+   * Dá nome aos códigos que a sessão ainda não conhece, lendo cada código uma só vez. A leitura que
+   * falha libera o código para uma nova tentativa.
+   */
+  carregar(codigos: Iterable<string>, ler: LeituraDeMunicipio): void {
+    for (const codigo of new Set(codigos)) {
+      if (this.municipio(codigo) !== null || this.lidos.has(codigo)) continue;
+      this.lidos.add(codigo);
+      ler(codigo).subscribe((resultado) => {
+        // Uma busca que passou pelo código enquanto a leitura corria tem a palavra final.
+        if (resultado.ok && this.municipio(codigo) === null) this.lembrar([resultado.data]);
+        else if (!resultado.ok) this.lidos.delete(codigo);
+      });
+    }
   }
 }
 
-function rotuloDe(municipio: MunicipioEncontrado): string {
-  return `${municipio.nome} (${municipio.uf})`;
+/** O nome do município com a UF, "Salvador (BA)". */
+export function nomeComUf(nome: string, uf: string): string {
+  return `${nome} (${uf})`;
 }
 
 /**
@@ -152,6 +185,8 @@ export class ValorDeMunicipioComponent {
   readonly contagemVisivel = input<boolean>(true);
   /** A UF a que a busca se limita, como no campo de município da UF respondida antes. */
   readonly uf = input<string | null>(null);
+  /** O nome gravado de um código escolhido, que vale no lugar do nome da busca. */
+  readonly rotulosGravados = input<Readonly<Record<string, string>>>({});
 
   readonly valuesChange = output<readonly string[]>();
 
@@ -220,7 +255,7 @@ export class ValorDeMunicipioComponent {
     const escolhidos = this.values();
     const opcao = (codigo: string): UiComboboxOption => ({
       value: codigo,
-      label: this.nomes.rotulo(codigo),
+      label: this.rotulosGravados()[codigo] ?? this.nomes.rotulo(codigo),
     });
     const achados = this.encontrados()
       .filter((municipio) => !escolhidos.includes(municipio.codigoIbge))

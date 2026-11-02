@@ -102,7 +102,7 @@ function comprovante(numeroInscricao: string, numero: number): ComprovanteInscri
       NOME: 'Fernanda Laura Nicole Drumond',
       DESEJA_NOME_SOCIAL: true,
       NOME_SOCIAL: 'Ariel Drumond',
-      NATURALIDADE_MUNICIPIO: '5002704',
+      NATURALIDADE_MUNICIPIO: { codigo: '2927408', rotulo: 'Salvador' },
       ...respostasAlteradas,
     },
     derivados: {},
@@ -163,8 +163,6 @@ const servico = {
   comprovante: (_: string, numero: number) =>
     of(numero <= 2 ? apiOk(comprovante('00000042', numero), 200, SEM_CABECALHOS) : NAO_ENCONTRADO),
   formulario: () => of(apiOk(FORMULARIO, 200, SEM_CABECALHOS)),
-  nomesDosMunicipios: (codigos: readonly string[]) =>
-    of(new Map(codigos.map((c) => [c, c === '5002704' ? 'Campo Grande — MS' : c]))),
   certame: (): Observable<ApiResult<CertamePublicadoDto | null>> =>
     of(
       apiOk(
@@ -347,8 +345,8 @@ describe('ComprovanteDaInscricaoPage', () => {
   it('o município de nascimento aparece pelo nome e pela UF, não pelo código', async () => {
     const tela = await abrir();
 
-    expect(dado(tela, 'Município de nascimento')).toBe('Campo Grande — MS');
-    expect(tela.textContent).not.toContain('5002704');
+    expect(dado(tela, 'Município de nascimento')).toBe('Salvador');
+    expect(tela.textContent).not.toContain('2927408');
   });
 
   it('o envio sai no fuso do processo, com o nome dele', async () => {
