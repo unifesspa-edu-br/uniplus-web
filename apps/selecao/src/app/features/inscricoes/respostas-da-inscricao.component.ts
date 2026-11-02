@@ -50,9 +50,6 @@ interface RespostaExibida {
   readonly aviso: string;
 }
 
-/** O que ocupa o lugar do identificador que a pessoa só pode revelar: a API não devolve nem o mascarado. */
-export const IDENTIFICADOR_NAO_EXIBIDO = 'Não exibido';
-
 function avisoDa(revelacao: RevelacaoDoCampo | null, rotulo: string): string {
   if (revelacao?.estado === 'revelado') return `${rotulo} revelado`;
   if (revelacao?.estado === 'indisponivel') return DADO_NAO_DISPONIVEL;
@@ -73,18 +70,10 @@ function respostaExibida(
     revelacao,
     aviso: avisoDa(revelacao, item.rotulo),
   };
-  const semValor = item.valor === undefined;
   const original = valorExibido(item.tipo, item.valor, item.componente);
-  const mascarado = semValor
-    ? IDENTIFICADOR_NAO_EXIBIDO
-    : 'valor' in original
-      ? original.valor
-      : null;
+  const mascarado = 'valor' in original ? original.valor : null;
   const valor = revelacao?.estado === 'revelado' ? revelacao.valor : item.valor;
-  const exibido: ValorExibido =
-    valor === undefined
-      ? { valor: IDENTIFICADOR_NAO_EXIBIDO }
-      : valorExibido(item.tipo, valor, item.componente);
+  const exibido: ValorExibido = valorExibido(item.tipo, valor, item.componente);
   const pronto = { ...base, mascarado };
   if ('linhas' in exibido)
     return { ...pronto, linhas: exibido.linhas, situacao: null, valor: null };

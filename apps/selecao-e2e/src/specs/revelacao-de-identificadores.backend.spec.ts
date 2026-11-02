@@ -78,7 +78,7 @@ test.describe('Revelação de identificadores', () => {
     await expect(pagina.getByRole('heading', { level: 2, name: 'Respostas do formulário' })).toBeVisible();
     await expect(pagina.getByText('CPF', { exact: true })).toHaveCount(0);
     await expect(pagina.getByRole('button', { name: /Revelar/ })).toHaveCount(0);
-    await expect(pagina.locator('main')).not.toContainText(/\*\*\*\.598|Não exibido/);
+    await expect(pagina.locator('main')).not.toContainText(/\*\*\*\.598/);
   });
 
   test('o valor revelado não aparece ao abrir outra inscrição', async ({ browser }) => {
