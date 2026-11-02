@@ -128,6 +128,7 @@ export interface components {
             readonly identificador: string;
             readonly nome: string;
             readonly numeroEdital: null | string;
+            readonly situacao: components["schemas"]["SituacaoDaInscricao"];
             /** Format: uri */
             readonly documentoEditalUrl: null | string;
             /** Format: date */
@@ -176,6 +177,8 @@ export interface components {
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
             readonly retryable?: boolean;
         };
+        /** @enum {string} */
+        readonly SituacaoDaInscricao: SituacaoDaInscricao;
         readonly TipoDoEventoResponse: {
             readonly codigo: string;
             readonly nome: string;
@@ -191,5 +194,11 @@ export type $defs = Record<string, never>;
 export enum PapelDoDocumento {
     principal = "principal",
     anexo = "anexo"
+}
+export enum SituacaoDaInscricao {
+    emBreve = "emBreve",
+    inscricoesAbertas = "inscricoesAbertas",
+    ultimosDias = "ultimosDias",
+    encerradas = "encerradas"
 }
 export type operations = Record<string, never>;

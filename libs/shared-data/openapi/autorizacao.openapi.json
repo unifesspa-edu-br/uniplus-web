@@ -62,116 +62,6 @@
         ]
       }
     },
-    "/api/autorizacao/permissoes": {
-      "get": {
-        "tags": [
-          "Autoriza\u00E7\u00E3o"
-        ],
-        "summary": "Lista o cat\u00E1logo de permiss\u00F5es",
-        "description": "Permiss\u00F5es da plataforma agrupadas por m\u00F3dulo e resource, com c\u00F3digo, nome, descri\u00E7\u00E3o e sensibilidade. Exige a permiss\u00E3o autorizacao:permissoes:consultar-catalogo.",
-        "operationId": "ConsultarCatalogoDePermissoes",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.uniplus.permissao-catalogo.v1\u002Bjson": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ModuloDoCatalogoResponse"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "406": {
-            "description": "Not Acceptable",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/api/autorizacao/permissoes/efetivas": {
-      "get": {
-        "tags": [
-          "Autoriza\u00E7\u00E3o"
-        ],
-        "summary": "Lista as permiss\u00F5es efetivas do usu\u00E1rio logado",
-        "description": "C\u00F3digo e nome de cada permiss\u00E3o que o token concede. Informa o que pode aparecer na interface; a decis\u00E3o de acesso continua sendo tomada em cada requisi\u00E7\u00E3o.",
-        "operationId": "ConsultarPermissoesEfetivas",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/vnd.uniplus.permissao-efetiva.v1\u002Bjson": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PermissaoEfetivaResponse"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "406": {
-            "description": "Not Acceptable",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
     "/api/autorizacao/concessoes": {
       "get": {
         "tags": [
@@ -1873,16 +1763,6 @@
                 }
               }
             }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           }
         },
         "security": [
@@ -1920,6 +1800,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -1942,16 +1832,6 @@
           },
           "422": {
             "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -2020,16 +1900,6 @@
           },
           "406": {
             "description": "Not Acceptable",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -2256,6 +2126,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -2288,16 +2168,6 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -2413,6 +2283,16 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -2445,16 +2325,6 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -2540,16 +2410,6 @@
           },
           "422": {
             "description": "Unprocessable Entity",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -3548,6 +3408,116 @@
           }
         ],
         "x-uniplus-idempotent": true
+      }
+    },
+    "/api/autorizacao/permissoes": {
+      "get": {
+        "tags": [
+          "Autoriza\u00E7\u00E3o"
+        ],
+        "summary": "Lista o cat\u00E1logo de permiss\u00F5es",
+        "description": "Permiss\u00F5es da plataforma agrupadas por m\u00F3dulo e pelo alvo de cada permiss\u00E3o, com c\u00F3digo, nome, descri\u00E7\u00E3o e sensibilidade. Exige a permiss\u00E3o autorizacao:permissoes:consultar-catalogo.",
+        "operationId": "ConsultarCatalogoDePermissoes",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.permissao-catalogo.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModuloDoCatalogoResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/autorizacao/permissoes/efetivas": {
+      "get": {
+        "tags": [
+          "Autoriza\u00E7\u00E3o"
+        ],
+        "summary": "Lista as permiss\u00F5es efetivas do usu\u00E1rio logado",
+        "description": "C\u00F3digo e nome de cada permiss\u00E3o que o token concede. Informa o que pode aparecer na interface; a decis\u00E3o de acesso continua sendo tomada em cada requisi\u00E7\u00E3o.",
+        "operationId": "ConsultarPermissoesEfetivas",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.permissao-efetiva.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PermissaoEfetivaResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
@@ -4753,9 +4723,6 @@
       "name": "Profile"
     },
     {
-      "name": "Autoriza\u00E7\u00E3o"
-    },
-    {
       "name": "Concessoes"
     },
     {
@@ -4766,6 +4733,9 @@
     },
     {
       "name": "Perfis"
+    },
+    {
+      "name": "Autoriza\u00E7\u00E3o"
     }
   ]
 }

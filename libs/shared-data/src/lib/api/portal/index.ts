@@ -5,4 +5,5 @@ export {
   type DocumentoDoEventoResponse,
   type EventoDaLinhaDoTempoResponse,
   PapelDoDocumento,
+  SituacaoDaInscricao,
 } from './certame-publico.request';

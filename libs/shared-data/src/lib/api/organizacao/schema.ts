@@ -248,7 +248,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois — a operação anterior ainda não concluiu. */
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -911,6 +911,8 @@ export interface components {
             readonly status?: null | number | string;
             readonly detail?: null | string;
             readonly instance?: null | string;
+            /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
+            readonly retryable?: boolean;
         };
         /** @enum {string} */
         readonly TipoUnidade: TipoUnidade;
