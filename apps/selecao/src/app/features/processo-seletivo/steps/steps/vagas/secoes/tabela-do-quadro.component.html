@@ -1,0 +1,133 @@
+<table class="vagas-table">
+  <caption class="sr-only">
+    Quadro de vagas por oferta de curso
+  </caption>
+  <thead>
+    <tr>
+      <th scope="col">Oferta</th>
+      <th scope="col">Total</th>
+      @for (modalidade of padraoDoEdital.colunasDoQuadro(); track modalidade.id) {
+        <th scope="col" [title]="modalidade.descricao || null">{{ modalidade.codigo }}</th>
+      }
+      @if (simulacao.simulacao().size > 0) {
+        @for (modalidade of padraoDoEdital.modalidadesCalculadas(); track modalidade.id) {
+          <th scope="col" class="vagas-table__calculado" [title]="modalidade.descricao">
+            {{ modalidade.codigo }}
+          </th>
+        }
+        <th scope="col" class="vagas-table__calculado">Publicado</th>
+      }
+      @if (!store.emConsulta()) {
+        <th scope="col"><span class="sr-only">Ações</span></th>
+      }
+    </tr>
+  </thead>
+  <tbody>
+    @for (distribuicao of padraoDoEdital.distribuicoes(); track distribuicao.ofertaCursoId) {
+      <tr>
+        <th scope="row" class="vagas-table__oferta">
+          {{ quadro.nomeDaOferta(distribuicao.ofertaCursoId) }}
+          <span class="vagas-oferta__detalhe">{{
+            quadro.detalheDaOferta(distribuicao.ofertaCursoId)
+          }}</span>
+        </th>
+        <td data-label="Total">
+          @if (store.emConsulta()) {
+            {{ distribuicao.voBase || '—' }}
+          } @else {
+          <input
+            class="input input--numero"
+            inputmode="numeric"
+            [attr.aria-label]="
+              'Total de vagas de ' + quadro.rotuloDaOferta(distribuicao.ofertaCursoId)
+            "
+            [attr.aria-invalid]="quadro.voBaseComProblema(distribuicao) || null"
+            [class.input--pendente]="quadro.voBaseComProblema(distribuicao)"
+            [ngModel]="distribuicao.voBase"
+            (ngModelChange)="quadro.alterarVoBase(distribuicao.ofertaCursoId, $event)"
+            [disabled]="!store.aceitaEdicao()"
+          />
+          }
+        </td>
+        @for (modalidade of padraoDoEdital.colunasDoQuadro(); track modalidade.id) {
+          <td [attr.data-label]="modalidade.codigo">
+            @if (store.emConsulta()) {
+              {{ quantidade(distribuicao, modalidade.id) || '—' }}
+            } @else {
+            <input
+              class="input input--numero"
+              inputmode="numeric"
+              [attr.aria-label]="
+                modalidade.codigo + ' de ' + quadro.rotuloDaOferta(distribuicao.ofertaCursoId)
+              "
+              [attr.aria-invalid]="quantidadeInvalida(distribuicao, modalidade.id) || null"
+              [class.input--pendente]="quantidadeInvalida(distribuicao, modalidade.id)"
+              [ngModel]="quantidade(distribuicao, modalidade.id)"
+              (ngModelChange)="
+                quadro.alterarQuantidade(distribuicao.ofertaCursoId, modalidade.id, $event)
+              "
+              [disabled]="!store.aceitaEdicao()"
+            />
+            }
+          </td>
+        }
+        @if (simulacao.simulacao().size > 0) {
+          @for (modalidade of padraoDoEdital.modalidadesCalculadas(); track modalidade.id) {
+            <td class="vagas-table__calculado" [attr.data-label]="modalidade.codigo">
+              {{ simulacao.quantidadeCalculada(distribuicao, modalidade.id) }}
+            </td>
+          }
+          <td class="vagas-table__calculado" data-label="Publicado">
+            {{ simulacao.calculado(distribuicao)?.totalPublicado ?? '—' }}
+          </td>
+        }
+        @if (!store.emConsulta()) {
+        <td class="vagas-table__acoes">
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            (click)="quadro.pedirRemocao(distribuicao.ofertaCursoId)"
+            [disabled]="!store.aceitaEdicao()"
+            [attr.aria-label]="
+              'Remover ' + quadro.rotuloDaOferta(distribuicao.ofertaCursoId) + ' do quadro'
+            "
+          >
+            Remover
+          </button>
+        </td>
+        }
+      </tr>
+    }
+  </tbody>
+
+  <!-- Os totais fecham o quadro, que é o que o edital declara: quantas
+       vagas o processo publica e quantas cada modalidade recebe. -->
+  <tfoot>
+    <tr>
+      <th scope="row" class="vagas-table__oferta">
+        {{
+          padraoDoEdital.distribuicoes().length === 1 ? '1 oferta' : padraoDoEdital.distribuicoes().length + ' ofertas'
+        }}
+      </th>
+      <td data-label="Total">{{ simulacao.totalGeralDeVagas() }}</td>
+      @for (modalidade of padraoDoEdital.colunasDoQuadro(); track modalidade.id) {
+        <td [attr.data-label]="modalidade.codigo">
+          {{ simulacao.totalDeclaradoDe(modalidade.id) }}
+        </td>
+      }
+      @if (simulacao.simulacao().size > 0) {
+        @for (modalidade of padraoDoEdital.modalidadesCalculadas(); track modalidade.id) {
+          <td class="vagas-table__calculado" [attr.data-label]="modalidade.codigo">
+            {{ simulacao.totalCalculadoDe(modalidade.id) }}
+          </td>
+        }
+        <td class="vagas-table__calculado" data-label="Publicado">
+          {{ simulacao.totalGeralPublicado() }}
+        </td>
+      }
+      @if (!store.emConsulta()) {
+        <td class="vagas-table__acoes"></td>
+      }
+    </tr>
+  </tfoot>
+</table>

@@ -1,0 +1,36 @@
+@if (store.emConsulta()) {
+  <ui-valor-em-consulta
+    rotulo="Regra de ajuste"
+    seVazio="Não declarada"
+    [valor]="padraoDoEdital.padraoLido().regraDeAjuste"
+  />
+} @else {
+<label class="label" for="f-ajuste">Regra de ajuste</label>
+<select
+  class="input"
+  id="f-ajuste"
+  [ngModel]="
+    (padraoDoEdital.padrao().regraAjusteCodigo ?? '') + '|' + (padraoDoEdital.padrao().regraAjusteVersao ?? '')
+  "
+  (ngModelChange)="alteracao.escolherRegraAjuste($event)"
+  [disabled]="!store.aceitaEdicao()"
+>
+  <option value="|">Selecione a regra de ajuste…</option>
+  @for (regra of catalogos.regrasAjuste(); track regra.codigo + regra.versao) {
+    <option [value]="regra.codigo + '|' + regra.versao">
+      {{ regra.codigo }} · versão {{ regra.versao }}
+    </option>
+  }
+</select>
+<p class="field__hint">Exigida pela Lei 12.711 — art. 11, § único.</p>
+}
+
+@if (ajusteExplicado(); as ajuste) {
+  <details
+    class="regra-explicada"
+    selRegraExplicada
+    [titulo]="'Base legal e garantias do ajuste'"
+    [rotuloDasGarantias]="'O que este ajuste garante'"
+    [regra]="ajuste"
+  ></details>
+}

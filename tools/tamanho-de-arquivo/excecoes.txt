@@ -59,8 +59,6 @@
 769 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/publicacao-para-comando.ts
 481 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/revisao.component.html
 834 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/revisao.component.ts
-643 apps/selecao/src/app/features/processo-seletivo/steps/steps/vagas/vagas.component.html
-1569 apps/selecao/src/app/features/processo-seletivo/steps/steps/vagas/vagas.component.ts
 761 apps/selecao/src/styles.css
 637 libs/shared-ui/src/lib/components/editor-de-condicoes/condicoes-de-fatos.ts
 572 libs/shared-ui/src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos.ts

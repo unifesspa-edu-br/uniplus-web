@@ -1,0 +1,24 @@
+<div class="alert__body">
+  <details class="vagas-estouro__detalhe">
+    <summary class="alert__title">{{ simulacao.resumoDoEstouro() }}</summary>
+
+    <p class="alert__msg">
+      O art. 10, § 2º garante ao menos uma vaga a cada sub-reserva que ficaria zerada, e é
+      isso que eleva a reserva além do percentual informado.
+    </p>
+
+    <ul class="vagas-estouro__lista">
+      @for (item of simulacao.ofertasComEstouro(); track item.distribuicao.ofertaCursoId) {
+        <li>
+          <span class="vagas-estouro__oferta">{{
+            quadro.rotuloDaOferta(item.distribuicao.ofertaCursoId)
+          }}</span>
+          <span class="vagas-estouro__valores">
+            reserva de {{ item.calculado?.vrNominal }} passou a
+            {{ item.calculado?.vrFinal }}
+          </span>
+        </li>
+      }
+    </ul>
+  </details>
+</div>

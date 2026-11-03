@@ -1,0 +1,43 @@
+@if (store.emConsulta()) {
+  <ui-valor-em-consulta
+    rotulo="Regra de distribuição"
+    seVazio="Não declarada"
+    [valor]="padraoDoEdital.padraoLido().regraDeDistribuicao"
+  />
+} @else {
+<label class="label" for="f-regra">Regra de distribuição</label>
+<select
+  class="input"
+  id="f-regra"
+  #campoRegra
+  [ngModel]="alteracao.valorDoSelectDeRegra()"
+  (ngModelChange)="alteracao.escolherRegraDistribuicao($event)"
+  [disabled]="!store.aceitaEdicao()"
+>
+  <option value="|">Selecione a regra…</option>
+  @for (regra of catalogos.regrasDistribuicao(); track regra.codigo + regra.versao) {
+    <option [value]="regra.codigo + '|' + regra.versao">
+      {{ regra.codigo }} · versão {{ regra.versao }}
+    </option>
+  }
+</select>
+<p class="field__hint">
+  A regra é identificada por código e versão: publicar versão nova do catálogo não muda a
+  regra que um processo já publicado aplicou.
+</p>
+}
+
+@if (regraExplicada(); as regra) {
+  <details
+    class="regra-explicada"
+    selRegraExplicada
+    [titulo]="'Base legal e garantias desta regra'"
+    [rotuloDasGarantias]="'O que esta regra garante'"
+    [regra]="regra"
+    [comParametros]="true"
+  ></details>
+
+  @if (!store.emConsulta()) {
+    <p class="field__hint">Passa a exigir: {{ exigenciasDaRegra().join('; ') }}.</p>
+  }
+}
