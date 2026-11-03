@@ -1,4 +1,9 @@
-import { comAlcanceDeTodasAsFases } from '../../shared/exigencias/alcance-das-exigencias';
+import {
+  comAlcanceDeTodasAsFases,
+  recortadoPorFase,
+  valendoEmTodasAsFases,
+  type ContextoDoAlcance,
+} from '../../shared/exigencias/alcance-das-exigencias';
 import { formatosDeclarados } from '../../shared/exigencias/arquivo-da-exigencia';
 import {
   type ExigenciaLocalizada,
@@ -16,7 +21,6 @@ import {
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
   baseLegalNova,
   comExigencia,
-  comExigenciaNaRaiz,
   comRepeticao,
   comRepeticaoEmTodasAsFases,
   exigenciaNova,
@@ -1374,99 +1378,29 @@ export class FaseStepComponent {
    * apagaria a exigência de todas as outras fases por causa de uma decisão tomada numa só.
    */
   recortarPorFase(id: string): void {
-    const exigencias = this.store.draft().documentos;
-    this.store.patchSection('documentos', {
-      ...this.materializarEmTodasAsFases(exigencias, id),
-      emTodasAsFases: exigencias.emTodasAsFases.filter((item) => item !== id),
-    });
+    this.store.patchSection(
+      'documentos',
+      recortadoPorFase(this.store.draft().documentos, id, this.contextoDoAlcance(id)),
+    );
   }
 
   /** Devolve o documento ao regime de acompanhar todas as fases do edital. */
   valerEmTodasAsFases(id: string): void {
-    const exigencias = this.normalizarDeclaracoesDoDocumento(this.store.draft().documentos, id);
-    const materializadas = this.materializarEmTodasAsFases(exigencias, id);
-    this.store.patchSection('documentos', {
-      ...materializadas,
-      emTodasAsFases: exigencias.emTodasAsFases.includes(id)
-        ? exigencias.emTodasAsFases
-        : [...exigencias.emTodasAsFases, id],
-    });
-  }
-
-  /**
-   * Alinha todas as declarações de raiz do documento à da fase aberta.
-   *
-   * "Vale em todas as fases" quer dizer a MESMA declaração em toda fase. Ligar o regime sobre
-   * declarações que já divergiam deixava a tela anunciando uma coisa e a gravação enviando
-   * outra: condições e consequência diferentes por fase, a fase criada depois recebendo a
-   * primeira que aparecesse, e a releitura ao reabrir o processo perdendo a marca porque as
-   * declarações não batem. Alinhar pela fase aberta é o que o operador vê ao ligar o regime.
-   *
-   * Fase, etapa e formulário ficam como estão: são próprios de cada declaração — cada fase responde
-   * os seus formulários —, e é por isso que a comparação que relê a intenção também os ignora.
-   */
-  private normalizarDeclaracoesDoDocumento(
-    exigencias: ExigenciasDoRascunho,
-    id: string,
-  ): ExigenciasDoRascunho {
-    const modelo = this.exigenciaDoDocumento(id);
-    // A repetição faz parte da declaração, como o gatilho que pode citar os campos do grupo.
-    const repeticao = this.repeticaoDeclarada(id);
-
-    return {
-      ...exigencias,
-      raizes: exigencias.raizes.map((no) =>
-        no.tipo === 'FOLHA' && no.documento !== null && no.documento.tipoDocumentoId === id
-          ? {
-              ...no,
-              repetePorEntidade: repeticao?.herdada === true ? no.repetePorEntidade : (repeticao?.grupo ?? null),
-              documento: {
-                ...modelo,
-                faseCodigo: no.documento.faseCodigo,
-                etapaId: no.documento.etapaId,
-                finalidade: no.documento.finalidade,
-              },
-            }
-          : no,
-      ),
-    };
-  }
-
-  /**
-   * Garante uma exigência do documento em cada fase do cronograma, copiando o que já foi
-   * declarado numa delas.
-   *
-   * Copiar, e não criar em branco, é o que preserva entrega, consequência e normas já
-   * escritas: quem marcou "todas as fases" depois de configurar a exigência numa delas está
-   * dizendo que é a mesma exigência, não uma nova.
-   */
-  private materializarEmTodasAsFases(
-    exigencias: ReturnType<ProcessoSeletivoStore['draft']>['documentos'],
-    id: string,
-  ) {
-    const fases = this.fasesDoCronograma().map((fase) => fase.codigo);
-    // Garante um modelo de raiz antes de espalhar: sem nenhuma exigência declarada na raiz,
-    // não há o que copiar, e `comAlcanceDeTodasAsFases` não inventa uma.
-    //
-    // O modelo nasce na fase ABERTA, não na primeira do cronograma: é nela que o operador
-    // está, e é o que ele vê ali que ele espera ver replicado. Semear noutra fase punha uma
-    // exigência em branco num lugar que ele não estava olhando.
-    const temModelo = exigenciasDaRaiz(exigencias).some(
-      (exigencia) => exigencia.tipoDocumentoId === id,
+    this.store.patchSection(
+      'documentos',
+      valendoEmTodasAsFases(this.store.draft().documentos, id, this.contextoDoAlcance(id)),
     );
-    const aberta = this.faseDoRascunho()?.codigo ?? fases[0] ?? '';
-    // O modelo é semeado na RAIZ, não por `comExigencia`: quando o documento só existe como
-    // alternativa dentro de um grupo OU, aquela substituiria a folha do grupo e a raiz
-    // continuaria sem modelo — a marca ficaria posta sem nada para espalhar, e a gravação
-    // sairia com a alternativa de sempre, sem as exigências prometidas.
-    const base = temModelo
-      ? exigencias
-      : comExigenciaNaRaiz(
-          exigencias,
-          exigenciaNova(id, aberta, this.catalogos.tipoDocumentoPorId().get(id)),
-        );
+  }
 
-    return comAlcanceDeTodasAsFases({ ...base, emTodasAsFases: [id] }, fases);
+  private contextoDoAlcance(id: string): ContextoDoAlcance {
+    const fases = this.fasesDoCronograma().map((fase) => fase.codigo);
+    return {
+      fases,
+      faseAberta: this.faseDoRascunho()?.codigo ?? fases[0] ?? '',
+      modelo: this.exigenciaDoDocumento(id),
+      repeticao: this.repeticaoDeclarada(id),
+      restricao: this.catalogos.tipoDocumentoPorId().get(id),
+    };
   }
 
   /**

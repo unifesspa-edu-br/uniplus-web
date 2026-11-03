@@ -1,7 +1,9 @@
-import type { ExigenciasDoRascunho } from '../../processo-seletivo.models';
+import type { ExigenciaDeDocumento, ExigenciasDoRascunho } from '../../processo-seletivo.models';
 
-import { exigenciasDaRaiz } from './consulta-das-exigencias';
-import { folhaDe } from './exigencias-documentais';
+import type { RestricaoDeArquivo } from './arquivo-da-exigencia';
+
+import { exigenciasDaRaiz, type RepeticaoDaExigencia } from './consulta-das-exigencias';
+import { comExigenciaNaRaiz, exigenciaNova, folhaDe } from './exigencias-documentais';
 
 /**
  * Materializa, em cada fase do cronograma, o documento que o operador declarou valer em todas.
@@ -54,4 +56,103 @@ export function comAlcanceDeTodasAsFases(
   }
 
   return resultado;
+}
+
+/** O que o alcance entre fases precisa saber do documento e do edital para se materializar. */
+export interface ContextoDoAlcance {
+  readonly fases: readonly string[];
+  /** A fase em que o operador está: é nela que o modelo de raiz nasce, se faltar. */
+  readonly faseAberta: string;
+  /** A exigência do documento na fase aberta. */
+  readonly modelo: ExigenciaDeDocumento;
+  readonly repeticao: RepeticaoDaExigencia | null;
+  readonly restricao: RestricaoDeArquivo | undefined;
+}
+
+/**
+ * Troca "vale em todas as fases" pelo recorte explícito, materializando antes: largar o alcance
+ * sem materializar tiraria o documento também de toda fase que só o tinha por herança.
+ */
+export function recortadoPorFase(
+  exigencias: ExigenciasDoRascunho,
+  id: string,
+  contexto: ContextoDoAlcance,
+): ExigenciasDoRascunho {
+  return {
+    ...materializadoEmTodasAsFases(exigencias, id, contexto),
+    emTodasAsFases: exigencias.emTodasAsFases.filter((item) => item !== id),
+  };
+}
+
+/** Devolve o documento ao regime de acompanhar todas as fases do edital. */
+export function valendoEmTodasAsFases(
+  exigencias: ExigenciasDoRascunho,
+  id: string,
+  contexto: ContextoDoAlcance,
+): ExigenciasDoRascunho {
+  const alinhadas = alinhadoAFaseAberta(exigencias, id, contexto);
+  return {
+    ...materializadoEmTodasAsFases(alinhadas, id, contexto),
+    emTodasAsFases: alinhadas.emTodasAsFases.includes(id)
+      ? alinhadas.emTodasAsFases
+      : [...alinhadas.emTodasAsFases, id],
+  };
+}
+
+/**
+ * Alinha todas as declarações de raiz do documento à da fase aberta.
+ *
+ * "Vale em todas as fases" quer dizer a MESMA declaração em toda fase. Ligar o regime sobre
+ * declarações que já divergiam deixava a tela anunciando uma coisa e a gravação enviando
+ * outra, e a releitura ao reabrir o processo perdia a marca porque as declarações não batem.
+ *
+ * Fase, etapa e formulário ficam como estão: são próprios de cada declaração — cada fase responde
+ * os seus formulários —, e é por isso que a comparação que relê a intenção também os ignora.
+ */
+function alinhadoAFaseAberta(
+  exigencias: ExigenciasDoRascunho,
+  id: string,
+  { modelo, repeticao }: ContextoDoAlcance,
+): ExigenciasDoRascunho {
+  return {
+    ...exigencias,
+    raizes: exigencias.raizes.map((no) =>
+      no.tipo === 'FOLHA' && no.documento !== null && no.documento.tipoDocumentoId === id
+        ? {
+            ...no,
+            repetePorEntidade:
+              repeticao?.herdada === true ? no.repetePorEntidade : (repeticao?.grupo ?? null),
+            documento: {
+              ...modelo,
+              faseCodigo: no.documento.faseCodigo,
+              etapaId: no.documento.etapaId,
+              finalidade: no.documento.finalidade,
+            },
+          }
+        : no,
+    ),
+  };
+}
+
+/**
+ * Garante uma exigência do documento em cada fase do cronograma, copiando o que já foi
+ * declarado numa delas: quem marcou "todas as fases" depois de configurar a exigência numa delas
+ * está dizendo que é a mesma exigência, não uma nova.
+ */
+function materializadoEmTodasAsFases(
+  exigencias: ExigenciasDoRascunho,
+  id: string,
+  { fases, faseAberta, restricao }: ContextoDoAlcance,
+): ExigenciasDoRascunho {
+  const temModelo = exigenciasDaRaiz(exigencias).some(
+    (exigencia) => exigencia.tipoDocumentoId === id,
+  );
+  // O modelo é semeado na RAIZ, não por `comExigencia`: quando o documento só existe como
+  // alternativa dentro de um grupo OU, aquela substituiria a folha do grupo e a raiz
+  // continuaria sem modelo. Nasce na fase ABERTA, onde o operador espera ver o que replica.
+  const base = temModelo
+    ? exigencias
+    : comExigenciaNaRaiz(exigencias, exigenciaNova(id, faseAberta, restricao));
+
+  return comAlcanceDeTodasAsFases({ ...base, emTodasAsFases: [id] }, fases);
 }
