@@ -28,6 +28,7 @@ import { CamposPressupostosService } from '../../shared/campos-pressupostos.serv
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './cronograma.component';
 import type { EtapaForm } from './cronograma-form';
+import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
 import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
@@ -64,6 +65,7 @@ import {
 describe('CronogramaStepComponent', () => {
   let componente: CronogramaStepComponent;
   let expansao: ExpansaoDoCronograma;
+  let conferencia: ConferenciaDoCronograma;
   let recusas: RecusasDasEtapas;
   let cronograma: FormularioDoCronograma;
   let reconciliacao: ReconciliacaoDasEtapas;
@@ -94,6 +96,7 @@ describe('CronogramaStepComponent', () => {
     const fixture = TestBed.createComponent(CronogramaStepComponent);
     componente = fixture.componentInstance;
     expansao = fixture.debugElement.injector.get(ExpansaoDoCronograma);
+    conferencia = fixture.debugElement.injector.get(ConferenciaDoCronograma);
     recusas = fixture.debugElement.injector.get(RecusasDasEtapas);
     cronograma = fixture.debugElement.injector.get(FormularioDoCronograma);
     reconciliacao = fixture.debugElement.injector.get(ReconciliacaoDasEtapas);
@@ -398,7 +401,7 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
 
     expect(cronograma.linhaDoTempo()[0].foraDoCatalogo).toBe(true);
-    expect(componente.problemas()).not.toContainEqual(
+    expect(conferencia.problemas()).not.toContainEqual(
       expect.stringContaining('fase de avaliação que as agrupa'),
     );
   });
@@ -426,7 +429,7 @@ describe('CronogramaStepComponent', () => {
     cronograma.removerFase(0);
 
     expect(store.draft().cronograma.fases).toHaveLength(0);
-    expect(componente.validate().messages).toContain('O cronograma precisa de ao menos uma fase.');
+    expect(conferencia.validar().messages).toContain('O cronograma precisa de ao menos uma fase.');
   });
 
   /**
@@ -1582,7 +1585,7 @@ describe('CronogramaStepComponent', () => {
       expect(radio('true')?.checked).toBe(false);
       expect(radio('false')?.checked).toBe(false);
       expect(radio('true')?.getAttribute('aria-invalid')).toBe('true');
-      expect(componente.problemas()).toContainEqual(expect.stringContaining('instância superior'));
+      expect(conferencia.problemas()).toContainEqual(expect.stringContaining('instância superior'));
     });
 
     it('guarda no rascunho a resposta escolhida', () => {
@@ -1593,7 +1596,7 @@ describe('CronogramaStepComponent', () => {
 
       expect(etapa.controls.recursos.value[0]?.admiteInstanciaSuperior).toBe(false);
       expect(radio('false')?.getAttribute('aria-invalid')).toBeNull();
-      expect(componente.problemas()).not.toContainEqual(
+      expect(conferencia.problemas()).not.toContainEqual(
         expect.stringContaining('instância superior'),
       );
     });
@@ -2133,7 +2136,7 @@ describe('CronogramaStepComponent', () => {
 
     expect(componente.etapasOrfas().map((orfa) => orfa.rotulo)).toEqual(['Prova objetiva']);
     expect(nativo.textContent ?? '').toContain('Etapas sem a fase que as agrupa');
-    expect(componente.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(
+    expect(conferencia.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(
       true,
     );
 
@@ -2142,7 +2145,7 @@ describe('CronogramaStepComponent', () => {
 
     expect(componente.etapasOrfas()).toEqual([]);
     expect(store.draft().cronograma.etapas).toEqual([]);
-    expect(componente.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(
+    expect(conferencia.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(
       false,
     );
   });
@@ -2956,7 +2959,7 @@ describe('CronogramaStepComponent', () => {
       );
       comFases(ID_AVALIACAO, ID_RESULTADO);
 
-      expect(componente.problemas()).toContainEqual(
+      expect(conferencia.problemas()).toContainEqual(
         expect.stringContaining(
           '“Modalidade da convocação” só é conhecido na fase Resultado final, depois da fase em que o documento é exigido. Como resolver: exija o documento na fase Resultado final.',
         ),
@@ -2983,7 +2986,7 @@ describe('CronogramaStepComponent', () => {
       });
       detectar();
 
-      expect(componente.problemas()).toContainEqual(
+      expect(conferencia.problemas()).toContainEqual(
         expect.stringContaining(
           'Nenhum formulário do processo tem mais o grupo “FAMILIA”, pelo qual o documento se repete.',
         ),
@@ -3260,7 +3263,7 @@ describe('CronogramaStepComponent', () => {
         { referencia: '', abrangencia: 'INTERNA_EDITAL', status: 'RESOLVIDO', observacao: '' },
       ]);
 
-      const resultado = componente.validate();
+      const resultado = conferencia.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain('norma');
     });
@@ -3276,7 +3279,7 @@ describe('CronogramaStepComponent', () => {
         },
       ]);
 
-      expect(componente.validate().messages?.join(' ') ?? '').not.toContain('norma');
+      expect(conferencia.validar().messages?.join(' ') ?? '').not.toContain('norma');
     });
 
     describe('alcance da exigência sobre as modalidades ofertadas', () => {
@@ -3317,7 +3320,7 @@ describe('CronogramaStepComponent', () => {
       }
 
       function acusaOrfa(): boolean {
-        return (componente.validate().messages ?? []).some((m) => m.includes(MENSAGEM));
+        return (conferencia.validar().messages ?? []).some((m) => m.includes(MENSAGEM));
       }
 
       it('acusa o gatilho IGUAL que não alcança nenhuma modalidade ofertada', () => {
@@ -3367,7 +3370,7 @@ describe('CronogramaStepComponent', () => {
         { consequenciaIndeferimento: 'PENDENCIA_REENVIO' },
       );
 
-      const resultado = componente.validate();
+      const resultado = conferencia.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain('complementação');
     });
@@ -3390,7 +3393,7 @@ describe('CronogramaStepComponent', () => {
       );
       comFases(ID_INSCRICAO);
 
-      const resultado = componente.validate();
+      const resultado = conferencia.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain(
         'sem o formulário em que o candidato o apresenta',
@@ -3441,7 +3444,7 @@ describe('CronogramaStepComponent', () => {
       });
       detectar();
 
-      const resultado = componente.validate();
+      const resultado = conferencia.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain(
         'sem o formulário em que o candidato o apresenta',
@@ -3461,7 +3464,7 @@ describe('CronogramaStepComponent', () => {
       // A fase sai depois de a exigência ter sido declarada nela.
       comFases(ID_INSCRICAO);
 
-      const resultado = componente.validate();
+      const resultado = conferencia.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain('saiu do cronograma');
     });

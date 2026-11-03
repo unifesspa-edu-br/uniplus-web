@@ -1713,18 +1713,18 @@
     </div>
   </form>
 
-  @if (problemas().length > 0) {
+  @if (conferencia.problemas().length > 0) {
     <div class="field__erro" role="status">
       <p>Antes de gravar:</p>
       <ul>
-        @for (problema of problemas(); track $index) {
+        @for (problema of conferencia.problemas(); track $index) {
           <li>{{ problema }}</li>
         }
       </ul>
     </div>
   }
 
-  @if (avisosDeGrupo().length > 0) {
+  @if (conferencia.avisosDeGrupo().length > 0) {
     <!--
       Aviso, não impedimento: a norma de um grupo não se edita nesta tela, e travar a gravação
       por causa dela deixaria o passo sem saída. Quem recusa é a publicação.
@@ -1732,7 +1732,7 @@
     <div class="field__hint" role="status">
       <p>Para publicar depois:</p>
       <ul>
-        @for (aviso of avisosDeGrupo(); track $index) {
+        @for (aviso of conferencia.avisosDeGrupo(); track $index) {
           <li>{{ aviso }}</li>
         }
       </ul>

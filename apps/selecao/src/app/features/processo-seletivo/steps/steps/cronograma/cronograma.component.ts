@@ -25,7 +25,6 @@ import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { descreverFase, finalidadesDaFase } from '../../shared/descricao-da-fase';
 import {
   CamposPressupostosService,
   fatosCitadosPelasModalidadesOfertadas,
@@ -35,42 +34,10 @@ import {
   PERMUTACAO_DE_ORDEM,
   gravarCronogramaFases,
 } from '../../shared/gravacao-do-cronograma';
-import { comAlcanceDeTodasAsFases } from '../../shared/exigencias/alcance-das-exigencias';
-import {
-  type RepeticaoDaExigencia,
-  exigenciasLocalizadas,
-  gruposSemNormaResolvida,
-  todasAsExigencias,
-} from '../../shared/exigencias/consulta-das-exigencias';
-import {
-  CONSEQUENCIA_REENVIO,
-  exigenciaDecideResultado,
-  temNormaResolvida,
-} from '../../shared/exigencias/exigencias-documentais';
-import { faltaOFormulario } from '../../shared/exigencias/formulario-da-exigencia';
+import { todasAsExigencias } from '../../shared/exigencias/consulta-das-exigencias';
 import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
 import { modalidadesDaExigencia } from '../../shared/exigencias/recorte-por-modalidade';
-import {
-  dominiosDoGatilho,
-  fatosParaGatilho,
-  nomesDoCatalogo,
-  podeAlcancarModalidade,
-  problemasDoGatilho,
-  recusasDeFaseDoGatilho,
-} from '../../shared/gatilho-de-exigencia';
-import {
-  orientacaoDaRecusaDaRepeticao,
-  recusaDaExigenciaDoServidor,
-  type NomesDaOrientacao,
-} from '../../shared/orientacao-da-recusa-do-fato';
-import {
-  camposDaRepeticao,
-  fasesNoCronograma,
-  producaoDoRascunho,
-  recusaDaRepeticao,
-  type LugarDaExigencia,
-  type ProducaoDosFatos,
-} from '../../shared/producao-dos-fatos';
+import { recusaDaExigenciaDoServidor } from '../../shared/orientacao-da-recusa-do-fato';
 import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../shared/instancia-superior';
 import { quemCitaNoProcesso } from '../formulario/formulario-de-inscricao';
 import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
@@ -81,12 +48,6 @@ import {
 import { FORMAS_DE_AVALIACAO } from '../../shared/forma-de-avaliacao';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
-import { problemasDoCronograma } from './cronograma-do-certame';
-import {
-  avisosDosGrupos,
-  type ExigenciaDeclarada,
-  type GrupoDeclarado,
-} from './conferencia-das-exigencias-declaradas';
 import {
   fasesComUnidadeNaoEncontrada,
   localDoErroDaEtapa,
@@ -106,6 +67,7 @@ import {
   type FaseForm,
 } from './cronograma-form';
 import { comoComandoDeEtapa } from './cronograma-para-comando';
+import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
 import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
@@ -166,6 +128,7 @@ import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.
     ReconciliacaoDasEtapas,
     FormularioDoCronograma,
     RecusasDasEtapas,
+    ConferenciaDoCronograma,
     ExpansaoDoCronograma,
   ],
 })
@@ -182,6 +145,7 @@ export class CronogramaStepComponent {
   protected readonly reconciliacao = inject(ReconciliacaoDasEtapas);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly recusas = inject(RecusasDasEtapas);
+  protected readonly conferencia = inject(ConferenciaDoCronograma);
   protected readonly expansao = inject(ExpansaoDoCronograma);
 
   readonly formulario = this.cronograma.formulario;
@@ -243,127 +207,6 @@ export class CronogramaStepComponent {
   /** Os papéis escolhíveis, no mesmo vocabulário que a configuração da fase usa. */
   readonly papeis = PAPEIS_ESCOLHIVEIS;
   readonly mensagemDaInstanciaSuperiorEmAberto = MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO;
-
-  /** O que impede a gravação, como a validação do passo o relata. */
-  readonly problemas = computed(() => {
-    this.versaoDoFormulario();
-    return problemasDoCronograma(
-      this.fases.controls.map(faseDoFormulario),
-      this.cronograma.etapasParaEnvio(),
-      this.catalogos.fasePorId(),
-      this.catalogos.precedencias(),
-      this.catalogos.atoPorCodigo(),
-      (tipoBancaId) => this.catalogos.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
-      (tipoEtapaOrigemId) => this.catalogos.tipoEtapaPorId().get(tipoEtapaOrigemId),
-      this.exigenciasDeclaradas(),
-    );
-  });
-
-  /**
-   * O que a publicação vai cobrar dos grupos, dito como aviso: eles não se editam aqui, e
-   * bloquear a gravação por causa deles prenderia o passo sem saída.
-   */
-  readonly avisosDeGrupo = computed(() => avisosDosGrupos(this.gruposDeclarados()));
-
-  /**
-   * Os grupos de exigências que o rascunho carrega. A tela não os edita — eles chegam da
-   * configuração do processo —, mas a publicação cobra deles a norma quando decidem o
-   * resultado, e é melhor dizer isso aqui do que no último passo.
-   */
-  private readonly gruposDeclarados = computed<readonly GrupoDeclarado[]>(() => {
-    const nomePorId = new Map(this.catalogos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]));
-
-    return gruposSemNormaResolvida(this.store.draft().documentos).map((grupo) => ({
-      decideResultado: true,
-      normaResolvida: false,
-      documentos: grupo.documentos.map((id) => nomePorId.get(id) ?? id),
-    }));
-  });
-
-  /**
-   * As exigências que o rascunho declara, na forma que a conferência entende: o nome que a
-   * pessoa lê, se a exigência decide o resultado e se a norma que a sustenta está resolvida.
-   */
-  private readonly exigenciasDeclaradas = computed<readonly ExigenciaDeclarada[]>(() => {
-    const nomePorId = new Map(this.catalogos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]));
-    // Percorre as exigências, não os tipos de documento: a norma é declarada POR exigência,
-    // e o mesmo documento pode decidir o resultado numa fase e não na outra. Conferir por
-    // documento aprovaria a fase cuja norma ficou pendente por causa da outra.
-    const fases = this.fases.controls.map(faseDoFormulario);
-    const fasePorCodigo = new Map(fases.map((fase) => [fase.codigo, fase]));
-    const ofertadas = new Set(this.store.modalidadesDoProcesso());
-    // O gatilho é conferido contra o MESMO catálogo que a superfície da fase oferece: o que a
-    // tela não soube propor, ela também não sabe validar, e apontar um fato que o editor não
-    // mostra deixaria o operador sem o que fazer.
-    const fatoPorCodigo = new Map(
-      fatosParaGatilho(
-        this.catalogos.fatos(),
-        dominiosDoGatilho(
-          this.catalogos.fatos(),
-          this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
-          [...ofertadas],
-        ),
-      ).map((fato) => [fato.codigo, fato]),
-    );
-    const nomePorCodigo = nomesDoCatalogo(this.catalogos.fatos());
-    // A fase de cada fato é lida das fases como estão na tela, não das gravadas: reordenar o
-    // cronograma pode deixar um gatilho citando o que só se conhece depois da exigência.
-    const producao = producaoDoRascunho(
-      this.store.draft().formulario,
-      fasesNoCronograma(fases, this.catalogos.fasePorId()),
-      this.catalogos.fatos(),
-    );
-    const nomes = {
-      fato: (codigo: string) => nomePorCodigo.get(codigo) ?? codigo,
-      fase: this.catalogos.nomeDaFase(),
-    };
-
-    // Confere o que a gravação envia: o documento que vale em todas as fases é materializado
-    // também na fase acrescentada depois do regime, e só assim a cópia dela é conferida antes do
-    // envio, em vez de chegar ao servidor sem ninguém a ter visto.
-    const materializadas = comAlcanceDeTodasAsFases(
-      this.store.draft().documentos,
-      fases.map((fase) => fase.codigo),
-    );
-    return exigenciasLocalizadas(materializadas).map(({ documento: exigencia, repeticao }) => {
-      const fase = fasePorCodigo.get(exigencia.faseCodigo);
-      const admiteComplementacao =
-        fase === undefined
-          ? false
-          : descreverFase(fase, this.catalogos.fasePorId()).permiteComplementacao;
-
-      return {
-        nome: nomePorId.get(exigencia.tipoDocumentoId) ?? exigencia.tipoDocumentoId,
-        decideResultado: exigenciaDecideResultado(exigencia),
-        normaResolvida: temNormaResolvida(exigencia.basesLegais),
-        faseCodigo: exigencia.faseCodigo,
-        faseViva: fase !== undefined,
-        alcancaModalidade: [...ofertadas].some((codigo) =>
-          podeAlcancarModalidade(exigencia, codigo),
-        ),
-        reenvioSemComplementacao:
-          exigencia.consequenciaIndeferimento === CONSEQUENCIA_REENVIO && !admiteComplementacao,
-        semFormulario:
-          fase !== undefined &&
-          faltaOFormulario(
-            exigencia.finalidade,
-            finalidadesDaFase(fase, this.catalogos.fasePorId()),
-          ) !== null,
-        problemasDeGatilho: problemasDoGatilho(exigencia, fatoPorCodigo, nomePorCodigo),
-        problemasDeFase: [
-          ...new Set([
-            ...problemaDaRepeticao(repeticao, exigencia, producao, nomes),
-            ...recusasDeFaseDoGatilho(
-              exigencia,
-              producao,
-              nomes,
-              camposDaRepeticao(repeticao?.grupo ?? null, producao),
-            ).map((recusa) => recusa.orientacao),
-          ]),
-        ],
-      };
-    });
-  });
 
   /**
    * Convenções de contagem de prazo publicadas no catálogo versionado. O DTO
@@ -740,17 +583,8 @@ export class CronogramaStepComponent {
     return preliminaresDaEtapa(grupo);
   }
 
-  /**
-   * A conferência do passo, que também é o que a gravação consulta antes de
-   * enviar qualquer coisa: recusar aqui é o que impede a segunda gravação de
-   * recriar etapas que já existem, e é o que impede a revisão final de declarar
-   * íntegro um cronograma que o servidor ainda não confirmou.
-   */
   validate(): StepValidation {
-    if (this.reconciliacaoPendente()) return { valid: false, messages: [AGUARDA_RELEITURA] };
-
-    const problemas = this.problemas();
-    return problemas.length === 0 ? { valid: true } : { valid: false, messages: [...problemas] };
+    return this.conferencia.validar();
   }
 
   /**
@@ -784,7 +618,7 @@ export class CronogramaStepComponent {
       };
     }
 
-    const conferencia = this.validate();
+    const conferencia = this.conferencia.validar();
     if (!conferencia.valid) {
       // O que a conferência acusa pode estar numa fase fechada: abrir todas põe o problema à
       // vista, em vez de deixar a mensagem apontar para um lugar que não está na tela.
@@ -1037,17 +871,4 @@ export class CronogramaStepComponent {
     if (codigo === PERMUTACAO_DE_ORDEM) return ORIENTACAO_DE_PERMUTACAO;
     return this.problemI18n.resolve(problema).title;
   }
-}
-
-/** A repetição que não vale onde o documento é cobrado, dita com o que fazer; nada quando vale ou não há. */
-function problemaDaRepeticao(
-  repeticao: RepeticaoDaExigencia | null,
-  lugar: LugarDaExigencia,
-  producao: ProducaoDosFatos,
-  nomes: NomesDaOrientacao,
-): readonly string[] {
-  const recusa = repeticao === null ? null : recusaDaRepeticao(repeticao.grupo, lugar, producao);
-  return recusa === null || repeticao === null
-    ? []
-    : [orientacaoDaRecusaDaRepeticao(recusa, producao, nomes, repeticao.herdada)];
 }
