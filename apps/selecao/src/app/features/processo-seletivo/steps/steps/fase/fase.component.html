@@ -183,7 +183,7 @@
             cada documento no bloco de comprovação de um deles.
           -->
           @for (grupo of conferenciaPorFormulario(); track grupo.finalidade ?? '') {
-            @let dividida = finalidadesDaFaseAberta().length > 1;
+            @let dividida = exigencias.finalidadesDaFaseAberta().length > 1;
             @if (dividida) {
               <h4 class="form-section__title">{{ tituloDoFormulario(grupo.finalidade) }}</h4>
             }
@@ -318,12 +318,12 @@
                                 }
                                 <!-- Folha dentro de um grupo não é exigida por si: basta satisfazer o grupo.
                                    Sem dizê-lo, ela parecia uma exigência solta como qualquer outra. -->
-                                @if (posicaoNaArvore(doc.id) !== '') {
-                                  <span class="doc-item__desc">{{ posicaoNaArvore(doc.id) }}</span>
+                                @if (exigencias.posicaoNaArvore(doc.id) !== '') {
+                                  <span class="doc-item__desc">{{ exigencias.posicaoNaArvore(doc.id) }}</span>
                                 }
-                                @if (declaradoMaisDeUmaVez(doc.id) !== '') {
+                                @if (exigencias.declaradoMaisDeUmaVez(doc.id) !== '') {
                                   <span class="field__hint">{{
-                                    declaradoMaisDeUmaVez(doc.id)
+                                    exigencias.declaradoMaisDeUmaVez(doc.id)
                                   }}</span>
                                 }
                               </div>
@@ -351,7 +351,7 @@
                               aparece com o erro até o operador escolher.
                             -->
                               @if (mostraFormulario(doc.id)) {
-                                @let formularioDoDoc = finalidadeDoDocumento(doc.id);
+                                @let formularioDoDoc = exigencias.finalidadeDoDocumento(doc.id);
                                 @let faltaFormularioDoDoc = faltaFormulario(doc.id);
                                 <div class="form-field">
                                   <label
@@ -412,16 +412,16 @@
                                     escolherAlcanceDoDocumento(doc.id, $any($event.target).value)
                                   "
                                 >
-                                  <option value="fase" [selected]="!valeEmTodasAsFases(doc.id)">
+                                  <option value="fase" [selected]="!exigencias.valeEmTodasAsFases(doc.id)">
                                     Só em {{ nomeDaFaseAberta() }}
                                   </option>
-                                  <option value="todas" [selected]="valeEmTodasAsFases(doc.id)">
+                                  <option value="todas" [selected]="exigencias.valeEmTodasAsFases(doc.id)">
                                     Todas as fases do edital
                                   </option>
                                 </select>
                               </div>
 
-                              @if (etapasDaFaseAberta().length > 0) {
+                              @if (exigencias.etapasDaFaseAberta().length > 0) {
                                 <div class="form-field">
                                   <label class="label" [attr.for]="idDaFase('doc-etapa-' + doc.id)"
                                     >Coletado em</label
@@ -439,17 +439,17 @@
                                       escolherEtapaDoDocumento(doc.id, $any($event.target).value)
                                     "
                                   >
-                                    <option value="" [selected]="etapaDoDocumento(doc.id) === ''">
+                                    <option value="" [selected]="exigencias.etapaDoDocumento(doc.id) === ''">
                                       A fase inteira
                                     </option>
                                     @for (
-                                      etapa of etapasDaFaseAberta();
+                                      etapa of exigencias.etapasDaFaseAberta();
                                       track etapa.id ?? etapa.nome
                                     ) {
                                       <option
                                         [value]="etapa.id ?? ''"
                                         [disabled]="etapa.id === null"
-                                        [selected]="etapa.id === etapaDoDocumento(doc.id)"
+                                        [selected]="etapa.id === exigencias.etapaDoDocumento(doc.id)"
                                       >
                                         {{ etapa.nome
                                         }}{{
@@ -467,7 +467,7 @@
                               Sem modalidade no quadro não há o que escolher: um campo vazio e desabilitado
                               ao lado do aviso seria só mais uma coisa a ignorar.
                             -->
-                              @if (modalidades().length === 0) {
+                              @if (exigencias.modalidades().length === 0) {
                                 <div class="form-field">
                                   <span class="label">Quem deve entregar</span>
                                   <p class="field__hint">
@@ -486,10 +486,10 @@
                                     rotulo="Modalidades que devem entregar"
                                     placeholder="Todas as modalidades ofertadas"
                                     textoSemResultado="Nenhuma modalidade do quadro casa com o que você digitou."
-                                    [grupos]="modalidadesEscolhiveis()"
-                                    [values]="modalidadesEfetivas(doc.id)"
+                                    [grupos]="gatilho.modalidadesEscolhiveis()"
+                                    [values]="gatilho.modalidadesEfetivas(doc.id)"
                                     [disabled]="!store.aceitaEdicao()"
-                                    (valuesChange)="definirModalidades(doc.id, $event)"
+                                    (valuesChange)="gatilho.definirModalidades(doc.id, $event)"
                                   />
                                 </div>
                               }
@@ -499,7 +499,7 @@
                               repetido é cobrado uma vez por ocorrência do grupo do formulário, e o gatilho
                               passa a ler, em cada ocorrência, os campos dela.
                             -->
-                              @let repeticaoDoDoc = repeticaoDoDocumento(doc.id);
+                              @let repeticaoDoDoc = gatilho.repeticaoDoDocumento(doc.id);
                               <div class="form-field">
                                 @if (repeticaoDoDoc.atual?.herdada) {
                                   <span class="label">Repetir por</span>
@@ -533,7 +533,7 @@
                                           idDaFase('doc-repeticao-ajuda-' + doc.id)
                                         : idDaFase('doc-repeticao-ajuda-' + doc.id)
                                     "
-                                    (change)="escolherRepeticao(doc.id, $any($event.target).value)"
+                                    (change)="gatilho.escolherRepeticao(doc.id, $any($event.target).value)"
                                   >
                                     <option value="" [selected]="repeticaoDoDoc.atual === null">
                                       Não repete: um por candidato
@@ -589,23 +589,23 @@
                                   class="select"
                                   [attr.id]="idDaFase('doc-exigido-de-' + doc.id)"
                                   [disabled]="!store.aceitaEdicao()"
-                                  (change)="escolherExigidoDe(doc.id, $any($event.target).value)"
+                                  (change)="gatilho.escolherExigidoDe(doc.id, $any($event.target).value)"
                                 >
-                                  <option value="todos" [selected]="ehExigidoDeTodos(doc.id)">
+                                  <option value="todos" [selected]="gatilho.ehExigidoDeTodos(doc.id)">
                                     Todo candidato
                                   </option>
-                                  <option value="quem" [selected]="!ehExigidoDeTodos(doc.id)">
+                                  <option value="quem" [selected]="!gatilho.ehExigidoDeTodos(doc.id)">
                                     Só de quem satisfaz as condições declaradas
                                   </option>
                                 </select>
-                                @if (avisoDeDescarteDoGatilho(doc.id) !== '') {
+                                @if (gatilho.avisoDeDescarteDoGatilho(doc.id) !== '') {
                                   <span class="field__hint">{{
-                                    avisoDeDescarteDoGatilho(doc.id)
+                                    gatilho.avisoDeDescarteDoGatilho(doc.id)
                                   }}</span>
                                 }
                               </div>
 
-                              @if (!ehExigidoDeTodos(doc.id)) {
+                              @if (!gatilho.ehExigidoDeTodos(doc.id)) {
                                 <!--
                                 O gatilho: há documento que só se cobra de quem tem certo fato — o título de
                                 eleitor não se pede a estrangeiro, a mulher nem a menor de dezoito. As
@@ -615,15 +615,15 @@
                                 <ui-editor-de-condicoes
                                   class="doc-item__gatilho"
                                   legenda="Condições para este documento ser cobrado"
-                                  [condicoes]="exigenciaDoDocumento(doc.id).condicoes"
-                                  [fatos]="fatosDoGatilhoDoDocumento(doc.id)"
-                                  [erros]="errosDeFaseDoGatilho(doc.id)"
-                                  [textoSemFatos]="textoSemFatosDoGatilho()"
+                                  [condicoes]="exigencias.exigenciaDoDocumento(doc.id).condicoes"
+                                  [fatos]="gatilho.fatosDoGatilhoDoDocumento(doc.id)"
+                                  [erros]="gatilho.errosDeFaseDoGatilho(doc.id)"
+                                  [textoSemFatos]="gatilho.textoSemFatosDoGatilho()"
                                   [idBase]="idDaFase('doc-' + doc.id)"
                                   [disabled]="!store.aceitaEdicao()"
                                   [fatoDoRecorte]="fatoDoRecorte"
-                                  [textoSemCondicao]="gatilhoSemCondicaoDiz(doc.id)"
-                                  (condicoesChange)="escreverCondicoes(doc.id, $event)"
+                                  [textoSemCondicao]="gatilho.gatilhoSemCondicaoDiz(doc.id)"
+                                  (condicoesChange)="gatilho.escreverCondicoes(doc.id, $event)"
                                 />
                               }
 
@@ -826,7 +826,7 @@
                                 }
                               }
 
-                              @if (faltaNormaResolvida(doc.id)) {
+                              @if (exigencias.faltaNormaResolvida(doc.id)) {
                                 <p class="field__hint doc-item__aviso-norma">
                                   Sem uma norma declarada e identificada como "Resolvida", a
                                   publicação recusa esta exigência, que decide o resultado.

@@ -26,6 +26,8 @@ import {
 } from '../../shared/exigencias/exigencias-documentais';
 import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
+import { GatilhoDasExigenciasStore } from './documentos/gatilho-das-exigencias.store';
 import { FaseEmEdicao } from './fase-em-edicao';
 import { FaseStepComponent } from './fase.component';
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
@@ -63,6 +65,8 @@ describe('FaseStepComponent', () => {
   let comCronograma: (...fases: readonly FaseDoCronograma[]) => void;
   let selecionado: (id: string) => string;
 
+  const exigencias = () => raiz.injector.get(ExigenciasDaFaseStore);
+  const gatilho = () => raiz.injector.get(GatilhoDasExigenciasStore);
   const bancas = () =>
     raiz.query(By.directive(BancasDaFaseComponent)).componentInstance as BancasDaFaseComponent;
   const publicacoes = () =>
@@ -597,13 +601,13 @@ describe('FaseStepComponent', () => {
     it('exige o documento na fase aberta, e só nela', () => {
       comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
 
-      componente.alternarExigencia(ID_CPF, true);
+      exigencias().alternarExigencia(ID_CPF, true);
       detectar();
 
-      expect(componente.exigidoNestaFase(ID_CPF)).toBe(true);
+      expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(true);
       componente.abrirFase(ID_RECURSOS);
       detectar();
-      expect(componente.exigidoNestaFase(ID_CPF)).toBe(false);
+      expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(false);
     });
 
     /**
@@ -666,12 +670,12 @@ describe('FaseStepComponent', () => {
         });
         componente.escolherDocumento(ID_CPF);
         componente.acrescentarDocumento();
-        componente.escolherExigidoDe(ID_CPF, 'quem');
+        gatilho().escolherExigidoDe(ID_CPF, 'quem');
         detectar();
       });
 
       it('não oferece na fase anterior o dado que a habilitação coleta', () => {
-        expect(componente.fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual([]);
+        expect(gatilho().fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual([]);
         expect(nativo.querySelector('.doc-item__gatilho')?.textContent).toContain(
           'Nenhum dado do candidato é conhecido até esta fase para condicionar o documento.',
         );
@@ -681,14 +685,14 @@ describe('FaseStepComponent', () => {
         componente.abrirFase(ID_RECURSOS);
         componente.escolherDocumento(ID_CPF);
         componente.acrescentarDocumento();
-        componente.escolherExigidoDe(ID_CPF, 'quem');
+        gatilho().escolherExigidoDe(ID_CPF, 'quem');
         detectar();
 
-        expect(componente.fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual(['LAUDO_RECENTE']);
+        expect(gatilho().fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual(['LAUDO_RECENTE']);
       });
 
       it('mostra na condição gravada o que fazer para o gatilho valer', () => {
-        componente.escreverCondicoes(ID_CPF, [
+        gatilho().escreverCondicoes(ID_CPF, [
           { clausula: 1, fato: 'LAUDO_RECENTE', operador: 'IGUAL', valor: 'true' },
         ]);
         detectar();
@@ -769,7 +773,7 @@ describe('FaseStepComponent', () => {
         componente.abrirFase(faseCanonicaId);
         componente.escolherDocumento(ID_CPF);
         componente.acrescentarDocumento();
-        componente.escolherExigidoDe(ID_CPF, 'quem');
+        gatilho().escolherExigidoDe(ID_CPF, 'quem');
         detectar();
       }
 
@@ -799,13 +803,13 @@ describe('FaseStepComponent', () => {
         expect(
           Array.from(campoRepetirPor()?.options ?? []).map((opcao) => opcao.text.trim()),
         ).toEqual(['Não repete: um por candidato', 'Composição familiar (FAMILIA)']);
-        expect(componente.fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual([]);
+        expect(gatilho().fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual([]);
 
-        componente.escolherRepeticao(ID_CPF, 'FAMILIA');
+        gatilho().escolherRepeticao(ID_CPF, 'FAMILIA');
         detectar();
 
         expect(folhaDoCpf()?.repeticao).toEqual({ grupo: 'FAMILIA', herdada: false });
-        expect(componente.fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual(['PARENTESCO']);
+        expect(gatilho().fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual(['PARENTESCO']);
         expect(componente.resumos()[0]?.repeticao).toBe('Um por ocorrência de Composição familiar');
       });
 
@@ -847,7 +851,7 @@ describe('FaseStepComponent', () => {
 
         expect(campoRepetirPor()).toBeNull();
         expect(nativo.textContent).toContain('Composição familiar, declarado no grupo de alternativas');
-        expect(componente.fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual(['PARENTESCO']);
+        expect(gatilho().fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual(['PARENTESCO']);
       });
 
       it('a repetição herdada que deixou de valer diz o que fazer sem apontar campo que o documento não tem', () => {
@@ -883,7 +887,7 @@ describe('FaseStepComponent', () => {
     it('oferece no seletor o documento que a fase ainda não exige', () => {
       comCronograma(fase({}));
 
-      expect(componente.documentosDaFase()).toEqual([]);
+      expect(exigencias().documentosDaFase()).toEqual([]);
       expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).toContainEqual(
         expect.objectContaining({ value: ID_CPF }),
       );
@@ -897,7 +901,7 @@ describe('FaseStepComponent', () => {
       componente.acrescentarDocumento();
       detectar();
 
-      expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
+      expect(exigencias().documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
       expect(
         componente.documentosDisponiveis().flatMap((grupo) => grupo.options),
       ).not.toContainEqual(expect.objectContaining({ value: ID_CPF }));
@@ -981,7 +985,7 @@ describe('FaseStepComponent', () => {
       beforeEach(() => comCronograma(fase({})));
 
       it('mostra no resumo o que decide a exigência, com os campos fechados', () => {
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         componente.escolherConsequencia(ID_CPF, 'ELIMINA');
         componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
         detectar();
@@ -998,7 +1002,7 @@ describe('FaseStepComponent', () => {
 
       /** A norma de todos aparece uma vez, acima da tabela; repetida, dobraria cada linha. */
       it('mostra uma vez a norma resolvida que sustenta todos os documentos', () => {
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
         detectar();
 
@@ -1015,8 +1019,8 @@ describe('FaseStepComponent', () => {
           ...TIPOS_DOCUMENTO,
           { ...TIPOS_DOCUMENTO[0], id: ID_RG, codigo: 'RG', nome: 'RG' },
         ]);
-        componente.alternarExigencia(ID_CPF, true);
-        componente.alternarExigencia(ID_RG, true);
+        exigencias().alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_RG, true);
         componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
         componente.escreverBaseLegal(ID_RG, 0, 'referencia', 'Lei 7.116/1983');
         detectar();
@@ -1029,14 +1033,14 @@ describe('FaseStepComponent', () => {
       });
 
       it('acusa no resumo a exigência que a publicação recusaria por falta de norma', () => {
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         detectar();
 
         expect(celula(linhas()[0], 'Norma')).toContain('Sem norma resolvida');
       });
 
       it('abre e recolhe os campos pelo nome do documento, que diz o estado', () => {
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         detectar();
 
         botaoDeEdicao()?.click();
@@ -1073,7 +1077,7 @@ describe('FaseStepComponent', () => {
         const envio = raiz.query(By.directive(ModeloDaExigenciaComponent));
         (envio.componentInstance as ModeloDaExigenciaComponent).modeloChange.emit(modelo);
 
-        expect(componente.exigenciaDoDocumento(ID_CPF).modelo).toEqual(modelo);
+        expect(exigencias().exigenciaDoDocumento(ID_CPF).modelo).toEqual(modelo);
       });
 
       it('filtra os documentos pelo público e diz quantos sobraram', () => {
@@ -1081,9 +1085,9 @@ describe('FaseStepComponent', () => {
           ...TIPOS_DOCUMENTO,
           { ...TIPOS_DOCUMENTO[0], id: ID_RG, codigo: 'RG', nome: 'RG' },
         ]);
-        componente.alternarExigencia(ID_CPF, true);
-        componente.alternarExigencia(ID_RG, true);
-        componente.escolherExigidoDe(ID_RG, 'quem');
+        exigencias().alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_RG, true);
+        gatilho().escolherExigidoDe(ID_RG, 'quem');
         detectar();
 
         const filtro = nativo.querySelector<HTMLSelectElement>('#fase-AVALIACAO-doc-filtro');
@@ -1110,7 +1114,7 @@ describe('FaseStepComponent', () => {
         componente.filtroDoPublico.set('todo-candidato');
         detectar();
 
-        componente.escolherExigidoDe(ID_CPF, 'quem');
+        gatilho().escolherExigidoDe(ID_CPF, 'quem');
         detectar();
 
         expect(linhas()).toHaveLength(1);
@@ -1141,7 +1145,7 @@ describe('FaseStepComponent', () => {
         componente.filtroDoPublico.set('condicao:Cor ou raça é INDIGENA');
         detectar();
 
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         detectar();
         const filtro = nativo.querySelector<HTMLSelectElement>('#fase-AVALIACAO-doc-filtro');
         expect(filtro?.value).toBe('condicao:Cor ou raça é INDIGENA');
@@ -1166,13 +1170,13 @@ describe('FaseStepComponent', () => {
           fase({}),
           fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
         );
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         componente.filtroDoPublico.set('condicao:Cor ou raça é INDIGENA');
         componente.saiuDaLista.set('CPF saiu da lista, porque não é mais do público filtrado.');
         detectar();
 
         componente.abrirFase(ID_RECURSOS);
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         detectar();
 
         expect(componente.filtroDoPublico()).toBe('');
@@ -1196,7 +1200,7 @@ describe('FaseStepComponent', () => {
         expect(componente.emEdicao(ID_CPF)).toBe(true);
 
         componente.abrirFase(ID_RECURSOS);
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         detectar();
         expect(componente.emEdicao(ID_CPF)).toBe(false);
         expect(campoDeEntrega()).toBeNull();
@@ -1220,9 +1224,9 @@ describe('FaseStepComponent', () => {
         segunda.detectChanges();
         for (const requisicao of controller.match(() => true)) requisicao.flush([]);
 
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         componente.alternarEdicao(ID_CPF, true);
-        segunda.componentInstance.alternarExigencia(ID_CPF, true);
+        segunda.debugElement.injector.get(ExigenciasDaFaseStore).alternarExigencia(ID_CPF, true);
         segunda.componentInstance.alternarEdicao(ID_CPF, true);
         detectar();
         segunda.detectChanges();
@@ -1258,7 +1262,7 @@ describe('FaseStepComponent', () => {
        * texto, sem botão que abra campo nenhum.
        */
       it('em consulta, lê o detalhe do documento como texto, sem campo nem botão', () => {
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         store.remoteSnapshot.set({
           status: StatusProcesso.publicado,
         } as unknown as ProcessoSeletivoDto);
@@ -1280,7 +1284,7 @@ describe('FaseStepComponent', () => {
         TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
           { ...TIPOS_DOCUMENTO[0], formatosAceitos: 'pdf,tiff' },
         ]);
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         store.remoteSnapshot.set({
           status: StatusProcesso.publicado,
         } as unknown as ProcessoSeletivoDto);
@@ -1295,7 +1299,7 @@ describe('FaseStepComponent', () => {
        * descrição e lê os formatos e o limite como dado próprio, sem perdê-los.
        */
       it('em consulta, lê os formatos e o limite do cadastro à parte da descrição ausente', () => {
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         store.remoteSnapshot.set({
           status: StatusProcesso.publicado,
         } as unknown as ProcessoSeletivoDto);
@@ -1315,7 +1319,7 @@ describe('FaseStepComponent', () => {
        * descrição, que o snapshot não guarda, diz de onde vem.
        */
       it('em consulta, lê os formatos e o limite gravados quando o cadastro diverge', () => {
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
           {
             ...TIPOS_DOCUMENTO[0],
@@ -1337,7 +1341,7 @@ describe('FaseStepComponent', () => {
       });
 
       it('em consulta, lê os formatos gravados do documento cujo tipo saiu do cadastro', () => {
-        componente.alternarExigencia(ID_CPF, true);
+        exigencias().alternarExigencia(ID_CPF, true);
         TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([]);
         store.remoteSnapshot.set({
           status: StatusProcesso.publicado,
@@ -1443,7 +1447,7 @@ describe('FaseStepComponent', () => {
       componente.escolherDocumento(ID_CPF);
       componente.acrescentarDocumento();
       detectar();
-      expect(componente.documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
+      expect(exigencias().documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
 
       // O cadastro inativa o tipo: ele deixa de vir no catálogo.
       TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set(
@@ -1452,7 +1456,7 @@ describe('FaseStepComponent', () => {
       detectar();
 
       expect(
-        componente.documentosDaFase().map((doc) => doc.id),
+        exigencias().documentosDaFase().map((doc) => doc.id),
         'a exigência continua no rascunho e continua sendo reenviada — precisa continuar à vista',
       ).toEqual([ID_CPF]);
       expect(
@@ -1470,7 +1474,7 @@ describe('FaseStepComponent', () => {
       componente.removerDocumento(ID_CPF, document.body);
       detectar();
 
-      expect(componente.documentosDaFase()).toEqual([]);
+      expect(exigencias().documentosDaFase()).toEqual([]);
       expect(componente.documentosDisponiveis().flatMap((grupo) => grupo.options)).toContainEqual(
         expect.objectContaining({ value: ID_CPF }),
       );
@@ -1479,9 +1483,9 @@ describe('FaseStepComponent', () => {
     it('recorta por fase partindo das fases que o edital tem hoje', () => {
       comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
 
-      componente.valerEmTodasAsFases(ID_CPF);
+      exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
-      componente.recortarPorFase(ID_CPF);
+      exigencias().recortarPorFase(ID_CPF);
       detectar();
 
       // Recortar materializa a exigência em cada fase do edital — congelar o conjunto atual
@@ -1524,14 +1528,14 @@ describe('FaseStepComponent', () => {
       componente.acrescentarDocumento();
       detectar();
 
-      expect(componente.etapasDaFaseAberta().map((etapa) => etapa.nome)).toEqual([
+      expect(exigencias().etapasDaFaseAberta().map((etapa) => etapa.nome)).toEqual([
         'Análise documental',
       ]);
 
       componente.escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
       detectar();
 
-      expect(componente.etapaDoDocumento(ID_CPF)).toBe(ID_ETAPA_DOCUMENTAL);
+      expect(exigencias().etapaDoDocumento(ID_CPF)).toBe(ID_ETAPA_DOCUMENTAL);
       // A etapa é campo da exigência daquela fase, que é onde ela vive no contrato.
       expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')[0].etapaId).toBe(
         ID_ETAPA_DOCUMENTAL,
@@ -1558,15 +1562,15 @@ describe('FaseStepComponent', () => {
     it('a fase sem etapa não oferece onde coletar', () => {
       comCronograma(fase({}));
 
-      expect(componente.etapasDaFaseAberta()).toEqual([]);
+      expect(exigencias().etapasDaFaseAberta()).toEqual([]);
     });
 
     it('tira o documento do processo ao desmarcar a última fase que o exigia', () => {
       comCronograma(fase({}));
 
-      componente.alternarExigencia(ID_CPF, true);
+      exigencias().alternarExigencia(ID_CPF, true);
       detectar();
-      componente.alternarExigencia(ID_CPF, false);
+      exigencias().alternarExigencia(ID_CPF, false);
       detectar();
 
       // Desmarcar tira a exigência DESTA fase; o mesmo documento em outra continua, porque
@@ -1686,7 +1690,7 @@ describe('FaseStepComponent', () => {
       campo.dispatchEvent(new Event('change'));
       detectar();
 
-      expect(componente.exigenciaDoDocumento(ID_CPF).finalidade).toBeNull();
+      expect(exigencias().exigenciaDoDocumento(ID_CPF).finalidade).toBeNull();
       expect(seletor()).toBeNull();
     });
 
@@ -1700,7 +1704,7 @@ describe('FaseStepComponent', () => {
       campo.dispatchEvent(new Event('change'));
       detectar();
 
-      expect(componente.exigenciaDoDocumento(ID_CPF).finalidade).toBe('ISENCAO_TAXA');
+      expect(exigencias().exigenciaDoDocumento(ID_CPF).finalidade).toBe('ISENCAO_TAXA');
       expect(titulos()).toEqual(['Formulário de isenção da taxa de inscrição']);
     });
   });
@@ -1712,7 +1716,7 @@ describe('FaseStepComponent', () => {
       componente.acrescentarDocumento();
       detectar();
 
-      const declarada = componente.exigenciaDoDocumento(ID_CPF);
+      const declarada = exigencias().exigenciaDoDocumento(ID_CPF);
       // O cadastro diz "pdf,jpg"; o contrato da exigência fala PDF e JPEG.
       expect(declarada.formatosPermitidos).toEqual(['PDF', 'JPEG']);
       expect(declarada.tamanhoMaximoBytes).toBe(10 * 1024 * 1024);
@@ -1738,7 +1742,7 @@ describe('FaseStepComponent', () => {
 
     it('não inventa restrição para tipo cujo cadastro não declara nenhuma', () => {
       comCronograma(fase({}));
-      const semRestricao = componente.exigenciaDoDocumento('tipo-fora-do-catalogo');
+      const semRestricao = exigencias().exigenciaDoDocumento('tipo-fora-do-catalogo');
 
       expect(semRestricao.formatosPermitidos).toBe('QUALQUER');
       expect(semRestricao.tamanhoMaximoBytes).toBeNull();
@@ -1757,7 +1761,7 @@ describe('FaseStepComponent', () => {
         fase({ ordem: 2 }),
       );
       // A fase aberta é a AVALIACAO (a fixada do componente), não a primeira da lista.
-      componente.valerEmTodasAsFases(ID_CPF);
+      exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
       const naAvaliacao = exigenciasDaFase(store.draft().documentos, 'AVALIACAO');
@@ -1777,13 +1781,13 @@ describe('FaseStepComponent', () => {
       componente.escolherDocumento(ID_CPF);
       componente.acrescentarDocumento();
       detectar();
-      componente.valerEmTodasAsFases(ID_CPF);
+      exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
       comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
       expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')).toEqual([]);
 
-      componente.alternarExigencia(ID_CPF, false);
+      exigencias().alternarExigencia(ID_CPF, false);
       detectar();
 
       // Saiu da AVALIACAO, que é a fase aberta; continua em RECURSOS.
@@ -1806,7 +1810,7 @@ describe('FaseStepComponent', () => {
         }),
       );
 
-      componente.valerEmTodasAsFases(ID_CPF);
+      exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
       expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')[0].finalidade).toBe('ISENCAO_TAXA');
@@ -1818,7 +1822,7 @@ describe('FaseStepComponent', () => {
       componente.escolherDocumento(ID_CPF);
       componente.acrescentarDocumento();
       componente.escolherFinalidade(ID_CPF, 'INSCRICAO');
-      componente.valerEmTodasAsFases(ID_CPF);
+      exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
       comCronograma(
@@ -1828,7 +1832,7 @@ describe('FaseStepComponent', () => {
       componente.abrirFase(ID_RECURSOS);
       detectar();
 
-      expect(componente.exigidoNestaFase(ID_CPF)).toBe(true);
+      expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(true);
       expect(componente.faltaFormulario(ID_CPF)).toBeNull();
     });
 
@@ -1840,11 +1844,11 @@ describe('FaseStepComponent', () => {
       detectar();
       componente.escolherObrigatoriedade(ID_CPF, 'nao');
       detectar();
-      componente.valerEmTodasAsFases(ID_CPF);
+      exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
-      expect(componente.exigidoNestaFase(ID_CPF)).toBe(true);
-      expect(componente.exigenciaDoDocumento(ID_CPF).obrigatorio).toBe(false);
+      expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(true);
+      expect(exigencias().exigenciaDoDocumento(ID_CPF).obrigatorio).toBe(false);
     });
   });
 
@@ -1935,17 +1939,17 @@ describe('FaseStepComponent', () => {
     it('leva o foco ao seletor do público enquanto restar documento', () => {
       remover();
 
-      expect(componente.documentosDaFase()).toHaveLength(1);
+      expect(exigencias().documentosDaFase()).toHaveLength(1);
       expect(document.activeElement).toBe(nativo.querySelector('#fase-AVALIACAO-doc-filtro'));
     });
 
     it('leva o foco ao campo "Documento a exigir" ao remover o último', () => {
-      componente.alternarExigencia(ID_RG, false);
+      exigencias().alternarExigencia(ID_RG, false);
       detectar();
 
       remover();
 
-      expect(componente.documentosDaFase()).toEqual([]);
+      expect(exigencias().documentosDaFase()).toEqual([]);
       expect(document.activeElement).toBe(nativo.querySelector('ui-combobox input'));
     });
 
