@@ -349,10 +349,6 @@ test.describe('Unidade responsável da fase no cronograma', () => {
     await unidade.selectOption({ label: 'CGA — Centro de Gestão Acadêmica' });
 
     await page.getByRole('button', { name: /Gravar e avançar/ }).click();
-    await page
-      .getByRole('button', { name: /Confirmar|Gravar/ })
-      .last()
-      .click();
 
     await expect.poll(() => capturado.cronogramas.length).toBeGreaterThan(0);
     expect(capturado.cronogramas.at(-1)?.[0]?.unidadeResponsavelId).toBe(UNIDADE_CGA.id);
