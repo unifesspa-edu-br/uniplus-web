@@ -38,6 +38,9 @@ import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
 import { convencaoLida } from './convencao-de-contagem';
 import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.component';
 import { RecursosDaEtapaComponent } from './etapa/recursos-da-etapa.component';
+import { JanelaDaEtapaComponent } from './etapa/janela-da-etapa.component';
+import { BancasDaEtapaComponent } from './etapa/bancas-da-etapa.component';
+import { PublicacoesDaEtapaComponent } from './etapa/publicacoes-da-etapa.component';
 
 @Component({
   selector: 'sel-step-cronograma',
@@ -54,6 +57,9 @@ import { RecursosDaEtapaComponent } from './etapa/recursos-da-etapa.component';
     DadosDaFaseComponent,
     EtapasOrfasComponent,
     RecursosDaEtapaComponent,
+    JanelaDaEtapaComponent,
+    BancasDaEtapaComponent,
+    PublicacoesDaEtapaComponent,
   ],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

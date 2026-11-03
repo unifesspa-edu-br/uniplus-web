@@ -1,0 +1,64 @@
+@let etapa = grupo();
+@let posicao = indiceDaEtapa();
+@let item = fase();
+@let notaDoEnem = edicao.etapaDeNotaDoEnem(etapa);
+
+<h4 class="form-section__title">Quando acontece e o que devolve</h4>
+@if (notaDoEnem) {
+  <p class="field__hint">Acontece na janela da fase.</p>
+} @else {
+  <div class="form-grid">
+    <div class="form-field">
+      <label class="label" [attr.for]="'cr-etapa-ini-' + posicao">Início</label>
+      <input
+        class="input"
+        type="datetime-local"
+        [attr.id]="'cr-etapa-ini-' + posicao"
+        formControlName="inicio"
+        [attr.min]="pisoDeData(etapa.controls.inicio.value, item.grupo.controls.inicio.value)"
+        [attr.max]="item.grupo.controls.fim.value || null"
+      />
+    </div>
+    <div class="form-field">
+      <label class="label" [attr.for]="'cr-etapa-fim-' + posicao">Fim</label>
+      <input
+        class="input"
+        type="datetime-local"
+        [attr.id]="'cr-etapa-fim-' + posicao"
+        formControlName="fim"
+        [attr.min]="
+          pisoDeData(
+            etapa.controls.fim.value,
+            etapa.controls.inicio.value,
+            item.grupo.controls.inicio.value
+          )
+        "
+        [attr.max]="item.grupo.controls.fim.value || null"
+      />
+    </div>
+  </div>
+  <p class="field__hint">
+    Em branco, a etapa acontece na janela da fase. Declare só quando ela tem data própria — a prova
+    e a entrevista não caem no mesmo dia.
+  </p>
+}
+<label class="checkbox">
+  <input
+    type="checkbox"
+    [attr.id]="'cr-etapa-parecer-' + posicao"
+    formControlName="emiteParecerIndividual"
+  />
+  <span class="checkbox__box" aria-hidden="true"></span>
+  Esta etapa emite parecer individual
+</label>
+@if (notaDoEnem) {
+  <p class="field__hint">
+    Opcional. Aqui o parecer é o espelho do cálculo, gerado pelo sistema. É dele que corre o prazo
+    do recurso.
+  </p>
+} @else {
+  <p class="field__hint">
+    O edital promete devolutiva a cada candidato. É dela que corre o prazo do recurso contra decisão
+    individual.
+  </p>
+}
