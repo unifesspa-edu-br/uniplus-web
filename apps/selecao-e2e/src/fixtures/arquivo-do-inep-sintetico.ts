@@ -67,13 +67,14 @@ export const ERICK: PessoaFicticia = {
 const NOTAS_PADRAO = ['611.1', '722.2', '833.3', '544.4', '960'];
 const SITUACOES_PADRAO = ['7', '7', '7', '7', '7'];
 
-export function numeroDeInscricao(ordem: number): string {
-  return String(240000000000 + ordem);
+/** A `rodada` desloca todos os números, e com eles o hash do arquivo: um arquivo por execução. */
+export function numeroDeInscricao(ordem: number, rodada = 0): string {
+  return String(240000000000 + rodada * 1000 + ordem);
 }
 
-export function linha(pessoa: PessoaFicticia, ordem: number, cpf: string = pessoa.cpf): string {
+export function linha(pessoa: PessoaFicticia, ordem: number, cpf: string = pessoa.cpf, rodada = 0): string {
   return [
-    numeroDeInscricao(ordem),
+    numeroDeInscricao(ordem, rodada),
     cpf,
     pessoa.nome,
     ...NOTAS_PADRAO,

@@ -9,7 +9,7 @@ import {
   linha,
   linhaDe23Campos,
 } from '../fixtures/arquivo-do-inep-sintetico';
-import { processoDasNotasDoEnem } from '../fixtures/processo-das-notas-do-enem';
+import { lotesDeNotasDoEnem, processoDasNotasDoEnem } from '../fixtures/processo-das-notas-do-enem';
 
 /**
  * Envio ao INEP e importação das notas do ENEM contra a API real, sem simulação. Roda só com
@@ -24,6 +24,12 @@ import { processoDasNotasDoEnem } from '../fixtures/processo-das-notas-do-enem';
  * `E2E_EDICAO` indica a edição que as inscrições escolheram (padrão 2025).
  */
 const EDICAO = process.env['E2E_EDICAO'] ?? '2025';
+/**
+ * Um arquivo de retorno novo a cada execução: o hash do arquivo identifica o lote vigente, e o mesmo
+ * conteúdo numa segunda execução devolveria o lote anterior sem gravar nada. Só o número de
+ * inscrição no ENEM muda; as notas, os CPFs e as linhas conferidas são os mesmos.
+ */
+const RODADA = Math.floor(Date.now() / 1000) % 100_000;
 const APP = process.env['BASE_URL'] ?? 'http://localhost:4200';
 
 /**
@@ -80,9 +86,10 @@ test.describe('Notas do ENEM contra a API real', () => {
     expect(cpfs).not.toContain(ERICK.cpf);
 
     // Retorno: todos os CPFs do envio presentes e uma pessoa não inscrita, que vira linha sem inscrito.
-    const presentes = cpfs.map((cpf, indice) => linha(FERNANDA, indice + 1, cpf));
+    const presentes = cpfs.map((cpf, indice) => linha(FERNANDA, indice + 1, cpf, RODADA));
     const linhaDoErick = presentes.length + 1;
-    const linhas = [...presentes, linha(ERICK, linhaDoErick)];
+    const lotesAntes = await lotesDeNotasDoEnem(processoId, EDICAO);
+    const linhas = [...presentes, linha(ERICK, linhaDoErick, ERICK.cpf, RODADA)];
     await importacao.getByLabel('Edição do ENEM').selectOption(EDICAO);
     await escolherLeiauteSeHouverOpcoes(importacao, 'Leiaute do arquivo de retorno');
     await importacao.locator('input[type="file"]').setInputFiles({
@@ -94,6 +101,15 @@ test.describe('Notas do ENEM contra a API real', () => {
     await expect(
       importacao.getByRole('heading', { name: 'Resultado da importação' }),
     ).toBeVisible();
+    // O lote é novo: outro id e outro hash do arquivo, o mais recente da edição e o único vigente.
+    const lotesDepois = await lotesDeNotasDoEnem(processoId, EDICAO);
+    expect(lotesDepois).toHaveLength(lotesAntes.length + 1);
+    const novo = lotesDepois[0];
+    expect(lotesAntes.map((lote) => lote.id)).not.toContain(novo?.id);
+    expect(lotesAntes.map((lote) => lote.arquivoHash)).not.toContain(novo?.arquivoHash);
+    expect(novo?.vigente).toBe(true);
+    expect(novo?.totalDeLinhas).toBe(linhas.length);
+    expect(lotesDepois.filter((lote) => lote.vigente)).toHaveLength(1);
     await importacao.getByRole('tab', { name: /Linhas sem inscrito/ }).click();
     const linhaSemInscrito = importacao.getByRole('tabpanel').getByRole('row').nth(1);
     await expect(linhaSemInscrito).toContainText(String(linhaDoErick));
@@ -114,6 +130,7 @@ test.describe('Notas do ENEM contra a API real', () => {
     const alerta = importacao.getByRole('alert').filter({ hasText: 'Arquivo recusado' });
     await expect(alerta).toContainText('nenhuma nota foi gravada');
     await expect(alerta).toContainText('Envie o arquivo exatamente como o INEP o devolveu');
+    expect(await lotesDeNotasDoEnem(processoId, EDICAO)).toEqual(lotesDepois);
   });
 });
 

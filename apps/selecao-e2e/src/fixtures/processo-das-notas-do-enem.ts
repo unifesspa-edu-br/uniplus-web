@@ -1,15 +1,16 @@
-import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import {
   API_URL,
+  chamarApi,
   aprovarCatalogoInicial,
   prepararAcessosDaSimulacao,
   resetPasswords,
   SENHA_DAS_PERSONAS,
 } from '@uniplus/shared-e2e';
 import { ARQUIVO_DE_PESSOAS } from './inscricoes-reais';
-import { processosPublicadosComNome, inscricoesDoProcesso } from './processos-da-api';
+import { inscricoesDoProcesso, processosPublicadosComNome } from './processos-da-api';
+import { rodarRoteiroDeProcesso } from './roteiro-da-api';
 
 /**
  * O processo das notas do ENEM da spec contra a API real: divulgado, com a etapa de nota do ENEM,
@@ -31,8 +32,8 @@ const ROTEIRO =
   process.env['E2E_ROTEIRO_DAS_NOTAS_DO_ENEM'] ??
   path.resolve(__dirname, '../../../../../uniplus-api/scripts/roteiro-processo-teste-notas-do-enem.sh');
 
-/** Folga entre a publicação e o fim do período, para as 56 inscrições caberem dentro dele. */
-const MINUTOS_DE_INSCRICAO_ABERTA = 6;
+/** Quanto o período de inscrição dura a partir da gravação do cronograma: cabem a publicação e as 56 inscrições. */
+const MINUTOS_DE_INSCRICAO_ABERTA = 8;
 
 /**
  * Carrega as funções do roteiro, encurta o período de inscrição na gravação do cronograma e roda o
@@ -41,9 +42,10 @@ const MINUTOS_DE_INSCRICAO_ABERTA = 6;
 const EXECUCAO_COM_INSCRICAO_CURTA = `set -euo pipefail
 source "$1"
 eval "$(declare -f api | sed '1s/^api /api_do_roteiro /')"
-fim_curto=$(TZ=America/Belem date -d "+${MINUTOS_DE_INSCRICAO_ABERTA} minutes" +%Y-%m-%dT%H:%M:%S-03:00)
 api() {
     if [ "$1" = PUT ] && [[ "$2" == */cronograma-fases ]]; then
+        local fim_curto
+        fim_curto=$(TZ=America/Belem date -d "+${MINUTOS_DE_INSCRICAO_ABERTA} minutes" +%Y-%m-%dT%H:%M:%S-03:00)
         set -- "$1" "$2" "$(jq -c --arg fim "$fim_curto" '.[0].fim = $fim' <<< "$3")"
     fi
     api_do_roteiro "$@"
@@ -106,21 +108,46 @@ export async function processoDasNotasDoEnem(): Promise<string> {
   await aprovarCatalogoInicial();
   await definirSenhaDasCandidatas();
   const identificador = `e2e-psm-2027-notas-do-enem-${Date.now()}`;
-  execFileSync('bash', ['-c', EXECUCAO_COM_INSCRICAO_CURTA, 'bash', ROTEIRO], {
-    env: {
+  const criado = rodarRoteiroDeProcesso(
+    'bash',
+    ['-c', EXECUCAO_COM_INSCRICAO_CURTA, 'bash', ROTEIRO],
+    {
       ...process.env,
       ADMIN_USER: 'manoel.aparicio',
       ADMIN_PASS: SENHA_DAS_PERSONAS,
       IDENTIFICADOR_PROCESSO: identificador,
       NOME_PROCESSO: `${NOME_DO_PROCESSO} ${identificador}`,
+      FAKE_PEOPLE: ARQUIVO_DE_PESSOAS,
     },
-    stdio: 'ignore',
-    timeout: 1_500_000,
-  });
-  const criado = await acharCompleto();
-  if (criado === undefined) {
-    throw new Error(`O roteiro das notas do ENEM não deixou um processo "${NOME_DO_PROCESSO}" completo.`);
-  }
+    1_500_000,
+  );
   await aguardarEncerramentoDasInscricoes(criado);
   return criado;
+}
+
+export interface LoteDeNotas {
+  readonly id: string;
+  readonly arquivoHash: string;
+  readonly importadoEm: string;
+  readonly vigente: boolean;
+  readonly totalDeLinhas: number;
+}
+
+/** Os lotes de notas da edição, do mais recente para o mais antigo, como a API os lista. */
+export async function lotesDeNotasDoEnem(processoId: string, edicao: string): Promise<readonly LoteDeNotas[]> {
+  const processo = await chamarApi<{ etapas: { id: string }[] }>('diogo.souza', 'GET', `/api/selecao/processos-seletivos/${processoId}`);
+  const etapaId = processo.corpo.etapas[0]?.id;
+  if (etapaId === undefined) {
+    throw new Error(`O processo ${processoId} não tem etapa de nota do ENEM.`);
+  }
+  const lotes = await chamarApi<LoteDeNotas[]>(
+    'diogo.souza',
+    'GET',
+    `/api/selecao/processos-seletivos/${processoId}/etapas/${etapaId}/edicoes-do-enem/${edicao}/lotes-de-notas`,
+    { cabecalhos: { accept: 'application/vnd.uniplus.lote-de-notas-do-enem.v1+json' } },
+  );
+  if (!Array.isArray(lotes.corpo)) {
+    throw new Error(`Listar os lotes de notas de ${processoId} respondeu ${lotes.status}.`);
+  }
+  return lotes.corpo;
 }
