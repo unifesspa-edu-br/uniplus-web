@@ -73,7 +73,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   ComboboxComponent,
   EditorDeCondicoesComponent,
@@ -83,7 +83,6 @@ import {
   ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
 import { consequenciasDaFase } from '@uniplus/shared-utils';
-import { Subscription } from 'rxjs';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 
@@ -105,7 +104,6 @@ import {
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { mesmoConteudo } from '../../shared/conteudo-canonico';
 import {
   ORIENTACAO_DE_PERMUTACAO,
   PERMUTACAO_DE_ORDEM,
@@ -117,14 +115,10 @@ import { nomeDaFinalidade } from '../formulario/formularios-por-finalidade';
 import {
   PAPEIS_ESCOLHIVEIS,
   problemasDaFase,
-  type AtoDoCatalogo,
-  type CampoDaFase,
-  type ProblemaDaFase,
 } from './configuracao-da-fase';
-import { idDaFase } from './ids-da-fase';
+import { FaseEmEdicao, type FaseNoSeletor } from './fase-em-edicao';
 import { produtosPreliminares } from './problemas-do-recurso-da-fase';
 import { traduzirRecusa } from './recusas-da-fase';
-import { faseDaConfiguracao, grupoDaConfiguracaoDaFase, type FaseConfigForm } from './fase-form';
 import type {
   DetalheLidoDoDocumento,
   RepeticaoDoDocumento,
@@ -164,17 +158,6 @@ const SEM_FORMULARIO = 'SEM_FORMULARIO';
 const SEM_ERROS: Readonly<Record<number, string>> = {};
 
 /**
- * A fase como o seletor a apresenta: posição na linha do tempo e nome resolvido
- * pelo catálogo, ou pelo código quando a fase saiu dele.
- */
-interface FaseNoSeletor {
-  readonly faseCanonicaId: string;
-  readonly codigo: string;
-  readonly ordem: number;
-  readonly nome: string;
-}
-
-/**
  * A superfície de configuração de uma fase: o que só existe dentro dela e não
  * cabe na linha do tempo — as publicações que ela faz e o papel de cada uma, a
  * conclusão do ciclo recursal, a regra de recurso, as bancas requeridas com o
@@ -197,7 +180,7 @@ interface FaseNoSeletor {
   ],
   templateUrl: './fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(FaseStepComponent)],
+  providers: [provePassoDoWizard(FaseStepComponent), FaseEmEdicao],
 })
 export class FaseStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
@@ -217,37 +200,27 @@ export class FaseStepComponent {
    */
   readonly faseFixada = input<string | null>(null);
 
-  /** Fase aberta, pelo id da fase canônica — o identificador sempre presente. */
-  readonly faseAberta = signal('');
+  private readonly faseEmEdicao = inject(FaseEmEdicao);
 
-  /** Formulário da fase aberta; `null` enquanto o cronograma está vazio. */
-  readonly formulario = signal<FormGroup<FaseConfigForm> | null>(null);
-
-  /** O que a última gravação recusou, por campo desta fase. */
-  readonly recusaPorCampo = signal<ReadonlyMap<CampoDaFase, string>>(new Map());
-
-  /** Recusas que não pertencem a nenhum campo da fase aberta. */
-  readonly recusasGerais = signal<readonly string[]>([]);
-
-  /**
-   * O conteúdo do formulário, como signal, para que os valores derivados reajam
-   * à digitação. Não é a fonte do dado, só a forma de o template acompanhar.
-   */
-  private readonly versaoDoFormulario = signal(0);
-
-  /**
-   * Enquanto o rascunho está sendo espelhado no formulário, o caminho de volta
-   * fica fechado: sem isso, cada projeção dispararia uma escrita no rascunho,
-   * que dispararia outra projeção.
-   */
-  private espelhando = false;
-
-  /** Assinatura do formulário vivo — trocar de fase descarta a anterior. */
-  private assinatura: Subscription | null = null;
+  readonly faseAberta = this.faseEmEdicao.faseAberta;
+  readonly formulario = this.faseEmEdicao.espelho.formulario;
+  private readonly versaoDoFormulario = this.faseEmEdicao.espelho.versao;
+  readonly recusaPorCampo = this.faseEmEdicao.recusaPorCampo;
+  readonly recusasGerais = this.faseEmEdicao.recusasGerais;
+  readonly fasesDoCronograma = this.faseEmEdicao.fasesDoCronograma;
+  readonly fasesNoSeletor = this.faseEmEdicao.fasesNoSeletor;
+  readonly faseDoRascunho = this.faseEmEdicao.faseDoRascunho;
+  readonly nomeDaFaseAberta = this.faseEmEdicao.nomeDaFaseAberta;
+  readonly bancasEscolhiveis = this.faseEmEdicao.bancasEscolhiveis;
+  readonly problemas = this.faseEmEdicao.problemas;
+  readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
+  readonly nomeDaBanca = this.faseEmEdicao.nomeDaBanca;
+  readonly idDaFase = this.faseEmEdicao.idDaFase;
+  private readonly atoPorCodigo = this.faseEmEdicao.atoPorCodigo;
 
   constructor() {
     this.catalogos.carregar();
-    this.destruicao.onDestroy(() => this.assinatura?.unsubscribe());
+    this.destruicao.onDestroy(() => this.faseEmEdicao.espelho.encerrar());
 
     // A fase aberta acompanha o cronograma: sem escolha, ou com a escolha já
     // removida da linha do tempo, abre a primeira. Deixar a tela apontando para
@@ -270,7 +243,7 @@ export class FaseStepComponent {
     // hidratação da leitura e a troca de fase chegam por aqui.
     effect(() => {
       const fase = this.faseDoRascunho();
-      untracked(() => this.espelhar(fase));
+      untracked(() => this.faseEmEdicao.espelho.espelhar(fase));
     });
 
     // Fora de rascunho o servidor recusa qualquer gravação, e deixar a tela
@@ -303,41 +276,7 @@ export class FaseStepComponent {
         if (ancora.value === '') ancora.setValue(unica);
       });
     });
-
-    // Outro processo entra em cena: a recusa que está na tela era do anterior.
-    effect(() => {
-      this.store.geracao();
-      untracked(() => this.limparRecusa());
-    });
   }
-
-  /** As fases do certame na ordem em que ocorrem. */
-  readonly fasesDoCronograma = computed<readonly FaseDoCronograma[]>(() =>
-    [...this.store.draft().cronograma.fases].sort((uma, outra) => uma.ordem - outra.ordem),
-  );
-
-  /** As fases como o seletor as nomeia. */
-  readonly fasesNoSeletor = computed<readonly FaseNoSeletor[]>(() => {
-    const fasePorId = this.catalogos.fasePorId();
-    return this.fasesDoCronograma().map((fase) => ({
-      faseCanonicaId: fase.faseCanonicaId,
-      codigo: fase.codigo,
-      ordem: fase.ordem,
-      nome: descreverFase(fase, fasePorId).nome,
-    }));
-  });
-
-  /** A fase aberta como o rascunho a guarda, ou `null` sem cronograma. */
-  readonly faseDoRascunho = computed<FaseDoCronograma | null>(() => {
-    const aberta = this.faseAberta();
-    return this.fasesDoCronograma().find((fase) => fase.faseCanonicaId === aberta) ?? null;
-  });
-
-  /** Nome da fase aberta, para o cabeçalho e para as mensagens. */
-  readonly nomeDaFaseAberta = computed(() => {
-    const aberta = this.faseAberta();
-    return this.fasesNoSeletor().find((fase) => fase.faseCanonicaId === aberta)?.nome ?? '';
-  });
 
   /** Atos escolhíveis hoje, com a marca de resultado que decide o papel. */
   readonly atosEscolhiveis = computed(() =>
@@ -357,33 +296,6 @@ export class FaseStepComponent {
   readonly categorias = computed(() =>
     this.catalogos.categorias().map((categoria) => ({ id: categoria.id, nome: categoria.nome })),
   );
-
-  /**
-   * Bancas que o seletor oferece: as do cadastro, mais a que esta fase já exige
-   * e saiu dele. A banca congelada continua fazendo parte do edital; fora da
-   * lista, ela seguiria sendo enviada a cada gravação sem que o operador a
-   * visse — nem pudesse tirá-la.
-   */
-  readonly bancasEscolhiveis = computed<readonly { id: string; nome: string }[]>(() => {
-    this.versaoDoFormulario();
-    const doCadastro = this.catalogos.bancas().map((banca) => ({ id: banca.id, nome: banca.nome }));
-    const conhecidas = new Set(doCadastro.map((banca) => banca.id));
-
-    const fase = this.faseDoRascunho();
-    const codigoCongelado = new Map(
-      (fase?.congelados?.bancas ?? []).map((banca) => [banca.id, banca.codigo]),
-    );
-
-    const congeladas = (fase?.bancasRequeridas ?? [])
-      .map((banca) => banca.tipoBancaId)
-      .filter((id) => id !== '' && !conhecidas.has(id))
-      .map((id) => ({
-        id,
-        nome: `${codigoCongelado.get(id) ?? 'Banca'} (fora do cadastro atual)`,
-      }));
-
-    return [...doCadastro, ...congeladas];
-  });
 
   /** As publicações preliminares da fase — as únicas que podem ancorar o prazo. */
   readonly ancorasPossiveis = computed<readonly { codigo: string; nome: string }[]>(() => {
@@ -422,42 +334,9 @@ export class FaseStepComponent {
   /** A fase abre ciclo recursal: publica ao menos um resultado preliminar. */
   readonly publicaPreliminar = computed(() => this.ancorasPossiveis().length > 0);
 
-  private readonly atoPorCodigo = computed<ReadonlyMap<string, AtoDoCatalogo>>(
-    () =>
-      new Map(
-        [...this.catalogos.atoPorCodigo()].map(([codigo, ato]) => [
-          codigo,
-          { nome: ato.nome, ehResultado: ato.ehResultado },
-        ]),
-      ),
-  );
-
-  /** O que impede gravar a fase aberta, com o campo de cada recusa. */
-  readonly problemas = computed<readonly ProblemaDaFase[]>(() => {
-    const fase = this.faseDoRascunho();
-    if (fase === null) return [];
-    return problemasDaFase(fase, this.fasesDoCronograma(), this.atoPorCodigo(), (id) =>
-      this.nomeDaBanca(id),
-    );
-  });
-
-  /**
-   * O que a tela mostra sob um campo: a conferência local, e a recusa que o
-   * servidor devolveu por aquele mesmo campo. A conferência vem primeiro porque
-   * descreve o estado atual — a recusa descreve o que foi enviado.
-   */
-  erroDoCampo(campo: CampoDaFase): string | null {
-    const local = this.problemas().find((problema) => problema.campo === campo);
-    return local?.mensagem ?? this.recusaPorCampo().get(campo) ?? null;
-  }
-
-  nomeDaBanca(tipoBancaId: string): string {
-    return this.bancasEscolhiveis().find((banca) => banca.id === tipoBancaId)?.nome ?? tipoBancaId;
-  }
-
   abrirFase(faseCanonicaId: string): void {
     this.faseAberta.set(faseCanonicaId);
-    this.limparRecusa();
+    this.faseEmEdicao.limparRecusa();
   }
 
   // ─── Publicações declaradas pela fase ───────────────────────────────────
@@ -995,15 +874,6 @@ export class FaseStepComponent {
     return this.valeEmTodasAsFases(id)
       ? `Todas as fases; nesta, ${momento}`
       : `${momento.charAt(0).toUpperCase()}${momento.slice(1)}`;
-  }
-
-  /**
-   * O id de um elemento desta fase, único por instância: o Cronograma embute um passo destes por
-   * fase aberta, e com id fixo o rótulo, o `aria-describedby` e o `aria-controls` da segunda fase
-   * apontariam para os da primeira. Todo id do template passa por aqui.
-   */
-  idDaFase(sufixo: string): string {
-    return idDaFase(this.faseDoRascunho()?.codigo ?? '', sufixo);
   }
 
   /**
@@ -1810,7 +1680,7 @@ export class FaseStepComponent {
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!gravacao.ok) return this.registrarRecusa(gravacao.problem, fases);
 
-      this.limparRecusa();
+      this.faseEmEdicao.limparRecusa();
       return { valid: true };
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
@@ -1854,54 +1724,4 @@ export class FaseStepComponent {
     return { valid: false, messages: mensagens.length === 0 ? [problema.title] : mensagens };
   }
 
-  private limparRecusa(): void {
-    this.recusaPorCampo.set(new Map());
-    this.recusasGerais.set([]);
-  }
-
-  /**
-   * Traz a fase do rascunho para o formulário, sem desfazer a digitação em
-   * curso: o rascunho é reescrito a cada tecla pelo caminho de volta, e recriar
-   * os controles a cada uma tiraria o foco do campo que está sendo preenchido.
-   */
-  private espelhar(fase: FaseDoCronograma | null): void {
-    if (fase === null) {
-      this.assinatura?.unsubscribe();
-      this.assinatura = null;
-      this.formulario.set(null);
-      return;
-    }
-
-    const atual = this.formulario();
-    if (atual !== null && mesmoConteudo(faseDaConfiguracao(atual), fase)) return;
-
-    this.espelhando = true;
-    try {
-      const grupo = grupoDaConfiguracaoDaFase(fase);
-      if (!this.store.aceitaEdicao()) grupo.disable({ emitEvent: false });
-
-      this.assinatura?.unsubscribe();
-      this.assinatura = grupo.valueChanges.subscribe(() => {
-        this.versaoDoFormulario.update((versao) => versao + 1);
-        if (this.espelhando) return;
-        this.escreverNoRascunho(faseDaConfiguracao(grupo));
-      });
-
-      this.formulario.set(grupo);
-      this.versaoDoFormulario.update((versao) => versao + 1);
-    } finally {
-      this.espelhando = false;
-    }
-  }
-
-  /** Substitui no rascunho só a fase aberta; as demais seguem como estão. */
-  private escreverNoRascunho(fase: FaseDoCronograma): void {
-    this.store.patchObjectSection('cronograma', {
-      fases: this.store
-        .draft()
-        .cronograma.fases.map((atual) =>
-          atual.faseCanonicaId === fase.faseCanonicaId ? fase : atual,
-        ),
-    });
-  }
 }
