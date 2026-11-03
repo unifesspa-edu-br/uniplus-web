@@ -24,17 +24,9 @@ import {
   type StepValidation,
   type WizardDraft,
 } from '../../processo-seletivo.models';
-import { rotuloDaUnidade } from '@uniplus/shared-data/organizacao';
 import { PAPEIS_ESCOLHIVEIS } from '../fase/configuracao-da-fase';
 import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import {
-  opcoesComAsGravadas,
-  type UnidadeGravada,
-  UNIDADE_EM_CARGA,
-  UNIDADE_FORA_DO_CADASTRO,
-  UNIDADE_SEM_CADASTRO_CARREGADO,
-} from '../../shared/unidades-do-cadastro';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { mesmoConteudo } from '../../shared/conteudo-canonico';
@@ -134,6 +126,8 @@ import {
   type FaseForm,
 } from './cronograma-form';
 import { comoComandoDeEtapa } from './cronograma-para-comando';
+import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
+import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
 import {
   baseLegalDaConvencao,
   convencaoLida,
@@ -202,7 +196,7 @@ interface FaseNaLinhaDoTempo extends DescricaoDaFase {
   ],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(CronogramaStepComponent)],
+  providers: [provePassoDoWizard(CronogramaStepComponent), ExpansaoDoCronograma, UnidadesDasFases],
 })
 export class CronogramaStepComponent {
   private readonly destroyRef = inject(DestroyRef);
@@ -213,6 +207,8 @@ export class CronogramaStepComponent {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly camposPressupostos = inject(CamposPressupostosService);
   private readonly injector = inject(Injector);
+  protected readonly expansao = inject(ExpansaoDoCronograma);
+  protected readonly unidades = inject(UnidadesDasFases);
 
   readonly formulario = novoFormularioDoCronograma();
 
@@ -278,76 +274,15 @@ export class CronogramaStepComponent {
       this.algoritmoConfirmadoNestaSessao(),
   );
 
-  /**
-   * Unidades oferecidas a cada fase: o cadastro e, quando faltar, a unidade que o processo
-   * guardou — uma unidade que saiu do cadastro continua sendo a da fase gravada.
-   */
-  readonly unidadesParaEscolha = computed(() =>
-    opcoesComAsGravadas(
-      this.catalogos.opcoesDeUnidade(),
-      (this.store.remoteSnapshot()?.cronogramaFases ?? []).flatMap((fase) =>
-        fase.unidadeResponsavel === null ? [] : [fase.unidadeResponsavel],
-      ),
-    ),
-  );
-
-  /** A unidade que o servidor recusou em cada fase; vale enquanto a fase continua com ela. */
-  private readonly unidadesRecusadas = signal<ReadonlyMap<FormGroup<FaseForm>, string>>(new Map());
-
-  unidadeRecusada(grupo: FormGroup<FaseForm>): boolean {
-    return this.unidadesRecusadas().get(grupo) === grupo.controls.unidadeResponsavelId.value;
-  }
-
   private recusarUnidades(
     enviadas: readonly FormGroup<FaseForm>[],
     indices: readonly number[],
   ): void {
     if (indices.length === 0) return;
-    const recusadas = indices.flatMap((indice) => {
-      const grupo = enviadas[indice];
-      return grupo === undefined
-        ? []
-        : [[grupo, grupo.controls.unidadeResponsavelId.value] as const];
-    });
-    this.unidadesRecusadas.set(new Map(recusadas));
-    this.fasesExpandidas.update(
-      (abertas) => new Set([...abertas, ...indices.filter((indice) => indice < enviadas.length)]),
-    );
+    this.unidades.recusar(enviadas, indices);
+    this.expansao.abrirFases(indices.filter((indice) => indice < enviadas.length));
     this.versaoDoFormulario.update((versao) => versao + 1);
     this.catalogos.carregarUnidades();
-  }
-
-  /** A cópia da unidade que o processo gravou em cada fase, pelo código da fase. */
-  private readonly gravadaPorFase = computed<ReadonlyMap<string, UnidadeGravada>>(
-    () =>
-      new Map(
-        (this.store.remoteSnapshot()?.cronogramaFases ?? []).flatMap((fase) =>
-          fase.unidadeResponsavel === null ? [] : [[fase.codigo, fase.unidadeResponsavel] as const],
-        ),
-      ),
-  );
-
-  private readonly rotuloNoCadastro = computed<ReadonlyMap<string, string>>(
-    () => new Map(this.unidadesParaEscolha().map((opcao) => [opcao.id, opcao.rotulo] as const)),
-  );
-
-  /**
-   * O rótulo da unidade da fase, ou `null` quando a fase está sem unidade. A cópia gravada na
-   * própria fase prevalece sobre o cadastro, que só nomeia a unidade escolhida e ainda não
-   * gravada nela. Só afirma que a unidade
-   * não está no cadastro depois que o cadastro carregou; antes disso o texto é neutro.
-   */
-  private rotuloDaUnidade(grupo: FormGroup<FaseForm>): string | null {
-    const id = grupo.controls.unidadeResponsavelId.value;
-    if (id === '') return null;
-    const gravada = this.gravadaPorFase().get(grupo.controls.codigo.value);
-    const rotulo =
-      gravada?.origemId === id ? rotuloDaUnidade(gravada) : this.rotuloNoCadastro().get(id);
-    if (rotulo !== undefined) return rotulo;
-    if (this.catalogos.unidadesCarregadas()) return UNIDADE_FORA_DO_CADASTRO;
-    return this.catalogos.erroDeUnidades() === null
-      ? UNIDADE_EM_CARGA
-      : UNIDADE_SEM_CADASTRO_CARREGADO;
   }
 
   constructor() {
@@ -370,7 +305,7 @@ export class CronogramaStepComponent {
       untracked(() => this.store.faseEmFoco.set(null));
       if (alvo === undefined) return;
       untracked(() => {
-        this.fasesExpandidas.update((abertas) => new Set(abertas).add(alvo.indice));
+        this.expansao.abrirFases([alvo.indice]);
         afterNextRender(
           () => setTimeout(() => document.getElementById(`cr-unidade-${alvo.indice}`)?.focus(), 0),
           { injector: this.injector },
@@ -451,7 +386,7 @@ export class CronogramaStepComponent {
       grupo,
       ...descreverFase(faseDoFormulario(grupo), fasePorId),
       indice,
-      unidade: this.rotuloDaUnidade(grupo),
+      unidade: this.unidades.rotuloDaUnidade(grupo),
     }));
   });
 
@@ -723,20 +658,6 @@ export class CronogramaStepComponent {
     }));
   }
 
-  /**
-   * A unidade que a fase canônica sugere, quando está entre as unidades carregadas; senão a
-   * unidade administradora do processo.
-   */
-  private unidadeInicialDaFase(faseCanonicaId: string): string | null {
-    const sugerida = this.catalogos.fasePorId().get(faseCanonicaId)?.unidadeSugerida?.origemId;
-    if (
-      sugerida !== undefined &&
-      this.catalogos.opcoesDeUnidade().some((opcao) => opcao.id === sugerida)
-    )
-      return sugerida;
-    return this.store.draft().identificacao.unidadeAdministradoraId || null;
-  }
-
   acrescentarFase(): void {
     const escolhida = this.formulario.controls.faseAAcrescentar.value;
     if (escolhida === '') return;
@@ -748,7 +669,7 @@ export class CronogramaStepComponent {
         ordem: this.fases.length + 1,
         inicio: null,
         fim: null,
-        unidadeResponsavelId: this.unidadeInicialDaFase(escolhida),
+        unidadeResponsavelId: this.unidades.unidadeInicialDaFase(escolhida),
         produtos: [],
         faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
@@ -758,30 +679,6 @@ export class CronogramaStepComponent {
       }),
     );
     this.formulario.controls.faseAAcrescentar.setValue('');
-  }
-
-  /**
-   * As fases expandidas, por posição na linha do tempo.
-   *
-   * Todas fechadas ao chegar: o passo se chama linha do tempo, e sete cabeçalhos mostram a
-   * linha inteira numa tela só. Abrir é um clique; o que está fechado continua sendo
-   * gravado, e a conferência que recusa abre tudo de volta (ver `persistir`).
-   */
-  private readonly fasesExpandidas = signal<ReadonlySet<number>>(new Set());
-
-  faseExpandida(indice: number): boolean {
-    return this.fasesExpandidas().has(indice);
-  }
-
-  alternarFase(indice: number): void {
-    const abertas = new Set(this.fasesExpandidas());
-    if (!abertas.delete(indice)) abertas.add(indice);
-    this.fasesExpandidas.set(abertas);
-  }
-
-  /** Abre todas — é o que a recusa da conferência faz, para não esconder o erro. */
-  private expandirTodasAsFases(): void {
-    this.fasesExpandidas.set(new Set(this.linhaDoTempo().map((item) => item.indice)));
   }
 
   /**
@@ -796,44 +693,6 @@ export class CronogramaStepComponent {
       marcas.push(documentos === 1 ? '1 documento' : `${documentos} documentos`);
     }
     return marcas;
-  }
-
-  /**
-   * As etapas abertas, por posição no formulário.
-   *
-   * Fechadas por padrão: cada etapa aberta passa de mil pixels, e a habilitação do certame
-   * regional tem oito. Mais de uma pode ficar aberta ao mesmo tempo — comparar duas etapas é
-   * pergunta legítima de quem monta o edital, e fechar a anterior a cada clique tiraria isso.
-   */
-  private readonly etapasAbertas = signal<ReadonlySet<number>>(new Set());
-
-  etapaAberta(posicao: number): boolean {
-    return this.etapasAbertas().has(posicao);
-  }
-
-  alternarEtapa(posicao: number): void {
-    const abertas = new Set(this.etapasAbertas());
-    if (!abertas.delete(posicao)) abertas.add(posicao);
-    this.etapasAbertas.set(abertas);
-  }
-
-  /**
-   * Os blocos abertos dentro de cada etapa, na chave `posição:bloco`.
-   *
-   * Recolhidos por padrão, como a etapa e a fase: cada janela recursal declarada ocupa uma
-   * grade inteira, e a prova objetiva do certame qualificado abre duas.
-   */
-  private readonly blocosAbertos = signal<ReadonlySet<string>>(new Set());
-
-  blocoAberto(posicao: number, bloco: 'recursos' | 'publica'): boolean {
-    return this.blocosAbertos().has(`${posicao}:${bloco}`);
-  }
-
-  alternarBloco(posicao: number, bloco: 'recursos' | 'publica'): void {
-    const abertos = new Set(this.blocosAbertos());
-    const chave = `${posicao}:${bloco}`;
-    if (!abertos.delete(chave)) abertos.add(chave);
-    this.blocosAbertos.set(abertos);
   }
 
   /** O que o cabeçalho recolhido diz sobre as janelas recursais da etapa. */
@@ -1067,12 +926,6 @@ export class CronogramaStepComponent {
     return convencaoLida(algoritmoContagemCodigo.value, algoritmoContagemVersao.value);
   });
 
-  /**
-   * A fase cuja remoção espera confirmação — ninguém perde etapa e documento sem ler antes
-   * quanto vai junto.
-   */
-  readonly remocaoAConfirmar = signal<number | null>(null);
-
   pedirRemocaoDaFase(indice: number): void {
     // Fase sem nada pendurado não precisa de confirmação: não há o que avisar.
     const dependentes = this.dependentesDaFase(indice);
@@ -1081,15 +934,11 @@ export class CronogramaStepComponent {
       return;
     }
 
-    this.remocaoAConfirmar.set(indice);
-  }
-
-  desistirDaRemocao(): void {
-    this.remocaoAConfirmar.set(null);
+    this.expansao.remocaoAConfirmar.set(indice);
   }
 
   confirmarRemocaoDaFase(indice: number): void {
-    this.remocaoAConfirmar.set(null);
+    this.expansao.remocaoAConfirmar.set(null);
     this.removerFase(indice);
   }
 
@@ -1138,7 +987,7 @@ export class CronogramaStepComponent {
 
     const codigo = removida.controls.codigo.value;
 
-    this.remocaoAConfirmar.set(null);
+    this.expansao.remocaoAConfirmar.set(null);
     this.fases.removeAt(indice, { emitEvent: false });
     this.removerEtapasDaFase(codigo);
     this.removerDocumentosDaFase(codigo);
@@ -1392,7 +1241,7 @@ export class CronogramaStepComponent {
     if (!conferencia.valid) {
       // O que a conferência acusa pode estar numa fase fechada: abrir todas põe o problema à
       // vista, em vez de deixar a mensagem apontar para um lugar que não está na tela.
-      this.expandirTodasAsFases();
+      this.expansao.expandirTodasAsFases(this.linhaDoTempo().map((item) => item.indice));
       return conferencia;
     }
 
@@ -1421,7 +1270,7 @@ export class CronogramaStepComponent {
         };
       }
 
-      this.unidadesRecusadas.set(new Map());
+      this.unidades.limparRecusadas();
       this.limparRecusasDosCampos();
       const gravacaoDeEtapas = await this.cadastro.definirEtapas(
         processoId,

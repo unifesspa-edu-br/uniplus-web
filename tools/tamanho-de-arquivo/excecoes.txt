@@ -46,8 +46,8 @@
 416 apps/selecao/src/app/features/processo-seletivo/steps/shared/anexo-edital/anexo-edital.component.ts
 494 apps/selecao/src/app/features/processo-seletivo/steps/steps/atendimento/atendimento.component.ts
 484 apps/selecao/src/app/features/processo-seletivo/steps/steps/bonus/bonus.component.ts
-1742 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma.component.html
-1782 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma.component.ts
+1741 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma.component.html
+1631 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma.component.ts
 430 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.html
 960 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.ts
 493 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/quadro-do-desempate.ts

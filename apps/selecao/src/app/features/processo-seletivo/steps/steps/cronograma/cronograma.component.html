@@ -289,7 +289,7 @@
       @for (item of linhaDoTempo(); track item.grupo) {
         <div
           class="step-card fase-bloco"
-          [class.fase-bloco--aberta]="faseExpandida(item.indice)"
+          [class.fase-bloco--aberta]="expansao.faseExpandida(item.indice)"
           [formGroupName]="item.indice"
         >
           <div class="fase-cabecalho">
@@ -297,9 +297,9 @@
               <button
                 class="fase-alternar"
                 type="button"
-                [attr.aria-expanded]="faseExpandida(item.indice)"
+                [attr.aria-expanded]="expansao.faseExpandida(item.indice)"
                 [attr.aria-controls]="'cr-fase-corpo-' + item.indice"
-                (click)="alternarFase(item.indice)"
+                (click)="expansao.alternarFase(item.indice)"
               >
                 <span class="etapa-resumo__seta" aria-hidden="true"></span>
                 <span>{{ item.grupo.controls.ordem.value }}. {{ item.nome }}</span>
@@ -348,7 +348,7 @@
             Etapa e documento existem por causa da fase e saem com ela. A confirmação diz
             quanto vai junto antes de acontecer, porque depois não há como desfazer.
           -->
-          @if (remocaoAConfirmar() === item.indice) {
+          @if (expansao.remocaoAConfirmar() === item.indice) {
             <div class="confirma-remocao" role="alert">
               <p class="confirma-remocao__texto">
                 Remover <strong>{{ item.nome }}</strong> apaga também
@@ -365,7 +365,7 @@
                 <button
                   class="btn btn--tertiary btn--sm"
                   type="button"
-                  (click)="desistirDaRemocao()"
+                  (click)="expansao.desistirDaRemocao()"
                 >
                   Manter a fase
                 </button>
@@ -373,7 +373,7 @@
             </div>
           }
 
-          @if (faseExpandida(item.indice)) {
+          @if (expansao.faseExpandida(item.indice)) {
             <div [attr.id]="'cr-fase-corpo-' + item.indice">
               @if (item.foraDoCatalogo) {
                 <p class="field__hint" role="status">
@@ -412,6 +412,8 @@
                     <label class="label" [attr.for]="'cr-unidade-' + item.indice"
                       >Unidade responsável</label
                     >
+                    @let unidadeInvalida =
+                      item.unidade === null || unidades.unidadeRecusada(item.grupo);
                     <select
                       class="input"
                       [attr.id]="'cr-unidade-' + item.indice"
@@ -419,17 +421,13 @@
                       [attr.aria-describedby]="
                         'cr-unidade-dica-' +
                         item.indice +
-                        (item.unidade === null || unidadeRecusada(item.grupo)
-                          ? ' cr-unidade-erro-' + item.indice
-                          : '')
+                        (unidadeInvalida ? ' cr-unidade-erro-' + item.indice : '')
                       "
-                      [attr.aria-invalid]="
-                        item.unidade === null || unidadeRecusada(item.grupo) ? 'true' : null
-                      "
-                      [class.is-invalid]="item.unidade === null || unidadeRecusada(item.grupo)"
+                      [attr.aria-invalid]="unidadeInvalida ? 'true' : null"
+                      [class.is-invalid]="unidadeInvalida"
                     >
                       <option value="">Selecione</option>
-                      @for (unidade of unidadesParaEscolha(); track unidade.id) {
+                      @for (unidade of unidades.unidadesParaEscolha(); track unidade.id) {
                         <option [value]="unidade.id">{{ unidade.rotulo }}</option>
                       }
                     </select>
@@ -445,7 +443,7 @@
                         </button>
                       </div>
                     }
-                    @if (unidadeRecusada(item.grupo)) {
+                    @if (unidades.unidadeRecusada(item.grupo)) {
                       <p
                         class="field__erro"
                         role="alert"
@@ -545,12 +543,13 @@
                   ) {
                     @let etapa = linha.grupo;
                     @let posicao = linha.indice;
+                    @let etapaAberta = expansao.etapaAberta(posicao);
                     <!--
                     A etapa chega fechada, resumida numa linha. Aberta, ela ocupa mais de mil
                     pixels — oito delas faziam a habilitação sozinha valer catorze telas de
                     rolagem, e o que o operador procurava sumia no meio.
                   -->
-                    <div class="etapa-bloco" [class.etapa-bloco--aberta]="etapaAberta(posicao)">
+                    <div class="etapa-bloco" [class.etapa-bloco--aberta]="etapaAberta">
                       @let rotuloDaEtapa =
                         etapa.controls.nome.value === ''
                           ? 'etapa ' + (posicao + 1)
@@ -566,9 +565,9 @@
                         <button
                           class="etapa-resumo"
                           type="button"
-                          [attr.aria-expanded]="etapaAberta(posicao)"
+                          [attr.aria-expanded]="etapaAberta"
                           [attr.aria-controls]="'cr-etapa-corpo-' + posicao"
-                          (click)="alternarEtapa(posicao)"
+                          (click)="expansao.alternarEtapa(posicao)"
                         >
                           <span class="etapa-resumo__seta" aria-hidden="true"></span>
                           <span class="etapa-resumo__nome">{{ nomeDaEtapa(etapa) }}</span>
@@ -609,7 +608,7 @@
                         </div>
                       </div>
 
-                      @if (etapaAberta(posicao)) {
+                      @if (etapaAberta) {
                         <div
                           class="form-grid etapa-linha"
                           [formGroup]="etapa"
@@ -1013,14 +1012,14 @@
                           @if (!notaDoEnem) {
                             <div
                               class="form-grid__full etapa-publica etapa-publica--recolhivel"
-                              [class.is-aberto]="blocoAberto(posicao, 'publica')"
+                              [class.is-aberto]="expansao.blocoAberto(posicao, 'publica')"
                             >
                               <button
                                 class="etapa-publica__cabecalho"
                                 type="button"
-                                [attr.aria-expanded]="blocoAberto(posicao, 'publica')"
+                                [attr.aria-expanded]="expansao.blocoAberto(posicao, 'publica')"
                                 [attr.aria-controls]="'cr-etapa-publica-' + posicao"
-                                (click)="alternarBloco(posicao, 'publica')"
+                                (click)="expansao.alternarBloco(posicao, 'publica')"
                               >
                                 <span class="etapa-resumo__seta" aria-hidden="true"></span>
                                 <h4 class="form-section__title">O que esta etapa publica</h4>
@@ -1031,7 +1030,7 @@
                                 </span>
                               </button>
 
-                              @if (blocoAberto(posicao, 'publica')) {
+                              @if (expansao.blocoAberto(posicao, 'publica')) {
                                 <div [attr.id]="'cr-etapa-publica-' + posicao">
                                   @for (produto of produtosDaEtapa(etapa); track $index) {
                                     <div class="form-grid">
@@ -1145,14 +1144,14 @@
 
                           <div
                             class="form-grid__full etapa-publica etapa-publica--recolhivel"
-                            [class.is-aberto]="blocoAberto(posicao, 'recursos')"
+                            [class.is-aberto]="expansao.blocoAberto(posicao, 'recursos')"
                           >
                             <button
                               class="etapa-publica__cabecalho"
                               type="button"
-                              [attr.aria-expanded]="blocoAberto(posicao, 'recursos')"
+                              [attr.aria-expanded]="expansao.blocoAberto(posicao, 'recursos')"
                               [attr.aria-controls]="'cr-etapa-recursos-' + posicao"
-                              (click)="alternarBloco(posicao, 'recursos')"
+                              (click)="expansao.alternarBloco(posicao, 'recursos')"
                             >
                               <span class="etapa-resumo__seta" aria-hidden="true"></span>
                               <h4 class="form-section__title">Recursos que esta etapa admite</h4>
@@ -1163,7 +1162,7 @@
                               </span>
                             </button>
 
-                            @if (blocoAberto(posicao, 'recursos')) {
+                            @if (expansao.blocoAberto(posicao, 'recursos')) {
                               <div [attr.id]="'cr-etapa-recursos-' + posicao">
                                 @for (recurso of recursosDaEtapa(etapa); track $index) {
                                   <div class="form-grid">
