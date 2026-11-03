@@ -1,0 +1,32 @@
+<td [attr.colspan]="colunas()">
+  <div class="form-grid" role="group" [attr.aria-label]="'Detalhe de ' + nomeDoDocumento()">
+    <ui-valor-em-consulta
+      class="form-grid__full"
+      rotulo="Sobre o documento"
+      seVazio="Sem descrição"
+      [valor]="detalhe().descricao"
+      [dica]="
+        detalhe().situacao ??
+        (detalhe().descricao === null
+          ? null
+          : 'Descrição do cadastro vigente: o processo não a guarda.')
+      "
+    />
+    @if (detalhe().formatos; as formatos) {
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        rotulo="Arquivo aceito pela exigência publicada"
+        [valor]="formatos"
+      />
+    }
+    @if (detalhe().formulario !== null) {
+      <ui-valor-em-consulta rotulo="Formulário" [valor]="detalhe().formulario" />
+    }
+    <ui-valor-em-consulta rotulo="Exigido em" [valor]="detalhe().exigidoEm" />
+    <ui-valor-em-consulta
+      rotulo="Modelo para o candidato preencher"
+      seVazio="Sem modelo"
+      [valor]="detalhe().modelo"
+    />
+  </div>
+</td>

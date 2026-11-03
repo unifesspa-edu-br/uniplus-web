@@ -1,0 +1,55 @@
+<th scope="row">
+  <!--
+  O nome abre os campos do documento, como o nome da fase abre a fase: um botão a mais
+  por linha tomaria a largura de uma coluna da conferência. Em consulta é texto: o
+  detalhe (a descrição do tipo, os formatos que a exigência não declara) fica sempre
+  à vista sob a linha, sem botão que o abra.
+-->
+  @if (store.emConsulta()) {
+    <span>{{ resumo().nome }}</span>
+  } @else {
+  <button
+    class="doc-conferencia__alternar"
+    type="button"
+    [attr.aria-expanded]="aberta()"
+    [attr.aria-controls]="idDaFase('doc-campos-' + resumo().id)"
+    (click)="alternar.emit()"
+  >
+    <span class="etapa-resumo__seta" aria-hidden="true"></span>
+    <span>{{ resumo().nome }}</span>
+  </button>
+  }
+  @if (resumo().repetido !== '') {
+    <span class="doc-conferencia__meta">{{ resumo().repetido }}</span>
+  }
+</th>
+<td class="doc-conferencia__largo" data-label="A quem se aplica">
+  {{ resumo().aplicaA }}
+  @if (resumo().repeticao !== '') {
+    <span class="doc-conferencia__meta">{{ resumo().repeticao }}</span>
+  }
+</td>
+<td data-label="Entrega">
+  {{ resumo().entrega }}
+  @if (resumo().composicao !== '') {
+    <span class="doc-conferencia__meta">{{ resumo().composicao }}</span>
+  }
+</td>
+<td data-label="Se não for entregue">{{ resumo().consequencia }}</td>
+<td data-label="Coleta">{{ resumo().coleta }}</td>
+@if (semNormaComum()) {
+  <td class="doc-conferencia__largo" data-label="Norma">
+    @for (norma of resumo().normas; track $index) {
+      <span class="doc-conferencia__norma">
+        {{ norma.referencia }}
+        <span class="doc-conferencia__meta">{{ norma.detalhe }}</span>
+        @if (norma.observacao !== '') {
+          <span class="doc-conferencia__meta">{{ norma.observacao }}</span>
+        }
+      </span>
+    }
+    @if (resumo().faltaNorma) {
+      <span class="tag tag--warning">Sem norma resolvida</span>
+    }
+  </td>
+}
