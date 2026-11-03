@@ -1,6 +1,3 @@
-/* ============================================================================
- * INSTITUTIONAL BAR + ACCESSIBILITY BAR + TOPBAR (mobile-first)
- * ========================================================================== */
 /*
  * O `ui-app-shell` é dono da própria caixa: trava a altura no viewport dinâmico
  * para que a rolagem aconteça nas regiões internas (`.page` e `.sidebar nav`) e

@@ -1,3 +1,6 @@
+/* ============================================================================
+ * BARRA INSTITUCIONAL (mobile-first)
+ * ========================================================================== */
 .institutional-bar {
   background: var(--color-primary-900);
   color: var(--text-on-inverse);
