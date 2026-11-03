@@ -1,7 +1,6 @@
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 
 import type { FaseDoCronograma, StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -95,7 +94,6 @@ export class GravacaoDoCronograma {
   private readonly catalogos = inject(CatalogosDoCronogramaService);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
-  private readonly api = inject(ProcessosSeletivosApi);
   private readonly exigencias = inject(GravacaoDasExigenciasDocumentais);
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly conferencia = inject(ConferenciaDoCronograma);

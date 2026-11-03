@@ -244,11 +244,6 @@
         [recusas]="recusas.recusasDaEtapa(etapa)"
       />
     }
-    <!--
-  O que a etapa publica. Mesmo desenho da fase um nível acima: só ato
-  que o catálogo marca como resultado admite papel, e é o papel
-  preliminar que abre o ciclo recursal.
--->
     <!-- Janela própria da etapa e promessa de devolutiva. -->
     <div
       class="form-grid__full etapa-publica"
@@ -269,11 +264,6 @@
     }
 
     <!-- As janelas recursais que a etapa abre. -->
-    <!--
-          Recolhido por padrão, como a etapa e a fase: cada janela recursal
-          declarada ocupa uma grade inteira, e a prova objetiva do certame
-          qualificado abre duas.
-        -->
     @if (!notaDoEnem) {
       <div
         class="form-grid__full etapa-publica etapa-publica--recolhivel"

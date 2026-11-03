@@ -174,12 +174,7 @@
                   Acrescentar etapa nesta fase
                 </button>
 
-                <!--
-                A configuração da fase mora dentro da própria fase: o que ela publica, o
-                ciclo recursal, o recurso, as bancas e os documentos. Antes isso vivia num
-                bloco à parte, com um segundo seletor de fase — a mesma fase aparecia duas
-                vezes na tela, e configurá-la exigia escolhê-la de novo.
-              -->
+                <!-- A configuração da fase mora dentro da própria fase, sem um segundo seletor de fase. -->
                 <sel-step-fase [faseFixada]="item.grupo.controls.faseCanonicaId.value" />
               }
             </div>

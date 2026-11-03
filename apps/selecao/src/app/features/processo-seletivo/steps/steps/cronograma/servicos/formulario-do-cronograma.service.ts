@@ -231,10 +231,7 @@ export class FormularioDoCronograma {
       (grupo) => grupo.controls.faseCodigo.value === codigo,
     ).length;
 
-    // A contagem varre a ÁRVORE de exigências, que é como o rascunho as guarda. Enquanto ela
-    // percorria os valores do objeto como se fossem os registros planos do modelo anterior,
-    // dava sempre zero: a fase com documentos e sem etapa era removida sem confirmação
-    // nenhuma, levando as exigências junto, e com etapas a confirmação omitia o que se perdia.
+    // A contagem varre a árvore de exigências, que é como o rascunho as guarda.
     const documentos = exigenciasDaFase(this.store.draft().documentos, codigo).length;
 
     return { etapas, documentos };

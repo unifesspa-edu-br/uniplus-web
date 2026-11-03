@@ -64,9 +64,4 @@ export class ConvencaoDeContagemComponent {
     // escolhida continuaria mostrando a anterior.
     this.cronograma.versao.update((versaoAtual) => versaoAtual + 1);
   }
-
-  // ── O que a etapa publica ──────────────────────────────────────────────────
-  // Mesmo desenho que a fase já usa um nível acima: a coleção é substituída por
-  // inteiro, e trocar o ato zera o papel, porque só ato que o catálogo marca como
-  // resultado o recebe.
 }
