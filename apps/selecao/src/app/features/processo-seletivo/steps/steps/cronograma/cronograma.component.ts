@@ -37,6 +37,7 @@ import { ReconciliacaoDasEtapas } from './servicos/reconciliacao-das-etapas.serv
 import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
 import { convencaoLida } from './convencao-de-contagem';
 import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.component';
+import { RecursosDaEtapaComponent } from './etapa/recursos-da-etapa.component';
 
 @Component({
   selector: 'sel-step-cronograma',
@@ -52,6 +53,7 @@ import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.
     CabecalhoDaFaseComponent,
     DadosDaFaseComponent,
     EtapasOrfasComponent,
+    RecursosDaEtapaComponent,
   ],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

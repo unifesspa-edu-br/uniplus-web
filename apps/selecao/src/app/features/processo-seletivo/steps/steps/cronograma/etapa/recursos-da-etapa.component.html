@@ -1,0 +1,41 @@
+@let etapa = grupo();
+@let posicao = indiceDaEtapa();
+
+<button
+  class="etapa-publica__cabecalho"
+  type="button"
+  [attr.aria-expanded]="expansao.blocoAberto(posicao, 'recursos')"
+  [attr.aria-controls]="'cr-etapa-recursos-' + posicao"
+  (click)="expansao.alternarBloco(posicao, 'recursos')"
+>
+  <span class="etapa-resumo__seta" aria-hidden="true"></span>
+  <h4 class="form-section__title">Recursos que esta etapa admite</h4>
+  <span class="etapa-resumo__marcas">
+    <span class="etapa-resumo__marca">{{ edicao.resumoDosRecursos(etapa) }}</span>
+  </span>
+</button>
+
+@if (expansao.blocoAberto(posicao, 'recursos')) {
+  <div [attr.id]="'cr-etapa-recursos-' + posicao">
+    @for (recurso of edicao.recursosDaEtapa(etapa); track $index) {
+      <div
+        class="form-grid"
+        selJanelaRecursal
+        [grupo]="etapa"
+        [indiceDaEtapa]="posicao"
+        [recursoDaEtapa]="recurso"
+        [indiceDoRecurso]="$index"
+      ></div>
+    } @empty {
+      <p class="field__hint">Esta etapa não admite recurso.</p>
+    }
+    <button
+      class="btn btn--secondary"
+      type="button"
+      (click)="edicao.acrescentarRecursoNaEtapa(etapa)"
+      [disabled]="!edicaoLiberada() || !edicao.temRegraDeRecurso()"
+    >
+      Acrescentar recurso
+    </button>
+  </div>
+}

@@ -1,0 +1,260 @@
+@let etapa = grupo();
+@let posicao = indiceDaEtapa();
+@let recurso = recursoDaEtapa();
+@let indice = indiceDoRecurso();
+@let notaDoEnem = edicao.etapaDeNotaDoEnem(etapa);
+
+<div class="form-field">
+  <label class="label" [attr.for]="'cr-rec-anc-' + posicao + '-' + indice">
+    O prazo corre de
+  </label>
+  <select
+    class="select"
+    [attr.id]="'cr-rec-anc-' + posicao + '-' + indice"
+    [disabled]="!edicaoLiberada()"
+    (change)="edicao.alterarRecursoDaEtapa(etapa, indice, 'ancora', $any($event.target).value)"
+  >
+    @if (!notaDoEnem || recurso.ancora === 'atoPublicado') {
+      <option value="atoPublicado" [selected]="recurso.ancora === 'atoPublicado'">
+        Publicação do ato — um prazo para todos
+      </option>
+    }
+    <option value="cienciaIndividual" [selected]="recurso.ancora === 'cienciaIndividual'">
+      Ciência do candidato — um prazo por candidato
+    </option>
+  </select>
+</div>
+@if (recurso.ancora === 'atoPublicado') {
+  <div class="form-field">
+    <label class="label" [attr.for]="'cr-rec-ato-' + posicao + '-' + indice">
+      Contra qual publicação
+    </label>
+    <select
+      class="select"
+      [attr.id]="'cr-rec-ato-' + posicao + '-' + indice"
+      [disabled]="!edicaoLiberada()"
+      (change)="
+        edicao.alterarRecursoDaEtapa(etapa, indice, 'atoAncoraCodigo', $any($event.target).value)
+      "
+    >
+      <option value="">Selecione…</option>
+      @for (preliminar of edicao.preliminaresDaEtapa(etapa); track preliminar.atoCodigo) {
+        <option
+          [value]="preliminar.atoCodigo"
+          [selected]="preliminar.atoCodigo === recurso.atoAncoraCodigo"
+        >
+          {{ catalogos.rotuloDoAto().get(preliminar.atoCodigo) ?? preliminar.atoCodigo }}
+        </option>
+      }
+    </select>
+    @if (edicao.preliminaresDaEtapa(etapa).length === 0) {
+      <p class="field__hint">
+        Esta etapa ainda não publica resultado preliminar — é da publicação dele que a janela corre.
+      </p>
+    }
+  </div>
+}
+<div class="form-field">
+  <label class="label" [attr.for]="'cr-rec-prazo-' + posicao + '-' + indice">Prazo</label>
+  <input
+    class="input"
+    type="text"
+    inputmode="numeric"
+    [attr.id]="'cr-rec-prazo-' + posicao + '-' + indice"
+    [value]="recurso.prazoValor"
+    [disabled]="!edicaoLiberada()"
+    (input)="edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoValor', $any($event.target).value)"
+  />
+</div>
+<div class="form-field">
+  <label class="label" [attr.for]="'cr-rec-un-' + posicao + '-' + indice">Unidade</label>
+  <select
+    class="select"
+    [attr.id]="'cr-rec-un-' + posicao + '-' + indice"
+    [disabled]="!edicaoLiberada()"
+    (change)="
+      edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoUnidade', $any($event.target).value)
+    "
+  >
+    <option value="diasUteis" [selected]="recurso.prazoUnidade === 'diasUteis'">dias úteis</option>
+    <option value="horas" [selected]="recurso.prazoUnidade === 'horas'">horas</option>
+  </select>
+</div>
+<div class="form-field">
+  <label class="label" [attr.for]="'cr-rec-susp1-val-' + posicao + '-' + indice"
+    >Suspensividade da 1ª instância — prazo</label
+  >
+  <input
+    class="input"
+    type="text"
+    inputmode="decimal"
+    [attr.id]="'cr-rec-susp1-val-' + posicao + '-' + indice"
+    [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + indice"
+    [value]="recurso.suspensividadePrimeiraInstanciaValor"
+    [disabled]="!edicaoLiberada()"
+    (input)="
+      edicao.alterarRecursoDaEtapa(
+        etapa,
+        indice,
+        'suspensividadePrimeiraInstanciaValor',
+        $any($event.target).value
+      )
+    "
+  />
+</div>
+<div class="form-field">
+  <label class="label" [attr.for]="'cr-rec-susp1-un-' + posicao + '-' + indice"
+    >Suspensividade da 1ª instância — unidade</label
+  >
+  <select
+    class="select"
+    [attr.id]="'cr-rec-susp1-un-' + posicao + '-' + indice"
+    [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + indice"
+    [disabled]="!edicaoLiberada()"
+    (change)="
+      edicao.alterarRecursoDaEtapa(
+        etapa,
+        indice,
+        'suspensividadePrimeiraInstanciaUnidade',
+        $any($event.target).value
+      )
+    "
+  >
+    <option value="" [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === ''">
+      Sem suspensividade
+    </option>
+    <option
+      value="diasUteis"
+      [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === 'diasUteis'"
+    >
+      dias úteis
+    </option>
+    <option value="horas" [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === 'horas'">
+      horas
+    </option>
+  </select>
+</div>
+<p class="field__hint" [attr.id]="'cr-rec-susp-ajuda-' + posicao + '-' + indice">
+  O prazo em que o recurso suspende o efeito do que foi publicado. Valor e unidade são declarados
+  juntos; deixar os dois em branco desativa a suspensividade daquela instância.
+</p>
+<fieldset
+  class="field form-grid__full"
+  [class.is-error]="recurso.admiteInstanciaSuperior === null"
+  [attr.aria-describedby]="
+    recurso.admiteInstanciaSuperior === null
+      ? 'cr-rec-superior-erro-' +
+        posicao +
+        '-' +
+        indice +
+        ' cr-rec-superior-ajuda-' +
+        posicao +
+        '-' +
+        indice
+      : 'cr-rec-superior-ajuda-' + posicao + '-' + indice
+  "
+>
+  <legend class="field__label is-required">Admite recurso em instância superior?</legend>
+  <label class="radio">
+    <input
+      type="radio"
+      [attr.name]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
+      [attr.formcontrolname]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
+      [value]="true"
+      [checked]="recurso.admiteInstanciaSuperior === true"
+      [disabled]="!edicaoLiberada()"
+      [attr.aria-invalid]="recurso.admiteInstanciaSuperior === null ? 'true' : null"
+      (change)="edicao.declararInstanciaSuperiorDaEtapa(etapa, indice, true)"
+    />
+    <span class="radio__dot" aria-hidden="true"></span>
+    Sim
+  </label>
+  <label class="radio">
+    <input
+      type="radio"
+      [attr.name]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
+      [attr.formcontrolname]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
+      [value]="false"
+      [checked]="recurso.admiteInstanciaSuperior === false"
+      [disabled]="!edicaoLiberada()"
+      [attr.aria-invalid]="recurso.admiteInstanciaSuperior === null ? 'true' : null"
+      (change)="edicao.declararInstanciaSuperiorDaEtapa(etapa, indice, false)"
+    />
+    <span class="radio__dot" aria-hidden="true"></span>
+    Não
+  </label>
+  <span class="field__hint" [attr.id]="'cr-rec-superior-ajuda-' + posicao + '-' + indice">
+    Não quando a decisão da banca recursal é final; Sim quando cabe recurso a outra instância,
+    julgada fora do sistema.
+  </span>
+  @if (recurso.admiteInstanciaSuperior === null) {
+    <span class="field__erro" [attr.id]="'cr-rec-superior-erro-' + posicao + '-' + indice">{{
+      edicao.mensagemDaInstanciaSuperiorEmAberto
+    }}</span>
+  }
+</fieldset>
+@if (recurso.admiteInstanciaSuperior === true) {
+  <div class="form-field">
+    <label class="label" [attr.for]="'cr-rec-susp2-val-' + posicao + '-' + indice"
+      >Suspensividade da 2ª instância — prazo</label
+    >
+    <input
+      class="input"
+      type="text"
+      inputmode="decimal"
+      [attr.id]="'cr-rec-susp2-val-' + posicao + '-' + indice"
+      [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + indice"
+      [value]="recurso.suspensividadeSegundaInstanciaValor"
+      [disabled]="!edicaoLiberada()"
+      (input)="
+        edicao.alterarRecursoDaEtapa(
+          etapa,
+          indice,
+          'suspensividadeSegundaInstanciaValor',
+          $any($event.target).value
+        )
+      "
+    />
+  </div>
+  <div class="form-field">
+    <label class="label" [attr.for]="'cr-rec-susp2-un-' + posicao + '-' + indice"
+      >Suspensividade da 2ª instância — unidade</label
+    >
+    <select
+      class="select"
+      [attr.id]="'cr-rec-susp2-un-' + posicao + '-' + indice"
+      [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + indice"
+      [disabled]="!edicaoLiberada()"
+      (change)="
+        edicao.alterarRecursoDaEtapa(
+          etapa,
+          indice,
+          'suspensividadeSegundaInstanciaUnidade',
+          $any($event.target).value
+        )
+      "
+    >
+      <option value="" [selected]="recurso.suspensividadeSegundaInstanciaUnidade === ''">
+        Sem suspensividade
+      </option>
+      <option
+        value="diasUteis"
+        [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'diasUteis'"
+      >
+        dias úteis
+      </option>
+      <option value="horas" [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'horas'">
+        horas
+      </option>
+    </select>
+  </div>
+}
+
+<button
+  class="btn btn--tertiary"
+  type="button"
+  (click)="edicao.removerRecursoDaEtapa(etapa, indice)"
+  [disabled]="!edicaoLiberada()"
+>
+  Remover recurso
+</button>
