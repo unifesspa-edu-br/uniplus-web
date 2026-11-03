@@ -16,7 +16,7 @@ import { type FaseDoCronograma, type StepValidation } from '../../processo-selet
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { gravarCronogramaFases } from '../../shared/gravacao-do-cronograma';
+import { gravarCronogramaFases } from '../cronograma/servicos/gravacao-do-cronograma.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { problemasDaFase } from './configuracao-da-fase';
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';

@@ -31,6 +31,7 @@ import type { EtapaForm } from './cronograma-form';
 import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
+import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
 import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
 import { ReconciliacaoDasEtapas } from './servicos/reconciliacao-das-etapas.service';
 import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
@@ -65,6 +66,7 @@ import {
 describe('CronogramaStepComponent', () => {
   let componente: CronogramaStepComponent;
   let expansao: ExpansaoDoCronograma;
+  let exigencias: GravacaoDasExigenciasDocumentais;
   let conferencia: ConferenciaDoCronograma;
   let recusas: RecusasDasEtapas;
   let cronograma: FormularioDoCronograma;
@@ -96,6 +98,7 @@ describe('CronogramaStepComponent', () => {
     const fixture = TestBed.createComponent(CronogramaStepComponent);
     componente = fixture.componentInstance;
     expansao = fixture.debugElement.injector.get(ExpansaoDoCronograma);
+    exigencias = fixture.debugElement.injector.get(GravacaoDasExigenciasDocumentais);
     conferencia = fixture.debugElement.injector.get(ConferenciaDoCronograma);
     recusas = fixture.debugElement.injector.get(RecusasDasEtapas);
     cronograma = fixture.debugElement.injector.get(FormularioDoCronograma);
@@ -2819,13 +2822,7 @@ describe('CronogramaStepComponent', () => {
     });
 
     const gravarExigencias = (): Promise<{ valid: boolean; messages?: string[] }> =>
-      (
-        componente as unknown as {
-          gravarExigenciasDocumentais(
-            processoId: string,
-          ): Promise<{ valid: boolean; messages?: string[] }>;
-        }
-      ).gravarExigenciasDocumentais(PROCESSO_ID);
+      exigencias.gravar(PROCESSO_ID);
 
     it('põe a pergunta das regras congeladas no processo com inscrição própria, sem exigência que recorte', async () => {
       const gravacao = gravarExigencias();
@@ -3003,11 +3000,7 @@ describe('CronogramaStepComponent', () => {
         },
       ]);
 
-      const gravacao = (
-        componente as unknown as {
-          gravarExigenciasDocumentais(processoId: string): Promise<{ messages?: string[] }>;
-        }
-      ).gravarExigenciasDocumentais(PROCESSO_ID);
+      const gravacao = exigencias.gravar(PROCESSO_ID);
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
       await proximoPasso();
       controller.expectOne(ROTA_DOCUMENTOS).flush(

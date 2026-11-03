@@ -1,7 +1,7 @@
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 
 import type { FaseDoCronograma, StepValidation } from '../../processo-seletivo.models';
-import { ORIENTACAO_DE_PERMUTACAO, PERMUTACAO_DE_ORDEM } from '../../shared/gravacao-do-cronograma';
+import { ORIENTACAO_DE_PERMUTACAO, PERMUTACAO_DE_ORDEM } from '../cronograma/servicos/gravacao-do-cronograma.service';
 import type { CampoDaFase } from './configuracao-da-fase';
 import { traduzirRecusa } from './recusas-da-fase';
 

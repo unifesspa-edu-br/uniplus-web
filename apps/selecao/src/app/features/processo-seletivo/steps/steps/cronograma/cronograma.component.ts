@@ -3,16 +3,12 @@ import {
   Component,
   computed,
   DestroyRef,
-  effect,
   inject,
   Injector,
-  signal,
-  untracked,
 } from '@angular/core';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
-import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
-import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import {
@@ -25,56 +21,28 @@ import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import {
-  CamposPressupostosService,
-  fatosCitadosPelasModalidadesOfertadas,
-} from '../../shared/campos-pressupostos.service';
-import {
-  ORIENTACAO_DE_PERMUTACAO,
-  PERMUTACAO_DE_ORDEM,
-  gravarCronogramaFases,
-} from '../../shared/gravacao-do-cronograma';
-import { todasAsExigencias } from '../../shared/exigencias/consulta-das-exigencias';
-import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
-import { modalidadesDaExigencia } from '../../shared/exigencias/recorte-por-modalidade';
-import { recusaDaExigenciaDoServidor } from '../../shared/orientacao-da-recusa-do-fato';
+import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../shared/instancia-superior';
-import { quemCitaNoProcesso } from '../formulario/formulario-de-inscricao';
-import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
 import {
   inicioDeHojeNoFusoInstitucional,
   pisoDoCampoDeData,
 } from '../../shared/fuso-institucional';
 import { FORMAS_DE_AVALIACAO } from '../../shared/forma-de-avaliacao';
-import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
-import {
-  fasesComUnidadeNaoEncontrada,
-  localDoErroDaEtapa,
-  recusaDaEtapaDeNotaDoEnem,
-  recusaDoCampoDaEtapa,
-} from './recusas-do-servidor-da-etapa';
 import {
   caracteresAdmitidos,
   componeNota,
   eliminaPorCarater,
   pontuaPorCarater,
 } from './regras-da-etapa';
-import {
-  etapaDoFormulario,
-  faseDoFormulario,
-  type EtapaForm,
-  type FaseForm,
-} from './cronograma-form';
-import { comoComandoDeEtapa } from './cronograma-para-comando';
+import { etapaDoFormulario, type EtapaForm, type FaseForm } from './cronograma-form';
 import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
+import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
+import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service';
 import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
-import {
-  AGUARDA_RELEITURA,
-  ReconciliacaoDasEtapas,
-} from './servicos/reconciliacao-das-etapas.service';
+import { ReconciliacaoDasEtapas } from './servicos/reconciliacao-das-etapas.service';
 import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
 import {
   baseLegalDaConvencao,
@@ -129,6 +97,8 @@ import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.
     FormularioDoCronograma,
     RecusasDasEtapas,
     ConferenciaDoCronograma,
+    GravacaoDasExigenciasDocumentais,
+    GravacaoDoCronograma,
     ExpansaoDoCronograma,
   ],
 })
@@ -146,6 +116,7 @@ export class CronogramaStepComponent {
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly recusas = inject(RecusasDasEtapas);
   protected readonly conferencia = inject(ConferenciaDoCronograma);
+  protected readonly gravacao = inject(GravacaoDoCronograma);
   protected readonly expansao = inject(ExpansaoDoCronograma);
 
   readonly formulario = this.cronograma.formulario;
@@ -160,48 +131,10 @@ export class CronogramaStepComponent {
   readonly erroDeReleitura = this.reconciliacao.erroDeReleitura;
   private readonly versaoDoFormulario = this.cronograma.versao;
 
-  /**
-   * A convenção foi gravada com sucesso nesta sessão. Só `persistir()`
-   * escreve aqui, no sucesso da terceira chamada — nunca a mirror genérica de
-   * `espelharRascunho`, que roda por causa de qualquer uma das três dimensões
-   * (inclusive uma reconciliação de etapas que nada tem a ver com o
-   * algoritmo) e daria falso positivo se lida como confirmação do servidor.
-   */
-  private readonly algoritmoConfirmadoNestaSessao = signal(false);
-
-  /**
-   * A convenção já foi declarada no servidor — pela última leitura completa
-   * (`remoteSnapshot`) ou por uma gravação desta sessão. Enquanto for
-   * `false`, "nenhuma convenção" é opção legítima (CA-05); depois, deixa de
-   * ser: o endpoint não tem operação de remoção —
-   * `DefinirAlgoritmoContagemPrazoRequest` exige `codigo` e `versao` — e
-   * oferecer a opção de novo convidaria a uma gravação que a tela pularia em
-   * silêncio, relatando sucesso sem o servidor ter mudado nada.
-   */
-  readonly algoritmoDeclaradoNoServidor = computed(
-    () =>
-      this.store.remoteSnapshot()?.algoritmoContagemPrazo != null ||
-      this.algoritmoConfirmadoNestaSessao(),
-  );
-
-  private recusarUnidades(
-    enviadas: readonly FormGroup<FaseForm>[],
-    indices: readonly number[],
-  ): void {
-    if (indices.length === 0) return;
-    this.unidades.recusar(enviadas, indices);
-    this.expansao.abrirFases(indices.filter((indice) => indice < enviadas.length));
-    this.versaoDoFormulario.update((versao) => versao + 1);
-    this.catalogos.carregarUnidades();
-  }
+  readonly algoritmoDeclaradoNoServidor = this.gravacao.algoritmoDeclaradoNoServidor;
 
   constructor() {
     this.catalogos.carregar();
-
-    effect(() => {
-      this.store.geracao();
-      untracked(() => this.algoritmoConfirmadoNestaSessao.set(false));
-    });
   }
 
   /** Os papéis escolhíveis, no mesmo vocabulário que a configuração da fase usa. */
@@ -587,150 +520,8 @@ export class CronogramaStepComponent {
     return this.conferencia.validar();
   }
 
-  /**
-   * Grava as três dimensões: etapas e cronograma de fases, na ordem que a
-   * bicondicional do agregado exige, e por último a convenção de contagem de
-   * prazo — só quando o rascunho declara uma.
-   *
-   * A ordem entre etapas e cronograma não é preferência: a fase que agrupa
-   * etapas é recusada na hora se o processo não tiver nenhuma etapa, então
-   * gravar o cronograma antes das etapas derrubaria a gravação de um
-   * cronograma que é válido.
-   *
-   * As duas vão juntas mesmo quando só uma mudou. O acoplamento que isso
-   * poderia criar — uma etapa malformada impedindo a correção de uma data — não
-   * chega a existir, porque a conferência acima recusa antes de qualquer envio e
-   * aponta a etapa; e um `PUT` que substitui a coleção pelo mesmo conteúdo não
-   * muda nada no servidor.
-   *
-   * O algoritmo vem por último e é opcional: ausência é estado válido
-   * enquanto rascunho (CA-05) — o endpoint recusa código ou versão nulos, e
-   * não existe caminho para desdeclarar a convenção depois de escolhida. Se
-   * ele falhar, as duas primeiras chamadas já gravaram, e a mensagem diz isso
-   * em vez de tratar a falha como se nada tivesse sido salvo.
-   */
-  async persistir(): Promise<StepValidation> {
-    const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      return {
-        valid: false,
-        messages: ['O cadastro do processo precisa estar concluído antes de montar o cronograma.'],
-      };
-    }
-
-    const conferencia = this.conferencia.validar();
-    if (!conferencia.valid) {
-      // O que a conferência acusa pode estar numa fase fechada: abrir todas põe o problema à
-      // vista, em vez de deixar a mensagem apontar para um lugar que não está na tela.
-      this.expansao.expandirTodasAsFases(this.linhaDoTempo().map((item) => item.indice));
-      return conferencia;
-    }
-
-    const fases = this.fases.controls.map(faseDoFormulario);
-    const grupos = [...this.etapas.controls];
-    const etapas = this.cronograma.etapasParaEnvio();
-    const geracao = this.store.geracao();
-    this.store.salvando.set(true);
-    try {
-      // O cronograma vai primeiro, sempre: a etapa declara a fase em que acontece, e o
-      // servidor recusa etapa cuja fase ainda não está no cronograma. Um certame montado do
-      // zero — nenhuma fase gravada ainda — não teria como gravar etapa nenhuma na ordem
-      // inversa.
-      // Remover uma fase também é seguro por aqui: o agregado poda as etapas dela junto.
-      const enviadas = [...this.fases.controls];
-      const cronograma = await gravarCronogramaFases(this.cadastro, processoId, fases);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!cronograma.ok) {
-        this.recusarUnidades(
-          enviadas,
-          fasesComUnidadeNaoEncontrada(cronograma.problem.errors ?? []),
-        );
-        return {
-          valid: false,
-          messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
-        };
-      }
-
-      this.unidades.limparRecusadas();
-      this.recusas.limpar();
-      const gravacaoDeEtapas = await this.cadastro.definirEtapas(
-        processoId,
-        etapas.map(comoComandoDeEtapa),
-      );
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!gravacaoDeEtapas.ok) {
-        const problema = gravacaoDeEtapas.problem;
-        this.recusas.aplicar(grupos, problema.errors ?? []);
-        const daRaiz = recusaDaEtapaDeNotaDoEnem(problema.code);
-        const resumo = resumoDaRecusa(
-          problema,
-          (erro) => {
-            const texto = recusaDoCampoDaEtapa(erro.code);
-            if (texto === null) return recusaDaEtapaDeNotaDoEnem(erro.code);
-            const indice = localDoErroDaEtapa(erro.field)?.indice;
-            if (indice === undefined) return texto;
-            const nome = etapas[indice]?.nome.trim() ?? '';
-            return `${nome === '' ? `Etapa ${indice + 1}` : nome}: ${texto}`;
-          },
-          () => this.problemI18n.resolve(problema).title,
-        );
-        return {
-          valid: false,
-          messages: daRaiz === null || resumo.includes(daRaiz) ? resumo : [daRaiz, ...resumo],
-        };
-      }
-
-      // As etapas já mudaram no servidor: é aqui que o rascunho recolhe os
-      // identificadores atribuídos. Deixar para o fim perderia a reconciliação
-      // se o cronograma fosse recusado, e a tentativa seguinte reenviaria
-      // etapas que já existem sem o `id`, recriando-as.
-      const reconciliada = await this.reconciliacao.reconciliarEtapas(processoId);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!reconciliada) {
-        // Trava a tela em vez de só avisar: o `finally` logo abaixo devolve o
-        // botão de gravar, e o rascunho ainda tem `id: null` nas etapas que o
-        // servidor acabou de criar.
-        this.reconciliacaoPendente.set(true);
-        return { valid: false, messages: [AGUARDA_RELEITURA] };
-      }
-
-      // As exigências documentais vão por último e dependem das duas gravações
-      // anteriores: a exigência referencia a fase pelo id que o servidor atribui, e
-      // a etapa que a coleta pelo id que a reconciliação acabou de recolher.
-      const exigencias = await this.gravarExigenciasDocumentais(processoId);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!exigencias.valid) return exigencias;
-
-      // Ausência é estado válido em rascunho (CA-05): a chamada só acontece
-      // quando há escolha. O código e a versão do formulário sempre andam
-      // juntos — `escolherAlgoritmo` os grava ao mesmo tempo —, então checar
-      // um basta para saber que o par está completo.
-      const codigoAlgoritmo = this.formulario.controls.algoritmoContagemCodigo.value;
-      if (codigoAlgoritmo !== '') {
-        const algoritmo = await this.cadastro.definirAlgoritmoContagemPrazo(processoId, {
-          codigo: codigoAlgoritmo,
-          versao: this.formulario.controls.algoritmoContagemVersao.value,
-        });
-        if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-        if (!algoritmo.ok) {
-          return {
-            valid: false,
-            messages: [
-              `As etapas e o cronograma de fases foram gravados. ${this.problemI18n.resolve(algoritmo.problem).title}`,
-            ],
-          };
-        }
-
-        // A partir daqui o endpoint não tem operação de remoção: o seletor
-        // deixa de oferecer "nenhuma convenção" para não convidar a uma
-        // gravação futura que a tela pularia em silêncio.
-        this.algoritmoConfirmadoNestaSessao.set(true);
-      }
-
-      return { valid: true };
-    } finally {
-      if (geracao === this.store.geracao()) this.store.salvando.set(false);
-    }
+  persistir(): Promise<StepValidation> {
+    return this.gravacao.persistir();
   }
 
   /**
@@ -750,125 +541,5 @@ export class CronogramaStepComponent {
 
   rotuloDeAvanco(): string {
     return 'Gravar e avançar';
-  }
-
-  /**
-   * Grava os documentos que cada fase exige.
-   *
-   * A conversão precisa do id de cada fase, que o rascunho não guarda — ele identifica
-   * a fase pelo código canônico, que é o que sobrevive à reconciliação do servidor. A
-   * releitura aqui é a que traduz um no outro; sem ela, a exigência sairia apontando
-   * para uma fase que só existe no rascunho.
-   */
-  private async gravarExigenciasDocumentais(processoId: string): Promise<StepValidation> {
-    const geracao = this.store.geracao();
-    const detalhe = await firstValueFrom(this.api.obter(processoId));
-    if (geracao !== this.store.geracao()) return { valid: true };
-    if (!isApiOk(detalhe)) {
-      return {
-        valid: false,
-        messages: [
-          'As etapas e o cronograma foram gravados, mas não foi possível reler as fases para gravar os documentos exigidos. Tente gravar de novo.',
-        ],
-      };
-    }
-
-    const faseIdPorCodigo = new Map(detalhe.data.cronogramaFases.map((f) => [f.codigo, f.id]));
-    const raizes = arvoreDeExigencias(
-      this.store.draft().documentos,
-      faseIdPorCodigo,
-      this.store.modalidadesDoProcesso(),
-      new Set(detalhe.data.etapas.map((etapa) => etapa.id)),
-      // O formulário de cada fase pelas fases que acabaram de ser gravadas: é contra elas que o
-      // servidor confere o formulário de cada documento.
-      new Map(
-        detalhe.data.cronogramaFases.map((fase) => [fase.codigo, finalidadesQueAtende(fase)]),
-      ),
-    );
-
-    // Os campos do formulário saem ANTES das exigências, e não é preferência de ordem: uma
-    // exigência condicionada a um fato só se resolve se o certame coletar aquele fato. Quem
-    // declara a condição é este passo, então é ele que garante o campo — o operador não
-    // deveria precisar lembrar que decidir de quem o documento é cobrado mexe no formulário.
-    // A exigência recortada por modalidade depende também das perguntas que as regras das
-    // modalidades ofertadas fazem: é delas que a modalidade do candidato se deriva.
-    const recorta = todasAsExigencias(this.store.draft().documentos).some(
-      (exigencia) => modalidadesDaExigencia(exigencia) !== null,
-    );
-    const citadosPelasModalidades = this.pedePerguntasDasModalidades(recorta)
-      ? fatosCitadosPelasModalidadesOfertadas(detalhe.data)
-      : new Set<string>();
-
-    const draft = this.store.draft();
-    const citadosPelasExigencias = new Set(
-      quemCitaNoProcesso({
-        documentos: draft.documentos,
-        derivacao: detalhe.data.regrasDerivacao ?? [],
-        desempate: draft.desempate,
-      }).keys(),
-    );
-    const campos = await this.camposPressupostos.garantirCampos(
-      processoId,
-      detalhe.data,
-      new Set([...citadosPelasExigencias, ...citadosPelasModalidades]),
-    );
-    if (geracao !== this.store.geracao()) return { valid: true };
-    if (campos.tipo === 'recusados') {
-      return {
-        valid: false,
-        messages: [`As etapas e o cronograma foram gravados. ${campos.motivo}`],
-      };
-    }
-    if (
-      campos.tipo === 'semFaseDeInscricao' &&
-      (recorta || !this.camposPressupostos.coletaTudo(detalhe.data, citadosPelasExigencias))
-    ) {
-      // Sem a fase de inscrição, as perguntas das modalidades esperam por ela; a exigência que
-      // depende de um dado, não.
-      return {
-        valid: false,
-        messages: [
-          'As etapas e o cronograma foram gravados. Uma exigência documental depende de um dado que o formulário de inscrição precisa coletar, e o cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição.',
-        ],
-      };
-    }
-
-    const gravacao = await this.cadastro.definirDocumentosExigidos(processoId, raizes);
-    if (geracao !== this.store.geracao()) return { valid: true };
-    if (!gravacao.ok) {
-      return {
-        valid: false,
-        messages: [
-          `As etapas, o cronograma e o formulário de inscrição foram gravados. ${recusaDaExigenciaDoServidor(gravacao.problem) ?? this.problemI18n.resolve(gravacao.problem).title}`,
-        ],
-      };
-    }
-
-    return { valid: true };
-  }
-
-  /**
-   * As perguntas das modalidades vão ao formulário do processo em que o candidato se inscreve — é
-   * a inscrição que coleta as respostas de que a modalidade dele se deriva —, e ao do que recorta
-   * exigência por modalidade, que sem elas escreveria uma condição que nunca resolve.
-   */
-  private pedePerguntasDasModalidades(recorta: boolean): boolean {
-    return (
-      recorta ||
-      this.store.draft().identificacao.origemCandidatos === OrigemCandidatos.inscricaoPropria
-    );
-  }
-
-  /**
-   * A recusa de permutação de ordem descreve o que aconteceu, não o que fazer.
-   * Quem reordenou duas fases precisa saber que o caminho é fazê-lo em duas
-   * gravações — a informação que evita tentar de novo o mesmo movimento.
-   */
-  private explicarRecusa(
-    codigo: string,
-    problema: Parameters<ProblemI18nService['resolve']>[0],
-  ): string {
-    if (codigo === PERMUTACAO_DE_ORDEM) return ORIENTACAO_DE_PERMUTACAO;
-    return this.problemI18n.resolve(problema).title;
   }
 }
