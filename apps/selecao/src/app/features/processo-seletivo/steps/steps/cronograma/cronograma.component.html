@@ -221,7 +221,7 @@
         <button
           class="btn btn--secondary"
           type="button"
-          (click)="acrescentarFase()"
+          (click)="cronograma.acrescentarFase()"
           [disabled]="
             !edicaoLiberada() ||
             !catalogos.unidadesCarregadas() ||
@@ -257,7 +257,7 @@
         <button
           class="btn btn--tertiary"
           type="button"
-          (click)="relerEtapas()"
+          (click)="reconciliacao.relerEtapas()"
           [disabled]="relendo()"
         >
           @if (relendo()) {
@@ -317,7 +317,7 @@
               <button
                 class="btn btn--tertiary btn--sm"
                 type="button"
-                (click)="mover(item.indice, -1)"
+                (click)="cronograma.mover(item.indice, -1)"
                 [disabled]="!edicaoLiberada() || item.indice === 0"
                 [attr.aria-label]="'Subir ' + item.nome"
               >
@@ -326,7 +326,7 @@
               <button
                 class="btn btn--tertiary btn--sm"
                 type="button"
-                (click)="mover(item.indice, 1)"
+                (click)="cronograma.mover(item.indice, 1)"
                 [disabled]="!edicaoLiberada() || item.indice === linhaDoTempo().length - 1"
                 [attr.aria-label]="'Descer ' + item.nome"
               >
@@ -335,7 +335,7 @@
               <button
                 class="btn btn--tertiary btn--sm"
                 type="button"
-                (click)="pedirRemocaoDaFase(item.indice)"
+                (click)="expansao.pedirRemocaoDaFase(item.indice)"
                 [disabled]="!edicaoLiberada()"
                 [attr.aria-label]="'Remover ' + item.nome"
               >
@@ -352,13 +352,13 @@
             <div class="confirma-remocao" role="alert">
               <p class="confirma-remocao__texto">
                 Remover <strong>{{ item.nome }}</strong> apaga também
-                {{ resumoDaRemocao(item.indice) }} desta fase.
+                {{ expansao.resumoDaRemocao(item.indice) }} desta fase.
               </p>
               <div class="confirma-remocao__acoes">
                 <button
                   class="btn btn--danger btn--sm"
                   type="button"
-                  (click)="confirmarRemocaoDaFase(item.indice)"
+                  (click)="expansao.confirmarRemocaoDaFase(item.indice)"
                 >
                   Remover assim mesmo
                 </button>
@@ -581,7 +581,7 @@
                           <button
                             class="btn btn--tertiary btn--sm"
                             type="button"
-                            (click)="moverEtapa(posicao, -1)"
+                            (click)="cronograma.moverEtapa(posicao, -1)"
                             [disabled]="!edicaoLiberada() || posicao === 0"
                             [attr.aria-label]="'Subir ' + rotuloDaEtapa"
                           >
@@ -590,7 +590,7 @@
                           <button
                             class="btn btn--tertiary btn--sm"
                             type="button"
-                            (click)="moverEtapa(posicao, 1)"
+                            (click)="cronograma.moverEtapa(posicao, 1)"
                             [disabled]="!edicaoLiberada() || posicao === etapas.length - 1"
                             [attr.aria-label]="'Descer ' + rotuloDaEtapa"
                           >
@@ -599,7 +599,7 @@
                           <button
                             class="btn btn--tertiary btn--sm"
                             type="button"
-                            (click)="removerEtapa(posicao)"
+                            (click)="cronograma.removerEtapa(posicao)"
                             [disabled]="!edicaoLiberada()"
                             [attr.aria-label]="'Remover ' + rotuloDaEtapa"
                           >
@@ -1582,7 +1582,7 @@
                 <button
                   class="btn btn--secondary acao-de-etapa"
                   type="button"
-                  (click)="acrescentarEtapa(item.grupo.controls.codigo.value)"
+                  (click)="cronograma.acrescentarEtapa(item.grupo.controls.codigo.value)"
                   [disabled]="!edicaoLiberada()"
                 >
                   Acrescentar etapa nesta fase
@@ -1622,7 +1622,7 @@
               <button
                 class="btn btn--tertiary"
                 type="button"
-                (click)="removerEtapa(orfa.indice)"
+                (click)="cronograma.removerEtapa(orfa.indice)"
                 [disabled]="!edicaoLiberada()"
                 [attr.aria-label]="'Remover ' + orfa.rotulo"
               >
@@ -1634,7 +1634,7 @@
         <button
           class="btn btn--secondary"
           type="button"
-          (click)="removerTodasAsEtapas()"
+          (click)="cronograma.removerTodasAsEtapas()"
           [disabled]="!edicaoLiberada()"
         >
           Remover todas as etapas

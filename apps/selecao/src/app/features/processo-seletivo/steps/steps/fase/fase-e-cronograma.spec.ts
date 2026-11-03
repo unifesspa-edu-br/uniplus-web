@@ -15,6 +15,7 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from '../cronograma/cronograma.component';
+import { FormularioDoCronograma } from '../cronograma/servicos/formulario-do-cronograma.service';
 import { FaseStepComponent } from './fase.component';
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
@@ -171,6 +172,7 @@ const PROCESSO_COM_ETAPA_GRAVADA = {
  */
 describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', () => {
   let cronograma: CronogramaStepComponent;
+  let formularioDoCronograma: FormularioDoCronograma;
   let superficie: FaseStepComponent;
   let publicacoes: () => PublicacoesDaFaseComponent;
   let bancas: () => BancasDaFaseComponent;
@@ -202,6 +204,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     const fixtureCronograma = TestBed.createComponent(CronogramaStepComponent);
     const fixtureSuperficie = TestBed.createComponent(FaseStepComponent);
     cronograma = fixtureCronograma.componentInstance;
+    formularioDoCronograma = fixtureCronograma.debugElement.injector.get(FormularioDoCronograma);
     superficie = fixtureSuperficie.componentInstance;
     bancas = () =>
       fixtureSuperficie.debugElement.query(By.directive(BancasDaFaseComponent))
@@ -449,7 +452,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     comCertame();
 
     // Troca as duas fases de lugar pela linha do tempo, sem gravar ali.
-    cronograma.mover(0, 1);
+    formularioDoCronograma.mover(0, 1);
     detectar();
 
     const gravacao = superficie.persistir();
@@ -489,7 +492,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     store.processoSeletivoId.set(PROCESSO_ID);
     comCertame();
 
-    cronograma.mover(0, 1);
+    formularioDoCronograma.mover(0, 1);
     detectar();
 
     const gravacao = superficie.persistir();

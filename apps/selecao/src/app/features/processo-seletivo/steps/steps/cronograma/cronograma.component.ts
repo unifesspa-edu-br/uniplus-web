@@ -1,5 +1,4 @@
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -18,24 +17,16 @@ import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/se
 import { ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import {
-  type EtapaPontuada,
   type ProdutoDaFase,
   type RecursoDaEtapa,
   type StepValidation,
-  type WizardDraft,
 } from '../../processo-seletivo.models';
 import { PAPEIS_ESCOLHIVEIS } from '../fase/configuracao-da-fase';
 import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { mesmoConteudo } from '../../shared/conteudo-canonico';
-import {
-  descreverFase,
-  finalidadesDaFase,
-  renumerar,
-  type DescricaoDaFase,
-} from '../../shared/descricao-da-fase';
+import { descreverFase, finalidadesDaFase } from '../../shared/descricao-da-fase';
 import {
   CamposPressupostosService,
   fatosCitadosPelasModalidadesOfertadas,
@@ -48,7 +39,6 @@ import {
 import { comAlcanceDeTodasAsFases } from '../../shared/exigencias/alcance-das-exigencias';
 import {
   type RepeticaoDaExigencia,
-  exigenciasDaFase,
   exigenciasLocalizadas,
   gruposSemNormaResolvida,
   todasAsExigencias,
@@ -56,8 +46,6 @@ import {
 import {
   CONSEQUENCIA_REENVIO,
   exigenciaDecideResultado,
-  semAEtapa,
-  semAFase,
   temNormaResolvida,
 } from '../../shared/exigencias/exigencias-documentais';
 import { faltaOFormulario } from '../../shared/exigencias/formulario-da-exigencia';
@@ -84,7 +72,6 @@ import {
   type LugarDaExigencia,
   type ProducaoDosFatos,
 } from '../../shared/producao-dos-fatos';
-import { etapasDe } from '../../shared/hidratacao';
 import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../shared/instancia-superior';
 import { quemCitaNoProcesso } from '../formulario/formulario-de-inscricao';
 import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
@@ -113,20 +100,21 @@ import {
   caracteresAdmitidos,
   componeNota,
   eliminaPorCarater,
-  etapaComOQueDeclara,
   pontuaPorCarater,
 } from './regras-da-etapa';
 import {
   etapaDoFormulario,
   faseDoFormulario,
-  grupoDaEtapa,
-  grupoDaFase,
-  novoFormularioDoCronograma,
   type EtapaForm,
   type FaseForm,
 } from './cronograma-form';
 import { comoComandoDeEtapa } from './cronograma-para-comando';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
+import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
+import {
+  AGUARDA_RELEITURA,
+  ReconciliacaoDasEtapas,
+} from './servicos/reconciliacao-das-etapas.service';
 import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
 import {
   baseLegalDaConvencao,
@@ -164,26 +152,6 @@ import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.
 
 const SEM_RECUSAS: ReadonlyMap<CampoComRecusa, string> = new Map();
 
-/**
- * O que a tela responde enquanto as etapas gravadas estão sem os identificadores
- * que o servidor atribuiu. Serve à conferência do passo e à recusa da gravação,
- * que é o mesmo impedimento dito uma vez só.
- */
-const AGUARDA_RELEITURA =
-  'As etapas foram gravadas, mas a tela ainda não recolheu os identificadores que o servidor atribuiu. Releia as etapas antes de gravar de novo: sem eles, a gravação seguinte recriaria as etapas e desfaria as referências de desempate e eliminação.';
-
-/**
- * A fase na tela: o formulário que o operador edita, junto do que o catálogo
- * congela sobre ela. O componente monta este par uma vez e o template lê os dois
- * lados sem procurar a fase canônica a cada célula.
- */
-interface FaseNaLinhaDoTempo extends DescricaoDaFase {
-  readonly grupo: FormGroup<FaseForm>;
-  readonly indice: number;
-  /** Rótulo da unidade responsável, ou `null` com a fase sem unidade. */
-  readonly unidade: string | null;
-}
-
 @Component({
   selector: 'sel-step-cronograma',
   imports: [
@@ -196,7 +164,13 @@ interface FaseNaLinhaDoTempo extends DescricaoDaFase {
   ],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(CronogramaStepComponent), ExpansaoDoCronograma, UnidadesDasFases],
+  providers: [
+    provePassoDoWizard(CronogramaStepComponent),
+    UnidadesDasFases,
+    ReconciliacaoDasEtapas,
+    FormularioDoCronograma,
+    ExpansaoDoCronograma,
+  ],
 })
 export class CronogramaStepComponent {
   private readonly destroyRef = inject(DestroyRef);
@@ -207,48 +181,22 @@ export class CronogramaStepComponent {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly camposPressupostos = inject(CamposPressupostosService);
   private readonly injector = inject(Injector);
-  protected readonly expansao = inject(ExpansaoDoCronograma);
   protected readonly unidades = inject(UnidadesDasFases);
+  protected readonly reconciliacao = inject(ReconciliacaoDasEtapas);
+  protected readonly cronograma = inject(FormularioDoCronograma);
+  protected readonly expansao = inject(ExpansaoDoCronograma);
 
-  readonly formulario = novoFormularioDoCronograma();
-
-  /**
-   * O conteúdo do formulário, como signal, para que os valores derivados
-   * reajam à digitação. `valueChanges` alimenta este sinal; ele não é a fonte
-   * do dado, só a forma de o template e os `computed` acompanharem a edição.
-   */
-  private readonly versaoDoFormulario = signal(0);
-
-  /**
-   * Enquanto o rascunho está sendo espelhado no formulário, o caminho de volta
-   * fica fechado: sem isso, cada projeção vinda do servidor dispararia uma
-   * escrita no rascunho, que dispararia outra projeção.
-   */
-  private espelhando = false;
-
-  /**
-   * Orientação da recusa de permutação, quando a reordenação pedida forma um
-   * ciclo que o servidor não persiste numa chamada só.
-   */
-  readonly avisoDeReordenacao = signal<string | null>(null);
-
-  /**
-   * As etapas existem no servidor, mas o rascunho ficou sem os identificadores
-   * que ele atribuiu — a releitura que os recolheria não respondeu.
-   *
-   * Enquanto durar, a tela não grava: a gravação seguinte omitiria o `id` de
-   * etapas que já existem, e o servidor criaria outras no lugar, deixando o
-   * critério de desempate e a regra de eliminação apontando para as que
-   * deixaram de existir. Instruir a reabrir o processo descreve a saída, mas não
-   * fecha a porta — quem fecha é a recusa, e o bloqueio é a face visível dela.
-   */
-  readonly reconciliacaoPendente = signal(false);
-
-  /** Releitura em voo: o botão que a dispara não aceita um segundo clique. */
-  readonly relendo = signal(false);
-
-  /** Por que a última tentativa de releitura não destravou a tela. */
-  readonly erroDeReleitura = signal<string | null>(null);
+  readonly formulario = this.cronograma.formulario;
+  readonly fases = this.cronograma.fases;
+  readonly etapas = this.cronograma.etapas;
+  readonly linhaDoTempo = this.cronograma.linhaDoTempo;
+  readonly fasesDisponiveis = this.cronograma.fasesDisponiveis;
+  readonly edicaoLiberada = this.cronograma.edicaoLiberada;
+  readonly avisoDeReordenacao = this.cronograma.avisoDeReordenacao;
+  readonly reconciliacaoPendente = this.reconciliacao.reconciliacaoPendente;
+  readonly relendo = this.reconciliacao.relendo;
+  readonly erroDeReleitura = this.reconciliacao.erroDeReleitura;
+  private readonly versaoDoFormulario = this.cronograma.versao;
 
   /**
    * A convenção foi gravada com sucesso nesta sessão. Só `persistir()`
@@ -287,125 +235,23 @@ export class CronogramaStepComponent {
 
   constructor() {
     this.catalogos.carregar();
-    this.espelharRascunho(this.store.draft().cronograma);
 
-    // Rascunho → formulário: hidratação da leitura e reconciliação da gravação
-    // chegam por aqui, e é a única entrada que não veio da digitação.
-    effect(() => {
-      const cronograma = this.store.draft().cronograma;
-      untracked(() => this.espelharRascunho(cronograma));
-    });
-
-    // Quem chega de uma recusa que cita a fase cai nela: aberta e com o foco no campo da unidade.
-    // O foco espera o passo estar visível e a troca de passo devolver o foco ao título.
-    effect(() => {
-      const codigo = this.store.faseEmFoco();
-      if (codigo === null || !this.store.cronogramaVisivel()) return;
-      const alvo = this.linhaDoTempo().find((item) => item.grupo.controls.codigo.value === codigo);
-      untracked(() => this.store.faseEmFoco.set(null));
-      if (alvo === undefined) return;
-      untracked(() => {
-        this.expansao.abrirFases([alvo.indice]);
-        afterNextRender(
-          () => setTimeout(() => document.getElementById(`cr-unidade-${alvo.indice}`)?.focus(), 0),
-          { injector: this.injector },
-        );
-      });
-    });
-
-    // Formulário → rascunho, que é o que persiste entre passos e alimenta a
-    // gravação.
-    this.formulario.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
-      this.versaoDoFormulario.update((versao) => versao + 1);
-      if (this.espelhando) return;
-      this.store.patchObjectSection('cronograma', {
-        fases: this.fases.controls.map(faseDoFormulario),
-        etapas: this.etapas.controls.map(etapaDoFormulario),
-        algoritmoContagemCodigo: this.formulario.controls.algoritmoContagemCodigo.value,
-        algoritmoContagemVersao: this.formulario.controls.algoritmoContagemVersao.value,
-      });
-    });
-
-    // Fora de rascunho o servidor recusa qualquer gravação; o formulário
-    // acompanha o que o wizard já decide para os outros passos, e mais o que só
-    // este passo sabe — as etapas gravadas à espera dos seus identificadores.
-    effect(() => {
-      const editavel = this.edicaoLiberada();
-      untracked(() => {
-        if (editavel) this.formulario.enable({ emitEvent: false });
-        else this.formulario.disable({ emitEvent: false });
-      });
-    });
-
-    // Outro processo entra em cena — por troca de rota ou por recomeço — e o
-    // que travou a tela era de um cadastro que não está mais aqui. Sem isto o
-    // bloqueio atravessaria a fronteira e recusaria a gravação de um processo
-    // que nunca teve etapa nenhuma pendente.
     effect(() => {
       this.store.geracao();
-      untracked(() => {
-        this.reconciliacaoPendente.set(false);
-        this.erroDeReleitura.set(null);
-        this.algoritmoConfirmadoNestaSessao.set(false);
-      });
+      untracked(() => this.algoritmoConfirmadoNestaSessao.set(false));
     });
-  }
-
-  get fases() {
-    return this.formulario.controls.fases;
   }
 
   /** Os papéis escolhíveis, no mesmo vocabulário que a configuração da fase usa. */
   readonly papeis = PAPEIS_ESCOLHIVEIS;
   readonly mensagemDaInstanciaSuperiorEmAberto = MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO;
 
-  get etapas() {
-    return this.formulario.controls.etapas;
-  }
-
-  /**
-   * O que a tela aceita editar: o que o wizard já permite, menos o intervalo em
-   * que as etapas gravadas seguem sem identificador. Duas origens para a mesma
-   * resposta, resolvidas aqui para que nenhum controle repita a conjunção.
-   */
-  readonly edicaoLiberada = computed(
-    () => this.store.aceitaEdicao() && !this.reconciliacaoPendente(),
-  );
-
-  /**
-   * A fase como a tela precisa dela, pela mesma resolução que a conferência
-   * usa: o que a fase congelou vale sobre o catálogo, e o catálogo descreve a
-   * que acabou de entrar. Duas resoluções separadas divergiriam, e a tela
-   * mostraria uma coisa enquanto a validação cobraria outra.
-   */
-  readonly linhaDoTempo = computed<readonly FaseNaLinhaDoTempo[]>(() => {
-    this.versaoDoFormulario();
-    const fasePorId = this.catalogos.fasePorId();
-
-    return this.fases.controls.map((grupo, indice) => ({
-      grupo,
-      ...descreverFase(faseDoFormulario(grupo), fasePorId),
-      indice,
-      unidade: this.unidades.rotuloDaUnidade(grupo),
-    }));
-  });
-
-  /**
-   * Fases que ainda cabem no cronograma, na ordem que as precedências sugerem —
-   * uma fase canônica entra uma vez só.
-   */
-  readonly fasesDisponiveis = computed(() => {
-    this.versaoDoFormulario();
-    const usadas = new Set(this.fases.controls.map((grupo) => grupo.controls.faseCanonicaId.value));
-    return this.catalogos.fasesEmOrdemSugerida().filter((fase) => !usadas.has(fase.id));
-  });
-
   /** O que impede a gravação, como a validação do passo o relata. */
   readonly problemas = computed(() => {
     this.versaoDoFormulario();
     return problemasDoCronograma(
       this.fases.controls.map(faseDoFormulario),
-      this.etapasParaEnvio(),
+      this.cronograma.etapasParaEnvio(),
       this.catalogos.fasePorId(),
       this.catalogos.precedencias(),
       this.catalogos.atoPorCodigo(),
@@ -658,35 +504,12 @@ export class CronogramaStepComponent {
     }));
   }
 
-  acrescentarFase(): void {
-    const escolhida = this.formulario.controls.faseAAcrescentar.value;
-    if (escolhida === '') return;
-
-    this.fases.push(
-      grupoDaFase({
-        faseCanonicaId: escolhida,
-        codigo: this.catalogos.fasePorId().get(escolhida)?.codigo ?? '',
-        ordem: this.fases.length + 1,
-        inicio: null,
-        fim: null,
-        unidadeResponsavelId: this.unidades.unidadeInicialDaFase(escolhida),
-        produtos: [],
-        faseConcluinteCodigo: null,
-        emiteParecerIndividual: false,
-        bancasRequeridas: [],
-        regraRecurso: null,
-        congelados: null,
-      }),
-    );
-    this.formulario.controls.faseAAcrescentar.setValue('');
-  }
-
   /**
    * O que a fase fechada diz de si: quantas etapas acontecem nela e quantos documentos ela
    * exige. É o bastante para o operador saber onde entrar sem abrir uma por uma.
    */
   marcasDaFase(indice: number): readonly string[] {
-    const { etapas, documentos } = this.dependentesDaFase(indice);
+    const { etapas, documentos } = this.cronograma.dependentesDaFase(indice);
     const marcas: string[] = [];
     if (etapas > 0) marcas.push(etapas === 1 ? '1 etapa' : `${etapas} etapas`);
     if (documentos > 0) {
@@ -821,20 +644,6 @@ export class CronogramaStepComponent {
     if (algumaApagada) this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
-  /**
-   * As etapas como a conferência e o envio as leem: a escala e a avaliação só valem onde a tela
-   * as pede. O que ficou num campo que a etapa não mostra não é conferido nem enviado.
-   */
-  private etapasParaEnvio(): readonly EtapaPontuada[] {
-    return this.etapas.controls.map((grupo) => {
-      const etapa = etapaDoFormulario(grupo);
-      return etapaComOQueDeclara(
-        etapa,
-        this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId),
-      );
-    });
-  }
-
   readonly formasDeAvaliacao = FORMAS_DE_AVALIACAO;
 
   etapaEhDeAvaliacaoHumana(grupo: FormGroup<EtapaForm>): boolean {
@@ -926,113 +735,6 @@ export class CronogramaStepComponent {
     return convencaoLida(algoritmoContagemCodigo.value, algoritmoContagemVersao.value);
   });
 
-  pedirRemocaoDaFase(indice: number): void {
-    // Fase sem nada pendurado não precisa de confirmação: não há o que avisar.
-    const dependentes = this.dependentesDaFase(indice);
-    if (dependentes.etapas === 0 && dependentes.documentos === 0) {
-      this.removerFase(indice);
-      return;
-    }
-
-    this.expansao.remocaoAConfirmar.set(indice);
-  }
-
-  confirmarRemocaoDaFase(indice: number): void {
-    this.expansao.remocaoAConfirmar.set(null);
-    this.removerFase(indice);
-  }
-
-  /** O que a confirmação enuncia, na língua de quem monta o edital. */
-  resumoDaRemocao(indice: number): string {
-    const { etapas, documentos } = this.dependentesDaFase(indice);
-    const partes: string[] = [];
-    if (etapas > 0) partes.push(etapas === 1 ? '1 etapa' : `${etapas} etapas`);
-    if (documentos > 0) {
-      partes.push(documentos === 1 ? '1 documento exigido' : `${documentos} documentos exigidos`);
-    }
-    return partes.join(' e ');
-  }
-
-  /**
-   * O que a remoção da fase leva junto, para a confirmação dizer antes de acontecer.
-   *
-   * Etapas e documentos existem por causa da fase: a etapa declara em que fase acontece, e a
-   * exigência documental declara em que fase é entregue. Some a fase, somem eles — mas o
-   * operador precisa saber disso antes de clicar, não depois de perder a configuração.
-   */
-  dependentesDaFase(indice: number): { etapas: number; documentos: number } {
-    const codigo = this.fases.at(indice)?.controls.codigo.value ?? '';
-    if (codigo === '') return { etapas: 0, documentos: 0 };
-
-    const etapas = this.etapas.controls.filter(
-      (grupo) => grupo.controls.faseCodigo.value === codigo,
-    ).length;
-
-    // A contagem varre a ÁRVORE de exigências, que é como o rascunho as guarda. Enquanto ela
-    // percorria os valores do objeto como se fossem os registros planos do modelo anterior,
-    // dava sempre zero: a fase com documentos e sem etapa era removida sem confirmação
-    // nenhuma, levando as exigências junto, e com etapas a confirmação omitia o que se perdia.
-    const documentos = exigenciasDaFase(this.store.draft().documentos, codigo).length;
-
-    return { etapas, documentos };
-  }
-
-  /**
-   * Tira a fase da linha do tempo, com o que era só dela: as etapas dela saem junto, em vez de
-   * ficarem apontando para uma fase que não existe mais.
-   */
-  removerFase(indice: number): void {
-    const removida = this.fases.at(indice);
-    if (removida === undefined) return;
-
-    const codigo = removida.controls.codigo.value;
-
-    this.expansao.remocaoAConfirmar.set(null);
-    this.fases.removeAt(indice, { emitEvent: false });
-    this.removerEtapasDaFase(codigo);
-    this.removerDocumentosDaFase(codigo);
-    this.renumerarFases();
-    this.avisoDeReordenacao.set(null);
-  }
-
-  /** As etapas daquela fase, e só elas — identificadas pelo código que cada uma declara. */
-  private removerEtapasDaFase(codigo: string): void {
-    for (let posicao = this.etapas.length - 1; posicao >= 0; posicao -= 1) {
-      if (this.etapas.at(posicao).controls.faseCodigo.value === codigo) {
-        this.etapas.removeAt(posicao, { emitEvent: false });
-      }
-    }
-  }
-
-  /**
-   * Tira a fase do alcance de cada documento. O documento que valia só ali deixa de ser
-   * exigido; o que valia em mais fases continua, sem ela.
-   */
-  private removerDocumentosDaFase(codigo: string): void {
-    this.store.patchSection('documentos', semAFase(this.store.draft().documentos, codigo));
-  }
-
-  /**
-   * Troca a fase de lugar.
-   *
-   * A troca é sempre aplicada. Trocar duas fases adjacentes forma o ciclo de
-   * ordem que o servidor não persiste numa chamada só — mas recusar aqui
-   * deixaria a linha do tempo impossível de reordenar, porque toda troca entre
-   * vizinhas tem essa forma. A edição aceita; quem arbitra é a gravação, e é lá
-   * que a orientação aparece, com o cronograma que a provocou à vista.
-   */
-  mover(indice: number, direcao: -1 | 1): void {
-    const destino = indice + direcao;
-    const atual = this.fases.at(indice);
-    const vizinha = this.fases.at(destino);
-    if (atual === undefined || vizinha === undefined) return;
-
-    this.fases.removeAt(indice, { emitEvent: false });
-    this.fases.insert(destino, atual, { emitEvent: false });
-    this.renumerarFases();
-    this.avisoDeReordenacao.set(null);
-  }
-
   /**
    * A convenção é identificada por código **e** versão: publicar versão nova
    * do catálogo não pode mudar a regra que um processo já declarou. Escolher
@@ -1116,83 +818,6 @@ export class CronogramaStepComponent {
     return preliminaresDaEtapa(grupo);
   }
 
-  acrescentarEtapa(faseCodigo = ''): void {
-    this.etapas.push(
-      grupoDaEtapa({
-        id: null,
-        nome: '',
-        carater: '',
-        tipoEtapaOrigemId: '',
-        peso: '',
-        notaMinima: '',
-        notaMaxima: '',
-        passoDoLancamento: '',
-        ordem: this.etapas.length + 1,
-        faseCodigo,
-        produtos: [],
-        inicio: '',
-        fim: '',
-        emiteParecerIndividual: false,
-        bancas: [],
-        recursos: [],
-      }),
-    );
-  }
-
-  removerEtapa(indice: number): void {
-    const removida = this.etapas.at(indice).controls.id.value;
-    this.etapas.removeAt(indice, { emitEvent: false });
-    this.renumerarEtapas();
-    this.desvincularDocumentosDaEtapa(removida);
-  }
-
-  /**
-   * Tira a etapa removida do registro de quem a apontava como ponto de coleta. Sem isto o
-   * rascunho reenviaria o identificador de uma etapa que não existe mais, e a gravação
-   * seguinte seria recusada — sem que a tela mostrasse onde está o problema, porque o
-   * seletor "Coletado em" não tem opção para um id que sumiu e exibe "A fase inteira".
-   */
-  private desvincularDocumentosDaEtapa(etapaId: string | null): void {
-    if (etapaId === null || etapaId === '') return;
-
-    this.store.patchSection('documentos', semAEtapa(this.store.draft().documentos, etapaId));
-  }
-
-  /**
-   * Esvazia as etapas de uma vez. Existe para o cronograma que ficou sem a fase
-   * que as agrupa: a conferência manda acrescentar a fase ou remover as etapas,
-   * e remover uma a uma é o caminho longo para a mesma decisão.
-   */
-  removerTodasAsEtapas(): void {
-    this.etapas.clear();
-  }
-
-  /**
-   * Troca a etapa de lugar, movendo o grupo inteiro.
-   *
-   * Move o controle em vez de trocar os valores entre dois: é o `id` que
-   * critério de desempate e regra de eliminação referenciam, e recriar a etapa
-   * numa posição diferente lhe daria outro identificador no servidor, deixando
-   * essas regras apontando para uma etapa que deixou de existir.
-   */
-  moverEtapa(indice: number, direcao: -1 | 1): void {
-    const destino = indice + direcao;
-    const atual = this.etapas.at(indice);
-    if (atual === undefined || this.etapas.at(destino) === undefined) return;
-
-    this.etapas.removeAt(indice, { emitEvent: false });
-    this.etapas.insert(destino, atual, { emitEvent: false });
-    this.renumerarEtapas();
-  }
-
-  /** Reescreve a posição das etapas de 1 a N, sem tocar nos identificadores. */
-  private renumerarEtapas(): void {
-    for (const [posicao, grupo] of this.etapas.controls.entries()) {
-      grupo.controls.ordem.setValue(posicao + 1, { emitEvent: false });
-    }
-    this.etapas.updateValueAndValidity();
-  }
-
   /**
    * A conferência do passo, que também é o que a gravação consulta antes de
    * enviar qualquer coisa: recusar aqui é o que impede a segunda gravação de
@@ -1247,7 +872,7 @@ export class CronogramaStepComponent {
 
     const fases = this.fases.controls.map(faseDoFormulario);
     const grupos = [...this.etapas.controls];
-    const etapas = this.etapasParaEnvio();
+    const etapas = this.cronograma.etapasParaEnvio();
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
@@ -1303,7 +928,7 @@ export class CronogramaStepComponent {
       // identificadores atribuídos. Deixar para o fim perderia a reconciliação
       // se o cronograma fosse recusado, e a tentativa seguinte reenviaria
       // etapas que já existem sem o `id`, recriando-as.
-      const reconciliada = await this.reconciliarEtapas(processoId);
+      const reconciliada = await this.reconciliacao.reconciliarEtapas(processoId);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!reconciliada) {
         // Trava a tela em vez de só avisar: o `finally` logo abaixo devolve o
@@ -1479,67 +1104,6 @@ export class CronogramaStepComponent {
   }
 
   /**
-   * Recolhe os `id` que o servidor atribuiu às etapas novas. Devolve se
-   * conseguiu.
-   *
-   * A gravação de etapas responde 204 sem corpo, e é o servidor quem atribui o
-   * identificador. Sem reler, o rascunho segue com `id: null` e a gravação
-   * seguinte omitiria o identificador de uma etapa que já existe — o servidor
-   * criaria outra no lugar, e o critério de desempate e a regra de eliminação
-   * que a referenciam ficariam apontando para a que deixou de existir.
-   *
-   * Projeta **só as etapas**, e não o processo inteiro: a navegação do wizard é
-   * livre, e hidratar tudo aqui substituiria as seções de passos que o operador
-   * editou sem ter gravado ainda — o trabalho sumiria sem aviso, por causa de
-   * uma gravação que nem era daquele passo.
-   */
-  private async reconciliarEtapas(processoId: string): Promise<boolean> {
-    const geracao = this.store.geracao();
-    const detalhe = await firstValueFrom(this.api.obter(processoId));
-    if (!isApiOk(detalhe)) return false;
-
-    // A leitura estava em voo e outro processo entrou no lugar: projetar agora
-    // escreveria as etapas de um cadastro sobre o rascunho de outro. Quem
-    // chamou confere a mesma geração e descarta o resultado.
-    if (geracao !== this.store.geracao()) return false;
-
-    this.store.projetarSecao('cronograma', { etapas: etapasDe(detalhe.data) });
-    return true;
-  }
-
-  /**
-   * Refaz a releitura que travou a tela.
-   *
-   * É a saída no próprio passo. Recarregar o processo resolve igual, mas custa
-   * ao operador sair de onde está — e a tela já sabe exatamente o que faltou.
-   */
-  async relerEtapas(): Promise<void> {
-    const processoId = this.store.processoSeletivoId();
-    if (processoId === null || this.relendo()) return;
-
-    const geracao = this.store.geracao();
-    this.relendo.set(true);
-    this.erroDeReleitura.set(null);
-    try {
-      const reconciliada = await this.reconciliarEtapas(processoId);
-      // Outro processo assumiu a tela enquanto a leitura vinha: o bloqueio que
-      // existia era do anterior, e quem o desfaz é a troca, não esta resposta.
-      if (geracao !== this.store.geracao()) return;
-
-      if (reconciliada) {
-        this.reconciliacaoPendente.set(false);
-        return;
-      }
-
-      this.erroDeReleitura.set(
-        'Não foi possível reler as etapas agora. Tente de novo em instantes; se continuar assim, recarregue o processo.',
-      );
-    } finally {
-      this.relendo.set(false);
-    }
-  }
-
-  /**
    * A recusa de permutação de ordem descreve o que aconteceu, não o que fazer.
    * Quem reordenou duas fases precisa saber que o caminho é fazê-lo em duas
    * gravações — a informação que evita tentar de novo o mesmo movimento.
@@ -1550,70 +1114,6 @@ export class CronogramaStepComponent {
   ): string {
     if (codigo === PERMUTACAO_DE_ORDEM) return ORIENTACAO_DE_PERMUTACAO;
     return this.problemI18n.resolve(problema).title;
-  }
-
-  /** Reescreve a posição de 1 a N na ordem em que as fases estão. */
-  private renumerarFases(): void {
-    for (const [posicao, grupo] of this.fases.controls.entries()) {
-      grupo.controls.ordem.setValue(posicao + 1, { emitEvent: false });
-    }
-    this.fases.updateValueAndValidity();
-  }
-
-  /**
-   * Traz o rascunho para o formulário, sem desfazer a digitação em curso.
-   *
-   * Reconstrói os arrays só quando o conteúdo difere do que já está na tela: o
-   * rascunho é atualizado a cada tecla pelo caminho de volta, e recriar os
-   * controles a cada uma tiraria o foco do campo que está sendo preenchido.
-   */
-  private espelharRascunho(cronograma: WizardDraft['cronograma']): void {
-    const atuais = {
-      fases: this.fases.controls.map(faseDoFormulario),
-      etapas: this.etapas.controls.map(etapaDoFormulario),
-    };
-    const algoritmoIgual =
-      this.formulario.controls.algoritmoContagemCodigo.value ===
-        cronograma.algoritmoContagemCodigo &&
-      this.formulario.controls.algoritmoContagemVersao.value === cronograma.algoritmoContagemVersao;
-
-    if (
-      mesmoConteudo(atuais.fases, cronograma.fases) &&
-      mesmoConteudo(atuais.etapas, cronograma.etapas) &&
-      algoritmoIgual
-    ) {
-      return;
-    }
-
-    this.espelhando = true;
-    try {
-      this.fases.clear({ emitEvent: false });
-      for (const fase of renumerar(cronograma.fases)) {
-        this.fases.push(grupoDaFase(fase), { emitEvent: false });
-      }
-
-      // A ordem das etapas vem resolvida da hidratação, que renumera o que o
-      // servidor devolveu — corrigir de novo aqui deixaria o formulário e o
-      // rascunho descrevendo posições diferentes.
-      this.etapas.clear({ emitEvent: false });
-      for (const etapa of cronograma.etapas) {
-        this.etapas.push(grupoDaEtapa(etapa), { emitEvent: false });
-      }
-
-      this.formulario.controls.algoritmoContagemCodigo.setValue(
-        cronograma.algoritmoContagemCodigo,
-        { emitEvent: false },
-      );
-      this.formulario.controls.algoritmoContagemVersao.setValue(
-        cronograma.algoritmoContagemVersao,
-        { emitEvent: false },
-      );
-
-      if (!this.edicaoLiberada()) this.formulario.disable({ emitEvent: false });
-      this.versaoDoFormulario.update((versao) => versao + 1);
-    } finally {
-      this.espelhando = false;
-    }
   }
 }
 

@@ -29,6 +29,8 @@ import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service'
 import { CronogramaStepComponent } from './cronograma.component';
 import type { EtapaForm } from './cronograma-form';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
+import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
+import { ReconciliacaoDasEtapas } from './servicos/reconciliacao-das-etapas.service';
 import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
 import {
   BASE,
@@ -61,6 +63,8 @@ import {
 describe('CronogramaStepComponent', () => {
   let componente: CronogramaStepComponent;
   let expansao: ExpansaoDoCronograma;
+  let cronograma: FormularioDoCronograma;
+  let reconciliacao: ReconciliacaoDasEtapas;
   let unidades: UnidadesDasFases;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
@@ -88,6 +92,8 @@ describe('CronogramaStepComponent', () => {
     const fixture = TestBed.createComponent(CronogramaStepComponent);
     componente = fixture.componentInstance;
     expansao = fixture.debugElement.injector.get(ExpansaoDoCronograma);
+    cronograma = fixture.debugElement.injector.get(FormularioDoCronograma);
+    reconciliacao = fixture.debugElement.injector.get(ReconciliacaoDasEtapas);
     unidades = fixture.debugElement.injector.get(UnidadesDasFases);
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
@@ -304,11 +310,11 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
     comUmaEtapa();
 
-    expect(componente.fases.length).toBe(2);
-    expect(componente.fases.at(0).controls.faseCanonicaId.value).toBe(ID_INSCRICAO);
-    expect(componente.fases.at(0).controls.inicio.value).toBe('2026-03-01T08:00');
-    expect(componente.etapas.length).toBe(1);
-    expect(componente.etapas.at(0).controls.nome.value).toBe('Prova objetiva');
+    expect(cronograma.fases.length).toBe(2);
+    expect(cronograma.fases.at(0).controls.faseCanonicaId.value).toBe(ID_INSCRICAO);
+    expect(cronograma.fases.at(0).controls.inicio.value).toBe('2026-03-01T08:00');
+    expect(cronograma.etapas.length).toBe(1);
+    expect(cronograma.etapas.at(0).controls.nome.value).toBe('Prova objetiva');
   });
 
   /**
@@ -324,22 +330,22 @@ describe('CronogramaStepComponent', () => {
   it('não recria os controles quando o rascunho recebe o que já está na tela', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
     comUmaEtapa();
-    const antes = componente.fases.controls;
-    const antesEtapa = componente.etapas.at(0);
+    const antes = cronograma.fases.controls;
+    const antesEtapa = cronograma.etapas.at(0);
 
-    componente.fases.at(0).controls.inicio.setValue('2026-03-02T09:00');
+    cronograma.fases.at(0).controls.inicio.setValue('2026-03-02T09:00');
     detectar();
 
-    expect(componente.fases.controls[0]).toBe(antes[0]);
-    expect(componente.fases.controls[1]).toBe(antes[1]);
-    expect(componente.etapas.at(0)).toBe(antesEtapa);
+    expect(cronograma.fases.controls[0]).toBe(antes[0]);
+    expect(cronograma.fases.controls[1]).toBe(antes[1]);
+    expect(cronograma.etapas.at(0)).toBe(antesEtapa);
   });
 
   it('leva ao rascunho o que foi digitado no controle', () => {
     comFases(ID_AVALIACAO);
     comUmaEtapa();
 
-    componente.etapas.at(0).controls.peso.setValue('2,5');
+    cronograma.etapas.at(0).controls.peso.setValue('2,5');
 
     expect(store.draft().cronograma.etapas[0].peso).toBe('2,5');
   });
@@ -351,14 +357,14 @@ describe('CronogramaStepComponent', () => {
    */
   it('desabilita os controles enquanto o passo não aceita edição', () => {
     comFases(ID_INSCRICAO);
-    expect(componente.formulario.enabled).toBe(true);
+    expect(cronograma.formulario.enabled).toBe(true);
 
     // `salvando` é o outro motivo pelo qual o passo para de aceitar digitação,
     // e o que este teste alcança sem simular um processo publicado inteiro.
     store.salvando.set(true);
     detectar();
 
-    expect(componente.formulario.disabled).toBe(true);
+    expect(cronograma.formulario.disabled).toBe(true);
   });
 
   /**
@@ -370,7 +376,7 @@ describe('CronogramaStepComponent', () => {
   it('descreve a fase pelo que ela congelou, mesmo com o catálogo dizendo outra coisa', () => {
     comFasesCongeladas({ id: ID_INSCRICAO, agrupaEtapas: true });
 
-    const item = componente.linhaDoTempo()[0];
+    const item = cronograma.linhaDoTempo()[0];
 
     expect(
       item.exigencias?.agrupaEtapas,
@@ -388,7 +394,7 @@ describe('CronogramaStepComponent', () => {
     comFasesCongeladas({ id: FASE_SUMIDA, agrupaEtapas: true });
     comUmaEtapa();
 
-    expect(componente.linhaDoTempo()[0].foraDoCatalogo).toBe(true);
+    expect(cronograma.linhaDoTempo()[0].foraDoCatalogo).toBe(true);
     expect(componente.problemas()).not.toContainEqual(
       expect.stringContaining('fase de avaliação que as agrupa'),
     );
@@ -397,7 +403,7 @@ describe('CronogramaStepComponent', () => {
   it('oferece cada fase canônica uma vez só', () => {
     comFases(ID_INSCRICAO);
 
-    const disponiveis = componente.fasesDisponiveis().map((fase) => fase.id);
+    const disponiveis = cronograma.fasesDisponiveis().map((fase) => fase.id);
 
     expect(disponiveis).not.toContain(ID_INSCRICAO);
     expect(disponiveis).toContain(ID_AVALIACAO);
@@ -414,7 +420,7 @@ describe('CronogramaStepComponent', () => {
   it('deixa remover a última fase, e a conferência é quem cobra o cronograma vazio', () => {
     comFases(ID_INSCRICAO);
 
-    componente.removerFase(0);
+    cronograma.removerFase(0);
 
     expect(store.draft().cronograma.fases).toHaveLength(0);
     expect(componente.validate().messages).toContain('O cronograma precisa de ao menos uma fase.');
@@ -468,7 +474,7 @@ describe('CronogramaStepComponent', () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_AVALIACAO);
     comUmaEtapa();
-    componente.etapas.at(0).controls.nome.setValue('');
+    cronograma.etapas.at(0).controls.nome.setValue('');
     detectar();
 
     const resultado = await componente.persistir();
@@ -485,7 +491,7 @@ describe('CronogramaStepComponent', () => {
   it('o caráter oferecido segue o que o tipo de etapa admite', () => {
     comFases(ID_AVALIACAO);
     comUmaEtapa();
-    const etapa = componente.etapas.at(0);
+    const etapa = cronograma.etapas.at(0);
 
     expect(componente.caracteresPara(etapa).map((o) => o.valor)).toEqual([
       'classificatoria',
@@ -507,7 +513,7 @@ describe('CronogramaStepComponent', () => {
   it('o caráter que o tipo deixou de admitir permanece visível, marcado', () => {
     comFases(ID_AVALIACAO);
     comUmaEtapa();
-    const etapa = componente.etapas.at(0);
+    const etapa = cronograma.etapas.at(0);
 
     componente.escolherTipoEtapa(etapa, TIPO_ETAPA_SO_ELIMINA);
     detectar();
@@ -523,7 +529,7 @@ describe('CronogramaStepComponent', () => {
   it('sem tipo escolhido, oferece os três caracteres', () => {
     comFases(ID_AVALIACAO);
     comUmaEtapa();
-    const etapa = componente.etapas.at(0);
+    const etapa = cronograma.etapas.at(0);
 
     componente.escolherTipoEtapa(etapa, '');
     detectar();
@@ -560,8 +566,8 @@ describe('CronogramaStepComponent', () => {
     }
 
     function acrescentar(faseId: string): void {
-      componente.formulario.controls.faseAAcrescentar.setValue(faseId);
-      componente.acrescentarFase();
+      cronograma.formulario.controls.faseAAcrescentar.setValue(faseId);
+      cronograma.acrescentarFase();
       detectar();
     }
 
@@ -593,7 +599,7 @@ describe('CronogramaStepComponent', () => {
     describe('unidade inicial da fase acrescentada', () => {
       it('não deixa acrescentar fase enquanto as unidades ainda carregam', () => {
         const catalogos = TestBed.inject(CatalogosDoCronogramaService);
-        componente.formulario.controls.faseAAcrescentar.setValue(ID_AVALIACAO);
+        cronograma.formulario.controls.faseAAcrescentar.setValue(ID_AVALIACAO);
         comUnidadesNoCadastro();
         expect(botaoAcrescentar().disabled).toBe(false);
 
@@ -607,7 +613,7 @@ describe('CronogramaStepComponent', () => {
         catalogos.unidadesCarregadas.set(false);
         catalogos.erroDeUnidades.set('falhou');
         detectar();
-        componente.formulario.controls.faseAAcrescentar.setValue(ID_AVALIACAO);
+        cronograma.formulario.controls.faseAAcrescentar.setValue(ID_AVALIACAO);
         detectar();
 
         expect(botaoAcrescentar().disabled).toBe(true);
@@ -633,7 +639,7 @@ describe('CronogramaStepComponent', () => {
 
         acrescentar(ID_AVALIACAO);
 
-        expect(componente.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CGA);
+        expect(cronograma.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CGA);
       });
 
       it('é a administradora quando a sugestão não está entre as unidades do cadastro', () => {
@@ -643,7 +649,7 @@ describe('CronogramaStepComponent', () => {
 
         acrescentar(ID_AVALIACAO);
 
-        expect(componente.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CEPS);
+        expect(cronograma.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CEPS);
       });
 
       it('é a administradora quando a fase canônica não sugere unidade', () => {
@@ -653,7 +659,7 @@ describe('CronogramaStepComponent', () => {
 
         acrescentar(ID_AVALIACAO);
 
-        expect(componente.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CEPS);
+        expect(cronograma.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CEPS);
       });
     });
 
@@ -663,8 +669,8 @@ describe('CronogramaStepComponent', () => {
 
       acrescentar(ID_INSCRICAO);
 
-      expect(componente.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CEPS);
-      expect(componente.linhaDoTempo()[0]?.unidade).toBe('CEPS — Centro de Processos Seletivos');
+      expect(cronograma.fases.at(0).controls.unidadeResponsavelId.value).toBe(ID_CEPS);
+      expect(cronograma.linhaDoTempo()[0]?.unidade).toBe('CEPS — Centro de Processos Seletivos');
     });
 
     it('oferece as unidades do cadastro, e a escolhida segue na gravação', async () => {
@@ -681,7 +687,7 @@ describe('CronogramaStepComponent', () => {
         'CGA — Centro de Gestão Acadêmica',
       ]);
 
-      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
+      cronograma.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
       const gravacao = componente.persistir();
       const requisicao = controller.expectOne(ROTA_FASES);
       expect(fasesDoCorpo(requisicao)[0]?.unidadeResponsavelId).toBe(ID_CGA);
@@ -699,7 +705,7 @@ describe('CronogramaStepComponent', () => {
       expansao.alternarFase(0);
       detectar();
 
-      expect(componente.linhaDoTempo()[0]?.unidade).toBeNull();
+      expect(cronograma.linhaDoTempo()[0]?.unidade).toBeNull();
       expect(nativo.querySelector('#cr-unidade-erro-0')?.textContent).toContain(
         'sem unidade responsável',
       );
@@ -722,7 +728,7 @@ describe('CronogramaStepComponent', () => {
     it('a cópia gravada no processo nomeia a unidade, mesmo com outro nome no cadastro', () => {
       comUnidadesNoCadastro();
       comFases(ID_INSCRICAO);
-      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
+      cronograma.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
       store.remoteSnapshot.set({
         ...PROCESSO_COM_ETAPA_GRAVADA,
         cronogramaFases: [
@@ -738,7 +744,7 @@ describe('CronogramaStepComponent', () => {
         ],
       } as never);
 
-      expect(componente.linhaDoTempo()[0]?.unidade).toBe('CECA — Centro de Estudos Acadêmicos');
+      expect(cronograma.linhaDoTempo()[0]?.unidade).toBe('CECA — Centro de Estudos Acadêmicos');
     });
 
     it('oferece uma vez só a unidade gravada fora do cadastro que várias fases referenciam', () => {
@@ -764,27 +770,27 @@ describe('CronogramaStepComponent', () => {
       comUnidadesNoCadastro();
       TestBed.inject(CatalogosDoCronogramaService).unidadesCarregadas.set(true);
       comFases(ID_INSCRICAO);
-      componente.fases
+      cronograma.fases
         .at(0)
         .controls.unidadeResponsavelId.setValue('01960000-0000-7000-0000-0000000000f9');
 
-      expect(componente.linhaDoTempo()[0]?.unidade).toBe('Unidade não encontrada no cadastro');
+      expect(cronograma.linhaDoTempo()[0]?.unidade).toBe('Unidade não encontrada no cadastro');
     });
 
     it('não afirma que a unidade falta enquanto o cadastro carrega nem se ele falhou', () => {
       const catalogos = TestBed.inject(CatalogosDoCronogramaService);
       comFases(ID_INSCRICAO);
-      componente.fases
+      cronograma.fases
         .at(0)
         .controls.unidadeResponsavelId.setValue('01960000-0000-7000-0000-0000000000f9');
       catalogos.unidadesCarregadas.set(false);
 
-      expect(componente.linhaDoTempo()[0]?.unidade).toBe('Carregando unidade…');
+      expect(cronograma.linhaDoTempo()[0]?.unidade).toBe('Carregando unidade…');
 
       catalogos.erroDeUnidades.set('falhou');
-      componente.fases.at(0).controls.unidadeResponsavelId.setValue('outra');
+      cronograma.fases.at(0).controls.unidadeResponsavelId.setValue('outra');
 
-      expect(componente.linhaDoTempo()[0]?.unidade).toBe('Cadastro de unidades indisponível');
+      expect(cronograma.linhaDoTempo()[0]?.unidade).toBe('Cadastro de unidades indisponível');
     });
 
     it('descarta o destino que não é fase do cronograma', async () => {
@@ -800,8 +806,8 @@ describe('CronogramaStepComponent', () => {
     it('cada fase mostra a cópia que gravou, mesmo com outra cópia da mesma unidade em outra fase', () => {
       comUnidadesNoCadastro();
       comFases(ID_INSCRICAO, ID_RESULTADO);
-      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
-      componente.fases.at(1).controls.unidadeResponsavelId.setValue(ID_CGA);
+      cronograma.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
+      cronograma.fases.at(1).controls.unidadeResponsavelId.setValue(ID_CGA);
       const copia = (sigla: string, nome: string) => ({
         origemId: ID_CGA,
         sigla,
@@ -816,7 +822,7 @@ describe('CronogramaStepComponent', () => {
         ],
       } as never);
 
-      const [primeira, segunda] = componente.linhaDoTempo();
+      const [primeira, segunda] = cronograma.linhaDoTempo();
 
       expect(primeira?.unidade).toBe('CECA — Estudos Acadêmicos');
       expect(segunda?.unidade).toBe('CGA — Gestão Acadêmica');
@@ -848,14 +854,14 @@ describe('CronogramaStepComponent', () => {
       store.processoSeletivoId.set(PROCESSO_ID);
       comUnidadesNoCadastro();
       comFases(ID_INSCRICAO, ID_RESULTADO);
-      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CEPS);
-      componente.fases.at(1).controls.unidadeResponsavelId.setValue(ID_CGA);
+      cronograma.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CEPS);
+      cronograma.fases.at(1).controls.unidadeResponsavelId.setValue(ID_CGA);
 
       const resultado = await recusarUnidadeNaFase(1);
 
       expect(resultado.valid).toBe(false);
-      expect(unidades.unidadeRecusada(componente.fases.at(1))).toBe(true);
-      expect(unidades.unidadeRecusada(componente.fases.at(0))).toBe(false);
+      expect(unidades.unidadeRecusada(cronograma.fases.at(1))).toBe(true);
+      expect(unidades.unidadeRecusada(cronograma.fases.at(0))).toBe(false);
       expect(expansao.faseExpandida(1)).toBe(true);
       const erro = nativo.querySelector('#cr-unidade-erro-1');
       expect(erro?.textContent).toContain('não está mais no cadastro');
@@ -868,14 +874,14 @@ describe('CronogramaStepComponent', () => {
       store.processoSeletivoId.set(PROCESSO_ID);
       comUnidadesNoCadastro();
       comFases(ID_INSCRICAO);
-      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
+      cronograma.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
       await recusarUnidadeNaFase(0);
-      expect(unidades.unidadeRecusada(componente.fases.at(0))).toBe(true);
+      expect(unidades.unidadeRecusada(cronograma.fases.at(0))).toBe(true);
 
-      componente.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CEPS);
+      cronograma.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CEPS);
       detectar();
 
-      expect(unidades.unidadeRecusada(componente.fases.at(0))).toBe(false);
+      expect(unidades.unidadeRecusada(cronograma.fases.at(0))).toBe(false);
       expect(nativo.querySelector('#cr-unidade-erro-0')).toBeNull();
     });
 
@@ -921,7 +927,7 @@ describe('CronogramaStepComponent', () => {
     function comEtapaDoEnemAberta(): FormGroup<EtapaForm> {
       comFases(ID_AVALIACAO);
       comEtapasEmFases(['AVALIACAO']);
-      const etapa = componente.etapas.at(0);
+      const etapa = cronograma.etapas.at(0);
       componente.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
       expansao.alternarFase(0);
       expansao.alternarEtapa(0);
@@ -950,7 +956,7 @@ describe('CronogramaStepComponent', () => {
     it('escolher o tipo descarta banca, publicação, janela e recurso contado de publicação', () => {
       comFases(ID_AVALIACAO);
       comEtapasEmFases(['AVALIACAO']);
-      const etapa = componente.etapas.at(0);
+      const etapa = cronograma.etapas.at(0);
       etapa.controls.bancas.setValue(['banca-1']);
       etapa.controls.produtos.setValue([{ atoCodigo: 'ATO', papel: null }]);
       etapa.controls.inicio.setValue('2027-01-10T08:00');
@@ -973,7 +979,7 @@ describe('CronogramaStepComponent', () => {
     it('na etapa gravada vale o que o processo congelou do tipo', () => {
       comFases(ID_AVALIACAO);
       comEtapasEmFases(['AVALIACAO']);
-      const etapa = componente.etapas.at(0);
+      const etapa = cronograma.etapas.at(0);
       etapa.controls.tipoCongelado.setValue({ origemId: TIPO_ETAPA, notaDeOrigemNoEnem: true });
       expect(componente.etapaDeNotaDoEnem(etapa)).toBe(true);
     });
@@ -986,7 +992,7 @@ describe('CronogramaStepComponent', () => {
       expansao.alternarFase(0);
       expansao.alternarEtapa(0);
       detectar();
-      return componente.etapas.at(0);
+      return cronograma.etapas.at(0);
     }
 
     it('pede a nota máxima da etapa com nota e a omite na etapa sem nota', () => {
@@ -1039,14 +1045,14 @@ describe('CronogramaStepComponent', () => {
       store.processoSeletivoId.set(PROCESSO_ID);
       comFases(ID_INSCRICAO, ID_AVALIACAO);
       comEtapasEmFases(['COLETA_INSCRICAO', 'AVALIACAO', 'AVALIACAO']);
-      const [, segunda, terceira] = componente.etapas.controls;
+      const [, segunda, terceira] = cronograma.etapas.controls;
 
       await recusarNotaMaximaDaEtapa(1);
       expect(componente.recusaDoCampo(segunda, 'notaMaxima')).not.toBeNull();
 
-      componente.removerFase(0);
+      cronograma.removerFase(0);
 
-      expect(componente.etapas.controls).toEqual([segunda, terceira]);
+      expect(cronograma.etapas.controls).toEqual([segunda, terceira]);
       expect(componente.recusaDoCampo(segunda, 'notaMaxima')).not.toBeNull();
       expect(componente.recusaDoCampo(terceira, 'notaMaxima')).toBeNull();
     });
@@ -1142,7 +1148,7 @@ describe('CronogramaStepComponent', () => {
       comEtapasEmFases(['AVALIACAO']);
       expansao.alternarFase(0);
       expansao.alternarEtapa(0);
-      const etapa = componente.etapas.at(0);
+      const etapa = cronograma.etapas.at(0);
       componente.escolherCarater(etapa, 'classificatoria');
       detectar();
       return etapa;
@@ -1248,7 +1254,7 @@ describe('CronogramaStepComponent', () => {
       comEtapasEmFases(['AVALIACAO']);
       expansao.alternarFase(0);
       expansao.alternarEtapa(0);
-      const etapa = componente.etapas.at(0);
+      const etapa = cronograma.etapas.at(0);
       componente.escolherCarater(etapa, 'classificatoria');
       etapa.controls.notaMaxima.setValue('10');
       detectar();
@@ -1500,7 +1506,7 @@ describe('CronogramaStepComponent', () => {
     expansao.alternarFase(0);
     detectar();
 
-    const etapa = componente.etapas.at(0);
+    const etapa = cronograma.etapas.at(0);
     expect(componente.marcasDaEtapa(etapa)).toEqual(['Prova objetiva']);
 
     componente.acrescentarRecursoNaEtapa(etapa);
@@ -1522,14 +1528,14 @@ describe('CronogramaStepComponent', () => {
 
     expect(expansao.blocoAberto(0, 'recursos')).toBe(false);
     expect(expansao.blocoAberto(0, 'publica')).toBe(false);
-    expect(componente.resumoDosRecursos(componente.etapas.at(0))).toBe('nenhum recurso');
-    expect(componente.resumoDasPublicacoes(componente.etapas.at(0))).toBe('não publica nada');
+    expect(componente.resumoDosRecursos(cronograma.etapas.at(0))).toBe('nenhum recurso');
+    expect(componente.resumoDasPublicacoes(cronograma.etapas.at(0))).toBe('não publica nada');
   });
 
   it('o cabeçalho do bloco conta o que há dentro dele', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
-    const etapa = componente.etapas.at(0);
+    const etapa = cronograma.etapas.at(0);
 
     componente.acrescentarRecursoNaEtapa(etapa);
     componente.acrescentarRecursoNaEtapa(etapa);
@@ -1542,7 +1548,7 @@ describe('CronogramaStepComponent', () => {
     function janelaAberta() {
       comFases(ID_AVALIACAO);
       comEtapasEmFases(['AVALIACAO']);
-      const etapa = componente.etapas.at(0);
+      const etapa = cronograma.etapas.at(0);
       componente.acrescentarRecursoNaEtapa(etapa);
       // O catálogo não responde neste cenário: a regra resolvida é o que faz a janela viajar.
       etapa.controls.recursos.setValue(
@@ -1624,7 +1630,7 @@ describe('CronogramaStepComponent', () => {
   it('peso só aparece na etapa que compõe a nota final', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
-    const etapa = componente.etapas.at(0);
+    const etapa = cronograma.etapas.at(0);
 
     componente.escolherCarater(etapa, 'classificatoria');
     expect(componente.etapaComponeNota(etapa)).toBe(true);
@@ -1646,7 +1652,7 @@ describe('CronogramaStepComponent', () => {
   it('trocar o caráter apaga o campo que deixou de valer', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
-    const etapa = componente.etapas.at(0);
+    const etapa = cronograma.etapas.at(0);
     etapa.controls.peso.setValue('3');
     etapa.controls.notaMinima.setValue('5');
 
@@ -1663,9 +1669,9 @@ describe('CronogramaStepComponent', () => {
   it('a etapa sem nome aparece na lista mesmo assim', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
-    componente.etapas.at(0).controls.nome.setValue('   ');
+    cronograma.etapas.at(0).controls.nome.setValue('   ');
 
-    expect(componente.nomeDaEtapa(componente.etapas.at(0))).toBe('Etapa sem nome');
+    expect(componente.nomeDaEtapa(cronograma.etapas.at(0))).toBe('Etapa sem nome');
   });
 
   /**
@@ -1677,7 +1683,7 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
 
-    componente.removerFase(1);
+    cronograma.removerFase(1);
 
     expect(store.draft().cronograma.fases).toHaveLength(1);
     expect(store.draft().cronograma.etapas).toEqual([]);
@@ -1691,7 +1697,7 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO', 'INSCRICAO', 'INSCRICAO']);
 
-    componente.removerFase(1);
+    cronograma.removerFase(1);
 
     expect(store.draft().cronograma.etapas).toHaveLength(2);
     expect(store.draft().cronograma.etapas.map((e) => e.faseCodigo)).toEqual([
@@ -1705,7 +1711,7 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_AVALIACAO, ID_INSCRICAO);
     comUmaEtapa();
 
-    componente.removerFase(1);
+    cronograma.removerFase(1);
 
     expect(store.draft().cronograma.etapas).toHaveLength(1);
   });
@@ -1714,11 +1720,11 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO', 'AVALIACAO']);
 
-    componente.pedirRemocaoDaFase(1);
+    expansao.pedirRemocaoDaFase(1);
     detectar();
 
     expect(expansao.remocaoAConfirmar()).toBe(1);
-    expect(componente.resumoDaRemocao(1)).toBe('2 etapas');
+    expect(expansao.resumoDaRemocao(1)).toBe('2 etapas');
     expect(store.draft().cronograma.fases, 'nada sai antes de confirmar').toHaveLength(2);
     expect(nativo.textContent).toContain('apaga também 2 etapas desta fase');
   });
@@ -1727,7 +1733,7 @@ describe('CronogramaStepComponent', () => {
   it('remove direto a fase que não tem etapa nem documento', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
 
-    componente.pedirRemocaoDaFase(1);
+    expansao.pedirRemocaoDaFase(1);
 
     expect(expansao.remocaoAConfirmar()).toBeNull();
     expect(store.draft().cronograma.fases).toHaveLength(1);
@@ -1737,7 +1743,7 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
 
-    componente.pedirRemocaoDaFase(1);
+    expansao.pedirRemocaoDaFase(1);
     expansao.desistirDaRemocao();
 
     expect(store.draft().cronograma.fases).toHaveLength(2);
@@ -1752,7 +1758,7 @@ describe('CronogramaStepComponent', () => {
   it('reordena no rascunho, renumerando a partir de 1', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
 
-    componente.mover(0, 1);
+    cronograma.mover(0, 1);
 
     const depois = store.draft().cronograma.fases;
     expect(depois.map((fase) => fase.faseCanonicaId)).toEqual([ID_AVALIACAO, ID_INSCRICAO]);
@@ -1829,12 +1835,12 @@ describe('CronogramaStepComponent', () => {
 
   it('renumera a partir de 1 ao acrescentar fase', () => {
     comFases(ID_INSCRICAO);
-    componente.formulario.controls.faseAAcrescentar.setValue(ID_AVALIACAO);
+    cronograma.formulario.controls.faseAAcrescentar.setValue(ID_AVALIACAO);
 
-    componente.acrescentarFase();
+    cronograma.acrescentarFase();
 
     expect(store.draft().cronograma.fases.map((fase) => fase.ordem)).toEqual([1, 2]);
-    expect(componente.formulario.controls.faseAAcrescentar.value).toBe('');
+    expect(cronograma.formulario.controls.faseAAcrescentar.value).toBe('');
   });
 
   /**
@@ -1844,18 +1850,18 @@ describe('CronogramaStepComponent', () => {
   it('grava a janela como instante no fuso institucional', () => {
     comFases(ID_INSCRICAO);
 
-    componente.fases.at(0).controls.inicio.setValue('2026-03-05T09:30');
+    cronograma.fases.at(0).controls.inicio.setValue('2026-03-05T09:30');
 
     expect(store.draft().cronograma.fases[0].inicio).toBe('2026-03-05T09:30:00-03:00');
     // O controle guarda a hora de parede; quem carimba o fuso é a saída para o
     // rascunho, e é ela que o campo lê de volta ao reabrir o processo.
-    expect(componente.fases.at(0).controls.inicio.value).toBe('2026-03-05T09:30');
+    expect(cronograma.fases.at(0).controls.inicio.value).toBe('2026-03-05T09:30');
   });
 
   it('campo de janela esvaziado volta a não declarar instante', () => {
     comFases(ID_INSCRICAO);
 
-    componente.fases.at(0).controls.fim.setValue('');
+    cronograma.fases.at(0).controls.fim.setValue('');
 
     expect(store.draft().cronograma.fases[0].fim).toBeNull();
   });
@@ -2039,8 +2045,8 @@ describe('CronogramaStepComponent', () => {
     await gravacao;
     detectar();
 
-    expect(componente.edicaoLiberada()).toBe(false);
-    expect(componente.formulario.disabled).toBe(true);
+    expect(cronograma.edicaoLiberada()).toBe(false);
+    expect(cronograma.formulario.disabled).toBe(true);
   });
 
   /**
@@ -2064,13 +2070,13 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
     await gravacao;
 
-    const releitura = componente.relerEtapas();
+    const releitura = reconciliacao.relerEtapas();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await releitura;
     detectar();
 
-    expect(componente.reconciliacaoPendente()).toBe(false);
-    expect(componente.edicaoLiberada()).toBe(true);
+    expect(reconciliacao.reconciliacaoPendente()).toBe(false);
+    expect(cronograma.edicaoLiberada()).toBe(true);
     expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
 
     const segunda = componente.persistir();
@@ -2109,7 +2115,7 @@ describe('CronogramaStepComponent', () => {
     store.reset();
     detectar();
 
-    expect(componente.reconciliacaoPendente()).toBe(false);
+    expect(reconciliacao.reconciliacaoPendente()).toBe(false);
   });
 
   /**
@@ -2128,7 +2134,7 @@ describe('CronogramaStepComponent', () => {
       true,
     );
 
-    componente.removerTodasAsEtapas();
+    cronograma.removerTodasAsEtapas();
     detectar();
 
     expect(componente.etapasOrfas()).toEqual([]);
@@ -2148,7 +2154,7 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_INSCRICAO);
     detectar();
 
-    componente.acrescentarEtapa('COLETA_INSCRICAO');
+    cronograma.acrescentarEtapa('COLETA_INSCRICAO');
     detectar();
 
     expect(componente.etapasDaFase('COLETA_INSCRICAO', false)).toHaveLength(1);
@@ -2159,8 +2165,8 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
     detectar();
 
-    componente.acrescentarEtapa('COLETA_INSCRICAO');
-    componente.acrescentarEtapa('AVALIACAO');
+    cronograma.acrescentarEtapa('COLETA_INSCRICAO');
+    cronograma.acrescentarEtapa('AVALIACAO');
     detectar();
 
     expect(componente.etapasDaFase('COLETA_INSCRICAO', false)).toHaveLength(1);
@@ -2171,7 +2177,7 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_INSCRICAO);
     detectar();
 
-    componente.acrescentarEtapa('COLETA_INSCRICAO');
+    cronograma.acrescentarEtapa('COLETA_INSCRICAO');
     detectar();
 
     expect(store.draft().cronograma.etapas[0].faseCodigo).toBe('COLETA_INSCRICAO');
@@ -2191,7 +2197,7 @@ describe('CronogramaStepComponent', () => {
   it('mostra pelo código o ato que o catálogo não nomeia', () => {
     comFaseQuePublica([{ atoCodigo: 'EDITAL_ANTIGO', papel: 'PRELIMINAR' }]);
 
-    const mostrados = componente.produtosDaFase(componente.fases.at(0));
+    const mostrados = componente.produtosDaFase(cronograma.fases.at(0));
 
     expect(mostrados).toEqual([
       { atoCodigo: 'EDITAL_ANTIGO', nome: 'EDITAL_ANTIGO', papel: 'resultado preliminar' },
@@ -2206,7 +2212,7 @@ describe('CronogramaStepComponent', () => {
   it('mostra o papel desconhecido pelo token que o contrato entregou', () => {
     comFaseQuePublica([{ atoCodigo: 'EDITAL', papel: 'RETIFICACAO' }]);
 
-    expect(componente.produtosDaFase(componente.fases.at(0))[0].papel).toBe('RETIFICACAO');
+    expect(componente.produtosDaFase(cronograma.fases.at(0))[0].papel).toBe('RETIFICACAO');
   });
 
   /**
@@ -2223,7 +2229,7 @@ describe('CronogramaStepComponent', () => {
       { atoCodigo: 'COMUNICADO', papel: null },
     ]);
 
-    componente.fases.at(0).controls.fim.setValue('2026-03-11T18:00');
+    cronograma.fases.at(0).controls.fim.setValue('2026-03-11T18:00');
     detectar();
 
     const gravacao = componente.persistir();
@@ -2269,7 +2275,7 @@ describe('CronogramaStepComponent', () => {
       ],
     );
 
-    componente.fases.at(0).controls.fim.setValue('2026-03-11T18:00');
+    cronograma.fases.at(0).controls.fim.setValue('2026-03-11T18:00');
     detectar();
 
     const gravacao = componente.persistir();
@@ -2383,10 +2389,10 @@ describe('CronogramaStepComponent', () => {
     const inativo = '01960000-0000-7000-0000-0000000000e9';
     comFases(ID_AVALIACAO);
     comUmaEtapa();
-    componente.etapas.at(0).controls.tipoEtapaOrigemId.setValue(inativo);
+    cronograma.etapas.at(0).controls.tipoEtapaOrigemId.setValue(inativo);
 
     const oferecidos = componente
-      .tiposEscolhiveisPara(componente.etapas.at(0))
+      .tiposEscolhiveisPara(cronograma.etapas.at(0))
       .map((tipo) => tipo.id);
 
     expect(oferecidos).toContain(inativo);
@@ -2439,7 +2445,7 @@ describe('CronogramaStepComponent', () => {
     });
     detectar();
 
-    componente.moverEtapa(0, 1);
+    cronograma.moverEtapa(0, 1);
 
     const depois = store.draft().cronograma.etapas;
     expect(depois.map((etapa) => etapa.id)).toEqual(['etapa-segunda', 'etapa-primeira']);
@@ -2462,8 +2468,8 @@ describe('CronogramaStepComponent', () => {
 
   /** CA-05: ausência é estado válido enquanto rascunho — nenhum default. */
   it('não pré-seleciona nenhuma convenção de contagem de prazo', () => {
-    expect(componente.formulario.controls.algoritmoContagemCodigo.value).toBe('');
-    expect(componente.formulario.controls.algoritmoContagemVersao.value).toBe('');
+    expect(cronograma.formulario.controls.algoritmoContagemCodigo.value).toBe('');
+    expect(cronograma.formulario.controls.algoritmoContagemVersao.value).toBe('');
     expect(nativo.querySelector<HTMLSelectElement>('#cr-algoritmo-contagem')?.value ?? '').toBe('');
   });
 
@@ -2621,10 +2627,10 @@ describe('CronogramaStepComponent', () => {
     });
     detectar();
 
-    expect(componente.formulario.controls.algoritmoContagemCodigo.value).toBe(
+    expect(cronograma.formulario.controls.algoritmoContagemCodigo.value).toBe(
       'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
     );
-    expect(componente.formulario.controls.algoritmoContagemVersao.value).toBe('v1');
+    expect(cronograma.formulario.controls.algoritmoContagemVersao.value).toBe('v1');
   });
 
   /**
@@ -3229,21 +3235,21 @@ describe('CronogramaStepComponent', () => {
         },
       ]);
 
-      const indice = componente.fases.controls.findIndex(
+      const indice = cronograma.fases.controls.findIndex(
         (grupo) =>
           grupo.controls.codigo.value ===
           FASES_CANONICAS.find((f) => f.id === ID_AVALIACAO)?.codigo,
       );
       expect(indice).toBeGreaterThanOrEqual(0);
 
-      expect(componente.dependentesDaFase(indice).documentos).toBe(1);
+      expect(cronograma.dependentesDaFase(indice).documentos).toBe(1);
 
-      componente.pedirRemocaoDaFase(indice);
+      expansao.pedirRemocaoDaFase(indice);
       expect(
         expansao.remocaoAConfirmar(),
         'a remoção precisa passar pela confirmação, porque leva o documento junto',
       ).toBe(indice);
-      expect(componente.resumoDaRemocao(indice)).toContain('1 documento exigido');
+      expect(expansao.resumoDaRemocao(indice)).toContain('1 documento exigido');
     });
 
     it('acusa a exigência que decide o resultado e está sem norma resolvida', () => {
@@ -3462,7 +3468,7 @@ describe('CronogramaStepComponent', () => {
     function emConsulta(): void {
       comFases(ID_INSCRICAO);
       detectar();
-      componente.acrescentarEtapa('COLETA_INSCRICAO');
+      cronograma.acrescentarEtapa('COLETA_INSCRICAO');
       store.remoteSnapshot.set({
         status: StatusProcesso.publicado,
       } as unknown as ProcessoSeletivoDto);

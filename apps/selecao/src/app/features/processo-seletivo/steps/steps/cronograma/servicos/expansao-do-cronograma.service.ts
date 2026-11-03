@@ -1,8 +1,23 @@
-import { Injectable, signal } from '@angular/core';
+import {
+  afterNextRender,
+  effect,
+  inject,
+  Injectable,
+  Injector,
+  signal,
+  untracked,
+} from '@angular/core';
+
+import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 
 /** O que a linha do tempo mostra aberto: fases, etapas e os blocos de dentro de cada etapa. */
 @Injectable()
 export class ExpansaoDoCronograma {
+  private readonly store = inject(ProcessoSeletivoStore);
+  private readonly cronograma = inject(FormularioDoCronograma);
+  private readonly injector = inject(Injector);
+
   /**
    * As fases expandidas, por posição na linha do tempo.
    *
@@ -78,5 +93,54 @@ export class ExpansaoDoCronograma {
 
   desistirDaRemocao(): void {
     this.remocaoAConfirmar.set(null);
+  }
+
+  constructor() {
+    // Quem chega de uma recusa que cita a fase cai nela: aberta e com o foco no campo da unidade.
+    // O foco espera o passo estar visível e a troca de passo devolver o foco ao título.
+    effect(() => {
+      const codigo = this.store.faseEmFoco();
+      if (codigo === null || !this.store.cronogramaVisivel()) return;
+      const alvo = this.cronograma
+        .linhaDoTempo()
+        .find((item) => item.grupo.controls.codigo.value === codigo);
+      untracked(() => this.store.faseEmFoco.set(null));
+      if (alvo === undefined) return;
+      untracked(() => {
+        this.abrirFases([alvo.indice]);
+        afterNextRender(
+          () => setTimeout(() => document.getElementById(`cr-unidade-${alvo.indice}`)?.focus(), 0),
+          { injector: this.injector },
+        );
+      });
+    });
+  }
+
+  pedirRemocaoDaFase(indice: number): void {
+    // Fase sem nada pendurado não precisa de confirmação: não há o que avisar.
+    const dependentes = this.cronograma.dependentesDaFase(indice);
+    if (dependentes.etapas === 0 && dependentes.documentos === 0) {
+      this.remocaoAConfirmar.set(null);
+      this.cronograma.removerFase(indice);
+      return;
+    }
+
+    this.remocaoAConfirmar.set(indice);
+  }
+
+  confirmarRemocaoDaFase(indice: number): void {
+    this.remocaoAConfirmar.set(null);
+    this.cronograma.removerFase(indice);
+  }
+
+  /** O que a confirmação enuncia, na língua de quem monta o edital. */
+  resumoDaRemocao(indice: number): string {
+    const { etapas, documentos } = this.cronograma.dependentesDaFase(indice);
+    const partes: string[] = [];
+    if (etapas > 0) partes.push(etapas === 1 ? '1 etapa' : `${etapas} etapas`);
+    if (documentos > 0) {
+      partes.push(documentos === 1 ? '1 documento exigido' : `${documentos} documentos exigidos`);
+    }
+    return partes.join(' e ');
   }
 }
