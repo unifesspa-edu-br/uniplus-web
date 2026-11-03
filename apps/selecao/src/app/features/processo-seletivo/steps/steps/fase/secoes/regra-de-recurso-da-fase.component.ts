@@ -1,12 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
@@ -47,7 +40,12 @@ const ROTULO_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
 /** A regra de recurso da fase: a regra de contagem, o prazo, a âncora e as suspensividades. */
 @Component({
   selector: 'div[selRegraDeRecursoDaFase]',
-  imports: [FormsModule, NgTemplateOutlet, ReactiveFormsModule, ValorEmConsultaComponent],
+  imports: [
+    FormsModule,
+    NgTemplateOutlet,
+    ReactiveFormsModule,
+    ValorEmConsultaComponent,
+  ],
   templateUrl: './regra-de-recurso-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   viewProviders: [
@@ -98,27 +96,6 @@ export class RegraDeRecursoDaFaseComponent {
   protected readonly suspensividadeDaSegundaInstancia = computed(() =>
     this.suspensividade('SegundaInstancia'),
   );
-
-  constructor() {
-    // Com um só resultado preliminar não há escolha a fazer, e pré-selecionar
-    // poupa um clique. Com dois — gabarito e resultado, por exemplo — a escolha
-    // é do operador: eleger um deles contaria a janela da publicação errada.
-    // Só preenche o campo vazio, e por isso nunca sobrescreve o que ele decidiu.
-    effect(() => {
-      const unica = this.faseEmEdicao.ancoraUnica();
-      const formulario = this.espelho.formulario();
-      // Ligar o interruptor não muda a lista de âncoras nem recria o
-      // formulário: sem acompanhar a edição, o campo ficaria vazio esperando
-      // uma escolha que não existe.
-      this.espelho.versao();
-      untracked(() => {
-        if (formulario === null || unica === null) return;
-        if (!formulario.controls.admiteRecurso.value) return;
-        const ancora = formulario.controls.recurso.controls.atoAncoraCodigo;
-        if (ancora.value === '') ancora.setValue(unica);
-      });
-    });
-  }
 
   /**
    * A regra é identificada por código **e** versão: publicar versão nova do

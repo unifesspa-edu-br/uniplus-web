@@ -196,7 +196,9 @@ export interface FaseMontada {
 }
 
 /** O passo da fase montado com os catálogos já atendidos, como ele abre para o operador. */
-export async function montarFase(): Promise<FaseMontada> {
+export async function montarFase(
+  catalogos: 'atendidos' | 'pendentes' | 'com-erro' = 'atendidos',
+): Promise<FaseMontada> {
   await TestBed.configureTestingModule({
     imports: [FaseStepComponent],
     providers: [
@@ -246,7 +248,12 @@ export async function montarFase(): Promise<FaseMontada> {
   };
 
   detectar();
-  atenderCatalogos();
+  if (catalogos === 'atendidos') atenderCatalogos();
+  if (catalogos === 'com-erro') {
+    for (const requisicao of controller.match(() => true)) {
+      requisicao.flush('indisponível', { status: 500, statusText: 'Server Error' });
+    }
+  }
   detectar();
 
   return {

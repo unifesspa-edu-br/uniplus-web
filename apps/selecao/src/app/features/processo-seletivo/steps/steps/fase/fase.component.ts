@@ -149,6 +149,25 @@ export class FaseStepComponent {
         else formulario.disable({ emitEvent: false });
       });
     });
+
+    // Com um só resultado preliminar não há escolha a fazer, e pré-selecionar
+    // poupa um clique. Com dois — gabarito e resultado, por exemplo — a escolha
+    // é do operador: eleger um deles contaria a janela da publicação errada.
+    // Só preenche o campo vazio, e por isso nunca sobrescreve o que ele decidiu.
+    effect(() => {
+      const unica = this.faseEmEdicao.ancoraUnica();
+      const formulario = this.formulario();
+      // Ligar o interruptor não muda a lista de âncoras nem recria o
+      // formulário: sem acompanhar a edição, o campo ficaria vazio esperando
+      // uma escolha que não existe.
+      this.faseEmEdicao.espelho.versao();
+      untracked(() => {
+        if (formulario === null || unica === null) return;
+        if (!formulario.controls.admiteRecurso.value) return;
+        const ancora = formulario.controls.recurso.controls.atoAncoraCodigo;
+        if (ancora.value === '') ancora.setValue(unica);
+      });
+    });
   }
 
   abrirFase(faseCanonicaId: string): void {
