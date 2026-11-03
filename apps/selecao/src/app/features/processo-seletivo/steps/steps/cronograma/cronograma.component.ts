@@ -9,9 +9,8 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { firstValueFrom, merge, take, type Subscription } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
@@ -89,12 +88,10 @@ import {
   type GrupoDeclarado,
 } from './conferencia-das-exigencias-declaradas';
 import {
-  campoDaRecusa,
   fasesComUnidadeNaoEncontrada,
   localDoErroDaEtapa,
   recusaDaEtapaDeNotaDoEnem,
   recusaDoCampoDaEtapa,
-  type CampoComRecusa,
 } from './recusas-do-servidor-da-etapa';
 import {
   caracteresAdmitidos,
@@ -111,6 +108,7 @@ import {
 import { comoComandoDeEtapa } from './cronograma-para-comando';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
+import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
 import {
   AGUARDA_RELEITURA,
   ReconciliacaoDasEtapas,
@@ -150,8 +148,6 @@ import {
 } from './recursos-da-etapa';
 import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.component';
 
-const SEM_RECUSAS: ReadonlyMap<CampoComRecusa, string> = new Map();
-
 @Component({
   selector: 'sel-step-cronograma',
   imports: [
@@ -169,6 +165,7 @@ const SEM_RECUSAS: ReadonlyMap<CampoComRecusa, string> = new Map();
     UnidadesDasFases,
     ReconciliacaoDasEtapas,
     FormularioDoCronograma,
+    RecusasDasEtapas,
     ExpansaoDoCronograma,
   ],
 })
@@ -184,6 +181,7 @@ export class CronogramaStepComponent {
   protected readonly unidades = inject(UnidadesDasFases);
   protected readonly reconciliacao = inject(ReconciliacaoDasEtapas);
   protected readonly cronograma = inject(FormularioDoCronograma);
+  protected readonly recusas = inject(RecusasDasEtapas);
   protected readonly expansao = inject(ExpansaoDoCronograma);
 
   readonly formulario = this.cronograma.formulario;
@@ -568,82 +566,6 @@ export class CronogramaStepComponent {
     return etapaDeclaraNotaMaxima(grupo, this.catalogos.tipoEtapaPorId());
   }
 
-  /** Todas as recusas do servidor à etapa, por campo; o editor dos itens lê as que são dele. */
-  recusasDaEtapa(grupo: FormGroup<EtapaForm>): ReadonlyMap<CampoComRecusa, string> {
-    this.versaoDoFormulario();
-    return this.recusasDosCampos.get(grupo)?.recusas ?? SEM_RECUSAS;
-  }
-
-  /** A recusa do servidor a um campo da escala da etapa, ou `null`. */
-  recusaDoCampo(grupo: FormGroup<EtapaForm>, campo: CampoComRecusa): string | null {
-    this.versaoDoFormulario();
-    return this.recusasDosCampos.get(grupo)?.recusas.get(campo) ?? null;
-  }
-
-  /**
-   * Os campos da escala e da avaliação se explicam entre si (a nota máxima fora do passo se
-   * resolve em qualquer um dos dois; a regra recusada depende da forma): mexer em um apaga a
-   * recusa de todos da etapa.
-   */
-  esquecerRecusasDaEtapa(grupo: FormGroup<EtapaForm>): void {
-    if (this.descartarRecusasDaEtapa(grupo)) this.versaoDoFormulario.update((versao) => versao + 1);
-  }
-
-  private descartarRecusasDaEtapa(grupo: FormGroup<EtapaForm>): boolean {
-    const atual = this.recusasDosCampos.get(grupo);
-    atual?.assinatura.unsubscribe();
-    return this.recusasDosCampos.delete(grupo);
-  }
-
-  /**
-   * A recusa fica na etapa que a recebeu, e não na posição: remover ou mover etapas durante a
-   * gravação não a leva para outra. Etapa que já saiu do formulário a perde. Ela dura até o
-   * valor de um dos campos dela mudar, por digitação ou não.
-   */
-  private aplicarRecusasDosCampos(
-    enviadas: readonly FormGroup<EtapaForm>[],
-    erros: readonly { readonly field: string; readonly code: string }[],
-  ): void {
-    const aplicadas = new Map<FormGroup<EtapaForm>, Map<CampoComRecusa, string>>();
-    for (const erro of erros) {
-      const local = localDoErroDaEtapa(erro.field);
-      const texto = recusaDoCampoDaEtapa(erro.code);
-      const campo = campoDaRecusa(local);
-      const grupo = local === null ? undefined : enviadas[local.indice];
-      if (campo === null || texto === null || grupo === undefined) continue;
-      if (!this.etapas.controls.includes(grupo)) continue;
-      aplicadas.set(grupo, (aplicadas.get(grupo) ?? new Map()).set(campo, texto));
-    }
-    for (const [grupo, recusas] of aplicadas) {
-      this.descartarRecusasDaEtapa(grupo);
-      const assinatura = merge(
-        grupo.controls.notaMinima.valueChanges,
-        grupo.controls.notaMaxima.valueChanges,
-        grupo.controls.passoDoLancamento.valueChanges,
-        grupo.controls.formaDeAvaliacao.valueChanges,
-        grupo.controls.regraConsolidacaoCodigo.valueChanges,
-        grupo.controls.itensDeAvaliacao.valueChanges,
-        grupo.controls.escalaDeAtendimento.valueChanges,
-      )
-        .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-        .subscribe(() => this.esquecerRecusasDaEtapa(grupo));
-      this.recusasDosCampos.set(grupo, { recusas, assinatura });
-    }
-    this.versaoDoFormulario.update((versao) => versao + 1);
-  }
-
-  private readonly recusasDosCampos = new WeakMap<
-    FormGroup<EtapaForm>,
-    { readonly recusas: ReadonlyMap<CampoComRecusa, string>; readonly assinatura: Subscription }
-  >();
-
-  private limparRecusasDosCampos(): void {
-    const algumaApagada = this.etapas.controls
-      .map((grupo) => this.descartarRecusasDaEtapa(grupo))
-      .some(Boolean);
-    if (algumaApagada) this.versaoDoFormulario.update((versao) => versao + 1);
-  }
-
   readonly formasDeAvaliacao = FORMAS_DE_AVALIACAO;
 
   etapaEhDeAvaliacaoHumana(grupo: FormGroup<EtapaForm>): boolean {
@@ -896,7 +818,7 @@ export class CronogramaStepComponent {
       }
 
       this.unidades.limparRecusadas();
-      this.limparRecusasDosCampos();
+      this.recusas.limpar();
       const gravacaoDeEtapas = await this.cadastro.definirEtapas(
         processoId,
         etapas.map(comoComandoDeEtapa),
@@ -904,7 +826,7 @@ export class CronogramaStepComponent {
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!gravacaoDeEtapas.ok) {
         const problema = gravacaoDeEtapas.problem;
-        this.aplicarRecusasDosCampos(grupos, problema.errors ?? []);
+        this.recusas.aplicar(grupos, problema.errors ?? []);
         const daRaiz = recusaDaEtapaDeNotaDoEnem(problema.code);
         const resumo = resumoDaRecusa(
           problema,

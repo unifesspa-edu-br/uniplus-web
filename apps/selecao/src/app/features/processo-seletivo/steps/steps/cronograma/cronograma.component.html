@@ -718,7 +718,7 @@
                             </div>
                           }
                           @if (etapaElimina(etapa)) {
-                            @let recusaDaNotaMinima = recusaDoCampo(etapa, 'notaMinima');
+                            @let recusaDaNotaMinima = recusas.recusaDoCampo(etapa, 'notaMinima');
                             <div class="form-field">
                               <label class="label" [attr.for]="'cr-etapa-nota-' + posicao"
                                 >Nota mínima</label
@@ -742,7 +742,7 @@
                             </div>
                           }
                           @if (etapaDeclaraNotaMaxima(etapa)) {
-                            @let recusaDaNotaMaxima = recusaDoCampo(etapa, 'notaMaxima');
+                            @let recusaDaNotaMaxima = recusas.recusaDoCampo(etapa, 'notaMaxima');
                             <div class="form-field">
                               <label class="label" [attr.for]="'cr-etapa-nota-maxima-' + posicao"
                                 >Nota máxima</label
@@ -769,7 +769,7 @@
                             </div>
                           }
                           @if (etapaDeclaraNotaMaxima(etapa)) {
-                            @let recusaDaForma = recusaDoCampo(etapa, 'formaDeAvaliacao');
+                            @let recusaDaForma = recusas.recusaDoCampo(etapa, 'formaDeAvaliacao');
                             <fieldset
                               class="field form-grid__full"
                               [attr.aria-describedby]="
@@ -802,7 +802,7 @@
                             </fieldset>
                           }
                           @if (etapaEhDeAvaliacaoHumana(etapa)) {
-                            @let recusaDaRegra = recusaDoCampo(etapa, 'regraConsolidacao');
+                            @let recusaDaRegra = recusas.recusaDoCampo(etapa, 'regraConsolidacao');
                             <fieldset
                               class="field form-grid__full"
                               [attr.aria-describedby]="
@@ -856,7 +856,7 @@
                               }
                             </fieldset>
                             @if (!etapaUsaEscalaDeAtendimento(etapa)) {
-                              @let recusaDoPasso = recusaDoCampo(etapa, 'passoDoLancamento');
+                              @let recusaPasso = recusas.recusaDoCampo(etapa, 'passoDoLancamento');
                               <div class="form-field">
                                 <label class="label" [attr.for]="'cr-etapa-passo-' + posicao"
                                   >Passo do lançamento</label
@@ -867,20 +867,20 @@
                                   inputmode="decimal"
                                   [attr.id]="'cr-etapa-passo-' + posicao"
                                   formControlName="passoDoLancamento"
-                                  [attr.aria-invalid]="recusaDoPasso ? 'true' : null"
+                                  [attr.aria-invalid]="recusaPasso ? 'true' : null"
                                   [attr.aria-describedby]="
                                     'cr-etapa-passo-ajuda-' +
                                     posicao +
-                                    (recusaDoPasso ? ' cr-etapa-passo-erro-' + posicao : '')
+                                    (recusaPasso ? ' cr-etapa-passo-erro-' + posicao : '')
                                   "
                                 />
                                 <p class="field__hint" [id]="'cr-etapa-passo-ajuda-' + posicao">
                                   Menor variação da nota lançada pelo avaliador, como 0,25. A nota
                                   máxima precisa ser múltipla dele.
                                 </p>
-                                @if (recusaDoPasso) {
+                                @if (recusaPasso) {
                                   <p class="field__error" [id]="'cr-etapa-passo-erro-' + posicao">
-                                    {{ recusaDoPasso }}
+                                    {{ recusaPasso }}
                                   </p>
                                 }
                               </div>
@@ -892,7 +892,7 @@
                               [grupo]="etapa"
                               [posicao]="posicao"
                               [habilitado]="edicaoLiberada()"
-                              [recusas]="recusasDaEtapa(etapa)"
+                              [recusas]="recusas.recusasDaEtapa(etapa)"
                             />
                           }
                           <!--

@@ -30,6 +30,7 @@ import { CronogramaStepComponent } from './cronograma.component';
 import type { EtapaForm } from './cronograma-form';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
+import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
 import { ReconciliacaoDasEtapas } from './servicos/reconciliacao-das-etapas.service';
 import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
 import {
@@ -63,6 +64,7 @@ import {
 describe('CronogramaStepComponent', () => {
   let componente: CronogramaStepComponent;
   let expansao: ExpansaoDoCronograma;
+  let recusas: RecusasDasEtapas;
   let cronograma: FormularioDoCronograma;
   let reconciliacao: ReconciliacaoDasEtapas;
   let unidades: UnidadesDasFases;
@@ -92,6 +94,7 @@ describe('CronogramaStepComponent', () => {
     const fixture = TestBed.createComponent(CronogramaStepComponent);
     componente = fixture.componentInstance;
     expansao = fixture.debugElement.injector.get(ExpansaoDoCronograma);
+    recusas = fixture.debugElement.injector.get(RecusasDasEtapas);
     cronograma = fixture.debugElement.injector.get(FormularioDoCronograma);
     reconciliacao = fixture.debugElement.injector.get(ReconciliacaoDasEtapas);
     unidades = fixture.debugElement.injector.get(UnidadesDasFases);
@@ -1048,13 +1051,13 @@ describe('CronogramaStepComponent', () => {
       const [, segunda, terceira] = cronograma.etapas.controls;
 
       await recusarNotaMaximaDaEtapa(1);
-      expect(componente.recusaDoCampo(segunda, 'notaMaxima')).not.toBeNull();
+      expect(recusas.recusaDoCampo(segunda, 'notaMaxima')).not.toBeNull();
 
       cronograma.removerFase(0);
 
       expect(cronograma.etapas.controls).toEqual([segunda, terceira]);
-      expect(componente.recusaDoCampo(segunda, 'notaMaxima')).not.toBeNull();
-      expect(componente.recusaDoCampo(terceira, 'notaMaxima')).toBeNull();
+      expect(recusas.recusaDoCampo(segunda, 'notaMaxima')).not.toBeNull();
+      expect(recusas.recusaDoCampo(terceira, 'notaMaxima')).toBeNull();
     });
 
     it('a recusa some quando a troca de caráter esvazia o campo', async () => {
@@ -1063,10 +1066,10 @@ describe('CronogramaStepComponent', () => {
       etapa.controls.notaMaxima.setValue('10');
 
       await recusarNotaMaximaDaEtapa(0);
-      expect(componente.recusaDoCampo(etapa, 'notaMaxima')).not.toBeNull();
+      expect(recusas.recusaDoCampo(etapa, 'notaMaxima')).not.toBeNull();
 
       componente.escolherCarater(etapa, '');
-      expect(componente.recusaDoCampo(etapa, 'notaMaxima')).toBeNull();
+      expect(recusas.recusaDoCampo(etapa, 'notaMaxima')).toBeNull();
     });
 
     it('não confere nem envia a escala herdada por etapa do ENEM', async () => {
@@ -1351,7 +1354,7 @@ describe('CronogramaStepComponent', () => {
       );
       await gravacao;
 
-      expect(componente.recusasDaEtapa(etapa).size).toBe(0);
+      expect(recusas.recusasDaEtapa(etapa).size).toBe(0);
     });
 
     it('mantém o id do item que veio da API ao editar e o envia, e o item novo vai sem id', async () => {
