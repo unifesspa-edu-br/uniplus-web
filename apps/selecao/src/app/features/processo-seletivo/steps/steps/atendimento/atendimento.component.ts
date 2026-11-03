@@ -1,5 +1,4 @@
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -17,37 +16,22 @@ import {
   TipoDeficienciaDto,
 } from '@uniplus/shared-data/configuracao';
 
-import {
-  AtendimentoCondicaoSelecionada,
-  ReferenciaDeAtendimento,
-  StepValidation,
-} from '../../processo-seletivo.models';
+import { StepValidation } from '../../processo-seletivo.models';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
 import { camposSemValoresOfertados } from '../formulario/formulario-de-inscricao';
-import { CatalogosDeAtendimentoService, CODIGO_CONDICAO_PCD } from './catalogos-de-atendimento.service';
-
-/**
- * Mensagem que nomeia as referências inativas de uma lista — o handler
- * (`DefinirOfertaAtendimentoCommandHandler`) resolve cada id no cadastro
- * **vivo** e recusa com 422 (`CondicaoNaoEncontrada`/`RecursoNaoEncontrado`/
- * `TipoDeficienciaNaoEncontrado`) se qualquer um não existir mais lá. Sem
- * este diagnóstico local, "Gravar e avançar" falharia sempre que o rascunho
- * guardasse uma referência inativa, e nada na tela apontaria qual item é a
- * causa — `undefined` quando a lista está vazia, para não gerar mensagem à toa.
- */
-function mensagemDeInativos(
-  singular: string,
-  plural: string,
-  itens: readonly { readonly nome: string }[],
-): string | undefined {
-  if (itens.length === 0) return undefined;
-  const nomes = itens.map((item) => item.nome).join(', ');
-  return itens.length === 1
-    ? `Remova ${singular} "${nomes}", que já saiu do cadastro ativo, antes de gravar.`
-    : `Remova ${plural} que já saíram do cadastro ativo antes de gravar: ${nomes}.`;
-}
+import { anunciarRemocao } from './anuncio-de-remocao';
+import { CatalogosDeAtendimentoService } from './catalogos-de-atendimento.service';
+import {
+  aposMarcarCondicao,
+  aposMarcarTodas,
+  aposRemover,
+  comoCondicaoSelecionada,
+  ehPcd,
+} from './oferta-de-atendimento';
+import { mensagemDeInativos, referenciasInativas } from './referencias-inativas';
 
 /**
  * A oferta de atendimento especializado do processo (UNI-REQ-0012), gravada
@@ -82,9 +66,8 @@ export class AtendimentoStepComponent {
   constructor() {
     this.catalogos.carregar();
 
-    // As rotas do editor reusam a mesma instância de componente ao trocar de
-    // processo — sem isto, a recusa de gravação do processo anterior
-    // continuaria na tela ao abrir um processo novo que nunca tentou gravar.
+    // As rotas do editor reusam a mesma instância ao trocar de processo: sem isto, a recusa de
+    // gravação do processo anterior continuaria na tela de um processo que nunca tentou gravar.
     effect(() => {
       this.store.geracao();
       untracked(() => this.erroDeGravacao.set(null));
@@ -97,7 +80,9 @@ export class AtendimentoStepComponent {
    * Em consulta, a oferta lida é a gravada: o rascunho guarda o nome de cada referência, e o
    * catálogo vivo, que pode ter inativado alguma, não muda o que o processo publicou.
    */
-  readonly nomesDasCondicoes = computed(() => this.atendimento().condicoes.map((item) => item.nome));
+  readonly nomesDasCondicoes = computed(() =>
+    this.atendimento().condicoes.map((item) => item.nome),
+  );
 
   readonly nomesDosTiposDeDeficiencia = computed(() =>
     this.atendimento().tiposDeficiencia.map((item) => item.nome),
@@ -106,55 +91,39 @@ export class AtendimentoStepComponent {
   readonly nomesDosRecursos = computed(() => this.atendimento().recursos.map((item) => item.nome));
 
   /**
-   * A condição PcD está entre as selecionadas — é o que libera tipos de
-   * deficiência (ADR-0067).
-   *
-   * Deriva do **rascunho**, não do catálogo ativo: o rascunho já guarda o
-   * código de cada condição selecionada (`AtendimentoCondicaoSelecionada`)
-   * justamente para isto. Depender de `catalogos.condicaoPcd()` faria a
-   * seção de tipos de deficiência sumir — e `validate()` recusar sem saída —
-   * assim que a condição PCD fosse inativada em Configuração ou o
-   * carregamento do catálogo falhasse, mesmo com a condição continuando
-   * marcada e visível na tela (com a tag "Inativo no cadastro").
+   * A condição PcD está entre as selecionadas: é o que libera tipos de deficiência (ADR-0067).
+   * Deriva do **rascunho**, não do catálogo ativo: depender de `catalogos.condicaoPcd()` faria a
+   * seção de tipos sumir, e `validate()` recusar sem saída, assim que a condição fosse inativada
+   * ou o carregamento falhasse, mesmo com ela marcada e visível na tela.
    */
   readonly pcdSelecionada = computed(() =>
-    this.atendimento().condicoes.some(
-      (item) => item.codigo.toUpperCase() === CODIGO_CONDICAO_PCD,
-    ),
+    this.atendimento().condicoes.some((item) => ehPcd(item.codigo)),
   );
 
   /**
-   * O catálogo confirmou sucesso — só então a tela sabe distinguir "saiu do
-   * cadastro" de "ainda não sei". Enquanto carregando ou depois de uma
-   * falha, `condicoesInativas()`/`recursosInativos()`/
-   * `tiposDeficienciaInativos()` capturam tudo que está selecionado, e
-   * qualquer controle que mutasse essas listas nesse estado (marcar,
-   * desmarcar, remover) apagaria parte de uma oferta gravada sem
-   * possibilidade de desfazer — `validate()` já não bloqueia o avanço
-   * enquanto não sabe (achado anterior), mas isso não impede o operador de
-   * remover algo sem querer se o controle continuar habilitado.
+   * O catálogo confirmou sucesso: só então a tela sabe distinguir "saiu do cadastro" de "ainda não
+   * sei". Enquanto carregando ou depois de uma falha, as listas de inativas capturam tudo que está
+   * selecionado, e qualquer controle que as mutasse nesse estado apagaria parte de uma oferta
+   * gravada sem possibilidade de desfazer.
    */
   readonly catalogoConfirmado = computed(
     () => !this.catalogos.carregando() && this.catalogos.erro() === null,
   );
 
-  /** Referências que o rascunho guarda mas o cadastro ativo já não tem — seguem visíveis, sem opção de escolher de novo (CA da #543). */
-  readonly condicoesInativas = computed<readonly AtendimentoCondicaoSelecionada[]>(() => {
-    const ativos = new Set(this.catalogos.condicoes().map((item) => item.id));
-    return this.atendimento().condicoes.filter((item) => !ativos.has(item.id));
-  });
+  /** Referências que o rascunho guarda mas o cadastro ativo já não tem: seguem visíveis, sem opção de escolher de novo. */
+  readonly condicoesInativas = computed(() =>
+    referenciasInativas(this.atendimento().condicoes, this.catalogos.condicoes()),
+  );
 
-  readonly recursosInativos = computed<readonly ReferenciaDeAtendimento[]>(() => {
-    const ativos = new Set(this.catalogos.recursos().map((item) => item.id));
-    return this.atendimento().recursos.filter((item) => !ativos.has(item.id));
-  });
+  readonly recursosInativos = computed(() =>
+    referenciasInativas(this.atendimento().recursos, this.catalogos.recursos()),
+  );
 
-  readonly tiposDeficienciaInativos = computed<readonly ReferenciaDeAtendimento[]>(() => {
-    const ativos = new Set(this.catalogos.tiposDeficiencia().map((item) => item.id));
-    return this.atendimento().tiposDeficiencia.filter((item) => !ativos.has(item.id));
-  });
+  readonly tiposDeficienciaInativos = computed(() =>
+    referenciasInativas(this.atendimento().tiposDeficiencia, this.catalogos.tiposDeficiencia()),
+  );
 
-  /** "Marcar todas" (#788) só olha para as condições ativas — referências inativas não entram na conta (CA-06). */
+  /** "Marcar todas" só olha para as condições ativas: referências inativas não entram na conta. */
   readonly todasAsCondicoesSelecionadas = computed(() => {
     const ativas = this.catalogos.condicoes();
     return ativas.length > 0 && ativas.every((item) => this.condicaoMarcada(item.id));
@@ -190,24 +159,10 @@ export class AtendimentoStepComponent {
   }
 
   toggleCondicao(condicao: CondicaoAtendimentoDto, marcada: boolean): void {
-    const atual = this.atendimento().condicoes;
-    const proximo = marcada
-      ? [...atual, { id: condicao.id, codigo: condicao.codigo, nome: condicao.nome }]
-      : atual.filter((item) => item.id !== condicao.id);
-
-    // Desmarcar a condição PcD esvazia os tipos de deficiência — sem ela o
-    // servidor recusa qualquer tipo de deficiência ofertado. Só quando,
-    // depois da desmarcação, não resta nenhuma outra condição de código PcD
-    // em `proximo`: se o operador tinha mais de uma condição PcD marcada
-    // (ex.: a inativa hidratada e a ativa que a substituiu), o pré-requisito
-    // do ADR-0067 continua satisfeito.
-    const ehPcd = condicao.codigo.toUpperCase() === CODIGO_CONDICAO_PCD;
-    const restaPcd = proximo.some((item) => item.codigo.toUpperCase() === CODIGO_CONDICAO_PCD);
-    if (!marcada && ehPcd && !restaPcd) {
-      this.store.patchObjectSection('atendimento', { condicoes: proximo, tiposDeficiencia: [] });
-      return;
-    }
-    this.store.patchObjectSection('atendimento', { condicoes: proximo });
+    this.store.patchObjectSection(
+      'atendimento',
+      aposMarcarCondicao(this.atendimento().condicoes, comoCondicaoSelecionada(condicao), marcada),
+    );
   }
 
   toggleRecurso(recurso: RecursoAcessibilidadeDto, marcado: boolean): void {
@@ -219,40 +174,31 @@ export class AtendimentoStepComponent {
   }
 
   /**
-   * Marca ou desmarca de uma vez só as condições ativas do catálogo (#788).
-   * Referências inativas preservadas no rascunho não são tocadas (CA-06) —
-   * seguem removíveis apenas individualmente, por `removerCondicaoInativa`.
-   * Espelha a regra do PcD em `toggleCondicao`: só esvazia os tipos de
-   * deficiência se, depois da alteração, não restar nenhuma condição de
-   * código PcD marcada.
+   * Marca ou desmarca de uma vez só as condições ativas do catálogo. Referências inativas
+   * preservadas no rascunho não são tocadas: seguem removíveis apenas individualmente.
    */
   marcarTodasAsCondicoes(marcar: boolean): void {
-    const inativas = this.condicoesInativas();
-    const proximo = marcar
-      ? [
-          ...inativas,
-          ...this.catalogos
-            .condicoes()
-            .map((item) => ({ id: item.id, codigo: item.codigo, nome: item.nome })),
-        ]
-      : [...inativas];
-
-    const restaPcd = proximo.some((item) => item.codigo.toUpperCase() === CODIGO_CONDICAO_PCD);
-    if (!restaPcd) {
-      this.store.patchObjectSection('atendimento', { condicoes: proximo, tiposDeficiencia: [] });
-      return;
-    }
-    this.store.patchObjectSection('atendimento', { condicoes: proximo });
+    this.store.patchObjectSection(
+      'atendimento',
+      aposMarcarTodas(
+        this.condicoesInativas(),
+        this.catalogos.condicoes().map(comoCondicaoSelecionada),
+        marcar,
+      ),
+    );
   }
 
   /**
-   * Marca ou desmarca de uma vez só os recursos ativos do catálogo (#788).
-   * Referências inativas preservadas no rascunho não são tocadas (CA-06).
+   * Marca ou desmarca de uma vez só os recursos ativos do catálogo. Referências inativas
+   * preservadas no rascunho não são tocadas.
    */
   marcarTodosOsRecursos(marcar: boolean): void {
     const inativos = this.recursosInativos();
     const proximo = marcar
-      ? [...inativos, ...this.catalogos.recursos().map((item) => ({ id: item.id, nome: item.nome }))]
+      ? [
+          ...inativos,
+          ...this.catalogos.recursos().map((item) => ({ id: item.id, nome: item.nome })),
+        ]
       : [...inativos];
     this.store.patchObjectSection('atendimento', { recursos: proximo });
   }
@@ -265,79 +211,45 @@ export class AtendimentoStepComponent {
     this.store.patchObjectSection('atendimento', { tiposDeficiencia: proximo });
   }
 
-  /**
-   * O que mudou, para quem não vê a tela — a remoção de uma referência inativa tirava a linha
-   * do DOM em silêncio.
-   */
+  /** O que mudou, para quem não vê a tela: a remoção de uma referência inativa tirava a linha do DOM em silêncio. */
   readonly anuncio = signal('');
 
   private readonly injector = inject(Injector);
 
-  /**
-   * Anuncia a remoção e devolve o foco à lista. Sem isto o botão clicado sai do DOM e o foco
-   * cai no corpo da página — numa ação que não tem desfazer, perder o lugar dói mais.
-   *
-   * A espera é por renderização, não por microtask: o ciclo de detecção do Angular roda depois
-   * que a fila de microtasks drena, e consultar o DOM antes disso acharia o botão que está
-   * prestes a sair.
-   */
-  private anunciarRemocao(
+  private anunciar(
     nome: string | undefined,
     prefixoDoId: string,
-    indice: number,
+    inativas: readonly { readonly id: string }[],
+    id: string,
     tituloDaSecao: string,
   ): void {
-    this.anuncio.set(nome === undefined ? 'Item removido.' : `${nome} removido da oferta.`);
-
-    afterNextRender(
-      () => {
-        const anterior = document.getElementById(`${prefixoDoId}-${Math.max(0, indice - 1)}`);
-        // Removido o último da lista, o foco volta ao título da seção — que existe sempre e
-        // diz onde a pessoa está.
-        (anterior ?? document.getElementById(tituloDaSecao))?.focus();
-      },
-      { injector: this.injector },
-    );
+    anunciarRemocao(this.anuncio, this.injector, {
+      nome,
+      prefixoDoId,
+      indice: inativas.findIndex((item) => item.id === id),
+      tituloDaSecao,
+    });
   }
 
-  /**
-   * Remove uma referência que já saiu do cadastro ativo — a única ação
-   * disponível para ela. Espelha `toggleCondicao`: se a condição removida
-   * for a de código PcD, os tipos de deficiência também são esvaziados — sem
-   * isso, `validate()` continuaria recusando o passo sem nenhum controle na
-   * tela capaz de desfazer a causa.
-   *
-   * A limpeza só acontece se **depois** da remoção não restar nenhuma
-   * condição de código PcD em `proximo`. Se o operador já tinha marcado a
-   * condição PcD ativa que substituiu a inativa (mesmo código, id novo), o
-   * pré-requisito continua satisfeito, e esvaziar os tipos de deficiência
-   * apagaria uma seleção válida sem motivo.
-   */
   removerCondicaoInativa(id: string): void {
     const atual = this.atendimento().condicoes;
-    const removida = atual.find((item) => item.id === id);
-    this.anunciarRemocao(
-      removida?.nome,
+    this.anunciar(
+      atual.find((item) => item.id === id)?.nome,
       'atend-cond-inativa',
-      this.condicoesInativas().findIndex((item) => item.id === id),
+      this.condicoesInativas(),
+      id,
       'atend-secao-condicoes',
     );
-    const proximo = atual.filter((item) => item.id !== id);
-
-    const restaPcd = proximo.some((item) => item.codigo.toUpperCase() === CODIGO_CONDICAO_PCD);
-    if (removida !== undefined && removida.codigo.toUpperCase() === CODIGO_CONDICAO_PCD && !restaPcd) {
-      this.store.patchObjectSection('atendimento', { condicoes: proximo, tiposDeficiencia: [] });
-      return;
-    }
-    this.store.patchObjectSection('atendimento', { condicoes: proximo });
+    this.store.patchObjectSection('atendimento', aposRemover(atual, id));
   }
 
   removerRecursoInativo(id: string): void {
     const atual = this.atendimento().recursos;
-    this.anunciarRemocao(
+    this.anunciar(
       atual.find((item) => item.id === id)?.nome,
       'atend-rec-inativo',
-      this.recursosInativos().findIndex((item) => item.id === id),
+      this.recursosInativos(),
+      id,
       'atend-secao-recursos',
     );
     this.store.patchObjectSection('atendimento', {
@@ -347,10 +259,11 @@ export class AtendimentoStepComponent {
 
   removerTipoDeficienciaInativo(id: string): void {
     const atual = this.atendimento().tiposDeficiencia;
-    this.anunciarRemocao(
+    this.anunciar(
       atual.find((item) => item.id === id)?.nome,
       'atend-tipo-inativo',
-      this.tiposDeficienciaInativos().findIndex((item) => item.id === id),
+      this.tiposDeficienciaInativos(),
+      id,
       'atend-secao-tipos',
     );
     this.store.patchObjectSection('atendimento', {
@@ -359,15 +272,9 @@ export class AtendimentoStepComponent {
   }
 
   /**
-   * "Inativo no cadastro" é uma afirmação que só se sustenta quando o
-   * catálogo carregou com sucesso — enquanto carregando ou depois de uma
-   * falha, `condicoesInativas()`/`recursosInativos()`/
-   * `tiposDeficienciaInativos()` também capturam tudo que está selecionado,
-   * porque o catálogo ativo comparado está vazio, não porque os itens de
-   * fato saíram dele. Afirmar "inativo" nesses dois casos seria um
-   * diagnóstico que a tela não tem como sustentar (CA da #543: nem falha
-   * nem carregamento podem esconder ou reclassificar o que já está
-   * gravado) — "ainda não sei" não é "não existe mais", nem no rótulo.
+   * "Inativo no cadastro" só se sustenta quando o catálogo carregou com sucesso: carregando ou em
+   * falha, o catálogo comparado está vazio, e não é porque os itens saíram dele. "Ainda não sei"
+   * não é "não existe mais", nem no rótulo.
    */
   rotuloDeSituacaoInativa(): string {
     if (this.catalogos.carregando()) return 'Carregando catálogo…';
@@ -397,8 +304,7 @@ export class AtendimentoStepComponent {
    * guarda — sem ela não há como declarar tipos de deficiência por esta tela.
    */
   readonly pcdAusenteDoCadastro = computed(
-    () =>
-      this.catalogoConfirmado() && !this.catalogos.condicaoPcd() && !this.pcdSelecionada(),
+    () => this.catalogoConfirmado() && !this.catalogos.condicaoPcd() && !this.pcdSelecionada(),
   );
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
@@ -426,16 +332,10 @@ export class AtendimentoStepComponent {
       );
     }
 
-    // A checagem de referência inativa só é confiável depois que os três
-    // catálogos carregaram com sucesso. Enquanto carregando ou depois de uma
-    // falha, `catalogos.condicoes()`/`recursos()`/`tiposDeficiencia()` ficam
-    // vazios — não porque nada está ativo, mas porque a tela ainda não sabe
-    // o que está ativo —, e `condicoesInativas()` e as demais confundiriam
-    // "não sei ainda" com "não existe mais", classificando toda seleção
-    // gravada como inativa e mandando o operador apagar uma oferta válida e
-    // inalterada por causa de uma indisponibilidade temporária. O erro de
-    // carga já está reportado no banner do template (`catalogos.erro()`);
-    // repeti-lo aqui bloquearia o avanço de um rascunho que não mudou.
+    // A checagem de referência inativa só é confiável depois que os três catálogos carregaram:
+    // antes disso eles estão vazios, e "não sei ainda" seria confundido com "não existe mais",
+    // mandando o operador apagar uma oferta válida por causa de uma indisponibilidade temporária.
+    // O erro de carga já está no banner do template.
     if (this.catalogoConfirmado()) {
       const inativos = [
         mensagemDeInativos('a condição', 'as condições', this.condicoesInativas()),
@@ -467,10 +367,9 @@ export class AtendimentoStepComponent {
     if (!conferencia.valid) return conferencia;
 
     const atendimento = this.atendimento();
-    const geracao = this.store.geracao();
     this.erroDeGravacao.set(null);
-    this.store.salvando.set(true);
-    try {
+    return gravarNoPasso(this.store, async () => {
+      const geracao = this.store.geracao();
       const resultado = await this.cadastro.definirOfertaAtendimento(processoId, {
         condicaoIds: atendimento.condicoes.map((item) => item.id),
         recursoIds: atendimento.recursos.map((item) => item.id),
@@ -478,17 +377,12 @@ export class AtendimentoStepComponent {
       });
 
       // O editor pode ter passado a outro processo enquanto o comando corria.
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
+      if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+      if (resultado.ok) return { valid: true };
 
-      if (!resultado.ok) {
-        const mensagem = this.problemI18n.resolve(resultado.problem).title;
-        this.erroDeGravacao.set(mensagem);
-        return { valid: false, messages: [mensagem] };
-      }
-
-      return { valid: true };
-    } finally {
-      if (geracao === this.store.geracao()) this.store.salvando.set(false);
-    }
+      const mensagem = this.problemI18n.resolve(resultado.problem).title;
+      this.erroDeGravacao.set(mensagem);
+      return { valid: false, messages: [mensagem] };
+    });
   }
 }
