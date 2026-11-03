@@ -1,6 +1,7 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
@@ -15,6 +16,7 @@ import { CamposPressupostosService } from '../../shared/campos-pressupostos.serv
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from '../cronograma/cronograma.component';
 import { FaseStepComponent } from './fase.component';
+import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -169,6 +171,7 @@ const PROCESSO_COM_ETAPA_GRAVADA = {
 describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', () => {
   let cronograma: CronogramaStepComponent;
   let superficie: FaseStepComponent;
+  let publicacoes: () => PublicacoesDaFaseComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let detectar: () => void;
@@ -198,6 +201,9 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     const fixtureSuperficie = TestBed.createComponent(FaseStepComponent);
     cronograma = fixtureCronograma.componentInstance;
     superficie = fixtureSuperficie.componentInstance;
+    publicacoes = () =>
+      fixtureSuperficie.debugElement.query(By.directive(PublicacoesDaFaseComponent))
+        .componentInstance as PublicacoesDaFaseComponent;
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
     detectar = () => {
@@ -304,9 +310,9 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     // 2. Superfície da fase: declara o que a segunda publica e quem a julga.
     superficie.abrirFase(ID_RESULTADO);
     detectar();
-    superficie.acrescentarProduto();
-    superficie.escolherAto(0, 'RESULTADO_FINAL');
-    superficie.escolherPapel(0, 'DEFINITIVO');
+    publicacoes().acrescentarProduto();
+    publicacoes().escolherAto(0, 'RESULTADO_FINAL');
+    publicacoes().escolherPapel(0, 'DEFINITIVO');
     superficie.acrescentarBanca();
     superficie.escolherTipoDeBanca(0, ID_BANCA_HETERO);
     superficie.alternarCategoria(0, ID_CATEGORIA_RACA, true);
@@ -321,7 +327,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
 
     // A superfície continua mostrando o que declarou, depois de duas reescritas
     // vindas da outra tela.
-    expect(superficie.produtos).toEqual([{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }]);
+    expect(publicacoes().produtos).toEqual([{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }]);
     expect(superficie.bancas).toEqual([
       { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
     ]);
@@ -379,7 +385,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     store.processoSeletivoId.set(PROCESSO_ID);
     comCertame();
 
-    superficie.acrescentarProduto();
+    publicacoes().acrescentarProduto();
     detectar();
 
     cronograma.fases.at(0).controls.fim.setValue('2026-03-11T18:00');
@@ -514,9 +520,9 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
 
     superficie.abrirFase(ID_RESULTADO);
     detectar();
-    superficie.acrescentarProduto();
-    superficie.escolherAto(0, 'RESULTADO_FINAL');
-    superficie.escolherPapel(0, 'DEFINITIVO');
+    publicacoes().acrescentarProduto();
+    publicacoes().escolherAto(0, 'RESULTADO_FINAL');
+    publicacoes().escolherPapel(0, 'DEFINITIVO');
     detectar();
 
     const gravacao = superficie.persistir();

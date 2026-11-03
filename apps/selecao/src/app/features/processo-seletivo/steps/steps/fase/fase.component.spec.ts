@@ -27,6 +27,7 @@ import {
 import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { FaseStepComponent } from './fase.component';
+import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 import {
   congeladosDaFase,
   fase,
@@ -60,6 +61,9 @@ describe('FaseStepComponent', () => {
   let comCronograma: (...fases: readonly FaseDoCronograma[]) => void;
   let selecionado: (id: string) => string;
 
+  const publicacoes = () =>
+    raiz.query(By.directive(PublicacoesDaFaseComponent)).componentInstance as PublicacoesDaFaseComponent;
+
   beforeEach(async () => {
     ({ componente, store, controller, detectar, nativo, raiz, atenderCatalogos, comCronograma, selecionado } =
       await montarFase());
@@ -82,38 +86,10 @@ describe('FaseStepComponent', () => {
       }),
     );
 
-    expect(componente.produtos).toEqual([
+    expect(publicacoes().produtos).toEqual([
       { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
     ]);
     expect(componente.formulario()?.controls.emiteParecerIndividual.value).toBe(true);
-  });
-
-  it('leva ao rascunho a publicação declarada na tela', () => {
-    comCronograma(fase({}));
-
-    componente.acrescentarProduto();
-    componente.escolherAto(0, 'RESULTADO_FINAL');
-    componente.escolherPapel(0, 'DEFINITIVO');
-    detectar();
-
-    expect(store.draft().cronograma.fases[0].produtos).toEqual([
-      { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
-    ]);
-  });
-
-  /**
-   * Só ato que o catálogo marca como resultado recebe papel: trocar para um que
-   * não é deixaria declarada uma combinação que o servidor recusa.
-   */
-  it('descarta o papel ao trocar para publicação que não é resultado', () => {
-    comCronograma(fase({ produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }] }));
-
-    componente.escolherAto(0, 'COMUNICADO');
-    detectar();
-
-    expect(store.draft().cronograma.fases[0].produtos).toEqual([
-      { atoCodigo: 'COMUNICADO', papel: null },
-    ]);
   });
 
   /**
@@ -392,7 +368,7 @@ describe('FaseStepComponent', () => {
     it('esquece a fase concluinte quando o papel preliminar é trocado', () => {
       comConcluinte();
 
-      componente.escolherPapel(0, 'DEFINITIVO');
+      publicacoes().escolherPapel(0, 'DEFINITIVO');
       detectar();
 
       expect(store.draft().cronograma.fases[0].faseConcluinteCodigo).toBeNull();
@@ -402,7 +378,7 @@ describe('FaseStepComponent', () => {
     it('esquece a fase concluinte quando a publicação preliminar é removida', () => {
       comConcluinte();
 
-      componente.removerProduto(0);
+      publicacoes().removerProduto(0);
       detectar();
 
       expect(store.draft().cronograma.fases[0].faseConcluinteCodigo).toBeNull();
@@ -1884,7 +1860,10 @@ describe('FaseStepComponent', () => {
       const recursos = criar(ID_RECURSOS);
       for (const fixture of [avaliacao, recursos]) {
         const instancia = fixture.componentInstance;
-        instancia.acrescentarProduto();
+        (
+          fixture.debugElement.query(By.directive(PublicacoesDaFaseComponent))
+            .componentInstance as PublicacoesDaFaseComponent
+        ).acrescentarProduto();
         instancia.escolherDocumento(ID_CPF);
         instancia.acrescentarDocumento();
         instancia.alternarEdicao(ID_CPF, true);
