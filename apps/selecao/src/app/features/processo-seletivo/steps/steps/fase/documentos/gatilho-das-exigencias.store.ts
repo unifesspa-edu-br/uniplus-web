@@ -43,6 +43,11 @@ const SEM_ERROS: Readonly<Record<number, string>> = {};
 /**
  * O gatilho de cada documento da fase aberta: de quem é cobrado, que fatos do candidato a
  * condição pode citar e a repetição pelas ocorrências de um grupo dos formulários.
+ *
+ * Há documento que só se cobra de quem tem certo fato: o título de eleitor não se pede a
+ * estrangeiro, a mulher nem a menor de dezoito; a quitação com o serviço militar só se pede a
+ * homem maior de dezoito, e nem dele quando é indígena. A modalidade fica de fora das condições,
+ * porque tem o seu próprio controle ao lado.
  */
 @Injectable()
 export class GatilhoDasExigenciasStore {

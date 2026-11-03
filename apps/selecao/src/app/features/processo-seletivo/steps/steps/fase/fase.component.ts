@@ -1,6 +1,4 @@
 import {
-} from '../../shared/exigencias/formulario-da-exigencia';
-import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -10,26 +8,17 @@ import {
   untracked,
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import {
-  ValorLegivelDirective,
-} from '@uniplus/shared-ui/components';
+import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 
-import {
-  type FaseDoCronograma,
-  type StepValidation,
-} from '../../processo-seletivo.models';
+import { type FaseDoCronograma, type StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import {
-  gravarCronogramaFases,
-} from '../../shared/gravacao-do-cronograma';
+import { gravarCronogramaFases } from '../../shared/gravacao-do-cronograma';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import {
-  problemasDaFase,
-} from './configuracao-da-fase';
+import { problemasDaFase } from './configuracao-da-fase';
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
 import { GatilhoDasExigenciasStore } from './documentos/gatilho-das-exigencias.store';
@@ -39,9 +28,6 @@ import { RegraDeRecursoDaFaseComponent } from './secoes/regra-de-recurso-da-fase
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { recusaDaGravacao } from './recusas-da-gravacao';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
-
-
-/** O gatilho sem condição recusada pela fase — a mesma referência, para o editor não se redesenhar. */
 
 /**
  * A superfície de configuração de uma fase: o que só existe dentro dela e não
@@ -80,9 +66,6 @@ export class FaseStepComponent {
   private readonly cadastro = inject(CadastroInicialService);
   private readonly destruicao = inject(DestroyRef);
 
-  /** Do cadastro vivo de Configuração, não de uma lista escrita nesta tela. */
-  readonly gruposDeDocumento = this.catalogos.documentosPorCategoria;
-
   /**
    * Quando declarada, a configuração pertence a essa fase e o seletor próprio some: é o
    * modo em que o passo Cronograma embute este bloco dentro de cada fase da linha do
@@ -107,8 +90,6 @@ export class FaseStepComponent {
   readonly nomeDaBanca = this.faseEmEdicao.nomeDaBanca;
   readonly idDaFase = this.faseEmEdicao.idDaFase;
   private readonly atoPorCodigo = this.faseEmEdicao.atoPorCodigo;
-  readonly ancorasPossiveis = this.faseEmEdicao.ancorasPossiveis;
-  readonly publicaPreliminar = this.faseEmEdicao.publicaPreliminar;
 
   constructor() {
     this.catalogos.carregar();
@@ -174,108 +155,6 @@ export class FaseStepComponent {
     this.faseAberta.set(faseCanonicaId);
     this.faseEmEdicao.limparRecusa();
   }
-
-  // ─── Exigências documentais desta fase ──────────────────────────────────
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // ─── Gatilho por fato do candidato ──────────────────────────────────────
-  //
-  // Há documento que só se cobra de quem tem certo fato: o título de eleitor não se pede a
-  // estrangeiro, a mulher nem a menor de dezoito; a quitação com o serviço militar só se pede
-  // a homem maior de dezoito, e nem dele quando é indígena. É isto que estes controles
-  // escrevem — e a modalidade fica de fora deles, porque tem o seu próprio ali ao lado.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   // ─── Conferência e gravação ─────────────────────────────────────────────
 
