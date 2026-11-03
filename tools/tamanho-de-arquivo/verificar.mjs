@@ -1,15 +1,7 @@
 #!/usr/bin/env node
 // Verifica o limite de linhas físicas por arquivo de produção.
 // Uso: node tools/tamanho-de-arquivo/verificar.mjs [--atualizar] [--raiz=<dir>]
-import {
-  existsSync,
-  readdirSync,
-  readFileSync,
-  writeFileSync,
-  openSync,
-  readSync,
-  closeSync,
-} from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,17 +18,9 @@ const raiz = raizArg
   : join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const arquivoDeExcecoes = join(raiz, 'tools', 'tamanho-de-arquivo', 'excecoes.txt');
 
-const ehCodigoGerado = (caminho) => {
-  if (/^libs\/shared-data\/src\/lib\/api\/[^/]+\/schema\.ts$/.test(caminho)) return true;
-  const fd = openSync(join(raiz, caminho), 'r');
-  try {
-    const buffer = Buffer.alloc(512);
-    const lidos = readSync(fd, buffer, 0, 512, 0);
-    return /auto-generated|@generated/i.test(buffer.toString('utf8', 0, lidos));
-  } finally {
-    closeSync(fd);
-  }
-};
+// Só o caminho decide o que é gerado: um marcador no conteúdo deixaria arquivo escrito à mão escapar da regra.
+const ehCodigoGerado = (caminho) =>
+  /^libs\/shared-data\/src\/lib\/api\/[^/]+\/schema\.ts$/.test(caminho);
 
 const ehTeste = (caminho) =>
   /\.spec\.ts$/.test(caminho) ||
@@ -114,6 +98,7 @@ if (atualizar) {
 
 const novos = [];
 const cresceram = [];
+const encolheram = [];
 const resolvidos = [];
 for (const [caminho, linhas] of linhasPorArquivo) {
   const registrado = excecoes.entradas.get(caminho);
@@ -123,6 +108,8 @@ for (const [caminho, linhas] of linhasPorArquivo) {
     cresceram.push(`${caminho}: ${linhas} linhas, registrado ${registrado}`);
   } else if (linhas <= LIMITE) {
     resolvidos.push(`${caminho}: ${linhas} linhas`);
+  } else if (linhas < registrado) {
+    encolheram.push(`${caminho}: ${linhas} linhas, registrado ${registrado}`);
   }
 }
 for (const caminho of excecoes.entradas.keys()) {
@@ -139,11 +126,15 @@ const secao = (titulo, itens) => {
 secao(`Arquivos acima de ${LIMITE} linhas e fora da lista de exceções (divida o arquivo):`, novos);
 secao('Arquivos da lista que cresceram além do registrado (a lista só diminui):', cresceram);
 secao(
+  'Arquivos da lista que encolheram (registre o número novo com --atualizar, senão a folga permite crescer de novo):',
+  encolheram,
+);
+secao(
   'Arquivos da lista que já cumprem o limite ou sumiram (tire-os de tools/tamanho-de-arquivo/excecoes.txt, ou rode com --atualizar):',
   resolvidos,
 );
 
-if (novos.length + cresceram.length + resolvidos.length > 0) {
+if (novos.length + cresceram.length + encolheram.length + resolvidos.length > 0) {
   console.error(`\nFalha: limite de ${LIMITE} linhas por arquivo violado.`);
   process.exit(1);
 }
