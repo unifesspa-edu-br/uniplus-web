@@ -1,6 +1,8 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import type { DebugElement } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import type { FormGroup } from '@angular/forms';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, FatoCandidatoView } from '@uniplus/shared-data/configuracao';
@@ -26,10 +28,13 @@ import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
+import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component';
 import { CronogramaStepComponent } from './cronograma.component';
 import type { EtapaForm } from './cronograma-form';
 import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
+import { EdicaoDaEtapa } from './servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
+import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
 import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
 import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
@@ -65,7 +70,10 @@ import {
 
 describe('CronogramaStepComponent', () => {
   let componente: CronogramaStepComponent;
+  let raiz: DebugElement;
   let expansao: ExpansaoDoCronograma;
+  let leitura: LeituraDaLinhaDoTempo;
+  let edicao: EdicaoDaEtapa;
   let exigencias: GravacaoDasExigenciasDocumentais;
   let conferencia: ConferenciaDoCronograma;
   let recusas: RecusasDasEtapas;
@@ -75,6 +83,8 @@ describe('CronogramaStepComponent', () => {
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let detectar: () => void;
+  const convencao = (): ConvencaoDeContagemComponent =>
+    raiz.query(By.directive(ConvencaoDeContagemComponent)).componentInstance;
   let nativo: HTMLElement;
 
   beforeEach(async () => {
@@ -97,7 +107,10 @@ describe('CronogramaStepComponent', () => {
 
     const fixture = TestBed.createComponent(CronogramaStepComponent);
     componente = fixture.componentInstance;
+    raiz = fixture.debugElement;
     expansao = fixture.debugElement.injector.get(ExpansaoDoCronograma);
+    leitura = fixture.debugElement.injector.get(LeituraDaLinhaDoTempo);
+    edicao = fixture.debugElement.injector.get(EdicaoDaEtapa);
     exigencias = fixture.debugElement.injector.get(GravacaoDasExigenciasDocumentais);
     conferencia = fixture.debugElement.injector.get(ConferenciaDoCronograma);
     recusas = fixture.debugElement.injector.get(RecusasDasEtapas);
@@ -471,8 +484,8 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO', 'AVALIACAO', 'COLETA_INSCRICAO']);
 
-    expect(componente.marcasDaFase(1)).toEqual(['2 etapas']);
-    expect(componente.marcasDaFase(0)).toEqual(['1 etapa']);
+    expect(leitura.marcasDaFase(1)).toEqual(['2 etapas']);
+    expect(leitura.marcasDaFase(0)).toEqual(['1 etapa']);
   });
 
   /**
@@ -502,17 +515,17 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
     const etapa = cronograma.etapas.at(0);
 
-    expect(componente.caracteresPara(etapa).map((o) => o.valor)).toEqual([
+    expect(edicao.caracteresPara(etapa).map((o) => o.valor)).toEqual([
       'classificatoria',
       'eliminatoria',
       'ambas',
     ]);
 
-    componente.escolherTipoEtapa(etapa, TIPO_ETAPA_SO_ELIMINA);
+    edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_SO_ELIMINA);
     detectar();
 
-    expect(componente.caracteresPara(etapa).map((o) => o.valor)).toContain('eliminatoria');
-    expect(componente.caracteresPara(etapa).map((o) => o.valor)).not.toContain('ambas');
+    expect(edicao.caracteresPara(etapa).map((o) => o.valor)).toContain('eliminatoria');
+    expect(edicao.caracteresPara(etapa).map((o) => o.valor)).not.toContain('ambas');
   });
 
   /**
@@ -524,13 +537,11 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
     const etapa = cronograma.etapas.at(0);
 
-    componente.escolherTipoEtapa(etapa, TIPO_ETAPA_SO_ELIMINA);
+    edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_SO_ELIMINA);
     detectar();
 
     expect(etapa.controls.carater.value, 'o valor declarado permanece').toBe('classificatoria');
-    const marcada = componente
-      .caracteresPara(etapa)
-      .find((opcao) => opcao.valor === 'classificatoria');
+    const marcada = edicao.caracteresPara(etapa).find((opcao) => opcao.valor === 'classificatoria');
     expect(marcada?.rotulo).toContain('não mais admitido');
   });
 
@@ -540,10 +551,10 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
     const etapa = cronograma.etapas.at(0);
 
-    componente.escolherTipoEtapa(etapa, '');
+    edicao.escolherTipoEtapa(etapa, '');
     detectar();
 
-    expect(componente.caracteresPara(etapa)).toHaveLength(3);
+    expect(edicao.caracteresPara(etapa)).toHaveLength(3);
   });
 
   describe('unidade responsável da fase', () => {
@@ -937,7 +948,7 @@ describe('CronogramaStepComponent', () => {
       comFases(ID_AVALIACAO);
       comEtapasEmFases(['AVALIACAO']);
       const etapa = cronograma.etapas.at(0);
-      componente.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
+      edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
       expansao.alternarFase(0);
       expansao.alternarEtapa(0);
       detectar();
@@ -946,7 +957,7 @@ describe('CronogramaStepComponent', () => {
 
     it('não oferece o caráter puramente eliminatório', () => {
       const etapa = comEtapaDoEnemAberta();
-      expect(componente.caracteresPara(etapa).map((o) => o.valor)).toEqual([
+      expect(edicao.caracteresPara(etapa).map((o) => o.valor)).toEqual([
         'classificatoria',
         'ambas',
       ]);
@@ -969,9 +980,9 @@ describe('CronogramaStepComponent', () => {
       etapa.controls.bancas.setValue(['banca-1']);
       etapa.controls.produtos.setValue([{ atoCodigo: 'ATO', papel: null }]);
       etapa.controls.inicio.setValue('2027-01-10T08:00');
-      componente.acrescentarRecursoNaEtapa(etapa);
+      edicao.acrescentarRecursoNaEtapa(etapa);
 
-      componente.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
+      edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
 
       expect(etapa.controls.bancas.value).toEqual([]);
       expect(etapa.controls.produtos.value).toEqual([]);
@@ -981,7 +992,7 @@ describe('CronogramaStepComponent', () => {
 
     it('o recurso acrescentado corre da ciência do candidato', () => {
       const etapa = comEtapaDoEnemAberta();
-      componente.acrescentarRecursoNaEtapa(etapa);
+      edicao.acrescentarRecursoNaEtapa(etapa);
       expect(etapa.controls.recursos.value[0]?.ancora).toBe('cienciaIndividual');
     });
 
@@ -990,7 +1001,7 @@ describe('CronogramaStepComponent', () => {
       comEtapasEmFases(['AVALIACAO']);
       const etapa = cronograma.etapas.at(0);
       etapa.controls.tipoCongelado.setValue({ origemId: TIPO_ETAPA, notaDeOrigemNoEnem: true });
-      expect(componente.etapaDeNotaDoEnem(etapa)).toBe(true);
+      expect(edicao.etapaDeNotaDoEnem(etapa)).toBe(true);
     });
   });
 
@@ -1008,7 +1019,7 @@ describe('CronogramaStepComponent', () => {
       const etapa = etapaAberta();
       expect(nativo.querySelector('#cr-etapa-nota-maxima-0')).not.toBeNull();
 
-      componente.escolherCarater(etapa, '');
+      edicao.escolherCarater(etapa, '');
       detectar();
       expect(nativo.querySelector('#cr-etapa-nota-maxima-0')).toBeNull();
     });
@@ -1018,7 +1029,7 @@ describe('CronogramaStepComponent', () => {
       etapa.controls.notaMaxima.setValue('10');
       etapa.controls.passoDoLancamento.setValue('0,5');
 
-      componente.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
+      edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
       detectar();
 
       expect(nativo.querySelector('#cr-etapa-nota-maxima-0')).toBeNull();
@@ -1074,7 +1085,7 @@ describe('CronogramaStepComponent', () => {
       await recusarNotaMaximaDaEtapa(0);
       expect(recusas.recusaDoCampo(etapa, 'notaMaxima')).not.toBeNull();
 
-      componente.escolherCarater(etapa, '');
+      edicao.escolherCarater(etapa, '');
       expect(recusas.recusaDoCampo(etapa, 'notaMaxima')).toBeNull();
     });
 
@@ -1100,7 +1111,7 @@ describe('CronogramaStepComponent', () => {
     it('mostra a recusa do servidor sob o campo e a retira quando o campo muda', async () => {
       store.processoSeletivoId.set(PROCESSO_ID);
       const etapa = etapaAberta();
-      componente.escolherCarater(etapa, 'ambas');
+      edicao.escolherCarater(etapa, 'ambas');
       etapa.controls.notaMaxima.setValue('10');
       detectar();
 
@@ -1158,7 +1169,7 @@ describe('CronogramaStepComponent', () => {
       expansao.alternarFase(0);
       expansao.alternarEtapa(0);
       const etapa = cronograma.etapas.at(0);
-      componente.escolherCarater(etapa, 'classificatoria');
+      edicao.escolherCarater(etapa, 'classificatoria');
       detectar();
       return etapa;
     }
@@ -1181,7 +1192,7 @@ describe('CronogramaStepComponent', () => {
       expect(nativo.textContent).toContain('mais de um avaliador corrige');
       expect(nativo.querySelector('#cr-etapa-passo-0')).not.toBeNull();
 
-      componente.escolherCarater(etapa, '');
+      edicao.escolherCarater(etapa, '');
       detectar();
       expect(nativo.querySelector('input[name="cr-etapa-forma-0"]')).toBeNull();
       expect(etapa.controls.formaDeAvaliacao.value).toBe('');
@@ -1264,7 +1275,7 @@ describe('CronogramaStepComponent', () => {
       expansao.alternarFase(0);
       expansao.alternarEtapa(0);
       const etapa = cronograma.etapas.at(0);
-      componente.escolherCarater(etapa, 'classificatoria');
+      edicao.escolherCarater(etapa, 'classificatoria');
       etapa.controls.notaMaxima.setValue('10');
       detectar();
       return etapa;
@@ -1439,7 +1450,7 @@ describe('CronogramaStepComponent', () => {
       digitar('#cr-etapa-0-item-0-rotulo', 'Clareza');
       digitar('#cr-etapa-0-item-0-pontuacao', '10');
 
-      componente.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
+      edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
       detectar();
 
       expect(nativo.querySelector('#cr-etapa-0-item-acrescentar')).toBeNull();
@@ -1516,12 +1527,12 @@ describe('CronogramaStepComponent', () => {
     detectar();
 
     const etapa = cronograma.etapas.at(0);
-    expect(componente.marcasDaEtapa(etapa)).toEqual(['Prova objetiva']);
+    expect(edicao.marcasDaEtapa(etapa)).toEqual(['Prova objetiva']);
 
-    componente.acrescentarRecursoNaEtapa(etapa);
+    edicao.acrescentarRecursoNaEtapa(etapa);
     detectar();
 
-    expect(componente.marcasDaEtapa(etapa)).toContain('1 recurso');
+    expect(edicao.marcasDaEtapa(etapa)).toContain('1 recurso');
   });
 
   /**
@@ -1537,8 +1548,8 @@ describe('CronogramaStepComponent', () => {
 
     expect(expansao.blocoAberto(0, 'recursos')).toBe(false);
     expect(expansao.blocoAberto(0, 'publica')).toBe(false);
-    expect(componente.resumoDosRecursos(cronograma.etapas.at(0))).toBe('nenhum recurso');
-    expect(componente.resumoDasPublicacoes(cronograma.etapas.at(0))).toBe('não publica nada');
+    expect(edicao.resumoDosRecursos(cronograma.etapas.at(0))).toBe('nenhum recurso');
+    expect(edicao.resumoDasPublicacoes(cronograma.etapas.at(0))).toBe('não publica nada');
   });
 
   it('o cabeçalho do bloco conta o que há dentro dele', () => {
@@ -1546,11 +1557,11 @@ describe('CronogramaStepComponent', () => {
     comEtapasEmFases(['AVALIACAO']);
     const etapa = cronograma.etapas.at(0);
 
-    componente.acrescentarRecursoNaEtapa(etapa);
-    componente.acrescentarRecursoNaEtapa(etapa);
+    edicao.acrescentarRecursoNaEtapa(etapa);
+    edicao.acrescentarRecursoNaEtapa(etapa);
     detectar();
 
-    expect(componente.resumoDosRecursos(etapa)).toBe('2 recursos');
+    expect(edicao.resumoDosRecursos(etapa)).toBe('2 recursos');
   });
 
   describe('instância superior da janela de recurso da etapa', () => {
@@ -1558,7 +1569,7 @@ describe('CronogramaStepComponent', () => {
       comFases(ID_AVALIACAO);
       comEtapasEmFases(['AVALIACAO']);
       const etapa = cronograma.etapas.at(0);
-      componente.acrescentarRecursoNaEtapa(etapa);
+      edicao.acrescentarRecursoNaEtapa(etapa);
       // O catálogo não responde neste cenário: a regra resolvida é o que faz a janela viajar.
       etapa.controls.recursos.setValue(
         etapa.controls.recursos.value.map((recurso) => ({
@@ -1641,17 +1652,17 @@ describe('CronogramaStepComponent', () => {
     comEtapasEmFases(['AVALIACAO']);
     const etapa = cronograma.etapas.at(0);
 
-    componente.escolherCarater(etapa, 'classificatoria');
-    expect(componente.etapaComponeNota(etapa)).toBe(true);
-    expect(componente.etapaElimina(etapa)).toBe(false);
+    edicao.escolherCarater(etapa, 'classificatoria');
+    expect(edicao.etapaComponeNota(etapa)).toBe(true);
+    expect(edicao.etapaElimina(etapa)).toBe(false);
 
-    componente.escolherCarater(etapa, 'eliminatoria');
-    expect(componente.etapaComponeNota(etapa)).toBe(false);
-    expect(componente.etapaElimina(etapa)).toBe(true);
+    edicao.escolherCarater(etapa, 'eliminatoria');
+    expect(edicao.etapaComponeNota(etapa)).toBe(false);
+    expect(edicao.etapaElimina(etapa)).toBe(true);
 
-    componente.escolherCarater(etapa, 'ambas');
-    expect(componente.etapaComponeNota(etapa)).toBe(true);
-    expect(componente.etapaElimina(etapa)).toBe(true);
+    edicao.escolherCarater(etapa, 'ambas');
+    expect(edicao.etapaComponeNota(etapa)).toBe(true);
+    expect(edicao.etapaElimina(etapa)).toBe(true);
   });
 
   /**
@@ -1665,12 +1676,12 @@ describe('CronogramaStepComponent', () => {
     etapa.controls.peso.setValue('3');
     etapa.controls.notaMinima.setValue('5');
 
-    componente.escolherCarater(etapa, 'eliminatoria');
+    edicao.escolherCarater(etapa, 'eliminatoria');
 
     expect(etapa.controls.peso.value, 'a eliminatória não entra no divisor da média').toBe('');
     expect(etapa.controls.notaMinima.value, 'o corte continua sendo dela').toBe('5');
 
-    componente.escolherCarater(etapa, 'classificatoria');
+    edicao.escolherCarater(etapa, 'classificatoria');
 
     expect(etapa.controls.notaMinima.value, 'quem não elimina não tem corte').toBe('');
   });
@@ -1680,7 +1691,7 @@ describe('CronogramaStepComponent', () => {
     comEtapasEmFases(['AVALIACAO']);
     cronograma.etapas.at(0).controls.nome.setValue('   ');
 
-    expect(componente.nomeDaEtapa(cronograma.etapas.at(0))).toBe('Etapa sem nome');
+    expect(edicao.nomeDaEtapa(cronograma.etapas.at(0))).toBe('Etapa sem nome');
   });
 
   /**
@@ -2137,7 +2148,7 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
     detectar();
 
-    expect(componente.etapasOrfas().map((orfa) => orfa.rotulo)).toEqual(['Prova objetiva']);
+    expect(leitura.etapasOrfas().map((orfa) => orfa.rotulo)).toEqual(['Prova objetiva']);
     expect(nativo.textContent ?? '').toContain('Etapas sem a fase que as agrupa');
     expect(conferencia.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(
       true,
@@ -2146,7 +2157,7 @@ describe('CronogramaStepComponent', () => {
     cronograma.removerTodasAsEtapas();
     detectar();
 
-    expect(componente.etapasOrfas()).toEqual([]);
+    expect(leitura.etapasOrfas()).toEqual([]);
     expect(store.draft().cronograma.etapas).toEqual([]);
     expect(conferencia.problemas().some((p) => p.includes('não dizem a que fase pertencem'))).toBe(
       false,
@@ -2166,8 +2177,8 @@ describe('CronogramaStepComponent', () => {
     cronograma.acrescentarEtapa('COLETA_INSCRICAO');
     detectar();
 
-    expect(componente.etapasDaFase('COLETA_INSCRICAO', false)).toHaveLength(1);
-    expect(componente.etapasOrfas()).toEqual([]);
+    expect(leitura.etapasDaFase('COLETA_INSCRICAO', false)).toHaveLength(1);
+    expect(leitura.etapasOrfas()).toEqual([]);
   });
 
   it('mantém cada etapa na fase que ela declara', () => {
@@ -2178,8 +2189,8 @@ describe('CronogramaStepComponent', () => {
     cronograma.acrescentarEtapa('AVALIACAO');
     detectar();
 
-    expect(componente.etapasDaFase('COLETA_INSCRICAO', false)).toHaveLength(1);
-    expect(componente.etapasDaFase('AVALIACAO', true)).toHaveLength(1);
+    expect(leitura.etapasDaFase('COLETA_INSCRICAO', false)).toHaveLength(1);
+    expect(leitura.etapasDaFase('AVALIACAO', true)).toHaveLength(1);
   });
 
   it('envia ao comando a fase que a etapa declara', () => {
@@ -2196,7 +2207,7 @@ describe('CronogramaStepComponent', () => {
     comFases(ID_AVALIACAO);
     comUmaEtapa();
 
-    expect(componente.etapasOrfas()).toEqual([]);
+    expect(leitura.etapasOrfas()).toEqual([]);
   });
 
   /**
@@ -2206,7 +2217,7 @@ describe('CronogramaStepComponent', () => {
   it('mostra pelo código o ato que o catálogo não nomeia', () => {
     comFaseQuePublica([{ atoCodigo: 'EDITAL_ANTIGO', papel: 'PRELIMINAR' }]);
 
-    const mostrados = componente.produtosDaFase(cronograma.fases.at(0));
+    const mostrados = leitura.produtosDaFase(cronograma.fases.at(0));
 
     expect(mostrados).toEqual([
       { atoCodigo: 'EDITAL_ANTIGO', nome: 'EDITAL_ANTIGO', papel: 'resultado preliminar' },
@@ -2221,7 +2232,7 @@ describe('CronogramaStepComponent', () => {
   it('mostra o papel desconhecido pelo token que o contrato entregou', () => {
     comFaseQuePublica([{ atoCodigo: 'EDITAL', papel: 'RETIFICACAO' }]);
 
-    expect(componente.produtosDaFase(cronograma.fases.at(0))[0].papel).toBe('RETIFICACAO');
+    expect(leitura.produtosDaFase(cronograma.fases.at(0))[0].papel).toBe('RETIFICACAO');
   });
 
   /**
@@ -2400,9 +2411,7 @@ describe('CronogramaStepComponent', () => {
     comUmaEtapa();
     cronograma.etapas.at(0).controls.tipoEtapaOrigemId.setValue(inativo);
 
-    const oferecidos = componente
-      .tiposEscolhiveisPara(cronograma.etapas.at(0))
-      .map((tipo) => tipo.id);
+    const oferecidos = edicao.tiposEscolhiveisPara(cronograma.etapas.at(0)).map((tipo) => tipo.id);
 
     expect(oferecidos).toContain(inativo);
     expect(oferecidos).toContain(TIPO_ETAPA);
@@ -2488,7 +2497,7 @@ describe('CronogramaStepComponent', () => {
    * disponível: é o caminho normal para a primeira escolha.
    */
   it('não esconde a opção de remover enquanto a escolha ainda não foi gravada', () => {
-    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    convencao().escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
     detectar();
 
     expect(opcoesDaConvencao()).toContain('');
@@ -2517,7 +2526,7 @@ describe('CronogramaStepComponent', () => {
   it('esconde a opção de remover a convenção logo após gravá-la nesta sessão', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_INSCRICAO);
-    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    convencao().escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
     detectar();
 
     const gravacao = componente.persistir();
@@ -2540,7 +2549,7 @@ describe('CronogramaStepComponent', () => {
   it('mantém a opção de remover disponível quando a gravação da convenção falha', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_INSCRICAO);
-    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    convencao().escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
     detectar();
 
     const gravacao = componente.persistir();
@@ -2573,7 +2582,7 @@ describe('CronogramaStepComponent', () => {
    * repeti-la em cada linha empurrava o código para fora da largura do campo.
    */
   it('oferece cada convenção do catálogo pelo código e pela versão', () => {
-    expect(componente.regrasDeContagem()).toContainEqual({
+    expect(convencao().regrasDeContagem()).toContainEqual({
       codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
       versao: 'v1',
       baseLegal: 'Lei 9.784/1999, art. 66',
@@ -2590,26 +2599,26 @@ describe('CronogramaStepComponent', () => {
    * descrevem a convenção escolhida, não as disponíveis.
    */
   it('mostra o que a convenção escolhida faz, na prosa do catálogo', () => {
-    expect(componente.invariantesDaContagem(), 'sem escolha, não há o que descrever').toEqual([]);
+    expect(convencao().invariantesDaContagem(), 'sem escolha, não há o que descrever').toEqual([]);
 
-    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    convencao().escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
     detectar();
 
-    expect(componente.invariantesDaContagem()).toEqual([
+    expect(convencao().invariantesDaContagem()).toEqual([
       'o dia da âncora não conta',
       'em horas, a contagem começa no primeiro dia útil seguinte',
     ]);
-    expect(componente.baseLegalDaContagem()).toBe('Lei 9.784/1999, art. 66');
+    expect(convencao().baseLegalDaContagem()).toBe('Lei 9.784/1999, art. 66');
     expect(nativo.textContent ?? '').toContain('O que esta convenção faz');
     expect(nativo.textContent ?? '').toContain('o dia da âncora não conta');
   });
 
   /** Catálogo que não publica invariante nenhum não ganha uma seção vazia. */
   it('esconde a descrição quando o catálogo não publica invariante', () => {
-    componente.escolherAlgoritmo('SEM-INVARIANTE');
+    convencao().escolherAlgoritmo('SEM-INVARIANTE');
     detectar();
 
-    expect(componente.invariantesDaContagem()).toEqual([]);
+    expect(convencao().invariantesDaContagem()).toEqual([]);
     expect(nativo.textContent ?? '').not.toContain('O que esta convenção faz');
   });
 
@@ -2619,7 +2628,7 @@ describe('CronogramaStepComponent', () => {
    * gravar código novo com versão velha é recusado pelo servidor.
    */
   it('escolher a convenção grava código e versão juntos no rascunho', () => {
-    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    convencao().escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
     detectar();
 
     expect(store.draft().cronograma.algoritmoContagemCodigo).toBe(
@@ -2650,7 +2659,7 @@ describe('CronogramaStepComponent', () => {
   it('grava a convenção de contagem depois das etapas e do cronograma de fases', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_INSCRICAO);
-    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    convencao().escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
     detectar();
 
     const gravacao = componente.persistir();
@@ -2703,7 +2712,7 @@ describe('CronogramaStepComponent', () => {
   it('diz que etapas e cronograma já gravaram quando só a convenção falha', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_INSCRICAO);
-    componente.escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
+    convencao().escolherAlgoritmo('CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL');
     detectar();
 
     const gravacao = componente.persistir();
@@ -3488,8 +3497,8 @@ describe('CronogramaStepComponent', () => {
     it('lê a janela da fase em dia e hora, não em texto de campo', () => {
       emConsulta();
 
-      expect(componente.dataHoraLida('2026-03-01T08:00')).toBe('01/03/2026 08:00');
-      expect(componente.dataHoraLida('')).toBe('');
+      expect(edicao.dataHoraLida('2026-03-01T08:00')).toBe('01/03/2026 08:00');
+      expect(edicao.dataHoraLida('')).toBe('');
     });
   });
 });

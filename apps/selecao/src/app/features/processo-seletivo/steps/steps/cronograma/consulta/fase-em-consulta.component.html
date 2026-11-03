@@ -1,0 +1,162 @@
+@let item = fase();
+
+<h2 class="form-section__title" [attr.id]="'cr-fase-leitura-' + item.indice">
+  {{ item.grupo.controls.ordem.value }}. {{ item.nome }}
+</h2>
+
+@if (item.exigencias === null) {
+  <p class="field__hint" role="status">
+    Esta fase não está no catálogo carregado e o processo não guardou os atributos dela.
+  </p>
+} @else {
+  @if (item.exigencias.admiteRecurso || item.publicaResultadoDefinitivo || item.coletaInscricao) {
+    <p class="field__hint">
+      @if (item.exigencias.admiteRecurso) {
+        Publica resultado preliminar, do qual cabe recurso.
+      } @else if (item.publicaResultadoDefinitivo) {
+        Publica resultado definitivo.
+      }
+      @if (item.coletaInscricao) {
+        Coleta inscrições.
+      }
+    </p>
+  }
+
+  <div class="form-grid">
+    <ui-valor-em-consulta
+      class="form-grid__full"
+      rotulo="Unidade responsável"
+      seVazio="Sem unidade responsável"
+      [valor]="item.unidade"
+    />
+    @if (item.exigencias.janelaObrigatoria) {
+      <ui-valor-em-consulta
+        rotulo="Início"
+        [valor]="edicao.dataHoraLida(item.grupo.controls.inicio.value)"
+      />
+      <ui-valor-em-consulta
+        rotulo="Fim"
+        dica="Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são contados."
+        [valor]="edicao.dataHoraLida(item.grupo.controls.fim.value)"
+      />
+    } @else {
+      <p class="field__hint form-grid__full">
+        A data desta fase não consta do edital: a unidade responsável a define na execução.
+      </p>
+    }
+
+    @if (item.exigencias.publicaProduto) {
+      <h3 class="label form-grid__full" [attr.id]="'cr-produtos-leitura-' + item.indice">
+        O que esta fase publica
+      </h3>
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        [rotuladoPor]="'cr-produtos-leitura-' + item.indice"
+        seVazio="Não publica nada"
+        [valor]="leitura.produtosLidosDaFase(item.grupo)"
+      />
+    }
+  </div>
+
+  <h3 class="form-section__title">Etapas desta fase</h3>
+  @for (
+    linha of leitura.etapasDaFase(item.grupo.controls.codigo.value, item.exigencias.agrupaEtapas);
+    track linha.indice
+  ) {
+    @let etapa = edicao.etapaLida(linha.grupo);
+    <div
+      class="etapa-bloco"
+      role="group"
+      [attr.aria-label]="'Etapa ' + (linha.indice + 1) + ': ' + etapa.nome"
+    >
+      <div class="form-grid etapa-linha">
+        <ui-valor-em-consulta rotulo="Nome" [valor]="etapa.nome" />
+        <ui-valor-em-consulta rotulo="Tipo" [valor]="etapa.tipo" />
+        <ui-valor-em-consulta rotulo="Caráter" [valor]="etapa.carater" />
+        @if (etapa.peso !== null) {
+          <ui-valor-em-consulta rotulo="Peso" [valor]="etapa.peso" />
+        }
+        @if (etapa.notaMinima !== null) {
+          <ui-valor-em-consulta rotulo="Nota mínima" [valor]="etapa.notaMinima" />
+        }
+        @if (etapa.notaMaxima !== null) {
+          <ui-valor-em-consulta rotulo="Nota máxima" [valor]="etapa.notaMaxima" />
+        }
+        @if (etapa.formaDeAvaliacao !== null) {
+          <ui-valor-em-consulta
+            rotulo="Forma de avaliação"
+            seVazio="Ainda não declarada"
+            [valor]="etapa.formaDeAvaliacao"
+          />
+        }
+        @if (etapa.regraDeConsolidacao !== null) {
+          <ui-valor-em-consulta
+            rotulo="Regra de consolidação"
+            seVazio="Ainda não declarada"
+            [valor]="etapa.regraDeConsolidacao"
+          />
+        }
+        @if (etapa.passoDoLancamento !== null) {
+          <ui-valor-em-consulta
+            rotulo="Passo do lançamento"
+            seVazio="Ainda não declarado"
+            [valor]="etapa.passoDoLancamento"
+          />
+        }
+        @if (etapa.itensDeAvaliacao !== null) {
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Itens de avaliação"
+            seVazio="Nenhum item"
+            [valor]="etapa.itensDeAvaliacao.linhas"
+          />
+          @if (etapa.itensDeAvaliacao.linhas.length > 0) {
+            <ui-valor-em-consulta rotulo="Soma dos itens" [valor]="etapa.itensDeAvaliacao.soma" />
+          }
+        }
+        @if (etapa.escalaDeAtendimento !== null) {
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Escala de atendimento"
+            [valor]="etapa.escalaDeAtendimento"
+          />
+        }
+        @if (etapa.notaDoEnem) {
+          <p class="form-grid__full field__hint">
+            A nota desta etapa é calculada pelo sistema a partir da nota do ENEM do candidato.
+            Acontece na janela da fase.
+          </p>
+        } @else {
+          <ui-valor-em-consulta
+            rotulo="Janela própria"
+            seVazio="Acontece na janela da fase"
+            [valor]="etapa.janela"
+          />
+        }
+        <ui-valor-em-consulta rotulo="Emite parecer individual" [valor]="etapa.parecerIndividual" />
+        @if (!etapa.notaDoEnem) {
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="Quem julga esta etapa"
+            seVazio="Nenhuma banca"
+            [valor]="etapa.bancas"
+          />
+          <ui-valor-em-consulta
+            class="form-grid__full"
+            rotulo="O que esta etapa publica"
+            seVazio="Não publica nada"
+            [valor]="etapa.publicacoes"
+          />
+        }
+        <ui-valor-em-consulta
+          class="form-grid__full"
+          rotulo="Recursos que esta etapa admite"
+          seVazio="Esta etapa não admite recurso"
+          [valor]="etapa.recursos"
+        />
+      </div>
+    </div>
+  }
+
+  <sel-step-fase [faseFixada]="item.grupo.controls.faseCanonicaId.value" />
+}

@@ -19,176 +19,7 @@
   }
 
   @for (item of linhaDoTempo(); track item.grupo) {
-    <div class="step-card fase-bloco">
-      <h2 class="form-section__title" [attr.id]="'cr-fase-leitura-' + item.indice">
-        {{ item.grupo.controls.ordem.value }}. {{ item.nome }}
-      </h2>
-
-      @if (item.exigencias === null) {
-        <p class="field__hint" role="status">
-          Esta fase não está no catálogo carregado e o processo não guardou os atributos dela.
-        </p>
-      } @else {
-        @if (
-          item.exigencias.admiteRecurso || item.publicaResultadoDefinitivo || item.coletaInscricao
-        ) {
-          <p class="field__hint">
-            @if (item.exigencias.admiteRecurso) {
-              Publica resultado preliminar, do qual cabe recurso.
-            } @else if (item.publicaResultadoDefinitivo) {
-              Publica resultado definitivo.
-            }
-            @if (item.coletaInscricao) {
-              Coleta inscrições.
-            }
-          </p>
-        }
-
-        <div class="form-grid">
-          <ui-valor-em-consulta
-            class="form-grid__full"
-            rotulo="Unidade responsável"
-            seVazio="Sem unidade responsável"
-            [valor]="item.unidade"
-          />
-          @if (item.exigencias.janelaObrigatoria) {
-            <ui-valor-em-consulta
-              rotulo="Início"
-              [valor]="dataHoraLida(item.grupo.controls.inicio.value)"
-            />
-            <ui-valor-em-consulta
-              rotulo="Fim"
-              dica="Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são contados."
-              [valor]="dataHoraLida(item.grupo.controls.fim.value)"
-            />
-          } @else {
-            <p class="field__hint form-grid__full">
-              A data desta fase não consta do edital: a unidade responsável a define na execução.
-            </p>
-          }
-
-          @if (item.exigencias.publicaProduto) {
-            <h3 class="label form-grid__full" [attr.id]="'cr-produtos-leitura-' + item.indice">
-              O que esta fase publica
-            </h3>
-            <ui-valor-em-consulta
-              class="form-grid__full"
-              [rotuladoPor]="'cr-produtos-leitura-' + item.indice"
-              seVazio="Não publica nada"
-              [valor]="produtosLidosDaFase(item.grupo)"
-            />
-          }
-        </div>
-
-        <h3 class="form-section__title">Etapas desta fase</h3>
-        @for (
-          linha of etapasDaFase(item.grupo.controls.codigo.value, item.exigencias.agrupaEtapas);
-          track linha.indice
-        ) {
-          @let etapa = etapaLida(linha.grupo);
-          <div
-            class="etapa-bloco"
-            role="group"
-            [attr.aria-label]="'Etapa ' + (linha.indice + 1) + ': ' + etapa.nome"
-          >
-            <div class="form-grid etapa-linha">
-              <ui-valor-em-consulta rotulo="Nome" [valor]="etapa.nome" />
-              <ui-valor-em-consulta rotulo="Tipo" [valor]="etapa.tipo" />
-              <ui-valor-em-consulta rotulo="Caráter" [valor]="etapa.carater" />
-              @if (etapa.peso !== null) {
-                <ui-valor-em-consulta rotulo="Peso" [valor]="etapa.peso" />
-              }
-              @if (etapa.notaMinima !== null) {
-                <ui-valor-em-consulta rotulo="Nota mínima" [valor]="etapa.notaMinima" />
-              }
-              @if (etapa.notaMaxima !== null) {
-                <ui-valor-em-consulta rotulo="Nota máxima" [valor]="etapa.notaMaxima" />
-              }
-              @if (etapa.formaDeAvaliacao !== null) {
-                <ui-valor-em-consulta
-                  rotulo="Forma de avaliação"
-                  seVazio="Ainda não declarada"
-                  [valor]="etapa.formaDeAvaliacao"
-                />
-              }
-              @if (etapa.regraDeConsolidacao !== null) {
-                <ui-valor-em-consulta
-                  rotulo="Regra de consolidação"
-                  seVazio="Ainda não declarada"
-                  [valor]="etapa.regraDeConsolidacao"
-                />
-              }
-              @if (etapa.passoDoLancamento !== null) {
-                <ui-valor-em-consulta
-                  rotulo="Passo do lançamento"
-                  seVazio="Ainda não declarado"
-                  [valor]="etapa.passoDoLancamento"
-                />
-              }
-              @if (etapa.itensDeAvaliacao !== null) {
-                <ui-valor-em-consulta
-                  class="form-grid__full"
-                  rotulo="Itens de avaliação"
-                  seVazio="Nenhum item"
-                  [valor]="etapa.itensDeAvaliacao.linhas"
-                />
-                @if (etapa.itensDeAvaliacao.linhas.length > 0) {
-                  <ui-valor-em-consulta
-                    rotulo="Soma dos itens"
-                    [valor]="etapa.itensDeAvaliacao.soma"
-                  />
-                }
-              }
-              @if (etapa.escalaDeAtendimento !== null) {
-                <ui-valor-em-consulta
-                  class="form-grid__full"
-                  rotulo="Escala de atendimento"
-                  [valor]="etapa.escalaDeAtendimento"
-                />
-              }
-              @if (etapa.notaDoEnem) {
-                <p class="form-grid__full field__hint">
-                  A nota desta etapa é calculada pelo sistema a partir da nota do ENEM do candidato.
-                  Acontece na janela da fase.
-                </p>
-              } @else {
-                <ui-valor-em-consulta
-                  rotulo="Janela própria"
-                  seVazio="Acontece na janela da fase"
-                  [valor]="etapa.janela"
-                />
-              }
-              <ui-valor-em-consulta
-                rotulo="Emite parecer individual"
-                [valor]="etapa.parecerIndividual"
-              />
-              @if (!etapa.notaDoEnem) {
-                <ui-valor-em-consulta
-                  class="form-grid__full"
-                  rotulo="Quem julga esta etapa"
-                  seVazio="Nenhuma banca"
-                  [valor]="etapa.bancas"
-                />
-                <ui-valor-em-consulta
-                  class="form-grid__full"
-                  rotulo="O que esta etapa publica"
-                  seVazio="Não publica nada"
-                  [valor]="etapa.publicacoes"
-                />
-              }
-              <ui-valor-em-consulta
-                class="form-grid__full"
-                rotulo="Recursos que esta etapa admite"
-                seVazio="Esta etapa não admite recurso"
-                [valor]="etapa.recursos"
-              />
-            </div>
-          </div>
-        }
-
-        <sel-step-fase [faseFixada]="item.grupo.controls.faseCanonicaId.value" />
-      }
-    </div>
+    <div class="step-card fase-bloco" selFaseEmConsulta [fase]="item"></div>
   }
 
   <div class="step-card">
@@ -304,7 +135,7 @@
                 <span class="etapa-resumo__seta" aria-hidden="true"></span>
                 <span>{{ item.grupo.controls.ordem.value }}. {{ item.nome }}</span>
                 <span class="etapa-resumo__marcas">
-                  @for (marca of marcasDaFase(item.indice); track marca) {
+                  @for (marca of leitura.marcasDaFase(item.indice); track marca) {
                     <span class="etapa-resumo__marca">{{ marca }}</span>
                   }
                   @if (item.unidade === null) {
@@ -502,7 +333,7 @@
                   }
 
                   @if (item.exigencias.publicaProduto) {
-                    @let produtos = produtosDaFase(item.grupo);
+                    @let produtos = leitura.produtosDaFase(item.grupo);
                     <div class="form-field form-grid__full">
                       <h3 class="label" [attr.id]="'cr-produtos-' + item.indice">
                         O que esta fase publica
@@ -522,8 +353,8 @@
                   &ldquo;Única&rdquo; basta. As que produzem nota precisam ser classificatórias (ou
                   ambas) e ter peso maior que zero.
                   @if (etapas.length > 0) {
-                    No processo inteiro, {{ etapasQueCompoemNota() }} de {{ etapas.length }} compõem
-                    a nota final.
+                    No processo inteiro, {{ leitura.etapasQueCompoemNota() }} de
+                    {{ etapas.length }} compõem a nota final.
                   }
                 </p>
 
@@ -535,7 +366,7 @@
               -->
                 <div>
                   @for (
-                    linha of etapasDaFase(
+                    linha of leitura.etapasDaFase(
                       item.grupo.controls.codigo.value,
                       item.exigencias.agrupaEtapas
                     );
@@ -570,9 +401,9 @@
                           (click)="expansao.alternarEtapa(posicao)"
                         >
                           <span class="etapa-resumo__seta" aria-hidden="true"></span>
-                          <span class="etapa-resumo__nome">{{ nomeDaEtapa(etapa) }}</span>
+                          <span class="etapa-resumo__nome">{{ edicao.nomeDaEtapa(etapa) }}</span>
                           <span class="etapa-resumo__marcas">
-                            @for (marca of marcasDaEtapa(etapa); track marca) {
+                            @for (marca of edicao.marcasDaEtapa(etapa); track marca) {
                               <span class="etapa-resumo__marca">{{ marca }}</span>
                             }
                           </span>
@@ -638,7 +469,7 @@
                               class="input"
                               [attr.id]="'cr-etapa-tipo-' + posicao"
                               [value]="etapa.controls.tipoEtapaOrigemId.value"
-                              (change)="escolherTipoEtapa(etapa, $any($event.target).value)"
+                              (change)="edicao.escolherTipoEtapa(etapa, $any($event.target).value)"
                             >
                               <option
                                 value=""
@@ -646,7 +477,7 @@
                               >
                                 Selecione…
                               </option>
-                              @for (tipo of tiposEscolhiveisPara(etapa); track tipo.id) {
+                              @for (tipo of edicao.tiposEscolhiveisPara(etapa); track tipo.id) {
                                 <option
                                   [value]="tipo.id"
                                   [selected]="tipo.id === etapa.controls.tipoEtapaOrigemId.value"
@@ -656,7 +487,7 @@
                               }
                             </select>
                           </div>
-                          @let notaDoEnem = etapaDeNotaDoEnem(etapa);
+                          @let notaDoEnem = edicao.etapaDeNotaDoEnem(etapa);
                           @if (notaDoEnem) {
                             <p
                               class="form-grid__full field__hint"
@@ -676,7 +507,7 @@
                               class="input"
                               [attr.id]="'cr-etapa-carater-' + posicao"
                               [value]="etapa.controls.carater.value"
-                              (change)="escolherCarater(etapa, $any($event.target).value)"
+                              (change)="edicao.escolherCarater(etapa, $any($event.target).value)"
                             >
                               <!--
                                   `selected` por opção: o seletor deixou de ser ligado pelo
@@ -686,7 +517,7 @@
                               <option value="" [selected]="etapa.controls.carater.value === ''">
                                 Selecione…
                               </option>
-                              @for (opcao of caracteresPara(etapa); track opcao.valor) {
+                              @for (opcao of edicao.caracteresPara(etapa); track opcao.valor) {
                                 <option
                                   [value]="opcao.valor"
                                   [selected]="opcao.valor === etapa.controls.carater.value"
@@ -703,7 +534,7 @@
                               análise documental deixa de oferecer peso sem que esta tela
                               carregue uma lista de códigos que envelhece a cada tipo novo.
                             -->
-                          @if (etapaComponeNota(etapa)) {
+                          @if (edicao.etapaComponeNota(etapa)) {
                             <div class="form-field">
                               <label class="label" [attr.for]="'cr-etapa-peso-' + posicao"
                                 >Peso</label
@@ -717,7 +548,7 @@
                               />
                             </div>
                           }
-                          @if (etapaElimina(etapa)) {
+                          @if (edicao.etapaElimina(etapa)) {
                             @let recusaDaNotaMinima = recusas.recusaDoCampo(etapa, 'notaMinima');
                             <div class="form-field">
                               <label class="label" [attr.for]="'cr-etapa-nota-' + posicao"
@@ -741,7 +572,7 @@
                               }
                             </div>
                           }
-                          @if (etapaDeclaraNotaMaxima(etapa)) {
+                          @if (edicao.etapaDeclaraNotaMaxima(etapa)) {
                             @let recusaDaNotaMaxima = recusas.recusaDoCampo(etapa, 'notaMaxima');
                             <div class="form-field">
                               <label class="label" [attr.for]="'cr-etapa-nota-maxima-' + posicao"
@@ -768,7 +599,7 @@
                               }
                             </div>
                           }
-                          @if (etapaDeclaraNotaMaxima(etapa)) {
+                          @if (edicao.etapaDeclaraNotaMaxima(etapa)) {
                             @let recusaDaForma = recusas.recusaDoCampo(etapa, 'formaDeAvaliacao');
                             <fieldset
                               class="field form-grid__full"
@@ -777,7 +608,7 @@
                               "
                             >
                               <legend class="field__label">Forma de avaliação</legend>
-                              @for (forma of formasDeAvaliacao; track forma.valor) {
+                              @for (forma of edicao.formasDeAvaliacao; track forma.valor) {
                                 <label class="radio">
                                   <input
                                     type="radio"
@@ -788,7 +619,7 @@
                                     "
                                     [disabled]="!edicaoLiberada()"
                                     [attr.aria-invalid]="recusaDaForma ? 'true' : null"
-                                    (change)="escolherFormaDeAvaliacao(etapa, forma.valor)"
+                                    (change)="edicao.escolherFormaDeAvaliacao(etapa, forma.valor)"
                                   />
                                   <span class="radio__dot" aria-hidden="true"></span>
                                   {{ forma.rotulo }}
@@ -801,7 +632,7 @@
                               }
                             </fieldset>
                           }
-                          @if (etapaEhDeAvaliacaoHumana(etapa)) {
+                          @if (edicao.etapaEhDeAvaliacaoHumana(etapa)) {
                             @let recusaDaRegra = recusas.recusaDoCampo(etapa, 'regraConsolidacao');
                             <fieldset
                               class="field form-grid__full"
@@ -811,7 +642,7 @@
                             >
                               <legend class="field__label">Regra de consolidação das notas</legend>
                               @for (
-                                regra of regrasDeConsolidacao();
+                                regra of edicao.regrasDeConsolidacao();
                                 track regra.codigo + regra.versao
                               ) {
                                 <label class="radio">
@@ -832,7 +663,11 @@
                                         : null
                                     "
                                     (change)="
-                                      escolherRegraDeConsolidacao(etapa, regra.codigo, regra.versao)
+                                      edicao.escolherRegraDeConsolidacao(
+                                        etapa,
+                                        regra.codigo,
+                                        regra.versao
+                                      )
                                     "
                                   />
                                   <span class="radio__dot" aria-hidden="true"></span>
@@ -855,7 +690,7 @@
                                 </p>
                               }
                             </fieldset>
-                            @if (!etapaUsaEscalaDeAtendimento(etapa)) {
+                            @if (!edicao.etapaUsaEscalaDeAtendimento(etapa)) {
                               @let recusaPasso = recusas.recusaDoCampo(etapa, 'passoDoLancamento');
                               <div class="form-field">
                                 <label class="label" [attr.for]="'cr-etapa-passo-' + posicao"
@@ -886,7 +721,7 @@
                               </div>
                             }
                           }
-                          @if (etapaDeclaraNotaMaxima(etapa)) {
+                          @if (edicao.etapaDeclaraNotaMaxima(etapa)) {
                             <sel-itens-de-avaliacao-da-etapa
                               class="form-grid__full"
                               [grupo]="etapa"
@@ -982,10 +817,10 @@
                                     <label class="checkbox">
                                       <input
                                         type="checkbox"
-                                        [checked]="bancasDaEtapa(etapa).includes(banca.id)"
+                                        [checked]="edicao.bancasDaEtapa(etapa).includes(banca.id)"
                                         [disabled]="!edicaoLiberada()"
                                         (change)="
-                                          alternarBancaDaEtapa(
+                                          edicao.alternarBancaDaEtapa(
                                             etapa,
                                             banca.id,
                                             $any($event.target).checked
@@ -1025,14 +860,14 @@
                                 <h4 class="form-section__title">O que esta etapa publica</h4>
                                 <span class="etapa-resumo__marcas">
                                   <span class="etapa-resumo__marca">{{
-                                    resumoDasPublicacoes(etapa)
+                                    edicao.resumoDasPublicacoes(etapa)
                                   }}</span>
                                 </span>
                               </button>
 
                               @if (expansao.blocoAberto(posicao, 'publica')) {
                                 <div [attr.id]="'cr-etapa-publica-' + posicao">
-                                  @for (produto of produtosDaEtapa(etapa); track $index) {
+                                  @for (produto of edicao.produtosDaEtapa(etapa); track $index) {
                                     <div class="form-grid">
                                       <div class="form-field">
                                         <label
@@ -1046,7 +881,7 @@
                                           [value]="produto.atoCodigo"
                                           [disabled]="!edicaoLiberada()"
                                           (change)="
-                                            escolherAtoDaEtapa(
+                                            edicao.escolherAtoDaEtapa(
                                               etapa,
                                               $index,
                                               $any($event.target).value
@@ -1082,10 +917,11 @@
                                           [attr.id]="'cr-etapa-papel-' + posicao + '-' + $index"
                                           [value]="produto.papel ?? ''"
                                           [disabled]="
-                                            !edicaoLiberada() || !atoEhResultado(produto.atoCodigo)
+                                            !edicaoLiberada() ||
+                                            !edicao.atoEhResultado(produto.atoCodigo)
                                           "
                                           (change)="
-                                            escolherPapelDaEtapa(
+                                            edicao.escolherPapelDaEtapa(
                                               etapa,
                                               $index,
                                               $any($event.target).value
@@ -1096,7 +932,7 @@
                                             Sem papel &mdash; não decide sobre candidato
                                           </option>
                                           <!-- O mesmo vocabulário que a fase já usa um nível acima. -->
-                                          @for (papel of papeis; track papel.valor) {
+                                          @for (papel of edicao.papeis; track papel.valor) {
                                             @if (papel.valor !== '') {
                                               <option
                                                 [value]="papel.valor"
@@ -1109,7 +945,7 @@
                                         </select>
                                         @if (
                                           produto.atoCodigo !== '' &&
-                                          !atoEhResultado(produto.atoCodigo)
+                                          !edicao.atoEhResultado(produto.atoCodigo)
                                         ) {
                                           <p class="field__hint">
                                             Este ato não é resultado no catálogo, então não recebe
@@ -1120,7 +956,7 @@
                                       <button
                                         class="btn btn--tertiary"
                                         type="button"
-                                        (click)="removerProdutoDaEtapa(etapa, $index)"
+                                        (click)="edicao.removerProdutoDaEtapa(etapa, $index)"
                                         [disabled]="!edicaoLiberada()"
                                       >
                                         Remover publicação
@@ -1132,7 +968,7 @@
                                   <button
                                     class="btn btn--secondary"
                                     type="button"
-                                    (click)="acrescentarProdutoNaEtapa(etapa)"
+                                    (click)="edicao.acrescentarProdutoNaEtapa(etapa)"
                                     [disabled]="!edicaoLiberada()"
                                   >
                                     Acrescentar publicação
@@ -1157,14 +993,14 @@
                               <h4 class="form-section__title">Recursos que esta etapa admite</h4>
                               <span class="etapa-resumo__marcas">
                                 <span class="etapa-resumo__marca">{{
-                                  resumoDosRecursos(etapa)
+                                  edicao.resumoDosRecursos(etapa)
                                 }}</span>
                               </span>
                             </button>
 
                             @if (expansao.blocoAberto(posicao, 'recursos')) {
                               <div [attr.id]="'cr-etapa-recursos-' + posicao">
-                                @for (recurso of recursosDaEtapa(etapa); track $index) {
+                                @for (recurso of edicao.recursosDaEtapa(etapa); track $index) {
                                   <div class="form-grid">
                                     <div class="form-field">
                                       <label
@@ -1178,7 +1014,7 @@
                                         [attr.id]="'cr-rec-anc-' + posicao + '-' + $index"
                                         [disabled]="!edicaoLiberada()"
                                         (change)="
-                                          alterarRecursoDaEtapa(
+                                          edicao.alterarRecursoDaEtapa(
                                             etapa,
                                             $index,
                                             'ancora',
@@ -1215,7 +1051,7 @@
                                           [attr.id]="'cr-rec-ato-' + posicao + '-' + $index"
                                           [disabled]="!edicaoLiberada()"
                                           (change)="
-                                            alterarRecursoDaEtapa(
+                                            edicao.alterarRecursoDaEtapa(
                                               etapa,
                                               $index,
                                               'atoAncoraCodigo',
@@ -1225,7 +1061,7 @@
                                         >
                                           <option value="">Selecione…</option>
                                           @for (
-                                            preliminar of preliminaresDaEtapa(etapa);
+                                            preliminar of edicao.preliminaresDaEtapa(etapa);
                                             track preliminar.atoCodigo
                                           ) {
                                             <option
@@ -1241,7 +1077,7 @@
                                             </option>
                                           }
                                         </select>
-                                        @if (preliminaresDaEtapa(etapa).length === 0) {
+                                        @if (edicao.preliminaresDaEtapa(etapa).length === 0) {
                                           <p class="field__hint">
                                             Esta etapa ainda não publica resultado preliminar — é da
                                             publicação dele que a janela corre.
@@ -1263,7 +1099,7 @@
                                         [value]="recurso.prazoValor"
                                         [disabled]="!edicaoLiberada()"
                                         (input)="
-                                          alterarRecursoDaEtapa(
+                                          edicao.alterarRecursoDaEtapa(
                                             etapa,
                                             $index,
                                             'prazoValor',
@@ -1283,7 +1119,7 @@
                                         [attr.id]="'cr-rec-un-' + posicao + '-' + $index"
                                         [disabled]="!edicaoLiberada()"
                                         (change)="
-                                          alterarRecursoDaEtapa(
+                                          edicao.alterarRecursoDaEtapa(
                                             etapa,
                                             $index,
                                             'prazoUnidade',
@@ -1322,7 +1158,7 @@
                                         [value]="recurso.suspensividadePrimeiraInstanciaValor"
                                         [disabled]="!edicaoLiberada()"
                                         (input)="
-                                          alterarRecursoDaEtapa(
+                                          edicao.alterarRecursoDaEtapa(
                                             etapa,
                                             $index,
                                             'suspensividadePrimeiraInstanciaValor',
@@ -1345,7 +1181,7 @@
                                         "
                                         [disabled]="!edicaoLiberada()"
                                         (change)="
-                                          alterarRecursoDaEtapa(
+                                          edicao.alterarRecursoDaEtapa(
                                             etapa,
                                             $index,
                                             'suspensividadePrimeiraInstanciaUnidade',
@@ -1424,7 +1260,11 @@
                                             recurso.admiteInstanciaSuperior === null ? 'true' : null
                                           "
                                           (change)="
-                                            declararInstanciaSuperiorDaEtapa(etapa, $index, true)
+                                            edicao.declararInstanciaSuperiorDaEtapa(
+                                              etapa,
+                                              $index,
+                                              true
+                                            )
                                           "
                                         />
                                         <span class="radio__dot" aria-hidden="true"></span>
@@ -1446,7 +1286,11 @@
                                             recurso.admiteInstanciaSuperior === null ? 'true' : null
                                           "
                                           (change)="
-                                            declararInstanciaSuperiorDaEtapa(etapa, $index, false)
+                                            edicao.declararInstanciaSuperiorDaEtapa(
+                                              etapa,
+                                              $index,
+                                              false
+                                            )
                                           "
                                         />
                                         <span class="radio__dot" aria-hidden="true"></span>
@@ -1467,7 +1311,7 @@
                                           [attr.id]="
                                             'cr-rec-superior-erro-' + posicao + '-' + $index
                                           "
-                                          >{{ mensagemDaInstanciaSuperiorEmAberto }}</span
+                                          >{{ edicao.mensagemDaInstanciaSuperiorEmAberto }}</span
                                         >
                                       }
                                     </fieldset>
@@ -1489,7 +1333,7 @@
                                           [value]="recurso.suspensividadeSegundaInstanciaValor"
                                           [disabled]="!edicaoLiberada()"
                                           (input)="
-                                            alterarRecursoDaEtapa(
+                                            edicao.alterarRecursoDaEtapa(
                                               etapa,
                                               $index,
                                               'suspensividadeSegundaInstanciaValor',
@@ -1512,7 +1356,7 @@
                                           "
                                           [disabled]="!edicaoLiberada()"
                                           (change)="
-                                            alterarRecursoDaEtapa(
+                                            edicao.alterarRecursoDaEtapa(
                                               etapa,
                                               $index,
                                               'suspensividadeSegundaInstanciaUnidade',
@@ -1553,7 +1397,7 @@
                                     <button
                                       class="btn btn--tertiary"
                                       type="button"
-                                      (click)="removerRecursoDaEtapa(etapa, $index)"
+                                      (click)="edicao.removerRecursoDaEtapa(etapa, $index)"
                                       [disabled]="!edicaoLiberada()"
                                     >
                                       Remover recurso
@@ -1565,8 +1409,8 @@
                                 <button
                                   class="btn btn--secondary"
                                   type="button"
-                                  (click)="acrescentarRecursoNaEtapa(etapa)"
-                                  [disabled]="!edicaoLiberada() || !temRegraDeRecurso()"
+                                  (click)="edicao.acrescentarRecursoNaEtapa(etapa)"
+                                  [disabled]="!edicaoLiberada() || !edicao.temRegraDeRecurso()"
                                 >
                                   Acrescentar recurso
                                 </button>
@@ -1608,7 +1452,7 @@
       removidas — editá-las aqui sugeriria que estão configuradas, quando o que
       falta é a fase que as avalia.
     -->
-    @if (etapasOrfas().length > 0) {
+    @if (leitura.etapasOrfas().length > 0) {
       <div class="step-card">
         <h2 class="form-section__title">Etapas sem a fase que as agrupa</h2>
         <p class="field__hint">
@@ -1616,7 +1460,7 @@
           agrupa. Acrescente a fase de avaliação acima para recebê-las de volta, ou remova-as aqui.
         </p>
         <ul>
-          @for (orfa of etapasOrfas(); track orfa.indice) {
+          @for (orfa of leitura.etapasOrfas(); track orfa.indice) {
             <li>
               {{ orfa.rotulo }}
               <button
@@ -1648,69 +1492,7 @@
       enquanto rascunho — nenhuma opção vem pré-selecionada, e o seletor exibe
       só `codigo` e `baseLegal`, que é o que o catálogo tem de legível.
     -->
-    <div class="step-card">
-      <h2 class="form-section__title">Convenção de contagem de prazo</h2>
-      <div class="form-field">
-        <label class="label" for="cr-algoritmo-contagem">Convenção de contagem</label>
-        <!--
-          A opção traz só o que distingue uma convenção da outra. A base legal saiu daqui:
-          as três convenções têm a MESMA, e repeti-la em cada linha empurrava o código —
-          que é o que de fato identifica — para fora da largura do campo.
-        -->
-        <select
-          class="input"
-          id="cr-algoritmo-contagem"
-          aria-describedby="cr-algoritmo-ajuda"
-          [ngModel]="formulario.controls.algoritmoContagemCodigo.value"
-          [ngModelOptions]="{ standalone: true }"
-          [disabled]="!edicaoLiberada()"
-          (ngModelChange)="escolherAlgoritmo($event)"
-        >
-          @if (!algoritmoDeclaradoNoServidor()) {
-            <option value="">Nenhuma convenção declarada</option>
-          }
-          @for (regra of regrasDeContagem(); track regra.codigo + regra.versao) {
-            <option [value]="regra.codigo">{{ regra.codigo }} ({{ regra.versao }})</option>
-          }
-        </select>
-      </div>
-      <p class="field__hint escolher-e-acrescentar__ajuda" id="cr-algoritmo-ajuda">
-        Regra do catálogo institucional que define como os prazos de recurso deste cronograma são
-        contados.
-        @if (algoritmoDeclaradoNoServidor()) {
-          Depois de declarada, a convenção não pode ser removida — apenas trocada por outra do
-          catálogo.
-        } @else {
-          Sem escolha, o processo segue em rascunho quanto a este item.
-        }
-      </p>
-
-      <!--
-        O que a convenção escolhida faz, na prosa do próprio catálogo: é isto que separa uma
-        da outra, e é onde o operador confere se escolheu a que o edital declara.
-      -->
-      @if (invariantesDaContagem().length > 0) {
-        <details class="regra-explicada">
-          <summary>
-            O que esta convenção faz
-            <span class="regra-explicada__contagem"
-              >{{ invariantesDaContagem().length }} garantias</span
-            >
-          </summary>
-
-          <ul class="regra-explicada__invariantes">
-            @for (invariante of invariantesDaContagem(); track invariante) {
-              <li>{{ invariante }}</li>
-            }
-          </ul>
-
-          @if (baseLegalDaContagem() !== '') {
-            <p class="regra-explicada__rotulo">Base legal</p>
-            <p class="regra-explicada__legal">{{ baseLegalDaContagem() }}</p>
-          }
-        </details>
-      }
-    </div>
+    <div class="step-card" selConvencaoDeContagem></div>
   </form>
 
   @if (conferencia.problemas().length > 0) {

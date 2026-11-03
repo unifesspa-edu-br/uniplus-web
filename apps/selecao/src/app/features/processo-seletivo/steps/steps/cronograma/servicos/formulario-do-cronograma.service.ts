@@ -26,7 +26,7 @@ import { UnidadesDasFases } from './unidades-das-fases.service';
  * congela sobre ela. O componente monta este par uma vez e o template lê os dois
  * lados sem procurar a fase canônica a cada célula.
  */
-interface FaseNaLinhaDoTempo extends DescricaoDaFase {
+export interface FaseNaLinhaDoTempo extends DescricaoDaFase {
   readonly grupo: FormGroup<FaseForm>;
   readonly indice: number;
   /** Rótulo da unidade responsável, ou `null` com a fase sem unidade. */

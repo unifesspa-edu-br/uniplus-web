@@ -14,7 +14,12 @@ import type {
   RecursoDaFase,
   TipoCongeladoDaEtapa,
 } from '../../processo-seletivo.models';
-import { campoDoInstante, instanteDoCampo } from '../../shared/fuso-institucional';
+import {
+  campoDoInstante,
+  inicioDeHojeNoFusoInstitucional,
+  instanteDoCampo,
+  pisoDoCampoDeData,
+} from '../../shared/fuso-institucional';
 
 /** Caráter ainda não escolhido é `''` — o valor que o seletor mostra vazio. */
 export type CaraterEscolhido = CaraterEtapa | '';
@@ -202,4 +207,19 @@ export function etapaDoFormulario(grupo: FormGroup<EtapaForm>): EtapaPontuada {
  */
 function controle<T>(valorInicial: T): FormControl<T> {
   return new FormControl<T>(valorInicial, { nonNullable: true });
+}
+
+/**
+ * O piso do campo de data e hora: nunca antes de hoje, e nunca depois do que o campo já
+ * carrega.
+ *
+ * Recebe os limites que valem para aquele campo — o início da fase, para uma etapa que precisa
+ * caber nela; o início da própria janela, para um fim. Passar o valor atual é o que impede o
+ * piso de invalidar cronograma já em curso, que é o caso da retificação.
+ */
+export function pisoDeData(
+  valorAtual: string,
+  ...limites: readonly (string | null | undefined)[]
+): string | null {
+  return pisoDoCampoDeData(valorAtual, inicioDeHojeNoFusoInstitucional(), ...limites);
 }

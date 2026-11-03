@@ -1,0 +1,58 @@
+<h2 class="form-section__title">Convenção de contagem de prazo</h2>
+<div class="form-field">
+  <label class="label" for="cr-algoritmo-contagem">Convenção de contagem</label>
+  <!--
+    A opção traz só o que distingue uma convenção da outra. A base legal saiu daqui:
+    as três convenções têm a MESMA, e repeti-la em cada linha empurrava o código —
+    que é o que de fato identifica — para fora da largura do campo.
+  -->
+  <select
+    class="input"
+    id="cr-algoritmo-contagem"
+    aria-describedby="cr-algoritmo-ajuda"
+    [ngModel]="formulario.controls.algoritmoContagemCodigo.value"
+    [ngModelOptions]="{ standalone: true }"
+    [disabled]="!edicaoLiberada()"
+    (ngModelChange)="escolherAlgoritmo($event)"
+  >
+    @if (!algoritmoDeclaradoNoServidor()) {
+      <option value="">Nenhuma convenção declarada</option>
+    }
+    @for (regra of regrasDeContagem(); track regra.codigo + regra.versao) {
+      <option [value]="regra.codigo">{{ regra.codigo }} ({{ regra.versao }})</option>
+    }
+  </select>
+</div>
+<p class="field__hint escolher-e-acrescentar__ajuda" id="cr-algoritmo-ajuda">
+  Regra do catálogo institucional que define como os prazos de recurso deste cronograma são
+  contados.
+  @if (algoritmoDeclaradoNoServidor()) {
+    Depois de declarada, a convenção não pode ser removida — apenas trocada por outra do catálogo.
+  } @else {
+    Sem escolha, o processo segue em rascunho quanto a este item.
+  }
+</p>
+
+<!--
+  O que a convenção escolhida faz, na prosa do próprio catálogo: é isto que separa uma
+  da outra, e é onde o operador confere se escolheu a que o edital declara.
+-->
+@if (invariantesDaContagem().length > 0) {
+  <details class="regra-explicada">
+    <summary>
+      O que esta convenção faz
+      <span class="regra-explicada__contagem">{{ invariantesDaContagem().length }} garantias</span>
+    </summary>
+
+    <ul class="regra-explicada__invariantes">
+      @for (invariante of invariantesDaContagem(); track invariante) {
+        <li>{{ invariante }}</li>
+      }
+    </ul>
+
+    @if (baseLegalDaContagem() !== '') {
+      <p class="regra-explicada__rotulo">Base legal</p>
+      <p class="regra-explicada__legal">{{ baseLegalDaContagem() }}</p>
+    }
+  </details>
+}
