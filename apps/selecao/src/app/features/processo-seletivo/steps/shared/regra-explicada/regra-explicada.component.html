@@ -1,0 +1,30 @@
+<summary>
+  {{ titulo() }}
+  <span class="regra-explicada__contagem">{{ regra().invariantes.length }} garantias</span>
+</summary>
+
+<p class="regra-explicada__rotulo">Base legal</p>
+<p class="regra-explicada__legal">{{ regra().baseLegal }}</p>
+
+@if (regra().invariantes.length > 0) {
+  <p class="regra-explicada__rotulo">{{ rotuloDasGarantias() }}</p>
+  <ul class="regra-explicada__invariantes">
+    @for (invariante of regra().invariantes; track invariante) {
+      <li>{{ invariante }}</li>
+    }
+  </ul>
+}
+
+@if (comParametros() && regra().parametros.length > 0) {
+  <p class="regra-explicada__rotulo">Parâmetros declarados pelo catálogo</p>
+  <dl class="regra-explicada__parametros">
+    @for (parametro of regra().parametros; track parametro.chave) {
+      <div>
+        <dt>
+          <code>{{ parametro.chave }}</code>
+        </dt>
+        <dd>{{ parametro.valores.join(' · ') }}</dd>
+      </div>
+    }
+  </dl>
+}

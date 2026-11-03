@@ -28,7 +28,12 @@ import {
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
 import { modalidadesGravadasPorId } from './modalidades-da-distribuicao';
 import { MatrizDaCascataComponent } from './matriz-da-cascata.component';
-import { explicarRegra, RegraExplicada } from './regra-em-linguagem-clara';
+import {
+  explicarRegra,
+  RegraExplicada,
+} from '../../shared/regra-explicada/regra-em-linguagem-clara';
+import { regraPorChave } from '../../shared/regra-por-chave';
+import { RegraExplicadaComponent } from '../../shared/regra-explicada/regra-explicada.component';
 import { VersaoDeRegraForaDaListagemService } from './versao-de-regra-fora-da-listagem.service';
 
 /**
@@ -57,6 +62,7 @@ import { VersaoDeRegraForaDaListagemService } from './versao-de-regra-fora-da-li
     ReactiveFormsModule,
     RolagemFocavelDirective,
     MatrizDaCascataComponent,
+    RegraExplicadaComponent,
   ],
   templateUrl: './cascata-remanejamento.component.html',
   providers: [VersaoDeRegraForaDaListagemService],
@@ -157,10 +163,9 @@ export class CascataRemanejamentoComponent {
     const regra = this.versaoDaRegra.regraEscolhida();
     if (regra === undefined) return listagem;
 
-    const jaNaListagem = listagem.some(
-      (item) => item.codigo === regra.codigo && item.versao === regra.versao,
-    );
-    return jaNaListagem ? listagem : [...listagem, regra];
+    return regraPorChave(listagem, regra.codigo, regra.versao) === undefined
+      ? [...listagem, regra]
+      : listagem;
   });
 
   /** A matriz que a regra escolhida congela — o que a tela apresenta e envia, sem editar. */

@@ -35,6 +35,9 @@ import {
   CamposPressupostosService,
   fatosCitadosPelasModalidadesOfertadas,
 } from '../../shared/campos-pressupostos.service';
+import { explicarRegra } from '../../shared/regra-explicada/regra-em-linguagem-clara';
+import { RegraExplicadaComponent } from '../../shared/regra-explicada/regra-explicada.component';
+import { regraPorChave } from '../../shared/regra-por-chave';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
 import { comandoDaCascata, comandoDeRemocaoDaCascata } from './cascata-de-remanejamento';
 import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
@@ -55,7 +58,6 @@ import {
   rotuloDasOpcoes,
   TEXTO_OPCOES_ACIMA_DAS_OFERTAS,
 } from './opcoes-de-curso';
-import { explicarRegra } from './regra-em-linguagem-clara';
 
 const PADRAO_VAZIO: PadraoDoEdital = {
   regraDistribuicaoCodigo: '',
@@ -114,6 +116,7 @@ type ModalidadeDoPadrao = Pick<ModalidadeDto, 'id' | 'codigo' | 'descricao'> &
     ConfirmDialogComponent,
     CascataRemanejamentoComponent,
     RegrasDasModalidadesComponent,
+    RegraExplicadaComponent,
   ],
   templateUrl: './vagas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -191,13 +194,11 @@ export class VagasStepComponent {
 
   /** A entrada do catálogo para a regra de distribuição escolhida no padrão. */
   private readonly regraDistribuicaoEscolhida = computed(() =>
-    this.catalogos
-      .regrasDistribuicao()
-      .find(
-        (regra) =>
-          regra.codigo === this.padrao().regraDistribuicaoCodigo &&
-          regra.versao === this.padrao().regraDistribuicaoVersao,
-      ),
+    regraPorChave(
+      this.catalogos.regrasDistribuicao(),
+      this.padrao().regraDistribuicaoCodigo,
+      this.padrao().regraDistribuicaoVersao,
+    ),
   );
 
   /**
@@ -308,13 +309,11 @@ export class VagasStepComponent {
 
   readonly ajusteExplicado = computed(() =>
     explicarRegra(
-      this.catalogos
-        .regrasAjuste()
-        .find(
-          (regra) =>
-            regra.codigo === this.padrao().regraAjusteCodigo &&
-            regra.versao === this.padrao().regraAjusteVersao,
-        ),
+      regraPorChave(
+        this.catalogos.regrasAjuste(),
+        this.padrao().regraAjusteCodigo,
+        this.padrao().regraAjusteVersao,
+      ),
     ),
   );
 
@@ -666,10 +665,8 @@ export class VagasStepComponent {
 
   private aplicarTrocaDeRegra(codigo: string, versao: string): void {
     const rol =
-      this.catalogos
-        .regrasDistribuicao()
-        .find((regra) => regra.codigo === codigo && regra.versao === versao)
-        ?.modalidadesAdmitidas ?? null;
+      regraPorChave(this.catalogos.regrasDistribuicao(), codigo, versao)?.modalidadesAdmitidas ??
+      null;
 
     // Rol aberto preserva a seleção livre; rol fechado é a oferta inteira —
     // a regra determina o conjunto, não filtra uma escolha dentro dele.
@@ -1050,13 +1047,11 @@ export class VagasStepComponent {
    */
   private rolDaDistribuicao(distribuicao: DistribuicaoDeVagas): readonly string[] | null {
     return (
-      this.catalogos
-        .regrasDistribuicao()
-        .find(
-          (regra) =>
-            regra.codigo === distribuicao.regraDistribuicaoCodigo &&
-            regra.versao === distribuicao.regraDistribuicaoVersao,
-        )?.modalidadesAdmitidas ?? null
+      regraPorChave(
+        this.catalogos.regrasDistribuicao(),
+        distribuicao.regraDistribuicaoCodigo,
+        distribuicao.regraDistribuicaoVersao,
+      )?.modalidadesAdmitidas ?? null
     );
   }
 

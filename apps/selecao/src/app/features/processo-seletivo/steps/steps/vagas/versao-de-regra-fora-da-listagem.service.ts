@@ -5,6 +5,7 @@ import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/seleca
 import { Subscription } from 'rxjs';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { regraPorChave } from '../../shared/regra-por-chave';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
 
 interface SelecaoDaRegra {
@@ -128,10 +129,7 @@ export class VersaoDeRegraForaDaListagemService {
 
     if (selecao === null || carregando) return;
 
-    const naListagem = regras.some(
-      (regra) => regra.codigo === selecao.regraCodigo && regra.versao === selecao.regraVersao,
-    );
-    if (naListagem) return;
+    if (regraPorChave(regras, selecao.regraCodigo, selecao.regraVersao) !== undefined) return;
 
     const buscaAtual = this.busca();
     if (buscaAtual !== null && this.ehDaSelecao(buscaAtual, selecao)) return;

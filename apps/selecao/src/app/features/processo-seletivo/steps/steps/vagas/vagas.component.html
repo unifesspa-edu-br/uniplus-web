@@ -100,40 +100,14 @@
         }
 
         @if (regraExplicada(); as regra) {
-          <details class="regra-explicada">
-            <summary>
-              Base legal e garantias desta regra
-              <span class="regra-explicada__contagem"
-                >{{ regra.invariantes.length }} garantias</span
-              >
-            </summary>
-
-            <p class="regra-explicada__rotulo">Base legal</p>
-            <p class="regra-explicada__legal">{{ regra.baseLegal }}</p>
-
-            @if (regra.invariantes.length > 0) {
-              <p class="regra-explicada__rotulo">O que esta regra garante</p>
-              <ul class="regra-explicada__invariantes">
-                @for (invariante of regra.invariantes; track invariante) {
-                  <li>{{ invariante }}</li>
-                }
-              </ul>
-            }
-
-            @if (regra.parametros.length > 0) {
-              <p class="regra-explicada__rotulo">Parâmetros declarados pelo catálogo</p>
-              <dl class="regra-explicada__parametros">
-                @for (parametro of regra.parametros; track parametro.chave) {
-                  <div>
-                    <dt>
-                      <code>{{ parametro.chave }}</code>
-                    </dt>
-                    <dd>{{ parametro.valores.join(' · ') }}</dd>
-                  </div>
-                }
-              </dl>
-            }
-          </details>
+          <details
+            class="regra-explicada"
+            selRegraExplicada
+            [titulo]="'Base legal e garantias desta regra'"
+            [rotuloDasGarantias]="'O que esta regra garante'"
+            [regra]="regra"
+            [comParametros]="true"
+          ></details>
 
           @if (!store.emConsulta()) {
             <p class="field__hint">Passa a exigir: {{ exigenciasDaRegra().join('; ') }}.</p>
@@ -192,26 +166,13 @@
           }
 
           @if (ajusteExplicado(); as ajuste) {
-            <details class="regra-explicada">
-              <summary>
-                Base legal e garantias do ajuste
-                <span class="regra-explicada__contagem">
-                  {{ ajuste.invariantes.length }} garantias
-                </span>
-              </summary>
-
-              <p class="regra-explicada__rotulo">Base legal</p>
-              <p class="regra-explicada__legal">{{ ajuste.baseLegal }}</p>
-
-              @if (ajuste.invariantes.length > 0) {
-                <p class="regra-explicada__rotulo">O que este ajuste garante</p>
-                <ul class="regra-explicada__invariantes">
-                  @for (invariante of ajuste.invariantes; track invariante) {
-                    <li>{{ invariante }}</li>
-                  }
-                </ul>
-              }
-            </details>
+            <details
+              class="regra-explicada"
+              selRegraExplicada
+              [titulo]="'Base legal e garantias do ajuste'"
+              [rotuloDasGarantias]="'O que este ajuste garante'"
+              [regra]="ajuste"
+            ></details>
           }
         </div>
 
