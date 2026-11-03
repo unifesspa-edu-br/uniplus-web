@@ -47,7 +47,6 @@
 976 apps/selecao/src/app/features/processo-seletivo/steps/processo-seletivo.models.ts
 741 apps/selecao/src/app/features/processo-seletivo/steps/processo-seletivo.store.ts
 416 apps/selecao/src/app/features/processo-seletivo/steps/shared/anexo-edital/anexo-edital.component.ts
-438 apps/selecao/src/app/features/processo-seletivo/steps/shared/cadastro-inicial.service.ts
 1339 apps/selecao/src/app/features/processo-seletivo/steps/shared/exigencias-documentais.ts
 532 apps/selecao/src/app/features/processo-seletivo/steps/shared/fase-do-fato.ts
 660 apps/selecao/src/app/features/processo-seletivo/steps/shared/hidratacao.ts

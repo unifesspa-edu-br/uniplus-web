@@ -1,9 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
-  ProblemDetails,
   SignedUploadClient,
-  STATUS_HTTP,
   enviarAoStorage,
   type ResultadoEnvio,
 } from '@uniplus/shared-core/http';
@@ -30,14 +28,8 @@ import {
   DefinirReferenciaTemporalFatosRequest,
 } from '@uniplus/shared-data/selecao';
 
-import {
-  cabecalhoParaEnvio,
-  itensParaEnvio,
-  planoDeGravacao,
-  termosParaEnvio,
-  type FormularioParaGravar,
-  type PassoDaGravacao,
-} from '../steps/formulario/formulario-do-processo';
+import type { FormularioParaGravar } from '../steps/formulario/formulario-do-processo';
+import { gravarFormulario } from './gravacao-do-formulario';
 import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
 import type {
   ResultadoAplicacaoDeModelo,
@@ -57,15 +49,6 @@ export type {
   ResultadoGravacaoComInconclusiva,
   ResultadoIniciacao,
 } from './gravacao/resultado-da-gravacao';
-
-/** Limite digitado no formulário que não é número: a gravação nem sai, porque a API recusa número em texto. */
-const LIMITE_QUE_NAO_E_NUMERO: ProblemDetails = {
-  type: 'about:blank',
-  title: 'Há limites ou deslocamentos do formulário que não são números.',
-  status: STATUS_HTTP.RECUSA_DE_NEGOCIO,
-  code: 'uniplus.client.numero_invalido',
-  traceId: '',
-};
 
 /** Cadastro do Processo Seletivo: cada comando de gravação entra por `GravacaoDoProcesso`. */
 @Injectable()
@@ -255,64 +238,19 @@ export class CadastroInicialService {
     );
   }
 
-  /**
-   * Grava o formulário de uma finalidade seguindo o plano: só o que difere do servidor, na ordem
-   * em que a API aceita cada parte. Para no primeiro passo recusado; os anteriores ficaram
-   * gravados, e quem chama relê o processo para comparar a próxima tentativa com o que ficou.
-   *
-   * Cada parte tem a sua chave, e o corpo leva a finalidade: a mesma lista enviada a duas
-   * finalidades é outro comando.
-   */
-  async gravarFormulario(
+  gravarFormulario(
     processoSeletivoId: string,
     finalidade: string,
     servidor: FormularioParaGravar | null,
     desejado: FormularioParaGravar & { readonly faseId: string },
   ): Promise<ResultadoGravacao> {
-    // Antes do primeiro passo: o cabeçalho não pode ser gravado se os itens não puderem.
-    if (itensParaEnvio(desejado.conteudo) === null) {
-      return { ok: false, problem: LIMITE_QUE_NAO_E_NUMERO };
-    }
-    for (const passo of planoDeGravacao(servidor, desejado)) {
-      const resultado = await this.gravarPassoDoFormulario(
-        processoSeletivoId,
-        finalidade,
-        passo,
-        desejado,
-      );
-      if (!resultado.ok) return resultado;
-    }
-    return { ok: true };
-  }
-
-  private gravarPassoDoFormulario(
-    processoSeletivoId: string,
-    finalidade: string,
-    passo: PassoDaGravacao,
-    desejado: FormularioParaGravar & { readonly faseId: string },
-  ): Promise<ResultadoGravacao> {
-    switch (passo) {
-      case 'cabecalho': {
-        const corpo = cabecalhoParaEnvio(desejado.faseId, desejado.conteudo);
-        return this.gravacao.gravar('cabecalhoDoFormulario', { finalidade, corpo }, (contexto) =>
-          this.api.definirCabecalhoDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
-        );
-      }
-      case 'itensSemSecao':
-      case 'itens': {
-        const corpo = itensParaEnvio(desejado.conteudo, passo === 'itensSemSecao');
-        if (corpo === null) return Promise.resolve({ ok: false, problem: LIMITE_QUE_NAO_E_NUMERO });
-        return this.gravacao.gravar('itensDoFormulario', { finalidade, corpo }, (contexto) =>
-          this.api.definirItensDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
-        );
-      }
-      case 'termos': {
-        const corpo = termosParaEnvio(desejado.conteudo);
-        return this.gravacao.gravar('termosDoFormulario', { finalidade, corpo }, (contexto) =>
-          this.api.definirTermosDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
-        );
-      }
-    }
+    return gravarFormulario(
+      this.gravacao,
+      this.api,
+      { processoSeletivoId, finalidade },
+      servidor,
+      desejado,
+    );
   }
 
   /**
