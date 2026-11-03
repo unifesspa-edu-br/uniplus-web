@@ -6,6 +6,7 @@ import {
   prepararAcessosDaSimulacao,
   SENHA_DAS_PERSONAS,
 } from '@uniplus/shared-e2e';
+import { processosPublicadosComNome, inscricoesDoProcesso } from './processos-da-api';
 import { inscreverPersona, type InscricaoCriada } from './inscricoes-reais';
 
 /**
@@ -25,7 +26,7 @@ import { inscreverPersona, type InscricaoCriada } from './inscricoes-reais';
  */
 const GERACAO = 'v2';
 const NOME_COM_PROVA = `Processo Seletivo Medicina 2027 (simulação da projeção, com prova, ${GERACAO})`;
-const NOME_SEM_INSCRICAO = `Processo Seletivo Medicina 2027 (simulação da projeção, ${GERACAO})`;
+const NOME_SEM_INSCRICAO = 'E2E Processo Seletivo Medicina 2027 (sem inscrição)';
 const MODELO_COM_PROVA = '5e3d0006-0000-7000-8000-000000000003';
 const MODELO_SEM_PROVA = '5e3d0006-0000-7000-8000-000000000004';
 
@@ -74,6 +75,22 @@ async function garantirProcesso(nome: string, identificador: string, modelo: str
   return criado;
 }
 
+/**
+ * Um processo publicado que nenhuma inscrição alcançou. O banco é compartilhado, então o estado
+ * "sem inscrição" não se herda: o processo de uma execução anterior só é reaproveitado se a API
+ * confirma que continua vazio; senão nasce outro, com identificador único.
+ */
+async function processoSemInscricao(): Promise<string> {
+  const candidatos = await processosPublicadosComNome(NOME_SEM_INSCRICAO);
+  for (const candidato of candidatos) {
+    if ((await inscricoesDoProcesso(candidato.id)) === 0) {
+      return candidato.id;
+    }
+  }
+  const identificador = `e2e-sem-inscricao-${Date.now()}`;
+  return garantirProcesso(`${NOME_SEM_INSCRICAO} ${identificador}`, identificador, MODELO_SEM_PROVA);
+}
+
 let guardado: Promise<CenarioDaProjecao> | undefined;
 
 export function cenarioDaProjecao(): Promise<CenarioDaProjecao> {
@@ -81,11 +98,7 @@ export function cenarioDaProjecao(): Promise<CenarioDaProjecao> {
     await prepararAcessosDaSimulacao();
     await aprovarCatalogoInicial();
     const processoId = await garantirProcesso(NOME_COM_PROVA, `psm-2027-projecao-prova-${GERACAO}`, MODELO_COM_PROVA);
-    const processoSemInscricaoId = await garantirProcesso(
-      NOME_SEM_INSCRICAO,
-      `psm-2027-projecao3-${GERACAO}`,
-      MODELO_SEM_PROVA,
-    );
+    const processoSemInscricaoId = await processoSemInscricao();
     const fernanda = await inscreverPersona(processoId, 'fernanda.drumond', true);
     const erick = await inscreverPersona(processoId, 'erick.ramos', false);
     return { processoId, nomeDoProcesso: NOME_COM_PROVA, processoSemInscricaoId, fernanda, erick };
