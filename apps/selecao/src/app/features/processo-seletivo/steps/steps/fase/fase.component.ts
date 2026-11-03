@@ -114,6 +114,7 @@ import {
 } from './configuracao-da-fase';
 import { FaseEmEdicao } from './fase-em-edicao';
 import { CicloRecursalDaFaseComponent } from './secoes/ciclo-recursal-da-fase.component';
+import { RegraDeRecursoDaFaseComponent } from './secoes/regra-de-recurso-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 import { traduzirRecusa } from './recusas-da-fase';
 import type {
@@ -136,16 +137,6 @@ import {
   repeticaoResumida,
   rotuloDaConsequencia,
 } from './resumo-da-exigencia';
-
-/**
- * Unidades de prazo que o domínio aceita, com o rótulo que o operador lê. Dia
- * corrido fica de fora de propósito: o domínio o recusa na interposição, e
- * oferecê-lo seria convidar a uma gravação que volta recusada.
- */
-const UNIDADES = [
-  { valor: 'diasUteis', rotulo: 'dias úteis' },
-  { valor: 'horas', rotulo: 'horas' },
-] as const;
 
 /** A opção que deixa o documento fora de formulário, na fase que não responde nenhum. */
 const SEM_FORMULARIO = 'SEM_FORMULARIO';
@@ -176,6 +167,7 @@ const SEM_ERROS: Readonly<Record<number, string>> = {};
     ModeloDaExigenciaComponent,
     PublicacoesDaFaseComponent,
     ReactiveFormsModule,
+    RegraDeRecursoDaFaseComponent,
   ],
   templateUrl: './fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -187,7 +179,6 @@ export class FaseStepComponent {
   private readonly cadastro = inject(CadastroInicialService);
   private readonly destruicao = inject(DestroyRef);
 
-  readonly unidades = UNIDADES;
   /** Do cadastro vivo de Configuração, não de uma lista escrita nesta tela. */
   readonly gruposDeDocumento = this.catalogos.documentosPorCategoria;
 
@@ -258,32 +249,7 @@ export class FaseStepComponent {
       });
     });
 
-    // Com um só resultado preliminar não há escolha a fazer, e pré-selecionar
-    // poupa um clique. Com dois — gabarito e resultado, por exemplo — a escolha
-    // é do operador: eleger um deles contaria a janela da publicação errada.
-    // Só preenche o campo vazio, e por isso nunca sobrescreve o que ele decidiu.
-    effect(() => {
-      const unica = this.faseEmEdicao.ancoraUnica();
-      const formulario = this.formulario();
-      // Ligar o interruptor não muda a lista de âncoras nem recria o
-      // formulário: sem acompanhar a edição, o campo ficaria vazio esperando
-      // uma escolha que não existe.
-      this.versaoDoFormulario();
-      untracked(() => {
-        if (formulario === null || unica === null) return;
-        if (!formulario.controls.admiteRecurso.value) return;
-        const ancora = formulario.controls.recurso.controls.atoAncoraCodigo;
-        if (ancora.value === '') ancora.setValue(unica);
-      });
-    });
   }
-
-  /** Regras de prazo de recurso publicadas no catálogo versionado. */
-  readonly regrasDeRecurso = computed(() =>
-    this.catalogos
-      .regrasRecurso()
-      .map((regra) => ({ codigo: regra.codigo, versao: regra.versao, baseLegal: regra.baseLegal })),
-  );
 
   /** Categorias de documento do cadastro, na ordem de exibição que ele decide. */
   readonly categorias = computed(() =>
@@ -304,33 +270,9 @@ export class FaseStepComponent {
     if (form === null) return null;
     this.versaoDoFormulario();
 
-    const rotulosDosAtos = this.catalogos.rotuloDoAto();
-    const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
-    const par = (valor: string, unidade: string): string =>
-      valor === '' ? '' : `${valor} ${UNIDADES.find((u) => u.valor === unidade)?.rotulo ?? unidade}`;
     const categorias = this.categorias();
-    const recurso = form.controls.recurso.controls;
 
     return {
-      admiteRecurso: form.controls.admiteRecurso.value,
-      regraDeRecurso: recurso.regraCodigo.value
-        ? `${recurso.regraCodigo.value} · versão ${recurso.regraVersao.value}`
-        : null,
-      prazo: par(recurso.prazoValor.value, recurso.prazoUnidade.value) || null,
-      publicacaoDoPrazo: recurso.atoAncoraCodigo.value ? nomeDoAto(recurso.atoAncoraCodigo.value) : null,
-      suspensividadePrimeiraInstancia:
-        par(
-          recurso.suspensividadePrimeiraInstanciaValor.value,
-          recurso.suspensividadePrimeiraInstanciaUnidade.value,
-        ) || null,
-      admiteInstanciaSuperior: recurso.admiteInstanciaSuperior.value,
-      suspensividadeSegundaInstancia:
-        recurso.admiteInstanciaSuperior.value === true
-          ? par(
-              recurso.suspensividadeSegundaInstanciaValor.value,
-              recurso.suspensividadeSegundaInstanciaUnidade.value,
-            ) || null
-          : null,
       bancas: this.bancas.map((banca) => {
         const nomes = banca.categoriasDocumentoIds.map(
           (id) => categorias.find((categoria) => categoria.id === id)?.nome ?? id,
@@ -385,21 +327,6 @@ export class FaseStepComponent {
     const tipo = this.bancas[posicao]?.tipoBancaId;
     if (tipo === undefined || tipo === '') return false;
     return this.bancas.filter((banca) => banca.tipoBancaId === tipo).length > 1;
-  }
-
-  /**
-   * A regra é identificada por código **e** versão: publicar versão nova do
-   * catálogo não pode mudar a regra que um processo já aplicou. Escolher pelo
-   * código e deduzir a versão do que está carregado é o que mantém o par
-   * coerente — gravar código novo com versão velha é recusado.
-   */
-  escolherRegra(codigo: string): void {
-    const grupo = this.formulario();
-    if (grupo === null) return;
-
-    const versao = this.regrasDeRecurso().find((regra) => regra.codigo === codigo)?.versao ?? '';
-    grupo.controls.recurso.controls.regraCodigo.setValue(codigo);
-    grupo.controls.recurso.controls.regraVersao.setValue(versao);
   }
 
   private escreverBancas(bancas: readonly BancaRequeridaDaFase[]): void {
