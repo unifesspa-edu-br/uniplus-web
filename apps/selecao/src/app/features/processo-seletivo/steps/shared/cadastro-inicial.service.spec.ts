@@ -1,53 +1,63 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import {
+  CriarProcessoSeletivoCommand,
+  OrigemCandidatos,
+  SELECAO_BASE_PATH,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
 
 import { CadastroInicialService } from './cadastro-inicial.service';
-import { ChaveDeSubstituicao } from '@uniplus/shared-core/http';
+import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
 
-/**
- * A `Idempotency-Key` que ficou para trás é invisível: o comando do processo
- * novo sai com a chave que o servidor viu no anterior, e o replay devolve o
- * resultado daquele em vez de aplicar o que foi pedido. Enumerar as chaves à
- * mão no descarte já deixou cinco de fora, então o que se testa aqui não é uma
- * lista — é que NENHUMA sobreviveu.
- */
 describe('CadastroInicialService — descarte do cadastro em andamento', () => {
-  function chavesDe(servico: CadastroInicialService): Map<string, string> {
-    const chaves = new Map<string, string>();
-    for (const [nome, campo] of Object.entries(servico)) {
-      if (campo instanceof ChaveDeSubstituicao) {
-        chaves.set(nome, campo.contextoPara({ corpo: 'igual' }).get(IDEMPOTENCY_KEY_TOKEN) ?? '');
-      }
-    }
-    return chaves;
-  }
+  const ROTA = 'http://localhost:5000/api/selecao/processos-seletivos';
 
-  it('renova toda chave de substituição, sem depender de lista nominal', () => {
+  const comando = (nome: string): CriarProcessoSeletivoCommand => ({
+    nome,
+    tipoProcessoOrigemId: '01960000-0000-7000-0000-000000000001',
+    origemCandidatos: OrigemCandidatos.inscricaoPropria,
+    unidadeAdministradoraOrigemId: '01960000-0000-7000-0000-000000000002',
+    localidadeCodigoIbge: null,
+    localidadeNome: null,
+    localidadeUf: null,
+    identificadorLegivel: null,
+  });
+
+  it('envia o comando novo depois do descarte, com outra chave, e não o retido do processo anterior', async () => {
     TestBed.configureTestingModule({
       providers: [
         CadastroInicialService,
-        { provide: SELECAO_BASE_PATH, useValue: '/api/selecao' },
-        provideHttpClient(),
+        GravacaoDoProcesso,
+        { provide: SELECAO_BASE_PATH, useValue: 'http://localhost:5000' },
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
       ],
     });
     const servico = TestBed.inject(CadastroInicialService);
+    const http = TestBed.inject(HttpTestingController);
 
-    const antes = chavesDe(servico);
-    expect(antes.size, 'o serviço precisa ter chaves de substituição para o teste dizer algo').toBeGreaterThan(10);
+    const primeira = servico.criar(comando('Processo Seletivo A'));
+    const requisicaoA = http.expectOne(ROTA);
+    const chaveA = requisicaoA.request.headers.get('Idempotency-Key');
+    requisicaoA.error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+    await primeira;
+    expect(servico.temCriacaoPendente()).toBe(true);
 
     servico.descartarCadastroEmAndamento();
+    const segunda = servico.criar(comando('Processo Seletivo B'));
+    const requisicaoB = http.expectOne(ROTA);
 
-    // Mesmo corpo de novo: sem a renovação, a chave seria reaproveitada tal e qual.
-    const depois = chavesDe(servico);
-    const sobreviventes = [...antes].filter(([nome, chave]) => depois.get(nome) === chave).map(([nome]) => nome);
-
-    expect(sobreviventes, 'chaves que atravessaram a troca de processo').toEqual([]);
+    expect(requisicaoB.request.body).toMatchObject({ nome: 'Processo Seletivo B' });
+    expect(requisicaoB.request.headers.get('Idempotency-Key')).not.toBe(chaveA);
+    requisicaoB.flush('01960000-0000-7000-0000-0000000005bb', {
+      status: 201,
+      statusText: 'Created',
+    });
+    await segunda;
   });
 });
 
@@ -56,6 +66,7 @@ describe('CadastroInicialService — gravação do formulário', () => {
     TestBed.configureTestingModule({
       providers: [
         CadastroInicialService,
+        GravacaoDoProcesso,
         { provide: SELECAO_BASE_PATH, useValue: '/api/selecao' },
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -66,7 +77,15 @@ describe('CadastroInicialService — gravação do formulário', () => {
     const conteudo: ConteudoDoFormulario = {
       titulo: 'Inscrição',
       etapas: [
-        { codigo: 'S1', ordem: 1, tipo: 'SECAO', bloco: null, titulo: 'S1', descricao: null, aviso: null },
+        {
+          codigo: 'S1',
+          ordem: 1,
+          tipo: 'SECAO',
+          bloco: null,
+          titulo: 'S1',
+          descricao: null,
+          aviso: null,
+        },
       ],
       itens: [
         {

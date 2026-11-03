@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { BonusStepComponent } from './bonus.component';
 
@@ -28,6 +29,7 @@ describe('BonusStepComponent', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDeClassificacaoService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),

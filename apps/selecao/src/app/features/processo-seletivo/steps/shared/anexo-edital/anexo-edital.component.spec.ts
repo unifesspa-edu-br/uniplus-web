@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../gravacao/gravacao-do-processo';
 import { AnexoEditalComponent } from './anexo-edital.component';
 
 const BASE = 'http://localhost:5000';
@@ -102,6 +103,7 @@ describe('AnexoEditalComponent', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },

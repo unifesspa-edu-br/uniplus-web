@@ -41,6 +41,7 @@ import { PASSOS } from './steps/processo-seletivo.data';
 import { PASSO_DO_WIZARD, PassoDoWizard } from './steps/passo-do-wizard';
 import type { ConfirmacaoDeGravacao, GravacaoDoPasso } from './steps/passo-do-wizard';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from './steps/shared/gravacao/gravacao-do-processo';
 import { CamposPressupostosService } from './steps/shared/campos-pressupostos.service';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
 import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-processo.component';
@@ -116,6 +117,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
   ],
   providers: [
     ProcessoSeletivoStore,
+    GravacaoDoProcesso,
     CadastroInicialService,
     CatalogosDoCronogramaService,
     CamposPressupostosService,
@@ -204,8 +206,6 @@ export class ProcessoSeletivoPage {
       concluido: this.store.completedSteps().has(index),
     })),
   );
-
-  /** Steps do wizard — cada um expõe validate(): StepValidation. */
 
   /** Retorna o componente do step ativo, se estiver instanciado. */
   private stepValidatorAt(index: number): PassoDoWizard | undefined {
@@ -809,13 +809,6 @@ export class ProcessoSeletivoPage {
   }
 
   /**
-   * Esquece o rastro local do rascunho, sem tocar no que está em tela.
-   *
-   * Serve a quem publicou (o servidor já apagou a linha) e a quem troca de processo, onde o
-   * rastro do anterior faria a guarda de saída perguntar sobre um rascunho que não é mais o
-   * desta tela.
-   */
-  /**
    * Toma o que está em tela como já guardado, sem gravar nada.
    *
    * É o estado de quem publicou: o rascunho no servidor sumiu junto com o ato, e os campos que
@@ -835,6 +828,11 @@ export class ProcessoSeletivoPage {
     this.chaveDoRascunho.renovar();
   }
 
+  /**
+   * Esquece o rastro local do rascunho, sem tocar no que está em tela. Serve a quem publicou e a
+   * quem troca de processo: o rastro do anterior faria a guarda de saída perguntar sobre um
+   * rascunho que não é mais o desta tela.
+   */
   private esquecerRascunhoDaPublicacao(): void {
     this.vezDoRascunho += 1;
     // O indicador de gravação sai junto: uma resposta em voo desiste ao descobrir que foi

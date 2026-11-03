@@ -10,6 +10,7 @@ import { CaraterEtapa, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from '../cronograma/cronograma.component';
@@ -178,6 +179,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CamposPressupostosService,
         CatalogosDoCronogramaService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),

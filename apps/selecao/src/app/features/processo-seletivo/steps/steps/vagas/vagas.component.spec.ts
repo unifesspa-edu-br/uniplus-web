@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DistribuicaoDeVagas, ModalidadeGravada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { VagasStepComponent } from './vagas.component';
@@ -141,6 +142,7 @@ describe('VagasStepComponent — remoção de oferta do quadro', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
@@ -265,6 +267,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
@@ -792,6 +795,7 @@ const ROTA_SIMULACAO_TESTE = `${ROTA_DISTRIBUICAO_TESTE}/simulacao`;
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
@@ -1260,6 +1264,7 @@ describe('VagasStepComponent — totais do quadro', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
@@ -1369,6 +1374,7 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
@@ -1683,6 +1689,7 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
@@ -1822,6 +1829,7 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
@@ -2079,6 +2087,7 @@ describe('VagasStepComponent — consulta', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
@@ -2154,6 +2163,7 @@ describe('VagasStepComponent — consulta com o catálogo em falha', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
@@ -2401,6 +2411,7 @@ describe('VagasStepComponent — número de opções de curso', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         CamposPressupostosService,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },

@@ -19,6 +19,7 @@ import {
 import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import {
   arvoreDeExigencias,
   comExigencia,
@@ -210,6 +211,7 @@ describe('FaseStepComponent', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),

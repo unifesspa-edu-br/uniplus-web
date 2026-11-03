@@ -23,6 +23,7 @@ import type {
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './cronograma.component';
@@ -235,6 +236,7 @@ describe('CronogramaStepComponent', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CamposPressupostosService,
         CatalogosDoCronogramaService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),

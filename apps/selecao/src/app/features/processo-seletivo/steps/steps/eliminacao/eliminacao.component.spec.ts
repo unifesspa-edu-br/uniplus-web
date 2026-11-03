@@ -21,6 +21,7 @@ import {
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
@@ -85,6 +86,7 @@ describe('EliminacaoStepComponent', () => {
       providers: [
         ProcessoSeletivoStore,
         CadastroInicialService,
+        GravacaoDoProcesso,
         CatalogosDeClassificacaoService,
         { provide: CatalogosDoCronogramaService, useValue: { tipoEtapaPorId } },
         AcompanhamentoDoCadastroDePesos,

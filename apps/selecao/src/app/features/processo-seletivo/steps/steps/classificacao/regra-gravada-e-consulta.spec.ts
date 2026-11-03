@@ -15,6 +15,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { BonusStepComponent } from '../bonus/bonus.component';
 import { DesempateStepComponent } from '../desempate/desempate.component';
@@ -54,6 +55,7 @@ async function montar<T>(componente: Type<T>): Promise<Montagem<T>> {
       { provide: PermissoesService, useValue: { tem: () => false } },
       ProcessoSeletivoStore,
       CadastroInicialService,
+      GravacaoDoProcesso,
       CatalogosDeClassificacaoService,
       AcompanhamentoDoCadastroDePesos,
       { provide: CatalogosDoCronogramaService, useValue: { tipoEtapaPorId: signal(new Map()) } },

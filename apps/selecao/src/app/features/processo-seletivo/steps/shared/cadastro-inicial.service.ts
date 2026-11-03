@@ -1,20 +1,13 @@
-import { HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import {
-  ApiResult,
   ProblemDetails,
   SignedUploadClient,
-  isApiOk,
   STATUS_HTTP,
-  ChaveDeSubstituicao,
-  proximaChave,
   enviarAoStorage,
   type ResultadoEnvio,
 } from '@uniplus/shared-core/http';
-import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import {
-  AplicacaoDeModeloDto,
   ConfiguracaoDistribuicaoVagasInput,
   DefinirOpcoesDeCursoRequest,
   CriarProcessoSeletivoCommand,
@@ -45,43 +38,25 @@ import {
   type FormularioParaGravar,
   type PassoDaGravacao,
 } from '../steps/formulario/formulario-do-processo';
+import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
+import type {
+  ResultadoAplicacaoDeModelo,
+  ResultadoCriacao,
+  ResultadoGravacao,
+  ResultadoGravacaoCascata,
+  ResultadoGravacaoComInconclusiva,
+  ResultadoIniciacao,
+} from './gravacao/resultado-da-gravacao';
 import { TIPO_DE_MIDIA_DO_EDITAL } from './hidratacao';
 
-/** Recusa nomeada por `ProblemDetails`, para o chamador exibir e decidir o retry. */
-export interface FalhaOperacao {
-  readonly ok: false;
-  readonly problem: ProblemDetails;
-}
-
-export type ResultadoCriacao =
-  | { readonly ok: true; readonly processoSeletivoId: string }
-  | FalhaOperacao;
-
-/** As gravações de configuração respondem 204 — não há corpo a devolver. */
-export type ResultadoGravacao = { readonly ok: true } | FalhaOperacao;
-
-/**
- * A gravação da cascata precisa dizer se a recusa é inconclusiva — a
- * `ChaveDeSubstituicao` preservou a chave porque a execução anterior ainda
- * pode ter sido aplicada (erro de rede ou 5xx). `VagasStepComponent` usa
- * isso para decidir se uma remoção futura continua obrigatória mesmo sem
- * confirmação de que a gravação chegou a aplicar — nunca dar a cascata como
- * ausente do servidor só porque a resposta não chegou.
- */
-/**
- * Forma reaproveitada por qualquer gravação cujo chamador precise saber se
- * uma recusa deixou em aberto se o comando foi executado — hoje a cascata de
- * remanejamento, a classificação, o desempate e a publicação (`publicar()`).
- */
-export type ResultadoGravacaoComInconclusiva =
-  | { readonly ok: true }
-  | (FalhaOperacao & { readonly inconclusiva: boolean });
-
-export type ResultadoGravacaoCascata = ResultadoGravacaoComInconclusiva;
-
-export type ResultadoIniciacao =
-  | { readonly ok: true; readonly iniciacao: IniciarEnvioDoDocumentoAPublicarDto }
-  | FalhaOperacao;
+export type {
+  FalhaOperacao,
+  ResultadoCriacao,
+  ResultadoGravacao,
+  ResultadoGravacaoCascata,
+  ResultadoGravacaoComInconclusiva,
+  ResultadoIniciacao,
+} from './gravacao/resultado-da-gravacao';
 
 /** Limite digitado no formulário que não é número: a gravação nem sai, porque a API recusa número em texto. */
 const LIMITE_QUE_NAO_E_NUMERO: ProblemDetails = {
@@ -92,156 +67,65 @@ const LIMITE_QUE_NAO_E_NUMERO: ProblemDetails = {
   traceId: '',
 };
 
-/**
- * Resposta que chegou depois de o editor passar a outro cadastro. Não descreve
- * uma recusa do servidor — é o resultado de um comando que já não pertence ao
- * que está em tela, e por isso não pode virar mensagem para o operador nem
- * mexer nas chaves do cadastro atual.
- */
-const SUPERADO: ProblemDetails = {
-  type: 'about:blank',
-  title: 'Operação abandonada ao trocar de processo.',
-  status: STATUS_HTTP.CONFLITO,
-  code: 'uniplus.client.operacao_superada',
-  traceId: '',
-};
-
-/**
- * Orquestra o cadastro inicial do Processo Seletivo e o anexo do edital,
- * escondendo dos componentes as duas mecânicas que erram fácil: quando a
- * `Idempotency-Key` pode ser reaproveitada e o que significa repetir cada fase
- * do upload.
- *
- * Uma chave por operação — criar, iniciar e confirmar são comandos distintos e
- * não compartilham chave.
- */
+/** Cadastro do Processo Seletivo: cada comando de gravação entra por `GravacaoDoProcesso`. */
 @Injectable()
 export class CadastroInicialService {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly upload = inject(SignedUploadClient);
+  private readonly gravacao = inject(GravacaoDoProcesso);
 
   /**
-   * Muda a cada descarte. Uma iniciação ou confirmação disparada para o
-   * cadastro anterior ainda responde depois que o editor passou a outro, e
-   * escreveria por cima das chaves novas — fazendo a retentativa do cadastro
-   * atual usar uma chave diferente da que o servidor viu, justamente o oposto
-   * da garantia que estas chaves existem para dar.
-   */
-  private geracao = 0;
-
-  private chaveCriacao = idempotencyKey.create();
-  private readonly chaveIniciacao = new ChaveDeSubstituicao();
-  private chaveConfirmacao = idempotencyKey.create();
-
-  private readonly chaveTaxa = new ChaveDeSubstituicao();
-  private readonly chaveDistribuicao = new ChaveDeSubstituicao();
-  private readonly chaveOpcoesDeCurso = new ChaveDeSubstituicao();
-  private readonly chaveCascata = new ChaveDeSubstituicao();
-  private readonly chaveEtapas = new ChaveDeSubstituicao();
-
-  private readonly chaveDocumentosExigidos = new ChaveDeSubstituicao();
-  private readonly chaveCronograma = new ChaveDeSubstituicao();
-  private readonly chaveAlgoritmoContagem = new ChaveDeSubstituicao();
-  private readonly chaveClassificacao = new ChaveDeSubstituicao();
-  private readonly chaveOpcoesDeclaradas = new ChaveDeSubstituicao();
-  private readonly chaveBonus = new ChaveDeSubstituicao();
-  private readonly chaveDesempate = new ChaveDeSubstituicao();
-  private readonly chaveAtendimento = new ChaveDeSubstituicao();
-  private readonly chavePublicacao = new ChaveDeSubstituicao();
-  // Cada comando tem a sua: a chave é de substituição por recurso, e compartilhá-la faria a
-  // gravação de um recurso invalidar a do outro.
-  private readonly chaveCabecalhoDoFormulario = new ChaveDeSubstituicao();
-  private readonly chaveItensDoFormulario = new ChaveDeSubstituicao();
-  private readonly chaveTermosDoFormulario = new ChaveDeSubstituicao();
-  private readonly chaveAplicacaoDeModelo = new ChaveDeSubstituicao();
-  private readonly chaveReferenciaTemporal = new ChaveDeSubstituicao();
-  private readonly chaveIdentificadorLegivel = new ChaveDeSubstituicao();
-
-  /**
-   * Comando de uma criação que ficou sem resposta definitiva (falha de rede ou
-   * 5xx). O servidor pode tê-la executado, então a retentativa precisa repetir
-   * o **mesmo corpo com a mesma chave** para receber o replay em vez de criar
-   * um segundo processo. Enquanto isso não se resolve, editar os campos não
-   * muda o que será reenviado — daí o congelamento na interface.
+   * Comando de uma criação sem resposta definitiva (rede ou 5xx). O servidor pode tê-la
+   * executado, então a retentativa repete o **mesmo corpo com a mesma chave** para receber o
+   * replay em vez de criar um segundo processo. Editar os campos nesse intervalo não muda o que
+   * será reenviado, daí o congelamento na interface.
    */
   private criacaoPendente: CriarProcessoSeletivoCommand | null = null;
 
-  /** Há criação sem resposta definitiva aguardando retentativa. */
   temCriacaoPendente(): boolean {
     return this.criacaoPendente !== null;
   }
 
   /**
-   * Esquece o cadastro que este serviço estava acompanhando.
-   *
-   * A página do editor sobrevive à troca de endereço, e este serviço com ela.
-   * Uma criação que ficou sem resposta definitiva retém o comando **e** a
-   * `Idempotency-Key` para poder repetir o mesmo envio — o que é correto
-   * enquanto o rascunho for o mesmo, e errado assim que o editor passa a
-   * tratar de outro. Sem esquecer, o próximo envio repetiria o comando antigo
-   * com a chave antiga e receberia de volta o id do processo anterior.
+   * Esquece o cadastro acompanhado. A página do editor sobrevive à troca de endereço, e este
+   * serviço com ela: sem esquecer, o próximo envio repetiria o comando antigo com a chave antiga
+   * e receberia de volta o id do processo anterior.
    */
   descartarCadastroEmAndamento(): void {
-    this.geracao += 1;
     this.criacaoPendente = null;
-    this.chaveCriacao = idempotencyKey.create();
-    this.chaveConfirmacao = idempotencyKey.create();
-    // Varredura, não lista nominal: uma enumeração à mão já deixou cinco chaves
-    // para trás, e a chave esquecida é invisível — o comando do processo novo sai
-    // com a chave que o servidor viu no anterior, e o replay devolve o resultado
-    // errado em vez de aplicar o que foi pedido. Uma chave de substituição criada
-    // daqui em diante entra sozinha.
-    for (const campo of Object.values(this)) {
-      if (campo instanceof ChaveDeSubstituicao) campo.renovar();
-    }
+    this.gravacao.descartar();
   }
 
-  /**
-   * Cria o processo em rascunho. O comando recebido já é um instantâneo do
-   * rascunho: quem chama congela os campos antes, para que a resposta nunca
-   * descreva um estado diferente do que foi enviado.
-   */
+  /** O comando recebido já é um instantâneo do rascunho: quem chama congela os campos antes. */
   async criar(command: CriarProcessoSeletivoCommand): Promise<ResultadoCriacao> {
-    const geracao = this.geracao;
+    const geracao = this.gravacao.geracao();
     const comando = this.criacaoPendente ?? command;
-    const result = await firstValueFrom(this.api.criar(comando, contextoCom(this.chaveCriacao)));
+    const resultado = await this.gravacao.gravarRetida('criacao', (contexto) =>
+      this.api.criar(comando, contexto),
+    );
 
-    if (geracao !== this.geracao)
-      return { ok: false, problem: result.ok ? SUPERADO : result.problem };
-
-    if (isApiOk(result)) {
-      this.chaveCriacao = idempotencyKey.create();
-      this.criacaoPendente = null;
-      return { ok: true, processoSeletivoId: result.data };
+    if (geracao === this.gravacao.geracao()) {
+      this.criacaoPendente = this.gravacao.retidaPendente('criacao') ? comando : null;
     }
-
-    const chaveAnterior = this.chaveCriacao;
-    this.chaveCriacao = proximaChave(chaveAnterior, result);
-    // Chave preservada significa resposta inconclusiva: o comando fica retido
-    // para ser repetido igual. Chave nova significa recusa definitiva, e o
-    // próximo envio parte do rascunho corrigido.
-    this.criacaoPendente = this.chaveCriacao === chaveAnterior ? comando : null;
-    return { ok: false, problem: result.problem };
+    return resultado.ok ? { ok: true, processoSeletivoId: resultado.dados } : resultado;
   }
 
   /**
-   * Documentos do edital já registrados no processo. Usado na retomada e na
-   * reverificação depois de uma leitura que falhou — sem ela, o operador não
-   * tem como saber se o processo já tem edital antes de enviar outro. Só o documento do edital:
-   * os anexos dele vivem na mesma coleção e não são candidatos a edital oficial.
+   * Documentos do edital já registrados no processo, para a retomada e para a reverificação depois
+   * de uma leitura que falhou. Só o documento do edital: os anexos vivem na mesma coleção.
    */
   listarDocumentos(processoSeletivoId: string) {
     return firstValueFrom(
-      this.api.listarDocumentosAPublicar(processoSeletivoId, FinalidadeDoDocumento.documentoDoEdital),
+      this.api.listarDocumentosAPublicar(
+        processoSeletivoId,
+        FinalidadeDoDocumento.documentoDoEdital,
+      ),
     );
   }
 
   /**
-   * Acesso de leitura a um documento confirmado, pedido no momento em que o
-   * operador quer conferir o PDF. A URL vem assinada e com validade curta, e
-   * não é guardada: quem a tem abre o arquivo sem passar por autorização de
-   * novo, e é por isso que o servidor a emite por pedido em vez de distribuí-la
-   * na listagem.
+   * A URL vem assinada e com validade curta, e não é guardada: quem a tem abre o arquivo sem
+   * passar por autorização de novo, por isso o servidor a emite por pedido.
    */
   obterAcessoAoDocumento(processoSeletivoId: string, documentoAPublicarId: string) {
     return firstValueFrom(
@@ -249,339 +133,126 @@ export class CadastroInicialService {
     );
   }
 
-  /**
-   * Declara a cobrança de taxa e os fundamentos de isenção do processo.
-   */
-  async definirTaxaInscricao(
+  definirTaxaInscricao(
     processoSeletivoId: string,
     request: DefinirTaxaInscricaoRequest,
   ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirTaxaInscricao(
-        processoSeletivoId,
-        request,
-        this.chaveTaxa.contextoPara(request),
-      ),
+    return this.gravacao.gravar('taxa', request, (contexto) =>
+      this.api.definirTaxaInscricao(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveTaxa.renovar();
-      return { ok: true };
-    }
-
-    this.chaveTaxa.recusada(result);
-    return { ok: false, problem: result.problem };
   }
 
-  /**
-   * Grava a distribuição de vagas do processo. O comando substitui o conjunto
-   * inteiro: as ofertas ausentes do envio deixam de ter distribuição, e é isso
-   * que permite ao operador remover uma linha do quadro.
-   */
-  async definirDistribuicaoVagas(
+  /** Substitui o conjunto inteiro: a oferta ausente do envio deixa de ter distribuição. */
+  definirDistribuicaoVagas(
     processoSeletivoId: string,
     distribuicoes: readonly ConfiguracaoDistribuicaoVagasInput[],
   ): Promise<ResultadoGravacaoComInconclusiva> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirDistribuicaoVagas(
-        processoSeletivoId,
-        distribuicoes,
-        this.chaveDistribuicao.contextoPara(distribuicoes),
-      ),
+    return this.gravacao.gravar('distribuicao', distribuicoes, (contexto) =>
+      this.api.definirDistribuicaoVagas(processoSeletivoId, distribuicoes, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
-
-    if (isApiOk(result)) {
-      this.chaveDistribuicao.renovar();
-      return { ok: true };
-    }
-
-    const inconclusiva = this.chaveDistribuicao.recusada(result);
-    return { ok: false, problem: result.problem, inconclusiva };
   }
 
-  /**
-   * Declara quantos cursos o candidato escolhe na inscrição. Chave própria: é gravado junto da
-   * distribuição, no mesmo passo, e a recusa de um não pode invalidar a chave do outro.
-   */
-  async definirOpcoesDeCurso(
+  /** Chave própria: é gravado junto da distribuição, e a recusa de um não invalida a chave do outro. */
+  definirOpcoesDeCurso(
     processoSeletivoId: string,
     request: DefinirOpcoesDeCursoRequest,
   ): Promise<ResultadoGravacaoComInconclusiva> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirOpcoesDeCurso(
-        processoSeletivoId,
-        request,
-        this.chaveOpcoesDeCurso.contextoPara(request),
-      ),
+    return this.gravacao.gravar('opcoesDeCurso', request, (contexto) =>
+      this.api.definirOpcoesDeCurso(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
-
-    if (isApiOk(result)) {
-      this.chaveOpcoesDeCurso.renovar();
-      return { ok: true };
-    }
-
-    const inconclusiva = this.chaveOpcoesDeCurso.recusada(result);
-    return { ok: false, problem: result.problem, inconclusiva };
   }
 
-  /**
-   * Grava a cascata de remanejamento do processo — ou a remove, quando
-   * `request` traz os quatro campos nulos.
-   *
-   * Chave própria, separada da distribuição de vagas: a cascata é gravada
-   * depois dela no `persistir()` do passo Vagas, e uma recusa aqui não pode
-   * invalidar a chave de um comando de distribuição que já foi aceito.
-   */
-  async definirCascataRemanejamento(
+  /** Remove a cascata quando `request` traz os quatro campos nulos. */
+  definirCascataRemanejamento(
     processoSeletivoId: string,
     request: DefinirCascataRemanejamentoRequest,
   ): Promise<ResultadoGravacaoCascata> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirCascataRemanejamento(
-        processoSeletivoId,
-        request,
-        this.chaveCascata.contextoPara(request),
-      ),
+    return this.gravacao.gravar('cascata', request, (contexto) =>
+      this.api.definirCascataRemanejamento(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
-
-    if (isApiOk(result)) {
-      this.chaveCascata.renovar();
-      return { ok: true };
-    }
-
-    const inconclusiva = this.chaveCascata.recusada(result);
-    return { ok: false, problem: result.problem, inconclusiva };
   }
 
-  /**
-   * Grava as etapas pontuadas do processo. O comando substitui a coleção
-   * inteira: as ausentes deixam de existir, e é isso que permite remover uma
-   * etapa. Coleção vazia é estado válido — processo cuja classificação é
-   * importada não tem etapa pontuada.
-   *
-   * Chave própria, separada das demais dimensões: uma recusa aqui não pode
-   * invalidar a chave de uma gravação de vagas ou de taxa em curso.
-   */
-  async definirEtapas(
+  /** Coleção vazia é estado válido: processo de classificação importada não tem etapa pontuada. */
+  definirEtapas(
     processoSeletivoId: string,
     etapas: readonly EtapaProcessoInput[],
   ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirEtapas(processoSeletivoId, etapas, this.chaveEtapas.contextoPara(etapas)),
+    return this.gravacao.gravar('etapas', etapas, (contexto) =>
+      this.api.definirEtapas(processoSeletivoId, etapas, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveEtapas.renovar();
-      return { ok: true };
-    }
-
-    this.chaveEtapas.recusada(result);
-    return { ok: false, problem: result.problem };
   }
 
-  /**
-   * Grava as exigências documentais do processo. Substitui a árvore inteira: uma
-   * exigência ausente do envio deixa de existir, e é isso que permite tirar um
-   * documento de uma fase. Árvore vazia é estado válido — certame que não coleta
-   * documento nenhum.
-   *
-   * Chave própria, pela mesma razão das etapas: uma recusa aqui não pode invalidar
-   * a chave de outra dimensão em curso.
-   */
-  async definirDocumentosExigidos(
+  /** Substitui a árvore inteira; árvore vazia é certame que não coleta documento. */
+  definirDocumentosExigidos(
     processoSeletivoId: string,
     raizes: readonly NoExigenciaInput[],
   ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirDocumentosExigidos(
-        processoSeletivoId,
-        raizes,
-        this.chaveDocumentosExigidos.contextoPara(raizes),
-      ),
+    return this.gravacao.gravar('documentosExigidos', raizes, (contexto) =>
+      this.api.definirDocumentosExigidos(processoSeletivoId, raizes, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveDocumentosExigidos.renovar();
-      return { ok: true };
-    }
-
-    this.chaveDocumentosExigidos.recusada(result);
-    return { ok: false, problem: result.problem };
   }
 
-  /**
-   * Grava o cronograma de fases. Substitui a coleção inteira: uma fase ausente
-   * do envio deixa de existir no processo.
-   *
-   * Chave própria — uma recusa do cronograma não pode invalidar a chave da
-   * gravação de etapas, que costuma vir logo antes na mesma interação.
-   */
-  async definirCronogramaFases(
+  /** Substitui a coleção inteira: a fase ausente do envio deixa de existir no processo. */
+  definirCronogramaFases(
     processoSeletivoId: string,
     fases: readonly FaseCronogramaInput[],
   ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirCronogramaFases(
-        processoSeletivoId,
-        fases,
-        this.chaveCronograma.contextoPara(fases),
-      ),
+    return this.gravacao.gravar('cronograma', fases, (contexto) =>
+      this.api.definirCronogramaFases(processoSeletivoId, fases, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveCronograma.renovar();
-      return { ok: true };
-    }
-
-    this.chaveCronograma.recusada(result);
-    return { ok: false, problem: result.problem };
   }
 
-  /**
-   * Declara a convenção de contagem de prazo do processo, por código e versão.
-   *
-   * Só é chamada quando há escolha: o endpoint recusa código ou versão nulos, e
-   * não existe caminho para desdeclarar a convenção.
-   */
-  async definirAlgoritmoContagemPrazo(
+  /** Só é chamada quando há escolha: o endpoint recusa código ou versão nulos. */
+  definirAlgoritmoContagemPrazo(
     processoSeletivoId: string,
     request: DefinirAlgoritmoContagemPrazoRequest,
   ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirAlgoritmoContagemPrazo(
-        processoSeletivoId,
-        request,
-        this.chaveAlgoritmoContagem.contextoPara(request),
-      ),
+    return this.gravacao.gravar('algoritmoContagem', request, (contexto) =>
+      this.api.definirAlgoritmoContagemPrazo(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveAlgoritmoContagem.renovar();
-      return { ok: true };
-    }
-
-    this.chaveAlgoritmoContagem.recusada(result);
-    return { ok: false, problem: result.problem };
   }
 
-  /**
-   * Grava a classificação inteira do processo — regra de cálculo, precisão,
-   * ordem de alocação, número de opções e o vetor de regras de eliminação, num
-   * corpo só (UNI-REQ-0482). Chave própria: uma recusa aqui não pode invalidar
-   * a chave da gravação de bônus ou desempate, que costumam vir na mesma
-   * interação.
-   */
-  async definirClassificacao(
+  /** Regra de cálculo, precisão, ordem de alocação, opções e eliminação, num corpo só (UNI-REQ-0482). */
+  definirClassificacao(
     processoSeletivoId: string,
     request: DefinirClassificacaoRequest,
   ): Promise<ResultadoGravacaoComInconclusiva> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirClassificacao(
-        processoSeletivoId,
-        request,
-        this.chaveClassificacao.contextoPara(request),
-      ),
+    return this.gravacao.gravar('classificacao', request, (contexto) =>
+      this.api.definirClassificacao(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
-
-    if (isApiOk(result)) {
-      this.chaveClassificacao.renovar();
-      return { ok: true };
-    }
-
-    const inconclusiva = this.chaveClassificacao.recusada(result);
-    return { ok: false, problem: result.problem, inconclusiva };
   }
 
-  /** Substitui as opções que o processo declara para um fato de fonte do processo. */
-  async definirOpcoesDeclaradas(
+  definirOpcoesDeclaradas(
     processoSeletivoId: string,
     fatoCodigo: string,
     request: DefinirOpcoesDeclaradasRequest,
   ): Promise<ResultadoGravacao> {
-    return this.gravarComChave(this.chaveOpcoesDeclaradas, { fatoCodigo, request }, (contexto) =>
+    return this.gravacao.gravar('opcoesDeclaradas', { fatoCodigo, request }, (contexto) =>
       this.api.definirOpcoesDeclaradas(processoSeletivoId, fatoCodigo, request, contexto),
     );
   }
 
-  /** Declara o instante contra o qual a idade do candidato é apurada. */
-  async definirReferenciaTemporalFatos(
+  /** Instante contra o qual a idade do candidato é apurada. */
+  definirReferenciaTemporalFatos(
     processoSeletivoId: string,
     request: DefinirReferenciaTemporalFatosRequest,
   ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirReferenciaTemporalFatos(
-        processoSeletivoId,
-        request,
-        this.chaveReferenciaTemporal.contextoPara(request),
-      ),
+    return this.gravacao.gravar('referenciaTemporal', request, (contexto) =>
+      this.api.definirReferenciaTemporalFatos(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveReferenciaTemporal.renovar();
-      return { ok: true };
-    }
-
-    this.chaveReferenciaTemporal.recusada(result);
-    return { ok: false, problem: result.problem };
   }
 
   /**
-   * Endereço público do certame, declarado ou trocado depois da criação. Diz se a recusa é
-   * inconclusiva: nela o servidor pode ter gravado o valor enviado, e quem chama não pode mais
-   * tomar o valor anterior como o que o servidor tem.
+   * Endereço público do certame. Na recusa inconclusiva o servidor pode ter gravado o valor
+   * enviado, e quem chama não pode mais tomar o anterior como o que o servidor tem.
    */
-  async definirIdentificadorLegivel(
+  definirIdentificadorLegivel(
     processoSeletivoId: string,
     request: DefinirIdentificadorLegivelRequest,
   ): Promise<ResultadoGravacaoComInconclusiva> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirIdentificadorLegivel(
-        processoSeletivoId,
-        request,
-        this.chaveIdentificadorLegivel.contextoPara(request),
-      ),
+    return this.gravacao.gravar('identificadorLegivel', request, (contexto) =>
+      this.api.definirIdentificadorLegivel(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
-
-    if (isApiOk(result)) {
-      this.chaveIdentificadorLegivel.renovar();
-      return { ok: true };
-    }
-
-    const inconclusiva = this.chaveIdentificadorLegivel.recusada(result);
-    return { ok: false, problem: result.problem, inconclusiva };
   }
 
   /**
@@ -614,7 +285,7 @@ export class CadastroInicialService {
     return { ok: true };
   }
 
-  private async gravarPassoDoFormulario(
+  private gravarPassoDoFormulario(
     processoSeletivoId: string,
     finalidade: string,
     passo: PassoDaGravacao,
@@ -623,28 +294,22 @@ export class CadastroInicialService {
     switch (passo) {
       case 'cabecalho': {
         const corpo = cabecalhoParaEnvio(desejado.faseId, desejado.conteudo);
-        return this.gravarComChave(
-          this.chaveCabecalhoDoFormulario,
-          { finalidade, corpo },
-          (contexto) =>
-            this.api.definirCabecalhoDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
+        return this.gravacao.gravar('cabecalhoDoFormulario', { finalidade, corpo }, (contexto) =>
+          this.api.definirCabecalhoDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
         );
       }
       case 'itensSemSecao':
       case 'itens': {
         const corpo = itensParaEnvio(desejado.conteudo, passo === 'itensSemSecao');
-        if (corpo === null) return { ok: false, problem: LIMITE_QUE_NAO_E_NUMERO };
-        return this.gravarComChave(this.chaveItensDoFormulario, { finalidade, corpo }, (contexto) =>
+        if (corpo === null) return Promise.resolve({ ok: false, problem: LIMITE_QUE_NAO_E_NUMERO });
+        return this.gravacao.gravar('itensDoFormulario', { finalidade, corpo }, (contexto) =>
           this.api.definirItensDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
         );
       }
       case 'termos': {
         const corpo = termosParaEnvio(desejado.conteudo);
-        return this.gravarComChave(
-          this.chaveTermosDoFormulario,
-          { finalidade, corpo },
-          (contexto) =>
-            this.api.definirTermosDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
+        return this.gravacao.gravar('termosDoFormulario', { finalidade, corpo }, (contexto) =>
+          this.api.definirTermosDoFormulario(processoSeletivoId, finalidade, corpo, contexto),
         );
       }
     }
@@ -652,242 +317,98 @@ export class CadastroInicialService {
 
   /**
    * Remove o formulário de uma finalidade, com os itens e os termos dele. A API só remove em
-   * rascunho e não pede chave de idempotência nesta rota: repetir a remoção encontra o formulário
-   * já removido, e quem chama confere o desfecho relendo o processo.
+   * rascunho, e quem chama confere o desfecho relendo o processo.
    */
-  async removerFormulario(
-    processoSeletivoId: string,
-    finalidade: string,
-  ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(this.api.removerFormulario(processoSeletivoId, finalidade));
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-    return isApiOk(result) ? { ok: true } : { ok: false, problem: result.problem };
+  removerFormulario(processoSeletivoId: string, finalidade: string): Promise<ResultadoGravacao> {
+    return this.gravacao.remover(() => this.api.removerFormulario(processoSeletivoId, finalidade));
   }
 
   /**
-   * Aplica um modelo de formulário ao processo: o formulário da finalidade do modelo é criado ou
-   * substituído por inteiro. Devolve o relato da cópia — o que ela trouxe, manteve, descartou e
-   * derivou —, que só o servidor sabe.
+   * O formulário da finalidade do modelo é criado ou substituído por inteiro. Devolve o relato da
+   * cópia (o que trouxe, manteve, descartou e derivou), que só o servidor sabe.
    */
   async aplicarModeloDeFormulario(
     processoSeletivoId: string,
     modeloId: string,
-  ): Promise<
-    | { readonly ok: true; readonly relato: AplicacaoDeModeloDto }
-    | (FalhaOperacao & { readonly inconclusiva: boolean })
-  > {
-    const geracao = this.geracao;
+  ): Promise<ResultadoAplicacaoDeModelo> {
     const corpo = { modeloId };
-    const result = await firstValueFrom(
-      this.api.aplicarModeloDeFormulario(
-        processoSeletivoId,
-        corpo,
-        this.chaveAplicacaoDeModelo.contextoPara(corpo),
-      ),
+    const resultado = await this.gravacao.gravar('aplicacaoDeModelo', corpo, (contexto) =>
+      this.api.aplicarModeloDeFormulario(processoSeletivoId, corpo, contexto),
     );
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
-
-    if (isApiOk(result)) {
-      this.chaveAplicacaoDeModelo.renovar();
-      return { ok: true, relato: result.data };
-    }
-    return {
-      ok: false,
-      problem: result.problem,
-      inconclusiva: this.chaveAplicacaoDeModelo.recusada(result),
-    };
+    return resultado.ok ? { ok: true, relato: resultado.dados } : resultado;
   }
 
-  /** Um comando de substituição sob a chave dele, girando-a como `ChaveDeSubstituicao` manda. */
-  private async gravarComChave(
-    chave: ChaveDeSubstituicao,
-    intencao: unknown,
-    enviar: (contexto: HttpContext) => Observable<ApiResult<void>>,
-  ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(enviar(chave.contextoPara(intencao)));
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      chave.renovar();
-      return { ok: true };
-    }
-
-    chave.recusada(result);
-    return { ok: false, problem: result.problem };
-  }
-
-  /**
-   * Declara se o processo aplica o Fator de Atenuação das Desigualdades de Acesso (UNI-REQ-0015). `aplica: false` grava a declaração com
-   * os cinco campos do bônus `null`; `aplica: true` exige a configuração.
-   */
-  async definirBonusRegional(
+  /** `aplica: false` grava a declaração com os cinco campos do bônus nulos; `true` exige a configuração. */
+  definirBonusRegional(
     processoSeletivoId: string,
     request: DefinirBonusRegionalRequest,
   ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirBonusRegional(
-        processoSeletivoId,
-        request,
-        this.chaveBonus.contextoPara(request),
-      ),
+    return this.gravacao.gravar('bonus', request, (contexto) =>
+      this.api.definirBonusRegional(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveBonus.renovar();
-      return { ok: true };
-    }
-
-    this.chaveBonus.recusada(result);
-    return { ok: false, problem: result.problem };
   }
 
-  /**
-   * Grava os critérios de desempate, na ordem em que serão avaliados.
-   * Substitui a coleção inteira: coleção vazia é estado válido.
-   */
-  async definirCriteriosDesempate(
+  /** Critérios na ordem em que serão avaliados; coleção vazia é estado válido. */
+  definirCriteriosDesempate(
     processoSeletivoId: string,
     criterios: readonly CriterioDesempateInput[],
   ): Promise<ResultadoGravacaoComInconclusiva> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirCriteriosDesempate(
-        processoSeletivoId,
-        criterios,
-        this.chaveDesempate.contextoPara(criterios),
-      ),
+    return this.gravacao.gravar('desempate', criterios, (contexto) =>
+      this.api.definirCriteriosDesempate(processoSeletivoId, criterios, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
-
-    if (isApiOk(result)) {
-      this.chaveDesempate.renovar();
-      return { ok: true };
-    }
-
-    const inconclusiva = this.chaveDesempate.recusada(result);
-    return { ok: false, problem: result.problem, inconclusiva };
   }
 
-  /**
-   * Grava a oferta de atendimento especializado — condições, recursos de
-   * acessibilidade e tipos de deficiência, por id do cadastro de
-   * Configuração. Substitui a configuração inteira: lista vazia é estado
-   * válido e apaga o que estava declarado (CA-05).
-   */
-  async definirOfertaAtendimento(
+  /** Substitui a configuração inteira: lista vazia apaga o que estava declarado (CA-05). */
+  definirOfertaAtendimento(
     processoSeletivoId: string,
     request: DefinirOfertaAtendimentoRequest,
   ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.definirOfertaAtendimento(
-        processoSeletivoId,
-        request,
-        this.chaveAtendimento.contextoPara(request),
-      ),
+    return this.gravacao.gravar('atendimento', request, (contexto) =>
+      this.api.definirOfertaAtendimento(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveAtendimento.renovar();
-      return { ok: true };
-    }
-
-    this.chaveAtendimento.recusada(result);
-    return { ok: false, problem: result.problem };
   }
 
   /**
-   * Publica o processo — `POST …/publicacao`. Chave de substituição como as
-   * demais gravações desta classe: depois de um `422`, a próxima tentativa
-   * rotaciona a chave (o corpo corrigido sob a mesma chave voltaria
-   * `body_mismatch`); `processing_conflict`, rede e 5xx preservam a chave,
-   * porque a execução anterior pode ainda concluir.
-   *
-   * `inconclusiva` (mesmo contrato de `ResultadoGravacaoCascata`) diz ao
-   * chamador se a recusa deixou em aberto se o comando foi executado — a
-   * tela de Revisão usa isso para manter a edição travada nesse caso:
-   * sem o sinal, o `finally` de `persistir()`
-   * destravaria a edição, e um retry com o corpo editado giraria a chave
-   * (`ChaveDeSubstituicao.contextoPara`), deixando de ser o replay seguro do
-   * comando incerto e podendo correr contra a primeira tentativa.
+   * Depois de um 422 a próxima tentativa gira a chave; conflito de processamento, rede e 5xx a
+   * preservam. A tela de Revisão usa `inconclusiva` para manter a edição travada: um retry com o
+   * corpo editado giraria a chave e deixaria de ser o replay seguro do comando incerto.
    */
-  async publicar(
+  publicar(
     processoSeletivoId: string,
     request: PublicarProcessoSeletivoRequest,
   ): Promise<ResultadoGravacaoComInconclusiva> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.publicar(processoSeletivoId, request, this.chavePublicacao.contextoPara(request)),
+    return this.gravacao.gravar('publicacao', request, (contexto) =>
+      this.api.publicar(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO, inconclusiva: false };
-
-    if (isApiOk(result)) {
-      this.chavePublicacao.renovar();
-      return { ok: true };
-    }
-
-    const inconclusiva = this.chavePublicacao.recusada(result);
-    return { ok: false, problem: result.problem, inconclusiva };
   }
 
-  /**
-   * Releitura pós-publicação (CA-08 da #486): o detalhe canônico do processo,
-   * para confirmar `status === publicado` depois do `204` de `publicar()`.
-   */
+  /** Releitura pós-publicação (CA-08 da #486): confirma `status === publicado` depois do `204`. */
   obterDetalhe(processoSeletivoId: string) {
     return firstValueFrom(this.api.obter(processoSeletivoId));
   }
 
-  /**
-   * Releitura pós-publicação (CA-08 da #486): o snapshot imutável da versão
-   * vigente — `snapshotPublicacaoId`, `schemaVersion` e os hashes. O
-   * `configuracao` que ele traz não é reinterpretado como comando de
-   * gravação; a tela só confirma que a publicação congelou.
-   */
+  /** O `configuracao` do snapshot não vira comando de gravação: a tela só confirma que congelou. */
   obterSnapshotVigente(processoSeletivoId: string) {
     return firstValueFrom(this.api.obterSnapshotVigente(processoSeletivoId));
   }
+
   /** Passo 1 do anexo: registro pendente + URL pré-assinada. */
   async iniciarUpload(
     processoSeletivoId: string,
     nomeArquivo: string,
   ): Promise<ResultadoIniciacao> {
-    const geracao = this.geracao;
     const request = {
       finalidade: FinalidadeDoDocumento.documentoDoEdital,
       nomeArquivo,
       tipoDeMidia: TIPO_DE_MIDIA_DO_EDITAL,
     };
-    const result = await firstValueFrom(
-      this.api.iniciarEnvioDocumentoAPublicar(
-        processoSeletivoId,
-        request,
-        this.chaveIniciacao.contextoPara(request),
-      ),
+    const resultado = await this.gravacao.gravar('iniciacaoDoEdital', request, (contexto) =>
+      this.api.iniciarEnvioDocumentoAPublicar(processoSeletivoId, request, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveIniciacao.renovar();
-      return { ok: true, iniciacao: result.data };
-    }
-
-    this.chaveIniciacao.recusada(result);
-    return { ok: false, problem: result.problem };
+    return resultado.ok ? { ok: true, iniciacao: resultado.dados } : resultado;
   }
 
-  /** Passo 2: envia o arquivo direto ao storage (`enviarAoStorage`). */
+  /** Passo 2: envia o arquivo direto ao storage. */
   enviarArquivo(
     iniciacao: IniciarEnvioDoDocumentoAPublicarDto,
     arquivo: File,
@@ -897,49 +418,21 @@ export class CadastroInicialService {
   }
 
   /**
-   * Confirmação que ficou sem resposta definitiva. O documento pode já estar
-   * selado no servidor — imutável, portanto — e a única saída correta é repetir
-   * esta mesma confirmação com a mesma chave até obter resposta. Trocar de
-   * arquivo aqui criaria um segundo edital imutável e perderia a referência do
-   * primeiro.
+   * Confirmação sem resposta definitiva: o documento pode já estar selado e imutável, e a única
+   * saída correta é repetir esta confirmação com a mesma chave. Trocar de arquivo criaria um
+   * segundo edital e perderia a referência do primeiro.
    */
-  private confirmacaoPendente = false;
-
-  /** Há confirmação sem resposta definitiva aguardando retentativa. */
   temConfirmacaoPendente(): boolean {
-    return this.confirmacaoPendente;
+    return this.gravacao.retidaPendente('confirmacaoDoEdital');
   }
 
   /** Passo 3: a API valida o objeto no storage e sela o documento. */
-  async confirmarUpload(
+  confirmarUpload(
     processoSeletivoId: string,
     documentoAPublicarId: string,
   ): Promise<ResultadoGravacao> {
-    const geracao = this.geracao;
-    const result = await firstValueFrom(
-      this.api.confirmarEnvioDocumentoAPublicar(
-        processoSeletivoId,
-        documentoAPublicarId,
-        contextoCom(this.chaveConfirmacao),
-      ),
+    return this.gravacao.gravarRetida('confirmacaoDoEdital', (contexto) =>
+      this.api.confirmarEnvioDocumentoAPublicar(processoSeletivoId, documentoAPublicarId, contexto),
     );
-
-    if (geracao !== this.geracao) return { ok: false, problem: SUPERADO };
-
-    if (isApiOk(result)) {
-      this.chaveConfirmacao = idempotencyKey.create();
-      this.confirmacaoPendente = false;
-      return { ok: true };
-    }
-
-    const chaveAnterior = this.chaveConfirmacao;
-    this.chaveConfirmacao = proximaChave(chaveAnterior, result);
-    // Mesma leitura da criação: chave preservada é resposta inconclusiva.
-    this.confirmacaoPendente = this.chaveConfirmacao === chaveAnterior;
-    return { ok: false, problem: result.problem };
   }
-}
-
-function contextoCom(chave: string): HttpContext {
-  return withIdempotencyKey(chave);
 }
