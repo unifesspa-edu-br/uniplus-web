@@ -6,44 +6,28 @@ import {
   effect,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   type ProblemDetails,
   ProblemI18nService,
-  coletarPaginas,
-  isApiOk,
 } from '@uniplus/shared-core/http';
-import { UnidadesApi } from '@uniplus/shared-data/organizacao';
-import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
-import {
-  ComboboxComponent,
-  ValorEmConsultaComponent,
-  type UiComboboxGroup,
-  ValorLegivelDirective,
-} from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import type { LocalidadeSelecionada } from '../../processo-seletivo.models';
 import { OrigemCandidatosSelecionada, StepValidation } from '../../processo-seletivo.models';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import {
-  comoOpcaoDeUnidade,
-  opcoesComAsGravadas,
-  type OpcaoDeUnidade,
-} from '../../shared/unidades-do-cadastro';
+import { MunicipioDoProcessoComponent } from './municipio-do-processo.component';
+import { BuscaDeMunicipioService } from './servicos/busca-de-municipio.service';
+import { CatalogoDeUnidadesService } from './servicos/catalogo-de-unidades.service';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import {
   ehRecusaDoIdentificadorLegivel,
   normalizarIdentificadorLegivel,
   problemaDoIdentificadorLegivel,
 } from '../../shared/identificador-legivel';
-
-/** Janela do seletor de municípios, igual à do calendário de dias úteis. */
-const MUNICIPIOS_LIMIT = 20;
 
 /**
  * Rótulos curtos de propósito: em 320 px, a largura intrínseca da opção mais
@@ -61,74 +45,30 @@ export const ORIGENS_CANDIDATOS: readonly {
 @Component({
   selector: 'sel-step-identificacao',
   standalone: true,
-  imports: [ValorLegivelDirective, ReactiveFormsModule, ComboboxComponent, ValorEmConsultaComponent],
+  imports: [
+    ValorLegivelDirective,
+    ReactiveFormsModule,
+    ValorEmConsultaComponent,
+    MunicipioDoProcessoComponent,
+  ],
   templateUrl: './identificacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(IdentificacaoStepComponent)],
+  providers: [
+    CatalogoDeUnidadesService,
+    BuscaDeMunicipioService,
+    provePassoDoWizard(IdentificacaoStepComponent),
+  ],
 })
 export class IdentificacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
-  private readonly unidadesApi = inject(UnidadesApi);
-
-  private readonly geo = inject(GeoApi);
+  protected readonly unidades = inject(CatalogoDeUnidadesService);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Campos inválidos detectados na última validação (chave → `.is-invalid`). */
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
   readonly origens = ORIGENS_CANDIDATOS;
-  /** Resultado corrente da busca de município na Geo. */
-  readonly municipios = signal<readonly CidadeResumoDto[]>([]);
-  readonly municipiosCarregando = signal(false);
-  readonly municipiosErro = signal<string | null>(null);
-  /** Termo digitado no seletor; não é persistido no rascunho. */
-  readonly buscaMunicipio = signal('');
-
-  /** O combobox do município: o rótulo do campo aponta para o id que ele gera. */
-  protected readonly campoDoMunicipio = viewChild(ComboboxComponent);
-
-  /** Os municípios achados, como as opções do combobox; o código IBGE identifica cada uma. */
-  protected readonly gruposDeMunicipios = computed<readonly UiComboboxGroup[]>(() =>
-    this.municipios().length === 0
-      ? []
-      : [
-          {
-            label: 'Municípios encontrados',
-            options: this.municipios().map((m) => ({
-              value: m.codigoIbge,
-              label: `${m.nome} — ${m.uf}`,
-            })),
-          },
-        ],
-  );
-
-  /** O que a lista diz enquanto não há município a escolher. */
-  protected readonly textoSemMunicipios = computed(() => {
-    if (this.municipiosErro() !== null) return 'Não foi possível buscar os municípios.';
-    if (this.buscaMunicipio().trim().length < 3) return 'Digite ao menos três letras do município.';
-    if (this.municipiosCarregando()) return 'Consultando a API Geo…';
-    return 'Nenhum município com esse nome.';
-  });
-
-  private readonly catalogoUnidades = signal<readonly OpcaoDeUnidade[]>([]);
-
-  /**
-   * Catálogo vivo mais, quando faltar, a unidade que o processo retomado
-   * declara.
-   *
-   * A unidade referenciada pode ter saído do catálogo, e a própria leitura do
-   * catálogo pode falhar. Em ambos os casos o campo — congelado depois da
-   * criação — abriria sem valor, e o operador não teria como identificar quem
-   * administra o certame. O snapshot devolvido por Seleção traz sigla e nome,
-   * e é a única fonte desse rótulo nessa situação.
-   */
-  readonly unidades = computed<readonly OpcaoDeUnidade[]>(() => {
-    const catalogo = this.catalogoUnidades();
-    const snapshot = this.store.remoteSnapshot()?.unidadeAdministradora;
-
-    return opcoesComAsGravadas(catalogo, snapshot === undefined ? [] : [snapshot]);
-  });
   /**
    * O cadastro como se lê: o que o rascunho guarda, com o rótulo de cada escolha. Serve à
    * consulta e ao resumo que confirma a criação. Sem o catálogo de unidades, a unidade vem
@@ -141,16 +81,13 @@ export class IdentificacaoStepComponent {
       nome: identificacao.nome,
       identificadorLegivel: identificacao.identificadorLegivel,
       unidade:
-        this.unidades().find((opcao) => opcao.id === identificacao.unidadeAdministradoraId)
+        this.unidades.opcoes().find((opcao) => opcao.id === identificacao.unidadeAdministradoraId)
           ?.rotulo ?? null,
       municipio: localidade === null ? null : `${localidade.nome} — ${localidade.uf}`,
       origem:
         this.origens.find((opcao) => opcao.value === identificacao.origemCandidatos)?.label ?? null,
     };
   });
-  readonly unidadesCarregando = signal(true);
-  readonly unidadesErro = signal<string | null>(null);
-
   /**
    * Enquanto o cadastro inicial não existe, o operador pode corrigir tudo;
    * depois de criado, o contrato não expõe atualização de identificação, então
@@ -226,8 +163,6 @@ export class IdentificacaoStepComponent {
   );
 
   constructor() {
-    this.carregarUnidades();
-
     this.identificadorLegivel.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((valor) => {
@@ -281,95 +216,6 @@ export class IdentificacaoStepComponent {
       if (congelado && this.form.enabled) this.form.disable({ emitEvent: false });
       if (!congelado && this.form.disabled) this.form.enable({ emitEvent: false });
     });
-  }
-
-  /** Grava o trio inteiro vindo da opção escolhida — nunca campo a campo. */
-  selecionarLocalidade(localidade: LocalidadeSelecionada): void {
-    this.store.patchObjectSection('identificacao', { localidade });
-    this.buscaMunicipio.set('');
-    this.municipios.set([]);
-  }
-
-  protected escolherMunicipio(codigoIbge: string): void {
-    const municipio = this.municipios().find((m) => m.codigoIbge === codigoIbge);
-    if (municipio === undefined) return;
-    this.selecionarLocalidade({
-      codigoIbge: municipio.codigoIbge,
-      nome: municipio.nome,
-      uf: municipio.uf,
-    });
-  }
-
-  limparLocalidade(): void {
-    this.store.patchObjectSection('identificacao', { localidade: null });
-  }
-
-  buscarMunicipios(termo: string): void {
-    this.buscaMunicipio.set(termo);
-    const busca = termo.trim();
-    if (busca.length < 3) {
-      this.municipios.set([]);
-      this.municipiosErro.set(null);
-      // Uma busca em voo pode ter começado com termo mais longo: a resposta dela
-      // será descartada pela guarda de termo obsoleto, então é aqui que o estado
-      // de carregamento precisa voltar — senão o campo fica anunciando consulta
-      // que ninguém mais vai concluir.
-      this.municipiosCarregando.set(false);
-      return;
-    }
-
-    this.municipiosCarregando.set(true);
-    this.municipiosErro.set(null);
-    // Resultado da busca anterior sai de cena ao começar a nova: enquanto a
-    // requisição corre, uma opção do termo antigo continuaria clicável, e numa
-    // conexão lenta o operador gravaria o município que já não procurava.
-    this.municipios.set([]);
-    this.geo
-      .listarCidades({ q: busca, limit: MUNICIPIOS_LIMIT })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        // Resposta de busca anterior chegando depois da atual: descartar, senão a
-        // lista exibiria resultado de um termo que o operador já trocou.
-        if (this.buscaMunicipio().trim() !== busca) {
-          return;
-        }
-        this.municipiosCarregando.set(false);
-        if (!isApiOk(result)) {
-          this.municipios.set([]);
-          this.municipiosErro.set(this.problemI18n.resolve(result.problem).title);
-          return;
-        }
-        this.municipios.set(result.data);
-      });
-  }
-
-  carregarUnidades(): void {
-    this.unidadesCarregando.set(true);
-    this.unidadesErro.set(null);
-    this.carregarCatalogoDeUnidades();
-  }
-
-  private carregarCatalogoDeUnidades(): void {
-    coletarPaginas((cursor) => this.unidadesApi.listar({ cursor }))
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (result) => {
-          if (!isApiOk(result)) {
-            this.exibirErroDeUnidades();
-            return;
-          }
-          this.catalogoUnidades.set(result.data.map(comoOpcaoDeUnidade));
-          this.unidadesCarregando.set(false);
-        },
-        error: () => this.exibirErroDeUnidades(),
-      });
-  }
-
-  private exibirErroDeUnidades(): void {
-    this.unidadesCarregando.set(false);
-    this.unidadesErro.set(
-      'Não foi possível carregar as unidades administradoras. Tente novamente.',
-    );
   }
 
   /** Recusa da criação, exibida no passo — o anexo tem o erro dele próprio. */
@@ -610,9 +456,4 @@ export class IdentificacaoStepComponent {
     this.invalidFields.update((campos) => new Set([...campos, 'identificadorLegivel']));
   }
 
-  /**
-   * Decisão explícita entre documentos confirmados (CA-06). O wizard nunca
-   * elege sozinho: adotar o mais recente trocaria o edital do certame sem o
-   * operador perceber.
-   */
 }

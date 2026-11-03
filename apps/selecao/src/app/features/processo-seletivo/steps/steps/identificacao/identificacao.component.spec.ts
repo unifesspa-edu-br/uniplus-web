@@ -11,6 +11,8 @@ import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { IdentificacaoStepComponent } from './identificacao.component';
+import { BuscaDeMunicipioService } from './servicos/busca-de-municipio.service';
+import { CatalogoDeUnidadesService } from './servicos/catalogo-de-unidades.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -64,6 +66,8 @@ function problema(status: number, code: string, title: string) {
 
 describe('IdentificacaoStepComponent', () => {
   let componente: IdentificacaoStepComponent;
+  let unidades: CatalogoDeUnidadesService;
+  let municipio: BuscaDeMunicipioService;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let host: HTMLElement;
@@ -86,6 +90,8 @@ describe('IdentificacaoStepComponent', () => {
 
     const fixture = TestBed.createComponent(IdentificacaoStepComponent);
     componente = fixture.componentInstance;
+    unidades = fixture.debugElement.injector.get(CatalogoDeUnidadesService);
+    municipio = fixture.debugElement.injector.get(BuscaDeMunicipioService);
     host = fixture.nativeElement as HTMLElement;
     detectar = () => fixture.detectChanges();
     store = TestBed.inject(ProcessoSeletivoStore);
@@ -129,10 +135,10 @@ describe('IdentificacaoStepComponent', () => {
   }
 
   it('carrega as unidades administradoras da API de Organização', () => {
-    expect(componente.unidades()).toEqual([
+    expect(unidades.opcoes()).toEqual([
       { id: UNIDADE_ID, rotulo: 'ICE — Instituto de Ciências Exatas' },
     ]);
-    expect(componente.unidadesCarregando()).toBe(false);
+    expect(unidades.carregando()).toBe(false);
   });
 
   it('exige unidade administradora e origem dos candidatos para avançar', () => {
@@ -357,27 +363,27 @@ describe('IdentificacaoStepComponent', () => {
   });
 
   it('busca municípios na Geo a partir de três letras e grava o trio da opção', async () => {
-    componente.buscarMunicipios('ma');
+    municipio.buscar('ma');
     controller.expectNone(() => true);
 
-    componente.buscarMunicipios('mar');
+    municipio.buscar('mar');
     const busca = controller.expectOne((r) => r.url.includes('/api/cidades'));
     expect(busca.request.params.get('q')).toBe('mar');
     busca.flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
     await tick();
 
-    expect(componente.municipios()).toHaveLength(1);
+    expect(municipio.municipios()).toHaveLength(1);
 
-    componente.selecionarLocalidade({ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' });
+    municipio.selecionar({ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' });
 
     expect(store.draft().identificacao.localidade).toEqual(MARABA);
-    expect(componente.municipios()).toEqual([]);
+    expect(municipio.municipios()).toEqual([]);
   });
 
   it('oferece os municípios achados como opções de um listbox e grava a escolhida', async () => {
     const campo = host.querySelector<HTMLInputElement>('input[role="combobox"]');
     campo?.focus();
-    componente.buscarMunicipios('mar');
+    municipio.buscar('mar');
     controller
       .expectOne((r) => r.url.includes('/api/cidades'))
       .flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
@@ -394,44 +400,44 @@ describe('IdentificacaoStepComponent', () => {
   it('limpar a localidade devolve o campo à busca', () => {
     store.patchObjectSection('identificacao', { localidade: MARABA });
 
-    componente.limparLocalidade();
+    municipio.limpar();
 
     expect(store.draft().identificacao.localidade).toBeNull();
   });
   it('libera o estado de consulta quando o termo encolhe abaixo de três letras', async () => {
-    componente.buscarMunicipios('mar');
+    municipio.buscar('mar');
     const busca = controller.expectOne((r) => r.url.includes('/api/cidades'));
 
     // O operador apaga antes de a resposta chegar: a guarda de termo obsoleto
     // descarta o resultado, então quem precisa devolver o campo ao normal é o
     // caminho curto — senão o aria-busy fica preso.
-    componente.buscarMunicipios('ma');
+    municipio.buscar('ma');
     busca.flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
     await tick();
 
-    expect(componente.municipiosCarregando()).toBe(false);
-    expect(componente.municipios()).toEqual([]);
+    expect(municipio.carregando()).toBe(false);
+    expect(municipio.municipios()).toEqual([]);
   });
   it('descarta o resultado anterior ao iniciar uma busca nova', async () => {
-    componente.buscarMunicipios('mar');
+    municipio.buscar('mar');
     controller
       .expectOne((r) => r.url.includes('/api/cidades'))
       .flush([{ id: 'x', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' }]);
     await tick();
-    expect(componente.municipios()).toHaveLength(1);
+    expect(municipio.municipios()).toHaveLength(1);
 
     // Enquanto a busca nova corre, a opção antiga não pode seguir clicável: numa
     // conexão lenta o operador gravaria o município que já não procurava.
-    componente.buscarMunicipios('bel');
-    expect(componente.municipios()).toEqual([]);
+    municipio.buscar('bel');
+    expect(municipio.municipios()).toEqual([]);
 
     controller
       .expectOne((r) => r.url.includes('/api/cidades'))
       .flush([{ id: 'y', codigoIbge: '1501402', nome: 'Belém', uf: 'PA', ddd: '91' }]);
     await tick();
 
-    expect(componente.municipios()).toHaveLength(1);
-    expect(componente.municipios()[0].nome).toBe('Belém');
+    expect(municipio.municipios()).toHaveLength(1);
+    expect(municipio.municipios()[0].nome).toBe('Belém');
   });
 
   /**

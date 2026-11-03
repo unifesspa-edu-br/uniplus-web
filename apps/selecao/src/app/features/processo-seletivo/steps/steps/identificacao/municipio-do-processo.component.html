@@ -1,0 +1,54 @@
+  <label class="label" [attr.for]="campoDoMunicipio()?.campoId ?? 'f-localidade'">Município que rege os prazos</label>
+  @if (store.draft().identificacao.localidade; as localidade) {
+    @if (bloqueado()) {
+      <input
+        class="input"
+        id="f-localidade"
+        disabled
+        aria-describedby="f-localidade-hint"
+        [value]="localidade.nome + ' — ' + localidade.uf"
+      />
+    } @else {
+      <div class="input-group">
+        <input
+          class="input"
+          id="f-localidade"
+          readonly
+          aria-describedby="f-localidade-hint"
+          [value]="localidade.nome + ' — ' + localidade.uf"
+        />
+        <button class="btn btn--tertiary" type="button" (click)="busca.limpar()">
+          Trocar município
+        </button>
+      </div>
+    }
+  } @else {
+    <!-- A lista de sugestões é a do combobox do DS: flutua sobre o conteúdo, com fundo, borda e
+         elevação, e expõe cada município como `option` de um `listbox`. O rótulo aponta para o
+         campo pelo id que o próprio combobox gera. -->
+    <ui-combobox
+      #municipio
+      buscaExterna
+      rotulo="Municípios encontrados"
+      placeholder="Digite ao menos 3 letras do município"
+      descritoPor="f-localidade-hint"
+      [grupos]="busca.grupos()"
+      [textoSemResultado]="busca.textoSemMunicipios()"
+      [estadoDaBusca]="busca.municipios().length === 0 ? busca.textoSemMunicipios() : null"
+      [invalido]="invalido()"
+      [disabled]="bloqueado()"
+      [contagemVisivel]="false"
+      (buscaChange)="busca.buscar($event)"
+      (valueChange)="busca.escolher($event)"
+    />
+    @if (busca.erro(); as erro) {
+      <div class="field__erro" role="alert">
+        <p>{{ erro }}</p>
+      </div>
+    }
+  }
+  <p class="field__hint" id="f-localidade-hint">
+    Determina quais feriados municipais e estaduais entram na contagem dos prazos de recurso.
+    Costuma ser a cidade da unidade administradora, mas não decorre dela: um certame pode correr
+    sob o calendário de outro município.
+  </p>
