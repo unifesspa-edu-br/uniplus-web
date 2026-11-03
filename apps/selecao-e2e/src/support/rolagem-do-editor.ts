@@ -123,6 +123,8 @@ export async function conferirRolagemPorTeclado(page: Page): Promise<void> {
     )
     .toBeLessThanOrEqual(1);
 
+  // Chegar a um pixel do fim não encerra a animação do End; o Home dado no meio dela é desfeito.
+  await esperarRolagemParar(page);
   await page.keyboard.press('Home');
   await expect
     .poll(async () => (await medirAreaDeTrabalho(page)).topo, {
