@@ -1,0 +1,81 @@
+/* ============================================================================
+ * SPINNER — indeterminate loading
+ * Contrato: <span class="spinner" role="status" aria-label="Carregando"></span>
+ * Inside button: replace btn content while keeping width (CSS sizes it).
+ * ========================================================================== */
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spinner-rotate 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.spinner--sm {
+  font-size: 14px;
+  border-width: 2px;
+}
+.spinner--md {
+  font-size: 20px;
+  border-width: 2.5px;
+}
+.spinner--lg {
+  font-size: 32px;
+  border-width: 3px;
+}
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 1.5s;
+  } /* slower instead of off — still need motion */
+}
+
+.ui-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-overlay);
+  padding: var(--space-4);
+}
+
+.ui-loading-overlay__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+}
+
+/* Button in-flight state: keeps width, swaps to spinner + label.
+ * Content uses opacity:0 (NOT visibility:hidden) so the button keeps its
+ * accessible name — visibility:hidden removes the label from the a11y tree,
+ * leaving the spinner (aria-hidden) as the only content and an unnamed button.
+ * The spinner overlay may stay aria-hidden="true": the original label is still
+ * exposed to assistive tech, and aria-busy="true" should signal the loading. */
+.btn[data-loading='true'] {
+  position: relative;
+  pointer-events: none;
+  cursor: progress;
+}
+.btn[data-loading='true'] > :not(.spinner) {
+  opacity: 0;
+}
+.btn[data-loading='true'] > .spinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}

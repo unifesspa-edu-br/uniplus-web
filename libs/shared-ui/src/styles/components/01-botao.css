@@ -1,0 +1,158 @@
+/* ============================================================================
+ * BUTTON
+ * Types: solid (primary/secondary/tertiary), outline, ghost, danger
+ * Sizes: sm 32, default 40, lg 48
+ * Density (touch-target via padding) — default = comfortable 44 minimum
+ * Modifiers: --icon-only (square 44/40/32), --pill, --full
+ * ========================================================================== */
+.btn {
+  --btn-bg: var(--color-primary);
+  --btn-fg: var(--text-on-primary);
+  --btn-bd: transparent;
+  --btn-bg-hover: var(--color-primary-700);
+  --btn-bg-active: var(--color-primary-800);
+  --btn-height: var(--touch-min);
+  --btn-px: var(--space-5);
+  --btn-fs: var(--text-base);
+  --btn-radius: var(--radius-pill);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  /* WCAG 2.5.5: never below the 44px touch floor, even for sm/md. Variants
+   * tune font/padding only; --btn-height can grow the target (lg = 48) but
+   * max() clamps it so it can never shrink below --touch-min. */
+  min-height: max(var(--touch-min), var(--btn-height));
+  padding-inline: var(--btn-px);
+  font-family: inherit;
+  font-size: var(--btn-fs);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  color: var(--btn-fg);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-bd);
+  border-radius: var(--btn-radius);
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+.btn:hover:not([disabled]):not(:disabled) {
+  background: var(--btn-bg-hover);
+}
+.btn:active:not([disabled]):not(:disabled) {
+  background: var(--btn-bg-active);
+}
+.btn[disabled],
+.btn:disabled {
+  cursor: not-allowed;
+  background: var(--surface-disabled);
+  color: var(--text-disabled);
+  border-color: transparent;
+}
+
+.btn--secondary {
+  --btn-bg: transparent;
+  --btn-fg: var(--color-primary);
+  --btn-bd: var(--color-primary);
+  --btn-bg-hover: var(--color-primary-50);
+  --btn-bg-active: var(--color-primary-100);
+}
+.btn--secondary:hover:not([disabled]):not(:disabled) {
+  color: var(--text-on-primary-tint);
+  border-color: var(--color-primary-700);
+}
+
+/*
+ * Hover com a mesma tinta e o mesmo texto do secundário: sobre `--surface-subtle`, o
+ * azul de `--color-primary` rendia 4,07:1 no tema escuro — abaixo do mínimo de 4,5:1
+ * que a WCAG 2.1 AA exige, e o botão terciário é comum o bastante para a falha
+ * aparecer em qualquer tela.
+ */
+.btn--tertiary {
+  --btn-bg: transparent;
+  --btn-fg: var(--color-primary);
+  --btn-bd: transparent;
+  --btn-bg-hover: var(--color-primary-50);
+  --btn-bg-active: var(--color-primary-100);
+}
+.btn--tertiary:hover:not([disabled]):not(:disabled) {
+  color: var(--text-on-primary-tint);
+}
+
+/*
+ * A terciária é a única variante sem caixa — fundo e borda transparentes — e desde
+ * a remoção do sublinhado de `.btn` uma âncora só de texto se distingue do corpo ao
+ * redor apenas pela cor. O SC 1.4.1 da WCAG 2.1 não aceita a cor sozinha, e a saída
+ * da técnica G183 (3:1 entre o controle e o texto vizinho) não é alcançada em
+ * nenhuma das três paletas: no tema de contraste `--text-primary` e `--color-primary`
+ * são o mesmo `#ffff00`, e a âncora fica idêntica ao que a cerca.
+ *
+ * Havendo ícone, ele já é a pista não-cromática e a regra se cala: o sublinhado se
+ * propagaria ao item flex e desenharia um traço solto sob o glifo — decoração
+ * propagada não pode ser desfeita por regra no descendente, então excluir aqui é o
+ * único ponto em que dá para evitá-lo.
+ *
+ * `text-decoration-line` e não o atalho: `text-decoration` reposicionaria
+ * `text-decoration-thickness` em `auto`, e como este seletor supera `a:hover` em
+ * especificidade, levaria junto o reforço de 2px que base.css dá a todo link.
+ */
+a.btn--tertiary:not(.btn--icon-only):not(:has(i, svg, img)) {
+  text-decoration-line: underline;
+}
+
+.btn--danger {
+  --btn-bg: var(--color-danger-solid);
+  --btn-fg: var(--color-neutral-0);
+  /* Escurece o próprio fundo: `--color-danger-700` é claro no tema escuro e deixava o texto branco ilegível. */
+  --btn-bg-hover: color-mix(in srgb, var(--color-danger-solid), #000 18%);
+  --btn-bg-active: color-mix(in srgb, var(--color-danger-solid), #000 18%);
+}
+[data-theme='contrast'] .btn--danger {
+  --btn-fg: var(--text-on-primary);
+}
+
+/* sm/md keep the 44px floor; lg opts up to the 48px comfortable target. */
+.btn--sm {
+  --btn-px: var(--space-4);
+  --btn-fs: var(--text-sm);
+}
+.btn--md {
+  --btn-px: var(--space-5);
+  --btn-fs: var(--text-sm);
+}
+.btn--lg {
+  --btn-height: var(--touch-comfortable);
+  --btn-px: var(--space-6);
+  --btn-fs: var(--text-md);
+}
+.btn--full {
+  width: 100%;
+}
+.btn--pill {
+  border-radius: var(--radius-pill);
+}
+.btn--rect {
+  border-radius: var(--radius-md);
+}
+
+.btn--icon-only {
+  width: max(var(--touch-min), var(--btn-height));
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  padding: 0;
+  flex-shrink: 0;
+}
+.btn--circle {
+  border-radius: var(--radius-circle);
+}
+
+.btn__icon {
+  width: 1.25em;
+  height: 1.25em;
+  flex-shrink: 0;
+}

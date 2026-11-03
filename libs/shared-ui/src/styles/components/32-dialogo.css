@@ -1,0 +1,117 @@
+/* ============================================================================
+ * DIALOG / MODAL / BOTTOM-SHEET
+ * Contrato: <dialog class="uni-dialog"> + .uni-dialog__panel inside.
+ * Mobile (<640px): bottom-sheet. Desktop: centered modal.
+ * Open with .showModal() (puts focus inside automatically).
+ * ========================================================================== */
+.uni-dialog {
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  max-width: 100vw;
+  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+  color: var(--text-primary);
+  display: none;
+}
+.uni-dialog[open] {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+@media (min-width: 640px) {
+  .uni-dialog[open] {
+    align-items: center;
+  }
+}
+.uni-dialog::backdrop {
+  background: var(--surface-overlay);
+  animation: uni-fade-in var(--duration-fast) var(--ease-standard);
+}
+
+.uni-dialog__panel {
+  background: var(--surface-card);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-3);
+  animation: uni-slide-up var(--duration-base) var(--ease-emphasized);
+}
+@media (min-width: 640px) {
+  .uni-dialog__panel {
+    border-radius: var(--radius-lg);
+    animation: uni-fade-in var(--duration-base) var(--ease-emphasized);
+  }
+}
+/* Variante larga: o diálogo com tabela cabe sem rolagem horizontal a 1366 px. */
+.uni-dialog--largo .uni-dialog__panel {
+  max-width: min(60rem, 100vw);
+}
+.uni-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-3);
+}
+.uni-dialog__title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  margin: 0;
+  line-height: 1.3;
+}
+.uni-dialog__body {
+  padding: 0 var(--space-5);
+  overflow-y: auto;
+  flex: 1;
+}
+.uni-dialog__body > p {
+  margin: 0 0 var(--space-3);
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+.uni-dialog__footer {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  margin-top: var(--space-4);
+}
+@media (min-width: 480px) {
+  .uni-dialog__footer {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+@keyframes uni-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes uni-slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .uni-dialog__panel,
+  .uni-dialog::backdrop {
+    animation: none;
+  }
+}

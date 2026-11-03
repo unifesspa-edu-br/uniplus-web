@@ -1,0 +1,50 @@
+/* ============================================================================
+ * BREADCRUMB — hierarchical navigation
+ * Contrato: <nav aria-label="Breadcrumb"> + <ol> with chevron separators.
+ * Last item gets aria-current="page" and is non-interactive.
+ * ========================================================================== */
+.breadcrumb {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.breadcrumb__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.breadcrumb__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.breadcrumb__item + .breadcrumb__item::before {
+  content: '›';
+  color: var(--text-muted);
+  margin-right: var(--space-1);
+  font-size: var(--text-base);
+}
+.breadcrumb__link {
+  font-size: var(--text-sm);
+  line-height: 1.25;
+  color: var(--color-primary);
+  text-decoration: none;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  min-height: var(--touch-min);
+  display: inline-flex;
+  align-items: center;
+}
+.breadcrumb__link:hover {
+  text-decoration: underline;
+}
+.breadcrumb__current {
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  line-height: 1.25;
+  font-weight: var(--weight-semibold);
+  padding: var(--space-1) var(--space-2);
+}

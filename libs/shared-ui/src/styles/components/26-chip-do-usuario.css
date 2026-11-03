@@ -1,0 +1,35 @@
+/* User chip */
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--surface-card);
+  font-size: var(--text-sm);
+  min-height: var(--touch-min);
+  cursor: pointer;
+}
+.user-chip__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--avatar-bg);
+  color: var(--avatar-fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-xs);
+}
+/* A inicial é decorativa e duplica a primeira letra do nome ao lado. Vem de
+ * `data-initials` em vez de nó de texto porque, como texto do DOM, ela
+ * comporia o rótulo VISÍVEL do botão ("AAdmin"), que nenhum nome acessível
+ * legível conteria — o SC 2.5.3 (Label in Name, nível A) compara o nome
+ * acessível com o texto lido na tela, e `aria-hidden` esconde do leitor, não
+ * da vista. Quem navega por comando de voz é quem paga: diz o rótulo que lê e
+ * o elemento não ativa. Mesmo padrão no contador do calendário mensal. */
+.user-chip__avatar::before {
+  content: attr(data-initials);
+}

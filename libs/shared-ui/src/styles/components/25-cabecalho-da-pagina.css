@@ -1,0 +1,42 @@
+/* ============================================================================
+ * PAGE HEADER — title + description + right actions
+ * ========================================================================== */
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.page-header__content {
+  min-width: 0;
+}
+.page-header__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  margin: 0;
+  line-height: var(--leading-tight);
+}
+.page-header__desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: var(--space-1) 0 0;
+  line-height: var(--leading-normal);
+}
+.page-header__actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media (min-width: 600px) {
+  .page-header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-5);
+  }
+  .page-header__actions {
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+}

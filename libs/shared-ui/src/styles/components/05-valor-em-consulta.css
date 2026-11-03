@@ -1,0 +1,16 @@
+/* ============================================================================
+ * VALOR EM CONSULTA — o campo lido, não preenchido (<ui-valor-em-consulta>)
+ * ========================================================================== */
+.valor-em-consulta {
+  display: block;
+  min-width: 0;
+}
+.valor-em-consulta > .field__hint {
+  margin: var(--space-1) 0 0;
+}
+
+.textarea[aria-invalid='true'],
+.field.is-error .textarea {
+  border-color: var(--color-danger-500);
+  background: var(--color-danger-50);
+}

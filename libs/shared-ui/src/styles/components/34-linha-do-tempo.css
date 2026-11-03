@@ -1,0 +1,109 @@
+/* ============================================================================
+ * STATUS TIMELINE (Inscrição state machine)
+ * Vertical, mobile-first. States: done, current, pending, blocked, danger.
+ * ========================================================================== */
+.uni-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.uni-timeline__item {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  position: relative;
+}
+.uni-timeline__item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 36px;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-default);
+}
+.uni-timeline__item.is-done:not(:last-child)::before,
+.uni-timeline__item.is-current:not(:last-child)::before {
+  background: var(--color-success-solid);
+}
+.uni-timeline__dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface-card);
+  border: 2px solid var(--border-default);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+.uni-timeline__item.is-done .uni-timeline__dot {
+  background: var(--color-success-solid);
+  border-color: var(--color-success-solid);
+  color: var(--color-neutral-0);
+}
+.uni-timeline__item.is-current .uni-timeline__dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--text-on-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 25%, transparent);
+}
+.uni-timeline__item.is-blocked .uni-timeline__dot {
+  background: var(--surface-card);
+  border-color: var(--border-default);
+  color: var(--text-muted);
+}
+.uni-timeline__item.is-danger .uni-timeline__dot {
+  background: var(--color-danger-solid);
+  border-color: var(--color-danger-solid);
+  color: var(--color-neutral-0);
+}
+[data-theme='contrast'] .uni-timeline__item.is-done .uni-timeline__dot,
+[data-theme='contrast'] .uni-timeline__item.is-danger .uni-timeline__dot {
+  color: var(--text-on-primary);
+}
+.uni-timeline__body {
+  padding-top: var(--space-1);
+}
+.uni-timeline__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.uni-timeline__title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--text-heading);
+  margin: 0;
+  line-height: 1.3;
+}
+.uni-timeline__item.is-current .uni-timeline__title {
+  color: var(--text-heading);
+}
+.uni-timeline__item.is-blocked .uni-timeline__title {
+  color: var(--text-muted);
+}
+.uni-timeline__when {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.uni-timeline__desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: var(--space-1) 0 0;
+  line-height: var(--leading-normal);
+}
+.uni-timeline__actions {
+  margin-top: var(--space-3);
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}

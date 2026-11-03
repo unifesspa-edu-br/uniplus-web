@@ -1,0 +1,76 @@
+/* ============================================================================
+ * LISTA DE DADOS — pares lidos (<ui-lista-de-dados> com um <ng-template uiDado> por par,
+ * renderizados como dl > div > dt + dd)
+ * O rótulo em cor secundária e o valor no texto primário, quebrando linha em vez de ser
+ * cortado. Com duas colunas, os pares ficam lado a lado quando a lista tem ao menos 32rem; em
+ * destaque, o valor sai grande e com algarismos tabulares, para número e situação de um
+ * documento.
+ * ========================================================================== */
+ui-lista-de-dados {
+  display: block;
+  min-width: 0;
+  container-type: inline-size;
+}
+.lista-de-dados {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+}
+/* As duas colunas dependem da largura da lista, não da janela: num cartão estreito, uma só. */
+@container (min-width: 32rem) {
+  .lista-de-dados--duas-colunas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-6);
+  }
+}
+.lista-de-dados--destaque {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-8);
+}
+.dado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.dado__rotulo {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+.dado__valor {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.lista-de-dados--destaque .dado__valor {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+}
+.valor-apresentado__lista {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  list-style: disc;
+  white-space: normal;
+}
+.valor-apresentado__lista--ordenada {
+  list-style: decimal;
+}
+.valor-apresentado__vazio {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+@media print {
+  .dado {
+    break-inside: avoid;
+  }
+}

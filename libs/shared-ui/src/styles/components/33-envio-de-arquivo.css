@@ -1,0 +1,180 @@
+/* ============================================================================
+ * FILE UPLOADER
+ * Drag-and-drop + button trigger + file list with progress + remove.
+ * ========================================================================== */
+.uni-uploader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.uni-uploader__drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-5);
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface-subtle);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+.uni-uploader__drop:hover:not(:disabled),
+.uni-uploader__drop.is-dragging {
+  border-color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+.uni-uploader__drop:disabled {
+  cursor: default;
+  background: var(--surface-disabled);
+  border-color: var(--border-default);
+  color: var(--text-disabled);
+}
+.uni-uploader__drop:disabled .uni-uploader__title,
+.uni-uploader__drop:disabled .uni-uploader__hint {
+  color: var(--text-disabled);
+}
+.uni-uploader__drop:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+.uni-uploader__icon {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-card);
+  border-radius: 50%;
+  color: var(--color-primary);
+}
+.uni-uploader__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.uni-uploader__title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+.uni-uploader__hint {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+/* Compacta: ícone e texto lado a lado, para a zona caber num formulário sem tomar a altura dele. */
+.uni-uploader--compacto .uni-uploader__drop {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  min-height: var(--touch-comfortable);
+  padding: var(--space-1) var(--space-4);
+  text-align: left;
+}
+.uni-uploader--compacto .uni-uploader__icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.uni-uploader--compacto .uni-uploader__text {
+  gap: 0;
+  line-height: 1.25;
+}
+.uni-uploader--compacto .uni-uploader__title {
+  font-size: var(--text-sm);
+}
+.uni-uploader--compacto .uni-uploader__hint {
+  font-size: var(--text-xs);
+}
+.uni-uploader__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.uni-uploader__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.uni-uploader__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.uni-uploader__item-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+.uni-uploader__item-body {
+  flex: 1;
+  min-width: 0;
+}
+.uni-uploader__item-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.uni-uploader__item-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.uni-uploader__progress {
+  width: 100%;
+  height: 6px;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-top: var(--space-1);
+}
+.uni-uploader__progress > div {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width var(--duration-base) var(--ease-standard);
+}
+.uni-uploader__item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+/* Em 320 px o nome e as ações não cabem lado a lado: as ações descem para a linha seguinte. */
+.uni-uploader__list > .uni-uploader__item {
+  flex-wrap: wrap;
+}
+.uni-uploader__list .uni-uploader__item-body {
+  flex: 1 1 12rem;
+}
+.uni-uploader__item.is-error {
+  border-color: var(--color-danger-500);
+  background: var(--color-danger-50);
+}
+.uni-uploader__item.is-error .uni-uploader__item-icon {
+  color: var(--color-danger-500);
+}
+.uni-uploader__item.is-error .uni-uploader__progress > div {
+  background: var(--color-danger-500);
+}
+.uni-uploader__item.is-success .uni-uploader__progress > div {
+  background: var(--color-success-600);
+}

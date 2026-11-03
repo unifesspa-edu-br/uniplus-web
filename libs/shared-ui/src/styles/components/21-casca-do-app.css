@@ -1,0 +1,54 @@
+/* ============================================================================
+ * INSTITUTIONAL BAR + ACCESSIBILITY BAR + TOPBAR (mobile-first)
+ * ========================================================================== */
+/*
+ * O `ui-app-shell` é dono da própria caixa: trava a altura no viewport dinâmico
+ * para que a rolagem aconteça nas regiões internas (`.page` e `.sidebar nav`) e
+ * nunca no `<body>`. Assim os apps consumidores não precisam de CSS de rolagem
+ * por rota — só que o host da rota (`*-root`) seja uma coluna flex. O cabeçalho
+ * institucional, a topbar e a navegação entram no cálculo da altura disponível
+ * pela própria cadeia flex (sem `calc()` com números mágicos).
+ */
+ui-app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100vh; /* fallback para navegadores sem dvh */
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.ui-app-shell {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-page);
+  color: var(--text-primary);
+}
+
+.ui-app-shell__main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: var(--space-5) var(--space-4);
+}
+
+.ui-app-shell__footer {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface-inverse);
+  color: var(--text-on-inverse);
+  font-size: var(--text-sm);
+}
+
+@media (min-width: 768px) {
+  .ui-app-shell__main {
+    padding: var(--space-7);
+  }
+}

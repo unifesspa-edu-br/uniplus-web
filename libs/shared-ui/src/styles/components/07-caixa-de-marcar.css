@@ -1,0 +1,75 @@
+/* Checkbox + Radio */
+.checkbox,
+.radio {
+  /* Contém o input escondido: sem isso, ele escapa da área que rola e estica a página. */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  cursor: pointer;
+  user-select: none;
+}
+.checkbox input,
+.radio input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.checkbox__box,
+.radio__dot {
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface-card);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+  flex-shrink: 0;
+}
+.checkbox__box {
+  border-radius: var(--radius-xs);
+}
+.radio__dot {
+  border-radius: var(--radius-circle);
+}
+.checkbox input:checked ~ .checkbox__box {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.checkbox input:checked ~ .checkbox__box::after {
+  content: '';
+  width: 6px;
+  height: 10px;
+  border: solid var(--color-neutral-0);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+/* Estado misto ("marcar todos" com parte dos itens marcados): traço em vez de marca. */
+.checkbox input:indeterminate ~ .checkbox__box {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.checkbox input:indeterminate ~ .checkbox__box::after {
+  content: '';
+  width: 10px;
+  height: 2px;
+  background: var(--color-neutral-0);
+}
+.radio input:checked ~ .radio__dot {
+  border-color: var(--color-primary);
+}
+.radio input:checked ~ .radio__dot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: var(--color-primary);
+  border-radius: 50%;
+}
+.checkbox input:focus-visible ~ .checkbox__box,
+.radio input:focus-visible ~ .radio__dot {
+  box-shadow: var(--focus-ring);
+}

@@ -1,0 +1,15 @@
+/* ============================================================================
+ * DIVIDER
+ * ========================================================================== */
+.divider {
+  border: none;
+  height: 1px;
+  background: var(--border-subtle);
+  margin-block: var(--space-4);
+}
+.divider--vertical {
+  width: 1px;
+  height: auto;
+  align-self: stretch;
+  margin: 0;
+}

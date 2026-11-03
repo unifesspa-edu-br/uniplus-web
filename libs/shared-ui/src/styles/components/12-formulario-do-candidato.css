@@ -1,0 +1,167 @@
+/*
+ * Formulário do candidato com os passos em coluna (apresentacaoDosPassos="lateral"): a partir de 768 px
+ * a coluna do ui-steps fica ao lado da seção; abaixo, ela some e a barra da seção atual abre o diálogo.
+ */
+.formulario-candidato__layout {
+  display: grid;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+@media (min-width: 768px) {
+  .formulario-candidato__layout--lateral {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-6);
+  }
+}
+.formulario-candidato__corpo {
+  display: grid;
+  gap: var(--space-4);
+  min-inline-size: 0;
+  flex: 1 1 auto;
+}
+@media (min-width: 768px) {
+  .formulario-candidato__layout--lateral .ui-steps--lateral {
+    /* A coluna acompanha a seção até o fim da página, com a altura visível da janela. */
+    height: auto;
+    max-height: var(--ui-steps-area-altura, 100vh);
+    width: 15rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+  }
+}
+.formulario-candidato__resumo {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+  justify-items: start;
+}
+.formulario-candidato__resumo h4,
+.formulario-candidato__resumo dl,
+.formulario-candidato__resumo dd {
+  margin: 0;
+}
+.formulario-candidato__resumo dt {
+  font-weight: var(--weight-semibold);
+}
+.formulario-candidato__resumo dd {
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Formulário do candidato (ui-formulario-do-candidato): os campos em coluna,
+ * os grupos repetíveis com cada ocorrência em cartão. Sem largura mínima: cabe em 320 px.
+ */
+.formulario-candidato {
+  display: grid;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+.formulario-candidato__secao {
+  display: grid;
+  gap: var(--space-6);
+  min-inline-size: 0;
+}
+.formulario-candidato__titulo {
+  margin: 0;
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+}
+/* O campo não se estica além do que se lê de uma vez; as escolhas e os grupos ocupam a coluna. */
+.formulario-candidato__secao > ui-campo-do-candidato {
+  max-inline-size: 40rem;
+}
+/*
+ * O campo de escolha não tem caixa que se alongue: o limite das caixas de texto só cortaria a
+ * orientação das opções com espaço sobrando. O teto mais largo ainda mantém a linha legível.
+ */
+.formulario-candidato__secao > ui-campo-do-candidato:has(> .formulario-candidato__escolhas) {
+  max-inline-size: 60rem;
+}
+/*
+ * O título só recebe foco programático, ao chegar na página ou na seção, para o leitor de tela
+ * anunciá-la: não entra na ordem de tabulação e não é controle, então não leva anel. O anel continua
+ * em tudo o que se alcança pelo teclado.
+ */
+.formulario-candidato__titulo:focus-visible,
+.page-header__title:focus-visible {
+  box-shadow: none;
+  outline: none;
+}
+.formulario-candidato__descricao {
+  margin: 0;
+  color: var(--text-muted);
+}
+.formulario-candidato__escolhas,
+.formulario-candidato__grupo {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  /* O fieldset tem largura mínima do conteúdo por padrão; sem o zero, não encolhe em 320 px. */
+  min-inline-size: 0;
+  justify-items: start;
+}
+.formulario-candidato__grupo {
+  gap: var(--space-4);
+  justify-items: stretch;
+}
+/*
+ * A orientação fica sob o texto da opção, alinhada a ele e não ao marcador, e colada à opção a que se
+ * refere. Tem a aparência da ajuda do campo (field__hint): o candidato reconhece a orientação pelo mesmo
+ * texto menor e esmaecido em todo o formulário.
+ */
+.formulario-candidato__orientacao {
+  margin-block-start: calc(-1 * var(--space-2));
+  padding-inline-start: calc(20px + var(--space-2));
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+.formulario-candidato__ocorrencia {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  min-inline-size: 0;
+}
+.formulario-candidato__ocorrencia > .btn {
+  justify-self: start;
+}
+.formulario-candidato__ocorrencia-titulo {
+  margin: 0;
+  font-size: var(--text-md);
+}
+.formulario-candidato__acoes-do-grupo,
+.formulario-candidato__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+.formulario-candidato__declaracao {
+  margin: 0;
+}
+.formulario-candidato__termo {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.formulario-candidato__termo h4 {
+  margin: 0;
+}
+.formulario-candidato__termo-texto {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}

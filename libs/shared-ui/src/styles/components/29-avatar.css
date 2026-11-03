@@ -1,0 +1,33 @@
+/* ============================================================================
+ * AVATAR
+ * --avatar-bg / --avatar-fg são tokens sensíveis ao tema.
+ * ========================================================================== */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--avatar-bg);
+  color: var(--avatar-fg);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar--sm {
+  width: 32px;
+  height: 32px;
+  font-size: var(--text-xs);
+}
+.avatar--lg {
+  width: 56px;
+  height: 56px;
+  font-size: var(--text-md);
+}

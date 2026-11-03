@@ -1,0 +1,140 @@
+/* ============================================================================
+ * DRAWER / OFF-CANVAS — left/right anchored, focus-trapped
+ * Uses <dialog> nativo (focus trap free), styled as side panel.
+ * ========================================================================== */
+/* `DrawerComponent` põe esta classe no <body> enquanto a gaveta está aberta. O
+   trava-scroll do fundo é do DS (todo app que usa <ui-drawer> herda) — não uma
+   regra corretiva repetida por app. */
+body.uni-drawer-open,
+body.ui-overlay-open {
+  overflow: hidden;
+}
+
+.uni-drawer {
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  max-width: 100vw;
+  max-height: 100vh; /* fallback para navegadores sem dvh */
+  max-height: 100dvh;
+  width: 100%;
+  height: 100%;
+  color: var(--text-primary);
+}
+.uni-drawer[open] {
+  display: flex;
+  justify-content: flex-start;
+}
+.uni-drawer--right[open] {
+  justify-content: flex-end;
+}
+.uni-drawer::backdrop {
+  background: var(--surface-overlay);
+  animation: uni-fade-in var(--duration-fast) var(--ease-standard);
+}
+/* Altura no viewport dinâmico: em navegador móvel com barra de URL retrátil,
+   `100vh` é maior que a área visível e o fim da lista fica atrás da barra sem
+   como alcançá-lo — o fundo está travado por `body.uni-drawer-open`. */
+.uni-drawer__panel {
+  background: var(--surface-card);
+  width: 100%;
+  max-width: 320px;
+  height: 100vh; /* fallback para navegadores sem dvh */
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-3);
+  animation: uni-drawer-in-left var(--duration-base) var(--ease-emphasized);
+}
+.uni-drawer--right .uni-drawer__panel {
+  animation-name: uni-drawer-in-right;
+}
+@keyframes uni-drawer-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes uni-drawer-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .uni-drawer__panel,
+  .uni-drawer::backdrop {
+    animation: none;
+  }
+}
+.uni-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.uni-drawer__title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  margin: 0;
+}
+.uni-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3) 0;
+}
+.uni-drawer__nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+/* .sidebar__label é escrito para o fundo escuro da sidebar (--text-on-inverse,
+   branco) — reaproveitado dentro do drawer mobile (fundo --surface-card claro),
+   onde branco-sobre-branco fica ilegível. Sobrescreve pro token de texto
+   secundário AAA (7.5:1 vs branco). */
+.uni-drawer .sidebar__label {
+  color: var(--text-muted);
+}
+.uni-drawer__nav a,
+.uni-drawer__account a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  min-height: var(--touch-min);
+}
+.uni-drawer__nav a:hover,
+.uni-drawer__account a:hover {
+  background: var(--surface-subtle);
+}
+.uni-drawer__nav a.is-active,
+.uni-drawer__nav a[aria-current='page'] {
+  background: var(--color-primary-50);
+  color: var(--text-on-primary-tint);
+  font-weight: var(--weight-semibold);
+  border-left: 3px solid var(--color-primary);
+  padding-left: calc(var(--space-5) - 3px);
+}
+.uni-drawer__nav a svg,
+.uni-drawer__account a svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.uni-drawer__account {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}

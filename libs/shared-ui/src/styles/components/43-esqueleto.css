@@ -1,0 +1,49 @@
+/* ============================================================================
+ * SKELETON LOADER
+ * Gradient stops come from --skeleton-from/to, which flip per theme.
+ * In dark, they sit slightly above --surface-card luminance so the shimmer
+ * reads as "placeholder" not "finished content".
+ * Contrato: <div class="skeleton" style="width: …; height: …" aria-hidden="true"></div>
+ * Use inside a wrapper with aria-busy="true" + aria-label="Carregando".
+ * ========================================================================== */
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-from) 0%,
+    var(--skeleton-to) 50%,
+    var(--skeleton-from) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+.skeleton--text {
+  height: 1em;
+  margin-block: 0.25em;
+}
+.skeleton--title {
+  height: 1.5em;
+  width: 60%;
+}
+.skeleton--circle {
+  border-radius: var(--radius-circle);
+}
+.skeleton--card {
+  height: 120px;
+  border-radius: var(--radius-lg);
+}
+@keyframes skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: var(--skeleton-from);
+  }
+}

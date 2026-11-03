@@ -1,0 +1,124 @@
+/* ============================================================================
+ * FILTER BAR
+ * ========================================================================== */
+.filter-bar {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.filter-bar__row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filter-bar__row > .input-group {
+  flex: 1 1 16rem;
+  min-width: min(100%, 16rem);
+}
+.filter-bar__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.filter-bar__group:empty {
+  display: none;
+}
+/* O título do bloco recolhível dos filtros, com os ativos à vista quando fechado. */
+.filter-bar__alternar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-heading);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.filter-bar__alternar:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+/* Fica dentro do botão: o contrato AAA pede ao menos 14px em texto interativo. */
+.filter-bar__titulo {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.filter-bar__seta {
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transition: transform var(--duration-fast, 150ms) var(--ease-standard, ease);
+}
+.filter-bar__alternar[aria-expanded='true'] > .filter-bar__seta {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .filter-bar__seta {
+    transition: none;
+  }
+}
+.filter-bar__ativo {
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-half-2);
+  padding: var(--space-half-2) var(--space-half-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--surface-card);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  /* --text-secondary sobre --surface-subtle (usada por .filter-chip__count)
+     mede abaixo do 7:1 AAA — mesmo ajuste já feito em .segmented__btn. */
+  color: var(--text-primary);
+  cursor: pointer;
+  min-height: var(--touch-min);
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+.filter-chip:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.filter-chip[aria-pressed='true'] {
+  background: var(--color-primary-50);
+  color: var(--text-on-primary-tint);
+  border-color: var(--color-primary);
+  font-weight: var(--weight-semibold);
+}
+.filter-chip__count {
+  font-size: var(--text-xs);
+  background: var(--surface-subtle);
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  color: inherit;
+}
+.filter-chip[aria-pressed='true'] .filter-chip__count {
+  /* --text-on-primary flips per theme (#fff light / #0f172a dark / #000 contrast);
+   * --color-neutral-0 is a constant #fff and gives only 2.5:1 on primary dark. */
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+}

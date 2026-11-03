@@ -1,0 +1,30 @@
+/* Input-affix (icon + input) */
+.input-group {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+.input-group:focus-within {
+  border-color: var(--focus-ring-color);
+  box-shadow: var(--focus-ring);
+}
+.input-group .input {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  flex: 1;
+  min-width: 0;
+}
+.input-group .input:focus-visible {
+  box-shadow: none;
+}
+.input-group__addon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-3);
+  color: var(--text-muted);
+}

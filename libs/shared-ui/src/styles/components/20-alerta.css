@@ -1,0 +1,104 @@
+/* ============================================================================
+ * ALERT / MESSAGE
+ * Hierarquia visual: danger > warning > info ≈ success. Danger usa régua
+ * lateral mais espessa e sombra para manter prioridade em telas com
+ * múltiplas mensagens.
+ * ========================================================================== */
+.alert {
+  /* `wrap`: um `<p class="alert">` com texto interpolado e elementos inline no
+     meio (ex.: `<strong>`) quebra o texto em vários itens flex anônimos — sem
+     wrap, cada um fica na mesma linha em vez de se comportar como um
+     parágrafo comum, e a soma deles estoura a largura do contêiner. */
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  border-left: 4px solid var(--border-default);
+}
+.alert__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--text-secondary);
+}
+.alert__body {
+  flex: 1;
+}
+.alert__title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1);
+}
+/* --text-secondary sobre os tints de alerta mede entre 6,68:1 e 6,96:1 no tema
+   claro — abaixo do 7:1 AAA nos quatro variantes. --text-primary é a alternativa
+   mais escura já usada para texto de corpo e mede 11:1 ou mais. */
+.alert__msg {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  margin: 0;
+  line-height: var(--leading-normal);
+}
+/* --text-muted sobre os tints de alerta também fica abaixo do 7:1 AAA no tema
+   claro (6,79:1 sobre o tint de perigo); o texto secundário do alerta usa a
+   mesma alternativa mais escura do corpo. */
+.alert .u-caption {
+  color: var(--text-primary);
+}
+
+.alert--success {
+  background: var(--color-success-50);
+  border-left-color: var(--color-success-600);
+}
+.alert--success .alert__icon {
+  color: var(--color-success-600);
+}
+.alert--success .alert__title {
+  color: var(--color-success-700);
+}
+
+.alert--warning {
+  background: var(--color-warning-50);
+  border-left-color: var(--color-warning-600);
+}
+.alert--warning .alert__icon {
+  color: var(--color-warning-600);
+}
+.alert--warning .alert__title {
+  color: var(--color-warning-700);
+}
+
+.alert--danger {
+  background: var(--color-danger-50);
+  border-left: 6px solid var(--color-danger-500);
+  box-shadow: var(--shadow-1);
+}
+.alert--danger .alert__icon {
+  color: var(--color-danger-500);
+}
+.alert--danger .alert__title {
+  color: var(--color-danger-700);
+}
+
+.alert--info {
+  background: var(--color-info-50);
+  border-left-color: var(--color-primary);
+}
+.alert--info .alert__icon {
+  color: var(--color-primary);
+}
+.alert--info .alert__title {
+  color: var(--color-info-700);
+}
+
+/* O --btn-fg padrão do secundário (--color-primary) mede 6,57:1 sobre o tint do
+   alerta no tema claro e 6,34:1 no escuro — abaixo do 7:1 AAA. Mesmo tratamento
+   do secundário sobre o tint do hero: --text-on-primary-tint é o token do DS
+   para texto sobre fundo tingido, e mede 8:1 ou mais nos quatro variantes. */
+.alert .btn--secondary {
+  --btn-fg: var(--text-on-primary-tint);
+  --btn-bd: var(--text-on-primary-tint);
+}

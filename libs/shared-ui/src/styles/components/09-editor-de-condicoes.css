@@ -1,0 +1,94 @@
+/*
+ * Editor de condições sobre fatos (ui-editor-de-condicoes / ui-condicao-de-fato).
+ * A condição não tem caixa própria: seus campos participam do grid de quem a hospeda, e o
+ * editor dá a esse grid a forma de uma linha por condição.
+ */
+ui-condicao-de-fato {
+  display: contents;
+}
+ui-editor-de-condicoes {
+  display: block;
+}
+
+.editor-condicoes {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-3) var(--space-4);
+  margin: 0;
+  /* O fieldset tem largura mínima do conteúdo por padrão; sem o zero, não encolhe em 320 px. */
+  min-inline-size: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+/* A borda à esquerda mostra que as condições de dentro valem juntas; o "ou", que as caixas são caminhos independentes. */
+.editor-condicoes__clausula {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  border-left: 3px solid var(--border-subtle);
+  padding-left: var(--space-3);
+}
+
+.editor-condicoes__ou {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  text-transform: lowercase;
+}
+
+/*
+ * Uma linha por condição: fato, comparação, valor e a ação de remover. O alinhamento é pelo
+ * topo, porque o campo de lista carrega a contagem de opções embaixo do controle — pela base,
+ * ele subia e o rótulo saía da altura dos vizinhos. O valor é o que mais precisa de largura
+ * (mostra os valores escolhidos dentro do campo), e por isso cresce o dobro dos outros.
+ */
+.editor-condicoes__condicao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2) var(--space-3);
+}
+
+.editor-condicoes__condicao .form-field {
+  flex: 1 1 12rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.editor-condicoes__condicao .condicao-de-fato__valor {
+  flex: 2 1 18rem;
+}
+
+/* A ação desce a altura do rótulo e tem a altura do controle, para ficar na linha dos campos. */
+.editor-condicoes__condicao > ui-condicao-de-fato > .btn {
+  --btn-height: var(--touch-comfortable);
+  flex: 0 0 auto;
+  margin-top: calc(var(--text-base) * var(--leading-normal));
+}
+
+.editor-condicoes__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Rótulos de ação mais largos que a tela estreita ("Acrescentar condição que também precisa valer",
+   "Acrescentar grupo repetível"): o rótulo quebra em vez de empurrar a página. */
+.editor-condicoes__acoes > .btn,
+.editor-formulario__acrescentar > .btn {
+  max-width: 100%;
+  white-space: normal;
+  text-align: start;
+}
+
+/* O que a condição alcança e o erro são prosa: ocupam a linha inteira, não um campo ao lado dos outros. */
+.condicao-de-fato__nota {
+  grid-column: 1 / -1;
+  flex-basis: 100%;
+  margin: 0;
+}

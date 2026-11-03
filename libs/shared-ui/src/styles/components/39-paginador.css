@@ -1,0 +1,86 @@
+/* ============================================================================
+ * PAGER — cursor-based pagination (keyset/seek)
+ * O contrato de API vive em docs/cursor-pagination.md; este bloco é só UI.
+ * Contrato: prev/next + status com aria-live, sem
+ * paginação numerada. Botões desabilitados nos extremos.
+ *
+ * Usage:
+ *   <nav class="pager" aria-label="Paginação">
+ *     <button class="pager__btn" data-pager="prev" disabled>…</button>
+ *     <span class="pager__status" aria-live="polite">Página 1 · 10 resultados</span>
+ *     <button class="pager__btn" data-pager="next">…</button>
+ *   </nav>
+ * ========================================================================== */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-page);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+.pager__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  padding: 0 var(--space-4);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+.pager__btn:hover:not(:disabled) {
+  background: var(--surface-subtle);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.pager__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--surface-disabled);
+  color: var(--text-disabled);
+  border-color: transparent;
+}
+.pager__btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.pager__status {
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  flex: 1 1 auto;
+}
+.pager__page {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+.pager__per-page {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.pager__per-page select {
+  min-height: var(--touch-min);
+  padding: 0 var(--space-3);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+}

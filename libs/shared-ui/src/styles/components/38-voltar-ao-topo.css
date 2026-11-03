@@ -1,0 +1,69 @@
+/* ============================================================================
+ * BACK-TO-TOP — floating action that appears after meaningful scroll
+ * Contrato: fixed bottom-right, ≥44, primary-tint, fade+slide in. ARIA-labeled.
+ * Respects prefers-reduced-motion. Scrolls page to top with focus restored
+ * to <body>/<main> so screen reader announcement is consistent.
+ *
+ * The button MUST be present in the DOM with `hidden` initial state; the JS
+ * sets aria-hidden + removes hidden when scroll threshold is crossed.
+ * ========================================================================== */
+.uni-back-to-top {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-sticky);
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  border: none;
+  border-radius: var(--radius-circle);
+  box-shadow: var(--shadow-2);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+  pointer-events: none;
+}
+.uni-back-to-top.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.uni-back-to-top:hover {
+  background: var(--color-primary-700);
+}
+.uni-back-to-top:active {
+  background: var(--color-primary-800);
+}
+.uni-back-to-top svg {
+  width: 22px;
+  height: 22px;
+}
+@media (min-width: 768px) {
+  .uni-back-to-top {
+    right: var(--space-6);
+    bottom: var(--space-6);
+    width: 52px;
+    height: 52px;
+  }
+  .uni-back-to-top svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .uni-back-to-top {
+    transition: opacity var(--duration-fast) linear;
+    transform: none;
+  }
+  .uni-back-to-top.is-visible {
+    transform: none;
+  }
+}

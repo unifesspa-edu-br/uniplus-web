@@ -1,0 +1,81 @@
+/* ============================================================================
+ * TOOLTIP — generic (not the sidebar inline one)
+ * Contrato: any element with [data-tooltip="texto"]. Use [data-tooltip-position]
+ * to control placement: top (default) | bottom | left | right.
+ * NOT a substitute for aria-label — keep BOTH for screen reader users.
+ * ========================================================================== */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  background: var(--color-primary-900);
+  color: var(--color-neutral-0);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+  box-shadow: var(--shadow-2);
+  z-index: var(--z-overlay);
+}
+[data-tooltip]:not([data-tooltip-position])::after,
+[data-tooltip][data-tooltip-position='top']::after {
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+}
+[data-tooltip]:not([data-tooltip-position]):hover::after,
+[data-tooltip]:not([data-tooltip-position]):focus-visible::after,
+[data-tooltip][data-tooltip-position='top']:hover::after,
+[data-tooltip][data-tooltip-position='top']:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+[data-tooltip][data-tooltip-position='bottom']::after {
+  top: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+}
+[data-tooltip][data-tooltip-position='bottom']:hover::after,
+[data-tooltip][data-tooltip-position='bottom']:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Position right: used by the collapsed admin sidebar. */
+[data-tooltip][data-tooltip-position='right']::after {
+  left: calc(100% + var(--space-2));
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+}
+[data-tooltip][data-tooltip-position='right']:hover::after,
+[data-tooltip][data-tooltip-position='right']:focus-visible::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+[data-tooltip][data-tooltip-position='left']::after {
+  right: calc(100% + var(--space-2));
+  top: 50%;
+  transform: translateY(-50%) translateX(4px);
+}
+[data-tooltip][data-tooltip-position='left']:hover::after,
+[data-tooltip][data-tooltip-position='left']:focus-visible::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tooltip]::after {
+    transition: opacity var(--duration-fast) linear;
+    transform: none !important;
+  }
+}
