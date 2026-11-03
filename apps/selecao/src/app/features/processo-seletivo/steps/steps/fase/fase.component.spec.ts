@@ -1,5 +1,6 @@
 import type { HttpTestingController } from '@angular/common/http/testing';
 import type { DebugElement } from '@angular/core';
+import { runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -26,6 +27,9 @@ import {
 } from '../../shared/exigencias/exigencias-documentais';
 import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { EditorDaExigenciaComponent } from './documentos/editor-da-exigencia.component';
+import { EixoEtapaComponent } from './documentos/eixos/eixo-etapa.component';
+import { EixoFormularioComponent } from './documentos/eixos/eixo-formulario.component';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
 import { GatilhoDasExigenciasStore } from './documentos/gatilho-das-exigencias.store';
 import { FaseEmEdicao } from './fase-em-edicao';
@@ -67,14 +71,30 @@ describe('FaseStepComponent', () => {
 
   const exigencias = () => raiz.injector.get(ExigenciasDaFaseStore);
   const gatilho = () => raiz.injector.get(GatilhoDasExigenciasStore);
+  /** As escritas do editor e dos eixos não dependem de a linha estar aberta na tela. */
+  const noPasso = <T>(classe: new () => T): T =>
+    runInInjectionContext(raiz.injector, () => new classe());
+  const editor = () => noPasso(EditorDaExigenciaComponent);
+  const eixoEtapa = () => noPasso(EixoEtapaComponent);
+  const eixoFormulario = () => noPasso(EixoFormularioComponent);
   const bancas = () =>
     raiz.query(By.directive(BancasDaFaseComponent)).componentInstance as BancasDaFaseComponent;
   const publicacoes = () =>
-    raiz.query(By.directive(PublicacoesDaFaseComponent)).componentInstance as PublicacoesDaFaseComponent;
+    raiz.query(By.directive(PublicacoesDaFaseComponent))
+      .componentInstance as PublicacoesDaFaseComponent;
 
   beforeEach(async () => {
-    ({ componente, store, controller, detectar, nativo, raiz, atenderCatalogos, comCronograma, selecionado } =
-      await montarFase());
+    ({
+      componente,
+      store,
+      controller,
+      detectar,
+      nativo,
+      raiz,
+      atenderCatalogos,
+      comCronograma,
+      selecionado,
+    } = await montarFase());
   });
 
   afterEach(() => controller.verify());
@@ -638,7 +658,10 @@ describe('FaseStepComponent', () => {
 
       beforeEach(() => {
         TestBed.inject(CatalogosDoCronogramaService).fatos.set([LAUDO]);
-        comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
+        comCronograma(
+          fase({}),
+          fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+        );
         store.patchObjectSection('formulario', {
           outrasFinalidades: [
             {
@@ -675,7 +698,11 @@ describe('FaseStepComponent', () => {
       });
 
       it('não oferece na fase anterior o dado que a habilitação coleta', () => {
-        expect(gatilho().fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual([]);
+        expect(
+          gatilho()
+            .fatosDoGatilhoDoDocumento(ID_CPF)
+            .map((fato) => fato.codigo),
+        ).toEqual([]);
         expect(nativo.querySelector('.doc-item__gatilho')?.textContent).toContain(
           'Nenhum dado do candidato é conhecido até esta fase para condicionar o documento.',
         );
@@ -688,7 +715,11 @@ describe('FaseStepComponent', () => {
         gatilho().escolherExigidoDe(ID_CPF, 'quem');
         detectar();
 
-        expect(gatilho().fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual(['LAUDO_RECENTE']);
+        expect(
+          gatilho()
+            .fatosDoGatilhoDoDocumento(ID_CPF)
+            .map((fato) => fato.codigo),
+        ).toEqual(['LAUDO_RECENTE']);
       });
 
       it('mostra na condição gravada o que fazer para o gatilho valer', () => {
@@ -763,7 +794,14 @@ describe('FaseStepComponent', () => {
             {
               finalidade: 'HABILITACAO',
               faseCodigo: 'RECURSOS',
-              conteudo: { titulo: null, etapas: [], termos: [], pressupostos: null, itens: [], grupos: [...grupos] },
+              conteudo: {
+                titulo: null,
+                etapas: [],
+                termos: [],
+                pressupostos: null,
+                itens: [],
+                grupos: [...grupos],
+              },
             },
           ],
         });
@@ -777,15 +815,20 @@ describe('FaseStepComponent', () => {
         detectar();
       }
 
-      const campoRepetirPor = () => nativo.querySelector<HTMLSelectElement>(`select[id$="doc-repeticao-${ID_CPF}"]`);
+      const campoRepetirPor = () =>
+        nativo.querySelector<HTMLSelectElement>(`select[id$="doc-repeticao-${ID_CPF}"]`);
       const folhaDoCpf = () =>
-        exigenciasLocalizadasDaFase(store.draft().documentos, componente.faseDoRascunho()?.codigo ?? '').find(
-          ({ documento }) => documento.tipoDocumentoId === ID_CPF,
-        );
+        exigenciasLocalizadasDaFase(
+          store.draft().documentos,
+          componente.faseDoRascunho()?.codigo ?? '',
+        ).find(({ documento }) => documento.tipoDocumentoId === ID_CPF);
 
       beforeEach(() => {
         TestBed.inject(CatalogosDoCronogramaService).fatos.set([PARENTESCO]);
-        comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
+        comCronograma(
+          fase({}),
+          fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+        );
       });
 
       it('sem grupo repetível nos formulários, não oferece repetir e diz de onde vem a lista', () => {
@@ -803,13 +846,21 @@ describe('FaseStepComponent', () => {
         expect(
           Array.from(campoRepetirPor()?.options ?? []).map((opcao) => opcao.text.trim()),
         ).toEqual(['Não repete: um por candidato', 'Composição familiar (FAMILIA)']);
-        expect(gatilho().fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual([]);
+        expect(
+          gatilho()
+            .fatosDoGatilhoDoDocumento(ID_CPF)
+            .map((fato) => fato.codigo),
+        ).toEqual([]);
 
         gatilho().escolherRepeticao(ID_CPF, 'FAMILIA');
         detectar();
 
         expect(folhaDoCpf()?.repeticao).toEqual({ grupo: 'FAMILIA', herdada: false });
-        expect(gatilho().fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual(['PARENTESCO']);
+        expect(
+          gatilho()
+            .fatosDoGatilhoDoDocumento(ID_CPF)
+            .map((fato) => fato.codigo),
+        ).toEqual(['PARENTESCO']);
         expect(componente.resumos()[0]?.repeticao).toBe('Um por ocorrência de Composição familiar');
       });
 
@@ -820,13 +871,18 @@ describe('FaseStepComponent', () => {
         expect(Array.from(campoRepetirPor()?.options ?? []).map((opcao) => opcao.value)).toEqual([
           '',
         ]);
-        expect(nativo.textContent).toContain('Não oferecidos aqui: “Composição familiar”, respondido na fase Recursos, depois desta.');
+        expect(nativo.textContent).toContain(
+          'Não oferecidos aqui: “Composição familiar”, respondido na fase Recursos, depois desta.',
+        );
       });
 
       it('a repetição que deixou de valer fica marcada no campo, com o que fazer', () => {
         comHabilitacao([FAMILIA]);
         exigirCpfNaFase(ID_AVALIACAO);
-        store.patchSection('documentos', comRepeticao(store.draft().documentos, ID_CPF, 'AVALIACAO', 'FAMILIA'));
+        store.patchSection(
+          'documentos',
+          comRepeticao(store.draft().documentos, ID_CPF, 'AVALIACAO', 'FAMILIA'),
+        );
         detectar();
 
         const campo = campoRepetirPor();
@@ -842,7 +898,15 @@ describe('FaseStepComponent', () => {
         componente.abrirFase(ID_RECURSOS);
         const folha = folhaDe(exigenciaNova(ID_CPF, 'RECURSOS'));
         store.patchSection('documentos', {
-          raizes: [{ ...folha, tipo: 'OU', documento: null, filhos: [folha], repetePorEntidade: 'FAMILIA' }],
+          raizes: [
+            {
+              ...folha,
+              tipo: 'OU',
+              documento: null,
+              filhos: [folha],
+              repetePorEntidade: 'FAMILIA',
+            },
+          ],
           emTodasAsFases: [],
         });
         detectar();
@@ -850,8 +914,14 @@ describe('FaseStepComponent', () => {
         detectar();
 
         expect(campoRepetirPor()).toBeNull();
-        expect(nativo.textContent).toContain('Composição familiar, declarado no grupo de alternativas');
-        expect(gatilho().fatosDoGatilhoDoDocumento(ID_CPF).map((fato) => fato.codigo)).toEqual(['PARENTESCO']);
+        expect(nativo.textContent).toContain(
+          'Composição familiar, declarado no grupo de alternativas',
+        );
+        expect(
+          gatilho()
+            .fatosDoGatilhoDoDocumento(ID_CPF)
+            .map((fato) => fato.codigo),
+        ).toEqual(['PARENTESCO']);
       });
 
       it('a repetição herdada que deixou de valer diz o que fazer sem apontar campo que o documento não tem', () => {
@@ -859,7 +929,15 @@ describe('FaseStepComponent', () => {
         componente.abrirFase(ID_RECURSOS);
         const folha = folhaDe(exigenciaNova(ID_CPF, 'RECURSOS'));
         store.patchSection('documentos', {
-          raizes: [{ ...folha, tipo: 'OU', documento: null, filhos: [folha], repetePorEntidade: 'FAMILIA' }],
+          raizes: [
+            {
+              ...folha,
+              tipo: 'OU',
+              documento: null,
+              filhos: [folha],
+              repetePorEntidade: 'FAMILIA',
+            },
+          ],
           emTodasAsFases: [],
         });
         detectar();
@@ -901,7 +979,11 @@ describe('FaseStepComponent', () => {
       componente.acrescentarDocumento();
       detectar();
 
-      expect(exigencias().documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
+      expect(
+        exigencias()
+          .documentosDaFase()
+          .map((doc) => doc.id),
+      ).toEqual([ID_CPF]);
       expect(
         componente.documentosDisponiveis().flatMap((grupo) => grupo.options),
       ).not.toContainEqual(expect.objectContaining({ value: ID_CPF }));
@@ -930,37 +1012,37 @@ describe('FaseStepComponent', () => {
       });
 
       it('avisa enquanto nenhuma norma está declarada, e uma vez só', () => {
-        componente.acrescentarBaseLegal(ID_CPF);
+        editor().acrescentarBaseLegal(ID_CPF);
         detectar();
 
         expect(avisos()).toBe(1);
       });
 
       it('some com a norma declarada e resolvida', () => {
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
         detectar();
 
         expect(avisos()).toBe(0);
       });
 
       it('continua com a norma declarada mas pendente', () => {
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
-        componente.escreverBaseLegal(ID_CPF, 0, 'status', 'PENDENTE');
+        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        editor().escreverBaseLegal(ID_CPF, 0, 'status', 'PENDENTE');
         detectar();
 
         expect(avisos()).toBe(1);
       });
 
       it('some quando outra norma da exigência já está resolvida', () => {
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
-        componente.acrescentarBaseLegal(ID_CPF);
+        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        editor().acrescentarBaseLegal(ID_CPF);
         detectar();
 
         expect(avisos()).toBe(0);
       });
 
       it('não avisa a exigência que não decide o resultado', () => {
-        componente.escolherObrigatoriedade(ID_CPF, 'nao');
+        editor().escolherObrigatoriedade(ID_CPF, 'nao');
         detectar();
 
         expect(avisos()).toBe(0);
@@ -986,8 +1068,8 @@ describe('FaseStepComponent', () => {
 
       it('mostra no resumo o que decide a exigência, com os campos fechados', () => {
         exigencias().alternarExigencia(ID_CPF, true);
-        componente.escolherConsequencia(ID_CPF, 'ELIMINA');
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        editor().escolherConsequencia(ID_CPF, 'ELIMINA');
+        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
         detectar();
 
         const [linha] = linhas();
@@ -1003,7 +1085,7 @@ describe('FaseStepComponent', () => {
       /** A norma de todos aparece uma vez, acima da tabela; repetida, dobraria cada linha. */
       it('mostra uma vez a norma resolvida que sustenta todos os documentos', () => {
         exigencias().alternarExigencia(ID_CPF, true);
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
         detectar();
 
         expect(
@@ -1021,8 +1103,8 @@ describe('FaseStepComponent', () => {
         ]);
         exigencias().alternarExigencia(ID_CPF, true);
         exigencias().alternarExigencia(ID_RG, true);
-        componente.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
-        componente.escreverBaseLegal(ID_RG, 0, 'referencia', 'Lei 7.116/1983');
+        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        editor().escreverBaseLegal(ID_RG, 0, 'referencia', 'Lei 7.116/1983');
         detectar();
 
         expect(nativo.querySelector('.doc-conferencia__norma-comum')).toBeNull();
@@ -1425,7 +1507,9 @@ describe('FaseStepComponent', () => {
     });
 
     it('mostra indisponível, com o motivo, o tipo cuja proteção de dados aguarda aprovação', () => {
-      TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([{ ...TIPOS_DOCUMENTO[0], protecaoAprovada: false }]);
+      TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+        { ...TIPOS_DOCUMENTO[0], protecaoAprovada: false },
+      ]);
       comCronograma(fase({}));
 
       const opcao = componente
@@ -1447,7 +1531,11 @@ describe('FaseStepComponent', () => {
       componente.escolherDocumento(ID_CPF);
       componente.acrescentarDocumento();
       detectar();
-      expect(exigencias().documentosDaFase().map((doc) => doc.id)).toEqual([ID_CPF]);
+      expect(
+        exigencias()
+          .documentosDaFase()
+          .map((doc) => doc.id),
+      ).toEqual([ID_CPF]);
 
       // O cadastro inativa o tipo: ele deixa de vir no catálogo.
       TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set(
@@ -1456,7 +1544,9 @@ describe('FaseStepComponent', () => {
       detectar();
 
       expect(
-        exigencias().documentosDaFase().map((doc) => doc.id),
+        exigencias()
+          .documentosDaFase()
+          .map((doc) => doc.id),
         'a exigência continua no rascunho e continua sendo reenviada — precisa continuar à vista',
       ).toEqual([ID_CPF]);
       expect(
@@ -1528,11 +1618,13 @@ describe('FaseStepComponent', () => {
       componente.acrescentarDocumento();
       detectar();
 
-      expect(exigencias().etapasDaFaseAberta().map((etapa) => etapa.nome)).toEqual([
-        'Análise documental',
-      ]);
+      expect(
+        exigencias()
+          .etapasDaFaseAberta()
+          .map((etapa) => etapa.nome),
+      ).toEqual(['Análise documental']);
 
-      componente.escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
+      eixoEtapa().escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
       detectar();
 
       expect(exigencias().etapaDoDocumento(ID_CPF)).toBe(ID_ETAPA_DOCUMENTAL);
@@ -1550,10 +1642,10 @@ describe('FaseStepComponent', () => {
       comCronograma(fase({}));
       componente.escolherDocumento(ID_CPF);
       componente.acrescentarDocumento();
-      componente.escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
+      eixoEtapa().escolherEtapaDoDocumento(ID_CPF, ID_ETAPA_DOCUMENTAL);
       detectar();
 
-      componente.escolherEtapaDoDocumento(ID_CPF, '');
+      eixoEtapa().escolherEtapaDoDocumento(ID_CPF, '');
       detectar();
 
       expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')[0].etapaId).toBeNull();
@@ -1589,19 +1681,23 @@ describe('FaseStepComponent', () => {
     it('não oferece o reenvio em fase que não admite complementação', () => {
       comCronograma(fase({}));
 
-      expect(componente.faseAdmiteComplementacao()).toBe(false);
-      expect(componente.consequenciasDaFase().map((opcao) => opcao.valor)).not.toContain(
-        'PENDENCIA_REENVIO',
-      );
+      expect(editor().faseAdmiteComplementacao()).toBe(false);
+      expect(
+        editor()
+          .consequenciasDaFase()
+          .map((opcao) => opcao.valor),
+      ).not.toContain('PENDENCIA_REENVIO');
     });
 
     it('oferece o reenvio na fase que admite', () => {
       comCronograma(fase({ congelados: congeladosDaFase({ permiteComplementacao: true }) }));
 
-      expect(componente.faseAdmiteComplementacao()).toBe(true);
-      expect(componente.consequenciasDaFase().map((opcao) => opcao.valor)).toContain(
-        'PENDENCIA_REENVIO',
-      );
+      expect(editor().faseAdmiteComplementacao()).toBe(true);
+      expect(
+        editor()
+          .consequenciasDaFase()
+          .map((opcao) => opcao.valor),
+      ).toContain('PENDENCIA_REENVIO');
     });
 
     /**
@@ -1614,10 +1710,10 @@ describe('FaseStepComponent', () => {
       componente.escolherDocumento(ID_CPF);
       componente.acrescentarDocumento();
       detectar();
-      componente.escolherConsequencia(ID_CPF, 'PENDENCIA_REENVIO');
+      editor().escolherConsequencia(ID_CPF, 'PENDENCIA_REENVIO');
       detectar();
 
-      expect(componente.consequenciaDoDocumento(ID_CPF)).toBe('PENDENCIA_REENVIO');
+      expect(editor().consequenciaDoDocumento(ID_CPF)).toBe('PENDENCIA_REENVIO');
     });
   });
 
@@ -1638,7 +1734,9 @@ describe('FaseStepComponent', () => {
     const seletor = () => nativo.querySelector<HTMLSelectElement>(`#${ID_FORMULARIO}`);
 
     function exigirCpfNa(congelados: Partial<AtributosCongeladosDaFase> | null): void {
-      comCronograma(fase({ congelados: congelados === null ? null : congeladosDaFase(congelados) }));
+      comCronograma(
+        fase({ congelados: congelados === null ? null : congeladosDaFase(congelados) }),
+      );
       componente.escolherDocumento(ID_CPF);
       componente.acrescentarDocumento();
       detectar();
@@ -1648,9 +1746,9 @@ describe('FaseStepComponent', () => {
       exigirCpfNa({ coletaInscricao: true, coletaSolicitacaoIsencao: true });
       expect(seletor()?.value).toBe('');
       expect(seletor()?.getAttribute('aria-invalid')).toBe('true');
-      expect(nativo.querySelector(`#fase-AVALIACAO-doc-formulario-erro-${ID_CPF}`)?.textContent).toContain(
-        'Escolha em que formulário o candidato apresenta este documento.',
-      );
+      expect(
+        nativo.querySelector(`#fase-AVALIACAO-doc-formulario-erro-${ID_CPF}`)?.textContent,
+      ).toContain('Escolha em que formulário o candidato apresenta este documento.');
 
       exigirCpfNa({ coletaInscricao: true });
       expect(seletor()?.value).toBe('INSCRICAO');
@@ -1662,12 +1760,14 @@ describe('FaseStepComponent', () => {
 
     it('o formulário declarado que a fase não responde mais não é trocado: o campo aparece com o erro e a gravação o leva como declarado', () => {
       exigirCpfNa({ coletaInscricao: true });
-      componente.escolherFinalidade(ID_CPF, 'ISENCAO_TAXA');
+      eixoFormulario().escolherFinalidade(ID_CPF, 'ISENCAO_TAXA');
       detectar();
 
       expect(seletor()?.value).toBe('');
       expect(seletor()?.getAttribute('aria-invalid')).toBe('true');
-      expect(nativo.querySelector(`#fase-AVALIACAO-doc-formulario-erro-${ID_CPF}`)?.textContent?.trim()).toBe(
+      expect(
+        nativo.querySelector(`#fase-AVALIACAO-doc-formulario-erro-${ID_CPF}`)?.textContent?.trim(),
+      ).toBe(
         'O formulário de isenção da taxa de inscrição não é respondido nesta fase; escolha o formulário.',
       );
       const raizes = arvoreDeExigencias(
@@ -1682,7 +1782,7 @@ describe('FaseStepComponent', () => {
 
     it('na fase que não responde formulário nenhum, o formulário declarado antes se desfaz pela opção "Nenhum"', () => {
       exigirCpfNa(null);
-      componente.escolherFinalidade(ID_CPF, 'ISENCAO_TAXA');
+      eixoFormulario().escolherFinalidade(ID_CPF, 'ISENCAO_TAXA');
       detectar();
       const campo = seletor() as HTMLSelectElement;
 
@@ -1696,7 +1796,8 @@ describe('FaseStepComponent', () => {
 
     it('na fase dividida, a escolha vai ao rascunho e a conferência passa a listar o documento sob o formulário', () => {
       exigirCpfNa({ coletaInscricao: true, coletaSolicitacaoIsencao: true });
-      const titulos = () => Array.from(nativo.querySelectorAll('h4'), (titulo) => titulo.textContent?.trim());
+      const titulos = () =>
+        Array.from(nativo.querySelectorAll('h4'), (titulo) => titulo.textContent?.trim());
       expect(titulos()).toEqual(['Formulário a escolher']);
 
       const campo = seletor() as HTMLSelectElement;
@@ -1804,16 +1905,24 @@ describe('FaseStepComponent', () => {
       );
       store.patchSection(
         'documentos',
-        comExigencia(comExigencia(exigenciasVazias(), { ...exigenciaNova(ID_CPF, 'AVALIACAO'), finalidade: 'INSCRICAO' }), {
-          ...exigenciaNova(ID_CPF, 'RECURSOS'),
-          finalidade: 'ISENCAO_TAXA',
-        }),
+        comExigencia(
+          comExigencia(exigenciasVazias(), {
+            ...exigenciaNova(ID_CPF, 'AVALIACAO'),
+            finalidade: 'INSCRICAO',
+          }),
+          {
+            ...exigenciaNova(ID_CPF, 'RECURSOS'),
+            finalidade: 'ISENCAO_TAXA',
+          },
+        ),
       );
 
       exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
-      expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')[0].finalidade).toBe('ISENCAO_TAXA');
+      expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')[0].finalidade).toBe(
+        'ISENCAO_TAXA',
+      );
     });
 
     it('a fase acrescentada depois do regime não herda o formulário do modelo que ela não responde', () => {
@@ -1821,19 +1930,24 @@ describe('FaseStepComponent', () => {
       comCronograma(fase({ congelados: daInscricao }));
       componente.escolherDocumento(ID_CPF);
       componente.acrescentarDocumento();
-      componente.escolherFinalidade(ID_CPF, 'INSCRICAO');
+      eixoFormulario().escolherFinalidade(ID_CPF, 'INSCRICAO');
       exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
       comCronograma(
         fase({ congelados: daInscricao }),
-        fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2, congelados: congeladosDaFase() }),
+        fase({
+          faseCanonicaId: ID_RECURSOS,
+          codigo: 'RECURSOS',
+          ordem: 2,
+          congelados: congeladosDaFase(),
+        }),
       );
       componente.abrirFase(ID_RECURSOS);
       detectar();
 
       expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(true);
-      expect(componente.faltaFormulario(ID_CPF)).toBeNull();
+      expect(eixoFormulario().faltaFormulario(ID_CPF)).toBeNull();
     });
 
     /** A fase alcançada mas ainda não materializada mostra o que será gravado. */
@@ -1842,7 +1956,7 @@ describe('FaseStepComponent', () => {
       componente.escolherDocumento(ID_CPF);
       componente.acrescentarDocumento();
       detectar();
-      componente.escolherObrigatoriedade(ID_CPF, 'nao');
+      editor().escolherObrigatoriedade(ID_CPF, 'nao');
       detectar();
       exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
@@ -1875,7 +1989,10 @@ describe('FaseStepComponent', () => {
         instancia.escolherDocumento(ID_CPF);
         instancia.acrescentarDocumento();
         instancia.alternarEdicao(ID_CPF, true);
-        instancia.escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 1/2000');
+        runInInjectionContext(
+          fixture.debugElement.injector,
+          () => new EditorDaExigenciaComponent(),
+        ).escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 1/2000');
         fixture.detectChanges();
       }
       return [avaliacao, recursos].map((fixture) => fixture.nativeElement as HTMLElement);

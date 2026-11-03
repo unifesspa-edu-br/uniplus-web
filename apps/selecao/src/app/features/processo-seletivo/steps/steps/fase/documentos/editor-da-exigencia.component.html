@@ -1,0 +1,348 @@
+@let doc = resumo().documento;
+<div class="doc-item__row">
+  <div class="doc-item__info">
+    <span class="doc-item__name">{{ doc.nome }}</span>
+    @if (resumo().orientacao; as orientacao) {
+      <span class="doc-item__desc">{{ orientacao }}</span>
+    }
+    <!-- Folha dentro de um grupo não é exigida por si: basta satisfazer o grupo.
+       Sem dizê-lo, ela parecia uma exigência solta como qualquer outra. -->
+    @if (exigencias.posicaoNaArvore(doc.id) !== '') {
+      <span class="doc-item__desc">{{ exigencias.posicaoNaArvore(doc.id) }}</span>
+    }
+    @if (exigencias.declaradoMaisDeUmaVez(doc.id) !== '') {
+      <span class="field__hint">{{
+        exigencias.declaradoMaisDeUmaVez(doc.id)
+      }}</span>
+    }
+  </div>
+  <button
+    class="btn btn--tertiary"
+    type="button"
+    [disabled]="!store.aceitaEdicao()"
+    [attr.aria-label]="'Remover ' + doc.nome"
+    (click)="remover.emit()"
+  >
+    Remover
+  </button>
+</div>
+
+<!--
+Os três eixos da exigência, lado a lado enquanto a largura permite: em que
+fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
+-->
+<div class="doc-item__eixos">
+  @if (mostraFormulario(doc.id)) {
+    <div selEixoFormulario class="form-field" [documentoId]="doc.id"></div>
+  }
+
+  <div selEixoAlcance class="form-field" [documentoId]="doc.id"></div>
+
+  @if (exigencias.etapasDaFaseAberta().length > 0) {
+    <div selEixoEtapa class="form-field" [documentoId]="doc.id"></div>
+  }
+
+  <!--
+  Sem modalidade no quadro não há o que escolher: um campo vazio e desabilitado
+  ao lado do aviso seria só mais uma coisa a ignorar.
+-->
+  @if (exigencias.modalidades().length === 0) {
+    <div class="form-field">
+      <span class="label">Quem deve entregar</span>
+      <p class="field__hint">
+        O quadro de vagas ainda não seleciona modalidade alguma. Declare
+        as ofertas no passo Vagas.
+      </p>
+    </div>
+  } @else {
+    <div class="form-field">
+      <label class="label" [attr.for]="modalidadesDoDoc.campoId">
+        Quem deve entregar
+      </label>
+      <ui-combobox
+        #modalidadesDoDoc
+        multiplo
+        rotulo="Modalidades que devem entregar"
+        placeholder="Todas as modalidades ofertadas"
+        textoSemResultado="Nenhuma modalidade do quadro casa com o que você digitou."
+        [grupos]="gatilho.modalidadesEscolhiveis()"
+        [values]="gatilho.modalidadesEfetivas(doc.id)"
+        [disabled]="!store.aceitaEdicao()"
+        (valuesChange)="gatilho.definirModalidades(doc.id, $event)"
+      />
+    </div>
+  }
+
+  <div selEixoRepeticao class="form-field" [documentoId]="doc.id"></div>
+
+  <div class="form-field">
+    <label
+      class="label"
+      [attr.for]="idDaFase('doc-exigido-de-' + doc.id)"
+    >
+      Exigido de
+    </label>
+    <!--
+    Declaração, não dedução: uma exigência pode ser "de quem satisfaz" e ainda
+    não ter condição escrita — é exigida de ninguém até que a primeira apareça.
+    Deduzir isto da presença de condição tornaria esse estado inalcançável.
+  -->
+    <select
+      class="select"
+      [attr.id]="idDaFase('doc-exigido-de-' + doc.id)"
+      [disabled]="!store.aceitaEdicao()"
+      (change)="gatilho.escolherExigidoDe(doc.id, $any($event.target).value)"
+    >
+      <option value="todos" [selected]="gatilho.ehExigidoDeTodos(doc.id)">
+        Todo candidato
+      </option>
+      <option value="quem" [selected]="!gatilho.ehExigidoDeTodos(doc.id)">
+        Só de quem satisfaz as condições declaradas
+      </option>
+    </select>
+    @if (gatilho.avisoDeDescarteDoGatilho(doc.id) !== '') {
+      <span class="field__hint">{{
+        gatilho.avisoDeDescarteDoGatilho(doc.id)
+      }}</span>
+    }
+  </div>
+
+  @if (!gatilho.ehExigidoDeTodos(doc.id)) {
+    <!--
+    O gatilho: há documento que só se cobra de quem tem certo fato — o título de
+    eleitor não se pede a estrangeiro, a mulher nem a menor de dezoito. As
+    condições de uma mesma alternativa valem JUNTAS; alternativas diferentes são
+    caminhos independentes pelos quais o documento passa a ser cobrado.
+  -->
+    <ui-editor-de-condicoes
+      class="doc-item__gatilho"
+      legenda="Condições para este documento ser cobrado"
+      [condicoes]="exigencias.exigenciaDoDocumento(doc.id).condicoes"
+      [fatos]="gatilho.fatosDoGatilhoDoDocumento(doc.id)"
+      [erros]="gatilho.errosDeFaseDoGatilho(doc.id)"
+      [textoSemFatos]="gatilho.textoSemFatosDoGatilho()"
+      [idBase]="idDaFase('doc-' + doc.id)"
+      [disabled]="!store.aceitaEdicao()"
+      [fatoDoRecorte]="fatoDoRecorte"
+      [textoSemCondicao]="gatilho.gatilhoSemCondicaoDiz(doc.id)"
+      (condicoesChange)="gatilho.escreverCondicoes(doc.id, $event)"
+    />
+  }
+
+  <div class="form-field">
+    <label
+      class="label"
+      [attr.for]="idDaFase('doc-obrigatorio-' + doc.id)"
+    >
+      Entrega
+    </label>
+    <select
+      class="select"
+      [attr.id]="idDaFase('doc-obrigatorio-' + doc.id)"
+      [disabled]="!store.aceitaEdicao()"
+      (change)="
+        escolherObrigatoriedade(doc.id, $any($event.target).value)
+      "
+    >
+      <option value="sim" [selected]="ehObrigatorio(doc.id)">
+        Obrigatória
+      </option>
+      <option value="nao" [selected]="!ehObrigatorio(doc.id)">
+        Facultativa — a análise segue sem ela
+      </option>
+    </select>
+  </div>
+
+  <div class="form-field">
+    <label
+      class="label"
+      [attr.for]="idDaFase('doc-consequencia-' + doc.id)"
+    >
+      Se não for entregue
+    </label>
+    <!--
+    Toda exigência que decide sozinha o resultado precisa de norma resolvida — é
+    o que a publicação confere. A consequência é o que diz se ela decide.
+  -->
+    <select
+      class="select"
+      [attr.id]="idDaFase('doc-consequencia-' + doc.id)"
+      [disabled]="!store.aceitaEdicao()"
+      (change)="escolherConsequencia(doc.id, $any($event.target).value)"
+    >
+      @for (opcao of consequenciasDaFase(); track opcao.valor) {
+        <option
+          [value]="opcao.valor"
+          [selected]="opcao.valor === consequenciaDoDocumento(doc.id)"
+        >
+          {{ rotuloDaConsequencia(opcao.valor, ehObrigatorio(doc.id)) }}
+        </option>
+      }
+    </select>
+    @if (resumo().avisoDeFormatos; as aviso) {
+      <span class="field__hint">{{ aviso }}</span>
+    }
+  </div>
+
+  <sel-modelo-da-exigencia
+    class="doc-item__modelo"
+    [modelo]="modeloDoDocumento(doc.id)"
+    [desabilitado]="!store.aceitaEdicao()"
+    [idBase]="idDaFase('doc-modelo-' + doc.id)"
+    [nomeDoDocumento]="doc.nome"
+    (modeloChange)="definirModelo(doc.id, $event)"
+  />
+
+  <!-- As normas que sustentam a exigência: são N por exigência, porque uma lei
+     federal somada à cláusula do edital é o caso comum. -->
+  @for (base of basesLegaisDoDocumento(doc.id); track $index) {
+    <div class="form-field">
+      <label
+        class="label"
+        [attr.for]="idDaFase('doc-base-legal-' + doc.id + '-' + $index)"
+      >
+        Norma que exige o documento
+      </label>
+      <input
+        class="input"
+        type="text"
+        [attr.id]="idDaFase('doc-base-legal-' + doc.id + '-' + $index)"
+        placeholder="Lei 12.711/2012, art. 3º"
+        [value]="base.referencia"
+        [disabled]="!store.aceitaEdicao()"
+        (input)="
+          escreverBaseLegal(
+            doc.id,
+            $index,
+            'referencia',
+            $any($event.target).value
+          )
+        "
+      />
+    </div>
+
+    <div class="form-field">
+      <label
+        class="label"
+        [attr.for]="
+          idDaFase('doc-abrangencia-' + doc.id + '-' + $index)
+        "
+      >
+        Alcance da norma
+      </label>
+      <select
+        class="select"
+        [attr.id]="idDaFase('doc-abrangencia-' + doc.id + '-' + $index)"
+        [disabled]="!store.aceitaEdicao()"
+        (change)="
+          escreverBaseLegal(
+            doc.id,
+            $index,
+            'abrangencia',
+            $any($event.target).value
+          )
+        "
+      >
+        @for (opcao of abrangencias; track opcao.valor) {
+          <option
+            [value]="opcao.valor"
+            [selected]="opcao.valor === base.abrangencia"
+          >
+            {{ opcao.rotulo }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="form-field">
+      <label
+        class="label"
+        [attr.for]="
+          idDaFase('doc-status-legal-' + doc.id + '-' + $index)
+        "
+      >
+        Identificação da norma
+      </label>
+      <select
+        class="select"
+        [attr.id]="
+          idDaFase('doc-status-legal-' + doc.id + '-' + $index)
+        "
+        [disabled]="!store.aceitaEdicao()"
+        (change)="
+          escreverBaseLegal(
+            doc.id,
+            $index,
+            'status',
+            $any($event.target).value
+          )
+        "
+      >
+        @for (opcao of statusBaseLegal; track opcao.valor) {
+          <option
+            [value]="opcao.valor"
+            [selected]="opcao.valor === base.status"
+          >
+            {{ opcao.rotulo }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="form-field">
+      <label
+        class="label"
+        [attr.for]="idDaFase('doc-obs-legal-' + doc.id + '-' + $index)"
+      >
+        Observação<span class="sr-only"> sobre a norma</span> (opcional)
+      </label>
+      <input
+        class="input"
+        type="text"
+        [attr.id]="idDaFase('doc-obs-legal-' + doc.id + '-' + $index)"
+        placeholder="O que esta norma exige, em uma linha"
+        [value]="base.observacao"
+        [disabled]="!store.aceitaEdicao()"
+        (input)="
+          escreverBaseLegal(
+            doc.id,
+            $index,
+            'observacao',
+            $any($event.target).value
+          )
+        "
+      />
+    </div>
+
+    @if (basesLegaisDoDocumento(doc.id).length > 1) {
+      <div class="doc-item__acoes">
+        <button
+          class="btn btn--tertiary btn--sm"
+          type="button"
+          [disabled]="!store.aceitaEdicao()"
+          (click)="removerBaseLegal(doc.id, $index)"
+        >
+          Remover esta norma
+        </button>
+      </div>
+    }
+  }
+
+  @if (exigencias.faltaNormaResolvida(doc.id)) {
+    <p class="field__hint doc-item__aviso-norma">
+      Sem uma norma declarada e identificada como "Resolvida", a
+      publicação recusa esta exigência, que decide o resultado.
+    </p>
+  }
+
+  <div class="doc-item__acoes">
+    <button
+      class="btn btn--tertiary btn--sm"
+      type="button"
+      [disabled]="!store.aceitaEdicao()"
+      (click)="acrescentarBaseLegal(doc.id)"
+    >
+      Acrescentar outra norma
+    </button>
+  </div>
+</div>

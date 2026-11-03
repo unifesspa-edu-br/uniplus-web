@@ -134,3 +134,30 @@ export function comFinalidade(
     ),
   };
 }
+
+/** A opção que deixa o documento fora de formulário, na fase que não responde nenhum. */
+export const SEM_FORMULARIO = 'SEM_FORMULARIO';
+
+/**
+ * Os formulários que a escolha oferece, como o seletor os nomeia. Na fase que não responde
+ * formulário nenhum, a escolha só aparece para desfazer um formulário declarado antes, e a saída
+ * é deixar o documento fora de formulário.
+ */
+export function formulariosEscolhiveis(
+  atendidas: readonly string[],
+): readonly { readonly valor: string; readonly rotulo: string }[] {
+  return atendidas.length === 0
+    ? [{ valor: SEM_FORMULARIO, rotulo: 'Nenhum: a fase não responde formulário' }]
+    : atendidas.map((finalidade) => ({
+        valor: finalidade,
+        rotulo: `Formulário de ${nomeDaFinalidade(finalidade)}`,
+      }));
+}
+
+/**
+ * Se a escolha do formulário aparece: na fase que responde algum, e em qualquer fase enquanto o
+ * formulário declarado não é respondido nela — escondê-la deixaria a falta sem o campo que a resolve.
+ */
+export function mostraFormulario(declarada: string | null, atendidas: readonly string[]): boolean {
+  return atendidas.length > 0 || faltaOFormulario(declarada, atendidas) !== null;
+}

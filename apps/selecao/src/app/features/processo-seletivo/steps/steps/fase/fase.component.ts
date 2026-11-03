@@ -1,14 +1,5 @@
 import {
-  ABRANGENCIAS_ESCOLHIVEIS,
-  CONSEQUENCIAS_ESCOLHIVEIS,
-  FATO_MODALIDADE,
-  STATUS_BASE_LEGAL_ESCOLHIVEIS,
-  baseLegalNova,
-} from '../../shared/exigencias/exigencias-documentais';
-import {
   agrupadosPorFormulario,
-  comFinalidade,
-  faltaOFormulario,
 } from '../../shared/exigencias/formulario-da-exigencia';
 import { descreverArquivo } from '../../shared/documentos-exigidos';
 import {
@@ -28,20 +19,16 @@ import {
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   ComboboxComponent,
-  EditorDeCondicoesComponent,
   MOTIVO_DA_PROTECAO_PENDENTE,
   type UiComboboxGroup,
   ValorEmConsultaComponent,
   ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
-import { consequenciasDaFase } from '@uniplus/shared-utils';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 
 import {
-  type BaseLegalConfig,
   type DocumentoDefinicao,
-  type ModeloDaExigencia,
   type FaseDoCronograma,
   type StepValidation,
 } from '../../processo-seletivo.models';
@@ -54,11 +41,15 @@ import {
   gravarCronogramaFases,
 } from '../../shared/gravacao-do-cronograma';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import { descreverFase } from '../../shared/descricao-da-fase';
 import { nomeDaFinalidade } from '../formulario/formularios-por-finalidade';
 import {
   problemasDaFase,
 } from './configuracao-da-fase';
+import { EditorDaExigenciaComponent } from './documentos/editor-da-exigencia.component';
+import {
+  formulariosEscolhiveis,
+  mostraFormulario,
+} from '../../shared/exigencias/formulario-da-exigencia';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
 import { GatilhoDasExigenciasStore } from './documentos/gatilho-das-exigencias.store';
 import { FaseEmEdicao } from './fase-em-edicao';
@@ -71,7 +62,6 @@ import type {
   DetalheLidoDoDocumento,
   ResumoDoDocumento,
 } from './tipos-da-conferencia';
-import { ModeloDaExigenciaComponent } from './modelo-da-exigencia/modelo-da-exigencia.component';
 import {
   alcancaOPublico,
   filtroDoValor,
@@ -85,9 +75,6 @@ import {
   repeticaoResumida,
   rotuloDaConsequencia,
 } from './resumo-da-exigencia';
-
-/** A opção que deixa o documento fora de formulário, na fase que não responde nenhum. */
-const SEM_FORMULARIO = 'SEM_FORMULARIO';
 
 
 /** O gatilho sem condição recusada pela fase — a mesma referência, para o editor não se redesenhar. */
@@ -105,14 +92,13 @@ const SEM_FORMULARIO = 'SEM_FORMULARIO';
 @Component({
   selector: 'sel-step-fase',
   imports: [
+    EditorDaExigenciaComponent,
     BancasDaFaseComponent,
     ValorLegivelDirective,
     ValorEmConsultaComponent,
     ComboboxComponent,
-    EditorDeCondicoesComponent,
     FormsModule,
     CicloRecursalDaFaseComponent,
-    ModeloDaExigenciaComponent,
     PublicacoesDaFaseComponent,
     ReactiveFormsModule,
     RegraDeRecursoDaFaseComponent,
@@ -360,14 +346,14 @@ export class FaseStepComponent {
   /** O que a consulta lê de um documento além do que a conferência já resume. */
   private detalheLidoDoDocumento(doc: DocumentoDefinicao): DetalheLidoDoDocumento {
     const id = doc.id;
-    const modelo = this.modeloDoDocumento(id);
+    const modelo = this.exigencias.exigenciaDoDocumento(id).modelo;
     const finalidade = this.exigencias.finalidadeDoDocumento(id);
     return {
       descricao: doc.descricao,
       formatos: this.arquivoPublicadoDoDocumento(id),
       situacao: doc.situacao,
-      formulario: this.mostraFormulario(id)
-        ? (this.formulariosEscolhiveis().find((opcao) => opcao.valor === finalidade)?.rotulo ?? null)
+      formulario: mostraFormulario(this.exigencias.exigenciaDoDocumento(id).finalidade, this.exigencias.finalidadesDaFaseAberta())
+        ? (formulariosEscolhiveis(this.exigencias.finalidadesDaFaseAberta()).find((opcao) => opcao.valor === finalidade)?.rotulo ?? null)
         : null,
       exigidoEm: this.exigencias.valeEmTodasAsFases(id)
         ? 'Todas as fases do edital'
@@ -483,170 +469,6 @@ export class FaseStepComponent {
     );
   });
 
-  /** O rótulo da consequência, o mesmo no seletor do editor e no resumo. */
-  rotuloDaConsequencia(valor: string, obrigatorio: boolean): string {
-    return rotuloDaConsequencia(valor, obrigatorio);
-  }
-
-
-
-
-
-  /**
-   * Os formulários que a escolha oferece, como o seletor os nomeia. Na fase que não responde
-   * formulário nenhum, a escolha só aparece para desfazer um formulário declarado antes, e a saída
-   * é deixar o documento fora de formulário.
-   */
-  readonly formulariosEscolhiveis = computed(() => {
-    const atendidas = this.exigencias.finalidadesDaFaseAberta();
-    return atendidas.length === 0
-      ? [{ valor: SEM_FORMULARIO, rotulo: 'Nenhum: a fase não responde formulário' }]
-      : atendidas.map((finalidade) => ({ valor: finalidade, rotulo: `Formulário de ${nomeDaFinalidade(finalidade)}` }));
-  });
-
-
-  /**
-   * O que falta para o documento ter formulário: a escolha na fase que divide inscrição e isenção,
-   * ou outra escolha quando a fase deixou de responder o formulário declarado.
-   */
-  faltaFormulario(id: string): string | null {
-    return faltaOFormulario(this.exigencias.exigenciaDoDocumento(id).finalidade, this.exigencias.finalidadesDaFaseAberta());
-  }
-
-  /**
-   * Se a escolha do formulário aparece: na fase que responde algum, e em qualquer fase enquanto o
-   * formulário declarado não é respondido nela — escondê-la deixaria a falta sem o campo que a resolve.
-   */
-  mostraFormulario(id: string): boolean {
-    return this.exigencias.finalidadesDaFaseAberta().length > 0 || this.faltaFormulario(id) !== null;
-  }
-
-  /**
-   * Declara o formulário do documento nesta fase. Vale para a árvore de raiz inteira: as
-   * alternativas de um grupo se satisfazem num formulário só.
-   */
-  escolherFinalidade(id: string, finalidade: string): void {
-    const fase = this.faseDoRascunho();
-    if (fase === null) return;
-
-    // A declaração passa a ser própria desta fase, como qualquer outra edição dela.
-    if (this.exigencias.valeEmTodasAsFases(id)) this.exigencias.recortarPorFase(id);
-
-    this.store.patchSection(
-      'documentos',
-      comFinalidade(
-        this.store.draft().documentos,
-        id,
-        fase.codigo,
-        finalidade === '' || finalidade === SEM_FORMULARIO ? null : finalidade,
-      ),
-    );
-  }
-
-  /**
-   * O que a tela oferece como consequência NESTA fase.
-   *
-   * "Abre pendência para reenvio" só é aceita em fase que admite complementação — quem decide
-   * é o cadastro da fase canônica, não este passo. Oferecê-la onde a fase não admite produzia
-   * uma recusa na gravação que o operador não sabia ligar ao que fez, e sem remédio à mão: o
-   * sinalizador não é editável aqui.
-   */
-  consequenciasDaFase(): readonly { readonly valor: string; readonly rotulo: string }[] {
-    return consequenciasDaFase(CONSEQUENCIAS_ESCOLHIVEIS, this.faseAdmiteComplementacao());
-  }
-
-  /** Se a fase aberta admite reenvio de documento depois da análise. */
-  faseAdmiteComplementacao(): boolean {
-    const fase = this.faseDoRascunho();
-    if (fase === null) return false;
-    return descreverFase(fase, this.catalogos.fasePorId()).permiteComplementacao;
-  }
-
-  protected readonly consequencias = CONSEQUENCIAS_ESCOLHIVEIS;
-  protected readonly abrangencias = ABRANGENCIAS_ESCOLHIVEIS;
-  protected readonly statusBaseLegal = STATUS_BASE_LEGAL_ESCOLHIVEIS;
-
-  ehObrigatorio(id: string): boolean {
-    return this.exigencias.exigenciaDoDocumento(id).obrigatorio;
-  }
-
-  /**
-   * Exigência obrigatória decide sozinha o resultado da análise — e é por isso que a publicação
-   * cobra a norma dela. A facultativa segue sem norma declarada.
-   */
-  escolherObrigatoriedade(id: string, valor: string): void {
-    this.exigencias.escreverExigencia(id, { obrigatorio: valor === 'sim' });
-  }
-
-  /** O modelo que a exigência oferece ao candidato nesta fase; `null` quando não oferece. */
-  modeloDoDocumento(id: string): ModeloDaExigencia | null {
-    return this.exigencias.exigenciaDoDocumento(id).modelo;
-  }
-
-  /** Vincula o modelo confirmado à exigência desta fase, ou o desvincula com `null`. */
-  definirModelo(id: string, modelo: ModeloDaExigencia | null): void {
-    this.exigencias.escreverExigencia(id, { modelo });
-  }
-
-  consequenciaDoDocumento(id: string): string {
-    return this.exigencias.exigenciaDoDocumento(id).consequenciaIndeferimento;
-  }
-
-  /**
-   * A consequência é o que faz a exigência decidir sozinha o resultado. Quem declara uma
-   * consequência está dizendo que ela decide, e a publicação vai cobrar a norma.
-   */
-  escolherConsequencia(id: string, consequencia: string): void {
-    this.exigencias.escreverExigencia(id, { consequenciaIndeferimento: consequencia });
-  }
-
-  /** As normas que sustentam a exigência nesta fase — são N por exigência (ADR-0074). */
-  basesLegaisDoDocumento(id: string): readonly BaseLegalConfig[] {
-    return this.exigencias.exigenciaDoDocumento(id).basesLegais;
-  }
-
-
-  /** Escreve um campo de UMA das normas, endereçada pela posição. */
-  escreverBaseLegal(
-    id: string,
-    posicao: number,
-    campo: keyof BaseLegalConfig,
-    valor: string,
-  ): void {
-    const bases = this.basesLegaisDoDocumento(id).map((base, i) =>
-      i === posicao ? { ...base, [campo]: valor } : base,
-    );
-    this.exigencias.escreverExigencia(id, { basesLegais: bases });
-  }
-
-  /** Acrescenta uma norma à exigência — uma lei federal somada à cláusula do edital. */
-  acrescentarBaseLegal(id: string): void {
-    this.exigencias.escreverExigencia(id, {
-      basesLegais: [...this.basesLegaisDoDocumento(id), baseLegalNova()],
-    });
-  }
-
-  /**
-   * Remove uma norma. A última não sai: a exigência que decide o resultado precisa de norma
-   * resolvida para publicar, e deixar a lista vazia tiraria da tela o campo que a publicação
-   * cobra — a linha em branco não viaja no comando de qualquer forma.
-   */
-  removerBaseLegal(id: string, posicao: number): void {
-    const bases = this.basesLegaisDoDocumento(id);
-    if (bases.length <= 1) return;
-    this.exigencias.escreverExigencia(id, { basesLegais: bases.filter((_, i) => i !== posicao) });
-  }
-
-
-
-  /**
-   * Declara em que etapa desta fase o documento é coletado. Vazio devolve o documento à fase
-   * inteira — a etapa sai do registro em vez de ficar guardada como texto vazio, que o
-   * contrato leria como declaração.
-   */
-  escolherEtapaDoDocumento(id: string, etapaId: string): void {
-    this.exigencias.escreverExigencia(id, { etapaId: etapaId === '' ? null : etapaId });
-  }
 
 
 
@@ -660,18 +482,32 @@ export class FaseStepComponent {
 
 
 
-  /**
-   * Em que fases o documento é exigido. É outro eixo do "Coletado em": este diz em QUAIS
-   * fases, aquele em que ponto DESTA fase — e a resposta do segundo continua sendo por fase
-   * mesmo quando o primeiro diz "todas".
-   */
-  escolherAlcanceDoDocumento(id: string, alcance: string): void {
-    if (alcance === 'todas') {
-      this.exigencias.valerEmTodasAsFases(id);
-      return;
-    }
-    this.exigencias.recortarPorFase(id);
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // ─── Gatilho por fato do candidato ──────────────────────────────────────
   //
@@ -700,8 +536,6 @@ export class FaseStepComponent {
 
 
 
-  /** O fato que tem controle próprio ao lado do gatilho: o editor não o mostra. */
-  protected readonly fatoDoRecorte = FATO_MODALIDADE;
 
 
 

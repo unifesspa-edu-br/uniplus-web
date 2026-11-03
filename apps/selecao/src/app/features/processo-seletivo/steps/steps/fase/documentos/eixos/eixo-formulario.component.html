@@ -1,0 +1,39 @@
+@let formularioDoDoc = exigencias.finalidadeDoDocumento(documentoId());
+@let faltaFormularioDoDoc = faltaFormulario(documentoId());
+<label
+  class="label"
+  [attr.for]="idDaFase('doc-formulario-' + documentoId())"
+  >Formulário</label
+>
+<select
+  class="select"
+  [attr.id]="idDaFase('doc-formulario-' + documentoId())"
+  [disabled]="!store.aceitaEdicao()"
+  [attr.aria-invalid]="faltaFormularioDoDoc ? 'true' : null"
+  [attr.aria-describedby]="
+    faltaFormularioDoDoc
+      ? idDaFase('doc-formulario-erro-' + documentoId())
+      : null
+  "
+  (change)="escolherFinalidade(documentoId(), $any($event.target).value)"
+>
+  @if (formularioDoDoc === null) {
+    <option value="" selected>Escolha o formulário</option>
+  }
+  @for (opcao of formulariosEscolhiveis(); track opcao.valor) {
+    <option
+      [value]="opcao.valor"
+      [selected]="opcao.valor === formularioDoDoc"
+    >
+      {{ opcao.rotulo }}
+    </option>
+  }
+</select>
+@if (faltaFormularioDoDoc; as erro) {
+  <p
+    class="field__erro"
+    [attr.id]="idDaFase('doc-formulario-erro-' + documentoId())"
+  >
+    {{ erro }}
+  </p>
+}

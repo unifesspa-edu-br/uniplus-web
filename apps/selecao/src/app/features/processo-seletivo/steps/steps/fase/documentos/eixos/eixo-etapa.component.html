@@ -1,0 +1,37 @@
+<label class="label" [attr.for]="idDaFase('doc-etapa-' + documentoId())"
+  >Coletado em</label
+>
+<!--
+`selected` por opção, não `value` no seletor: o valor é aplicado antes de
+as opções existirem, e o seletor voltaria sempre em "A fase inteira" —
+escondendo a etapa que o processo já declarou.
+                                -->
+<select
+  class="select"
+  [attr.id]="idDaFase('doc-etapa-' + documentoId())"
+  [disabled]="!store.aceitaEdicao()"
+  (change)="
+    escolherEtapaDoDocumento(documentoId(), $any($event.target).value)
+  "
+>
+  <option value="" [selected]="exigencias.etapaDoDocumento(documentoId()) === ''">
+    A fase inteira
+  </option>
+  @for (
+    etapa of exigencias.etapasDaFaseAberta();
+    track etapa.id ?? etapa.nome
+  ) {
+    <option
+      [value]="etapa.id ?? ''"
+      [disabled]="etapa.id === null"
+      [selected]="etapa.id === exigencias.etapaDoDocumento(documentoId())"
+    >
+      {{ etapa.nome
+      }}{{
+        etapa.id === null
+          ? ' — grave o passo para poder escolher'
+          : ''
+      }}
+    </option>
+  }
+</select>
