@@ -230,3 +230,36 @@ export function composicaoResumida(grupo: GrupoDaExigencia | null): string {
 export function repeticaoResumida(rotuloDoGrupo: string | null): string {
   return rotuloDoGrupo === null ? '' : `Um por ocorrência de ${rotuloDoGrupo}`;
 }
+
+/** Um público que a conferência oferece, com o valor que o seletor guarda. */
+export interface OpcaoDoFiltro {
+  readonly valor: string;
+  readonly rotulo: string;
+}
+
+/** A opção do seletor de público, rotulada pelo público que o valor codifica. */
+export function opcaoDoFiltro(valor: string): OpcaoDoFiltro {
+  const filtro = filtroDoValor(valor);
+  switch (filtro.tipo) {
+    case 'modalidade':
+      return { valor, rotulo: `Candidato de ${filtro.codigo}` };
+    case 'condicao':
+      return { valor, rotulo: `Candidato com: ${filtro.condicao}` };
+    case 'todo-candidato':
+      return { valor, rotulo: 'Exigidos de todo candidato' };
+    case 'tudo':
+      return { valor, rotulo: 'Todos os documentos da fase' };
+  }
+}
+
+/** O valor do seletor de público de volta ao filtro que ele codifica. */
+export function filtroDoValor(valor: string): FiltroDePublico {
+  if (valor === 'todo-candidato') return { tipo: 'todo-candidato' };
+  if (valor.startsWith('modalidade:')) {
+    return { tipo: 'modalidade', codigo: valor.slice('modalidade:'.length) };
+  }
+  if (valor.startsWith('condicao:')) {
+    return { tipo: 'condicao', condicao: valor.slice('condicao:'.length) };
+  }
+  return { tipo: 'tudo' };
+}

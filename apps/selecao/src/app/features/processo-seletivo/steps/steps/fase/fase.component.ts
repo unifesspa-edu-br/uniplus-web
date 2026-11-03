@@ -54,7 +54,6 @@ import {
   fasesNoCronograma,
   producaoDoRascunho,
   recusaDaRepeticao,
-  type GrupoDaProducao,
 } from '../../shared/producao-dos-fatos';
 import {
   ChangeDetectionStrategy,
@@ -102,6 +101,7 @@ import {
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { mesmoConteudo } from '../../shared/conteudo-canonico';
 import {
   ORIENTACAO_DE_PERMUTACAO,
   PERMUTACAO_DE_ORDEM,
@@ -117,12 +117,22 @@ import {
   type CampoDaFase,
   type ProblemaDaFase,
 } from './configuracao-da-fase';
+import { idDaFase } from './ids-da-fase';
 import { produtosPreliminares } from './problemas-do-recurso-da-fase';
 import { traduzirRecusa } from './recusas-da-fase';
 import { faseDaConfiguracao, grupoDaConfiguracaoDaFase, type FaseConfigForm } from './fase-form';
+import type {
+  DetalheLidoDoDocumento,
+  RepeticaoDoDocumento,
+  ResumoDoDocumento,
+} from './tipos-da-conferencia';
+import { SEM_REPETICAO } from './tipos-da-conferencia';
 import { ModeloDaExigenciaComponent } from './modelo-da-exigencia/modelo-da-exigencia.component';
 import {
   alcancaOPublico,
+  filtroDoValor,
+  opcaoDoFiltro,
+  type OpcaoDoFiltro,
   composicaoResumida,
   descreverNorma,
   descreverPublico,
@@ -130,9 +140,6 @@ import {
   publicoDaExigencia,
   repeticaoResumida,
   rotuloDaConsequencia,
-  type FiltroDePublico,
-  type NormaDescrita,
-  type PublicoDaExigencia,
 } from './resumo-da-exigencia';
 
 /**
@@ -992,7 +999,7 @@ export class FaseStepComponent {
    * apontariam para os da primeira. Todo id do template passa por aqui.
    */
   idDaFase(sufixo: string): string {
-    return `fase-${this.faseDoRascunho()?.codigo ?? ''}-${sufixo}`;
+    return idDaFase(this.faseDoRascunho()?.codigo ?? '', sufixo);
   }
 
   /**
@@ -1963,120 +1970,4 @@ export class FaseStepComponent {
         ),
     });
   }
-}
-
-/**
- * Compara conteúdo, não a ordem em que os campos foram escritos: a projeção da
- * leitura e a do formulário montam os mesmos objetos em ordens diferentes, e
- * `JSON.stringify` preserva a ordem de inserção — comparar assim daria
- * "diferente" para dado igual, e o formulário seria recriado a cada tecla.
- */
-function mesmoConteudo(umLado: unknown, outroLado: unknown): boolean {
-  return canonico(umLado) === canonico(outroLado);
-}
-
-function canonico(valor: unknown): string {
-  return JSON.stringify(valor, (_chave, conteudo: unknown) =>
-    conteudo !== null && typeof conteudo === 'object' && !Array.isArray(conteudo)
-      ? Object.fromEntries(
-          Object.entries(conteudo as Record<string, unknown>).sort(([um], [outro]) =>
-            um.localeCompare(outro),
-          ),
-        )
-      : conteudo,
-  );
-}
-
-/** A repetição do documento na fase e o que o campo "Repetir por" oferece. */
-interface RepeticaoDoDocumento {
-  readonly atual: RepeticaoDaExigencia | null;
-  /** O rótulo do grupo da repetição atual; o código, quando o grupo saiu dos formulários. */
-  readonly rotulo: string;
-  /** Se nenhum formulário do processo tem grupo repetível. */
-  readonly semGrupo: boolean;
-  readonly oferecidos: readonly GrupoDaProducao[];
-  /** Os grupos que o documento não pode escolher aqui, com o motivo. */
-  readonly naoOferecidos: readonly string[];
-  /** O que fazer quando a repetição atual deixou de valer. */
-  readonly erro: string | null;
-}
-
-const SEM_REPETICAO: RepeticaoDoDocumento = {
-  atual: null,
-  rotulo: '',
-  semGrupo: true,
-  oferecidos: [],
-  naoOferecidos: [],
-  erro: null,
-};
-
-/** O que a consulta lê de um documento, como texto. */
-interface DetalheLidoDoDocumento {
-  readonly descricao: string | null;
-  readonly formatos: string | null;
-  readonly situacao: string | null;
-  readonly formulario: string | null;
-  readonly exigidoEm: string;
-  readonly modelo: string | null;
-}
-
-/** O que a conferência mostra de um documento exigido. */
-interface ResumoDoDocumento {
-  readonly id: string;
-  readonly nome: string;
-  readonly documento: DocumentoDefinicao;
-  readonly publico: PublicoDaExigencia;
-  readonly aplicaA: string;
-  readonly entrega: string;
-  /** Como o documento compõe um grupo; vazio quando é exigido por si. */
-  readonly composicao: string;
-  /** Pelas ocorrências de que grupo do formulário o documento se repete; vazio quando é um por candidato. */
-  readonly repeticao: string;
-  readonly consequencia: string;
-  readonly coleta: string;
-  readonly bases: readonly BaseLegalConfig[];
-  readonly normas: readonly NormaDescrita[];
-  readonly faltaNorma: boolean;
-  readonly repetido: string;
-  /** O formulário em que o documento é apresentado; `null` enquanto a fase dividida pede a escolha. */
-  readonly finalidade: string | null;
-  /** O que orienta quem edita, já completo. */
-  readonly orientacao: string | null;
-  /** O aviso dos formatos do cadastro que a exigência não declara; `null` quando não há. */
-  readonly avisoDeFormatos: string | null;
-  /** Só existe em consulta, único modo que o lê. */
-  readonly detalhe: DetalheLidoDoDocumento | null;
-}
-
-/** Um público que a conferência oferece, com o valor que o seletor guarda. */
-interface OpcaoDoFiltro {
-  readonly valor: string;
-  readonly rotulo: string;
-}
-
-/** A opção do seletor de público, rotulada pelo público que o valor codifica. */
-function opcaoDoFiltro(valor: string): OpcaoDoFiltro {
-  const filtro = filtroDoValor(valor);
-  switch (filtro.tipo) {
-    case 'modalidade':
-      return { valor, rotulo: `Candidato de ${filtro.codigo}` };
-    case 'condicao':
-      return { valor, rotulo: `Candidato com: ${filtro.condicao}` };
-    case 'todo-candidato':
-      return { valor, rotulo: 'Exigidos de todo candidato' };
-    case 'tudo':
-      return { valor, rotulo: 'Todos os documentos da fase' };
-  }
-}
-
-/** O valor do seletor de público de volta ao filtro que ele codifica. */
-function filtroDoValor(valor: string): FiltroDePublico {
-  if (valor === 'todo-candidato') return { tipo: 'todo-candidato' };
-  if (valor.startsWith('modalidade:')) {
-    return { tipo: 'modalidade', codigo: valor.slice('modalidade:'.length) };
-  }
-  if (valor.startsWith('condicao:')) {
-    return { tipo: 'condicao', condicao: valor.slice('condicao:'.length) };
-  }
-  return { tipo: 'tudo' };
 }
