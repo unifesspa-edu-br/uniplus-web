@@ -9,7 +9,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { GravacaoDoProcesso } from './gravacao-do-processo';
+import { GravacaoDoProcesso, type RecursoDoProcesso } from './gravacao-do-processo';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
@@ -109,27 +109,38 @@ describe('GravacaoDoProcesso', () => {
   });
 
   it('renova toda chave de substituição ao descartar, sem depender de lista nominal', async () => {
-    const recursos: readonly [string, () => Promise<unknown>][] = [
-      ['etapas', gravarEtapas],
-      ['cronograma-fases', gravarCronograma],
-    ];
-    const antes = new Map<string, string>();
-    for (const [rota, gravar] of recursos) {
-      // Uma gravação recusada com falha de rede deixa a chave em uso, que é a que o descarte tem de trocar.
-      const pendente = gravar();
-      const requisicao = http.expectOne(`${ROTA}/${rota}`);
-      antes.set(rota, requisicao.request.headers.get('Idempotency-Key') ?? '');
+    // O último é um recurso que nenhuma lista do código conhece: o descarte tem de alcançá-lo.
+    const recursos = [
+      'taxa',
+      'distribuicao',
+      'etapas',
+      'cronograma',
+      'bonus',
+      'atendimento',
+      'recurso-criado-no-teste',
+    ] as unknown as readonly RecursoDoProcesso[];
+    const gravarEmAberto = async (recurso: RecursoDoProcesso): Promise<string> => {
+      // A falha de rede deixa a chave em uso, que é a que o descarte tem de trocar.
+      const pendente = gravacao.gravar(recurso, 'mesmo corpo', (contexto) =>
+        api.definirEtapas(PROCESSO_ID, [], contexto),
+      );
+      const requisicao = http.expectOne(`${ROTA}/etapas`);
+      const chave = requisicao.request.headers.get('Idempotency-Key') ?? '';
       erroDeRede(requisicao);
       await pendente;
-    }
+      return chave;
+    };
+    const antes = new Map<string, string>();
+    for (const recurso of recursos) antes.set(recurso, await gravarEmAberto(recurso));
+    expect(new Set(antes.values()).size, 'cada recurso tem a sua chave').toBe(recursos.length);
 
     gravacao.descartar();
 
-    for (const [rota, gravar] of recursos) {
-      const chave = await chaveDaGravacao(gravar, rota);
-      expect(chave, `chave de ${rota} que atravessou a troca de processo`).not.toBe(
-        antes.get(rota),
-      );
+    for (const recurso of recursos) {
+      expect(
+        await gravarEmAberto(recurso),
+        `chave de ${recurso} que atravessou o descarte`,
+      ).not.toBe(antes.get(recurso));
     }
   });
 
