@@ -10,6 +10,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { BasesLegaisDeBonusService } from './bases-legais-de-bonus.service';
 import { BonusStepComponent } from './bonus.component';
 
 const BASE = 'http://localhost:5000';
@@ -19,6 +20,7 @@ const BASE_LEGAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
 
 describe('BonusStepComponent', () => {
   let componente: BonusStepComponent;
+  let basesLegais: BasesLegaisDeBonusService;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let fixture: ComponentFixture<BonusStepComponent>;
@@ -40,6 +42,7 @@ describe('BonusStepComponent', () => {
 
     fixture = TestBed.createComponent(BonusStepComponent);
     componente = fixture.componentInstance;
+    basesLegais = fixture.debugElement.injector.get(BasesLegaisDeBonusService);
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
 
@@ -265,7 +268,7 @@ describe('BonusStepComponent', () => {
     it('mostra a identificação da base legal do catálogo', () => {
       // A carga inicial do beforeEach já foi flushada com [] — refaz a busca para
       // interceptar esta com dados reais, sem alterar o setup compartilhado.
-      componente['carregarBasesLegais']();
+      basesLegais.carregar();
       const requisicaoBaseLegal = controller.expectOne(
         (r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`,
       );
@@ -295,11 +298,11 @@ describe('BonusStepComponent', () => {
 
   describe('municipiosDaBaseLegalSelecionada()', () => {
     it('não lista município nenhum quando não há base legal escolhida', () => {
-      expect(componente.municipiosDaBaseLegalSelecionada()).toEqual([]);
+      expect(basesLegais.municipiosDaSelecionada()).toEqual([]);
     });
 
     it('lista os municípios da base legal escolhida, ordenados por nome', () => {
-      componente['carregarBasesLegais']();
+      basesLegais.carregar();
       controller
         .expectOne((r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`)
         .flush([
@@ -319,7 +322,7 @@ describe('BonusStepComponent', () => {
 
       componente.escolherBaseLegal(BASE_LEGAL_ID);
 
-      expect(componente.municipiosDaBaseLegalSelecionada().map((m) => m.nome)).toEqual([
+      expect(basesLegais.municipiosDaSelecionada().map((m) => m.nome)).toEqual([
         'Abel Figueiredo',
         'Marabá',
         'Xinguara',
@@ -327,7 +330,7 @@ describe('BonusStepComponent', () => {
     });
 
     it('não expõe tabindex/role/aria-labelledby quando a tabela não transborda a caixa', () => {
-      componente['carregarBasesLegais']();
+      basesLegais.carregar();
       controller
         .expectOne((r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`)
         .flush([
@@ -357,7 +360,7 @@ describe('BonusStepComponent', () => {
     });
 
     it('a região com rolagem é alcançável por teclado e tem nome acessível quando a tabela transborda a caixa', () => {
-      componente['carregarBasesLegais']();
+      basesLegais.carregar();
       controller
         .expectOne((r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`)
         .flush([

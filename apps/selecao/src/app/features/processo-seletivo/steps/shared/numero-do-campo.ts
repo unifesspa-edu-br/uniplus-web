@@ -33,8 +33,14 @@ export function inteiroNaForma(texto: string): number | null {
 
 /** Aceita vírgula ou ponto como separador decimal, sem notação exótica. */
 export function decimalDoCampo(texto: string): number | null {
+  const decimal = decimalNaForma(texto);
+  return decimal === null ? null : finitoOuNulo(decimal);
+}
+
+/** Só a forma: dígitos com vírgula ou ponto decimal, sem teto de alcance. */
+export function decimalNaForma(texto: string): number | null {
   const limpo = texto.trim().replace(',', '.');
-  return /^\d+(\.\d+)?$/.test(limpo) ? finitoOuNulo(Number(limpo)) : null;
+  return /^\d+(\.\d+)?$/.test(limpo) ? Number(limpo) : null;
 }
 
 /**

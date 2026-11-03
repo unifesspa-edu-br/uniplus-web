@@ -1,17 +1,12 @@
 import { DefinirBonusRegionalRequest } from '@uniplus/shared-data/selecao';
 
 import { WizardDraft } from '../../processo-seletivo.models';
+import { decimalNaForma } from '../../shared/numero-do-campo';
 
 /** Texto vazio vira `null` — a forma de "não informado" no comando. */
 function naoVazio(texto: string): string | null {
   const limpo = texto.trim();
   return limpo === '' ? null : limpo;
-}
-
-/** Vírgula ou ponto como separador decimal — a mesma gramática do resto do wizard. */
-function decimal(texto: string): number | null {
-  const limpo = texto.trim().replace(',', '.');
-  return /^\d+(\.\d+)?$/.test(limpo) ? Number(limpo) : null;
 }
 
 /**
@@ -41,8 +36,8 @@ export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusReg
     aplica: true,
     regraCodigo: naoVazio(bonus.regraCodigo),
     regraVersao: naoVazio(bonus.regraVersao),
-    fator: decimal(bonus.fator),
-    teto: naoVazio(bonus.teto) === null ? null : decimal(bonus.teto),
+    fator: decimalNaForma(bonus.fator),
+    teto: naoVazio(bonus.teto) === null ? null : decimalNaForma(bonus.teto),
     baseLegalBonusRegionalId: naoVazio(bonus.baseLegalBonusRegionalId),
     fatoElegibilidadeCodigo: naoVazio(bonus.fatoElegibilidadeCodigo),
   };

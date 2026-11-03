@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   decimalDoCampo,
+  decimalNaForma,
   inteiroDoCampo,
   inteiroNaForma,
   leituraDoCampoDecimal,
@@ -38,6 +39,12 @@ describe('leitura dos campos numéricos do editor', () => {
     expect(inteiroNaForma('007')).toBe(7);
     expect(inteiroNaForma('9'.repeat(309))).toBe(Number.POSITIVE_INFINITY);
     expect(inteiroNaForma('1.5')).toBeNull();
+  });
+
+  it('confere só a forma do decimal, com vírgula ou ponto', () => {
+    expect(decimalNaForma('0,5')).toBe(0.5);
+    expect(decimalNaForma('9'.repeat(309))).toBe(Number.POSITIVE_INFINITY);
+    expect(decimalNaForma('1e2')).toBeNull();
   });
 
   it('aceita valor grande que ainda cabe no número', () => {

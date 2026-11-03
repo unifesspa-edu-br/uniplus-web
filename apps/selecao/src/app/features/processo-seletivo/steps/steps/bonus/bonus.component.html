@@ -5,10 +5,10 @@
 @if (!store.emConsulta() && catalogos.erro(); as erro) {
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
-@if (!store.emConsulta() && basesLegaisErro(); as erro) {
+@if (!store.emConsulta() && basesLegais.erro(); as erro) {
   <p class="alert alert--danger" role="alert">
     {{ erro }}
-    <button type="button" class="btn btn--secondary btn--sm" (click)="carregarBasesLegais()">
+    <button type="button" class="btn btn--secondary btn--sm" (click)="basesLegais.carregar()">
       Tentar novamente
     </button>
   </p>
@@ -63,7 +63,7 @@
             class="form-grid__full"
             rotulo="Base Legal do bônus"
             [valor]="leitura().baseLegal"
-            [dica]="descricaoDaBaseLegal() || null"
+            [dica]="basesLegais.descricaoDaSelecionada() || null"
           />
           @if (citaElegibilidade()) {
             <ui-valor-em-consulta
@@ -116,27 +116,27 @@
             ><select
               class="input"
               id="f-bonus-base-legal"
-              [disabled]="basesLegaisCarregando() || !store.aceitaEdicao()"
+              [disabled]="basesLegais.carregando() || !store.aceitaEdicao()"
               (change)="escolherBaseLegal($any($event.target).value)"
             >
               <option value="" [selected]="store.draft().bonus.baseLegalBonusRegionalId === ''">
                 — escolher —
               </option>
-              @for (base of basesLegaisEscolhiveis(); track base.id) {
+              @for (base of basesLegais.escolhiveis(); track base.id) {
                 <option
                   [value]="base.id"
                   [selected]="base.id === store.draft().bonus.baseLegalBonusRegionalId"
                 >
-                  {{ rotuloDaBaseLegal(base) }}
+                  {{ basesLegais.rotuloDaBaseLegal(base) }}
                 </option>
               }
             </select>
             <!-- O que a norma diz, fora do seletor: dentro da opção, o texto se repetiria em
                  cada linha da lista. É por ele que se distinguem duas portarias parecidas. -->
-            @if (descricaoDaBaseLegal(); as descricao) {
+            @if (basesLegais.descricaoDaSelecionada(); as descricao) {
               <span class="field__hint">{{ descricao }}</span>
             }
-            @if (tiposInstrumentoErro(); as erro) {
+            @if (basesLegais.tiposInstrumentoErro(); as erro) {
               <!--
                 `role="alert"` como o carregamento vizinho: sem ele, quem usa leitor de tela
                 clica em "Tentar novamente", a segunda tentativa falha, e nada o diz.
@@ -146,10 +146,10 @@
                 <button
                   class="btn btn--tertiary btn--sm"
                   type="button"
-                  [disabled]="tiposInstrumentoCarregando()"
-                  (click)="carregarTiposDeInstrumento()"
+                  [disabled]="basesLegais.tiposInstrumentoCarregando()"
+                  (click)="basesLegais.carregarTiposDeInstrumento()"
                 >
-                  {{ tiposInstrumentoCarregando() ? 'Carregando…' : 'Tentar novamente' }}
+                  {{ basesLegais.tiposInstrumentoCarregando() ? 'Carregando…' : 'Tentar novamente' }}
                 </button>
               </span>
             }
@@ -217,7 +217,7 @@
           </div>
         }
       }
-      @if (municipiosDaBaseLegalSelecionada().length > 0) {
+      @if (basesLegais.municipiosDaSelecionada().length > 0) {
         <div class="bonus-municipios">
           <div
             class="table-responsive bonus-municipios__scroll"
@@ -226,7 +226,7 @@
             <table>
               <caption id="bonus-municipios-caption" class="bonus-municipios__caption">
                 {{
-                  municipiosDaBaseLegalSelecionada().length
+                  basesLegais.municipiosDaSelecionada().length
                 }}
                 município(s) beneficiado(s) por esta base legal
               </caption>
@@ -238,7 +238,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (municipio of municipiosDaBaseLegalSelecionada(); track municipio.codigoIbge) {
+                @for (municipio of basesLegais.municipiosDaSelecionada(); track municipio.codigoIbge) {
                   <tr>
                     <td data-label="Nome">{{ municipio.nome }}</td>
                     <td data-label="UF">{{ municipio.uf }}</td>

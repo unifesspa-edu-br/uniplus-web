@@ -5,23 +5,22 @@ import {
   computed,
   effect,
   inject,
-  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { ProblemI18nService, coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
+import { ProblemI18nService } from '@uniplus/shared-core/http';
 import {
-  BaseLegalBonusRegionalApi,
-  BaseLegalBonusRegionalDto,
-  TiposInstrumentoNormativoApi,
-} from '@uniplus/shared-data/configuracao';
-import { RolagemFocavelDirective, ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
+  RolagemFocavelDirective,
+  ValorEmConsultaComponent,
+  ValorLegivelDirective,
+} from '@uniplus/shared-ui/components';
 
 import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import {
@@ -29,36 +28,15 @@ import {
   regrasEscolhiveis,
   rotuloDaRegraEscolhida,
 } from '../classificacao/regra-escolhivel';
+import { BasesLegaisDeBonusService } from './bases-legais-de-bonus.service';
 import { comoComandoDeBonus } from './bonus-para-comando';
+import { confirmacaoDoBonus } from './confirmacao-do-bonus';
+import { validarBonus } from './validacao-do-bonus';
 import {
   type FatoDeElegibilidade,
   citaFatoDeElegibilidade,
   fatosDeElegibilidade,
 } from './fato-de-elegibilidade';
-
-/** O que o `<select>` de base legal exibe — o mesmo par que `RegraEscolhivel` usa. */
-interface BaseLegalEscolhivel {
-  readonly id: string;
-  readonly identificacao: string;
-  /**
-   * O que a norma é e o que ela diz. Sem os dois, escolher entre duas portarias de
-   * identificação parecida é adivinhar — e é a norma que sustenta o bônus. Vêm do cadastro, e
-   * também do snapshot congelado no processo, que guarda os dois.
-   *
-   * `tipoInstrumento` é o código canônico do vocabulário fechado, não o rótulo: quem traduz é
-   * o próprio vocabulário, servido pela API.
-   */
-  readonly tipoInstrumento: string;
-  readonly descricao: string;
-  readonly municipios: readonly MunicipioBeneficiado[];
-}
-
-/** Município de uma base legal — mesma forma tanto no catálogo quanto no snapshot congelado. */
-interface MunicipioBeneficiado {
-  readonly codigoIbge: string;
-  readonly nome: string;
-  readonly uf: string;
-}
 
 /**
  * Bônus regional (`PUT …/bonus-regional`) — o processo declara se aplica o bônus ou não, e a
@@ -69,22 +47,23 @@ interface MunicipioBeneficiado {
 @Component({
   selector: 'sel-step-bonus',
   standalone: true,
-  imports: [ValorLegivelDirective, ReactiveFormsModule, RolagemFocavelDirective, ValorEmConsultaComponent],
+  imports: [
+    ValorLegivelDirective,
+    ReactiveFormsModule,
+    RolagemFocavelDirective,
+    ValorEmConsultaComponent,
+  ],
   templateUrl: './bonus.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(BonusStepComponent)],
+  providers: [BasesLegaisDeBonusService, provePassoDoWizard(BonusStepComponent)],
 })
 export class BonusStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
-  private readonly baseLegalApi = inject(BaseLegalBonusRegionalApi);
+  protected readonly basesLegais = inject(BasesLegaisDeBonusService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
-
-  private readonly basesLegais = signal<readonly BaseLegalBonusRegionalDto[]>([]);
-  readonly basesLegaisCarregando = signal(true);
-  readonly basesLegaisErro = signal<string | null>(null);
 
   /**
    * A resposta de aplicar ou não o bônus. O rascunho do store é a fonte da verdade: o controle
@@ -105,121 +84,12 @@ export class BonusStepComponent {
     });
 
     this.catalogos.carregar();
-    this.carregarBasesLegais();
-
-    this.carregarTiposDeInstrumento();
   }
 
   readonly regrasBonus = computed(() => {
     const bonus = this.store.draft().bonus;
     return regrasEscolhiveis(this.catalogos.regrasBonus(), bonus.regraCodigo, bonus.regraVersao);
   });
-
-  /**
-   * O catálogo ativo mais, quando faltar, a base legal que o processo já tem
-   * gravada — reabrir um processo cuja base legal foi desativada depois não
-   * pode mostrar o `<select>` em branco (CA-03, mesmo princípio de
-   * `regrasEscolhiveis`). O snapshot do próprio processo carrega
-   * `identificacao` mesmo quando a base legal já saiu do catálogo.
-   */
-  readonly basesLegaisEscolhiveis = computed<readonly BaseLegalEscolhivel[]>(() => {
-    const catalogo = this.basesLegais().map((base) => ({
-      id: base.id,
-      identificacao: base.identificacao,
-      tipoInstrumento: base.tipoInstrumento,
-      descricao: base.descricao,
-      municipios: base.municipios,
-    }));
-    const selecionadoId = this.store.draft().bonus.baseLegalBonusRegionalId;
-    if (selecionadoId === '' || catalogo.some((base) => base.id === selecionadoId)) {
-      return catalogo;
-    }
-
-    const snapshot = this.store.remoteSnapshot()?.bonusRegional;
-    if (
-      snapshot === null ||
-      snapshot === undefined ||
-      snapshot.baseLegalBonusRegionalId !== selecionadoId
-    ) {
-      return catalogo;
-    }
-
-    return [
-      {
-        id: snapshot.baseLegalBonusRegionalId,
-        identificacao: snapshot.identificacao,
-        // O snapshot congela os quatro campos, não só dois — e é exatamente quando a norma
-        // saiu do cadastro que o tipo e a descrição fazem falta para reconhecê-la.
-        tipoInstrumento: snapshot.tipoInstrumento,
-        descricao: snapshot.descricao,
-        municipios: snapshot.municipios,
-      },
-      ...catalogo,
-    ];
-  });
-
-  private readonly tiposInstrumentoApi = inject(TiposInstrumentoNormativoApi);
-
-  /**
-   * Os rótulos dos tipos de instrumento normativo, indexados pelo código.
-   *
-   * O código é UPPER_SNAKE — `INSTRUCAO_NORMATIVA` —, e exibi-lo cru numa tela em português
-   * mostra a grafia da máquina a quem monta o edital. A lista não se escreve aqui: é
-   * vocabulário fechado derivado de enum no servidor, e é ele quem publica o rótulo.
-   */
-  private readonly rotuloDoTipoInstrumento = signal<ReadonlyMap<string, string>>(new Map());
-
-  /**
-   * Se o vocabulário não pôde ser carregado.
-   *
-   * Engolir a falha deixaria o código da máquina — `INSTRUCAO_NORMATIVA` — permanente na tela,
-   * sem nada dizendo que algo falhou nem como tentar de novo. É a mesma conduta do
-   * carregamento das bases legais, ao lado.
-   */
-  readonly tiposInstrumentoErro = signal<string | null>(null);
-
-  /** Se o vocabulário está sendo buscado — trava o botão e evita duas chamadas concorrentes. */
-  readonly tiposInstrumentoCarregando = signal(false);
-
-  carregarTiposDeInstrumento(): void {
-    if (this.tiposInstrumentoCarregando()) return;
-
-    this.tiposInstrumentoErro.set(null);
-    this.tiposInstrumentoCarregando.set(true);
-
-    this.tiposInstrumentoApi
-      .listar()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (resultado) => {
-          this.tiposInstrumentoCarregando.set(false);
-          if (isApiOk(resultado)) {
-            this.rotuloDoTipoInstrumento.set(
-              new Map(resultado.data.map((tipo) => [tipo.codigo, tipo.nome])),
-            );
-            return;
-          }
-          this.tiposInstrumentoErro.set(this.problemI18n.resolve(resultado.problem).title);
-        },
-        error: () => {
-          this.tiposInstrumentoCarregando.set(false);
-          this.tiposInstrumentoErro.set(
-            'Não foi possível carregar como se lê o tipo de cada norma.',
-          );
-        },
-      });
-  }
-
-  /** O tipo da norma como se lê, ou o código quando o vocabulário ainda não chegou. */
-  rotuloDoTipo(codigo: string): string {
-    if (codigo === '') return '';
-    return this.rotuloDoTipoInstrumento().get(codigo) ?? codigo;
-  }
-
-  /** A norma pelo tipo e pela identificação, no seletor e na consulta. */
-  rotuloDaBaseLegal(base: Pick<BaseLegalEscolhivel, 'tipoInstrumento' | 'identificacao'>): string {
-    return `${this.rotuloDoTipo(base.tipoInstrumento)} ${base.identificacao}`.trim();
-  }
 
   /** Se o passo pede o fato que decide quem recebe o acréscimo. */
   readonly citaElegibilidade = computed(() => citaFatoDeElegibilidade(this.store.draft()));
@@ -249,40 +119,17 @@ export class BonusStepComponent {
   /** O bônus como se lê em consulta, com o rótulo de cada escolha. */
   readonly leitura = computed(() => {
     const bonus = this.store.draft().bonus;
-    const base = this.basesLegaisEscolhiveis().find(
-      (item) => item.id === bonus.baseLegalBonusRegionalId,
-    );
+    const base = this.basesLegais
+      .escolhiveis()
+      .find((item) => item.id === bonus.baseLegalBonusRegionalId);
     return {
       aplicacao: aplicacaoEmConsulta(bonus.aplica),
       regra: rotuloDaRegraEscolhida(this.regrasBonus()),
       fator: leituraDoCampoDecimal(bonus.fator),
       teto: leituraDoCampoDecimal(bonus.teto),
-      baseLegal: base === undefined ? null : this.rotuloDaBaseLegal(base),
+      baseLegal: base === undefined ? null : this.basesLegais.rotuloDaBaseLegal(base),
       fatoElegibilidade: this.leituraDoFatoDeElegibilidade(bonus.fatoElegibilidadeCodigo),
     };
-  });
-
-  /** O que a norma escolhida diz. */
-  readonly descricaoDaBaseLegal = computed<string>(() => {
-    const escolhida = this.store.draft().bonus.baseLegalBonusRegionalId;
-    const base = this.basesLegaisEscolhiveis().find((item) => item.id === escolhida);
-    return base?.descricao ?? '';
-  });
-
-  /**
-   * Municípios da base legal escolhida, ordenados por nome — o mesmo catálogo/snapshot
-   * de `basesLegaisEscolhiveis`, então uma base fora do catálogo (CA-03) continua
-   * mostrando os municípios do congelamento. Exibida junto ao select para o gestor
-   * confirmar visualmente a cobertura sem precisar abrir o cadastro em outra aba.
-   */
-  readonly municipiosDaBaseLegalSelecionada = computed<readonly MunicipioBeneficiado[]>(() => {
-    const selecionadoId = this.store.draft().bonus.baseLegalBonusRegionalId;
-    if (selecionadoId === '') return [];
-
-    const base = this.basesLegaisEscolhiveis().find((b) => b.id === selecionadoId);
-    if (base === undefined) return [];
-
-    return [...base.municipios].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   });
 
   escolherRegra(valor: string): void {
@@ -324,73 +171,20 @@ export class BonusStepComponent {
     if (!this.validate().valid) return null;
 
     const bonus = this.store.draft().bonus;
-    if (bonus.aplica === false) {
-      return {
-        titulo: 'Confirmar que o processo não aplica o bônus regional',
-        aviso: 'O processo será declarado sem bônus regional.',
-        rotuloDeConfirmar: 'Confirmar sem bônus',
-        itens: [{ rotulo: 'Bônus regional', valor: 'Não aplicado neste processo' }],
-      };
-    }
-
-    const baseLegal = this.basesLegaisEscolhiveis().find(
-      (base) => base.id === bonus.baseLegalBonusRegionalId,
-    );
-
-    return {
-      titulo: 'Confirmar o bônus regional',
-      aviso: 'Estes dados serão gravados como o bônus regional deste processo.',
-      rotuloDeConfirmar: 'Gravar bônus',
-      itens: [
-        { rotulo: 'Regra', valor: bonus.regraCodigo },
-        { rotulo: 'Fator', valor: bonus.fator },
-        { rotulo: 'Teto', valor: bonus.teto === '' ? 'sem teto' : bonus.teto },
-        { rotulo: 'Base legal', valor: baseLegal?.identificacao ?? 'não selecionada' },
-        ...(this.citaElegibilidade()
-          ? [
-              {
-                rotulo: 'Quem recebe o acréscimo',
-                valor: this.leitura().fatoElegibilidade ?? 'ainda não escolhido',
-              },
-            ]
-          : []),
-      ],
-    };
+    return confirmacaoDoBonus({
+      bonus,
+      identificacaoDaBaseLegal: this.basesLegais
+        .escolhiveis()
+        .find((base) => base.id === bonus.baseLegalBonusRegionalId)?.identificacao,
+      citaElegibilidade: this.citaElegibilidade(),
+      fatoDeElegibilidade: this.leitura().fatoElegibilidade,
+    });
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {
-    const bonus = this.store.draft().bonus;
-    if (bonus.aplica === null) {
-      return { valid: false, messages: ['Informe se o processo aplica o bônus regional.'] };
-    }
-    if (!bonus.aplica) return { valid: true };
-
-    const messages: string[] = [];
-
-    if (!bonus.regraCodigo) messages.push('Selecione a regra do bônus.');
-
-    const fator = decimal(bonus.fator);
-    if (fator === null || fator <= 0) {
-      messages.push('Informe o fator do bônus, maior que zero.');
-    } else {
-      messages.push(...foraDaPrecisao(bonus.fator, 'O fator do bônus'));
-    }
-
-    if (bonus.teto.trim() !== '') {
-      const teto = decimal(bonus.teto);
-      if (teto === null || teto <= 0) {
-        messages.push('O teto do bônus, quando informado, deve ser maior que zero.');
-      } else {
-        messages.push(...foraDaPrecisao(bonus.teto, 'O teto do bônus'));
-      }
-    }
-
-    if (!bonus.baseLegalBonusRegionalId) {
-      messages.push('Selecione a base legal do bônus regional.');
-    }
-
-    return messages.length ? { valid: false, messages } : { valid: true };
+    const messages = validarBonus(this.store.draft().bonus);
+    return messages.length ? { valid: false, messages: [...messages] } : { valid: true };
   }
 
   /** Grava a declaração do bônus regional — aplica ou não, o passo sempre grava. */
@@ -406,43 +200,18 @@ export class BonusStepComponent {
     const conferencia = this.validate();
     if (!conferencia.valid) return conferencia;
 
-    const geracao = this.store.geracao();
-    this.store.salvando.set(true);
-    try {
+    return gravarNoPasso(this.store, async () => {
+      const geracao = this.store.geracao();
       const resultado = await this.cadastro.definirBonusRegional(
         processoId,
         comoComandoDeBonus(this.store.draft().bonus),
       );
 
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-
-      if (!resultado.ok) {
-        return { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
-      }
-
-      return { valid: true };
-    } finally {
-      if (geracao === this.store.geracao()) this.store.salvando.set(false);
-    }
-  }
-
-  protected carregarBasesLegais(): void {
-    this.basesLegaisCarregando.set(true);
-    this.basesLegaisErro.set(null);
-
-    coletarPaginas((cursor) => this.baseLegalApi.listar({ cursor, direction: 'next' }))
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => {
-        if (!isApiOk(resultado)) {
-          this.basesLegaisErro.set(
-            'Não foi possível carregar as bases legais de bônus regional. Tente novamente.',
-          );
-          this.basesLegaisCarregando.set(false);
-          return;
-        }
-        this.basesLegais.set(resultado.data);
-        this.basesLegaisCarregando.set(false);
-      });
+      if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+      return resultado.ok
+        ? { valid: true }
+        : { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
+    });
   }
 }
 
@@ -450,35 +219,4 @@ export class BonusStepComponent {
 function aplicacaoEmConsulta(aplica: boolean | null): string | null {
   if (aplica === null) return null;
   return aplica ? 'Aplicado neste processo' : 'Não aplicado neste processo';
-}
-
-function decimal(texto: string): number | null {
-  const limpo = texto.trim().replace(',', '.');
-  return /^\d+(\.\d+)?$/.test(limpo) ? Number(limpo) : null;
-}
-
-/**
- * O registro guarda fator e teto com dois dígitos inteiros e quatro decimais — teto efetivo de
- * 99,9999. Não é limite arbitrário da tela: é a precisão da coluna, e o servidor recusa o que
- * passa dela.
- *
- * Num certame cuja nota final é em base 100 ou 1000, "teto de 100 pontos" é o primeiro valor
- * que quem monta o edital escreve — e era o que voltava recusado sem que o campo dissesse
- * qualquer coisa sobre faixa.
- */
-const DIGITOS_INTEIROS = 2;
-const CASAS_DECIMAIS = 4;
-
-function foraDaPrecisao(valor: string, rotulo: string): readonly string[] {
-  const [inteira = '', decimal = ''] = valor.trim().replace('-', '').replace(',', '.').split('.');
-  const problemas: string[] = [];
-
-  if (inteira.replace(/^0+(?=\d)/, '').length > DIGITOS_INTEIROS) {
-    problemas.push(`${rotulo} não pode passar de 99,9999 — é a precisão com que ele é guardado.`);
-  }
-  if (decimal.length > CASAS_DECIMAIS) {
-    problemas.push(`${rotulo} aceita no máximo ${CASAS_DECIMAIS} casas decimais.`);
-  }
-
-  return problemas;
 }
