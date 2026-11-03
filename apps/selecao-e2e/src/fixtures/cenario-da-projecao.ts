@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import * as path from 'node:path';
 import {
   aprovarCatalogoInicial,
@@ -6,7 +5,8 @@ import {
   prepararAcessosDaSimulacao,
   SENHA_DAS_PERSONAS,
 } from '@uniplus/shared-e2e';
-import { processosPublicadosComNome, inscricoesDoProcesso } from './processos-da-api';
+import { inscricoesDoProcesso, listarProcessos, processosPublicadosComNome } from './processos-da-api';
+import { rodarRoteiroDeProcesso } from './roteiro-da-api';
 import { inscreverPersona, type InscricaoCriada } from './inscricoes-reais';
 
 /**
@@ -43,12 +43,7 @@ export interface CenarioDaProjecao {
 }
 
 async function acharProcesso(nome: string): Promise<string | undefined> {
-  const lista = await chamarApi<{ id: string; nome: string; status: string }[]>(
-    'manoel.aparicio',
-    'GET',
-    '/api/selecao/processos-seletivos?limit=100',
-  );
-  return lista.corpo.find((processo) => processo.nome === nome && processo.status === 'publicado')?.id;
+  return (await listarProcessos()).find((processo) => processo.nome === nome && processo.status === 'publicado')?.id;
 }
 
 async function garantirProcesso(nome: string, identificador: string, modelo: string): Promise<string> {
@@ -56,8 +51,10 @@ async function garantirProcesso(nome: string, identificador: string, modelo: str
   if (existente !== undefined) {
     return existente;
   }
-  execFileSync(ROTEIRO, [], {
-    env: {
+  return rodarRoteiroDeProcesso(
+    ROTEIRO,
+    [],
+    {
       ...process.env,
       ADMIN_USER: 'manoel.aparicio',
       ADMIN_PASS: SENHA_DAS_PERSONAS,
@@ -65,14 +62,8 @@ async function garantirProcesso(nome: string, identificador: string, modelo: str
       NOME_PROCESSO: nome,
       MODELO_INSCRICAO_ID: modelo,
     },
-    stdio: 'ignore',
-    timeout: 600_000,
-  });
-  const criado = await acharProcesso(nome);
-  if (criado === undefined) {
-    throw new Error(`O roteiro não criou o processo "${nome}".`);
-  }
-  return criado;
+    600_000,
+  );
 }
 
 /**
@@ -113,31 +104,19 @@ const SNIPPET_DO_RASCUNHO = `set -euo pipefail
 export ADMIN_USER=manoel.aparicio ADMIN_PASS="$4" IDENTIFICADOR_PROCESSO="$1" NOME_PROCESSO="$2"
 source "$3"
 obter_token; setup_publicacoes; setup_organizacao; setup_configuracao
-criar_processo; definir_cronograma_fases`;
+criar_processo; definir_cronograma_fases
+echo "PROCESSO_ID=$PROCESSO_ID"`;
 
 /** O processo em rascunho onde a configuração das exigências é testada, reaproveitado se já existe. */
 export async function rascunhoParaConfiguracao(): Promise<{ readonly processoId: string; readonly faseHabilitacaoId: string }> {
-  const lista = await chamarApi<{ id: string; nome: string; status: string }[]>(
-    'manoel.aparicio',
-    'GET',
-    '/api/selecao/processos-seletivos?limit=100',
-  );
-  let id = lista.corpo.find((p) => p.nome === NOME_DO_RASCUNHO && p.status === 'rascunho')?.id;
-  if (id === undefined) {
-    execFileSync('bash', ['-c', SNIPPET_DO_RASCUNHO, 'bash', `psm-2027-projecao-rascunho-${Date.now()}`, NOME_DO_RASCUNHO, ROTEIRO, SENHA_DAS_PERSONAS], {
-      stdio: 'ignore',
-      timeout: 600_000,
-    });
-    const nova = await chamarApi<{ id: string; nome: string; status: string }[]>(
-      'manoel.aparicio',
-      'GET',
-      '/api/selecao/processos-seletivos?limit=100',
+  const id =
+    (await listarProcessos()).find((p) => p.nome === NOME_DO_RASCUNHO && p.status === 'rascunho')?.id ??
+    rodarRoteiroDeProcesso(
+      'bash',
+      ['-c', SNIPPET_DO_RASCUNHO, 'bash', `psm-2027-projecao-rascunho-${Date.now()}`, NOME_DO_RASCUNHO, ROTEIRO, SENHA_DAS_PERSONAS],
+      process.env,
+      600_000,
     );
-    id = nova.corpo.find((p) => p.nome === NOME_DO_RASCUNHO && p.status === 'rascunho')?.id;
-  }
-  if (id === undefined) {
-    throw new Error('Não consegui criar o processo em rascunho.');
-  }
   const processo = await chamarApi<{ cronogramaFases: { id: string; codigo: string }[] }>(
     'manoel.aparicio',
     'GET',
