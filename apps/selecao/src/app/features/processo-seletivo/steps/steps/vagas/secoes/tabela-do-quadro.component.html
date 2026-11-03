@@ -6,11 +6,11 @@
     <tr>
       <th scope="col">Oferta</th>
       <th scope="col">Total</th>
-      @for (modalidade of padraoDoEdital.colunasDoQuadro(); track modalidade.id) {
+      @for (modalidade of estado.colunasDoQuadro(); track modalidade.id) {
         <th scope="col" [title]="modalidade.descricao || null">{{ modalidade.codigo }}</th>
       }
-      @if (simulacao.simulacao().size > 0) {
-        @for (modalidade of padraoDoEdital.modalidadesCalculadas(); track modalidade.id) {
+      @if (estado.simulacao().size > 0) {
+        @for (modalidade of estado.modalidadesCalculadas(); track modalidade.id) {
           <th scope="col" class="vagas-table__calculado" [title]="modalidade.descricao">
             {{ modalidade.codigo }}
           </th>
@@ -23,12 +23,12 @@
     </tr>
   </thead>
   <tbody>
-    @for (distribuicao of padraoDoEdital.distribuicoes(); track distribuicao.ofertaCursoId) {
+    @for (distribuicao of estado.distribuicoes(); track distribuicao.ofertaCursoId) {
       <tr>
         <th scope="row" class="vagas-table__oferta">
-          {{ quadro.nomeDaOferta(distribuicao.ofertaCursoId) }}
+          {{ catalogos.nomeDaOfertaOuSemNome(distribuicao.ofertaCursoId) }}
           <span class="vagas-oferta__detalhe">{{
-            quadro.detalheDaOferta(distribuicao.ofertaCursoId)
+            catalogos.detalheDaOfertaOuVazio(distribuicao.ofertaCursoId)
           }}</span>
         </th>
         <td data-label="Total">
@@ -39,17 +39,17 @@
             class="input input--numero"
             inputmode="numeric"
             [attr.aria-label]="
-              'Total de vagas de ' + quadro.rotuloDaOferta(distribuicao.ofertaCursoId)
+              'Total de vagas de ' + catalogos.rotuloDaOfertaOuSemNome(distribuicao.ofertaCursoId)
             "
-            [attr.aria-invalid]="quadro.voBaseComProblema(distribuicao) || null"
-            [class.input--pendente]="quadro.voBaseComProblema(distribuicao)"
+            [attr.aria-invalid]="conferencia.voBaseComProblema(distribuicao) || null"
+            [class.input--pendente]="conferencia.voBaseComProblema(distribuicao)"
             [ngModel]="distribuicao.voBase"
-            (ngModelChange)="quadro.alterarVoBase(distribuicao.ofertaCursoId, $event)"
+            (ngModelChange)="alterarVoBase(distribuicao.ofertaCursoId, $event)"
             [disabled]="!store.aceitaEdicao()"
           />
           }
         </td>
-        @for (modalidade of padraoDoEdital.colunasDoQuadro(); track modalidade.id) {
+        @for (modalidade of estado.colunasDoQuadro(); track modalidade.id) {
           <td [attr.data-label]="modalidade.codigo">
             @if (store.emConsulta()) {
               {{ quantidade(distribuicao, modalidade.id) || '—' }}
@@ -58,21 +58,21 @@
               class="input input--numero"
               inputmode="numeric"
               [attr.aria-label]="
-                modalidade.codigo + ' de ' + quadro.rotuloDaOferta(distribuicao.ofertaCursoId)
+                modalidade.codigo + ' de ' + catalogos.rotuloDaOfertaOuSemNome(distribuicao.ofertaCursoId)
               "
               [attr.aria-invalid]="quantidadeInvalida(distribuicao, modalidade.id) || null"
               [class.input--pendente]="quantidadeInvalida(distribuicao, modalidade.id)"
               [ngModel]="quantidade(distribuicao, modalidade.id)"
               (ngModelChange)="
-                quadro.alterarQuantidade(distribuicao.ofertaCursoId, modalidade.id, $event)
+                alterarQuantidade(distribuicao.ofertaCursoId, modalidade.id, $event)
               "
               [disabled]="!store.aceitaEdicao()"
             />
             }
           </td>
         }
-        @if (simulacao.simulacao().size > 0) {
-          @for (modalidade of padraoDoEdital.modalidadesCalculadas(); track modalidade.id) {
+        @if (estado.simulacao().size > 0) {
+          @for (modalidade of estado.modalidadesCalculadas(); track modalidade.id) {
             <td class="vagas-table__calculado" [attr.data-label]="modalidade.codigo">
               {{ simulacao.quantidadeCalculada(distribuicao, modalidade.id) }}
             </td>
@@ -86,10 +86,10 @@
           <button
             class="btn btn--tertiary btn--sm"
             type="button"
-            (click)="quadro.pedirRemocao(distribuicao.ofertaCursoId)"
+            (click)="pedirRemocao(distribuicao.ofertaCursoId)"
             [disabled]="!store.aceitaEdicao()"
             [attr.aria-label]="
-              'Remover ' + quadro.rotuloDaOferta(distribuicao.ofertaCursoId) + ' do quadro'
+              'Remover ' + catalogos.rotuloDaOfertaOuSemNome(distribuicao.ofertaCursoId) + ' do quadro'
             "
           >
             Remover
@@ -106,17 +106,17 @@
     <tr>
       <th scope="row" class="vagas-table__oferta">
         {{
-          padraoDoEdital.distribuicoes().length === 1 ? '1 oferta' : padraoDoEdital.distribuicoes().length + ' ofertas'
+          estado.distribuicoes().length === 1 ? '1 oferta' : estado.distribuicoes().length + ' ofertas'
         }}
       </th>
       <td data-label="Total">{{ simulacao.totalGeralDeVagas() }}</td>
-      @for (modalidade of padraoDoEdital.colunasDoQuadro(); track modalidade.id) {
+      @for (modalidade of estado.colunasDoQuadro(); track modalidade.id) {
         <td [attr.data-label]="modalidade.codigo">
           {{ simulacao.totalDeclaradoDe(modalidade.id) }}
         </td>
       }
-      @if (simulacao.simulacao().size > 0) {
-        @for (modalidade of padraoDoEdital.modalidadesCalculadas(); track modalidade.id) {
+      @if (estado.simulacao().size > 0) {
+        @for (modalidade of estado.modalidadesCalculadas(); track modalidade.id) {
           <td class="vagas-table__calculado" [attr.data-label]="modalidade.codigo">
             {{ simulacao.totalCalculadoDe(modalidade.id) }}
           </td>

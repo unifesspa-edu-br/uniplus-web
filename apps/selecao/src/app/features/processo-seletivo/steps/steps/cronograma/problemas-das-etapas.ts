@@ -5,7 +5,7 @@ import { descreverFase } from '../../shared/descricao-da-fase';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 import { escalaVale, fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
 import { problemasDosRecursosDasEtapas } from './problemas-dos-recursos-da-etapa';
-import { repetidos } from './repetidos';
+import { repetidos } from '../../shared/repetidos';
 import {
   componeNota,
   declaraNotaDoEnem,

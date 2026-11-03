@@ -6,8 +6,8 @@
     class="input"
     id="f-filtro-oferta"
     type="search"
-    [ngModel]="quadro.filtroDeOferta()"
-    (ngModelChange)="quadro.filtroDeOferta.set($event)"
+    [ngModel]="estado.filtroDeOferta()"
+    (ngModelChange)="estado.filtroDeOferta.set($event)"
     [disabled]="!store.aceitaEdicao()"
   />
 </div>
@@ -16,27 +16,27 @@
   <input
     type="checkbox"
     [checked]="
-      quadro.ofertasMarcadas().size === quadro.ofertasParaEscolher().length &&
-      quadro.ofertasParaEscolher().length > 0
+      estado.ofertasMarcadas().size === estado.ofertasParaEscolher().length &&
+      estado.ofertasParaEscolher().length > 0
     "
-    [disabled]="!store.aceitaEdicao() || quadro.ofertasParaEscolher().length === 0"
-    (change)="quadro.marcarTodasAsOfertas($any($event.target).checked)"
+    [disabled]="!store.aceitaEdicao() || estado.ofertasParaEscolher().length === 0"
+    (change)="marcarTodas($any($event.target).checked)"
   />
-  <span>Marcar todas as {{ quadro.ofertasParaEscolher().length }} ofertas listadas</span>
+  <span>Marcar todas as {{ estado.ofertasParaEscolher().length }} ofertas listadas</span>
 </label>
 
 <div class="checkbox-grid vagas-escolha__lista">
-  @for (oferta of quadro.ofertasParaEscolher(); track oferta.id) {
+  @for (oferta of estado.ofertasParaEscolher(); track oferta.id) {
     <label class="check-item vagas-escolha__item">
       <input
         type="checkbox"
-        [checked]="quadro.ofertaMarcada(oferta.id)"
+        [checked]="estado.ofertasMarcadas().has(oferta.id)"
         [disabled]="!store.aceitaEdicao()"
-        (change)="quadro.alternarOfertaMarcada(oferta.id)"
+        (change)="alternarMarcada(oferta.id)"
       />
       <span>
-        {{ quadro.nomeDaOferta(oferta.id) }}
-        <span class="vagas-oferta__detalhe">{{ quadro.detalheDaOferta(oferta.id) }}</span>
+        {{ catalogos.nomeDaOfertaOuSemNome(oferta.id) }}
+        <span class="vagas-oferta__detalhe">{{ catalogos.detalheDaOfertaOuVazio(oferta.id) }}</span>
       </span>
     </label>
   } @empty {
@@ -47,12 +47,12 @@
 <button
   class="btn btn--outline btn--sm"
   type="button"
-  (click)="quadro.adicionarOfertasMarcadas()"
-  [disabled]="!store.aceitaEdicao() || quadro.ofertasMarcadas().size === 0"
+  (click)="adicionar()"
+  [disabled]="!store.aceitaEdicao() || estado.ofertasMarcadas().size === 0"
 >
-  @if (quadro.ofertasMarcadas().size === 0) {
+  @if (estado.ofertasMarcadas().size === 0) {
     Adicionar ao quadro
   } @else {
-    Adicionar {{ quadro.ofertasMarcadas().size }} ao quadro
+    Adicionar {{ estado.ofertasMarcadas().size }} ao quadro
   }
 </button>

@@ -184,6 +184,16 @@ export class CatalogosDeDistribuicaoService {
     return this.rotuloDaOferta().get(ofertaCursoId) ?? this.textoDaOfertaSemNome();
   }
 
+  /** Curso e unidade da oferta, ou o texto de oferta sem nome. */
+  nomeDaOfertaOuSemNome(ofertaCursoId: string): string {
+    return this.nomeDaOferta().get(ofertaCursoId) ?? this.textoDaOfertaSemNome();
+  }
+
+  /** Regime, turnos e o que mais distinga a oferta das outras do curso. */
+  detalheDaOfertaOuVazio(ofertaCursoId: string): string {
+    return this.detalheDaOferta().get(ofertaCursoId) ?? '';
+  }
+
   carregar(): void {
     this.carregando.set(true);
     this.erro.set(null);

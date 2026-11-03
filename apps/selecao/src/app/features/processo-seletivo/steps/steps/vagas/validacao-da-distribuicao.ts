@@ -1,4 +1,5 @@
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
+import { repetidos } from '../../shared/repetidos';
 import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
 
 import {
@@ -71,16 +72,8 @@ function problemasDePr(pr: string): string[] {
 }
 
 /** Ofertas repetidas no mesmo processo — UNI-REQ-0134. */
-export function ofertasRepetidas(distribuicoes: readonly DistribuicaoDeVagas[]): string[] {
-  const vistas = new Set<string>();
-  const repetidas = new Set<string>();
-
-  for (const { ofertaCursoId } of distribuicoes) {
-    if (vistas.has(ofertaCursoId)) repetidas.add(ofertaCursoId);
-    vistas.add(ofertaCursoId);
-  }
-
-  return [...repetidas];
+export function ofertasRepetidas(distribuicoes: readonly DistribuicaoDeVagas[]): readonly string[] {
+  return repetidos(distribuicoes.map((distribuicao) => distribuicao.ofertaCursoId));
 }
 
 function casasDecimais(texto: string): number {

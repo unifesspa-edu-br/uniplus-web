@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
+import { ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { FormsModule } from '@angular/forms';
 import {
   ConfirmDialogComponent,
@@ -13,23 +14,23 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
 import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
-import { pendenciasQueImpedemGravar } from './conferencia-das-vagas';
 import { confirmacaoDasVagas } from './confirmacao-das-vagas';
+import { modalidadesDoRolAtual, perderiaQuantidadeDoQuadro } from './edicao-do-padrao';
 import { rotuloDasOpcoes } from './opcoes-de-curso';
 import { EstouroDaReservaComponent } from './secoes/estouro-da-reserva.component';
 import { OfertaParaAdicionarComponent } from './secoes/oferta-para-adicionar.component';
 import { OfertasForaDoPadraoComponent } from './secoes/ofertas-fora-do-padrao.component';
 import { OpcoesDeCursoComponent } from './secoes/opcoes-de-curso.component';
-import { RegraDaDistribuicaoComponent } from './secoes/regra-da-distribuicao.component';
+import {
+  AVISO_DA_TROCA_DE_REGRA,
+  RegraDaDistribuicaoComponent,
+} from './secoes/regra-da-distribuicao.component';
 import { RegraDeAjusteComponent } from './secoes/regra-de-ajuste.component';
 import { TabelaDoQuadroComponent } from './secoes/tabela-do-quadro.component';
-import { AlteracaoDoPadraoService } from './servicos/alteracao-do-padrao.service';
+import { ConferenciaDoQuadroService } from './servicos/conferencia-do-quadro.service';
+import { EstadoDoPassoDeVagas } from './servicos/estado-do-passo-de-vagas';
 import { GravacaoDasVagasService } from './servicos/gravacao-das-vagas.service';
-import { OpcoesDeCursoService } from './servicos/opcoes-de-curso.service';
-import { PadraoDoEditalService } from './servicos/padrao-do-edital.service';
-import { QuadroDeVagasService } from './servicos/quadro-de-vagas.service';
 import { SimulacaoDoQuadroService } from './servicos/simulacao-do-quadro.service';
-import { ofertasRepetidas } from './validacao-da-distribuicao';
 import { totalDeVagasInformadas } from './totais-do-quadro';
 
 /**
@@ -68,11 +69,9 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     CatalogosDeDistribuicaoService,
-    PadraoDoEditalService,
+    EstadoDoPassoDeVagas,
     SimulacaoDoQuadroService,
-    QuadroDeVagasService,
-    AlteracaoDoPadraoService,
-    OpcoesDeCursoService,
+    ConferenciaDoQuadroService,
     GravacaoDasVagasService,
     provePassoDoWizard(VagasStepComponent),
   ],
@@ -80,11 +79,9 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
 export class VagasStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeDistribuicaoService);
-  protected readonly padraoDoEdital = inject(PadraoDoEditalService);
+  protected readonly estado = inject(EstadoDoPassoDeVagas);
   protected readonly simulacao = inject(SimulacaoDoQuadroService);
-  protected readonly quadro = inject(QuadroDeVagasService);
-  protected readonly alteracao = inject(AlteracaoDoPadraoService);
-  protected readonly opcoes = inject(OpcoesDeCursoService);
+  protected readonly conferencia = inject(ConferenciaDoQuadroService);
   private readonly gravacao = inject(GravacaoDasVagasService);
 
   /**
@@ -118,19 +115,33 @@ export class VagasStepComponent {
     () => this.store.emConsulta() && this.catalogos.situacao() === 'falhou',
   );
 
-  private readonly pendencias = computed(() =>
-    pendenciasQueImpedemGravar({
-      numeroDeOpcoes: this.opcoes.numero(),
-      distribuicoes: this.padraoDoEdital.distribuicoes(),
-      ofertasForaDoPadrao: this.quadro.ofertasForaDoPadrao().length,
-      simulacaoCobreOQuadro: this.simulacao.simulacaoCobreOQuadro(),
-      problemasDoPadrao: this.quadro.problemasDoPadrao(),
-      pendenciasDoQuadro: this.quadro.pendenciasDoQuadro(),
-      problemasEspecificos: this.quadro.problemasEspecificos(),
-      ofertasRepetidas: ofertasRepetidas(this.padraoDoEdital.distribuicoes()),
-      rotuloDaOferta: (ofertaCursoId) => this.quadro.rotuloDaOferta(ofertaCursoId),
-    }),
-  );
+  protected readonly avisoDaTrocaDeRegra = AVISO_DA_TROCA_DE_REGRA;
+  protected readonly avisoDoReaplicarRol =
+    'Recompor pelo rol da regra atual pode remover do quadro quantidades já preenchidas — de modalidade que sai da seleção, ou de modalidade que fica mas cuja quantidade a regra atual não aceita mais como declarada. O processo só muda quando o passo for gravado.';
+
+  protected readonly avisoDaRemocao = computed(() => {
+    const ofertaCursoId = this.estado.remocaoPendente();
+    if (ofertaCursoId === null) return '';
+
+    return `${this.catalogos.rotuloDaOfertaOuSemNome(ofertaCursoId)} sai do quadro com a distribuição configurada para ela. O processo só deixa de tê-la quando o passo for gravado.`;
+  });
+
+  protected readonly todasAsModalidadesSelecionadas = computed(() => {
+    const oferecidas = this.estado.modalidadesOferecidas();
+    return (
+      oferecidas.length > 0 && oferecidas.every((m) => this.estado.modalidadeSelecionada(m.id))
+    );
+  });
+
+  /**
+   * Reaplicar o rol tem efeito além de quando a seleção diverge dele: uma modalidade pode continuar
+   * selecionada e ainda ter, no quadro, uma quantidade que a regra atual não aceita mais como
+   * declarada. `selecaoBateComORol` não enxerga isso, porque é do conteúdo do quadro.
+   */
+  protected readonly reaplicarRolTemEfeito = computed(() => {
+    if (this.estado.rolDaRegraEscolhida() === null) return false;
+    return !this.estado.selecaoBateComORol() || this.perderiaQuantidade(this.modalidadesDoRol());
+  });
 
   constructor() {
     this.catalogos.carregar();
@@ -138,12 +149,12 @@ export class VagasStepComponent {
 
   validate(): StepValidation {
     const mensagens = [
-      ...this.pendencias(),
+      ...this.conferencia.pendenciasQueImpedemGravar(),
       ...(this.cascataSecao()?.pendenciasParaGravar() ?? []),
     ];
 
     // A tentativa de avançar é o que faz o erro aparecer no campo.
-    this.opcoes.marcarComoConferidas();
+    this.estado.opcoesConferidas.set(true);
 
     return mensagens.length > 0 ? { valid: false, messages: mensagens } : { valid: true };
   }
@@ -177,11 +188,11 @@ export class VagasStepComponent {
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
     if (!this.validate().valid) return null;
 
-    const padrao = this.padraoDoEdital.padrao();
+    const padrao = this.estado.padrao();
     return confirmacaoDasVagas({
-      numeroDeOpcoes: rotuloDasOpcoes(this.opcoes.numero()) ?? '',
-      ofertas: this.padraoDoEdital.distribuicoes().length,
-      vagasInformadas: totalDeVagasInformadas(this.padraoDoEdital.distribuicoes()),
+      numeroDeOpcoes: rotuloDasOpcoes(this.estado.numeroDeOpcoes()) ?? '',
+      ofertas: this.estado.distribuicoes().length,
+      vagasInformadas: totalDeVagasInformadas(this.estado.distribuicoes()),
       totalPublicado: this.simulacao.totalGeralPublicado(),
       totaisPorModalidade: this.totaisPorModalidade(),
       regraDeDistribuicao: `${padrao.regraDistribuicaoCodigo} (versão ${padrao.regraDistribuicaoVersao})`,
@@ -189,10 +200,72 @@ export class VagasStepComponent {
     });
   }
 
+  protected alterarPr(pr: string): void {
+    this.estado.alterarPadrao({ pr });
+  }
+
+  protected escolherReferencia(valor: string): void {
+    this.estado.alterarPadrao({ referenciaReservaDemograficaId: valor === '' ? null : valor });
+  }
+
+  /** Rol fechado não é escolha do operador: a regra já a fez. */
+  protected alternarModalidade(modalidade: ModalidadeDto): void {
+    if (this.estado.rolDaRegraEscolhida() !== null) return;
+
+    const atuais = this.estado.padrao().modalidades;
+    this.estado.alterarPadrao({
+      modalidades: this.estado.modalidadeSelecionada(modalidade.id)
+        ? atuais.filter((item) => item.id !== modalidade.id)
+        : [...atuais, { id: modalidade.id, codigo: modalidade.codigo }],
+    });
+  }
+
+  /** Só faz sentido com rol aberto: rol fechado já marca tudo, sem escolha. */
+  protected marcarTodasAsModalidades(marcar: boolean): void {
+    this.estado.alterarPadrao({
+      modalidades: marcar
+        ? this.estado.modalidadesOferecidas().map((m) => ({ id: m.id, codigo: m.codigo }))
+        : [],
+    });
+  }
+
+  /**
+   * Recompõe a seleção pelo rol fechado da regra atual, resolvendo excesso e falta juntos: rol
+   * fechado não tem checkbox para modalidade fora dele, então não há como corrigir um item por vez.
+   */
+  protected reaplicarRolDaRegra(): void {
+    if (this.estado.rolDaRegraEscolhida() === null) return;
+
+    const modalidades = this.modalidadesDoRol();
+    if (this.perderiaQuantidade(modalidades)) {
+      this.estado.reaplicarRolPendente.set(true);
+      return;
+    }
+    this.estado.alterarPadrao({ modalidades });
+  }
+
+  protected confirmarReaplicarRol(): void {
+    if (!this.estado.reaplicarRolPendente()) return;
+
+    this.estado.reaplicarRolPendente.set(false);
+    this.estado.alterarPadrao({ modalidades: this.modalidadesDoRol() });
+  }
+
+  protected confirmarRemocao(): void {
+    const ofertaCursoId = this.estado.remocaoPendente();
+    if (ofertaCursoId === null) return;
+
+    this.estado.remocaoPendente.set(null);
+    this.estado.removerOferta(ofertaCursoId);
+  }
+
+  protected confirmarTrocaDeRegra(): void {
+    this.regraDaDistribuicao()?.confirmarTroca();
+  }
+
   /** Devolve o `<select>` de regra ao valor vigente quando a troca é recusada. */
-  cancelarTrocaDeRegra(): void {
-    this.alteracao.cancelarTrocaDeRegra();
-    this.regraDaDistribuicao()?.restaurarSelect();
+  protected cancelarTrocaDeRegra(): void {
+    this.regraDaDistribuicao()?.cancelarTroca();
   }
 
   /**
@@ -203,11 +276,11 @@ export class VagasStepComponent {
    * identificador de domínio e não se repete dentro de um quadro.
    */
   private totaisPorModalidade(): readonly ItemDeConfirmacao[] {
-    const declaradas = this.padraoDoEdital.colunasDeQuantidade().map((modalidade) => ({
+    const declaradas = this.estado.colunasDeQuantidade().map((modalidade) => ({
       rotulo: `${modalidade.codigo} — vagas declaradas`,
       valor: String(this.simulacao.totalDeclaradoDe(modalidade.id)),
     }));
-    const calculadas = this.padraoDoEdital.modalidadesCalculadas().map((modalidade) => ({
+    const calculadas = this.estado.modalidadesCalculadas().map((modalidade) => ({
       rotulo: `${modalidade.codigo} — vagas calculadas pela regra`,
       valor: String(this.simulacao.totalCalculadoDe(modalidade.id)),
     }));
@@ -226,5 +299,16 @@ export class VagasStepComponent {
 
     const cascata = this.store.draft().vagas.cascata;
     return cascata === null ? null : `${cascata.regraCodigo} (versão ${cascata.regraVersao})`;
+  }
+
+  private modalidadesDoRol() {
+    return modalidadesDoRolAtual(this.estado.rolDaRegraEscolhida(), this.catalogos.modalidades());
+  }
+
+  private perderiaQuantidade(modalidades: ReturnType<typeof modalidadesDoRolAtual>): boolean {
+    return perderiaQuantidadeDoQuadro(this.estado.padrao(), modalidades, {
+      modalidadesPorId: this.catalogos.modalidadePorId(),
+      ofertas: this.estado.distribuicoes(),
+    });
   }
 }

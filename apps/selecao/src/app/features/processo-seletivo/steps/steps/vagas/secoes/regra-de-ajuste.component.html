@@ -2,7 +2,7 @@
   <ui-valor-em-consulta
     rotulo="Regra de ajuste"
     seVazio="Não declarada"
-    [valor]="padraoDoEdital.padraoLido().regraDeAjuste"
+    [valor]="estado.padraoLido().regraDeAjuste"
   />
 } @else {
 <label class="label" for="f-ajuste">Regra de ajuste</label>
@@ -10,9 +10,9 @@
   class="input"
   id="f-ajuste"
   [ngModel]="
-    (padraoDoEdital.padrao().regraAjusteCodigo ?? '') + '|' + (padraoDoEdital.padrao().regraAjusteVersao ?? '')
+    (estado.padrao().regraAjusteCodigo ?? '') + '|' + (estado.padrao().regraAjusteVersao ?? '')
   "
-  (ngModelChange)="alteracao.escolherRegraAjuste($event)"
+  (ngModelChange)="escolher($event)"
   [disabled]="!store.aceitaEdicao()"
 >
   <option value="|">Selecione a regra de ajuste…</option>

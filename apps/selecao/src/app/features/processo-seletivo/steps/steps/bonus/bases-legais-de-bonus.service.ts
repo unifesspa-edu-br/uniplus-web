@@ -80,27 +80,8 @@ export class BasesLegaisDeBonusService {
       return catalogo;
     }
 
-    const snapshot = this.store.remoteSnapshot()?.bonusRegional;
-    if (
-      snapshot === null ||
-      snapshot === undefined ||
-      snapshot.baseLegalBonusRegionalId !== selecionadoId
-    ) {
-      return catalogo;
-    }
-
-    return [
-      {
-        id: snapshot.baseLegalBonusRegionalId,
-        identificacao: snapshot.identificacao,
-        // O snapshot congela os quatro campos, não só dois, e é exatamente quando a norma saiu do
-        // cadastro que o tipo e a descrição fazem falta para reconhecê-la.
-        tipoInstrumento: snapshot.tipoInstrumento,
-        descricao: snapshot.descricao,
-        municipios: snapshot.municipios,
-      },
-      ...catalogo,
-    ];
+    const gravada = this.gravadaForaDoCatalogo(selecionadoId);
+    return gravada === null ? catalogo : [gravada, ...catalogo];
   });
 
   private readonly selecionada = computed(() =>
@@ -185,5 +166,22 @@ export class BasesLegaisDeBonusService {
   /** A norma pelo tipo e pela identificação, no seletor e na consulta. */
   rotuloDaBaseLegal(base: Pick<BaseLegalEscolhivel, 'tipoInstrumento' | 'identificacao'>): string {
     return `${this.rotuloDoTipo(base.tipoInstrumento)} ${base.identificacao}`.trim();
+  }
+
+  /**
+   * A base legal que o processo congelou. O snapshot guarda os quatro campos, não só dois, e é
+   * exatamente quando a norma saiu do cadastro que o tipo e a descrição fazem falta para reconhecê-la.
+   */
+  private gravadaForaDoCatalogo(selecionadoId: string): BaseLegalEscolhivel | null {
+    const snapshot = this.store.remoteSnapshot()?.bonusRegional;
+    if (!snapshot || snapshot.baseLegalBonusRegionalId !== selecionadoId) return null;
+
+    return {
+      id: snapshot.baseLegalBonusRegionalId,
+      identificacao: snapshot.identificacao,
+      tipoInstrumento: snapshot.tipoInstrumento,
+      descricao: snapshot.descricao,
+      municipios: snapshot.municipios,
+    };
   }
 }

@@ -2,7 +2,7 @@
   <ui-valor-em-consulta
     rotulo="Regra de distribuição"
     seVazio="Não declarada"
-    [valor]="padraoDoEdital.padraoLido().regraDeDistribuicao"
+    [valor]="estado.padraoLido().regraDeDistribuicao"
   />
 } @else {
 <label class="label" for="f-regra">Regra de distribuição</label>
@@ -10,8 +10,8 @@
   class="input"
   id="f-regra"
   #campoRegra
-  [ngModel]="alteracao.valorDoSelectDeRegra()"
-  (ngModelChange)="alteracao.escolherRegraDistribuicao($event)"
+  [ngModel]="valorDoSelectDeRegra()"
+  (ngModelChange)="escolher($event)"
   [disabled]="!store.aceitaEdicao()"
 >
   <option value="|">Selecione a regra…</option>

@@ -7,7 +7,13 @@ import {
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -121,54 +127,8 @@ export class IdentificacaoStepComponent {
   readonly identificadorLegivel = new FormControl('', { nonNullable: true });
 
   constructor() {
-    this.identificadorLegivel.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((valor) => {
-        this.store.patchObjectSection('identificacao', { identificadorLegivel: valor });
-        this.gravacao.erroDoIdentificador.set(null);
-      });
-
-    effect(() => {
-      const valor = this.store.draft().identificacao.identificadorLegivel;
-      const editavel = this.gravacao.identificadorEditavel();
-
-      if (this.identificadorLegivel.value !== valor) {
-        this.identificadorLegivel.setValue(valor, { emitEvent: false });
-      }
-      if (editavel && this.identificadorLegivel.disabled) {
-        this.identificadorLegivel.enable({ emitEvent: false });
-      }
-      if (!editavel && this.identificadorLegivel.enabled) {
-        this.identificadorLegivel.disable({ emitEvent: false });
-      }
-    });
-
-    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((valor) => {
-      this.store.patchObjectSection('identificacao', {
-        nome: valor.nome ?? '',
-        unidadeAdministradoraId: valor.unidadeAdministradoraId ?? '',
-        origemCandidatos: (valor.origemCandidatos ?? '') as OrigemCandidatosSelecionada,
-      });
-    });
-
-    // A hidratação escreve no store; o formulário reflete sem devolver o eco,
-    // que reabriria o ciclo e marcaria o campo como sujo sem o operador tocar.
-    effect(() => {
-      const identificacao = this.store.draft().identificacao;
-      const congelado = this.store.cadastroInicialCongelado();
-
-      this.form.setValue(
-        {
-          nome: identificacao.nome,
-          unidadeAdministradoraId: identificacao.unidadeAdministradoraId,
-          origemCandidatos: identificacao.origemCandidatos,
-        },
-        { emitEvent: false },
-      );
-
-      if (congelado && this.form.enabled) this.form.disable({ emitEvent: false });
-      if (!congelado && this.form.disabled) this.form.enable({ emitEvent: false });
-    });
+    this.ligarIdentificadorLegivel();
+    this.ligarFormulario();
   }
 
   /**
@@ -242,5 +202,52 @@ export class IdentificacaoStepComponent {
 
   persistir(): Promise<StepValidation> {
     return this.gravacao.persistir();
+  }
+
+  private ligarIdentificadorLegivel(): void {
+    this.identificadorLegivel.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((valor) => {
+        this.store.patchObjectSection('identificacao', { identificadorLegivel: valor });
+        this.gravacao.erroDoIdentificador.set(null);
+      });
+
+    effect(() => {
+      const valor = this.store.draft().identificacao.identificadorLegivel;
+      if (this.identificadorLegivel.value !== valor) {
+        this.identificadorLegivel.setValue(valor, { emitEvent: false });
+      }
+      this.habilitar(this.identificadorLegivel, this.gravacao.identificadorEditavel());
+    });
+  }
+
+  private ligarFormulario(): void {
+    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((valor) => {
+      this.store.patchObjectSection('identificacao', {
+        nome: valor.nome ?? '',
+        unidadeAdministradoraId: valor.unidadeAdministradoraId ?? '',
+        origemCandidatos: (valor.origemCandidatos ?? '') as OrigemCandidatosSelecionada,
+      });
+    });
+
+    // A hidratação escreve no store; o formulário reflete sem devolver o eco, que reabriria o
+    // ciclo e marcaria o campo como sujo sem o operador tocar.
+    effect(() => {
+      const identificacao = this.store.draft().identificacao;
+      this.form.setValue(
+        {
+          nome: identificacao.nome,
+          unidadeAdministradoraId: identificacao.unidadeAdministradoraId,
+          origemCandidatos: identificacao.origemCandidatos,
+        },
+        { emitEvent: false },
+      );
+      this.habilitar(this.form, !this.store.cadastroInicialCongelado());
+    });
+  }
+
+  private habilitar(controle: AbstractControl, habilitado: boolean): void {
+    if (habilitado && controle.disabled) controle.enable({ emitEvent: false });
+    if (!habilitado && controle.enabled) controle.disable({ emitEvent: false });
   }
 }

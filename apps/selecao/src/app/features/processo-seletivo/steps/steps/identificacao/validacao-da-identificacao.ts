@@ -16,33 +16,29 @@ export function validarIdentificacao(
   identificacao: WizardDraft['identificacao'],
   identificadorDeclaravel: boolean,
 ): ResultadoDaValidacao {
-  const messages: string[] = [];
-  const invalidos = new Set<string>();
+  const faltas: readonly (readonly [boolean, string, string])[] = [
+    [!identificacao.nome.trim(), 'nome', 'Informe o nome do processo seletivo.'],
+    [
+      !identificacao.unidadeAdministradoraId,
+      'unidadeAdministradoraId',
+      'Selecione a unidade administradora.',
+    ],
+    [!identificacao.origemCandidatos, 'origemCandidatos', 'Informe a origem dos candidatos.'],
+    [
+      identificacao.localidade === null,
+      'localidade',
+      'Informe o município cujo calendário rege os prazos do processo.',
+    ],
+  ];
+  const messages = faltas.filter(([falta]) => falta).map(([, , mensagem]) => mensagem);
+  const invalidos = new Set(faltas.filter(([falta]) => falta).map(([, campo]) => campo));
 
-  if (!identificacao.nome.trim()) {
-    messages.push('Informe o nome do processo seletivo.');
-    invalidos.add('nome');
-  }
-  if (!identificacao.unidadeAdministradoraId) {
-    messages.push('Selecione a unidade administradora.');
-    invalidos.add('unidadeAdministradoraId');
-  }
-  if (!identificacao.origemCandidatos) {
-    messages.push('Informe a origem dos candidatos.');
-    invalidos.add('origemCandidatos');
-  }
-  if (identificacao.localidade === null) {
-    messages.push('Informe o município cujo calendário rege os prazos do processo.');
-    invalidos.add('localidade');
-  }
-
-  let erroDoIdentificador: string | null | undefined;
-  if (identificadorDeclaravel) {
-    erroDoIdentificador = problemaDoIdentificadorLegivel(identificacao.identificadorLegivel);
-    if (erroDoIdentificador !== null) {
-      messages.push(erroDoIdentificador);
-      invalidos.add('identificadorLegivel');
-    }
+  const erroDoIdentificador = identificadorDeclaravel
+    ? problemaDoIdentificadorLegivel(identificacao.identificadorLegivel)
+    : undefined;
+  if (erroDoIdentificador) {
+    messages.push(erroDoIdentificador);
+    invalidos.add('identificadorLegivel');
   }
 
   return { messages, camposInvalidos: invalidos, erroDoIdentificador };

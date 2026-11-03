@@ -3,7 +3,7 @@ import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { AJUDA_DAS_OPCOES, OPCOES_DE_CURSO } from '../opcoes-de-curso';
-import { OpcoesDeCursoService } from '../servicos/opcoes-de-curso.service';
+import { EstadoDoPassoDeVagas } from '../servicos/estado-do-passo-de-vagas';
 
 /** O número de opções de curso que o candidato escolhe na inscrição. */
 @Component({
@@ -14,7 +14,11 @@ import { OpcoesDeCursoService } from '../servicos/opcoes-de-curso.service';
 })
 export class OpcoesDeCursoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly opcoes = inject(OpcoesDeCursoService);
+  protected readonly estado = inject(EstadoDoPassoDeVagas);
   protected readonly opcoesDeCurso = OPCOES_DE_CURSO;
   protected readonly ajudaDasOpcoes = AJUDA_DAS_OPCOES;
+
+  protected alterar(numero: string): void {
+    this.store.patchObjectSection('opcoesDeCurso', { numero });
+  }
 }

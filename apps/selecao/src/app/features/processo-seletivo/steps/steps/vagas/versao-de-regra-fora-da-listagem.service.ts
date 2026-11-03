@@ -1,6 +1,6 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
+import { type ApiResult, isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 import { Subscription } from 'rxjs';
 
@@ -113,27 +113,35 @@ export class VersaoDeRegraForaDaListagemService {
     carregando: boolean,
     regras: readonly RegraCatalogoDto[],
   ): void {
-    // Uma busca em curso cuja seleção saiu da tela (troca de processo, ou de regra) foi
-    // abandonada: a resposta dela não completaria mais nada. Ela é cancelada e esquecida antes de
-    // qualquer outra checagem, pois, se o `buscando` ficasse, voltar à mesma seleção o veria como
-    // "já tratado" e nunca mais consultaria a versão.
-    const emCurso = this.busca();
-    if (
-      emCurso?.estado === 'buscando' &&
-      (selecao === null || !this.ehDaSelecao(emCurso, selecao))
-    ) {
-      this.buscaEmCurso?.unsubscribe();
-      this.buscaEmCurso = null;
-      this.busca.set(null);
-    }
+    this.abandonarBuscaDeOutraSelecao(selecao);
 
     if (selecao === null || carregando) return;
-
     if (regraPorChave(regras, selecao.regraCodigo, selecao.regraVersao) !== undefined) return;
 
     const buscaAtual = this.busca();
     if (buscaAtual !== null && this.ehDaSelecao(buscaAtual, selecao)) return;
 
+    this.buscar(selecao);
+  }
+
+  /**
+   * Uma busca em curso cuja seleção saiu da tela (troca de processo, ou de regra) foi abandonada:
+   * a resposta dela não completaria mais nada. Ela é cancelada e esquecida antes de qualquer outra
+   * checagem, pois, se o `buscando` ficasse, voltar à mesma seleção o veria como "já tratado" e
+   * nunca mais consultaria a versão.
+   */
+  private abandonarBuscaDeOutraSelecao(selecao: SelecaoDaRegra | null): void {
+    const emCurso = this.busca();
+    const abandonada =
+      emCurso?.estado === 'buscando' && (selecao === null || !this.ehDaSelecao(emCurso, selecao));
+    if (!abandonada) return;
+
+    this.buscaEmCurso?.unsubscribe();
+    this.buscaEmCurso = null;
+    this.busca.set(null);
+  }
+
+  private buscar(selecao: SelecaoDaRegra): void {
     const { regraCodigo: codigo, regraVersao: versao } = selecao;
     this.busca.set({ estado: 'buscando', codigo, versao });
     this.buscaEmCurso = this.regrasCatalogoApi
@@ -141,20 +149,26 @@ export class VersaoDeRegraForaDaListagemService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.buscaEmCurso = null;
-
-        const atual = this.cascata();
-        if (atual === null || atual.regraCodigo !== codigo || atual.regraVersao !== versao) return;
-
-        if (isApiOk(resultado)) {
-          this.busca.set({ estado: 'encontrada', codigo, versao, regra: resultado.data });
-          return;
-        }
-
-        this.busca.set(
-          resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO
-            ? { estado: 'nao_encontrada', codigo, versao }
-            : { estado: 'falha', codigo, versao },
-        );
+        if (this.ehDaSelecaoAtual(codigo, versao)) this.concluirBusca(codigo, versao, resultado);
       });
+  }
+
+  private ehDaSelecaoAtual(codigo: string, versao: string): boolean {
+    const atual = this.cascata();
+    return atual !== null && atual.regraCodigo === codigo && atual.regraVersao === versao;
+  }
+
+  private concluirBusca(
+    codigo: string,
+    versao: string,
+    resultado: ApiResult<RegraCatalogoDto>,
+  ): void {
+    if (isApiOk(resultado)) {
+      this.busca.set({ estado: 'encontrada', codigo, versao, regra: resultado.data });
+      return;
+    }
+
+    const confirmadaAusente = resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO;
+    this.busca.set({ estado: confirmadaAusente ? 'nao_encontrada' : 'falha', codigo, versao });
   }
 }

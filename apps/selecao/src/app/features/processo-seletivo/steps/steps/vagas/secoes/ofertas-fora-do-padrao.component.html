@@ -1,9 +1,9 @@
 <div class="alert__body">
   <p class="alert__title">
     {{
-      quadro.ofertasForaDoPadrao().length === 1
+      estado.ofertasForaDoPadrao().length === 1
         ? '1 oferta foi gravada'
-        : quadro.ofertasForaDoPadrao().length + ' ofertas foram gravadas'
+        : estado.ofertasForaDoPadrao().length + ' ofertas foram gravadas'
     }}
     com um padrão diferente do que está em tela
   </p>
@@ -14,7 +14,7 @@
   <button
     class="btn btn--outline btn--sm"
     type="button"
-    (click)="quadro.aplicarPadraoATodas()"
+    (click)="aplicarPadraoATodas()"
     [disabled]="!store.aceitaEdicao()"
   >
     Aplicar o padrão a todas as ofertas

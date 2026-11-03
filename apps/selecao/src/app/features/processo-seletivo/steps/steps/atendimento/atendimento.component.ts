@@ -16,7 +16,7 @@ import {
   TipoDeficienciaDto,
 } from '@uniplus/shared-data/configuracao';
 
-import { StepValidation } from '../../processo-seletivo.models';
+import { ReferenciaDeAtendimento, StepValidation } from '../../processo-seletivo.models';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
@@ -217,41 +217,41 @@ export class AtendimentoStepComponent {
   private readonly injector = inject(Injector);
 
   private anunciar(
-    nome: string | undefined,
-    prefixoDoId: string,
-    inativas: readonly { readonly id: string }[],
-    id: string,
-    tituloDaSecao: string,
+    inativas: readonly ReferenciaDeAtendimento[],
+    remocao: {
+      readonly id: string;
+      readonly nome: string | undefined;
+      readonly prefixoDoId: string;
+      readonly tituloDaSecao: string;
+    },
   ): void {
     anunciarRemocao(this.anuncio, this.injector, {
-      nome,
-      prefixoDoId,
-      indice: inativas.findIndex((item) => item.id === id),
-      tituloDaSecao,
+      nome: remocao.nome,
+      prefixoDoId: remocao.prefixoDoId,
+      indice: inativas.findIndex((item) => item.id === remocao.id),
+      tituloDaSecao: remocao.tituloDaSecao,
     });
   }
 
   removerCondicaoInativa(id: string): void {
     const atual = this.atendimento().condicoes;
-    this.anunciar(
-      atual.find((item) => item.id === id)?.nome,
-      'atend-cond-inativa',
-      this.condicoesInativas(),
+    this.anunciar(this.condicoesInativas(), {
       id,
-      'atend-secao-condicoes',
-    );
+      nome: atual.find((item) => item.id === id)?.nome,
+      prefixoDoId: 'atend-cond-inativa',
+      tituloDaSecao: 'atend-secao-condicoes',
+    });
     this.store.patchObjectSection('atendimento', aposRemover(atual, id));
   }
 
   removerRecursoInativo(id: string): void {
     const atual = this.atendimento().recursos;
-    this.anunciar(
-      atual.find((item) => item.id === id)?.nome,
-      'atend-rec-inativo',
-      this.recursosInativos(),
+    this.anunciar(this.recursosInativos(), {
       id,
-      'atend-secao-recursos',
-    );
+      nome: atual.find((item) => item.id === id)?.nome,
+      prefixoDoId: 'atend-rec-inativo',
+      tituloDaSecao: 'atend-secao-recursos',
+    });
     this.store.patchObjectSection('atendimento', {
       recursos: atual.filter((item) => item.id !== id),
     });
@@ -259,13 +259,12 @@ export class AtendimentoStepComponent {
 
   removerTipoDeficienciaInativo(id: string): void {
     const atual = this.atendimento().tiposDeficiencia;
-    this.anunciar(
-      atual.find((item) => item.id === id)?.nome,
-      'atend-tipo-inativo',
-      this.tiposDeficienciaInativos(),
+    this.anunciar(this.tiposDeficienciaInativos(), {
       id,
-      'atend-secao-tipos',
-    );
+      nome: atual.find((item) => item.id === id)?.nome,
+      prefixoDoId: 'atend-tipo-inativo',
+      tituloDaSecao: 'atend-secao-tipos',
+    });
     this.store.patchObjectSection('atendimento', {
       tiposDeficiencia: atual.filter((item) => item.id !== id),
     });
@@ -336,20 +335,21 @@ export class AtendimentoStepComponent {
     // antes disso eles estão vazios, e "não sei ainda" seria confundido com "não existe mais",
     // mandando o operador apagar uma oferta válida por causa de uma indisponibilidade temporária.
     // O erro de carga já está no banner do template.
-    if (this.catalogoConfirmado()) {
-      const inativos = [
-        mensagemDeInativos('a condição', 'as condições', this.condicoesInativas()),
-        mensagemDeInativos('o recurso', 'os recursos', this.recursosInativos()),
-        mensagemDeInativos(
-          'o tipo de deficiência',
-          'os tipos de deficiência',
-          this.tiposDeficienciaInativos(),
-        ),
-      ].filter((mensagem): mensagem is string => mensagem !== undefined);
-      mensagens.push(...inativos);
-    }
+    if (this.catalogoConfirmado()) mensagens.push(...this.mensagensDeInativos());
 
     return mensagens.length > 0 ? { valid: false, messages: mensagens } : { valid: true };
+  }
+
+  private mensagensDeInativos(): string[] {
+    return [
+      mensagemDeInativos('a condição', 'as condições', this.condicoesInativas()),
+      mensagemDeInativos('o recurso', 'os recursos', this.recursosInativos()),
+      mensagemDeInativos(
+        'o tipo de deficiência',
+        'os tipos de deficiência',
+        this.tiposDeficienciaInativos(),
+      ),
+    ].filter((mensagem): mensagem is string => mensagem !== undefined);
   }
 
   async persistir(): Promise<StepValidation> {

@@ -4,6 +4,7 @@ import {
   type FaseDoCronograma,
 } from '../../processo-seletivo.models';
 
+import { repetidos } from '../../shared/repetidos';
 import { problemasDoRecurso, produtosPreliminares } from './problemas-do-recurso-da-fase';
 
 /** A fase encerra a matéria que abriu: do que ela publica não cabe mais recurso. */
@@ -88,7 +89,7 @@ function problemasDosProdutos(
   const declarados = fase.produtos
     .filter((produto) => produto.atoCodigo !== '')
     .map((produto) => `${produto.atoCodigo}\u0000${produto.papel ?? ''}`);
-  if (new Set(declarados).size !== declarados.length) {
+  if (repetidos(declarados).length > 0) {
     problemas.push({
       campo: 'produtos',
       mensagem: 'A fase não pode declarar a mesma publicação duas vezes no mesmo papel.',
@@ -250,7 +251,7 @@ function problemasDasBancas(
     }
 
     const assinaturas = recortes.map((recorte) => recorte.join('|'));
-    if (new Set(assinaturas).size !== assinaturas.length) {
+    if (repetidos(assinaturas).length > 0) {
       problemas.push({
         campo: 'bancasRequeridas',
         mensagem: `Duas bancas de ${nome} declaram o mesmo recorte de competência — não haveria como saber qual julga o quê.`,

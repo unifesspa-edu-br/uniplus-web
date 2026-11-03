@@ -1,12 +1,24 @@
-import { HttpInterceptorFn, HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpInterceptorFn,
+  HttpResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
 import { of } from 'rxjs';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { type Type } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, type FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { OrigemCandidatos, ProcessoSeletivoDto, SELECAO_BASE_PATH, StatusProcesso } from '@uniplus/shared-data/selecao';
+import {
+  OrigemCandidatos,
+  ProcessoSeletivoDto,
+  SELECAO_BASE_PATH,
+  StatusProcesso,
+} from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DistribuicaoDeVagas, ModalidadeGravada } from '../../processo-seletivo.models';
@@ -15,9 +27,11 @@ import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import { AlteracaoDoPadraoService } from './servicos/alteracao-do-padrao.service';
-import { PadraoDoEditalService } from './servicos/padrao-do-edital.service';
-import { QuadroDeVagasService } from './servicos/quadro-de-vagas.service';
+import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
+import { RegraDaDistribuicaoComponent } from './secoes/regra-da-distribuicao.component';
+import { TabelaDoQuadroComponent } from './secoes/tabela-do-quadro.component';
+import { ConferenciaDoQuadroService } from './servicos/conferencia-do-quadro.service';
+import { EstadoDoPassoDeVagas } from './servicos/estado-do-passo-de-vagas';
 import { SimulacaoDoQuadroService } from './servicos/simulacao-do-quadro.service';
 import { VagasStepComponent } from './vagas.component';
 
@@ -102,21 +116,67 @@ function distribuicao(ofertaCursoId: string): DistribuicaoDeVagas {
 }
 
 interface ServicosDasVagas {
-  readonly padrao: PadraoDoEditalService;
+  readonly estado: EstadoDoPassoDeVagas;
   readonly simulacao: SimulacaoDoQuadroService;
-  readonly quadro: QuadroDeVagasService;
-  readonly alteracao: AlteracaoDoPadraoService;
+  readonly conferencia: ConferenciaDoQuadroService;
+  readonly catalogos: CatalogosDeDistribuicaoService;
+  /** As ações que o operador dispara na tela, que ficam nos componentes do passo. */
+  readonly tela: Record<TelaDasVagas, (...argumentos: unknown[]) => unknown>;
 }
+
+type TelaDasVagas =
+  | 'pedirRemocao'
+  | 'confirmarRemocao'
+  | 'avisoDaRemocao'
+  | 'alterarVoBase'
+  | 'escolherRegra'
+  | 'confirmarTrocaDeRegra'
+  | 'cancelarTrocaDeRegra'
+  | 'reaplicarRolDaRegra'
+  | 'reaplicarRolTemEfeito'
+  | 'confirmarReaplicarRol'
+  | 'alternarModalidade';
 
 let servicos: ServicosDasVagas;
 
+const ACAO_NA_TELA: Record<TelaDasVagas, { componente: Type<unknown> | null; metodo: string }> = {
+  pedirRemocao: { componente: TabelaDoQuadroComponent, metodo: 'pedirRemocao' },
+  confirmarRemocao: { componente: null, metodo: 'confirmarRemocao' },
+  avisoDaRemocao: { componente: null, metodo: 'avisoDaRemocao' },
+  alterarVoBase: { componente: TabelaDoQuadroComponent, metodo: 'alterarVoBase' },
+  escolherRegra: { componente: RegraDaDistribuicaoComponent, metodo: 'escolher' },
+  confirmarTrocaDeRegra: { componente: null, metodo: 'confirmarTrocaDeRegra' },
+  cancelarTrocaDeRegra: { componente: null, metodo: 'cancelarTrocaDeRegra' },
+  reaplicarRolDaRegra: { componente: null, metodo: 'reaplicarRolDaRegra' },
+  reaplicarRolTemEfeito: { componente: null, metodo: 'reaplicarRolTemEfeito' },
+  confirmarReaplicarRol: { componente: null, metodo: 'confirmarReaplicarRol' },
+  alternarModalidade: { componente: null, metodo: 'alternarModalidade' },
+};
+
 function servicosDe(fixture: ComponentFixture<VagasStepComponent>): ServicosDasVagas {
   const injetor = fixture.debugElement.injector;
+  const tela = Object.fromEntries(
+    Object.entries(ACAO_NA_TELA).map(([nome, { componente, metodo }]) => [
+      nome,
+      (...argumentos: unknown[]) => {
+        const alvo =
+          componente === null
+            ? fixture.componentInstance
+            : fixture.debugElement.query(By.directive(componente)).componentInstance;
+        const membro = (alvo as Record<string, unknown>)[metodo];
+        return typeof membro === 'function'
+          ? membro.apply(alvo, argumentos)
+          : (membro as () => unknown)();
+      },
+    ]),
+  ) as unknown as ServicosDasVagas['tela'];
+
   return {
-    padrao: injetor.get(PadraoDoEditalService),
+    estado: injetor.get(EstadoDoPassoDeVagas),
     simulacao: injetor.get(SimulacaoDoQuadroService),
-    quadro: injetor.get(QuadroDeVagasService),
-    alteracao: injetor.get(AlteracaoDoPadraoService),
+    conferencia: injetor.get(ConferenciaDoQuadroService),
+    catalogos: injetor.get(CatalogosDeDistribuicaoService),
+    tela,
   };
 }
 
@@ -126,15 +186,19 @@ const ROTA_PROCESSO_LIDO = new RegExp(`^${BASE}/api/selecao/processos-seletivos/
  * Espera a gravação do passo respondendo a releitura do processo que segue a gravação do quadro:
  * é dela que saem as regras congeladas das modalidades.
  */
-async function comReleitura<T>(controller: HttpTestingController, gravacao: Promise<T>): Promise<T> {
+async function comReleitura<T>(
+  controller: HttpTestingController,
+  gravacao: Promise<T>,
+): Promise<T> {
   let terminou = false;
   void gravacao.finally(() => (terminou = true)).catch(() => undefined);
   for (let volta = 0; !terminou && volta < 20; volta++) {
     await new Promise((resolve) => setTimeout(resolve, 0));
-    for (const releitura of controller.match((r) => r.method === 'GET' && ROTA_PROCESSO_LIDO.test(r.url))) {
+    for (const releitura of controller.match(
+      (r) => r.method === 'GET' && ROTA_PROCESSO_LIDO.test(r.url),
+    )) {
       releitura.flush({ distribuicaoVagas: [], regrasDerivacao: [] });
     }
-
   }
   return gravacao;
 }
@@ -210,40 +274,40 @@ describe('VagasStepComponent — remoção de oferta do quadro', () => {
   }
 
   it('não remove ao pedir a remoção — só marca a oferta como pendente', () => {
-    servicos.quadro.pedirRemocao(OFERTA);
+    servicos.tela.pedirRemocao(OFERTA);
 
-    expect(servicos.quadro.remocaoPendente()).toBe(OFERTA);
+    expect(servicos.estado.remocaoPendente()).toBe(OFERTA);
     expect(ofertasNoQuadro()).toEqual([OFERTA, OUTRA_OFERTA]);
   });
 
   it('remove a oferta ao confirmar', () => {
-    servicos.quadro.pedirRemocao(OFERTA);
-    servicos.quadro.confirmarRemocao();
+    servicos.tela.pedirRemocao(OFERTA);
+    servicos.tela.confirmarRemocao();
 
     expect(ofertasNoQuadro()).toEqual([OUTRA_OFERTA]);
-    expect(servicos.quadro.remocaoPendente()).toBeNull();
+    expect(servicos.estado.remocaoPendente()).toBeNull();
   });
 
   it('mantém a oferta ao cancelar', () => {
-    servicos.quadro.pedirRemocao(OFERTA);
-    servicos.quadro.cancelarRemocao();
+    servicos.tela.pedirRemocao(OFERTA);
+    servicos.estado.remocaoPendente.set(null);
 
     expect(ofertasNoQuadro()).toEqual([OFERTA, OUTRA_OFERTA]);
-    expect(servicos.quadro.remocaoPendente()).toBeNull();
+    expect(servicos.estado.remocaoPendente()).toBeNull();
   });
 
   /** Confirmar sem pedido pendente não pode remover a primeira da lista. */
   it('ignora a confirmação quando nada está pendente', () => {
-    servicos.quadro.confirmarRemocao();
+    servicos.tela.confirmarRemocao();
 
     expect(ofertasNoQuadro()).toEqual([OFERTA, OUTRA_OFERTA]);
   });
 
   it('nomeia a oferta no aviso de confirmação', () => {
-    servicos.quadro.pedirRemocao(OFERTA);
+    servicos.tela.pedirRemocao(OFERTA);
 
-    expect(servicos.quadro.avisoDaRemocao()).toContain('Medicina');
-    expect(servicos.quadro.avisoDaRemocao()).toContain('quando o passo for gravado');
+    expect(servicos.tela.avisoDaRemocao()).toContain('Medicina');
+    expect(servicos.tela.avisoDaRemocao()).toContain('quando o passo for gravado');
   });
 
   /**
@@ -254,11 +318,11 @@ describe('VagasStepComponent — remoção de oferta do quadro', () => {
   it('preserva o padrão ao remover a última oferta do quadro', () => {
     comQuadroDeUmaOferta();
 
-    servicos.quadro.pedirRemocao(OFERTA);
-    servicos.quadro.confirmarRemocao();
+    servicos.tela.pedirRemocao(OFERTA);
+    servicos.tela.confirmarRemocao();
 
     expect(store.draft().vagas.ofertas).toEqual([]);
-    expect(servicos.padrao.padrao()).toMatchObject({
+    expect(servicos.estado.padrao()).toMatchObject({
       regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
       pr: '0,5',
       modalidades: [{ id: MODALIDADE, codigo: 'AC_I' }],
@@ -272,9 +336,9 @@ describe('VagasStepComponent — remoção de oferta do quadro', () => {
   /** Passo em leitura não abre confirmação: não há remoção a confirmar. */
   it('não abre a confirmação com a edição bloqueada', () => {
     store.salvando.set(true);
-    servicos.quadro.pedirRemocao(OFERTA);
+    servicos.tela.pedirRemocao(OFERTA);
 
-    expect(servicos.quadro.remocaoPendente()).toBeNull();
+    expect(servicos.estado.remocaoPendente()).toBeNull();
   });
 });
 
@@ -423,11 +487,11 @@ describe('VagasStepComponent — gravação da distribuição', () => {
   /** Uma edição descarta o resultado: a conferência é sobre o que está em tela. */
   it('volta a exigir simulação depois de editar o quadro', () => {
     simularEConferir([OFERTA, OUTRA_OFERTA]);
-    expect(servicos.simulacao.simulacaoCobreOQuadro()).toBe(true);
+    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(true);
 
-    servicos.quadro.alterarVoBase(OFERTA, '35');
+    servicos.tela.alterarVoBase(OFERTA, '35');
 
-    expect(servicos.simulacao.simulacaoCobreOQuadro()).toBe(false);
+    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(false);
   });
 
   /**
@@ -470,7 +534,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
     expect(new Set(rotulos).size).toBe(rotulos.length);
     expect(rotulos).toContain('Ofertas de curso no quadro');
     expect(confirmacao.itens.find((i) => i.rotulo === 'Ofertas de curso no quadro')?.valor).toBe(
-      String(servicos.padrao.distribuicoes().length),
+      String(servicos.estado.distribuicoes().length),
     );
   });
 
@@ -486,9 +550,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
     if (confirmacao === null) throw new Error('o quadro simulado e sem pendência deve confirmar');
 
     const informadas = confirmacao.itens.find((i) => i.rotulo === 'Vagas informadas nas ofertas');
-    const publicado = confirmacao.itens.find((i) =>
-      i.rotulo.startsWith('Total publicado'),
-    );
+    const publicado = confirmacao.itens.find((i) => i.rotulo.startsWith('Total publicado'));
 
     expect(informadas?.valor, 'duas ofertas de 40 vagas informadas').toBe('80');
     expect(
@@ -506,9 +568,9 @@ describe('VagasStepComponent — gravação da distribuição', () => {
     simularEConferir([OFERTA, OUTRA_OFERTA]);
     expect(componente.validate().valid).toBe(true);
 
-    servicos.quadro.alterarVoBase(OFERTA, '35');
+    servicos.tela.alterarVoBase(OFERTA, '35');
 
-    expect(servicos.simulacao.simulacaoCobreOQuadro()).toBe(false);
+    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(false);
     expect(componente.validate().valid).toBe(false);
   });
 
@@ -524,11 +586,11 @@ describe('VagasStepComponent — gravação da distribuição', () => {
     const requisicao = controller.expectOne(ROTA_SIMULACAO);
     expect(servicos.simulacao.simulando()).toBe(true);
 
-    servicos.quadro.alterarVoBase(OFERTA, '35');
+    servicos.tela.alterarVoBase(OFERTA, '35');
 
     expect(requisicao.cancelled).toBe(true);
     expect(servicos.simulacao.simulando()).toBe(false);
-    expect(servicos.simulacao.simulacaoCobreOQuadro()).toBe(false);
+    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(false);
 
     const resultado = await comReleitura(controller, componente.persistir());
     expect(resultado.valid).toBe(false);
@@ -553,7 +615,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
   it('instala a simulação quando o quadro não mudou', () => {
     simular([OFERTA, OUTRA_OFERTA]);
 
-    expect(servicos.simulacao.simulacaoCobreOQuadro()).toBe(true);
+    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(true);
   });
 
   /**
@@ -564,24 +626,24 @@ describe('VagasStepComponent — gravação da distribuição', () => {
    */
   it('descarta a simulação ao trocar de processo', () => {
     simularEConferir([OFERTA, OUTRA_OFERTA]);
-    expect(servicos.simulacao.simulacaoCobreOQuadro()).toBe(true);
+    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(true);
 
     trocarDeProcesso();
 
-    expect(servicos.simulacao.simulacaoCobreOQuadro()).toBe(false);
+    expect(servicos.estado.simulacaoCobreOQuadro()).toBe(false);
   });
 
   /** O padrão guardado pertence ao processo em que foi guardado. */
   it('descarta o padrão preservado ao trocar de processo', () => {
     store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
-    servicos.quadro.pedirRemocao(OFERTA);
-    servicos.quadro.confirmarRemocao();
-    expect(servicos.padrao.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-INSTITUCIONAL');
+    servicos.tela.pedirRemocao(OFERTA);
+    servicos.tela.confirmarRemocao();
+    expect(servicos.estado.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-INSTITUCIONAL');
 
     trocarDeProcesso();
 
-    expect(servicos.padrao.padrao().regraDistribuicaoCodigo).toBe('');
-    expect(servicos.padrao.padrao().modalidades).toEqual([]);
+    expect(servicos.estado.padrao().regraDistribuicaoCodigo).toBe('');
+    expect(servicos.estado.padrao().modalidades).toEqual([]);
   });
 
   /**
@@ -595,7 +657,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
       ofertas: [distribuicao(OFERTA), { ...distribuicao(OUTRA_OFERTA), pr: '0,75' }],
     });
 
-    expect(servicos.quadro.ofertasForaDoPadrao()).toHaveLength(1);
+    expect(servicos.estado.ofertasForaDoPadrao()).toHaveLength(1);
 
     const resultado = await comReleitura(controller, componente.persistir());
     expect(resultado.valid).toBe(false);
@@ -608,9 +670,9 @@ describe('VagasStepComponent — gravação da distribuição', () => {
       ofertas: [distribuicao(OFERTA), { ...distribuicao(OUTRA_OFERTA), pr: '0,75' }],
     });
 
-    servicos.quadro.aplicarPadraoATodas();
+    servicos.estado.alterarPadrao({});
 
-    expect(servicos.quadro.ofertasForaDoPadrao()).toEqual([]);
+    expect(servicos.estado.ofertasForaDoPadrao()).toEqual([]);
     expect(store.draft().vagas.ofertas.map((item) => item.pr)).toEqual(['0,5', '0,5']);
   });
 
@@ -627,17 +689,17 @@ describe('VagasStepComponent — gravação da distribuição', () => {
 
   /** O que sobra do processo anterior não pertence ao que está aberto. */
   it('descarta o restante do estado local ao trocar de processo', () => {
-    servicos.quadro.alternarOfertaMarcada(OFERTA);
-    servicos.quadro.filtroDeOferta.set('medicina');
-    servicos.quadro.pedirRemocao(OUTRA_OFERTA);
-    servicos.simulacao.erroDaSimulacao.set('falha anterior');
+    servicos.estado.ofertasMarcadas.set(new Set([OFERTA]));
+    servicos.estado.filtroDeOferta.set('medicina');
+    servicos.tela.pedirRemocao(OUTRA_OFERTA);
+    servicos.estado.erroDaSimulacao.set('falha anterior');
 
     trocarDeProcesso();
 
-    expect(servicos.quadro.ofertasMarcadas().size).toBe(0);
-    expect(servicos.quadro.filtroDeOferta()).toBe('');
-    expect(servicos.quadro.remocaoPendente()).toBeNull();
-    expect(servicos.simulacao.erroDaSimulacao()).toBeNull();
+    expect(servicos.estado.ofertasMarcadas().size).toBe(0);
+    expect(servicos.estado.filtroDeOferta()).toBe('');
+    expect(servicos.estado.remocaoPendente()).toBeNull();
+    expect(servicos.estado.erroDaSimulacao()).toBeNull();
   });
 
   /** O editor reusa o componente; quem troca de processo é a geração do store. */
@@ -810,7 +872,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
   const ROTA_CASCATA_TESTE = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/cascata-remanejamento`;
   const ROTA_DISTRIBUICAO_TESTE = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/distribuicao-vagas`;
   const ROTA_PROCESSO_LIDO_TESTE = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
-const ROTA_SIMULACAO_TESTE = `${ROTA_DISTRIBUICAO_TESTE}/simulacao`;
+  const ROTA_SIMULACAO_TESTE = `${ROTA_DISTRIBUICAO_TESTE}/simulacao`;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -916,14 +978,19 @@ const ROTA_SIMULACAO_TESTE = `${ROTA_DISTRIBUICAO_TESTE}/simulacao`;
 
   it('não envia cascata quando nenhuma oferta a exige', async () => {
     store.patchObjectSection('vagas', {
-      ofertas: [{ ...distribuicaoComCascata(), modalidades: [
+      ofertas: [
+        {
+          ...distribuicaoComCascata(),
+          modalidades: [
             { id: LB_Q, codigo: 'LB_Q' },
             { id: AC_CASCATA, codigo: 'AC' },
           ],
           quadro: [
             { modalidadeId: LB_Q, quantidade: '20' },
             { modalidadeId: AC_CASCATA, quantidade: '80' },
-          ], }],
+          ],
+        },
+      ],
     });
     detectar();
     servicos.simulacao.simular();
@@ -1241,14 +1308,19 @@ const ROTA_SIMULACAO_TESTE = `${ROTA_DISTRIBUICAO_TESTE}/simulacao`;
     detectar();
 
     store.patchObjectSection('vagas', {
-      ofertas: [{ ...distribuicaoComCascata(), modalidades: [
+      ofertas: [
+        {
+          ...distribuicaoComCascata(),
+          modalidades: [
             { id: LB_Q, codigo: 'LB_Q' },
             { id: AC_CASCATA, codigo: 'AC' },
           ],
           quadro: [
             { modalidadeId: LB_Q, quantidade: '20' },
             { modalidadeId: AC_CASCATA, quantidade: '80' },
-          ], }],
+          ],
+        },
+      ],
       cascata: null,
     });
     detectar();
@@ -1385,7 +1457,6 @@ const REGRA_PSIQ = {
 };
 
 describe('VagasStepComponent — regra determina o rol de modalidades', () => {
-  let componente: VagasStepComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let detectar: () => void;
@@ -1410,7 +1481,6 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
     }).compileComponents();
 
     const fixture = TestBed.createComponent(VagasStepComponent);
-    componente = fixture.componentInstance;
     servicos = servicosDe(fixture);
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
@@ -1425,7 +1495,9 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
       else if (url.includes('modalidades')) requisicao.flush(MODALIDADES);
       else if (url.includes('regras-catalogo')) {
         const tipo = requisicao.request.params.get('tipo');
-        requisicao.flush(tipo === 'regra_distribuicao_vagas' ? [REGRA_INSTITUCIONAL, REGRA_PSIQ] : []);
+        requisicao.flush(
+          tipo === 'regra_distribuicao_vagas' ? [REGRA_INSTITUCIONAL, REGRA_PSIQ] : [],
+        );
       } else requisicao.flush([]);
     }
     detectar();
@@ -1449,65 +1521,83 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
   });
 
   it('rol aberto (Institucional) oferece o catálogo inteiro para seleção livre', () => {
-    expect(servicos.padrao.rolDaRegraEscolhida()).toBeNull();
-    expect(servicos.padrao.modalidadesOferecidas().map((m) => m.codigo)).toEqual(['AC_I', 'AC_Q']);
+    expect(servicos.estado.rolDaRegraEscolhida()).toBeNull();
+    expect(servicos.estado.modalidadesOferecidas().map((m) => m.codigo)).toEqual(['AC_I', 'AC_Q']);
   });
 
   it('trocar para regra sem dado a perder aplica direto, sem confirmação', () => {
     store.patchObjectSection('vagas', { ofertas: [] });
     detectar();
 
-    servicos.alteracao.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
+    servicos.tela.escolherRegra('DISTRIB-VAGAS-PSIQ|v1');
 
-    expect(servicos.alteracao.trocaDeRegraPendente()).toBeNull();
-    expect(servicos.padrao.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-PSIQ');
-    expect(servicos.padrao.padrao().modalidades.map((m) => m.codigo).sort()).toEqual(['AC_I', 'AC_Q']);
+    expect(servicos.estado.trocaDeRegraPendente()).toBeNull();
+    expect(servicos.estado.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-PSIQ');
+    expect(
+      servicos.estado
+        .padrao()
+        .modalidades.map((m) => m.codigo)
+        .sort(),
+    ).toEqual(['AC_I', 'AC_Q']);
   });
 
   it('trocar de regra com dado preenchido pede confirmação antes de mudar', () => {
     store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
     detectar();
 
-    servicos.alteracao.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
+    servicos.tela.escolherRegra('DISTRIB-VAGAS-PSIQ|v1');
 
-    expect(servicos.alteracao.trocaDeRegraPendente()).toEqual({ codigo: 'DISTRIB-VAGAS-PSIQ', versao: 'v1' });
-    expect(servicos.padrao.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-INSTITUCIONAL');
+    expect(servicos.estado.trocaDeRegraPendente()).toEqual({
+      codigo: 'DISTRIB-VAGAS-PSIQ',
+      versao: 'v1',
+    });
+    expect(servicos.estado.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-INSTITUCIONAL');
   });
 
   it('confirmar a troca aplica o rol fechado da nova regra por inteiro', () => {
     store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
     detectar();
 
-    servicos.alteracao.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
-    servicos.alteracao.confirmarTrocaDeRegra();
+    servicos.tela.escolherRegra('DISTRIB-VAGAS-PSIQ|v1');
+    servicos.tela.confirmarTrocaDeRegra();
 
-    expect(servicos.alteracao.trocaDeRegraPendente()).toBeNull();
-    expect(servicos.padrao.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-PSIQ');
-    expect(servicos.padrao.padrao().modalidades.map((m) => m.codigo).sort()).toEqual(['AC_I', 'AC_Q']);
-    expect(servicos.padrao.rolDaRegraEscolhida()).toEqual(['AC_I', 'AC_Q']);
+    expect(servicos.estado.trocaDeRegraPendente()).toBeNull();
+    expect(servicos.estado.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-PSIQ');
+    expect(
+      servicos.estado
+        .padrao()
+        .modalidades.map((m) => m.codigo)
+        .sort(),
+    ).toEqual(['AC_I', 'AC_Q']);
+    expect(servicos.estado.rolDaRegraEscolhida()).toEqual(['AC_I', 'AC_Q']);
   });
 
   it('cancelar a troca mantém a regra e as modalidades como estavam', () => {
     store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
     detectar();
 
-    servicos.alteracao.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
-    componente.cancelarTrocaDeRegra();
+    servicos.tela.escolherRegra('DISTRIB-VAGAS-PSIQ|v1');
+    servicos.tela.cancelarTrocaDeRegra();
 
-    expect(servicos.alteracao.trocaDeRegraPendente()).toBeNull();
-    expect(servicos.padrao.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-INSTITUCIONAL');
-    expect(servicos.padrao.padrao().modalidades).toEqual([{ id: MODALIDADE, codigo: 'AC_I' }]);
+    expect(servicos.estado.trocaDeRegraPendente()).toBeNull();
+    expect(servicos.estado.padrao().regraDistribuicaoCodigo).toBe('DISTRIB-VAGAS-INSTITUCIONAL');
+    expect(servicos.estado.padrao().modalidades).toEqual([{ id: MODALIDADE, codigo: 'AC_I' }]);
   });
 
   it('rol fechado não aceita alternar modalidade manualmente', () => {
     store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
     detectar();
-    servicos.alteracao.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
-    servicos.alteracao.confirmarTrocaDeRegra();
+    servicos.tela.escolherRegra('DISTRIB-VAGAS-PSIQ|v1');
+    servicos.tela.confirmarTrocaDeRegra();
 
-    servicos.alteracao.alternarModalidade({ id: MODALIDADE, codigo: 'AC_I' } as never);
+    servicos.tela.alternarModalidade({ id: MODALIDADE, codigo: 'AC_I' } as never);
 
-    expect(servicos.padrao.padrao().modalidades.map((m) => m.codigo).sort()).toEqual(['AC_I', 'AC_Q']);
+    expect(
+      servicos.estado
+        .padrao()
+        .modalidades.map((m) => m.codigo)
+        .sort(),
+    ).toEqual(['AC_I', 'AC_Q']);
   });
 
   /** Processo hidratado por fora do fluxo normal, trazendo modalidade que a regra atual não admite. */
@@ -1528,7 +1618,7 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
     });
     detectar();
 
-    const problemas = servicos.quadro.problemasDe(store.draft().vagas.ofertas[0]);
+    const problemas = servicos.conferencia.problemasDe(store.draft().vagas.ofertas[0]);
 
     expect(
       problemas.some(
@@ -1550,12 +1640,17 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
     });
     detectar();
 
-    expect(servicos.padrao.selecaoBateComORol()).toBe(false);
+    expect(servicos.estado.selecaoBateComORol()).toBe(false);
 
-    servicos.alteracao.reaplicarRolDaRegra();
+    servicos.tela.reaplicarRolDaRegra();
 
-    expect(servicos.padrao.selecaoBateComORol()).toBe(true);
-    expect(servicos.padrao.padrao().modalidades.map((m) => m.codigo).sort()).toEqual(['AC_I', 'AC_Q']);
+    expect(servicos.estado.selecaoBateComORol()).toBe(true);
+    expect(
+      servicos.estado
+        .padrao()
+        .modalidades.map((m) => m.codigo)
+        .sort(),
+    ).toEqual(['AC_I', 'AC_Q']);
   });
 
   /**
@@ -1582,19 +1677,25 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
     });
     detectar();
 
-    servicos.alteracao.reaplicarRolDaRegra();
+    servicos.tela.reaplicarRolDaRegra();
 
-    expect(servicos.alteracao.reaplicarRolPendente()).toBe(true);
-    expect(servicos.padrao.padrao().modalidades.map((m) => m.codigo).sort()).toEqual([
-      'AC_I',
-      'AC_PCD',
-      'AC_Q',
-    ]);
+    expect(servicos.estado.reaplicarRolPendente()).toBe(true);
+    expect(
+      servicos.estado
+        .padrao()
+        .modalidades.map((m) => m.codigo)
+        .sort(),
+    ).toEqual(['AC_I', 'AC_PCD', 'AC_Q']);
 
-    servicos.alteracao.confirmarReaplicarRol();
+    servicos.tela.confirmarReaplicarRol();
 
-    expect(servicos.alteracao.reaplicarRolPendente()).toBe(false);
-    expect(servicos.padrao.padrao().modalidades.map((m) => m.codigo).sort()).toEqual(['AC_I', 'AC_Q']);
+    expect(servicos.estado.reaplicarRolPendente()).toBe(false);
+    expect(
+      servicos.estado
+        .padrao()
+        .modalidades.map((m) => m.codigo)
+        .sort(),
+    ).toEqual(['AC_I', 'AC_Q']);
   });
 
   it('cancelar o reaplicar do rol mantém a seleção divergente como estava', () => {
@@ -1614,24 +1715,26 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
     });
     detectar();
 
-    servicos.alteracao.reaplicarRolDaRegra();
-    servicos.alteracao.cancelarReaplicarRol();
+    servicos.tela.reaplicarRolDaRegra();
+    servicos.estado.reaplicarRolPendente.set(false);
 
-    expect(servicos.alteracao.reaplicarRolPendente()).toBe(false);
-    expect(servicos.padrao.padrao().modalidades.map((m) => m.codigo).sort()).toEqual([
-      'AC_I',
-      'AC_PCD',
-    ]);
+    expect(servicos.estado.reaplicarRolPendente()).toBe(false);
+    expect(
+      servicos.estado
+        .padrao()
+        .modalidades.map((m) => m.codigo)
+        .sort(),
+    ).toEqual(['AC_I', 'AC_PCD']);
   });
 
   it('rol fechado com a seleção certa: selecaoBateComORol aprova', () => {
     store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA)] });
     detectar();
 
-    servicos.alteracao.escolherRegraDistribuicao('DISTRIB-VAGAS-PSIQ|v1');
-    servicos.alteracao.confirmarTrocaDeRegra();
+    servicos.tela.escolherRegra('DISTRIB-VAGAS-PSIQ|v1');
+    servicos.tela.confirmarTrocaDeRegra();
 
-    expect(servicos.padrao.selecaoBateComORol()).toBe(true);
+    expect(servicos.estado.selecaoBateComORol()).toBe(true);
   });
 
   /**
@@ -1651,10 +1754,10 @@ describe('VagasStepComponent — regra determina o rol de modalidades', () => {
     campoRegra.dispatchEvent(new Event('change'));
     detectar();
 
-    expect(servicos.alteracao.trocaDeRegraPendente()).not.toBeNull();
+    expect(servicos.estado.trocaDeRegraPendente()).not.toBeNull();
     expect(campoRegra.value).toBe('DISTRIB-VAGAS-PSIQ|v1');
 
-    componente.cancelarTrocaDeRegra();
+    servicos.tela.cancelarTrocaDeRegra();
     detectar();
 
     expect(campoRegra.value).toBe('DISTRIB-VAGAS-INSTITUCIONAL|v1');
@@ -1776,9 +1879,9 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
     });
     detectar();
 
-    servicos.alteracao.reaplicarRolDaRegra();
+    servicos.tela.reaplicarRolDaRegra();
 
-    expect(servicos.alteracao.reaplicarRolPendente()).toBe(true);
+    expect(servicos.estado.reaplicarRolPendente()).toBe(true);
   });
 
   /**
@@ -1809,29 +1912,33 @@ describe('VagasStepComponent — reaplicar o rol sob composição calculada', ()
     });
     detectar();
 
-    expect(servicos.padrao.selecaoBateComORol()).toBe(true);
-    expect(servicos.alteracao.reaplicarRolTemEfeito()).toBe(true);
+    expect(servicos.estado.selecaoBateComORol()).toBe(true);
+    expect(servicos.tela.reaplicarRolTemEfeito()).toBe(true);
   });
   it('apresenta o grau junto ao curso, uma única vez no rótulo', () => {
     // O grau é atributo do curso, não da oferta: duas ofertas do mesmo curso
     // têm o mesmo grau, então ele identifica e nunca distingue. Por isso entra
     // no nome, ao lado do curso, e não no detalhe.
-    expect(servicos.quadro.nomeDaOferta(OFERTA)).toBe('Medicina · Bacharelado · IGE');
-    expect(servicos.quadro.detalheDaOferta(OFERTA)).toBe('INTEGRAL · MATUTINO e VESPERTINO');
+    expect(servicos.catalogos.nomeDaOfertaOuSemNome(OFERTA)).toBe('Medicina · Bacharelado · IGE');
+    expect(servicos.catalogos.detalheDaOfertaOuVazio(OFERTA)).toBe(
+      'INTEGRAL · MATUTINO e VESPERTINO',
+    );
 
-    expect(servicos.quadro.rotuloDaOferta(OFERTA)).toBe(
+    expect(servicos.catalogos.rotuloDaOfertaOuSemNome(OFERTA)).toBe(
       'Medicina · Bacharelado · IGE · INTEGRAL · MATUTINO e VESPERTINO',
     );
 
     // Uma única vez: o grau entra pelo nome e não se repete no detalhe.
-    expect(servicos.quadro.rotuloDaOferta(OFERTA).match(/Bacharelado/g)).toHaveLength(1);
+    expect(servicos.catalogos.rotuloDaOfertaOuSemNome(OFERTA).match(/Bacharelado/g)).toHaveLength(
+      1,
+    );
   });
 
   it('omite o grau sem deixar separador pendurado quando o curso não o declara', () => {
     // 'curso-9' não está no catálogo: nome desconhecido e grau ausente não
     // podem produzir "Curso não identificado ·  · IGE".
-    expect(servicos.quadro.nomeDaOferta('oferta-inexistente')).not.toContain('·  ·');
-    expect(servicos.quadro.nomeDaOferta('oferta-inexistente')).not.toMatch(/·\s*$/);
+    expect(servicos.catalogos.nomeDaOfertaOuSemNome('oferta-inexistente')).not.toContain('·  ·');
+    expect(servicos.catalogos.nomeDaOfertaOuSemNome('oferta-inexistente')).not.toMatch(/·\s*$/);
   });
 });
 
@@ -1882,7 +1989,9 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
     fixture.detectChanges();
 
     store.processoSeletivoId.set(PROCESSO_ID);
-    store.patchObjectSection('identificacao', { origemCandidatos: OrigemCandidatos.inscricaoPropria });
+    store.patchObjectSection('identificacao', {
+      origemCandidatos: OrigemCandidatos.inscricaoPropria,
+    });
     store.patchObjectSection('vagas', {
       ofertas: [
         {
@@ -1983,7 +2092,10 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
 
   /** O processo como o servidor o devolve depois de gravar o quadro, com as regras congeladas. */
   function processoGravado(
-    inscricao: { readonly formularios: readonly unknown[]; readonly cronogramaFases: readonly unknown[] } = {
+    inscricao: {
+      readonly formularios: readonly unknown[];
+      readonly cronogramaFases: readonly unknown[];
+    } = {
       formularios: [formularioDeInscricao(['NOME', 'CONCORRER_PCD'])],
       cronogramaFases: [FASE_DE_INSCRICAO],
     },
@@ -1994,7 +2106,11 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
         {
           modalidades: [
             { codigo: 'AC', descricao: 'Ampla concorrência', regraDeAplicabilidade: [] },
-            { codigo: 'AC_PCD', descricao: 'Pessoa com deficiência', regraDeAplicabilidade: QUEM_CONCORRE_PCD },
+            {
+              codigo: 'AC_PCD',
+              descricao: 'Pessoa com deficiência',
+              regraDeAplicabilidade: QUEM_CONCORRE_PCD,
+            },
           ],
         },
       ],
@@ -2017,20 +2133,27 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
 
   it('põe no formulário de inscrição a pergunta que a regra congelada cita, sem gravar derivação', async () => {
     const { gravacao } = await gravarQuadro(
-      processoGravado({ formularios: [formularioDeInscricao(['NOME'])], cronogramaFases: [FASE_DE_INSCRICAO] }),
+      processoGravado({
+        formularios: [formularioDeInscricao(['NOME'])],
+        cronogramaFases: [FASE_DE_INSCRICAO],
+      }),
     );
 
     // A pergunta entra na seção dos outros dados, que o cabeçalho do formulário cria antes dos itens.
     const cabecalho = controller.expectOne((r) => r.method === 'PUT' && r.url === ROTA_INSCRICAO);
-    expect(cabecalho.request.body.etapas.map((e: { codigo: string }) => e.codigo)).toContain('OUTROS_DADOS_EXIGIDOS');
+    expect(cabecalho.request.body.etapas.map((e: { codigo: string }) => e.codigo)).toContain(
+      'OUTROS_DADOS_EXIGIDOS',
+    );
     cabecalho.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
 
-    const itens = controller.expectOne((r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`);
+    const itens = controller.expectOne(
+      (r) => r.method === 'PUT' && r.url === `${ROTA_INSCRICAO}/itens`,
+    );
     // A seção dos dados básicos é da api e não vai no envio.
-    expect(itens.request.body.itens.map((item: { fatoCodigo: string }) => item.fatoCodigo)).toEqual([
-      'CONCORRER_PCD',
-    ]);
+    expect(itens.request.body.itens.map((item: { fatoCodigo: string }) => item.fatoCodigo)).toEqual(
+      ['CONCORRER_PCD'],
+    );
     itens.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
     controller.match((r) => r.method === 'GET' && r.url === ROTA_PROCESSO);
@@ -2047,7 +2170,9 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
   });
 
   it('sem fase de inscrição, aceita a gravação e deixa as perguntas para o cronograma', async () => {
-    const { gravacao } = await gravarQuadro(processoGravado({ formularios: [], cronogramaFases: [] }));
+    const { gravacao } = await gravarQuadro(
+      processoGravado({ formularios: [], cronogramaFases: [] }),
+    );
 
     await expect(gravacao).resolves.toEqual({ valid: true });
     controller.expectNone((r) => r.method === 'PUT');
@@ -2060,7 +2185,10 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
     const carregar = vi.spyOn(catalogos, 'carregar');
 
     const { gravacao } = await gravarQuadro(
-      processoGravado({ formularios: [formularioDeInscricao(['NOME'])], cronogramaFases: [FASE_DE_INSCRICAO] }),
+      processoGravado({
+        formularios: [formularioDeInscricao(['NOME'])],
+        cronogramaFases: [FASE_DE_INSCRICAO],
+      }),
     );
 
     const resultado = await gravacao;
@@ -2071,15 +2199,23 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
   });
 
   it('no processo que importa o resultado, relê só para mostrar as regras, sem pôr perguntas', async () => {
-    store.patchObjectSection('identificacao', { origemCandidatos: OrigemCandidatos.importacaoExterna });
+    store.patchObjectSection('identificacao', {
+      origemCandidatos: OrigemCandidatos.importacaoExterna,
+    });
 
     const { gravacao } = await gravarQuadro(
-      processoGravado({ formularios: [formularioDeInscricao(['NOME'])], cronogramaFases: [FASE_DE_INSCRICAO] }),
+      processoGravado({
+        formularios: [formularioDeInscricao(['NOME'])],
+        cronogramaFases: [FASE_DE_INSCRICAO],
+      }),
     );
 
     await expect(gravacao).resolves.toEqual({ valid: true });
     controller.expectNone((r) => r.method === 'PUT');
-    expect(store.regrasDasModalidades().map((modalidade) => modalidade.codigo)).toEqual(['AC', 'AC_PCD']);
+    expect(store.regrasDasModalidades().map((modalidade) => modalidade.codigo)).toEqual([
+      'AC',
+      'AC_PCD',
+    ]);
   });
 
   it('mostra, depois de gravar o quadro, quem concorre em cada modalidade pela regra congelada', async () => {
@@ -2098,7 +2234,6 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
     ]);
   });
 });
-
 
 describe('VagasStepComponent — consulta', () => {
   let store: ProcessoSeletivoStore;
@@ -2138,8 +2273,12 @@ describe('VagasStepComponent — consulta', () => {
     }
     fixture.detectChanges();
 
-    store.patchObjectSection('vagas', { ofertas: [distribuicao(OFERTA), distribuicao(OUTRA_OFERTA)] });
-    store.remoteSnapshot.set({ status: StatusProcesso.publicado } as unknown as ProcessoSeletivoDto);
+    store.patchObjectSection('vagas', {
+      ofertas: [distribuicao(OFERTA), distribuicao(OUTRA_OFERTA)],
+    });
+    store.remoteSnapshot.set({
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
   });
 
@@ -2148,7 +2287,9 @@ describe('VagasStepComponent — consulta', () => {
   const leitura = () => (tela.textContent ?? '').replace(/\s+/g, ' ');
 
   it('lê o padrão e as modalidades como texto, sem campo nem ação de edição', () => {
-    expect(tela.querySelectorAll('.step-card select, .step-card input, .step-card textarea')).toHaveLength(0);
+    expect(
+      tela.querySelectorAll('.step-card select, .step-card input, .step-card textarea'),
+    ).toHaveLength(0);
     expect(tela.querySelectorAll('.step-card button')).toHaveLength(0);
     expect(leitura()).toContain('DISTRIB-VAGAS-INSTITUCIONAL · versão');
     expect(leitura()).toContain('AC_I — Indígena');
@@ -2161,7 +2302,9 @@ describe('VagasStepComponent — consulta', () => {
 
     expect(tabela.querySelectorAll('tbody tr')).toHaveLength(2);
     expect(tabela.querySelector('input')).toBeNull();
-    expect(Array.from(tabela.querySelectorAll('thead th')).map((th) => th.textContent?.trim())).not.toContain('Ações');
+    expect(
+      Array.from(tabela.querySelectorAll('thead th')).map((th) => th.textContent?.trim()),
+    ).not.toContain('Ações');
   });
 });
 
@@ -2310,7 +2453,11 @@ describe('VagasStepComponent — consulta com o catálogo em falha', () => {
           ...distribuicaoComCascata(),
           regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
           modalidades: [
-            { id: LB_PPI, codigo: 'LB_PPI', gravada: gravadaDe('Descrição publicada', 'RETIRA_DE') },
+            {
+              id: LB_PPI,
+              codigo: 'LB_PPI',
+              gravada: gravadaDe('Descrição publicada', 'RETIRA_DE'),
+            },
             { id: LB_Q, codigo: 'LB_Q', gravada: gravadaDe('Quilombola publicada', 'RETIRA_DE') },
           ],
           quadro: [
@@ -2648,7 +2795,9 @@ describe('VagasStepComponent — número de opções de curso', () => {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_DISTRIBUICAO).flush(null, SEM_CORPO);
     await proximoTick();
-    const { body, opts } = recusa422('uniplus.selecao.processo_seletivo.opcoes_de_curso_acima_das_ofertas');
+    const { body, opts } = recusa422(
+      'uniplus.selecao.processo_seletivo.opcoes_de_curso_acima_das_ofertas',
+    );
     controller.expectOne(ROTA_OPCOES).flush(body, opts);
     await gravacao;
     fixture.detectChanges();
@@ -2679,7 +2828,9 @@ describe('VagasStepComponent — número de opções de curso', () => {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_DISTRIBUICAO).flush(null, SEM_CORPO);
     await proximoTick();
-    const { body, opts } = recusa422('uniplus.selecao.processo_seletivo.opcoes_de_curso_acima_das_ofertas');
+    const { body, opts } = recusa422(
+      'uniplus.selecao.processo_seletivo.opcoes_de_curso_acima_das_ofertas',
+    );
     controller.expectOne(ROTA_OPCOES).flush(body, opts);
 
     const resultado = await gravacao;
@@ -2700,7 +2851,9 @@ describe('VagasStepComponent — número de opções de curso', () => {
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_OPCOES).flush(null, SEM_CORPO);
     await proximoTick();
-    const { body, opts } = recusa422('uniplus.selecao.processo_seletivo.opcoes_de_curso_acima_das_ofertas');
+    const { body, opts } = recusa422(
+      'uniplus.selecao.processo_seletivo.opcoes_de_curso_acima_das_ofertas',
+    );
     controller.expectOne(ROTA_DISTRIBUICAO).flush(body, opts);
 
     const resultado = await gravacao;
@@ -2780,10 +2933,14 @@ describe('VagasStepComponent — número de opções de curso', () => {
 
   it('em consulta, lê o número gravado como texto', () => {
     store.patchObjectSection('opcoesDeCurso', { numero: '2' });
-    store.remoteSnapshot.set({ status: StatusProcesso.publicado } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set({
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
     expect(campo()).toBeNull();
-    expect((tela.textContent ?? '').replace(/\s+/g, ' ')).toContain('Número de opções de curso 2 opções');
+    expect((tela.textContent ?? '').replace(/\s+/g, ' ')).toContain(
+      'Número de opções de curso 2 opções',
+    );
   });
 });

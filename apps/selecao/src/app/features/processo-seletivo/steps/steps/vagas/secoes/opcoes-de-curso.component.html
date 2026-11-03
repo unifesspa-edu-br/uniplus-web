@@ -2,20 +2,20 @@
   <ui-valor-em-consulta
     rotulo="Número de opções de curso"
     seVazio="Não declarado"
-    [valor]="opcoes.opcoesLidas()"
+    [valor]="estado.opcoesLidas()"
   />
 } @else {
   <label class="label" for="f-opcoes-curso">Número de opções de curso</label>
   <select
     class="input"
     id="f-opcoes-curso"
-    [class.is-invalid]="opcoes.erro() !== null"
-    [attr.aria-invalid]="opcoes.erro() !== null ? 'true' : null"
+    [class.is-invalid]="estado.erroDasOpcoes() !== null"
+    [attr.aria-invalid]="estado.erroDasOpcoes() !== null ? 'true' : null"
     [attr.aria-describedby]="
-      opcoes.erro() !== null ? 'f-opcoes-curso-ajuda f-opcoes-curso-erro' : 'f-opcoes-curso-ajuda'
+      estado.erroDasOpcoes() !== null ? 'f-opcoes-curso-ajuda f-opcoes-curso-erro' : 'f-opcoes-curso-ajuda'
     "
     [disabled]="!store.aceitaEdicao()"
-    (change)="opcoes.alterar($any($event.target).value)"
+    (change)="alterar($any($event.target).value)"
   >
     <option value="" [selected]="store.draft().opcoesDeCurso.numero === ''">
       — escolher —
@@ -33,7 +33,7 @@
     {{ ajudaDasOpcoes }}
   </p>
   <div aria-live="polite" aria-atomic="true">
-    @if (opcoes.erro(); as erro) {
+    @if (estado.erroDasOpcoes(); as erro) {
       <p class="field__erro" id="f-opcoes-curso-erro">{{ erro }}</p>
     }
   </div>

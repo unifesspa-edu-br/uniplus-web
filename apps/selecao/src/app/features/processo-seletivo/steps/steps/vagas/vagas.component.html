@@ -33,7 +33,7 @@
         <ui-valor-em-consulta
           rotulo="Percentual de reserva"
           dica="Entre 0,5 e 1,0 — art. 10, II da Lei 12.711."
-          [valor]="padraoDoEdital.padraoLido().percentualDeReserva"
+          [valor]="estado.padraoLido().percentualDeReserva"
         />
       } @else {
       <div class="form-field">
@@ -42,22 +42,22 @@
           class="input"
           id="f-pr"
           inputmode="decimal"
-          [ngModel]="padraoDoEdital.padrao().pr"
-          (ngModelChange)="alteracao.alterarPr($event)"
+          [ngModel]="estado.padrao().pr"
+          (ngModelChange)="alterarPr($event)"
           [disabled]="!store.aceitaEdicao()"
         />
         <p class="field__hint">Entre 0,5 e 1,0 — art. 10, II da Lei 12.711.</p>
       </div>
       }
 
-      @if (padraoDoEdital.ehFederal()) {
+      @if (estado.ehFederal()) {
         <div selRegraDeAjuste class="form-field"></div>
         @if (store.emConsulta()) {
           <ui-valor-em-consulta
             class="form-grid__full"
             rotulo="Referência de reserva demográfica"
             seVazio="Não declarada"
-            [valor]="padraoDoEdital.padraoLido().referenciaDemografica"
+            [valor]="estado.padraoLido().referenciaDemografica"
           />
         } @else {
         <div class="form-field form-grid__full">
@@ -65,8 +65,8 @@
           <select
             class="input"
             id="f-ref"
-            [ngModel]="padraoDoEdital.padrao().referenciaReservaDemograficaId ?? ''"
-            (ngModelChange)="alteracao.escolherReferencia($event)"
+            [ngModel]="estado.padrao().referenciaReservaDemograficaId ?? ''"
+            (ngModelChange)="escolherReferencia($event)"
             [disabled]="!store.aceitaEdicao()"
           >
             <option value="">Selecione a referência…</option>
@@ -89,23 +89,23 @@
       <ui-valor-em-consulta
         rotuladoPor="f-modalidades-titulo"
         seVazio="Nenhuma modalidade oferecida"
-        [valor]="padraoDoEdital.padraoLido().modalidades"
+        [valor]="estado.padraoLido().modalidades"
       />
     } @else {
-    @if (padraoDoEdital.rolDaRegraEscolhida(); as rol) {
+    @if (estado.rolDaRegraEscolhida(); as rol) {
       <p class="field__hint">
         A regra escolhida determina estas {{ rol.length }} modalidades — não há escolha a fazer
         aqui. Para compor livremente, escolha DISTRIB-VAGAS-INSTITUCIONAL.
       </p>
 
-      @if (alteracao.reaplicarRolTemEfeito()) {
+      @if (reaplicarRolTemEfeito()) {
         <p class="field__erro" role="alert">
           A seleção ou o quadro desta oferta não correspondem mais ao rol da regra atual.
         </p>
         <button
           class="btn btn--tertiary btn--sm"
           type="button"
-          (click)="alteracao.reaplicarRolDaRegra()"
+          (click)="reaplicarRolDaRegra()"
           [disabled]="!store.aceitaEdicao()"
         >
           Recompor pelo rol da regra atual
@@ -116,23 +116,23 @@
         <label class="check-item">
           <input
             type="checkbox"
-            [checked]="alteracao.todasAsModalidadesSelecionadas()"
+            [checked]="todasAsModalidadesSelecionadas()"
             [disabled]="!store.aceitaEdicao()"
-            (change)="alteracao.marcarTodasAsModalidades($any($event.target).checked)"
+            (change)="marcarTodasAsModalidades($any($event.target).checked)"
           />
-          <span>Marcar todas as {{ padraoDoEdital.modalidadesOferecidas().length }} modalidades</span>
+          <span>Marcar todas as {{ estado.modalidadesOferecidas().length }} modalidades</span>
         </label>
       </div>
     }
 
     <div class="checkbox-grid">
-      @for (modalidade of padraoDoEdital.modalidadesOferecidas(); track modalidade.id) {
+      @for (modalidade of estado.modalidadesOferecidas(); track modalidade.id) {
         <label class="check-item">
           <input
             type="checkbox"
-            [checked]="padraoDoEdital.modalidadeSelecionada(modalidade.id)"
-            [disabled]="!store.aceitaEdicao() || padraoDoEdital.rolDaRegraEscolhida() !== null"
-            (change)="alteracao.alternarModalidade(modalidade)"
+            [checked]="estado.modalidadeSelecionada(modalidade.id)"
+            [disabled]="!store.aceitaEdicao() || estado.rolDaRegraEscolhida() !== null"
+            (change)="alternarModalidade(modalidade)"
           />
           <span>{{ modalidade.codigo }} — {{ modalidade.descricao }}</span>
         </label>
@@ -147,8 +147,8 @@
       </p>
     }
 
-    @if (padraoDoEdital.modalidadesCalculadas().length > 0 && !store.emConsulta()) {
-      <p class="field__hint vagas-calculadas__resumo">{{ padraoDoEdital.resumoDasCalculadas() }}</p>
+    @if (estado.modalidadesCalculadas().length > 0 && !store.emConsulta()) {
+      <p class="field__hint vagas-calculadas__resumo">{{ estado.resumoDasCalculadas() }}</p>
     }
 
     @if (regrasDasModalidades().length > 0) {
@@ -160,28 +160,28 @@
     <div class="vagas-oferta__cabecalho">
       <h2 class="form-section__title">Quadro de vagas</h2>
       <span class="field__hint">
-        {{ padraoDoEdital.distribuicoes().length }} no quadro
+        {{ estado.distribuicoes().length }} no quadro
         @if (!store.emConsulta()) {
-          · {{ quadro.ofertasDisponiveis().length }} disponíveis
+          · {{ estado.ofertasDisponiveis().length }} disponíveis
         }
       </span>
     </div>
 
-    @if (quadro.problemasDoPadrao().length > 0 && !store.emConsulta()) {
+    @if (conferencia.problemasDoPadrao().length > 0 && !store.emConsulta()) {
       <div class="field__erro" role="alert">
         <ul aria-label="Problemas no padrão da distribuição">
-          @for (problema of quadro.problemasDoPadrao(); track problema) {
+          @for (problema of conferencia.problemasDoPadrao(); track problema) {
             <li>{{ problema }}</li>
           }
         </ul>
       </div>
     }
 
-    @if (quadro.ofertasDisponiveis().length > 0 && !store.emConsulta()) {
+    @if (estado.ofertasDisponiveis().length > 0 && !store.emConsulta()) {
       <details class="vagas-escolha" selOfertaParaAdicionar></details>
     }
 
-    @if (padraoDoEdital.distribuicoes().length === 0) {
+    @if (estado.distribuicoes().length === 0) {
       <p class="field__hint">
         @if (store.emConsulta()) {
           Nenhuma oferta no quadro.
@@ -199,7 +199,7 @@
           class="btn btn--outline btn--sm"
           type="button"
           (click)="simulacao.simular()"
-          [disabled]="simulacao.simulando() || padraoDoEdital.distribuicoes().length === 0"
+          [disabled]="simulacao.simulando() || estado.distribuicoes().length === 0"
         >
           {{ simulacao.simulando() ? 'Simulando…' : 'Simular o quadro' }}
         </button>
@@ -209,13 +209,13 @@
         </span>
       </div>
 
-      @if (simulacao.erroDaSimulacao(); as erro) {
+      @if (estado.erroDaSimulacao(); as erro) {
         <p class="field__erro" role="alert">{{ erro }}</p>
       }
 
-      @if (quadro.pendenciasDoQuadro().length > 0) {
+      @if (conferencia.pendenciasDoQuadro().length > 0) {
         <p class="field__erro" role="alert">
-          Falta preencher: {{ quadro.pendenciasDoQuadro().join('; ') }}. Os campos pendentes estão
+          Falta preencher: {{ conferencia.pendenciasDoQuadro().join('; ') }}. Os campos pendentes estão
           destacados no quadro.
         </p>
       }
@@ -232,7 +232,7 @@
         </p>
       }
 
-      @if (quadro.ofertasForaDoPadrao().length > 0 && !store.emConsulta()) {
+      @if (estado.ofertasForaDoPadrao().length > 0 && !store.emConsulta()) {
         <div class="alert alert--warning vagas-divergencia" role="status" selOfertasForaDoPadrao></div>
       }
 
@@ -245,34 +245,34 @@
 <!-- Permanece no DOM: é o componente que devolve o foco ao botão que abriu a
      confirmação, e destruí-lo por um `@if` pularia esse caminho. -->
 <ui-confirm-dialog
-  [visible]="quadro.remocaoPendente() !== null"
+  [visible]="estado.remocaoPendente() !== null"
   heading="Remover oferta do quadro"
-  [message]="quadro.avisoDaRemocao()"
+  [message]="avisoDaRemocao()"
   confirmLabel="Remover do quadro"
   cancelLabel="Manter no quadro"
   confirmVariant="danger"
-  (confirmed)="quadro.confirmarRemocao()"
-  (cancelled)="quadro.cancelarRemocao()"
+  (confirmed)="confirmarRemocao()"
+  (cancelled)="estado.remocaoPendente.set(null)"
 />
 
 <ui-confirm-dialog
-  [visible]="alteracao.trocaDeRegraPendente() !== null"
+  [visible]="estado.trocaDeRegraPendente() !== null"
   heading="Trocar regra de distribuição"
-  [message]="alteracao.avisoDaTrocaDeRegra"
+  [message]="avisoDaTrocaDeRegra"
   confirmLabel="Trocar regra"
   cancelLabel="Manter a regra atual"
   confirmVariant="danger"
-  (confirmed)="alteracao.confirmarTrocaDeRegra()"
+  (confirmed)="confirmarTrocaDeRegra()"
   (cancelled)="cancelarTrocaDeRegra()"
 />
 
 <ui-confirm-dialog
-  [visible]="alteracao.reaplicarRolPendente()"
+  [visible]="estado.reaplicarRolPendente()"
   heading="Completar com o rol da regra"
-  [message]="alteracao.avisoDoReaplicarRol"
+  [message]="avisoDoReaplicarRol"
   confirmLabel="Completar seleção"
   cancelLabel="Manter como está"
   confirmVariant="danger"
-  (confirmed)="alteracao.confirmarReaplicarRol()"
-  (cancelled)="alteracao.cancelarReaplicarRol()"
+  (confirmed)="confirmarReaplicarRol()"
+  (cancelled)="estado.reaplicarRolPendente.set(false)"
 />

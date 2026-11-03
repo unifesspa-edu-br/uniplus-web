@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { QuadroDeVagasService } from '../servicos/quadro-de-vagas.service';
+import { EstadoDoPassoDeVagas } from '../servicos/estado-do-passo-de-vagas';
 
 /** O aviso das ofertas gravadas com padrão diferente do que está em tela, e a saída para igualá-las. */
 @Component({
@@ -11,5 +11,10 @@ import { QuadroDeVagasService } from '../servicos/quadro-de-vagas.service';
 })
 export class OfertasForaDoPadraoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly quadro = inject(QuadroDeVagasService);
+  protected readonly estado = inject(EstadoDoPassoDeVagas);
+
+  /** Reescreve todas as ofertas com o padrão em tela. */
+  protected aplicarPadraoATodas(): void {
+    this.estado.alterarPadrao({});
+  }
 }

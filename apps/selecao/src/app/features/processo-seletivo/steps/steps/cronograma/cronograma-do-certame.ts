@@ -9,7 +9,7 @@ import {
 } from './conferencia-das-exigencias-declaradas';
 import { problemasDasEtapas } from './problemas-das-etapas';
 import { instanteDe, violacoesDePrecedencia } from './precedencia-de-fases';
-import { repetidos } from './repetidos';
+import { repetidos } from '../../shared/repetidos';
 import type { TipoDeEtapaDoCatalogo } from './regras-da-etapa';
 
 /**

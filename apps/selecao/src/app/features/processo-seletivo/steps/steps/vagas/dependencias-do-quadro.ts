@@ -1,5 +1,6 @@
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 
+import { repetidos } from '../../shared/repetidos';
 import { COMPOSICOES_CALCULADAS, COMPOSICOES_DECLARADAS } from './composicao-de-vagas';
 import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 import { ProblemaDaDistribuicao } from './problema-da-distribuicao';
@@ -82,7 +83,7 @@ export function problemasDeModalidades(
   if (modalidadeIds.length === 0) return ['Selecione ao menos uma modalidade para esta oferta.'];
 
   const problemas: string[] = [];
-  if (new Set(modalidadeIds).size !== modalidadeIds.length) {
+  if (repetidos(modalidadeIds).length > 0) {
     problemas.push('Cada modalidade só pode ser selecionada uma vez nesta oferta.');
   }
 
