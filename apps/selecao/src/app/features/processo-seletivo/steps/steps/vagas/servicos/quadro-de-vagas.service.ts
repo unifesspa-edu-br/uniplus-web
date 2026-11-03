@@ -100,9 +100,7 @@ export class QuadroDeVagasService {
    * nome do curso não aparece: some da lista de escolha, mas não do que já foi configurado.
    */
   rotuloDaOferta(ofertaCursoId: string): string {
-    return (
-      this.catalogos.rotuloDaOferta().get(ofertaCursoId) ?? this.catalogos.textoDaOfertaSemNome()
-    );
+    return this.catalogos.rotuloDaOfertaOuSemNome(ofertaCursoId);
   }
 
   /** Curso e unidade: o que a linha destaca. */

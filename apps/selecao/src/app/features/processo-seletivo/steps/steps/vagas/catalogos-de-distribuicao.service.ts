@@ -176,6 +176,14 @@ export class CatalogosDeDistribuicaoService {
     );
   });
 
+  /**
+   * O rótulo da oferta que o processo referencia; quando a listagem não a traz (excluída do
+   * cadastro depois de configurada), o texto que diz por que o nome do curso não aparece.
+   */
+  rotuloDaOfertaOuSemNome(ofertaCursoId: string): string {
+    return this.rotuloDaOferta().get(ofertaCursoId) ?? this.textoDaOfertaSemNome();
+  }
+
   carregar(): void {
     this.carregando.set(true);
     this.erro.set(null);

@@ -190,11 +190,11 @@ export class CascataRemanejamentoComponent {
    * O servidor pode ter uma cascata gravada — de hidratação ou de uma
    * gravação anterior nesta mesma sessão do editor. É rastreado à parte do
    * rascunho de propósito: limpar o seletor de regra zera `cascata()`, mas
-   * não apaga o que já foi salvo — só o envio da remoção faz isso, e
-   * `VagasStepComponent.persistirCascata()` só sabe que precisa enviá-la
-   * consultando este sinal, não o rascunho.
+   * não apaga o que já foi salvo — só o envio da remoção faz isso, e a
+   * gravação do passo só sabe que precisa enviá-la consultando este sinal,
+   * não o rascunho.
    *
-   * `VagasStepComponent` escreve aqui depois de cada gravação bem-sucedida
+   * A gravação do passo escreve aqui depois de cada gravação bem-sucedida
    * (`true` numa gravação normal, `false` numa remoção) — por isso é
    * `WritableSignal`, não só leitura.
    */
@@ -282,7 +282,7 @@ export class CascataRemanejamentoComponent {
   readonly pendenciasParaGravar = computed<readonly string[]>(() => {
     const foraDoRegime = this.ofertasForaDoRegime().map(
       (oferta) =>
-        `Cascata — ${this.catalogos.rotuloDaOferta().get(oferta.ofertaCursoId) ?? this.catalogos.textoDaOfertaSemNome()}: tem modalidade que segue a cascata fora do ramo federal. Corrija a regra de distribuição ou a modalidade desta oferta.`,
+        `Cascata — ${this.catalogos.rotuloDaOfertaOuSemNome(oferta.ofertaCursoId)}: tem modalidade que segue a cascata fora do ramo federal. Corrija a regra de distribuição ou a modalidade desta oferta.`,
     );
 
     if (!this.precisaExibir()) return foraDoRegime;
