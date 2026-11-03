@@ -1,14 +1,14 @@
-import { type FaseCanonicaDto, type PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
 import { CaraterEtapa } from '@uniplus/shared-data/selecao';
 import {
   type EtapaPontuada,
   type FaseDoCronograma,
   type ProdutoDaFase,
 } from '../../processo-seletivo.models';
-import { type AtoDoCatalogo } from '../fase/configuracao-da-fase';
 import { problemasDoCronograma } from './cronograma-do-certame';
 import { type ExigenciaDeclarada } from './conferencia-das-exigencias-declaradas';
 import { type TipoDeEtapaDoCatalogo } from './regras-da-etapa';
+import { type FaseCanonicaDto, type PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
+import { type AtoDoCatalogo } from '../fase/configuracao-da-fase';
 
 /** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
 export const SEM_CATALOGO: ReadonlyMap<string, AtoDoCatalogo> = new Map();
@@ -147,4 +147,35 @@ export const tipoDoEnem = (): TipoDeEtapaDoCatalogo => ({
   admitePontuacao: true,
   admiteEliminacao: true,
   notaDeOrigemNoEnem: true,
+});
+
+export const AVALIACAO = faseCanonica({
+  id: 'id-avaliacao',
+  codigo: 'AVALIACAO',
+  nome: 'Avaliação',
+  agrupaEtapas: true,
+  origemData: 'NO_EDITAL',
+});
+export const RESULTADO = faseCanonica({
+  id: 'id-resultado',
+  codigo: 'RESULTADO_PRELIMINAR',
+  nome: 'Resultado preliminar',
+  origemData: 'NA_EXECUCAO',
+});
+export const catalogoDeFases = new Map([
+  [AVALIACAO.id, AVALIACAO],
+  [RESULTADO.id, RESULTADO],
+]);
+
+export const etapaValida = etapa({
+  nome: 'Prova',
+  carater: CaraterEtapa.classificatoria,
+  tipoEtapaOrigemId: 'tipo-1',
+  peso: '1',
+});
+export const faseDeAvaliacao = fase({
+  faseCanonicaId: AVALIACAO.id,
+  codigo: 'AVALIACAO',
+  inicio: '2026-03-01T08:00:00-03:00',
+  fim: '2026-03-02T18:00:00-03:00',
 });
