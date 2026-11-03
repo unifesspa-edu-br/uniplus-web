@@ -17,7 +17,7 @@ import type {
   InscricaoRequest,
   MinhaInscricaoDto,
 } from './inscricoes.contrato';
-import type { FormularioRenderizavelDto } from './processos-seletivos.api';
+import type { FormularioRenderizavelDto } from './processos-seletivos.contrato';
 import { SELECAO_BASE_PATH } from './tokens';
 
 /**

@@ -1,19 +1,27 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpContext,
+  HttpHeaders,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   CriarProcessoSeletivoCommand,
   OrigemCandidatos,
+  ProcessosSeletivosApi,
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/selecao';
-import { describe, expect, it } from 'vitest';
+import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { CadastroInicialService } from './cadastro-inicial.service';
 import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
 
 describe('CadastroInicialService — descarte do cadastro em andamento', () => {
   const ROTA = 'http://localhost:5000/api/selecao/processos-seletivos';
+  const PROCESSO_ID = '01960000-0000-7000-0000-000000000515';
 
   const comando = (nome: string): CriarProcessoSeletivoCommand => ({
     nome,
@@ -57,5 +65,36 @@ describe('CadastroInicialService — descarte do cadastro em andamento', () => {
       statusText: 'Created',
     });
     await segunda;
+  });
+
+  it('entrega à API de remoção o mesmo contexto que a gravação montou para o pedido', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        CadastroInicialService,
+        GravacaoDoProcesso,
+        { provide: SELECAO_BASE_PATH, useValue: 'http://localhost:5000' },
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+      ],
+    });
+    const servico = TestBed.inject(CadastroInicialService);
+    const gravacao = TestBed.inject(GravacaoDoProcesso);
+    const api = TestBed.inject(ProcessosSeletivosApi);
+    const removerNaApi = vi
+      .spyOn(api, 'removerFormulario')
+      .mockReturnValue(of(apiOk(undefined, 204, new HttpHeaders())));
+    let contextoDaGravacao: HttpContext | undefined;
+    const remover = gravacao.remover.bind(gravacao);
+    vi.spyOn(gravacao, 'remover').mockImplementation((enviar) =>
+      remover((contexto) => {
+        contextoDaGravacao = contexto;
+        return enviar(contexto);
+      }),
+    );
+
+    await servico.removerFormulario(PROCESSO_ID, 'INSCRICAO');
+
+    expect(contextoDaGravacao).toBeDefined();
+    expect(removerNaApi.mock.calls[0][2]).toBe(contextoDaGravacao);
   });
 });

@@ -73,7 +73,7 @@
 682 apps/selecao/src/app/features/processo-seletivo/steps/steps/vagas/vagas.component.html
 1655 apps/selecao/src/app/features/processo-seletivo/steps/steps/vagas/vagas.component.ts
 761 apps/selecao/src/styles.css
-1043 libs/shared-data/src/lib/api/selecao/processos-seletivos.api.ts
+1000 libs/shared-data/src/lib/api/selecao/processos-seletivos.api.ts
 637 libs/shared-ui/src/lib/components/editor-de-condicoes/condicoes-de-fatos.ts
 572 libs/shared-ui/src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos.ts
 993 libs/shared-ui/src/lib/components/editor-de-formulario/editor-de-formulario.ts

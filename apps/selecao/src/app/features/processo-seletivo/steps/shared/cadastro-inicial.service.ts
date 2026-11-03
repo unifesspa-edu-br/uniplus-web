@@ -225,7 +225,9 @@ export class CadastroInicialService {
    * rascunho, e quem chama confere o desfecho relendo o processo.
    */
   removerFormulario(processoSeletivoId: string, finalidade: string): Promise<ResultadoGravacao> {
-    return this.gravacao.remover(() => this.api.removerFormulario(processoSeletivoId, finalidade));
+    return this.gravacao.remover((contexto) =>
+      this.api.removerFormulario(processoSeletivoId, finalidade, contexto),
+    );
   }
 
   /**

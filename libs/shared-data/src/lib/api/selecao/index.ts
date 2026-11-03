@@ -114,10 +114,10 @@ export type {
   SnapshotVigenteDto,
   RascunhoDaPublicacaoDto,
   SalvarRascunhoDaPublicacaoRequest,
-} from './processos-seletivos.api';
+} from './processos-seletivos.contrato';
 export type { RegraCatalogoDto, RegrasCatalogoQuery } from './regras-catalogo.api';
+export { ProcessosSeletivosApi, type ProcessosSeletivosQuery } from './processos-seletivos.api';
 export {
-  ProcessosSeletivosApi,
   type CriarProcessoSeletivoCommand,
   type AcessoDocumentoAPublicarDto,
   type AcessoModeloDeDocumentoDto,
@@ -151,10 +151,9 @@ export {
   type FormularioRenderizavelDto,
   type ProcessoSeletivoDto,
   type ProcessoSeletivoResumoDto,
-  type ProcessosSeletivosQuery,
   type PublicarAtoAvulsoDoProcessoRequest,
   type TipoProcessoSnapshotDto,
-} from './processos-seletivos.api';
+} from './processos-seletivos.contrato';
 export {
   CaraterEtapa,
   OrigemCandidatos,

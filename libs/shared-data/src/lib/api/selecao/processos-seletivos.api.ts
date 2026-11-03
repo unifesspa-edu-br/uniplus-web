@@ -1,129 +1,58 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
-import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
-import {
-  DefinirTaxaInscricaoRequestFundamentos,
+import { ApiResult, VENDOR_MIME_TOKEN, withVendorMime } from '@uniplus/shared-core/http';
+import type {
+  AcessoDocumentoAPublicarDto,
+  AcessoModeloDeDocumentoDto,
+  AplicacaoDeModeloDto,
+  AplicacaoDeModeloInput,
+  AtoDoProcessoDto,
+  AtoPublicadoDto,
+  CampoDivulgacaoDto,
+  ConfiguracaoDistribuicaoVagasDto,
+  ConfiguracaoDistribuicaoVagasInput,
+  ConformidadeLegalProcessoSeletivoDto,
+  ConformidadeProcessoSeletivoDto,
+  CriarProcessoSeletivoCommand,
+  CriterioDesempateInput,
+  DefinirAlgoritmoContagemPrazoRequest,
+  DefinirBonusRegionalRequest,
+  DefinirCascataRemanejamentoRequest,
+  DefinirClassificacaoRequest,
+  DefinirFormularioRequest,
+  DefinirIdentificadorLegivelRequest,
+  DefinirItensDoFormularioRequest,
+  DefinirOfertaAtendimentoRequest,
+  DefinirOpcoesDeCursoRequest,
+  DefinirOpcoesDeclaradasRequest,
+  DefinirReferenciaTemporalFatosRequest,
+  DefinirTaxaInscricaoRequest,
+  DefinirTermosDoFormularioRequest,
+  DocumentoAPublicarDto,
+  EtapaProcessoInput,
+  FaseCronogramaInput,
   FinalidadeDoDocumento,
-  ImpedimentoDoProduto,
-  SituacaoDoProdutoPrevisto,
-} from './schema';
-import type { components } from './schema';
+  FormularioRenderizavelDto,
+  FundamentoIsencaoDto,
+  IniciarEnvioDoDocumentoAPublicarDto,
+  IniciarEnvioDoDocumentoAPublicarRequest,
+  IniciarEnvioDoModeloDeDocumentoDto,
+  IniciarEnvioDoModeloDeDocumentoRequest,
+  ModeloDeDocumentoDto,
+  NoExigenciaInput,
+  ProcessoSeletivoDto,
+  ProcessoSeletivoResumoDto,
+  ProdutosPrevistosDoProcessoDto,
+  PublicarAtoAvulsoDoProcessoRequest,
+  PublicarProcessoSeletivoRequest,
+  PublicarProdutoDoEditalRequest,
+  RascunhoDaPublicacaoDto,
+  SalvarRascunhoDaPublicacaoRequest,
+  SnapshotVigenteDto,
+} from './processos-seletivos.contrato';
+import { rotasDoProcesso } from './rotas-do-processo';
 import { SELECAO_BASE_PATH } from './tokens';
-
-export type CriarProcessoSeletivoCommand = components['schemas']['CriarProcessoSeletivoCommand'];
-export type ProcessoSeletivoDto = components['schemas']['ProcessoSeletivoDto'];
-export type FormularioRenderizavelDto = components['schemas']['FormularioRenderizavelDto'];
-export type ProcessoSeletivoResumoDto = components['schemas']['ProcessoSeletivoResumoDto'];
-export type TipoProcessoSnapshotDto = components['schemas']['TipoProcessoSnapshotDto'];
-export type IniciarEnvioDoDocumentoAPublicarRequest =
-  components['schemas']['IniciarEnvioDoDocumentoAPublicarRequest'];
-export type IniciarEnvioDoDocumentoAPublicarDto =
-  components['schemas']['IniciarEnvioDoDocumentoAPublicarDto'];
-export type DocumentoAPublicarDto = components['schemas']['DocumentoAPublicarDto'];
-export type AcessoDocumentoAPublicarDto = components['schemas']['AcessoDocumentoAPublicarDto'];
-export type AnexoDoEditalRequest = components['schemas']['AnexoDoEditalRequest'];
-export type AtoDoProcessoDto = components['schemas']['AtoDoProcessoDto'];
-export type DocumentoDoAtoDto = components['schemas']['DocumentoDoAtoDto'];
-export type PublicarAtoAvulsoDoProcessoRequest =
-  components['schemas']['PublicarAtoAvulsoDoProcessoRequest'];
-export type AnexoDoAtoRequest = components['schemas']['AnexoDoAtoRequest'];
-export type AtoPublicadoDto = components['schemas']['AtoPublicadoDto'];
-export type ProdutosPrevistosDoProcessoDto = components['schemas']['ProdutosPrevistosDoProcessoDto'];
-export type FaseComProdutosPrevistosDto = components['schemas']['FaseComProdutosPrevistosDto'];
-export type EtapaComProdutosPrevistosDto = components['schemas']['EtapaComProdutosPrevistosDto'];
-export type ProdutoPrevistoDto = components['schemas']['ProdutoPrevistoDto'];
-export type PublicarProdutoDoEditalRequest = components['schemas']['PublicarProdutoDoEditalRequest'];
-export type ConfiguracaoDivulgacaoDto = components['schemas']['ConfiguracaoDivulgacaoDto'];
-export type CampoDivulgacaoDto = components['schemas']['CampoDivulgacaoDto'];
-
-/** Para que serve o documento enviado: o edital oficial, um anexo dele ou um documento de ato. */
-export { FinalidadeDoDocumento };
-
-/** O que o cronograma do edital declara publicar: a situação de cada item e o que o impede de sair. */
-export { ImpedimentoDoProduto, SituacaoDoProdutoPrevisto };
-export type IniciarEnvioDoModeloDeDocumentoRequest =
-  components['schemas']['IniciarEnvioDoModeloDeDocumentoRequest'];
-export type IniciarEnvioDoModeloDeDocumentoDto =
-  components['schemas']['IniciarEnvioDoModeloDeDocumentoDto'];
-export type ModeloDeDocumentoDto = components['schemas']['ModeloDeDocumentoDto'];
-export type AcessoModeloDeDocumentoDto = components['schemas']['AcessoModeloDeDocumentoDto'];
-export type ModeloDaExigenciaDto = components['schemas']['ModeloDaExigenciaDto'];
-export type ConfiguracaoTaxaInscricaoDto = components['schemas']['ConfiguracaoTaxaInscricaoDto'];
-export type DefinirTaxaInscricaoRequest = components['schemas']['DefinirTaxaInscricaoRequest'];
-export type FundamentoIsencaoDto = components['schemas']['FundamentoIsencaoDto'];
-
-/** Vocabulário fechado dos fundamentos que a configuração pode referenciar. */
-export { DefinirTaxaInscricaoRequestFundamentos as FundamentoIsencao };
-export type FundamentoIsencaoCodigo = DefinirTaxaInscricaoRequestFundamentos;
-export type ConfiguracaoDistribuicaoVagasInput =
-  components['schemas']['ConfiguracaoDistribuicaoVagasInput'];
-export type ConfiguracaoDistribuicaoVagasDto =
-  components['schemas']['ConfiguracaoDistribuicaoVagasDto'];
-export type EtapaProcessoInput = components['schemas']['EtapaProcessoInput'];
-export type EtapaProcessoDto = components['schemas']['EtapaProcessoDto'];
-export type FaseCronogramaInput = components['schemas']['FaseCronogramaInput'];
-export type NoExigenciaInput = components['schemas']['NoExigenciaInput'];
-export type ItemDocumentoExigidoInput = components['schemas']['ItemDocumentoExigidoInput'];
-export type DocumentoExigidoDto = components['schemas']['DocumentoExigidoDto'];
-export type NoExigenciaDto = components['schemas']['NoExigenciaDto'];
-export type FatoColetadoDto = components['schemas']['FatoColetadoDto'];
-export type FatoColetadoInput = components['schemas']['FatoColetadoInput'];
-export type ConfiguracaoDerivacaoDto = components['schemas']['ConfiguracaoDerivacaoDto'];
-export type ConfiguracaoDerivacaoInput = components['schemas']['ConfiguracaoDerivacaoInput'];
-export type ReferenciaTemporalFatosDto = components['schemas']['ReferenciaTemporalFatosDto'];
-export type DefinirReferenciaTemporalFatosRequest =
-  components['schemas']['DefinirReferenciaTemporalFatosRequest'];
-export type FormularioDto = components['schemas']['FormularioDto'];
-export type DefinirFormularioRequest = components['schemas']['DefinirFormularioRequest'];
-export type DefinirItensDoFormularioRequest =
-  components['schemas']['DefinirItensDoFormularioRequest'];
-export type DefinirTermosDoFormularioRequest =
-  components['schemas']['DefinirTermosDoFormularioRequest'];
-export type AplicacaoDeModeloInput = components['schemas']['AplicacaoDeModeloInput'];
-export type AplicacaoDeModeloDto = components['schemas']['AplicacaoDeModeloDto'];
-export type ParteDescartadaDto = components['schemas']['ParteDescartadaDto'];
-export type DefinirIdentificadorLegivelRequest =
-  components['schemas']['DefinirIdentificadorLegivelRequest'];
-export type BaseLegalDto = components['schemas']['BaseLegalDto'];
-export type FaseCronogramaDto = components['schemas']['FaseCronogramaDto'];
-export type RegraRecursoFaseInput = components['schemas']['RegraRecursoFaseInput'];
-export type DefinirAlgoritmoContagemPrazoRequest =
-  components['schemas']['DefinirAlgoritmoContagemPrazoRequest'];
-export type DefinirOfertaAtendimentoRequest =
-  components['schemas']['DefinirOfertaAtendimentoRequest'];
-export type DefinirCascataRemanejamentoRequest =
-  components['schemas']['DefinirCascataRemanejamentoRequest'];
-export type DestinoRemanejamentoInput = components['schemas']['DestinoRemanejamentoInput'];
-export type ConformidadeProcessoSeletivoDto =
-  components['schemas']['ConformidadeProcessoSeletivoDto'];
-export type ItemConformidadeDto = components['schemas']['ItemConformidadeDto'];
-export type AvisoConformidadeDto = components['schemas']['AvisoConformidadeDto'];
-export type ConformidadeLegalProcessoSeletivoDto =
-  components['schemas']['ConformidadeLegalProcessoSeletivoDto'];
-export type RegraAvaliadaDto = components['schemas']['RegraAvaliadaDto'];
-export type PublicarProcessoSeletivoRequest =
-  components['schemas']['PublicarProcessoSeletivoRequest'];
-export type DadosDoAtoRequest = components['schemas']['DadosDoAtoRequest'];
-export type ReferenciaRegraDto = components['schemas']['ReferenciaRegraDto'];
-export type ConfiguracaoClassificacaoDto = components['schemas']['ConfiguracaoClassificacaoDto'];
-export type DefinirOpcoesDeCursoRequest = components['schemas']['DefinirOpcoesDeCursoRequest'];
-export type DefinirClassificacaoRequest = components['schemas']['DefinirClassificacaoRequest'];
-export type RegraEliminacaoDto = components['schemas']['RegraEliminacaoDto'];
-export type RegraEliminacaoInput = components['schemas']['RegraEliminacaoInput'];
-export type ConfiguracaoBonusRegionalDto = components['schemas']['ConfiguracaoBonusRegionalDto'];
-export type ConfiguracaoBonusRegionalMunicipioDto =
-  components['schemas']['ConfiguracaoBonusRegionalMunicipioDto'];
-export type DefinirBonusRegionalRequest = components['schemas']['DefinirBonusRegionalRequest'];
-export type DefinirOpcoesDeclaradasRequest =
-  components['schemas']['DefinirOpcoesDeclaradasRequest'];
-export type CriterioDesempateDto = components['schemas']['CriterioDesempateDto'];
-export type CriterioDesempateInput = components['schemas']['CriterioDesempateInput'];
-export type SnapshotVigenteDto = components['schemas']['SnapshotVigenteDto'];
-export type RascunhoDaPublicacaoDto = components['schemas']['RascunhoDaPublicacaoDto'];
-export type SalvarRascunhoDaPublicacaoRequest =
-  components['schemas']['SalvarRascunhoDaPublicacaoRequest'];
 
 /** Filtro da listagem de Processos Seletivos (cursor opaco, ADR-0026). */
 export interface ProcessosSeletivosQuery {
@@ -142,7 +71,7 @@ export interface ProcessosSeletivosQuery {
 @Injectable({ providedIn: 'root' })
 export class ProcessosSeletivosApi {
   private readonly http = inject(HttpClient);
-  private readonly basePath = inject(SELECAO_BASE_PATH);
+  private readonly rotas = rotasDoProcesso(inject(SELECAO_BASE_PATH));
 
   /** GET `/api/selecao/processos-seletivos` — lista paginada por cursor opaco. */
   listar(
@@ -155,10 +84,10 @@ export class ProcessosSeletivosApi {
       params = params.set('limit', String(query.limit ?? 100));
     }
 
-    return this.http.get<ApiResult<readonly ProcessoSeletivoResumoDto[]>>(
-      `${this.basePath}/api/selecao/processos-seletivos`,
-      { params, context: withVendorMime('processo-seletivo', 1) },
-    );
+    return this.http.get<ApiResult<readonly ProcessoSeletivoResumoDto[]>>(this.rotas.colecao(), {
+      params,
+      context: withVendorMime('processo-seletivo', 1),
+    });
   }
 
   /**
@@ -174,7 +103,7 @@ export class ProcessosSeletivosApi {
     distribuicoes: readonly ConfiguracaoDistribuicaoVagasInput[],
   ): Observable<ApiResult<readonly ConfiguracaoDistribuicaoVagasDto[]>> {
     return this.http.post<ApiResult<readonly ConfiguracaoDistribuicaoVagasDto[]>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/distribuicao-vagas/simulacao`,
+      this.rotas.doProcesso(processoSeletivoId, 'distribuicao-vagas', 'simulacao'),
       distribuicoes,
       { context: withVendorMime('simulacao-distribuicao-vagas', 1) },
     );
@@ -190,7 +119,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/distribuicao-vagas`,
+      this.rotas.doProcesso(processoSeletivoId, 'distribuicao-vagas'),
       distribuicoes,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -209,7 +138,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/opcoes-de-curso`,
+      this.rotas.doProcesso(processoSeletivoId, 'opcoes-de-curso'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -237,7 +166,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/etapas`,
+      this.rotas.doProcesso(processoSeletivoId, 'etapas'),
       etapas,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -263,7 +192,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/cronograma-fases`,
+      this.rotas.doProcesso(processoSeletivoId, 'cronograma-fases'),
       fases,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -290,7 +219,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-exigidos`,
+      this.rotas.doProcesso(processoSeletivoId, 'documentos-exigidos'),
       raizes,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -312,7 +241,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/referencia-temporal-fatos`,
+      this.rotas.doProcesso(processoSeletivoId, 'referencia-temporal-fatos'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -387,8 +316,14 @@ export class ProcessosSeletivosApi {
    * DELETE `…/formularios/{finalidade}` — só em rascunho; a inscrição é recusada se outra
    * finalidade cita fato dela. Responde 204 sem corpo.
    */
-  removerFormulario(processoSeletivoId: string, finalidade: string): Observable<ApiResult<void>> {
-    return this.http.delete<ApiResult<void>>(this.urlDoFormulario(processoSeletivoId, finalidade));
+  removerFormulario(
+    processoSeletivoId: string,
+    finalidade: string,
+    context?: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.delete<ApiResult<void>>(this.urlDoFormulario(processoSeletivoId, finalidade), {
+      context,
+    });
   }
 
   /**
@@ -406,13 +341,17 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<AplicacaoDeModeloDto>> {
     return this.http.post<ApiResult<AplicacaoDeModeloDto>>(
-      `${this.basePath}/api/selecao/admin/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/formularios/aplicacoes-de-modelo`,
+      this.rotas.doProcessoNaAdministracao(
+        processoSeletivoId,
+        'formularios',
+        'aplicacoes-de-modelo',
+      ),
       request,
       {
-        context: withVendorMime('aplicacao-de-modelo-formulario', 1).set(
-          IDEMPOTENCY_KEY_TOKEN,
-          context.get(IDEMPOTENCY_KEY_TOKEN),
-        ),
+        context: context.set(VENDOR_MIME_TOKEN, {
+          resource: 'aplicacao-de-modelo-formulario',
+          version: 1,
+        }),
       },
     );
   }
@@ -435,7 +374,7 @@ export class ProcessosSeletivosApi {
   }
 
   private urlDoFormulario(processoSeletivoId: string, finalidade: string): string {
-    return `${this.basePath}/api/selecao/admin/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/formularios/${encodeURIComponent(finalidade)}`;
+    return this.rotas.doProcessoNaAdministracao(processoSeletivoId, 'formularios', finalidade);
   }
 
   /**
@@ -455,7 +394,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/identificador-legivel`,
+      this.rotas.doProcesso(processoSeletivoId, 'identificador-legivel'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -479,7 +418,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/algoritmo-contagem-prazo`,
+      this.rotas.doProcesso(processoSeletivoId, 'algoritmo-contagem-prazo'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -504,7 +443,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/oferta-atendimento`,
+      this.rotas.doProcesso(processoSeletivoId, 'oferta-atendimento'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -528,7 +467,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/cascata-remanejamento`,
+      this.rotas.doProcesso(processoSeletivoId, 'cascata-remanejamento'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -547,7 +486,7 @@ export class ProcessosSeletivosApi {
     processoSeletivoId: string,
   ): Observable<ApiResult<ConformidadeProcessoSeletivoDto>> {
     return this.http.get<ApiResult<ConformidadeProcessoSeletivoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/conformidade`,
+      this.rotas.doProcesso(processoSeletivoId, 'conformidade'),
       { context: withVendorMime('conformidade-processo-seletivo', 1) },
     );
   }
@@ -569,7 +508,7 @@ export class ProcessosSeletivosApi {
       params = params.set('dataReferencia', dataReferencia);
     }
     return this.http.get<ApiResult<ConformidadeLegalProcessoSeletivoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/conformidade-legal`,
+      this.rotas.doProcesso(processoSeletivoId, 'conformidade-legal'),
       { params, context: withVendorMime('conformidade-legal-processo-seletivo', 1) },
     );
   }
@@ -597,7 +536,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.post<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/publicacao`,
+      this.rotas.doProcesso(processoSeletivoId, 'publicacao'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -624,7 +563,7 @@ export class ProcessosSeletivosApi {
       params = params.set('instante', instante);
     }
     return this.http.get<ApiResult<SnapshotVigenteDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/snapshot-vigente`,
+      this.rotas.doProcesso(processoSeletivoId, 'snapshot-vigente'),
       { params, context: withVendorMime('snapshot-vigente-processo-seletivo', 1) },
     );
   }
@@ -640,7 +579,7 @@ export class ProcessosSeletivosApi {
     processoSeletivoId: string,
   ): Observable<ApiResult<RascunhoDaPublicacaoDto>> {
     return this.http.get<ApiResult<RascunhoDaPublicacaoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/rascunho-da-publicacao`,
+      this.rotas.doProcesso(processoSeletivoId, 'rascunho-da-publicacao'),
       { context: withVendorMime('rascunho-da-publicacao', 1) },
     );
   }
@@ -662,7 +601,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/rascunho-da-publicacao`,
+      this.rotas.doProcesso(processoSeletivoId, 'rascunho-da-publicacao'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -677,7 +616,7 @@ export class ProcessosSeletivosApi {
    */
   descartarRascunhoDaPublicacao(processoSeletivoId: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/rascunho-da-publicacao`,
+      this.rotas.doProcesso(processoSeletivoId, 'rascunho-da-publicacao'),
       { headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
@@ -699,7 +638,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/classificacao`,
+      this.rotas.doProcesso(processoSeletivoId, 'classificacao'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -719,7 +658,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/fatos/${encodeURIComponent(fatoCodigo)}/opcoes`,
+      this.rotas.doProcesso(processoSeletivoId, 'fatos', fatoCodigo, 'opcoes'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -739,7 +678,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/bonus-regional`,
+      this.rotas.doProcesso(processoSeletivoId, 'bonus-regional'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -759,7 +698,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/criterios-desempate`,
+      this.rotas.doProcesso(processoSeletivoId, 'criterios-desempate'),
       criterios,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -767,10 +706,9 @@ export class ProcessosSeletivosApi {
 
   /** GET `/api/selecao/processos-seletivos/{id}` — detalhe e snapshot do tipo. */
   obter(id: string): Observable<ApiResult<ProcessoSeletivoDto>> {
-    return this.http.get<ApiResult<ProcessoSeletivoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(id)}`,
-      { context: withVendorMime('processo-seletivo', 1) },
-    );
+    return this.http.get<ApiResult<ProcessoSeletivoDto>>(this.rotas.doProcesso(id), {
+      context: withVendorMime('processo-seletivo', 1),
+    });
   }
 
   /** POST `/api/selecao/processos-seletivos` — criação idempotente. */
@@ -778,11 +716,10 @@ export class ProcessosSeletivosApi {
     command: CriarProcessoSeletivoCommand,
     context: HttpContext,
   ): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(
-      `${this.basePath}/api/selecao/processos-seletivos`,
-      command,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
+    return this.http.post<ApiResult<string>>(this.rotas.colecao(), command, {
+      context,
+      headers: new HttpHeaders({ Accept: 'application/json' }),
+    });
   }
 
   /**
@@ -807,7 +744,7 @@ export class ProcessosSeletivosApi {
     const params =
       finalidade === undefined ? new HttpParams() : new HttpParams().set('finalidade', finalidade);
     return this.http.get<ApiResult<readonly DocumentoAPublicarDto[]>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-a-publicar`,
+      this.rotas.doProcesso(processoSeletivoId, 'documentos-a-publicar'),
       { params, context: withVendorMime('documento-a-publicar', 1) },
     );
   }
@@ -821,7 +758,7 @@ export class ProcessosSeletivosApi {
     processoSeletivoId: string,
   ): Observable<ApiResult<readonly AtoDoProcessoDto[]>> {
     return this.http.get<ApiResult<readonly AtoDoProcessoDto[]>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/atos`,
+      this.rotas.doProcesso(processoSeletivoId, 'atos'),
       { context: withVendorMime('ato-do-processo', 1) },
     );
   }
@@ -841,7 +778,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<AtoPublicadoDto>> {
     return this.http.post<ApiResult<AtoPublicadoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/atos`,
+      this.rotas.doProcesso(processoSeletivoId, 'atos'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -857,7 +794,7 @@ export class ProcessosSeletivosApi {
     processoSeletivoId: string,
   ): Observable<ApiResult<ProdutosPrevistosDoProcessoDto>> {
     return this.http.get<ApiResult<ProdutosPrevistosDoProcessoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/produtos-previstos`,
+      this.rotas.doProcesso(processoSeletivoId, 'produtos-previstos'),
       { context: withVendorMime('produtos-previstos-do-processo', 1) },
     );
   }
@@ -879,7 +816,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<AtoPublicadoDto>> {
     return this.http.post<ApiResult<AtoPublicadoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/produtos-previstos/${encodeURIComponent(produtoId)}/publicacoes`,
+      this.rotas.doProcesso(processoSeletivoId, 'produtos-previstos', produtoId, 'publicacoes'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -891,7 +828,7 @@ export class ProcessosSeletivosApi {
    */
   listarCamposDivulgacao(): Observable<ApiResult<readonly CampoDivulgacaoDto[]>> {
     return this.http.get<ApiResult<readonly CampoDivulgacaoDto[]>>(
-      `${this.basePath}/api/selecao/campos-divulgacao`,
+      this.rotas.doCatalogo('campos-divulgacao'),
       { context: withVendorMime('campo-divulgacao', 1) },
     );
   }
@@ -906,7 +843,7 @@ export class ProcessosSeletivosApi {
    */
   listarFundamentosIsencao(): Observable<ApiResult<readonly FundamentoIsencaoDto[]>> {
     return this.http.get<ApiResult<readonly FundamentoIsencaoDto[]>>(
-      `${this.basePath}/api/selecao/fundamentos-isencao`,
+      this.rotas.doCatalogo('fundamentos-isencao'),
       { context: withVendorMime('fundamento-isencao', 1) },
     );
   }
@@ -927,7 +864,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/taxa-inscricao`,
+      this.rotas.doProcesso(processoSeletivoId, 'taxa-inscricao'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -948,7 +885,12 @@ export class ProcessosSeletivosApi {
     documentoAPublicarId: string,
   ): Observable<ApiResult<AcessoDocumentoAPublicarDto>> {
     return this.http.get<ApiResult<AcessoDocumentoAPublicarDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-a-publicar/${encodeURIComponent(documentoAPublicarId)}/acesso`,
+      this.rotas.doProcesso(
+        processoSeletivoId,
+        'documentos-a-publicar',
+        documentoAPublicarId,
+        'acesso',
+      ),
       { context: withVendorMime('acesso-documento-a-publicar', 1) },
     );
   }
@@ -966,7 +908,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<IniciarEnvioDoDocumentoAPublicarDto>> {
     return this.http.post<ApiResult<IniciarEnvioDoDocumentoAPublicarDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-a-publicar`,
+      this.rotas.doProcesso(processoSeletivoId, 'documentos-a-publicar'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -986,7 +928,12 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<DocumentoAPublicarDto>> {
     return this.http.post<ApiResult<DocumentoAPublicarDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/documentos-a-publicar/${encodeURIComponent(documentoAPublicarId)}/confirmacao`,
+      this.rotas.doProcesso(
+        processoSeletivoId,
+        'documentos-a-publicar',
+        documentoAPublicarId,
+        'confirmacao',
+      ),
       null,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -1004,7 +951,7 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<IniciarEnvioDoModeloDeDocumentoDto>> {
     return this.http.post<ApiResult<IniciarEnvioDoModeloDeDocumentoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/modelos-de-documento`,
+      this.rotas.doProcesso(processoSeletivoId, 'modelos-de-documento'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -1020,7 +967,12 @@ export class ProcessosSeletivosApi {
     context: HttpContext,
   ): Observable<ApiResult<ModeloDeDocumentoDto>> {
     return this.http.post<ApiResult<ModeloDeDocumentoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/modelos-de-documento/${encodeURIComponent(modeloDeDocumentoId)}/confirmacao`,
+      this.rotas.doProcesso(
+        processoSeletivoId,
+        'modelos-de-documento',
+        modeloDeDocumentoId,
+        'confirmacao',
+      ),
       null,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -1036,7 +988,12 @@ export class ProcessosSeletivosApi {
     modeloDeDocumentoId: string,
   ): Observable<ApiResult<AcessoModeloDeDocumentoDto>> {
     return this.http.get<ApiResult<AcessoModeloDeDocumentoDto>>(
-      `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/modelos-de-documento/${encodeURIComponent(modeloDeDocumentoId)}/acesso`,
+      this.rotas.doProcesso(
+        processoSeletivoId,
+        'modelos-de-documento',
+        modeloDeDocumentoId,
+        'acesso',
+      ),
       { context: withVendorMime('acesso-modelo-de-documento', 1) },
     );
   }
