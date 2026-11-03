@@ -12,18 +12,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 
-import {
-  ProblemI18nService,
-  isApiOk,
-  STATUS_HTTP,
-} from '@uniplus/shared-core/http';
-import {
-  FinalidadeDoDocumento,
-  ProcessoSeletivoDto,
-  ProcessosSeletivosApi,
-} from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
   DialogComponent,
@@ -37,6 +26,7 @@ import { PASSOS } from './steps/processo-seletivo.data';
 import { PASSO_DO_WIZARD } from './steps/passo-do-wizard';
 import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { FocoDoEditor } from './editor/foco-do-editor.service';
+import { LeituraDoProcesso } from './editor/leitura-do-processo.service';
 import { RascunhoDaPublicacao } from './editor/rascunho-da-publicacao.service';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { EnvioDoEdital } from './steps/shared/envio-do-edital.service';
@@ -59,26 +49,10 @@ import { reavaliarRecusaPeloDesempate } from './steps/steps/desempate/quadro-do-
 import { EliminacaoStepComponent } from './steps/steps/eliminacao/eliminacao.component';
 import { AtendimentoStepComponent } from './steps/steps/atendimento/atendimento.component';
 import { RevisaoStepComponent } from './steps/steps/revisao/revisao.component';
-import { classificarDocumentos } from './steps/shared/hidratacao';
-import { passosConcluidosDe } from './steps/shared/passos-concluidos';
 import {
   AVISO_DE_RASCUNHO_NAO_GRAVADO,
   ConfirmacaoDeSaida,
 } from './steps/shared/rascunho-nao-gravado.guard';
-import type { MotivoFalhaDeLeitura } from './steps/processo-seletivo.models';
-
-/** Formato do `:id` na rota — recusar aqui poupa uma ida ao servidor com lixo. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** 404 e 403 descrevem o endereço, não uma indisponibilidade: repetir a leitura daria o mesmo
- * resultado, e a saída é voltar à listagem. O resto admite retentativa. */
-function motivoDe(status: number): MotivoFalhaDeLeitura {
-  if (status === STATUS_HTTP.NAO_ENCONTRADO) return 'naoEncontrado';
-  if (status === STATUS_HTTP.SEM_PERMISSAO || status === STATUS_HTTP.NAO_AUTENTICADO) {
-    return 'semPermissao';
-  }
-  return 'falhaTemporaria';
-}
 
 @Component({
   selector: 'sel-processo-seletivo',
@@ -109,6 +83,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     FocoDoEditor,
     RascunhoDaPublicacao,
     ConducaoDoWizard,
+    LeituraDoProcesso,
     GravacaoDoProcesso,
     CadastroInicialService,
     EnvioDoEdital,
@@ -125,30 +100,27 @@ export class ProcessoSeletivoPage {
   /** Os passos na ordem em que o template os declara. */
   private readonly passos = viewChildren(PASSO_DO_WIZARD);
 
-  readonly passoCorrente = computed(() => PASSOS[this.store.currentStep()]);
-
   readonly store = inject(ProcessoSeletivoStore);
-  private readonly rascunho = inject(RascunhoDaPublicacao);
   private readonly conducao = inject(ConducaoDoWizard);
+  private readonly leitura = inject(LeituraDoProcesso);
+  private readonly rascunho = inject(RascunhoDaPublicacao);
+  private readonly foco = inject(FocoDoEditor);
+  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
+  private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
+  private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
+  readonly passoCorrente = computed(() => PASSOS[this.store.currentStep()]);
+  readonly podePublicar = this.conducao.podePublicar;
+  readonly confirmacaoPendente = this.conducao.confirmacaoPendente;
+  readonly restaurarFocoAoFechar = this.conducao.restaurarFocoAoFechar;
   readonly rascunhoPendente = this.rascunho.pendente;
   readonly rascunhoSalvoEm = this.rascunho.salvoEm;
   readonly avisoDoRascunho = this.rascunho.aviso;
   readonly salvandoRascunho = this.rascunho.salvando;
   readonly falhaDoRascunho = this.rascunho.falha;
-  private readonly foco = inject(FocoDoEditor);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly api = inject(ProcessosSeletivosApi);
-  private readonly cadastro = inject(CadastroInicialService);
-  private readonly releitura = inject(ReleituraDoSnapshot);
-  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
-  private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
-  private readonly problemI18n = inject(ProblemI18nService);
-  private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
-
-  readonly podePublicar = this.conducao.podePublicar;
 
   protected readonly itensDosPassos = computed<StepItem[]>(() =>
     this.store.labels.map((rotulo, index) => ({
@@ -157,12 +129,6 @@ export class ProcessoSeletivoPage {
       concluido: this.store.completedSteps().has(index),
     })),
   );
-
-  /** Vez da leitura em curso — respostas de vezes anteriores são descartadas. */
-  private leituraEmCurso = 0;
-
-  readonly confirmacaoPendente = this.conducao.confirmacaoPendente;
-  readonly restaurarFocoAoFechar = this.conducao.restaurarFocoAoFechar;
 
   /**
    * Rótulo do botão de avanço. O passo aberto pode dizer o seu; sem isso, o
@@ -264,8 +230,7 @@ export class ProcessoSeletivoPage {
             return;
           }
 
-          this.leituraEmCurso += 1;
-          this.limparEditor();
+          this.leitura.abandonar();
         }
         return;
       }
@@ -278,7 +243,7 @@ export class ProcessoSeletivoPage {
         // mais seguro do que consertar sinal por sinal — foi remendando esses
         // sinais que se chegou a um anexo destravado sobre estado desconhecido.
         if (this.store.falhaDeLeitura() !== null || this.store.hidratando()) {
-          void this.retomar(id);
+          void this.leitura.retomar(id);
         }
         return;
       }
@@ -291,124 +256,8 @@ export class ProcessoSeletivoPage {
         return;
       }
 
-      void this.retomar(id);
+      void this.leitura.retomar(id);
     });
-  }
-
-  /**
-   * Retomada por endereço (CA-05, CA-06, CA-08): lê o detalhe canônico e o
-   * readback dos documentos do edital.
-   *
-   * Falha de leitura nunca vira rascunho vazio — abrir um cadastro novo sob o
-   * id de outro processo levaria o operador a preencher tudo de novo e, no
-   * passo de identificação, a criar uma duplicata.
-   */
-  protected async retomar(id: string): Promise<void> {
-    // Com a página reusada, trocar de processo antes de a leitura anterior
-    // responder deixa duas em voo. Se a mais antiga chegar por último, ela
-    // sobrescreveria o store — o endereço mostraria B com os dados de A, e um
-    // anexo enviado ali iria para o processo errado. Cada leitura carimba sua
-    // vez e desiste ao descobrir que foi superada.
-    const leitura = ++this.leituraEmCurso;
-    const superada = (): boolean => leitura !== this.leituraEmCurso;
-
-    if (!UUID.test(id)) {
-      // A leitura anterior já foi superada pelo carimbo acima; sem encerrar o
-      // carregamento aqui, voltar ao processo que estava aberto encontraria o
-      // editor preso no indicador de progresso para sempre.
-      this.store.hidratando.set(false);
-      this.store.falhaDeLeitura.set({
-        motivo: 'idInvalido',
-        mensagem: 'O endereço não aponta para um identificador de processo válido.',
-      });
-      return;
-    }
-
-    // Abrir um processo por endereço sempre começa do zero. Hidratar por cima
-    // do que estava em tela manteria o que o detalhe não traz — anexo,
-    // metadados locais do edital e as seções ainda sem readback — atribuído ao
-    // processo errado, e isso vale tanto vindo de outro `:id` quanto de um
-    // `novo` já preenchido, onde ainda não há id no store para comparar.
-    //
-    // O caminho `novo` → id recém-criado não passa por aqui: o id já é o do
-    // store, e ali o rascunho local pertence ao processo que acabou de nascer.
-    this.limparEditor();
-
-    this.store.falhaDeLeitura.set(null);
-    this.store.hidratando.set(true);
-
-    const detalhe = await firstValueFrom(this.api.obter(id));
-    if (superada()) return;
-
-    if (!isApiOk(detalhe)) {
-      this.store.hidratando.set(false);
-      this.store.falhaDeLeitura.set({
-        motivo: motivoDe(detalhe.problem.status),
-        mensagem: this.problemI18n.resolve(detalhe.problem).title,
-      });
-      return;
-    }
-
-    this.store.hidratar(detalhe.data);
-    await this.restaurarDocumentoEdital(id, superada);
-    if (superada()) return;
-    await this.rascunho.restaurar(id, superada);
-    if (superada()) return;
-    await this.derivarPassosConcluidos(detalhe.data, superada);
-    if (superada()) return;
-
-    this.store.hidratando.set(false);
-  }
-
-  /**
-   * O stepper de um processo retomado mostra o que o servidor tem gravado e conforme, não a
-   * navegação desta sessão — que recomeça vazia a cada abertura. Sem o checklist não há como
-   * afirmar a conformidade, então nenhum passo é dado por concluído: o mesmo estado de antes,
-   * em vez de um verde que a Revisão contradiria.
-   */
-  private async derivarPassosConcluidos(
-    detalhe: ProcessoSeletivoDto,
-    superada: () => boolean,
-  ): Promise<void> {
-    const checklist = await firstValueFrom(this.api.obterConformidade(detalhe.id));
-    if (superada() || !isApiOk(checklist)) return;
-    this.store.syncCompleted(passosConcluidosDe(detalhe, checklist.data.itens));
-  }
-
-  /**
-   * Um único documento confirmado restaura o vínculo sozinho; havendo mais de
-   * um, a escolha é do administrador (CA-06) — presumir que o mais recente é
-   * o oficial trocaria silenciosamente o edital do certame.
-   *
-   * Falha aqui não bloqueia o editor: o processo foi lido, e o passo de
-   * identificação segue operável para anexar de novo. O aviso diz que o anexo
-   * existente não pôde ser verificado, para o operador não concluir que não há
-   * nenhum.
-   */
-  private async restaurarDocumentoEdital(
-    processoSeletivoId: string,
-    superada: () => boolean,
-  ): Promise<void> {
-    if (!this.podePublicar()) return;
-    const resultado = await firstValueFrom(
-      this.api.listarDocumentosAPublicar(processoSeletivoId, FinalidadeDoDocumento.documentoDoEdital),
-    );
-    if (superada()) return;
-
-    if (!isApiOk(resultado)) {
-      this.store.avisoDocumentos.set(
-        'Não foi possível verificar se este processo já tem edital anexado. Confira antes de enviar outro.',
-      );
-      return;
-    }
-
-    this.store.avisoDocumentos.set(null);
-
-    const { vinculo, escolha } = classificarDocumentos(resultado.data);
-    if (vinculo !== null) {
-      this.store.projetarSecao('identificacao', { uploads: [vinculo] });
-    }
-    this.store.documentosParaEscolha.set(escolha);
   }
 
   /**
@@ -432,29 +281,6 @@ export class ProcessoSeletivoPage {
 
   protected descartarRascunhoDaPublicacao(): Promise<void> {
     return this.rascunho.descartar();
-  }
-
-  /**
-   * Limpa o editor por inteiro. O store guarda o que está em tela; o serviço de
-   * cadastro guarda o comando retido e as chaves de idempotência da criação em
-   * andamento. Os dois descrevem o mesmo processo e precisam ser esquecidos
-   * juntos — deixar as chaves para trás faria o próximo envio repetir o
-   * cadastro anterior.
-   */
-  private limparEditor(): void {
-    this.store.reset();
-    this.cadastro.descartarCadastroEmAndamento();
-    this.catalogosDeClassificacao.esquecerPesosAreaEnem();
-
-    // A rota reusa esta página, então um resumo aberto sobrevive à troca de
-    // processo se ninguém o descartar. Confirmá-lo depois resolveria o passo
-    // pelo estado novo enquanto exibia os dados do editor anterior — o resumo
-    // vale para o rascunho que o produziu, e esse rascunho acabou de sumir.
-    this.conducao.confirmacaoPendente.set(null);
-
-    // Mesmo motivo do resumo: o rastro do rascunho descreve o processo que estava aberto. Sem
-    // esquecê-lo, a guarda de saída perguntaria sobre a transcrição do processo anterior.
-    this.rascunho.esquecer();
   }
 
   /** Há transcrição por gravar, e quem está trocando de processo concordou em perdê-la? */
@@ -485,7 +311,7 @@ export class ProcessoSeletivoPage {
   /** Repete a leitura do endereço atual, para as falhas que admitem retentativa. */
   protected tentarNovamente(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id !== null && !this.store.hidratando()) void this.retomar(id);
+    if (id !== null && !this.store.hidratando()) void this.leitura.retomar(id);
   }
 
   previous(): void {
