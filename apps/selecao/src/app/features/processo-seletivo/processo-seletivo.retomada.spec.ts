@@ -1400,6 +1400,34 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
   });
 
   /**
+   * O resumo aberto vale para o rascunho que o produziu. Confirmá-lo depois da troca resolveria o
+   * passo pelo estado novo enquanto exibe os dados do editor anterior. A asserção vem na linha
+   * seguinte ao `next`, sem esperar a detecção de mudanças: o efeito que zera o resumo a cada
+   * troca de passo só roda depois dela, então só a limpeza do editor pode tê-lo zerado.
+   */
+  it('zera a confirmação pendente ao trocar de processo', async () => {
+    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
+    const paramMap = new BehaviorSubject<{ get: (k: string) => string | null }>({
+      get: () => PROCESSO_ID,
+    });
+    const cenario = montar({ id: PROCESSO_ID, paramMap });
+    await propagar();
+    cenario.store.goTo(2);
+    cenario.fixture.detectChanges();
+    cenario.componente.confirmacaoPendente.set({
+      titulo: 'Gravar o passo',
+      aviso: 'Confira os dados antes de gravar.',
+      itens: [],
+      rotuloDeConfirmar: 'Gravar',
+    });
+    expect(cenario.componente.confirmacaoPendente()).not.toBeNull();
+
+    paramMap.next({ get: () => OUTRO_ID });
+
+    expect(cenario.componente.confirmacaoPendente()).toBeNull();
+  });
+
+  /**
    * Duas leituras em voo podem responder fora de ordem. A antiga chegando por
    * último mostraria A sob o endereço de B — e o anexo enviado ali iria para o
    * processo errado.

@@ -42,6 +42,7 @@ import {
   StatusProcesso,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
+import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { quadroCongelado } from './steps/shared/quadro-de-pesos';
@@ -508,7 +509,15 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const conteudoComLimiteInvalido = () => ({
       titulo: null,
       etapas: [
-        { codigo: 'S1', ordem: 0, tipo: 'SECAO', bloco: null, titulo: 'Escolaridade', descricao: null, aviso: null },
+        {
+          codigo: 'S1',
+          ordem: 0,
+          tipo: 'SECAO',
+          bloco: null,
+          titulo: 'Escolaridade',
+          descricao: null,
+          aviso: null,
+        },
       ],
       itens: [
         {
@@ -529,7 +538,10 @@ describe('ProcessoSeletivoPage — publicação', () => {
     });
 
     /** Avança e deixa as renderizações que o foco espera (aba aberta, seção aberta) acontecerem. */
-    async function tentarAvancar(fixture: { detectChanges(): void }, page: { nextOrPublish(): Promise<void> }) {
+    async function tentarAvancar(
+      fixture: { detectChanges(): void },
+      page: { nextOrPublish(): Promise<void> },
+    ) {
       await page.nextOrPublish();
       fixture.detectChanges();
       for (let volta = 0; volta < 4; volta++) {
@@ -545,7 +557,14 @@ describe('ProcessoSeletivoPage — publicação', () => {
       store.patchObjectSection('formulario', {
         conteudo: outraAba ? valido : invalido,
         outrasFinalidades: outraAba
-          ? [{ finalidade: 'HABILITACAO', faseCodigo: '', conteudo: invalido, modeloOrigemCodigo: null }]
+          ? [
+              {
+                finalidade: 'HABILITACAO',
+                faseCodigo: '',
+                conteudo: invalido,
+                modeloOrigemCodigo: null,
+              },
+            ]
           : [],
       });
       store.goTo(STEP_LABELS.indexOf('Formulários'));
@@ -559,7 +578,8 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
     it('abre a seção recolhida e leva o foco ao limite inválido ao avançar', async () => {
       const { fixture, page, raiz, campo } = await avancarDoFormulario(false);
-      for (const botao of raiz.querySelectorAll<HTMLButtonElement>('.editor-formulario__alternar')) botao.click();
+      for (const botao of raiz.querySelectorAll<HTMLButtonElement>('.editor-formulario__alternar'))
+        botao.click();
       fixture.detectChanges();
       expect(campo()?.closest('[hidden]')).not.toBeNull();
 
@@ -604,10 +624,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const { fixture, page, store } = montar();
     const stub = { validate: () => ({ valid: true }) };
 
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockReturnValue(stub);
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockReturnValue(stub);
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
@@ -637,10 +654,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
       persistir: persistirDoPassoAnterior,
     };
 
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockImplementation((index: number) => (index === 2 ? stubComPersistir : stubSemPersistir));
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+      (index: number) => (index === 2 ? stubComPersistir : stubSemPersistir),
+    );
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
@@ -663,10 +679,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
     };
     const stubSemPersistir = { validate: () => ({ valid: true }) };
 
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockImplementation((index: number) => (index === 2 ? stubQueMarca : stubSemPersistir));
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+      (index: number) => (index === 2 ? stubQueMarca : stubSemPersistir),
+    );
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
@@ -716,15 +731,13 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const stubSemPersistir = { validate: () => ({ valid: true }) };
     // A Revisão para a publicação depois da releitura: o que importa aqui é o que veio antes.
     const stubDaRevisao = { validate: () => ({ valid: false, messages: ['Revisão pendente.'] }) };
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockImplementation((index: number) =>
-      index === 2
-        ? stubDaEliminacao
-        : index === store.totalSteps - 1
-          ? stubDaRevisao
-          : stubSemPersistir,
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+      (index: number) =>
+        index === 2
+          ? stubDaEliminacao
+          : index === store.totalSteps - 1
+            ? stubDaRevisao
+            : stubSemPersistir,
     );
 
     store.goTo(store.totalSteps - 1);
@@ -757,10 +770,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
           : { valid: true };
       },
     };
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockImplementation(() => stubQueDependeDaClassificacao);
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+      () => stubQueDependeDaClassificacao,
+    );
     store.classificacao.marcarDesconhecida();
 
     store.goTo(store.totalSteps - 1);
@@ -778,10 +790,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const { fixture, page, store } = montar();
     const reler = vi.spyOn(fixture.debugElement.injector.get(ReleituraDoSnapshot), 'reler');
     const stubIncompleto = { validate: () => ({ valid: false, messages: ['Falta a regra.'] }) };
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockImplementation(() => stubIncompleto);
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+      () => stubIncompleto,
+    );
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
@@ -892,15 +903,13 @@ describe('ProcessoSeletivoPage — publicação', () => {
         }),
       };
       const stubSemPersistir = { validate: () => ({ valid: true }) };
-      vi.spyOn(
-        page as unknown as { stepValidatorAt: (index: number) => unknown },
-        'stepValidatorAt',
-      ).mockImplementation((index: number) =>
-        index === INDICE_DO_DESEMPATE
-          ? stubDoDesempate
-          : index === INDICE_DA_ELIMINACAO
-            ? stubDaEliminacao
-            : stubSemPersistir,
+      vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+        (index: number) =>
+          index === INDICE_DO_DESEMPATE
+            ? stubDoDesempate
+            : index === INDICE_DA_ELIMINACAO
+              ? stubDaEliminacao
+              : stubSemPersistir,
       );
       fixture.detectChanges();
       return { ...montagem, ordem };
@@ -1018,15 +1027,13 @@ describe('ProcessoSeletivoPage — publicação', () => {
         }),
       };
       const stubSemPersistir = { validate: () => ({ valid: true }) };
-      vi.spyOn(
-        page as unknown as { stepValidatorAt: (index: number) => unknown },
-        'stepValidatorAt',
-      ).mockImplementation((index: number) =>
-        index === INDICE_DO_DESEMPATE
-          ? passos[index]
-          : index === INDICE_DA_ELIMINACAO
-            ? stubDaEliminacao
-            : stubSemPersistir,
+      vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+        (index: number) =>
+          index === INDICE_DO_DESEMPATE
+            ? passos[index]
+            : index === INDICE_DA_ELIMINACAO
+              ? stubDaEliminacao
+              : stubSemPersistir,
       );
       return { page, store, ordem, gravarCriterios };
     }
@@ -1123,10 +1130,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
           ? { valid: false, messages: ['Classificação desconhecida.'] }
           : { valid: true },
     };
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockImplementation((index: number) => (index === 2 ? stubComPersistir : stubQueAguarda));
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+      (index: number) => (index === 2 ? stubComPersistir : stubQueAguarda),
+    );
     store.classificacao.marcarDesconhecida();
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
@@ -1149,10 +1155,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
         .mockResolvedValue({ valid: false, messages: ['Falha ao gravar de novo.'] }),
     };
 
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockImplementation((index: number) => (index === 2 ? stubComFalha : stubSemPersistir));
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+      (index: number) => (index === 2 ? stubComFalha : stubSemPersistir),
+    );
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
@@ -1185,11 +1190,8 @@ describe('ProcessoSeletivoPage — publicação', () => {
       recarregarChecklist,
     };
 
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockImplementation((index: number) =>
-      index === store.totalSteps - 1 ? stubRevisao : stubSemPersistir,
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+      (index: number) => (index === store.totalSteps - 1 ? stubRevisao : stubSemPersistir),
     );
 
     store.goTo(store.totalSteps - 1);
@@ -1228,14 +1230,13 @@ describe('ProcessoSeletivoPage — publicação', () => {
     });
     const stubRevisao = { validate: () => ({ valid: true }), recarregarChecklist };
 
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockImplementation((index: number) => {
-      if (index === store.totalSteps - 1) return stubRevisao;
-      if (index === 1) return stubComPersistir;
-      return stubSemPersistir;
-    });
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+      (index: number) => {
+        if (index === store.totalSteps - 1) return stubRevisao;
+        if (index === 1) return stubComPersistir;
+        return stubSemPersistir;
+      },
+    );
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
@@ -1266,14 +1267,13 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const stub1 = { validate: () => ({ valid: true }), persistir: persistirDoPrimeiroPasso };
     const stub2 = { validate: () => ({ valid: true }), persistir: persistirDoSegundoPasso };
 
-    vi.spyOn(
-      page as unknown as { stepValidatorAt: (index: number) => unknown },
-      'stepValidatorAt',
-    ).mockImplementation((index: number) => {
-      if (index === 1) return stub1;
-      if (index === 2) return stub2;
-      return stubSemPersistir;
-    });
+    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+      (index: number) => {
+        if (index === 1) return stub1;
+        if (index === 2) return stub2;
+        return stubSemPersistir;
+      },
+    );
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();

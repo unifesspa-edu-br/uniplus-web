@@ -7,7 +7,6 @@ import {
   ElementRef,
   effect,
   inject,
-  signal,
   untracked,
   viewChild,
   viewChildren,
@@ -15,7 +14,6 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   ProblemI18nService,
   isApiOk,
@@ -35,10 +33,9 @@ import {
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
-import { StepValidation } from './steps/processo-seletivo.models';
 import { PASSOS } from './steps/processo-seletivo.data';
-import { PASSO_DO_WIZARD, PassoDoWizard } from './steps/passo-do-wizard';
-import type { ConfirmacaoDeGravacao, GravacaoDoPasso } from './steps/passo-do-wizard';
+import { PASSO_DO_WIZARD } from './steps/passo-do-wizard';
+import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { FocoDoEditor } from './editor/foco-do-editor.service';
 import { RascunhoDaPublicacao } from './editor/rascunho-da-publicacao.service';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
@@ -111,6 +108,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     ProcessoSeletivoStore,
     FocoDoEditor,
     RascunhoDaPublicacao,
+    ConducaoDoWizard,
     GravacaoDoProcesso,
     CadastroInicialService,
     EnvioDoEdital,
@@ -131,6 +129,7 @@ export class ProcessoSeletivoPage {
 
   readonly store = inject(ProcessoSeletivoStore);
   private readonly rascunho = inject(RascunhoDaPublicacao);
+  private readonly conducao = inject(ConducaoDoWizard);
 
   readonly rascunhoPendente = this.rascunho.pendente;
   readonly rascunhoSalvoEm = this.rascunho.salvoEm;
@@ -147,11 +146,9 @@ export class ProcessoSeletivoPage {
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
   private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
   private readonly problemI18n = inject(ProblemI18nService);
-  private readonly permissoes = inject(PermissoesService);
   private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
 
-  /** Publicar, gravar o rascunho da publicação e enviar o edital exigem a permissão de publicar, além da de configurar. */
-  readonly podePublicar = computed(() => this.permissoes.tem(PERMISSAO.selecao.processosPublicar));
+  readonly podePublicar = this.conducao.podePublicar;
 
   protected readonly itensDosPassos = computed<StepItem[]>(() =>
     this.store.labels.map((rotulo, index) => ({
@@ -161,26 +158,11 @@ export class ProcessoSeletivoPage {
     })),
   );
 
-  /** Retorna o componente do step ativo, se estiver instanciado. */
-  private stepValidatorAt(index: number): PassoDoWizard | undefined {
-    return this.passos()[index];
-  }
-
   /** Vez da leitura em curso — respostas de vezes anteriores são descartadas. */
   private leituraEmCurso = 0;
 
-  /**
-   * Resumo aguardando confirmação do operador. Enquanto não é `null`, nada foi
-   * enviado à API — é exatamente esse o ponto do modal.
-   */
-  readonly confirmacaoPendente = signal<ConfirmacaoDeGravacao | null>(null);
-
-  /**
-   * Se o diálogo devolve o foco ao botão que o abriu. Só é desligado quando a
-   * confirmação levou a um avanço de passo — aí a tela por trás mudou, e o
-   * destino certo é o título do passo novo.
-   */
-  readonly restaurarFocoAoFechar = signal(true);
+  readonly confirmacaoPendente = this.conducao.confirmacaoPendente;
+  readonly restaurarFocoAoFechar = this.conducao.restaurarFocoAoFechar;
 
   /**
    * Rótulo do botão de avanço. O passo aberto pode dizer o seu; sem isso, o
@@ -190,7 +172,7 @@ export class ProcessoSeletivoPage {
   readonly rotuloDeAvanco = computed(() => {
     if (!this.store.edicaoPermitida()) return 'Próximo';
     if (this.store.isLast()) return 'Publicar';
-    const passo = this.stepValidatorAt(this.store.currentStep());
+    const passo = this.conducao.passoNo(this.store.currentStep());
     return passo?.rotuloDeAvanco?.() ?? 'Próximo';
   });
 
@@ -203,6 +185,8 @@ export class ProcessoSeletivoPage {
   private readonly rodape = viewChild<ElementRef<HTMLElement>>('wizFooter');
 
   constructor() {
+    this.conducao.conectar(this.passos);
+
     // Um resumo aberto vale para o passo que o produziu. Trocar de passo — pelo
     // stepper, pelo histórico do navegador ou por uma troca de processo, já que
     // a rota reusa esta página — o torna obsoleto, e confirmá-lo depois
@@ -466,7 +450,7 @@ export class ProcessoSeletivoPage {
     // processo se ninguém o descartar. Confirmá-lo depois resolveria o passo
     // pelo estado novo enquanto exibia os dados do editor anterior — o resumo
     // vale para o rascunho que o produziu, e esse rascunho acabou de sumir.
-    this.confirmacaoPendente.set(null);
+    this.conducao.confirmacaoPendente.set(null);
 
     // Mesmo motivo do resumo: o rastro do rascunho descreve o processo que estava aberto. Sem
     // esquecê-lo, a guarda de saída perguntaria sobre a transcrição do processo anterior.
@@ -509,426 +493,16 @@ export class ProcessoSeletivoPage {
     this.store.previous();
   }
 
-  async nextOrPublish(): Promise<void> {
-    // Single-flight: o passo 2 grava na API, e um duplo clique criaria dois
-    // processos com chaves de idempotência diferentes. `operacaoEmAndamento()`
-    // cobre também a janela de `publicar()` entre um passo terminar e o
-    // próximo começar — `salvando()` sozinho fica `false` ali por um
-    // instante real.
-    if (this.store.operacaoEmAndamento()) return;
-
-    // Consultar um processo publicado é livre; escrever nele o servidor
-    // recusaria, depois de o operador ter preenchido a tela inteira.
-    if (!this.store.edicaoPermitida()) {
-      this.store.next();
-      return;
-    }
-
-    if (this.store.isLast()) {
-      if (this.podePublicar()) await this.publicar();
-      return;
-    }
-
-    const validator = this.stepValidatorAt(this.store.currentStep());
-    const result = validator?.validate();
-
-    if (result && !result.valid) {
-      this.store.setStepError(mensagensDe(result));
-      this.revelarErro();
-      return;
-    }
-
-    // O passo acabou de passar na conferência: o resumo que ainda estiver na
-    // tela descreve erros que já não existem, e o alerta os anunciaria de novo
-    // enquanto o operador lê a confirmação. Uma recusa da gravação volta a
-    // preenchê-lo.
-    this.store.setStepError(null);
-
-    // A confirmação vem antes de qualquer requisição: é o momento em que o
-    // operador ainda pode desistir. Depois de gravado, o cadastro inicial não
-    // volta atrás pelo contrato desta tela.
-    const confirmacao = validator?.confirmacaoDeGravacao?.();
-    if (confirmacao) {
-      this.restaurarFocoAoFechar.set(true);
-      this.confirmacaoPendente.set(confirmacao);
-      return;
-    }
-
-    await this.gravarEAvancar(validator);
+  nextOrPublish(): Promise<void> {
+    return this.conducao.avancar();
   }
 
-  /**
-   * Confirma o resumo e grava. O passo de destino é lido de novo aqui, mas não
-   * pode ter mudado — o resumo é descartado a cada troca de passo, justamente
-   * para que confirmar signifique sempre o que o operador leu.
-   *
-   * O diálogo continua aberto enquanto a requisição corre. Fechá-lo no clique
-   * devolveria o foco ao botão de avanço que `persistir()` acaba de desabilitar,
-   * e o teclado ficaria sem ponto de partida por toda a espera; assim o foco
-   * permanece dentro do diálogo, que anuncia a gravação em curso, e só volta ao
-   * botão quando ele torna a aceitar foco.
-   */
-  async confirmarGravacao(): Promise<void> {
-    if (this.confirmacaoPendente() === null || this.store.salvando()) return;
-    try {
-      // Avançar troca o passo por baixo do diálogo. Devolver o foco ao botão
-      // que o abriu levaria a um rodapé que já não descreve o que está em
-      // tela; quem passa a mandar no foco é o efeito de troca de passo, que
-      // leva ao título do passo novo. Falhando, a tela é a mesma e a
-      // restauração continua correta.
-      const sucesso = await this.gravarEAvancar(this.stepValidatorAt(this.store.currentStep()), {
-        confirmadaPeloOperador: true,
-      });
-      this.restaurarFocoAoFechar.set(!sucesso);
-
-      // `store.next()` não avança a partir do último passo — não há passo
-      // seguinte —, então o efeito de troca de passo (que move o foco ao
-      // título do passo novo em qualquer outra gravação) não dispara depois
-      // de publicar. Sem este destino explícito, fechar o diálogo de
-      // confirmação da publicação deixa o foco sem lugar nenhum.
-      if (sucesso && this.store.isLast()) {
-        // O ato foi registrado e o servidor já apagou o rascunho. O que sobra em tela é a
-        // declaração publicada, e ela é a nova referência: zerá-la faria a guarda de saída ler
-        // os campos publicados como transcrição por gravar e barrar quem acabou de publicar —
-        // o oposto do que esta linha existe para evitar.
-        this.rascunho.fixarComoJaGravado();
-        this.foco.focarConfirmacaoDePublicacao();
-      }
-    } finally {
-      this.confirmacaoPendente.set(null);
-    }
+  confirmarGravacao(): Promise<void> {
+    return this.conducao.confirmarGravacao();
   }
 
-  /**
-   * Desiste da gravação. Nada foi enviado e nada muda no rascunho: o operador
-   * volta ao passo com o que digitou, que é o motivo de a confirmação vir
-   * antes da requisição e não depois.
-   *
-   * Com a gravação em curso não há mais o que desistir — o comando já saiu — e
-   * fechar aqui só tiraria da tela o aviso de que ela está acontecendo.
-   */
   cancelarGravacao(): void {
-    if (this.store.salvando()) return;
-    this.confirmacaoPendente.set(null);
-  }
-
-  /**
-   * Conclui o passo depois de a confirmação já ter sido resolvida — seja
-   * porque o passo não pedia nenhuma, seja porque o operador confirmou.
-   */
-  private async gravarEAvancar(
-    validator: PassoDoWizard | undefined,
-    gravacao: GravacaoDoPasso = { confirmadaPeloOperador: false },
-  ): Promise<boolean> {
-    // Passos que persistem expõem `persistir()`; os demais avançam direto.
-    if (validator?.persistir) {
-      const commit = await validator.persistir(gravacao).catch(
-        (): StepValidation => ({
-          valid: false,
-          messages: ['Não foi possível concluir a operação. Tente novamente.'],
-        }),
-      );
-      if (!commit.valid) {
-        // Lista de mensagens vazia é descarte deliberado: o resultado pertence
-        // a um editor que já não está em tela, e anunciá-lo colocaria erro num
-        // rascunho que ninguém tentou gravar.
-        if (commit.messages?.length !== 0) {
-          this.store.setStepError(mensagensDe(commit));
-          this.revelarErro();
-        }
-        return false;
-      }
-
-      const recusaDoDesempate = await this.gravarDesempatePendente();
-      if (recusaDoDesempate !== null) {
-        // A classificação ficou gravada; a recusa é dos critérios, e é no passo deles que se corrige.
-        if (recusaDoDesempate.mensagens.length > 0) {
-          this.store.goTo(recusaDoDesempate.indice);
-          this.store.setStepError(recusaDoDesempate.mensagens);
-          this.revelarErro();
-        }
-        return false;
-      }
-    }
-
-    this.store.setStepError(null);
-    this.store.next();
-    return true;
-  }
-
-  /**
-   * Publica só com o rascunho inteiro válido. Como a navegação entre passos é
-   * livre, chegar ao último passo não significa ter preenchido os anteriores:
-   * sem esta checagem dá para saltar direto para a revisão e publicar um
-   * rascunho vazio, ou invalidar um passo já concluído e voltar para cá.
-   *
-   * Duas passadas de `validarRascunho()`, não uma — a ordem não é a
-   * intuitiva. A primeira cobre só os passos ANTERIORES à Revisão
-   * (`totalSteps - 1`, exclusivo): rápida, sem rede, e barra de imediato um
-   * passo genuinamente incompleto, sem arriscar `persistir()` contra um
-   * rascunho que ainda não faz sentido. A Revisão fica de fora dela de
-   * propósito — se ela entrasse aqui, `validate()` recusaria com o
-   * checklist AINDA velho sempre que o operador tivesse acabado de corrigir
-   * um passo anterior e voltado direto à Revisão pelo stepper livre (sem
-   * "avançar", que gravaria): o portão barraria antes mesmo de
-   * `gravarPassosAnteriores()` ter a chance de gravar a correção.
-   * Só depois de gravar de novo e recarregar o
-   * checklist da Revisão é que a segunda passada — o rascunho inteiro,
-   * Revisão incluída — faz sentido: agora ela vê o que a primeira acabou de
-   * produzir, nunca uma foto de antes dela.
-   *
-   * `geracao` é conferida depois de cada await: `gravarPassosAnteriores()`
-   * grava vários passos em sequência, e o operador pode trocar de processo
-   * no meio da varredura — continuar dali gravaria no rascunho do processo
-   * NOVO por engano. Sai calada quando isso acontece, no mesmo silêncio que
-   * `{ valid: false, messages: [] }` já tem em `gravarEAvancar()`.
-   */
-  private async publicar(): Promise<void> {
-    const geracao = this.store.geracao();
-
-    // `travamentoDeOrquestracao`, não só o `salvando()` de cada passo: cada `persistir()` solta o
-    // seu `salvando` ao terminar, mas a orquestração inteira (gravar, recarregar o checklist,
-    // validar de novo) ainda não acabou, e o intervalo entre um passo e outro liberava o stepper e
-    // os campos. Liga antes de qualquer espera e solta ao sair, inclusive ao abrir o diálogo de
-    // confirmação, cuja modalidade passa a impedir a edição por baixo.
-    this.store.travamentoDeOrquestracao.set(true);
-    try {
-      let pendentesAntesDeGravar = this.validarRascunho(this.store.totalSteps - 1);
-      // O Desempate recusa o critério por área enquanto não se sabe o que a classificação gravada
-      // tem. Com algo por reler, a recusa pode ser essa: a releitura decide e a validação se
-      // refaz. Sem nada por reler, o rascunho incompleto é barrado sem ir à rede.
-      if (pendentesAntesDeGravar.length > 0 && this.store.classificacao.gravadoPorReler()) {
-        await this.releitura.reler();
-        if (geracao !== this.store.geracao()) return;
-        pendentesAntesDeGravar = this.validarRascunho(this.store.totalSteps - 1);
-      }
-      if (pendentesAntesDeGravar.length > 0) {
-        this.store.setStepError(pendentesAntesDeGravar);
-        this.revelarErro();
-        return;
-      }
-
-      const falhasDeGravacao = await this.gravarPassosAnteriores();
-      if (geracao !== this.store.geracao()) return;
-      // Os passos gravados na varredura não releem o detalhe um a um; uma leitura só, aqui, põe
-      // em dia o que o processo congelou — com ou sem falha na varredura —, e confirma a cópia que
-      // a gravação da classificação presumiu.
-      if (this.store.classificacao.gravadoPorReler()) await this.releitura.reler();
-      if (geracao !== this.store.geracao()) return;
-      // Critérios que ainda esperam a classificação não podem ficar para trás: publicar seguiria
-      // com os que o servidor tinha antes.
-      const indiceDoDesempate = this.indiceDoPassoPosClassificacao();
-      if (
-        falhasDeGravacao.length === 0 &&
-        this.store.classificacao.desempatePendenteDeGravacao() &&
-        indiceDoDesempate >= 0
-      ) {
-        falhasDeGravacao.push(
-          `Passo ${indiceDoDesempate + 1} — ${this.store.labels[indiceDoDesempate]}: ${DESEMPATE_AINDA_PENDENTE}`,
-        );
-      }
-      if (falhasDeGravacao.length > 0) {
-        this.store.setStepError(falhasDeGravacao);
-        this.revelarErro();
-        return;
-      }
-
-      // A Revisão fica de fora da varredura acima — seu `persistir()`
-      // publica de verdade, não é um resalvar — mas o checklist que ela
-      // cacheia pode ter ficado desatualizado exatamente pelos passos que
-      // acabamos de gravar de novo.
-      await this.stepValidatorAt(this.store.totalSteps - 1)?.recarregarChecklist?.();
-      if (geracao !== this.store.geracao()) return;
-
-      const pendentes = this.validarRascunho();
-      if (pendentes.length > 0) {
-        this.store.setStepError(pendentes);
-        this.revelarErro();
-        return;
-      }
-
-      this.store.setStepError(null);
-
-      const validator = this.stepValidatorAt(this.store.currentStep());
-      const confirmacao = validator?.confirmacaoDeGravacao?.();
-      if (confirmacao) {
-        this.restaurarFocoAoFechar.set(true);
-        this.confirmacaoPendente.set(confirmacao);
-        return;
-      }
-
-      await this.gravarEAvancar(validator);
-    } finally {
-      if (geracao === this.store.geracao()) this.store.travamentoDeOrquestracao.set(false);
-    }
-  }
-
-  /** Traz o aviso de pendências para a vista; o passo em tela sabe abrir a seção que guarda o campo recusado. */
-  private revelarErro(): void {
-    this.foco.revelarErro(() => this.stepValidatorAt(this.store.currentStep()));
-  }
-
-  /** O passo que grava depois da classificação (hoje só o Desempate), ou `-1`. */
-  private indiceDoPassoPosClassificacao(): number {
-    return this.passos().findIndex((passo) => passo.gravarAposAClassificacao !== undefined);
-  }
-
-  /**
-   * Os critérios de desempate que ficaram para depois da classificação são gravados assim que ela
-   * congela o quadro: primeiro a classificação, depois os critérios, que o servidor confere contra
-   * o quadro. A cópia que a gravação presumiu é confirmada antes — a varredura da publicação não
-   * relê a cada passo —, porque o Desempate só julga as áreas contra uma cópia confirmada. `null`
-   * quando não havia o que gravar ou deu certo.
-   */
-  private async gravarDesempatePendente(): Promise<RecusaDoDesempate | null> {
-    if (!this.store.classificacao.desempatePendenteDeGravacao()) return null;
-    const indice = this.indiceDoPassoPosClassificacao();
-    const desempate = this.passos()[indice];
-    if (desempate?.gravarAposAClassificacao === undefined) return null;
-
-    if (this.store.classificacao.motivoDaReleitura() !== null) {
-      const geracao = this.store.geracao();
-      await this.releitura.reler();
-      if (geracao !== this.store.geracao()) return { indice, mensagens: [] };
-    }
-    const gravada = this.store.classificacao.gravada().estado;
-    // Ainda sem a classificação gravada com quadro: é o passo dela que vem antes.
-    if (gravada === 'nunca-gravada' || gravada === 'sem-quadro') return null;
-    if (this.store.classificacao.copiaCongeladaEmVigor() === null) {
-      return { indice, mensagens: [COPIA_NAO_CONFIRMADA] };
-    }
-
-    const commit = await desempate.gravarAposAClassificacao().catch(
-      (): StepValidation => ({
-        valid: false,
-        messages: ['Não foi possível concluir a operação. Tente novamente.'],
-      }),
-    );
-    if (commit.valid) return null;
-    return { indice, mensagens: commit.messages?.length === 0 ? [] : mensagensDe(commit) };
-  }
-
-  /**
-   * Roda `validate()` dos passos de `0` até `ateIndice` (exclusive; todos
-   * por padrão), reconcilia o progresso exibido nesse intervalo e devolve
-   * uma mensagem por pendência, identificada pelo passo de origem. Todos os
-   * passos ficam montados (`[hidden]`), então todos respondem.
-   *
-   * `ateIndice` existe só para `publicar()` chamar em duas passadas: a
-   * primeira, sem a Revisão (`totalSteps - 1`), porque o `validate()` dela
-   * depende de um checklist que só fica correto DEPOIS de
-   * `gravarPassosAnteriores()` gravar as correções e `recarregarChecklist()`
-   * atualizar o cache — incluí-la na primeira passada recusaria com a foto
-   * de antes da correção e nunca chegaria a gravar nada. Passos fora do
-   * intervalo desta chamada mantêm o progresso que já tinham.
-   */
-  private validarRascunho(ateIndice = this.store.totalSteps): string[] {
-    const pendencias: string[] = [];
-    const concluidos = new Set<number>(this.store.completedSteps());
-
-    for (let index = 0; index < ateIndice; index += 1) {
-      const resultado = this.stepValidatorAt(index)?.validate();
-
-      if (resultado && !resultado.valid) {
-        const detalhe = mensagensDe(resultado).join(' ');
-        pendencias.push(`Passo ${index + 1} — ${this.store.labels[index]}: ${detalhe}`);
-        concluidos.delete(index);
-        continue;
-      }
-
-      concluidos.add(index);
-    }
-
-    this.store.syncCompleted(concluidos);
-    return pendencias;
-  }
-
-  /**
-   * Grava de novo cada passo anterior à Revisão que declara `persistir()` —
-   * não só valida. A navegação entre passos é livre: o operador pode voltar
-   * a um passo já gravado pelo stepper, editá-lo, e pular direto para a
-   * Revisão sem passar pelo "avançar" que dispara `persistir()` de novo.
-   * `validarRascunho()` só confere que o rascunho local está bem-formado —
-   * não que bate com o que o servidor tem —, e sem esta varredura a
-   * publicação confirmava sobre uma edição que nunca chegou ao servidor:
-   * publica-se a configuração antiga enquanto o operador acredita publicar
-   * a que acabou de editar.
-   *
-   * Detectar "sujo" seção a seção exigiria um mapeamento de passo para
-   * seção do `WizardDraft` que não existe em lugar nenhum do wizard de
-   * propósito (`processo-seletivo.data.ts`: "nenhum componente de passo
-   * declara a própria [posição]" — vale também para a seção) — e o
-   * rascunho tem mais de um caminho de escrita (`patchObjectSection` do
-   * operador, `patchSection`, `projetarSecao` de reconciliação com o
-   * servidor), cada um por conta própria. Uma tentativa anterior comparou
-   * um retrato do rascunho tirado após a hidratação contra o atual, e
-   * quebrou toda retomada com edital confirmado porque a restauração do
-   * anexo muda o rascunho de novo, assincronamente, depois do retrato — a
-   * mesma classe de lacuna se repetiria a cada novo caminho de escrita que
-   * aparecesse. Gravar de novo é mais caro (uma chamada a mais por passo já
-   * visitado, mesmo sem edição), mas correto por construção: `persistir()`
-   * de cada passo já é reenvio idempotente (`ChaveDeSubstituicao`), e
-   * nenhum deles depende de `store.currentStep()` — todos já são chamados
-   * genericamente por `gravarEAvancar()` fora desta varredura.
-   */
-  private async gravarPassosAnteriores(): Promise<string[]> {
-    const pendencias: string[] = [];
-    const geracao = this.store.geracao();
-
-    for (let index = 0; index < this.store.totalSteps - 1; index += 1) {
-      // Troca de processo em pleno voo — o operador navegou para outro
-      // processo enquanto esta varredura sequencial ainda corria. Continuar
-      // chamaria persistir() dos passos seguintes contra o rascunho do
-      // processo NOVO, gravando lá por engano. Sai calada, sem pendência —
-      // `publicar()` já confere `geracao` de novo ao voltar desta chamada e
-      // não prossegue.
-      if (geracao !== this.store.geracao()) return [];
-
-      const validator = this.stepValidatorAt(index);
-      if (validator === undefined) continue;
-
-      // Confere localmente antes de tentar gravar — não só para poupar a
-      // chamada, mas para não mandar ao servidor o comando de um passo que
-      // o próprio operador ainda não terminou de preencher (um passo
-      // posterior pode compor a partir do que este ainda não tem). Mantém
-      // também a ordem e o texto que `validarRascunho()` já dava: quem lê
-      // "Passo 1" quer o primeiro passo REALMENTE incompleto, não o
-      // primeiro que por acaso declara `persistir()`.
-      const conferencia = validator.validate();
-      if (!conferencia.valid) {
-        const detalhe = mensagensDe(conferencia).join(' ');
-        pendencias.push(`Passo ${index + 1} — ${this.store.labels[index]}: ${detalhe}`);
-        continue;
-      }
-
-      if (!validator.persistir) continue;
-
-      const commit = await validator.persistir({ confirmadaPeloOperador: false }).catch(
-        (): StepValidation => ({
-          valid: false,
-          messages: ['Não foi possível concluir a operação. Tente novamente.'],
-        }),
-      );
-
-      if (geracao !== this.store.geracao()) return [];
-
-      if (!commit.valid && commit.messages?.length !== 0) {
-        const detalhe = mensagensDe(commit).join(' ');
-        pendencias.push(`Passo ${index + 1} — ${this.store.labels[index]}: ${detalhe}`);
-      }
-      if (!commit.valid) continue;
-
-      const recusaDoDesempate = await this.gravarDesempatePendente();
-      if (geracao !== this.store.geracao()) return [];
-      if (recusaDoDesempate !== null && recusaDoDesempate.mensagens.length > 0) {
-        const { indice, mensagens } = recusaDoDesempate;
-        pendencias.push(
-          `Passo ${indice + 1} — ${this.store.labels[indice]}: ${mensagens.join(' ')}`,
-        );
-      }
-    }
-
-    return pendencias;
+    this.conducao.cancelarGravacao();
   }
 
   protected irParaPasso(index: number): void {
@@ -942,22 +516,4 @@ export class ProcessoSeletivoPage {
   protected focarTituloAposAEscolha(): void {
     queueMicrotask(() => this.foco.focarTituloDoPasso());
   }
-}
-
-const DESEMPATE_AINDA_PENDENTE =
-  'Os critérios de desempate por área não foram gravados, porque a classificação não ficou gravada com o quadro de Peso por Área de que eles dependem. Grave a classificação no passo Eliminação, com a resolução escolhida no passo Fórmula, e publique de novo.';
-
-const COPIA_NAO_CONFIRMADA =
-  'Os critérios de desempate não foram gravados: a classificação foi gravada, mas o quadro de Peso por Área que ela congelou não pôde ser confirmado por uma releitura do processo, e os critérios por área dependem dele. Tente de novo.';
-
-/** A recusa à gravação dos critérios de desempate, com o passo onde eles se corrigem. */
-interface RecusaDoDesempate {
-  readonly indice: number;
-  readonly mensagens: string[];
-}
-
-/** Normaliza `message` (forma simples) e `messages` (lista) para `string[]`. */
-function mensagensDe(resultado: StepValidation): string[] {
-  if (resultado.messages && resultado.messages.length > 0) return resultado.messages;
-  return [resultado.message ?? 'Preencha os campos obrigatórios para continuar.'];
 }
