@@ -22,10 +22,12 @@ import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { TipoAtoPublicadoDto, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
-import type { DocumentoDefinicao, DocumentoGrupo } from '../../processo-seletivo.models';
+import type { DocumentoGrupo } from '../../processo-seletivo.models';
 import { hojeNoFusoInstitucional } from '../../shared/fuso-institucional';
 import { comoOpcaoDeUnidade } from '../../shared/unidades-do-cadastro';
 import { vigenteNoDia } from '../../shared/vigencia';
+import { documentosPorCategoria } from './documentos-por-categoria';
+import { ordemSugeridaDasFases } from './ordem-sugerida-das-fases';
 
 /** Tipo do `rol_de_regras` que a convenção de contagem referencia. */
 const TIPO_REGRA_CONTAGEM = 'algoritmo_contagem_prazo';
@@ -89,41 +91,10 @@ export class CatalogosDoCronogramaService {
    */
   readonly fatos = signal<readonly FatoCandidatoView[]>([]);
 
-  /**
-   * Os tipos de documento agrupados pela categoria do cadastro — o que a tela de
-   * exigência documental oferece. Derivado do cadastro vivo, e não de uma lista escrita
-   * à mão: o catálogo cresce sem deploy, e uma cópia local envelheceria em silêncio.
-   */
-  readonly documentosPorCategoria = computed<readonly DocumentoGrupo[]>(() => {
-    const rotulo = new Map(this.categorias().map((c) => [c.codigo, c.nome]));
-    const porCategoria = new Map<string, DocumentoDefinicao[]>();
-
-    for (const tipo of this.tiposDocumento()) {
-      const chave = tipo.categoria ?? 'OUTROS';
-      const lista = porCategoria.get(chave) ?? [];
-      const descricao = tipo.descricao?.trim() || null;
-      const formatos = formatosDe(tipo);
-      lista.push({
-        id: tipo.id,
-        nome: tipo.nome,
-        descricao: descricao,
-        formatos: formatos,
-        // Sem descrição, o que orienta quem edita é o formato aceito.
-        orientacao: descricao ?? formatos,
-        situacao: null,
-      });
-      porCategoria.set(chave, lista);
-    }
-
-    return [...porCategoria.entries()]
-      .map(
-        ([codigo, docs]): DocumentoGrupo => ({
-          label: rotulo.get(codigo) ?? codigo,
-          docs: [...docs].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
-        }),
-      )
-      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
-  });
+  /** Os tipos de documento agrupados pela categoria do cadastro, que é o que a exigência oferece. */
+  readonly documentosPorCategoria = computed<readonly DocumentoGrupo[]>(() =>
+    documentosPorCategoria(this.tiposDocumento(), this.categorias()),
+  );
 
   /** As unidades do cadastro, a mesma lista que a unidade administradora do processo oferece. */
   readonly unidades = signal<readonly UnidadeDto[]>([]);
@@ -232,71 +203,10 @@ export class CatalogosDoCronogramaService {
     () => new Map(this.categorias().map((categoria) => [categoria.id, categoria])),
   );
 
-  /**
-   * Fases em ordem cronológica sugerida, derivada das precedências cadastradas.
-   *
-   * Ordenação topológica de Kahn sobre as arestas que ligam fases do catálogo,
-   * com a ordem do próprio catálogo como desempate — assim o resultado é
-   * estável, e não depende da ordem em que as arestas chegaram. Um passe único
-   * de ajuste não bastaria: com o catálogo em `B, C, A` e as arestas `B→C` e
-   * `A→B`, mover `B` para depois de `A` deixaria `C` antes de `B`, violando a
-   * primeira aresta e sugerindo uma ordem que o servidor recusa.
-   *
-   * Fases que nenhuma aresta alcança entram na ordem do catálogo, e um ciclo no
-   * cadastro — que não deveria existir — degrada para essa mesma ordem em vez de
-   * perder fase. Isto sugere; quem arbitra continua sendo o servidor.
-   */
-  readonly fasesEmOrdemSugerida = computed<readonly FaseCanonicaDto[]>(() => {
-    const fases = this.fases();
-    const porCodigo = new Map(fases.map((fase) => [fase.codigo, fase]));
-
-    const sucessores = new Map<string, string[]>();
-    const grauDeEntrada = new Map<string, number>(fases.map((fase) => [fase.codigo, 0]));
-
-    for (const aresta of this.precedencias()) {
-      if (!porCodigo.has(aresta.antecessoraCodigo) || !porCodigo.has(aresta.sucessoraCodigo)) {
-        continue;
-      }
-      sucessores.set(aresta.antecessoraCodigo, [
-        ...(sucessores.get(aresta.antecessoraCodigo) ?? []),
-        aresta.sucessoraCodigo,
-      ]);
-      grauDeEntrada.set(
-        aresta.sucessoraCodigo,
-        (grauDeEntrada.get(aresta.sucessoraCodigo) ?? 0) + 1,
-      );
-    }
-
-    // A fila mantém a ordem do catálogo entre os elegíveis, o que torna o
-    // resultado determinístico para o mesmo cadastro.
-    const prontos = fases
-      .filter((fase) => grauDeEntrada.get(fase.codigo) === 0)
-      .map((f) => f.codigo);
-    const ordenado: FaseCanonicaDto[] = [];
-
-    for (let codigo = prontos.shift(); codigo !== undefined; codigo = prontos.shift()) {
-      const fase = porCodigo.get(codigo);
-      if (fase !== undefined) ordenado.push(fase);
-
-      const liberados: string[] = [];
-      for (const sucessor of sucessores.get(codigo) ?? []) {
-        const restante = (grauDeEntrada.get(sucessor) ?? 0) - 1;
-        grauDeEntrada.set(sucessor, restante);
-        if (restante === 0) liberados.push(sucessor);
-      }
-
-      // Reinsere respeitando a ordem do catálogo, não a de liberação.
-      prontos.push(...liberados);
-      prontos.sort(
-        (a, b) => fases.findIndex((f) => f.codigo === a) - fases.findIndex((f) => f.codigo === b),
-      );
-    }
-
-    // Ciclo no cadastro deixaria fases de fora; devolvê-las na ordem do
-    // catálogo é melhor do que sumir com elas do seletor.
-    const incluidos = new Set(ordenado.map((fase) => fase.codigo));
-    return [...ordenado, ...fases.filter((fase) => !incluidos.has(fase.codigo))];
-  });
+  /** Fases em ordem cronológica sugerida pelas precedências cadastradas. */
+  readonly fasesEmOrdemSugerida = computed<readonly FaseCanonicaDto[]>(() =>
+    ordemSugeridaDasFases(this.fases(), this.precedencias()),
+  );
 
   /**
    * Já buscou, ou está buscando. Dois passos do wizard dependem destes
@@ -428,15 +338,4 @@ export class CatalogosDoCronogramaService {
     );
     this.carregando.set(false);
   }
-}
-
-/** Os formatos e o tamanho que o cadastro declara, só com as partes presentes; `null` sem nenhuma. */
-function formatosDe(tipo: TipoDocumentoDto): string | null {
-  const formatos = tipo.formatosAceitos?.trim() ?? '';
-  const tamanho = tipo.tamanhoMaximoMb;
-  const partes = [
-    formatos === '' ? null : `Formatos aceitos: ${formatos}.`,
-    tamanho !== null && tamanho !== undefined && tamanho > 0 ? `Até ${tamanho.toLocaleString('pt-BR')} MB.` : null,
-  ].filter((parte) => parte !== null);
-  return partes.length === 0 ? null : partes.join(' ');
 }
