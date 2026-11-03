@@ -77,6 +77,7 @@ const TIPOS_DOCUMENTO = [
     formatosAceitos: 'pdf',
     tamanhoMaximoMb: 10,
     tipoEquivalente: null,
+    protecaoAprovada: true,
     criadoEm: '2026-08-30T12:00:00Z',
   },
 ] as const;

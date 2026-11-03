@@ -130,6 +130,7 @@ const TIPOS_DOCUMENTO = [
     tipoEquivalente: null,
     ativo: true,
     formatosAceitos: null,
+    protecaoAprovada: true,
     criadoEm: '2026-08-30T12:00:00Z',
   },
 ] as const;
