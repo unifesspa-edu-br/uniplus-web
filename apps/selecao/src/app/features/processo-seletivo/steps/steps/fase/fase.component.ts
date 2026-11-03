@@ -24,8 +24,6 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import {
-  ORIENTACAO_DE_PERMUTACAO,
-  PERMUTACAO_DE_ORDEM,
   gravarCronogramaFases,
 } from '../../shared/gravacao-do-cronograma';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
@@ -39,8 +37,8 @@ import { FaseEmEdicao } from './fase-em-edicao';
 import { CicloRecursalDaFaseComponent } from './secoes/ciclo-recursal-da-fase.component';
 import { RegraDeRecursoDaFaseComponent } from './secoes/regra-de-recurso-da-fase.component';
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
+import { recusaDaGravacao } from './recusas-da-gravacao';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
-import { traduzirRecusa } from './recusas-da-fase';
 
 
 /** O gatilho sem condição recusada pela fase — a mesma referência, para o editor não se redesenhar. */
@@ -337,41 +335,18 @@ export class FaseStepComponent {
     }
   }
 
-  /**
-   * Distribui a recusa pelos campos e devolve o que o resumo do topo anuncia.
-   *
-   * O resumo repete o que aparece sob cada campo, e é deliberado: ele é a região
-   * que o leitor de tela anuncia depois da gravação, e sem ele a recusa de um
-   * campo fora da parte visível passaria despercebida.
-   */
   private registrarRecusa(
     problema: ProblemDetails,
     fases: readonly FaseDoCronograma[],
   ): StepValidation {
-    const abertaEm = fases.findIndex((fase) => fase.faseCanonicaId === this.faseAberta());
-    const nomes = new Map(this.fasesNoSeletor().map((fase) => [fase.faseCanonicaId, fase.nome]));
-    const nomeDaFase = (indice: number): string => {
-      const fase = fases[indice];
-      if (fase === undefined) return `posição ${indice + 1}`;
-      return nomes.get(fase.faseCanonicaId) ?? fase.codigo;
-    };
-
-    // A permutação de ordem não descreve campo nenhum desta tela: ela é da
-    // linha do tempo, e o que orienta é como desfazê-la lá. Traduzi-la por
-    // campo apontaria um controle que não tem nada a ver com o que foi
-    // recusado.
-    if (problema.code === PERMUTACAO_DE_ORDEM) {
-      this.recusaPorCampo.set(new Map());
-      this.recusasGerais.set([ORIENTACAO_DE_PERMUTACAO]);
-      return { valid: false, messages: [ORIENTACAO_DE_PERMUTACAO] };
-    }
-
-    const traduzida = traduzirRecusa(problema, abertaEm, nomeDaFase);
-    this.recusaPorCampo.set(traduzida.porCampo);
-    this.recusasGerais.set(traduzida.gerais);
-
-    const mensagens = [...traduzida.porCampo.values(), ...traduzida.gerais];
-    return { valid: false, messages: mensagens.length === 0 ? [problema.title] : mensagens };
+    const recusa = recusaDaGravacao(
+      problema,
+      fases,
+      this.faseAberta(),
+      new Map(this.fasesNoSeletor().map((fase) => [fase.faseCanonicaId, fase.nome])),
+    );
+    this.recusaPorCampo.set(recusa.porCampo);
+    this.recusasGerais.set(recusa.gerais);
+    return recusa.validacao;
   }
-
 }
