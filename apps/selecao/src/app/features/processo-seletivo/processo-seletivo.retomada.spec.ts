@@ -48,6 +48,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditorRouteReuseStrategy, ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
 import { ConfirmacaoDeSaida } from './steps/shared/rascunho-nao-gravado.guard';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
+import { RascunhoDaPublicacao } from './editor/rascunho-da-publicacao.service';
 import { PASSOS } from './steps/processo-seletivo.data';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
@@ -1186,8 +1187,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
       true,
     );
 
-    (cenario.componente as unknown as { fixarRascunhoComoJaGravado(): void })
-      .fixarRascunhoComoJaGravado();
+    cenario.fixture.debugElement.injector.get(RascunhoDaPublicacao).fixarComoJaGravado();
 
     expect(cenario.componente.rascunhoPendente()).toBe(false);
   });
