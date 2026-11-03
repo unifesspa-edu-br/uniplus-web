@@ -17,6 +17,10 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
+import { EtapasOrfasComponent } from './etapas-orfas.component';
+import { DadosDaFaseComponent } from './fase/dados-da-fase.component';
+import { CabecalhoDaFaseComponent } from './fase/cabecalho-da-fase.component';
+import { NovaFaseComponent } from './fase/nova-fase.component';
 import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component';
 import { FaseEmConsultaComponent } from './consulta/fase-em-consulta.component';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
@@ -44,6 +48,10 @@ import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.
     FaseStepComponent,
     FaseEmConsultaComponent,
     ConvencaoDeContagemComponent,
+    NovaFaseComponent,
+    CabecalhoDaFaseComponent,
+    DadosDaFaseComponent,
+    EtapasOrfasComponent,
   ],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

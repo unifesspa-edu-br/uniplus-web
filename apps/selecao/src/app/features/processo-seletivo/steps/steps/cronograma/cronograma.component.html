@@ -32,51 +32,7 @@
   </div>
 } @else {
   <form [formGroup]="formulario">
-    <div class="step-card">
-      <h2 class="form-section__title">Acrescentar fase</h2>
-      <div class="escolher-e-acrescentar">
-        <div class="form-field">
-          <label class="label" for="cr-nova-fase">Fase do catálogo</label>
-          <select
-            class="input"
-            id="cr-nova-fase"
-            formControlName="faseAAcrescentar"
-            aria-describedby="cr-nova-fase-ajuda"
-          >
-            <option value="">Selecione a fase…</option>
-            @for (fase of fasesDisponiveis(); track fase.id) {
-              <option [value]="fase.id">{{ fase.nome }}</option>
-            }
-          </select>
-        </div>
-        <button
-          class="btn btn--secondary"
-          type="button"
-          (click)="cronograma.acrescentarFase()"
-          [disabled]="
-            !edicaoLiberada() ||
-            !catalogos.unidadesCarregadas() ||
-            formulario.controls.faseAAcrescentar.value === ''
-          "
-        >
-          Acrescentar à linha do tempo
-        </button>
-      </div>
-      @if (catalogos.erroDeUnidades(); as erroDeUnidades) {
-        <div class="field__erro" role="alert">
-          <p>{{ erroDeUnidades }}</p>
-          <button class="btn btn--tertiary" type="button" (click)="catalogos.carregarUnidades()">
-            Tentar novamente
-          </button>
-        </div>
-      } @else if (!catalogos.unidadesCarregadas()) {
-        <p class="field__hint" role="status">Carregando unidades…</p>
-      }
-      <p class="field__hint escolher-e-acrescentar__ajuda" id="cr-nova-fase-ajuda">
-        As fases aparecem na ordem que as precedências do cadastro sugerem. Uma fase entra uma vez
-        só, e o cronograma não precisa de todas: inclua as que este processo realmente tem.
-      </p>
-    </div>
+    <div class="step-card" selNovaFase></div>
 
     @if (reconciliacaoPendente()) {
       <div class="field__erro" role="alert">
@@ -123,57 +79,7 @@
           [class.fase-bloco--aberta]="expansao.faseExpandida(item.indice)"
           [formGroupName]="item.indice"
         >
-          <div class="fase-cabecalho">
-            <h2 class="form-section__title fase-titulo">
-              <button
-                class="fase-alternar"
-                type="button"
-                [attr.aria-expanded]="expansao.faseExpandida(item.indice)"
-                [attr.aria-controls]="'cr-fase-corpo-' + item.indice"
-                (click)="expansao.alternarFase(item.indice)"
-              >
-                <span class="etapa-resumo__seta" aria-hidden="true"></span>
-                <span>{{ item.grupo.controls.ordem.value }}. {{ item.nome }}</span>
-                <span class="etapa-resumo__marcas">
-                  @for (marca of leitura.marcasDaFase(item.indice); track marca) {
-                    <span class="etapa-resumo__marca">{{ marca }}</span>
-                  }
-                  @if (item.unidade === null) {
-                    <span class="etapa-resumo__marca">Sem unidade responsável</span>
-                  }
-                </span>
-              </button>
-            </h2>
-            <div class="fase-acoes">
-              <button
-                class="btn btn--tertiary btn--sm"
-                type="button"
-                (click)="cronograma.mover(item.indice, -1)"
-                [disabled]="!edicaoLiberada() || item.indice === 0"
-                [attr.aria-label]="'Subir ' + item.nome"
-              >
-                Subir
-              </button>
-              <button
-                class="btn btn--tertiary btn--sm"
-                type="button"
-                (click)="cronograma.mover(item.indice, 1)"
-                [disabled]="!edicaoLiberada() || item.indice === linhaDoTempo().length - 1"
-                [attr.aria-label]="'Descer ' + item.nome"
-              >
-                Descer
-              </button>
-              <button
-                class="btn btn--tertiary btn--sm"
-                type="button"
-                (click)="expansao.pedirRemocaoDaFase(item.indice)"
-                [disabled]="!edicaoLiberada()"
-                [attr.aria-label]="'Remover ' + item.nome"
-              >
-                Remover
-              </button>
-            </div>
-          </div>
+          <div class="fase-cabecalho" selCabecalhoDaFase [fase]="item"></div>
 
           <!--
             Etapa e documento existem por causa da fase e saem com ela. A confirmação diz
@@ -238,114 +144,7 @@
                   </p>
                 }
 
-                <div class="form-grid">
-                  <div class="form-field form-grid__full">
-                    <label class="label" [attr.for]="'cr-unidade-' + item.indice"
-                      >Unidade responsável</label
-                    >
-                    @let unidadeInvalida =
-                      item.unidade === null || unidades.unidadeRecusada(item.grupo);
-                    <select
-                      class="input"
-                      [attr.id]="'cr-unidade-' + item.indice"
-                      formControlName="unidadeResponsavelId"
-                      [attr.aria-describedby]="
-                        'cr-unidade-dica-' +
-                        item.indice +
-                        (unidadeInvalida ? ' cr-unidade-erro-' + item.indice : '')
-                      "
-                      [attr.aria-invalid]="unidadeInvalida ? 'true' : null"
-                      [class.is-invalid]="unidadeInvalida"
-                    >
-                      <option value="">Selecione</option>
-                      @for (unidade of unidades.unidadesParaEscolha(); track unidade.id) {
-                        <option [value]="unidade.id">{{ unidade.rotulo }}</option>
-                      }
-                    </select>
-                    @if (catalogos.erroDeUnidades(); as erroDeUnidades) {
-                      <div class="field__erro" role="alert">
-                        <p>{{ erroDeUnidades }}</p>
-                        <button
-                          class="btn btn--tertiary"
-                          type="button"
-                          (click)="catalogos.carregarUnidades()"
-                        >
-                          Tentar novamente
-                        </button>
-                      </div>
-                    }
-                    @if (unidades.unidadeRecusada(item.grupo)) {
-                      <p
-                        class="field__erro"
-                        role="alert"
-                        [attr.id]="'cr-unidade-erro-' + item.indice"
-                      >
-                        A unidade escolhida para esta fase não está mais no cadastro. Escolha outra
-                        unidade.
-                      </p>
-                    } @else if (item.unidade === null) {
-                      <p class="field__erro" [attr.id]="'cr-unidade-erro-' + item.indice">
-                        Esta fase está sem unidade responsável. Pode salvar o rascunho assim, mas a
-                        publicação exige a unidade.
-                      </p>
-                    }
-                    <p class="field__hint" [attr.id]="'cr-unidade-dica-' + item.indice">
-                      Unidade que decide e registra o que esta fase produz.
-                    </p>
-                  </div>
-                  @if (item.exigencias.janelaObrigatoria) {
-                    <div class="form-field">
-                      <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
-                      <input
-                        class="input"
-                        type="datetime-local"
-                        [attr.id]="'cr-inicio-' + item.indice"
-                        formControlName="inicio"
-                        [attr.min]="pisoDeData(item.grupo.controls.inicio.value)"
-                        [attr.aria-describedby]="'cr-fuso-' + item.indice"
-                      />
-                    </div>
-                    <div class="form-field">
-                      <label class="label" [attr.for]="'cr-fim-' + item.indice">Fim</label>
-                      <input
-                        class="input"
-                        type="datetime-local"
-                        [attr.id]="'cr-fim-' + item.indice"
-                        formControlName="fim"
-                        [attr.min]="
-                          pisoDeData(
-                            item.grupo.controls.fim.value,
-                            item.grupo.controls.inicio.value
-                          )
-                        "
-                        [attr.aria-describedby]="'cr-fuso-' + item.indice"
-                      />
-                    </div>
-                    <p class="field__hint form-grid__full" [attr.id]="'cr-fuso-' + item.indice">
-                      Data e hora no horário de Belém, que é o fuso em que os prazos deste processo
-                      são contados.
-                    </p>
-                  } @else {
-                    <p class="field__hint form-grid__full">
-                      A data desta fase não consta do edital: a unidade responsável a define na
-                      execução.
-                    </p>
-                  }
-
-                  @if (item.exigencias.publicaProduto) {
-                    @let produtos = leitura.produtosDaFase(item.grupo);
-                    <div class="form-field form-grid__full">
-                      <h3 class="label" [attr.id]="'cr-produtos-' + item.indice">
-                        O que esta fase publica
-                      </h3>
-                      <ul class="field__hint" [attr.aria-labelledby]="'cr-produtos-' + item.indice">
-                        @for (produto of produtos; track produto.atoCodigo) {
-                          <li>{{ produto.nome }} — {{ produto.papel }}.</li>
-                        }
-                      </ul>
-                    </div>
-                  }
-                </div>
+                <div class="form-grid" selDadosDaFase [fase]="item"></div>
 
                 <h3 class="form-section__title">Etapas desta fase</h3>
                 <p class="field__hint">
@@ -1453,37 +1252,7 @@
       falta é a fase que as avalia.
     -->
     @if (leitura.etapasOrfas().length > 0) {
-      <div class="step-card">
-        <h2 class="form-section__title">Etapas sem a fase que as agrupa</h2>
-        <p class="field__hint">
-          Estas etapas pontuadas continuam no processo, mas nenhuma fase da linha do tempo as
-          agrupa. Acrescente a fase de avaliação acima para recebê-las de volta, ou remova-as aqui.
-        </p>
-        <ul>
-          @for (orfa of leitura.etapasOrfas(); track orfa.indice) {
-            <li>
-              {{ orfa.rotulo }}
-              <button
-                class="btn btn--tertiary"
-                type="button"
-                (click)="cronograma.removerEtapa(orfa.indice)"
-                [disabled]="!edicaoLiberada()"
-                [attr.aria-label]="'Remover ' + orfa.rotulo"
-              >
-                Remover
-              </button>
-            </li>
-          }
-        </ul>
-        <button
-          class="btn btn--secondary"
-          type="button"
-          (click)="cronograma.removerTodasAsEtapas()"
-          [disabled]="!edicaoLiberada()"
-        >
-          Remover todas as etapas
-        </button>
-      </div>
+      <div class="step-card" selEtapasOrfas></div>
     }
 
     <!--

@@ -1,0 +1,43 @@
+<h2 class="form-section__title">Acrescentar fase</h2>
+<div class="escolher-e-acrescentar">
+  <div class="form-field">
+    <label class="label" for="cr-nova-fase">Fase do catálogo</label>
+    <select
+      class="input"
+      id="cr-nova-fase"
+      formControlName="faseAAcrescentar"
+      aria-describedby="cr-nova-fase-ajuda"
+    >
+      <option value="">Selecione a fase…</option>
+      @for (fase of fasesDisponiveis(); track fase.id) {
+        <option [value]="fase.id">{{ fase.nome }}</option>
+      }
+    </select>
+  </div>
+  <button
+    class="btn btn--secondary"
+    type="button"
+    (click)="cronograma.acrescentarFase()"
+    [disabled]="
+      !edicaoLiberada() ||
+      !catalogos.unidadesCarregadas() ||
+      formulario.controls.faseAAcrescentar.value === ''
+    "
+  >
+    Acrescentar à linha do tempo
+  </button>
+</div>
+@if (catalogos.erroDeUnidades(); as erroDeUnidades) {
+  <div class="field__erro" role="alert">
+    <p>{{ erroDeUnidades }}</p>
+    <button class="btn btn--tertiary" type="button" (click)="catalogos.carregarUnidades()">
+      Tentar novamente
+    </button>
+  </div>
+} @else if (!catalogos.unidadesCarregadas()) {
+  <p class="field__hint" role="status">Carregando unidades…</p>
+}
+<p class="field__hint escolher-e-acrescentar__ajuda" id="cr-nova-fase-ajuda">
+  As fases aparecem na ordem que as precedências do cadastro sugerem. Uma fase entra uma vez só, e o
+  cronograma não precisa de todas: inclua as que este processo realmente tem.
+</p>

@@ -1,0 +1,51 @@
+@let item = fase();
+
+<h2 class="form-section__title fase-titulo">
+  <button
+    class="fase-alternar"
+    type="button"
+    [attr.aria-expanded]="expansao.faseExpandida(item.indice)"
+    [attr.aria-controls]="'cr-fase-corpo-' + item.indice"
+    (click)="expansao.alternarFase(item.indice)"
+  >
+    <span class="etapa-resumo__seta" aria-hidden="true"></span>
+    <span>{{ item.grupo.controls.ordem.value }}. {{ item.nome }}</span>
+    <span class="etapa-resumo__marcas">
+      @for (marca of leitura.marcasDaFase(item.indice); track marca) {
+        <span class="etapa-resumo__marca">{{ marca }}</span>
+      }
+      @if (item.unidade === null) {
+        <span class="etapa-resumo__marca">Sem unidade responsável</span>
+      }
+    </span>
+  </button>
+</h2>
+<div class="fase-acoes">
+  <button
+    class="btn btn--tertiary btn--sm"
+    type="button"
+    (click)="cronograma.mover(item.indice, -1)"
+    [disabled]="!edicaoLiberada() || item.indice === 0"
+    [attr.aria-label]="'Subir ' + item.nome"
+  >
+    Subir
+  </button>
+  <button
+    class="btn btn--tertiary btn--sm"
+    type="button"
+    (click)="cronograma.mover(item.indice, 1)"
+    [disabled]="!edicaoLiberada() || item.indice === linhaDoTempo().length - 1"
+    [attr.aria-label]="'Descer ' + item.nome"
+  >
+    Descer
+  </button>
+  <button
+    class="btn btn--tertiary btn--sm"
+    type="button"
+    (click)="expansao.pedirRemocaoDaFase(item.indice)"
+    [disabled]="!edicaoLiberada()"
+    [attr.aria-label]="'Remover ' + item.nome"
+  >
+    Remover
+  </button>
+</div>

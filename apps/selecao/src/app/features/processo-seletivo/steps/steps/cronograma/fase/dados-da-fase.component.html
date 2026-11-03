@@ -1,0 +1,89 @@
+@let item = fase();
+
+@if (item.exigencias !== null) {
+  <div class="form-field form-grid__full">
+    <label class="label" [attr.for]="'cr-unidade-' + item.indice">Unidade responsável</label>
+    @let unidadeInvalida = item.unidade === null || unidades.unidadeRecusada(item.grupo);
+    <select
+      class="input"
+      [attr.id]="'cr-unidade-' + item.indice"
+      formControlName="unidadeResponsavelId"
+      [attr.aria-describedby]="
+        'cr-unidade-dica-' +
+        item.indice +
+        (unidadeInvalida ? ' cr-unidade-erro-' + item.indice : '')
+      "
+      [attr.aria-invalid]="unidadeInvalida ? 'true' : null"
+      [class.is-invalid]="unidadeInvalida"
+    >
+      <option value="">Selecione</option>
+      @for (unidade of unidades.unidadesParaEscolha(); track unidade.id) {
+        <option [value]="unidade.id">{{ unidade.rotulo }}</option>
+      }
+    </select>
+    @if (catalogos.erroDeUnidades(); as erroDeUnidades) {
+      <div class="field__erro" role="alert">
+        <p>{{ erroDeUnidades }}</p>
+        <button class="btn btn--tertiary" type="button" (click)="catalogos.carregarUnidades()">
+          Tentar novamente
+        </button>
+      </div>
+    }
+    @if (unidades.unidadeRecusada(item.grupo)) {
+      <p class="field__erro" role="alert" [attr.id]="'cr-unidade-erro-' + item.indice">
+        A unidade escolhida para esta fase não está mais no cadastro. Escolha outra unidade.
+      </p>
+    } @else if (item.unidade === null) {
+      <p class="field__erro" [attr.id]="'cr-unidade-erro-' + item.indice">
+        Esta fase está sem unidade responsável. Pode salvar o rascunho assim, mas a publicação exige
+        a unidade.
+      </p>
+    }
+    <p class="field__hint" [attr.id]="'cr-unidade-dica-' + item.indice">
+      Unidade que decide e registra o que esta fase produz.
+    </p>
+  </div>
+  @if (item.exigencias.janelaObrigatoria) {
+    <div class="form-field">
+      <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
+      <input
+        class="input"
+        type="datetime-local"
+        [attr.id]="'cr-inicio-' + item.indice"
+        formControlName="inicio"
+        [attr.min]="pisoDeData(item.grupo.controls.inicio.value)"
+        [attr.aria-describedby]="'cr-fuso-' + item.indice"
+      />
+    </div>
+    <div class="form-field">
+      <label class="label" [attr.for]="'cr-fim-' + item.indice">Fim</label>
+      <input
+        class="input"
+        type="datetime-local"
+        [attr.id]="'cr-fim-' + item.indice"
+        formControlName="fim"
+        [attr.min]="pisoDeData(item.grupo.controls.fim.value, item.grupo.controls.inicio.value)"
+        [attr.aria-describedby]="'cr-fuso-' + item.indice"
+      />
+    </div>
+    <p class="field__hint form-grid__full" [attr.id]="'cr-fuso-' + item.indice">
+      Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são contados.
+    </p>
+  } @else {
+    <p class="field__hint form-grid__full">
+      A data desta fase não consta do edital: a unidade responsável a define na execução.
+    </p>
+  }
+
+  @if (item.exigencias.publicaProduto) {
+    @let produtos = leitura.produtosDaFase(item.grupo);
+    <div class="form-field form-grid__full">
+      <h3 class="label" [attr.id]="'cr-produtos-' + item.indice">O que esta fase publica</h3>
+      <ul class="field__hint" [attr.aria-labelledby]="'cr-produtos-' + item.indice">
+        @for (produto of produtos; track produto.atoCodigo) {
+          <li>{{ produto.nome }} — {{ produto.papel }}.</li>
+        }
+      </ul>
+    </div>
+  }
+}
