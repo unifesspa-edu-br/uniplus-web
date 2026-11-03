@@ -24,6 +24,7 @@ import { StepValidation, WizardDraft } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { gravarNoPasso, respostaFoiDescartada } from '../../shared/gravacao/gravacao-no-passo';
 import {
   analisarValorEmReais,
   FORMATO_VALOR_EM_REAIS,
@@ -231,33 +232,22 @@ export class PagamentoStepComponent {
     if (!conferencia.valid) return conferencia;
 
     const pagamento = this.store.draft().pagamento;
-    const geracao = this.store.geracao();
     this.erroDeGravacao.set(null);
-    this.store.salvando.set(true);
-    try {
-      const resultado = await this.cadastro.definirTaxaInscricao(processoId, {
+    const resultado = await gravarNoPasso(this.store, () =>
+      this.cadastro.definirTaxaInscricao(processoId, {
         cobra: pagamento.cobra,
         valor: analisarValorEmReais(pagamento.valor),
         fundamentos: pagamento.fundamentos,
-      });
+      }),
+    );
+    if (respostaFoiDescartada(resultado)) return resultado;
 
-      // O editor pode ter passado a outro processo enquanto o comando corria.
-      // A resposta descreve o processo anterior: anunciá-la agora contaminaria
-      // a tela nova, e concluir o passo avançaria o rascunho de outro processo.
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-
-      if (!resultado.ok) {
-        const mensagem = this.problemI18n.resolve(resultado.problem).title;
-        this.erroDeGravacao.set(mensagem);
-        return { valid: false, messages: [mensagem] };
-      }
-
-      return { valid: true };
-    } finally {
-      // Quem destrava é a geração que travou: um editor novo pode ter comando
-      // próprio em curso.
-      if (geracao === this.store.geracao()) this.store.salvando.set(false);
+    if (!resultado.ok) {
+      const mensagem = this.problemI18n.resolve(resultado.problem).title;
+      this.erroDeGravacao.set(mensagem);
+      return { valid: false, messages: [mensagem] };
     }
+    return { valid: true };
   }
 
   validate(): StepValidation {
