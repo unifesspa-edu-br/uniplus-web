@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { UNIDADE_DO_CERTAME, entrarComoPersona, garantirConcessao, garantirPerfil } from '@uniplus/shared-e2e';
 import type { Locator } from '@playwright/test';
 import { expect, test } from '../fixtures/auth.fixture';
 import {
@@ -8,36 +9,58 @@ import {
   linha,
   linhaDe23Campos,
 } from '../fixtures/arquivo-do-inep-sintetico';
+import { processoDasNotasDoEnem } from '../fixtures/processo-das-notas-do-enem';
 
 /**
  * Envio ao INEP e importação das notas do ENEM contra a API real, sem simulação. Roda só com
- * `E2E_BACKEND_REAL=1`, a stack do `uniplus-api` no ar e `E2E_PROCESSO_ID` apontando um processo já
- * divulgado, com a etapa de nota do ENEM, as edições declaradas e inscrições enviadas das
- * personas fictícias (`scripts/roteiro-processo-teste-notas-do-enem.sh` da uniplus-api, que
- * imprime o id). Sem `E2E_PROCESSO_ID` o teste falha dizendo o que falta, em vez de passar sem ter
- * conferido nada.
+ * `E2E_BACKEND_REAL=1` e a stack do `uniplus-api` no ar. O processo divulgado, com a etapa de nota
+ * do ENEM, as edições declaradas e as inscrições enviadas das personas fictícias, é montado pela
+ * própria spec (`processoDasNotasDoEnem`) e reaproveitado nas execuções seguintes.
  *
  * ```bash
- * E2E_BACKEND_REAL=1 E2E_PROCESSO_ID=<id> \
- *   npx playwright test -c apps/selecao-e2e/playwright.config.ts --project=selecao-backend-real
+ * E2E_BACKEND_REAL=1 npx playwright test -c apps/selecao-e2e/playwright.config.ts --project=selecao-backend-real
  * ```
  *
  * `E2E_EDICAO` indica a edição que as inscrições escolheram (padrão 2025).
  */
-const PROCESSO_ID = process.env['E2E_PROCESSO_ID'] ?? '';
 const EDICAO = process.env['E2E_EDICAO'] ?? '2025';
+const APP = process.env['BASE_URL'] ?? 'http://localhost:4200';
+
+/**
+ * Quem opera o envio e a importação precisa das permissões na unidade dona do certame e não pode
+ * estar inscrito no processo. Diogo é servidor, não candidato, e os perfis são só desta spec. O
+ * catálogo de leiautes do INEP é institucional, e um perfil não mistura os dois alcances.
+ */
+const OPERADOR = 'diogo.souza';
+const PERFIS_DO_OPERADOR = [
+  {
+    nome: 'E2E notas do ENEM — operação do envio e da importação',
+    permissoes: ['selecao:processos:configurar', 'selecao:envios-inep:gerar', 'selecao:notas-enem:importar'],
+  },
+  {
+    nome: 'E2E notas do ENEM — consulta dos leiautes do INEP',
+    permissoes: ['selecao:leiautes-inep:consultar'],
+  },
+];
 
 test.describe('Notas do ENEM contra a API real', () => {
-  test.beforeAll(() => {
-    if (PROCESSO_ID === '') {
-      throw new Error(
-        'Defina E2E_PROCESSO_ID com o processo que o roteiro de teste das notas do ENEM criou.',
+  let processoId = '';
+
+  test.beforeAll(async () => {
+    test.setTimeout(1_800_000);
+    for (const perfil of PERFIS_DO_OPERADOR) {
+      const perfilId = await garantirPerfil(
+        perfil.nome,
+        'Acesso do operador à spec das notas do ENEM contra a API real.',
+        perfil.permissoes,
       );
+      await garantirConcessao(OPERADOR, perfilId, UNIDADE_DO_CERTAME);
     }
+    processoId = await processoDasNotasDoEnem();
   });
 
-  test('baixa o envio, importa o retorno e recusa o arquivo fora do leiaute', async ({ page }) => {
-    await page.goto(`/processo-seletivo/${PROCESSO_ID}/notas-do-enem`);
+  test('baixa o envio, importa o retorno e recusa o arquivo fora do leiaute', async ({ browser }) => {
+    const page = await entrarComoPersona(browser, APP, OPERADOR, `/processo-seletivo/${processoId}/notas-do-enem`);
     await expect(page.getByRole('heading', { level: 1, name: 'Notas do ENEM' })).toBeVisible();
     const envio = page.getByRole('region', { name: 'Enviar CPFs ao INEP' });
     const importacao = page.getByRole('region', { name: 'Importar o retorno do INEP' });

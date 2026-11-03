@@ -11,7 +11,7 @@ import { API_URL, tokenDaPersona } from '@uniplus/shared-e2e';
 const GEO_URL = process.env['E2E_GEO_URL'] ?? 'http://localhost:5400';
 const OFERTA_MEDICINA = '01a188d4-aed8-7488-b84d-6b3a3b1a5377';
 
-const ARQUIVO_DE_PESSOAS =
+export const ARQUIVO_DE_PESSOAS =
   process.env['E2E_FAKE_PEOPLE'] ??
   path.resolve(__dirname, '../../../../../uniplus-developers/src/data/fake-people.json');
 
