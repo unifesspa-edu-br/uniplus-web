@@ -1,45 +1,38 @@
-import { campoDoInstante } from './fuso-institucional';
 import { FundamentoIsencao, OrigemCandidatos } from '@uniplus/shared-data/selecao';
-import type { FundamentoIsencaoCodigo } from '@uniplus/shared-data/selecao';
+import type { FundamentoIsencaoCodigo, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+
 import type {
-  ConfiguracaoClassificacaoDto,
-  DocumentoAPublicarDto,
-  ProcessoSeletivoDto,
-} from '@uniplus/shared-data/selecao';
-import { formatarDataBr, formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
-import { OrigemCandidatosSelecionada, UploadItem } from '../processo-seletivo.models';
-import {
-  AtendimentoCondicaoSelecionada,
-  CascataSelecionada,
   FormularioDeInscricao,
-  CriterioDesempateConfigurado,
-  DistribuicaoDeVagas,
-  EtapaPontuada,
-  FaseDoCronograma,
-  RecursoDaFase,
-  ReferenciaDeAtendimento,
-  RegraEliminacaoConfigurada,
+  OrigemCandidatosSelecionada,
   WizardDraft,
 } from '../processo-seletivo.models';
-import {
-  decodificarComposicaoVagas,
-  ehRamoFederal,
-  quantidadeEhDeclarada,
-} from '../steps/vagas/distribuicao-de-vagas';
 import { formulariosDoServidor } from '../steps/formulario/formularios-por-finalidade';
 import { exigenciasDe } from './exigencias-documentais';
-import { escalaDaNotaFinalComoTexto } from '../steps/classificacao/escala-da-nota-final';
-import { percentualDaFracao } from './itens-de-avaliacao';
-import { edicoesDoEnemDe } from '../steps/classificacao/edicoes-do-enem';
+import { comoTexto } from './hidratacao/campos-lidos';
+import {
+  atendimentoDe,
+  bonusDe,
+  classificacaoDe,
+  desempateDe,
+} from './hidratacao/hidratacao-da-classificacao';
+import { cronogramaDe } from './hidratacao/hidratacao-do-cronograma';
+import { cascataDe, distribuicoesDe } from './hidratacao/hidratacao-das-vagas';
 import { formatarValorEmReais } from './valor-em-reais';
 
+export { desempateDe } from './hidratacao/hidratacao-da-classificacao';
+export { etapasDe } from './hidratacao/hidratacao-do-cronograma';
+export {
+  classificarDocumentos,
+  descreverDocumento,
+  TIPO_DE_MIDIA_DO_EDITAL,
+  uploadItemDe,
+  type ReadbackDocumentos,
+} from './hidratacao/documentos-do-edital';
+
 /**
- * Projeta o `ProcessoSeletivoDto` (fonte durável) sobre o rascunho editável.
- *
- * Toda dimensão que o wizard grava precisa ser lida de volta aqui. O que não for mapeado é
- * reescrito em branco na gravação seguinte, porque os comandos substituem a coleção inteira —
- * foi assim que a exigência documental perdia entrega, consequência e norma, e é por isso que
- * a coleta de fatos entrou junto quando o formulário de inscrição ganhou passo.
+ * Projeta o `ProcessoSeletivoDto` (fonte durável) sobre o rascunho editável. Toda dimensão que o
+ * wizard grava precisa ser lida de volta aqui: o que não for mapeado é reescrito em branco na
+ * gravação seguinte, porque os comandos substituem a coleção inteira.
  */
 export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): WizardDraft {
   return {
@@ -75,11 +68,10 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
 }
 
 /**
- * Os formulários de cada finalidade — o conteúdo pelo mesmo mapeamento da gravação, e a fase em
- * que cada um é respondido —, a política que ancora a apuração de idade e as regras de derivação.
- *
- * As fases voltam traduzidas para CÓDIGO — o rascunho não guarda id de fase, porque ele não
- * sobrevive a uma gravação de cronograma que remova e reacrescente a fase.
+ * Os formulários de cada finalidade (conteúdo pelo mesmo mapeamento da gravação e fase em que cada
+ * um é respondido), a política que ancora a apuração de idade e as regras de derivação. As fases
+ * voltam como CÓDIGO: o id não sobrevive a uma gravação de cronograma que remova e reacrescente
+ * a fase.
  */
 function formularioDe(dto: ProcessoSeletivoDto): FormularioDeInscricao {
   const codigoPorFaseId = new Map((dto.cronogramaFases ?? []).map((f) => [f.id, f.codigo]));
@@ -106,434 +98,9 @@ function formularioDe(dto: ProcessoSeletivoDto): FormularioDeInscricao {
 }
 
 /**
- * Projeta o cronograma, as etapas pontuadas e a convenção de contagem.
- *
- * Guarda os identificadores **de origem**, que é o que a gravação recebe: a
- * fase pelo id da fase canônica, a banca pelo id do tipo de banca. O `id` que o
- * detalhe traz identifica o snapshot da configuração, não a entidade do
- * catálogo — reenviá-lo produziria referência que o servidor não resolve. E a
- * entrada de fase sequer tem campo de id: a reconciliação é por fase canônica.
- *
- * A etapa é a exceção deliberada: o `id` dela é preservado e reenviado, porque
- * critério de desempate e regra de eliminação o referenciam.
- *
- * Os números voltam como texto porque é o que o campo edita.
- */
-function cronogramaDe(dto: ProcessoSeletivoDto): WizardDraft['cronograma'] {
-  const algoritmo = dto.algoritmoContagemPrazo;
-
-  return {
-    fases: (dto.cronogramaFases ?? []).map(faseDe),
-    // Renumeradas na chegada: a etapa gravada sem ordem volta como zero, e com
-    // uma etapa só não há duplicata que a conferência acuse nem botão de mover
-    // que a conserte — a gravação sairia com ordem zero para voltar recusada,
-    // sem nada na tela explicando. A posição na lista é a ordem que o servidor
-    // devolveu, então renumerar preserva a sequência que já existia.
-    etapas: (dto.etapas ?? []).map(etapaDe).map((etapa, posicao) => ({
-      ...etapa,
-      ordem: posicao + 1,
-    })),
-    algoritmoContagemCodigo: algoritmo?.codigo ?? '',
-    algoritmoContagemVersao: algoritmo?.versao ?? '',
-  };
-}
-
-function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCronograma {
-  return {
-    faseCanonicaId: fase.faseCanonicaOrigemId,
-    codigo: fase.codigo,
-    // O detalhe traz o que a fase congelou; o catálogo pode não ter mais esta
-    // fase, e é isto que mantém a tela sabendo o que ela exige.
-    congelados: {
-      origemData: fase.origemData,
-      agrupaEtapas: fase.agrupaEtapas,
-      coletaInscricao: fase.coletaInscricao,
-      permiteComplementacao: fase.permiteComplementacao,
-      coletaSolicitacaoIsencao: fase.coletaSolicitacaoIsencao,
-      bancas: fase.bancasRequeridas.map((banca) => ({
-        id: banca.tipoBancaOrigemId,
-        codigo: banca.codigo,
-      })),
-    },
-    ordem: comoInteiro(fase.ordem),
-    inicio: fase.inicio,
-    fim: fase.fim,
-    produtos: fase.produtos.map((produto) => ({
-      atoCodigo: produto.atoCodigo,
-      papel: produto.papel ?? null,
-    })),
-    unidadeResponsavelId: fase.unidadeResponsavel?.origemId ?? null,
-    faseConcluinteCodigo: fase.faseConcluinteCodigo,
-    emiteParecerIndividual: fase.emiteParecerIndividual,
-    bancasRequeridas: fase.bancasRequeridas.map((banca) => ({
-      tipoBancaId: banca.tipoBancaOrigemId,
-      categoriasDocumentoIds: banca.recorteDeCompetencia.map(
-        (categoria) => categoria.categoriaDocumentoOrigemId,
-      ),
-    })),
-    regraRecurso: recursoDe(fase.regraRecurso, fase.produtos),
-  };
-}
-
-/**
- * A presença da regra é o que faz a fase admitir recurso. O hash da referência
- * não volta ao rascunho: o servidor o recompõe do catálogo, e guardá-lo aqui
- * criaria uma cópia que envelhece sozinha.
- *
- * A âncora chega como identidade da publicação e é gravada como código do tipo
- * de ato. A ponte entre os dois vocabulários são os produtos da própria fase,
- * que trazem `id` e `atoCodigo` juntos — e o cruzamento é sem perda porque o
- * ato entra uma vez só em cada fase. Sem ele, uma simples mudança de data
- * reenviaria a âncora em branco, ou um código resolvido para outro produto:
- * o prazo de recurso passaria a contar de outra publicação, em silêncio.
- */
-function recursoDe(
-  regra: ProcessoSeletivoDto['cronogramaFases'][number]['regraRecurso'],
-  produtos: ProcessoSeletivoDto['cronogramaFases'][number]['produtos'],
-): RecursoDaFase | null {
-  if (regra === null || regra === undefined) return null;
-
-  const args = regra.args;
-  const ancora = produtos.find((produto) => produto.id === regra.produtoAncoraId);
-  return {
-    regraCodigo: regra.regra.codigo,
-    regraVersao: regra.regra.versao,
-    prazoValor: comoTexto(args.prazoValor),
-    prazoUnidade: args.prazoUnidade,
-    atoAncoraCodigo: ancora?.atoCodigo ?? '',
-    suspensividadePrimeiraInstanciaValor: comoTexto(args.suspensividadePrimeiraInstanciaValor),
-    suspensividadePrimeiraInstanciaUnidade: args.suspensividadePrimeiraInstanciaUnidade ?? '',
-    admiteInstanciaSuperior: args.admiteInstanciaSuperior,
-    suspensividadeSegundaInstanciaValor: comoTexto(args.suspensividadeSegundaInstanciaValor),
-    suspensividadeSegundaInstanciaUnidade: args.suspensividadeSegundaInstanciaUnidade ?? '',
-  };
-}
-
-/**
- * As etapas do processo como o rascunho as guarda.
- *
- * Exportada porque a gravação precisa recolher os `id` que o servidor atribuiu
- * sem hidratar o wizard inteiro: `hidratarDraft` substitui todas as seções, e o
- * operador pode ter editado outro passo sem gravá-lo — a navegação é livre.
- */
-export function etapasDe(dto: ProcessoSeletivoDto): EtapaPontuada[] {
-  return (dto.etapas ?? []).map(etapaDe);
-}
-
-function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
-  return {
-    id: etapa.id,
-    nome: etapa.nome,
-    carater: etapa.carater,
-    tipoEtapaOrigemId: etapa.tipoEtapa.origemId,
-    tipoCongelado: {
-      origemId: etapa.tipoEtapa.origemId,
-      notaDeOrigemNoEnem: etapa.tipoEtapa.notaDeOrigemNoEnem,
-    },
-    peso: comoTexto(etapa.peso),
-    notaMinima: comoTexto(etapa.notaMinima),
-    notaMaxima: comoTexto(etapa.notaMaxima),
-    passoDoLancamento: comoTexto(etapa.passoDoLancamento),
-    formaDeAvaliacao: etapa.formaDeAvaliacao ?? '',
-    regraConsolidacaoCodigo: etapa.regraConsolidacao?.codigo ?? '',
-    regraConsolidacaoVersao: etapa.regraConsolidacao?.versao ?? '',
-    itensDeAvaliacao: (etapa.itensDeAvaliacao ?? []).map((item) => ({
-      id: item.id,
-      rotulo: item.rotulo,
-      pontuacaoMaxima: comoTexto(item.pontuacaoMaxima),
-    })),
-    escalaDeAtendimento: (etapa.escalaDeAtendimento ?? []).map((nivel) => ({
-      rotulo: nivel.rotulo,
-      percentual: percentualDaFracao(nivel.fracao),
-    })),
-    ordem: comoInteiro(etapa.ordem),
-    faseCodigo: etapa.faseCodigo ?? '',
-    produtos: (etapa.produtos ?? []).map((produto) => ({
-      atoCodigo: produto.atoCodigo,
-      papel: produto.papel ?? null,
-    })),
-    inicio:
-      etapa.inicio === null || etapa.inicio === undefined ? '' : campoDoInstante(etapa.inicio),
-    fim: etapa.fim === null || etapa.fim === undefined ? '' : campoDoInstante(etapa.fim),
-    emiteParecerIndividual: etapa.emiteParecerIndividual ?? false,
-    bancas: (etapa.bancas ?? []).map((banca) => banca.tipoBancaOrigemId),
-    recursos: (etapa.recursos ?? []).map((recurso) => ({
-      ancora: recurso.ancora as unknown as 'atoPublicado' | 'cienciaIndividual',
-      regraCodigo: recurso.regra.codigo,
-      regraVersao: recurso.regra.versao,
-      prazoValor: comoTexto(recurso.args.prazoValor),
-      prazoUnidade: recurso.args.prazoUnidade,
-      atoAncoraCodigo: recurso.atoAncoraCodigo ?? '',
-      // Mesma leitura que `recursoDe` faz para a fase. Sem ela, a gravação seguinte
-      // reenviava os quatro em branco e apagava o efeito suspensivo declarado.
-      suspensividadePrimeiraInstanciaValor: comoTexto(
-        recurso.args.suspensividadePrimeiraInstanciaValor,
-      ),
-      suspensividadePrimeiraInstanciaUnidade:
-        recurso.args.suspensividadePrimeiraInstanciaUnidade ?? '',
-      admiteInstanciaSuperior: recurso.args.admiteInstanciaSuperior,
-      suspensividadeSegundaInstanciaValor: comoTexto(
-        recurso.args.suspensividadeSegundaInstanciaValor,
-      ),
-      suspensividadeSegundaInstanciaUnidade:
-        recurso.args.suspensividadeSegundaInstanciaUnidade ?? '',
-    })),
-  };
-}
-
-/**
- * Projeta a classificação já gravada (UNI-REQ-0482). Ausente é estado válido
- * — rascunho onde a Eliminação ainda não gravou — e volta com os campos
- * vazios que a criação já usa; a bimodalidade de INV-B8 não precisa de
- * projeção especial aqui, porque o `regraArredondamento` nulo vira `''` de
- * qualquer forma, e é o mapeador para o comando quem decide o que enviar.
- */
-function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classificacao'] {
-  const classificacao = dto.classificacao;
-  if (classificacao === null || classificacao === undefined) {
-    return {
-      regraCalculoCodigo: '',
-      regraCalculoVersao: '',
-      regraArredondamentoCodigo: '',
-      regraArredondamentoVersao: '',
-      casasArredondamento: '',
-      regraOrdemAlocacaoCodigo: '',
-      regraOrdemAlocacaoVersao: '',
-      baseadoEmEnem: false,
-      escalaNotaFinal: '',
-      resolucaoPesoAreaEnem: '',
-      regrasEliminacao: [],
-      edicoesEnem: [],
-    };
-  }
-
-  return {
-    regraCalculoCodigo: classificacao.regraCalculo.codigo,
-    regraCalculoVersao: classificacao.regraCalculo.versao,
-    regraArredondamentoCodigo: classificacao.regraArredondamento?.codigo ?? '',
-    regraArredondamentoVersao: classificacao.regraArredondamento?.versao ?? '',
-    casasArredondamento: comoTexto(classificacao.casasArredondamento),
-    regraOrdemAlocacaoCodigo: classificacao.regraOrdemAlocacao.codigo,
-    regraOrdemAlocacaoVersao: classificacao.regraOrdemAlocacao.versao,
-    baseadoEmEnem: classificacao.baseadoEmEnem,
-    escalaNotaFinal: escalaDaNotaFinalComoTexto(classificacao.escalaNotaFinal),
-    resolucaoPesoAreaEnem: classificacao.resolucaoPesoAreaEnem ?? '',
-    regrasEliminacao: classificacao.regrasEliminacao.map(regraEliminacaoDe),
-    edicoesEnem: edicoesDoEnemDe(dto),
-  };
-}
-
-function regraEliminacaoDe(
-  regra: ConfiguracaoClassificacaoDto['regrasEliminacao'][number],
-): RegraEliminacaoConfigurada {
-  return {
-    regraCodigo: regra.regra.codigo,
-    regraVersao: regra.regra.versao,
-    etapaRef: regra.etapaRef ?? '',
-    notaMinima: comoTexto(regra.notaMinima),
-    minimo: comoTexto(regra.minimo),
-    areaCodigo: regra.areaCodigo ?? '',
-  };
-}
-
-/**
- * Projeta o bônus regional já gravado. A declaração (`aplicaBonusRegional`) vem do servidor e
- * `null` é "ainda por declarar": a ausência da configuração só significa "sem bônus" quando a
- * declaração é falsa. Sem configuração, os cinco campos voltam vazios.
- */
-function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
-  const aplica = dto.aplicaBonusRegional ?? null;
-  const bonus = dto.bonusRegional;
-  if (bonus === null || bonus === undefined) {
-    return {
-      aplica,
-      regraCodigo: '',
-      regraVersao: '',
-      fator: '',
-      teto: '',
-      baseLegalBonusRegionalId: '',
-      fatoElegibilidadeCodigo: '',
-    };
-  }
-
-  return {
-    aplica,
-    regraCodigo: bonus.regra.codigo,
-    regraVersao: bonus.regra.versao,
-    fator: comoTexto(bonus.fator),
-    teto: comoTexto(bonus.teto),
-    baseLegalBonusRegionalId: bonus.baseLegalBonusRegionalId,
-    fatoElegibilidadeCodigo: bonus.fatoElegibilidadeCodigo ?? '',
-  };
-}
-
-/**
- * Projeta os critérios de desempate na ordem em que o servidor os avalia — a
- * posição no array é a ordem, então a lista chega ordenada por `ordem` antes
- * de perder o número.
- */
-export function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempateConfigurado[] {
-  return [...(dto.criteriosDesempate ?? [])]
-    .sort((a, b) => comoInteiro(a.ordem) - comoInteiro(b.ordem))
-    .map((criterio) => ({
-      regraCodigo: criterio.regra.codigo,
-      regraVersao: criterio.regra.versao,
-      etapaRef: criterio.etapaRef ?? '',
-      idadeMinima: comoTexto(criterio.idadeMinima),
-      fato: criterio.fato ?? '',
-      operador: criterio.operador ?? '',
-      valor: criterio.valor ?? '',
-      areas: [...(criterio.areas ?? [])],
-    }));
-}
-
-/**
- * Projeta a oferta de atendimento já gravada. Guarda o id **de origem** — o
- * que a gravação recebe — junto do nome (e, para condições, do código) que o
- * detalhe devolveu no momento da leitura: é o que mantém a referência legível
- * mesmo se o item já tiver saído do cadastro ativo de Configuração (CA-05).
- *
- * `null` no detalhe é "nenhuma oferta declarada ainda" — as três listas
- * voltam vazias, não um erro de leitura.
- */
-function atendimentoDe(dto: ProcessoSeletivoDto): WizardDraft['atendimento'] {
-  const oferta = dto.ofertaAtendimento;
-  if (oferta === null || oferta === undefined) {
-    return { condicoes: [], recursos: [], tiposDeficiencia: [] };
-  }
-
-  const condicoes: AtendimentoCondicaoSelecionada[] = oferta.condicoes.map((condicao) => ({
-    id: condicao.condicaoOrigemId,
-    codigo: condicao.condicaoCodigo,
-    nome: condicao.condicaoNome,
-  }));
-  const recursos: ReferenciaDeAtendimento[] = oferta.recursos.map((recurso) => ({
-    id: recurso.recursoOrigemId,
-    nome: recurso.recursoNome,
-  }));
-  const tiposDeficiencia: ReferenciaDeAtendimento[] = oferta.tiposDeficiencia.map((tipo) => ({
-    id: tipo.tipoDeficienciaOrigemId,
-    nome: tipo.tipoDeficienciaNome,
-  }));
-
-  return { condicoes, recursos, tiposDeficiencia };
-}
-
-/** Ausente vira campo vazio, não zero. */
-function comoTexto(valor: number | null | undefined): string {
-  if (valor === null || valor === undefined) return '';
-  return String(valor);
-}
-
-/**
- * A ordem é posição na lista. Ausente vira zero — que a validação recusa, e é o que se quer: ordem não
- * declarada precisa aparecer como pendência, não passar despercebida.
- */
-function comoInteiro(valor: number | null | undefined): number {
-  return valor ?? 0;
-}
-
-/**
- * Projeta a distribuição de vagas já gravada.
- *
- * Guarda sempre os identificadores **de origem**, que é o que o comando de
- * gravação recebe. O `id` que o detalhe traz identifica o snapshot da
- * configuração, não a entidade do catálogo: reenviá-lo produziria referência
- * que o servidor não resolve.
- *
- * Os números voltam como texto porque é o que o campo edita.
- *
- * O quadro devolvido é o resultado do cálculo, e só as quantidades que o edital
- * fixou podem voltar como entrada: reenviar as calculadas na gravação seguinte
- * faria o servidor recusar a configuração que ele mesmo devolveu.
- */
-function distribuicoesDe(dto: ProcessoSeletivoDto): DistribuicaoDeVagas[] {
-  return (dto.distribuicaoVagas ?? []).map((distribuicao) => ({
-    ofertaCursoId: distribuicao.ofertaCursoOrigemId,
-    voBase: String(distribuicao.voBase),
-    pr: comoDecimalPtBr(distribuicao.pr),
-    regraDistribuicaoCodigo: distribuicao.regraDistribuicao.codigo,
-    regraDistribuicaoVersao: distribuicao.regraDistribuicao.versao,
-    regraAjusteCodigo: distribuicao.regraAjuste?.codigo ?? null,
-    regraAjusteVersao: distribuicao.regraAjuste?.versao ?? null,
-    referenciaReservaDemograficaId: distribuicao.referenciaDemografica?.origemId ?? null,
-    modalidades: distribuicao.modalidades.map((modalidade) => ({
-      id: modalidade.modalidadeOrigemId,
-      codigo: modalidade.codigo,
-      gravada: {
-        descricao: modalidade.descricao,
-        composicaoVagas: decodificarComposicaoVagas(modalidade.composicaoVagas),
-        composicaoOrigemCodigo: modalidade.composicaoOrigemCodigo,
-        regraRemanejamento: modalidade.regraRemanejamento,
-        remanejamentoDestino: modalidade.remanejamentoDestino,
-        remanejamentoPar: modalidade.remanejamentoPar,
-        remanejamentoFallback: modalidade.remanejamentoFallback,
-      },
-    })),
-    quadro: quadroDeclaradoDe(distribuicao),
-  }));
-}
-
-/** Só o que o edital fixou; o que a regra calcula fica de fora do rascunho. */
-function quadroDeclaradoDe(
-  distribuicao: ProcessoSeletivoDto['distribuicaoVagas'][number],
-): DistribuicaoDeVagas['quadro'] {
-  const federal = ehRamoFederal(distribuicao.regraDistribuicao.codigo);
-  const composicaoPorModalidade = new Map(
-    distribuicao.modalidades.map((modalidade) => [
-      modalidade.modalidadeOrigemId,
-      decodificarComposicaoVagas(modalidade.composicaoVagas),
-    ]),
-  );
-
-  return distribuicao.quadro
-    .filter((vaga) => {
-      const composicao = composicaoPorModalidade.get(vaga.modalidadeOrigemId);
-      return (
-        composicao !== undefined &&
-        composicao !== null &&
-        quantidadeEhDeclarada(composicao, federal)
-      );
-    })
-    .map((vaga) => ({
-      modalidadeId: vaga.modalidadeOrigemId,
-      quantidade: String(vaga.quantidade),
-    }));
-}
-
-/**
- * Projeta a cascata já gravada, só pelo par código/versão da regra escolhida.
- *
- * `fallbackCodigo` e `destinos[]` não entram no rascunho: são derivados do
- * `esquemaArgs` da regra no momento de montar o comando (matriz inteira da cascata de remanejamento de cotas, UNI-REQ-0056), e
- * trazê-los da leitura criaria uma segunda fonte que poderia divergir da regra
- * — por exemplo se o catálogo tiver ganhado uma versão nova entre a gravação e
- * esta leitura.
- */
-function cascataDe(dto: ProcessoSeletivoDto): CascataSelecionada | null {
-  const cascata = dto.cascata;
-  if (cascata === null || cascata === undefined) return null;
-
-  return { regraCodigo: cascata.regra.codigo, regraVersao: cascata.regra.versao };
-}
-
-/**
- * O separador decimal do campo é a vírgula, e é assim que o operador informou o
- * percentual. Devolver o ponto de `String(0.5)` faria a tela reabrir mostrando
- * grafia diferente da que ela mesma pediu.
- */
-function comoDecimalPtBr(valor: number): string {
-  return String(valor).replace('.', ',');
-}
-
-/**
- * Projeta a configuração de taxa já gravada. Ausente significa "ainda não
- * declarado" — que é diferente de declarar que não cobra, e por isso vira
- * `cobra: null` em vez de `false`: o passo precisa continuar exigindo a
- * declaração.
- *
- * O valor volta como texto porque é o que o campo edita; a vírgula decimal é
- * a forma que o operador digita e reconhece.
+ * Projeta a taxa gravada. Ausente é "ainda não declarado", diferente de declarar que não cobra, e
+ * vira `cobra: null` para o passo continuar exigindo a declaração. O valor volta como texto, com a
+ * vírgula decimal que o operador digita.
  */
 function pagamentoDe(dto: ProcessoSeletivoDto): WizardDraft['pagamento'] {
   const config = dto.configuracaoTaxaInscricao;
@@ -548,18 +115,15 @@ function pagamentoDe(dto: ProcessoSeletivoDto): WizardDraft['pagamento'] {
   };
 }
 
-/**
- * O valor gravado chega como número do JSON, não como a escrita do operador.
- */
+/** O valor gravado chega como número do JSON, não como a escrita do operador. */
 function valorGravadoComoTexto(valor: number | null | undefined): string {
   if (valor === null || valor === undefined) return '';
   return Number.isFinite(valor) ? formatarValorEmReais(valor) : '';
 }
 
 /**
- * O detalhe devolve os fundamentos como texto livre, e a gravação aceita
- * vocabulário fechado. Um código que este cliente não conhece é descartado do
- * rascunho editável em vez de seguir para um comando que o recusaria.
+ * O detalhe devolve os fundamentos como texto livre e a gravação aceita vocabulário fechado: o
+ * código desconhecido sai do rascunho em vez de seguir para um comando que o recusaria.
  */
 function ehFundamentoConhecido(codigo: string): codigo is FundamentoIsencaoCodigo {
   const conhecidos: readonly string[] = Object.values(FundamentoIsencao);
@@ -567,15 +131,9 @@ function ehFundamentoConhecido(codigo: string): codigo is FundamentoIsencaoCodig
 }
 
 /**
- * A leitura e a escrita do processo não falam o mesmo vocabulário: a criação
- * recebe `inscricaoPropria`, mas o `ProcessoSeletivoDto` devolve o nome do
- * enum de domínio — `InscricaoPropria`. Sem traduzir, a retomada gravaria no
- * rascunho um valor que nenhuma `<option>` do formulário tem, e o campo
- * apareceria vazio para um processo que declarou a origem (uniplus-api#1294).
- *
- * Valor fora do vocabulário conhecido vira `''`: o formulário mostra
- * "Selecione" e a validação cobra a escolha, em vez de carregar adiante um
- * valor que o servidor recusaria.
+ * A leitura devolve o nome do enum de domínio (`InscricaoPropria`) e a criação recebe
+ * `inscricaoPropria`. Sem traduzir, a retomada gravaria no rascunho um valor que nenhuma `<option>`
+ * tem (uniplus-api#1294). Valor fora do vocabulário vira `''`, e a validação cobra a escolha.
  */
 export function decodificarOrigemCandidatos(valor: string): OrigemCandidatosSelecionada {
   const normalizado = valor.charAt(0).toLowerCase() + valor.slice(1);
@@ -586,75 +144,4 @@ export function decodificarOrigemCandidatos(valor: string): OrigemCandidatosSele
     return OrigemCandidatos.importacaoExterna;
   }
   return '';
-}
-
-/**
- * Projeta o readback de um documento confirmado no shape que o passo 2 já
- * sabe exibir, com o nome do arquivo que o operador enviou.
- */
-export function uploadItemDe(documento: DocumentoAPublicarDto): UploadItem {
-  return {
-    id: documento.id,
-    name: documento.nomeArquivo,
-    extension: 'pdf',
-    progress: 100,
-    fase: 'confirmado',
-    documentoAPublicarId: documento.id,
-    enviado: true,
-  };
-}
-
-/** O edital é sempre um PDF; o tipo declarado no início do envio é o que a API confere depois. */
-export const TIPO_DE_MIDIA_DO_EDITAL = 'application/pdf';
-
-export interface ReadbackDocumentos {
-  /** Documento confirmado único — vínculo restaurável sem decisão. */
-  readonly vinculo: UploadItem | null;
-  /** Confirmados que exigem escolha explícita do administrador (CA-06). */
-  readonly escolha: readonly DocumentoAPublicarDto[];
-}
-
-/**
- * Decide o que fazer com os documentos lidos do processo. Um confirmado
- * restaura o vínculo; mais de um é levado ao administrador, porque eleger o
- * mais recente trocaria o edital do certame sem ninguém perceber. Pendentes
- * não contam: só confirmado tem hash e selo de imutabilidade. Só PDF conta: o
- * processo também guarda DOCX e ODT enviados como anexo, e a API recusa na
- * publicação o edital que não é PDF.
- */
-export function classificarDocumentos(
-  documentos: readonly DocumentoAPublicarDto[],
-): ReadbackDocumentos {
-  const confirmados = documentos.filter(
-    (documento) =>
-      documento.confirmadoEm !== null && documento.tipoDeMidia === TIPO_DE_MIDIA_DO_EDITAL,
-  );
-
-  if (confirmados.length === 0) return { vinculo: null, escolha: [] };
-  if (confirmados.length === 1) return { vinculo: uploadItemDe(confirmados[0]), escolha: [] };
-  return { vinculo: null, escolha: confirmados };
-}
-
-/**
- * Como apresentar um documento confirmado na escolha do oficial (CA-06).
- *
- * Não há rota de download, então não dá para inspecionar o conteúdo antes de
- * decidir. Além do nome do arquivo, ele vem com metadados estáveis: instante da
- * confirmação com segundos, porque duas confirmações no mesmo minuto ficariam
- * idênticas sem eles; tamanho; e o início do hash, que é a identidade do
- * arquivo — hashes iguais significam o mesmo conteúdo, e aí a escolha é
- * indiferente.
- */
-export function descreverDocumento(documento: DocumentoAPublicarDto): string {
-  const instante =
-    formatarDataBr(documento.confirmadoEm, 'datetimeSeconds') || 'instante indisponível';
-
-  const hash =
-    documento.hashSha256 === null
-      ? 'hash indisponível'
-      : `hash ${documento.hashSha256.slice(0, 12)}`;
-
-  const nome = documento.nomeArquivo.trim() || 'nome indisponível';
-
-  return `${nome} · ${instante} · ${formatarTamanhoDeArquivo(documento.tamanhoBytes)} · ${hash}`;
 }
