@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import type { BancaRequeridaDaFase } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -10,7 +10,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 /** As bancas que a fase requer, com o recorte de categorias de documento que cada uma julga. */
 @Component({
   selector: 'div[selBancasDaFase]',
-  imports: [FormsModule, ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, FormsModule, ValorEmConsultaComponent],
   templateUrl: './bancas-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { PAPEL_DEFINITIVO } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -9,7 +9,7 @@ import { FaseEmEdicao, type FaseNoSeletor } from '../fase-em-edicao';
 /** A conclusão do ciclo recursal da matéria e a promessa de parecer individual. */
 @Component({
   selector: 'div[selCicloRecursalDaFase]',
-  imports: [ReactiveFormsModule, ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, ReactiveFormsModule, ValorEmConsultaComponent],
   templateUrl: './ciclo-recursal-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   viewProviders: [

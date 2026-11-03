@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { PAPEL_PRELIMINAR, type ProdutoDaFase } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -11,7 +11,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 /** As publicações que a fase declara, cada uma um tipo de ato do catálogo, com o papel que ela tem. */
 @Component({
   selector: 'div[selPublicacoesDaFase]',
-  imports: [FormsModule, ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, FormsModule, ValorEmConsultaComponent],
   templateUrl: './publicacoes-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

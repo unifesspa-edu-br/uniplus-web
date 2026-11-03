@@ -1,5 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
-import { ComboboxComponent, EditorDeCondicoesComponent } from '@uniplus/shared-ui/components';
+import {
+  ComboboxComponent,
+  EditorDeCondicoesComponent,
+  ValorLegivelDirective,
+} from '@uniplus/shared-ui/components';
 import { consequenciasDaFase } from '@uniplus/shared-utils';
 
 import type { BaseLegalConfig, ModeloDaExigencia } from '../../../processo-seletivo.models';
@@ -29,6 +33,7 @@ import { GatilhoDasExigenciasStore } from './gatilho-das-exigencias.store';
 @Component({
   selector: 'div[selEditorDaExigencia]',
   imports: [
+    ValorLegivelDirective,
     ComboboxComponent,
     EditorDeCondicoesComponent,
     EixoAlcanceComponent,

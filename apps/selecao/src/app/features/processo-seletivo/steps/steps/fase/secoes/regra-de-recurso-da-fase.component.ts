@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
@@ -45,6 +45,7 @@ const ROTULO_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
     NgTemplateOutlet,
     ReactiveFormsModule,
     ValorEmConsultaComponent,
+    ValorLegivelDirective,
   ],
   templateUrl: './regra-de-recurso-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
