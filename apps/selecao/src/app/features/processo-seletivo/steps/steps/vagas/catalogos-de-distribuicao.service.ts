@@ -14,7 +14,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
-import { ModalidadeDoCatalogo } from './distribuicao-de-vagas';
+import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 
 /** Tipos do `rol_de_regras` que esta tela referencia. */
 const TIPO_REGRA_DISTRIBUICAO = 'regra_distribuicao_vagas';

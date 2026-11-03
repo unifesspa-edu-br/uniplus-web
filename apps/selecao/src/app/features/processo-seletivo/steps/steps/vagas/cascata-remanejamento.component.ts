@@ -25,7 +25,7 @@ import {
   problemasDaCascata,
 } from './cascata-de-remanejamento';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
-import { modalidadesGravadasPorId } from './distribuicao-de-vagas';
+import { modalidadesGravadasPorId } from './modalidades-da-distribuicao';
 import { explicarRegra, RegraExplicada } from './regra-em-linguagem-clara';
 
 /**

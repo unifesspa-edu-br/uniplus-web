@@ -15,7 +15,6 @@ import { ModalidadeDto } from '@uniplus/shared-data/configuracao';
 
 import {
   DistribuicaoDeVagas,
-  ModalidadeDaOferta,
   StepValidation,
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -40,18 +39,12 @@ import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidad
 import { comandoDaCascata, comandoDeRemocaoDaCascata } from './cascata-de-remanejamento';
 import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
-import {
-  EscopoDoProblema,
-  ehRamoFederal,
-  modalidadesDoRol,
-  modalidadesGravadasPorId,
-  ofertasRepetidas,
-  ProblemaDaDistribuicao,
-  problemaDeVagasAutorizadas,
-  problemasDaDistribuicao,
-  quantidadeEhDeclarada,
-  seguemOMesmoPadrao,
-} from './distribuicao-de-vagas';
+import { ehRamoFederal, quantidadeEhDeclarada } from './composicao-de-vagas';
+import { modalidadesDoRol, modalidadesGravadasPorId } from './modalidades-da-distribuicao';
+import { PadraoDoEdital, seguemOMesmoPadrao } from './padrao-do-edital';
+import { EscopoDoProblema, ProblemaDaDistribuicao } from './problema-da-distribuicao';
+import { problemaDeVagasAutorizadas, voBaseValido } from './teto-e-soma-do-quadro';
+import { ofertasRepetidas, problemasDaDistribuicao } from './validacao-da-distribuicao';
 import { comoComando } from './distribuicao-para-comando';
 import {
   AJUDA_DAS_OPCOES,
@@ -64,18 +57,7 @@ import {
 } from './opcoes-de-curso';
 import { explicarRegra } from './regra-em-linguagem-clara';
 
-/** O que o edital declara uma vez e vale para todas as ofertas. */
-interface PadraoDaDistribuicao {
-  readonly regraDistribuicaoCodigo: string;
-  readonly regraDistribuicaoVersao: string;
-  readonly regraAjusteCodigo: string | null;
-  readonly regraAjusteVersao: string | null;
-  readonly referenciaReservaDemograficaId: string | null;
-  readonly modalidades: readonly ModalidadeDaOferta[];
-  readonly pr: string;
-}
-
-const PADRAO_VAZIO: PadraoDaDistribuicao = {
+const PADRAO_VAZIO: PadraoDoEdital = {
   regraDistribuicaoCodigo: '',
   regraDistribuicaoVersao: '',
   regraAjusteCodigo: null,
@@ -172,7 +154,7 @@ export class VagasStepComponent {
    * O padrão vem da primeira oferta: é o rascunho que persiste, e guardá-lo
    * num estado próprio criaria duas fontes para o mesmo dado.
    */
-  readonly padrao = computed<PadraoDaDistribuicao>(() => {
+  readonly padrao = computed<PadraoDoEdital>(() => {
     const primeira = this.distribuicoes()[0];
     if (primeira === undefined) return this.padraoPendente();
 
@@ -220,7 +202,7 @@ export class VagasStepComponent {
   }
 
   /** Enquanto não há oferta, o padrão declarado fica aqui. */
-  private readonly padraoPendente = signal<PadraoDaDistribuicao>(PADRAO_VAZIO);
+  private readonly padraoPendente = signal<PadraoDoEdital>(PADRAO_VAZIO);
 
   readonly ehFederal = computed(() => ehRamoFederal(this.padrao().regraDistribuicaoCodigo));
 
@@ -817,7 +799,7 @@ export class VagasStepComponent {
    * invariantes do agregado.
    */
   voBaseInvalido(distribuicao: DistribuicaoDeVagas): boolean {
-    return !/^[1-9]\d*$/.test(distribuicao.voBase.trim());
+    return !voBaseValido(distribuicao.voBase);
   }
 
   quantidadeInvalida(distribuicao: DistribuicaoDeVagas, modalidadeId: string): boolean {
@@ -1612,7 +1594,7 @@ export class VagasStepComponent {
     );
   }
 
-  private alterarPadrao(patch: Partial<PadraoDaDistribuicao>): void {
+  private alterarPadrao(patch: Partial<PadraoDoEdital>): void {
     const proximo = { ...this.padrao(), ...patch };
     this.padraoPendente.set(proximo);
 
@@ -1633,7 +1615,7 @@ export class VagasStepComponent {
    */
   private quadroCoerente(
     quadro: DistribuicaoDeVagas['quadro'],
-    padrao: PadraoDaDistribuicao,
+    padrao: PadraoDoEdital,
   ): DistribuicaoDeVagas['quadro'] {
     const selecionadas = new Set(padrao.modalidades.map((modalidade) => modalidade.id));
     const federal = ehRamoFederal(padrao.regraDistribuicaoCodigo);

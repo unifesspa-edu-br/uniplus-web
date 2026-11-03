@@ -21,8 +21,14 @@
  * corpo como `null` — o campo chegaria ao servidor apagado, e não recusado.
  */
 export function inteiroDoCampo(texto: string): number | null {
+  const inteiro = inteiroNaForma(texto);
+  return inteiro === null ? null : finitoOuNulo(inteiro);
+}
+
+/** Só a forma: dígitos, sem teto de alcance. Quem precisa do teto usa `inteiroDoCampo`. */
+export function inteiroNaForma(texto: string): number | null {
   const limpo = texto.trim();
-  return /^\d+$/.test(limpo) ? finitoOuNulo(Number(limpo)) : null;
+  return /^\d+$/.test(limpo) ? Number(limpo) : null;
 }
 
 /** Aceita vírgula ou ponto como separador decimal, sem notação exótica. */

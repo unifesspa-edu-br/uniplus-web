@@ -4,7 +4,8 @@ import {
 } from '@uniplus/shared-data/selecao';
 
 import { CascataSelecionada, DistribuicaoDeVagas } from '../../processo-seletivo.models';
-import { ehRamoFederal, ModalidadeDoCatalogo } from './distribuicao-de-vagas';
+import { ehRamoFederal } from './composicao-de-vagas';
+import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 
 /** Vocabulário fechado que a API devolve para a modalidade: ela segue a cascata única do processo. */
 const SEGUE_CASCATA = 'SEGUE_CASCATA';

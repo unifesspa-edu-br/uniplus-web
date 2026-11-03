@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { decimalDoCampo, inteiroDoCampo, leituraDoCampoDecimal } from './numero-do-campo';
+import {
+  decimalDoCampo,
+  inteiroDoCampo,
+  inteiroNaForma,
+  leituraDoCampoDecimal,
+} from './numero-do-campo';
 
 describe('leitura dos campos numéricos do editor', () => {
   it('lê o ponto como separador decimal, não como agrupador', () => {
@@ -27,6 +32,12 @@ describe('leitura dos campos numéricos do editor', () => {
     expect(Number(digitosDemais)).toBe(Number.POSITIVE_INFINITY);
     expect(decimalDoCampo(digitosDemais)).toBeNull();
     expect(inteiroDoCampo(digitosDemais)).toBeNull();
+  });
+
+  it('confere só a forma do inteiro, sem teto de alcance', () => {
+    expect(inteiroNaForma('007')).toBe(7);
+    expect(inteiroNaForma('9'.repeat(309))).toBe(Number.POSITIVE_INFINITY);
+    expect(inteiroNaForma('1.5')).toBeNull();
   });
 
   it('aceita valor grande que ainda cabe no número', () => {

@@ -12,7 +12,7 @@ import {
   precisaExibirSecaoDaCascata,
   problemasDaCascata,
 } from './cascata-de-remanejamento';
-import { ModalidadeDoCatalogo } from './distribuicao-de-vagas';
+import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 
 const LB_PPI = 'mod-lb-ppi';
 const LB_Q = 'mod-lb-q';
