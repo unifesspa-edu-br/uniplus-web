@@ -60,7 +60,7 @@ export class GravacaoDoProcesso {
   ): Promise<ResultadoDaGravacao<T>> {
     const geracao = this.geracao();
     const chave = this.chaveDe(recurso);
-    const result = await firstValueFrom(enviar(chave.contextoPara(intencao)));
+    const result = await firstValueFrom(enviar(this.contextoDa(chave.contextoPara(intencao))));
 
     if (geracao !== this.geracao()) return superado();
     if (isApiOk(result)) {
@@ -73,7 +73,7 @@ export class GravacaoDoProcesso {
   /** Remoção sem `Idempotency-Key`: repetir encontra o recurso já removido. */
   async remover(enviar: Enviar<void>): Promise<ResultadoDaGravacao<void>> {
     const geracao = this.geracao();
-    const result = await firstValueFrom(enviar(new HttpContext()));
+    const result = await firstValueFrom(enviar(this.contextoDa()));
 
     if (geracao !== this.geracao()) return superado();
     return isApiOk(result)
@@ -87,7 +87,7 @@ export class GravacaoDoProcesso {
   ): Promise<ResultadoDaGravacao<T>> {
     const geracao = this.geracao();
     const chave = this.retidas[operacao];
-    const result = await firstValueFrom(enviar(chave.contexto()));
+    const result = await firstValueFrom(enviar(this.contextoDa(chave.contexto())));
 
     if (geracao !== this.geracao()) return superado();
     chave.concluir(result);
@@ -109,6 +109,11 @@ export class GravacaoDoProcesso {
     this.chaves.forEach((chave) => chave.renovar());
     this.retidas.criacao.descartar({ esquecerPendente: true });
     this.retidas.confirmacaoDoEdital.descartar({ esquecerPendente: false });
+  }
+
+  /** Ponto comum do contexto HTTP de toda gravação: o que valer para os pedidos entra aqui. */
+  private contextoDa(contexto: HttpContext = new HttpContext()): HttpContext {
+    return contexto;
   }
 
   private chaveDe(recurso: RecursoDoProcesso): ChaveDeSubstituicao {

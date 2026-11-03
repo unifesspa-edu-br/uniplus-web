@@ -7,7 +7,7 @@ import {
   ProcessosSeletivosApi,
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/selecao';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GravacaoDoProcesso } from './gravacao-do-processo';
 
@@ -131,6 +131,34 @@ describe('GravacaoDoProcesso', () => {
         antes.get(rota),
       );
     }
+  });
+
+  describe('contexto do pedido', () => {
+    it('monta o contexto de gravação, de remoção e de operação retida pelo mesmo ponto', async () => {
+      const contextoDa = vi.spyOn(
+        gravacao as unknown as { contextoDa: () => unknown },
+        'contextoDa',
+      );
+
+      const gravada = gravarEtapas();
+      http.expectOne(`${ROTA}/etapas`).flush(null, { status: 204, statusText: 'No Content' });
+      await gravada;
+      const removida = gravacao.remover(() => api.removerFormulario(PROCESSO_ID, 'INSCRICAO'));
+      http
+        .expectOne(`${ROTA.replace('/api/selecao/', '/api/selecao/admin/')}/formularios/INSCRICAO`)
+        .flush(null, {
+          status: 204,
+          statusText: 'No Content',
+        });
+      await removida;
+      const retida = confirmarEdital();
+      http
+        .expectOne(`${ROTA}/documentos-a-publicar/${DOCUMENTO_ID}/confirmacao`)
+        .flush(null, { status: 204, statusText: 'No Content' });
+      await retida;
+
+      expect(contextoDa).toHaveBeenCalledTimes(3);
+    });
   });
 
   describe('chave retida', () => {
