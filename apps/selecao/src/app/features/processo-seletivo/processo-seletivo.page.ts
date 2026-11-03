@@ -41,6 +41,7 @@ import { PASSOS } from './steps/processo-seletivo.data';
 import { PASSO_DO_WIZARD, PassoDoWizard } from './steps/passo-do-wizard';
 import type { ConfirmacaoDeGravacao, GravacaoDoPasso } from './steps/passo-do-wizard';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
+import { EnvioDoEdital } from './steps/shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from './steps/shared/gravacao/gravacao-do-processo';
 import { CamposPressupostosService } from './steps/shared/campos-pressupostos.service';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
@@ -78,11 +79,8 @@ import type { MotivoFalhaDeLeitura } from './steps/processo-seletivo.models';
 /** Formato do `:id` na rota — recusar aqui poupa uma ida ao servidor com lixo. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Traduz o status da recusa no que a tela pode oferecer. 404 e 403 descrevem
- * o endereço, não uma indisponibilidade: repetir a leitura daria o mesmo
- * resultado, então a saída é voltar à listagem. O resto admite retentativa.
- */
+/** 404 e 403 descrevem o endereço, não uma indisponibilidade: repetir a leitura daria o mesmo
+ * resultado, e a saída é voltar à listagem. O resto admite retentativa. */
 function motivoDe(status: number): MotivoFalhaDeLeitura {
   if (status === STATUS_HTTP.NAO_ENCONTRADO) return 'naoEncontrado';
   if (status === STATUS_HTTP.SEM_PERMISSAO || status === STATUS_HTTP.NAO_AUTENTICADO) {
@@ -119,6 +117,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
     ProcessoSeletivoStore,
     GravacaoDoProcesso,
     CadastroInicialService,
+    EnvioDoEdital,
     CatalogosDoCronogramaService,
     CamposPressupostosService,
     CatalogosDeClassificacaoService,

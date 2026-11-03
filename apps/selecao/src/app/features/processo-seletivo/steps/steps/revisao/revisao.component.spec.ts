@@ -26,6 +26,7 @@ import { PASSOS } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { baseLegalNova, comExigencia, exigenciaNova, folhaDe } from '../../shared/exigencias-documentais';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { EnvioDoEdital } from '../../shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { nomeDoPasso } from './publicacao-para-comando';
@@ -213,6 +214,7 @@ describe('RevisaoStepComponent', () => {
         ProcessoSeletivoStore,
         CadastroInicialService,
         GravacaoDoProcesso,
+        EnvioDoEdital,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },

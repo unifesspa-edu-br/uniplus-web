@@ -17,7 +17,7 @@ import {
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { UploadItem } from '../../processo-seletivo.models';
-import { CadastroInicialService } from '../cadastro-inicial.service';
+import { EnvioDoEdital } from '../envio-do-edital.service';
 import { classificarDocumentos, descreverDocumento, uploadItemDe } from '../hidratacao';
 
 /** Limite do documento do edital no domínio: 20 MB. */
@@ -44,7 +44,7 @@ const TAMANHO_MAXIMO_MB = 20;
 })
 export class AnexoEditalComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly envioDoEdital = inject(EnvioDoEdital);
   private readonly problemI18n = inject(ProblemI18nService);
 
   readonly tamanhoMaximoMb = TAMANHO_MAXIMO_MB;
@@ -253,7 +253,7 @@ export class AnexoEditalComponent {
     let iniciacao = this.iniciacaoAtual;
     if (iniciacao === null || destinoExpirado(iniciacao)) {
       this.atualizarAnexo({ fase: 'iniciando', progress: 0, mensagemErro: undefined });
-      const inicio = await this.cadastro.iniciarUpload(processoId, arquivo.name);
+      const inicio = await this.envioDoEdital.iniciarUpload(processoId, arquivo.name);
       if (!inicio.ok) {
         this.falharAnexo(this.problemI18n.resolve(inicio.problem).title);
         return;
@@ -267,7 +267,7 @@ export class AnexoEditalComponent {
     }
 
     this.atualizarAnexo({ fase: 'enviando' });
-    const envio = await this.cadastro.enviarArquivo(iniciacao, arquivo, (pct) =>
+    const envio = await this.envioDoEdital.enviarArquivo(iniciacao, arquivo, (pct) =>
       this.atualizarAnexo({ progress: pct }),
     );
     if (!envio.ok) {
@@ -294,9 +294,9 @@ export class AnexoEditalComponent {
 
   private async confirmar(processoId: string, documentoAPublicarId: string): Promise<void> {
     this.atualizarAnexo({ fase: 'confirmando', progress: 100 });
-    const confirmacao = await this.cadastro.confirmarUpload(processoId, documentoAPublicarId);
+    const confirmacao = await this.envioDoEdital.confirmarUpload(processoId, documentoAPublicarId);
     if (!confirmacao.ok) {
-      const indefinida = this.cadastro.temConfirmacaoPendente();
+      const indefinida = this.envioDoEdital.temConfirmacaoPendente();
       this.atualizarAnexo({ confirmacaoIndefinida: indefinida });
       this.falharAnexo(
         indefinida
@@ -359,7 +359,7 @@ export class AnexoEditalComponent {
     this.erroDeAbertura.set(null);
     try {
       const desfecho = await abrirAcessoEmNovaAba(
-        () => this.cadastro.obterAcessoAoDocumento(processoId, documentoAPublicarId),
+        () => this.envioDoEdital.obterAcessoAoDocumento(processoId, documentoAPublicarId),
         () => geracao === this.store.geracao(),
       );
       if (desfecho.situacao === 'bloqueada') {
@@ -382,7 +382,7 @@ export class AnexoEditalComponent {
     const geracao = this.store.geracao();
     this.reverificando.set(true);
     try {
-      const resultado = await this.cadastro.listarDocumentos(id);
+      const resultado = await this.envioDoEdital.listarDocumentos(id);
       // O editor pode ter passado a outro processo enquanto a leitura corria.
       if (geracao !== this.store.geracao() || !isApiOk(resultado)) return;
 

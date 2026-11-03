@@ -11,7 +11,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../cadastro-inicial.service';
+import { EnvioDoEdital } from '../envio-do-edital.service';
 import { GravacaoDoProcesso } from '../gravacao/gravacao-do-processo';
 import { AnexoEditalComponent } from './anexo-edital.component';
 
@@ -102,7 +102,7 @@ describe('AnexoEditalComponent', () => {
       imports: [AnexoEditalComponent],
       providers: [
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        EnvioDoEdital,
         GravacaoDoProcesso,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
