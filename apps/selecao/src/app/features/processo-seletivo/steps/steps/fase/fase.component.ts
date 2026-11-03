@@ -105,12 +105,12 @@ import { nomeDaFinalidade } from '../formulario/formularios-por-finalidade';
 import {
   PAPEIS_ESCOLHIVEIS,
   problemasDaFase,
-  produtosPreliminares,
-  traduzirRecusa,
   type AtoDoCatalogo,
   type CampoDaFase,
   type ProblemaDaFase,
 } from './configuracao-da-fase';
+import { produtosPreliminares } from './problemas-do-recurso-da-fase';
+import { traduzirRecusa } from './recusas-da-fase';
 import { faseDaConfiguracao, grupoDaConfiguracaoDaFase, type FaseConfigForm } from './fase-form';
 import { ModeloDaExigenciaComponent } from './modelo-da-exigencia/modelo-da-exigencia.component';
 import {

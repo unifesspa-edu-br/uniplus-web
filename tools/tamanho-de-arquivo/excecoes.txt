@@ -49,14 +49,13 @@
 494 apps/selecao/src/app/features/processo-seletivo/steps/steps/atendimento/atendimento.component.ts
 484 apps/selecao/src/app/features/processo-seletivo/steps/steps/bonus/bonus.component.ts
 442 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/catalogos-do-cronograma.service.ts
-1197 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma-do-certame.ts
+1186 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma-do-certame.ts
 1766 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma.component.html
 2182 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma.component.ts
 430 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.html
 960 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.ts
 493 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/quadro-do-desempate.ts
 948 apps/selecao/src/app/features/processo-seletivo/steps/steps/eliminacao/eliminacao.component.ts
-744 apps/selecao/src/app/features/processo-seletivo/steps/steps/fase/configuracao-da-fase.ts
 1444 apps/selecao/src/app/features/processo-seletivo/steps/steps/fase/fase.component.html
 2089 apps/selecao/src/app/features/processo-seletivo/steps/steps/fase/fase.component.ts
 425 apps/selecao/src/app/features/processo-seletivo/steps/steps/formula/formula.component.html

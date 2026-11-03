@@ -9,13 +9,14 @@ import {
 import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { escalaVale, fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
+import { fracaoDeDiaUtil } from '../../shared/prazo-em-dias-uteis';
 import { recursoResolvido } from './cronograma-para-comando';
 import {
   problemasDaFase,
   publicaResultadoDefinitivo,
-  UNIDADE_RESPONSAVEL_NAO_ENCONTRADA,
   type AtoDoCatalogo,
 } from '../fase/configuracao-da-fase';
+import { UNIDADE_RESPONSAVEL_NAO_ENCONTRADA } from '../fase/recusas-da-fase';
 import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
 
 /** Origem de data que obriga a fase a declarar janela. */
@@ -1113,18 +1114,6 @@ function problemasDasEtapas(
 function prazoUtilizavel(prazo: string): boolean {
   const valor = decimalDoCampo(prazo);
   return valor !== null && valor > 0;
-}
-
-/**
- * Fração de dia útil não tem leitura unívoca — meio expediente, doze horas dentro do dia, ou
- * metade de um dia civil que numa transição de fuso nem sempre tem vinte e quatro horas. As
- * três fecham a janela em instantes diferentes, e o servidor recusa em vez de eleger uma.
- * Prazo menor que um dia se declara em horas.
- */
-function fracaoDeDiaUtil(prazo: string, unidade: string): boolean {
-  if (unidade !== 'diasUteis') return false;
-  const valor = decimalDoCampo(prazo);
-  return valor !== null && !Number.isInteger(valor);
 }
 
 /**
