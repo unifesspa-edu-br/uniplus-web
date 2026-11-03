@@ -1,10 +1,10 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CodigoDeVerificacaoComponent } from './codigo-de-verificacao';
+import { lerFolha } from '../../../styles/testing/ler-folha.testing';
 
 const CODIGO = '9e036c76130c5f7b0e8f9241ae1b6cdf';
 
@@ -54,7 +54,7 @@ describe('CodigoDeVerificacaoComponent', () => {
 });
 
 describe('components.css — código de verificação', () => {
-  const folha = readFileSync(resolve(__dirname, '../../../styles/components.css'), 'utf-8').replace(
+  const folha = lerFolha(resolve(__dirname, '../../../styles/components.css')).replace(
     /\/\*[\s\S]*?\*\//gu,
     '',
   );

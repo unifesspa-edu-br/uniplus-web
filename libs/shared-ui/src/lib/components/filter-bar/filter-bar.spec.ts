@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Component, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -6,6 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { FilterBarComponent as PublicFilterBarComponent } from '../../index';
 import { FilterBarComponent } from './filter-bar';
+import { lerFolha } from '../../../styles/testing/ler-folha.testing';
 
 describe('FilterBarComponent', () => {
   function setup() {
@@ -109,7 +109,7 @@ describe('FilterBarComponent', () => {
   });
 
   it('mantém o layout do grupo secundário no stylesheet compartilhado', () => {
-    const styles = readFileSync(resolve(__dirname, '../../../styles/components.css'), 'utf-8');
+    const styles = lerFolha(resolve(__dirname, '../../../styles/components.css'));
     const groupRule = styles.match(/\.filter-bar__group\s*\{(?<declarations>[^}]*)\}/u)?.groups?.[
       'declarations'
     ];

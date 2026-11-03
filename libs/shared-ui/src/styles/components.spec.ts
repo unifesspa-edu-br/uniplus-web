@@ -1,9 +1,10 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+
+import { lerFolha } from './testing/ler-folha.testing';
 
 /** A folha sem comentários: a asserção tem de casar CSS aplicado, nunca uma declaração comentada. */
 function folha(nome: string): string {
-  return readFileSync(resolve(__dirname, nome), 'utf-8').replace(/\/\*[\s\S]*?\*\//gu, '');
+  return lerFolha(resolve(__dirname, nome)).replace(/\/\*[\s\S]*?\*\//gu, '');
 }
 
 /** O texto como literal de expressão regular: todo metacaractere escapado. */
@@ -87,14 +88,18 @@ describe('components.css — nome da linha clicável', () => {
   /** As declarações da regra cujo seletor é exatamente o informado. */
   function declaracoes(seletor: string): string {
     return (
-      folha('components.css').match(new RegExp(`(?:^|\\})\\s*${escaparRegex(seletor)}\\s*\\{([^{}]*)\\}`, 'u'))?.[1] ?? ''
+      folha('components.css').match(
+        new RegExp(`(?:^|\\})\\s*${escaparRegex(seletor)}\\s*\\{([^{}]*)\\}`, 'u'),
+      )?.[1] ?? ''
     );
   }
 
   it('fica sem sublinhado em repouso, como o nome das demais listagens, e sublinha sob o ponteiro', () => {
     expect(declaracoes('.table-responsive__alvo')).toMatch(/text-decoration:\s*none;/u);
     expect(
-      declaracoes('.table-responsive tbody tr:hover .table-responsive__alvo,\n.table-responsive__alvo:hover'),
+      declaracoes(
+        '.table-responsive tbody tr:hover .table-responsive__alvo,\n.table-responsive__alvo:hover',
+      ),
     ).toMatch(/text-decoration:\s*underline;/u);
   });
 });

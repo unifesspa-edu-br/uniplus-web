@@ -1,9 +1,9 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AppShellComponent, UiShellNavGroup } from './app-shell';
+import { lerFolha } from '../../../styles/testing/ler-folha.testing';
 
 const groups: readonly UiShellNavGroup[] = [
   {
@@ -122,10 +122,10 @@ describe('AppShellComponent', () => {
   describe('contrato de rolagem (stylesheet compartilhado)', () => {
     // Comentários removidos: as asserções abaixo têm de casar CSS aplicado, nunca
     // uma declaração comentada.
-    const styles = readFileSync(
-      resolve(__dirname, '../../../styles/components.css'),
-      'utf-8',
-    ).replace(/\/\*[\s\S]*?\*\//gu, '');
+    const styles = lerFolha(resolve(__dirname, '../../../styles/components.css')).replace(
+      /\/\*[\s\S]*?\*\//gu,
+      '',
+    );
 
     /** Um bloco cujo seletor é exatamente `selector`; `marker` desambigua blocos
      * homônimos (ex.: `.sidebar` base vs `.sidebar` do `position: sticky`). */

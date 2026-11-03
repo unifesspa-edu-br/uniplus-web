@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { DOCUMENT } from '@angular/common';
@@ -7,6 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DocumentoComponent } from './documento';
+import { lerFolha } from '../../../styles/testing/ler-folha.testing';
 
 @Component({
   standalone: true,
@@ -89,7 +89,7 @@ describe('DocumentoComponent', () => {
 });
 
 describe('components.css — papel do documento', () => {
-  const folha = readFileSync(resolve(__dirname, '../../../styles/components.css'), 'utf-8').replace(
+  const folha = lerFolha(resolve(__dirname, '../../../styles/components.css')).replace(
     /\/\*[\s\S]*?\*\//gu,
     '',
   );
