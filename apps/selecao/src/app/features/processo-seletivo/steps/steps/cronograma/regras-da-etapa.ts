@@ -100,3 +100,47 @@ export function componeNota(etapa: EtapaPontuada): boolean {
   const peso = decimalDoCampo(etapa.peso);
   return pontuaPorCarater(etapa.carater) && peso !== null && peso > 0;
 }
+
+/** Caráter de uma etapa, com o rótulo que o operador lê. */
+export const CARATERES = [
+  { valor: 'classificatoria', rotulo: 'Classificatória' },
+  { valor: 'eliminatoria', rotulo: 'Eliminatória' },
+  { valor: 'ambas', rotulo: 'Classificatória e eliminatória' },
+] as const;
+
+/**
+ * Os caracteres que a etapa pode ter, dado o tipo escolhido.
+ *
+ * O recorte vem do cadastro de Configuração, onde cada tipo declara se compõe a nota final e
+ * se elimina candidato — e não de uma lista de códigos escrita aqui, que envelheceria no dia
+ * em que o CEPS cadastrasse um tipo novo. É esse recorte que faz peso e nota mínima
+ * desaparecerem de uma análise documental sem que a tela precise saber o que ela é.
+ */
+export function caracteresAdmitidos(
+  tipo: TipoDeEtapaDoCatalogo | undefined,
+  notaDoEnem: boolean,
+  escolhido: string,
+): readonly { valor: string; rotulo: string }[] {
+  // Sem tipo escolhido não há o que restringir: a etapa ainda não disse de que natureza é.
+  // A etapa de nota do ENEM sempre compõe a média: puramente eliminatória, ela ficaria
+  // fora do divisor, e a nota que ela traz não pesaria em nada.
+  const admitidos: readonly { valor: string; rotulo: string }[] =
+    tipo === undefined
+      ? CARATERES
+      : CARATERES.filter(
+          (opcao) =>
+            (opcao.valor === 'classificatoria' && tipo.admitePontuacao) ||
+            (opcao.valor === 'eliminatoria' && tipo.admiteEliminacao && !notaDoEnem) ||
+            (opcao.valor === 'ambas' && tipo.admitePontuacao && tipo.admiteEliminacao),
+        );
+
+  if (escolhido === '' || admitidos.some((opcao) => opcao.valor === escolhido)) {
+    return admitidos;
+  }
+
+  // Caráter que o cadastro deixou de admitir depois de a etapa ter sido gravada: continua na
+  // lista, nomeado. Sumir seria o formulário mentindo sobre o que está gravado, e a gravação
+  // seguinte recusaria sem que ninguém tivesse visto o quê.
+  const rotulo = CARATERES.find((opcao) => opcao.valor === escolhido)?.rotulo ?? escolhido;
+  return [...admitidos, { valor: escolhido, rotulo: `${rotulo} (não mais admitido)` }];
+}

@@ -18,8 +18,6 @@ import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/se
 import { ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import {
-  PAPEL_DEFINITIVO,
-  PAPEL_PRELIMINAR,
   type EtapaPontuada,
   type ProdutoDaFase,
   type RecursoDaEtapa,
@@ -95,8 +93,6 @@ import {
   type ProducaoDosFatos,
 } from '../../shared/producao-dos-fatos';
 import { etapasDe } from '../../shared/hidratacao';
-import { escalaVale, decimalLido, textoDaSoma } from '../../shared/itens-de-avaliacao';
-import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../shared/instancia-superior';
 import { quemCitaNoProcesso } from '../formulario/formulario-de-inscricao';
 import { finalidadesQueAtende } from '../formulario/formularios-por-finalidade';
@@ -104,11 +100,7 @@ import {
   inicioDeHojeNoFusoInstitucional,
   pisoDoCampoDeData,
 } from '../../shared/fuso-institucional';
-import {
-  FORMA_HUMANA,
-  FORMAS_DE_AVALIACAO,
-  rotuloDaFormaDeAvaliacao,
-} from '../../shared/forma-de-avaliacao';
+import { FORMAS_DE_AVALIACAO } from '../../shared/forma-de-avaliacao';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import { problemasDoCronograma } from './cronograma-do-certame';
@@ -126,9 +118,8 @@ import {
   type CampoComRecusa,
 } from './recusas-do-servidor-da-etapa';
 import {
+  caracteresAdmitidos,
   componeNota,
-  declaraNotaDoEnem,
-  declaraNotaMaxima,
   eliminaPorCarater,
   etapaComOQueDeclara,
   pontuaPorCarater,
@@ -139,11 +130,42 @@ import {
   grupoDaEtapa,
   grupoDaFase,
   novoFormularioDoCronograma,
-  type CaraterEscolhido,
   type EtapaForm,
   type FaseForm,
 } from './cronograma-form';
 import { comoComandoDeEtapa } from './cronograma-para-comando';
+import {
+  baseLegalDaConvencao,
+  convencaoLida,
+  invariantesDaConvencao,
+  textosDoCatalogo,
+} from './convencao-de-contagem';
+import {
+  etapaDeclaraNotaMaxima,
+  etapaDeNotaDoEnem,
+  etapaEhDeAvaliacaoHumana,
+  etapaUsaEscalaDeAtendimento,
+} from './declaracoes-da-etapa';
+import {
+  trocarCaraterDaEtapa,
+  trocarFormaDeAvaliacao,
+  trocarRegraDeConsolidacao,
+  trocarTipoDaEtapa,
+} from './edicao-da-etapa';
+import { dataHoraLida, etapaLida, nomeDaEtapa, rotuloDoPapel } from './leitura-da-etapa';
+import {
+  acrescentarProduto,
+  escolherAtoDoProduto,
+  escolherPapelDoProduto,
+  removerProduto,
+} from './produtos-da-etapa';
+import {
+  acrescentarRecurso,
+  alterarRecurso,
+  declararInstanciaSuperior,
+  preliminaresDaEtapa,
+  removerRecurso,
+} from './recursos-da-etapa';
 import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.component';
 
 const SEM_RECUSAS: ReadonlyMap<CampoComRecusa, string> = new Map();
@@ -155,13 +177,6 @@ const SEM_RECUSAS: ReadonlyMap<CampoComRecusa, string> = new Map();
  */
 const AGUARDA_RELEITURA =
   'As etapas foram gravadas, mas a tela ainda não recolheu os identificadores que o servidor atribuiu. Releia as etapas antes de gravar de novo: sem eles, a gravação seguinte recriaria as etapas e desfaria as referências de desempate e eliminação.';
-
-/** Caráter de uma etapa, com o rótulo que o operador lê. */
-const CARATERES = [
-  { valor: 'classificatoria', rotulo: 'Classificatória' },
-  { valor: 'eliminatoria', rotulo: 'Eliminatória' },
-  { valor: 'ambas', rotulo: 'Classificatória e eliminatória' },
-] as const;
 
 /**
  * A fase na tela: o formulário que o operador edita, junto do que o catálogo
@@ -199,7 +214,6 @@ export class CronogramaStepComponent {
   private readonly camposPressupostos = inject(CamposPressupostosService);
   private readonly injector = inject(Injector);
 
-  readonly careteres = CARATERES;
   readonly formulario = novoFormularioDoCronograma();
 
   /**
@@ -584,32 +598,19 @@ export class CronogramaStepComponent {
       .map((regra) => ({ codigo: regra.codigo, versao: regra.versao, baseLegal: regra.baseLegal })),
   );
 
-  /**
-   * O que a convenção escolhida faz, na prosa que o próprio catálogo publica.
-   *
-   * O rótulo da opção trazia a base legal, e as três convenções de contagem têm a MESMA —
-   * quatrocentos e sessenta e nove caracteres idênticos repetidos em cada linha, que não
-   * distinguiam nada e ainda escondiam o fim do código. O que separa uma convenção da outra
-   * são os invariantes: cada um descreve um caso — âncora fora da meia-noite, âncora em dia
-   * não útil, contagem em dias úteis, contagem em horas — com o exemplo do resultado.
-   */
   readonly invariantesDaContagem = computed<readonly string[]>(() => {
     this.versaoDoFormulario();
-    const escolhida = this.formulario.controls.algoritmoContagemCodigo.value;
-    if (escolhida === '') return [];
-
-    const regra = this.catalogos.regrasContagem().find((item) => item.codigo === escolhida);
-    return textosDoCatalogo(regra?.invariantes);
+    return invariantesDaConvencao(
+      this.catalogos.regrasContagem(),
+      this.formulario.controls.algoritmoContagemCodigo.value,
+    );
   });
 
-  /** A base legal da convenção escolhida — a mesma das três, mostrada uma vez só. */
   readonly baseLegalDaContagem = computed<string>(() => {
     this.versaoDoFormulario();
-    const escolhida = this.formulario.controls.algoritmoContagemCodigo.value;
-    if (escolhida === '') return '';
-
-    return (
-      this.catalogos.regrasContagem().find((item) => item.codigo === escolhida)?.baseLegal ?? ''
+    return baseLegalDaConvencao(
+      this.catalogos.regrasContagem(),
+      this.formulario.controls.algoritmoContagemCodigo.value,
     );
   });
 
@@ -849,77 +850,23 @@ export class CronogramaStepComponent {
     return total === 1 ? '1 publicação' : `${total} publicações`;
   }
 
-  /**
-   * Os caracteres que a etapa pode ter, dado o tipo escolhido.
-   *
-   * O recorte vem do cadastro de Configuração, onde cada tipo declara se compõe a nota final e
-   * se elimina candidato — e não de uma lista de códigos escrita aqui, que envelheceria no dia
-   * em que o CEPS cadastrasse um tipo novo. É esse recorte que faz peso e nota mínima
-   * desaparecerem de uma análise documental sem que a tela precise saber o que ela é.
-   */
   caracteresPara(grupo: FormGroup<EtapaForm>): readonly { valor: string; rotulo: string }[] {
     this.versaoDoFormulario();
-    const tipo = this.catalogos.tipoEtapaPorId().get(grupo.controls.tipoEtapaOrigemId.value);
-
-    // Sem tipo escolhido não há o que restringir: a etapa ainda não disse de que natureza é.
-    // A etapa de nota do ENEM sempre compõe a média: puramente eliminatória, ela ficaria
-    // fora do divisor, e a nota que ela traz não pesaria em nada.
-    const notaDoEnem = this.etapaDeNotaDoEnem(grupo);
-    const admitidos: readonly { valor: string; rotulo: string }[] =
-      tipo === undefined
-        ? CARATERES
-        : CARATERES.filter(
-            (opcao) =>
-              (opcao.valor === 'classificatoria' && tipo.admitePontuacao) ||
-              (opcao.valor === 'eliminatoria' && tipo.admiteEliminacao && !notaDoEnem) ||
-              (opcao.valor === 'ambas' && tipo.admitePontuacao && tipo.admiteEliminacao),
-          );
-
-    const escolhido = grupo.controls.carater.value;
-    if (escolhido === '' || admitidos.some((opcao) => opcao.valor === escolhido)) {
-      return admitidos;
-    }
-
-    // Caráter que o cadastro deixou de admitir depois de a etapa ter sido gravada: continua na
-    // lista, nomeado. Sumir seria o formulário mentindo sobre o que está gravado, e a gravação
-    // seguinte recusaria sem que ninguém tivesse visto o quê.
-    const rotulo = CARATERES.find((opcao) => opcao.valor === escolhido)?.rotulo ?? escolhido;
-    return [...admitidos, { valor: escolhido, rotulo: `${rotulo} (não mais admitido)` }];
+    return caracteresAdmitidos(
+      this.catalogos.tipoEtapaPorId().get(grupo.controls.tipoEtapaOrigemId.value),
+      this.etapaDeNotaDoEnem(grupo),
+      grupo.controls.carater.value,
+    );
   }
 
-  /**
-   * Troca o tipo da etapa. Não mexe no caráter de propósito: se o tipo novo não o admitir, ele
-   * permanece visível e marcado por `caracteresPara`, e a recusa vem na gravação com o motivo.
-   * O que some da tela com o tipo novo, esse sim é descartado, porque não fica visível para
-   * ser corrigido.
-   */
   escolherTipoEtapa(grupo: FormGroup<EtapaForm>, tipoEtapaOrigemId: string): void {
-    grupo.controls.tipoEtapaOrigemId.setValue(tipoEtapaOrigemId);
-    if (this.etapaDeNotaDoEnem(grupo)) this.descartarOQueANotaDoEnemNaoTem(grupo);
+    trocarTipoDaEtapa(grupo, tipoEtapaOrigemId, this.catalogos.tipoEtapaPorId());
     this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
-  /** A nota da etapa vem do ENEM do candidato — é calculada, não lançada por banca. */
   etapaDeNotaDoEnem(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    const etapa = grupo.getRawValue();
-    return declaraNotaDoEnem(etapa, this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId));
-  }
-
-  /**
-   * Banca, publicação, janela própria e recurso contado de publicação somem da tela da
-   * etapa de nota do ENEM. Ficar com o que já estava declarado seria mandar ao servidor, a
-   * cada gravação, o que ninguém vê e ele recusa.
-   */
-  private descartarOQueANotaDoEnemNaoTem(grupo: FormGroup<EtapaForm>): void {
-    grupo.controls.bancas.setValue([]);
-    this.descartarEscalaEAvaliacao(grupo);
-    grupo.controls.produtos.setValue([]);
-    grupo.controls.inicio.setValue('');
-    grupo.controls.fim.setValue('');
-    grupo.controls.recursos.setValue(
-      grupo.controls.recursos.value.filter((recurso) => recurso.ancora === 'cienciaIndividual'),
-    );
+    return etapaDeNotaDoEnem(grupo, this.catalogos.tipoEtapaPorId());
   }
 
   /**
@@ -934,14 +881,9 @@ export class CronogramaStepComponent {
     return pontuaPorCarater(grupo.controls.carater.value);
   }
 
-  /**
-   * A etapa tem nota lançada por banca: compõe a média ou corta por nota mínima. A etapa sem
-   * nota (apto/inapto) e a do ENEM, cuja escala vem do INEP, não declaram nota máxima.
-   */
   etapaDeclaraNotaMaxima(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    const etapa = grupo.getRawValue();
-    return declaraNotaMaxima(etapa, this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId));
+    return etapaDeclaraNotaMaxima(grupo, this.catalogos.tipoEtapaPorId());
   }
 
   /** Todas as recusas do servidor à etapa, por campo; o editor dos itens lê as que são dele. */
@@ -1036,25 +978,13 @@ export class CronogramaStepComponent {
 
   readonly formasDeAvaliacao = FORMAS_DE_AVALIACAO;
 
-  /** A etapa é avaliada por banca: só nela cabem a regra de consolidação e o passo do lançamento. */
   etapaEhDeAvaliacaoHumana(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    return (
-      this.etapaDeclaraNotaMaxima(grupo) && grupo.controls.formaDeAvaliacao.value === FORMA_HUMANA
-    );
+    return etapaEhDeAvaliacaoHumana(grupo, this.catalogos.tipoEtapaPorId());
   }
 
-  /**
-   * Trocar a forma apaga a regra e o passo que ela não admite: o servidor os recusa fora da
-   * forma humana, e o que a tela esconde não pode seguir no rascunho.
-   */
   escolherFormaDeAvaliacao(grupo: FormGroup<EtapaForm>, forma: string): void {
-    grupo.controls.formaDeAvaliacao.setValue(forma);
-    grupo.controls.formaDeAvaliacao.markAsDirty();
-    if (forma !== FORMA_HUMANA) {
-      this.descartarRegraEPasso(grupo);
-      grupo.controls.escalaDeAtendimento.setValue([]);
-    }
+    trocarFormaDeAvaliacao(grupo, forma);
     this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
@@ -1070,37 +1000,14 @@ export class CronogramaStepComponent {
     })),
   );
 
-  /** A regra vai e volta como par código e versão: gravar um com a versão do outro é recusado. */
   escolherRegraDeConsolidacao(grupo: FormGroup<EtapaForm>, codigo: string, versao: string): void {
-    grupo.controls.regraConsolidacaoCodigo.setValue(codigo);
-    grupo.controls.regraConsolidacaoVersao.setValue(versao);
-    grupo.controls.regraConsolidacaoCodigo.markAsDirty();
+    trocarRegraDeConsolidacao(grupo, codigo, versao);
     this.versaoDoFormulario.update((atual) => atual + 1);
   }
 
-  private limparAvaliacaoSeNaoDeclara(grupo: FormGroup<EtapaForm>): void {
-    if (!this.etapaDeclaraNotaMaxima(grupo)) this.descartarEscalaEAvaliacao(grupo);
-  }
-
-  private descartarEscalaEAvaliacao(grupo: FormGroup<EtapaForm>): void {
-    grupo.controls.notaMaxima.setValue('');
-    grupo.controls.formaDeAvaliacao.setValue('');
-    grupo.controls.itensDeAvaliacao.setValue([]);
-    grupo.controls.escalaDeAtendimento.setValue([]);
-    this.descartarRegraEPasso(grupo);
-  }
-
-  /** Com escala a banca escolhe o nível em vez de digitar a nota, então a etapa não tem passo. */
   etapaUsaEscalaDeAtendimento(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    return this.etapaEhDeAvaliacaoHumana(grupo) && escalaVale(grupo.getRawValue());
-  }
-
-  /** A regra de consolidação e o passo só existem onde mais de um avaliador lança a nota. */
-  private descartarRegraEPasso(grupo: FormGroup<EtapaForm>): void {
-    grupo.controls.regraConsolidacaoCodigo.setValue('');
-    grupo.controls.regraConsolidacaoVersao.setValue('');
-    grupo.controls.passoDoLancamento.setValue('');
+    return etapaUsaEscalaDeAtendimento(grupo, this.catalogos.tipoEtapaPorId());
   }
 
   /** A etapa corta candidato — é onde a nota mínima tem o que fazer. */
@@ -1109,25 +1016,9 @@ export class CronogramaStepComponent {
     return eliminaPorCarater(grupo.controls.carater.value);
   }
 
-  /**
-   * Troca o caráter e apaga o que deixou de valer.
-   *
-   * Sem isto, quem declara peso 3 e depois muda para eliminatória fica com o 3 gravado e
-   * invisível: o campo some da tela, o valor continua no rascunho e vai para o servidor a
-   * cada gravação, sem que nada o use.
-   */
   escolherCarater(grupo: FormGroup<EtapaForm>, carater: string): void {
-    grupo.controls.carater.setValue(carater as CaraterEscolhido);
-    if (!this.etapaComponeNota(grupo)) grupo.controls.peso.setValue('');
-    if (!this.etapaElimina(grupo)) grupo.controls.notaMinima.setValue('');
-    this.limparAvaliacaoSeNaoDeclara(grupo);
+    trocarCaraterDaEtapa(grupo, carater, this.catalogos.tipoEtapaPorId());
     this.versaoDoFormulario.update((versao) => versao + 1);
-  }
-
-  /** O nome que a etapa já tem, ou o que a linha fechada mostra enquanto ele não existe. */
-  nomeDaEtapa(grupo: FormGroup<EtapaForm>): string {
-    const nome = grupo.controls.nome.value.trim();
-    return nome === '' ? 'Etapa sem nome' : nome;
   }
 
   /**
@@ -1163,121 +1054,17 @@ export class CronogramaStepComponent {
     return this.produtosDaFase(grupo).map((produto) => `${produto.nome} — ${produto.papel}`);
   }
 
-  /**
-   * Dia e hora como a consulta os lê: `AAAA-MM-DDTHH:mm`, a hora de parede do campo, vira
-   * `DD/MM/AAAA HH:mm`. Vazio fica vazio, para o valor em consulta dizer "Não informado".
-   */
-  dataHoraLida(valor: string): string {
-    const [data = '', hora = ''] = valor.split('T');
-    const [ano, mes, dia] = data.split('-');
-    if (!ano || !mes || !dia) return '';
-    return hora ? `${dia}/${mes}/${ano} ${hora}` : `${dia}/${mes}/${ano}`;
-  }
+  readonly nomeDaEtapa = nomeDaEtapa;
+  readonly dataHoraLida = dataHoraLida;
 
-  /** Os itens como a consulta os lê, com a soma contra a nota máxima da etapa. */
-  private itensLidos(grupo: FormGroup<EtapaForm>): {
-    readonly linhas: readonly string[];
-    readonly soma: string;
-  } {
-    const itens = grupo.controls.itensDeAvaliacao.value;
-    return {
-      linhas: itens.map((item) => `${item.rotulo} — ${decimalLido(item.pontuacaoMaxima)}`),
-      soma: textoDaSoma(itens, grupo.controls.notaMaxima.value),
-    };
-  }
-
-  /**
-   * A etapa como a consulta a lê: cada declaração em texto, sem o controle que a edita.
-   * Peso e nota mínima só aparecem quando o caráter da etapa os admite, como na edição.
-   */
   etapaLida(grupo: FormGroup<EtapaForm>) {
-    const rotulosDosAtos = this.catalogos.rotuloDoAto();
-    const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
-    const unidade = (valor: string): string => (valor === 'horas' ? 'horas' : 'dias úteis');
-    const par = (valor: string, un: string): string =>
-      valor === '' ? '' : `${valor} ${unidade(un)}`;
-    const controles = grupo.controls;
-    const carater = this.caracteresPara(grupo).find(
-      (opcao) => opcao.valor === controles.carater.value,
-    );
-    const janela =
-      controles.inicio.value || controles.fim.value
-        ? `${this.dataHoraLida(controles.inicio.value) || '—'} até ${this.dataHoraLida(controles.fim.value) || '—'}`
-        : '';
-    const nomesDasBancas = this.catalogos.bancas();
-
-    return {
-      nome: this.nomeDaEtapa(grupo),
-      tipo: this.catalogos.rotuloDoTipoEtapa().get(controles.tipoEtapaOrigemId.value) ?? '',
-      carater: carater?.rotulo ?? '',
-      peso: this.etapaComponeNota(grupo) ? controles.peso.value : null,
-      notaMinima: this.etapaElimina(grupo) ? controles.notaMinima.value : null,
-      notaMaxima: this.etapaDeclaraNotaMaxima(grupo)
-        ? leituraDoCampoDecimal(controles.notaMaxima.value)
-        : null,
-      formaDeAvaliacao: this.etapaDeclaraNotaMaxima(grupo)
-        ? rotuloDaFormaDeAvaliacao(controles.formaDeAvaliacao.value)
-        : null,
-      regraDeConsolidacao: this.etapaEhDeAvaliacaoHumana(grupo)
-        ? controles.regraConsolidacaoCodigo.value
-          ? `${controles.regraConsolidacaoCodigo.value} (${controles.regraConsolidacaoVersao.value})`
-          : ''
-        : null,
-      passoDoLancamento:
-        this.etapaEhDeAvaliacaoHumana(grupo) && !this.etapaUsaEscalaDeAtendimento(grupo)
-          ? leituraDoCampoDecimal(controles.passoDoLancamento.value)
-          : null,
-      itensDeAvaliacao: this.etapaDeclaraNotaMaxima(grupo) ? this.itensLidos(grupo) : null,
-      escalaDeAtendimento: this.etapaUsaEscalaDeAtendimento(grupo)
-        ? controles.escalaDeAtendimento.value.map(
-            (nivel) => `${nivel.rotulo} — ${decimalLido(nivel.percentual)}%`,
-          )
-        : null,
-      notaDoEnem: this.etapaDeNotaDoEnem(grupo),
-      janela,
-      parecerIndividual: controles.emiteParecerIndividual.value,
-      bancas: this.bancasDaEtapa(grupo).map(
-        (id) => nomesDasBancas.find((banca) => banca.id === id)?.nome ?? id,
-      ),
-      publicacoes: this.produtosDaEtapa(grupo)
-        .filter((produto) => produto.atoCodigo !== '')
-        .map((produto) => `${nomeDoAto(produto.atoCodigo)} — ${rotuloDoPapel(produto.papel)}`),
-      recursos: this.recursosDaEtapa(grupo).map((recurso) => {
-        const partes = [
-          recurso.ancora === 'atoPublicado'
-            ? `prazo corre da publicação de ${nomeDoAto(recurso.atoAncoraCodigo)}`
-            : 'prazo corre da ciência do candidato',
-          `prazo de ${par(recurso.prazoValor, recurso.prazoUnidade) || 'não informado'}`,
-        ];
-        const primeira = par(
-          recurso.suspensividadePrimeiraInstanciaValor,
-          recurso.suspensividadePrimeiraInstanciaUnidade,
-        );
-        const segunda = recurso.admiteInstanciaSuperior
-          ? par(
-              recurso.suspensividadeSegundaInstanciaValor,
-              recurso.suspensividadeSegundaInstanciaUnidade,
-            )
-          : '';
-        if (primeira) partes.push(`suspensividade da 1ª instância de ${primeira}`);
-        partes.push(
-          recurso.admiteInstanciaSuperior
-            ? 'admite instância superior'
-            : 'não admite instância superior',
-        );
-        if (segunda) partes.push(`suspensividade da 2ª instância de ${segunda}`);
-        return partes.join('; ');
-      }),
-    };
+    return etapaLida(grupo, this.catalogos);
   }
 
-  /** A convenção de contagem de prazo declarada, por código e versão. */
   readonly convencaoDeContagemLida = computed(() => {
     this.versaoDoFormulario();
     const { algoritmoContagemCodigo, algoritmoContagemVersao } = this.formulario.controls;
-    return algoritmoContagemCodigo.value === ''
-      ? null
-      : `${algoritmoContagemCodigo.value} · versão ${algoritmoContagemVersao.value}`;
+    return convencaoLida(algoritmoContagemCodigo.value, algoritmoContagemVersao.value);
   });
 
   /**
@@ -1422,52 +1209,14 @@ export class CronogramaStepComponent {
     return grupo.controls.produtos.value;
   }
 
-  acrescentarProdutoNaEtapa(grupo: FormGroup<EtapaForm>): void {
-    this.escreverProdutosDaEtapa(grupo, [
-      ...grupo.controls.produtos.value,
-      { atoCodigo: '', papel: null },
-    ]);
-  }
-
-  removerProdutoDaEtapa(grupo: FormGroup<EtapaForm>, posicao: number): void {
-    this.escreverProdutosDaEtapa(
-      grupo,
-      grupo.controls.produtos.value.filter((_, indice) => indice !== posicao),
-    );
-  }
-
-  escolherAtoDaEtapa(grupo: FormGroup<EtapaForm>, posicao: number, atoCodigo: string): void {
-    this.escreverProdutosDaEtapa(
-      grupo,
-      grupo.controls.produtos.value.map((produto, indice) =>
-        indice === posicao ? { atoCodigo, papel: null } : produto,
-      ),
-    );
-  }
-
-  escolherPapelDaEtapa(grupo: FormGroup<EtapaForm>, posicao: number, papel: string): void {
-    const escolhido = papel === '' ? null : (papel as ProdutoDaFase['papel']);
-    this.escreverProdutosDaEtapa(
-      grupo,
-      grupo.controls.produtos.value.map((produto, indice) =>
-        indice === posicao ? { ...produto, papel: escolhido } : produto,
-      ),
-    );
-  }
+  readonly acrescentarProdutoNaEtapa = acrescentarProduto;
+  readonly removerProdutoDaEtapa = removerProduto;
+  readonly escolherAtoDaEtapa = escolherAtoDoProduto;
+  readonly escolherPapelDaEtapa = escolherPapelDoProduto;
 
   /** Só ato que o catálogo marca como resultado admite papel no ciclo recursal. */
   atoEhResultado(atoCodigo: string): boolean {
     return this.catalogos.atoPorCodigo().get(atoCodigo)?.ehResultado === true;
-  }
-
-  private escreverProdutosDaEtapa(
-    grupo: FormGroup<EtapaForm>,
-    produtos: readonly ProdutoDaFase[],
-  ): void {
-    // `valueChanges` do formulário já propaga para o rascunho e incrementa a versão —
-    // não há o que marcar aqui além do próprio controle.
-    grupo.controls.produtos.setValue(produtos);
-    grupo.controls.produtos.markAsDirty();
   }
 
   // ── Bancas e janelas recursais da etapa ────────────────────────────────────
@@ -1491,51 +1240,8 @@ export class CronogramaStepComponent {
     return grupo.controls.recursos.value;
   }
 
-  /**
-   * A janela nasce ancorada no primeiro produto preliminar da etapa, quando existe: é o
-   * caso comum, e deixar o campo vazio obrigaria o operador a escolher de novo o que a
-   * própria etapa já declarou publicar.
-   */
   acrescentarRecursoNaEtapa(grupo: FormGroup<EtapaForm>): void {
-    const preliminar = grupo.controls.produtos.value.find((p) => p.papel === PAPEL_PRELIMINAR);
-    // A etapa de nota do ENEM não publica ato: o único relógio é a ciência do candidato.
-    const ancora: RecursoDaEtapa['ancora'] = this.etapaDeNotaDoEnem(grupo)
-      ? 'cienciaIndividual'
-      : 'atoPublicado';
-    const regra = this.regraDoCatalogo(ancora);
-    this.escreverRecursos(grupo, [
-      ...grupo.controls.recursos.value,
-      {
-        ancora,
-        regraCodigo: regra?.codigo ?? '',
-        regraVersao: regra?.versao ?? '',
-        prazoValor: '',
-        prazoUnidade: 'diasUteis',
-        atoAncoraCodigo: preliminar?.atoCodigo ?? '',
-        // Nasce sem suspensividade — declarar o par é escolha do operador, e os dois em
-        // branco são a desativação prevista daquela instância.
-        suspensividadePrimeiraInstanciaValor: '',
-        suspensividadePrimeiraInstanciaUnidade: '',
-        // Sem valor padrão: a janela só é gravada depois de o operador responder se cabe
-        // instância superior.
-        admiteInstanciaSuperior: null,
-        suspensividadeSegundaInstanciaValor: '',
-        suspensividadeSegundaInstanciaUnidade: '',
-      },
-    ]);
-  }
-
-  /**
-   * A regra de prazo que o catálogo oferece para cada âncora. São duas regras distintas
-   * porque são dois relógios: um conta da publicação do ato, o outro da ciência de cada
-   * candidato.
-   */
-  private regraDoCatalogo(ancora: RecursoDaEtapa['ancora']) {
-    const alvo = ancora === 'atoPublicado' ? 'ANCORADO-EM-ATO' : 'ANCORADO-EM-CIENCIA';
-    return (
-      this.catalogos.regrasRecurso().find((regra) => regra.codigo.includes(alvo)) ??
-      this.catalogos.regrasRecurso()[0]
-    );
+    acrescentarRecurso(grupo, this.catalogos.regrasRecurso(), this.etapaDeNotaDoEnem(grupo));
   }
 
   /** Sem regra de prazo no catálogo, não há janela recursal declarável. */
@@ -1543,12 +1249,7 @@ export class CronogramaStepComponent {
     return this.catalogos.regrasRecurso().length > 0;
   }
 
-  removerRecursoDaEtapa(grupo: FormGroup<EtapaForm>, posicao: number): void {
-    this.escreverRecursos(
-      grupo,
-      grupo.controls.recursos.value.filter((_, i) => i !== posicao),
-    );
-  }
+  readonly removerRecursoDaEtapa = removerRecurso;
 
   alterarRecursoDaEtapa(
     grupo: FormGroup<EtapaForm>,
@@ -1556,57 +1257,14 @@ export class CronogramaStepComponent {
     campo: keyof RecursoDaEtapa,
     valor: string,
   ): void {
-    this.escreverRecursos(
-      grupo,
-      grupo.controls.recursos.value.map((recurso, i) => {
-        if (i !== posicao) return recurso;
-        if (campo === 'ancora') {
-          const ancora = valor as RecursoDaEtapa['ancora'];
-          const regra = this.regraDoCatalogo(ancora);
-          // A ciência não tem publicação a referenciar: o ato âncora sai junto, e a regra
-          // de prazo muda, porque o relógio é outro.
-          return {
-            ...recurso,
-            ancora,
-            regraCodigo: regra?.codigo ?? recurso.regraCodigo,
-            regraVersao: regra?.versao ?? recurso.regraVersao,
-            atoAncoraCodigo: ancora === 'atoPublicado' ? recurso.atoAncoraCodigo : '',
-          };
-        }
-
-        if (campo === 'regraCodigo') {
-          const regra = this.catalogos.regrasRecurso().find((r) => r.codigo === valor);
-          return { ...recurso, regraCodigo: valor, regraVersao: regra?.versao ?? '' };
-        }
-
-        return { ...recurso, [campo]: valor };
-      }),
-    );
+    alterarRecurso(grupo, posicao, campo, valor, this.catalogos.regrasRecurso());
   }
 
-  /** Registra a resposta da pergunta que o contrato não deixa sem decisão. */
-  declararInstanciaSuperiorDaEtapa(
-    grupo: FormGroup<EtapaForm>,
-    posicao: number,
-    admite: boolean,
-  ): void {
-    this.escreverRecursos(
-      grupo,
-      grupo.controls.recursos.value.map((recurso, i) =>
-        i === posicao ? { ...recurso, admiteInstanciaSuperior: admite } : recurso,
-      ),
-    );
-  }
+  readonly declararInstanciaSuperiorDaEtapa = declararInstanciaSuperior;
 
-  /** Os produtos preliminares da etapa — os únicos em que uma janela pode ancorar. */
   preliminaresDaEtapa(grupo: FormGroup<EtapaForm>): readonly ProdutoDaFase[] {
     this.versaoDoFormulario();
-    return grupo.controls.produtos.value.filter((p) => p.papel === PAPEL_PRELIMINAR);
-  }
-
-  private escreverRecursos(grupo: FormGroup<EtapaForm>, recursos: readonly RecursoDaEtapa[]): void {
-    grupo.controls.recursos.setValue(recursos);
-    grupo.controls.recursos.markAsDirty();
+    return preliminaresDaEtapa(grupo);
   }
 
   acrescentarEtapa(faseCodigo = ''): void {
@@ -2108,30 +1766,6 @@ export class CronogramaStepComponent {
       this.espelhando = false;
     }
   }
-}
-
-/**
- * Lê uma lista de textos publicada pelo catálogo — os invariantes de uma regra chegam como
- * JSON solto, e o contrato não promete a forma.
- *
- * Nada de inventar: o que não for texto dentro de um array é descartado em silêncio, e a
- * tela mostra o que sobrou. Uma lista vazia esconde a seção inteira, que é melhor do que
- * exibir um rótulo de seção sem nada embaixo.
- */
-function textosDoCatalogo(conteudo: unknown): readonly string[] {
-  if (!Array.isArray(conteudo)) return [];
-  return conteudo.filter((item): item is string => typeof item === 'string' && item.trim() !== '');
-}
-
-/**
- * Como a tela nomeia o papel de uma publicação. O token que o contrato venha a
- * acrescentar aparece como veio: inventar rótulo para o desconhecido esconderia
- * do operador que a fase declara algo que esta tela ainda não sabe descrever.
- */
-function rotuloDoPapel(papel: string | null): string {
-  if (papel === PAPEL_PRELIMINAR) return 'resultado preliminar';
-  if (papel === PAPEL_DEFINITIVO) return 'resultado definitivo';
-  return papel ?? 'não é resultado';
 }
 
 /** A repetição que não vale onde o documento é cobrado, dita com o que fazer; nada quando vale ou não há. */
