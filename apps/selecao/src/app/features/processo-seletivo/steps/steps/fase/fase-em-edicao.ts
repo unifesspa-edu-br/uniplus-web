@@ -10,6 +10,7 @@ import {
   type CampoDaFase,
   type ProblemaDaFase,
 } from './configuracao-da-fase';
+import { produtosPreliminares } from './problemas-do-recurso-da-fase';
 import { EspelhoDaFase } from './espelho-da-fase';
 import { idDaFase } from './ids-da-fase';
 
@@ -72,6 +73,27 @@ export class FaseEmEdicao {
     const aberta = this.faseAberta();
     return this.fasesNoSeletor().find((fase) => fase.faseCanonicaId === aberta)?.nome ?? '';
   });
+
+  /** As publicações preliminares da fase — as únicas que podem ancorar o prazo. */
+  readonly ancorasPossiveis = computed<readonly { codigo: string; nome: string }[]>(() => {
+    const fase = this.faseDoRascunho();
+    if (fase === null) return [];
+
+    const rotulos = this.catalogos.rotuloDoAto();
+    return produtosPreliminares(fase.produtos).map((produto) => ({
+      codigo: produto.atoCodigo,
+      nome: rotulos.get(produto.atoCodigo) ?? produto.atoCodigo,
+    }));
+  });
+
+  /** Publicação preliminar única, que dispensa escolha; `null` com zero ou duas. */
+  readonly ancoraUnica = computed(() => {
+    const possiveis = this.ancorasPossiveis();
+    return possiveis.length === 1 ? possiveis[0].codigo : null;
+  });
+
+  /** A fase abre ciclo recursal: publica ao menos um resultado preliminar. */
+  readonly publicaPreliminar = computed(() => this.ancorasPossiveis().length > 0);
 
   /**
    * Bancas que o seletor oferece: as do cadastro, mais a que esta fase já exige

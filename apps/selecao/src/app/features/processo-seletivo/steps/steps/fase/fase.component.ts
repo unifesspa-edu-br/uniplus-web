@@ -87,7 +87,6 @@ import { consequenciasDaFase } from '@uniplus/shared-utils';
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 
 import {
-  PAPEL_DEFINITIVO,
   type BancaRequeridaDaFase,
   type BaseLegalConfig,
   type CondicaoGatilhoConfig,
@@ -113,9 +112,9 @@ import { nomeDaFinalidade } from '../formulario/formularios-por-finalidade';
 import {
   problemasDaFase,
 } from './configuracao-da-fase';
-import { FaseEmEdicao, type FaseNoSeletor } from './fase-em-edicao';
+import { FaseEmEdicao } from './fase-em-edicao';
+import { CicloRecursalDaFaseComponent } from './secoes/ciclo-recursal-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
-import { produtosPreliminares } from './problemas-do-recurso-da-fase';
 import { traduzirRecusa } from './recusas-da-fase';
 import type {
   DetalheLidoDoDocumento,
@@ -173,6 +172,7 @@ const SEM_ERROS: Readonly<Record<number, string>> = {};
     ComboboxComponent,
     EditorDeCondicoesComponent,
     FormsModule,
+    CicloRecursalDaFaseComponent,
     ModeloDaExigenciaComponent,
     PublicacoesDaFaseComponent,
     ReactiveFormsModule,
@@ -215,6 +215,8 @@ export class FaseStepComponent {
   readonly nomeDaBanca = this.faseEmEdicao.nomeDaBanca;
   readonly idDaFase = this.faseEmEdicao.idDaFase;
   private readonly atoPorCodigo = this.faseEmEdicao.atoPorCodigo;
+  readonly ancorasPossiveis = this.faseEmEdicao.ancorasPossiveis;
+  readonly publicaPreliminar = this.faseEmEdicao.publicaPreliminar;
 
   constructor() {
     this.catalogos.carregar();
@@ -261,7 +263,7 @@ export class FaseStepComponent {
     // é do operador: eleger um deles contaria a janela da publicação errada.
     // Só preenche o campo vazio, e por isso nunca sobrescreve o que ele decidiu.
     effect(() => {
-      const unica = this.ancoraUnica();
+      const unica = this.faseEmEdicao.ancoraUnica();
       const formulario = this.formulario();
       // Ligar o interruptor não muda a lista de âncoras nem recria o
       // formulário: sem acompanhar a edição, o campo ficaria vazio esperando
@@ -288,43 +290,6 @@ export class FaseStepComponent {
     this.catalogos.categorias().map((categoria) => ({ id: categoria.id, nome: categoria.nome })),
   );
 
-  /** As publicações preliminares da fase — as únicas que podem ancorar o prazo. */
-  readonly ancorasPossiveis = computed<readonly { codigo: string; nome: string }[]>(() => {
-    const fase = this.faseDoRascunho();
-    if (fase === null) return [];
-
-    const rotulos = this.catalogos.rotuloDoAto();
-    return produtosPreliminares(fase.produtos).map((produto) => ({
-      codigo: produto.atoCodigo,
-      nome: rotulos.get(produto.atoCodigo) ?? produto.atoCodigo,
-    }));
-  });
-
-  /** Publicação preliminar única, que dispensa escolha; `null` com zero ou duas. */
-  readonly ancoraUnica = computed(() => {
-    const possiveis = this.ancorasPossiveis();
-    return possiveis.length === 1 ? possiveis[0].codigo : null;
-  });
-
-  /** Fases que podem concluir o ciclo desta: publicam definitiva e vêm depois. */
-  readonly concluintesPossiveis = computed<readonly FaseNoSeletor[]>(() => {
-    const fase = this.faseDoRascunho();
-    if (fase === null) return [];
-
-    const declaradaPorId = new Map(
-      this.fasesDoCronograma().map((candidata) => [candidata.faseCanonicaId, candidata]),
-    );
-
-    return this.fasesNoSeletor().filter((outra) => {
-      if (outra.faseCanonicaId === fase.faseCanonicaId || outra.ordem <= fase.ordem) return false;
-      const declarada = declaradaPorId.get(outra.faseCanonicaId);
-      return declarada?.produtos.some((produto) => produto.papel === PAPEL_DEFINITIVO) === true;
-    });
-  });
-
-  /** A fase abre ciclo recursal: publica ao menos um resultado preliminar. */
-  readonly publicaPreliminar = computed(() => this.ancorasPossiveis().length > 0);
-
   abrirFase(faseCanonicaId: string): void {
     this.faseAberta.set(faseCanonicaId);
     this.faseEmEdicao.limparRecusa();
@@ -345,18 +310,8 @@ export class FaseStepComponent {
       valor === '' ? '' : `${valor} ${UNIDADES.find((u) => u.valor === unidade)?.rotulo ?? unidade}`;
     const categorias = this.categorias();
     const recurso = form.controls.recurso.controls;
-    const concluinte = form.controls.faseConcluinteCodigo.value;
-    const faseConcluinte = this.fasesNoSeletor().find((fase) => fase.codigo === concluinte);
 
     return {
-      publicaPreliminar: this.publicaPreliminar(),
-      faseQueConclui:
-        concluinte === ''
-          ? 'Esta fase conclui a si mesma'
-          : faseConcluinte
-            ? `${faseConcluinte.ordem}. ${faseConcluinte.nome}`
-            : concluinte,
-      parecerIndividual: form.controls.emiteParecerIndividual.value,
       admiteRecurso: form.controls.admiteRecurso.value,
       regraDeRecurso: recurso.regraCodigo.value
         ? `${recurso.regraCodigo.value} · versão ${recurso.regraVersao.value}`

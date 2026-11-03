@@ -26,6 +26,7 @@ import {
 } from '../../shared/exigencias/exigencias-documentais';
 import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { FaseEmEdicao } from './fase-em-edicao';
 import { FaseStepComponent } from './fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 import {
@@ -339,7 +340,7 @@ describe('FaseStepComponent', () => {
         }),
       );
 
-      expect(componente.ancorasPossiveis()).toEqual([
+      expect(raiz.injector.get(FaseEmEdicao).ancorasPossiveis()).toEqual([
         { codigo: 'GABARITO_PRELIMINAR', nome: 'Gabarito preliminar' },
       ]);
     });
