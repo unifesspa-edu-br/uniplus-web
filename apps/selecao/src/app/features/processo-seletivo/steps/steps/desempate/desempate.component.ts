@@ -893,7 +893,7 @@ export class DesempateStepComponent {
   /**
    * Grava a coleção inteira, na ordem em que está na tela (CA-05). Com critério por área e sem o
    * quadro gravado, só marca a gravação como pendente: quem grava a classificação grava os
-   * critérios em seguida (`gravarPendente`).
+   * critérios em seguida (`gravarAposAClassificacao`).
    */
   async persistir(): Promise<StepValidation> {
     const conferencia = this.validate();
@@ -906,7 +906,7 @@ export class DesempateStepComponent {
   }
 
   /** Grava os critérios que ficaram para depois da classificação, se ficaram. */
-  async gravarPendente(): Promise<StepValidation> {
+  async gravarAposAClassificacao(): Promise<StepValidation> {
     if (!this.store.classificacao.desempatePendenteDeGravacao()) return { valid: true };
     const conferencia = this.validate();
     return conferencia.valid ? this.gravar() : conferencia;

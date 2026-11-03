@@ -686,21 +686,11 @@ export class ProcessoSeletivoPage {
   private async publicar(): Promise<void> {
     const geracao = this.store.geracao();
 
-    // `travamentoDeOrquestracao`, não só o `salvando()` de cada passo
-    // individual: cada `persistir()` da varredura abaixo solta `salvando`
-    // no próprio `finally` assim que a PRÓPRIA chamada termina, mas esta
-    // orquestração — gravar os passos anteriores, recarregar o checklist,
-    // validar de novo — ainda não acabou. Sem uma trava que cubra a
-    // orquestração inteira, o intervalo entre um passo terminar e o
-    // próximo começar (ou entre o último passo e a recarga que vem depois)
-    // liberava o stepper e os campos por um instante real: o operador podia
-    // navegar, editar e voltar antes da recarga concluir, e a confirmação
-    // seguinte comparava contra um checklist que já não descrevia o
-    // rascunho atual. Liga antes de
-    // qualquer espera, a releitura antes da validação inclusive: um segundo clique, ou
-    // um clique no stepper, não entra no meio. Solta ao sair — inclusive ao
-    // abrir o diálogo de confirmação: a partir dali é a modalidade dele, não
-    // esta trava, que impede editar por baixo.
+    // `travamentoDeOrquestracao`, não só o `salvando()` de cada passo: cada `persistir()` solta o
+    // seu `salvando` ao terminar, mas a orquestração inteira (gravar, recarregar o checklist,
+    // validar de novo) ainda não acabou, e o intervalo entre um passo e outro liberava o stepper e
+    // os campos. Liga antes de qualquer espera e solta ao sair, inclusive ao abrir o diálogo de
+    // confirmação, cuja modalidade passa a impedir a edição por baixo.
     this.store.travamentoDeOrquestracao.set(true);
     try {
       let pendentesAntesDeGravar = this.validarRascunho(this.store.totalSteps - 1);
@@ -727,9 +717,7 @@ export class ProcessoSeletivoPage {
       if (geracao !== this.store.geracao()) return;
       // Critérios que ainda esperam a classificação não podem ficar para trás: publicar seguiria
       // com os que o servidor tinha antes.
-      const indiceDoDesempate = this.passos().findIndex(
-        (passo) => passo instanceof DesempateStepComponent,
-      );
+      const indiceDoDesempate = this.indiceDoPassoPosClassificacao();
       if (
         falhasDeGravacao.length === 0 &&
         this.store.classificacao.desempatePendenteDeGravacao() &&
@@ -780,6 +768,11 @@ export class ProcessoSeletivoPage {
     this.foco.revelarErro(() => this.stepValidatorAt(this.store.currentStep()));
   }
 
+  /** O passo que grava depois da classificação (hoje só o Desempate), ou `-1`. */
+  private indiceDoPassoPosClassificacao(): number {
+    return this.passos().findIndex((passo) => passo.gravarAposAClassificacao !== undefined);
+  }
+
   /**
    * Os critérios de desempate que ficaram para depois da classificação são gravados assim que ela
    * congela o quadro: primeiro a classificação, depois os critérios, que o servidor confere contra
@@ -789,9 +782,9 @@ export class ProcessoSeletivoPage {
    */
   private async gravarDesempatePendente(): Promise<RecusaDoDesempate | null> {
     if (!this.store.classificacao.desempatePendenteDeGravacao()) return null;
-    const indice = this.passos().findIndex((passo) => passo instanceof DesempateStepComponent);
+    const indice = this.indiceDoPassoPosClassificacao();
     const desempate = this.passos()[indice];
-    if (!(desempate instanceof DesempateStepComponent)) return null;
+    if (desempate?.gravarAposAClassificacao === undefined) return null;
 
     if (this.store.classificacao.motivoDaReleitura() !== null) {
       const geracao = this.store.geracao();
@@ -805,7 +798,7 @@ export class ProcessoSeletivoPage {
       return { indice, mensagens: [COPIA_NAO_CONFIRMADA] };
     }
 
-    const commit = await desempate.gravarPendente().catch(
+    const commit = await desempate.gravarAposAClassificacao().catch(
       (): StepValidation => ({
         valid: false,
         messages: ['Não foi possível concluir a operação. Tente novamente.'],

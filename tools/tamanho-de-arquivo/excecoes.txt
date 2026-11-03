@@ -42,7 +42,7 @@
 514 apps/portal/src/app/features/processos/processos.ts
 467 apps/selecao/src/app/features/inscricoes/detalhe-da-inscricao.page.ts
 2710 apps/selecao/src/app/features/processo-seletivo/processo-seletivo.css
-970 apps/selecao/src/app/features/processo-seletivo/processo-seletivo.page.ts
+963 apps/selecao/src/app/features/processo-seletivo/processo-seletivo.page.ts
 551 apps/selecao/src/app/features/processo-seletivo/publicacoes/publicar-documento.component.ts
 416 apps/selecao/src/app/features/processo-seletivo/steps/shared/anexo-edital/anexo-edital.component.ts
 1339 apps/selecao/src/app/features/processo-seletivo/steps/shared/exigencias-documentais.ts

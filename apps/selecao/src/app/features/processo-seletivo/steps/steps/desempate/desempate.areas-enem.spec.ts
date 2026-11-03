@@ -826,7 +826,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       expect(m.store.classificacao.desempatePendenteDeGravacao()).toBe(true);
 
       comQuadroGravado(m);
-      const gravacao = m.componente.gravarPendente();
+      const gravacao = m.componente.gravarAposAClassificacao();
       m.controller
         .expectOne((r) => r.url.endsWith(ROTA_DESEMPATE))
         .flush(null, { status: 204, statusText: 'No Content' });
@@ -839,7 +839,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       const m = await montar();
       m.store.processoSeletivoId.set(PROCESSO_ID);
 
-      await expect(m.componente.gravarPendente()).resolves.toEqual({ valid: true });
+      await expect(m.componente.gravarAposAClassificacao()).resolves.toEqual({ valid: true });
       m.controller.expectNone((r) => r.url.endsWith(ROTA_DESEMPATE));
     });
 

@@ -54,6 +54,12 @@ export interface PassoDoWizard {
   confirmacaoDeGravacao?(): ConfirmacaoDeGravacao | null;
 
   /**
+   * Grava o que o passo deixou para depois de a classificação congelar o quadro de que depende.
+   * A orquestração a chama logo depois de gravar a classificação, sem conhecer o passo.
+   */
+  gravarAposAClassificacao?(): Promise<StepValidation>;
+
+  /**
    * Refaz, a partir do servidor, o que este passo cacheia para `validate()`
    * decidir. A maioria dos passos não tem cache — só a Revisão, cujo
    * checklist é lido uma vez e reaproveitado enquanto o operador estiver

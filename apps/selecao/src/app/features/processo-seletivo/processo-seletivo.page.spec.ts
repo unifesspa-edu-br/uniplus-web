@@ -869,7 +869,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
         (passo): passo is DesempateStepComponent => passo instanceof DesempateStepComponent,
       );
       if (desempate === undefined) throw new Error('passo Desempate ausente');
-      vi.spyOn(desempate, 'gravarPendente').mockImplementation(async () => {
+      vi.spyOn(desempate, 'gravarAposAClassificacao').mockImplementation(async () => {
         ordem.push('critérios');
         if (recusaDosCriterios !== null) return { valid: false, messages: recusaDosCriterios };
         store.classificacao.desempatePendenteDeGravacao.set(false);
