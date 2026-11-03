@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { FaseCanonicaDto, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
 import { CaraterEtapa, UnidadePrazo } from '@uniplus/shared-data/selecao';
-
-import type {
-  EtapaPontuada,
-  FaseDoCronograma,
-  ProdutoDaFase,
-  RecursoDaEtapa,
+import {
+  type EtapaPontuada,
+  type FaseDoCronograma,
+  type RecursoDaEtapa,
 } from '../../processo-seletivo.models';
-import { descreverFase, exigenciasDe } from '../../shared/descricao-da-fase';
 import {
   fracaoDoPercentual,
   percentualDaFracao,
@@ -16,435 +12,20 @@ import {
   somaForaDaNotaMaxima,
   textoDaSoma,
 } from '../../shared/itens-de-avaliacao';
-import { publicaResultadoDefinitivo, type AtoDoCatalogo } from '../fase/configuracao-da-fase';
+import { problemasDoCronograma } from './cronograma-do-certame';
+import { etapaComOQueDeclara } from './regras-da-etapa';
 import {
-  comoNumero,
-  componeNota,
-  avisosDosGrupos,
-  problemasDoCronograma,
-  renumerar,
-  trocaFechaCiclo,
-  violacoesDePrecedencia,
-  type ExigenciaDeclarada,
-  type TipoDeEtapaDoCatalogo,
-  declaraNotaDoEnem,
-  recusaDaEtapaDeNotaDoEnem,
-  localDoErroDaEtapa,
-  etapaComOQueDeclara,
-  recusaDoCampoDaEtapa,
-  campoDaRecusa,
-  fasesComUnidadeNaoEncontrada,
-} from './cronograma-do-certame';
-
-/** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
-const SEM_CATALOGO: ReadonlyMap<string, AtoDoCatalogo> = new Map();
-const nomeDaBanca = (id: string): string => id;
-
-/**
- * Tipo de etapa que admite qualquer caráter — o caso comum dos cenários de outro assunto. Quem
- * testa o recorte do cadastro passa o seu por `problemasDoCronograma` diretamente.
- */
-const tipoQueAdmiteTudo = (): TipoDeEtapaDoCatalogo => ({
-  nome: 'Prova objetiva',
-  admitePontuacao: true,
-  admiteEliminacao: true,
-  notaDeOrigemNoEnem: false,
-});
-
-/** A conferência do cronograma, com os catálogos que ela consulta. */
-function problemasDe(
-  fases: Parameters<typeof problemasDoCronograma>[0],
-  etapas: Parameters<typeof problemasDoCronograma>[1],
-  fasePorId: Parameters<typeof problemasDoCronograma>[2],
-  precedencias: Parameters<typeof problemasDoCronograma>[3],
-): readonly string[] {
-  return problemasDoCronograma(
-    fases,
-    etapas,
-    fasePorId,
-    precedencias,
-    SEM_CATALOGO,
-    nomeDaBanca,
-    tipoQueAdmiteTudo,
-    [],
-  );
-}
-
-function faseCanonica(parcial: Partial<FaseCanonicaDto>): FaseCanonicaDto {
-  return {
-    id: 'fase-1',
-    codigo: 'INSCRICAO',
-    nome: 'Inscrição',
-    descricao: null,
-    unidadeSugerida: null,
-    agrupaEtapas: false,
-    permiteComplementacao: false,
-    baseLegal: null,
-    coletaInscricao: false,
-    coletaSolicitacaoIsencao: false,
-    origemData: 'NO_EDITAL',
-    criadoEm: '2026-08-30T12:00:00Z',
-    ...parcial,
-  } as FaseCanonicaDto;
-}
-
-function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
-  return {
-    faseCanonicaId: 'id-1',
-    codigo: 'INSCRICAO',
-    ordem: 1,
-    inicio: null,
-    fim: null,
-    unidadeResponsavelId: null,
-    produtos: [],
-    faseConcluinteCodigo: null,
-    emiteParecerIndividual: false,
-    bancasRequeridas: [],
-    regraRecurso: null,
-    congelados: null,
-    ...parcial,
-  };
-}
-
-function aresta(parcial: Partial<PrecedenciaFaseDto>): PrecedenciaFaseDto {
-  return {
-    id: 'aresta-1',
-    antecessoraCodigo: 'INSCRICAO',
-    sucessoraCodigo: 'HOMOLOGACAO',
-    permiteSobreposicao: false,
-    criadoEm: '2026-08-30T12:00:00Z',
-    ...parcial,
-  } as PrecedenciaFaseDto;
-}
-
-/**
- * Espalhar um `Partial` faz o TypeScript aceitar o objeto mesmo sem as propriedades
- * obrigatórias, então o fixture as declara todas à mão: antes disto ele devolvia uma etapa
- * sem `recursos`, e qualquer conferência que percorresse a coleção estourava no teste em vez
- * de reprovar de verdade.
- */
-function etapa(parcial: Partial<EtapaPontuada>): EtapaPontuada {
-  return {
-    id: null,
-    nome: 'Prova Objetiva',
-    carater: CaraterEtapa.classificatoria,
-    tipoEtapaOrigemId: 'tipo-1',
-    peso: '2',
-    notaMinima: '',
-    ordem: 1,
-    faseCodigo: '',
-    produtos: [],
-    inicio: '',
-    fim: '',
-    emiteParecerIndividual: false,
-    bancas: [],
-    recursos: [],
-    ...parcial,
-  };
-}
-
-/**
- * Uma exigência declarada, ancorada e conforme — os testes de norma partem daqui e mexem só
- * no que estão medindo. Montar o objeto à mão deixava `faseViva` indefinido, e a conferência
- * de ancoragem acusava "fase que saiu do cronograma" em teste que falava de outra coisa.
- */
-function exigenciaDeclarada(parcial: Partial<ExigenciaDeclarada>): ExigenciaDeclarada {
-  return {
-    nome: 'Documento',
-    decideResultado: false,
-    normaResolvida: false,
-    faseCodigo: 'AVALIACAO',
-    faseViva: true,
-    alcancaModalidade: true,
-    reenvioSemComplementacao: false,
-    semFormulario: false,
-    problemasDeGatilho: [],
-    problemasDeFase: [],
-    ...parcial,
-  };
-}
-
-const PRELIMINAR: ProdutoDaFase = { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' };
-const DEFINITIVO: ProdutoDaFase = { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' };
-const AVISO: ProdutoDaFase = { atoCodigo: 'COMUNICADO', papel: null };
-
-describe('exigências da fase', () => {
-  it('a fase que coleta inscrição ou isenção exige janela mesmo com a data definida na execução', () => {
-    const naExecucao = faseCanonica({ origemData: 'NA_EXECUCAO' });
-
-    expect(exigenciasDe({ ...naExecucao, coletaInscricao: true }, []).janelaObrigatoria).toBe(true);
-    expect(
-      exigenciasDe({ ...naExecucao, coletaSolicitacaoIsencao: true }, []).janelaObrigatoria,
-    ).toBe(true);
-  });
-
-  it('data fixada no edital obriga janela; definida na execução não', () => {
-    expect(exigenciasDe(faseCanonica({ origemData: 'NO_EDITAL' }), []).janelaObrigatoria).toBe(
-      true,
-    );
-    expect(exigenciasDe(faseCanonica({ origemData: 'NA_EXECUCAO' }), []).janelaObrigatoria).toBe(
-      false,
-    );
-  });
-
-  /**
-   * O que a fase publica é declaração dela, não atributo do catálogo: a mesma
-   * fase canônica entra em dois editais publicando coisas diferentes.
-   */
-  it('publica produto quando a fase declara ao menos um', () => {
-    const canonica = faseCanonica({});
-
-    expect(exigenciasDe(canonica, [AVISO]).publicaProduto).toBe(true);
-    expect(exigenciasDe(canonica, []).publicaProduto).toBe(false);
-  });
-
-  /**
-   * Recurso não é sinalizador próprio: cabe contra o resultado preliminar, que
-   * é a âncora de que o prazo conta. Fase que só publica o definitivo encerra a
-   * matéria, e oferecer ali a configuração levaria o operador a preencher algo
-   * que o domínio recusa.
-   */
-  it('recurso cabe só onde há produto preliminar', () => {
-    const canonica = faseCanonica({});
-
-    expect(exigenciasDe(canonica, [PRELIMINAR]).admiteRecurso).toBe(true);
-    expect(exigenciasDe(canonica, [DEFINITIVO]).admiteRecurso).toBe(false);
-    expect(exigenciasDe(canonica, [AVISO]).admiteRecurso).toBe(false);
-    expect(exigenciasDe(canonica, []).admiteRecurso).toBe(false);
-  });
-
-  /**
-   * Ato que não é resultado não torna a fase produtora de resultado — publicar
-   * um comunicado não abre nem encerra matéria nenhuma.
-   */
-  it('produto sem papel não publica resultado definitivo', () => {
-    expect(publicaResultadoDefinitivo([DEFINITIVO])).toBe(true);
-    expect(publicaResultadoDefinitivo([PRELIMINAR, AVISO])).toBe(false);
-    expect(publicaResultadoDefinitivo([])).toBe(false);
-  });
-
-  /**
-   * A fase que saiu do catálogo continua descrita pelo que congelou — mas o que
-   * ela publica sai dos produtos dela, que o congelado não guarda.
-   */
-  it('descreve a fase congelada pelos produtos que ela declara', () => {
-    const congelada = fase({
-      produtos: [PRELIMINAR],
-      congelados: {
-        origemData: 'NO_EDITAL',
-        agrupaEtapas: false,
-        coletaInscricao: false,
-        permiteComplementacao: false,
-        coletaSolicitacaoIsencao: false,
-        bancas: [],
-      },
-    });
-
-    const descricao = descreverFase(congelada, new Map());
-
-    expect(descricao.exigencias?.admiteRecurso).toBe(true);
-    expect(descricao.exigencias?.publicaProduto).toBe(true);
-    expect(descricao.publicaResultadoDefinitivo).toBe(false);
-    expect(descricao.foraDoCatalogo).toBe(true);
-  });
-});
-
-describe('precedência entre fases', () => {
-  it('acusa a ordem invertida quando as duas fases estão no cronograma', () => {
-    const violacoes = violacoesDePrecedencia(
-      [
-        fase({ codigo: 'HOMOLOGACAO', ordem: 1 }),
-        fase({ codigo: 'INSCRICAO', ordem: 2, faseCanonicaId: 'id-2' }),
-      ],
-      [aresta({})],
-    );
-
-    expect(violacoes).toHaveLength(1);
-    expect(violacoes[0].motivo).toBe('ordem');
-  });
-
-  /**
-   * A ausência de uma das duas fases NÃO é violação — é o que permite um
-   * cronograma curto, e o agregado é explícito quanto a isso.
-   */
-  it('ignora a aresta cuja outra ponta não está no cronograma', () => {
-    const violacoes = violacoesDePrecedencia(
-      [fase({ codigo: 'INSCRICAO', ordem: 1 })],
-      [aresta({})],
-    );
-
-    expect(violacoes).toEqual([]);
-  });
-
-  it('acusa janelas sobrepostas quando a aresta não permite sobreposição', () => {
-    const violacoes = violacoesDePrecedencia(
-      [
-        fase({ codigo: 'INSCRICAO', ordem: 1, fim: '2026-03-20T23:59:59-03:00' }),
-        fase({
-          codigo: 'HOMOLOGACAO',
-          ordem: 2,
-          faseCanonicaId: 'id-2',
-          inicio: '2026-03-15T08:00:00-03:00',
-        }),
-      ],
-      [aresta({ permiteSobreposicao: false })],
-    );
-
-    expect(violacoes).toHaveLength(1);
-    expect(violacoes[0].motivo).toBe('sobreposicao');
-  });
-
-  it('aceita as mesmas janelas quando a aresta permite sobreposição', () => {
-    const violacoes = violacoesDePrecedencia(
-      [
-        fase({ codigo: 'INSCRICAO', ordem: 1, fim: '2026-03-20T23:59:59-03:00' }),
-        fase({
-          codigo: 'HOMOLOGACAO',
-          ordem: 2,
-          faseCanonicaId: 'id-2',
-          inicio: '2026-03-15T08:00:00-03:00',
-        }),
-      ],
-      [aresta({ permiteSobreposicao: true })],
-    );
-
-    expect(violacoes).toEqual([]);
-  });
-
-  /**
-   * O mesmo instante escrito em deslocamentos diferentes precisa comparar igual.
-   * Comparar o texto separaria os dois, e a tela acusaria sobreposição onde não
-   * há.
-   */
-  it('compara janelas pelo instante, não pelo texto', () => {
-    const violacoes = violacoesDePrecedencia(
-      [
-        fase({ codigo: 'INSCRICAO', ordem: 1, fim: '2026-03-20T23:59:59-03:00' }),
-        fase({
-          codigo: 'HOMOLOGACAO',
-          ordem: 2,
-          faseCanonicaId: 'id-2',
-          inicio: '2026-03-21T02:59:59Z',
-        }),
-      ],
-      [aresta({ permiteSobreposicao: false })],
-    );
-
-    expect(violacoes).toEqual([]);
-  });
-});
-
-describe('permutação de ordem', () => {
-  const a = fase({ faseCanonicaId: 'a', codigo: 'INSCRICAO', ordem: 1 });
-  const b = fase({ faseCanonicaId: 'b', codigo: 'HOMOLOGACAO', ordem: 2 });
-
-  it('acusa a troca direta entre duas fases retidas', () => {
-    const depois = [
-      { ...a, ordem: 2 },
-      { ...b, ordem: 1 },
-    ];
-
-    expect(trocaFechaCiclo([a, b], depois)).toBe(true);
-  });
-
-  /** Cadeia que termina em ordem livre não fecha ciclo. */
-  it('aceita o deslocamento para uma ordem que ninguém ocupa', () => {
-    const depois = [
-      { ...a, ordem: 3 },
-      { ...b, ordem: 2 },
-    ];
-
-    expect(trocaFechaCiclo([a, b], depois)).toBe(false);
-  });
-
-  /** A remoção libera o valor, então a cadeia que termina nela não é ciclo. */
-  it('aceita assumir a ordem de uma fase removida', () => {
-    const depois = [{ ...a, ordem: 2 }];
-
-    expect(trocaFechaCiclo([a, b], depois)).toBe(false);
-  });
-
-  /**
-   * Renumerar sequencialmente **não** evita o ciclo — trocar duas fases de
-   * lugar e renumerar produz exatamente a permutação que o servidor recusa. É a
-   * reordenação mais comum que existe, e quem implementar o arrastar-e-soltar
-   * precisa guardá-la com `trocaFechaCiclo`, não confiar na renumeração.
-   *
-   * A saída é mover uma das fases para uma ordem livre numa gravação e fechar o
-   * ciclo na seguinte, que é o que a recusa do domínio orienta.
-   */
-  it('renumerar após trocar duas fases produz o ciclo que o servidor recusa', () => {
-    const depois = renumerar([b, a]);
-
-    expect(depois.map((f) => f.ordem)).toEqual([1, 2]);
-    expect(trocaFechaCiclo([a, b], depois)).toBe(true);
-  });
-});
-
-describe('etapa que compõe a nota', () => {
-  /**
-   * Havendo etapas, ao menos uma precisa pontuar COM peso — senão o divisor da
-   * média seria zero. Uma prova de títulos sozinha, eliminatória e sem peso, é
-   * recusada, e a mensagem do domínio fala de nota final, não de etapa.
-   */
-  it('exige caráter que pontua e peso declarado', () => {
-    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '2' }))).toBe(true);
-    expect(componeNota(etapa({ carater: CaraterEtapa.ambas, peso: '1' }))).toBe(true);
-    expect(componeNota(etapa({ carater: CaraterEtapa.eliminatoria, peso: '2' }))).toBe(false);
-    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '' }))).toBe(false);
-    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '   ' }))).toBe(false);
-  });
-
-  /**
-   * Peso zero não soma ao divisor, e o domínio o recusa à parte por exigir peso
-   * maior que zero. Aceitá-lo aqui deixaria um conjunto todo zerado passar na
-   * conferência da tela e ser recusado no servidor por outro motivo.
-   */
-  it('não considera peso zero como composição de nota', () => {
-    expect(componeNota(etapa({ carater: CaraterEtapa.classificatoria, peso: '0' }))).toBe(false);
-    expect(componeNota(etapa({ carater: CaraterEtapa.ambas, peso: '0,0' }))).toBe(false);
-  });
-});
-
-describe('conversão do campo para número', () => {
-  /**
-   * O defeito que esta gramática existe para impedir: ler o ponto como
-   * agrupador devolveria 5 para `0.5`, e o servidor aceitaria — 5 é peso
-   * válido, e a classificação rodaria com o dobro em ordem de grandeza.
-   */
-  it('lê o ponto como separador decimal, não como agrupador', () => {
-    expect(comoNumero('0.5')).toBe(0.5);
-    expect(comoNumero('2.75')).toBe(2.75);
-  });
-
-  it('aceita vírgula como separador decimal', () => {
-    expect(comoNumero('0,5')).toBe(0.5);
-    expect(comoNumero('2,5')).toBe(2.5);
-  });
-
-  it('devolve nulo para campo vazio, e não zero', () => {
-    expect(comoNumero('')).toBeNull();
-    expect(comoNumero('   ')).toBeNull();
-  });
-
-  it('devolve nulo para texto que não é número', () => {
-    expect(comoNumero('dois')).toBeNull();
-  });
-
-  /** `Number` leria `1e2` como 100 e `0x10` como 16; nenhum é peso. */
-  it('recusa notação científica e hexadecimal', () => {
-    expect(comoNumero('1e2')).toBeNull();
-    expect(comoNumero('0x10')).toBeNull();
-  });
-
-  it('recusa sinal negativo, que nenhum destes campos admite', () => {
-    expect(comoNumero('-1')).toBeNull();
-  });
-
-  it('preserva o zero declarado', () => {
-    expect(comoNumero('0')).toBe(0);
-  });
-});
+  SEM_CATALOGO,
+  nomeDaBanca,
+  tipoQueAdmiteTudo,
+  tipoDoEnem,
+  problemasDe,
+  faseCanonica,
+  fase,
+  etapa,
+  exigenciaDeclarada,
+  PRELIMINAR,
+} from './cronograma-do-certame.testing';
 
 describe('o que impede gravar o cronograma', () => {
   const AVALIACAO = faseCanonica({
@@ -847,47 +428,6 @@ describe('o que impede gravar o cronograma', () => {
     expect(confere('0,25')).not.toContainEqual(expect.stringContaining('passo do lançamento'));
   });
 
-  describe('o que a etapa declara', () => {
-    const humana = etapa({
-      nome: 'Redação',
-      carater: CaraterEtapa.classificatoria,
-      tipoEtapaOrigemId: 'tipo-1',
-      notaMaxima: '10',
-      passoDoLancamento: '0,5',
-      formaDeAvaliacao: 'HUMANA',
-      regraConsolidacaoCodigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
-      regraConsolidacaoVersao: 'v1',
-    });
-
-    it('mantém regra e passo na forma humana', () => {
-      expect(etapaComOQueDeclara(humana, undefined)).toMatchObject({
-        passoDoLancamento: '0,5',
-        regraConsolidacaoCodigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
-      });
-    });
-
-    it('descarta regra e passo quando a forma é objetiva', () => {
-      expect(
-        etapaComOQueDeclara({ ...humana, formaDeAvaliacao: 'OBJETIVA' }, undefined),
-      ).toMatchObject({
-        notaMaxima: '10',
-        formaDeAvaliacao: 'OBJETIVA',
-        passoDoLancamento: '',
-        regraConsolidacaoCodigo: '',
-        regraConsolidacaoVersao: '',
-      });
-    });
-
-    it('descarta a avaliação inteira quando a etapa não tem nota', () => {
-      expect(etapaComOQueDeclara({ ...humana, carater: '' }, undefined)).toMatchObject({
-        notaMaxima: '',
-        formaDeAvaliacao: '',
-        passoDoLancamento: '',
-        regraConsolidacaoCodigo: '',
-      });
-    });
-  });
-
   describe('itens de avaliação e escala de atendimento', () => {
     const item = (rotulo: string, pontuacaoMaxima: string) => ({
       id: null,
@@ -965,41 +505,6 @@ describe('o que impede gravar o cronograma', () => {
       expect(percentualDaFracao(0.3333)).toBe('33.33');
       expect(percentualDaFracao(1)).toBe('100');
     });
-
-    it('dá texto às recusas do servidor a item e nível e as aponta no campo', () => {
-      expect(
-        recusaDoCampoDaEtapa('uniplus.selecao.item_de_avaliacao.pontuacao_fora_do_passo'),
-      ).toContain('passo do lançamento');
-      expect(
-        campoDaRecusa(localDoErroDaEtapa('etapas[0].itensDeAvaliacao[1].pontuacaoMaxima')),
-      ).toBe('itensDeAvaliacao.1.pontuacaoMaxima');
-      expect(campoDaRecusa(localDoErroDaEtapa('etapas[0].escalaDeAtendimento'))).toBe(
-        'escalaDeAtendimento',
-      );
-      expect(campoDaRecusa(localDoErroDaEtapa('etapas[0].itensDeAvaliacao[1].outro'))).toBeNull();
-    });
-  });
-
-  it('dá texto às recusas de avaliação do servidor e ignora as de outra natureza', () => {
-    expect(
-      recusaDoCampoDaEtapa('uniplus.selecao.etapa_processo.passo_na_forma_objetiva'),
-    ).toContain('avaliação humana');
-    expect(recusaDoCampoDaEtapa('uniplus.selecao.etapa_processo.nome_obrigatorio')).toBeNull();
-  });
-
-  it('lê a etapa e o campo que a recusa do servidor aponta', () => {
-    expect(localDoErroDaEtapa('etapas[1].notaMaxima')).toMatchObject({
-      indice: 1,
-      campo: 'notaMaxima',
-    });
-    expect(localDoErroDaEtapa('etapas[2]')).toMatchObject({ indice: 2, campo: null });
-    expect(localDoErroDaEtapa('etapas[0].itensDeAvaliacao[3].pontuacaoMaxima')).toEqual({
-      indice: 0,
-      campo: 'itensDeAvaliacao',
-      posicao: 3,
-      subcampo: 'pontuacaoMaxima',
-    });
-    expect(localDoErroDaEtapa('fases[0].codigo')).toBeNull();
   });
 
   it('não confere a nota máxima herdada por etapa do ENEM nem a mostra como pendência', () => {
@@ -1291,42 +796,6 @@ describe('o que impede gravar o cronograma', () => {
   });
 });
 
-describe('o que a publicação vai cobrar dos grupos', () => {
-  /**
-   * Aviso, não impedimento. A norma de um grupo não se edita no wizard — bloquear a gravação
-   * por causa dela prenderia o passo sem saída, e a única fuga seria remover os documentos do
-   * grupo um a um até ele desaparecer, destruindo a configuração. Quem recusa é a publicação.
-   */
-  it('avisa sobre o grupo que decide o resultado sem norma, nomeando o que ele reúne', () => {
-    const avisos = avisosDosGrupos([
-      { decideResultado: true, normaResolvida: false, documentos: ['Contracheque', 'Extrato'] },
-    ]);
-
-    expect(avisos).toHaveLength(1);
-    expect(avisos[0]).toContain('Contracheque, Extrato');
-    expect(avisos[0]).toContain('A publicação vai cobrá-la.');
-  });
-
-  it('não avisa sobre grupo com norma resolvida nem sobre grupo transparente', () => {
-    expect(
-      avisosDosGrupos([
-        { decideResultado: true, normaResolvida: true, documentos: ['Contracheque'] },
-        { decideResultado: false, normaResolvida: false, documentos: ['Extrato'] },
-      ]),
-    ).toEqual([]);
-  });
-
-  /** Sem documentos nomeáveis a frase não pode terminar em "reúne ." */
-  it('avisa mesmo quando não há documento a nomear', () => {
-    const avisos = avisosDosGrupos([
-      { decideResultado: true, normaResolvida: false, documentos: [] },
-    ]);
-
-    expect(avisos[0]).not.toContain('reúne');
-    expect(avisos[0]).toContain('A publicação vai cobrá-la.');
-  });
-});
-
 describe('a janela própria da etapa', () => {
   const CATALOGO = new Map([
     [
@@ -1440,12 +909,6 @@ describe('a janela própria da etapa', () => {
 });
 
 describe('etapa de nota do ENEM', () => {
-  const tipoDoEnem = (): TipoDeEtapaDoCatalogo => ({
-    nome: 'Nota do ENEM',
-    admitePontuacao: true,
-    admiteEliminacao: true,
-    notaDeOrigemNoEnem: true,
-  });
   const faseDeAvaliacao = fase({ faseCanonicaId: 'fase-1', codigo: 'AVALIACAO' });
 
   function problemasDaEnem(parcial: Partial<EtapaPontuada>): readonly string[] {
@@ -1460,24 +923,6 @@ describe('etapa de nota do ENEM', () => {
       [],
     ).filter((problema) => problema.includes('nota do ENEM'));
   }
-
-  it('reconhece a etapa pelo atributo do tipo no cadastro', () => {
-    expect(declaraNotaDoEnem(etapa({}), tipoDoEnem())).toBe(true);
-    expect(declaraNotaDoEnem(etapa({}), tipoQueAdmiteTudo())).toBe(false);
-  });
-
-  it('na etapa gravada vale o que o processo congelou, enquanto o tipo é o mesmo', () => {
-    const gravada = etapa({ tipoCongelado: { origemId: 'tipo-1', notaDeOrigemNoEnem: true } });
-    expect(declaraNotaDoEnem(gravada, tipoQueAdmiteTudo())).toBe(true);
-  });
-
-  it('trocar o tipo desfaz o congelado, e vale o cadastro do tipo novo', () => {
-    const trocada = etapa({
-      tipoEtapaOrigemId: 'tipo-2',
-      tipoCongelado: { origemId: 'tipo-1', notaDeOrigemNoEnem: true },
-    });
-    expect(declaraNotaDoEnem(trocada, tipoQueAdmiteTudo())).toBe(false);
-  });
 
   it('classificatória com peso não tem pendência', () => {
     expect(problemasDaEnem({ carater: CaraterEtapa.classificatoria, peso: '2' })).toEqual([]);
@@ -1507,53 +952,5 @@ describe('etapa de nota do ENEM', () => {
     expect(problemasDaEnem({ produtos: [{ atoCodigo: 'ATO', papel: null }] })).toHaveLength(1);
     expect(problemasDaEnem({ recursos: [recurso('atoPublicado')] })).toHaveLength(1);
     expect(problemasDaEnem({ recursos: [recurso('cienciaIndividual')] })).toEqual([]);
-  });
-
-  it('a recusa do servidor à etapa de nota do ENEM ganha texto próprio', () => {
-    expect(
-      recusaDaEtapaDeNotaDoEnem(
-        'uniplus.selecao.processo_seletivo.etapa_nota_enem_nao_compoe_nota',
-      ),
-    ).toContain('compõe a média');
-    expect(
-      recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca'),
-    ).toContain('não admite banca');
-    expect(
-      recusaDaEtapaDeNotaDoEnem(
-        'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_produto_ou_recurso_em_ato',
-      ),
-    ).toContain('ciência do candidato');
-    expect(
-      recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_lancamento'),
-    ).toBeNull();
-  });
-});
-
-describe('fases cuja unidade o servidor não encontrou', () => {
-  const NAO_ENCONTRADA = 'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada';
-
-  it('devolve a posição de cada fase citada no campo da unidade', () => {
-    expect(
-      fasesComUnidadeNaoEncontrada([
-        { field: 'fases[2].unidadeResponsavelId', code: NAO_ENCONTRADA },
-        { field: 'fases[0].unidadeResponsavelId', code: NAO_ENCONTRADA },
-      ]),
-    ).toEqual([2, 0]);
-  });
-
-  it.each(['$.fases[2].unidadeResponsavelId', 'request.Fases[2].UnidadeResponsavelId'])(
-    'reconhece o campo com prefixo de caminho e caixa diferentes: %s',
-    (field) => {
-      expect(fasesComUnidadeNaoEncontrada([{ field, code: NAO_ENCONTRADA }])).toEqual([2]);
-    },
-  );
-
-  it('ignora outro código ou outro campo da fase', () => {
-    expect(
-      fasesComUnidadeNaoEncontrada([
-        { field: 'fases[1].unidadeResponsavelId', code: 'uniplus.validacao' },
-        { field: 'fases[1].inicio', code: NAO_ENCONTRADA },
-      ]),
-    ).toEqual([]);
   });
 });

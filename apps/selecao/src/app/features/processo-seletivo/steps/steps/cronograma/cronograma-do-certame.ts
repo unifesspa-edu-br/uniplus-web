@@ -6,305 +6,24 @@ import {
   type FaseDoCronograma,
 } from '../../processo-seletivo.models';
 import { descreverFase } from '../../shared/descricao-da-fase';
-import { decimalDoCampo, inteiroDoCampo } from '../../shared/numero-do-campo';
-import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
+import { decimalDoCampo } from '../../shared/numero-do-campo';
 import { escalaVale, fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
 import { fracaoDeDiaUtil } from '../../shared/prazo-em-dias-uteis';
 import { recursoResolvido } from './cronograma-para-comando';
 import { problemasDaFase, type AtoDoCatalogo } from '../fase/configuracao-da-fase';
-import { UNIDADE_RESPONSAVEL_NAO_ENCONTRADA } from '../fase/recusas-da-fase';
-
-/**
- * Recusa de precedência que a tela consegue antecipar.
- *
- * Só vale quando **as duas** fases da aresta estão no cronograma: a ausência de
- * uma delas não é violação, e é o que permite um cronograma curto. Quem arbitra
- * continua sendo o servidor — isto existe para avisar antes de gravar.
- */
-export interface ViolacaoDePrecedencia {
-  readonly antecessora: string;
-  readonly sucessora: string;
-  readonly motivo: 'ordem' | 'sobreposicao';
-}
-
-export function violacoesDePrecedencia(
-  fases: readonly FaseDoCronograma[],
-  arestas: readonly PrecedenciaFaseDto[],
-): readonly ViolacaoDePrecedencia[] {
-  const porCodigo = new Map(fases.map((fase) => [fase.codigo, fase]));
-  const violacoes: ViolacaoDePrecedencia[] = [];
-
-  for (const aresta of arestas) {
-    const antecessora = porCodigo.get(aresta.antecessoraCodigo);
-    const sucessora = porCodigo.get(aresta.sucessoraCodigo);
-    if (antecessora === undefined || sucessora === undefined) continue;
-
-    if (antecessora.ordem >= sucessora.ordem) {
-      violacoes.push({
-        antecessora: aresta.antecessoraCodigo,
-        sucessora: aresta.sucessoraCodigo,
-        motivo: 'ordem',
-      });
-      continue;
-    }
-
-    if (
-      !aresta.permiteSobreposicao &&
-      antecessora.fim !== null &&
-      sucessora.inicio !== null &&
-      instanteDe(antecessora.fim) > instanteDe(sucessora.inicio)
-    ) {
-      violacoes.push({
-        antecessora: aresta.antecessoraCodigo,
-        sucessora: aresta.sucessoraCodigo,
-        motivo: 'sobreposicao',
-      });
-    }
-  }
-
-  return violacoes;
-}
-
-/**
- * Trocar a ordem entre duas fases que permanecem no cronograma forma um ciclo
- * que o servidor não consegue persistir numa chamada só — cada linha precisa que
- * a outra libere o valor primeiro.
- *
- * Renumerar a lista sequencialmente **não** evita isso: trocar duas fases de
- * lugar e renumerar produz precisamente essa permutação, e é a reordenação mais
- * comum que existe. Quem move fase na tela guarda a operação com esta função e,
- * quando ela acusa, segue o que a recusa do domínio orienta — mover uma das
- * fases para uma ordem livre numa gravação e fechar o ciclo na seguinte.
- *
- * Uma cadeia que termina numa ordem livre, ou na ordem de uma fase removida, não
- * é ciclo: a remoção libera o valor.
- */
-export function trocaFechaCiclo(
-  antes: readonly FaseDoCronograma[],
-  depois: readonly FaseDoCronograma[],
-): boolean {
-  const anteriores = new Map(antes.map((fase) => [fase.faseCanonicaId, fase]));
-  const novas = new Map(depois.map((fase) => [fase.faseCanonicaId, fase]));
-
-  const retidaNaOrdem = new Map<number, string>();
-  for (const [id, fase] of anteriores) {
-    if (novas.has(id)) retidaNaOrdem.set(fase.ordem, id);
-  }
-
-  const estado = new Map<string, 'visitando' | 'concluido'>();
-  for (const inicial of anteriores.keys()) {
-    if (estado.has(inicial)) continue;
-
-    const caminho: string[] = [];
-    let atual: string | undefined = inicial;
-
-    while (atual !== undefined) {
-      const jaVisto = estado.get(atual);
-      if (jaVisto !== undefined) {
-        if (jaVisto === 'visitando') return true;
-        break;
-      }
-
-      const nova = novas.get(atual);
-      const anterior = anteriores.get(atual);
-      if (nova === undefined || anterior === undefined || nova.ordem === anterior.ordem) break;
-
-      estado.set(atual, 'visitando');
-      caminho.push(atual);
-      atual = retidaNaOrdem.get(nova.ordem);
-    }
-
-    for (const visitado of caminho) estado.set(visitado, 'concluido');
-  }
-
-  return false;
-}
-
-/**
- * Compara janelas pelo instante que elas representam, não pelo texto: dois
- * mesmos momentos escritos com deslocamentos diferentes precisam comparar
- * iguais, e a ordem lexicográfica do texto os separaria.
- */
-function instanteDe(valor: string): number {
-  return Date.parse(valor);
-}
-
-/** Renumera a lista de 1 a N, na ordem em que ela está. */
-export function renumerar(fases: readonly FaseDoCronograma[]): readonly FaseDoCronograma[] {
-  return fases.map((fase, indice) => ({ ...fase, ordem: indice + 1 }));
-}
-
-/**
- * Uma etapa compõe a nota quando pontua e declara peso **positivo**. Havendo
- * etapas, ao menos uma precisa fazê-lo: sem nenhuma, o divisor da média seria
- * zero, e o agregado recusa com uma mensagem que fala de nota final, não de
- * etapa.
- *
- * Peso zero não compõe: ele não soma ao divisor, e o domínio o recusa à parte,
- * exigindo peso maior que zero quando informado. Aceitá-lo aqui faria um
- * conjunto de etapas todo zerado passar na conferência da tela para ser
- * recusado no servidor por outro motivo — com uma mensagem que fala do peso de
- * uma etapa, não da nota final que ficou sem divisor.
- */
-/** O que a conferência precisa saber de uma exigência documental declarada. */
-export interface ExigenciaDeclarada {
-  readonly nome: string;
-  readonly decideResultado: boolean;
-  readonly normaResolvida: boolean;
-  /** Código da fase em que a exigência foi declarada. */
-  readonly faseCodigo: string;
-  /** Se essa fase ainda está no cronograma. */
-  readonly faseViva: boolean;
-  /** Se a exigência alcança ao menos uma modalidade que o quadro de vagas oferta. */
-  readonly alcancaModalidade: boolean;
-  /** Se pede reenvio numa fase que não admite complementação. */
-  readonly reenvioSemComplementacao: boolean;
-  /**
-   * Se a fase responde mais de um formulário e a exigência ainda não diz em qual o candidato
-   * apresenta o documento — o servidor a recusa sem ele.
-   */
-  readonly semFormulario: boolean;
-  /**
-   * O que impede o gatilho de ser gravado — fato fora do catálogo, comparação que o domínio
-   * não admite, condição sem valor. Vazio quando o gatilho está íntegro, ou quando não há
-   * gatilho nenhum.
-   */
-  readonly problemasDeGatilho: readonly string[];
-  /**
-   * As condições do gatilho que citam fato ainda não conhecido na fase da exigência, cada uma
-   * dita com o que fazer para resolvê-la. Vazio quando todas valem nesta fase.
-   */
-  readonly problemasDeFase: readonly string[];
-}
-
-/**
- * O que impede a exigência de ser gravada: a fase que a ancora saiu do cronograma, ela não
- * alcança modalidade nenhuma, ou pede reenvio onde a fase não admite complementação.
- *
- * Mora aqui, e não na superfície da fase, porque é o passo do Cronograma que grava as
- * exigências e é o `validate()` dele que o wizard chama — a superfície da fase é embutida com
- * `faseFixada` e o `validate()` dela nunca é invocado pela página.
- */
-function problemasDeAncoragem(exigencias: readonly ExigenciaDeclarada[]): readonly string[] {
-  const problemas: string[] = [];
-
-  const orfas = exigencias.filter((e) => !e.faseViva).map((e) => e.nome);
-  if (orfas.length > 0) {
-    problemas.push(
-      `Há documento exigido numa fase que saiu do cronograma: ${[...new Set(orfas)].join(', ')}. Declare-o em outra fase, ou remova a exigência.`,
-    );
-  }
-
-  if (exigencias.some((e) => e.faseViva && !e.alcancaModalidade)) {
-    problemas.push('Todo documento exigido precisa valer para ao menos uma modalidade aceita.');
-  }
-
-  const comGatilhoIncompleto = exigencias.filter(
-    (e) => e.faseViva && e.problemasDeGatilho.length > 0,
-  );
-  for (const exigencia of comGatilhoIncompleto) {
-    problemas.push(
-      `A condição de "${exigencia.nome}" ainda não está completa: ${exigencia.problemasDeGatilho.join('; ')}.`,
-    );
-  }
-
-  const semFormulario = exigencias.filter((e) => e.faseViva && e.semFormulario).map((e) => e.nome);
-  if (semFormulario.length > 0) {
-    problemas.push(
-      `Há documento exigido sem o formulário em que o candidato o apresenta: ${[...new Set(semFormulario)].join(', ')}. Na fase dele, escolha o formulário.`,
-    );
-  }
-
-  for (const exigencia of exigencias.filter((e) => e.faseViva)) {
-    for (const problema of exigencia.problemasDeFase) {
-      problemas.push(`Na condição de "${exigencia.nome}": ${problema}`);
-    }
-  }
-
-  const semComplementacao = exigencias
-    .filter((e) => e.faseViva && e.reenvioSemComplementacao)
-    .map((e) => e.nome);
-  if (semComplementacao.length > 0) {
-    problemas.push(
-      `A consequência "abre pendência para reenvio" só vale em fase que admite complementação, e ${[...new Set(semComplementacao)].join(', ')} está em fase que não admite. Escolha outra consequência, ou declare o documento em outra fase.`,
-    );
-  }
-
-  return problemas;
-}
-
-/**
- * O que a publicação vai cobrar de um GRUPO de exigências, dito como AVISO.
- *
- * Não bloqueia a gravação, e a diferença em relação à exigência individual é o que a torna
- * corrigível: a norma de uma exigência se edita nesta mesma tela, a de um grupo não — o wizard
- * não tem controle que a alcance. Bloquear aqui prenderia quem tem um grupo com norma pendente
- * num passo sem saída, e a única fuga seria remover os documentos do grupo um a um até ele
- * desaparecer, destruindo a configuração.
- *
- * O `PUT` aceita esse estado; quem o recusa é a publicação, e é lá que ele trava.
- */
-export function avisosDosGrupos(grupos: readonly GrupoDeclarado[]): readonly string[] {
-  return grupos
-    .filter((grupo) => grupo.decideResultado && !grupo.normaResolvida)
-    .map((grupo) =>
-      grupo.documentos.length === 0
-        ? 'Um grupo de documentos decide o resultado da análise e ainda não tem norma resolvida. A publicação vai cobrá-la.'
-        : `Um grupo de documentos decide o resultado da análise e ainda não tem norma resolvida — o que reúne ${grupo.documentos.join(', ')}. A publicação vai cobrá-la.`,
-    );
-}
-
-function problemasDasExigencias(exigencias: readonly ExigenciaDeclarada[]): readonly string[] {
-  const problemas: string[] = [...problemasDeAncoragem(exigencias)];
-
-  const semNorma = exigencias.filter((e) => e.decideResultado && !e.normaResolvida);
-  if (semNorma.length === 0) return problemas;
-
-  return [
-    ...problemas,
-    semNorma.length === 1
-      ? `A exigência "${semNorma[0].nome}" decide o resultado da análise e precisa da norma que a sustenta.`
-      : `${semNorma.length} exigências decidem o resultado da análise e precisam da norma que as sustenta: ${semNorma
-          .map((e) => e.nome)
-          .join(', ')}.`,
-  ];
-}
-
-/** O que a conferência precisa saber de um grupo de exigências. */
-export interface GrupoDeclarado {
-  /** O grupo tem consequência própria — é ele que decide, não cada documento de dentro. */
-  readonly decideResultado: boolean;
-  readonly normaResolvida: boolean;
-  /** Os documentos que ele reúne, para nomear o grupo numa tela que não o edita. */
-  readonly documentos: readonly string[];
-}
-
-/** O que a conferência precisa saber de um tipo de etapa do cadastro. */
-export interface TipoDeEtapaDoCatalogo {
-  readonly nome: string;
-  readonly admitePontuacao: boolean;
-  readonly admiteEliminacao: boolean;
-  readonly notaDeOrigemNoEnem: boolean;
-}
-
-/**
- * A etapa traz a nota do ENEM do candidato, em vez de uma nota lançada por banca.
- *
- * Quem diz é o atributo do tipo, nunca o código: um código na tela envelheceria no dia em
- * que o cadastro ganhasse outro tipo com a mesma natureza. Na etapa gravada vale o que o
- * processo congelou, enquanto ela aponta para o mesmo tipo; trocar o tipo desfaz o vínculo,
- * e aí o que vale é o cadastro do tipo novo.
- */
-export function declaraNotaDoEnem(
-  etapa: Pick<EtapaPontuada, 'tipoEtapaOrigemId' | 'tipoCongelado'>,
-  tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
-): boolean {
-  const congelado = etapa.tipoCongelado;
-  if (congelado != null && congelado.origemId === etapa.tipoEtapaOrigemId) {
-    return congelado.notaDeOrigemNoEnem;
-  }
-  return tipoDoCadastro?.notaDeOrigemNoEnem ?? false;
-}
+import {
+  problemasDasExigencias,
+  type ExigenciaDeclarada,
+} from './conferencia-das-exigencias-declaradas';
+import { instanteDe, violacoesDePrecedencia } from './precedencia-de-fases';
+import {
+  componeNota,
+  declaraNotaDoEnem,
+  declaraNotaMaxima,
+  eliminaPorCarater,
+  pontuaPorCarater,
+  type TipoDeEtapaDoCatalogo,
+} from './regras-da-etapa';
 
 /**
  * A etapa de nota do ENEM sempre compõe a média, e a nota dela é calculada, não julgada:
@@ -332,263 +51,6 @@ function problemasDaEtapaDeNotaDoEnem(etapa: EtapaPontuada): readonly string[] {
   }
   return problemas;
 }
-
-/**
- * Texto próprio das recusas do servidor à etapa de nota do ENEM, que o título genérico não
- * orienta: cada um diz o que corrigir no passo.
- */
-const RECUSA_DA_ETAPA_DE_NOTA_DO_ENEM: ReadonlyMap<string, string> = new Map([
-  [
-    'uniplus.selecao.processo_seletivo.etapa_nota_enem_nao_compoe_nota',
-    'A etapa de nota do ENEM compõe a média: declare caráter classificatória (ou ambas) e um peso maior que zero.',
-  ],
-  [
-    'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca',
-    'A etapa de nota do ENEM não admite banca: a nota é calculada, e quem julga o recurso é declarado na fase de recursos.',
-  ],
-  [
-    'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_produto_ou_recurso_em_ato',
-    'A etapa de nota do ENEM não publica ato nem abre recurso contado de publicação: o resultado sai pela fase, e na etapa cabe só o recurso contado da ciência do candidato.',
-  ],
-]);
-
-/** O texto da recusa à etapa de nota do ENEM, ou `null` quando a recusa é outra. */
-export function recusaDaEtapaDeNotaDoEnem(codigo: string): string | null {
-  return RECUSA_DA_ETAPA_DE_NOTA_DO_ENEM.get(codigo) ?? null;
-}
-
-/** Os campos da etapa sob os quais a recusa do servidor aparece; o nome é o que o servidor aponta. */
-export type CampoDaEtapaComRecusa =
-  | 'notaMinima'
-  | 'notaMaxima'
-  | 'passoDoLancamento'
-  | 'formaDeAvaliacao'
-  | 'regraConsolidacao'
-  | 'itensDeAvaliacao'
-  | 'escalaDeAtendimento';
-
-/** Um campo de um item da lista, na chave `itensDeAvaliacao.2.rotulo`. */
-export type CampoDeItemComRecusa =
-  | `itensDeAvaliacao.${number}.${'rotulo' | 'id' | 'pontuacaoMaxima'}`
-  | `escalaDeAtendimento.${number}.${'rotulo' | 'fracao'}`;
-
-export type CampoComRecusa = CampoDaEtapaComRecusa | CampoDeItemComRecusa;
-
-const CAMPOS_DA_ETAPA_COM_RECUSA: ReadonlySet<string> = new Set<CampoDaEtapaComRecusa>([
-  'notaMinima',
-  'notaMaxima',
-  'passoDoLancamento',
-  'formaDeAvaliacao',
-  'regraConsolidacao',
-  'itensDeAvaliacao',
-  'escalaDeAtendimento',
-]);
-
-const CAMPO_DE_ITEM_COM_RECUSA =
-  /^(?:itensDeAvaliacao\.\d+\.(?:rotulo|id|pontuacaoMaxima)|escalaDeAtendimento\.\d+\.(?:rotulo|fracao))$/;
-
-/** A chave sob a qual a tela guarda a recusa do que o servidor apontou, ou `null` quando ela não tem campo. */
-export function campoDaRecusa(
-  local: {
-    readonly campo: string | null;
-    readonly posicao: number | null;
-    readonly subcampo: string | null;
-  } | null,
-): CampoComRecusa | null {
-  if (local?.campo == null) return null;
-  const chave =
-    local.posicao === null ? local.campo : `${local.campo}.${local.posicao}.${local.subcampo}`;
-  if (CAMPOS_DA_ETAPA_COM_RECUSA.has(chave) || CAMPO_DE_ITEM_COM_RECUSA.test(chave)) {
-    return chave as CampoComRecusa;
-  }
-  return null;
-}
-
-const RECUSA_DO_CAMPO_DA_ETAPA: ReadonlyMap<string, string> = new Map([
-  [
-    'uniplus.selecao.etapa_processo.nota_maxima_invalida',
-    'A nota máxima precisa ser maior que zero.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.nota_minima_acima_da_nota_maxima',
-    'A nota mínima não pode passar da nota máxima.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.nota_maxima_fora_do_passo',
-    'A nota máxima precisa ser múltipla do passo do lançamento: ajuste uma das duas.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.passo_do_lancamento_invalido',
-    'O passo do lançamento precisa ser maior que zero.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.forma_de_avaliacao_desconhecida',
-    'Escolha a forma de avaliação: objetiva ou humana.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.avaliacao_na_etapa_do_enem',
-    'A etapa de nota do ENEM não declara forma de avaliação nem regra de consolidação: a nota vem do INEP.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.regra_de_consolidacao_fora_da_forma_humana',
-    'A regra de consolidação só vale na avaliação humana.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.regra_de_consolidacao_invalida',
-    'Escolha uma regra de consolidação que o catálogo oferece.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.passo_na_forma_objetiva',
-    'O passo do lançamento só vale na avaliação humana.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.itens_na_etapa_do_enem',
-    'A etapa de nota do ENEM não declara itens de avaliação nem escala de atendimento: a nota vem do INEP.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.escala_sem_itens',
-    'A escala de atendimento só vale em etapa com itens de avaliação.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.escala_na_forma_objetiva',
-    'A escala de atendimento só vale na avaliação humana.',
-  ],
-  [
-    'uniplus.selecao.etapa_processo.passo_com_escala_de_atendimento',
-    'Com escala de atendimento a banca escolhe o nível e não digita a nota: a etapa não declara passo do lançamento.',
-  ],
-  [
-    'uniplus.selecao.item_de_avaliacao.rotulo_invalido',
-    'Dê ao item um rótulo, de até 300 caracteres.',
-  ],
-  [
-    'uniplus.selecao.item_de_avaliacao.rotulo_duplicado',
-    'Outro item da etapa já tem este rótulo: o rótulo identifica o critério para a banca.',
-  ],
-  ['uniplus.selecao.item_de_avaliacao.id_duplicado', 'Este item aparece mais de uma vez na etapa.'],
-  [
-    'uniplus.selecao.item_de_avaliacao.pontuacao_maxima_invalida',
-    'A pontuação máxima do item precisa ser maior que zero.',
-  ],
-  [
-    'uniplus.selecao.item_de_avaliacao.pontuacao_fora_do_passo',
-    'A pontuação máxima do item precisa ser múltipla do passo do lançamento da etapa: ajuste uma das duas.',
-  ],
-  [
-    'uniplus.selecao.nivel_de_atendimento.rotulo_invalido',
-    'Dê ao nível um rótulo, de até 100 caracteres.',
-  ],
-  [
-    'uniplus.selecao.nivel_de_atendimento.fracao_invalida',
-    'O percentual do nível precisa estar entre 0 e 100.',
-  ],
-  ['uniplus.selecao.nivel_de_atendimento.duplicado', 'Outro nível da escala já tem este rótulo.'],
-  [
-    'uniplus.selecao.nivel_de_atendimento.sem_nivel_completo',
-    'A escala precisa de um nível de 100%: é o que vale a pontuação inteira do item.',
-  ],
-]);
-
-/** O texto da recusa do servidor a um campo da etapa, ou `null` quando a recusa é outra. */
-export function recusaDoCampoDaEtapa(codigo: string): string | null {
-  return RECUSA_DO_CAMPO_DA_ETAPA.get(codigo) ?? null;
-}
-
-/**
- * A etapa e o campo que uma recusa do servidor aponta (`etapas[i].campo`, ou
- * `etapas[i].lista[j].subcampo` para o item de uma lista); o índice é o da etapa no que foi
- * enviado. `campo` é `null` quando a recusa aponta a etapa inteira.
- */
-export function localDoErroDaEtapa(field: string): {
-  readonly indice: number;
-  readonly campo: string | null;
-  readonly posicao: number | null;
-  readonly subcampo: string | null;
-} | null {
-  const [, indice, campo, posicao, subcampo] =
-    /^etapas\[(\d+)\](?:\.(\w+)(?:\[(\d+)\]\.(\w+))?)?$/.exec(field) ?? [];
-  if (indice === undefined) return null;
-  return {
-    indice: Number(indice),
-    campo: campo ?? null,
-    posicao: posicao === undefined ? null : Number(posicao),
-    subcampo: subcampo ?? null,
-  };
-}
-
-/**
- * As posições, no cronograma enviado, das fases cuja unidade o servidor não encontrou. O campo é
- * lido sem prefixo de caminho (`$.`, `request.`) e sem caixa, como em `ehCampoDaResolucao`.
- */
-export function fasesComUnidadeNaoEncontrada(
-  erros: readonly { readonly field: string; readonly code: string }[],
-): readonly number[] {
-  return erros.flatMap((erro) => {
-    const [, indice] =
-      /^(?:\$\.|request\.)?fases\[(\d+)\]\.unidadeResponsavelId$/i.exec(erro.field) ?? [];
-    return indice !== undefined && erro.code === UNIDADE_RESPONSAVEL_NAO_ENCONTRADA
-      ? [Number(indice)]
-      : [];
-  });
-}
-
-/**
- * A etapa declara como a nota é obtida (forma de avaliação) e em que escala (nota máxima) quando
- * tem nota lançada — compõe a média ou corta por nota mínima, o que o caráter diz — e não é do
- * ENEM, cuja nota e escala vêm do INEP.
- */
-export function declaraNotaMaxima(
-  etapa: Pick<EtapaPontuada, 'carater' | 'tipoEtapaOrigemId' | 'tipoCongelado'>,
-  tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
-): boolean {
-  return etapa.carater !== '' && !declaraNotaDoEnem(etapa, tipoDoCadastro);
-}
-
-/**
- * A etapa como a conferência e o envio a leem: só vale o que a tela pede dela. A que não tem
- * nota lançada não leva escala nem avaliação; a que não é de avaliação humana não leva regra de
- * consolidação nem passo, que só existem onde mais de um avaliador lança a nota.
- */
-export function etapaComOQueDeclara(
-  etapa: EtapaPontuada,
-  tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
-): EtapaPontuada {
-  if (!declaraNotaMaxima(etapa, tipoDoCadastro)) {
-    return {
-      ...etapa,
-      notaMaxima: '',
-      passoDoLancamento: '',
-      formaDeAvaliacao: '',
-      regraConsolidacaoCodigo: '',
-      regraConsolidacaoVersao: '',
-      itensDeAvaliacao: [],
-      escalaDeAtendimento: [],
-    };
-  }
-  const humana = etapa.formaDeAvaliacao === FORMA_HUMANA;
-  const comAvaliacao = humana
-    ? etapa
-    : { ...etapa, passoDoLancamento: '', regraConsolidacaoCodigo: '', regraConsolidacaoVersao: '' };
-  // A escala existe onde a banca atende cada item; com ela a banca escolhe o nível e não digita a
-  // nota, então o passo do lançamento deixa de existir.
-  return escalaVale(comAvaliacao)
-    ? { ...comAvaliacao, passoDoLancamento: '' }
-    : { ...comAvaliacao, escalaDeAtendimento: [] };
-}
-
-export function componeNota(etapa: EtapaPontuada): boolean {
-  const pontua = etapa.carater === 'classificatoria' || etapa.carater === 'ambas';
-  const peso = decimalDoCampo(etapa.peso);
-  return pontua && peso !== null && peso > 0;
-}
-
-/**
- * Peso e nota mínima, como o comando os recebe. A gramática é a dos campos
- * numéricos do editor, e não a de moeda: aqui o ponto é separador decimal,
- * porque `0.5` é meio — lê-lo como agrupador devolveria 5, e o servidor
- * aceitaria, porque 5 é um peso válido.
- */
-export { decimalDoCampo as comoNumero, inteiroDoCampo };
 
 /**
  * O que impede a gravação, na ordem em que quem preenche resolve: primeiro o
@@ -673,14 +135,6 @@ export function problemasDoCronograma(
 }
 
 /**
- * As etapas e a fase que as agrupa formam um par: uma fase que agrupa etapas sem
- * nenhuma etapa é recusada na hora da gravação, e etapas sem a fase que as
- * agrupa passam agora para serem recusadas na publicação.
- *
- * Os dois casos entram aqui porque a diferença — recusa agora ou depois — não
- * ajuda quem preenche: os dois descrevem um cronograma que não se sustenta.
- */
-/**
  * A janela própria da etapa: coerente consigo mesma, e cabendo na janela da fase.
  *
  * A etapa não precisa declarar datas — em branco ela acontece na janela da fase, e é isso que a
@@ -744,6 +198,14 @@ function problemasDasJanelasDasEtapas(
   return problemas;
 }
 
+/**
+ * As etapas e a fase que as agrupa formam um par: uma fase que agrupa etapas sem
+ * nenhuma etapa é recusada na hora da gravação, e etapas sem a fase que as
+ * agrupa passam agora para serem recusadas na publicação.
+ *
+ * Os dois casos entram aqui porque a diferença — recusa agora ou depois — não
+ * ajuda quem preenche: os dois descrevem um cronograma que não se sustenta.
+ */
 function problemasDasEtapas(
   fases: readonly FaseDoCronograma[],
   etapas: readonly EtapaPontuada[],
@@ -797,14 +259,12 @@ function problemasDasEtapas(
     const tipo = tipoDaEtapa(etapa.tipoEtapaOrigemId);
     if (tipo === undefined || etapa.carater === '') continue;
 
-    const pontua = etapa.carater === 'classificatoria' || etapa.carater === 'ambas';
-    const elimina = etapa.carater === 'eliminatoria' || etapa.carater === 'ambas';
-    if (pontua && !tipo.admitePontuacao) {
+    if (pontuaPorCarater(etapa.carater) && !tipo.admitePontuacao) {
       problemas.push(
         `O tipo ${tipo.nome} não compõe a nota final: a etapa "${etapa.nome.trim()}" não pode ter caráter que pontua.`,
       );
     }
-    if (elimina && !tipo.admiteEliminacao) {
+    if (eliminaPorCarater(etapa.carater) && !tipo.admiteEliminacao) {
       problemas.push(
         `O tipo ${tipo.nome} não elimina candidato: a etapa "${etapa.nome.trim()}" não pode ter caráter que reprova.`,
       );

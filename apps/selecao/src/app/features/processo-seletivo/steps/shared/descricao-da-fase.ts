@@ -126,3 +126,8 @@ export interface DescricaoDaFase {
   readonly exigencias: ExigenciasDaFase | null;
   readonly foraDoCatalogo: boolean;
 }
+
+/** Renumera a lista de 1 a N, na ordem em que ela está. */
+export function renumerar(fases: readonly FaseDoCronograma[]): readonly FaseDoCronograma[] {
+  return fases.map((fase, indice) => ({ ...fase, ordem: indice + 1 }));
+}

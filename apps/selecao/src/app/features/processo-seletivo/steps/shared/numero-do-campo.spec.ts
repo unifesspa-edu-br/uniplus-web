@@ -45,3 +45,43 @@ describe('leitura dos campos numéricos do editor', () => {
     expect(leituraDoCampoDecimal('1e2')).toBe('1e2');
   });
 });
+
+describe('conversão do campo para número', () => {
+  /**
+   * O defeito que esta gramática existe para impedir: ler o ponto como
+   * agrupador devolveria 5 para `0.5`, e o servidor aceitaria — 5 é peso
+   * válido, e a classificação rodaria com o dobro em ordem de grandeza.
+   */
+  it('lê o ponto como separador decimal, não como agrupador', () => {
+    expect(decimalDoCampo('0.5')).toBe(0.5);
+    expect(decimalDoCampo('2.75')).toBe(2.75);
+  });
+
+  it('aceita vírgula como separador decimal', () => {
+    expect(decimalDoCampo('0,5')).toBe(0.5);
+    expect(decimalDoCampo('2,5')).toBe(2.5);
+  });
+
+  it('devolve nulo para campo vazio, e não zero', () => {
+    expect(decimalDoCampo('')).toBeNull();
+    expect(decimalDoCampo('   ')).toBeNull();
+  });
+
+  it('devolve nulo para texto que não é número', () => {
+    expect(decimalDoCampo('dois')).toBeNull();
+  });
+
+  /** `Number` leria `1e2` como 100 e `0x10` como 16; nenhum é peso. */
+  it('recusa notação científica e hexadecimal', () => {
+    expect(decimalDoCampo('1e2')).toBeNull();
+    expect(decimalDoCampo('0x10')).toBeNull();
+  });
+
+  it('recusa sinal negativo, que nenhum destes campos admite', () => {
+    expect(decimalDoCampo('-1')).toBeNull();
+  });
+
+  it('preserva o zero declarado', () => {
+    expect(decimalDoCampo('0')).toBe(0);
+  });
+});

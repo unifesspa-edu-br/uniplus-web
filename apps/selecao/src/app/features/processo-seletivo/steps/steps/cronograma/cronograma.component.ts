@@ -43,6 +43,7 @@ import { mesmoConteudo } from '../../shared/conteudo-canonico';
 import {
   descreverFase,
   finalidadesDaFase,
+  renumerar,
   type DescricaoDaFase,
 } from '../../shared/descricao-da-fase';
 import {
@@ -110,23 +111,28 @@ import {
 } from '../../shared/forma-de-avaliacao';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
+import { problemasDoCronograma } from './cronograma-do-certame';
+import {
+  avisosDosGrupos,
+  type ExigenciaDeclarada,
+  type GrupoDeclarado,
+} from './conferencia-das-exigencias-declaradas';
+import {
+  campoDaRecusa,
+  fasesComUnidadeNaoEncontrada,
+  localDoErroDaEtapa,
+  recusaDaEtapaDeNotaDoEnem,
+  recusaDoCampoDaEtapa,
+  type CampoComRecusa,
+} from './recusas-do-servidor-da-etapa';
 import {
   componeNota,
   declaraNotaDoEnem,
-  campoDaRecusa,
-  recusaDoCampoDaEtapa,
-  recusaDaEtapaDeNotaDoEnem,
-  fasesComUnidadeNaoEncontrada,
-  localDoErroDaEtapa,
   declaraNotaMaxima,
+  eliminaPorCarater,
   etapaComOQueDeclara,
-  problemasDoCronograma,
-  renumerar,
-  type CampoComRecusa,
-  type ExigenciaDeclarada,
-  type GrupoDeclarado,
-  avisosDosGrupos,
-} from './cronograma-do-certame';
+  pontuaPorCarater,
+} from './regras-da-etapa';
 import {
   etapaDoFormulario,
   faseDoFormulario,
@@ -925,8 +931,7 @@ export class CronogramaStepComponent {
    */
   etapaComponeNota(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    const carater = grupo.controls.carater.value;
-    return carater === 'classificatoria' || carater === 'ambas';
+    return pontuaPorCarater(grupo.controls.carater.value);
   }
 
   /**
@@ -1101,8 +1106,7 @@ export class CronogramaStepComponent {
   /** A etapa corta candidato — é onde a nota mínima tem o que fazer. */
   etapaElimina(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    const carater = grupo.controls.carater.value;
-    return carater === 'eliminatoria' || carater === 'ambas';
+    return eliminaPorCarater(grupo.controls.carater.value);
   }
 
   /**
@@ -1744,13 +1748,7 @@ export class CronogramaStepComponent {
       // servidor recusa etapa cuja fase ainda não está no cronograma. Um certame montado do
       // zero — nenhuma fase gravada ainda — não teria como gravar etapa nenhuma na ordem
       // inversa.
-      //
-      // A ordem oposta existia para proteger a bicondicional por sinalizador: enquanto a fase
-      // agrupadora era a única que podia ter etapas, gravar o cronograma antes a deixava sem
-      // nenhuma, e o agregado recusava na hora. Desde que a etapa passou a declarar a própria
-      // fase, essa recusa saiu — qualquer fase se subdivide, e é o vínculo que responde por
-      // onde a etapa vive. Remover uma fase também é seguro por aqui: o agregado poda as
-      // etapas dela junto.
+      // Remover uma fase também é seguro por aqui: o agregado poda as etapas dela junto.
       const enviadas = [...this.fases.controls];
       const cronograma = await gravarCronogramaFases(this.cadastro, processoId, fases);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };

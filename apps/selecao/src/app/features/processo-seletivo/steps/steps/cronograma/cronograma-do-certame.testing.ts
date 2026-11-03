@@ -1,0 +1,150 @@
+import { type FaseCanonicaDto, type PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
+import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import {
+  type EtapaPontuada,
+  type FaseDoCronograma,
+  type ProdutoDaFase,
+} from '../../processo-seletivo.models';
+import { type AtoDoCatalogo } from '../fase/configuracao-da-fase';
+import { problemasDoCronograma } from './cronograma-do-certame';
+import { type ExigenciaDeclarada } from './conferencia-das-exigencias-declaradas';
+import { type TipoDeEtapaDoCatalogo } from './regras-da-etapa';
+
+/** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
+export const SEM_CATALOGO: ReadonlyMap<string, AtoDoCatalogo> = new Map();
+export const nomeDaBanca = (id: string): string => id;
+
+/**
+ * Tipo de etapa que admite qualquer caráter — o caso comum dos cenários de outro assunto. Quem
+ * testa o recorte do cadastro passa o seu por `problemasDoCronograma` diretamente.
+ */
+export const tipoQueAdmiteTudo = (): TipoDeEtapaDoCatalogo => ({
+  nome: 'Prova objetiva',
+  admitePontuacao: true,
+  admiteEliminacao: true,
+  notaDeOrigemNoEnem: false,
+});
+
+/** A conferência do cronograma, com os catálogos que ela consulta. */
+export function problemasDe(
+  fases: Parameters<typeof problemasDoCronograma>[0],
+  etapas: Parameters<typeof problemasDoCronograma>[1],
+  fasePorId: Parameters<typeof problemasDoCronograma>[2],
+  precedencias: Parameters<typeof problemasDoCronograma>[3],
+): readonly string[] {
+  return problemasDoCronograma(
+    fases,
+    etapas,
+    fasePorId,
+    precedencias,
+    SEM_CATALOGO,
+    nomeDaBanca,
+    tipoQueAdmiteTudo,
+    [],
+  );
+}
+
+export function faseCanonica(parcial: Partial<FaseCanonicaDto>): FaseCanonicaDto {
+  return {
+    id: 'fase-1',
+    codigo: 'INSCRICAO',
+    nome: 'Inscrição',
+    descricao: null,
+    unidadeSugerida: null,
+    agrupaEtapas: false,
+    permiteComplementacao: false,
+    baseLegal: null,
+    coletaInscricao: false,
+    coletaSolicitacaoIsencao: false,
+    origemData: 'NO_EDITAL',
+    criadoEm: '2026-08-30T12:00:00Z',
+    ...parcial,
+  } as FaseCanonicaDto;
+}
+
+export function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
+  return {
+    faseCanonicaId: 'id-1',
+    codigo: 'INSCRICAO',
+    ordem: 1,
+    inicio: null,
+    fim: null,
+    unidadeResponsavelId: null,
+    produtos: [],
+    faseConcluinteCodigo: null,
+    emiteParecerIndividual: false,
+    bancasRequeridas: [],
+    regraRecurso: null,
+    congelados: null,
+    ...parcial,
+  };
+}
+
+export function aresta(parcial: Partial<PrecedenciaFaseDto>): PrecedenciaFaseDto {
+  return {
+    id: 'aresta-1',
+    antecessoraCodigo: 'INSCRICAO',
+    sucessoraCodigo: 'HOMOLOGACAO',
+    permiteSobreposicao: false,
+    criadoEm: '2026-08-30T12:00:00Z',
+    ...parcial,
+  } as PrecedenciaFaseDto;
+}
+
+/**
+ * Espalhar um `Partial` faz o TypeScript aceitar o objeto mesmo sem as propriedades
+ * obrigatórias, então o fixture as declara todas à mão: antes disto ele devolvia uma etapa
+ * sem `recursos`, e qualquer conferência que percorresse a coleção estourava no teste em vez
+ * de reprovar de verdade.
+ */
+export function etapa(parcial: Partial<EtapaPontuada>): EtapaPontuada {
+  return {
+    id: null,
+    nome: 'Prova Objetiva',
+    carater: CaraterEtapa.classificatoria,
+    tipoEtapaOrigemId: 'tipo-1',
+    peso: '2',
+    notaMinima: '',
+    ordem: 1,
+    faseCodigo: '',
+    produtos: [],
+    inicio: '',
+    fim: '',
+    emiteParecerIndividual: false,
+    bancas: [],
+    recursos: [],
+    ...parcial,
+  };
+}
+
+/**
+ * Uma exigência declarada, ancorada e conforme — os testes de norma partem daqui e mexem só
+ * no que estão medindo. Montar o objeto à mão deixava `faseViva` indefinido, e a conferência
+ * de ancoragem acusava "fase que saiu do cronograma" em teste que falava de outra coisa.
+ */
+export function exigenciaDeclarada(parcial: Partial<ExigenciaDeclarada>): ExigenciaDeclarada {
+  return {
+    nome: 'Documento',
+    decideResultado: false,
+    normaResolvida: false,
+    faseCodigo: 'AVALIACAO',
+    faseViva: true,
+    alcancaModalidade: true,
+    reenvioSemComplementacao: false,
+    semFormulario: false,
+    problemasDeGatilho: [],
+    problemasDeFase: [],
+    ...parcial,
+  };
+}
+
+export const PRELIMINAR: ProdutoDaFase = { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' };
+export const DEFINITIVO: ProdutoDaFase = { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' };
+export const AVISO: ProdutoDaFase = { atoCodigo: 'COMUNICADO', papel: null };
+
+export const tipoDoEnem = (): TipoDeEtapaDoCatalogo => ({
+  nome: 'Nota do ENEM',
+  admitePontuacao: true,
+  admiteEliminacao: true,
+  notaDeOrigemNoEnem: true,
+});

@@ -21,7 +21,7 @@ import {
   somaForaDaNotaMaxima,
   textoDaSoma,
 } from '../../shared/itens-de-avaliacao';
-import type { CampoComRecusa } from './cronograma-do-certame';
+import type { CampoComRecusa } from './recusas-do-servidor-da-etapa';
 import type { EtapaForm } from './cronograma-form';
 
 /**

@@ -5,7 +5,7 @@ import {
   RegraEliminacaoConfigurada,
   WizardDraft,
 } from '../../processo-seletivo.models';
-import { componeNota } from '../cronograma/cronograma-do-certame';
+import { componeNota } from '../cronograma/regras-da-etapa';
 import {
   FORMATO_DA_ESCALA_DA_NOTA_FINAL,
   escalaDaNotaFinal,

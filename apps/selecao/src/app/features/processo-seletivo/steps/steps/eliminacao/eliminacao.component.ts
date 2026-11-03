@@ -52,7 +52,7 @@ import {
   TEXTO_DA_PENDENCIA_DA_RESOLUCAO,
 } from '../classificacao/classificacao-para-comando';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import { declaraNotaDoEnem } from '../cronograma/cronograma-do-certame';
+import { declaraNotaDoEnem } from '../cronograma/regras-da-etapa';
 import {
   lerChaveDaRegra,
   regrasEscolhiveis,
