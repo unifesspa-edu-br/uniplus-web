@@ -24,12 +24,6 @@ import { lotesDeNotasDoEnem, processoDasNotasDoEnem } from '../fixtures/processo
  * `E2E_EDICAO` indica a edição que as inscrições escolheram (padrão 2025).
  */
 const EDICAO = process.env['E2E_EDICAO'] ?? '2025';
-/**
- * Um arquivo de retorno novo a cada execução: o hash do arquivo identifica o lote vigente, e o mesmo
- * conteúdo numa segunda execução devolveria o lote anterior sem gravar nada. Só o número de
- * inscrição no ENEM muda; as notas, os CPFs e as linhas conferidas são os mesmos.
- */
-const RODADA = Math.floor(Date.now() / 1000) % 100_000;
 const APP = process.env['BASE_URL'] ?? 'http://localhost:4200';
 
 /**
@@ -86,10 +80,14 @@ test.describe('Notas do ENEM contra a API real', () => {
     expect(cpfs).not.toContain(ERICK.cpf);
 
     // Retorno: todos os CPFs do envio presentes e uma pessoa não inscrita, que vira linha sem inscrito.
-    const presentes = cpfs.map((cpf, indice) => linha(FERNANDA, indice + 1, cpf, RODADA));
-    const linhaDoErick = presentes.length + 1;
+    // Um arquivo inédito por importação: o hash do arquivo identifica o lote vigente, e o mesmo
+    // conteúdo devolveria o lote anterior sem gravar. Só o número de inscrição no ENEM muda, pela
+    // contagem de lotes do processo; as notas, os CPFs e as linhas conferidas são os mesmos.
     const lotesAntes = await lotesDeNotasDoEnem(processoId, EDICAO);
-    const linhas = [...presentes, linha(ERICK, linhaDoErick, ERICK.cpf, RODADA)];
+    const rodada = lotesAntes.length + 1;
+    const presentes = cpfs.map((cpf, indice) => linha(FERNANDA, indice + 1, cpf, rodada));
+    const linhaDoErick = presentes.length + 1;
+    const linhas = [...presentes, linha(ERICK, linhaDoErick, ERICK.cpf, rodada)];
     await importacao.getByLabel('Edição do ENEM').selectOption(EDICAO);
     await escolherLeiauteSeHouverOpcoes(importacao, 'Leiaute do arquivo de retorno');
     await importacao.locator('input[type="file"]').setInputFiles({

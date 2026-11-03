@@ -67,7 +67,7 @@ export const ERICK: PessoaFicticia = {
 const NOTAS_PADRAO = ['611.1', '722.2', '833.3', '544.4', '960'];
 const SITUACOES_PADRAO = ['7', '7', '7', '7', '7'];
 
-/** A `rodada` desloca todos os números, e com eles o hash do arquivo: um arquivo por execução. */
+/** A `rodada` desloca todos os números, e com eles o hash do arquivo: um arquivo por importação. */
 export function numeroDeInscricao(ordem: number, rodada = 0): string {
   return String(240000000000 + rodada * 1000 + ordem);
 }
