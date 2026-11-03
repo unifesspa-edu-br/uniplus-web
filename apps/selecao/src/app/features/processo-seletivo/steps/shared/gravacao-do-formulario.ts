@@ -1,5 +1,5 @@
 import { ProblemDetails, STATUS_HTTP } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { FormulariosDoProcessoApi } from '@uniplus/shared-data/selecao';
 
 import {
   cabecalhoParaEnvio,
@@ -38,7 +38,7 @@ interface AlvoDoFormulario {
  */
 export async function gravarFormulario(
   gravacao: GravacaoDoProcesso,
-  api: ProcessosSeletivosApi,
+  api: FormulariosDoProcessoApi,
   alvo: AlvoDoFormulario,
   servidor: FormularioParaGravar | null,
   desejado: FormularioDesejado,
@@ -56,7 +56,7 @@ export async function gravarFormulario(
 
 function gravarPasso(
   gravacao: GravacaoDoProcesso,
-  api: ProcessosSeletivosApi,
+  api: FormulariosDoProcessoApi,
   { processoSeletivoId, finalidade }: AlvoDoFormulario,
   passo: PassoDaGravacao,
   desejado: FormularioDesejado,

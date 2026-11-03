@@ -136,6 +136,11 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
       // `@uniplus/shared-core/http` — proíbe falso negativo onde o service importa
       // ApiResult de shared-core mas withVendorMime de outra lib qualquer.
       // Cobre imports multi-linha via [\s\S] dentro de {}.
+      // Service só de escrita não usa vendor MIME e não precisa importá-lo.
+      if (!/\bwithVendorMime\(/.test(source)) {
+        return;
+      }
+
       expect(source).toMatch(
         /import\s+(?:type\s+)?\{[\s\S]*?\bwithVendorMime\b[\s\S]*?\}\s+from\s+['"]@uniplus\/shared-core\/http['"]/,
       );

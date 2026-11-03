@@ -33,8 +33,10 @@ import { AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   DocumentoAPublicarDto,
+  ClassificacaoDoProcessoApi,
   DocumentosEAtosDoProcessoApi,
   FinalidadeDoDocumento,
+  FormulariosDoProcessoApi,
   FundamentoIsencaoDto,
   ItemConformidadeDto,
   OrigemCandidatos,
@@ -240,6 +242,8 @@ function montar(opts: CenarioOpts = {}) {
           obterSnapshotVigente: () => NEVER,
         },
       },
+      { provide: FormulariosDoProcessoApi, useValue: {} },
+      { provide: ClassificacaoDoProcessoApi, useValue: {} },
       {
         provide: ActivatedRoute,
         useValue: {

@@ -117,6 +117,8 @@ export type {
 } from './processos-seletivos.contrato';
 export type { RegraCatalogoDto, RegrasCatalogoQuery } from './regras-catalogo.api';
 export { ProcessosSeletivosApi, type ProcessosSeletivosQuery } from './processos-seletivos.api';
+export { ClassificacaoDoProcessoApi } from './classificacao-do-processo.api';
+export { FormulariosDoProcessoApi } from './formularios-do-processo.api';
 export { PublicacaoDoProcessoApi } from './publicacao-do-processo.api';
 export { DocumentosEAtosDoProcessoApi } from './documentos-e-atos-do-processo.api';
 export {

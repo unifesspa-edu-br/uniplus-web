@@ -1,30 +1,19 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, VENDOR_MIME_TOKEN, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import type {
-  AplicacaoDeModeloDto,
-  AplicacaoDeModeloInput,
   ConfiguracaoDistribuicaoVagasDto,
   ConfiguracaoDistribuicaoVagasInput,
   CriarProcessoSeletivoCommand,
-  CriterioDesempateInput,
   DefinirAlgoritmoContagemPrazoRequest,
-  DefinirBonusRegionalRequest,
   DefinirCascataRemanejamentoRequest,
-  DefinirClassificacaoRequest,
-  DefinirFormularioRequest,
   DefinirIdentificadorLegivelRequest,
-  DefinirItensDoFormularioRequest,
   DefinirOfertaAtendimentoRequest,
   DefinirOpcoesDeCursoRequest,
-  DefinirOpcoesDeclaradasRequest,
-  DefinirReferenciaTemporalFatosRequest,
   DefinirTaxaInscricaoRequest,
-  DefinirTermosDoFormularioRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
-  FormularioRenderizavelDto,
   FundamentoIsencaoDto,
   NoExigenciaInput,
   ProcessoSeletivoDto,
@@ -205,158 +194,6 @@ export class ProcessosSeletivosApi {
   }
 
   /**
-   * PUT `/api/selecao/processos-seletivos/{id}/referencia-temporal-fatos` — declara o instante
-   * contra o qual a idade do candidato é apurada.
-   *
-   * Uma política por certame, e ela ancora TODOS os gatilhos por idade dele. Exigida quando
-   * alguma exigência condiciona por faixa etária: sem ela, a publicação é recusada, porque não
-   * há fallback implícito para "quantos anos o candidato tinha". Enviar tudo nulo remove.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirReferenciaTemporalFatos(
-    processoSeletivoId: string,
-    request: DefinirReferenciaTemporalFatosRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'referencia-temporal-fatos'),
-      request,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}` — cria ou
-   * substitui o cabeçalho do formulário de uma finalidade (inscrição, isenção da taxa,
-   * habilitação — ADR-0136): a fase em que é respondido, o título e as etapas. Na inscrição, a
-   * API repõe a seção dos dados básicos.
-   *
-   * A leitura vem com o processo (`ProcessoSeletivoDto.formularios`). As escritas são três,
-   * separadas porque a API confere cada parte contra o que está gravado da outra: o cabeçalho,
-   * os itens e grupos, e os termos. O `If-Match` é aceito e ignorado no rascunho.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirCabecalhoDoFormulario(
-    processoSeletivoId: string,
-    finalidade: string,
-    request: DefinirFormularioRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.urlDoFormulario(processoSeletivoId, finalidade),
-      request,
-      {
-        context,
-        headers: new HttpHeaders({ Accept: 'application/json' }),
-      },
-    );
-  }
-
-  /**
-   * PUT `…/formularios/{finalidade}/itens` — substitui os itens e os grupos; `grupos` nulo deixa
-   * os grupos como estão. Exige o formulário criado. Responde 204 sem corpo.
-   */
-  definirItensDoFormulario(
-    processoSeletivoId: string,
-    finalidade: string,
-    request: DefinirItensDoFormularioRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      `${this.urlDoFormulario(processoSeletivoId, finalidade)}/itens`,
-      request,
-      {
-        context,
-        headers: new HttpHeaders({ Accept: 'application/json' }),
-      },
-    );
-  }
-
-  /** PUT `…/formularios/{finalidade}/termos` — substitui os termos exigidos. Responde 204 sem corpo. */
-  definirTermosDoFormulario(
-    processoSeletivoId: string,
-    finalidade: string,
-    request: DefinirTermosDoFormularioRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      `${this.urlDoFormulario(processoSeletivoId, finalidade)}/termos`,
-      request,
-      {
-        context,
-        headers: new HttpHeaders({ Accept: 'application/json' }),
-      },
-    );
-  }
-
-  /**
-   * DELETE `…/formularios/{finalidade}` — só em rascunho; a inscrição é recusada se outra
-   * finalidade cita fato dela. Responde 204 sem corpo.
-   */
-  removerFormulario(
-    processoSeletivoId: string,
-    finalidade: string,
-    context?: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.delete<ApiResult<void>>(this.urlDoFormulario(processoSeletivoId, finalidade), {
-      context,
-    });
-  }
-
-  /**
-   * POST `…/formularios/aplicacoes-de-modelo` — copia o modelo para o processo: o formulário da
-   * finalidade do modelo é criado ou substituído por inteiro, e a resposta relata o que a cópia
-   * trouxe, manteve, descartou e derivou. Só em rascunho. A fase do formulário que já existia é
-   * preservada; o que nasce pela aplicação fica sem fase até o cabeçalho declará-la.
-   *
-   * Responde com media type próprio, então o `Accept` é o do recurso; a Idempotency-Key vem do
-   * `context` de quem chama.
-   */
-  aplicarModeloDeFormulario(
-    processoSeletivoId: string,
-    request: AplicacaoDeModeloInput,
-    context: HttpContext,
-  ): Observable<ApiResult<AplicacaoDeModeloDto>> {
-    return this.http.post<ApiResult<AplicacaoDeModeloDto>>(
-      this.rotas.doProcessoNaAdministracao(
-        processoSeletivoId,
-        'formularios',
-        'aplicacoes-de-modelo',
-      ),
-      request,
-      {
-        context: context.set(VENDOR_MIME_TOKEN, {
-          resource: 'aplicacao-de-modelo-formulario',
-          version: 1,
-        }),
-      },
-    );
-  }
-
-  /**
-   * GET `/api/selecao/admin/processos-seletivos/{id}/formularios/{finalidade}/renderizavel` — o
-   * formulário da finalidade pronto para o candidato ver, com as regras que o interpretador avalia,
-   * montado da configuração viva: serve também ao rascunho, para a simulação.
-   */
-  obterFormularioRenderizavel(
-    processoSeletivoId: string,
-    finalidade: string,
-  ): Observable<ApiResult<FormularioRenderizavelDto>> {
-    return this.http.get<ApiResult<FormularioRenderizavelDto>>(
-      `${this.urlDoFormulario(processoSeletivoId, finalidade)}/renderizavel`,
-      {
-        context: withVendorMime('formulario', 2),
-      },
-    );
-  }
-
-  private urlDoFormulario(processoSeletivoId: string, finalidade: string): string {
-    return this.rotas.doProcessoNaAdministracao(processoSeletivoId, 'formularios', finalidade);
-  }
-
-  /**
    * PUT `/api/selecao/processos-seletivos/{id}/identificador-legivel` — declara o
    * endereço público do certame.
    *
@@ -448,89 +285,6 @@ export class ProcessosSeletivosApi {
     return this.http.put<ApiResult<void>>(
       this.rotas.doProcesso(processoSeletivoId, 'cascata-remanejamento'),
       request,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/classificacao` — declara num
-   * corpo único a regra de cálculo, a precisão, a ordem de alocação, o número
-   * de opções e o vetor de regras de eliminação (UNI-REQ-0482).
-   *
-   * `regraArredondamentoCodigo`/`…Versao`/`casasArredondamento` viajam `null`
-   * quando a regra de cálculo é `CLASSIFICACAO-IMPORTADA` (INV-B8) — o
-   * mapeador que monta este corpo é quem decide isso, não este método.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirClassificacao(
-    processoSeletivoId: string,
-    request: DefinirClassificacaoRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'classificacao'),
-      request,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/fatos/{fatoCodigo}/opcoes` — substitui as opções
-   * que o processo declara para um fato cuja fonte de valores é o próprio processo, como as
-   * edições do ENEM aceitas. A lista vem na ordem em que o candidato a vê.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirOpcoesDeclaradas(
-    processoSeletivoId: string,
-    fatoCodigo: string,
-    request: DefinirOpcoesDeclaradasRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'fatos', fatoCodigo, 'opcoes'),
-      request,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/bonus-regional` — declara se o
-   * processo aplica o Fator de Atenuação das Desigualdades de Acesso (UNI-REQ-0015). `aplica` é obrigatório: `false`
-   * declara "sem bônus" e vai com os cinco campos `null`; `true` exige a
-   * configuração do bônus.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirBonusRegional(
-    processoSeletivoId: string,
-    request: DefinirBonusRegionalRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'bonus-regional'),
-      request,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/criterios-desempate` —
-   * substitui a coleção inteira de critérios de desempate, na ordem em que
-   * serão avaliados. Coleção vazia é estado válido: processo sem critério de
-   * desempate declarado.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirCriteriosDesempate(
-    processoSeletivoId: string,
-    criterios: readonly CriterioDesempateInput[],
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'criterios-desempate'),
-      criterios,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }

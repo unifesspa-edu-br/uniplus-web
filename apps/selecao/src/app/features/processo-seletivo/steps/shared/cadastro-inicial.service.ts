@@ -16,6 +16,8 @@ import {
   FaseCronogramaInput,
   NoExigenciaInput,
   ProcessosSeletivosApi,
+  ClassificacaoDoProcessoApi,
+  FormulariosDoProcessoApi,
   PublicacaoDoProcessoApi,
   PublicarProcessoSeletivoRequest,
   DefinirIdentificadorLegivelRequest,
@@ -46,6 +48,8 @@ export type {
 @Injectable()
 export class CadastroInicialService {
   private readonly api = inject(ProcessosSeletivosApi);
+  private readonly classificacaoApi = inject(ClassificacaoDoProcessoApi);
+  private readonly formulariosApi = inject(FormulariosDoProcessoApi);
   private readonly publicacaoApi = inject(PublicacaoDoProcessoApi);
   private readonly gravacao = inject(GravacaoDoProcesso);
 
@@ -170,7 +174,7 @@ export class CadastroInicialService {
     request: DefinirClassificacaoRequest,
   ): Promise<ResultadoGravacaoComInconclusiva> {
     return this.gravacao.gravar('classificacao', request, (contexto) =>
-      this.api.definirClassificacao(processoSeletivoId, request, contexto),
+      this.classificacaoApi.definirClassificacao(processoSeletivoId, request, contexto),
     );
   }
 
@@ -180,7 +184,12 @@ export class CadastroInicialService {
     request: DefinirOpcoesDeclaradasRequest,
   ): Promise<ResultadoGravacao> {
     return this.gravacao.gravar('opcoesDeclaradas', { fatoCodigo, request }, (contexto) =>
-      this.api.definirOpcoesDeclaradas(processoSeletivoId, fatoCodigo, request, contexto),
+      this.classificacaoApi.definirOpcoesDeclaradas(
+        processoSeletivoId,
+        fatoCodigo,
+        request,
+        contexto,
+      ),
     );
   }
 
@@ -190,7 +199,7 @@ export class CadastroInicialService {
     request: DefinirReferenciaTemporalFatosRequest,
   ): Promise<ResultadoGravacao> {
     return this.gravacao.gravar('referenciaTemporal', request, (contexto) =>
-      this.api.definirReferenciaTemporalFatos(processoSeletivoId, request, contexto),
+      this.formulariosApi.definirReferenciaTemporalFatos(processoSeletivoId, request, contexto),
     );
   }
 
@@ -215,7 +224,7 @@ export class CadastroInicialService {
   ): Promise<ResultadoGravacao> {
     return gravarFormulario(
       this.gravacao,
-      this.api,
+      this.formulariosApi,
       { processoSeletivoId, finalidade },
       servidor,
       desejado,
@@ -228,7 +237,7 @@ export class CadastroInicialService {
    */
   removerFormulario(processoSeletivoId: string, finalidade: string): Promise<ResultadoGravacao> {
     return this.gravacao.remover((contexto) =>
-      this.api.removerFormulario(processoSeletivoId, finalidade, contexto),
+      this.formulariosApi.removerFormulario(processoSeletivoId, finalidade, contexto),
     );
   }
 
@@ -242,7 +251,7 @@ export class CadastroInicialService {
   ): Promise<ResultadoAplicacaoDeModelo> {
     const corpo = { modeloId };
     const resultado = await this.gravacao.gravar('aplicacaoDeModelo', corpo, (contexto) =>
-      this.api.aplicarModeloDeFormulario(processoSeletivoId, corpo, contexto),
+      this.formulariosApi.aplicarModeloDeFormulario(processoSeletivoId, corpo, contexto),
     );
     return resultado.ok ? { ok: true, relato: resultado.dados } : resultado;
   }
@@ -253,7 +262,7 @@ export class CadastroInicialService {
     request: DefinirBonusRegionalRequest,
   ): Promise<ResultadoGravacao> {
     return this.gravacao.gravar('bonus', request, (contexto) =>
-      this.api.definirBonusRegional(processoSeletivoId, request, contexto),
+      this.classificacaoApi.definirBonusRegional(processoSeletivoId, request, contexto),
     );
   }
 
@@ -263,7 +272,7 @@ export class CadastroInicialService {
     criterios: readonly CriterioDesempateInput[],
   ): Promise<ResultadoGravacaoComInconclusiva> {
     return this.gravacao.gravar('desempate', criterios, (contexto) =>
-      this.api.definirCriteriosDesempate(processoSeletivoId, criterios, contexto),
+      this.classificacaoApi.definirCriteriosDesempate(processoSeletivoId, criterios, contexto),
     );
   }
 

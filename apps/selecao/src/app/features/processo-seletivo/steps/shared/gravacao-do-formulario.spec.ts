@@ -2,7 +2,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { FormulariosDoProcessoApi, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
 import { describe, expect, it } from 'vitest';
 
@@ -20,7 +20,7 @@ describe('gravarFormulario', () => {
       ],
     });
     const gravacao = TestBed.inject(GravacaoDoProcesso);
-    const api = TestBed.inject(ProcessosSeletivosApi);
+    const api = TestBed.inject(FormulariosDoProcessoApi);
     const http = TestBed.inject(HttpTestingController);
     const conteudo: ConteudoDoFormulario = {
       titulo: 'Inscrição',

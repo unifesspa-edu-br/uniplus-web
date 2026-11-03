@@ -9,8 +9,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   CriarProcessoSeletivoCommand,
+  FormulariosDoProcessoApi,
   OrigemCandidatos,
-  ProcessosSeletivosApi,
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/selecao';
 import { of } from 'rxjs';
@@ -79,7 +79,7 @@ describe('CadastroInicialService — descarte do cadastro em andamento', () => {
     });
     const servico = TestBed.inject(CadastroInicialService);
     const gravacao = TestBed.inject(GravacaoDoProcesso);
-    const api = TestBed.inject(ProcessosSeletivosApi);
+    const api = TestBed.inject(FormulariosDoProcessoApi);
     const removerNaApi = vi
       .spyOn(api, 'removerFormulario')
       .mockReturnValue(of(apiOk(undefined, 204, new HttpHeaders())));

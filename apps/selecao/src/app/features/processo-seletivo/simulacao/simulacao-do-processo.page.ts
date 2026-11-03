@@ -12,7 +12,7 @@ import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { AvaliacoesDeFormularioApi } from '@uniplus/shared-data/configuracao';
 import { buscaDeCepNoGeo, buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
-  ProcessosSeletivosApi,
+  FormulariosDoProcessoApi,
   type FormularioRenderizavelDto,
 } from '@uniplus/shared-data/selecao';
 import {
@@ -77,7 +77,7 @@ import {
   `,
 })
 export class SimulacaoDoProcessoPage {
-  private readonly processos = inject(ProcessosSeletivosApi);
+  private readonly formularios = inject(FormulariosDoProcessoApi);
   private readonly avaliacoes = inject(AvaliacoesDeFormularioApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
@@ -111,7 +111,7 @@ export class SimulacaoDoProcessoPage {
   protected carregar(): void {
     this.carregando.set(true);
     this.erroAoCarregar.set(null);
-    this.processos
+    this.formularios
       .obterFormularioRenderizavel(this.id, this.finalidade)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {

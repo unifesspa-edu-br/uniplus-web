@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   DocumentosEAtosDoProcessoApi,
+  FormulariosDoProcessoApi,
   OrigemCandidatos,
   ProcessosSeletivosApi,
   SELECAO_BASE_PATH,
@@ -24,6 +25,7 @@ describe('GravacaoDoProcesso', () => {
   let gravacao: GravacaoDoProcesso;
   let api: ProcessosSeletivosApi;
   let documentosApi: DocumentosEAtosDoProcessoApi;
+  let formulariosApi: FormulariosDoProcessoApi;
   let http: HttpTestingController;
 
   beforeEach(() => {
@@ -38,6 +40,7 @@ describe('GravacaoDoProcesso', () => {
     gravacao = TestBed.inject(GravacaoDoProcesso);
     api = TestBed.inject(ProcessosSeletivosApi);
     documentosApi = TestBed.inject(DocumentosEAtosDoProcessoApi);
+    formulariosApi = TestBed.inject(FormulariosDoProcessoApi);
     http = TestBed.inject(HttpTestingController);
   });
 
@@ -157,7 +160,9 @@ describe('GravacaoDoProcesso', () => {
       const gravada = gravarEtapas();
       http.expectOne(`${ROTA}/etapas`).flush(null, { status: 204, statusText: 'No Content' });
       await gravada;
-      const removida = gravacao.remover(() => api.removerFormulario(PROCESSO_ID, 'INSCRICAO'));
+      const removida = gravacao.remover(() =>
+        formulariosApi.removerFormulario(PROCESSO_ID, 'INSCRICAO'),
+      );
       http
         .expectOne(`${ROTA.replace('/api/selecao/', '/api/selecao/admin/')}/formularios/INSCRICAO`)
         .flush(null, {

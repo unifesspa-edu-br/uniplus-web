@@ -35,7 +35,9 @@ import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { GeoApi } from '@uniplus/shared-data/geo';
 import { AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import {
+  ClassificacaoDoProcessoApi,
   DocumentosEAtosDoProcessoApi,
+  FormulariosDoProcessoApi,
   FundamentoIsencaoDto,
   OrigemCandidatos,
   ProcessosSeletivosApi,
@@ -147,6 +149,8 @@ const PAGE_PROVIDERS = [
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
   { provide: DocumentosEAtosDoProcessoApi, useValue: {} },
   { provide: PublicacaoDoProcessoApi, useValue: {} },
+  { provide: FormulariosDoProcessoApi, useValue: {} },
+  { provide: ClassificacaoDoProcessoApi, useValue: {} },
   { provide: PermissoesService, useValue: { tem: concedeSoPublicar } },
 ];
 
