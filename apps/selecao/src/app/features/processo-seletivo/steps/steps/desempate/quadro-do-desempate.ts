@@ -1,9 +1,6 @@
 import type { CriterioDesempateConfigurado, WizardDraft } from '../../processo-seletivo.models';
-import {
-  motivoDaReleitura,
-  type ClassificacaoGravada,
-  type ProcessoSeletivoStore,
-} from '../../processo-seletivo.store';
+import { motivoDaReleitura, type ClassificacaoGravada } from '../../classificacao-no-servidor';
+import type { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
   areasComunsAoQuadro,
   colunasDoQuadro,
@@ -357,16 +354,19 @@ export function reavaliarRecusaPeloDesempate(
   store: ProcessoSeletivoStore,
   cadastro: LeituraDoCadastro,
 ): void {
-  const gravados = store.criteriosDesempateGravados();
-  if (store.recusaPeloDesempatePorArea() === null || gravados === null) return;
+  const gravados = store.classificacao.criteriosDesempateGravados();
+  if (store.classificacao.recusaPeloDesempatePorArea() === null || gravados === null) return;
   const semCriterioPorArea = !gravados.some((criterio) => desempateUsaAreas(criterio.regraCodigo));
   const criteriosMudaram =
-    JSON.stringify(gravados) !== JSON.stringify(store.criteriosNaRecusaPeloDesempate());
+    JSON.stringify(gravados) !==
+    JSON.stringify(store.classificacao.criteriosNaRecusaPeloDesempate());
   const cadastroRelido =
-    cadastro.lido && cadastro.leitura > store.leituraDoCadastroNaRecusaPeloDesempate();
+    cadastro.lido &&
+    cadastro.leitura > store.classificacao.leituraDoCadastroNaRecusaPeloDesempate();
   if (!semCriterioPorArea && !criteriosMudaram && !cadastroRelido) return;
   const conferencia = conferirDesempateGravado(gravados, store.draft().classificacao, cadastro);
-  if (conferencia.resultado === 'sem-pendencia') store.recusaPeloDesempatePorArea.set(null);
+  if (conferencia.resultado === 'sem-pendencia')
+    store.classificacao.recusaPeloDesempatePorArea.set(null);
 }
 
 const CRITERIO_GRAVADO_SEM_QUADRO =

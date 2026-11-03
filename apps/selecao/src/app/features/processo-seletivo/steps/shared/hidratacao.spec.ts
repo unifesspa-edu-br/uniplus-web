@@ -716,28 +716,33 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
 
     store.hidratar(dtoComCronograma({ criteriosDesempate: CRITERIOS_DESEMPATE }));
 
-    expect(store.criteriosDesempateGravados()).toEqual(store.draft().desempate);
-    expect(store.criteriosDesempateGravados()?.[2].areas).toEqual(['MATEMATICA', 'REDACAO']);
+    expect(store.classificacao.criteriosDesempateGravados()).toEqual(store.draft().desempate);
+    expect(store.classificacao.criteriosDesempateGravados()?.[2].areas).toEqual([
+      'MATEMATICA',
+      'REDACAO',
+    ]);
   });
 
   it('a hidratação de outro processo muda a versão da classificação lida, mesmo com a mesma classificação', () => {
     const store = new ProcessoSeletivoStore();
     store.hidratar(dtoComCronograma({ id: 'processo-1' }));
-    const antes = store.versaoDaClassificacaoLida();
+    const antes = store.classificacao.versaoLida();
 
     store.hidratar(dtoComCronograma({ id: 'processo-2' }));
 
-    expect(store.versaoDaClassificacaoLida()).toBe(antes + 1);
+    expect(store.classificacao.versaoLida()).toBe(antes + 1);
   });
 
   it('a releitura do processo repõe os critérios gravados que uma gravação inconclusiva deixou desconhecidos', () => {
     const store = new ProcessoSeletivoStore();
-    store.criteriosDesempateGravados.set(null);
+    store.classificacao.criteriosDesempateGravados.set(null);
 
     store.registrarGravadoLido(dtoComCronograma({ criteriosDesempate: CRITERIOS_DESEMPATE }));
 
     // Na ordem em que o servidor os avalia, como a hidratação os projeta.
-    expect(store.criteriosDesempateGravados()?.map((criterio) => criterio.regraCodigo)).toEqual(
+    expect(
+      store.classificacao.criteriosDesempateGravados()?.map((criterio) => criterio.regraCodigo),
+    ).toEqual(
       [...CRITERIOS_DESEMPATE]
         .sort((a, b) => a.ordem - b.ordem)
         .map((criterio) => criterio.regra.codigo),
@@ -995,48 +1000,6 @@ describe('hidratarDraft — formulário de inscrição', () => {
     expect(draft.formulario.conteudo.etapas?.map((e) => e.codigo)).toEqual(['REVISAO_E_ACEITE']);
     expect(draft.formulario.conteudo.itens).toEqual([]);
     expect(draft.formulario.derivacao).toEqual([]);
-  });
-});
-
-describe('ProcessoSeletivoStore.hidratar — quadro de Peso por Área congelado', () => {
-  const QUADRO = [
-    {
-      grupoAreaEnem: { codigo: 'SAUDE_E_BIOLOGICAS', rotulo: 'Saúde e Biológicas' },
-      baseLegal: 'Resolução nº 805/2024/Consepe – Anexo I',
-      areas: [{ codigo: 'REDACAO', rotulo: 'Redação', peso: 2, corte: 400 }],
-    },
-  ];
-
-  it('uma classificação lida sem o quadro fica sem grupo, sem quebrar quem o lê', () => {
-    const store = new ProcessoSeletivoStore();
-
-    store.registrarClassificacaoLida({
-      resolucaoPesoAreaEnem: 'Resolução nº 805/2024/Consepe',
-    } as unknown as ProcessoSeletivoDto['classificacao']);
-
-    // O servidor só conta como quadro o que tem ao menos um grupo.
-    expect(store.classificacaoGravada()).toEqual({ estado: 'sem-quadro' });
-  });
-
-  it('guarda a resolução e o quadro que o processo congelou, como referência atual', () => {
-    const store = new ProcessoSeletivoStore();
-    store.marcarClassificacaoDesconhecida();
-
-    store.hidratar(
-      dtoComCronograma({
-        classificacao: {
-          ...CLASSIFICACAO,
-          baseadoEmEnem: true,
-          resolucaoPesoAreaEnem: 'Resolução nº 805/2024/Consepe',
-          quadroPesoAreaEnem: QUADRO,
-        },
-      }),
-    );
-
-    expect(store.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nº 805/2024/Consepe');
-    expect(store.copiaCongeladaEmVigor()?.grupos.map((grupo) => grupo.codigo)).toEqual(
-      QUADRO.map((grupo) => grupo.grupoAreaEnem.codigo).sort(),
-    );
   });
 });
 

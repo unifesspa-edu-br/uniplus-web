@@ -168,13 +168,13 @@ describe('FormulaStepComponent', () => {
 
     it('sob classificação importada, o campo não aparece e a recusa guardada some', () => {
       passoValidoComEscala('100');
-      store.recusaDaEscalaDaNotaFinal.set('Recusa antiga.');
+      store.classificacao.recusaDaEscalaDaNotaFinal.set('Recusa antiga.');
 
       componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
       fixture.detectChanges();
 
       expect(campo()).toBeNull();
-      expect(store.recusaDaEscalaDaNotaFinal()).toBeNull();
+      expect(store.classificacao.recusaDaEscalaDaNotaFinal()).toBeNull();
     });
 
     it('o texto que não é número recusa o passo e o erro descreve o campo', () => {
@@ -194,7 +194,7 @@ describe('FormulaStepComponent', () => {
     it('a recusa da gravação aparece no campo e some quando o valor muda', () => {
       passoValidoComEscala('0');
 
-      store.recusaDaEscalaDaNotaFinal.set(
+      store.classificacao.recusaDaEscalaDaNotaFinal.set(
         'A escala da nota final deve ser um número maior que zero.',
       );
       fixture.detectChanges();
@@ -208,16 +208,20 @@ describe('FormulaStepComponent', () => {
 
     it('a recusa da escala sobrevive a alternar o ENEM, que não a julgou', () => {
       passoValidoComEscala('0');
-      store.recusaDaEscalaDaNotaFinal.set('A escala deve ser maior que zero.');
+      store.classificacao.recusaDaEscalaDaNotaFinal.set('A escala deve ser maior que zero.');
 
       componente.alternarBaseadoEmEnem(true);
 
-      expect(store.recusaDaEscalaDaNotaFinal()).toBe('A escala deve ser maior que zero.');
+      expect(store.classificacao.recusaDaEscalaDaNotaFinal()).toBe(
+        'A escala deve ser maior que zero.',
+      );
     });
 
     it('a pendência de publicação aparece no campo vazio e não no preenchido', () => {
       passoValidoComEscala('');
-      store.pendenciasDaConferencia.set(['classificacao_escala_nota_final_nao_declarada']);
+      store.classificacao.pendenciasDaConferencia.set([
+        'classificacao_escala_nota_final_nao_declarada',
+      ]);
       fixture.detectChanges();
       expect(erro()).toBe('Declare a escala da nota final para publicar o processo.');
 
@@ -263,7 +267,7 @@ describe('FormulaStepComponent', () => {
     it('a recusa do servidor às edições aparece junto da lista e descreve o campo do ano', () => {
       processoDeInscricaoComEnem(['2026']);
 
-      store.recusaDasEdicoesDoEnem.set('A edição informada não é aceita.');
+      store.classificacao.recusaDasEdicoesDoEnem.set('A edição informada não é aceita.');
       fixture.detectChanges();
 
       const recusa = (fixture.nativeElement as HTMLElement).querySelector('#edicoes-enem-servidor');

@@ -3,50 +3,18 @@ import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type { StepStatus } from '@uniplus/shared-ui/components';
 import { STEP_LABELS } from './processo-seletivo.data';
-import { CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA } from './steps/classificacao/escala-da-nota-final';
 import {
   regrasDasModalidadesOfertadas,
   type RegraDaModalidadeOfertada,
 } from './shared/regras-das-modalidades';
 import { desempateDe, hidratarDraft } from './shared/hidratacao';
-import type { MotivoDaReleitura } from './shared/motivo-da-releitura';
 import type { AplicacaoEmAberto } from './steps/formulario/modelo-de-formulario';
-import {
-  mesmoQuadro,
-  quadroCongelado,
-  type CopiaCongelada,
-  type GrupoDoQuadro,
-} from './shared/quadro-de-pesos';
-import {
-  CriterioDesempateConfigurado,
-  FalhaDeLeitura,
-  WizardDraft,
-} from './processo-seletivo.models';
+import { FalhaDeLeitura, WizardDraft } from './processo-seletivo.models';
+import { ClassificacaoNoServidor } from './classificacao-no-servidor';
 import { rascunhoInicial } from './rascunho-inicial';
 import { motivoDeSomenteLeitura } from './somente-leitura';
 
 const INDICE_DO_CRONOGRAMA = STEP_LABELS.indexOf('Cronograma');
-
-/**
- * O que se sabe da classificação que o processo tem no servidor. `desconhecida` depois de uma
- * gravação sem resposta conclusiva, ou de uma gravação que deu certo com a resolução sem o
- * cadastro de Peso por Área lido, que não diz o que foi copiado: o servidor pode ter qualquer das
- * outras, e só uma releitura decide. O servidor só conta como quadro o que tem ao menos um grupo.
- *
- * `com-quadro` sem `confirmada` é a cópia que a gravação que deu certo presume: o quadro do
- * cadastro lido pelo cliente. O servidor copia o cadastro dele no momento da gravação, que pode ser
- * mais novo, e só a releitura confirma o que ficou congelado.
- */
-export type ClassificacaoGravada =
-  | { readonly estado: 'nunca-gravada' }
-  | { readonly estado: 'sem-quadro' }
-  | {
-      readonly estado: 'com-quadro';
-      readonly resolucao: string;
-      readonly grupos: readonly GrupoDoQuadro[];
-      readonly confirmada: boolean;
-    }
-  | { readonly estado: 'desconhecida' };
 
 @Injectable()
 export class ProcessoSeletivoStore {
@@ -155,122 +123,7 @@ export class ProcessoSeletivoStore {
    */
   readonly avisoDocumentos = signal<string | null>(null);
 
-  /**
-   * Recusa do servidor ao campo `resolucaoPesoAreaEnem`, na última gravação da classificação.
-   *
-   * Vive no store porque quem grava a classificação é a Eliminação, e o campo é do passo da
-   * fórmula: sem um lugar comum, o operador voltava à fórmula e não via ali o que o servidor
-   * recusou. Some quando a resolução muda ou deixa de ser exigida, quando o cadastro é relido e
-   * quando a gravação seguinte dá certo. Uma recusa de outro campo não a apaga: o servidor pode
-   * ter recusado antes de julgar a resolução.
-   */
-  readonly recusaDaResolucaoPesoAreaEnem = signal<string | null>(null);
-
-  /**
-   * Recusa do servidor ao campo `escalaNotaFinal`, na última gravação da classificação — a escala
-   * que não é maior que zero. Mostrada sob o campo no passo da fórmula; some quando a escala muda
-   * e quando a gravação seguinte dá certo.
-   */
-  readonly recusaDaEscalaDaNotaFinal = signal<string | null>(null);
-
-  /**
-   * Os códigos dos itens que a conferência de publicação acusa como pendentes. Quem lê a
-   * conferência é a Revisão, que os entrega aqui enquanto está montada e os retira ao sair; os
-   * outros passos derivam daqui o que lhes cabe.
-   */
-  readonly pendenciasDaConferencia = signal<readonly string[]>([]);
-
-  /**
-   * O servidor aponta a escala da nota final como pendência de publicação: a classificação por
-   * fórmula local não a declarou. O campo vive no passo da fórmula.
-   */
-  readonly escalaDaNotaFinalPendente = computed(() =>
-    this.pendenciasDaConferencia().includes(CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA),
-  );
-
-  /**
-   * Recusa do servidor às edições do ENEM, gravadas pela Eliminação logo depois da classificação.
-   * Mostrada no passo da fórmula, onde as edições são escolhidas; some quando a gravação seguinte
-   * dá certo.
-   */
-  readonly recusaDasEdicoesDoEnem = signal<string | null>(null);
-
-  /**
-   * Recusa do servidor à gravação da classificação por um critério de desempate já gravado que
-   * compara a nota de área do ENEM, mostrada, como a da resolução, sob o campo do passo da
-   * fórmula. Some quando a resolução muda ou deixa de ser exigida e quando a gravação seguinte da
-   * classificação dá certo; depois de gravar o desempate ou de reler o cadastro, só quando a
-   * conferência dos critérios gravados contra o rascunho da classificação e o cadastro lido
-   * mostra que a pendência acabou — com os critérios gravados desconhecidos, ela fica.
-   */
-  readonly recusaPeloDesempatePorArea = signal<string | null>(null);
-
-  /**
-   * A leitura do cadastro de Peso por Área em mãos quando o servidor recusou pelo desempate. O
-   * servidor julgou pelo cadastro dele: só uma leitura posterior a esta pode dizer que a área que
-   * ele recusou passou a valer.
-   */
-  readonly leituraDoCadastroNaRecusaPeloDesempate = signal(0);
-
-  /** Os critérios gravados que o servidor julgou ao recusar pelo desempate. */
-  readonly criteriosNaRecusaPeloDesempate = signal<readonly CriterioDesempateConfigurado[] | null>(
-    null,
-  );
-
-  recusarPeloDesempate(recusa: string | null, leituraDoCadastro: number): void {
-    this.recusaPeloDesempatePorArea.set(recusa);
-    this.leituraDoCadastroNaRecusaPeloDesempate.set(leituraDoCadastro);
-    this.criteriosNaRecusaPeloDesempate.set(this.criteriosDesempateGravados());
-  }
-
-  /** A resolução mudou, deixou de ser exigida ou foi gravada: as recusas eram sobre a de antes. */
-  descartarRecusasDaClassificacao(): void {
-    this.recusaDaResolucaoPesoAreaEnem.set(null);
-    this.recusaPeloDesempatePorArea.set(null);
-  }
-
-  readonly classificacaoGravada = signal<ClassificacaoGravada>({ estado: 'nunca-gravada' });
-
-  readonly motivoDaReleituraDaClassificacao = computed(() =>
-    motivoDaReleitura(this.classificacaoGravada()),
-  );
-
-  readonly classificacaoPorReler = computed(() => this.motivoDaReleituraDaClassificacao() !== null);
-
-  /** O quadro que o processo congelou, quando se sabe que ele tem um e quais são os valores. */
-  readonly copiaCongeladaEmVigor = computed<CopiaCongelada | null>(() => {
-    const gravada = this.classificacaoGravada();
-    return gravada.estado === 'com-quadro' && gravada.confirmada
-      ? { resolucao: gravada.resolucao, grupos: gravada.grupos }
-      : null;
-  });
-
-  /**
-   * Os critérios de desempate que o servidor tem, pela leitura do processo e pelas gravações desta
-   * sessão. É contra eles, e não contra o rascunho, que a gravação da classificação é conferida.
-   * `null` depois de uma gravação sem resposta conclusiva: o servidor pode ter gravado, e só ele
-   * sabe o que tem.
-   */
-  readonly criteriosDesempateGravados = signal<readonly CriterioDesempateConfigurado[] | null>([]);
-
-  /**
-   * O Desempate deixou os critérios para gravar depois da classificação: o servidor recusa o
-   * critério por área enquanto o processo não tem o quadro congelado, e quem o congela é a gravação
-   * da classificação, no passo seguinte.
-   */
-  readonly desempatePendenteDeGravacao = signal(false);
-
-  /** Algo do que o servidor tem só uma releitura do processo diz. */
-  readonly gravadoPorReler = computed(
-    () => this.classificacaoPorReler() || this.criteriosDesempateGravados() === null,
-  );
-
-  /**
-   * Muda a cada troca de processo e a cada leitura que muda a classificação conhecida — a que só
-   * confirma o que já se sabia não muda. Uma leitura do cadastro de Peso por Área pedida nesta
-   * versão, ou depois, é posterior ao que o processo congelou.
-   */
-  readonly versaoDaClassificacaoLida = signal(0);
+  readonly classificacao = new ClassificacaoNoServidor();
 
   /**
    * Muda sempre que o editor passa a tratar de outro processo — por limpeza ou
@@ -517,54 +370,8 @@ export class ProcessoSeletivoStore {
     this.camposPostosPelasExigencias.set(new Set());
     this.aplicacoesDeModeloEmAberto.set(new Map());
     this.avisoDocumentos.set(null);
-    this.recusaDaResolucaoPesoAreaEnem.set(null);
-    this.recusaDaEscalaDaNotaFinal.set(null);
-    this.pendenciasDaConferencia.set([]);
-    this.recusaDasEdicoesDoEnem.set(null);
-    this.recusaPeloDesempatePorArea.set(null);
-    this.classificacaoGravada.set({ estado: 'nunca-gravada' });
-    this.criteriosDesempateGravados.set([]);
-    this.desempatePendenteDeGravacao.set(false);
-    this.versaoDaClassificacaoLida.update((versao) => versao + 1);
+    this.classificacao.reiniciar();
     this.geracao.update((valor) => valor + 1);
-  }
-
-  /**
-   * A classificação do processo, lida do servidor. Só ela: a releitura depois de gravar não pode
-   * mexer no `remoteSnapshot`, de que outros passos derivam estado, nem no rascunho, que é o que o
-   * operador está editando.
-   */
-  registrarClassificacaoLida(classificacao: ProcessoSeletivoDto['classificacao']): void {
-    const lida = classificacaoGravadaDe(classificacao);
-    if (!mesmaClassificacao(this.classificacaoGravada(), lida)) {
-      this.versaoDaClassificacaoLida.update((versao) => versao + 1);
-    }
-    this.classificacaoGravada.set(lida);
-  }
-
-  /**
-   * A gravação que não envolve resolução nenhuma deixa o processo com uma classificação sem quadro,
-   * e não precisa de releitura para sabê-lo. Sem este registro, a tela trataria o processo como sem
-   * classificação gravada, e o desempate seria conferido contra o rascunho, não contra o servidor.
-   */
-  registrarClassificacaoGravadaSemQuadro(): void {
-    this.classificacaoGravada.set({ estado: 'sem-quadro' });
-  }
-
-  /**
-   * A gravação que deu certo com a resolução copiou para o processo o quadro dela no cadastro do
-   * servidor. O que o cadastro lido aqui tem é a cópia presumida, por confirmar na releitura.
-   */
-  registrarClassificacaoGravadaComQuadro(
-    resolucao: string,
-    grupos: readonly GrupoDoQuadro[],
-  ): void {
-    this.classificacaoGravada.set({ estado: 'com-quadro', resolucao, grupos, confirmada: false });
-  }
-
-  /** A gravação ficou sem resposta conclusiva: o que o processo tem só uma releitura decide. */
-  marcarClassificacaoDesconhecida(): void {
-    this.classificacaoGravada.set({ estado: 'desconhecida' });
   }
 
   /**
@@ -577,7 +384,7 @@ export class ProcessoSeletivoStore {
   hidratar(dto: ProcessoSeletivoDto): void {
     if (this.processoSeletivoId() !== dto.id) {
       this.geracao.update((valor) => valor + 1);
-      this.versaoDaClassificacaoLida.update((versao) => versao + 1);
+      this.classificacao.aoTrocarDeProcesso();
     }
     // Qualquer releitura que chegue até aqui traz status atual do servidor —
     // resolve a incerteza de `publicacaoNaoConfirmada`, publicado ou não.
@@ -594,8 +401,8 @@ export class ProcessoSeletivoStore {
    * depois de gravar não mexe no rascunho.
    */
   registrarGravadoLido(dto: ProcessoSeletivoDto): void {
-    this.registrarClassificacaoLida(dto.classificacao);
-    this.criteriosDesempateGravados.set(desempateDe(dto));
+    this.classificacao.registrarLida(dto.classificacao);
+    this.classificacao.criteriosDesempateGravados.set(desempateDe(dto));
     this.registrarRegrasDasModalidades(dto);
     this.registrarVagasGravadas(dto);
   }
@@ -611,30 +418,4 @@ export class ProcessoSeletivoStore {
   registrarRegrasDasModalidades(dto: ProcessoSeletivoDto): void {
     this.regrasDasModalidades.set(regrasDasModalidadesOfertadas(dto));
   }
-}
-
-/** A classificação lida sem o quadro fica sem grupo, e não é um erro de leitura. */
-function classificacaoGravadaDe(
-  classificacao: ProcessoSeletivoDto['classificacao'],
-): ClassificacaoGravada {
-  if (classificacao === null || classificacao === undefined) return { estado: 'nunca-gravada' };
-  const resolucao = classificacao.resolucaoPesoAreaEnem ?? null;
-  const grupos = quadroCongelado(classificacao.quadroPesoAreaEnem ?? []);
-  return resolucao === null || grupos.length === 0
-    ? { estado: 'sem-quadro' }
-    : { estado: 'com-quadro', resolucao, grupos, confirmada: true };
-}
-
-/** Por que só uma releitura diz o que a classificação gravada tem, ou `null` quando se sabe. */
-export function motivoDaReleitura(gravada: ClassificacaoGravada): MotivoDaReleitura | null {
-  if (gravada.estado === 'desconhecida') return 'desconhecida';
-  return gravada.estado === 'com-quadro' && !gravada.confirmada ? 'por-confirmar' : null;
-}
-
-/** A mesma classificação, com os mesmos valores, confirmada ou não. */
-function mesmaClassificacao(a: ClassificacaoGravada, b: ClassificacaoGravada): boolean {
-  if (a.estado === 'com-quadro' && b.estado === 'com-quadro') {
-    return a.resolucao === b.resolucao && mesmoQuadro(a.grupos, b.grupos);
-  }
-  return a.estado === b.estado;
 }

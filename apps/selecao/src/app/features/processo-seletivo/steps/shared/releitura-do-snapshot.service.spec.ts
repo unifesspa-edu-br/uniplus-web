@@ -57,7 +57,7 @@ describe('ReleituraDoSnapshot', () => {
     antiga.responder(detalheCom('Resolução antiga'));
     await expect(primeira).resolves.toBe(false);
 
-    expect(store.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nova');
+    expect(store.classificacao.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nova');
   });
 
   it('atualiza só a classificação: o detalhe de que outros passos derivam estado fica intacto', async () => {
@@ -71,13 +71,13 @@ describe('ReleituraDoSnapshot', () => {
     await relendo;
 
     expect(store.remoteSnapshot()).toBe(anterior);
-    expect(store.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nova');
+    expect(store.classificacao.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nova');
   });
 
   it('repõe os critérios de desempate que o processo tem, junto com a classificação', async () => {
     const leitura = leituraPendente();
     const { store, releitura } = montar([leitura.promessa]);
-    store.criteriosDesempateGravados.set(null);
+    store.classificacao.criteriosDesempateGravados.set(null);
 
     const relendo = releitura.reler();
     leitura.responder({
@@ -98,33 +98,35 @@ describe('ReleituraDoSnapshot', () => {
     } as unknown as ProcessoSeletivoDto);
     await relendo;
 
-    expect(store.criteriosDesempateGravados()?.map((criterio) => criterio.areas)).toEqual([
-      ['REDACAO'],
-    ]);
+    expect(
+      store.classificacao.criteriosDesempateGravados()?.map((criterio) => criterio.areas),
+    ).toEqual([['REDACAO']]);
   });
 
   it('confirma a cópia presumida com o que o servidor congelou', async () => {
     const leitura = leituraPendente();
     const { store, releitura } = montar([leitura.promessa]);
-    store.registrarClassificacaoGravadaComQuadro('Resolução nova', []);
-    expect(store.copiaCongeladaEmVigor()).toBeNull();
+    store.classificacao.registrarGravadaComQuadro('Resolução nova', []);
+    expect(store.classificacao.copiaCongeladaEmVigor()).toBeNull();
 
     const relendo = releitura.reler();
     leitura.responder(detalheCom('Resolução nova'));
     await relendo;
 
-    expect(store.motivoDaReleituraDaClassificacao()).not.toBe('por-confirmar');
-    expect(store.copiaCongeladaEmVigor()?.grupos.map((grupo) => grupo.codigo)).toEqual(['G']);
+    expect(store.classificacao.motivoDaReleitura()).not.toBe('por-confirmar');
+    expect(
+      store.classificacao.copiaCongeladaEmVigor()?.grupos.map((grupo) => grupo.codigo),
+    ).toEqual(['G']);
   });
 
   it('a falha da releitura deixa a cópia por confirmar, sem rebaixá-la a desconhecida', async () => {
     const { store, releitura } = montar([Promise.reject(new Error('rede'))]);
-    store.registrarClassificacaoGravadaComQuadro('Resolução nova', []);
+    store.classificacao.registrarGravadaComQuadro('Resolução nova', []);
 
     await releitura.reler();
 
-    expect(store.motivoDaReleituraDaClassificacao()).toBe('por-confirmar');
-    expect(store.motivoDaReleituraDaClassificacao()).not.toBe('desconhecida');
+    expect(store.classificacao.motivoDaReleitura()).toBe('por-confirmar');
+    expect(store.classificacao.motivoDaReleitura()).not.toBe('desconhecida');
   });
 
   it('a falha da releitura pedida pelos critérios desconhecidos não rebaixa a classificação sabida', async () => {
@@ -133,12 +135,12 @@ describe('ReleituraDoSnapshot', () => {
     const primeira = releitura.reler();
     leitura.responder(detalheCom('Resolução nova'));
     await primeira;
-    store.criteriosDesempateGravados.set(null);
+    store.classificacao.criteriosDesempateGravados.set(null);
 
     await releitura.reler();
 
-    expect(store.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nova');
-    expect(store.criteriosDesempateGravados()).toBeNull();
+    expect(store.classificacao.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nova');
+    expect(store.classificacao.criteriosDesempateGravados()).toBeNull();
   });
 });
 
@@ -148,7 +150,7 @@ describe('ReleituraDoSnapshot.gravando', () => {
     const nova = leituraPendente();
     const { store, releitura } = montar([antiga.promessa, nova.promessa]);
     const emCurso = releitura.reler();
-    store.marcarClassificacaoDesconhecida();
+    store.classificacao.marcarDesconhecida();
 
     const gravacao = releitura.gravando(async () => 'gravado');
     antiga.responder(detalheCom('Resolução antiga'));
@@ -156,7 +158,7 @@ describe('ReleituraDoSnapshot.gravando', () => {
     nova.responder(detalheCom('Resolução nova'));
 
     await expect(gravacao).resolves.toBe('gravado');
-    expect(store.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nova');
+    expect(store.classificacao.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nova');
   });
 
   it('com a cópia por confirmar, relê depois de gravar', async () => {
@@ -164,20 +166,20 @@ describe('ReleituraDoSnapshot.gravando', () => {
     const { store, releitura } = montar([leitura.promessa]);
 
     const gravacao = releitura.gravando(async () =>
-      store.registrarClassificacaoGravadaComQuadro('Resolução nova', []),
+      store.classificacao.registrarGravadaComQuadro('Resolução nova', []),
     );
     await new Promise((resolve) => setTimeout(resolve));
     leitura.responder(detalheCom('Resolução nova'));
     await gravacao;
 
-    expect(store.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nova');
+    expect(store.classificacao.copiaCongeladaEmVigor()?.resolucao).toBe('Resolução nova');
   });
 
   it('com os critérios de desempate desconhecidos, relê depois de gravar', async () => {
     const { store, releitura } = montar([]);
     const reler = vi.spyOn(releitura, 'reler').mockResolvedValue(true);
 
-    await releitura.gravando(async () => store.criteriosDesempateGravados.set(null));
+    await releitura.gravando(async () => store.classificacao.criteriosDesempateGravados.set(null));
 
     expect(reler).toHaveBeenCalledTimes(1);
   });
@@ -185,7 +187,7 @@ describe('ReleituraDoSnapshot.gravando', () => {
   it('relê mesmo quando a gravação lança: a leitura descartada era a que resolveria', async () => {
     const { store, releitura } = montar([]);
     const reler = vi.spyOn(releitura, 'reler').mockResolvedValue(true);
-    store.marcarClassificacaoDesconhecida();
+    store.classificacao.marcarDesconhecida();
 
     await expect(
       releitura.gravando(async () => {
@@ -211,7 +213,7 @@ describe('ReleituraDoSnapshot.gravando', () => {
 
     await releitura.gravando(async () => {
       store.reset();
-      store.marcarClassificacaoDesconhecida();
+      store.classificacao.marcarDesconhecida();
     });
 
     expect(reler).not.toHaveBeenCalled();
@@ -220,7 +222,7 @@ describe('ReleituraDoSnapshot.gravando', () => {
   it('na varredura da publicação não relê: ela relê uma vez no fim', async () => {
     const { store, releitura } = montar([]);
     const reler = vi.spyOn(releitura, 'reler');
-    store.marcarClassificacaoDesconhecida();
+    store.classificacao.marcarDesconhecida();
     store.travamentoDeOrquestracao.set(true);
 
     await releitura.gravando(async () => undefined);

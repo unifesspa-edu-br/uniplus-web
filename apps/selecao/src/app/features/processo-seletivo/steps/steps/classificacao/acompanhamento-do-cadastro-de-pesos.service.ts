@@ -48,7 +48,7 @@ export class AcompanhamentoDoCadastroDePesos {
   );
 
   private readonly lido = computed(
-    () => this.catalogos.pesosLidosNaMarca() === this.store.versaoDaClassificacaoLida(),
+    () => this.catalogos.pesosLidosNaMarca() === this.store.classificacao.versaoLida(),
   );
 
   readonly leitura = computed<LeituraDoCadastro>(() => ({
@@ -91,8 +91,11 @@ export class AcompanhamentoDoCadastroDePesos {
     effect(
       () => {
         if (!exigeResolucao()) return;
-        const marca = this.store.versaoDaClassificacaoLida();
-        if (this.store.edicaoPermitida() || this.store.copiaCongeladaEmVigor() === null) {
+        const marca = this.store.classificacao.versaoLida();
+        if (
+          this.store.edicaoPermitida() ||
+          this.store.classificacao.copiaCongeladaEmVigor() === null
+        ) {
           untracked(() => this.catalogos.garantirPesosAreaEnem(marca));
         } else {
           untracked(() => this.catalogos.garantirAreasEnem());
@@ -108,8 +111,8 @@ export class AcompanhamentoDoCadastroDePesos {
    * gravação julga de novo. `depoisDeLer` só roda quando a leitura dá certo.
    */
   relerCadastroAPedido(depoisDeLer: () => void): void {
-    this.catalogos.recarregarPesosAreaEnem(this.store.versaoDaClassificacaoLida(), () => {
-      this.store.recusaDaResolucaoPesoAreaEnem.set(null);
+    this.catalogos.recarregarPesosAreaEnem(this.store.classificacao.versaoLida(), () => {
+      this.store.classificacao.recusaDaResolucaoPesoAreaEnem.set(null);
       depoisDeLer();
     });
   }

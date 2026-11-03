@@ -208,7 +208,7 @@
             [attr.aria-describedby]="
               'edicoes-enem-ajuda' +
               (recusaDoAno() !== null ? ' edicoes-enem-recusa' : '') +
-              (store.recusaDasEdicoesDoEnem() !== null ? ' edicoes-enem-servidor' : '')
+              (store.classificacao.recusaDasEdicoesDoEnem() !== null ? ' edicoes-enem-servidor' : '')
             "
             (input)="anoDaNovaEdicao.set($any($event.target).value)"
             (keydown.enter)="$event.preventDefault(); acrescentarEdicao()"
@@ -216,7 +216,7 @@
           @if (recusaDoAno(); as recusa) {
             <p class="field__error" id="edicoes-enem-recusa" role="alert">{{ recusa }}</p>
           }
-          @if (store.recusaDasEdicoesDoEnem(); as recusa) {
+          @if (store.classificacao.recusaDasEdicoesDoEnem(); as recusa) {
             <p class="field__error" id="edicoes-enem-servidor" role="alert">{{ recusa }}</p>
           }
         </div>

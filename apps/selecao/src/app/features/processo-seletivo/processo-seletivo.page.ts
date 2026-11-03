@@ -262,7 +262,7 @@ export class ProcessoSeletivoPage {
     // classificação.
     effect(() => {
       this.catalogosDeClassificacao.pesosLidosNaLeitura();
-      this.store.criteriosDesempateGravados();
+      this.store.classificacao.criteriosDesempateGravados();
       untracked(() => reavaliarRecusaPeloDesempate(this.store, this.cadastroDePesos.leitura()));
     });
 
@@ -970,7 +970,7 @@ export class ProcessoSeletivoPage {
       // O Desempate recusa o critério por área enquanto não se sabe o que a classificação gravada
       // tem. Com algo por reler, a recusa pode ser essa: a releitura decide e a validação se
       // refaz. Sem nada por reler, o rascunho incompleto é barrado sem ir à rede.
-      if (pendentesAntesDeGravar.length > 0 && this.store.gravadoPorReler()) {
+      if (pendentesAntesDeGravar.length > 0 && this.store.classificacao.gravadoPorReler()) {
         await this.releitura.reler();
         if (geracao !== this.store.geracao()) return;
         pendentesAntesDeGravar = this.validarRascunho(this.store.totalSteps - 1);
@@ -986,7 +986,7 @@ export class ProcessoSeletivoPage {
       // Os passos gravados na varredura não releem o detalhe um a um; uma leitura só, aqui, põe
       // em dia o que o processo congelou — com ou sem falha na varredura —, e confirma a cópia que
       // a gravação da classificação presumiu.
-      if (this.store.gravadoPorReler()) await this.releitura.reler();
+      if (this.store.classificacao.gravadoPorReler()) await this.releitura.reler();
       if (geracao !== this.store.geracao()) return;
       // Critérios que ainda esperam a classificação não podem ficar para trás: publicar seguiria
       // com os que o servidor tinha antes.
@@ -995,7 +995,7 @@ export class ProcessoSeletivoPage {
       );
       if (
         falhasDeGravacao.length === 0 &&
-        this.store.desempatePendenteDeGravacao() &&
+        this.store.classificacao.desempatePendenteDeGravacao() &&
         indiceDoDesempate >= 0
       ) {
         falhasDeGravacao.push(
@@ -1127,20 +1127,20 @@ export class ProcessoSeletivoPage {
    * quando não havia o que gravar ou deu certo.
    */
   private async gravarDesempatePendente(): Promise<RecusaDoDesempate | null> {
-    if (!this.store.desempatePendenteDeGravacao()) return null;
+    if (!this.store.classificacao.desempatePendenteDeGravacao()) return null;
     const indice = this.passos().findIndex((passo) => passo instanceof DesempateStepComponent);
     const desempate = this.passos()[indice];
     if (!(desempate instanceof DesempateStepComponent)) return null;
 
-    if (this.store.motivoDaReleituraDaClassificacao() !== null) {
+    if (this.store.classificacao.motivoDaReleitura() !== null) {
       const geracao = this.store.geracao();
       await this.releitura.reler();
       if (geracao !== this.store.geracao()) return { indice, mensagens: [] };
     }
-    const gravada = this.store.classificacaoGravada().estado;
+    const gravada = this.store.classificacao.gravada().estado;
     // Ainda sem a classificação gravada com quadro: é o passo dela que vem antes.
     if (gravada === 'nunca-gravada' || gravada === 'sem-quadro') return null;
-    if (this.store.copiaCongeladaEmVigor() === null) {
+    if (this.store.classificacao.copiaCongeladaEmVigor() === null) {
       return { indice, mensagens: [COPIA_NAO_CONFIRMADA] };
     }
 

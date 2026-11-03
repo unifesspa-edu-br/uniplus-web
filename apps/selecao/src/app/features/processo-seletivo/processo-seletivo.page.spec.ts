@@ -657,7 +657,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const stubQueMarca = {
       validate: () => ({ valid: true }),
       persistir: vi.fn(async () => {
-        store.marcarClassificacaoDesconhecida();
+        store.classificacao.marcarDesconhecida();
         return { valid: false, messages: ['Falha ao gravar de novo.'] };
       }),
     };
@@ -702,7 +702,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const stubDaEliminacao = {
       validate: () => ({ valid: true }),
       persistir: vi.fn(async () => {
-        store.registrarClassificacaoGravadaComQuadro('Resolução nova', [
+        store.classificacao.registrarGravadaComQuadro('Resolução nova', [
           {
             codigo: 'G',
             rotulo: 'Grupo',
@@ -733,7 +733,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
     expect(stubDaEliminacao.persistir).toHaveBeenCalledTimes(1);
     expect(obterDetalhe).toHaveBeenCalledTimes(1);
-    expect(store.copiaCongeladaEmVigor()).toEqual({
+    expect(store.classificacao.copiaCongeladaEmVigor()).toEqual({
       resolucao: 'Resolução nova',
       grupos: quadroCongelado(detalhe.classificacao?.quadroPesoAreaEnem ?? []),
     });
@@ -745,14 +745,14 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const ordem: string[] = [];
     vi.spyOn(releitura, 'reler').mockImplementation(async () => {
       ordem.push('releu');
-      store.registrarClassificacaoGravadaSemQuadro();
+      store.classificacao.registrarGravadaSemQuadro();
       return true;
     });
     // O Desempate recusa enquanto não se sabe o que a classificação gravada tem.
     const stubQueDependeDaClassificacao = {
       validate: () => {
         ordem.push('validou');
-        return store.motivoDaReleituraDaClassificacao() === 'desconhecida'
+        return store.classificacao.motivoDaReleitura() === 'desconhecida'
           ? { valid: false, messages: ['Classificação desconhecida.'] }
           : { valid: true };
       },
@@ -761,7 +761,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       page as unknown as { stepValidatorAt: (index: number) => unknown },
       'stepValidatorAt',
     ).mockImplementation(() => stubQueDependeDaClassificacao);
-    store.marcarClassificacaoDesconhecida();
+    store.classificacao.marcarDesconhecida();
 
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
@@ -793,29 +793,29 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
   it('cada leitura do cadastro que dá certo reavalia a recusa pelo desempate', () => {
     const { fixture, store } = montar();
-    store.criteriosDesempateGravados.set([]);
-    store.recusarPeloDesempate('Recusa pelo desempate.', 0);
+    store.classificacao.criteriosDesempateGravados.set([]);
+    store.classificacao.recusarPeloDesempate('Recusa pelo desempate.', 0);
 
     fixture.debugElement.injector
       .get(CatalogosDeClassificacaoService)
       .pesosLidosNaLeitura.update((leitura) => leitura + 1);
     TestBed.tick();
 
-    expect(store.recusaPeloDesempatePorArea()).toBeNull();
+    expect(store.classificacao.recusaPeloDesempatePorArea()).toBeNull();
   });
 
   it('critérios de desempate gravados que mudam reavaliam a recusa pelo desempate', () => {
     const { store } = montar();
-    store.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
-    store.recusarPeloDesempate('Recusa pelo desempate.', 0);
+    store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
+    store.classificacao.recusarPeloDesempate('Recusa pelo desempate.', 0);
     TestBed.tick();
-    expect(store.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
+    expect(store.classificacao.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
 
     // A releitura do processo, ou a gravação do Desempate, trouxe critérios sem área.
-    store.criteriosDesempateGravados.set([]);
+    store.classificacao.criteriosDesempateGravados.set([]);
     TestBed.tick();
 
-    expect(store.recusaPeloDesempatePorArea()).toBeNull();
+    expect(store.classificacao.recusaPeloDesempatePorArea()).toBeNull();
   });
 
   describe('critérios de desempate por área antes da classificação com quadro', () => {
@@ -872,14 +872,14 @@ describe('ProcessoSeletivoPage — publicação', () => {
       vi.spyOn(desempate, 'gravarPendente').mockImplementation(async () => {
         ordem.push('critérios');
         if (recusaDosCriterios !== null) return { valid: false, messages: recusaDosCriterios };
-        store.desempatePendenteDeGravacao.set(false);
+        store.classificacao.desempatePendenteDeGravacao.set(false);
         return { valid: true };
       });
       const stubDoDesempate = {
         validate: () => ({ valid: true }),
         persistir: vi.fn(async () => {
           ordem.push('critérios adiados');
-          store.desempatePendenteDeGravacao.set(true);
+          store.classificacao.desempatePendenteDeGravacao.set(true);
           return { valid: true };
         }),
       };
@@ -887,7 +887,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
         validate: () => ({ valid: true }),
         persistir: vi.fn(async () => {
           ordem.push('classificação');
-          store.registrarClassificacaoGravadaComQuadro(RESOLUCAO, COPIA_PRESUMIDA);
+          store.classificacao.registrarGravadaComQuadro(RESOLUCAO, COPIA_PRESUMIDA);
           return { valid: true };
         }),
       };
@@ -916,7 +916,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura', 'critérios']);
       expect(store.currentStep()).toBe(INDICE_DA_ELIMINACAO + 1);
       expect(store.stepError()).toBeNull();
-      expect(store.desempatePendenteDeGravacao()).toBe(false);
+      expect(store.classificacao.desempatePendenteDeGravacao()).toBe(false);
     });
 
     it('a recusa dos critérios gravados depois da classificação leva ao passo Desempate', async () => {
@@ -1033,7 +1033,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
     it('na varredura, com o Desempate de verdade, confirma a cópia e grava os critérios sem recusa', async () => {
       const { page, store, ordem, gravarCriterios } = await montarVarreduraReal((store) =>
-        store.registrarClassificacaoGravadaComQuadro(RESOLUCAO, COPIA_PRESUMIDA),
+        store.classificacao.registrarGravadaComQuadro(RESOLUCAO, COPIA_PRESUMIDA),
       );
 
       store.goTo(store.totalSteps - 1);
@@ -1042,7 +1042,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       expect(ordem).toEqual(['classificação', 'releitura', 'critérios']);
       expect(gravarCriterios).toHaveBeenCalledTimes(1);
       expect(JSON.stringify(store.stepError() ?? null)).not.toContain('Desempate');
-      expect(store.desempatePendenteDeGravacao()).toBe(false);
+      expect(store.classificacao.desempatePendenteDeGravacao()).toBe(false);
     });
 
     it('trocado o processo durante a releitura, não grava os critérios nem acusa nada', async () => {
@@ -1058,7 +1058,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
     it('na varredura, com a classificação desconhecida depois de gravar, relê e grava os critérios', async () => {
       const { page, store, ordem, gravarCriterios } = await montarVarreduraReal((store) =>
-        store.marcarClassificacaoDesconhecida(),
+        store.classificacao.marcarDesconhecida(),
       );
 
       store.goTo(store.totalSteps - 1);
@@ -1066,13 +1066,13 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
       expect(ordem).toEqual(['classificação', 'releitura', 'critérios']);
       expect(gravarCriterios).toHaveBeenCalledTimes(1);
-      expect(store.desempatePendenteDeGravacao()).toBe(false);
+      expect(store.classificacao.desempatePendenteDeGravacao()).toBe(false);
       expect(JSON.stringify(store.stepError() ?? null)).not.toContain('Desempate');
     });
 
     it('com os critérios ainda pendentes ao fim da varredura, a publicação é barrada no Desempate', async () => {
       const { page, store, gravarCriterios } = await montarVarreduraReal(
-        (store) => store.marcarClassificacaoDesconhecida(),
+        (store) => store.classificacao.marcarDesconhecida(),
         {
           id: 'processo-1',
           classificacao: null,
@@ -1109,7 +1109,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       () =>
         new Promise<boolean>((resolve) => {
           releiturasPendentes.push(() => {
-            store.registrarClassificacaoGravadaSemQuadro();
+            store.classificacao.registrarGravadaSemQuadro();
             resolve(true);
           });
         }),
@@ -1119,7 +1119,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     // Com a classificação desconhecida o passo recusa, e a publicação relê antes de validar de novo.
     const stubQueAguarda = {
       validate: () =>
-        store.motivoDaReleituraDaClassificacao() === 'desconhecida'
+        store.classificacao.motivoDaReleitura() === 'desconhecida'
           ? { valid: false, messages: ['Classificação desconhecida.'] }
           : { valid: true },
     };
@@ -1127,7 +1127,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       page as unknown as { stepValidatorAt: (index: number) => unknown },
       'stepValidatorAt',
     ).mockImplementation((index: number) => (index === 2 ? stubComPersistir : stubQueAguarda));
-    store.marcarClassificacaoDesconhecida();
+    store.classificacao.marcarDesconhecida();
     store.goTo(store.totalSteps - 1);
     fixture.detectChanges();
 

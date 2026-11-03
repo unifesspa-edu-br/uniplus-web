@@ -464,7 +464,7 @@ describe('EliminacaoStepComponent', () => {
         resolucaoPesoAreaEnem: RESOLUCAO,
         regrasEliminacao: [{ ...CORTE, areaCodigo: 'REDACAO', minimo: '450' }],
       });
-      store.classificacaoGravada.set({
+      store.classificacao.gravada.set({
         estado: 'com-quadro',
         resolucao: RESOLUCAO,
         confirmada: true,
@@ -492,7 +492,7 @@ describe('EliminacaoStepComponent', () => {
 
     /** A cópia gravada de R1: só Matemática em todos os grupos, com corte 300. */
     function gravadaComMatematica(resolucao = RESOLUCAO): void {
-      store.classificacaoGravada.set({
+      store.classificacao.gravada.set({
         estado: 'com-quadro',
         resolucao,
         confirmada: true,
@@ -927,7 +927,7 @@ describe('EliminacaoStepComponent', () => {
 
     it('recusa gravar a classificação sem ENEM, que deixaria o critério gravado sem a nota de área', async () => {
       prepararClassificacaoLocal();
-      store.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
+      store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
 
       const resultado = await gravar();
 
@@ -943,7 +943,7 @@ describe('EliminacaoStepComponent', () => {
     it('uma tecla em outro passo não refaz a conferência do desempate gravado', () => {
       lerCadastro([{ codigo: 'REDACAO', rotulo: 'Redação', peso: 1, corte: null }]);
       classificacaoPeloEnem();
-      store.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
+      store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
       const antes = componente.avisoDoDesempatePorArea();
 
       store.patchObjectSection('identificacao', { nome: 'Processo de teste' });
@@ -954,7 +954,7 @@ describe('EliminacaoStepComponent', () => {
     it('pelo cadastro lido, só avisa da área que a resolução não tem em todos os grupos, e deixa o servidor julgar', async () => {
       lerCadastro([{ codigo: 'REDACAO', rotulo: 'Redação', peso: 1, corte: null }]);
       classificacaoPeloEnem();
-      store.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
+      store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
 
       const aviso = `Pelo cadastro de Peso por Área lido, o critério de desempate 1 gravado cita Matemática, que a resolução ${RESOLUCAO} não tem em todos os grupos, e a gravação deve ser recusada: retire a área no passo Desempate e grave o passo, ou escolha outra resolução no passo Fórmula. Se o cadastro mudou, atualize a lista.`;
       expect(componente.avisoDoDesempatePorArea()).toEqual([aviso]);
@@ -966,7 +966,7 @@ describe('EliminacaoStepComponent', () => {
     it('só para consulta, não avisa de gravação nenhuma', () => {
       lerCadastro([{ codigo: 'REDACAO', rotulo: 'Redação', peso: 1, corte: null }]);
       classificacaoPeloEnem();
-      store.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
+      store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
       store.remoteSnapshot.set({
         status: StatusProcesso.publicado,
       } as unknown as ProcessoSeletivoDto);
@@ -977,7 +977,7 @@ describe('EliminacaoStepComponent', () => {
     it('"Atualizar lista" do aviso relê o cadastro', () => {
       lerCadastro([{ codigo: 'REDACAO', rotulo: 'Redação', peso: 1, corte: null }]);
       classificacaoPeloEnem();
-      store.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
+      store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
       fixture.detectChanges();
 
       (fixture.nativeElement as HTMLElement)
@@ -995,7 +995,7 @@ describe('EliminacaoStepComponent', () => {
         { codigo: 'REDACAO', rotulo: 'Redação', peso: 1, corte: null },
       ]);
       classificacaoPeloEnem();
-      store.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
+      store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
 
       await expect(gravar()).resolves.toEqual({ valid: true });
     });
@@ -1011,7 +1011,7 @@ describe('EliminacaoStepComponent', () => {
       prepararClassificacaoLocal();
       expect(componente.confirmacaoDeGravacao()).not.toBeNull();
 
-      store.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
+      store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
 
       expect(componente.confirmacaoDeGravacao()).toBeNull();
     });
@@ -1020,7 +1020,7 @@ describe('EliminacaoStepComponent', () => {
       prepararClassificacaoLocal();
       // O rascunho do desempate não é o que o servidor tem, e não serve de substituto.
       store.patchSection('desempate', [CRITERIO_POR_AREA]);
-      store.criteriosDesempateGravados.set(null);
+      store.classificacao.criteriosDesempateGravados.set(null);
 
       await expect(gravar()).resolves.toEqual({ valid: true });
     });
@@ -1028,7 +1028,9 @@ describe('EliminacaoStepComponent', () => {
     it('com todas as áreas do critério fora, orienta a trocar a regra ou remover o critério', async () => {
       lerCadastro([{ codigo: 'REDACAO', rotulo: 'Redação', peso: 1, corte: null }]);
       classificacaoPeloEnem();
-      store.criteriosDesempateGravados.set([{ ...CRITERIO_POR_AREA, areas: ['MATEMATICA'] }]);
+      store.classificacao.criteriosDesempateGravados.set([
+        { ...CRITERIO_POR_AREA, areas: ['MATEMATICA'] },
+      ]);
 
       expect(componente.avisoDoDesempatePorArea()).toEqual([
         `Pelo cadastro de Peso por Área lido, o critério de desempate 1 gravado cita Matemática, que a resolução ${RESOLUCAO} não tem em todos os grupos, e a gravação deve ser recusada: troque a regra do critério ou remova-o no passo Desempate e grave o passo, ou escolha outra resolução no passo Fórmula. Se o cadastro mudou, atualize a lista.`,
@@ -1041,7 +1043,7 @@ describe('EliminacaoStepComponent', () => {
         { codigo: 'REDACAO', rotulo: 'Redação', peso: 1, corte: null },
       ]);
       classificacaoPeloEnem();
-      store.criteriosDesempateGravados.set([
+      store.classificacao.criteriosDesempateGravados.set([
         { ...CRITERIO_POR_AREA, areas: ['REDACAO', 'LINGUAGENS'] },
       ]);
 
@@ -1050,7 +1052,7 @@ describe('EliminacaoStepComponent', () => {
 
     it('a publicação não barra na validação o que a varredura corrige gravando o Desempate antes', async () => {
       prepararClassificacaoLocal();
-      store.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
+      store.classificacao.criteriosDesempateGravados.set([CRITERIO_POR_AREA]);
       store.patchSection('desempate', [
         { ...CRITERIO_POR_AREA, regraCodigo: 'DESEMPATE-MAIOR-IDADE', areas: [] },
       ]);
@@ -1058,7 +1060,7 @@ describe('EliminacaoStepComponent', () => {
       expect(componente.validate()).toEqual({ valid: true });
 
       // A varredura grava o Desempate, e o que está gravado passa a ser o rascunho.
-      store.criteriosDesempateGravados.set(store.draft().desempate);
+      store.classificacao.criteriosDesempateGravados.set(store.draft().desempate);
       await expect(gravar()).resolves.toEqual({ valid: true });
     });
   });
@@ -1136,7 +1138,7 @@ describe('EliminacaoStepComponent', () => {
 
     it('depois de gravar, relê o que o processo congelou para a Fórmula mostrar a cópia nova', async () => {
       prepararClassificacaoLocal();
-      store.registrarClassificacaoLida(
+      store.classificacao.registrarLida(
         (detalheCom('Resolução antiga', 1) as unknown as ProcessoSeletivoDto).classificacao,
       );
       store.patchObjectSection('classificacao', {
@@ -1152,7 +1154,7 @@ describe('EliminacaoStepComponent', () => {
       controller.expectOne(ROTA_DETALHE).flush(detalheCom(RESOLUCAO, 3));
       await gravacao;
 
-      const congelado = store.copiaCongeladaEmVigor();
+      const congelado = store.classificacao.copiaCongeladaEmVigor();
       expect(congelado?.resolucao).toBe(RESOLUCAO);
       expect(congelado?.grupos[0].areas[0].peso).toBe(3);
     });
@@ -1172,7 +1174,7 @@ describe('EliminacaoStepComponent', () => {
         .flush(null, { status: 204, statusText: 'No Content' });
 
       await expect(gravacao).resolves.toEqual({ valid: true });
-      expect(store.motivoDaReleituraDaClassificacao()).toBe('desconhecida');
+      expect(store.classificacao.motivoDaReleitura()).toBe('desconhecida');
     });
 
     it('editor superado durante a releitura não relata a gravação como concluída', async () => {
@@ -1209,7 +1211,7 @@ describe('EliminacaoStepComponent', () => {
 
       expect(controller.match(ROTA_DETALHE)).toHaveLength(0);
       await expect(gravacao).resolves.toEqual({ valid: true });
-      expect(store.motivoDaReleituraDaClassificacao()).toBe('desconhecida');
+      expect(store.classificacao.motivoDaReleitura()).toBe('desconhecida');
     });
 
     it('na varredura, a gravação conclusiva com a resolução registra a cópia do cadastro lido como por confirmar', async () => {
@@ -1229,12 +1231,12 @@ describe('EliminacaoStepComponent', () => {
 
       // A gravação chegou: se a releitura do fim da varredura falhar, não é "desconhecida". Mas o
       // servidor copiou o cadastro dele, e só a releitura diz o que ficou congelado.
-      expect(store.classificacaoGravada()).toMatchObject({
+      expect(store.classificacao.gravada()).toMatchObject({
         estado: 'com-quadro',
         resolucao: RESOLUCAO,
         confirmada: false,
       });
-      expect(store.copiaCongeladaEmVigor()).toBeNull();
+      expect(store.classificacao.copiaCongeladaEmVigor()).toBeNull();
     });
 
     it('fora da varredura, relê e confirma a cópia com o que o servidor congelou', async () => {
@@ -1250,12 +1252,12 @@ describe('EliminacaoStepComponent', () => {
         .expectOne(ROTA_CLASSIFICACAO)
         .flush(null, { status: 204, statusText: 'No Content' });
       await aguardarReleitura();
-      expect(store.motivoDaReleituraDaClassificacao()).toBe('por-confirmar');
+      expect(store.classificacao.motivoDaReleitura()).toBe('por-confirmar');
       controller.expectOne(ROTA_DETALHE).flush(detalheCom(RESOLUCAO, 3));
       await gravacao;
 
-      expect(store.motivoDaReleituraDaClassificacao()).not.toBe('por-confirmar');
-      expect(store.copiaCongeladaEmVigor()?.grupos[0].areas[0].peso).toBe(3);
+      expect(store.classificacao.motivoDaReleitura()).not.toBe('por-confirmar');
+      expect(store.classificacao.copiaCongeladaEmVigor()?.grupos[0].areas[0].peso).toBe(3);
     });
 
     it('fora da varredura, a releitura que falha deixa a cópia por confirmar', async () => {
@@ -1276,8 +1278,8 @@ describe('EliminacaoStepComponent', () => {
         .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
 
       await expect(gravacao).resolves.toEqual({ valid: true });
-      expect(store.motivoDaReleituraDaClassificacao()).toBe('por-confirmar');
-      expect(store.motivoDaReleituraDaClassificacao()).not.toBe('desconhecida');
+      expect(store.classificacao.motivoDaReleitura()).toBe('por-confirmar');
+      expect(store.classificacao.motivoDaReleitura()).not.toBe('desconhecida');
     });
 
     it('linhas do cadastro sem leitura válida não servem de cópia presumida', async () => {
@@ -1295,7 +1297,7 @@ describe('EliminacaoStepComponent', () => {
         .flush(null, { status: 204, statusText: 'No Content' });
       await gravacao;
 
-      expect(store.motivoDaReleituraDaClassificacao()).toBe('desconhecida');
+      expect(store.classificacao.motivoDaReleitura()).toBe('desconhecida');
     });
 
     it('a gravação recusada também descarta a releitura em curso', async () => {
@@ -1316,12 +1318,12 @@ describe('EliminacaoStepComponent', () => {
       leituraAntiga.flush(detalheCom('Resolução antiga', 1));
 
       await expect(antiga).resolves.toBe(false);
-      expect(store.classificacaoGravada()).toEqual({ estado: 'nunca-gravada' });
+      expect(store.classificacao.gravada()).toEqual({ estado: 'nunca-gravada' });
     });
 
     it('a gravação que lança também descarta a releitura em curso, e relê depois dela', async () => {
       prepararClassificacaoLocal();
-      store.marcarClassificacaoDesconhecida();
+      store.classificacao.marcarDesconhecida();
       const antiga = TestBed.inject(ReleituraDoSnapshot).reler();
       const leituraAntiga = controller.expectOne(ROTA_DETALHE);
       vi.spyOn(TestBed.inject(CadastroInicialService), 'definirClassificacao').mockRejectedValue(
@@ -1336,7 +1338,7 @@ describe('EliminacaoStepComponent', () => {
 
       await expect(gravacao).rejects.toThrow('falha fora do envelope');
       await expect(antiga).resolves.toBe(false);
-      expect(store.copiaCongeladaEmVigor()?.resolucao).toBe(RESOLUCAO);
+      expect(store.classificacao.copiaCongeladaEmVigor()?.resolucao).toBe(RESOLUCAO);
     });
 
     it('a releitura que começou antes da gravação não decide sobre o que a gravação copiou', async () => {
@@ -1357,7 +1359,7 @@ describe('EliminacaoStepComponent', () => {
       leituraAntiga.flush(detalheCom('Resolução antiga', 1));
 
       await expect(antiga).resolves.toBe(false);
-      expect(store.classificacaoGravada()).toEqual({ estado: 'desconhecida' });
+      expect(store.classificacao.gravada()).toEqual({ estado: 'desconhecida' });
     });
 
     it('sem resolução antes e depois da gravação, não relê o detalhe', async () => {
@@ -1372,12 +1374,12 @@ describe('EliminacaoStepComponent', () => {
       expect(controller.match(ROTA_DETALHE)).toHaveLength(0);
       await expect(gravacao).resolves.toEqual({ valid: true });
       // O servidor tem agora uma classificação sem quadro, e o desempate é conferido contra ela.
-      expect(store.classificacaoGravada()).toEqual({ estado: 'sem-quadro' });
+      expect(store.classificacao.gravada()).toEqual({ estado: 'sem-quadro' });
     });
 
     it('gravada com sucesso sem resolução, a classificação fica sem quadro, mesmo se antes era desconhecida', async () => {
       prepararClassificacaoLocal();
-      store.marcarClassificacaoDesconhecida();
+      store.classificacao.marcarDesconhecida();
 
       const gravacao = componente.persistir();
       controller
@@ -1388,7 +1390,7 @@ describe('EliminacaoStepComponent', () => {
       // A gravação conclusiva já prova o que o servidor tem: não há o que reler.
       expect(controller.match(ROTA_DETALHE)).toHaveLength(0);
       await expect(gravacao).resolves.toEqual({ valid: true });
-      expect(store.classificacaoGravada()).toEqual({ estado: 'sem-quadro' });
+      expect(store.classificacao.gravada()).toEqual({ estado: 'sem-quadro' });
     });
 
     it('marca o quadro congelado como desatualizado quando a releitura falha', async () => {
@@ -1408,7 +1410,7 @@ describe('EliminacaoStepComponent', () => {
         .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
 
       await expect(gravacao).resolves.toEqual({ valid: true });
-      expect(store.motivoDaReleituraDaClassificacao()).toBe('desconhecida');
+      expect(store.classificacao.motivoDaReleitura()).toBe('desconhecida');
     });
 
     it('não grava a classificação baseada em ENEM sem a resolução, e aponta o passo Fórmula', async () => {
@@ -1475,7 +1477,7 @@ describe('EliminacaoStepComponent', () => {
         ]);
         emVoo.flush([linhaDoCadastro(2)]);
 
-        expect(store.leituraDoCadastroNaRecusaPeloDesempate()).toBe(2);
+        expect(store.classificacao.leituraDoCadastroNaRecusaPeloDesempate()).toBe(2);
         expect(catalogos.pesosLidosNaLeitura()).toBe(2);
       });
 
@@ -1486,19 +1488,19 @@ describe('EliminacaoStepComponent', () => {
 
         expect(resultado.messages).toEqual([TEXTO_FORA_DO_QUADRO]);
         // Guardada à parte da recusa da resolução, e mostrada sob o mesmo campo.
-        expect(store.recusaPeloDesempatePorArea()).toBe(TEXTO_FORA_DO_QUADRO);
-        expect(store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+        expect(store.classificacao.recusaPeloDesempatePorArea()).toBe(TEXTO_FORA_DO_QUADRO);
+        expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
       });
 
       it('a resposta nova pelo desempate substitui a recusa antiga da resolução', async () => {
-        store.recusaDaResolucaoPesoAreaEnem.set('Recusa antiga da resolução.');
+        store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa antiga da resolução.');
 
         await recusar(FORA_DO_QUADRO, [
           { field: 'resolucaoPesoAreaEnem', code: FORA_DO_QUADRO, message: 'Critério 1.' },
         ]);
 
-        expect(store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
-        expect(store.recusaPeloDesempatePorArea()).toBe(TEXTO_FORA_DO_QUADRO);
+        expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+        expect(store.classificacao.recusaPeloDesempatePorArea()).toBe(TEXTO_FORA_DO_QUADRO);
       });
 
       it('sem quadro no campo da resolução, orienta a escolher a resolução', async () => {
@@ -1515,7 +1517,7 @@ describe('EliminacaoStepComponent', () => {
         ]);
 
         expect(resultado.messages).toEqual([TEXTO_SEM_QUADRO]);
-        expect(store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+        expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
       });
 
       it('sem campo, explica pelo código da raiz', async () => {
@@ -1574,7 +1576,7 @@ describe('EliminacaoStepComponent', () => {
       expect(resultado.messages).toEqual([
         `Resolução de Peso por Área, no passo Fórmula: ${esperada}`,
       ]);
-      expect(store.recusaDaResolucaoPesoAreaEnem()).toBe(esperada);
+      expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe(esperada);
     });
 
     it('a recusa da escala da nota final vai ao campo do passo Fórmula, e a gravação certa a apaga', async () => {
@@ -1608,7 +1610,7 @@ describe('EliminacaoStepComponent', () => {
       const resultado = await recusada;
       const esperada = 'A escala deve ser maior que zero.';
       expect(resultado.messages).toEqual([`Escala da nota final, no passo Fórmula: ${esperada}`]);
-      expect(store.recusaDaEscalaDaNotaFinal()).toBe(esperada);
+      expect(store.classificacao.recusaDaEscalaDaNotaFinal()).toBe(esperada);
 
       store.patchObjectSection('classificacao', { escalaNotaFinal: '100' });
       const aceita = componente.persistir();
@@ -1616,12 +1618,12 @@ describe('EliminacaoStepComponent', () => {
         .expectOne(ROTA_CLASSIFICACAO)
         .flush(null, { status: 204, statusText: 'No Content' });
       await aceita;
-      expect(store.recusaDaEscalaDaNotaFinal()).toBeNull();
+      expect(store.classificacao.recusaDaEscalaDaNotaFinal()).toBeNull();
     });
 
     it('uma recusa que não traz erro da escala mantém a recusa guardada dela', async () => {
       prepararClassificacaoLocal();
-      store.recusaDaEscalaDaNotaFinal.set('Recusa anterior da escala.');
+      store.classificacao.recusaDaEscalaDaNotaFinal.set('Recusa anterior da escala.');
 
       const gravacao = componente.persistir();
       controller.expectOne(ROTA_CLASSIFICACAO).flush(
@@ -1647,7 +1649,7 @@ describe('EliminacaoStepComponent', () => {
       );
 
       const resultado = await gravacao;
-      expect(store.recusaDaEscalaDaNotaFinal()).toBe('Recusa anterior da escala.');
+      expect(store.classificacao.recusaDaEscalaDaNotaFinal()).toBe('Recusa anterior da escala.');
       expect(resultado.messages).toEqual(['Campos inválidos.']);
     });
 
@@ -1686,7 +1688,7 @@ describe('EliminacaoStepComponent', () => {
 
     it('uma recusa que não traz erro da resolução mantém a recusa guardada dela', async () => {
       prepararClassificacaoLocal();
-      store.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
+      store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
 
       const gravacao = componente.persistir();
       controller.expectOne(ROTA_CLASSIFICACAO).flush(
@@ -1712,7 +1714,7 @@ describe('EliminacaoStepComponent', () => {
       );
 
       const resultado = await gravacao;
-      expect(store.recusaDaResolucaoPesoAreaEnem()).toBe('Recusa anterior.');
+      expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe('Recusa anterior.');
       expect(resultado.messages).toEqual(['Campos inválidos.']);
     });
 
@@ -1771,10 +1773,10 @@ describe('EliminacaoStepComponent', () => {
       await aguardarReleitura();
 
       // O servidor pode ter gravado a classificação sem quadro, ou não ter gravado nada.
-      expect(store.classificacaoGravada()).toEqual({ estado: 'desconhecida' });
+      expect(store.classificacao.gravada()).toEqual({ estado: 'desconhecida' });
       controller.expectOne(ROTA_DETALHE).flush({ id: PROCESSO_ID, classificacao: null });
       await gravacao;
-      expect(store.classificacaoGravada()).toEqual({ estado: 'nunca-gravada' });
+      expect(store.classificacao.gravada()).toEqual({ estado: 'nunca-gravada' });
     });
 
     it('falha inconclusiva: o servidor pode ter gravado, e o quadro fica desconhecido se a releitura também falha', async () => {
@@ -1794,7 +1796,7 @@ describe('EliminacaoStepComponent', () => {
         .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
 
       expect((await gravacao).valid).toBe(false);
-      expect(store.motivoDaReleituraDaClassificacao()).toBe('desconhecida');
+      expect(store.classificacao.motivoDaReleitura()).toBe('desconhecida');
     });
 
     it('usa um texto genérico para a recusa de código que a tela não conhece', async () => {
@@ -1824,14 +1826,14 @@ describe('EliminacaoStepComponent', () => {
       );
 
       await gravacao;
-      expect(store.recusaDaResolucaoPesoAreaEnem()).toBe(
+      expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe(
         'O servidor recusou a resolução de Peso por Área escolhida. Confira o cadastro de Peso por Área ou escolha outra.',
       );
     });
 
     it('mantém a recusa guardada quando a falha seguinte não julgou a resolução', async () => {
       prepararClassificacaoLocal();
-      store.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
+      store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
 
       const gravacao = componente.persistir();
       controller
@@ -1842,7 +1844,7 @@ describe('EliminacaoStepComponent', () => {
 
       const resultado = await gravacao;
       expect(resultado.valid).toBe(false);
-      expect(store.recusaDaResolucaoPesoAreaEnem()).toBe('Recusa anterior.');
+      expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe('Recusa anterior.');
     });
 
     it('não grava a resolução que o cadastro lido já não tem', async () => {
@@ -1876,7 +1878,7 @@ describe('EliminacaoStepComponent', () => {
 
     it('limpa a recusa guardada quando a gravação seguinte dá certo', async () => {
       prepararClassificacaoLocal();
-      store.recusaDaResolucaoPesoAreaEnem.set('Recusa antiga.');
+      store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa antiga.');
 
       const gravacao = componente.persistir();
       controller
@@ -1884,7 +1886,7 @@ describe('EliminacaoStepComponent', () => {
         .flush(null, { status: 204, statusText: 'No Content' });
 
       await expect(gravacao).resolves.toEqual({ valid: true });
-      expect(store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+      expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
     });
 
     it('preserva o rascunho quando a API recusa', async () => {
@@ -1960,7 +1962,7 @@ describe('EliminacaoStepComponent', () => {
 
     it('lista os critérios de desempate que a classificação grava junto', () => {
       prepararClassificacaoLocal();
-      store.desempatePendenteDeGravacao.set(true);
+      store.classificacao.desempatePendenteDeGravacao.set(true);
       store.patchSection('desempate', [MAIOR_IDADE]);
 
       const confirmacao = componente.confirmacaoDeGravacao();
@@ -2051,7 +2053,7 @@ describe('EliminacaoStepComponent', () => {
         valid: false,
         messages: ['Edições do ENEM, no passo Fórmula: A edição informada não é aceita.'],
       });
-      expect(store.recusaDasEdicoesDoEnem()).toBe('A edição informada não é aceita.');
+      expect(store.classificacao.recusaDasEdicoesDoEnem()).toBe('A edição informada não é aceita.');
     });
 
     it('não grava edições no processo que só importa o resultado', async () => {

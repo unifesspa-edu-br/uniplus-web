@@ -309,8 +309,8 @@ export class RevisaoStepComponent {
 
     // Os outros passos leem da conferência o que lhes cabe; ao sair da Revisão a conferência
     // deixa de valer para eles.
-    effect(() => this.store.pendenciasDaConferencia.set(this.codigosPendentes()));
-    inject(DestroyRef).onDestroy(() => this.store.pendenciasDaConferencia.set([]));
+    effect(() => this.store.classificacao.pendenciasDaConferencia.set(this.codigosPendentes()));
+    inject(DestroyRef).onDestroy(() => this.store.classificacao.pendenciasDaConferencia.set([]));
 
     // Processo publicado: o ato que vale é o do servidor, lido uma vez ao entrar
     // no passo. Uma falha fica visível com "Tentar novamente", em vez de o formulário vazio.

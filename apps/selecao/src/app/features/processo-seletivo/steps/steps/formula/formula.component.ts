@@ -73,22 +73,20 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 /**
  * Fórmula, precisão e ordem de alocação da classificação (UNI-REQ-0482).
  *
- * Coleta até `regrasEliminacao`, que é do passo Eliminação — que também é
- * quem grava o corpo inteiro em `PUT …/classificacao`. Este passo não tem
- * `persistir()` próprio: gravar duas vezes enviaria `regrasEliminacao` vazio
- * na primeira e derrubaria o item de conformidade que a Eliminação acabou de
- * levantar.
+ * Coleta até `regrasEliminacao`, que é do passo Eliminação, quem grava o corpo inteiro em
+ * `PUT …/classificacao`. Este passo não tem `persistir()`: gravar duas vezes enviaria
+ * `regrasEliminacao` vazio na primeira e derrubaria o item de conformidade que a Eliminação
+ * acabou de levantar.
  *
- * A classificação é bimodal (INV-B8): sob `CLASSIFICACAO-IMPORTADA`, precisão
- * e eliminação não se aplicam, e a seção de precisão desaparece — não fica
- * desabilitada, some, porque o que o operador vê tem de bater com o que será
- * enviado (`null` nos dois campos).
+ * A classificação é bimodal (INV-B8): sob `CLASSIFICACAO-IMPORTADA`, precisão e eliminação não se
+ * aplicam e a seção some em vez de ficar desabilitada, porque o que o operador vê tem de bater
+ * com o que será enviado (`null` nos dois campos).
  *
  * A resolução de Peso por Área segue a mesma regra: aparece só quando a classificação a exige
- * (baseada em ENEM, com a média ponderada local), junto com um quadro de pesos só leitura. Se a
- * resolução do rascunho é a que o processo já gravou, o quadro é a cópia congelada no processo —
+ * (baseada em ENEM, com a média ponderada local), com um quadro de pesos só leitura. Se a
+ * resolução do rascunho é a que o processo já gravou, o quadro é a cópia congelada no processo, e
  * o Seleção não lê o cadastro vivo para mostrar o que já congelou. Senão, é a prévia do cadastro
- * da Configuração: o que a Eliminação copia para o processo ao gravar a classificação.
+ * da Configuração: o que a Eliminação copia ao gravar a classificação.
  */
 @Component({
   selector: 'sel-step-formula',
@@ -109,7 +107,6 @@ export class FormulaStepComponent {
 
   readonly relendoProcesso = signal(false);
 
-  /** Campos inválidos detectados na última validação (chave → `.is-invalid`). */
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
 
   readonly idDoCampoResolucao = ID_DO_CAMPO_RESOLUCAO;
@@ -194,12 +191,14 @@ export class FormulaStepComponent {
     return [{ valor: escolhida, rotulo }, ...opcoes];
   });
 
-  private readonly quadroGravado = computed(() => this.store.copiaCongeladaEmVigor()?.grupos ?? []);
+  private readonly quadroGravado = computed(
+    () => this.store.classificacao.copiaCongeladaEmVigor()?.grupos ?? [],
+  );
 
   private readonly quadroVigente = computed(() =>
     quadroVigente(
       this.resolucaoEscolhida(),
-      this.store.copiaCongeladaEmVigor(),
+      this.store.classificacao.copiaCongeladaEmVigor(),
       this.cadastroDePesos.quadroDaResolucaoEscolhida(),
     ),
   );
@@ -208,7 +207,7 @@ export class FormulaStepComponent {
 
   /** O aviso de que o quadro à vista é a prévia, porque só uma releitura diz o que ficou congelado. */
   readonly avisoDeQuadroPorReler = computed(() => {
-    const motivo = this.store.motivoDaReleituraDaClassificacao();
+    const motivo = this.store.classificacao.motivoDaReleitura();
     return this.exigeResolucao() && motivo !== null
       ? `${MOTIVO_DA_RELEITURA[motivo]}. Enquanto isso, o quadro abaixo é a prévia do cadastro.`
       : null;
@@ -228,7 +227,6 @@ export class FormulaStepComponent {
     colunasDoQuadro(this.quadro(), ordemDasAreas(this.catalogos.areasEnem())),
   );
 
-  /** Com uma base legal só, ela vai uma vez acima do quadro, e não repetida em cada linha. */
   readonly baseLegalDoQuadro = computed(() => baseLegalComum(this.quadro()));
 
   /**
@@ -272,7 +270,10 @@ export class FormulaStepComponent {
       : null;
     return pendencia !== null
       ? TEXTO_DA_PENDENCIA_DA_RESOLUCAO[pendencia].campo
-      : [this.store.recusaDaResolucaoPesoAreaEnem(), this.store.recusaPeloDesempatePorArea()]
+      : [
+          this.store.classificacao.recusaDaResolucaoPesoAreaEnem(),
+          this.store.classificacao.recusaPeloDesempatePorArea(),
+        ]
           .filter((recusa) => recusa !== null)
           .join(' ') || null;
   });
@@ -287,10 +288,10 @@ export class FormulaStepComponent {
     if (this.invalidFields().has('escalaNotaFinal') && escalaDaNotaFinalIlegivel(texto)) {
       return FORMATO_DA_ESCALA_DA_NOTA_FINAL;
     }
-    if (this.store.recusaDaEscalaDaNotaFinal() !== null) {
-      return this.store.recusaDaEscalaDaNotaFinal();
+    if (this.store.classificacao.recusaDaEscalaDaNotaFinal() !== null) {
+      return this.store.classificacao.recusaDaEscalaDaNotaFinal();
     }
-    return this.store.escalaDaNotaFinalPendente() && texto.trim() === ''
+    return this.store.classificacao.escalaDaNotaFinalPendente() && texto.trim() === ''
       ? 'Declare a escala da nota final para publicar o processo.'
       : null;
   });
@@ -344,7 +345,6 @@ export class FormulaStepComponent {
     );
   });
 
-  /** A classificação como se lê em consulta, com o rótulo de cada escolha. */
   readonly leitura = computed(() => {
     const classificacao = this.store.draft().classificacao;
     return {
@@ -388,7 +388,7 @@ export class FormulaStepComponent {
       // escolha que o ramo atual não usa.
       ...(local ? {} : { regraArredondamentoCodigo: '', regraArredondamentoVersao: '' }),
     });
-    if (!local) this.store.recusaDaEscalaDaNotaFinal.set(null);
+    if (!local) this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
     this.descartarRecusaQueNaoSeAplica();
   }
 
@@ -407,7 +407,7 @@ export class FormulaStepComponent {
   alterarEscalaNotaFinal(valor: string): void {
     this.store.patchObjectSection('classificacao', { escalaNotaFinal: valor });
     // A recusa julgou o valor de antes; o novo ainda não foi ao servidor.
-    this.store.recusaDaEscalaDaNotaFinal.set(null);
+    this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
   }
 
   escolherRegraOrdemAlocacao(valor: string): void {
@@ -429,14 +429,14 @@ export class FormulaStepComponent {
     });
     this.anoDaNovaEdicao.set('');
     this.recusaDoAno.set(null);
-    this.store.recusaDasEdicoesDoEnem.set(null);
+    this.store.classificacao.recusaDasEdicoesDoEnem.set(null);
   }
 
   removerEdicao(ano: string): void {
     this.store.patchObjectSection('classificacao', {
       edicoesEnem: this.edicoes().filter((e) => e !== ano),
     });
-    this.store.recusaDasEdicoesDoEnem.set(null);
+    this.store.classificacao.recusaDasEdicoesDoEnem.set(null);
     afterNextRender(() => document.getElementById(ID_DO_CAMPO_EDICAO)?.focus(), {
       injector: this.injector,
     });
@@ -465,7 +465,7 @@ export class FormulaStepComponent {
    */
   private descartarRecusaQueNaoSeAplica(): void {
     if (exigeResolucaoPesoAreaEnem(this.store.draft().classificacao)) return;
-    this.store.descartarRecusasDaClassificacao();
+    this.store.classificacao.descartarRecusas();
   }
 
   aoEscolherResolucao(evento: Event): void {
@@ -476,7 +476,7 @@ export class FormulaStepComponent {
     if (!this.store.aceitaEdicao() || valor === this.resolucaoEscolhida()) return;
     this.store.patchObjectSection('classificacao', { resolucaoPesoAreaEnem: valor });
     // A recusa era sobre a escolha anterior; a nova ainda não foi julgada pelo servidor.
-    this.store.descartarRecusasDaClassificacao();
+    this.store.classificacao.descartarRecusas();
   }
 
   /**
@@ -508,7 +508,7 @@ export class FormulaStepComponent {
    */
   async relerProcesso(): Promise<void> {
     const decidiu = await relerProcessoAPedido(this.releitura, this.relendoProcesso);
-    if (decidiu && !this.store.classificacaoPorReler()) {
+    if (decidiu && !this.store.classificacao.porReler()) {
       this.focarQuemSobrou(ID_DO_TITULO_DA_SECAO);
     }
   }

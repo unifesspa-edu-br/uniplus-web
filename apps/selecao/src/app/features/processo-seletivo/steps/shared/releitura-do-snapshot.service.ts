@@ -61,7 +61,7 @@ export class ReleituraDoSnapshot {
     } finally {
       if (
         geracao === this.store.geracao() &&
-        this.store.gravadoPorReler() &&
+        this.store.classificacao.gravadoPorReler() &&
         !this.store.travamentoDeOrquestracao()
       ) {
         await this.reler();

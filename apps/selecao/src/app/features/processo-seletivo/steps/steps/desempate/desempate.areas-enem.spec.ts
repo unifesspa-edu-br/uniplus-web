@@ -188,7 +188,7 @@ function classificacaoGravada(
   return (store: ProcessoSeletivoStore) => {
     const classificacao = { resolucaoPesoAreaEnem: resolucao, quadroPesoAreaEnem: quadro };
     store.remoteSnapshot.set({ status, classificacao } as unknown as ProcessoSeletivoDto);
-    store.registrarClassificacaoLida(
+    store.classificacao.registrarLida(
       classificacao as unknown as ProcessoSeletivoDto['classificacao'],
     );
   };
@@ -447,7 +447,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
             store.processoSeletivoId.set(PROCESSO_ID);
             store.patchSection('desempate', [criterio(['REDACAO'])]);
             classificacaoGravada(RESOLUCAO, QUADRO_CONGELADO)(store);
-            store.marcarClassificacaoDesconhecida();
+            store.classificacao.marcarDesconhecida();
           },
         });
         return m;
@@ -524,7 +524,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
           antesDeMontar: (store) => {
             store.processoSeletivoId.set(PROCESSO_ID);
             store.patchSection('desempate', [criterio(['REDACAO'])]);
-            store.registrarClassificacaoGravadaComQuadro(RESOLUCAO, []);
+            store.classificacao.registrarGravadaComQuadro(RESOLUCAO, []);
           },
         });
       }
@@ -608,7 +608,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
   describe('depois de gravada nesta sessão uma classificação sem ENEM', () => {
     it('com o rascunho já pelo ENEM, oferece as áreas do cadastro, que a próxima gravação copia', async () => {
       const m = await montar({
-        antesDeMontar: (store) => store.registrarClassificacaoGravadaSemQuadro(),
+        antesDeMontar: (store) => store.classificacao.registrarGravadaSemQuadro(),
       });
       criterioPorArea(m);
 
@@ -682,7 +682,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         'Não foi possível carregar o cadastro de Peso por Área',
       );
 
-      m.store.recusaDaResolucaoPesoAreaEnem.set('Recusa do cadastro anterior.');
+      m.store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa do cadastro anterior.');
       const tentar = botao(m, 'desemp-areas-tentar');
       tentar.focus();
       tentar.click();
@@ -692,7 +692,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
 
       expect(opcoesDoSeletor(m, 0)).toEqual(['Redação', 'Matemática']);
       expect(document.activeElement?.id).toBe('desemp-area-nova-0');
-      expect(m.store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+      expect(m.store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
     });
 
     it('"Tentar novamente" mantém o alerta, com o botão focado, enquanto a nova leitura corre e se ela falhar de novo', async () => {
@@ -823,7 +823,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       );
       await expect(m.componente.persistir()).resolves.toEqual({ valid: true });
       m.controller.expectNone((r) => r.url.endsWith(ROTA_DESEMPATE));
-      expect(m.store.desempatePendenteDeGravacao()).toBe(true);
+      expect(m.store.classificacao.desempatePendenteDeGravacao()).toBe(true);
 
       comQuadroGravado(m);
       const gravacao = m.componente.gravarPendente();
@@ -831,8 +831,8 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         .expectOne((r) => r.url.endsWith(ROTA_DESEMPATE))
         .flush(null, { status: 204, statusText: 'No Content' });
       await expect(gravacao).resolves.toEqual({ valid: true });
-      expect(m.store.desempatePendenteDeGravacao()).toBe(false);
-      expect(m.store.criteriosDesempateGravados()?.[0].areas).toEqual(['REDACAO']);
+      expect(m.store.classificacao.desempatePendenteDeGravacao()).toBe(false);
+      expect(m.store.classificacao.criteriosDesempateGravados()?.[0].areas).toEqual(['REDACAO']);
     });
 
     it('sem critério pendente, gravar o pendente não vai à rede', async () => {
@@ -860,7 +860,10 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       expect(JSON.stringify(pedido.request.body)).toContain('"areas":["MATEMATICA","REDACAO"]');
       pedido.flush(null, { status: 204, statusText: 'No Content' });
       await expect(gravacao).resolves.toEqual({ valid: true });
-      expect(m.store.criteriosDesempateGravados()?.[0].areas).toEqual(['MATEMATICA', 'REDACAO']);
+      expect(m.store.classificacao.criteriosDesempateGravados()?.[0].areas).toEqual([
+        'MATEMATICA',
+        'REDACAO',
+      ]);
     });
 
     it('percorrer o seletor pelo teclado não acrescenta nada: só o botão acrescenta', async () => {
@@ -1242,7 +1245,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       const m = await montar({ antesDeMontar: classificacaoGravada(RESOLUCAO, []) });
       criterioPorArea(m);
 
-      expect(m.store.classificacaoGravada()).toEqual({ estado: 'sem-quadro' });
+      expect(m.store.classificacao.gravada()).toEqual({ estado: 'sem-quadro' });
       expect(opcoesDoSeletor(m, 0)).toEqual(['Redação', 'Matemática']);
     });
 
@@ -1341,7 +1344,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
       await new Promise((resolve) => setTimeout(resolve));
 
-      expect(m.store.criteriosDesempateGravados()).toBeNull();
+      expect(m.store.classificacao.criteriosDesempateGravados()).toBeNull();
       m.controller
         .expectOne((r) => r.url.endsWith(ROTA_DETALHE))
         .flush({
@@ -1357,7 +1360,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         });
       await gravacao;
 
-      expect(m.store.criteriosDesempateGravados()).toEqual([criterio(['REDACAO'])]);
+      expect(m.store.classificacao.criteriosDesempateGravados()).toEqual([criterio(['REDACAO'])]);
     });
 
     it('explica a área fora do quadro que o servidor recusa, com o critério e a área', async () => {
@@ -1415,14 +1418,14 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       leituraAntiga.flush({ id: PROCESSO_ID, classificacao: null, criteriosDesempate: [] });
       await antiga;
 
-      expect(m.store.criteriosDesempateGravados()?.[0].areas).toEqual(['REDACAO']);
+      expect(m.store.classificacao.criteriosDesempateGravados()?.[0].areas).toEqual(['REDACAO']);
     });
 
     it('com a classificação desconhecida, relê o processo depois de gravar, já que descartou a releitura em curso', async () => {
       const m = await montar({
         antesDeMontar: (store) => {
           store.processoSeletivoId.set(PROCESSO_ID);
-          store.marcarClassificacaoDesconhecida();
+          store.classificacao.marcarDesconhecida();
         },
       });
       m.store.patchSection('desempate', [
@@ -1439,7 +1442,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         .expectOne((r) => r.url.endsWith(`/api/selecao/processos-seletivos/${PROCESSO_ID}`))
         .flush({ id: PROCESSO_ID, classificacao: null, criteriosDesempate: [] });
       await expect(gravacao).resolves.toEqual({ valid: true });
-      expect(m.store.motivoDaReleituraDaClassificacao()).not.toBe('desconhecida');
+      expect(m.store.classificacao.motivoDaReleitura()).not.toBe('desconhecida');
     });
 
     it('explica as recusas do servidor às áreas de um critério, nomeando o critério e a área', async () => {

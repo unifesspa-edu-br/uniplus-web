@@ -205,7 +205,7 @@ export class DesempateStepComponent {
    */
   private acompanharListaCanonicaDasAreas(): void {
     effect(() => {
-      this.store.versaoDaClassificacaoLida();
+      this.store.classificacao.versaoLida();
       this.catalogos.pesosLidosNaLeitura();
       if (this.temCriterioPorArea()) untracked(() => this.catalogos.garantirAreasEnem());
     });
@@ -276,7 +276,7 @@ export class DesempateStepComponent {
   readonly situacaoDoQuadro = computed(() =>
     situacaoDoQuadro(
       this.classificacao(),
-      this.store.classificacaoGravada(),
+      this.store.classificacao.gravada(),
       this.cadastroDePesos.leitura(),
     ),
   );
@@ -336,7 +336,7 @@ export class DesempateStepComponent {
    * recusa enquanto o processo não tem o quadro congelado.
    */
   private readonly adiaAGravacao = computed(
-    () => this.temCriterioPorArea() && this.store.copiaCongeladaEmVigor() === null,
+    () => this.temCriterioPorArea() && this.store.classificacao.copiaCongeladaEmVigor() === null,
   );
 
   /** A nota de que os critérios serão gravados junto com a classificação. */
@@ -899,7 +899,7 @@ export class DesempateStepComponent {
     const conferencia = this.validate();
     if (!conferencia.valid) return conferencia;
     if (this.store.processoSeletivoId() !== null && this.adiaAGravacao()) {
-      this.store.desempatePendenteDeGravacao.set(true);
+      this.store.classificacao.desempatePendenteDeGravacao.set(true);
       return { valid: true };
     }
     return this.gravar();
@@ -907,7 +907,7 @@ export class DesempateStepComponent {
 
   /** Grava os critérios que ficaram para depois da classificação, se ficaram. */
   async gravarPendente(): Promise<StepValidation> {
-    if (!this.store.desempatePendenteDeGravacao()) return { valid: true };
+    if (!this.store.classificacao.desempatePendenteDeGravacao()) return { valid: true };
     const conferencia = this.validate();
     return conferencia.valid ? this.gravar() : conferencia;
   }
@@ -934,11 +934,11 @@ export class DesempateStepComponent {
         );
         if (geracao !== this.store.geracao()) return resposta;
         if (resposta.ok) {
-          this.store.criteriosDesempateGravados.set(criterios);
-          this.store.desempatePendenteDeGravacao.set(false);
+          this.store.classificacao.criteriosDesempateGravados.set(criterios);
+          this.store.classificacao.desempatePendenteDeGravacao.set(false);
         } else if (resposta.inconclusiva) {
           // O servidor pode ter gravado: o que ele tem deixa de ser sabido até a releitura.
-          this.store.criteriosDesempateGravados.set(null);
+          this.store.classificacao.criteriosDesempateGravados.set(null);
         }
         return resposta;
       });

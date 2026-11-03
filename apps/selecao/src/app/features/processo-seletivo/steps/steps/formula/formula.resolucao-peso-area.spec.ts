@@ -220,7 +220,7 @@ function processoGravadoCom(
     rascunhoComResolucao(resolucao)(store);
     const classificacao = { resolucaoPesoAreaEnem: resolucao, quadroPesoAreaEnem: quadro };
     store.remoteSnapshot.set({ status, classificacao } as unknown as ProcessoSeletivoDto);
-    store.registrarClassificacaoLida(
+    store.classificacao.registrarLida(
       classificacao as unknown as ProcessoSeletivoDto['classificacao'],
     );
   };
@@ -325,18 +325,18 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
     it('tirar a regra de cálculo guarda a resolução no rascunho e descarta a recusa', async () => {
       const m = await montar({ antesDeMontar: rascunhoComResolucao(RESOLUCAO) });
       responderPesos(m);
-      m.store.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
+      m.store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
 
       m.componente.escolherRegraCalculo('|');
 
       expect(m.store.draft().classificacao.resolucaoPesoAreaEnem).toBe(RESOLUCAO);
-      expect(m.store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+      expect(m.store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
     });
 
     it('trocar para a nota importada e voltar devolve a escolha, sem a recusa', async () => {
       const m = await montar({ antesDeMontar: rascunhoComResolucao(RESOLUCAO) });
       responderPesos(m);
-      m.store.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
+      m.store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
 
       m.componente.escolherRegraCalculo('CLASSIFICACAO-IMPORTADA|1.0');
       m.fixture.detectChanges();
@@ -344,7 +344,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       m.fixture.detectChanges();
 
       expect(m.store.draft().classificacao.resolucaoPesoAreaEnem).toBe(RESOLUCAO);
-      expect(m.store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+      expect(m.store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
       expect(seletor(m).value).toBe(RESOLUCAO);
     });
   });
@@ -540,11 +540,11 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
     it('"Reler o processo" relê o detalhe ali mesmo e, quando o aviso sai, foca o título', async () => {
       const m = await montar({ antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO) });
       responderPesos(m);
-      const gravada = m.store.classificacaoGravada();
-      m.store.marcarClassificacaoDesconhecida();
+      const gravada = m.store.classificacao.gravada();
+      m.store.classificacao.marcarDesconhecida();
       m.fixture.detectChanges();
       releitura.reler.mockImplementation(async () => {
-        m.store.classificacaoGravada.set(gravada);
+        m.store.classificacao.gravada.set(gravada);
         return true;
       });
 
@@ -564,11 +564,11 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
     it('"Reler o processo" superado por outra leitura não mexe no foco', async () => {
       const m = await montar({ antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO) });
       responderPesos(m);
-      const gravada = m.store.classificacaoGravada();
-      m.store.marcarClassificacaoDesconhecida();
+      const gravada = m.store.classificacao.gravada();
+      m.store.classificacao.marcarDesconhecida();
       m.fixture.detectChanges();
       releitura.reler.mockImplementation(async () => {
-        m.store.classificacaoGravada.set(gravada);
+        m.store.classificacao.gravada.set(gravada);
         return false;
       });
 
@@ -622,7 +622,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
     it('releitura falha depois de gravar: não mostra a cópia velha como congelada e avisa', async () => {
       const m = await montar({ antesDeMontar: processoGravadoCom(RESOLUCAO, QUADRO_CONGELADO) });
       responderPesos(m);
-      m.store.marcarClassificacaoDesconhecida();
+      m.store.classificacao.marcarDesconhecida();
       m.fixture.detectChanges();
 
       expect(texto(m.el.querySelector('caption'))).toContain('Prévia');
@@ -632,7 +632,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
     it('a cópia que a gravação presumiu não é dada como congelada: falta confirmá-la, e o aviso oferece reler', async () => {
       const m = await montar({ antesDeMontar: rascunhoComResolucao(RESOLUCAO) });
       responderPesos(m);
-      m.store.registrarClassificacaoGravadaComQuadro(RESOLUCAO, quadroCongelado(QUADRO_CONGELADO));
+      m.store.classificacao.registrarGravadaComQuadro(RESOLUCAO, quadroCongelado(QUADRO_CONGELADO));
       m.fixture.detectChanges();
 
       expect(texto(m.el.querySelector('caption'))).toContain('Prévia');
@@ -752,7 +752,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
 
       expect(m.componente.catalogos.pesosLidosNaMarca()).toBe(-1);
       responderPesos(m);
-      expect(m.componente.catalogos.pesosLidosNaMarca()).toBe(m.store.versaoDaClassificacaoLida());
+      expect(m.componente.catalogos.pesosLidosNaMarca()).toBe(m.store.classificacao.versaoLida());
     });
 
     it('um processo só para consulta, aberto depois de outro, não herda a lista do anterior', async () => {
@@ -806,7 +806,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
           store.remoteSnapshot.set({
             status: StatusProcesso.publicado,
           } as unknown as ProcessoSeletivoDto);
-          store.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
+          store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
         },
       });
       // Sem cópia congelada, o quadro à vista só pode vir do cadastro, mesmo só para consulta.
@@ -815,7 +815,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       m.componente.escolherResolucao(OUTRA_RESOLUCAO);
 
       expect(m.store.draft().classificacao.resolucaoPesoAreaEnem).toBe(RESOLUCAO);
-      expect(m.store.recusaDaResolucaoPesoAreaEnem()).toBe('Recusa anterior.');
+      expect(m.store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe('Recusa anterior.');
     });
   });
 
@@ -825,12 +825,12 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       marcarEnemComMediaPonderada(m);
       responderPesos(m);
       escolherNoSeletor(m, RESOLUCAO);
-      m.store.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
+      m.store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa anterior.');
 
       m.componente.alternarBaseadoEmEnem(false);
       m.fixture.detectChanges();
       expect(m.store.draft().classificacao.resolucaoPesoAreaEnem).toBe('');
-      expect(m.store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+      expect(m.store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
 
       m.componente.alternarBaseadoEmEnem(true);
       m.fixture.detectChanges();
@@ -877,16 +877,16 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       marcarEnemComMediaPonderada(m);
       responderPesos(m);
       escolherNoSeletor(m, RESOLUCAO);
-      m.store.recusaDaResolucaoPesoAreaEnem.set('Recusa do servidor.');
+      m.store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa do servidor.');
       m.fixture.detectChanges();
 
       expect(texto(m.el.querySelector('#f-resolucao-peso-area-erro'))).toBe('Recusa do servidor.');
 
       m.componente.escolherResolucao(RESOLUCAO);
-      expect(m.store.recusaDaResolucaoPesoAreaEnem()).toBe('Recusa do servidor.');
+      expect(m.store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBe('Recusa do servidor.');
 
       escolherNoSeletor(m, OUTRA_RESOLUCAO);
-      expect(m.store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+      expect(m.store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
       expect(m.el.querySelector('#f-resolucao-peso-area-erro')).toBeNull();
     });
 
@@ -895,8 +895,8 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       marcarEnemComMediaPonderada(m);
       responderPesos(m);
       escolherNoSeletor(m, RESOLUCAO);
-      m.store.recusaDaResolucaoPesoAreaEnem.set('Recusa da resolução.');
-      m.store.recusaPeloDesempatePorArea.set('Recusa pelo desempate.');
+      m.store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa da resolução.');
+      m.store.classificacao.recusaPeloDesempatePorArea.set('Recusa pelo desempate.');
       m.fixture.detectChanges();
 
       // As duas recusas vigentes, e não uma escondendo a outra.
@@ -905,7 +905,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       );
 
       escolherNoSeletor(m, OUTRA_RESOLUCAO);
-      expect(m.store.recusaPeloDesempatePorArea()).toBeNull();
+      expect(m.store.classificacao.recusaPeloDesempatePorArea()).toBeNull();
     });
   });
 
@@ -976,7 +976,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       botao(m, 'Atualizar lista')?.click();
       m.fixture.detectChanges();
       responderPesos(m);
-      m.componente.catalogos.recarregarPesosAreaEnem(m.store.versaoDaClassificacaoLida());
+      m.componente.catalogos.recarregarPesosAreaEnem(m.store.classificacao.versaoLida());
       m.fixture.detectChanges();
 
       const atualizar = botao(m, 'Atualizar lista');
@@ -1015,14 +1015,14 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       marcarEnemComMediaPonderada(m);
       responderPesos(m);
       escolherNoSeletor(m, RESOLUCAO);
-      m.store.recusaDaResolucaoPesoAreaEnem.set('A resolução estava incompleta.');
+      m.store.classificacao.recusaDaResolucaoPesoAreaEnem.set('A resolução estava incompleta.');
       m.fixture.detectChanges();
 
       botao(m, 'Atualizar lista')?.click();
       m.fixture.detectChanges();
       responderPesos(m);
 
-      expect(m.store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+      expect(m.store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
       expect(seletor(m).getAttribute('aria-invalid')).toBeNull();
     });
   });

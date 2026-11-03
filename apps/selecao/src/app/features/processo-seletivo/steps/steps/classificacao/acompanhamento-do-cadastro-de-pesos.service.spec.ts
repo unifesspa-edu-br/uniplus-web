@@ -99,7 +99,7 @@ describe('AcompanhamentoDoCadastroDePesos', () => {
       store.remoteSnapshot.set({
         status: StatusProcesso.publicado,
       } as unknown as ProcessoSeletivoDto);
-      store.registrarClassificacaoLida({
+      store.classificacao.registrarLida({
         resolucaoPesoAreaEnem: RESOLUCAO,
         quadroPesoAreaEnem: [
           { grupoAreaEnem: { codigo: 'G', rotulo: 'G' }, baseLegal: 'Anexo I', areas: [] },
@@ -134,7 +134,7 @@ describe('AcompanhamentoDoCadastroDePesos', () => {
       store.remoteSnapshot.set({
         status: StatusProcesso.publicado,
       } as unknown as ProcessoSeletivoDto);
-      store.registrarClassificacaoLida(CLASSIFICACAO_COM_COPIA);
+      store.classificacao.registrarLida(CLASSIFICACAO_COM_COPIA);
       TestBed.tick();
 
       emVoo.next(apiOk([linha('SAUDE', ['MATEMATICA'])], 200, new HttpHeaders()));
@@ -150,7 +150,7 @@ describe('AcompanhamentoDoCadastroDePesos', () => {
       TestBed.tick();
       listarPesos.mockReturnValueOnce(new Subject() as never);
 
-      store.registrarClassificacaoLida(CLASSIFICACAO_COM_COPIA);
+      store.classificacao.registrarLida(CLASSIFICACAO_COM_COPIA);
       TestBed.tick();
 
       expect(listarPesos).toHaveBeenCalledTimes(2);
@@ -187,15 +187,15 @@ describe('AcompanhamentoDoCadastroDePesos', () => {
   describe('relerCadastroAPedido', () => {
     it('tira a recusa da resolução, que julgou o cadastro de antes, e avisa quem pediu', () => {
       const { store, acompanhamento } = montar();
-      store.recusaDaResolucaoPesoAreaEnem.set('Recusa da resolução.');
-      store.recusaPeloDesempatePorArea.set('Recusa pelo desempate.');
+      store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa da resolução.');
+      store.classificacao.recusaPeloDesempatePorArea.set('Recusa pelo desempate.');
       const depoisDeLer = vi.fn();
 
       acompanhamento.relerCadastroAPedido(depoisDeLer);
 
-      expect(store.recusaDaResolucaoPesoAreaEnem()).toBeNull();
+      expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
       // A do desempate é de quem orquestra a reavaliação, não do cadastro.
-      expect(store.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
+      expect(store.classificacao.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
       expect(depoisDeLer).toHaveBeenCalledTimes(1);
     });
   });

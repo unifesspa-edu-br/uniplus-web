@@ -773,11 +773,11 @@ describe('RevisaoStepComponent', () => {
       await gravacao;
       TestBed.tick();
 
-      expect(store.escalaDaNotaFinalPendente()).toBe(true);
+      expect(store.classificacao.escalaDaNotaFinalPendente()).toBe(true);
 
       // Fora da Revisão a conferência não vale mais: o campo da Fórmula não pode seguir marcado.
       fixture.destroy();
-      expect(store.escalaDaNotaFinalPendente()).toBe(false);
+      expect(store.classificacao.escalaDaNotaFinalPendente()).toBe(false);
     });
 
     it('em 422 de conformidade legal, guarda as obrigatoriedades reprovadas', async () => {

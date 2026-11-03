@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CriterioDesempateConfigurado, WizardDraft } from '../../processo-seletivo.models';
-import { ProcessoSeletivoStore, type ClassificacaoGravada } from '../../processo-seletivo.store';
+import type { ClassificacaoGravada } from '../../classificacao-no-servidor';
+import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { GrupoDoQuadro } from '../../shared/quadro-de-pesos';
 import { REGRA_CALCULO_MEDIA_PONDERADA } from '../classificacao/classificacao-para-comando';
 import {
@@ -279,8 +280,8 @@ describe('reavaliarRecusaPeloDesempate', () => {
   function comRecusa(criterios: CriterioDesempateConfigurado[], leituraNaRecusa = 1) {
     const store = new ProcessoSeletivoStore();
     store.patchObjectSection('classificacao', classificacao(ESCOLHIDA));
-    store.criteriosDesempateGravados.set(criterios);
-    store.recusarPeloDesempate('Recusa pelo desempate.', leituraNaRecusa);
+    store.classificacao.criteriosDesempateGravados.set(criterios);
+    store.classificacao.recusarPeloDesempate('Recusa pelo desempate.', leituraNaRecusa);
     return store;
   }
 
@@ -289,7 +290,7 @@ describe('reavaliarRecusaPeloDesempate', () => {
 
     reavaliarRecusaPeloDesempate(store, lido(grupos('REDACAO'), 2));
 
-    expect(store.recusaPeloDesempatePorArea()).toBeNull();
+    expect(store.classificacao.recusaPeloDesempatePorArea()).toBeNull();
   });
 
   it('com o cadastro de antes da recusa, mantém a recusa: o servidor julgou pelo dele', () => {
@@ -297,7 +298,7 @@ describe('reavaliarRecusaPeloDesempate', () => {
 
     reavaliarRecusaPeloDesempate(store, lido(grupos('REDACAO'), 1));
 
-    expect(store.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
+    expect(store.classificacao.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
   });
 
   it('com o cadastro relido que ainda a provoca, mantém a recusa', () => {
@@ -305,7 +306,7 @@ describe('reavaliarRecusaPeloDesempate', () => {
 
     reavaliarRecusaPeloDesempate(store, lido(grupos('REDACAO'), 2));
 
-    expect(store.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
+    expect(store.classificacao.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
   });
 
   it('sem critério por área gravado, tira a recusa sem depender do cadastro', () => {
@@ -313,34 +314,34 @@ describe('reavaliarRecusaPeloDesempate', () => {
 
     reavaliarRecusaPeloDesempate(store, CARREGANDO);
 
-    expect(store.recusaPeloDesempatePorArea()).toBeNull();
+    expect(store.classificacao.recusaPeloDesempatePorArea()).toBeNull();
   });
 
   it('critérios regravados depois da recusa, com o mesmo cadastro, tiram a recusa que já não provocam', () => {
     const store = comRecusa([criterio(['LINGUAGENS'])]);
-    store.criteriosDesempateGravados.set([criterio(['REDACAO'])]);
+    store.classificacao.criteriosDesempateGravados.set([criterio(['REDACAO'])]);
 
     reavaliarRecusaPeloDesempate(store, lido(grupos('REDACAO'), 1));
 
-    expect(store.recusaPeloDesempatePorArea()).toBeNull();
+    expect(store.classificacao.recusaPeloDesempatePorArea()).toBeNull();
   });
 
   it('os mesmos critérios regravados com o mesmo cadastro deixam a recusa', () => {
     const store = comRecusa([criterio(['REDACAO'])]);
-    store.criteriosDesempateGravados.set([criterio(['REDACAO'])]);
+    store.classificacao.criteriosDesempateGravados.set([criterio(['REDACAO'])]);
 
     reavaliarRecusaPeloDesempate(store, lido(grupos('REDACAO'), 1));
 
-    expect(store.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
+    expect(store.classificacao.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
   });
 
   it('com os critérios gravados desconhecidos, mantém a recusa', () => {
     const store = comRecusa([criterio(['REDACAO'])]);
-    store.criteriosDesempateGravados.set(null);
+    store.classificacao.criteriosDesempateGravados.set(null);
 
     reavaliarRecusaPeloDesempate(store, lido(grupos('REDACAO'), 2));
 
-    expect(store.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
+    expect(store.classificacao.recusaPeloDesempatePorArea()).toBe('Recusa pelo desempate.');
   });
 });
 

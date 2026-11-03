@@ -204,7 +204,7 @@ export class EliminacaoStepComponent {
     if (!exigeResolucaoPesoAreaEnem(classificacao)) return 'sem-quadro';
     const cadastro = this.cadastroDePesos.leitura();
     if (cadastro.lido) return cadastro.quadroDaResolucaoEscolhida;
-    const gravada = this.store.classificacaoGravada();
+    const gravada = this.store.classificacao.gravada();
     return gravada.estado === 'com-quadro' &&
       gravada.resolucao === classificacao.resolucaoPesoAreaEnem
       ? gravada.grupos
@@ -252,7 +252,6 @@ export class EliminacaoStepComponent {
     );
   }
 
-  /** A regra como se lê em consulta, com o rótulo de cada escolha. */
   leituraDaRegra(regra: RegraEliminacaoConfigurada) {
     const etapa = this.etapasReferenciaveis().find((item) => item.id === regra.etapaRef);
     return {
@@ -422,7 +421,7 @@ export class EliminacaoStepComponent {
     const local = this.usaFormulaLocal();
     // O passo Desempate adia a gravação dos critérios por área até a classificação: é aqui que eles
     // saem, e quem confirma precisa ver quais são.
-    const criteriosAdiados = this.store.desempatePendenteDeGravacao()
+    const criteriosAdiados = this.store.classificacao.desempatePendenteDeGravacao()
       ? this.store.draft().desempate
       : [];
 
@@ -637,7 +636,7 @@ export class EliminacaoStepComponent {
   private readonly pendenciasDoDesempateGravado = computed<readonly PendenciaDoCriterioGravado[]>(
     () => {
       // Depois de uma gravação do desempate sem resposta conclusiva, só o servidor sabe o que tem.
-      const gravados = this.store.criteriosDesempateGravados();
+      const gravados = this.store.classificacao.criteriosDesempateGravados();
       if (gravados === null) return [];
       const conferencia = conferirDesempateGravado(
         gravados,
@@ -686,12 +685,12 @@ export class EliminacaoStepComponent {
         if (geracao !== this.store.geracao()) return resposta;
         if (resposta.ok) {
           this.recusasPorCampo.set(new Map());
-          this.store.descartarRecusasDaClassificacao();
-          this.store.recusaDaEscalaDaNotaFinal.set(null);
+          this.store.classificacao.descartarRecusas();
+          this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
           this.registrarQuadroCongelado(comando.resolucaoPesoAreaEnem ?? null);
         } else if (resposta.inconclusiva) {
           // O servidor pode ter gravado — com ou sem quadro —, e o que ele tem fica desconhecido.
-          this.store.marcarClassificacaoDesconhecida();
+          this.store.classificacao.marcarDesconhecida();
         }
         return resposta;
       });
@@ -725,13 +724,13 @@ export class EliminacaoStepComponent {
       { opcoes: comoOpcoesDasEdicoes(draft.classificacao.edicoesEnem) },
     );
     if (resposta.ok) {
-      this.store.recusaDasEdicoesDoEnem.set(null);
+      this.store.classificacao.recusaDasEdicoesDoEnem.set(null);
       return { valid: true };
     }
 
     const { title, detail } = this.problemI18n.resolve(resposta.problem);
     const recusa = detail ?? title;
-    this.store.recusaDasEdicoesDoEnem.set(recusa);
+    this.store.classificacao.recusaDasEdicoesDoEnem.set(recusa);
     return { valid: false, messages: [`Edições do ENEM, no passo Fórmula: ${recusa}`] };
   }
 
@@ -752,18 +751,19 @@ export class EliminacaoStepComponent {
     if (sobOCampo.length > 0) {
       const peloDesempate = sobOCampo.map(recusaDaClassificacaoPeloDesempate);
       const [daResolucao] = sobOCampo.filter((_, indice) => peloDesempate[indice] === null);
-      this.store.recusarPeloDesempate(
+      this.store.classificacao.recusarPeloDesempate(
         peloDesempate.find((recusa) => recusa !== null) ?? null,
         this.cadastroDePesos.leitura().pedida,
       );
-      this.store.recusaDaResolucaoPesoAreaEnem.set(
+      this.store.classificacao.recusaDaResolucaoPesoAreaEnem.set(
         daResolucao === undefined ? null : mensagemDaRecusaDaResolucao(daResolucao),
       );
     }
 
     const daEscala = (problema.errors ?? []).find((erro) => ehCampoDaEscala(erro.field));
     const recusaDaEscala = daEscala === undefined ? null : mensagemDaRecusaDaEscala(daEscala);
-    if (recusaDaEscala !== null) this.store.recusaDaEscalaDaNotaFinal.set(recusaDaEscala);
+    if (recusaDaEscala !== null)
+      this.store.classificacao.recusaDaEscalaDaNotaFinal.set(recusaDaEscala);
 
     return resumoDaRecusa(
       problema,
@@ -788,18 +788,18 @@ export class EliminacaoStepComponent {
    */
   private registrarQuadroCongelado(resolucaoGravada: string | null): void {
     if (resolucaoGravada === null) {
-      this.store.registrarClassificacaoGravadaSemQuadro();
+      this.store.classificacao.registrarGravadaSemQuadro();
       return;
     }
 
     const cadastro = this.cadastroDePesos.leitura();
     if (cadastro.lido && cadastro.quadroDaResolucaoEscolhida.length > 0) {
-      this.store.registrarClassificacaoGravadaComQuadro(
+      this.store.classificacao.registrarGravadaComQuadro(
         resolucaoGravada,
         cadastro.quadroDaResolucaoEscolhida,
       );
     } else {
-      this.store.marcarClassificacaoDesconhecida();
+      this.store.classificacao.marcarDesconhecida();
     }
   }
 }
