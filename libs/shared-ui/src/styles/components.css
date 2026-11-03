@@ -2698,12 +2698,15 @@ ui-icon-button {
   font-weight: var(--weight-medium);
   color: var(--color-primary);
   text-align: inherit;
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 0.2em;
   cursor: pointer;
 }
+/* Em repouso o nome segue as demais listagens, sem sublinhado; a cor primária e o cursor indicam
+   a linha clicável, e o sublinhado só confirma a ação sob o ponteiro. */
+.table-responsive tbody tr:hover .table-responsive__alvo,
 .table-responsive__alvo:hover {
-  text-decoration-thickness: 2px;
+  text-decoration: underline;
 }
 .table-responsive__alvo::after {
   content: '';

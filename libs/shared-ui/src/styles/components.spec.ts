@@ -82,3 +82,19 @@ describe('components.css — passo com erro do ui-steps na sobreposição', () =
     expect(contraste(erroEscuro, fundoEscuro)).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('components.css — nome da linha clicável', () => {
+  /** As declarações da regra cujo seletor é exatamente o informado. */
+  function declaracoes(seletor: string): string {
+    return (
+      folha('components.css').match(new RegExp(`(?:^|\\})\\s*${escaparRegex(seletor)}\\s*\\{([^{}]*)\\}`, 'u'))?.[1] ?? ''
+    );
+  }
+
+  it('fica sem sublinhado em repouso, como o nome das demais listagens, e sublinha sob o ponteiro', () => {
+    expect(declaracoes('.table-responsive__alvo')).toMatch(/text-decoration:\s*none;/u);
+    expect(
+      declaracoes('.table-responsive tbody tr:hover .table-responsive__alvo,\n.table-responsive__alvo:hover'),
+    ).toMatch(/text-decoration:\s*underline;/u);
+  });
+});
