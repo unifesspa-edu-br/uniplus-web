@@ -45,15 +45,17 @@ import {
   type FatoEscolhivel,
 } from '../../shared/gatilho-de-exigencia';
 import {
-  camposDaRepeticao,
-  fasesNoCronograma,
   motivoDoGrupoForaDoLugar,
   orientacaoDaRecusaDaRepeticao,
+  type NomesDaOrientacao,
+} from '../../shared/orientacao-da-recusa-do-fato';
+import {
+  camposDaRepeticao,
+  fasesNoCronograma,
   producaoDoRascunho,
   recusaDaRepeticao,
   type GrupoDaProducao,
-  type NomesDaOrientacao,
-} from '../../shared/fase-do-fato';
+} from '../../shared/producao-dos-fatos';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -106,7 +108,7 @@ import {
   gravarCronogramaFases,
 } from '../../shared/gravacao-do-cronograma';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import { descreverFase, finalidadesDaFase } from '../cronograma/cronograma-do-certame';
+import { descreverFase, finalidadesDaFase } from '../../shared/descricao-da-fase';
 import { nomeDaFinalidade } from '../formulario/formularios-por-finalidade';
 import {
   PAPEIS_ESCOLHIVEIS,
@@ -516,13 +518,9 @@ export class FaseStepComponent {
   }
 
   /**
-   * Escreve as publicações e reconcilia o que depende delas.
-   *
-   * A conclusão do ciclo recursal só existe em fase que publica preliminar, e o
-   * seletor que a declara desaparece junto com ele. Deixar o código declarado
-   * para trás trancaria o passo numa recusa — "só fase que publica resultado
-   * preliminar declara quem a conclui" — cujo campo a tela já não mostra, e sem
-   * caminho visível para desfazê-la.
+   * Escreve as publicações e reconcilia o que depende delas. A conclusão do ciclo recursal só
+   * existe em fase que publica preliminar: deixar o código declarado para trás trancaria o passo
+   * numa recusa cujo campo a tela já não mostra, sem caminho visível para desfazê-la.
    */
   private escreverProdutos(produtos: readonly ProdutoDaFase[]): void {
     const formulario = this.formulario();

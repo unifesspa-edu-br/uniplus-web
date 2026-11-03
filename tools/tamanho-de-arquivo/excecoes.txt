@@ -44,11 +44,10 @@
 2710 apps/selecao/src/app/features/processo-seletivo/processo-seletivo.css
 551 apps/selecao/src/app/features/processo-seletivo/publicacoes/publicar-documento.component.ts
 416 apps/selecao/src/app/features/processo-seletivo/steps/shared/anexo-edital/anexo-edital.component.ts
-532 apps/selecao/src/app/features/processo-seletivo/steps/shared/fase-do-fato.ts
 494 apps/selecao/src/app/features/processo-seletivo/steps/steps/atendimento/atendimento.component.ts
 484 apps/selecao/src/app/features/processo-seletivo/steps/steps/bonus/bonus.component.ts
 442 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/catalogos-do-cronograma.service.ts
-1186 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma-do-certame.ts
+1062 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma-do-certame.ts
 1766 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma.component.html
 2174 apps/selecao/src/app/features/processo-seletivo/steps/steps/cronograma/cronograma.component.ts
 430 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.html
@@ -56,7 +55,7 @@
 493 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/quadro-do-desempate.ts
 948 apps/selecao/src/app/features/processo-seletivo/steps/steps/eliminacao/eliminacao.component.ts
 1444 apps/selecao/src/app/features/processo-seletivo/steps/steps/fase/fase.component.html
-2084 apps/selecao/src/app/features/processo-seletivo/steps/steps/fase/fase.component.ts
+2082 apps/selecao/src/app/features/processo-seletivo/steps/steps/fase/fase.component.ts
 425 apps/selecao/src/app/features/processo-seletivo/steps/steps/formula/formula.component.html
 583 apps/selecao/src/app/features/processo-seletivo/steps/steps/formula/formula.component.ts
 481 apps/selecao/src/app/features/processo-seletivo/steps/steps/formulario/formulario-de-inscricao.ts

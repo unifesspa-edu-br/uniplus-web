@@ -32,7 +32,7 @@ import {
   valoresDeListaDe,
   type FatoEscolhivel,
 } from './gatilho-de-exigencia';
-import type { ProducaoDosFatos } from './fase-do-fato';
+import type { ProducaoDosFatos } from './producao-dos-fatos';
 
 /** Um fato do catálogo, na forma em que a API o entrega. */
 function view(parcial: Partial<FatoCandidatoView> & Pick<FatoCandidatoView, 'codigo'>): FatoCandidatoView {

@@ -62,7 +62,7 @@ import {
   fatosParaLerOGatilho,
 } from '../../shared/documentos-exigidos';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import { descreverFase } from '../cronograma/cronograma-do-certame';
+import { descreverFase } from '../../shared/descricao-da-fase';
 import {
   desempateIdosoSemApuracao,
   desempateSemDataDeNascimento,

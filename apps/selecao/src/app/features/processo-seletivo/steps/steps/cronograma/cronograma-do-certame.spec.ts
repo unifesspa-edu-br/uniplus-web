@@ -8,6 +8,7 @@ import type {
   ProdutoDaFase,
   RecursoDaEtapa,
 } from '../../processo-seletivo.models';
+import { descreverFase, exigenciasDe } from '../../shared/descricao-da-fase';
 import {
   fracaoDoPercentual,
   percentualDaFracao,
@@ -19,8 +20,6 @@ import { publicaResultadoDefinitivo, type AtoDoCatalogo } from '../fase/configur
 import {
   comoNumero,
   componeNota,
-  descreverFase,
-  exigenciasDe,
   avisosDosGrupos,
   problemasDoCronograma,
   renumerar,

@@ -3,19 +3,20 @@ import { describe, expect, it } from 'vitest';
 
 import type { FormularioDeInscricao } from '../processo-seletivo.models';
 import {
-  oProcessoResolve,
-  orientacaoDaRecusaDaRepeticao,
-  orientacaoDaRecusaDeFase,
-  producaoDoRascunho,
-  recusaDaRepeticao,
-  recusaDeFaseDoGatilho,
-  recusaDaExigenciaDoServidor,
-  type GrupoDaProducao,
   type FatoComFase,
   type FormularioQueColeta,
+  type GrupoDaProducao,
   type LugarDaExigencia,
+  oProcessoResolve,
+  producaoDoRascunho,
   type ProducaoDosFatos,
-} from './fase-do-fato';
+  recusaDaRepeticao,
+  recusaDeFaseDoGatilho,
+} from './producao-dos-fatos';
+import {
+  orientacaoDaRecusaDaRepeticao,
+  orientacaoDaRecusaDeFase,
+} from './orientacao-da-recusa-do-fato';
 
 const fato = (codigo: string, extra: Partial<FatoComFase> = {}): FatoComFase => ({
   codigo,
@@ -44,7 +45,10 @@ const CONVOCACAO = fato('MODALIDADE_CONVOCACAO', {
   pontoResolucao: 'RESULTADO_FINAL',
 });
 const DO_SIGAA = fato('DO_SIGAA', { binding: 'INTEGRACAO:SIGAA' });
-const FAIXA_ETARIA = fato('FAIXA_ETARIA', { dominio: 'NUMERICO', binding: 'ATRIBUTO_CANDIDATO:FAIXA_ETARIA' });
+const FAIXA_ETARIA = fato('FAIXA_ETARIA', {
+  dominio: 'NUMERICO',
+  binding: 'ATRIBUTO_CANDIDATO:FAIXA_ETARIA',
+});
 
 const FASES = [
   { codigo: 'INSCRICAO', ordem: 1, finalidades: ['INSCRICAO'] },
@@ -54,9 +58,16 @@ const FASES = [
 ];
 
 /** A exigência cobrada na fase, no formulário declarado; sem declaração, no único que a fase responde. */
-const na = (faseCodigo: string, finalidade: string | null = null): LugarDaExigencia => ({ faseCodigo, finalidade });
+const na = (faseCodigo: string, finalidade: string | null = null): LugarDaExigencia => ({
+  faseCodigo,
+  finalidade,
+});
 
-const formulario = (finalidade: string, faseCodigo: string, ...fatos: string[]): FormularioQueColeta => ({
+const formulario = (
+  finalidade: string,
+  faseCodigo: string,
+  ...fatos: string[]
+): FormularioQueColeta => ({
   finalidade,
   faseCodigo,
   fatos: new Set(fatos),
@@ -68,10 +79,17 @@ function producao(parcial: Partial<ProducaoDosFatos> = {}): ProducaoDosFatos {
     formularios: [formulario('INSCRICAO', 'INSCRICAO', 'PCD')],
     derivacoes: new Map(),
     catalogo: new Map(
-      [PCD, LAUDO_RECENTE, BAIXA_RENDA, SEM_RENDA, ALGUM_SEM_RENDA, PERFIL, CONVOCACAO, DO_SIGAA, FAIXA_ETARIA].map((f) => [
-        f.codigo,
-        f,
-      ]),
+      [
+        PCD,
+        LAUDO_RECENTE,
+        BAIXA_RENDA,
+        SEM_RENDA,
+        ALGUM_SEM_RENDA,
+        PERFIL,
+        CONVOCACAO,
+        DO_SIGAA,
+        FAIXA_ETARIA,
+      ].map((f) => [f.codigo, f]),
     ),
     grupos: new Map(),
     ...parcial,
@@ -89,11 +107,17 @@ const FASE_DIVIDIDA = producao({
     { codigo: 'INSCRICAO', ordem: 1, finalidades: ['INSCRICAO', 'ISENCAO_TAXA'] },
     { codigo: 'RESULTADO_FINAL', ordem: 2, finalidades: [] },
   ],
-  formularios: [formulario('INSCRICAO', 'INSCRICAO', 'PCD'), formulario('ISENCAO_TAXA', 'INSCRICAO', 'BAIXA_RENDA')],
+  formularios: [
+    formulario('INSCRICAO', 'INSCRICAO', 'PCD'),
+    formulario('ISENCAO_TAXA', 'INSCRICAO', 'BAIXA_RENDA'),
+  ],
 });
 
 const COM_HABILITACAO = producao({
-  formularios: [formulario('INSCRICAO', 'INSCRICAO', 'PCD'), formulario('HABILITACAO', 'HABILITACAO', 'LAUDO_RECENTE')],
+  formularios: [
+    formulario('INSCRICAO', 'INSCRICAO', 'PCD'),
+    formulario('HABILITACAO', 'HABILITACAO', 'LAUDO_RECENTE'),
+  ],
 });
 
 describe('a fase em que o gatilho pode citar o fato', () => {
@@ -112,22 +136,31 @@ describe('a fase em que o gatilho pode citar o fato', () => {
       fato: 'MODALIDADE_CONVOCACAO',
       faseCodigo: 'RESULTADO_FINAL',
     });
-    expect(recusaDeFaseDoGatilho('MODALIDADE_CONVOCACAO', na('HABILITACAO'), producao())).toBeNull();
+    expect(
+      recusaDeFaseDoGatilho('MODALIDADE_CONVOCACAO', na('HABILITACAO'), producao()),
+    ).toBeNull();
   });
 
   it('o fato situado numa fase que o cronograma não tem não vale em fase nenhuma', () => {
-    const semResultado = producao({ fases: FASES.filter((fase) => fase.codigo !== 'RESULTADO_FINAL') });
-
-    expect(recusaDeFaseDoGatilho('MODALIDADE_CONVOCACAO', na('HABILITACAO'), semResultado)).toEqual({
-      tipo: 'FASE_FORA_DO_CRONOGRAMA',
-      fato: 'MODALIDADE_CONVOCACAO',
-      origem: 'MODALIDADE_CONVOCACAO',
-      faseCodigo: 'RESULTADO_FINAL',
+    const semResultado = producao({
+      fases: FASES.filter((fase) => fase.codigo !== 'RESULTADO_FINAL'),
     });
+
+    expect(recusaDeFaseDoGatilho('MODALIDADE_CONVOCACAO', na('HABILITACAO'), semResultado)).toEqual(
+      {
+        tipo: 'FASE_FORA_DO_CRONOGRAMA',
+        fato: 'MODALIDADE_CONVOCACAO',
+        origem: 'MODALIDADE_CONVOCACAO',
+        faseCodigo: 'RESULTADO_FINAL',
+      },
+    );
   });
 
   it('o derivado por regra fica conhecido só quando o que ele cita é', () => {
-    const derivado = producao({ ...COM_HABILITACAO, derivacoes: new Map([['PERFIL', ['PCD', 'LAUDO_RECENTE']]]) });
+    const derivado = producao({
+      ...COM_HABILITACAO,
+      derivacoes: new Map([['PERFIL', ['PCD', 'LAUDO_RECENTE']]]),
+    });
 
     expect(recusaDeFaseDoGatilho('PERFIL', na('INSCRICAO'), derivado)).toEqual({
       tipo: 'FASE_POSTERIOR',
@@ -138,16 +171,25 @@ describe('a fase em que o gatilho pode citar o fato', () => {
 
   it('o agregado fica conhecido só quando o fato de membro é', () => {
     const agregado = producao({
-      formularios: [formulario('INSCRICAO', 'INSCRICAO', 'PCD'), formulario('HABILITACAO', 'HABILITACAO', 'SEM_RENDA')],
+      formularios: [
+        formulario('INSCRICAO', 'INSCRICAO', 'PCD'),
+        formulario('HABILITACAO', 'HABILITACAO', 'SEM_RENDA'),
+      ],
     });
 
-    expect(recusaDeFaseDoGatilho('ALGUM_SEM_RENDA', na('INSCRICAO'), agregado)?.tipo).toBe('FASE_POSTERIOR');
+    expect(recusaDeFaseDoGatilho('ALGUM_SEM_RENDA', na('INSCRICAO'), agregado)?.tipo).toBe(
+      'FASE_POSTERIOR',
+    );
     expect(recusaDeFaseDoGatilho('ALGUM_SEM_RENDA', na('HABILITACAO'), agregado)).toBeNull();
   });
 
   it('o fato só da isenção vale apenas no documento do formulário de isenção, mesmo na fase que a inscrição divide com ela', () => {
-    expect(recusaDeFaseDoGatilho('BAIXA_RENDA', na('INSCRICAO', 'ISENCAO_TAXA'), FASE_DIVIDIDA)).toBeNull();
-    expect(recusaDeFaseDoGatilho('BAIXA_RENDA', na('INSCRICAO', 'INSCRICAO'), FASE_DIVIDIDA)).toEqual({
+    expect(
+      recusaDeFaseDoGatilho('BAIXA_RENDA', na('INSCRICAO', 'ISENCAO_TAXA'), FASE_DIVIDIDA),
+    ).toBeNull();
+    expect(
+      recusaDeFaseDoGatilho('BAIXA_RENDA', na('INSCRICAO', 'INSCRICAO'), FASE_DIVIDIDA),
+    ).toEqual({
       tipo: 'SO_DA_ISENCAO',
       fato: 'BAIXA_RENDA',
       faseCodigo: 'INSCRICAO',
@@ -159,7 +201,9 @@ describe('a fase em que o gatilho pode citar o fato', () => {
   });
 
   it('o coletável que nenhum formulário coleta conta como da inscrição, que passa a coletá-lo', () => {
-    const inscricaoDepois = producao({ formularios: [formulario('INSCRICAO', 'SOLICITACAO_ISENCAO', 'PCD')] });
+    const inscricaoDepois = producao({
+      formularios: [formulario('INSCRICAO', 'SOLICITACAO_ISENCAO', 'PCD')],
+    });
 
     expect(recusaDeFaseDoGatilho('LAUDO_RECENTE', na('INSCRICAO'), inscricaoDepois)).toEqual({
       tipo: 'FASE_POSTERIOR',
@@ -176,13 +220,18 @@ describe('a fase em que o gatilho pode citar o fato', () => {
 describe('os fatos que o processo resolve', () => {
   it('o derivado por regra só quando o processo declara a regra dele', () => {
     expect(oProcessoResolve(PERFIL, producao())).toBe(false);
-    expect(oProcessoResolve(PERFIL, producao({ derivacoes: new Map([['PERFIL', ['PCD']]]) }))).toBe(true);
+    expect(oProcessoResolve(PERFIL, producao({ derivacoes: new Map([['PERFIL', ['PCD']]]) }))).toBe(
+      true,
+    );
   });
 
   it('o agregado só quando algum formulário coleta o fato de membro', () => {
     expect(oProcessoResolve(ALGUM_SEM_RENDA, producao())).toBe(false);
     expect(
-      oProcessoResolve(ALGUM_SEM_RENDA, producao({ formularios: [formulario('HABILITACAO', 'HABILITACAO', 'SEM_RENDA')] })),
+      oProcessoResolve(
+        ALGUM_SEM_RENDA,
+        producao({ formularios: [formulario('HABILITACAO', 'HABILITACAO', 'SEM_RENDA')] }),
+      ),
     ).toBe(true);
   });
 
@@ -194,7 +243,11 @@ describe('os fatos que o processo resolve', () => {
 });
 
 describe('a orientação da recusa de fase', () => {
-  const orientar = (codigo: string, lugar: LugarDaExigencia, contexto: ProducaoDosFatos): string => {
+  const orientar = (
+    codigo: string,
+    lugar: LugarDaExigencia,
+    contexto: ProducaoDosFatos,
+  ): string => {
     const recusa = recusaDeFaseDoGatilho(codigo, lugar, contexto);
     if (recusa === null) throw new Error('esperava recusa');
     return orientacaoDaRecusaDeFase(recusa, lugar, contexto, NOMES);
@@ -216,7 +269,10 @@ describe('a orientação da recusa de fase', () => {
 
   it('do fato só da isenção, propõe a fase da isenção e a coleta pela inscrição quando ela vem antes', () => {
     const comIsencao = producao({
-      formularios: [formulario('INSCRICAO', 'INSCRICAO', 'PCD'), formulario('ISENCAO_TAXA', 'SOLICITACAO_ISENCAO', 'BAIXA_RENDA')],
+      formularios: [
+        formulario('INSCRICAO', 'INSCRICAO', 'PCD'),
+        formulario('ISENCAO_TAXA', 'SOLICITACAO_ISENCAO', 'BAIXA_RENDA'),
+      ],
     });
 
     expect(orientar('BAIXA_RENDA', na('HABILITACAO'), comIsencao)).toBe(
@@ -248,7 +304,9 @@ describe('a orientação da recusa de fase', () => {
   });
 
   it('sem fase que o aceite, propõe acrescentar ao cronograma a fase em que o fato é conhecido', () => {
-    const semResultado = producao({ fases: FASES.filter((fase) => fase.codigo !== 'RESULTADO_FINAL') });
+    const semResultado = producao({
+      fases: FASES.filter((fase) => fase.codigo !== 'RESULTADO_FINAL'),
+    });
 
     expect(orientar('MODALIDADE_CONVOCACAO', na('HABILITACAO'), semResultado)).toBe(
       '“modalidade_convocacao” só é conhecido na fase resultado_final, que o cronograma não tem. ' +
@@ -276,9 +334,18 @@ describe('a produção dos fatos no rascunho', () => {
       faseCodigo: 'INSCRICAO',
       conteudo: conteudoInicial(),
       referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
-      derivacao: [{ codigoFato: 'PERFIL', regras: [{ quando: [[{ fato: 'LAUDO_RECENTE', operador: 'IGUAL', valor: true }]] }] }],
+      derivacao: [
+        {
+          codigoFato: 'PERFIL',
+          regras: [{ quando: [[{ fato: 'LAUDO_RECENTE', operador: 'IGUAL', valor: true }]] }],
+        },
+      ],
       outrasFinalidades: [
-        { finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: { ...conteudoInicial(), itens: [item('LAUDO_RECENTE')] } },
+        {
+          finalidade: 'HABILITACAO',
+          faseCodigo: 'HABILITACAO',
+          conteudo: { ...conteudoInicial(), itens: [item('LAUDO_RECENTE')] },
+        },
       ],
     };
 
@@ -308,23 +375,42 @@ describe('a produção dos fatos no rascunho', () => {
       referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
       derivacao: [],
       outrasFinalidades: [
-        { finalidade: 'HABILITACAO', faseCodigo: 'HABILITACAO', conteudo: { ...conteudoInicial(), grupos: [familia] } },
+        {
+          finalidade: 'HABILITACAO',
+          faseCodigo: 'HABILITACAO',
+          conteudo: { ...conteudoInicial(), grupos: [familia] },
+        },
       ],
     };
 
     const lida = producaoDoRascunho(rascunho, FASES, [PCD, SEM_RENDA]);
 
-    expect(lida.grupos.get('FAMILIA')).toEqual({ codigo: 'FAMILIA', rotulo: 'Composição familiar', campos: ['SEM_RENDA'] });
+    expect(lida.grupos.get('FAMILIA')).toEqual({
+      codigo: 'FAMILIA',
+      rotulo: 'Composição familiar',
+      campos: ['SEM_RENDA'],
+    });
     expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO'), lida)?.tipo).toBe('GRUPO_FORA_DO_LUGAR');
   });
 });
 
 describe('a repetição do documento pelas ocorrências de um grupo do formulário', () => {
-  const FAMILIA: GrupoDaProducao = { codigo: 'FAMILIA', rotulo: 'Composição familiar', campos: ['SEM_RENDA'] };
-  const familiaNa = (finalidade: string, faseCodigo: string, base: Partial<ProducaoDosFatos> = {}): ProducaoDosFatos =>
+  const FAMILIA: GrupoDaProducao = {
+    codigo: 'FAMILIA',
+    rotulo: 'Composição familiar',
+    campos: ['SEM_RENDA'],
+  };
+  const familiaNa = (
+    finalidade: string,
+    faseCodigo: string,
+    base: Partial<ProducaoDosFatos> = {},
+  ): ProducaoDosFatos =>
     producao({
       ...base,
-      formularios: [...(base.formularios ?? [formulario('INSCRICAO', 'INSCRICAO', 'PCD')]), formulario(finalidade, faseCodigo, 'SEM_RENDA')],
+      formularios: [
+        ...(base.formularios ?? [formulario('INSCRICAO', 'INSCRICAO', 'PCD')]),
+        formulario(finalidade, faseCodigo, 'SEM_RENDA'),
+      ],
       grupos: new Map([['FAMILIA', FAMILIA]]),
     });
 
@@ -342,7 +428,9 @@ describe('a repetição do documento pelas ocorrências de um grupo do formulár
   it('o grupo só da isenção não repete documento do outro formulário da mesma fase', () => {
     const dividida = familiaNa('ISENCAO_TAXA', 'INSCRICAO', { fases: FASE_DIVIDIDA.fases });
 
-    expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO', 'INSCRICAO'), dividida)?.tipo).toBe('GRUPO_FORA_DO_LUGAR');
+    expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO', 'INSCRICAO'), dividida)?.tipo).toBe(
+      'GRUPO_FORA_DO_LUGAR',
+    );
     expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO', 'ISENCAO_TAXA'), dividida)).toBeNull();
   });
 
@@ -355,7 +443,10 @@ describe('a repetição do documento pelas ocorrências de um grupo do formulár
   });
 
   it('o grupo que nenhum formulário tem não repete documento algum', () => {
-    expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO'), producao())).toEqual({ tipo: 'GRUPO_INEXISTENTE', grupo: 'FAMILIA' });
+    expect(recusaDaRepeticao('FAMILIA', na('INSCRICAO'), producao())).toEqual({
+      tipo: 'GRUPO_INEXISTENTE',
+      grupo: 'FAMILIA',
+    });
   });
 
   it('a orientação nomeia o grupo e leva o documento para onde ele é respondido', () => {
@@ -366,45 +457,5 @@ describe('a repetição do documento pelas ocorrências de um grupo do formulár
       'O grupo “Composição familiar” é respondido na fase habilitacao, depois da fase em que o documento é exigido. ' +
         'Como resolver: exija o documento na fase habilitacao; ou escolha outro grupo em “Repetir por”, ou “Não repete”.',
     );
-  });
-});
-
-describe('a recusa do servidor sobre onde o documento é cobrado', () => {
-  const recusa = (code: string, errors: readonly { field: string; code: string; message: string }[] = []) =>
-    recusaDaExigenciaDoServidor({ code, errors });
-
-  it('diz o que fazer quando a repetição nomeia grupo que não existe ou se aninha', () => {
-    expect(recusa('uniplus.selecao.no_exigencia.tipo_entidade_invalido')).toContain('campo “Repetir por”');
-    expect(recusa('uniplus.selecao.no_exigencia.repeticao_de_entidade_aninhada')).toContain('Escolha “Não repete”');
-    expect(recusa('uniplus.predicado_dnf.fato_nao_coletado_pelo_processo')).toContain('Escolha o grupo no campo “Repetir por”');
-  });
-
-  it('diz o que fazer para cada recusa de fase, e nada para as outras', () => {
-    expect(recusa('uniplus.selecao.documento_exigido.fato_resolvido_em_fase_posterior')).toContain(
-      'Exija o documento numa fase em que o dado já seja conhecido',
-    );
-    expect(recusa('uniplus.selecao.documento_exigido.fato_da_isencao_em_outra_finalidade')).toContain(
-      'Escolha o formulário de isenção no campo “Formulário” do documento',
-    );
-    expect(recusa('uniplus.selecao.documento_exigido.ponto_resolucao_fora_do_cronograma')).toContain(
-      'Acrescente essa fase ao cronograma',
-    );
-    expect(recusa('uniplus.selecao.documento_exigido.outra')).toBeNull();
-  });
-
-  it('diz que o tipo de documento que aguarda a proteção de dados não aceita vínculo', () => {
-    expect(recusa('uniplus.selecao.documento_exigido.tipo_documento_com_protecao_pendente')).toContain(
-      'aguarda a aprovação da proteção de dados',
-    );
-  });
-
-  it('as recusas do formulário do documento apontam o campo “Formulário”, venham no problema ou num erro dele', () => {
-    const CAMPO = 'no campo “Formulário” do documento';
-    expect(recusa('uniplus.selecao.documento_exigido.finalidade_obrigatoria')).toContain(CAMPO);
-    expect(recusa('uniplus.selecao.documento_exigido.fase_incoerente_com_finalidade')).toContain(CAMPO);
-    expect(recusa('uniplus.selecao.no_exigencia.grupo_com_finalidades_diferentes')).toContain(CAMPO);
-    expect(
-      recusa('uniplus.validacao', [{ field: 'raizes[0].documento.finalidade', code: 'uniplus.estrutura_formulario.finalidade_invalida', message: '' }]),
-    ).toContain(CAMPO);
   });
 });

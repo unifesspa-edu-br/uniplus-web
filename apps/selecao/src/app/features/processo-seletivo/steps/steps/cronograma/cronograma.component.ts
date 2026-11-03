@@ -40,6 +40,11 @@ import {
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import {
+  descreverFase,
+  finalidadesDaFase,
+  type DescricaoDaFase,
+} from '../../shared/descricao-da-fase';
+import {
   CamposPressupostosService,
   fatosCitadosPelasModalidadesOfertadas,
 } from '../../shared/campos-pressupostos.service';
@@ -75,16 +80,18 @@ import {
   recusasDeFaseDoGatilho,
 } from '../../shared/gatilho-de-exigencia';
 import {
+  orientacaoDaRecusaDaRepeticao,
+  recusaDaExigenciaDoServidor,
+  type NomesDaOrientacao,
+} from '../../shared/orientacao-da-recusa-do-fato';
+import {
   camposDaRepeticao,
   fasesNoCronograma,
-  orientacaoDaRecusaDaRepeticao,
   producaoDoRascunho,
-  recusaDaExigenciaDoServidor,
   recusaDaRepeticao,
   type LugarDaExigencia,
-  type NomesDaOrientacao,
   type ProducaoDosFatos,
-} from '../../shared/fase-do-fato';
+} from '../../shared/producao-dos-fatos';
 import { etapasDe } from '../../shared/hidratacao';
 import { escalaVale, decimalLido, textoDaSoma } from '../../shared/itens-de-avaliacao';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
@@ -105,8 +112,6 @@ import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service'
 import {
   componeNota,
   declaraNotaDoEnem,
-  descreverFase,
-  finalidadesDaFase,
   campoDaRecusa,
   recusaDoCampoDaEtapa,
   recusaDaEtapaDeNotaDoEnem,
@@ -117,7 +122,6 @@ import {
   problemasDoCronograma,
   renumerar,
   type CampoComRecusa,
-  type DescricaoDaFase,
   type ExigenciaDeclarada,
   type GrupoDeclarado,
   avisosDosGrupos,
@@ -1333,12 +1337,8 @@ export class CronogramaStepComponent {
   }
 
   /**
-   * Tira a fase da linha do tempo, com o que era só dela.
-   *
-   * Antes, a remoção limpava TODAS as etapas do processo quando a fase saída era a que o
-   * cadastro marca como agrupadora — apagava as etapas das outras fases junto — e, em
-   * qualquer outra fase, deixava as etapas dela órfãs, apontando para uma fase que não
-   * existe mais; a gravação seguinte era recusada pelo servidor sem dizer o que fazer.
+   * Tira a fase da linha do tempo, com o que era só dela: as etapas dela saem junto, em vez de
+   * ficarem apontando para uma fase que não existe mais.
    */
   removerFase(indice: number): void {
     const removida = this.fases.at(indice);

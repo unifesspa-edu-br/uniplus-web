@@ -24,16 +24,18 @@ import type { CondicaoGatilhoConfig, ExigenciaDeDocumento } from '../processo-se
 import { FATO_MODALIDADE } from './exigencias/exigencias-documentais';
 import { exigidoDeTodos, numerosDeClausula } from './exigencias/recorte-por-modalidade';
 import {
-  ehCampoDeMembro,
-  oProcessoResolve,
   orientacaoDaRecusaDeFase,
   orientacaoDoCampoDeMembroForaDaRepeticao,
+  type NomesDaOrientacao,
+} from './orientacao-da-recusa-do-fato';
+import {
+  ehCampoDeMembro,
+  oProcessoResolve,
   recusaDeFaseDoGatilho,
   type FatoComFase,
   type LugarDaExigencia,
-  type NomesDaOrientacao,
   type ProducaoDosFatos,
-} from './fase-do-fato';
+} from './producao-dos-fatos';
 
 /**
  * O gatilho de uma exigência documental: a condição sobre fatos do candidato que diz de quem
