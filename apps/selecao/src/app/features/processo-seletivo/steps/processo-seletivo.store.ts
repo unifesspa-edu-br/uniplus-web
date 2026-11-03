@@ -1,10 +1,9 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
-import { conteudoInicial, type StepStatus } from '@uniplus/shared-ui/components';
+import type { StepStatus } from '@uniplus/shared-ui/components';
 import { STEP_LABELS } from './processo-seletivo.data';
 import { CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA } from './steps/classificacao/escala-da-nota-final';
-import { exigenciasVazias } from './shared/exigencias-documentais';
 import {
   regrasDasModalidadesOfertadas,
   type RegraDaModalidadeOfertada,
@@ -20,89 +19,13 @@ import {
 } from './shared/quadro-de-pesos';
 import {
   CriterioDesempateConfigurado,
-  ExigenciasDoRascunho,
   FalhaDeLeitura,
   WizardDraft,
 } from './processo-seletivo.models';
+import { rascunhoInicial } from './rascunho-inicial';
+import { motivoDeSomenteLeitura } from './somente-leitura';
 
 const INDICE_DO_CRONOGRAMA = STEP_LABELS.indexOf('Cronograma');
-
-/**
- * O rascunho nasce sem documento nenhum: quais existem é o cadastro de Configuração que
- * diz, e ele cresce sem deploy. Semear a partir de uma lista local fazia o rascunho
- * carregar entradas de documentos que ninguém marcou — e envelhecer junto com a lista.
- */
-function initialDocumentos(): ExigenciasDoRascunho {
-  return exigenciasVazias();
-}
-
-const INITIAL_DRAFT: WizardDraft = {
-  // Desmarcado por padrão — o usuário DEVE escolher um tipo no step-01.
-  tipoProcesso: { selected: '', rotulo: '', codigo: '' },
-  // Todos os campos do Passo 2 começam vazios para obrigar o preenchimento.
-  identificacao: {
-    nome: '',
-    identificadorLegivel: '',
-    unidadeAdministradoraId: '',
-    origemCandidatos: '',
-    localidade: null,
-    uploads: [],
-  },
-  pagamento: { cobra: null, valor: '', fundamentos: [] },
-  opcoesDeCurso: { numero: '' },
-  vagas: { ofertas: [], cascata: null },
-  // Cronograma e etapas nascem vazios: quais fases o certame tem é decisão de
-  // quem configura, e processo com classificação importada não tem etapa
-  // pontuada. Semear qualquer um dos dois inventaria configuração que ninguém
-  // declarou, e a etapa fictícia ainda faria o processo novo nascer com uma
-  // linha que o operador não pediu.
-  cronograma: { fases: [], etapas: [], algoritmoContagemCodigo: '', algoritmoContagemVersao: '' },
-  // Classificação começa vazia — o usuário DEVE escolher a regra de cálculo
-  // no passo de Fórmula antes de a Eliminação poder gravar.
-  classificacao: {
-    regraCalculoCodigo: '',
-    regraCalculoVersao: '',
-    regraArredondamentoCodigo: '',
-    regraArredondamentoVersao: '',
-    casasArredondamento: '',
-    regraOrdemAlocacaoCodigo: '',
-    regraOrdemAlocacaoVersao: '',
-    baseadoEmEnem: false,
-    escalaNotaFinal: '',
-    resolucaoPesoAreaEnem: '',
-    regrasEliminacao: [],
-    edicoesEnem: [],
-  },
-  bonus: {
-    aplica: null,
-    regraCodigo: '',
-    regraVersao: '',
-    fator: '',
-    teto: '',
-    baseLegalBonusRegionalId: '',
-    fatoElegibilidadeCodigo: '',
-  },
-  desempate: [],
-  documentos: initialDocumentos(),
-  // O formulário nasce só com a revisão e aceite: os campos são declaração do certame, e semear
-  // qualquer coisa aqui poria no formulário do candidato um campo que ninguém escolheu. A seção
-  // dos dados básicos vem da API, quando o formulário é criado.
-  formulario: {
-    faseCodigo: '',
-    conteudo: conteudoInicial(),
-    referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
-    derivacao: [],
-    outrasFinalidades: [],
-  },
-  atendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
-  publicacao: {
-    numero: '',
-    periodoInscricaoInicio: '',
-    periodoInscricaoFim: '',
-    ato: { orgao: '', serie: '', ano: '', dataPublicacao: '', assinante: '', tipoAtoCodigo: '' },
-    anexos: [],
-  },
-};
 
 /**
  * O que se sabe da classificação que o processo tem no servidor. `desconhecida` depois de uma
@@ -132,7 +55,7 @@ export class ProcessoSeletivoStore {
   readonly currentStep = signal(0);
   readonly visitedSteps = signal<ReadonlySet<number>>(new Set([0]));
   readonly completedSteps = signal<ReadonlySet<number>>(new Set());
-  readonly draft = signal<WizardDraft>(structuredClone(INITIAL_DRAFT));
+  readonly draft = signal<WizardDraft>(rascunhoInicial());
   /** Mensagens de validação do step ativo. `null` indica sem erro. */
   readonly stepError = signal<string[] | null>(null);
   /**
@@ -434,33 +357,9 @@ export class ProcessoSeletivoStore {
    */
   readonly aceitaEdicao = computed(() => this.edicaoPermitida() && !this.operacaoEmAndamento());
 
-  /**
-   * Por que a configuração está apenas para consulta. O texto acompanha o
-   * status: um rascunho cancelado nunca foi publicado e não se corrige por
-   * retificação, então prometer esse caminho mandaria o operador a lugar
-   * nenhum.
-   */
-  readonly motivoDeSomenteLeitura = computed(() => {
-    if (this.publicacaoNaoConfirmada()) {
-      return 'A publicação foi aceita, mas ainda não foi possível confirmar o novo estado do processo. A configuração fica bloqueada até a confirmação ser refeita — recarregue a página.';
-    }
-
-    const status = this.remoteSnapshot()?.status;
-    if (status === undefined || status === StatusProcesso.rascunho) return null;
-
-    if (status === StatusProcesso.publicado) {
-      return 'Este processo já foi publicado. A configuração fica disponível para consulta; alterá-la depende de abrir uma retificação.';
-    }
-
-    if (status === StatusProcesso.encerrado || status === StatusProcesso.cancelado) {
-      const situacao = status === StatusProcesso.encerrado ? 'encerrado' : 'cancelado';
-      return `Este processo está ${situacao} e não aceita alteração. A configuração fica disponível para consulta.`;
-    }
-
-    // Status que este cliente não conhece. A allowlist estabelece que não é
-    // rascunho, e nada além disso — nomear a situação seria inventá-la.
-    return 'Este processo não está em rascunho e não aceita alteração. A configuração fica disponível para consulta.';
-  });
+  readonly motivoDeSomenteLeitura = computed(() =>
+    motivoDeSomenteLeitura(this.remoteSnapshot()?.status, this.publicacaoNaoConfirmada()),
+  );
 
   /**
    * Modalidades que o processo aceita: a união do que suas distribuições de
@@ -601,7 +500,7 @@ export class ProcessoSeletivoStore {
     this.currentStep.set(0);
     this.visitedSteps.set(new Set([0]));
     this.completedSteps.set(new Set());
-    this.draft.set(structuredClone(INITIAL_DRAFT));
+    this.draft.set(rascunhoInicial());
     this.stepError.set(null);
     this.processoSeletivoId.set(null);
     this.salvando.set(false);
