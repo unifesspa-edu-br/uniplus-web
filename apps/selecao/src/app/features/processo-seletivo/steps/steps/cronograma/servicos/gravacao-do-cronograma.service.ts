@@ -11,8 +11,7 @@ import {
 } from '../../../shared/cadastro-inicial.service';
 import { resumoDaRecusa } from '../../../shared/resumo-da-recusa';
 import { CatalogosDoCronogramaService } from '../catalogos-do-cronograma.service';
-import type { FaseForm } from '../cronograma-form';
-import { faseDoFormulario } from '../cronograma-form';
+import { type FaseForm, faseDoFormulario } from '../cronograma-form';
 import { comoComandoDeEtapa, comoComandoDeFase } from '../cronograma-para-comando';
 import {
   localDoErroDaEtapa,
@@ -22,8 +21,8 @@ import {
 } from '../recusas-do-servidor-da-etapa';
 import { ConferenciaDoCronograma } from './conferencia-do-cronograma.service';
 import { ExpansaoDoCronograma } from './expansao-do-cronograma.service';
-import { GravacaoDasExigenciasDocumentais } from './gravacao-das-exigencias-documentais.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
+import { GravacaoDasExigenciasDocumentais } from './gravacao-das-exigencias-documentais.service';
 import { ReconciliacaoDasEtapas, AGUARDA_RELEITURA } from './reconciliacao-das-etapas.service';
 import { RecusasDasEtapas } from './recusas-das-etapas.service';
 import { UnidadesDasFases } from './unidades-das-fases.service';

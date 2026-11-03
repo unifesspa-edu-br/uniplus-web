@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
-import { ReactiveFormsModule } from '@angular/forms';
-import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
+
 import { pisoDeData, type EtapaForm } from '../cronograma-form';
-import { FormGroup } from '@angular/forms';
-import { type FaseNaLinhaDoTempo } from '../servicos/formulario-do-cronograma.service';
 import { FORMULARIO_DO_PAI } from '../formulario-do-pai';
+import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
+import type { FaseNaLinhaDoTempo } from '../servicos/formulario-do-cronograma.service';
 
 @Component({
   selector: 'div[selJanelaDaEtapa]',

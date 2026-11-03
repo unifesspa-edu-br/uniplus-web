@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { FormsModule } from '@angular/forms';
+import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
+
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import { baseLegalDaConvencao, invariantesDaConvencao } from './convencao-de-contagem';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';

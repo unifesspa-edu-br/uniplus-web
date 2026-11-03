@@ -1,0 +1,50 @@
+@let etapa = grupo();
+@let posicao = indiceDaEtapa();
+@let etapaAberta = expansao.etapaAberta(posicao);
+@let rotuloDaEtapa =
+  etapa.controls.nome.value === '' ? 'etapa ' + (posicao + 1) : etapa.controls.nome.value;
+
+<button
+  class="etapa-resumo"
+  type="button"
+  [attr.aria-expanded]="etapaAberta"
+  [attr.aria-controls]="'cr-etapa-corpo-' + posicao"
+  (click)="expansao.alternarEtapa(posicao)"
+>
+  <span class="etapa-resumo__seta" aria-hidden="true"></span>
+  <span class="etapa-resumo__nome">{{ edicao.nomeDaEtapa(etapa) }}</span>
+  <span class="etapa-resumo__marcas">
+    @for (marca of edicao.marcasDaEtapa(etapa); track marca) {
+      <span class="etapa-resumo__marca">{{ marca }}</span>
+    }
+  </span>
+</button>
+<div class="etapa-acoes">
+  <button
+    class="btn btn--tertiary btn--sm"
+    type="button"
+    (click)="cronograma.moverEtapa(posicao, -1)"
+    [disabled]="!edicaoLiberada() || posicao === 0"
+    [attr.aria-label]="'Subir ' + rotuloDaEtapa"
+  >
+    Subir
+  </button>
+  <button
+    class="btn btn--tertiary btn--sm"
+    type="button"
+    (click)="cronograma.moverEtapa(posicao, 1)"
+    [disabled]="!edicaoLiberada() || posicao === etapas.length - 1"
+    [attr.aria-label]="'Descer ' + rotuloDaEtapa"
+  >
+    Descer
+  </button>
+  <button
+    class="btn btn--tertiary btn--sm"
+    type="button"
+    (click)="cronograma.removerEtapa(posicao)"
+    [disabled]="!edicaoLiberada()"
+    [attr.aria-label]="'Remover ' + rotuloDaEtapa"
+  >
+    Remover
+  </button>
+</div>

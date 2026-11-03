@@ -1,0 +1,25 @@
+@let item = fase();
+
+@if (item.exigencias !== null) {
+  @for (
+    linha of leitura.etapasDaFase(item.grupo.controls.codigo.value, item.exigencias.agrupaEtapas);
+    track linha.indice
+  ) {
+    @let etapa = linha.grupo;
+    @let posicao = linha.indice;
+    @let etapaAberta = expansao.etapaAberta(posicao);
+    <!--
+  A etapa chega fechada, resumida numa linha. Aberta, ela ocupa mais de mil
+  pixels — oito delas faziam a habilitação sozinha valer catorze telas de
+  rolagem, e o que o operador procurava sumia no meio.
+-->
+    <div
+      class="etapa-bloco"
+      [class.etapa-bloco--aberta]="etapaAberta"
+      selEditorDaEtapa
+      [grupo]="etapa"
+      [indiceDaEtapa]="posicao"
+      [fase]="item"
+    ></div>
+  }
+}

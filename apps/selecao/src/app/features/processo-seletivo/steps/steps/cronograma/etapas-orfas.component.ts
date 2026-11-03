@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
+
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
+import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
 
 @Component({
   selector: 'div[selEtapasOrfas]',
-  imports: [],
   templateUrl: './etapas-orfas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { FormGroup } from '@angular/forms';
+
+import type { EtapaForm } from '../cronograma-form';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from '../servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
-import { FormGroup } from '@angular/forms';
-import { type EtapaForm } from '../cronograma-form';
 import { JanelaRecursalComponent } from './janela-recursal.component';
 
 @Component({

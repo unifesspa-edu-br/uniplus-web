@@ -1,22 +1,11 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  Injector,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
-import { ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import { type StepValidation } from '../../processo-seletivo.models';
 import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
 import { EtapasOrfasComponent } from './etapas-orfas.component';
 import { DadosDaFaseComponent } from './fase/dados-da-fase.component';
 import { CabecalhoDaFaseComponent } from './fase/cabecalho-da-fase.component';
@@ -25,7 +14,6 @@ import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component'
 import { FaseEmConsultaComponent } from './consulta/fase-em-consulta.component';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
-import { pisoDeData } from './cronograma-form';
 import { EdicaoDaEtapa } from './servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
@@ -36,17 +24,11 @@ import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
 import { ReconciliacaoDasEtapas } from './servicos/reconciliacao-das-etapas.service';
 import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
 import { convencaoLida } from './convencao-de-contagem';
-import { ItensDeAvaliacaoDaEtapaComponent } from './itens-de-avaliacao-da-etapa.component';
-import { RecursosDaEtapaComponent } from './etapa/recursos-da-etapa.component';
-import { JanelaDaEtapaComponent } from './etapa/janela-da-etapa.component';
-import { BancasDaEtapaComponent } from './etapa/bancas-da-etapa.component';
-import { PublicacoesDaEtapaComponent } from './etapa/publicacoes-da-etapa.component';
+import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
 
 @Component({
   selector: 'sel-step-cronograma',
   imports: [
-    ItensDeAvaliacaoDaEtapaComponent,
-    ValorLegivelDirective,
     ValorEmConsultaComponent,
     ReactiveFormsModule,
     FaseStepComponent,
@@ -56,10 +38,7 @@ import { PublicacoesDaEtapaComponent } from './etapa/publicacoes-da-etapa.compon
     CabecalhoDaFaseComponent,
     DadosDaFaseComponent,
     EtapasOrfasComponent,
-    RecursosDaEtapaComponent,
-    JanelaDaEtapaComponent,
-    BancasDaEtapaComponent,
-    PublicacoesDaEtapaComponent,
+    EtapasDaFaseComponent,
   ],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,21 +57,12 @@ import { PublicacoesDaEtapaComponent } from './etapa/publicacoes-da-etapa.compon
   ],
 })
 export class CronogramaStepComponent {
-  private readonly destroyRef = inject(DestroyRef);
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDoCronogramaService);
-  private readonly cadastro = inject(CadastroInicialService);
-  private readonly problemI18n = inject(ProblemI18nService);
-  private readonly api = inject(ProcessosSeletivosApi);
-  private readonly camposPressupostos = inject(CamposPressupostosService);
-  private readonly injector = inject(Injector);
-  protected readonly unidades = inject(UnidadesDasFases);
   protected readonly reconciliacao = inject(ReconciliacaoDasEtapas);
   protected readonly cronograma = inject(FormularioDoCronograma);
-  protected readonly recusas = inject(RecusasDasEtapas);
   protected readonly conferencia = inject(ConferenciaDoCronograma);
   protected readonly gravacao = inject(GravacaoDoCronograma);
-  protected readonly edicao = inject(EdicaoDaEtapa);
   protected readonly leitura = inject(LeituraDaLinhaDoTempo);
   protected readonly expansao = inject(ExpansaoDoCronograma);
 
@@ -100,16 +70,12 @@ export class CronogramaStepComponent {
   readonly fases = this.cronograma.fases;
   readonly etapas = this.cronograma.etapas;
   readonly linhaDoTempo = this.cronograma.linhaDoTempo;
-  readonly fasesDisponiveis = this.cronograma.fasesDisponiveis;
   readonly edicaoLiberada = this.cronograma.edicaoLiberada;
   readonly avisoDeReordenacao = this.cronograma.avisoDeReordenacao;
   readonly reconciliacaoPendente = this.reconciliacao.reconciliacaoPendente;
   readonly relendo = this.reconciliacao.relendo;
   readonly erroDeReleitura = this.reconciliacao.erroDeReleitura;
   private readonly versaoDoFormulario = this.cronograma.versao;
-
-  readonly pisoDeData = pisoDeData;
-  readonly algoritmoDeclaradoNoServidor = this.gravacao.algoritmoDeclaradoNoServidor;
 
   constructor() {
     this.catalogos.carregar();

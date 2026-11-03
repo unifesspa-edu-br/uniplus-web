@@ -1,7 +1,7 @@
 import type { FaseDoCronograma } from '../../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { comAlcanceDeTodasAsFases } from '../../../shared/exigencias/alcance-das-exigencias';
 import { descreverFase, finalidadesDaFase } from '../../../shared/descricao-da-fase';
+import { comAlcanceDeTodasAsFases } from '../../../shared/exigencias/alcance-das-exigencias';
 import {
   exigenciasLocalizadas,
   type RepeticaoDaExigencia,

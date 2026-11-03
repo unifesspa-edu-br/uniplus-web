@@ -1,10 +1,10 @@
 import { computed, inject, Injectable } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
 
-import { type ProdutoDaFase, type RecursoDaEtapa } from '../../../processo-seletivo.models';
-import { PAPEIS_ESCOLHIVEIS } from '../../fase/configuracao-da-fase';
+import type { ProdutoDaFase, RecursoDaEtapa } from '../../../processo-seletivo.models';
 import { FORMAS_DE_AVALIACAO } from '../../../shared/forma-de-avaliacao';
 import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../../shared/instancia-superior';
+import { PAPEIS_ESCOLHIVEIS } from '../../fase/configuracao-da-fase';
 import { CatalogosDoCronogramaService } from '../catalogos-do-cronograma.service';
 import { textosDoCatalogo } from '../convencao-de-contagem';
 import type { EtapaForm } from '../cronograma-form';

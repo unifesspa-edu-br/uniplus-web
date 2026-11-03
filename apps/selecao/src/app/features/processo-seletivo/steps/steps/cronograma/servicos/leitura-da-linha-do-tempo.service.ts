@@ -1,10 +1,10 @@
 import { computed, inject, Injectable } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
 
-import { componeNota } from '../regras-da-etapa';
 import { CatalogosDoCronogramaService } from '../catalogos-do-cronograma.service';
 import { etapaDoFormulario, type EtapaForm, type FaseForm } from '../cronograma-form';
 import { rotuloDoPapel } from '../leitura-da-etapa';
+import { componeNota } from '../regras-da-etapa';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 
 /** O que a linha do tempo lê do formulário para mostrar: as etapas de cada fase, o que ela publica e as marcas do cabeçalho. */

@@ -1,7 +1,7 @@
 import { effect, inject, Injectable, signal, untracked } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
 import { isApiOk } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { firstValueFrom } from 'rxjs';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { etapasDe } from '../../../shared/hidratacao';

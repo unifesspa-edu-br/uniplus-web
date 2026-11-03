@@ -3,7 +3,7 @@ import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import { FaseStepComponent } from '../../fase/fase.component';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
-import { type FaseNaLinhaDoTempo } from '../servicos/formulario-do-cronograma.service';
+import type { FaseNaLinhaDoTempo } from '../servicos/formulario-do-cronograma.service';
 import { LeituraDaLinhaDoTempo } from '../servicos/leitura-da-linha-do-tempo.service';
 
 /** A fase de um processo que só se lê: cada declaração em texto, sem campo nem ação de edição. */

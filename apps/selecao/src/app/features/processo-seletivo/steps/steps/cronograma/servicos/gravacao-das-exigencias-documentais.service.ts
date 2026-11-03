@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { firstValueFrom } from 'rxjs';
 
 import type { StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
