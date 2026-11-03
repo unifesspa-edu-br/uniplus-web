@@ -39,3 +39,18 @@ jobs:
       # pode ser avaliada se o tempo crescer.
       - name: Executar lint em todos os projetos
         run: npx nx run-many --target=lint --all
+
+  tamanho-de-arquivo:
+    name: Limite de 400 linhas por arquivo
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      # Script sem dependências: dispensa `npm ci`.
+      - name: Verificar tamanho dos arquivos de produção
+        run: npm run check:tamanho

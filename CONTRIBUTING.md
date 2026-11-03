@@ -383,6 +383,12 @@ features/
 - Mobile-first: começar pelo layout mobile, expandir com `md:` e `lg:`
 - Cores institucionais devem usar variáveis CSS definidas em `shared-ui`
 
+### Tamanho de arquivo
+
+- Nenhum arquivo de produção (`.ts`, `.html` e `.css` em `apps/` e `libs/`) passa de **400 linhas físicas**, contando comentários e linhas em branco. Ficam de fora specs, mocks de teste, projetos E2E e contratos gerados.
+- `npm run check:tamanho` confere a regra e roda no CI. Arquivo novo acima do limite é recusado.
+- Os arquivos que ainda excedem o limite estão em `tools/tamanho-de-arquivo/excecoes.txt`. A lista só diminui: arquivo listado não pode crescer, e ao chegar a 400 linhas ou menos a entrada sai (`npm run check:tamanho -- --atualizar` reduz números e remove entradas).
+
 ---
 
 ## Acessibilidade (WCAG 2.1 AA)
