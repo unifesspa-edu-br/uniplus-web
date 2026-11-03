@@ -40,6 +40,7 @@ import { StepValidation } from './steps/processo-seletivo.models';
 import { PASSOS } from './steps/processo-seletivo.data';
 import { PASSO_DO_WIZARD, PassoDoWizard } from './steps/passo-do-wizard';
 import type { ConfirmacaoDeGravacao, GravacaoDoPasso } from './steps/passo-do-wizard';
+import { FocoDoEditor } from './editor/foco-do-editor.service';
 import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
 import { EnvioDoEdital } from './steps/shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from './steps/shared/gravacao/gravacao-do-processo';
@@ -115,6 +116,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
   ],
   providers: [
     ProcessoSeletivoStore,
+    FocoDoEditor,
     GravacaoDoProcesso,
     CadastroInicialService,
     EnvioDoEdital,
@@ -182,7 +184,7 @@ export class ProcessoSeletivoPage {
   });
 
   readonly store = inject(ProcessoSeletivoStore);
-  private readonly root = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly foco = inject(FocoDoEditor);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -266,39 +268,17 @@ export class ProcessoSeletivoPage {
       untracked(() => reavaliarRecusaPeloDesempate(this.store, this.cadastroDePesos.leitura()));
     });
 
-    // O rodapé e a barra de etapas do celular ficam colados às bordas do `.page`, por cima
-    // do passo. Ao rolar até o campo que recebe foco, o navegador só os desconta pelo
-    // `scroll-padding` do `.page` (em `styles.css`), que recebe daqui a altura medida de
-    // cada um: ela muda com a largura, com o modo de fonte e com os botões do passo.
-    effect((onCleanup) => {
-      const barra = this.etapas()?.barra()?.nativeElement;
-      const rodape = this.rodape()?.nativeElement;
-      const area = this.root.nativeElement.closest<HTMLElement>('.page');
-      const raiz = this.root.nativeElement.ownerDocument.documentElement;
-      if (!barra || !rodape || !area || typeof ResizeObserver === 'undefined') return;
-
-      const observador = new ResizeObserver(() => {
-        area.style.setProperty('--wiz-reserva-topo', `${barra.offsetHeight}px`);
-        area.style.setProperty('--wiz-reserva-base', `${rodape.offsetHeight}px`);
-        // O "Voltar ao topo" é irmão do `.page` no shell, fora do alcance da variável acima.
-        raiz.style.setProperty('--wiz-reserva-base', `${rodape.offsetHeight}px`);
-      });
-      observador.observe(barra);
-      observador.observe(rodape);
-      onCleanup(() => {
-        observador.disconnect();
-        area.style.removeProperty('--wiz-reserva-topo');
-        area.style.removeProperty('--wiz-reserva-base');
-        raiz.style.removeProperty('--wiz-reserva-base');
-      });
-    });
+    this.foco.observarReservas(
+      () => this.etapas()?.barra()?.nativeElement,
+      () => this.rodape()?.nativeElement,
+    );
 
     effect(() => {
       this.store.currentStep();
       // Numa entrada por `/:id` o painel só existe depois da leitura; sem
       // observar `hidratando`, o foco ficaria preso no estado de carregamento.
       this.store.hidratando();
-      queueMicrotask(() => this.focarTituloDoPasso());
+      queueMicrotask(() => this.foco.focarTituloDoPasso());
     });
 
     // CA-04: assim que a criação — disparada dentro do passo 2 — devolve o id,
@@ -800,7 +780,7 @@ export class ProcessoSeletivoPage {
         // os campos publicados como transcrição por gravar e barrar quem acabou de publicar —
         // o oposto do que esta linha existe para evitar.
         this.fixarRascunhoComoJaGravado();
-        this.focarConfirmacaoDePublicacao();
+        this.foco.focarConfirmacaoDePublicacao();
       }
     } finally {
       this.confirmacaoPendente.set(null);
@@ -848,18 +828,6 @@ export class ProcessoSeletivoPage {
     // gravação do processo novo sairia com a chave que o servidor já viu, receberia o replay do
     // anterior e a tela marcaria como salvo um rascunho que ninguém gravou.
     this.chaveDoRascunho.renovar();
-  }
-
-  /** Foca o título "Processo publicado" — só existe quando `persistir()` da Revisão confirmou o snapshot. */
-  private focarConfirmacaoDePublicacao(): void {
-    // `setTimeout`, não `queueMicrotask`: o bloco só entra no DOM depois que o
-    // Angular processa `snapshotConfirmado()`, o que acontece depois da fila
-    // de microtarefas — mesmo motivo de `revelarErro()`.
-    setTimeout(() => {
-      this.root.nativeElement
-        .querySelector<HTMLElement>('.revisao-publicado-titulo')
-        ?.focus({ preventScroll: true });
-    });
   }
 
   /**
@@ -1038,85 +1006,9 @@ export class ProcessoSeletivoPage {
     }
   }
 
-  /** Título do passo — o destino de foco a cada troca. */
-  private focarTituloDoPasso(): void {
-    // O passo novo abre no topo: com a rolagem do passo anterior mantida, ele aparecia rolado até
-    // o meio, com o título fora da tela. O foco vai sem rolar para não brigar com esta rolagem.
-    const scroller = this.root.nativeElement.closest<HTMLElement>('.page');
-    try {
-      scroller?.scrollTo({ top: 0, behavior: 'instant' });
-    } catch {
-      // jsdom não implementa scrollTo(options); o foco não pode ser bloqueado.
-    }
-    this.root.nativeElement.querySelector<HTMLElement>('.step-head h1')?.focus({
-      preventScroll: true,
-    });
-  }
-
-  private campoInvalidoParaFoco(): HTMLElement | null {
-    const visivel = (campo: HTMLElement): boolean => campo.closest('[hidden]') === null;
-    const ativo = document.activeElement;
-    if (
-      ativo instanceof HTMLElement &&
-      this.root.nativeElement.contains(ativo) &&
-      ativo.getAttribute('aria-invalid') === 'true' &&
-      visivel(ativo)
-    ) {
-      return ativo;
-    }
-    return (
-      Array.from(
-        this.root.nativeElement.querySelectorAll<HTMLElement>('.step-pane:not([hidden]) [aria-invalid="true"]'),
-      ).find(visivel) ?? null
-    );
-  }
-
-  /**
-   * Traz o aviso de pendências para a vista e o entrega ao leitor de tela. O
-   * resumo do último passo rola em 320 px e com zoom alto: sem isto, quem
-   * publica a partir do rodapé com a lista rolada não recebe retorno visível.
-   */
+  /** Traz o aviso de pendências para a vista; o passo em tela sabe abrir a seção que guarda o campo recusado. */
   private revelarErro(): void {
-    // `setTimeout` e não `queueMicrotask`: o aviso só existe no DOM depois que
-    // o Angular processa a mudança do signal, o que ocorre após a fila de
-    // microtarefas.
-    setTimeout(async () => {
-      const alerta = this.root.nativeElement.querySelector<HTMLElement>('.step-error');
-      if (alerta === null) return;
-
-      alerta.setAttribute('tabindex', '-1');
-
-      // O passo em tela sabe abrir a aba ou a seção que guarda o campo recusado.
-      if (await this.stepValidatorAt(this.store.currentStep())?.revelarCampoInvalido?.()) return;
-
-      // Com campo inválido no passo em tela, o foco vai a ele e a rolagem o traz para a vista:
-      // foco fora da tela não é foco visível. O aviso segue anunciado pela região aria-live.
-      // O campo de aba ou seção escondida não recebe foco; quem já está num campo inválido fica nele.
-      const campo = this.campoInvalidoParaFoco();
-      if (campo !== null) {
-        campo.scrollIntoView?.({ block: 'center' });
-        campo.focus({ preventScroll: true });
-        if (document.activeElement === campo) return;
-      }
-
-      // Sem campo inválido: quem rola é o `.page` do shell. O `scrollTo` ignora o `scroll-padding`, então a
-      // reserva do topo (a barra de etapas do celular, que cobriria o aviso) entra à mão.
-      const scroller = this.root.nativeElement.closest<HTMLElement>('.page');
-      if (scroller) {
-        try {
-          const reservaTopo = parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 0;
-          const topoAlerta = alerta.getBoundingClientRect().top;
-          const topoScroller = scroller.getBoundingClientRect().top;
-          scroller.scrollTo({
-            top: scroller.scrollTop + (topoAlerta - topoScroller) - reservaTopo,
-            behavior: 'smooth',
-          });
-        } catch {
-          // jsdom não implementa scrollTo(options); o foco não pode ser bloqueado.
-        }
-      }
-      alerta.focus({ preventScroll: true });
-    });
+    this.foco.revelarErro(() => this.stepValidatorAt(this.store.currentStep()));
   }
 
   /**
@@ -1286,7 +1178,7 @@ export class ProcessoSeletivoPage {
    * devolve o foco a lugar nenhum: o foco vai ao título. Na coluna lateral nada disso acontece.
    */
   protected focarTituloAposAEscolha(): void {
-    queueMicrotask(() => this.focarTituloDoPasso());
+    queueMicrotask(() => this.foco.focarTituloDoPasso());
   }
 }
 
