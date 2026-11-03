@@ -35,6 +35,7 @@ import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { GeoApi } from '@uniplus/shared-data/geo';
 import { AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import {
+  DocumentosEAtosDoProcessoApi,
   FundamentoIsencaoDto,
   OrigemCandidatos,
   ProcessosSeletivosApi,
@@ -143,6 +144,7 @@ const PAGE_PROVIDERS = [
   // E os modelos de que cada formulário pode partir.
   { provide: ModelosFormularioApi, useValue: catalogoVazioStub },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
+  { provide: DocumentosEAtosDoProcessoApi, useValue: {} },
   { provide: PermissoesService, useValue: { tem: concedeSoPublicar } },
 ];
 

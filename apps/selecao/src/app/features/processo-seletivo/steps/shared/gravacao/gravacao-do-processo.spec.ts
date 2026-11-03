@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
+  DocumentosEAtosDoProcessoApi,
   OrigemCandidatos,
   ProcessosSeletivosApi,
   SELECAO_BASE_PATH,
@@ -22,6 +23,7 @@ const erroDeRede = (requisicao: { error: (e: ProgressEvent, o: object) => void }
 describe('GravacaoDoProcesso', () => {
   let gravacao: GravacaoDoProcesso;
   let api: ProcessosSeletivosApi;
+  let documentosApi: DocumentosEAtosDoProcessoApi;
   let http: HttpTestingController;
 
   beforeEach(() => {
@@ -35,6 +37,7 @@ describe('GravacaoDoProcesso', () => {
     });
     gravacao = TestBed.inject(GravacaoDoProcesso);
     api = TestBed.inject(ProcessosSeletivosApi);
+    documentosApi = TestBed.inject(DocumentosEAtosDoProcessoApi);
     http = TestBed.inject(HttpTestingController);
   });
 
@@ -47,7 +50,7 @@ describe('GravacaoDoProcesso', () => {
     );
   const confirmarEdital = () =>
     gravacao.gravarRetida('confirmacaoDoEdital', (contexto) =>
-      api.confirmarEnvioDocumentoAPublicar(PROCESSO_ID, DOCUMENTO_ID, contexto),
+      documentosApi.confirmarEnvioDocumentoAPublicar(PROCESSO_ID, DOCUMENTO_ID, contexto),
     );
 
   function chaveDe(rota: string): string {

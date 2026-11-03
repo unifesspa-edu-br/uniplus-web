@@ -36,7 +36,7 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import type { TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
 import {
   FinalidadeDoDocumento,
-  ProcessosSeletivosApi,
+  DocumentosEAtosDoProcessoApi,
   type AtoDoProcessoDto,
   type AtoPublicadoDto,
   type ProdutoPrevistoDto,
@@ -137,7 +137,7 @@ const CAMPOS: ReadonlySet<string> = new Set<CampoDoFormulario>([
   styleUrl: './publicar-documento.component.css',
 })
 export class PublicarDocumentoComponent {
-  private readonly api = inject(ProcessosSeletivosApi);
+  private readonly api = inject(DocumentosEAtosDoProcessoApi);
   private readonly envios = inject(AnexosDoEditalService);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);

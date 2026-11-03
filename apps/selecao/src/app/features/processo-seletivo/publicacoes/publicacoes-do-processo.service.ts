@@ -5,6 +5,7 @@ import { FasesCanonicasApi } from '@uniplus/shared-data/configuracao';
 import { TiposAtoApi, type TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
 import {
   ProcessosSeletivosApi,
+  DocumentosEAtosDoProcessoApi,
   StatusProcesso,
   type AtoDoProcessoDto,
   type CampoDivulgacaoDto,
@@ -35,6 +36,7 @@ export interface PrevistosLidos {
 @Injectable()
 export class PublicacoesDoProcesso {
   private readonly api = inject(ProcessosSeletivosApi);
+  private readonly documentosApi = inject(DocumentosEAtosDoProcessoApi);
   private readonly tiposApi = inject(TiposAtoApi);
   private readonly fasesApi = inject(FasesCanonicasApi);
   private readonly problemI18n = inject(ProblemI18nService);
@@ -159,8 +161,8 @@ export class PublicacoesDoProcesso {
 
   private async lerPrevistos(processoId: string, leitura: number): Promise<void> {
     const [consulta, campos, fases] = await Promise.all([
-      firstValueFrom(this.api.obterProdutosPrevistos(processoId)),
-      firstValueFrom(this.api.listarCamposDivulgacao()),
+      firstValueFrom(this.documentosApi.obterProdutosPrevistos(processoId)),
+      firstValueFrom(this.documentosApi.listarCamposDivulgacao()),
       firstValueFrom(coletarPaginas((cursor) => this.fasesApi.listar({ cursor }))),
     ]);
     if (leitura !== this.leituraAtual) return;
@@ -183,7 +185,7 @@ export class PublicacoesDoProcesso {
   }
 
   private async lerAtos(processoId: string, leitura: number): Promise<void> {
-    const resultado = await firstValueFrom(this.api.listarAtosDoProcesso(processoId));
+    const resultado = await firstValueFrom(this.documentosApi.listarAtosDoProcesso(processoId));
     if (leitura !== this.leituraAtual) return;
 
     this.atos.set(

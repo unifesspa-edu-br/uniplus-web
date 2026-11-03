@@ -9,7 +9,7 @@ import {
   type ResultadoEnvio,
 } from '@uniplus/shared-core/http';
 import {
-  ProcessosSeletivosApi,
+  DocumentosEAtosDoProcessoApi,
   type DocumentoAPublicarDto,
   type IniciarEnvioDoDocumentoAPublicarDto,
   type IniciarEnvioDoDocumentoAPublicarRequest,
@@ -30,7 +30,7 @@ export class EnvioDoAnexo {
   private readonly chaveConfirmacao = new ChaveDeSubstituicao();
 
   constructor(
-    private readonly api: ProcessosSeletivosApi,
+    private readonly api: DocumentosEAtosDoProcessoApi,
     private readonly upload: SignedUploadClient,
   ) {}
 
@@ -67,7 +67,7 @@ export class EnvioDoAnexo {
 /** Abre os envios dos anexos e lê o que o processo publicou. Provido por componente. */
 @Injectable()
 export class AnexosDoEditalService {
-  private readonly api = inject(ProcessosSeletivosApi);
+  private readonly api = inject(DocumentosEAtosDoProcessoApi);
   private readonly upload = inject(SignedUploadClient);
 
   /** Um envio novo, com as próprias chaves de idempotência. */

@@ -12,7 +12,7 @@ import { firstValueFrom } from 'rxjs';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { ProblemI18nService, abrirAcessoEmNovaAba } from '@uniplus/shared-core/http';
 import {
-  ProcessosSeletivosApi,
+  DocumentosEAtosDoProcessoApi,
   StatusProcesso,
   type AtoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
@@ -55,7 +55,7 @@ import { PublicarDocumentoComponent, type ModoDaPublicacao } from './publicar-do
 })
 export class PublicacoesDoProcessoPage {
   private readonly rota = inject(ActivatedRoute);
-  private readonly api = inject(ProcessosSeletivosApi);
+  private readonly api = inject(DocumentosEAtosDoProcessoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly permissoes = inject(PermissoesService);
   protected readonly publicacoes = inject(PublicacoesDoProcesso);

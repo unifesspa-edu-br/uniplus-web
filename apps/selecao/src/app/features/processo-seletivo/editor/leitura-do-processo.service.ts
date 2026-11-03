@@ -5,6 +5,7 @@ import {
   FinalidadeDoDocumento,
   ProcessoSeletivoDto,
   ProcessosSeletivosApi,
+  DocumentosEAtosDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
 
 import type { MotivoFalhaDeLeitura } from '../steps/processo-seletivo.models';
@@ -40,6 +41,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
 export class LeituraDoProcesso {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly api = inject(ProcessosSeletivosApi);
+  private readonly documentosApi = inject(DocumentosEAtosDoProcessoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
@@ -162,7 +164,7 @@ export class LeituraDoProcesso {
   ): Promise<void> {
     if (!this.conducao.podePublicar()) return;
     const resultado = await firstValueFrom(
-      this.api.listarDocumentosAPublicar(
+      this.documentosApi.listarDocumentosAPublicar(
         processoSeletivoId,
         FinalidadeDoDocumento.documentoDoEdital,
       ),

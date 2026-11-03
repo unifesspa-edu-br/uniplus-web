@@ -33,6 +33,7 @@ import { AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   DocumentoAPublicarDto,
+  DocumentosEAtosDoProcessoApi,
   FinalidadeDoDocumento,
   FundamentoIsencaoDto,
   ItemConformidadeDto,
@@ -222,13 +223,16 @@ function montar(opts: CenarioOpts = {}) {
         useValue: {
           obter,
           obterConformidade,
-          listarDocumentosAPublicar: listarDocumentos,
           obterRascunhoDaPublicacao: obterRascunho,
           // A Revisão de processo publicado lê o ato vigente; esta suíte não exercita o ato.
           obterSnapshotVigente: () => NEVER,
           listarFundamentosIsencao: () => of(okResult<readonly FundamentoIsencaoDto[]>([])),
           definirTaxaInscricao,
         },
+      },
+      {
+        provide: DocumentosEAtosDoProcessoApi,
+        useValue: { listarDocumentosAPublicar: listarDocumentos },
       },
       {
         provide: ActivatedRoute,

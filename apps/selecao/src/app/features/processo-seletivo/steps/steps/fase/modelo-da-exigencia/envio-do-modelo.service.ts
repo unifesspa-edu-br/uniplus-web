@@ -9,7 +9,7 @@ import {
   type ResultadoEnvio,
 } from '@uniplus/shared-core/http';
 import {
-  ProcessosSeletivosApi,
+  DocumentosEAtosDoProcessoApi,
   type IniciarEnvioDoModeloDeDocumentoDto,
   type IniciarEnvioDoModeloDeDocumentoRequest,
   type ModeloDeDocumentoDto,
@@ -27,7 +27,7 @@ import {
  */
 @Injectable()
 export class EnvioDoModeloService {
-  private readonly api = inject(ProcessosSeletivosApi);
+  private readonly api = inject(DocumentosEAtosDoProcessoApi);
   private readonly upload = inject(SignedUploadClient);
 
   private readonly chaveIniciacao = new ChaveDeSubstituicao();

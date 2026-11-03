@@ -8,7 +8,7 @@ import {
 import {
   FinalidadeDoDocumento,
   IniciarEnvioDoDocumentoAPublicarDto,
-  ProcessosSeletivosApi,
+  DocumentosEAtosDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
 
 import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
@@ -18,7 +18,7 @@ import { TIPO_DE_MIDIA_DO_EDITAL } from './hidratacao';
 /** O envio do documento do edital em três passos: iniciar, enviar ao storage e confirmar. */
 @Injectable()
 export class EnvioDoEdital {
-  private readonly api = inject(ProcessosSeletivosApi);
+  private readonly api = inject(DocumentosEAtosDoProcessoApi);
   private readonly upload = inject(SignedUploadClient);
   private readonly gravacao = inject(GravacaoDoProcesso);
 
