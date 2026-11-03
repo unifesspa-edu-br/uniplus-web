@@ -23,7 +23,7 @@ import type {
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
-import { comExigencia, exigenciaNova } from '../../shared/exigencias-documentais';
+import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';

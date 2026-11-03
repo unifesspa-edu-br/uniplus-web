@@ -1,34 +1,40 @@
+import { comAlcanceDeTodasAsFases } from '../../shared/exigencias/alcance-das-exigencias';
+import { formatosDeclarados } from '../../shared/exigencias/arquivo-da-exigencia';
+import {
+  type ExigenciaLocalizada,
+  type GrupoDaExigencia,
+  type RepeticaoDaExigencia,
+  exigenciasDaFase,
+  exigenciasDaRaiz,
+  exigenciasLocalizadasDaFase,
+  todasAsExigencias,
+} from '../../shared/exigencias/consulta-das-exigencias';
 import {
   ABRANGENCIAS_ESCOLHIVEIS,
   CONSEQUENCIAS_ESCOLHIVEIS,
   FATO_MODALIDADE,
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
-  agrupadosPorFormulario,
   baseLegalNova,
-  comAlcanceDeTodasAsFases,
   comExigencia,
-  comFinalidade,
   comExigenciaNaRaiz,
-  comExigidoDeTodos,
-  comRecorteEscolhido,
   comRepeticao,
   comRepeticaoEmTodasAsFases,
   exigenciaNova,
-  exigenciasDaFase,
-  exigenciasDaRaiz,
   exigenciaSemNormaResolvida,
-  exigenciasLocalizadasDaFase,
-  exigidoDeTodos,
+  semAExigencia,
+} from '../../shared/exigencias/exigencias-documentais';
+import {
+  agrupadosPorFormulario,
+  comFinalidade,
   faltaOFormulario,
   finalidadeDaExigencia,
-  formatosDeclarados,
+} from '../../shared/exigencias/formulario-da-exigencia';
+import {
+  comExigidoDeTodos,
+  comRecorteEscolhido,
+  exigidoDeTodos,
   modalidadesDaExigencia,
-  semAExigencia,
-  todasAsExigencias,
-  type ExigenciaLocalizada,
-  type GrupoDaExigencia,
-  type RepeticaoDaExigencia,
-} from '../../shared/exigencias-documentais';
+} from '../../shared/exigencias/recorte-por-modalidade';
 import { descreverArquivo } from '../../shared/documentos-exigidos';
 import {
   clausulasDoGatilho,
@@ -659,11 +665,6 @@ export class FaseStepComponent {
   /** Só as modalidades que as ofertas de vagas selecionam podem exigir documento. */
   readonly modalidades = computed(() => this.store.modalidadesDoProcesso());
 
-  /**
-   * A configuração de um documento, ou o padrão de quem ainda não foi tocado. O registro
-   * do rascunho deixou de nascer semeado por um catálogo fixo — o cadastro cresce sem
-   * deploy, e semear a partir dele faria o rascunho guardar documento que ninguém marcou.
-   */
   /** O documento escolhido no seletor, ainda não acrescentado. */
   readonly documentoAAcrescentar = signal('');
 
@@ -1244,13 +1245,7 @@ export class FaseStepComponent {
     return exigenciaSemNormaResolvida(this.exigenciaDoDocumento(id));
   }
 
-  /**
-   * Escreve um campo de UMA das normas, endereçada pela posição.
-   *
-   * Antes havia três campos escalares por documento e uma união fechada de três literais: a
-   * segunda norma não tinha onde existir, e a observação não tinha campo nenhum — ela era
-   * escrita como `null` fixo e nunca lida de volta.
-   */
+  /** Escreve um campo de UMA das normas, endereçada pela posição. */
   escreverBaseLegal(
     id: string,
     posicao: number,

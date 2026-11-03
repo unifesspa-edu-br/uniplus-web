@@ -13,7 +13,7 @@ import type {
   ExigenciasDoRascunho,
   FormularioDeInscricao,
 } from '../../processo-seletivo.models';
-import { comExigencia, exigenciaNova } from '../../shared/exigencias-documentais';
+import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-documentais';
 import {
   camposSemUsoDeclarado,
   camposSemValoresOfertados,

@@ -21,16 +21,18 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import {
-  arvoreDeExigencias,
+  exigenciasDaFase,
+  exigenciasLocalizadasDaFase,
+  todasAsExigencias,
+} from '../../shared/exigencias/consulta-das-exigencias';
+import {
   comExigencia,
   comRepeticao,
   exigenciaNova,
-  exigenciasDaFase,
-  exigenciasLocalizadasDaFase,
   exigenciasVazias,
   folhaDe,
-  todasAsExigencias,
-} from '../../shared/exigencias-documentais';
+} from '../../shared/exigencias/exigencias-documentais';
+import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { FaseStepComponent } from './fase.component';
 import { ModeloDaExigenciaComponent } from './modelo-da-exigencia/modelo-da-exigencia.component';

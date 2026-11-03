@@ -24,7 +24,7 @@ import type {
   ReferenciaTemporalConfig,
   WizardDraft,
 } from '../../processo-seletivo.models';
-import { todasAsExigencias } from '../../shared/exigencias-documentais';
+import { todasAsExigencias } from '../../shared/exigencias/consulta-das-exigencias';
 import type { RegraDaModalidadeOfertada } from '../../shared/regras-das-modalidades';
 import {
   desempateUsaDataDeNascimento,

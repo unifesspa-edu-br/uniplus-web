@@ -48,22 +48,24 @@ import {
   PERMUTACAO_DE_ORDEM,
   gravarCronogramaFases,
 } from '../../shared/gravacao-do-cronograma';
+import { comAlcanceDeTodasAsFases } from '../../shared/exigencias/alcance-das-exigencias';
 import {
-  CONSEQUENCIA_REENVIO,
-  arvoreDeExigencias,
-  comAlcanceDeTodasAsFases,
-  exigenciaDecideResultado,
+  type RepeticaoDaExigencia,
   exigenciasDaFase,
   exigenciasLocalizadas,
-  faltaOFormulario,
   gruposSemNormaResolvida,
-  modalidadesDaExigencia,
+  todasAsExigencias,
+} from '../../shared/exigencias/consulta-das-exigencias';
+import {
+  CONSEQUENCIA_REENVIO,
+  exigenciaDecideResultado,
   semAEtapa,
   semAFase,
   temNormaResolvida,
-  todasAsExigencias,
-  type RepeticaoDaExigencia,
-} from '../../shared/exigencias-documentais';
+} from '../../shared/exigencias/exigencias-documentais';
+import { faltaOFormulario } from '../../shared/exigencias/formulario-da-exigencia';
+import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
+import { modalidadesDaExigencia } from '../../shared/exigencias/recorte-por-modalidade';
 import {
   dominiosDoGatilho,
   fatosParaGatilho,
@@ -600,7 +602,6 @@ export class CronogramaStepComponent {
     );
   });
 
-  /** Quantas etapas compõem a nota final — o que a fórmula vai dividir. */
   /**
    * Os controles de etapa que declaram pertencer a esta fase, com o índice que cada um
    * ocupa no FormArray — é por ele que o template liga rótulo, `id` e remoção.
@@ -747,15 +748,6 @@ export class CronogramaStepComponent {
     this.formulario.controls.faseAAcrescentar.setValue('');
   }
 
-  /**
-   * A última fase não sai: o cronograma gravado não aceita ficar vazio, e a
-   * recusa chegaria só depois de o operador perder o que preencheu.
-   */
-  /**
-   * Remover a fase que agrupa etapas leva as etapas junto: elas continuariam no
-   * agregado sem a fase que as avalia, e a publicação passaria a recusar por um
-   * motivo que não aponta esta tela.
-   */
   /**
    * As fases expandidas, por posição na linha do tempo.
    *

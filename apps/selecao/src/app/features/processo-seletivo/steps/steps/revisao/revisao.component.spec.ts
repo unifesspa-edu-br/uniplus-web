@@ -24,7 +24,12 @@ import { AtoNormativoDto, AtosApi, TiposAtoApi } from '@uniplus/shared-data/publ
 import { FaseDoCronograma, FaseUpload, UploadItem, WizardDraft } from '../../processo-seletivo.models';
 import { PASSOS } from '../../processo-seletivo.data';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { baseLegalNova, comExigencia, exigenciaNova, folhaDe } from '../../shared/exigencias-documentais';
+import {
+  baseLegalNova,
+  comExigencia,
+  exigenciaNova,
+  folhaDe,
+} from '../../shared/exigencias/exigencias-documentais';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { EnvioDoEdital } from '../../shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';

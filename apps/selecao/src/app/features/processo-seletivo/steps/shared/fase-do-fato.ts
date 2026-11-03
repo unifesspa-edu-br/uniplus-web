@@ -10,7 +10,7 @@ import {
 
 import type { FaseDoCronograma, FormularioDeInscricao } from '../processo-seletivo.models';
 import { finalidadesDaFase } from '../steps/cronograma/cronograma-do-certame';
-import { finalidadeDaExigencia } from './exigencias-documentais';
+import { finalidadeDaExigencia } from './exigencias/formulario-da-exigencia';
 import {
   fatosCitadosPelaDerivacao,
   fatosColetadosPelaInscricao,

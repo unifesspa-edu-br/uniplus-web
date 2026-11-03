@@ -3,10 +3,9 @@ import { describe, expect, it } from 'vitest';
 import type { ExigenciaDeDocumento } from '../../processo-seletivo.models';
 import {
   APLICABILIDADE_CONDICIONAL,
-  comExigidoDeTodos,
-  comModalidades,
   exigenciaNova,
-} from '../../shared/exigencias-documentais';
+} from '../../shared/exigencias/exigencias-documentais';
+import { comExigidoDeTodos, comModalidades } from '../../shared/exigencias/recorte-por-modalidade';
 import {
   comClausula,
   comCondicaoTrocada,

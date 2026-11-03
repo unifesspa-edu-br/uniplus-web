@@ -1,7 +1,7 @@
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 
 import type { WizardDraft } from './processo-seletivo.models';
-import { exigenciasVazias } from './shared/exigencias-documentais';
+import { exigenciasVazias } from './shared/exigencias/exigencias-documentais';
 
 /**
  * O rascunho de um processo novo. Nada nasce semeado: cada campo vazio é decisão que quem

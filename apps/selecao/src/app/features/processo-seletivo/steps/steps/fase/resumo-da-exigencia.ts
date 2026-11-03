@@ -1,16 +1,15 @@
 import { descreverCondicao } from '@uniplus/shared-ui/components';
 
 import type { BaseLegalConfig, ExigenciaDeDocumento } from '../../processo-seletivo.models';
+import { type GrupoDaExigencia } from '../../shared/exigencias/consulta-das-exigencias';
 import {
   ABRANGENCIAS_ESCOLHIVEIS,
   CONSEQUENCIAS_ESCOLHIVEIS,
   FATO_MODALIDADE,
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
-  exigidoDeTodos,
-  numerosDeClausula,
   temNormaResolvida,
-  type GrupoDaExigencia,
-} from '../../shared/exigencias-documentais';
+} from '../../shared/exigencias/exigencias-documentais';
+import { exigidoDeTodos, numerosDeClausula } from '../../shared/exigencias/recorte-por-modalidade';
 import {
   OPERADOR_DIFERENTE,
   OPERADOR_EM,

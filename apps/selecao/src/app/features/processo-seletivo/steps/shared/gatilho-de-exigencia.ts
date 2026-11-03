@@ -21,7 +21,8 @@ import {
 } from '@uniplus/shared-ui/components';
 
 import type { CondicaoGatilhoConfig, ExigenciaDeDocumento } from '../processo-seletivo.models';
-import { FATO_MODALIDADE, exigidoDeTodos, numerosDeClausula } from './exigencias-documentais';
+import { FATO_MODALIDADE } from './exigencias/exigencias-documentais';
+import { exigidoDeTodos, numerosDeClausula } from './exigencias/recorte-por-modalidade';
 import {
   ehCampoDeMembro,
   oProcessoResolve,

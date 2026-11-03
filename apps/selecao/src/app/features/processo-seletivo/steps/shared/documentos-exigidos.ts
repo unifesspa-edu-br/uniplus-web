@@ -9,15 +9,17 @@ import {
   repeticaoResumida,
   rotuloDaConsequencia,
 } from '../steps/fase/resumo-da-exigencia';
+import { comAlcanceDeTodasAsFases } from './exigencias/alcance-das-exigencias';
+import {
+  type ExigenciaLocalizada,
+  exigenciasLocalizadasDaFase,
+  gruposQueDecidem,
+} from './exigencias/consulta-das-exigencias';
 import {
   exigenciaDecideResultado,
-  exigenciasLocalizadasDaFase,
-  comAlcanceDeTodasAsFases,
-  gruposQueDecidem,
-  finalidadeDaExigencia,
   exigenciaSemNormaResolvida,
-  type ExigenciaLocalizada,
-} from './exigencias-documentais';
+} from './exigencias/exigencias-documentais';
+import { finalidadeDaExigencia } from './exigencias/formulario-da-exigencia';
 import { dominiosDoGatilho, fatosParaGatilho, type FatoEscolhivel } from './gatilho-de-exigencia';
 
 /** Como a leitura nomeia o que o rascunho guarda por código. */

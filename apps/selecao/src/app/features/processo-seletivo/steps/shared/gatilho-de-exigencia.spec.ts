@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
 
 import type { ExigenciaDeDocumento } from '../processo-seletivo.models';
-import { comExigidoDeTodos, comModalidades, comRecorteEscolhido } from './exigencias-documentais';
+import {
+  comExigidoDeTodos,
+  comModalidades,
+  comRecorteEscolhido,
+} from './exigencias/recorte-por-modalidade';
 import {
   alcanceDaCondicao,
   clausulasDoGatilho,
