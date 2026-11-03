@@ -3,14 +3,17 @@ import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type { StepStatus } from '@uniplus/shared-ui/components';
 import { STEP_LABELS } from './processo-seletivo.data';
-import {
-  regrasDasModalidadesOfertadas,
-  type RegraDaModalidadeOfertada,
-} from './shared/regras-das-modalidades';
-import { desempateDe, hidratarDraft } from './shared/hidratacao';
+import type { RegraDaModalidadeOfertada } from './shared/regras-das-modalidades';
 import type { AplicacaoEmAberto } from './steps/formulario/modelo-de-formulario';
 import { FalhaDeLeitura, WizardDraft } from './processo-seletivo.models';
 import { ClassificacaoNoServidor } from './classificacao-no-servidor';
+import {
+  hidratarProcesso,
+  registrarGravadoLido,
+  registrarRegrasDasModalidades,
+  registrarVagasGravadas,
+} from './leituras-do-servidor';
+import { concorrenciaDuplaAplicavel, modalidadesDasOfertas } from './modalidades-do-processo';
 import { rascunhoInicial } from './rascunho-inicial';
 import { motivoDeSomenteLeitura } from './somente-leitura';
 
@@ -214,30 +217,10 @@ export class ProcessoSeletivoStore {
     motivoDeSomenteLeitura(this.remoteSnapshot()?.status, this.publicacaoNaoConfirmada()),
   );
 
-  /**
-   * Modalidades que o processo aceita: a união do que suas distribuições de
-   * vagas selecionam.
-   *
-   * Não é escolha própria do processo. Modalidade participa da distribuição de
-   * cada oferta, e o passo que a declarava globalmente foi removido — ele
-   * pedia duas vezes a mesma decisão e não tinha para onde gravar.
-   */
-  readonly modalidadesDoProcesso = computed<readonly string[]>(() => {
-    const codigos = this.draft().vagas.ofertas.flatMap((oferta) =>
-      oferta.modalidades.map((modalidade) => modalidade.codigo),
-    );
-    return [...new Set(codigos)];
-  });
+  readonly modalidadesDoProcesso = computed(() => modalidadesDasOfertas(this.draft()));
 
-  /**
-   * Concorrência dupla (Lei 14.723/2023) vale quando o processo oferece cota
-   * reservada. É consequência das modalidades, não uma opção: o servidor a
-   * computa do mesmo modo em `ConcorrenciaDuplaAplicavel`.
-   */
   readonly concorrenciaDuplaAplicavel = computed(() =>
-    this.modalidadesDoProcesso().some(
-      (codigo) => codigo.startsWith('LB_') || codigo.startsWith('LI_'),
-    ),
+    concorrenciaDuplaAplicavel(this.modalidadesDoProcesso()),
   );
 
   readonly currentLabel = computed(() => this.labels[this.currentStep()]);
@@ -374,48 +357,19 @@ export class ProcessoSeletivoStore {
     this.geracao.update((valor) => valor + 1);
   }
 
-  /**
-   * Projeta o detalhe canônico sobre o rascunho (CA-05) e marca o processo
-   * como já criado — os campos do comando de identificação ficam bloqueados,
-   * exatamente como ficariam depois de uma criação nesta mesma sessão
-   * (`cadastroInicialCongelado`), porque o contrato não expõe atualização
-   * deles.
-   */
   hidratar(dto: ProcessoSeletivoDto): void {
-    if (this.processoSeletivoId() !== dto.id) {
-      this.geracao.update((valor) => valor + 1);
-      this.classificacao.aoTrocarDeProcesso();
-    }
-    // Qualquer releitura que chegue até aqui traz status atual do servidor —
-    // resolve a incerteza de `publicacaoNaoConfirmada`, publicado ou não.
-    this.publicacaoNaoConfirmada.set(false);
-    this.remoteSnapshot.set(dto);
-    this.registrarGravadoLido(dto);
-    this.processoSeletivoId.set(dto.id);
-    this.draft.update((draft) => hidratarDraft(draft, dto));
+    hidratarProcesso(this, dto);
   }
 
-  /**
-   * O que o servidor tem e contra o que as gravações são conferidas: a classificação, os critérios
-   * de desempate e as regras congeladas das modalidades, lidos do detalhe. Só isso — a releitura
-   * depois de gravar não mexe no rascunho.
-   */
   registrarGravadoLido(dto: ProcessoSeletivoDto): void {
-    this.classificacao.registrarLida(dto.classificacao);
-    this.classificacao.criteriosDesempateGravados.set(desempateDe(dto));
-    this.registrarRegrasDasModalidades(dto);
-    this.registrarVagasGravadas(dto);
+    registrarGravadoLido(this, dto);
   }
 
-  /** O número de opções de curso, lido do detalhe. */
   registrarVagasGravadas(dto: ProcessoSeletivoDto): void {
-    const numero = dto.opcoesDeCurso?.numero;
-    this.opcoesDeCursoGravadas.set(numero ?? null);
-    this.vagasGravadasDefasadas.set(false);
+    registrarVagasGravadas(this, dto);
   }
 
-  /** As regras que o servidor congelou nas modalidades ofertadas, lidas do detalhe. */
   registrarRegrasDasModalidades(dto: ProcessoSeletivoDto): void {
-    this.regrasDasModalidades.set(regrasDasModalidadesOfertadas(dto));
+    registrarRegrasDasModalidades(this, dto);
   }
 }

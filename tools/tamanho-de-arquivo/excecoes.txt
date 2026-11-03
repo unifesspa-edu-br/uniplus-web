@@ -44,7 +44,6 @@
 2710 apps/selecao/src/app/features/processo-seletivo/processo-seletivo.css
 1309 apps/selecao/src/app/features/processo-seletivo/processo-seletivo.page.ts
 551 apps/selecao/src/app/features/processo-seletivo/publicacoes/publicar-documento.component.ts
-421 apps/selecao/src/app/features/processo-seletivo/steps/processo-seletivo.store.ts
 416 apps/selecao/src/app/features/processo-seletivo/steps/shared/anexo-edital/anexo-edital.component.ts
 1339 apps/selecao/src/app/features/processo-seletivo/steps/shared/exigencias-documentais.ts
 532 apps/selecao/src/app/features/processo-seletivo/steps/shared/fase-do-fato.ts
