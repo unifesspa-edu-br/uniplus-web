@@ -72,23 +72,6 @@ function frase(quantas: number): string {
 }
 
 /**
- * Por que `secao.matriz()` é `null` — três causas distintas, cada uma com
- * mensagem própria (esquema malformado, regra confirmadamente ausente,
- * consulta que falhou sem confirmar nada), nunca a mesma frase genérica
- * para as três. É o mesmo desvio em dois lugares — `pendenciasDaCascata` e
- * `persistirCascata` —, então fica num só ponto.
- */
-function mensagemDeMatrizIndisponivel(secao: CascataRemanejamentoComponent): string {
-  if (secao.regraNaoEncontrada()) {
-    return 'A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.';
-  }
-  if (secao.falhaAoConsultarRegra()) {
-    return 'Não foi possível confirmar a regra escolhida — a consulta falhou. Tente novamente antes de gravar.';
-  }
-  return 'A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.';
-}
-
-/**
  * O que não é inteiro positivo não entra na soma: célula vazia ou malformada
  * já é apontada pela validação, e somá-la como `NaN` apagaria o total inteiro.
  */
@@ -1421,7 +1404,7 @@ export class VagasStepComponent {
     if (matriz === null) {
       return {
         valid: false,
-        messages: [mensagemDeMatrizIndisponivel(secao)],
+        messages: [secao.mensagemDeMatrizIndisponivel()],
       };
     }
 
@@ -1483,55 +1466,9 @@ export class VagasStepComponent {
     ];
   });
 
-  /**
-   * O que a seção de cascata ainda pede antes de gravar — vazio quando ela
-   * não se aplica a nenhuma oferta desta distribuição.
-   *
-   * A oferta fora do regime federal bloqueia o avanço mesmo quando a seção
-   * inteira não aparece (`precisaExibir()` falso): sem isto, o alerta que a
-   * seção mostra (`ofertasForaDoRegime()`) seria só decorativo — o operador
-   * gravaria e avançaria com `cascata_modalidade_fora_do_regime_federal`
-   * vermelho, que bloqueia a publicação mais adiante sem nenhuma pista de
-   * onde a correção mora.
-   */
-  private readonly pendenciasDaCascata = computed<readonly string[]>(() => {
-    const secao = this.cascataSecao();
-    if (secao === undefined) return [];
-
-    const pendenciasForaDoRegime = secao
-      .ofertasForaDoRegime()
-      .map(
-        (oferta) =>
-          `Cascata — ${this.rotuloDaOferta(oferta.ofertaCursoId)}: tem modalidade que segue a cascata fora do ramo federal. Corrija a regra de distribuição ou a modalidade desta oferta.`,
-      );
-
-    if (!secao.precisaExibir()) return pendenciasForaDoRegime;
-
-    if (secao.cascata() === null) {
-      return [...pendenciasForaDoRegime, 'Escolha a regra de remanejamento da cascata.'];
-    }
-
-    // `matriz()` pode ser `null` por três causas distintas — esquema
-    // malformado, regra confirmadamente ausente (404) ou consulta que
-    // falhou sem confirmar nada —, e a tabela e o checkbox de confirmação
-    // não aparecem no template em nenhuma delas (`@if (matriz(); as
-    // matrizDaRegra)`). Sem este desvio, o operador cairia no "confirme a
-    // cascata" de baixo, pedindo para marcar um checkbox que não existe na
-    // tela — e tratar as três causas como a mesma coisa esconderia qual
-    // delas é, e se vale tentar de novo ou trocar de regra.
-    const naoResolveMatriz =
-      secao.esquemaNaoReconhecido() || secao.regraNaoEncontrada() || secao.falhaAoConsultarRegra();
-    if (naoResolveMatriz) {
-      return [...pendenciasForaDoRegime, `Cascata — ${mensagemDeMatrizIndisponivel(secao)}`];
-    }
-
-    const problemas = secao
-      .problemas()
-      .map((problema) => `Cascata — ${secao.rotuloDoProblema(problema)}`);
-    if (problemas.length > 0) return [...pendenciasForaDoRegime, ...problemas];
-
-    return pendenciasForaDoRegime;
-  });
+  private readonly pendenciasDaCascata = computed<readonly string[]>(
+    () => this.cascataSecao()?.pendenciasParaGravar() ?? [],
+  );
 
   validate(): StepValidation {
     // A conferência saiu daqui: ela virou o diálogo que a página abre ANTES de gravar, como nos

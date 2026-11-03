@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   effect,
   inject,
   signal,
@@ -10,10 +9,12 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
-import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
-import { RolagemFocavelDirective, ValorLegivelDirective, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
-import { Subscription } from 'rxjs';
+import { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
+import {
+  RolagemFocavelDirective,
+  ValorLegivelDirective,
+  ValorEmConsultaComponent,
+} from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
@@ -26,7 +27,9 @@ import {
 } from './cascata-de-remanejamento';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
 import { modalidadesGravadasPorId } from './modalidades-da-distribuicao';
+import { MatrizDaCascataComponent } from './matriz-da-cascata.component';
 import { explicarRegra, RegraExplicada } from './regra-em-linguagem-clara';
+import { VersaoDeRegraForaDaListagemService } from './versao-de-regra-fora-da-listagem.service';
 
 /**
  * A seção da cascata de remanejamento, dentro do passo Vagas (UNI-REQ-0134 e
@@ -48,15 +51,21 @@ import { explicarRegra, RegraExplicada } from './regra-em-linguagem-clara';
 @Component({
   selector: 'sel-cascata-remanejamento',
   standalone: true,
-  imports: [ValorLegivelDirective, ValorEmConsultaComponent, ReactiveFormsModule, RolagemFocavelDirective],
+  imports: [
+    ValorLegivelDirective,
+    ValorEmConsultaComponent,
+    ReactiveFormsModule,
+    RolagemFocavelDirective,
+    MatrizDaCascataComponent,
+  ],
   templateUrl: './cascata-remanejamento.component.html',
+  providers: [VersaoDeRegraForaDaListagemService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CascataRemanejamentoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeDistribuicaoService);
-  private readonly regrasCatalogoApi = inject(RegrasCatalogoApi);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly versaoDaRegra = inject(VersaoDeRegraForaDaListagemService);
 
   private readonly ofertas = computed(() => this.store.draft().vagas.ofertas);
   readonly cascata = computed(() => this.store.draft().vagas.cascata);
@@ -129,97 +138,11 @@ export class CascataRemanejamentoComponent {
    */
   readonly regraControl = new FormControl<string>('|', { nonNullable: true });
 
-  /**
-   * A versão específica de uma seleção que a listagem carregada não tem —
-   * hidratação (ou uma gravação anterior) pode referenciar uma regra que
-   * saiu de lá desde então (inativada, ou nova versão publicada por cima).
-   * A listagem só traz o que está ativo hoje; a seleção é imutável por
-   * código+versão (CA-03 da #481: item já referenciado permanece legível
-   * como snapshot), então a busca é pela versão exata via
-   * `RegrasCatalogoApi.obterVersao`, nunca por uma substituta.
-   *
-   * `null` enquanto não há por que buscar (seleção vazia, já na listagem,
-   * ou catálogo ainda carregando — a listagem tem prioridade e chega
-   * primeiro na maioria dos casos).
-   *
-   * `nao_encontrada` é reservado ao 404 — a única resposta que confirma que
-   * a regra não existe. Erro de rede, 5xx ou falha de autorização são
-   * `falha`: a consulta não deu certo agora, o que não prova nada sobre a
-   * regra em si, e por isso é retentável (`tentarNovamenteRegra()`) em vez
-   * de terminal — tratar os dois como a mesma coisa transformaria uma
-   * indisponibilidade transitória num veredito permanente de "regra
-   * inexistente" sobre um processo já configurado.
-   */
-  private readonly buscaDaVersaoFora = signal<
-    | { readonly estado: 'buscando'; readonly codigo: string; readonly versao: string }
-    | {
-        readonly estado: 'encontrada';
-        readonly codigo: string;
-        readonly versao: string;
-        readonly regra: RegraCatalogoDto;
-      }
-    | { readonly estado: 'nao_encontrada'; readonly codigo: string; readonly versao: string }
-    | { readonly estado: 'falha'; readonly codigo: string; readonly versao: string }
-    | null
-  >(null);
-
-  /** A requisição por trás de um `buscando` — cancelada quando a seleção deixa de ser a dela. */
-  private buscaEmCurso: Subscription | null = null;
-
-  private readonly regraEscolhida = computed<RegraCatalogoDto | undefined>(() => {
-    const selecao = this.cascata();
-    if (selecao === null) return undefined;
-
-    const daListagem = this.catalogos
-      .regrasCascata()
-      .find((regra) => regra.codigo === selecao.regraCodigo && regra.versao === selecao.regraVersao);
-    if (daListagem !== undefined) return daListagem;
-
-    const busca = this.buscaDaVersaoFora();
-    return busca?.estado === 'encontrada' &&
-      busca.codigo === selecao.regraCodigo &&
-      busca.versao === selecao.regraVersao
-      ? busca.regra
-      : undefined;
-  });
-
-  /**
-   * A seleção não está na listagem carregada, e a busca direta da versão
-   * já terminou sem encontrá-la — diferente de "ainda carregando" (onde
-   * `regraEscolhida()` fica temporariamente `undefined` sem que isso seja
-   * defeito) e de "esquemaArgs malformado" (onde a regra existe).
-   */
-  readonly regraNaoEncontrada = computed(() => {
-    const selecao = this.cascata();
-    if (selecao === null) return false;
-    const busca = this.buscaDaVersaoFora();
-    return (
-      busca?.estado === 'nao_encontrada' &&
-      busca.codigo === selecao.regraCodigo &&
-      busca.versao === selecao.regraVersao
-    );
-  });
-
-  /**
-   * A busca da versão fora da listagem falhou por um motivo que não prova
-   * que a regra não existe (rede, 5xx, autorização) — diferente de
-   * `regraNaoEncontrada`, que é o 404 definitivo. `tentarNovamenteRegra()`
-   * é a saída: a tela nunca declara a regra inexistente sem uma resposta
-   * que confirme isso.
-   */
-  readonly falhaAoConsultarRegra = computed(() => {
-    const selecao = this.cascata();
-    if (selecao === null) return false;
-    const busca = this.buscaDaVersaoFora();
-    return (
-      busca?.estado === 'falha' &&
-      busca.codigo === selecao.regraCodigo &&
-      busca.versao === selecao.regraVersao
-    );
-  });
+  readonly regraNaoEncontrada = this.versaoDaRegra.regraNaoEncontrada;
+  readonly falhaAoConsultarRegra = this.versaoDaRegra.falhaAoConsultarRegra;
 
   readonly regraExplicada = computed<RegraExplicada | null>(() =>
-    explicarRegra(this.regraEscolhida()),
+    explicarRegra(this.versaoDaRegra.regraEscolhida()),
   );
 
   /**
@@ -231,7 +154,7 @@ export class CascataRemanejamentoComponent {
    */
   readonly opcoesDoSeletor = computed<readonly RegraCatalogoDto[]>(() => {
     const listagem = this.catalogos.regrasCascata();
-    const regra = this.regraEscolhida();
+    const regra = this.versaoDaRegra.regraEscolhida();
     if (regra === undefined) return listagem;
 
     const jaNaListagem = listagem.some(
@@ -242,37 +165,14 @@ export class CascataRemanejamentoComponent {
 
   /** A matriz que a regra escolhida congela — o que a tela apresenta e envia, sem editar. */
   readonly matriz = computed<MatrizDaRegra | null>(() => {
-    const regra = this.regraEscolhida();
+    const regra = this.versaoDaRegra.regraEscolhida();
     return regra === undefined ? null : matrizDaRegra(regra.esquemaArgs);
   });
 
   /** A regra existe (na listagem ou pela busca direta) mas o `esquemaArgs` não tem a forma reconhecida — defeito a reportar, não matriz vazia. */
   readonly esquemaNaoReconhecido = computed(
-    () => this.regraEscolhida() !== undefined && this.matriz() === null,
+    () => this.versaoDaRegra.regraEscolhida() !== undefined && this.matriz() === null,
   );
-
-  /**
-   * Os rótulos ordinais das colunas — "1ª", "2ª", … —, um por posição de
-   * preferência. Sai do maior número de destinos entre as origens, e não de
-   * uma constante: a matriz é o que a regra do catálogo declara, e outra
-   * versão pode declarar outra largura.
-   */
-  readonly ordinaisDaMatriz = computed<readonly string[]>(() => {
-    const matriz = this.matriz();
-    if (matriz === null) return [];
-    const maior = matriz.ordens.reduce((maximo, ordem) => Math.max(maximo, ordem.destinos.length), 0);
-    return Array.from({ length: maior }, (_, indice) => `${indice + 1}ª`);
-  });
-
-  /**
-   * O destino de uma origem numa posição de preferência, ou o travessão quando
-   * aquela origem tem menos destinos que a mais larga da matriz. A checagem é
-   * por comprimento, e não por coalescência: o índice de um `readonly string[]`
-   * é tipado como `string`, então `?? ` seria código morto (NG8102).
-   */
-  destinoNaPosicao(destinos: readonly string[], posicao: number): string {
-    return posicao < destinos.length ? destinos[posicao] : '—';
-  }
 
   /** Encaixe entre a matriz e cada oferta federal — por oferta, nunca sobre a união (UNI-REQ-0056). */
   readonly problemas = computed<readonly ProblemaDaCascata[]>(() => {
@@ -323,8 +223,10 @@ export class CascataRemanejamentoComponent {
     effect(() => {
       const habilitado = this.store.aceitaEdicao();
       untracked(() => {
-        if (habilitado && this.regraControl.disabled) this.regraControl.enable({ emitEvent: false });
-        if (!habilitado && this.regraControl.enabled) this.regraControl.disable({ emitEvent: false });
+        if (habilitado && this.regraControl.disabled)
+          this.regraControl.enable({ emitEvent: false });
+        if (!habilitado && this.regraControl.enabled)
+          this.regraControl.disable({ emitEvent: false });
       });
     });
 
@@ -332,97 +234,10 @@ export class CascataRemanejamentoComponent {
     this.regraControl.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((valor) => this.escolherRegra(valor));
-
-    // Busca a versão específica quando a seleção não está na listagem —
-    // só depois dela terminar de carregar, para a listagem ter prioridade
-    // e não disparar uma busca que a própria listagem resolveria a seguir.
-    effect(() => {
-      const selecao = this.cascata();
-      const carregando = this.catalogos.carregando();
-      const regras = this.catalogos.regrasCascata();
-      untracked(() => this.buscarVersaoForaDaListagemSePreciso(selecao, carregando, regras));
-    });
   }
 
-  private buscarVersaoForaDaListagemSePreciso(
-    selecao: { readonly regraCodigo: string; readonly regraVersao: string } | null,
-    carregando: boolean,
-    regras: readonly RegraCatalogoDto[],
-  ): void {
-    // Uma busca em curso cuja seleção saiu da tela (troca de processo, ou de
-    // regra) foi abandonada: a resposta dela não completaria mais nada. Ela é
-    // cancelada e esquecida antes de qualquer outra checagem — se o `buscando`
-    // ficasse, voltar à mesma seleção o veria como "já tratado" e nunca mais
-    // consultaria a versão (#729).
-    const emCurso = this.buscaDaVersaoFora();
-    if (
-      emCurso?.estado === 'buscando' &&
-      (selecao === null ||
-        emCurso.codigo !== selecao.regraCodigo ||
-        emCurso.versao !== selecao.regraVersao)
-    ) {
-      this.buscaEmCurso?.unsubscribe();
-      this.buscaEmCurso = null;
-      this.buscaDaVersaoFora.set(null);
-    }
-
-    if (selecao === null || carregando) return;
-
-    const naListagem = regras.some(
-      (regra) => regra.codigo === selecao.regraCodigo && regra.versao === selecao.regraVersao,
-    );
-    if (naListagem) return;
-
-    const buscaAtual = this.buscaDaVersaoFora();
-    const jaTratada =
-      buscaAtual !== null &&
-      buscaAtual.codigo === selecao.regraCodigo &&
-      buscaAtual.versao === selecao.regraVersao;
-    if (jaTratada) return;
-
-    const { regraCodigo: codigo, regraVersao: versao } = selecao;
-    this.buscaDaVersaoFora.set({ estado: 'buscando', codigo, versao });
-    this.buscaEmCurso = this.regrasCatalogoApi
-      .obterVersao(codigo, versao)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => {
-        this.buscaEmCurso = null;
-
-        // Defesa extra: a busca abandonada já é cancelada acima, mas uma
-        // resposta que ainda assim chegue para outra seleção não pode
-        // sobrescrever o estado da seleção atual.
-        const atual = this.cascata();
-        if (atual === null || atual.regraCodigo !== codigo || atual.regraVersao !== versao) return;
-
-        if (isApiOk(resultado)) {
-          this.buscaDaVersaoFora.set({ estado: 'encontrada', codigo, versao, regra: resultado.data });
-          return;
-        }
-
-        // 404 é a única resposta que confirma que a regra não existe.
-        // Qualquer outra falha (rede, 5xx, autorização) não prova nada
-        // sobre a regra — só que a consulta não deu certo agora.
-        this.buscaDaVersaoFora.set(
-          resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO
-            ? { estado: 'nao_encontrada', codigo, versao }
-            : { estado: 'falha', codigo, versao },
-        );
-      });
-  }
-
-  /**
-   * Refaz a busca da versão fora da listagem depois de uma falha retentável
-   * (`falhaAoConsultarRegra()`) — limpa o estado anterior para que
-   * `buscarVersaoForaDaListagemSePreciso` não o veja como "já tratado" e
-   * pule a tentativa nova.
-   */
   tentarNovamenteRegra(): void {
-    this.buscaDaVersaoFora.set(null);
-    this.buscarVersaoForaDaListagemSePreciso(
-      this.cascata(),
-      this.catalogos.carregando(),
-      this.catalogos.regrasCascata(),
-    );
+    this.versaoDaRegra.tentarNovamente();
   }
 
   /**
@@ -437,10 +252,60 @@ export class CascataRemanejamentoComponent {
     () => this.cascata() !== null && this.matriz() !== null && this.problemas().length === 0,
   );
 
+  /**
+   * Por que `matriz()` é `null` — três causas distintas, cada uma com mensagem própria (esquema
+   * malformado, regra confirmadamente ausente, consulta que falhou sem confirmar nada).
+   */
+  mensagemDeMatrizIndisponivel(): string {
+    if (this.regraNaoEncontrada()) {
+      return 'A regra escolhida não foi encontrada no catálogo. Escolha outra regra ou avise o suporte.';
+    }
+    if (this.falhaAoConsultarRegra()) {
+      return 'Não foi possível confirmar a regra escolhida — a consulta falhou. Tente novamente antes de gravar.';
+    }
+    return 'A regra escolhida não declara uma matriz de remanejamento no formato esperado. Escolha outra regra ou versão.';
+  }
+
+  /**
+   * O que a seção ainda pede antes de gravar — vazio quando ela não se aplica a nenhuma oferta.
+   *
+   * A oferta fora do regime federal bloqueia o avanço mesmo quando a seção inteira não aparece
+   * (`precisaExibir()` falso): sem isto, o alerta que a seção mostra seria só decorativo, e o
+   * operador avançaria com `cascata_modalidade_fora_do_regime_federal` vermelho, que bloqueia a
+   * publicação sem nenhuma pista de onde a correção mora.
+   */
+  readonly pendenciasParaGravar = computed<readonly string[]>(() => {
+    const foraDoRegime = this.ofertasForaDoRegime().map(
+      (oferta) =>
+        `Cascata — ${this.catalogos.rotuloDaOferta().get(oferta.ofertaCursoId) ?? this.catalogos.textoDaOfertaSemNome()}: tem modalidade que segue a cascata fora do ramo federal. Corrija a regra de distribuição ou a modalidade desta oferta.`,
+    );
+
+    if (!this.precisaExibir()) return foraDoRegime;
+    if (this.cascata() === null)
+      return [...foraDoRegime, 'Escolha a regra de remanejamento da cascata.'];
+
+    // A tabela não aparece quando `matriz()` é nulo: pedir para "confirmar a cascata" mandaria o
+    // operador a um controle que não existe, e tratar as causas como a mesma coisa esconderia se
+    // vale tentar de novo ou trocar de regra.
+    const naoResolveMatriz =
+      this.esquemaNaoReconhecido() || this.regraNaoEncontrada() || this.falhaAoConsultarRegra();
+    if (naoResolveMatriz) {
+      return [...foraDoRegime, `Cascata — ${this.mensagemDeMatrizIndisponivel()}`];
+    }
+
+    const problemas = this.problemas().map(
+      (problema) => `Cascata — ${this.rotuloDoProblema(problema)}`,
+    );
+    return [...foraDoRegime, ...problemas];
+  });
+
   escolherRegra(valor: string): void {
     const [codigo, versao] = valor.split('|');
     this.store.patchObjectSection('vagas', {
-      cascata: codigo === '' || versao === undefined || versao === '' ? null : { regraCodigo: codigo, regraVersao: versao },
+      cascata:
+        codigo === '' || versao === undefined || versao === ''
+          ? null
+          : { regraCodigo: codigo, regraVersao: versao },
     });
   }
 
