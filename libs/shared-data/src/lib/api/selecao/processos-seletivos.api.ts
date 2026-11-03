@@ -3,19 +3,11 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import type {
-  ConfiguracaoDistribuicaoVagasDto,
-  ConfiguracaoDistribuicaoVagasInput,
   CriarProcessoSeletivoCommand,
-  DefinirAlgoritmoContagemPrazoRequest,
-  DefinirCascataRemanejamentoRequest,
   DefinirIdentificadorLegivelRequest,
   DefinirOfertaAtendimentoRequest,
-  DefinirOpcoesDeCursoRequest,
   DefinirTaxaInscricaoRequest,
-  EtapaProcessoInput,
-  FaseCronogramaInput,
   FundamentoIsencaoDto,
-  NoExigenciaInput,
   ProcessoSeletivoDto,
   ProcessoSeletivoResumoDto,
 } from './processos-seletivos.contrato';
@@ -59,141 +51,6 @@ export class ProcessosSeletivosApi {
   }
 
   /**
-   * POST `/api/selecao/processos-seletivos/{id}/distribuicao-vagas/simulacao`
-   * — devolve o quadro como a regra o calcula, sem gravar.
-   *
-   * É o que permite ao editor mostrar o efeito da configuração — quanto sobra
-   * na ampla concorrência depois das reservas e das retiradas — sem reimplementar
-   * a Lei de Cotas no cliente.
-   */
-  simularDistribuicaoVagas(
-    processoSeletivoId: string,
-    distribuicoes: readonly ConfiguracaoDistribuicaoVagasInput[],
-  ): Observable<ApiResult<readonly ConfiguracaoDistribuicaoVagasDto[]>> {
-    return this.http.post<ApiResult<readonly ConfiguracaoDistribuicaoVagasDto[]>>(
-      this.rotas.doProcesso(processoSeletivoId, 'distribuicao-vagas', 'simulacao'),
-      distribuicoes,
-      { context: withVendorMime('simulacao-distribuicao-vagas', 1) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/distribuicao-vagas` — substitui
-   * a coleção inteira. Enviar menos ofertas do que existem apaga as demais.
-   */
-  definirDistribuicaoVagas(
-    processoSeletivoId: string,
-    distribuicoes: readonly ConfiguracaoDistribuicaoVagasInput[],
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'distribuicao-vagas'),
-      distribuicoes,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/opcoes-de-curso` — declara quantos cursos o
-   * candidato escolhe na inscrição (1 ou 2). Com a distribuição de vagas já gravada, o número
-   * não pode passar da quantidade de ofertas: a recusa vem como 422 no campo `numero`.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirOpcoesDeCurso(
-    processoSeletivoId: string,
-    request: DefinirOpcoesDeCursoRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'opcoes-de-curso'),
-      request,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/etapas` — substitui a coleção
-   * inteira de etapas pontuadas.
-   *
-   * Enviar menos etapas do que existem remove as ausentes, e é assim que uma
-   * etapa sai da configuração. Coleção vazia é estado válido: processo sem
-   * prova — classificação importada — não tem etapa pontuada, e o servidor a
-   * aceita sem inventar nenhuma.
-   *
-   * O `id` de cada item é opcional e **deve ser reenviado** quando a etapa já
-   * existe: é ele que critério de desempate e regra de eliminação referenciam,
-   * e omiti-lo faria o servidor criar outra etapa, deixando as referências
-   * apontando para uma que deixou de existir.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirEtapas(
-    processoSeletivoId: string,
-    etapas: readonly EtapaProcessoInput[],
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'etapas'),
-      etapas,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/cronograma-fases` — substitui o
-   * cronograma inteiro.
-   *
-   * A janela de cada fase é **instante**, não data: o servidor normaliza para
-   * UTC preservando o momento, e o deslocamento com que o cliente escreve é
-   * transporte. Enviar só a data perderia a hora que separa "encerra dia 20" de
-   * "encerra 20/03 às 23:59:59".
-   *
-   * Não há campo de `id` na entrada — a reconciliação do servidor é por
-   * `faseCanonicaId`, que é a identidade estável de uma fase no cronograma.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirCronogramaFases(
-    processoSeletivoId: string,
-    fases: readonly FaseCronogramaInput[],
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'cronograma-fases'),
-      fases,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/documentos-exigidos` — substitui
-   * a árvore de exigências documentais inteira.
-   *
-   * A entrada é uma árvore: cada raiz é um nó `FOLHA` (um documento), `E` (todos
-   * os filhos) ou `OU` (quantos `quantidadeMinima` disser). Uma lista simples de
-   * documentos é uma lista de folhas, sem grupo nenhum.
-   *
-   * O documento em si vem por `tipoDocumentoId` — o servidor resolve o cadastro e
-   * congela nome, código e categoria. `exigidoNaFaseId` é a fase em que ele é
-   * exigido, e `exigidoNaEtapaId`, quando presente, a etapa daquela fase que o
-   * coleta.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirDocumentosExigidos(
-    processoSeletivoId: string,
-    raizes: readonly NoExigenciaInput[],
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'documentos-exigidos'),
-      raizes,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
    * PUT `/api/selecao/processos-seletivos/{id}/identificador-legivel` — declara o
    * endereço público do certame.
    *
@@ -211,30 +68,6 @@ export class ProcessosSeletivosApi {
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
       this.rotas.doProcesso(processoSeletivoId, 'identificador-legivel'),
-      request,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/algoritmo-contagem-prazo` —
-   * declara a convenção de contagem que o certame usa nos prazos que distinguem
-   * dia útil, por código e versão do catálogo de regras.
-   *
-   * **Não aceita limpar a declaração.** Código ou versão nulos são recusados
-   * com 422, ainda que o contrato tipe os dois como anuláveis — não existe
-   * "desmarcar" a convenção, só trocá-la. Quem chama só dispara depois de haver
-   * escolha.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirAlgoritmoContagemPrazo(
-    processoSeletivoId: string,
-    request: DefinirAlgoritmoContagemPrazoRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'algoritmo-contagem-prazo'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
@@ -260,30 +93,6 @@ export class ProcessosSeletivosApi {
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
       this.rotas.doProcesso(processoSeletivoId, 'oferta-atendimento'),
-      request,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/cascata-remanejamento` —
-   * grava a matriz de remanejamento entre modalidades.
-   *
-   * A tela não compõe `fallbackCodigo` nem `destinos[]`: o handler valida o
-   * corpo célula a célula contra o `esquemaArgs` **congelado** da regra
-   * escolhida e recusa com 422 (`ConfiguracaoCascataRemanejamento.MatrizDivergenteDaRegra`)
-   * qualquer divergência — quem chama envia o que a regra do catálogo já
-   * declarou, nunca uma composição livre.
-   *
-   * Responde 204 sem corpo.
-   */
-  definirCascataRemanejamento(
-    processoSeletivoId: string,
-    request: DefinirCascataRemanejamentoRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'cascata-remanejamento'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );

@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
+  CronogramaDoProcessoApi,
   DocumentosEAtosDoProcessoApi,
   FormulariosDoProcessoApi,
   OrigemCandidatos,
@@ -24,6 +25,7 @@ const erroDeRede = (requisicao: { error: (e: ProgressEvent, o: object) => void }
 describe('GravacaoDoProcesso', () => {
   let gravacao: GravacaoDoProcesso;
   let api: ProcessosSeletivosApi;
+  let cronogramaApi: CronogramaDoProcessoApi;
   let documentosApi: DocumentosEAtosDoProcessoApi;
   let formulariosApi: FormulariosDoProcessoApi;
   let http: HttpTestingController;
@@ -39,6 +41,7 @@ describe('GravacaoDoProcesso', () => {
     });
     gravacao = TestBed.inject(GravacaoDoProcesso);
     api = TestBed.inject(ProcessosSeletivosApi);
+    cronogramaApi = TestBed.inject(CronogramaDoProcessoApi);
     documentosApi = TestBed.inject(DocumentosEAtosDoProcessoApi);
     formulariosApi = TestBed.inject(FormulariosDoProcessoApi);
     http = TestBed.inject(HttpTestingController);
@@ -46,10 +49,12 @@ describe('GravacaoDoProcesso', () => {
 
   /** Duas gravações de recursos diferentes com o mesmo corpo vazio. */
   const gravarEtapas = () =>
-    gravacao.gravar('etapas', [], (contexto) => api.definirEtapas(PROCESSO_ID, [], contexto));
+    gravacao.gravar('etapas', [], (contexto) =>
+      cronogramaApi.definirEtapas(PROCESSO_ID, [], contexto),
+    );
   const gravarCronograma = () =>
     gravacao.gravar('cronograma', [], (contexto) =>
-      api.definirCronogramaFases(PROCESSO_ID, [], contexto),
+      cronogramaApi.definirCronogramaFases(PROCESSO_ID, [], contexto),
     );
   const confirmarEdital = () =>
     gravacao.gravarRetida('confirmacaoDoEdital', (contexto) =>
@@ -128,7 +133,7 @@ describe('GravacaoDoProcesso', () => {
     const gravarEmAberto = async (recurso: RecursoDoProcesso): Promise<string> => {
       // A falha de rede deixa a chave em uso, que é a que o descarte tem de trocar.
       const pendente = gravacao.gravar(recurso, 'mesmo corpo', (contexto) =>
-        api.definirEtapas(PROCESSO_ID, [], contexto),
+        cronogramaApi.definirEtapas(PROCESSO_ID, [], contexto),
       );
       const requisicao = http.expectOne(`${ROTA}/etapas`);
       const chave = requisicao.request.headers.get('Idempotency-Key') ?? '';

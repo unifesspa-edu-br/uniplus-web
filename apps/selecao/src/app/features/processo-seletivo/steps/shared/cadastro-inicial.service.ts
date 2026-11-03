@@ -16,6 +16,8 @@ import {
   FaseCronogramaInput,
   NoExigenciaInput,
   ProcessosSeletivosApi,
+  CronogramaDoProcessoApi,
+  VagasDoProcessoApi,
   ClassificacaoDoProcessoApi,
   FormulariosDoProcessoApi,
   PublicacaoDoProcessoApi,
@@ -48,6 +50,8 @@ export type {
 @Injectable()
 export class CadastroInicialService {
   private readonly api = inject(ProcessosSeletivosApi);
+  private readonly cronogramaApi = inject(CronogramaDoProcessoApi);
+  private readonly vagasApi = inject(VagasDoProcessoApi);
   private readonly classificacaoApi = inject(ClassificacaoDoProcessoApi);
   private readonly formulariosApi = inject(FormulariosDoProcessoApi);
   private readonly publicacaoApi = inject(PublicacaoDoProcessoApi);
@@ -104,7 +108,7 @@ export class CadastroInicialService {
     distribuicoes: readonly ConfiguracaoDistribuicaoVagasInput[],
   ): Promise<ResultadoGravacaoComInconclusiva> {
     return this.gravacao.gravar('distribuicao', distribuicoes, (contexto) =>
-      this.api.definirDistribuicaoVagas(processoSeletivoId, distribuicoes, contexto),
+      this.vagasApi.definirDistribuicaoVagas(processoSeletivoId, distribuicoes, contexto),
     );
   }
 
@@ -114,7 +118,7 @@ export class CadastroInicialService {
     request: DefinirOpcoesDeCursoRequest,
   ): Promise<ResultadoGravacaoComInconclusiva> {
     return this.gravacao.gravar('opcoesDeCurso', request, (contexto) =>
-      this.api.definirOpcoesDeCurso(processoSeletivoId, request, contexto),
+      this.vagasApi.definirOpcoesDeCurso(processoSeletivoId, request, contexto),
     );
   }
 
@@ -124,7 +128,7 @@ export class CadastroInicialService {
     request: DefinirCascataRemanejamentoRequest,
   ): Promise<ResultadoGravacaoCascata> {
     return this.gravacao.gravar('cascata', request, (contexto) =>
-      this.api.definirCascataRemanejamento(processoSeletivoId, request, contexto),
+      this.vagasApi.definirCascataRemanejamento(processoSeletivoId, request, contexto),
     );
   }
 
@@ -134,7 +138,7 @@ export class CadastroInicialService {
     etapas: readonly EtapaProcessoInput[],
   ): Promise<ResultadoGravacao> {
     return this.gravacao.gravar('etapas', etapas, (contexto) =>
-      this.api.definirEtapas(processoSeletivoId, etapas, contexto),
+      this.cronogramaApi.definirEtapas(processoSeletivoId, etapas, contexto),
     );
   }
 
@@ -144,7 +148,7 @@ export class CadastroInicialService {
     raizes: readonly NoExigenciaInput[],
   ): Promise<ResultadoGravacao> {
     return this.gravacao.gravar('documentosExigidos', raizes, (contexto) =>
-      this.api.definirDocumentosExigidos(processoSeletivoId, raizes, contexto),
+      this.cronogramaApi.definirDocumentosExigidos(processoSeletivoId, raizes, contexto),
     );
   }
 
@@ -154,7 +158,7 @@ export class CadastroInicialService {
     fases: readonly FaseCronogramaInput[],
   ): Promise<ResultadoGravacao> {
     return this.gravacao.gravar('cronograma', fases, (contexto) =>
-      this.api.definirCronogramaFases(processoSeletivoId, fases, contexto),
+      this.cronogramaApi.definirCronogramaFases(processoSeletivoId, fases, contexto),
     );
   }
 
@@ -164,7 +168,7 @@ export class CadastroInicialService {
     request: DefinirAlgoritmoContagemPrazoRequest,
   ): Promise<ResultadoGravacao> {
     return this.gravacao.gravar('algoritmoContagem', request, (contexto) =>
-      this.api.definirAlgoritmoContagemPrazo(processoSeletivoId, request, contexto),
+      this.cronogramaApi.definirAlgoritmoContagemPrazo(processoSeletivoId, request, contexto),
     );
   }
 

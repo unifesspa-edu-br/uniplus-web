@@ -24,6 +24,7 @@ import {
   ConfiguracaoDistribuicaoVagasDto,
   OrigemCandidatos,
   ProcessosSeletivosApi,
+  VagasDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, Subscription } from 'rxjs';
@@ -440,7 +441,6 @@ export class VagasStepComponent {
     this.store.emConsulta() ? null : this.catalogos.erro(),
   );
 
-  /** Só as modalidades cuja quantidade o edital fixa viram coluna do quadro. */
   readonly colunasDeQuantidade = computed(() =>
     this.modalidadesDoPadrao().filter((modalidade) => this.ehDeclarada(modalidade)),
   );
@@ -464,8 +464,8 @@ export class VagasStepComponent {
     return this.catalogos.ofertas().filter((oferta) => !usadas.has(oferta.id));
   });
 
-  /** Ofertas marcadas para entrar no quadro. */
   private readonly api = inject(ProcessosSeletivosApi);
+  private readonly vagasApi = inject(VagasDoProcessoApi);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly camposPressupostos = inject(CamposPressupostosService);
@@ -910,7 +910,7 @@ export class VagasStepComponent {
     this.abandonarSimulacaoEmVoo();
     this.erroDaSimulacao.set(null);
 
-    const inscricao = this.api
+    const inscricao = this.vagasApi
       .simularDistribuicaoVagas(processoId, distribuicoes.map(comoComando))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

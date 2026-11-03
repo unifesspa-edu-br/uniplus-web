@@ -34,6 +34,7 @@ import { UnidadeDto, UnidadesApi } from '@uniplus/shared-data/organizacao';
 import {
   DocumentoAPublicarDto,
   ClassificacaoDoProcessoApi,
+  CronogramaDoProcessoApi,
   DocumentosEAtosDoProcessoApi,
   FinalidadeDoDocumento,
   FormulariosDoProcessoApi,
@@ -45,6 +46,7 @@ import {
   ProcessosSeletivosApi,
   PublicacaoDoProcessoApi,
   StatusProcesso,
+  VagasDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
 import { BehaviorSubject, NEVER, from, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -244,6 +246,8 @@ function montar(opts: CenarioOpts = {}) {
       },
       { provide: FormulariosDoProcessoApi, useValue: {} },
       { provide: ClassificacaoDoProcessoApi, useValue: {} },
+      { provide: VagasDoProcessoApi, useValue: {} },
+      { provide: CronogramaDoProcessoApi, useValue: {} },
       {
         provide: ActivatedRoute,
         useValue: {

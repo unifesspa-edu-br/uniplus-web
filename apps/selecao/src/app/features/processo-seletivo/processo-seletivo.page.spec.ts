@@ -36,6 +36,7 @@ import { GeoApi } from '@uniplus/shared-data/geo';
 import { AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import {
   ClassificacaoDoProcessoApi,
+  CronogramaDoProcessoApi,
   DocumentosEAtosDoProcessoApi,
   FormulariosDoProcessoApi,
   FundamentoIsencaoDto,
@@ -44,6 +45,7 @@ import {
   PublicacaoDoProcessoApi,
   RegrasCatalogoApi,
   StatusProcesso,
+  VagasDoProcessoApi,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
@@ -151,6 +153,8 @@ const PAGE_PROVIDERS = [
   { provide: PublicacaoDoProcessoApi, useValue: {} },
   { provide: FormulariosDoProcessoApi, useValue: {} },
   { provide: ClassificacaoDoProcessoApi, useValue: {} },
+  { provide: VagasDoProcessoApi, useValue: {} },
+  { provide: CronogramaDoProcessoApi, useValue: {} },
   { provide: PermissoesService, useValue: { tem: concedeSoPublicar } },
 ];
 
