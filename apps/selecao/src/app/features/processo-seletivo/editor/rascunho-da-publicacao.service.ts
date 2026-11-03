@@ -6,7 +6,7 @@ import {
   STATUS_HTTP,
   isApiOk,
 } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { PublicacaoDoProcessoApi } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../steps/processo-seletivo.store';
 import { anexoConfirmado } from '../steps/shared/anexos-do-edital/anexos-do-edital';
@@ -29,7 +29,7 @@ import {
 @Injectable()
 export class RascunhoDaPublicacao {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly api = inject(ProcessosSeletivosApi);
+  private readonly api = inject(PublicacaoDoProcessoApi);
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** Quando o rascunho foi gravado, para o carimbo do passo de Revisão. */

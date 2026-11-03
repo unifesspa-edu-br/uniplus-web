@@ -5,6 +5,7 @@ import {
   FinalidadeDoDocumento,
   ProcessoSeletivoDto,
   ProcessosSeletivosApi,
+  PublicacaoDoProcessoApi,
   DocumentosEAtosDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
 
@@ -41,6 +42,7 @@ function motivoDe(status: number): MotivoFalhaDeLeitura {
 export class LeituraDoProcesso {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly api = inject(ProcessosSeletivosApi);
+  private readonly publicacaoApi = inject(PublicacaoDoProcessoApi);
   private readonly documentosApi = inject(DocumentosEAtosDoProcessoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly cadastro = inject(CadastroInicialService);
@@ -146,7 +148,7 @@ export class LeituraDoProcesso {
     detalhe: ProcessoSeletivoDto,
     superada: () => boolean,
   ): Promise<void> {
-    const checklist = await firstValueFrom(this.api.obterConformidade(detalhe.id));
+    const checklist = await firstValueFrom(this.publicacaoApi.obterConformidade(detalhe.id));
     if (superada() || !isApiOk(checklist)) return;
     this.store.syncCompleted(passosConcluidosDe(detalhe, checklist.data.itens));
   }

@@ -41,6 +41,7 @@ import {
   RegrasCatalogoApi,
   ProcessoSeletivoDto,
   ProcessosSeletivosApi,
+  PublicacaoDoProcessoApi,
   StatusProcesso,
 } from '@uniplus/shared-data/selecao';
 import { BehaviorSubject, NEVER, from, of } from 'rxjs';
@@ -222,10 +223,6 @@ function montar(opts: CenarioOpts = {}) {
         provide: ProcessosSeletivosApi,
         useValue: {
           obter,
-          obterConformidade,
-          obterRascunhoDaPublicacao: obterRascunho,
-          // A Revisão de processo publicado lê o ato vigente; esta suíte não exercita o ato.
-          obterSnapshotVigente: () => NEVER,
           listarFundamentosIsencao: () => of(okResult<readonly FundamentoIsencaoDto[]>([])),
           definirTaxaInscricao,
         },
@@ -233,6 +230,15 @@ function montar(opts: CenarioOpts = {}) {
       {
         provide: DocumentosEAtosDoProcessoApi,
         useValue: { listarDocumentosAPublicar: listarDocumentos },
+      },
+      {
+        provide: PublicacaoDoProcessoApi,
+        useValue: {
+          obterConformidade,
+          obterRascunhoDaPublicacao: obterRascunho,
+          // A Revisão de processo publicado lê o ato vigente; esta suíte não exercita o ato.
+          obterSnapshotVigente: () => NEVER,
+        },
       },
       {
         provide: ActivatedRoute,
@@ -803,7 +809,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     const salvar = vi.fn();
     const descartar = vi.fn();
     const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
-    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    const api = TestBed.inject(PublicacaoDoProcessoApi) as unknown as Record<string, unknown>;
     api['salvarRascunhoDaPublicacao'] = salvar;
     api['descartarRascunhoDaPublicacao'] = descartar;
 
@@ -910,7 +916,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     await propagar();
 
     let concluir: (resposta: unknown) => void = () => undefined;
-    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    const api = TestBed.inject(PublicacaoDoProcessoApi) as unknown as Record<string, unknown>;
     api['salvarRascunhoDaPublicacao'] = vi.fn(
       () => from(new Promise((resolve) => (concluir = resolve))),
     );
@@ -944,7 +950,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     await propagar();
 
     let concluir: (resposta: unknown) => void = () => undefined;
-    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    const api = TestBed.inject(PublicacaoDoProcessoApi) as unknown as Record<string, unknown>;
     api['descartarRascunhoDaPublicacao'] = vi.fn(
       () => from(new Promise((resolve) => (concluir = resolve))),
     );
@@ -969,7 +975,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     const cenario = montar({ obterRascunho: rascunho({ ato: { orgao: 'REITORIA' } }) });
     await propagar();
 
-    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    const api = TestBed.inject(PublicacaoDoProcessoApi) as unknown as Record<string, unknown>;
     api['descartarRascunhoDaPublicacao'] = vi.fn(() => of(okResult(undefined)));
 
     await (
@@ -995,7 +1001,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
       ],
     });
 
-    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    const api = TestBed.inject(PublicacaoDoProcessoApi) as unknown as Record<string, unknown>;
     api['descartarRascunhoDaPublicacao'] = vi.fn(() => of(okResult(undefined)));
     await (
       cenario.componente as unknown as { descartarRascunhoDaPublicacao(): Promise<void> }
@@ -1098,7 +1104,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     await propagar();
 
     const chaves: (string | null)[] = [];
-    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    const api = TestBed.inject(PublicacaoDoProcessoApi) as unknown as Record<string, unknown>;
     api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
       chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
       return of(okResult(undefined));
@@ -1149,7 +1155,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     await propagar();
 
     const chaves: (string | null)[] = [];
-    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    const api = TestBed.inject(PublicacaoDoProcessoApi) as unknown as Record<string, unknown>;
     api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
       chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
       return of(okResult(undefined));
@@ -1215,7 +1221,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     await propagar();
 
     const chaves: (string | null)[] = [];
-    const api = TestBed.inject(ProcessosSeletivosApi) as unknown as Record<string, unknown>;
+    const api = TestBed.inject(PublicacaoDoProcessoApi) as unknown as Record<string, unknown>;
     api['salvarRascunhoDaPublicacao'] = vi.fn((_id: string, _corpo: unknown, contexto: HttpContext) => {
       chaves.push(contexto.get(IDEMPOTENCY_KEY_TOKEN));
       return of(okResult(undefined));

@@ -7,7 +7,7 @@ import {
   ConformidadeLegalProcessoSeletivoDto,
   ConformidadeProcessoSeletivoDto,
   ItemConformidadeDto,
-  ProcessosSeletivosApi,
+  PublicacaoDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
 import { TipoAtoPublicadoDto, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 
@@ -66,7 +66,7 @@ function montar(overrides?: {
   TestBed.configureTestingModule({
     providers: [
       PreflightDaPublicacaoService,
-      { provide: ProcessosSeletivosApi, useValue: { obterConformidade, obterConformidadeLegal } },
+      { provide: PublicacaoDoProcessoApi, useValue: { obterConformidade, obterConformidadeLegal } },
       { provide: TiposAtoApi, useValue: { listar: listarTiposAto } },
     ],
   });

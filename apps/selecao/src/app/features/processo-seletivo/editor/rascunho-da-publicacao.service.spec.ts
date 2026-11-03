@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService, okResult } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { PublicacaoDoProcessoApi } from '@uniplus/shared-data/selecao';
 import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -22,7 +22,7 @@ describe('RascunhoDaPublicacao', () => {
         RascunhoDaPublicacao,
         { provide: ProblemI18nService, useValue: { resolve: () => ({ title: 'Recusado' }) } },
         {
-          provide: ProcessosSeletivosApi,
+          provide: PublicacaoDoProcessoApi,
           useValue: { salvarRascunhoDaPublicacao: vi.fn(() => resposta) },
         },
       ],

@@ -16,6 +16,7 @@ import {
   FaseCronogramaInput,
   NoExigenciaInput,
   ProcessosSeletivosApi,
+  PublicacaoDoProcessoApi,
   PublicarProcessoSeletivoRequest,
   DefinirIdentificadorLegivelRequest,
   DefinirReferenciaTemporalFatosRequest,
@@ -45,6 +46,7 @@ export type {
 @Injectable()
 export class CadastroInicialService {
   private readonly api = inject(ProcessosSeletivosApi);
+  private readonly publicacaoApi = inject(PublicacaoDoProcessoApi);
   private readonly gravacao = inject(GravacaoDoProcesso);
 
   /**
@@ -285,7 +287,7 @@ export class CadastroInicialService {
     request: PublicarProcessoSeletivoRequest,
   ): Promise<ResultadoGravacaoComInconclusiva> {
     return this.gravacao.gravar('publicacao', request, (contexto) =>
-      this.api.publicar(processoSeletivoId, request, contexto),
+      this.publicacaoApi.publicar(processoSeletivoId, request, contexto),
     );
   }
 
@@ -296,6 +298,6 @@ export class CadastroInicialService {
 
   /** O `configuracao` do snapshot não vira comando de gravação: a tela só confirma que congelou. */
   obterSnapshotVigente(processoSeletivoId: string) {
-    return firstValueFrom(this.api.obterSnapshotVigente(processoSeletivoId));
+    return firstValueFrom(this.publicacaoApi.obterSnapshotVigente(processoSeletivoId));
   }
 }

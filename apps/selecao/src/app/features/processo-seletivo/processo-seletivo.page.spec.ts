@@ -39,6 +39,7 @@ import {
   FundamentoIsencaoDto,
   OrigemCandidatos,
   ProcessosSeletivosApi,
+  PublicacaoDoProcessoApi,
   RegrasCatalogoApi,
   StatusProcesso,
   type ProcessoSeletivoDto,
@@ -145,6 +146,7 @@ const PAGE_PROVIDERS = [
   { provide: ModelosFormularioApi, useValue: catalogoVazioStub },
   { provide: ProcessosSeletivosApi, useValue: processosSeletivosApiStub },
   { provide: DocumentosEAtosDoProcessoApi, useValue: {} },
+  { provide: PublicacaoDoProcessoApi, useValue: {} },
   { provide: PermissoesService, useValue: { tem: concedeSoPublicar } },
 ];
 
