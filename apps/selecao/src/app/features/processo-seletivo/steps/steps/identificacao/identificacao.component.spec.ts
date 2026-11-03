@@ -13,6 +13,7 @@ import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { IdentificacaoStepComponent } from './identificacao.component';
 import { BuscaDeMunicipioService } from './servicos/busca-de-municipio.service';
 import { CatalogoDeUnidadesService } from './servicos/catalogo-de-unidades.service';
+import { GravacaoDaIdentificacaoService } from './servicos/gravacao-da-identificacao.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -68,6 +69,7 @@ describe('IdentificacaoStepComponent', () => {
   let componente: IdentificacaoStepComponent;
   let unidades: CatalogoDeUnidadesService;
   let municipio: BuscaDeMunicipioService;
+  let gravacao: GravacaoDaIdentificacaoService;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let host: HTMLElement;
@@ -92,6 +94,7 @@ describe('IdentificacaoStepComponent', () => {
     componente = fixture.componentInstance;
     unidades = fixture.debugElement.injector.get(CatalogoDeUnidadesService);
     municipio = fixture.debugElement.injector.get(BuscaDeMunicipioService);
+    gravacao = fixture.debugElement.injector.get(GravacaoDaIdentificacaoService);
     host = fixture.nativeElement as HTMLElement;
     detectar = () => fixture.detectChanges();
     store = TestBed.inject(ProcessoSeletivoStore);
@@ -156,9 +159,9 @@ describe('IdentificacaoStepComponent', () => {
   it('nomeia os campos que faltam antes de criar o cadastro', async () => {
     await componente.persistir();
 
-    expect(componente.erroDeCriacao()).toContain('tipo do processo (passo 1)');
-    expect(componente.erroDeCriacao()).toContain('unidade administradora');
-    expect(componente.erroDeCriacao()).toContain('origem dos candidatos');
+    expect(gravacao.erroDeCriacao()).toContain('tipo do processo (passo 1)');
+    expect(gravacao.erroDeCriacao()).toContain('unidade administradora');
+    expect(gravacao.erroDeCriacao()).toContain('origem dos candidatos');
     expect(store.processoSeletivoId()).toBeNull();
   });
 
@@ -168,7 +171,7 @@ describe('IdentificacaoStepComponent', () => {
 
     await componente.persistir();
 
-    expect(componente.erroDeCriacao()).toContain('identificador legível');
+    expect(gravacao.erroDeCriacao()).toContain('identificador legível');
     expect(store.processoSeletivoId()).toBeNull();
     controller.expectNone(`${BASE}/api/selecao/processos-seletivos`);
   });
@@ -600,7 +603,7 @@ describe('IdentificacaoStepComponent', () => {
       expect((await criado).valid).toBe(false);
       detectar();
 
-      expect(componente.erroDoIdentificador()).toBe(
+      expect(gravacao.erroDoIdentificador()).toBe(
         'O identificador legível já é usado por outro processo seletivo',
       );
       expect(host.querySelector('#f-identificador')?.getAttribute('aria-invalid')).toBe('true');
@@ -650,7 +653,7 @@ describe('IdentificacaoStepComponent', () => {
       await tick();
 
       expect((await gravado).valid).toBe(false);
-      expect(componente.erroDoIdentificador()).toContain('já é usado');
+      expect(gravacao.erroDoIdentificador()).toContain('já é usado');
     });
 
     /**
