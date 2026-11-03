@@ -39,13 +39,16 @@ interface IdentidadeDoToken {
   readonly email: string;
 }
 
-const tokens = new Map<string, string>();
+/** Folga antes do vencimento em que o token deixa de ser reaproveitado. */
+const FOLGA_DO_TOKEN_MS = 30_000;
 
-/** Token da persona pelo `admin-cli` (senha), reaproveitado enquanto a spec roda. */
+const tokens = new Map<string, { readonly token: string; readonly venceEm: number }>();
+
+/** Token da persona pelo `admin-cli` (senha), reaproveitado até perto do vencimento: uma spec pode esperar minutos. */
 export async function tokenDaPersona(username: string): Promise<string> {
   const guardado = tokens.get(username);
-  if (guardado !== undefined) {
-    return guardado;
+  if (guardado !== undefined && guardado.venceEm - FOLGA_DO_TOKEN_MS > Date.now()) {
+    return guardado.token;
   }
   const resposta = await fetch(`${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`, {
     method: 'POST',
@@ -61,8 +64,14 @@ export async function tokenDaPersona(username: string): Promise<string> {
   if (json.access_token === undefined) {
     throw new Error(`Sem token para a persona ${username}: ${resposta.status}`);
   }
-  tokens.set(username, json.access_token);
+  tokens.set(username, { token: json.access_token, venceEm: validadeDoToken(json.access_token) });
   return json.access_token;
+}
+
+function validadeDoToken(token: string): number {
+  const [, carga] = token.split('.');
+  const { exp } = JSON.parse(Buffer.from(carga ?? '', 'base64url').toString('utf-8')) as { exp: number };
+  return exp * 1000;
 }
 
 export function identidadeDoToken(token: string): IdentidadeDoToken {
