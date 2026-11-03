@@ -87,7 +87,6 @@ import { consequenciasDaFase } from '@uniplus/shared-utils';
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 
 import {
-  type BancaRequeridaDaFase,
   type BaseLegalConfig,
   type CondicaoGatilhoConfig,
   type DocumentoDefinicao,
@@ -115,6 +114,7 @@ import {
 import { FaseEmEdicao } from './fase-em-edicao';
 import { CicloRecursalDaFaseComponent } from './secoes/ciclo-recursal-da-fase.component';
 import { RegraDeRecursoDaFaseComponent } from './secoes/regra-de-recurso-da-fase.component';
+import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 import { traduzirRecusa } from './recusas-da-fase';
 import type {
@@ -158,6 +158,7 @@ const SEM_ERROS: Readonly<Record<number, string>> = {};
 @Component({
   selector: 'sel-step-fase',
   imports: [
+    BancasDaFaseComponent,
     ValorLegivelDirective,
     ValorEmConsultaComponent,
     ComboboxComponent,
@@ -200,7 +201,6 @@ export class FaseStepComponent {
   readonly fasesNoSeletor = this.faseEmEdicao.fasesNoSeletor;
   readonly faseDoRascunho = this.faseEmEdicao.faseDoRascunho;
   readonly nomeDaFaseAberta = this.faseEmEdicao.nomeDaFaseAberta;
-  readonly bancasEscolhiveis = this.faseEmEdicao.bancasEscolhiveis;
   readonly problemas = this.faseEmEdicao.problemas;
   readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
   readonly nomeDaBanca = this.faseEmEdicao.nomeDaBanca;
@@ -248,89 +248,11 @@ export class FaseStepComponent {
         else formulario.disable({ emitEvent: false });
       });
     });
-
   }
-
-  /** Categorias de documento do cadastro, na ordem de exibição que ele decide. */
-  readonly categorias = computed(() =>
-    this.catalogos.categorias().map((categoria) => ({ id: categoria.id, nome: categoria.nome })),
-  );
 
   abrirFase(faseCanonicaId: string): void {
     this.faseAberta.set(faseCanonicaId);
     this.faseEmEdicao.limparRecusa();
-  }
-
-  /**
-   * A configuração da fase como a consulta a lê: cada declaração em texto, sem o controle que a
-   * edita. `null` enquanto a fase não foi espelhada no formulário.
-   */
-  faseLida() {
-    const form = this.formulario();
-    if (form === null) return null;
-    this.versaoDoFormulario();
-
-    const categorias = this.categorias();
-
-    return {
-      bancas: this.bancas.map((banca) => {
-        const nomes = banca.categoriasDocumentoIds.map(
-          (id) => categorias.find((categoria) => categoria.id === id)?.nome ?? id,
-        );
-        return nomes.length === 0
-          ? this.nomeDaBanca(banca.tipoBancaId)
-          : `${this.nomeDaBanca(banca.tipoBancaId)} — julga ${nomes.join(', ')}`;
-      }),
-    };
-  }
-
-  // ─── Bancas requeridas e o recorte de competência ───────────────────────
-
-  get bancas(): readonly BancaRequeridaDaFase[] {
-    this.versaoDoFormulario();
-    return this.formulario()?.controls.bancasRequeridas.value ?? [];
-  }
-
-  acrescentarBanca(): void {
-    this.escreverBancas([...this.bancas, { tipoBancaId: '', categoriasDocumentoIds: [] }]);
-  }
-
-  removerBanca(posicao: number): void {
-    this.escreverBancas(this.bancas.filter((_, indice) => indice !== posicao));
-  }
-
-  escolherTipoDeBanca(posicao: number, tipoBancaId: string): void {
-    this.escreverBancas(
-      this.bancas.map((banca, indice) => (indice === posicao ? { ...banca, tipoBancaId } : banca)),
-    );
-  }
-
-  alternarCategoria(posicao: number, categoriaId: string, marcada: boolean): void {
-    this.escreverBancas(
-      this.bancas.map((banca, indice) => {
-        if (indice !== posicao) return banca;
-        const semEla = banca.categoriasDocumentoIds.filter((id) => id !== categoriaId);
-        return { ...banca, categoriasDocumentoIds: marcada ? [...semEla, categoriaId] : semEla };
-      }),
-    );
-  }
-
-  categoriaMarcada(posicao: number, categoriaId: string): boolean {
-    return this.bancas[posicao]?.categoriasDocumentoIds.includes(categoriaId) === true;
-  }
-
-  /**
-   * A banca desta linha divide o tipo com outra da mesma fase — é o caso em que
-   * o recorte deixa de ser opcional, porque é ele que diz qual julga o quê.
-   */
-  recorteObrigatorio(posicao: number): boolean {
-    const tipo = this.bancas[posicao]?.tipoBancaId;
-    if (tipo === undefined || tipo === '') return false;
-    return this.bancas.filter((banca) => banca.tipoBancaId === tipo).length > 1;
-  }
-
-  private escreverBancas(bancas: readonly BancaRequeridaDaFase[]): void {
-    this.formulario()?.controls.bancasRequeridas.setValue(bancas);
   }
 
   // ─── Exigências documentais desta fase ──────────────────────────────────

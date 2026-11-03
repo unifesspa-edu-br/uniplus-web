@@ -16,6 +16,7 @@ import { CamposPressupostosService } from '../../shared/campos-pressupostos.serv
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from '../cronograma/cronograma.component';
 import { FaseStepComponent } from './fase.component';
+import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 
 const BASE = 'http://localhost:5000';
@@ -172,6 +173,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
   let cronograma: CronogramaStepComponent;
   let superficie: FaseStepComponent;
   let publicacoes: () => PublicacoesDaFaseComponent;
+  let bancas: () => BancasDaFaseComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let detectar: () => void;
@@ -201,6 +203,9 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     const fixtureSuperficie = TestBed.createComponent(FaseStepComponent);
     cronograma = fixtureCronograma.componentInstance;
     superficie = fixtureSuperficie.componentInstance;
+    bancas = () =>
+      fixtureSuperficie.debugElement.query(By.directive(BancasDaFaseComponent))
+        .componentInstance as BancasDaFaseComponent;
     publicacoes = () =>
       fixtureSuperficie.debugElement.query(By.directive(PublicacoesDaFaseComponent))
         .componentInstance as PublicacoesDaFaseComponent;
@@ -313,9 +318,9 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     publicacoes().acrescentarProduto();
     publicacoes().escolherAto(0, 'RESULTADO_FINAL');
     publicacoes().escolherPapel(0, 'DEFINITIVO');
-    superficie.acrescentarBanca();
-    superficie.escolherTipoDeBanca(0, ID_BANCA_HETERO);
-    superficie.alternarCategoria(0, ID_CATEGORIA_RACA, true);
+    bancas().acrescentarBanca();
+    bancas().escolherTipoDeBanca(0, ID_BANCA_HETERO);
+    bancas().alternarCategoria(0, ID_CATEGORIA_RACA, true);
     detectar();
 
     // 3. Linha do tempo de novo: acerta o início da segunda fase. A superfície
@@ -328,7 +333,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     // A superfície continua mostrando o que declarou, depois de duas reescritas
     // vindas da outra tela.
     expect(publicacoes().produtos).toEqual([{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }]);
-    expect(superficie.bancas).toEqual([
+    expect(bancas().bancas).toEqual([
       { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
     ]);
 
@@ -404,7 +409,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     store.processoSeletivoId.set(PROCESSO_ID);
     comCertame();
 
-    superficie.acrescentarBanca();
+    bancas().acrescentarBanca();
     detectar();
 
     const resultado = await cronograma.persistir();

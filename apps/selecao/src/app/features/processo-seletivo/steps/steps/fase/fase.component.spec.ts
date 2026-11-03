@@ -28,6 +28,7 @@ import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigenc
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { FaseEmEdicao } from './fase-em-edicao';
 import { FaseStepComponent } from './fase.component';
+import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 import {
   congeladosDaFase,
@@ -62,6 +63,8 @@ describe('FaseStepComponent', () => {
   let comCronograma: (...fases: readonly FaseDoCronograma[]) => void;
   let selecionado: (id: string) => string;
 
+  const bancas = () =>
+    raiz.query(By.directive(BancasDaFaseComponent)).componentInstance as BancasDaFaseComponent;
   const publicacoes = () =>
     raiz.query(By.directive(PublicacoesDaFaseComponent)).componentInstance as PublicacoesDaFaseComponent;
 
@@ -425,9 +428,9 @@ describe('FaseStepComponent', () => {
     it('declara a banca com o recorte de competência que ela julga', () => {
       comCronograma(fase({}));
 
-      componente.acrescentarBanca();
-      componente.escolherTipoDeBanca(0, ID_BANCA_HETERO);
-      componente.alternarCategoria(0, ID_CATEGORIA_RACA, true);
+      bancas().acrescentarBanca();
+      bancas().escolherTipoDeBanca(0, ID_BANCA_HETERO);
+      bancas().alternarCategoria(0, ID_CATEGORIA_RACA, true);
       detectar();
 
       expect(store.draft().cronograma.fases[0].bancasRequeridas).toEqual([
@@ -445,7 +448,7 @@ describe('FaseStepComponent', () => {
         }),
       );
 
-      expect(componente.recorteObrigatorio(1)).toBe(true);
+      expect(bancas().recorteObrigatorio(1)).toBe(true);
       expect(componente.erroDoCampo('bancasRequeridas')).toContain(
         'mais de uma banca de Heteroidentificação',
       );

@@ -11,6 +11,7 @@ import {
   type ProblemaDaFase,
 } from './configuracao-da-fase';
 import { produtosPreliminares } from './problemas-do-recurso-da-fase';
+import { bancasEscolhiveis, nomeDaBanca } from './secoes/bancas-da-fase';
 import { EspelhoDaFase } from './espelho-da-fase';
 import { idDaFase } from './ids-da-fase';
 
@@ -95,31 +96,11 @@ export class FaseEmEdicao {
   /** A fase abre ciclo recursal: publica ao menos um resultado preliminar. */
   readonly publicaPreliminar = computed(() => this.ancorasPossiveis().length > 0);
 
-  /**
-   * Bancas que o seletor oferece: as do cadastro, mais a que esta fase já exige
-   * e saiu dele. A banca congelada continua fazendo parte do edital; fora da
-   * lista, ela seguiria sendo enviada a cada gravação sem que o operador a
-   * visse — nem pudesse tirá-la.
-   */
-  readonly bancasEscolhiveis = computed<readonly { id: string; nome: string }[]>(() => {
+  /** Bancas que o seletor oferece. */
+  readonly bancasEscolhiveis = computed(() => {
     this.espelho.versao();
     const doCadastro = this.catalogos.bancas().map((banca) => ({ id: banca.id, nome: banca.nome }));
-    const conhecidas = new Set(doCadastro.map((banca) => banca.id));
-
-    const fase = this.faseDoRascunho();
-    const codigoCongelado = new Map(
-      (fase?.congelados?.bancas ?? []).map((banca) => [banca.id, banca.codigo]),
-    );
-
-    const congeladas = (fase?.bancasRequeridas ?? [])
-      .map((banca) => banca.tipoBancaId)
-      .filter((id) => id !== '' && !conhecidas.has(id))
-      .map((id) => ({
-        id,
-        nome: `${codigoCongelado.get(id) ?? 'Banca'} (fora do cadastro atual)`,
-      }));
-
-    return [...doCadastro, ...congeladas];
+    return bancasEscolhiveis(doCadastro, this.faseDoRascunho());
   });
 
   readonly atoPorCodigo = computed<ReadonlyMap<string, AtoDoCatalogo>>(
@@ -152,7 +133,7 @@ export class FaseEmEdicao {
   };
 
   readonly nomeDaBanca = (tipoBancaId: string): string =>
-    this.bancasEscolhiveis().find((banca) => banca.id === tipoBancaId)?.nome ?? tipoBancaId;
+    nomeDaBanca(this.bancasEscolhiveis(), tipoBancaId);
 
   /**
    * O id de um elemento desta fase, único por instância. Todo id do template passa por aqui.
