@@ -314,7 +314,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     });
     await propagar();
 
-    const concluidos = [...store.completedSteps()].sort((a, b) => a - b);
+    const concluidos = [...store.passosConcluidos()].sort((a, b) => a - b);
     // O detalhe grava o tipo (que nasce com o processo), o identificador e a taxa; o resto
     // está vazio e continua pendente, mesmo sem item reprovado no checklist.
     expect(concluidos).toEqual(
@@ -335,8 +335,8 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     });
     await propagar();
 
-    expect(store.completedSteps().has(indiceDoPasso('Pagamento'))).toBe(false);
-    expect(store.completedSteps().has(indiceDoPasso('Identificação'))).toBe(true);
+    expect(store.passosConcluidos().has(indiceDoPasso('Pagamento'))).toBe(false);
+    expect(store.passosConcluidos().has(indiceDoPasso('Identificação'))).toBe(true);
   });
 
   it('não afirma conformidade quando o checklist não carrega', async () => {
@@ -346,7 +346,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
     });
     await propagar();
 
-    expect(store.completedSteps().size).toBe(0);
+    expect(store.passosConcluidos().size).toBe(0);
     expect(store.hidratando()).toBe(false);
   });
 
@@ -749,7 +749,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
     const cenario = montar({ obterRascunho: rascunho({ numero: '07/2027' }) });
     await propagar();
 
-    cenario.store.goTo(cenario.store.totalSteps - 1);
+    cenario.store.goTo(cenario.store.totalDePassos - 1);
     cenario.fixture.detectChanges();
 
     expect(
@@ -1380,7 +1380,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
 
     expect(cenario.store.processoSeletivoId()).toBeNull();
     expect(cenario.store.remoteSnapshot()).toBeNull();
-    expect(cenario.store.currentStep()).toBe(0);
+    expect(cenario.store.passoAtual()).toBe(0);
     expect(cenario.store.draft().identificacao.nome).toBe('');
   });
 
@@ -1795,7 +1795,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     cenario.fixture.detectChanges();
     await propagar();
 
-    expect(cenario.store.currentStep()).toBe(1);
+    expect(cenario.store.passoAtual()).toBe(1);
     expect(cenario.store.draft().identificacao.nome).toBe('Em edição');
   });
 
@@ -1869,14 +1869,14 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
       await cenario.componente.nextOrPublish();
 
       expect(cenario.definirTaxaInscricao).not.toHaveBeenCalled();
-      expect(cenario.store.currentStep()).toBe(PASSO_PAGAMENTO + 1);
+      expect(cenario.store.passoAtual()).toBe(PASSO_PAGAMENTO + 1);
     });
 
     it('retira o botão de avanço do último passo, onde ele só publicaria', async () => {
       const cenario = publicado();
       await propagar();
 
-      cenario.store.goTo(cenario.store.totalSteps - 1);
+      cenario.store.goTo(cenario.store.totalDePassos - 1);
       cenario.fixture.detectChanges();
 
       expect(cenario.componente.ofereceAvanco()).toBe(false);
@@ -1947,7 +1947,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
 
       expect(cenario.store.edicaoPermitida(), 'pré-condição: o processo é de leitura').toBe(false);
 
-      cenario.store.goTo(cenario.store.totalSteps - 1);
+      cenario.store.goTo(cenario.store.totalDePassos - 1);
       cenario.fixture.detectChanges();
 
       const botao = Array.from(

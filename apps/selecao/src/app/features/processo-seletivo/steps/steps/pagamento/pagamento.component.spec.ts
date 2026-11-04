@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
-import { PagamentoStepComponent } from './pagamento.component';
+import { PagamentoPassoComponent } from './pagamento.component';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -36,8 +36,8 @@ function problema(status: number, code: string, title: string) {
   };
 }
 
-describe('PagamentoStepComponent', () => {
-  let componente: PagamentoStepComponent;
+describe('PagamentoPassoComponent', () => {
+  let componente: PagamentoPassoComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let host: HTMLElement;
@@ -45,7 +45,7 @@ describe('PagamentoStepComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PagamentoStepComponent],
+      imports: [PagamentoPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -56,7 +56,7 @@ describe('PagamentoStepComponent', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(PagamentoStepComponent);
+    const fixture = TestBed.createComponent(PagamentoPassoComponent);
     componente = fixture.componentInstance;
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
@@ -448,7 +448,7 @@ describe('PagamentoStepComponent', () => {
 
   /**
    * O stepper continua clicável durante o PUT. Sem o bloqueio, a troca de passo
-   * move `currentStep`, e o `next()` que fecha a gravação avança a partir do
+   * move `passoAtual`, e o `next()` que fecha a gravação avança a partir do
    * índice novo — marcando como concluído um passo que ninguém preencheu.
    */
   it('recusa troca de passo enquanto a gravação corre', async () => {
@@ -457,19 +457,19 @@ describe('PagamentoStepComponent', () => {
       valor: '150',
       fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
-    const passoInicial = store.currentStep();
+    const passoInicial = store.passoAtual();
 
     const promessa = componente.persistir();
     await tick();
 
     store.goTo(passoInicial + 3);
-    expect(store.currentStep()).toBe(passoInicial);
+    expect(store.passoAtual()).toBe(passoInicial);
 
     controller.expectOne(ROTA_TAXA).flush(null, { status: 204, statusText: 'No Content' });
     await promessa;
 
     store.goTo(passoInicial + 3);
-    expect(store.currentStep()).toBe(passoInicial + 3);
+    expect(store.passoAtual()).toBe(passoInicial + 3);
   });
 
   /**

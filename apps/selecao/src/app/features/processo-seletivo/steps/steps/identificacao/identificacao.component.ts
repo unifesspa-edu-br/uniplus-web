@@ -56,10 +56,10 @@ export const ORIGENS_CANDIDATOS: readonly {
     CatalogoDeUnidades,
     BuscaDeMunicipio,
     GravacaoDaIdentificacao,
-    provePassoDoWizard(IdentificacaoStepComponent),
+    provePassoDoWizard(IdentificacaoPassoComponent),
   ],
 })
-export class IdentificacaoStepComponent {
+export class IdentificacaoPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   protected readonly unidades = inject(CatalogoDeUnidades);
   protected readonly gravacao = inject(GravacaoDaIdentificacao);

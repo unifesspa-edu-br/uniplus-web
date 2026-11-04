@@ -45,9 +45,9 @@ import {
   imports: [ValorLegivelDirective, ReactiveFormsModule, ValorEmConsultaComponent],
   templateUrl: './pagamento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(PagamentoStepComponent)],
+  providers: [provePassoDoWizard(PagamentoPassoComponent)],
 })
-export class PagamentoStepComponent {
+export class PagamentoPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly cadastro = inject(CadastroInicial);

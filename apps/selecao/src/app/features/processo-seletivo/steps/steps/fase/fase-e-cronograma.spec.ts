@@ -14,9 +14,9 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
-import { CronogramaStepComponent } from '../cronograma/cronograma.component';
+import { CronogramaPassoComponent } from '../cronograma/cronograma.component';
 import { FormularioDoCronograma } from '../cronograma/servicos/formulario-do-cronograma.service';
-import { FaseStepComponent } from './fase.component';
+import { FasePassoComponent } from './fase.component';
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 
@@ -171,9 +171,9 @@ const PROCESSO_COM_ETAPA_GRAVADA = {
  * releitura do processo revelaria — depois.
  */
 describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', () => {
-  let cronograma: CronogramaStepComponent;
+  let cronograma: CronogramaPassoComponent;
   let formularioDoCronograma: FormularioDoCronograma;
-  let superficie: FaseStepComponent;
+  let superficie: FasePassoComponent;
   let publicacoes: () => PublicacoesDaFaseComponent;
   let bancas: () => BancasDaFaseComponent;
   let store: ProcessoSeletivoStore;
@@ -182,7 +182,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CronogramaStepComponent, FaseStepComponent],
+      imports: [CronogramaPassoComponent, FasePassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -201,8 +201,8 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     // Um provider de cada serviço no injetor do TestBed: as duas telas
     // compartilham o rascunho, os catálogos e a chave de gravação, como
     // compartilham na página que as hospeda.
-    const fixtureCronograma = TestBed.createComponent(CronogramaStepComponent);
-    const fixtureSuperficie = TestBed.createComponent(FaseStepComponent);
+    const fixtureCronograma = TestBed.createComponent(CronogramaPassoComponent);
+    const fixtureSuperficie = TestBed.createComponent(FasePassoComponent);
     cronograma = fixtureCronograma.componentInstance;
     formularioDoCronograma = fixtureCronograma.debugElement.injector.get(FormularioDoCronograma);
     superficie = fixtureSuperficie.componentInstance;

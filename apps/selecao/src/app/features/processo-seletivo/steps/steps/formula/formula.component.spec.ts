@@ -11,7 +11,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
-import { FormulaStepComponent } from './formula.component';
+import { FormulaPassoComponent } from './formula.component';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 
 const BASE = 'http://localhost:5000';
@@ -35,15 +35,15 @@ function etapaQueCompoeNota(): EtapaPontuada {
   };
 }
 
-describe('FormulaStepComponent', () => {
-  let fixture: ComponentFixture<FormulaStepComponent>;
-  let componente: FormulaStepComponent;
+describe('FormulaPassoComponent', () => {
+  let fixture: ComponentFixture<FormulaPassoComponent>;
+  let componente: FormulaPassoComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FormulaStepComponent],
+      imports: [FormulaPassoComponent],
       providers: [
         { provide: PermissoesService, useValue: { tem: () => false } },
         ProcessoSeletivoStore,
@@ -58,7 +58,7 @@ describe('FormulaStepComponent', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(FormulaStepComponent);
+    fixture = TestBed.createComponent(FormulaPassoComponent);
     componente = fixture.componentInstance;
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);

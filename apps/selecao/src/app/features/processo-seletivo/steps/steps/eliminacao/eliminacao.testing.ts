@@ -15,7 +15,7 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
-import { EliminacaoStepComponent } from './eliminacao.component';
+import { EliminacaoPassoComponent } from './eliminacao.component';
 
 export const BASE = 'http://localhost:5000';
 export const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -125,8 +125,8 @@ export function prepararClassificacaoLocal(): void {
   });
 }
 
-export let componente: EliminacaoStepComponent;
-export let fixture: ComponentFixture<EliminacaoStepComponent>;
+export let componente: EliminacaoPassoComponent;
+export let fixture: ComponentFixture<EliminacaoPassoComponent>;
 export let store: ProcessoSeletivoStore;
 export let controller: HttpTestingController;
 export let tipoEtapaPorId: WritableSignal<ReadonlyMap<string, TipoEtapaDto>>;
@@ -136,7 +136,7 @@ export function montarEliminacao(): void {
   beforeEach(async () => {
     tipoEtapaPorId = signal(new Map());
     await TestBed.configureTestingModule({
-      imports: [EliminacaoStepComponent],
+      imports: [EliminacaoPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -152,7 +152,7 @@ export function montarEliminacao(): void {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(EliminacaoStepComponent);
+    fixture = TestBed.createComponent(EliminacaoPassoComponent);
     componente = fixture.componentInstance;
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);

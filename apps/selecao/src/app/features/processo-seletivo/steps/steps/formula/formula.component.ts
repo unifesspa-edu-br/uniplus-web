@@ -57,9 +57,9 @@ const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
   ],
   templateUrl: './formula.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(FormulaStepComponent)],
+  providers: [provePassoDoWizard(FormulaPassoComponent)],
 })
-export class FormulaStepComponent {
+export class FormulaPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());

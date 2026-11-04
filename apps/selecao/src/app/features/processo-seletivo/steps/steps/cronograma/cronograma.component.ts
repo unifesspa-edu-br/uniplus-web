@@ -3,7 +3,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import { type ValidacaoDoPasso } from '../../processo-seletivo.models';
-import { FaseStepComponent } from '../fase/fase.component';
+import { FasePassoComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { EtapasOrfasComponent } from './etapas-orfas.component';
@@ -31,7 +31,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
   imports: [
     ValorEmConsultaComponent,
     ReactiveFormsModule,
-    FaseStepComponent,
+    FasePassoComponent,
     FaseEmConsultaComponent,
     ConvencaoDeContagemComponent,
     NovaFaseComponent,
@@ -43,7 +43,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    provePassoDoWizard(CronogramaStepComponent),
+    provePassoDoWizard(CronogramaPassoComponent),
     UnidadesResponsaveisDasFases,
     ReleituraDasEtapas,
     FormularioDoCronograma,
@@ -56,7 +56,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
     ExpansaoDoCronograma,
   ],
 })
-export class CronogramaStepComponent {
+export class CronogramaPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDoCronograma);
   protected readonly releituraDasEtapas = inject(ReleituraDasEtapas);

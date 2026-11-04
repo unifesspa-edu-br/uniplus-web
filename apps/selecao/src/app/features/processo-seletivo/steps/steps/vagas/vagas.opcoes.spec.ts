@@ -16,7 +16,7 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
-import { VagasStepComponent } from './vagas.component';
+import { VagasPassoComponent } from './vagas.component';
 import {
   BASE,
   LISTA_DE_CURSOS,
@@ -36,20 +36,20 @@ import {
 
 let servicos: ServicosDasVagas;
 
-describe('VagasStepComponent — número de opções de curso', () => {
+describe('VagasPassoComponent — número de opções de curso', () => {
   const ROTA_OPCOES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/opcoes-de-curso`;
   const ROTA_PROCESSO_RELIDO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
   const TEXTO = 'Com 2 opções de curso, cadastre pelo menos dois cursos.';
 
-  let componente: VagasStepComponent;
-  let fixture: ComponentFixture<VagasStepComponent>;
+  let componente: VagasPassoComponent;
+  let fixture: ComponentFixture<VagasPassoComponent>;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let tela: HTMLElement;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VagasStepComponent],
+      imports: [VagasPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -65,7 +65,7 @@ describe('VagasStepComponent — número de opções de curso', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(VagasStepComponent);
+    fixture = TestBed.createComponent(VagasPassoComponent);
     componente = fixture.componentInstance;
     servicos = servicosDe(fixture);
     store = TestBed.inject(ProcessoSeletivoStore);

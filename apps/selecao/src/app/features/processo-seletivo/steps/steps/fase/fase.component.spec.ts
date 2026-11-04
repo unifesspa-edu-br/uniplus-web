@@ -34,7 +34,7 @@ import { EixoFormularioComponent } from './documentos/eixos/eixo-formulario.comp
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
 import { GatilhoDasExigenciasStore } from './documentos/gatilho-das-exigencias.store';
 import { FaseEmEdicao } from './fase-em-edicao';
-import { FaseStepComponent } from './fase.component';
+import { FasePassoComponent } from './fase.component';
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 import {
@@ -58,8 +58,8 @@ import {
 } from './fase.testing';
 import { ModeloDaExigenciaComponent } from './modelo-da-exigencia/modelo-da-exigencia.component';
 
-describe('FaseStepComponent', () => {
-  let componente: FaseStepComponent;
+describe('FasePassoComponent', () => {
+  let componente: FasePassoComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let detectar: () => void;
@@ -1311,7 +1311,7 @@ describe('FaseStepComponent', () => {
           fase({}),
           fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
         );
-        const segunda = TestBed.createComponent(FaseStepComponent);
+        const segunda = TestBed.createComponent(FasePassoComponent);
         segunda.componentRef.setInput('faseFixada', ID_RECURSOS);
         segunda.detectChanges();
         for (const requisicao of controller.match(() => true)) requisicao.flush([]);
@@ -1987,7 +1987,7 @@ describe('FaseStepComponent', () => {
     function duasFases() {
       comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
       const criar = (faseCanonicaId: string) => {
-        const fixture = TestBed.createComponent(FaseStepComponent);
+        const fixture = TestBed.createComponent(FasePassoComponent);
         fixture.componentRef.setInput('faseFixada', faseCanonicaId);
         fixture.detectChanges();
         atenderCatalogos();

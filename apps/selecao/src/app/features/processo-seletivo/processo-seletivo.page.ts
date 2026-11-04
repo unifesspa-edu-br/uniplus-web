@@ -33,22 +33,22 @@ import { EnvioDoEdital } from './steps/shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from './steps/shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from './steps/shared/campos-pressupostos.service';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
-import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-processo.component';
-import { IdentificacaoStepComponent } from './steps/steps/identificacao/identificacao.component';
-import { PagamentoStepComponent } from './steps/steps/pagamento/pagamento.component';
-import { VagasStepComponent } from './steps/steps/vagas/vagas.component';
+import { TipoProcessoPassoComponent } from './steps/steps/tipo-processo/tipo-processo.component';
+import { IdentificacaoPassoComponent } from './steps/steps/identificacao/identificacao.component';
+import { PagamentoPassoComponent } from './steps/steps/pagamento/pagamento.component';
+import { VagasPassoComponent } from './steps/steps/vagas/vagas.component';
 import { CatalogosDoCronograma } from './steps/steps/cronograma/catalogos-do-cronograma.service';
-import { CronogramaStepComponent } from './steps/steps/cronograma/cronograma.component';
-import { FormularioStepComponent } from './steps/steps/formulario/formulario.component';
+import { CronogramaPassoComponent } from './steps/steps/cronograma/cronograma.component';
+import { FormularioPassoComponent } from './steps/steps/formulario/formulario.component';
 import { LeituraDoCadastroDePesos } from './steps/steps/classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from './steps/steps/classificacao/catalogos-de-classificacao.service';
-import { FormulaStepComponent } from './steps/steps/formula/formula.component';
-import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
-import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
+import { FormulaPassoComponent } from './steps/steps/formula/formula.component';
+import { BonusPassoComponent } from './steps/steps/bonus/bonus.component';
+import { DesempatePassoComponent } from './steps/steps/desempate/desempate.component';
 import { reavaliarRecusaPeloDesempate } from './steps/steps/desempate/conferencia-do-desempate-gravado';
-import { EliminacaoStepComponent } from './steps/steps/eliminacao/eliminacao.component';
-import { AtendimentoStepComponent } from './steps/steps/atendimento/atendimento.component';
-import { RevisaoStepComponent } from './steps/steps/revisao/revisao.component';
+import { EliminacaoPassoComponent } from './steps/steps/eliminacao/eliminacao.component';
+import { AtendimentoPassoComponent } from './steps/steps/atendimento/atendimento.component';
+import { RevisaoPassoComponent } from './steps/steps/revisao/revisao.component';
 import {
   AVISO_DE_RASCUNHO_NAO_GRAVADO,
   ConfirmacaoDeSaida,
@@ -64,18 +64,18 @@ import {
     AlertComponent,
     DialogComponent,
     SpinnerComponent,
-    TipoProcessoStepComponent,
-    IdentificacaoStepComponent,
-    PagamentoStepComponent,
-    VagasStepComponent,
-    CronogramaStepComponent,
-    FormularioStepComponent,
-    FormulaStepComponent,
-    BonusStepComponent,
-    DesempateStepComponent,
-    EliminacaoStepComponent,
-    AtendimentoStepComponent,
-    RevisaoStepComponent,
+    TipoProcessoPassoComponent,
+    IdentificacaoPassoComponent,
+    PagamentoPassoComponent,
+    VagasPassoComponent,
+    CronogramaPassoComponent,
+    FormularioPassoComponent,
+    FormulaPassoComponent,
+    BonusPassoComponent,
+    DesempatePassoComponent,
+    EliminacaoPassoComponent,
+    AtendimentoPassoComponent,
+    RevisaoPassoComponent,
     StepsResponsivoComponent,
   ],
   providers: [
@@ -112,7 +112,7 @@ export class ProcessoSeletivoPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  readonly passoCorrente = computed(() => PASSOS[this.store.currentStep()]);
+  readonly passoCorrente = computed(() => PASSOS[this.store.passoAtual()]);
   readonly podePublicar = this.conducao.podePublicar;
   readonly confirmacaoPendente = this.conducao.confirmacaoPendente;
   readonly restaurarFocoAoFechar = this.conducao.restaurarFocoAoFechar;
@@ -126,7 +126,7 @@ export class ProcessoSeletivoPage {
     this.store.labels.map((rotulo, index) => ({
       rotulo,
       status: this.store.status(index),
-      concluido: this.store.completedSteps().has(index),
+      concluido: this.store.passosConcluidos().has(index),
     })),
   );
 
@@ -138,7 +138,7 @@ export class ProcessoSeletivoPage {
   readonly rotuloDeAvanco = computed(() => {
     if (!this.store.edicaoPermitida()) return 'Próximo';
     if (this.store.isLast()) return 'Publicar';
-    const passo = this.conducao.passoNo(this.store.currentStep());
+    const passo = this.conducao.passoNo(this.store.passoAtual());
     return passo?.rotuloDeAvanco?.() ?? 'Próximo';
   });
 
@@ -172,7 +172,7 @@ export class ProcessoSeletivoPage {
    */
   private esquecerAConfirmacaoAoTrocarDePasso(): void {
     effect(() => {
-      this.store.currentStep();
+      this.store.passoAtual();
       untracked(() => this.confirmacaoPendente.set(null));
     });
   }
@@ -192,7 +192,7 @@ export class ProcessoSeletivoPage {
 
   private focarOTituloAoTrocarDePasso(): void {
     effect(() => {
-      this.store.currentStep();
+      this.store.passoAtual();
       // Numa entrada por `/:id` o painel só existe depois da leitura; sem
       // observar `hidratando`, o foco ficaria preso no estado de carregamento.
       this.store.hidratando();

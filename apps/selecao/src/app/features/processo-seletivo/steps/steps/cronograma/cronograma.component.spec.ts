@@ -29,7 +29,7 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronograma } from './catalogos-do-cronograma.service';
 import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component';
-import { CronogramaStepComponent } from './cronograma.component';
+import { CronogramaPassoComponent } from './cronograma.component';
 import type { EtapaForm } from './cronograma-form';
 import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
 import { EdicaoDaEtapa } from './servicos/edicao-da-etapa.service';
@@ -68,8 +68,8 @@ import {
   PROCESSO_COM_ETAPA_GRAVADA,
 } from './cronograma.testing';
 
-describe('CronogramaStepComponent', () => {
-  let componente: CronogramaStepComponent;
+describe('CronogramaPassoComponent', () => {
+  let componente: CronogramaPassoComponent;
   let raiz: DebugElement;
   let expansao: ExpansaoDoCronograma;
   let leitura: LeituraDaLinhaDoTempo;
@@ -89,7 +89,7 @@ describe('CronogramaStepComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CronogramaStepComponent],
+      imports: [CronogramaPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -105,7 +105,7 @@ describe('CronogramaStepComponent', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(CronogramaStepComponent);
+    const fixture = TestBed.createComponent(CronogramaPassoComponent);
     componente = fixture.componentInstance;
     raiz = fixture.debugElement;
     expansao = fixture.debugElement.injector.get(ExpansaoDoCronograma);

@@ -21,9 +21,9 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
   imports: [ValorLegivelDirective, TypeCardComponent, ValorEmConsultaComponent],
   templateUrl: './tipo-processo.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(TipoProcessoStepComponent)],
+  providers: [provePassoDoWizard(TipoProcessoPassoComponent)],
 })
-export class TipoProcessoStepComponent {
+export class TipoProcessoPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly destroyRef = inject(DestroyRef);
   private readonly tiposProcessoApi = inject(TiposProcessoApi);

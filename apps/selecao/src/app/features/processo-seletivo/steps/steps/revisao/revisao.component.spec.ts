@@ -15,7 +15,7 @@ import {
   folhaDe,
 } from '../../shared/exigencias/exigencias-documentais';
 import { nomeDoPasso } from './destino-das-pendencias';
-import { RevisaoStepComponent } from './revisao.component';
+import { RevisaoPassoComponent } from './revisao.component';
 import {
   ATO_DO_PROCESSO,
   ATO_PUBLICADO,
@@ -39,10 +39,10 @@ import {
   CenarioDaRevisao,
 } from './revisao.testing';
 
-describe('RevisaoStepComponent', () => {
+describe('RevisaoPassoComponent', () => {
   let cenario: CenarioDaRevisao;
-  let fixture: ComponentFixture<RevisaoStepComponent>;
-  let componente: RevisaoStepComponent;
+  let fixture: ComponentFixture<RevisaoPassoComponent>;
+  let componente: RevisaoPassoComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 
@@ -55,7 +55,7 @@ describe('RevisaoStepComponent', () => {
 
   it('em consulta, não orienta a anexar o edital nem a concluir a identificação', async () => {
     store.remoteSnapshot.set(PROCESSO_DTO_MINIMO as never);
-    store.currentStep.set(store.totalSteps - 1);
+    store.passoAtual.set(store.totalDePassos - 1);
     await flushMicrotasks();
     fixture.detectChanges();
 
@@ -239,7 +239,7 @@ describe('RevisaoStepComponent', () => {
       );
       expect(botao?.textContent?.trim()).toBe(`Ir para ${nomeDoPasso('Cronograma')}`);
       botao?.click();
-      expect(PASSOS[store.currentStep()].rotulo).toBe('Cronograma');
+      expect(PASSOS[store.passoAtual()].rotulo).toBe('Cronograma');
     });
 
     it('não bloqueia a publicação e o banner dos itens conformes traz a ressalva', async () => {
@@ -313,7 +313,7 @@ describe('RevisaoStepComponent', () => {
     }
 
     function rotuloDoPassoAtual(): string {
-      return PASSOS[store.currentStep()].rotulo;
+      return PASSOS[store.passoAtual()].rotulo;
     }
 
     it('a pendência da resolução leva ao passo da fórmula e diz que a escolha vai com a classificação', async () => {

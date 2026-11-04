@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { FormulaStepComponent } from './formula.component';
+import { FormulaPassoComponent } from './formula.component';
 import {
   MontagemDe,
   RESOLUCAO,
@@ -18,12 +18,12 @@ import {
 
 function montarPasso(
   opcoes: Omit<OpcoesDaMontagem, 'comoSecao'> = {},
-): Promise<MontagemDe<FormulaStepComponent>> {
-  return montar(FormulaStepComponent, opcoes);
+): Promise<MontagemDe<FormulaPassoComponent>> {
+  return montar(FormulaPassoComponent, opcoes);
 }
 
 /** Marca o ENEM como o operador: escolhe a média ponderada local e liga a caixa. */
-function marcarEnemPelaTela(m: MontagemDe<FormulaStepComponent>): void {
+function marcarEnemPelaTela(m: MontagemDe<FormulaPassoComponent>): void {
   m.componente.escolherRegraCalculo('FORMULA-MEDIA-PONDERADA|1.0');
   m.fixture.detectChanges();
   const checkbox = m.el.querySelector<HTMLInputElement>('input[type="checkbox"]');
@@ -33,7 +33,7 @@ function marcarEnemPelaTela(m: MontagemDe<FormulaStepComponent>): void {
   m.fixture.detectChanges();
 }
 
-describe('FormulaStepComponent — resolução de Peso por Área', () => {
+describe('FormulaPassoComponent — resolução de Peso por Área', () => {
   afterEach(encerrarMontagem);
 
   describe('quando aparece e quando o cadastro é lido', () => {

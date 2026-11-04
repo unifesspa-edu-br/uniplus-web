@@ -10,7 +10,7 @@ import {
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
-import { IdentificacaoStepComponent } from './identificacao.component';
+import { IdentificacaoPassoComponent } from './identificacao.component';
 import { BuscaDeMunicipio } from './servicos/busca-de-municipio.service';
 import { CatalogoDeUnidades } from './servicos/catalogo-de-unidades.service';
 import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
@@ -65,8 +65,8 @@ function problema(status: number, code: string, title: string) {
   };
 }
 
-describe('IdentificacaoStepComponent', () => {
-  let componente: IdentificacaoStepComponent;
+describe('IdentificacaoPassoComponent', () => {
+  let componente: IdentificacaoPassoComponent;
   let unidades: CatalogoDeUnidades;
   let municipio: BuscaDeMunicipio;
   let gravacao: GravacaoDaIdentificacao;
@@ -77,7 +77,7 @@ describe('IdentificacaoStepComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [IdentificacaoStepComponent],
+      imports: [IdentificacaoPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -90,7 +90,7 @@ describe('IdentificacaoStepComponent', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(IdentificacaoStepComponent);
+    const fixture = TestBed.createComponent(IdentificacaoPassoComponent);
     componente = fixture.componentInstance;
     unidades = fixture.debugElement.injector.get(CatalogoDeUnidades);
     municipio = fixture.debugElement.injector.get(BuscaDeMunicipio);

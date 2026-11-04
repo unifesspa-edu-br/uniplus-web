@@ -27,7 +27,7 @@ import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
-import { FormularioStepComponent } from './formulario.component';
+import { FormularioPassoComponent } from './formulario.component';
 import { GravacaoDosFormularios } from './servicos/gravacao-dos-formularios.service';
 import { CamposPressupostosDoFormulario } from './servicos/campos-pressupostos-do-formulario.service';
 import { FasesDosFormularios } from './servicos/fases-dos-formularios.service';
@@ -152,8 +152,8 @@ const PCD_NO_CATALOGO = {
   escopo: 'CANDIDATO',
 };
 
-describe('FormularioStepComponent', () => {
-  let fixture: ComponentFixture<FormularioStepComponent>;
+describe('FormularioPassoComponent', () => {
+  let fixture: ComponentFixture<FormularioPassoComponent>;
   const servicoDeModelos = (): AplicacaoDeModelo =>
     fixture.debugElement.injector.get(AplicacaoDeModelo);
   let store: ProcessoSeletivoStore;
@@ -165,7 +165,7 @@ describe('FormularioStepComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FormularioStepComponent],
+      imports: [FormularioPassoComponent],
       providers: [
         provideRouter([]),
         ProcessoSeletivoStore,
@@ -191,7 +191,7 @@ describe('FormularioStepComponent', () => {
       referenciaTemporal: { tipo: 'DATA_ESPECIFICA', data: '2027-01-15', faseCodigo: '' },
     });
 
-    fixture = TestBed.createComponent(FormularioStepComponent);
+    fixture = TestBed.createComponent(FormularioPassoComponent);
     host = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
     for (const requisicao of controller.match(() => true)) {
@@ -334,7 +334,7 @@ describe('FormularioStepComponent', () => {
 
       expect(host.textContent).toContain('Nenhum documento exigido nesta fase');
       host.querySelector<HTMLButtonElement>('sel-documentos-do-formulario button')?.click();
-      expect(store.currentStep()).toBe(PASSO_CRONOGRAMA);
+      expect(store.passoAtual()).toBe(PASSO_CRONOGRAMA);
     });
   });
 
@@ -551,7 +551,7 @@ describe('FormularioStepComponent', () => {
     // A data de nascimento é dos dados básicos, que a inscrição sempre coleta.
     expect(host.querySelector('#form-desempate-sem-nascimento')).toBeNull();
     (host.querySelector('#form-ir-desempate-apuracao') as HTMLButtonElement).click();
-    expect(store.currentStep()).toBe(PASSO_DESEMPATE);
+    expect(store.passoAtual()).toBe(PASSO_DESEMPATE);
   });
 
   describe('com um formulário por finalidade', () => {

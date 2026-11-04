@@ -54,13 +54,13 @@ import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.compone
   templateUrl: './fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    provePassoDoWizard(FaseStepComponent),
+    provePassoDoWizard(FasePassoComponent),
     FaseEmEdicao,
     ExigenciasDaFaseStore,
     GatilhoDasExigenciasStore,
   ],
 })
-export class FaseStepComponent {
+export class FasePassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDoCronograma);
   private readonly cadastro = inject(CadastroInicial);

@@ -12,7 +12,7 @@ import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
 import { ConferenciaDoQuadro } from './servicos/conferencia-do-quadro.service';
 import { EstadoDoPassoDeVagas } from './servicos/estado-do-passo-de-vagas';
 import { SimulacaoDoQuadro } from './servicos/simulacao-do-quadro.service';
-import { VagasStepComponent } from './vagas.component';
+import { VagasPassoComponent } from './vagas.component';
 
 export const BASE = 'http://localhost:5000';
 export const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -290,7 +290,7 @@ export interface ServicosDasVagas {
   readonly catalogos: CatalogosDeDistribuicao;
 }
 
-export function servicosDe(fixture: ComponentFixture<VagasStepComponent>): ServicosDasVagas {
+export function servicosDe(fixture: ComponentFixture<VagasPassoComponent>): ServicosDasVagas {
   const injetor = fixture.debugElement.injector;
   return {
     estado: injetor.get(EstadoDoPassoDeVagas),
@@ -306,7 +306,7 @@ const DIALOGO_DO_REAPLICAR_ROL = 2;
 
 /** O que o operador faz na tela do passo: clica, digita e escolhe, e a tela reage. */
 export class TelaDasVagas {
-  constructor(private readonly fixture: ComponentFixture<VagasStepComponent>) {}
+  constructor(private readonly fixture: ComponentFixture<VagasPassoComponent>) {}
 
   /** Deixa a tela refletir o que mudou no rascunho. */
   atualizar(): void {

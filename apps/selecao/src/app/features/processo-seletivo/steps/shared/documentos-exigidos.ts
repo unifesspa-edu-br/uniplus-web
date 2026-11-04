@@ -1,6 +1,6 @@
 import { formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
-import { STEP_LABELS } from '../processo-seletivo.data';
+import { ROTULOS_DOS_PASSOS } from '../processo-seletivo.data';
 import type { ExigenciasDoRascunho } from '../processo-seletivo.models';
 import {
   composicaoResumida,
@@ -167,4 +167,4 @@ export function fatosParaLerOGatilho(
 }
 
 /** Posição do passo onde a lista de documentos é editada, derivada da ordem única dos passos. */
-export const PASSO_CRONOGRAMA = STEP_LABELS.indexOf('Cronograma');
+export const PASSO_CRONOGRAMA = ROTULOS_DOS_PASSOS.indexOf('Cronograma');

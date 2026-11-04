@@ -2,7 +2,7 @@ import { ComponentFixture } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { RevisaoStepComponent } from './revisao.component';
+import { RevisaoPassoComponent } from './revisao.component';
 import {
   CONFORMIDADE_LEGAL_VERDE,
   CONFORMIDADE_VERDE,
@@ -20,10 +20,10 @@ import {
   ROTA_PUBLICACAO,
 } from './revisao.testing';
 
-describe('RevisaoStepComponent — conferência', () => {
+describe('RevisaoPassoComponent — conferência', () => {
   let cenario: CenarioDaRevisao;
-  let fixture: ComponentFixture<RevisaoStepComponent>;
-  let componente: RevisaoStepComponent;
+  let fixture: ComponentFixture<RevisaoPassoComponent>;
+  let componente: RevisaoPassoComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 

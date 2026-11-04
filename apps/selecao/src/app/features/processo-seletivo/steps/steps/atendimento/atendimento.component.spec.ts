@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
-import { AtendimentoStepComponent } from './atendimento.component';
+import { AtendimentoPassoComponent } from './atendimento.component';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000009aa';
@@ -38,9 +38,9 @@ const TIPOS_DEFICIENCIA = [
   },
 ];
 
-describe('AtendimentoStepComponent', () => {
-  let componente: AtendimentoStepComponent;
-  let fixture: ComponentFixture<AtendimentoStepComponent>;
+describe('AtendimentoPassoComponent', () => {
+  let componente: AtendimentoPassoComponent;
+  let fixture: ComponentFixture<AtendimentoPassoComponent>;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let elemento: HTMLElement;
@@ -48,7 +48,7 @@ describe('AtendimentoStepComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AtendimentoStepComponent],
+      imports: [AtendimentoPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -60,7 +60,7 @@ describe('AtendimentoStepComponent', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(AtendimentoStepComponent);
+    fixture = TestBed.createComponent(AtendimentoPassoComponent);
     componente = fixture.componentInstance;
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);

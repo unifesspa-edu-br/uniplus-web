@@ -11,23 +11,23 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { BasesLegaisDeBonus } from './bases-legais-de-bonus.service';
-import { BonusStepComponent } from './bonus.component';
+import { BonusPassoComponent } from './bonus.component';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
 const ROTA_BONUS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/bonus-regional`;
 const BASE_LEGAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
 
-describe('BonusStepComponent', () => {
-  let componente: BonusStepComponent;
+describe('BonusPassoComponent', () => {
+  let componente: BonusPassoComponent;
   let basesLegais: BasesLegaisDeBonus;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
-  let fixture: ComponentFixture<BonusStepComponent>;
+  let fixture: ComponentFixture<BonusPassoComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BonusStepComponent],
+      imports: [BonusPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -40,7 +40,7 @@ describe('BonusStepComponent', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(BonusStepComponent);
+    fixture = TestBed.createComponent(BonusPassoComponent);
     componente = fixture.componentInstance;
     basesLegais = fixture.debugElement.injector.get(BasesLegaisDeBonus);
     store = TestBed.inject(ProcessoSeletivoStore);

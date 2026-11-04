@@ -57,13 +57,13 @@ function contagemEmTexto(quantidade: number, singular: string, plural: string): 
   templateUrl: './revisao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    provePassoDoWizard(RevisaoStepComponent),
+    provePassoDoWizard(RevisaoPassoComponent),
     ProntidaoDaPublicacao,
     ConferenciaDaPublicacao,
     PublicacaoDoProcesso,
   ],
 })
-export class RevisaoStepComponent {
+export class RevisaoPassoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
   protected readonly prontidao = inject(ProntidaoDaPublicacao);
   protected readonly conferencia = inject(ConferenciaDaPublicacao);

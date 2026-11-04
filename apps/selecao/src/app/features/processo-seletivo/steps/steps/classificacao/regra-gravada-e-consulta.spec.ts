@@ -17,12 +17,12 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
-import { BonusStepComponent } from '../bonus/bonus.component';
-import { DesempateStepComponent } from '../desempate/desempate.component';
+import { BonusPassoComponent } from '../bonus/bonus.component';
+import { DesempatePassoComponent } from '../desempate/desempate.component';
 import { EdicaoDosCriterios } from '../desempate/edicao-dos-criterios.service';
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
-import { EliminacaoStepComponent } from '../eliminacao/eliminacao.component';
-import { FormulaStepComponent } from '../formula/formula.component';
+import { EliminacaoPassoComponent } from '../eliminacao/eliminacao.component';
+import { FormulaPassoComponent } from '../formula/formula.component';
 import { LeituraDoCadastroDePesos } from './leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
@@ -136,7 +136,7 @@ const CLASSIFICACAO_LOCAL = {
 describe('regra gravada no select, passo lido como texto em consulta', () => {
   describe('Fórmula', () => {
     it('mostra as regras gravadas quando o catálogo chega depois do rascunho', async () => {
-      const { fixture, host, store, catalogos } = await montar(FormulaStepComponent);
+      const { fixture, host, store, catalogos } = await montar(FormulaPassoComponent);
       store.patchObjectSection('classificacao', CLASSIFICACAO_LOCAL);
       detectar(fixture);
 
@@ -156,7 +156,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('com o processo publicado, lê as regras gravadas como texto', async () => {
-      const { fixture, host, store, catalogos } = await montar(FormulaStepComponent);
+      const { fixture, host, store, catalogos } = await montar(FormulaPassoComponent);
       store.patchObjectSection('classificacao', CLASSIFICACAO_LOCAL);
       publicar(store);
       catalogos.regrasCalculo.set([regra('FORMULA-MEDIA-PONDERADA')]);
@@ -175,7 +175,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('trava os controles enquanto a gravação está em curso', async () => {
-      const { fixture, host, store } = await montar(FormulaStepComponent);
+      const { fixture, host, store } = await montar(FormulaPassoComponent);
       store.patchObjectSection('classificacao', CLASSIFICACAO_LOCAL);
       store.salvando.set(true);
       detectar(fixture);
@@ -186,7 +186,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
 
   describe('Bônus', () => {
     it('mostra a regra gravada quando o catálogo chega depois do rascunho', async () => {
-      const { fixture, host, store, catalogos } = await montar(BonusStepComponent);
+      const { fixture, host, store, catalogos } = await montar(BonusPassoComponent);
       store.patchObjectSection('bonus', {
         aplica: true,
         regraCodigo: 'BONUS-REGIONAL',
@@ -201,7 +201,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('com o processo publicado, lê o bônus gravado como texto', async () => {
-      const { fixture, host, store, catalogos } = await montar(BonusStepComponent);
+      const { fixture, host, store, catalogos } = await montar(BonusPassoComponent);
       store.patchObjectSection('bonus', {
         aplica: true,
         regraCodigo: 'BONUS-REGIONAL',
@@ -224,7 +224,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('com o processo publicado e sem bônus, diz que ele não se aplica', async () => {
-      const { fixture, host, store } = await montar(BonusStepComponent);
+      const { fixture, host, store } = await montar(BonusPassoComponent);
       store.patchObjectSection('bonus', { aplica: false });
       publicar(store);
       detectar(fixture);
@@ -234,7 +234,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('trava os controles enquanto a gravação está em curso', async () => {
-      const { fixture, host, store } = await montar(BonusStepComponent);
+      const { fixture, host, store } = await montar(BonusPassoComponent);
       store.patchObjectSection('bonus', {
         aplica: true,
         regraCodigo: 'BONUS-REGIONAL',
@@ -261,7 +261,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     };
 
     it('mostra a regra gravada quando o catálogo chega depois do rascunho', async () => {
-      const { fixture, host, store, catalogos } = await montar(DesempateStepComponent);
+      const { fixture, host, store, catalogos } = await montar(DesempatePassoComponent);
       store.patchSection('desempate', [criterio]);
       detectar(fixture);
 
@@ -272,7 +272,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('com o processo publicado, lê cada critério como texto, na ordem, sem ações', async () => {
-      const { fixture, host, store, catalogos } = await montar(DesempateStepComponent);
+      const { fixture, host, store, catalogos } = await montar(DesempatePassoComponent);
       const idoso = { ...criterio, regraCodigo: 'DESEMPATE-IDOSO', idadeMinima: '60' };
       store.patchSection('desempate', [criterio, idoso]);
       publicar(store);
@@ -291,7 +291,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('trava os controles enquanto a gravação está em curso', async () => {
-      const { fixture, host, store } = await montar(DesempateStepComponent);
+      const { fixture, host, store } = await montar(DesempatePassoComponent);
       store.patchSection('desempate', [criterio, criterio]);
       store.salvando.set(true);
       detectar(fixture);
@@ -301,7 +301,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('com o processo publicado, acrescentar, mover e remover pelo código não mudam o rascunho', async () => {
-      const { fixture, store } = await montar(DesempateStepComponent);
+      const { fixture, store } = await montar(DesempatePassoComponent);
       const segundo = { ...criterio, regraCodigo: 'DESEMPATE-IDOSO' };
       store.patchSection('desempate', [criterio, segundo]);
       publicar(store);
@@ -327,7 +327,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     };
 
     it('mostra a regra gravada quando o catálogo chega depois do rascunho', async () => {
-      const { fixture, host, store, catalogos } = await montar(EliminacaoStepComponent);
+      const { fixture, host, store, catalogos } = await montar(EliminacaoPassoComponent);
       store.patchObjectSection('classificacao', {
         ...CLASSIFICACAO_LOCAL,
         regrasEliminacao: [regraGravada],
@@ -341,7 +341,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('com o processo publicado, lê cada regra como texto, sem ações', async () => {
-      const { fixture, host, store, catalogos } = await montar(EliminacaoStepComponent);
+      const { fixture, host, store, catalogos } = await montar(EliminacaoPassoComponent);
       store.patchObjectSection('classificacao', {
         ...CLASSIFICACAO_LOCAL,
         regrasEliminacao: [regraGravada],
@@ -359,7 +359,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('com o processo publicado e nenhuma regra, diz que não há regra declarada', async () => {
-      const { fixture, host, store } = await montar(EliminacaoStepComponent);
+      const { fixture, host, store } = await montar(EliminacaoPassoComponent);
       store.patchObjectSection('classificacao', { ...CLASSIFICACAO_LOCAL, regrasEliminacao: [] });
       publicar(store);
       detectar(fixture);
@@ -369,7 +369,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('com o processo publicado e sem regra de cálculo, não diz que a classificação é importada', async () => {
-      const { fixture, host, store } = await montar(EliminacaoStepComponent);
+      const { fixture, host, store } = await montar(EliminacaoPassoComponent);
       store.patchObjectSection('classificacao', {
         ...CLASSIFICACAO_LOCAL,
         regraCalculoCodigo: '',
@@ -384,7 +384,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('trava os controles enquanto a gravação está em curso', async () => {
-      const { fixture, host, store } = await montar(EliminacaoStepComponent);
+      const { fixture, host, store } = await montar(EliminacaoPassoComponent);
       store.patchObjectSection('classificacao', {
         ...CLASSIFICACAO_LOCAL,
         regrasEliminacao: [regraGravada],
@@ -397,7 +397,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
     });
 
     it('com o processo publicado, acrescentar, alterar e remover pelo código não mudam o rascunho', async () => {
-      const { fixture, store } = await montar(EliminacaoStepComponent);
+      const { fixture, store } = await montar(EliminacaoPassoComponent);
       store.patchObjectSection('classificacao', {
         ...CLASSIFICACAO_LOCAL,
         regrasEliminacao: [regraGravada],

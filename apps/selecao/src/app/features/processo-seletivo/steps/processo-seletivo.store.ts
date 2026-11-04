@@ -2,7 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type { StepStatus } from '@uniplus/shared-ui/components';
-import { STEP_LABELS } from './processo-seletivo.data';
+import { ROTULOS_DOS_PASSOS } from './processo-seletivo.data';
 import type { RegraDaModalidadeOfertada } from './shared/regras-das-modalidades';
 import type { AplicacaoEmAberto } from './steps/formulario/modelo-de-formulario';
 import { FalhaDeLeitura, WizardDraft } from './processo-seletivo.models';
@@ -17,18 +17,18 @@ import { concorrenciaDuplaAplicavel, modalidadesDasOfertas } from './modalidades
 import { rascunhoInicial } from './rascunho-inicial';
 import { motivoDeSomenteLeitura } from './somente-leitura';
 
-const INDICE_DO_CRONOGRAMA = STEP_LABELS.indexOf('Cronograma');
+const INDICE_DO_CRONOGRAMA = ROTULOS_DOS_PASSOS.indexOf('Cronograma');
 
 @Injectable()
 export class ProcessoSeletivoStore {
-  readonly totalSteps = STEP_LABELS.length;
-  readonly labels = STEP_LABELS;
-  readonly currentStep = signal(0);
-  readonly visitedSteps = signal<ReadonlySet<number>>(new Set([0]));
-  readonly completedSteps = signal<ReadonlySet<number>>(new Set());
+  readonly totalDePassos = ROTULOS_DOS_PASSOS.length;
+  readonly labels = ROTULOS_DOS_PASSOS;
+  readonly passoAtual = signal(0);
+  readonly passosVisitados = signal<ReadonlySet<number>>(new Set([0]));
+  readonly passosConcluidos = signal<ReadonlySet<number>>(new Set());
   readonly draft = signal<WizardDraft>(rascunhoInicial());
   /** Mensagens de validação do step ativo. `null` indica sem erro. */
-  readonly stepError = signal<string[] | null>(null);
+  readonly erroDoPasso = signal<string[] | null>(null);
   /**
    * Id do Processo Seletivo já criado na API. `null` enquanto o cadastro
    * inicial não foi persistido.
@@ -172,7 +172,7 @@ export class ProcessoSeletivoStore {
    */
   readonly faseEmFoco = signal<string | null>(null);
 
-  readonly cronogramaVisivel = computed(() => this.currentStep() === INDICE_DO_CRONOGRAMA);
+  readonly cronogramaVisivel = computed(() => this.passoAtual() === INDICE_DO_CRONOGRAMA);
 
   /** Leva ao passo Cronograma já na fase citada. */
   irParaFase(codigo: string): void {
@@ -223,14 +223,14 @@ export class ProcessoSeletivoStore {
     concorrenciaDuplaAplicavel(this.modalidadesDoProcesso()),
   );
 
-  readonly currentLabel = computed(() => this.labels[this.currentStep()]);
+  readonly currentLabel = computed(() => this.labels[this.passoAtual()]);
   readonly currentMeta = computed(() => {
-    const index = this.currentStep();
-    return `Etapa ${index + 1} de ${this.totalSteps} (${String(index + 1).padStart(2, '0')} ${this.labels[index]})`;
+    const index = this.passoAtual();
+    return `Etapa ${index + 1} de ${this.totalDePassos} (${String(index + 1).padStart(2, '0')} ${this.labels[index]})`;
   });
-  readonly progress = computed(() => ((this.currentStep() + 1) / this.totalSteps) * 100);
-  readonly isFirst = computed(() => this.currentStep() === 0);
-  readonly isLast = computed(() => this.currentStep() === this.totalSteps - 1);
+  readonly progress = computed(() => ((this.passoAtual() + 1) / this.totalDePassos) * 100);
+  readonly isFirst = computed(() => this.passoAtual() === 0);
+  readonly isLast = computed(() => this.passoAtual() === this.totalDePassos - 1);
 
   goTo(index: number): void {
     // Trocar de passo durante a gravação faria o avanço partir do índice novo:
@@ -241,23 +241,23 @@ export class ProcessoSeletivoStore {
     // está com sua própria chamada em voo.
     if (this.operacaoEmAndamento()) return;
 
-    if (index < 0 || index >= this.totalSteps) return;
-    this.currentStep.set(index);
-    this.visitedSteps.update((current) => new Set(current).add(index));
+    if (index < 0 || index >= this.totalDePassos) return;
+    this.passoAtual.set(index);
+    this.passosVisitados.update((current) => new Set(current).add(index));
   }
 
   next(): boolean {
-    if (this.stepError()) return false;
-    const current = this.currentStep();
-    if (current >= this.totalSteps - 1) return false;
-    this.completedSteps.update((steps) => new Set(steps).add(current));
+    if (this.erroDoPasso()) return false;
+    const current = this.passoAtual();
+    if (current >= this.totalDePassos - 1) return false;
+    this.passosConcluidos.update((steps) => new Set(steps).add(current));
     this.goTo(current + 1);
     return true;
   }
 
   /** Define as mensagens de erro do step ativo (null limpa). */
-  setStepError(messages: string[] | null): void {
-    this.stepError.set(messages);
+  definirErroDoPasso(messages: string[] | null): void {
+    this.erroDoPasso.set(messages);
   }
 
   /**
@@ -267,17 +267,17 @@ export class ProcessoSeletivoStore {
    * "Próximo" —, e só a validação de todos reconcilia o progresso exibido.
    */
   syncCompleted(completed: Iterable<number>): void {
-    this.completedSteps.set(new Set(completed));
+    this.passosConcluidos.set(new Set(completed));
   }
 
   previous(): void {
-    this.goTo(this.currentStep() - 1);
+    this.goTo(this.passoAtual() - 1);
   }
 
   status(index: number): StepStatus {
-    if (index === this.currentStep()) return 'active';
-    if (this.completedSteps().has(index)) return 'done';
-    if (this.visitedSteps().has(index)) return 'pending';
+    if (index === this.passoAtual()) return 'active';
+    if (this.passosConcluidos().has(index)) return 'done';
+    if (this.passosVisitados().has(index)) return 'pending';
     return 'unvisited';
   }
 
@@ -333,11 +333,11 @@ export class ProcessoSeletivoStore {
   }
 
   reset(): void {
-    this.currentStep.set(0);
-    this.visitedSteps.set(new Set([0]));
-    this.completedSteps.set(new Set());
+    this.passoAtual.set(0);
+    this.passosVisitados.set(new Set([0]));
+    this.passosConcluidos.set(new Set());
     this.draft.set(rascunhoInicial());
-    this.stepError.set(null);
+    this.erroDoPasso.set(null);
     this.processoSeletivoId.set(null);
     this.salvando.set(false);
     this.travamentoDeOrquestracao.set(false);

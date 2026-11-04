@@ -52,7 +52,7 @@ function comoPasso(passo: DefinicaoDePasso<RotuloDePasso>) {
 export const PASSOS = DEFINICOES.map(comoPasso);
 
 /** Rótulos curtos do stepper lateral. */
-export const STEP_LABELS = PASSOS.map((passo) => passo.rotulo);
+export const ROTULOS_DOS_PASSOS = PASSOS.map((passo) => passo.rotulo);
 
 /** O painel de revisão lista os passos anteriores, não a si mesmo. */
 export const REVIEW_NAMES = PASSOS.slice(0, -1).map((passo) => passo.revisao);

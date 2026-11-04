@@ -53,9 +53,9 @@ import { mensagemDeInativos, referenciasInativas } from './referencias-inativas'
   imports: [ValorEmConsultaComponent],
   templateUrl: './atendimento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [CatalogosDeAtendimento, provePassoDoWizard(AtendimentoStepComponent)],
+  providers: [CatalogosDeAtendimento, provePassoDoWizard(AtendimentoPassoComponent)],
 })
-export class AtendimentoStepComponent {
+export class AtendimentoPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeAtendimento);
   private readonly cadastro = inject(CadastroInicial);

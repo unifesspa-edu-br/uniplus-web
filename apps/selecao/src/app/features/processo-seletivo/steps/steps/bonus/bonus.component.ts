@@ -55,9 +55,9 @@ import {
   ],
   templateUrl: './bonus.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [BasesLegaisDeBonus, provePassoDoWizard(BonusStepComponent)],
+  providers: [BasesLegaisDeBonus, provePassoDoWizard(BonusPassoComponent)],
 })
-export class BonusStepComponent {
+export class BonusPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
   protected readonly basesLegais = inject(BasesLegaisDeBonus);

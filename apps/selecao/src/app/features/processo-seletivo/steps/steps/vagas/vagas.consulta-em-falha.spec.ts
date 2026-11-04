@@ -16,13 +16,13 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
-import { VagasStepComponent } from './vagas.component';
+import { VagasPassoComponent } from './vagas.component';
 import { AC_CASCATA, BASE, LB_PPI, LB_Q, distribuicaoComCascata, gravadaDe } from './vagas.testing';
 
-describe('VagasStepComponent — consulta com o catálogo em falha', () => {
+describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
-  let fixture: ComponentFixture<VagasStepComponent>;
+  let fixture: ComponentFixture<VagasPassoComponent>;
   let tela: HTMLElement;
 
   /** Toda requisição pendente falha: nenhum catálogo chega. */
@@ -37,7 +37,7 @@ describe('VagasStepComponent — consulta com o catálogo em falha', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VagasStepComponent],
+      imports: [VagasPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -53,7 +53,7 @@ describe('VagasStepComponent — consulta com o catálogo em falha', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(VagasStepComponent);
+    fixture = TestBed.createComponent(VagasPassoComponent);
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
     tela = fixture.nativeElement as HTMLElement;

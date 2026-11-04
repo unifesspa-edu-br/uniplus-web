@@ -9,7 +9,7 @@ import {
   TiposProcessoQuery,
 } from '@uniplus/shared-data/configuracao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { TipoProcessoStepComponent } from './tipo-processo.component';
+import { TipoProcessoPassoComponent } from './tipo-processo.component';
 
 const ID_SISU = '01960000-0000-7000-0000-000000000515';
 const ID_MEDICINA = '01960000-0000-7000-0000-000000000516';
@@ -34,14 +34,14 @@ const tiposSeed: readonly TipoProcessoDto[] = [
   },
 ];
 
-describe('TipoProcessoStepComponent', () => {
-  let fixture: ComponentFixture<TipoProcessoStepComponent>;
+describe('TipoProcessoPassoComponent', () => {
+  let fixture: ComponentFixture<TipoProcessoPassoComponent>;
   let listar: (query?: TiposProcessoQuery) => Observable<ApiResult<readonly TipoProcessoDto[]>>;
 
   beforeEach(async () => {
     listar = () => of(apiOk(tiposSeed, 200, headers));
     await TestBed.configureTestingModule({
-      imports: [TipoProcessoStepComponent],
+      imports: [TipoProcessoPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         {
@@ -54,8 +54,8 @@ describe('TipoProcessoStepComponent', () => {
 
   afterEach(() => fixture?.destroy());
 
-  function montar(): TipoProcessoStepComponent {
-    fixture = TestBed.createComponent(TipoProcessoStepComponent);
+  function montar(): TipoProcessoPassoComponent {
+    fixture = TestBed.createComponent(TipoProcessoPassoComponent);
     fixture.detectChanges();
     return fixture.componentInstance;
   }

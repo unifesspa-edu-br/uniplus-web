@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
  *
  * O gate distingue três coisas, ou reprova o que deve passar:
  *
- * 1. **rótulos de navegação** — `PASSOS`, `STEP_LABELS`, `REVIEW_NAMES` em
+ * 1. **rótulos de navegação** — `PASSOS`, `ROTULOS_DOS_PASSOS`, `REVIEW_NAMES` em
  *    `processo-seletivo.data.ts`. Não são vocabulário institucional, ficam.
  * 2. **códigos de vocabulário fechado que a própria API devolve, e sobre os
  *    quais a interface decide** — `'SEGUE_CASCATA'`/`'DESTINO_UNICO'`
@@ -108,7 +108,7 @@ const CATALOGO_BANIDO: Readonly<Record<string, { fonte: string; story: string }>
 };
 
 /** Rótulos de navegação e a exceção temporária — decisão 2 do plano da frente. */
-const EXPORTS_PERMITIDOS_EM_DATA_TS = new Set(['PASSOS', 'STEP_LABELS', 'REVIEW_NAMES']);
+const EXPORTS_PERMITIDOS_EM_DATA_TS = new Set(['PASSOS', 'ROTULOS_DOS_PASSOS', 'REVIEW_NAMES']);
 
 function listarArquivosTs(root: string): string[] {
   const arquivos: string[] = [];
@@ -226,7 +226,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
       expect(
         EXPORTS_PERMITIDOS_EM_DATA_TS.has(nome),
         `\nprocesso-seletivo.data.ts exporta "${nome}", que não é rótulo de navegação ` +
-          `(PASSOS/STEP_LABELS/REVIEW_NAMES).\n` +
+          `(PASSOS/ROTULOS_DOS_PASSOS/REVIEW_NAMES).\n` +
           `Se "${nome}" é uma lista de valores aceitos de um catálogo institucional, ela pertence a um ` +
           `client de API (uniplus/shared-data) — confira o inventário reconciliado na issue #511.\n` +
           `Se é rótulo de apresentação legítimo, adicione o nome a EXPORTS_PERMITIDOS_EM_DATA_TS neste fitness test.`,
@@ -281,7 +281,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
     it('sinaliza POLOS declarado como `const` privada e usada só dentro do próprio arquivo, nunca exportada', () => {
       const fonteSintetica = `
         const POLOS = ['Marabá (PA)', 'Canaã dos Carajás (PA)'];
-        export class PolosStepComponent {
+        export class PolosPassoComponent {
           readonly polos = POLOS;
         }
       `;
@@ -324,7 +324,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
     it('NÃO sinaliza rótulo de navegação', () => {
       const fonteSintetica = `
         export const PASSOS = [];
-        export const STEP_LABELS = [];
+        export const ROTULOS_DOS_PASSOS = [];
         export const REVIEW_NAMES = [];
         export const DOCUMENTO_GRUPOS = [];
       `;

@@ -19,7 +19,7 @@ import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-d
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { AreasDoDesempate } from './areas-do-desempate.service';
 import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
-import { DesempateStepComponent } from './desempate.component';
+import { DesempatePassoComponent } from './desempate.component';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000008aa';
@@ -109,8 +109,8 @@ const CLASSIFICACAO_COM_QUADRO = {
 };
 
 interface Montagem {
-  readonly fixture: ComponentFixture<DesempateStepComponent>;
-  readonly componente: DesempateStepComponent;
+  readonly fixture: ComponentFixture<DesempatePassoComponent>;
+  readonly componente: DesempatePassoComponent;
   readonly store: ProcessoSeletivoStore;
   readonly controller: HttpTestingController;
   readonly el: HTMLElement;
@@ -130,7 +130,7 @@ let controllerAtual: HttpTestingController | null = null;
 
 async function montar(opcoes: OpcoesDeMontagem = {}): Promise<Montagem> {
   await TestBed.configureTestingModule({
-    imports: [DesempateStepComponent],
+    imports: [DesempatePassoComponent],
     providers: [
       ProcessoSeletivoStore,
       CadastroInicial,
@@ -151,7 +151,7 @@ async function montar(opcoes: OpcoesDeMontagem = {}): Promise<Montagem> {
   if (classificacao !== null) store.patchObjectSection('classificacao', classificacao);
   opcoes.antesDeMontar?.(store);
 
-  const fixture = TestBed.createComponent(DesempateStepComponent);
+  const fixture = TestBed.createComponent(DesempatePassoComponent);
   const controller = TestBed.inject(HttpTestingController);
   controllerAtual = controller;
   fixture.detectChanges();
@@ -285,7 +285,7 @@ function areasDoDesempate(m: Montagem): AreasDoDesempate {
   return m.fixture.debugElement.injector.get(AreasDoDesempate);
 }
 
-describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
+describe('DesempatePassoComponent — ordem das áreas do ENEM', () => {
   afterEach(() => {
     // Solta o módulo mesmo quando a conferência falha: senão a falha de um teste vaza para os
     // seguintes.

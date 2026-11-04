@@ -12,7 +12,7 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
-import { VagasStepComponent } from './vagas.component';
+import { VagasPassoComponent } from './vagas.component';
 import {
   ACEITA_AS_OPCOES,
   BASE,
@@ -36,14 +36,14 @@ import {
 let servicos: ServicosDasVagas;
 let operador: TelaDasVagas;
 
-describe('VagasStepComponent — gravação da distribuição', () => {
-  let componente: VagasStepComponent;
+describe('VagasPassoComponent — gravação da distribuição', () => {
+  let componente: VagasPassoComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VagasStepComponent],
+      imports: [VagasPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -59,7 +59,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(VagasStepComponent);
+    const fixture = TestBed.createComponent(VagasPassoComponent);
     componente = fixture.componentInstance;
     servicos = servicosDe(fixture);
     operador = new TelaDasVagas(fixture);

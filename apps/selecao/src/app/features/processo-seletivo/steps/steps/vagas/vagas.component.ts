@@ -73,10 +73,10 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
     SimulacaoDoQuadro,
     ConferenciaDoQuadro,
     GravacaoDasVagas,
-    provePassoDoWizard(VagasStepComponent),
+    provePassoDoWizard(VagasPassoComponent),
   ],
 })
-export class VagasStepComponent {
+export class VagasPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeDistribuicao);
   protected readonly estado = inject(EstadoDoPassoDeVagas);

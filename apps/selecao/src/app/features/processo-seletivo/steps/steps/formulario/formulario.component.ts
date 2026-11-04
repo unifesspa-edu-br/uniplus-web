@@ -87,13 +87,13 @@ import {
     CamposPressupostosDoFormulario,
     FasesDosFormularios,
     LeituraDoProcessoNoFormulario,
-    provePassoDoWizard(FormularioStepComponent),
+    provePassoDoWizard(FormularioPassoComponent),
     // A condição sobre município — o impedimento do campo de município, inclusive — escolhe o
     // valor pela busca no Geo.
     { provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosNoGeo },
   ],
 })
-export class FormularioStepComponent {
+export class FormularioPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDoCronograma);
   protected readonly dados = inject(CatalogosDoFormulario);

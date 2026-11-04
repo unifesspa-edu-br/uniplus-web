@@ -16,7 +16,7 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
-import { VagasStepComponent } from './vagas.component';
+import { VagasPassoComponent } from './vagas.component';
 import {
   ACEITA_AS_OPCOES,
   AC_CASCATA,
@@ -40,8 +40,8 @@ import {
 
 let servicos: ServicosDasVagas;
 
-describe('VagasStepComponent — gravação da cascata de remanejamento', () => {
-  let componente: VagasStepComponent;
+describe('VagasPassoComponent — gravação da cascata de remanejamento', () => {
+  let componente: VagasPassoComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let detectar: () => void;
@@ -53,7 +53,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VagasStepComponent],
+      imports: [VagasPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -69,7 +69,7 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(VagasStepComponent);
+    const fixture = TestBed.createComponent(VagasPassoComponent);
     componente = fixture.componentInstance;
     servicos = servicosDe(fixture);
     store = TestBed.inject(ProcessoSeletivoStore);

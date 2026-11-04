@@ -13,7 +13,7 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
-import { VagasStepComponent } from './vagas.component';
+import { VagasPassoComponent } from './vagas.component';
 import {
   BASE,
   LISTA_DE_CURSOS,
@@ -29,13 +29,13 @@ import {
 
 let servicos: ServicosDasVagas;
 
-describe('VagasStepComponent — totais do quadro', () => {
+describe('VagasPassoComponent — totais do quadro', () => {
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VagasStepComponent],
+      imports: [VagasPassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -51,7 +51,7 @@ describe('VagasStepComponent — totais do quadro', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(VagasStepComponent);
+    const fixture = TestBed.createComponent(VagasPassoComponent);
     servicos = servicosDe(fixture);
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);

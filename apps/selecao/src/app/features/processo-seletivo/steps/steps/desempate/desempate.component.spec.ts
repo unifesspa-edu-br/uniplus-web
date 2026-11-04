@@ -19,7 +19,7 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
-import { DesempateStepComponent } from './desempate.component';
+import { DesempatePassoComponent } from './desempate.component';
 import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
 import { PASSO_FORMULARIO } from './desempate-por-idade';
 
@@ -88,9 +88,9 @@ function criterio(patch: Partial<CriterioDesempateConfigurado>): CriterioDesempa
   };
 }
 
-describe('DesempateStepComponent', () => {
-  let componente: DesempateStepComponent;
-  let fixture: ComponentFixture<DesempateStepComponent>;
+describe('DesempatePassoComponent', () => {
+  let componente: DesempatePassoComponent;
+  let fixture: ComponentFixture<DesempatePassoComponent>;
   const edicao = (): EdicaoDosCriterios =>
     fixture.debugElement.injector.get(EdicaoDosCriterios);
   let store: ProcessoSeletivoStore;
@@ -98,7 +98,7 @@ describe('DesempateStepComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DesempateStepComponent],
+      imports: [DesempatePassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -114,7 +114,7 @@ describe('DesempateStepComponent', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(DesempateStepComponent);
+    fixture = TestBed.createComponent(DesempatePassoComponent);
     componente = fixture.componentInstance;
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
@@ -142,7 +142,7 @@ describe('DesempateStepComponent', () => {
   it('anuncia a falha do catálogo de fatos e busca de novo quando pedido', async () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
-      imports: [DesempateStepComponent],
+      imports: [DesempatePassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -157,7 +157,7 @@ describe('DesempateStepComponent', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(DesempateStepComponent);
+    const fixture = TestBed.createComponent(DesempatePassoComponent);
     const controllerLocal = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
 
@@ -194,7 +194,7 @@ describe('DesempateStepComponent', () => {
   it('em consulta, com o catálogo de fatos em falha, lê o fato pelo código gravado e avisa, sem dizer que saiu do catálogo', async () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
-      imports: [DesempateStepComponent],
+      imports: [DesempatePassoComponent],
       providers: [
         ProcessoSeletivoStore,
         CadastroInicial,
@@ -209,7 +209,7 @@ describe('DesempateStepComponent', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(DesempateStepComponent);
+    const fixture = TestBed.createComponent(DesempatePassoComponent);
     const storeLocal = TestBed.inject(ProcessoSeletivoStore);
     const controllerLocal = TestBed.inject(HttpTestingController);
     storeLocal.processoSeletivoId.set(PROCESSO_ID);
@@ -292,7 +292,7 @@ describe('DesempateStepComponent', () => {
     expect(componente.semDataDeNascimento()).toBe(true);
 
     componente.irParaFormulario();
-    expect(store.currentStep()).toBe(PASSO_FORMULARIO);
+    expect(store.passoAtual()).toBe(PASSO_FORMULARIO);
 
     store.patchObjectSection('formulario', {
       conteudo: conteudo(item('NOME', 0), item('DATA_NASCIMENTO', 1)),

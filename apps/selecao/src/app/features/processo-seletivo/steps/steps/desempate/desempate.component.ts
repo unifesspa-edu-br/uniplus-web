@@ -39,10 +39,10 @@ import { mensagensDoDesempate } from './validacao-do-desempate';
     EdicaoDosCriterios,
     FatosDoDesempate,
     GravacaoDoDesempate,
-    provePassoDoWizard(DesempateStepComponent),
+    provePassoDoWizard(DesempatePassoComponent),
   ],
 })
-export class DesempateStepComponent {
+export class DesempatePassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
   protected readonly areas = inject(AreasDoDesempate);

@@ -77,7 +77,7 @@ export class ConducaoDoWizard {
 
   /** Traz o aviso de pendências para a vista; o passo em tela sabe abrir a seção que guarda o campo recusado. */
   revelarErro(): void {
-    this.foco.revelarErro(() => this.passoNo(this.store.currentStep()));
+    this.foco.revelarErro(() => this.passoNo(this.store.passoAtual()));
   }
 
   async avancar(): Promise<void> {
@@ -98,18 +98,18 @@ export class ConducaoDoWizard {
       return;
     }
 
-    const validator = this.passoNo(this.store.currentStep());
+    const validator = this.passoNo(this.store.passoAtual());
     const result = validator?.validar();
 
     if (result && !result.valid) {
-      this.store.setStepError(mensagensDe(result));
+      this.store.definirErroDoPasso(mensagensDe(result));
       this.revelarErro();
       return;
     }
 
     // O passo acabou de passar na conferência: o resumo que ainda estiver na tela descreve erros
     // que já não existem. Uma recusa da gravação volta a preenchê-lo.
-    this.store.setStepError(null);
+    this.store.definirErroDoPasso(null);
 
     // A confirmação vem antes de qualquer requisição, quando o operador ainda pode desistir:
     // depois de gravado, o cadastro inicial não volta atrás pelo contrato desta tela.
@@ -136,7 +136,7 @@ export class ConducaoDoWizard {
       // Avançar troca o passo por baixo do diálogo; devolver o foco ao botão que o abriu levaria a
       // um rodapé que já não descreve o que está em tela. Falhando, a tela é a mesma e a
       // restauração continua correta.
-      const sucesso = await this.gravarEAvancar(this.passoNo(this.store.currentStep()), {
+      const sucesso = await this.gravarEAvancar(this.passoNo(this.store.passoAtual()), {
         confirmadaPeloOperador: true,
       });
       this.restaurarFocoAoFechar.set(!sucesso);
@@ -179,7 +179,7 @@ export class ConducaoDoWizard {
         // Lista de mensagens vazia é descarte deliberado: o resultado pertence a um editor que já
         // não está em tela, e anunciá-lo colocaria erro num rascunho que ninguém tentou gravar.
         if (commit.messages?.length !== 0) {
-          this.store.setStepError(mensagensDe(commit));
+          this.store.definirErroDoPasso(mensagensDe(commit));
           this.revelarErro();
         }
         return false;
@@ -190,14 +190,14 @@ export class ConducaoDoWizard {
         // A classificação ficou gravada; a recusa é dos critérios, e é no passo deles que se corrige.
         if (recusaDoDesempate.mensagens.length > 0) {
           this.store.goTo(recusaDoDesempate.indice);
-          this.store.setStepError(recusaDoDesempate.mensagens);
+          this.store.definirErroDoPasso(recusaDoDesempate.mensagens);
           this.revelarErro();
         }
         return false;
       }
     }
 
-    this.store.setStepError(null);
+    this.store.definirErroDoPasso(null);
     this.store.next();
     return true;
   }
@@ -241,9 +241,9 @@ export class ConducaoDoWizard {
    * `validar()` depende de um checklist que só fica correto depois de gravar as correções e
    * recarregá-lo. Passos fora do intervalo mantêm o progresso que já tinham.
    */
-  validarRascunho(ateIndice = this.store.totalSteps): string[] {
+  validarRascunho(ateIndice = this.store.totalDePassos): string[] {
     const pendencias: string[] = [];
-    const concluidos = new Set<number>(this.store.completedSteps());
+    const concluidos = new Set<number>(this.store.passosConcluidos());
 
     for (let index = 0; index < ateIndice; index += 1) {
       const resultado = this.passoNo(index)?.validar();

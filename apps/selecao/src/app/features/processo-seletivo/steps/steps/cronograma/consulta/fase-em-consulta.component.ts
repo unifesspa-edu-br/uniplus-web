@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
-import { FaseStepComponent } from '../../fase/fase.component';
+import { FasePassoComponent } from '../../fase/fase.component';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
 import type { FaseNaLinhaDoTempo } from '../servicos/formulario-do-cronograma.service';
 import { LeituraDaLinhaDoTempo } from '../servicos/leitura-da-linha-do-tempo.service';
@@ -9,7 +9,7 @@ import { LeituraDaLinhaDoTempo } from '../servicos/leitura-da-linha-do-tempo.ser
 /** A fase de um processo que só se lê: cada declaração em texto, sem campo nem ação de edição. */
 @Component({
   selector: 'sel-fase-em-consulta',
-  imports: [ValorEmConsultaComponent, FaseStepComponent],
+  imports: [ValorEmConsultaComponent, FasePassoComponent],
   templateUrl: './fase-em-consulta.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: ':host { display: block; }',

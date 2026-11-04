@@ -55,7 +55,7 @@ import { quadroCongelado } from './steps/shared/quadro-de-pesos';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
 import type { PassoDoWizard } from './steps/passo-do-wizard';
 import { CatalogosDeClassificacao } from './steps/steps/classificacao/catalogos-de-classificacao.service';
-import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
+import { DesempatePassoComponent } from './steps/steps/desempate/desempate.component';
 import type { CriterioDesempateConfigurado } from './steps/processo-seletivo.models';
 
 const CRITERIO_POR_AREA: CriterioDesempateConfigurado = {
@@ -68,7 +68,7 @@ const CRITERIO_POR_AREA: CriterioDesempateConfigurado = {
   valor: '',
   areas: ['REDACAO'],
 };
-import { STEP_LABELS } from './steps/processo-seletivo.data';
+import { ROTULOS_DOS_PASSOS } from './steps/processo-seletivo.data';
 import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
 
 const tiposProcessoApiStub = {
@@ -168,7 +168,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
 
   /**
    * O painel de cada passo é escolhido pela POSIÇÃO — `[hidden]` compara com
-   * `currentStep()` —, e o validador que decide o avanço também é resolvido por
+   * `passoAtual()` —, e o validador que decide o avanço também é resolvido por
    * índice. Um painel a mais ou a menos desalinha rótulo, conteúdo e validação
    * de todos os passos seguintes: o passo mostraria um formulário e cobraria os
    * campos de outro, e o último passo ficaria inalcançável.
@@ -183,7 +183,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
     const host = fixture.nativeElement as HTMLElement;
     const paineis = Array.from(host.querySelectorAll('.step-pane') as NodeListOf<HTMLElement>);
 
-    expect(paineis).toHaveLength(STEP_LABELS.length);
+    expect(paineis).toHaveLength(ROTULOS_DOS_PASSOS.length);
     for (const painel of paineis) {
       expect(
         painel.children.length,
@@ -195,7 +195,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
   /**
    * O painel e o validador de cada passo são resolvidos por ÍNDICE, mas o índice de cada um vem
    * de duas fontes diferentes: o rótulo sai de `PASSOS`, e o painel e o validador saem da ordem
-   * em que o template declara as seções — doze literais `currentStep() !== N` escritos à mão e
+   * em que o template declara as seções — doze literais `passoAtual() !== N` escritos à mão e
    * um `viewChildren` que lê a ordem de declaração.
    *
    * Reordenar um passo mexendo só em `PASSOS` dessincroniza os dois lados **sem erro de
@@ -223,9 +223,9 @@ describe('ProcessoSeletivoPage — estrutura', () => {
     const host = fixture.nativeElement as HTMLElement;
     const store = fixture.componentInstance.store;
 
-    expect(Object.keys(componentePorRotulo)).toEqual([...STEP_LABELS]);
+    expect(Object.keys(componentePorRotulo)).toEqual([...ROTULOS_DOS_PASSOS]);
 
-    STEP_LABELS.forEach((rotulo, indice) => {
+    ROTULOS_DOS_PASSOS.forEach((rotulo, indice) => {
       store.goTo(indice);
       fixture.detectChanges();
 
@@ -356,7 +356,7 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
     );
     botoes[2].click();
 
-    expect(store.currentStep()).toBe(2);
+    expect(store.passoAtual()).toBe(2);
     expect(etapas.aberto()).toBe(true);
   });
 
@@ -368,7 +368,7 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
 
     dialog.querySelectorAll<HTMLButtonElement>('ui-steps li button')[3].click();
 
-    expect(store.currentStep()).toBe(3);
+    expect(store.passoAtual()).toBe(3);
     expect(etapas.aberto()).toBe(false);
   });
 
@@ -383,7 +383,7 @@ describe('ProcessoSeletivoPage — lista de etapas', () => {
     if (titulo === null) throw new Error('Título do passo ausente.');
     document.body.append(fixture.nativeElement);
 
-    dialog.querySelectorAll<HTMLButtonElement>('ui-steps li button')[store.currentStep()].click();
+    dialog.querySelectorAll<HTMLButtonElement>('ui-steps li button')[store.passoAtual()].click();
     await Promise.resolve();
 
     expect(document.activeElement).toBe(titulo);
@@ -451,12 +451,12 @@ describe('ProcessoSeletivoPage — publicação', () => {
   it('recusa publicar rascunho vazio alcançado por salto de passo', async () => {
     const { fixture, page, store } = montar();
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
     fixture.detectChanges();
 
-    const erros = store.stepError();
+    const erros = store.erroDoPasso();
     expect(erros).not.toBeNull();
     expect(erros?.length).toBeGreaterThan(0);
     expect(erros?.[0]).toContain('Passo 1');
@@ -465,7 +465,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
   it('traz o aviso de pendências para a vista e para o foco', async () => {
     const { fixture, page, store } = montar();
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
     fixture.detectChanges();
@@ -507,7 +507,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const atual = painel.querySelector<HTMLInputElement>('#atual') as HTMLInputElement;
     atual.focus();
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
     fixture.detectChanges();
@@ -579,7 +579,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
             ]
           : [],
       });
-      store.goTo(STEP_LABELS.indexOf('Formulários'));
+      store.goTo(ROTULOS_DOS_PASSOS.indexOf('Formulários'));
       fixture.detectChanges();
       const raiz = fixture.nativeElement as HTMLElement;
       const campo = (): HTMLInputElement | null =>
@@ -612,11 +612,11 @@ describe('ProcessoSeletivoPage — publicação', () => {
   it('identifica cada pendência pelo passo de origem', async () => {
     const { fixture, page, store } = montar();
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
-    const erros = store.stepError() ?? [];
+    const erros = store.erroDoPasso() ?? [];
     expect(erros.some((erro) => erro.startsWith('Passo 2 — Identificação'))).toBe(true);
   });
 
@@ -624,12 +624,12 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const { fixture, page, store } = montar();
 
     store.syncCompleted([0, 1, 2]);
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
-    expect(store.completedSteps().has(0)).toBe(false);
-    expect(store.completedSteps().has(1)).toBe(false);
+    expect(store.passosConcluidos().has(0)).toBe(false);
+    expect(store.passosConcluidos().has(1)).toBe(false);
   });
 
   it('sem pendência local, segue para gravarEAvancar em vez de travar no aviso genérico', () => {
@@ -638,13 +638,13 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
     vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockReturnValue(stub);
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     page.nextOrPublish();
 
     // O stub não declara persistir() nem confirmacaoDeGravacao(): o fluxo
     // completa como navegação simples, sem erro nem confirmação pendente.
-    expect(store.stepError()).toBeNull();
+    expect(store.erroDoPasso()).toBeNull();
     expect(store.salvando()).toBe(false);
     expect(page.confirmacaoPendente()).toBeNull();
   });
@@ -670,12 +670,12 @@ describe('ProcessoSeletivoPage — publicação', () => {
       (index: number) => (index === 2 ? stubComPersistir : stubSemPersistir),
     );
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
     expect(persistirDoPassoAnterior).toHaveBeenCalledTimes(1);
-    expect(store.stepError()).toBeNull();
+    expect(store.erroDoPasso()).toBeNull();
   });
 
   it('relê o processo uma vez no fim da varredura quando uma gravação deixou o quadro congelado velho', async () => {
@@ -695,7 +695,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       (index: number) => (index === 2 ? stubQueMarca : stubSemPersistir),
     );
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
@@ -747,12 +747,12 @@ describe('ProcessoSeletivoPage — publicação', () => {
       (index: number) =>
         index === 2
           ? stubDaEliminacao
-          : index === store.totalSteps - 1
+          : index === store.totalDePassos - 1
             ? stubDaRevisao
             : stubSemPersistir,
     );
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
@@ -787,7 +787,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     );
     store.classificacao.marcarDesconhecida();
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
@@ -795,7 +795,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     expect(ordem[0]).toBe('validou');
     expect(ordem).toContain('releu');
     expect(ordem.slice(ordem.indexOf('releu'))).toContain('validou');
-    expect(JSON.stringify(store.stepError() ?? null)).not.toContain('Classificação desconhecida.');
+    expect(JSON.stringify(store.erroDoPasso() ?? null)).not.toContain('Classificação desconhecida.');
   });
 
   it('sem nada por reler, o rascunho incompleto é barrado sem ir à rede', async () => {
@@ -806,12 +806,12 @@ describe('ProcessoSeletivoPage — publicação', () => {
       () => stubIncompleto,
     );
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
     expect(reler).not.toHaveBeenCalled();
-    expect(JSON.stringify(store.stepError())).toContain('Falta a regra.');
+    expect(JSON.stringify(store.erroDoPasso())).toContain('Falta a regra.');
   });
 
   it('cada leitura do cadastro que dá certo reavalia a recusa pelo desempate', () => {
@@ -842,8 +842,8 @@ describe('ProcessoSeletivoPage — publicação', () => {
   });
 
   describe('critérios de desempate por área antes da classificação com quadro', () => {
-    const INDICE_DO_DESEMPATE = STEP_LABELS.indexOf('Desempate');
-    const INDICE_DA_ELIMINACAO = STEP_LABELS.indexOf('Eliminação');
+    const INDICE_DO_DESEMPATE = ROTULOS_DOS_PASSOS.indexOf('Desempate');
+    const INDICE_DA_ELIMINACAO = ROTULOS_DOS_PASSOS.indexOf('Eliminação');
 
     const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
     const DETALHE_COM_QUADRO = {
@@ -889,7 +889,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       );
       const passos = (page as unknown as { passos: () => readonly unknown[] }).passos();
       const desempate = passos.find(
-        (passo): passo is DesempateStepComponent => passo instanceof DesempateStepComponent,
+        (passo): passo is DesempatePassoComponent => passo instanceof DesempatePassoComponent,
       );
       if (desempate === undefined) throw new Error('passo Desempate ausente');
       vi.spyOn(desempate, 'gravarAposAClassificacao').mockImplementation(async () => {
@@ -935,8 +935,8 @@ describe('ProcessoSeletivoPage — publicação', () => {
       await page.nextOrPublish();
 
       expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura', 'critérios']);
-      expect(store.currentStep()).toBe(INDICE_DA_ELIMINACAO + 1);
-      expect(store.stepError()).toBeNull();
+      expect(store.passoAtual()).toBe(INDICE_DA_ELIMINACAO + 1);
+      expect(store.erroDoPasso()).toBeNull();
       expect(store.classificacao.desempatePendenteDeGravacao()).toBe(false);
     });
 
@@ -948,14 +948,14 @@ describe('ProcessoSeletivoPage — publicação', () => {
       await page.nextOrPublish();
 
       expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura', 'critérios']);
-      expect(store.currentStep()).toBe(INDICE_DO_DESEMPATE);
-      expect(store.stepError()).toEqual(['Critério de desempate 1: recusado.']);
+      expect(store.passoAtual()).toBe(INDICE_DO_DESEMPATE);
+      expect(store.erroDoPasso()).toEqual(['Critério de desempate 1: recusado.']);
     });
 
     it('na varredura da publicação, a mesma ordem: classificação, depois critérios', async () => {
       const { page, store, ordem } = montarFluxo();
 
-      store.goTo(store.totalSteps - 1);
+      store.goTo(store.totalDePassos - 1);
       await page.nextOrPublish();
 
       expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura', 'critérios']);
@@ -969,8 +969,8 @@ describe('ProcessoSeletivoPage — publicação', () => {
       await page.nextOrPublish();
 
       expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura']);
-      expect(store.currentStep()).toBe(INDICE_DO_DESEMPATE);
-      expect(JSON.stringify(store.stepError())).toContain('não pôde ser confirmado');
+      expect(store.passoAtual()).toBe(INDICE_DO_DESEMPATE);
+      expect(JSON.stringify(store.erroDoPasso())).toContain('não pôde ser confirmado');
     });
 
     /**
@@ -1055,12 +1055,12 @@ describe('ProcessoSeletivoPage — publicação', () => {
         store.classificacao.registrarGravadaComQuadro(RESOLUCAO, COPIA_PRESUMIDA),
       );
 
-      store.goTo(store.totalSteps - 1);
+      store.goTo(store.totalDePassos - 1);
       await page.nextOrPublish();
 
       expect(ordem).toEqual(['classificação', 'releitura', 'critérios']);
       expect(gravarCriterios).toHaveBeenCalledTimes(1);
-      expect(JSON.stringify(store.stepError() ?? null)).not.toContain('Desempate');
+      expect(JSON.stringify(store.erroDoPasso() ?? null)).not.toContain('Desempate');
       expect(store.classificacao.desempatePendenteDeGravacao()).toBe(false);
     });
 
@@ -1072,7 +1072,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       await page.nextOrPublish();
 
       expect(ordem).toEqual(['critérios adiados', 'classificação', 'releitura']);
-      expect(store.stepError()).toBeNull();
+      expect(store.erroDoPasso()).toBeNull();
     });
 
     it('na varredura, com a classificação desconhecida depois de gravar, relê e grava os critérios', async () => {
@@ -1080,13 +1080,13 @@ describe('ProcessoSeletivoPage — publicação', () => {
         store.classificacao.marcarDesconhecida(),
       );
 
-      store.goTo(store.totalSteps - 1);
+      store.goTo(store.totalDePassos - 1);
       await page.nextOrPublish();
 
       expect(ordem).toEqual(['classificação', 'releitura', 'critérios']);
       expect(gravarCriterios).toHaveBeenCalledTimes(1);
       expect(store.classificacao.desempatePendenteDeGravacao()).toBe(false);
-      expect(JSON.stringify(store.stepError() ?? null)).not.toContain('Desempate');
+      expect(JSON.stringify(store.erroDoPasso() ?? null)).not.toContain('Desempate');
     });
 
     it('com os critérios ainda pendentes ao fim da varredura, a publicação é barrada no Desempate', async () => {
@@ -1099,11 +1099,11 @@ describe('ProcessoSeletivoPage — publicação', () => {
         } as unknown as ProcessoSeletivoDto,
       );
 
-      store.goTo(store.totalSteps - 1);
+      store.goTo(store.totalDePassos - 1);
       await page.nextOrPublish();
 
       expect(gravarCriterios).not.toHaveBeenCalled();
-      expect(JSON.stringify(store.stepError())).toContain(
+      expect(JSON.stringify(store.erroDoPasso())).toContain(
         `Passo ${INDICE_DO_DESEMPATE + 1} — Desempate: Os critérios de desempate por área não foram gravados`,
       );
     });
@@ -1111,10 +1111,10 @@ describe('ProcessoSeletivoPage — publicação', () => {
     it('na varredura, a recusa dos critérios é dita no passo Desempate', async () => {
       const { page, store } = montarFluxo(['recusado.']);
 
-      store.goTo(store.totalSteps - 1);
+      store.goTo(store.totalDePassos - 1);
       await page.nextOrPublish();
 
-      expect(store.stepError()).toContain(
+      expect(store.erroDoPasso()).toContain(
         `Passo ${INDICE_DO_DESEMPATE + 1} — Desempate: recusado.`,
       );
     });
@@ -1146,7 +1146,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       (index: number) => (index === 2 ? stubComPersistir : stubQueAguarda),
     );
     store.classificacao.marcarDesconhecida();
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
 
     const primeiro = page.nextOrPublish();
@@ -1171,11 +1171,11 @@ describe('ProcessoSeletivoPage — publicação', () => {
       (index: number) => (index === 2 ? stubComFalha : stubSemPersistir),
     );
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
-    const erros = store.stepError() ?? [];
+    const erros = store.erroDoPasso() ?? [];
     expect(
       erros.some((erro) => erro.includes('Passo 3') && erro.includes('Falha ao gravar de novo.')),
     ).toBe(true);
@@ -1203,15 +1203,15 @@ describe('ProcessoSeletivoPage — publicação', () => {
     };
 
     vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
-      (index: number) => (index === store.totalSteps - 1 ? stubRevisao : stubSemPersistir),
+      (index: number) => (index === store.totalDePassos - 1 ? stubRevisao : stubSemPersistir),
     );
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
     expect(recarregarChecklist).toHaveBeenCalledTimes(1);
-    expect(store.stepError()).toBeNull();
+    expect(store.erroDoPasso()).toBeNull();
   });
 
   /**
@@ -1238,25 +1238,25 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const recarregarChecklist = vi.fn().mockImplementation(async () => {
       estadosDurante.push(store.operacaoEmAndamento());
       store.goTo(0); // tentativa de navegar por baixo, durante a recarga
-      passoAtingidoDuranteATrava.push(store.currentStep());
+      passoAtingidoDuranteATrava.push(store.passoAtual());
     });
     const stubRevisao = { validar: () => ({ valid: true }), recarregarChecklist };
 
     vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
       (index: number) => {
-        if (index === store.totalSteps - 1) return stubRevisao;
+        if (index === store.totalDePassos - 1) return stubRevisao;
         if (index === 1) return stubComPersistir;
         return stubSemPersistir;
       },
     );
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
     expect(estadosDurante).toEqual([true]);
     // goTo(0) foi barrado: o passo continuou sendo o último (Revisão).
-    expect(passoAtingidoDuranteATrava).toEqual([store.totalSteps - 1]);
+    expect(passoAtingidoDuranteATrava).toEqual([store.totalDePassos - 1]);
     expect(store.operacaoEmAndamento()).toBe(false);
   });
 
@@ -1287,7 +1287,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       },
     );
 
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     await page.nextOrPublish();
 
@@ -1318,7 +1318,7 @@ describe('ProcessoSeletivoPage — permissão de publicar', () => {
     fixture.detectChanges();
     const { store } = fixture.componentInstance;
     store.processoSeletivoId.set(ID);
-    store.goTo(store.totalSteps - 1);
+    store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
     const textoDosBotoes = () =>
@@ -1345,7 +1345,7 @@ describe('ProcessoSeletivoPage — permissão de publicar', () => {
 
     await page.nextOrPublish();
     fixture.detectChanges();
-    expect(store.stepError()).toBeNull();
+    expect(store.erroDoPasso()).toBeNull();
   });
 });
 
@@ -1354,10 +1354,10 @@ describe('ProcessoSeletivoStore — progresso', () => {
     const store = new ProcessoSeletivoStore();
 
     store.syncCompleted([0, 3]);
-    expect([...store.completedSteps()]).toEqual([0, 3]);
+    expect([...store.passosConcluidos()]).toEqual([0, 3]);
 
     store.syncCompleted([1]);
-    expect([...store.completedSteps()]).toEqual([1]);
+    expect([...store.passosConcluidos()]).toEqual([1]);
   });
 });
 
@@ -1427,7 +1427,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
 
     expect(page.confirmacaoPendente()).toBeNull();
     expect(criar).not.toHaveBeenCalled();
-    expect(store.currentStep()).toBe(1);
+    expect(store.passoAtual()).toBe(1);
     expect(store.draft().identificacao.nome).toBe('Vestibular 2027');
   });
 
@@ -1635,7 +1635,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     fixture.detectChanges();
     await page.nextOrPublish();
     fixture.detectChanges();
-    expect(store.stepError()).not.toBeNull();
+    expect(store.erroDoPasso()).not.toBeNull();
     expect(page.confirmacaoPendente()).toBeNull();
 
     store.patchObjectSection('identificacao', { identificadorLegivel: 'vestibular-2027' });
@@ -1644,7 +1644,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     fixture.detectChanges();
 
     expect(page.confirmacaoPendente()).not.toBeNull();
-    expect(store.stepError()).toBeNull();
+    expect(store.erroDoPasso()).toBeNull();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('.step-error')).toBeNull();
   });
@@ -1652,7 +1652,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
   it('desistir da confirmação não traz o erro corrigido de volta', async () => {
     const { page, store, fixture } = cenario();
 
-    store.setStepError([
+    store.definirErroDoPasso([
       'O identificador legível não pode ter a forma de um identificador técnico (Guid).',
     ]);
     fixture.detectChanges();
@@ -1664,7 +1664,7 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
     fixture.detectChanges();
 
     expect(page.confirmacaoPendente()).toBeNull();
-    expect(store.stepError()).toBeNull();
+    expect(store.erroDoPasso()).toBeNull();
   });
 
   it('a recusa da gravação confirmada volta a preencher o resumo', async () => {
@@ -1706,12 +1706,12 @@ describe('ProcessoSeletivoPage — confirmação antes de gravar', () => {
 
     await page.nextOrPublish();
     fixture.detectChanges();
-    expect(store.stepError()).toBeNull();
+    expect(store.erroDoPasso()).toBeNull();
 
     await page.confirmarGravacao();
     fixture.detectChanges();
 
-    expect(store.stepError()?.join(' ')).toContain('já é usado por outro processo seletivo');
+    expect(store.erroDoPasso()?.join(' ')).toContain('já é usado por outro processo seletivo');
   });
 
   /** O comando já saiu: fechar aqui só tiraria da tela o aviso da gravação. */

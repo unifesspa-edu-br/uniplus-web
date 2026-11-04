@@ -5,7 +5,7 @@ import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { RevisaoStepComponent } from './revisao.component';
+import { RevisaoPassoComponent } from './revisao.component';
 import {
   DOCUMENTO_ID,
   PROCESSO_DTO_MINIMO,
@@ -23,10 +23,10 @@ import {
   CenarioDaRevisao,
 } from './revisao.testing';
 
-describe('RevisaoStepComponent — publicação', () => {
+describe('RevisaoPassoComponent — publicação', () => {
   let cenario: CenarioDaRevisao;
-  let fixture: ComponentFixture<RevisaoStepComponent>;
-  let componente: RevisaoStepComponent;
+  let fixture: ComponentFixture<RevisaoPassoComponent>;
+  let componente: RevisaoPassoComponent;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 

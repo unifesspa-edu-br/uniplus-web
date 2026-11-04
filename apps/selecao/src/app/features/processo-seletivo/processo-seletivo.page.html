@@ -44,7 +44,7 @@
   <div class="wiz-body">
     <div class="wiz-content">
       <div aria-live="polite" aria-atomic="true">
-        @if (store.stepError(); as errors) {
+        @if (store.erroDoPasso(); as errors) {
         <div class="step-error" role="alert">
           <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
           <div class="step-error__content">
@@ -61,20 +61,20 @@
         </div>
         } @if (passoCorrente(); as passo) {
         <div class="step-head">
-          <span class="step-head__badge">Passo {{ store.currentStep() + 1 }}</span>
-          <h1 tabindex="-1">Passo {{ store.currentStep() + 1 }}: {{ passo.titulo }}</h1>
+          <span class="step-head__badge">Passo {{ store.passoAtual() + 1 }}</span>
+          <h1 tabindex="-1">Passo {{ store.passoAtual() + 1 }}: {{ passo.titulo }}</h1>
         </div>
         }
-        <section class="step-pane" [hidden]="store.currentStep() !== 0">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 0">
           <sel-step-tipo-processo></sel-step-tipo-processo>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 1">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 1">
           <sel-step-identificacao></sel-step-identificacao>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 2">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 2">
           <sel-step-pagamento></sel-step-pagamento>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 3">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 3">
           <sel-step-vagas></sel-step-vagas>
         </section>
         <!--
@@ -82,22 +82,22 @@
           declarar o que cada fase publica são a mesma decisão, e separá-las obrigava o
           operador a ir e voltar entre dois passos para configurar uma fase.
         -->
-        <section class="step-pane" [hidden]="store.currentStep() !== 4">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 4">
           <sel-step-cronograma></sel-step-cronograma>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 5">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 5">
           <sel-step-formula></sel-step-formula>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 6">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 6">
           <sel-step-bonus></sel-step-bonus>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 7">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 7">
           <sel-step-desempate></sel-step-desempate>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 8">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 8">
           <sel-step-eliminacao></sel-step-eliminacao>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 9">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 9">
           <sel-step-atendimento></sel-step-atendimento>
         </section>
         <!--
@@ -106,10 +106,10 @@
           depender de um fato do candidato, e o domínio de alguns desses campos sai da oferta
           declarada em Atend. especial. Declará-lo antes obrigava a adivinhar o que viria.
         -->
-        <section class="step-pane" [hidden]="store.currentStep() !== 10">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 10">
           <sel-step-formulario></sel-step-formulario>
         </section>
-        <section class="step-pane" [hidden]="store.currentStep() !== 11">
+        <section class="step-pane" [hidden]="store.passoAtual() !== 11">
           <sel-step-revisao></sel-step-revisao>
         </section>
       </div>

@@ -42,7 +42,7 @@ import { LeituraDaVersaoForaDaListagem } from './leitura-da-versao-fora-da-lista
  *
  * Não é passo próprio do wizard: a cascata é função das ofertas que o
  * operador acabou de montar na mesma tela, e só existe uma decisão por
- * processo. `VagasStepComponent` lê este componente por `viewChild` para
+ * processo. `VagasPassoComponent` lê este componente por `viewChild` para
  * validar e gravar — a cascata é gravada no `persistir()` do passo Vagas,
  * depois da distribuição, porque referencia modalidades que só existem
  * depois de a oferta ser gravada (CA-06).

@@ -7,7 +7,7 @@ import {
   store,
 } from './eliminacao.testing';
 
-describe('EliminacaoStepComponent', () => {
+describe('EliminacaoPassoComponent', () => {
   montarEliminacao();
 
   it('recusa sem a regra de cálculo escolhida no passo Fórmula', () => {

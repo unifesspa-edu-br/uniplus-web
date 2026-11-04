@@ -30,17 +30,17 @@ export async function publicar(conducao: ConducaoDoWizard): Promise<void> {
   // confirmação, cuja modalidade passa a impedir a edição por baixo.
   store.travamentoDeOrquestracao.set(true);
   try {
-    let pendentesAntesDeGravar = conducao.validarRascunho(store.totalSteps - 1);
+    let pendentesAntesDeGravar = conducao.validarRascunho(store.totalDePassos - 1);
     // O Desempate recusa o critério por área enquanto não se sabe o que a classificação gravada
     // tem. Com algo por reler, a recusa pode ser essa: a releitura decide e a validação se refaz.
     // Sem nada por reler, o rascunho incompleto é barrado sem ir à rede.
     if (pendentesAntesDeGravar.length > 0 && store.classificacao.gravadoPorReler()) {
       await conducao.reler();
       if (geracao !== store.geracao()) return;
-      pendentesAntesDeGravar = conducao.validarRascunho(store.totalSteps - 1);
+      pendentesAntesDeGravar = conducao.validarRascunho(store.totalDePassos - 1);
     }
     if (pendentesAntesDeGravar.length > 0) {
-      store.setStepError(pendentesAntesDeGravar);
+      store.definirErroDoPasso(pendentesAntesDeGravar);
       conducao.revelarErro();
       return;
     }
@@ -65,26 +65,26 @@ export async function publicar(conducao: ConducaoDoWizard): Promise<void> {
       );
     }
     if (falhasDeGravacao.length > 0) {
-      store.setStepError(falhasDeGravacao);
+      store.definirErroDoPasso(falhasDeGravacao);
       conducao.revelarErro();
       return;
     }
 
     // A Revisão fica de fora da varredura, porque o `persistir()` dela publica de verdade, mas o
     // checklist que ela cacheia pode ter ficado desatualizado exatamente pelos passos gravados.
-    await conducao.passoNo(store.totalSteps - 1)?.recarregarChecklist?.();
+    await conducao.passoNo(store.totalDePassos - 1)?.recarregarChecklist?.();
     if (geracao !== store.geracao()) return;
 
     const pendentes = conducao.validarRascunho();
     if (pendentes.length > 0) {
-      store.setStepError(pendentes);
+      store.definirErroDoPasso(pendentes);
       conducao.revelarErro();
       return;
     }
 
-    store.setStepError(null);
+    store.definirErroDoPasso(null);
 
-    const validator = conducao.passoNo(store.currentStep());
+    const validator = conducao.passoNo(store.passoAtual());
     const confirmacao = validator?.confirmacaoDeGravacao?.();
     if (confirmacao) {
       conducao.pedirConfirmacao(confirmacao);
@@ -115,7 +115,7 @@ async function gravarPassosAnteriores(conducao: ConducaoDoWizard): Promise<strin
   const pendencias: string[] = [];
   const geracao = store.geracao();
 
-  for (let index = 0; index < store.totalSteps - 1; index += 1) {
+  for (let index = 0; index < store.totalDePassos - 1; index += 1) {
     // O operador pode ter navegado para outro processo com a varredura ainda correndo: continuar
     // chamaria `persistir()` dos passos seguintes contra o rascunho do processo NOVO. Sai calada,
     // e `publicar()` confere a geração de novo ao voltar.

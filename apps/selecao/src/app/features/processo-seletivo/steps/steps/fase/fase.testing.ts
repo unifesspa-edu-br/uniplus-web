@@ -13,7 +13,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
-import { FaseStepComponent } from './fase.component';
+import { FasePassoComponent } from './fase.component';
 
 export const BASE = 'http://localhost:5000';
 export const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -184,7 +184,7 @@ export const proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0
 export const fasesEnviadas = (corpo: unknown) => corpo as Record<string, unknown>[];
 
 export interface FaseMontada {
-  readonly componente: FaseStepComponent;
+  readonly componente: FasePassoComponent;
   readonly store: ProcessoSeletivoStore;
   readonly controller: HttpTestingController;
   readonly detectar: () => void;
@@ -200,7 +200,7 @@ export async function montarFase(
   catalogos: 'atendidos' | 'pendentes' | 'com-erro' = 'atendidos',
 ): Promise<FaseMontada> {
   await TestBed.configureTestingModule({
-    imports: [FaseStepComponent],
+    imports: [FasePassoComponent],
     providers: [
       ProcessoSeletivoStore,
       CadastroInicial,
@@ -215,7 +215,7 @@ export async function montarFase(
     ],
   }).compileComponents();
 
-  const fixture = TestBed.createComponent(FaseStepComponent);
+  const fixture = TestBed.createComponent(FasePassoComponent);
   const store = TestBed.inject(ProcessoSeletivoStore);
   const controller = TestBed.inject(HttpTestingController);
   const nativo = fixture.nativeElement as HTMLElement;

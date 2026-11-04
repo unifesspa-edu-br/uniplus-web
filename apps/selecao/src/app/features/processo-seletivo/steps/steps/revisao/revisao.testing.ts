@@ -20,7 +20,7 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { EnvioDoEdital } from '../../shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
-import { RevisaoStepComponent } from './revisao.component';
+import { RevisaoPassoComponent } from './revisao.component';
 import { PublicacaoDoProcesso } from './servicos/publicacao-do-processo.service';
 
 export const BASE = 'http://localhost:5000';
@@ -175,8 +175,8 @@ export const ATO_PUBLICADO: AtoNormativoDto = {
 };
 /** Os dobles que os testes trocam por caso, e o que o componente montado expõe. */
 export interface CenarioDaRevisao {
-  readonly fixture: ComponentFixture<RevisaoStepComponent>;
-  readonly componente: RevisaoStepComponent;
+  readonly fixture: ComponentFixture<RevisaoPassoComponent>;
+  readonly componente: RevisaoPassoComponent;
   readonly store: ProcessoSeletivoStore;
   readonly controller: HttpTestingController;
   /** Mutável por teste: a fase de coleta pode não ter `congelados` ainda, e é o catálogo quem resolve. */
@@ -203,7 +203,7 @@ export async function montarOCenario(): Promise<CenarioDaRevisao> {
   };
 
   await TestBed.configureTestingModule({
-    imports: [RevisaoStepComponent],
+    imports: [RevisaoPassoComponent],
     providers: [
       ProcessoSeletivoStore,
       CadastroInicial,
@@ -229,7 +229,7 @@ export async function montarOCenario(): Promise<CenarioDaRevisao> {
     ],
   }).compileComponents();
 
-  const fixture = TestBed.createComponent(RevisaoStepComponent);
+  const fixture = TestBed.createComponent(RevisaoPassoComponent);
   const montada = Object.assign(cenario, {
     fixture,
     componente: fixture.componentInstance,
@@ -257,7 +257,7 @@ export function flushMicrotasks(): Promise<void> {
  * passo, e a Revisão é sempre o último, então o cenário também precisa estar lá.
  */
 export async function criarProcesso(cenario: CenarioDaRevisao): Promise<void> {
-  cenario.store.currentStep.set(cenario.store.totalSteps - 1);
+  cenario.store.passoAtual.set(cenario.store.totalDePassos - 1);
   cenario.store.processoSeletivoId.set(PROCESSO_ID);
   await flushMicrotasks();
   cenario.fixture.detectChanges();

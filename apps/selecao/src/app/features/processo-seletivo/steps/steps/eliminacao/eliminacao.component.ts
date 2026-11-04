@@ -56,9 +56,9 @@ import { recusaPorCriterioGravadoSemQuadro } from '../desempate/recusas-do-desem
   imports: [ValorEmConsultaComponent, RegraDeEliminacaoComponent],
   templateUrl: './eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [GravacaoDaClassificacao, provePassoDoWizard(EliminacaoStepComponent)],
+  providers: [GravacaoDaClassificacao, provePassoDoWizard(EliminacaoPassoComponent)],
 })
-export class EliminacaoStepComponent {
+export class EliminacaoPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
