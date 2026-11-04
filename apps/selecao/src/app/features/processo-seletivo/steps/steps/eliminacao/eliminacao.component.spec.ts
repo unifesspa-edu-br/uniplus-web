@@ -518,14 +518,14 @@ describe('EliminacaoStepComponent', () => {
       comCadastroLido(450);
       gravadaComMatematica('Resolução anterior');
 
-      expect(componente.areasDoCorte()?.map((area) => area.codigo)).toEqual(['REDACAO']);
+      expect(componente.quadro().areas?.map((area) => area.codigo)).toEqual(['REDACAO']);
     });
 
     it('com o cadastro da mesma resolução alterado, vale o cadastro, não a cópia gravada', () => {
       comCadastroLido(450);
       gravadaComMatematica();
 
-      expect(componente.areasDoCorte()?.map((area) => area.codigo)).toEqual(['REDACAO']);
+      expect(componente.quadro().areas?.map((area) => area.codigo)).toEqual(['REDACAO']);
       store.patchObjectSection('classificacao', {
         regrasEliminacao: [{ ...CORTE, areaCodigo: 'REDACAO' }],
       });
@@ -537,7 +537,7 @@ describe('EliminacaoStepComponent', () => {
       gravadaComMatematica();
       store.patchObjectSection('classificacao', { baseadoEmEnem: false });
 
-      expect(componente.areasDoCorte()?.map((area) => area.codigo)).toEqual([
+      expect(componente.quadro().areas?.map((area) => area.codigo)).toEqual([
         'MATEMATICA',
         'REDACAO',
       ]);
@@ -551,7 +551,7 @@ describe('EliminacaoStepComponent', () => {
       });
       gravadaComMatematica('Resolução anterior');
 
-      expect(componente.areasDoCorte()).toBeNull();
+      expect(componente.quadro().areas).toBeNull();
     });
 
     it('mostra a área gravada no seletor mesmo fora das áreas oferecidas', () => {

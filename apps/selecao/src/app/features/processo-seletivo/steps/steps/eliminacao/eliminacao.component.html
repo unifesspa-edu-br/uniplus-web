@@ -153,7 +153,7 @@
             }
 
             @if (usaAreaEMinimo(regra)) {
-              @let semAreas = areasDoCorte() === null;
+              @let semAreas = quadro().areas === null;
               @let recusaDaArea = recusaDoCampo(indice, 'area');
               <div class="form-field">
                 <label class="label" [attr.for]="'elim-area-' + indice">Área do ENEM</label

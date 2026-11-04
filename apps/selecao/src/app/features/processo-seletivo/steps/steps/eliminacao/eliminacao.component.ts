@@ -19,7 +19,6 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
-import { decimalNaForma, leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { leituraDaEscalaDaNotaFinal } from '../classificacao/escala-da-nota-final';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
@@ -35,8 +34,6 @@ import {
   classificacaoUsaFormulaLocal,
   comoComandoDeClassificacao,
   divisorDaMediaValido,
-  eliminacaoAceitaUmaSoVez,
-  eliminacaoExigeBaseadoEmEnem,
   eliminacaoUsaAreaEMinimo,
   eliminacaoUsaEtapa,
   eliminacaoUsaEtapaENotaMinima,
@@ -52,35 +49,29 @@ import {
 } from '../classificacao/recusas-da-classificacao';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { declaraNotaDoEnem } from '../cronograma/regras-da-etapa';
-import {
-  lerChaveDaRegra,
-  regrasEscolhiveis,
-  rotuloDaRegraEscolhida,
-} from '../classificacao/regra-escolhivel';
-import {
-  areasComunsAoQuadro,
-  corteDaArea,
-  ordemDasAreas,
-  type ColunaDoQuadro,
-  type GrupoDoQuadro,
-} from '../../shared/quadro-de-pesos';
+import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
+import { type ColunaDoQuadro } from '../../shared/quadro-de-pesos';
 import { recusaDaEliminacao, recusasDoCorte, type CampoDaRegra } from './recusas-da-eliminacao';
+import {
+  REGRA_ELIMINACAO_VAZIA,
+  areasEscolhiveis,
+  corteSugerido,
+  etapasEscolhiveis,
+  leituraDaRegra,
+  quadroDoCorte,
+  rotuloDaArea,
+  rotuloDoMinimo,
+  trocaDeArea,
+  trocaDeRegra,
+  type EtapaReferenciavel,
+} from './regras-de-eliminacao';
+import { mensagensDasRegras } from './validacao-da-eliminacao';
 import {
   conferirDesempateGravado,
   recusaDaClassificacaoPeloDesempate,
   recusaPorCriterioGravadoSemQuadro,
-  rotulosDasAreas,
   type PendenciaDoCriterioGravado,
 } from '../desempate/quadro-do-desempate';
-
-const REGRA_ELIMINACAO_VAZIA: RegraEliminacaoConfigurada = {
-  regraCodigo: '',
-  regraVersao: '',
-  etapaRef: '',
-  notaMinima: '',
-  minimo: '',
-  areaCodigo: '',
-};
 
 /**
  * Regras de eliminação — a coleção que fecha o corpo de `PUT
@@ -124,15 +115,31 @@ export class EliminacaoStepComponent {
   readonly regras = computed(() => this.classificacao().regrasEliminacao);
 
   /** Só etapas já persistidas (com `id`) podem ser referenciadas por `etapaRef`. */
-  readonly etapasReferenciaveis = computed(() =>
-    this.store
+  readonly etapasReferenciaveis = computed<readonly EtapaReferenciavel[]>(() => {
+    // Vale o tipo do catálogo quando o rascunho já trocou o da etapa gravada, como no cronograma: a
+    // tela julga a etapa como o servidor, que confere o tipo que a gravação levaria.
+    const tipos = this.catalogosDoCronograma.tipoEtapaPorId();
+    return this.store
       .draft()
       .cronograma.etapas.filter(
         (etapa): etapa is EtapaPontuada & { id: string } => etapa.id !== null,
-      ),
-  );
+      )
+      .map((etapa) => ({
+        ...etapa,
+        doEnem: declaraNotaDoEnem(etapa, tipos.get(etapa.tipoEtapaOrigemId)),
+      }));
+  });
 
   readonly regrasDoCatalogo = computed(() => this.catalogos.regrasEliminacao());
+
+  /** O quadro dos cortes por área: as áreas oferecidas, os grupos e os rótulos. */
+  readonly quadro = computed(() =>
+    quadroDoCorte(
+      this.classificacao(),
+      this.cadastroDePesos.leitura(),
+      this.store.classificacao.gravada(),
+    ),
+  );
 
   regraEscolhivel(regra: RegraEliminacaoConfigurada) {
     return regrasEscolhiveis(this.regrasDoCatalogo(), regra.regraCodigo, regra.regraVersao);
@@ -150,131 +157,37 @@ export class EliminacaoStepComponent {
     return eliminacaoUsaEtapa(regra.regraCodigo);
   }
 
-  /**
-   * As etapas oferecidas à regra. A ausência só vale onde há prova a que faltar, e a etapa de nota
-   * do ENEM não tem: fica de fora, e cada etapa é citada por uma regra só. A etapa gravada aparece
-   * mesmo fora das oferecidas, como na área do corte: o operador vê o que está configurado.
-   */
-  etapasEscolhiveis(indice: number): readonly EtapaPontuada[] {
-    const regra = this.regras()[indice];
-    const etapas = this.etapasReferenciaveis();
-    if (!this.usaSoEtapa(regra)) return etapas;
-
-    const oferecidas = etapas.filter((etapa) => this.elegivelParaAusencia(etapa, indice));
-    const gravada = etapas.find((etapa) => etapa.id === regra.etapaRef);
-    return gravada === undefined || oferecidas.includes(gravada)
-      ? oferecidas
-      : [gravada, ...oferecidas];
-  }
-
-  /**
-   * Vale o tipo do catálogo quando o rascunho já trocou o da etapa gravada, como no cronograma: a
-   * tela julga a etapa como o servidor, que confere o tipo que a gravação levaria.
-   */
-  private ehEtapaDoEnem(etapa: EtapaPontuada): boolean {
-    return declaraNotaDoEnem(
-      etapa,
-      this.catalogosDoCronograma.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId),
-    );
-  }
-
-  private citadaPorOutraAusencia(etapaId: string | null, indice: number): boolean {
-    return this.regras().some(
-      (outra, item) => item !== indice && this.usaSoEtapa(outra) && outra.etapaRef === etapaId,
-    );
-  }
-
-  /** A ausência só vale em etapa que não é do ENEM e que nenhuma outra regra de ausência cita. */
-  private elegivelParaAusencia(etapa: EtapaPontuada, indice: number): boolean {
-    return !this.ehEtapaDoEnem(etapa) && !this.citadaPorOutraAusencia(etapa.id, indice);
-  }
-
   usaAreaEMinimo(regra: RegraEliminacaoConfigurada): boolean {
     return eliminacaoUsaAreaEMinimo(regra.regraCodigo);
   }
 
-  /**
-   * O quadro contra o qual o servidor confere o corte: o que a gravação da classificação copia do
-   * cadastro para a resolução do rascunho. Com o cadastro ainda não lido, a cópia gravada vale só
-   * se for da mesma resolução — é o caso do processo só para consulta. `null` quando não se sabe;
-   * `'sem-quadro'` quando a classificação não usa a média ponderada do ENEM.
-   */
-  private readonly quadroDoCorte = computed<readonly GrupoDoQuadro[] | 'sem-quadro' | null>(() => {
-    const classificacao = this.classificacao();
-    if (!exigeResolucaoPesoAreaEnem(classificacao)) return 'sem-quadro';
-    const cadastro = this.cadastroDePesos.leitura();
-    if (cadastro.lido) return cadastro.quadroDaResolucaoEscolhida;
-    const gravada = this.store.classificacao.gravada();
-    return gravada.estado === 'com-quadro' &&
-      gravada.resolucao === classificacao.resolucaoPesoAreaEnem
-      ? gravada.grupos
-      : null;
-  });
+  etapasEscolhiveis(indice: number): readonly EtapaReferenciavel[] {
+    return etapasEscolhiveis(this.regras(), this.etapasReferenciaveis(), indice);
+  }
 
-  /**
-   * As áreas que um corte pode citar: com quadro, as que estão em todos os grupos dele; sem quadro,
-   * qualquer área do ENEM; `null` enquanto o quadro não é conhecido.
-   */
-  readonly areasDoCorte = computed<readonly ColunaDoQuadro[] | null>(() => {
-    const quadro = this.quadroDoCorte();
-    const canonicas = this.cadastroDePesos.leitura().canonicas;
-    if (quadro === 'sem-quadro') return canonicas;
-    return quadro === null ? null : areasComunsAoQuadro(quadro, ordemDasAreas(canonicas));
-  });
-
-  private readonly gruposDoQuadro = computed(() => {
-    const quadro = this.quadroDoCorte();
-    return quadro === 'sem-quadro' || quadro === null ? [] : quadro;
-  });
-
-  /** As áreas oferecidas à regra: as do corte, menos as que outro corte já cita (uma por área). */
   areasEscolhiveis(indice: number): readonly ColunaDoQuadro[] {
-    const citadasPorOutras = new Set(
-      this.regras()
-        .filter((regra, item) => item !== indice && this.usaAreaEMinimo(regra))
-        .map((regra) => regra.areaCodigo),
-    );
-    const oferecidas = (this.areasDoCorte() ?? []).filter(
-      (area) => !citadasPorOutras.has(area.codigo),
-    );
-    // A área gravada aparece mesmo fora das oferecidas: o operador vê o que está configurado.
-    const gravada = this.regras()[indice]?.areaCodigo ?? '';
-    return gravada === '' || oferecidas.some((area) => area.codigo === gravada)
-      ? oferecidas
-      : [{ codigo: gravada, rotulo: this.rotuloDaArea(gravada) }, ...oferecidas];
+    return areasEscolhiveis(this.regras(), this.quadro(), indice);
   }
 
   rotuloDaArea(codigo: string): string {
-    return (
-      rotulosDasAreas(this.cadastroDePesos.leitura().canonicas, this.gruposDoQuadro()).get(
-        codigo,
-      ) ?? codigo
-    );
+    return rotuloDaArea(this.quadro(), codigo);
   }
 
   leituraDaRegra(regra: RegraEliminacaoConfigurada) {
-    const etapa = this.etapasReferenciaveis().find((item) => item.id === regra.etapaRef);
-    return {
-      regra: rotuloDaRegraEscolhida(this.regraEscolhivel(regra)),
-      etapa: etapa === undefined ? null : etapa.nome || 'Etapa sem nome',
-      notaMinima: leituraDoCampoDecimal(regra.notaMinima),
-      area: regra.areaCodigo === '' ? null : this.rotuloDaArea(regra.areaCodigo),
-      minimo: leituraDoCampoDecimal(regra.minimo),
-    };
+    return leituraDaRegra(
+      regra,
+      this.regrasDoCatalogo(),
+      this.etapasReferenciaveis(),
+      this.quadro(),
+    );
   }
 
-  /** O rótulo completo do mínimo, com a área: dois cortes lado a lado não se confundem. */
   rotuloDoMinimo(regra: RegraEliminacaoConfigurada): string {
-    return regra.areaCodigo === ''
-      ? 'Nota mínima'
-      : `Nota mínima em ${this.rotuloDaArea(regra.areaCodigo)}`;
+    return rotuloDoMinimo(regra, this.quadro());
   }
 
-  /** O corte que a resolução dá à área, quando a classificação tem quadro e o cadastro foi lido. */
   corteSugerido(regra: RegraEliminacaoConfigurada): number | null {
-    const grupos = this.gruposDoQuadro();
-    if (regra.areaCodigo === '' || grupos.length === 0) return null;
-    return corteDaArea(grupos, regra.areaCodigo);
+    return corteSugerido(regra, this.quadro());
   }
 
   /**
@@ -340,34 +253,11 @@ export class EliminacaoStepComponent {
   }
 
   escolherRegra(indice: number, valor: string): void {
-    const { codigo, versao } = lerChaveDaRegra(valor);
-    this.atualizarRegra(indice, {
-      regraCodigo: codigo,
-      regraVersao: versao,
-      // Trocar de regra some com o que não se aplica mais ao shape novo — o
-      // operador não vê um campo preenchido que a regra escolhida ignora.
-      etapaRef: '',
-      notaMinima: '',
-      minimo: '',
-      areaCodigo: '',
-    });
+    this.atualizarRegra(indice, trocaDeRegra(valor));
   }
 
-  /**
-   * O corte do cadastro é sugestão, e a regra é a norma aplicada: o mínimo sugerido só entra
-   * quando o operador ainda não informou um. O mínimo igual à sugestão da área anterior veio dela,
-   * e não do operador, então também é trocado.
-   */
   escolherArea(indice: number, areaCodigo: string): void {
-    const regra = this.regras()[indice];
-    const anterior = this.corteSugerido(regra);
-    const sugerido = this.corteSugerido({ ...regra, areaCodigo });
-    const minimo = regra.minimo.trim();
-    const naoInformado = minimo === '' || (anterior !== null && minimo === String(anterior));
-    this.atualizarRegra(indice, {
-      areaCodigo,
-      ...(naoInformado ? { minimo: sugerido === null ? '' : String(sugerido) } : {}),
-    });
+    this.atualizarRegra(indice, trocaDeArea(this.regras()[indice], areaCodigo, this.quadro()));
   }
 
   alterarEtapaRef(indice: number, etapaRef: string): void {
@@ -502,96 +392,16 @@ export class EliminacaoStepComponent {
         'Nenhuma etapa do Cronograma compõe a nota. Volte ao Cronograma e declare ao menos uma etapa classificatória (ou ambas) com peso maior que zero.',
       );
     }
-
-    const idsDeEtapa = new Set(this.etapasReferenciaveis().map((etapa) => etapa.id));
-
-    this.regras().forEach((regra, indice) => {
-      const posicao = indice + 1;
-      if (!regra.regraCodigo) {
-        messages.push(`Regra de eliminação ${posicao}: selecione uma regra.`);
-        return;
-      }
-
-      if (this.usaEtapa(regra)) {
-        if (regra.etapaRef === '') {
-          messages.push(`Regra de eliminação ${posicao}: selecione a etapa referenciada.`);
-        } else if (!idsDeEtapa.has(regra.etapaRef)) {
-          messages.push(
-            `Regra de eliminação ${posicao}: a etapa referenciada não existe mais no cronograma.`,
-          );
-        }
-        if (this.usaEtapaENotaMinima(regra) && decimalNaForma(regra.notaMinima) === null) {
-          messages.push(`Regra de eliminação ${posicao}: informe a nota mínima.`);
-        }
-        if (this.usaSoEtapa(regra)) messages.push(...this.mensagensDaAusencia(regra, indice));
-      } else if (this.usaAreaEMinimo(regra)) {
-        messages.push(...this.mensagensDoCorte(regra, indice));
-      }
-
-      if (
-        eliminacaoAceitaUmaSoVez(regra.regraCodigo) &&
-        this.regras().some(
-          (outra, item) => item < indice && outra.regraCodigo === regra.regraCodigo,
-        )
-      ) {
-        messages.push(
-          `Regra de eliminação ${posicao}: esta regra já foi declarada em outra posição; deixe uma só.`,
-        );
-      }
-
-      if (eliminacaoExigeBaseadoEmEnem(regra.regraCodigo) && !classificacao.baseadoEmEnem) {
-        messages.push(
-          `Regra de eliminação ${posicao}: só se aplica quando a classificação está marcada como baseada em ENEM (passo Fórmula).`,
-        );
-      }
-    });
+    messages.push(
+      ...mensagensDasRegras({
+        regras: this.regras(),
+        etapas: this.etapasReferenciaveis(),
+        quadro: this.quadro(),
+        baseadoEmEnem: classificacao.baseadoEmEnem,
+      }),
+    );
 
     return messages.length ? { valid: false, messages } : { valid: true };
-  }
-
-  private mensagensDaAusencia(regra: RegraEliminacaoConfigurada, indice: number): string[] {
-    const posicao = indice + 1;
-    const mensagens: string[] = [];
-    const etapa = this.etapasReferenciaveis().find((item) => item.id === regra.etapaRef);
-    if (etapa === undefined) return mensagens;
-    if (this.ehEtapaDoEnem(etapa)) {
-      mensagens.push(
-        `Regra de eliminação ${posicao}: a ausência não se aplica à etapa de nota do ENEM; escolha outra etapa.`,
-      );
-    }
-    if (this.citadaPorOutraAusencia(etapa.id, indice)) {
-      mensagens.push(
-        `Regra de eliminação ${posicao}: a ausência nesta etapa já foi declarada em outra regra; deixe uma só.`,
-      );
-    }
-    return mensagens;
-  }
-
-  private mensagensDoCorte(regra: RegraEliminacaoConfigurada, indice: number): string[] {
-    const posicao = indice + 1;
-    const mensagens: string[] = [];
-    if (regra.areaCodigo === '') {
-      mensagens.push(`Regra de eliminação ${posicao}: selecione a área do ENEM.`);
-    } else {
-      const rotulo = this.rotuloDaArea(regra.areaCodigo);
-      const repetida = this.regras().some(
-        (outra, item) =>
-          item < indice && this.usaAreaEMinimo(outra) && outra.areaCodigo === regra.areaCodigo,
-      );
-      if (repetida) {
-        mensagens.push(`Regra de eliminação ${posicao}: ${rotulo} já tem um corte em outra regra.`);
-      }
-      const areas = this.areasDoCorte();
-      if (areas !== null && !areas.some((area) => area.codigo === regra.areaCodigo)) {
-        mensagens.push(
-          `Regra de eliminação ${posicao}: ${rotulo} não está em todos os grupos da resolução de Peso por Área escolhida.`,
-        );
-      }
-    }
-    if (decimalNaForma(regra.minimo) === null) {
-      mensagens.push(`Regra de eliminação ${posicao}: informe a nota mínima.`);
-    }
-    return mensagens;
   }
 
   /**
