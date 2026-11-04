@@ -7,15 +7,10 @@ import {
   computed,
   effect,
   inject,
-  signal,
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
-import { AtoNormativoDto, AtosApi } from '@uniplus/shared-data/publicacoes';
-import { SnapshotVigenteDto, StatusProcesso } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
@@ -25,7 +20,6 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { instanteLegivel } from '../../shared/fuso-institucional';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
 import { documentosPorFase } from '../../shared/documentos-exigidos';
@@ -34,18 +28,9 @@ import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
 import { ehEnderecoNavegavel } from './endereco-navegavel';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
 import { ConferenciaDaPublicacaoService } from './servicos/conferencia-da-publicacao.service';
+import { PublicacaoDoProcessoService } from './servicos/publicacao-do-processo.service';
 import { faseQueAncoraOPeriodoDeInscricao, temFaseDeColetaInscricao } from './periodo-de-inscricao';
-import { comoComandoDePublicacao } from './comando-de-publicacao';
 import { rotuloDaDimensao } from './grupos-da-revisao';
-
-/**
- * O ato vigente de um processo já publicado. A tela o lê do servidor ao abrir, porque o
- * formulário do ato só guarda o que esta sessão transcreveu antes de publicar.
- */
-export type AtoPublicado =
-  | { readonly estado: 'lendo' }
-  | { readonly estado: 'lido'; readonly ato: AtoNormativoDto }
-  | { readonly estado: 'falha' };
 
 /**
  * Passo Revisão e Publicação (`#486`). Substitui a contagem de passos
@@ -80,6 +65,7 @@ export type AtoPublicado =
     provePassoDoWizard(RevisaoStepComponent),
     PreflightDaPublicacaoService,
     ConferenciaDaPublicacaoService,
+    PublicacaoDoProcessoService,
   ],
 })
 export class RevisaoStepComponent {
@@ -90,6 +76,7 @@ export class RevisaoStepComponent {
   protected readonly podePublicar = computed(() => this.permissoes.tem(this.permissaoDePublicar));
   readonly preflight = inject(PreflightDaPublicacaoService);
   protected readonly conferencia = inject(ConferenciaDaPublicacaoService);
+  protected readonly publicacao = inject(PublicacaoDoProcessoService);
 
   /**
    * Os documentos exigidos por fase, com a situação da base legal que a publicação confere: a
@@ -106,34 +93,9 @@ export class RevisaoStepComponent {
 
   /** Quem concorre em cada modalidade ofertada, pela regra que o processo congelou. */
   protected readonly regrasDasModalidades = this.store.regrasDasModalidades;
-  private readonly cadastro = inject(CadastroInicialService);
-  private readonly atos = inject(AtosApi);
   private readonly dataBr = new DateBrPipe();
-  private readonly problemI18n = inject(ProblemI18nService);
   /** Provido na página, a mesma instância do cronograma: resolve `coletaInscricao` da fase acrescentada nesta sessão. */
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
-
-  /** O snapshot lido depois do `204` (CA-08) — só existe quando esta sessão acabou de publicar. */
-  readonly snapshotConfirmado = signal<SnapshotVigenteDto | null>(null);
-
-  /** O ato vigente, para processo publicado; `null` enquanto não há o que ler. */
-  readonly atoPublicado = signal<AtoPublicado | null>(null);
-
-  /**
-   * Se o processo tem versão publicada e, portanto, um ato vigente a mostrar no lugar do
-   * formulário. Só `publicado` garante isso (a retificação o mantém): cancelado ou encerrado
-   * não dizem se houve publicação, e ler o snapshot vigente de um rascunho cancelado falharia
-   * e esconderia a transcrição que ele guarda.
-   */
-  readonly jaPublicado = computed(
-    () => this.store.remoteSnapshot()?.status === StatusProcesso.publicado,
-  );
-
-  /** O ato da versão vigente, quando já foi lido: é nele que estão os anexos publicados do edital. */
-  readonly atoVigenteId = computed(() => {
-    const leitura = this.atoPublicado();
-    return leitura?.estado === 'lido' ? leitura.ato.id : null;
-  });
 
   /**
    * A transcrição do ato gravada no rascunho, para o processo que não aceita edição e ainda não
@@ -167,7 +129,7 @@ export class RevisaoStepComponent {
 
   /** O ato vigente como pares rótulo e valor, na ordem do formulário que ele substitui. */
   readonly resumoDoAto = computed(() => {
-    const leitura = this.atoPublicado();
+    const leitura = this.publicacao.atoPublicado();
     if (leitura?.estado !== 'lido') return null;
     const { ato } = leitura;
     const tipo = this.preflight.tiposAto().find((item) => item.codigo === ato.tipoCodigo);
@@ -231,23 +193,6 @@ export class RevisaoStepComponent {
       untracked(() => {
         void this.preflight.recarregar(id, this.conferencia.dataReferenciaLegal());
       });
-    });
-
-    effect(() => {
-      this.store.geracao();
-      untracked(() => {
-        this.snapshotConfirmado.set(null);
-        this.atoPublicado.set(null);
-      });
-    });
-
-    // Processo publicado: o ato que vale é o do servidor, lido uma vez ao entrar
-    // no passo. Uma falha fica visível com "Tentar novamente", em vez de o formulário vazio.
-    effect(() => {
-      const id = this.store.processoSeletivoId();
-      if (id === null || !this.store.isLast() || !this.jaPublicado()) return;
-      if (untracked(() => this.atoPublicado()) !== null) return;
-      untracked(() => void this.lerAtoPublicado(id));
     });
 
     // Empurra o rascunho para o formulário sem disparar `valueChanges` — quem
@@ -314,35 +259,9 @@ export class RevisaoStepComponent {
     });
   }
 
-  /**
-   * Lê o ato vigente: o `atoId` vem do snapshot publicado, e o ato, da Publicações. Quando esta
-   * sessão acabou de publicar, o snapshot já relido serve, sem ler de novo.
-   */
-  async lerAtoPublicado(processoId: string): Promise<void> {
-    const geracao = this.store.geracao();
-    this.atoPublicado.set({ estado: 'lendo' });
-
-    const atoId =
-      this.snapshotConfirmado()?.atoId ?? (await this.atoIdDoSnapshotVigente(processoId));
-    if (geracao !== this.store.geracao()) return;
-    if (atoId === null) {
-      this.atoPublicado.set({ estado: 'falha' });
-      return;
-    }
-
-    const ato = await firstValueFrom(this.atos.obter(atoId));
-    if (geracao !== this.store.geracao()) return;
-    this.atoPublicado.set(ato.ok ? { estado: 'lido', ato: ato.data } : { estado: 'falha' });
-  }
-
-  private async atoIdDoSnapshotVigente(processoId: string): Promise<string | null> {
-    const snapshot = await this.cadastro.obterSnapshotVigente(processoId);
-    return snapshot.ok ? snapshot.data.atoId : null;
-  }
-
   tentarLerAtoDeNovo(): void {
     const id = this.store.processoSeletivoId();
-    if (id !== null) void this.lerAtoPublicado(id);
+    if (id !== null) void this.publicacao.lerAtoPublicado(id);
   }
 
   /**
@@ -428,131 +347,7 @@ export class RevisaoStepComponent {
     return this.conferencia.validate();
   }
 
-  /**
-   * Publica e, com `204`, confirma o snapshot (CA-08) antes de devolver
-   * sucesso — `store.hidratar()` do detalhe relido é o que leva o wizard a
-   * somente leitura (CA-09), pela mesma `edicaoPermitida()` que todo passo já
-   * respeita.
-   */
-  async persistir(): Promise<StepValidation> {
-    const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      return {
-        valid: false,
-        messages: ['Conclua a identificação do processo antes de publicar.'],
-      };
-    }
-
-    const conferencia = this.conferencia.validate();
-    if (!conferencia.valid) return conferencia;
-
-    const documentoAPublicarId = this.conferencia.documentoAPublicarId();
-    if (documentoAPublicarId === null) {
-      // `validate()` já cobre este caso via `mensagensDePublicacao`; a
-      // checagem aqui só estreita o tipo para `comoComandoDePublicacao`.
-      return { valid: false, messages: [] };
-    }
-
-    const comando = comoComandoDePublicacao(
-      this.store.draft(),
-      documentoAPublicarId,
-      this.catalogosDoCronograma.fasePorId(),
-    );
-    const geracao = this.store.geracao();
-    this.store.salvando.set(true);
-    this.conferencia.descartarRecusa();
-
-    try {
-      const resultado = await this.cadastro.publicar(processoId, comando);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-
-      if (!resultado.ok) {
-        // Rede, 5xx ou `processing_conflict`: `CadastroInicialService`
-        // preserva a `Idempotency-Key` porque o comando pode já ter sido
-        // executado, mas isso só protege um replay que reenvie o MESMO
-        // corpo. Se o operador editar um campo antes de tentar de novo,
-        // `ChaveDeSubstituicao.contextoPara()` gira a chave para o corpo
-        // mudado — o retry deixa de ser o replay seguro do comando incerto e
-        // pode correr contra a primeira tentativa. Mantém a tela travada
-        // pelo mesmo sinal do caminho "204 mas releitura falhou", em vez de
-        // deixar o `finally` liberar a edição sobre um resultado que ainda
-        // não se sabe se aplicou.
-        if (resultado.inconclusiva) this.store.publicacaoNaoConfirmada.set(true);
-
-        this.conferencia.registrarRecusa(resultado.problem);
-        return { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
-      }
-
-      const confirmado = await this.confirmarPublicacao(processoId);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-
-      if (!confirmado) {
-        return {
-          valid: false,
-          messages: [
-            'A publicação foi aceita, mas não foi possível confirmar o estado do processo. Recarregue a página para conferir.',
-          ],
-        };
-      }
-
-      return { valid: true };
-    } finally {
-      if (geracao === this.store.geracao()) this.store.salvando.set(false);
-    }
-  }
-
-  /**
-   * CA-08 — depois do `204`, relê `GET /{id}` e `GET /snapshot-vigente`. O
-   * `configuracao` que o snapshot traz não é reinterpretado como comando de
-   * gravação (fica só como prova visível de hash/versão); quem edita a
-   * configuração é o rascunho local, que a partir daqui está bloqueado por
-   * `edicaoPermitida()`.
-   */
-  private async confirmarPublicacao(processoId: string): Promise<boolean> {
-    const [detalhe, snapshot] = await Promise.all([
-      this.cadastro.obterDetalhe(processoId),
-      this.cadastro.obterSnapshotVigente(processoId),
-    ]);
-
-    if (!detalhe.ok) {
-      // O `POST` já devolveu `204` — a publicação pode ter acontecido de
-      // verdade — mas sem o detalhe relido não há como confirmar nem
-      // descartar. `persistir()` ainda vai liberar `salvando` no `finally`;
-      // sem este sinal a edição destravaria sobre um processo possivelmente
-      // já publicado. Só uma releitura que chegue
-      // ao fim — aqui numa nova tentativa, ou na retomada da página — limpa
-      // isto, em `store.hidratar()`.
-      this.store.publicacaoNaoConfirmada.set(true);
-      return false;
-    }
-
-    if (detalhe.data.status === StatusProcesso.rascunho) {
-      // O `POST` já devolveu `204` — a publicação foi aceita —, mas esta
-      // releitura ainda mostra rascunho. Atraso de propagação (réplica que
-      // ainda não viu a escrita) ou falha real de aplicar — não dá para
-      // distinguir daqui, e as duas exigem a MESMA cautela. `hidratar()`
-      // aplicaria este status desatualizado E limparia
-      // `publicacaoNaoConfirmada` (é o que ele faz para resolver a
-      // incerteza numa releitura que CHEGA a uma resposta definitiva) —
-      // tratando um estado ainda intermediário como se fosse o final.
-      // Mantém travado; só uma releitura que mostre um
-      // status definitivo resolve.
-      this.store.publicacaoNaoConfirmada.set(true);
-      return false;
-    }
-
-    // Hidrata assim que o detalhe responde com um status definitivo, mesmo
-    // que o snapshot falhe: o POST já pode ter publicado de verdade, e
-    // deixar o rascunho no estado antigo reabriria os controles de edição e
-    // de publicar sobre um processo que o servidor já considera imutável.
-    // `persistir()` ainda devolve inválido
-    // quando `snapshot` falha — só a hidratação, que é o que trava a tela,
-    // não pode esperar por ele.
-    this.store.hidratar(detalhe.data);
-
-    if (!snapshot.ok) return false;
-
-    this.snapshotConfirmado.set(snapshot.data);
-    return detalhe.data.status === StatusProcesso.publicado;
+  persistir(): Promise<StepValidation> {
+    return this.publicacao.persistir();
   }
 }

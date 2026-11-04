@@ -36,6 +36,7 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { nomeDoPasso } from './destino-das-pendencias';
 import { RevisaoStepComponent } from './revisao.component';
+import { PublicacaoDoProcessoService } from './servicos/publicacao-do-processo.service';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000009aa';
@@ -278,6 +279,10 @@ describe('RevisaoStepComponent', () => {
       periodoInscricaoFim: '2027-05-10T18:00',
       ato: atoCompleto(),
     });
+  }
+
+  function publicacao(): PublicacaoDoProcessoService {
+    return fixture.debugElement.injector.get(PublicacaoDoProcessoService);
   }
 
   function textoDaTela(): string {
@@ -620,7 +625,7 @@ describe('RevisaoStepComponent', () => {
       const resultado = await gravacao;
       expect(resultado).toEqual({ valid: true });
       expect(store.remoteSnapshot()?.status).toBe(StatusProcesso.publicado);
-      expect(componente.snapshotConfirmado()?.snapshotPublicacaoId).toBe(
+      expect(publicacao().snapshotConfirmado()?.snapshotPublicacaoId).toBe(
         SNAPSHOT_DTO.snapshotPublicacaoId,
       );
       expect(store.salvando()).toBe(false);
@@ -651,7 +656,7 @@ describe('RevisaoStepComponent', () => {
       // O snapshot não confirmou, mas o detalhe publicado já está no store.
       expect(store.remoteSnapshot()?.status).toBe(StatusProcesso.publicado);
       expect(store.edicaoPermitida()).toBe(false);
-      expect(componente.snapshotConfirmado()).toBeNull();
+      expect(publicacao().snapshotConfirmado()).toBeNull();
     });
 
     /**
@@ -679,7 +684,7 @@ describe('RevisaoStepComponent', () => {
       expect(resultado.valid).toBe(false);
       expect(store.publicacaoNaoConfirmada()).toBe(true);
       expect(store.edicaoPermitida()).toBe(false);
-      expect(componente.snapshotConfirmado()).toBeNull();
+      expect(publicacao().snapshotConfirmado()).toBeNull();
     });
 
     /**

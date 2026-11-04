@@ -1,5 +1,5 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal, untracked } from '@angular/core';
-import { ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
+import { ProblemDetails } from '@uniplus/shared-core/http';
 
 import { StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -29,7 +29,6 @@ export class ConferenciaDaPublicacaoService {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly preflight = inject(PreflightDaPublicacaoService);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
-  private readonly problemI18n = inject(ProblemI18nService);
 
   /** A última recusa da publicação, ou `null` enquanto não houve tentativa (ou ela publicou). */
   readonly ultimaRecusa = signal<RecusaDePublicacao | null>(null);
@@ -118,8 +117,9 @@ export class ConferenciaDaPublicacaoService {
     return dataReferenciaLegalDe(this.store.draft(), this.catalogosDoCronograma.fasePorId());
   }
 
-  registrarRecusa(problem: ProblemDetails): void {
-    this.ultimaRecusa.set(comoRecusaDePublicacao(problem, this.problemI18n.resolve(problem).title));
+  /** Guarda o que o servidor recusou; `titulo` é o texto que o operador lê da recusa. */
+  registrarRecusa(problem: ProblemDetails, titulo: string): void {
+    this.ultimaRecusa.set(comoRecusaDePublicacao(problem, titulo));
   }
 
   descartarRecusa(): void {

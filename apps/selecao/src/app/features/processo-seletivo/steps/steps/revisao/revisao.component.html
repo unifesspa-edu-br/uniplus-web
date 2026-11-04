@@ -11,7 +11,7 @@
   <p class="alert alert--info" role="status">{{ motivo }}</p>
 }
 
-@if (snapshotConfirmado(); as snapshot) {
+@if (publicacao.snapshotConfirmado(); as snapshot) {
   <div class="alert alert--success" role="status">
     <!-- Destino de foco explícito: no último passo, `store.next()` não avança
          (não há passo seguinte), então o efeito de troca de passo da página —
@@ -63,7 +63,7 @@
 <ng-container *authTemPermissao="permissaoDePublicar">
 <sel-anexo-edital />
 
-<sel-anexos-do-edital [publicado]="jaPublicado()" [atoId]="atoVigenteId()" />
+<sel-anexos-do-edital [publicado]="publicacao.jaPublicado()" [atoId]="publicacao.atoVigenteId()" />
 </ng-container>
 
 @if (store.processoSeletivoId() === null) {
@@ -328,8 +328,8 @@
         </p>
       }
 
-      @if (jaPublicado()) {
-        @switch (atoPublicado()?.estado) {
+      @if (publicacao.jaPublicado()) {
+        @switch (publicacao.atoPublicado()?.estado) {
           @case ('falha') {
             <div class="alert alert--danger" role="alert">
               <p>Não foi possível ler o ato publicado deste processo.</p>
