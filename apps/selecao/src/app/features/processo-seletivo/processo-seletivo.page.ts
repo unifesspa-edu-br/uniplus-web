@@ -152,30 +152,45 @@ export class ProcessoSeletivoPage {
 
   constructor() {
     this.conducao.conectar(this.passos);
+    this.esquecerAConfirmacaoAoTrocarDePasso();
+    this.reavaliarARecusaPeloDesempate();
+    this.foco.observarReservas(
+      () => this.etapas()?.barra()?.nativeElement,
+      () => this.rodape()?.nativeElement,
+    );
+    this.focarOTituloAoTrocarDePasso();
+    this.darEnderecoAoProcessoCriado();
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => this.aoMudarOEndereco(params.get('id')));
+  }
 
-    // Um resumo aberto vale para o passo que o produziu. Trocar de passo — pelo
-    // stepper, pelo histórico do navegador ou por uma troca de processo, já que
-    // a rota reusa esta página — o torna obsoleto, e confirmá-lo depois
-    // aplicaria a decisão lida numa tela ao efeito de outra.
+  /**
+   * Um resumo aberto vale para o passo que o produziu. Trocar de passo — pelo stepper, pelo
+   * histórico do navegador ou por uma troca de processo, já que a rota reusa esta página — o torna
+   * obsoleto, e confirmá-lo depois aplicaria a decisão lida numa tela ao efeito de outra.
+   */
+  private esquecerAConfirmacaoAoTrocarDePasso(): void {
     effect(() => {
       this.store.currentStep();
       untracked(() => this.confirmacaoPendente.set(null));
     });
+  }
 
-    // Cada leitura do cadastro de Peso por Área que dá certo, e cada mudança nos critérios de
-    // desempate gravados, pode mostrar que acabou a pendência pela qual o servidor recusou a
-    // classificação.
+  /**
+   * Cada leitura do cadastro de Peso por Área que dá certo, e cada mudança nos critérios de
+   * desempate gravados, pode mostrar que acabou a pendência pela qual o servidor recusou a
+   * classificação.
+   */
+  private reavaliarARecusaPeloDesempate(): void {
     effect(() => {
       this.catalogosDeClassificacao.pesosLidosNaLeitura();
       this.store.classificacao.criteriosDesempateGravados();
       untracked(() => reavaliarRecusaPeloDesempate(this.store, this.cadastroDePesos.leitura()));
     });
+  }
 
-    this.foco.observarReservas(
-      () => this.etapas()?.barra()?.nativeElement,
-      () => this.rodape()?.nativeElement,
-    );
-
+  private focarOTituloAoTrocarDePasso(): void {
     effect(() => {
       this.store.currentStep();
       // Numa entrada por `/:id` o painel só existe depois da leitura; sem
@@ -183,17 +198,19 @@ export class ProcessoSeletivoPage {
       this.store.hidratando();
       queueMicrotask(() => this.foco.focarTituloDoPasso());
     });
+  }
 
-    // CA-04: assim que a criação — disparada dentro do passo 2 — devolve o id,
-    // o endereço passa a contê-lo. Sem isto, recarregar `/novo` depois de já
-    // ter criado perderia o vínculo, e o passo 2 dispararia um segundo POST
-    // para o mesmo rascunho.
-    //
-    // A transição preserva esta instância: as duas rotas do editor declaram a
-    // mesma `reuseKey` (ver `editor-route-reuse.strategy.ts`). Sem isso o
-    // wizard voltaria ao passo 1 no meio do anexo do edital, que é quando a
-    // criação responde. `replaceUrl` porque não é navegação nova — é o mesmo
-    // cadastro ganhando endereço próprio.
+  /**
+   * CA-04: assim que a criação — disparada dentro do passo 2 — devolve o id, o endereço passa a
+   * contê-lo. Sem isto, recarregar `/novo` depois de já ter criado perderia o vínculo, e o passo 2
+   * dispararia um segundo POST para o mesmo rascunho.
+   *
+   * A transição preserva esta instância: as duas rotas do editor declaram a mesma `reuseKey` (ver
+   * `editor-route-reuse.strategy.ts`). Sem isso o wizard voltaria ao passo 1 no meio do anexo do
+   * edital, que é quando a criação responde. `replaceUrl` porque não é navegação nova — é o mesmo
+   * cadastro ganhando endereço próprio.
+   */
+  private darEnderecoAoProcessoCriado(): void {
     effect(() => {
       const id = this.store.processoSeletivoId();
       if (id === null) return;
@@ -202,62 +219,62 @@ export class ProcessoSeletivoPage {
         void this.router.navigate(['/processo-seletivo', id], { replaceUrl: true });
       });
     });
+  }
 
-    // Reagir ao parâmetro, e não lê-lo uma vez: com a rota reusada o construtor
-    // não roda de novo, então abrir outro processo pelo endereço precisa
-    // disparar a leitura aqui. O id assumido logo após a criação não relê nada
-    // — o editor já tem o que acabou de gravar.
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      const id = params.get('id');
-
-      if (id === null) {
-        // Entrar em `/novo` com a página reusada de um processo já carregado
-        // deixaria o cadastro anterior em tela sob o endereço de cadastro novo
-        // — com os campos congelados e o id de outro processo no store, o que
-        // o operador continuasse preenchendo iria para o processo errado.
-        //
-        // `hidratando` entra na conta: uma leitura ainda em voo não deixou
-        // rastro nos outros dois sinais, e sua resposta hidrataria o processo
-        // sob `/novo` — o efeito do id levaria de volta a ele em seguida.
-        const tinhaProcesso =
-          this.store.processoSeletivoId() !== null ||
-          this.store.falhaDeLeitura() !== null ||
-          this.store.hidratando();
-
-        if (tinhaProcesso) {
-          if (!this.podeTrocarDeProcesso()) {
-            this.voltarAoProcessoAberto();
-            return;
-          }
-
-          this.leitura.abandonar();
-        }
-        return;
-      }
-
-      if (id === this.store.processoSeletivoId()) {
-        // Voltar ao processo que já está em tela não relê nada — exceto quando
-        // a ida a outro endereço interrompeu a leitura no meio. Aí o que ficou
-        // é um estado parcial: o detalhe hidratou, a resposta dos documentos
-        // foi descartada, e o editor não sabe se existe edital. Ler de novo é
-        // mais seguro do que consertar sinal por sinal — foi remendando esses
-        // sinais que se chegou a um anexo destravado sobre estado desconhecido.
-        if (this.store.falhaDeLeitura() !== null || this.store.hidratando()) {
-          void this.leitura.retomar(id);
-        }
-        return;
-      }
-
+  /**
+   * Reage ao parâmetro, e não o lê uma vez: com a rota reusada o construtor não roda de novo, então
+   * abrir outro processo pelo endereço precisa disparar a leitura aqui. O id assumido logo após a
+   * criação não relê nada — o editor já tem o que acabou de gravar.
+   */
+  private aoMudarOEndereco(id: string | null): void {
+    if (id === null) {
+      this.aoEntrarEmProcessoNovo();
+    } else if (id === this.store.processoSeletivoId()) {
+      this.aoVoltarAoProcessoEmTela(id);
+    } else if (this.podeTrocarDeProcesso()) {
+      void this.leitura.retomar(id);
+    } else {
       // A guarda da rota não roda aqui: mudar só o `:id` reusa a rota, e o componente nunca é
       // desativado. Sem perguntar neste ponto, a promessa dela valia para sair do editor e não
       // para trocar de processo — e é `retomar()` quem apaga a transcrição, logo em seguida.
-      if (!this.podeTrocarDeProcesso()) {
-        this.voltarAoProcessoAberto();
-        return;
-      }
+      this.voltarAoProcessoAberto();
+    }
+  }
 
+  /**
+   * Entrar em `/novo` com a página reusada de um processo já carregado deixaria o cadastro anterior
+   * em tela sob o endereço de cadastro novo — com os campos congelados e o id de outro processo no
+   * store, o que o operador continuasse preenchendo iria para o processo errado.
+   *
+   * `hidratando` entra na conta: uma leitura ainda em voo não deixou rastro nos outros dois
+   * sinais, e sua resposta hidrataria o processo sob `/novo` — o efeito do id levaria de volta a
+   * ele em seguida.
+   */
+  private aoEntrarEmProcessoNovo(): void {
+    const tinhaProcesso =
+      this.store.processoSeletivoId() !== null ||
+      this.store.falhaDeLeitura() !== null ||
+      this.store.hidratando();
+    if (!tinhaProcesso) return;
+
+    if (!this.podeTrocarDeProcesso()) {
+      this.voltarAoProcessoAberto();
+      return;
+    }
+    this.leitura.abandonar();
+  }
+
+  /**
+   * Voltar ao processo que já está em tela não relê nada — exceto quando a ida a outro endereço
+   * interrompeu a leitura no meio. Aí o que ficou é um estado parcial: o detalhe hidratou, a
+   * resposta dos documentos foi descartada, e o editor não sabe se existe edital. Ler de novo é
+   * mais seguro do que consertar sinal por sinal — foi remendando esses sinais que se chegou a um
+   * anexo destravado sobre estado desconhecido.
+   */
+  private aoVoltarAoProcessoEmTela(id: string): void {
+    if (this.store.falhaDeLeitura() !== null || this.store.hidratando()) {
       void this.leitura.retomar(id);
-    });
+    }
   }
 
   /**
