@@ -1,6 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
-import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import {
+  OrigemCandidatos,
+  ProcessosSeletivosApi,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import { firstValueFrom } from 'rxjs';
 
 import type { StepValidation } from '../../../processo-seletivo.models';
@@ -47,58 +51,101 @@ export class GravacaoDasExigenciasDocumentais {
       };
     }
 
-    const faseIdPorCodigo = new Map(detalhe.data.cronogramaFases.map((f) => [f.codigo, f.id]));
-    const raizes = arvoreDeExigencias(
-      this.store.draft().documentos,
-      faseIdPorCodigo,
-      this.store.modalidadesDoProcesso(),
-      new Set(detalhe.data.etapas.map((etapa) => etapa.id)),
-      // O formulário de cada fase pelas fases que acabaram de ser gravadas: é contra elas que o
-      // servidor confere o formulário de cada documento.
-      new Map(
-        detalhe.data.cronogramaFases.map((fase) => [fase.codigo, finalidadesQueAtende(fase)]),
-      ),
-    );
+    const raizes = this.arvoreDoRascunho(detalhe.data);
+    const recusa = await this.garantirOsCampos(processoId, detalhe.data, geracao);
+    if (recusa !== null) return recusa;
 
-    // Os campos do formulário saem ANTES das exigências, e não é preferência de ordem: uma
-    // exigência condicionada a um fato só se resolve se o certame coletar aquele fato. Quem
-    // declara a condição é este passo, então é ele que garante o campo — o operador não
-    // deveria precisar lembrar que decidir de quem o documento é cobrado mexe no formulário.
-    // A exigência recortada por modalidade depende também das perguntas que as regras das
-    // modalidades ofertadas fazem: é delas que a modalidade do candidato se deriva.
+    const gravacao = await this.cadastro.definirDocumentosExigidos(processoId, raizes);
+    if (geracao !== this.store.geracao()) return { valid: true };
+    return gravacao.ok
+      ? { valid: true }
+      : {
+          valid: false,
+          messages: [
+            `As etapas, o cronograma e o formulário de inscrição foram gravados. ${recusaDaExigenciaDoServidor(gravacao.problem) ?? this.problemI18n.resolve(gravacao.problem).title}`,
+          ],
+        };
+  }
+
+  /**
+   * Os campos do formulário saem ANTES das exigências, e não é preferência de ordem: uma exigência
+   * condicionada a um fato só se resolve se o certame coletar aquele fato. Quem declara a condição
+   * é este passo, então é ele que garante o campo — o operador não deveria precisar lembrar que
+   * decidir de quem o documento é cobrado mexe no formulário. A exigência recortada por modalidade
+   * depende também das perguntas que as regras das modalidades ofertadas fazem: é delas que a
+   * modalidade do candidato se deriva.
+   *
+   * Devolve a recusa quando os campos não ficaram no formulário, ou `{ valid: true }` se o
+   * processo mudou no meio; `null` quando ficaram.
+   */
+  private async garantirOsCampos(
+    processoId: string,
+    processo: ProcessoSeletivoDto,
+    geracao: number,
+  ): Promise<StepValidation | null> {
     const recorta = todasAsExigencias(this.store.draft().documentos).some(
       (exigencia) => modalidadesDaExigencia(exigencia) !== null,
     );
     const citadosPelasModalidades = this.pedePerguntasDasModalidades(recorta)
-      ? fatosCitadosPelasModalidadesOfertadas(detalhe.data)
+      ? fatosCitadosPelasModalidadesOfertadas(processo)
       : new Set<string>();
+    const citadosPelasExigencias = this.citadosPelasExigencias(processo);
 
-    const draft = this.store.draft();
-    const citadosPelasExigencias = new Set(
-      quemCitaNoProcesso({
-        documentos: draft.documentos,
-        derivacao: detalhe.data.regrasDerivacao ?? [],
-        desempate: draft.desempate,
-      }).keys(),
-    );
     const campos = await this.camposPressupostos.garantirCampos(
       processoId,
-      detalhe.data,
+      processo,
       new Set([...citadosPelasExigencias, ...citadosPelasModalidades]),
     );
     if (geracao !== this.store.geracao()) return { valid: true };
+    return this.recusaDosCampos(campos, processo, recorta, citadosPelasExigencias);
+  }
+
+  /**
+   * A árvore de exigências com o id de cada fase gravada, e o formulário de cada fase pelas fases
+   * que acabaram de ser gravadas: é contra elas que o servidor confere o formulário de cada
+   * documento.
+   */
+  private arvoreDoRascunho(processo: ProcessoSeletivoDto) {
+    return arvoreDeExigencias(
+      this.store.draft().documentos,
+      new Map(processo.cronogramaFases.map((f) => [f.codigo, f.id])),
+      this.store.modalidadesDoProcesso(),
+      new Set(processo.etapas.map((etapa) => etapa.id)),
+      new Map(processo.cronogramaFases.map((fase) => [fase.codigo, finalidadesQueAtende(fase)])),
+    );
+  }
+
+  /** Os fatos que as exigências e as regras de derivação citam. */
+  private citadosPelasExigencias(processo: ProcessoSeletivoDto): ReadonlySet<string> {
+    const draft = this.store.draft();
+    return new Set(
+      quemCitaNoProcesso({
+        documentos: draft.documentos,
+        derivacao: processo.regrasDerivacao ?? [],
+        desempate: draft.desempate,
+      }).keys(),
+    );
+  }
+
+  /** A recusa quando os campos que o processo pressupõe não ficaram no formulário; `null` se ficaram. */
+  private recusaDosCampos(
+    campos: Awaited<ReturnType<CamposPressupostosService['garantirCampos']>>,
+    processo: ProcessoSeletivoDto,
+    recorta: boolean,
+    citadosPelasExigencias: ReadonlySet<string>,
+  ): StepValidation | null {
     if (campos.tipo === 'recusados') {
       return {
         valid: false,
         messages: [`As etapas e o cronograma foram gravados. ${campos.motivo}`],
       };
     }
+    // Sem a fase de inscrição, as perguntas das modalidades esperam por ela; a exigência que
+    // depende de um dado, não.
     if (
       campos.tipo === 'semFaseDeInscricao' &&
-      (recorta || !this.camposPressupostos.coletaTudo(detalhe.data, citadosPelasExigencias))
+      (recorta || !this.camposPressupostos.coletaTudo(processo, citadosPelasExigencias))
     ) {
-      // Sem a fase de inscrição, as perguntas das modalidades esperam por ela; a exigência que
-      // depende de um dado, não.
       return {
         valid: false,
         messages: [
@@ -106,19 +153,7 @@ export class GravacaoDasExigenciasDocumentais {
         ],
       };
     }
-
-    const gravacao = await this.cadastro.definirDocumentosExigidos(processoId, raizes);
-    if (geracao !== this.store.geracao()) return { valid: true };
-    if (!gravacao.ok) {
-      return {
-        valid: false,
-        messages: [
-          `As etapas, o cronograma e o formulário de inscrição foram gravados. ${recusaDaExigenciaDoServidor(gravacao.problem) ?? this.problemI18n.resolve(gravacao.problem).title}`,
-        ],
-      };
-    }
-
-    return { valid: true };
+    return null;
   }
 
   /**
