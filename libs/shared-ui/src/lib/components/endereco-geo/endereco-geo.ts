@@ -11,50 +11,39 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ControlValueAccessor,
-  FormControl,
-  FormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   ReactiveFormsModule,
   type ValidationErrors,
   type Validator,
 } from '@angular/forms';
-import { ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
+import { type ApiFailure, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { UNIDADES_FEDERATIVAS } from '@uniplus/shared-utils';
-import { NomesDeMunicipios, ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-municipio';
+import {
+  NomesDeMunicipios,
+  ValorDeMunicipioComponent,
+} from '../editor-de-condicoes/valor-de-municipio';
 import { SpinnerComponent } from '../spinner/spinner';
 import {
+  ENDERECO_VAZIO,
+  criarFormularioDoEndereco,
+  montarEndereco,
+  textosDoCep,
+  textosDoEndereco,
+} from './endereco-geo.formulario';
+import {
   BUSCA_DE_CEP,
-  type CampoEndereco,
   type CepEncontrado,
-  type CidadeRef,
   type EnderecoEstruturado,
-  type NivelResolucao,
-  ORIGEM_GEO,
   ORIGEM_MANUAL,
-  camposAncorados,
-  normalizarNivel,
 } from './endereco-geo.model';
-
+import { ResolucaoDoEndereco, somenteDigitos } from './endereco-geo.resolucao';
 
 const URL_BUSCA_DE_CEP_DOS_CORREIOS = 'https://buscacepinter.correios.com.br';
 const LIMITE_DO_COMPLEMENTO = 300;
-/** Origens do Geo aceitas sem confirmação; as demais (`faixa-cidade`, `faixa-bairro`, `faixa-distrito`...) a exigem. */
-const ORIGEM_CEP_GERAL = 'cep-geral';
-const ORIGENS_SEM_CONFIRMACAO: readonly string[] = ['logradouro', 'grande-usuario', ORIGEM_CEP_GERAL];
 /** Sentinela do erro de CEP inexistente quando o endereço exige CEP (mensagem com link). */
 const CEP_SEM_REGISTRO = 'CEP_SEM_REGISTRO';
-
-interface EnderecoFormControls {
-  cep: FormControl<string>;
-  logradouro: FormControl<string>;
-  numero: FormControl<string>;
-  complemento: FormControl<string>;
-  bairro: FormControl<string>;
-  distrito: FormControl<string>;
-  latitude: FormControl<string>;
-  longitude: FormControl<string>;
-}
+const DIGITOS_DO_CEP = 8;
 
 /**
  * Componente reutilizável de endereço estruturado (referência ao Geo, ADR-0096),
@@ -76,7 +65,7 @@ interface EnderecoFormControls {
  *
  * Um CEP já resolvido pode ser corrigido via botão "Trocar CEP" — reabre só o
  * campo CEP (`iniciarEdicaoCep`) sem descartar o restante do endereço já
- * preenchido; uma nova resolução bem-sucedida re-ancora o campo..
+ * preenchido; uma nova resolução bem-sucedida re-ancora o campo.
  *
  * Erros de CEP (formato/404) são exibidos inline; o erro de coerência
  * cidade↔CEP (422) do backend chega via `erroExterno` do parent. Acessibilidade
@@ -88,340 +77,8 @@ interface EnderecoFormControls {
   standalone: true,
   imports: [ReactiveFormsModule, SpinnerComponent, ValorDeMunicipioComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: `
-    .endereco-geo__cidade {
-      display: flex;
-      gap: var(--space-2);
-      align-items: flex-start;
-    }
-    .endereco-geo__cidade > ui-valor-de-municipio {
-      flex: 1;
-      min-inline-size: 0;
-    }
-    .endereco-geo__contagem {
-      display: block;
-      text-align: end;
-    }
-    .endereco-geo__link {
-      padding: 0;
-      color: inherit;
-      background: transparent;
-      border: 0;
-      font: inherit;
-      text-align: left;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-  `,
-  template: `
-    <fieldset class="endereco-geo" [disabled]="disabled()" [attr.aria-describedby]="descritoPor()">
-      <legend
-        [class]="aparencia() === 'campo' ? 'field__label' : 'form-section__title'"
-        [class.is-required]="obrigatorio()"
-      >
-        {{ legend() }}
-      </legend>
-
-      <div class="form-grid">
-        <div class="field form-grid__full" [class.is-error]="cepErro() !== null || cepPendente()">
-          <label [for]="id('cep')" class="field__label">CEP</label>
-          <div class="input-group">
-            <input
-              [id]="id('cep')"
-              class="input"
-              type="text"
-              inputmode="numeric"
-              autocomplete="postal-code"
-              placeholder="00000-000"
-              maxlength="9"
-              [formControl]="form.controls.cep"
-              [readonly]="(ehAncorado('cep') && !editandoCep()) || resolvendoCep()"
-              [attr.aria-readonly]="(ehAncorado('cep') && !editandoCep()) || resolvendoCep() ? 'true' : null"
-              [attr.aria-invalid]="cepErro() !== null ? 'true' : null"
-              [attr.aria-describedby]="descricaoDoCep()"
-              (blur)="aoSairDoCep()"
-            />
-            @if (ehAncorado('cep') && !editandoCep()) {
-              <button
-                type="button"
-                class="btn btn--secondary btn--rect"
-                [disabled]="disabled()"
-                (click)="iniciarEdicaoCep()"
-              >
-                Trocar CEP
-              </button>
-            } @else {
-              <button
-                type="button"
-                class="btn btn--secondary btn--rect"
-                [disabled]="disabled() || resolvendoCep()"
-                [attr.aria-busy]="resolvendoCep() ? 'true' : null"
-                (click)="resolverCep()"
-              >
-                @if (resolvendoCep()) {
-                  <ui-spinner size="sm" />
-                }
-                Buscar CEP
-              </button>
-            }
-          </div>
-          @if (exigeCep()) {
-            <span [id]="id('cep') + '-hint'" class="field__hint">
-              Informe o CEP para preencher o endereço automaticamente.
-            </span>
-          } @else {
-            <span [id]="id('cep') + '-hint'" class="field__hint">
-              Informe o CEP para preencher o endereço automaticamente, ou
-              <button type="button" class="endereco-geo__link" (click)="alternarModoManual()">
-                {{ modoManual() ? 'voltar a buscar por CEP' : 'preencher sem CEP' }}
-              </button>
-              .
-            </span>
-          }
-          @if (cepGeral() && cidade(); as c) {
-            <span [id]="id('cep') + '-geral'" class="field__hint">
-              Este é o CEP geral de {{ c.nome }}/{{ c.uf }}
-            </span>
-          }
-          @if (cepEmFaixa() && cidade(); as c) {
-            <p [id]="id('cep') + '-faixa'" class="field__error" role="alert">
-              O CEP {{ form.controls.cep.value }} não corresponde a uma rua cadastrada nos Correios.
-              Ele fica na faixa de CEPs de {{ c.nome }}/{{ c.uf }}. Se você digitou errado, corrija;
-              se o seu endereço usa o CEP geral da cidade ou do bairro, confirme abaixo.
-            </p>
-            <label class="checkbox">
-              <input
-                type="checkbox"
-                [checked]="cepConfirmado()"
-                [attr.aria-invalid]="cepDeFaixaSemConfirmacao() ? 'true' : null"
-                [attr.aria-describedby]="
-                  cepDeFaixaSemConfirmacao()
-                    ? id('cep') + '-faixa ' + id('cep') + '-confirmacao'
-                    : id('cep') + '-faixa'
-                "
-                [disabled]="disabled()"
-                (change)="confirmarCep($event)"
-              />
-              <span class="checkbox__box" aria-hidden="true"></span>
-              Confirmo que este é o CEP que uso no meu endereço
-            </label>
-            @if (cepDeFaixaSemConfirmacao()) {
-              <span [id]="id('cep') + '-confirmacao'" class="field__error" role="alert">
-                Confirme o CEP ou corrija-o para continuar.
-              </span>
-            }
-          }
-          @if (cepSemRegistro()) {
-            <span [id]="id('cep') + '-error'" class="field__error" role="alert">
-              CEP não encontrado. Confira o seu CEP na
-              <a
-                [href]="urlBuscaDeCepDosCorreios"
-                target="_blank"
-                rel="noopener noreferrer"
-                >busca de CEP dos Correios (abre em nova aba)</a
-              >; se o seu bairro não tem CEP próprio, use o CEP geral da sua cidade e descreva o
-              endereço real no complemento.
-            </span>
-          } @else if (cepErro(); as erro) {
-            <span [id]="id('cep') + '-error'" class="field__error" role="alert">{{ erro }}</span>
-          } @else if (cepPendente()) {
-            <span class="field__error" role="alert">
-              Valide o CEP em "Buscar CEP" ou limpe o campo para continuar.
-            </span>
-          }
-        </div>
-
-        @if (modoManual()) {
-          <div class="field">
-            <label [for]="id('uf')" class="field__label is-required">UF</label>
-            <select
-              class="select"
-              [id]="id('uf')"
-              [disabled]="disabled()"
-              (change)="escolherUf(valorDoSelect($event))"
-            >
-              <option value="" [selected]="ufDaCidade() === ''">Selecione a UF</option>
-              @for (uf of unidadesFederativas; track uf.sigla) {
-                <option [value]="uf.sigla" [selected]="uf.sigla === ufDaCidade()">{{ uf.nome }}</option>
-              }
-            </select>
-          </div>
-          <div class="field">
-            <label class="field__label is-required" [attr.for]="municipio.campoId()">Cidade</label>
-            <div class="endereco-geo__cidade">
-              <ui-valor-de-municipio
-                #municipio
-                rotulo="Cidade"
-                [values]="codigoDaCidade()"
-                [uf]="ufDaCidade() || null"
-                [disabled]="disabled() || ufDaCidade() === ''"
-                [invalido]="!!erroExterno()"
-                [descritoPor]="erroExterno() ? id('erro') : ufDaCidade() === '' ? id('cidade-uf') : null"
-                [contagemVisivel]="false"
-                (valuesChange)="selecionarCidade($event.at(0) ?? '')"
-              />
-              @if (cidade() && !disabled()) {
-                <button
-                  type="button"
-                  class="btn btn--secondary btn--rect"
-                  aria-label="Limpar cidade"
-                  (click)="selecionarCidade('')"
-                >
-                  Limpar
-                </button>
-              }
-            </div>
-            @if (ufDaCidade() === '') {
-              <span class="field__hint" [id]="id('cidade-uf')">Escolha antes a UF.</span>
-            }
-          </div>
-        } @else if (cidade(); as c) {
-          <div class="field">
-            <label [for]="id('uf')" class="field__label">UF</label>
-            <input [id]="id('uf')" class="input" type="text" [value]="c.uf" readonly aria-readonly="true" />
-            <span class="field__hint">Preenchida pelo CEP.</span>
-          </div>
-          <div class="field">
-            <label [for]="id('cidade')" class="field__label">Cidade</label>
-            <input [id]="id('cidade')" class="input" type="text" [value]="c.nome" readonly aria-readonly="true" />
-            <span class="field__hint">Preenchida pelo CEP.</span>
-          </div>
-        }
-
-        <!-- Detalhes do endereço só quando há CEP resolvido: sem resolução o
-             backend não persiste endereço estruturado (só a cidade). #412 -->
-        @if (mostrarDetalheEndereco()) {
-        @if (!semValorDoCep('bairro')) {
-        <div class="field" [class.form-grid__full]="semValorDoCep('distrito')">
-          <label
-            [for]="id('bairro')"
-            class="field__label"
-            [class.is-required]="logradouroBairroObrigatorios()"
-            >Bairro</label
-          >
-          <input
-            [id]="id('bairro')"
-            class="input"
-            type="text"
-            autocomplete="address-level3"
-            [formControl]="form.controls.bairro"
-            [readonly]="ehAncorado('bairro')"
-            [attr.aria-readonly]="ehAncorado('bairro') ? 'true' : null"
-            [attr.aria-required]="logradouroBairroObrigatorios() ? 'true' : null"
-            [attr.aria-invalid]="faltaPreencher('bairro') ? 'true' : null"
-            [attr.aria-describedby]="faltaPreencher('bairro') ? id('bairro') + '-error' : null"
-          />
-          @if (ehAncorado('bairro')) {
-            <span class="field__hint">Preenchido pelo CEP.</span>
-          }
-          @if (faltaPreencher('bairro')) {
-            <span [id]="id('bairro') + '-error'" class="field__error" role="alert">
-              Informe o bairro.
-            </span>
-          }
-        </div>
-        }
-
-        @if (!semValorDoCep('distrito')) {
-        <div class="field">
-          <label [for]="id('distrito')" class="field__label">Distrito</label>
-          <input
-            [id]="id('distrito')"
-            class="input"
-            type="text"
-            autocomplete="off"
-            [formControl]="form.controls.distrito"
-            [readonly]="ehAncorado('distrito')"
-            [attr.aria-readonly]="ehAncorado('distrito') ? 'true' : null"
-          />
-          @if (ehAncorado('distrito')) {
-            <span class="field__hint">Preenchido pelo CEP.</span>
-          }
-        </div>
-        }
-
-        <div class="field form-grid__full">
-          <label
-            [for]="id('logradouro')"
-            class="field__label"
-            [class.is-required]="logradouroBairroObrigatorios()"
-            >Logradouro</label
-          >
-          <input
-            [id]="id('logradouro')"
-            class="input"
-            type="text"
-            autocomplete="address-line1"
-            [formControl]="form.controls.logradouro"
-            [readonly]="ehAncorado('logradouro')"
-            [attr.aria-readonly]="ehAncorado('logradouro') ? 'true' : null"
-            [attr.aria-required]="logradouroBairroObrigatorios() ? 'true' : null"
-            [attr.aria-invalid]="faltaPreencher('logradouro') ? 'true' : null"
-            [attr.aria-describedby]="faltaPreencher('logradouro') ? id('logradouro') + '-error' : null"
-          />
-          @if (ehAncorado('logradouro')) {
-            <span class="field__hint">Preenchido pelo CEP.</span>
-          }
-          @if (faltaPreencher('logradouro')) {
-            <span [id]="id('logradouro') + '-error'" class="field__error" role="alert">
-              Informe o logradouro.
-            </span>
-          }
-        </div>
-
-        <div class="field">
-          <label [for]="id('numero')" class="field__label">Número</label>
-          <input
-            [id]="id('numero')"
-            class="input"
-            type="text"
-            autocomplete="off"
-            [formControl]="form.controls.numero"
-          />
-          <span class="field__hint">Dado próprio — sempre editável.</span>
-        </div>
-
-        @if (exigeCep()) {
-          <div class="field form-grid__full">
-            <label [for]="id('complemento')" class="field__label">Complemento</label>
-            <textarea
-              [id]="id('complemento')"
-              class="textarea"
-              rows="3"
-              autocomplete="off"
-              [attr.maxlength]="limiteDoComplemento"
-              [attr.aria-describedby]="id('complemento') + '-hint ' + id('complemento') + '-contagem'"
-              [formControl]="form.controls.complemento"
-            ></textarea>
-            <span [id]="id('complemento') + '-hint'" class="field__hint">
-              Use para indicar ponto de referência ou o endereço real, quando o CEP for o geral da
-              cidade ou de outro bairro.
-            </span>
-            <span [id]="id('complemento') + '-contagem'" class="field__hint endereco-geo__contagem">
-              {{ tamanhoDoComplemento() }} de {{ limiteDoComplemento }} caracteres
-            </span>
-          </div>
-        } @else {
-        <div class="field">
-          <label [for]="id('complemento')" class="field__label">Complemento</label>
-          <input
-            [id]="id('complemento')"
-            class="input"
-            type="text"
-            autocomplete="off"
-            [formControl]="form.controls.complemento"
-          />
-          <span class="field__hint">Dado próprio — sempre editável.</span>
-        </div>
-        }
-        }
-      </div>
-
-      @if (erroExterno(); as erro) {
-        <p [id]="id('erro')" class="field__error" role="alert">{{ erro }}</p>
-      }
-    </fieldset>
-  `,
+  styleUrl: './endereco-geo.css',
+  templateUrl: './endereco-geo.html',
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -462,6 +119,10 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
 
   protected readonly urlBuscaDeCepDosCorreios = URL_BUSCA_DE_CEP_DOS_CORREIOS;
   protected readonly limiteDoComplemento = LIMITE_DO_COMPLEMENTO;
+  protected readonly unidadesFederativas = UNIDADES_FEDERATIVAS;
+  protected readonly form = criarFormularioDoEndereco();
+  protected readonly resolucao = new ResolucaoDoEndereco(() => this.exigeCep());
+
   protected readonly tamanhoDoComplemento = signal(0);
   protected readonly disabled = signal(false);
   protected readonly resolvendoCep = signal(false);
@@ -469,179 +130,51 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   /** CEP ancorado reaberto para correção via "Trocar CEP" — ver `iniciarEdicaoCep`. */
   protected readonly editandoCep = signal(false);
   protected readonly modoManual = signal(false);
-  protected readonly cidade = signal<CidadeRef | null>(null);
-  protected readonly unidadesFederativas = UNIDADES_FEDERATIVAS;
   /** A UF escolhida no endereço sem CEP, antes da cidade: a busca de municípios se limita a ela. */
   private readonly ufEscolhida = signal('');
   /** A UF da cidade escolhida, ou a escolhida antes dela. */
-  protected readonly ufDaCidade = computed(() => this.cidade()?.uf ?? this.ufEscolhida());
+  protected readonly ufDaCidade = computed(() => this.resolucao.cidade()?.uf ?? this.ufEscolhida());
 
   /** A cidade escolhida no campo de município, pelo código IBGE. */
   protected readonly codigoDaCidade = computed(() => {
-    const cidade = this.cidade();
+    const cidade = this.resolucao.cidade();
     return cidade ? [cidade.codigoIbge] : [];
   });
 
   /** O 404 do Geo com `exigeCep`: a mensagem leva o link da busca dos Correios. */
   protected readonly cepSemRegistro = computed(() => this.cepErro() === CEP_SEM_REGISTRO);
-  /** CEP geral da cidade em endereço que exige CEP: o DNE não traz logradouro nem bairro. */
-  protected readonly logradouroBairroObrigatorios = computed(
-    () =>
-      this.exigeCep() && (this.cepGeral() || (this.cepEmFaixa() && this.cepConfirmado())),
-  );
-  /**
-   * O CEP resolvido não tem rua cadastrada: qualquer origem do Geo fora das aceitas sem
-   * confirmação (`faixa-*` ou uma origem desconhecida) pede a confirmação do candidato.
-   */
-  protected readonly cepEmFaixa = computed(() => {
-    const origem = this.origem();
-    return this.exigeCep() && this.cepVigente() && origem !== null && !ORIGENS_SEM_CONFIRMACAO.includes(origem);
-  });
-  /** O CEP geral oficial de uma cidade ou distrito. */
-  protected readonly cepGeral = computed(
-    () => this.exigeCep() && this.cepVigente() && this.origem() === ORIGEM_CEP_GERAL,
-  );
-  /**
-   * O CEP digitado é o resolvido pelo Geo. Os avisos, a confirmação e as exigências que vêm da
-   * origem da resolução só valem assim; durante a troca do CEP o endereço fica pendente.
-   */
-  protected readonly cepVigente = computed(
-    () => this.cepResolvido().length === 8 && this.cepAtual() === this.cepResolvido(),
-  );
   /** Ids que descrevem o CEP: a ajuda, o aviso do CEP geral e o erro. */
   protected readonly descricaoDoCep = computed(() =>
     [
       this.id('cep') + '-hint',
-      this.cepGeral() ? this.id('cep') + '-geral' : null,
+      this.resolucao.cepGeral() ? this.id('cep') + '-geral' : null,
       this.cepErro() !== null ? this.id('cep') + '-error' : null,
     ]
       .filter((id) => id !== null)
       .join(' '),
   );
-  /** O candidato confirmou que usa o CEP de faixa no endereço (`cepConfirmado` na resposta). */
-  protected readonly cepConfirmado = signal(false);
-  protected readonly cepDeFaixaSemConfirmacao = computed(
-    () => this.cepEmFaixa() && !this.cepConfirmado(),
-  );
-
-  /** Nível de resolução vigente — governa os campos ancorados (read-only). */
-  private readonly nivel = signal<NivelResolucao | null>(null);
-  /**
-   * Mostra os campos de logradouro/número/complemento/bairro/distrito apenas
-   * quando há um CEP **resolvido** (`nivel !== null`). Sem resolução — formulário
-   * inicial, após 404, ou no fluxo "sem CEP" — esses campos não persistem (o
-   * backend exige CEP no endereço), então exibi-los editáveis descartaria a
-   * digitação em silêncio..
-   */
-  protected readonly mostrarDetalheEndereco = computed(
-    () => this.nivel() !== null && !this.cepDeFaixaSemConfirmacao(),
-  );
-  /** Origem do CEP segundo o Geo (`logradouro`, `grande-usuario`, `cep-geral`, `faixa-*`), ou `manual` sem CEP. */
-  private readonly origem = signal<string | null>(null);
-  /**
-   * Conjunto de campos ancorados (read-only) pelo `nivelResolucao` corrente.
-   * Entrada manual (`origem === 'manual'`) não ancora nada — todo campo fica
-   * editável, inclusive ao recarregar um endereço gravado manualmente.
-   */
-  protected readonly ancorados = computed(() =>
-    this.origem() === ORIGEM_MANUAL ? new Set<CampoEndereco>() : camposAncorados(this.nivel()),
-  );
-
-  protected readonly form: FormGroup<EnderecoFormControls> = new FormGroup<EnderecoFormControls>({
-    cep: new FormControl('', { nonNullable: true }),
-    logradouro: new FormControl('', { nonNullable: true }),
-    numero: new FormControl('', { nonNullable: true }),
-    complemento: new FormControl('', { nonNullable: true }),
-    bairro: new FormControl('', { nonNullable: true }),
-    distrito: new FormControl('', { nonNullable: true }),
-    latitude: new FormControl('', { nonNullable: true }),
-    longitude: new FormControl('', { nonNullable: true }),
-  });
 
   private onChange: (value: EnderecoEstruturado | null) => void = () => undefined;
   private onTouched: () => void = () => undefined;
   private onValidatorChange: () => void = () => undefined;
-  /** Último CEP (8 dígitos) resolvido pelo Geo — âncora para validação e blur. */
-  private readonly cepResolvido = signal('');
-  /** Dígitos do CEP atualmente no campo (sincronizado em `emitir()`). */
-  private readonly cepAtual = signal('');
-  /** Texto cru (trim) do campo CEP — pega entradas sem dígito (ex.: "abc"). */
-  private readonly cepTextoAtual = signal('');
-  /**
-   * Há um CEP digitado que ainda não foi resolvido pelo Geo (formato inválido,
-   * sem dígitos, 404, ou ainda sem "Buscar"). Bloqueia o save mesmo em endereço
-   * opcional — senão a tentativa de CEP seria descartada em silêncio.
-   * Considera o texto cru: qualquer valor não-vazio que não seja exatamente o
-   * CEP resolvido (8 dígitos) é pendente.
-   */
-  protected readonly cepPendente = computed(() => {
-    if (this.cepTextoAtual().length === 0) {
-      return false;
-    }
-    const resolvido = this.cepResolvido();
-    return !(resolvido.length === 8 && this.cepAtual() === resolvido);
-  });
 
   constructor() {
-    // Mudanças no formulário propagam o valor montado ao FormControl do parent.
-    this.form.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.emitir());
+    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.emitir());
   }
 
   writeValue(value: EnderecoEstruturado | null): void {
     if (value === null) {
-      this.form.reset(
-        { cep: '', logradouro: '', numero: '', complemento: '', bairro: '', distrito: '', latitude: '', longitude: '' },
-        { emitEvent: false },
-      );
-      this.cidade.set(null);
-      this.ufEscolhida.set('');
-      this.nivel.set(null);
-      this.origem.set(null);
-      this.cepConfirmado.set(false);
-      this.modoManual.set(false);
-      this.cepErro.set(null);
-      this.editandoCep.set(false);
-      this.cepResolvido.set('');
-      this.cepAtual.set('');
-      this.cepTextoAtual.set('');
-      this.tamanhoDoComplemento.set(0);
-      return;
+      this.form.reset(ENDERECO_VAZIO, { emitEvent: false });
+      this.resolucao.limpar();
+    } else {
+      this.form.setValue(textosDoEndereco(value), { emitEvent: false });
+      this.resolucao.restaurar(value);
+      // O nome da cidade gravada aparece no campo de município sem passar pela busca.
+      if (value.cidade) {
+        this.municipios.lembrar([value.cidade]);
+      }
     }
-
-    this.form.setValue(
-      {
-        cep: value.cep ?? '',
-        logradouro: value.logradouro ?? '',
-        numero: value.numero ?? '',
-        complemento: value.complemento ?? '',
-        bairro: value.bairro ?? '',
-        distrito: value.distrito ?? '',
-        latitude: value.latitude ?? '',
-        longitude: value.longitude ?? '',
-      },
-      { emitEvent: false },
-    );
-    this.tamanhoDoComplemento.set((value.complemento ?? '').length);
-    this.cidade.set(value.cidade);
-    this.ufEscolhida.set(value.cidade?.uf ?? '');
-    // O nome da cidade gravada aparece no campo de município sem passar pela busca.
-    if (value.cidade) {
-      this.municipios.lembrar([value.cidade]);
-    }
-    const nivel = normalizarNivel(value.nivelResolucao);
-    this.nivel.set(nivel);
-    this.origem.set(value.origem);
-    this.cepConfirmado.set(value.cepConfirmado === true);
-    const cepDigitos = (value.cep ?? '').replace(/\D/g, '');
-    this.cepResolvido.set(cepDigitos);
-    this.cepAtual.set(cepDigitos);
-    this.cepTextoAtual.set((value.cep ?? '').trim());
-    // Endereço gravado manualmente reabre em modo manual (tudo editável).
-    this.modoManual.set(value.origem === ORIGEM_MANUAL && !this.exigeCep());
-    this.cepErro.set(null);
-    this.editandoCep.set(false);
+    this.restaurarEstadoDaTela(value);
   }
 
   registerOnChange(fn: (value: EnderecoEstruturado | null) => void): void {
@@ -657,27 +190,26 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   }
 
   /**
-   * Inválido enquanto houver um CEP digitado que não foi resolvido pelo Geo —
-   * bloqueia o save mesmo quando o endereço é opcional (Instituição), para a
-   * tentativa de CEP não ser descartada em silêncio.
+   * Inválido enquanto houver um CEP digitado que não foi resolvido pelo Geo — bloqueia o save
+   * mesmo quando o endereço é opcional (Instituição), para a tentativa de CEP não ser descartada
+   * em silêncio.
    */
   validate(): ValidationErrors | null {
-    if (this.cepPendente()) {
+    const resolucao = this.resolucao;
+    if (resolucao.cepPendente()) {
       return { cepNaoResolvido: true };
     }
-    if (this.cepDeFaixaSemConfirmacao()) {
+    if (resolucao.cepDeFaixaSemConfirmacao()) {
       return { cepNaoConfirmado: true };
     }
-    if (this.exigeCep() && this.cidade() !== null && this.cepResolvido().length !== 8) {
+    if (
+      this.exigeCep() &&
+      resolucao.cidade() !== null &&
+      resolucao.cepResolvido().length !== DIGITOS_DO_CEP
+    ) {
       return { cepObrigatorio: true };
     }
-    if (this.logradouroBairroObrigatorios()) {
-      const { logradouro, bairro } = this.form.getRawValue();
-      if (logradouro.trim() === '' || bairro.trim() === '') {
-        return { logradouroBairroObrigatorios: true };
-      }
-    }
-    return null;
+    return this.logradouroOuBairroVazios() ? { logradouroBairroObrigatorios: true } : null;
   }
 
   setDisabledState(isDisabled: boolean): void {
@@ -693,16 +225,11 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     return `${this.idPrefix()}-${campo}`;
   }
 
-  protected ehAncorado(campo: CampoEndereco): boolean {
-    if (this.exigeCep() && (campo === 'logradouro' || campo === 'bairro')) {
-      return false;
-    }
-    return this.ancorados().has(campo);
-  }
-
   /** Logradouro ou bairro obrigatório (CEP geral da cidade) ainda vazio. */
   protected faltaPreencher(campo: 'logradouro' | 'bairro'): boolean {
-    return this.logradouroBairroObrigatorios() && this.form.controls[campo].value.trim() === '';
+    return (
+      this.resolucao.logradouroBairroObrigatorios() && this.form.controls[campo].value.trim() === ''
+    );
   }
 
   /**
@@ -711,22 +238,21 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
    * nada ao usuário e parece defeito, então não aparece; o valor continua nulo.
    */
   protected semValorDoCep(campo: 'bairro' | 'distrito'): boolean {
-    return this.ehAncorado(campo) && this.form.controls[campo].value.trim() === '';
+    return this.resolucao.ehAncorado(campo) && this.form.controls[campo].value.trim() === '';
   }
 
   /** Resolve o CEP no blur apenas quando há 8 dígitos novos (evita request redundante). */
   protected aoSairDoCep(): void {
     this.onTouched();
-    const digitos = this.form.controls.cep.value.replace(/\D/g, '');
-    if (digitos.length === 8 && digitos !== this.cepResolvido()) {
+    const digitos = somenteDigitos(this.form.controls.cep.value);
+    if (digitos.length === DIGITOS_DO_CEP && digitos !== this.resolucao.cepResolvido()) {
       this.resolverCep();
     }
   }
 
   /**
-   * Reabre o campo CEP para correção sem descartar o restante do endereço já
-   * resolvido — antes disso, a única forma de corrigir um CEP ancorado era o
-   * fluxo "sem CEP", que zera CEP e campos derivados como efeito colateral..
+   * Reabre o campo CEP para correção sem descartar o restante do endereço já resolvido; a outra
+   * saída, o fluxo "sem CEP", zera CEP e campos derivados como efeito colateral.
    */
   protected iniciarEdicaoCep(): void {
     this.editandoCep.set(true);
@@ -737,81 +263,31 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     if (this.resolvendoCep() || this.disabled()) {
       return;
     }
-    const digitos = this.form.controls.cep.value.replace(/\D/g, '');
-    if (digitos.length !== 8) {
+    const digitos = somenteDigitos(this.form.controls.cep.value);
+    if (digitos.length !== DIGITOS_DO_CEP) {
       this.cepErro.set('Informe um CEP com 8 dígitos.');
       return;
     }
-
     this.resolvendoCep.set(true);
     this.cepErro.set(null);
     this.buscaDeCep(digitos)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
+      .subscribe((resultado) => {
         this.resolvendoCep.set(false);
-        // Resposta obsoleta: o usuário alterou o CEP enquanto o lookup estava em
-        // voo — ignora para não sobrescrever o formulário com um CEP antigo..
-        if (this.form.controls.cep.value.replace(/\D/g, '') !== digitos) {
+        // Resposta obsoleta: o CEP mudou durante a busca e não pode sobrescrever o formulário.
+        if (somenteDigitos(this.form.controls.cep.value) !== digitos) {
           return;
         }
-        if (result.ok) {
-          this.aplicarCepResolvido(result.data, digitos);
-          return;
+        if (resultado.ok) {
+          this.aplicarCepResolvido(resultado.data, digitos);
+        } else {
+          this.recusarCep(resultado);
         }
-        if (result.status === STATUS_HTTP.NAO_ENCONTRADO) {
-          // CEP não encontrado. Sem resolução anterior, mantém os campos
-          // editáveis para entrada manual. Em correção de um CEP já resolvido
-          // (editandoCep), preserva a última resolução válida em vez de
-          // descartá-la — do contrário, retornar ao CEP original sem uma nova
-          // busca reaprovaria o formulário com `nivelResolucao` nulo enquanto
-          // os campos de detalhe ainda carregam os dados da resolução antiga..
-          if (this.cepResolvido().length === 0) {
-            this.nivel.set(null);
-          }
-          this.cepErro.set(
-            this.exigeCep()
-              ? CEP_SEM_REGISTRO
-              : 'CEP não encontrado. Verifique ou preencha o endereço manualmente.',
-          );
-          return;
-        }
-        if (result.status === STATUS_HTTP.REQUISICAO_INVALIDA) {
-          this.cepErro.set('CEP em formato inválido.');
-          return;
-        }
-        this.cepErro.set(this.problemI18n.resolve(result.problem).title);
       });
   }
 
-  private aplicarCepResolvido(dto: CepEncontrado, digitos: string): void {
-    this.modoManual.set(false);
-    this.editandoCep.set(false);
-    this.cepResolvido.set(digitos);
-    const cidade = { codigoIbge: dto.codigoIbge, nome: dto.cidade, uf: dto.uf };
-    this.cidade.set(cidade);
-    // Passando ao endereço sem CEP, a cidade resolvida segue no campo de município, pelo nome.
-    this.municipios.lembrar([cidade]);
-    this.nivel.set(normalizarNivel(dto.nivelResolucao));
-    this.origem.set(dto.origem ?? ORIGEM_GEO);
-    this.cepConfirmado.set(false);
-    // Faixa de CEP: o Geo não tem a rua, então nada além de cidade e UF é preenchido.
-    const preenche = !this.cepEmFaixa();
-    this.form.patchValue(
-      {
-        cep: dto.cep,
-        logradouro: preenche ? logradouroCompleto(dto.tipo ?? null, dto.logradouro ?? null) : '',
-        bairro: preenche ? (dto.bairro ?? '') : '',
-        distrito: preenche ? (dto.distrito ?? '') : '',
-        latitude: preenche ? textoDeCoordenada(dto.latitude) : '',
-        longitude: preenche ? textoDeCoordenada(dto.longitude) : '',
-      },
-      { emitEvent: false },
-    );
-    this.emitir();
-  }
-
   protected confirmarCep(evento: Event): void {
-    this.cepConfirmado.set((evento.target as HTMLInputElement).checked);
+    this.resolucao.confirmar((evento.target as HTMLInputElement).checked);
     this.onTouched();
     this.emitir();
   }
@@ -822,32 +298,13 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
       return;
     }
     const manual = !this.modoManual();
-    // A UF da cidade que já havia (a do CEP, por exemplo) segue escolhida no endereço sem CEP.
-    this.ufEscolhida.set(this.cidade()?.uf ?? '');
+    this.ufEscolhida.set(this.resolucao.cidade()?.uf ?? '');
     this.modoManual.set(manual);
     this.cepErro.set(null);
     this.editandoCep.set(false);
     if (manual) {
-      // Entrada manual: libera todos os campos (nada ancorado) e marca a origem.
-      this.nivel.set(null);
-      this.origem.set(ORIGEM_MANUAL);
-      // Fluxo "sem CEP" persiste só a cidade (o `endereco` do backend exige CEP).
-      // Limpa CEP + os campos derivados do CEP: senão valores resolvidos antes
-      // ficariam visíveis e seriam descartados silenciosamente no save..
-      this.form.reset(
-        {
-          cep: '',
-          logradouro: '',
-          numero: '',
-          complemento: '',
-          bairro: '',
-          distrito: '',
-          latitude: '',
-          longitude: '',
-        },
-        { emitEvent: false },
-      );
-      this.cepResolvido.set('');
+      this.resolucao.passarParaEntradaManual();
+      this.form.reset(ENDERECO_VAZIO, { emitEvent: false });
     }
     this.emitir();
   }
@@ -855,7 +312,8 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   /** A UF do endereço sem CEP: trocá-la tira a cidade de outra UF. */
   protected escolherUf(sigla: string): void {
     this.ufEscolhida.set(sigla);
-    if (this.cidade() !== null && this.cidade()?.uf !== sigla) {
+    const cidade = this.resolucao.cidade();
+    if (cidade !== null && cidade.uf !== sigla) {
       this.selecionarCidade('');
     }
   }
@@ -867,116 +325,76 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   /** A cidade escolhida no campo de município, achada pela busca; o código vazio tira a cidade. */
   protected selecionarCidade(codigo: string): void {
     const selecionada = codigo === '' ? null : this.municipios.municipio(codigo);
-    this.cidade.set(
-      selecionada ? { codigoIbge: selecionada.codigoIbge, nome: selecionada.nome, uf: selecionada.uf } : null,
+    this.resolucao.escolherCidade(
+      selecionada
+        ? { codigoIbge: selecionada.codigoIbge, nome: selecionada.nome, uf: selecionada.uf }
+        : null,
     );
-    this.origem.set(ORIGEM_MANUAL);
     this.onTouched();
     this.emitir();
   }
 
-  private emitir(): void {
-    let raw = this.form.getRawValue();
-    const cepDigitos = raw.cep.replace(/\D/g, '');
+  private restaurarEstadoDaTela(value: EnderecoEstruturado | null): void {
+    this.tamanhoDoComplemento.set((value?.complemento ?? '').length);
+    this.ufEscolhida.set(value?.cidade?.uf ?? '');
+    // Endereço gravado manualmente reabre em modo manual (tudo editável).
+    this.modoManual.set(value?.origem === ORIGEM_MANUAL && !this.exigeCep());
+    this.cepErro.set(null);
+    this.editandoCep.set(false);
+  }
 
-    if (raw.cep.trim().length === 0 && this.nivel() !== null) {
-      // Correção via "Trocar CEP" abandonada (campo esvaziado por completo —
-      // texto bruto vazio, não só sem dígitos: um valor tipo "abc" não conta
-      // como abandono, e sim como formato pendente, ver cepPendente) enquanto
-      // havia uma resolução preservada — descarta a resolução antiga e os
-      // campos derivados dela em vez de deixá-los visíveis mas fora do que é
-      // submetido (`enderecoParaCommand` só monta `endereco` com CEP de 8
-      // dígitos; sem cidade, a cidade top-level também some)..
-      this.nivel.set(null);
-      this.cidade.set(null);
-      this.origem.set(null);
-      this.cepResolvido.set('');
-      // Descartar a resolução preservada torna o CEP vazio válido de novo
-      // (endereço é opcional); um erro de uma tentativa de correção anterior
-      // (404, formato) não pode continuar na tela contradizendo isso.
-      this.cepErro.set(null);
-      // numero também é limpo aqui: embora seja "dado próprio" (nunca
-      // ancorado pelo DNE), ele descreve um imóvel específico do endereço
-      // abandonado — mantê-lo faria o número vazar para o próximo CEP
-      // resolvido, que pode ser uma rua/cidade completamente diferente.
-      this.form.patchValue(
-        { logradouro: '', numero: '', complemento: '', bairro: '', distrito: '', latitude: '', longitude: '' },
-        { emitEvent: false },
+  private logradouroOuBairroVazios(): boolean {
+    if (!this.resolucao.logradouroBairroObrigatorios()) {
+      return false;
+    }
+    const { logradouro, bairro } = this.form.getRawValue();
+    return logradouro.trim() === '' || bairro.trim() === '';
+  }
+
+  private recusarCep(falha: ApiFailure): void {
+    if (falha.status === STATUS_HTTP.NAO_ENCONTRADO) {
+      this.resolucao.aoNaoEncontrarCep();
+      this.cepErro.set(
+        this.exigeCep()
+          ? CEP_SEM_REGISTRO
+          : 'CEP não encontrado. Verifique ou preencha o endereço manualmente.',
       );
-      raw = this.form.getRawValue();
+    } else if (falha.status === STATUS_HTTP.REQUISICAO_INVALIDA) {
+      this.cepErro.set('CEP em formato inválido.');
+    } else {
+      this.cepErro.set(this.problemI18n.resolve(falha.problem).title);
     }
+  }
 
-    const cidade = this.cidade();
-    // Só um CEP efetivamente resolvido pelo Geo entra no valor. Um CEP digitado
-    // mas não resolvido (ex.: lookup 404, ou ainda sem "Buscar") NÃO deve virar
-    // `endereco`: o mapeamento trataria os 8 dígitos como endereço válido e
-    // submeteria um CEP que o usuário não conseguiu validar..
-    this.tamanhoDoComplemento.set(raw.complemento.length);
-    if (cepDigitos !== this.cepResolvido()) {
-      // Trocar o CEP desfaz a confirmação.
-      this.cepConfirmado.set(false);
+  private aplicarCepResolvido(cep: CepEncontrado, digitos: string): void {
+    this.modoManual.set(false);
+    this.editandoCep.set(false);
+    this.municipios.lembrar([this.resolucao.adotar(cep, digitos)]);
+    this.form.patchValue(textosDoCep(cep, !this.resolucao.cepEmFaixa()), { emitEvent: false });
+    this.emitir();
+  }
+
+  private emitir(): void {
+    if (this.form.controls.cep.value.trim().length === 0 && this.resolucao.temResolucao) {
+      this.descartarCorrecaoAbandonada();
     }
-    this.cepAtual.set(cepDigitos);
-    this.cepTextoAtual.set(raw.cep.trim());
-    const cepCorrespondeAoResolvido = cepDigitos.length > 0 && cepDigitos === this.cepResolvido();
-    if (cepCorrespondeAoResolvido) {
-      // O usuário voltou ao CEP já resolvido (ex.: desistiu de uma correção que
-      // falhou) sem disparar nova busca — limpa um eventual erro de tentativa
-      // anterior, que do contrário ficaria preso na tela mesmo com o formulário
-      // válido outra vez..
+    const texto = this.form.getRawValue();
+    this.tamanhoDoComplemento.set(texto.complemento.length);
+    this.resolucao.sincronizarComCampo(texto.cep);
+    if (this.resolucao.cepCorrespondeAoResolvido()) {
       this.cepErro.set(null);
     }
     this.onValidatorChange();
-    const cepResolvidoNoValor = cepCorrespondeAoResolvido ? vazioParaNulo(raw.cep) : null;
-
-    const algumPreenchido =
-      cidade !== null ||
-      cepResolvidoNoValor !== null ||
-      [raw.logradouro, raw.numero, raw.complemento, raw.bairro, raw.distrito].some(
-        (v) => v.trim().length > 0,
-      );
-
-    if (!algumPreenchido) {
-      this.onChange(null);
-      return;
-    }
-
-    this.onChange({
-      cep: cepResolvidoNoValor,
-      logradouro: vazioParaNulo(raw.logradouro),
-      numero: vazioParaNulo(raw.numero),
-      complemento: vazioParaNulo(raw.complemento),
-      bairro: vazioParaNulo(raw.bairro),
-      distrito: vazioParaNulo(raw.distrito),
-      cidade,
-      latitude: vazioParaNulo(raw.latitude),
-      longitude: vazioParaNulo(raw.longitude),
-      nivelResolucao: this.nivel(),
-      origem: this.origem(),
-      ...(this.cepConfirmado() ? { cepConfirmado: true } : {}),
-    });
+    this.onChange(montarEndereco(texto, this.resolucao));
   }
-}
 
-function vazioParaNulo(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-/** Coordenada do DTO (`string | number | null`) → texto do form control. */
-function textoDeCoordenada(valor: string | number | null | undefined): string {
-  return valor === null || valor === undefined ? '' : String(valor);
-}
-
-/**
- * Nome completo do logradouro para exibição — o Geo devolve `tipo` (ex.
- * "Rua", "Avenida", "Terceira") separado de `logradouro` porque a API não
- * expõe um campo agregado; a concatenação precisa ser feita no client para
- * refletir o nome real do DNE (ex. "Terceira Avenida Bloco 1740")..
- */
-function logradouroCompleto(tipo: string | null, logradouro: string | null): string {
-  if (logradouro === null || logradouro.length === 0) {
-    return '';
+  private descartarCorrecaoAbandonada(): void {
+    this.resolucao.descartar();
+    this.cepErro.set(null);
+    // O número descreve um imóvel do endereço abandonado e não pode vazar para o próximo CEP.
+    this.form.patchValue(
+      { ...ENDERECO_VAZIO, cep: this.form.controls.cep.value },
+      { emitEvent: false },
+    );
   }
-  return tipo !== null && tipo.length > 0 ? `${tipo} ${logradouro}` : logradouro;
 }
