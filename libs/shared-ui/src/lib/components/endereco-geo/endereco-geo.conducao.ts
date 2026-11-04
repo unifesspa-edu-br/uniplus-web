@@ -50,6 +50,8 @@ export class ConducaoDoEndereco {
   readonly editandoCep = signal(false);
   readonly modoManual = signal(false);
   readonly tamanhoDoComplemento = signal(0);
+  /** O que o leitor de tela ouve sobre a busca do CEP: o início e a conclusão bem-sucedida. */
+  readonly anuncioDoCep = signal('');
   /** A UF escolhida no endereço sem CEP, antes da cidade: a busca de municípios se limita a ela. */
   private readonly ufEscolhida = signal('');
 
@@ -89,6 +91,7 @@ export class ConducaoDoEndereco {
     this.modoManual.set(valor?.origem === ORIGEM_MANUAL && !this.dependencias.exigeCep());
     this.cepErro.set(null);
     this.editandoCep.set(false);
+    this.anuncioDoCep.set('');
   }
 
   desabilitar(desabilitado: boolean): void {
@@ -165,6 +168,7 @@ export class ConducaoDoEndereco {
     }
     this.resolvendoCep.set(true);
     this.cepErro.set(null);
+    this.anuncioDoCep.set('Buscando CEP…');
     this.dependencias
       .buscaDeCep(digitos)
       .pipe(takeUntilDestroyed(this.dependencias.destroyRef))
@@ -172,11 +176,14 @@ export class ConducaoDoEndereco {
         this.resolvendoCep.set(false);
         // Resposta obsoleta: o CEP mudou durante a busca e não pode sobrescrever o formulário.
         if (somenteDigitos(this.form.controls.cep.value) !== digitos) {
+          this.anuncioDoCep.set('');
           return;
         }
         if (resultado.ok) {
           this.aplicarCepResolvido(resultado.data, digitos);
         } else {
+          // A recusa é anunciada pela mensagem de erro do campo.
+          this.anuncioDoCep.set('');
           this.recusarCep(resultado);
         }
       });
@@ -250,6 +257,7 @@ export class ConducaoDoEndereco {
   private aplicarCepResolvido(cep: CepEncontrado, digitos: string): void {
     this.modoManual.set(false);
     this.editandoCep.set(false);
+    this.anuncioDoCep.set('CEP encontrado.');
     this.dependencias.municipios.lembrar([this.resolucao.adotar(cep, digitos)]);
     this.form.patchValue(textosDoCep(cep, !this.resolucao.cepEmFaixa()), { emitEvent: false });
     this.emitir();

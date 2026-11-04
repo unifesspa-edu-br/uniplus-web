@@ -192,7 +192,21 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     this.conducao.confirmarCep((evento.target as HTMLInputElement).checked);
   }
 
+  /** O grupo é tocado quando o foco sai dele, e não a cada troca de campo dentro dele. */
+  protected aoSairDoGrupo(evento: FocusEvent): void {
+    const grupo = evento.currentTarget as HTMLElement;
+    if (!grupo.contains(evento.relatedTarget as Node | null)) {
+      this.onTouched();
+    }
+  }
+
+  protected alternarModoManual(): void {
+    this.onTouched();
+    this.conducao.alternarModoManual();
+  }
+
   protected escolherUf(evento: Event): void {
+    this.onTouched();
     const alvo = evento.target;
     this.conducao.escolherUf(alvo instanceof HTMLSelectElement ? alvo.value : '');
   }

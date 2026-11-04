@@ -2,6 +2,7 @@
   class="endereco-geo"
   [disabled]="conducao.disabled()"
   [attr.aria-describedby]="descritoPor()"
+  (focusout)="aoSairDoGrupo($event)"
 >
   <legend
     [class]="aparencia() === 'campo' ? 'field__label' : 'form-section__title'"
@@ -35,14 +36,16 @@
           class="btn btn--secondary btn--rect"
           [disabled]="conducao.disabled()"
           [attr.aria-disabled]="!cepTravado() && conducao.resolvendoCep() ? 'true' : null"
-          [attr.aria-busy]="!cepTravado() && conducao.resolvendoCep() ? 'true' : null"
           (click)="cepTravado() ? trocarCep() : conducao.resolverCep()"
         >
           @if (cepTravado()) { Trocar CEP } @else { @if (conducao.resolvendoCep()) {
-          <ui-spinner size="sm" />
+          <span aria-hidden="true"><ui-spinner size="sm" /></span>
           } Buscar CEP }
         </button>
       </div>
+      <span [id]="id('cep') + '-status'" class="sr-only" role="status" aria-live="polite"
+        >{{ conducao.anuncioDoCep() }}</span
+      >
       @if (exigeCep()) {
       <span [id]="id('cep') + '-hint'" class="field__hint">
         Informe o CEP para preencher o endereço automaticamente.
@@ -50,7 +53,7 @@
       } @else {
       <span [id]="id('cep') + '-hint'" class="field__hint">
         Informe o CEP para preencher o endereço automaticamente, ou
-        <button type="button" class="endereco-geo__link" (click)="conducao.alternarModoManual()">
+        <button type="button" class="endereco-geo__link" (click)="alternarModoManual()">
           {{ conducao.modoManual() ? 'voltar a buscar por CEP' : 'preencher sem CEP' }}
         </button>
         .

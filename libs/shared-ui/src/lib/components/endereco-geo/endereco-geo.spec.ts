@@ -4,8 +4,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { apiOk } from '@uniplus/shared-core/http';
 import axe from 'axe-core';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { EnderecoGeoComponent } from './endereco-geo';
 import { BUSCA_DE_CEP, type CepEncontrado, type EnderecoEstruturado } from './endereco-geo.model';
 
@@ -109,5 +110,138 @@ describe('EnderecoGeoComponent', () => {
     });
 
     expect(resultado.violations).toEqual([]);
+  });
+});
+
+describe('EnderecoGeoComponent com a busca em andamento', () => {
+  let fixture: ComponentFixture<AnfitriaoComponent>;
+  let resposta: Subject<ReturnType<typeof apiOk<CepEncontrado>>>;
+  let buscas: number;
+
+  beforeEach(() => {
+    buscas = 0;
+    resposta = new Subject();
+    TestBed.configureTestingModule({
+      imports: [AnfitriaoComponent],
+      providers: [
+        {
+          provide: BUSCA_DE_CEP,
+          useValue: () => {
+            buscas++;
+            return resposta;
+          },
+        },
+        { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },
+      ],
+    });
+    fixture = TestBed.createComponent(AnfitriaoComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  });
+
+  const campoCep = () => fixture.nativeElement.querySelector('#t-cep') as HTMLInputElement;
+  const botaoDoCep = () => campoCep().parentElement?.querySelector('button') as HTMLButtonElement;
+  const anuncio = () => fixture.nativeElement.querySelector('#t-cep-status') as HTMLElement;
+
+  async function atualizar(): Promise<void> {
+    fixture.detectChanges();
+    await fixture.whenStable();
+  }
+
+  async function iniciarBusca(): Promise<void> {
+    campoCep().value = '68507-590';
+    campoCep().dispatchEvent(new Event('input'));
+    await atualizar();
+    botaoDoCep().click();
+    await atualizar();
+  }
+
+  it('anuncia a busca numa região de status fora do botão, e o botão não repete a requisição', async () => {
+    expect(anuncio().getAttribute('role')).toBe('status');
+    expect(anuncio().getAttribute('aria-live')).toBe('polite');
+    expect(botaoDoCep().contains(anuncio())).toBe(false);
+    expect(anuncio().textContent?.trim()).toBe('');
+
+    await iniciarBusca();
+    botaoDoCep().click();
+    botaoDoCep().click();
+    await atualizar();
+
+    expect(anuncio().textContent).toContain('Buscando CEP');
+    expect(buscas).toBe(1);
+    expect(botaoDoCep().getAttribute('aria-disabled')).toBe('true');
+    expect(
+      botaoDoCep().querySelector('[role="status"]')?.closest('[aria-hidden="true"]'),
+    ).not.toBeNull();
+  });
+
+  it('anuncia a conclusão da busca', async () => {
+    await iniciarBusca();
+
+    resposta.next(apiOk(CEP_DO_GEO, 200, new HttpHeaders()));
+    await atualizar();
+
+    expect(anuncio().textContent).toContain('CEP encontrado');
+    expect(botaoDoCep().hasAttribute('aria-disabled')).toBe(false);
+  });
+
+  it('na falha, o anúncio de busca sai e a mensagem de erro do campo fala', async () => {
+    await iniciarBusca();
+
+    resposta.next({ ok: false, status: 404, problem: {}, headers: new HttpHeaders() } as never);
+    await atualizar();
+
+    expect(anuncio().textContent?.trim()).toBe('');
+    expect(fixture.nativeElement.querySelector('#t-cep-error')?.getAttribute('role')).toBe('alert');
+  });
+
+  it('trocar a UF do endereço sem CEP marca o campo como tocado', async () => {
+    const manual: EnderecoEstruturado = {
+      cep: null,
+      logradouro: null,
+      numero: null,
+      complemento: null,
+      bairro: null,
+      distrito: null,
+      cidade: null,
+      latitude: null,
+      longitude: null,
+      nivelResolucao: null,
+      origem: 'manual',
+    };
+    fixture.componentInstance.controle.setValue(manual);
+    await atualizar();
+    expect(fixture.componentInstance.controle.touched).toBe(false);
+
+    const uf = fixture.nativeElement.querySelector('#t-uf') as HTMLSelectElement;
+    uf.value = 'PA';
+    uf.dispatchEvent(new Event('change'));
+    await atualizar();
+
+    expect(fixture.componentInstance.controle.touched).toBe(true);
+  });
+
+  it('alternar para o endereço sem CEP marca o campo como tocado', async () => {
+    const alternar = fixture.nativeElement.querySelector(
+      '.endereco-geo__link',
+    ) as HTMLButtonElement;
+
+    alternar.click();
+    await atualizar();
+
+    expect(fixture.componentInstance.controle.touched).toBe(true);
+  });
+
+  it('o foco sair do grupo marca o campo como tocado; mudar de campo dentro dele não', async () => {
+    campoCep().focus();
+    campoCep().dispatchEvent(
+      new FocusEvent('focusout', { bubbles: true, relatedTarget: botaoDoCep() }),
+    );
+    expect(fixture.componentInstance.controle.touched).toBe(false);
+
+    campoCep().dispatchEvent(
+      new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }),
+    );
+    expect(fixture.componentInstance.controle.touched).toBe(true);
   });
 });
