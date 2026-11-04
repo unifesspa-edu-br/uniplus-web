@@ -1,0 +1,140 @@
+<!-- O contêiner trata o drop que a zona não recebeu (lista, mensagens, ou a zona desabilitada,
+     que não recebe eventos): sem isso o navegador abriria o arquivo solto. -->
+<div
+  class="uni-uploader"
+  [class.uni-uploader--compacto]="compacto()"
+  (dragover)="aoArrastarSobre($event)"
+  (drop)="aoSoltarForaDaZona($event)"
+>
+  @if (fieldLabel()) {
+  <label [id]="labelId" [attr.for]="inputId" class="field__label" [class.is-required]="isRequired()"
+    >{{ fieldLabel() }}</label
+  >
+  } @if (!zonaOculta()) {
+  <button
+    #dropZone
+    type="button"
+    class="uni-uploader__drop"
+    [class.is-dragging]="isDragging()"
+    [disabled]="disabled()"
+    [attr.aria-disabled]="disabled() ? 'true' : null"
+    [attr.aria-labelledby]="fieldLabel() ? labelId + ' ' + dropTextId : null"
+    [attr.aria-describedby]="describedBy()"
+    (click)="openFilePicker()"
+    (dragover)="$event.preventDefault(); onDragOver()"
+    (dragleave)="onDragLeave()"
+    (drop)="$event.preventDefault(); onDrop($event.dataTransfer?.files)"
+  >
+    <span class="uni-uploader__icon" aria-hidden="true">↑</span>
+    <span [id]="dropTextId" class="uni-uploader__text">
+      <span class="uni-uploader__title">{{ dropTitle() }}</span>
+      <span class="uni-uploader__hint">{{ dropHint() }}</span>
+    </span>
+  </button>
+  }
+  <input
+    #fileInput
+    [id]="inputId"
+    type="file"
+    class="hidden"
+    [accept]="acceptedFileTypes()"
+    [multiple]="modoMultiplo()"
+    [disabled]="disabled()"
+    [attr.aria-describedby]="describedBy()"
+    [attr.aria-invalid]="comErro() ? 'true' : null"
+    [attr.aria-required]="isRequired() ? 'true' : null"
+    (change)="onFilesPicked(fileInput)"
+  />
+  @let lista = itens(); @if (lista === null) { @let file = selectedFile(); @if (file) {
+  <div class="uni-uploader__item">
+    <span class="uni-uploader__item-icon" aria-hidden="true">□</span>
+    <span class="uni-uploader__item-body">
+      <span class="uni-uploader__item-name">{{ file.name }}</span>
+    </span>
+    <button
+      #removerArquivo
+      type="button"
+      class="btn btn--tertiary btn--sm"
+      [disabled]="disabled()"
+      (click)="removeFile()"
+      aria-label="Remover arquivo"
+    >
+      Remover
+    </button>
+  </div>
+  } } @else if (lista.length > 0) {
+  <ul
+    #listaDeArquivos
+    tabindex="-1"
+    class="uni-uploader__list"
+    [attr.aria-label]="listaAccessibleName()"
+  >
+    @for (arquivo of lista; track arquivo.id) {
+    <li
+      class="uni-uploader__item"
+      [class.is-error]="arquivo.fase === 'erro'"
+      [class.is-success]="arquivo.fase === 'confirmado'"
+    >
+      <div class="uni-uploader__item-body">
+        <div class="uni-uploader__item-name" [title]="arquivo.nome">{{ arquivo.nome }}</div>
+        @if (arquivo.detalhe ?? tamanhoDe(arquivo); as detalhe) {
+        <div class="uni-uploader__item-meta">{{ detalhe }}</div>
+        }
+        <div
+          class="uni-uploader__progress"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          [attr.aria-label]="'Progresso do envio de ' + arquivo.nome"
+          [attr.aria-valuenow]="arquivo.progresso"
+          [attr.aria-valuetext]="textoDaFase(arquivo)"
+        >
+          <div [style.width.%]="arquivo.progresso"></div>
+        </div>
+        <div class="uni-uploader__item-meta" aria-hidden="true">{{ textoDaFase(arquivo) }}</div>
+        @if (arquivo.fase === 'erro') {
+        <small class="field__error" role="alert"
+          ><span class="sr-only">{{ arquivo.nome }}: </span>{{ arquivo.mensagem || 'O envio não foi
+          concluído.' }}</small
+        >
+        } @else {
+        <div class="sr-only" role="status" aria-live="polite">{{ anuncioDaFase(arquivo) }}</div>
+        }
+      </div>
+      <div class="uni-uploader__item-actions">
+        @if (arquivo.fase === 'erro' && arquivo.podeTentarDeNovo !== false) {
+        <button
+          type="button"
+          class="btn btn--tertiary btn--sm"
+          [attr.aria-label]="'Tentar enviar novamente ' + arquivo.nome + sufixoDoContexto()"
+          (click)="repetir(arquivo.id)"
+        >
+          Tentar novamente
+        </button>
+        } @if (permitirBaixar() && arquivo.fase === 'confirmado') {
+        <button
+          type="button"
+          class="btn btn--tertiary btn--sm"
+          [attr.aria-label]="'Baixar ' + arquivo.nome + sufixoDoContextoParaBaixar()"
+          (click)="baixar(arquivo.id)"
+        >
+          Baixar
+        </button>
+        } @if (arquivo.podeRetirar !== false) {
+        <button
+          type="button"
+          class="btn btn--tertiary btn--sm"
+          [attr.aria-label]="'Remover ' + arquivo.nome + sufixoDoContexto()"
+          (click)="retirar(arquivo.id)"
+        >
+          Remover
+        </button>
+        }
+      </div>
+    </li>
+    }
+  </ul>
+  } @for (message of messages(); track $index) {
+  <small [id]="idDaMensagem($index)" class="field__error" role="alert">{{ message }}</small>
+  }
+</div>

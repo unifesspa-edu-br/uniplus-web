@@ -56,7 +56,6 @@
 506 libs/shared-ui/src/lib/components/editor-de-formulario/grupo-do-formulario.ts
 428 libs/shared-ui/src/lib/components/editor-de-formulario/restricoes-do-campo.ts
 982 libs/shared-ui/src/lib/components/endereco-geo/endereco-geo.ts
-548 libs/shared-ui/src/lib/components/file-upload/file-upload.ts
 411 libs/shared-ui/src/lib/components/formulario-do-candidato/arquivo-do-formulario.ts
 609 libs/shared-ui/src/lib/components/formulario-do-candidato/campo-do-candidato.ts
 700 libs/shared-ui/src/lib/components/formulario-do-candidato/documentos-avaliados.ts

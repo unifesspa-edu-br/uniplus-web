@@ -13,38 +13,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
+import { type ArquivoEmEnvio, anuncioDaFase, textoDaFase } from './arquivo-em-envio';
+import { type RegrasDoArquivo, validarArquivo } from './validacao-de-arquivo';
 
-type ValidationResult = { ok: true } | { ok: false; reason: string };
-
-/** Onde o envio de um arquivo está: o componente só exibe, quem envia informa. */
-export type FaseDoArquivo =
-  | 'iniciando'
-  | 'enviando'
-  | 'confirmando'
-  | 'verificando'
-  | 'confirmado'
-  | 'erro';
-
-/** Um arquivo da lista, como o consumidor o reporta. */
-export interface ArquivoEmEnvio {
-  readonly id: string;
-  readonly nome: string;
-  readonly tamanhoBytes?: number;
-  readonly fase: FaseDoArquivo;
-  /** Percentual de 0 a 100. */
-  readonly progresso: number;
-  /** Texto da falha, exibido quando a fase é `erro`, ou o que se espera, quando é `verificando`. */
-  readonly mensagem?: string | null;
-  /** `false` quando repetir não adianta; o padrão é oferecer a nova tentativa. */
-  readonly podeTentarDeNovo?: boolean;
-  /** `false` quando o arquivo não pode mais sair da lista; o padrão é permitir. */
-  readonly podeRetirar?: boolean;
-  /** Descreve o arquivo no lugar do tamanho, quando quem envia sabe mais do que ele (formato, data do envio). */
-  readonly detalhe?: string;
-}
-
-const BYTES_POR_MB = 1024 * 1024;
-const PASSO_ANUNCIADO = 25;
+export type { ArquivoEmEnvio, FaseDoArquivo } from './arquivo-em-envio';
 
 /**
  * Zona de soltar arquivos com validação de tipo e tamanho no cliente.
@@ -58,148 +30,7 @@ const PASSO_ANUNCIADO = 25;
   selector: 'ui-file-upload',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <!-- O contêiner trata o drop que a zona não recebeu (lista, mensagens, ou a zona desabilitada,
-         que não recebe eventos): sem isso o navegador abriria o arquivo solto. -->
-    <div class="uni-uploader" [class.uni-uploader--compacto]="compacto()" (dragover)="aoArrastarSobre($event)" (drop)="aoSoltarForaDaZona($event)">
-      @if (fieldLabel()) {
-        <label [id]="labelId" [attr.for]="inputId" class="field__label" [class.is-required]="isRequired()">{{ fieldLabel() }}</label>
-      }
-      @if (!zonaOculta()) {
-      <button
-        #dropZone
-        type="button"
-        class="uni-uploader__drop"
-        [class.is-dragging]="isDragging()"
-        [disabled]="disabled()"
-        [attr.aria-disabled]="disabled() ? 'true' : null"
-        [attr.aria-labelledby]="fieldLabel() ? labelId + ' ' + dropTextId : null"
-        [attr.aria-describedby]="describedBy()"
-        (click)="openFilePicker()"
-        (dragover)="$event.preventDefault(); onDragOver()"
-        (dragleave)="onDragLeave()"
-        (drop)="$event.preventDefault(); onDrop($event.dataTransfer?.files)"
-      >
-        <span class="uni-uploader__icon" aria-hidden="true">↑</span>
-        <span [id]="dropTextId" class="uni-uploader__text">
-          <span class="uni-uploader__title">{{ dropTitle() }}</span>
-          <span class="uni-uploader__hint">{{ dropHint() }}</span>
-        </span>
-      </button>
-      }
-      <input
-        #fileInput
-        [id]="inputId"
-        type="file"
-        class="hidden"
-        [accept]="acceptedFileTypes()"
-        [multiple]="modoMultiplo()"
-        [disabled]="disabled()"
-        [attr.aria-describedby]="describedBy()"
-        [attr.aria-invalid]="comErro() ? 'true' : null"
-        [attr.aria-required]="isRequired() ? 'true' : null"
-        (change)="onFilesPicked(fileInput)"
-      />
-      @let lista = itens();
-      @if (lista === null) {
-        @let file = selectedFile();
-        @if (file) {
-          <div class="uni-uploader__item">
-            <span class="uni-uploader__item-icon" aria-hidden="true">□</span>
-            <span class="uni-uploader__item-body">
-              <span class="uni-uploader__item-name">{{ file.name }}</span>
-            </span>
-            <button
-              #removerArquivo
-              type="button"
-              class="btn btn--tertiary btn--sm"
-              [disabled]="disabled()"
-              (click)="removeFile()"
-              aria-label="Remover arquivo"
-            >
-              Remover
-            </button>
-          </div>
-        }
-      } @else if (lista.length > 0) {
-        <ul #listaDeArquivos tabindex="-1" class="uni-uploader__list" [attr.aria-label]="listaAccessibleName()">
-          @for (arquivo of lista; track arquivo.id) {
-            <li
-              class="uni-uploader__item"
-              [class.is-error]="arquivo.fase === 'erro'"
-              [class.is-success]="arquivo.fase === 'confirmado'"
-            >
-              <div class="uni-uploader__item-body">
-                <div class="uni-uploader__item-name" [title]="arquivo.nome">{{ arquivo.nome }}</div>
-                @if (arquivo.detalhe ?? tamanhoDe(arquivo); as detalhe) {
-                  <div class="uni-uploader__item-meta">{{ detalhe }}</div>
-                }
-                <div
-                  class="uni-uploader__progress"
-                  role="progressbar"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  [attr.aria-label]="'Progresso do envio de ' + arquivo.nome"
-                  [attr.aria-valuenow]="arquivo.progresso"
-                  [attr.aria-valuetext]="textoDaFase(arquivo)"
-                >
-                  <div [style.width.%]="arquivo.progresso"></div>
-                </div>
-                <div class="uni-uploader__item-meta" aria-hidden="true">{{ textoDaFase(arquivo) }}</div>
-                @if (arquivo.fase === 'erro') {
-                  <small class="field__error" role="alert"
-                    ><span class="sr-only">{{ arquivo.nome }}: </span
-                    >{{ arquivo.mensagem || 'O envio não foi concluído.' }}</small
-                  >
-                } @else {
-                  <div class="sr-only" role="status" aria-live="polite">{{ anuncioDaFase(arquivo) }}</div>
-                }
-              </div>
-              <div class="uni-uploader__item-actions">
-                @if (arquivo.fase === 'erro' && arquivo.podeTentarDeNovo !== false) {
-                  <button
-                    type="button"
-                    class="btn btn--tertiary btn--sm"
-                    [attr.aria-label]="'Tentar enviar novamente ' + arquivo.nome + sufixoDoContexto()"
-                    (click)="repetir(arquivo.id)"
-                  >
-                    Tentar novamente
-                  </button>
-                }
-                @if (permitirBaixar() && arquivo.fase === 'confirmado') {
-                  <button
-                    type="button"
-                    class="btn btn--tertiary btn--sm"
-                    [attr.aria-label]="'Baixar ' + arquivo.nome + sufixoDoContextoParaBaixar()"
-                    (click)="baixar(arquivo.id)"
-                  >
-                    Baixar
-                  </button>
-                }
-                @if (arquivo.podeRetirar !== false) {
-                  <button
-                    type="button"
-                    class="btn btn--tertiary btn--sm"
-                    [attr.aria-label]="'Remover ' + arquivo.nome + sufixoDoContexto()"
-                    (click)="retirar(arquivo.id)"
-                  >
-                    Remover
-                  </button>
-                }
-              </div>
-            </li>
-          }
-        </ul>
-      }
-      @for (message of messages(); track $index) {
-        <small
-          [id]="idDaMensagem($index)"
-          class="field__error"
-          role="alert"
-        >{{ message }}</small>
-      }
-    </div>
-  `,
+  templateUrl: './file-upload.html',
 })
 export class FileUploadComponent {
   // Garante IDs únicos por instância para isolar `for`/`aria-describedby`
@@ -323,22 +154,12 @@ export class FileUploadComponent {
     return ids.length > 0 ? ids.join(' ') : null;
   });
 
-  private readonly maxBytes = computed(() => this.maxSizeMb() * BYTES_POR_MB);
-  private readonly acceptedExtensions = computed(() =>
-    this.acceptedFileTypes()
-      .split(',')
-      .map((extension) => extension.trim().toLowerCase())
-      .filter((extension) => extension.length > 0),
-  );
-  private readonly normalizedMimeTypes = computed(() =>
-    this.allowedMimeTypes().map((type) => type.toLowerCase()),
-  );
-  private readonly maxSizeError = computed(
-    () => `Arquivo excede o tamanho máximo de ${this.maxSizeMb()}MB.`,
-  );
-  private readonly typeNotAllowedError = computed(
-    () => `Tipo de arquivo não permitido. Envie arquivos nos formatos: ${this.acceptedFileTypes()}`,
-  );
+  private readonly regras = computed<RegrasDoArquivo>(() => ({
+    tamanhoMaximoMb: this.maxSizeMb(),
+    extensoesAceitas: this.acceptedFileTypes(),
+    tiposMimeAceitos: this.allowedMimeTypes(),
+    soPelaExtensao: this.validarSoPelaExtensao(),
+  }));
 
   onDragOver(): void {
     if (this.disabled()) return;
@@ -412,31 +233,8 @@ export class FileUploadComponent {
     return bytes === undefined ? null : formatarTamanhoDeArquivo(bytes);
   }
 
-  protected textoDaFase(arquivo: ArquivoEmEnvio): string {
-    switch (arquivo.fase) {
-      case 'iniciando':
-        return 'Preparando o envio';
-      case 'enviando':
-        return `Enviando: ${arquivo.progresso}%`;
-      case 'confirmando':
-        return 'Validando o arquivo';
-      case 'verificando':
-        return arquivo.mensagem || 'Arquivo em verificação';
-      case 'confirmado':
-        return 'Envio concluído';
-      case 'erro':
-        return 'O envio não foi concluído';
-    }
-  }
-
-  // O leitor de tela recebe o andamento em passos: anunciar cada percentual interromperia
-  // quem lê a página a cada fração de segundo.
-  protected anuncioDaFase(arquivo: ArquivoEmEnvio): string {
-    const nome = arquivo.nome;
-    if (arquivo.fase !== 'enviando') return `${nome}: ${this.textoDaFase(arquivo)}`;
-    const passo = Math.floor(arquivo.progresso / PASSO_ANUNCIADO) * PASSO_ANUNCIADO;
-    return `${nome}: enviando, ${passo}%`;
-  }
+  protected readonly textoDaFase = textoDaFase;
+  protected readonly anuncioDaFase = anuncioDaFase;
 
   // Depois de retirar um arquivo o botão que tinha o foco some; devolver o foco à zona evita
   // que a navegação por teclado recomece do topo da página.
@@ -457,9 +255,6 @@ export class FileUploadComponent {
     );
   }
 
-  // Validação client-side é UX/anti-engano. A fronteira real de segurança
-  // (magic bytes, antivírus) é responsabilidade do servidor — ver ADR-012
-  // (quarentena → ClamAV → bucket definitivo).
   private handleFiles(files: readonly File[]): void {
     if (files.length === 0) return;
 
@@ -477,7 +272,7 @@ export class FileUploadComponent {
     const limite = this.maxFiles();
     let vagas = this.vagasRestantes();
     for (const file of files) {
-      const result = this.validate(file);
+      const result = validarArquivo(file, this.regras());
       if (!result.ok) {
         recusas.push(`${file.name}: ${result.reason}`);
       } else if (vagas <= 0) {
@@ -505,7 +300,7 @@ export class FileUploadComponent {
       this.errors.set([`${file.name}: ${this.mensagemDoLimite(this.maxFiles())}`]);
       return;
     }
-    const result = this.validate(file);
+    const result = validarArquivo(file, this.regras());
     if (!result.ok) {
       this.errors.set([result.reason]);
       return;
@@ -519,30 +314,5 @@ export class FileUploadComponent {
         injector: this.injector,
       });
     }
-  }
-
-  private validate(file: File): ValidationResult {
-    if (file.size === 0) {
-      return { ok: false, reason: 'O arquivo está vazio.' };
-    }
-    if (file.size > this.maxBytes()) {
-      return { ok: false, reason: this.maxSizeError() };
-    }
-    if (!this.isMimeAllowed(file) || !this.isExtensionAllowed(file)) {
-      return { ok: false, reason: this.typeNotAllowedError() };
-    }
-    return { ok: true };
-  }
-
-  private isMimeAllowed(file: File): boolean {
-    if (this.validarSoPelaExtensao()) return true;
-    return this.normalizedMimeTypes().includes(file.type.toLowerCase());
-  }
-
-  private isExtensionAllowed(file: File): boolean {
-    const dotIndex = file.name.lastIndexOf('.');
-    if (dotIndex < 0) return false;
-    const extension = file.name.slice(dotIndex).toLowerCase();
-    return this.acceptedExtensions().includes(extension);
   }
 }
