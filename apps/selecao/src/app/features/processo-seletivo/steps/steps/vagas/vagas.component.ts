@@ -13,7 +13,7 @@ import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
 import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
-import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
 import { confirmacaoDasVagas } from './confirmacao-das-vagas';
 import { modalidadesDoRolAtual, perderiaQuantidadeDoQuadro } from './edicao-do-padrao';
 import { rotuloDasOpcoes } from './opcoes-de-curso';
@@ -68,7 +68,7 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
   templateUrl: './vagas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    CatalogosDeDistribuicaoService,
+    CatalogosDeDistribuicao,
     EstadoDoPassoDeVagas,
     SimulacaoDoQuadro,
     ConferenciaDoQuadro,
@@ -78,7 +78,7 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
 })
 export class VagasStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDeDistribuicaoService);
+  readonly catalogos = inject(CatalogosDeDistribuicao);
   protected readonly estado = inject(EstadoDoPassoDeVagas);
   protected readonly simulacao = inject(SimulacaoDoQuadro);
   protected readonly conferencia = inject(ConferenciaDoQuadro);

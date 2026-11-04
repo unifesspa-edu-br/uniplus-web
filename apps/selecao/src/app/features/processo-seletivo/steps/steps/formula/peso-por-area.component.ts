@@ -31,7 +31,7 @@ import {
   relerProcessoAPedido,
 } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import {
   TEXTO_DA_PENDENCIA_DA_RESOLUCAO,
   pendenciaDaResolucao,
@@ -63,7 +63,7 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 })
 export class PesoPorAreaComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly catalogos = inject(CatalogosDeClassificacaoService);
+  protected readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
   private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly appConfig = inject(AppConfigService);

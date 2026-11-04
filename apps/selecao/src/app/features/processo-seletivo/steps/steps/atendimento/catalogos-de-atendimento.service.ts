@@ -33,7 +33,7 @@ export const CODIGO_CONDICAO_PCD = 'PCD';
  * snapshot que o próprio rascunho guarda, não deste catálogo.
  */
 @Injectable()
-export class CatalogosDeAtendimentoService {
+export class CatalogosDeAtendimento {
   private readonly condicoesApi = inject(CondicoesAtendimentoApi);
   private readonly recursosApi = inject(RecursoAcessibilidadeApi);
   private readonly tiposApi = inject(TipoDeficienciaApi);

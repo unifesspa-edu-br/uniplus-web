@@ -15,7 +15,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { VagasStepComponent } from './vagas.component';
 import {
   BASE,
@@ -39,7 +39,7 @@ describe('VagasStepComponent — consulta', () => {
         ProcessoSeletivoStore,
         CadastroInicial,
         GravacaoDoProcesso,
-        CatalogosDoCronogramaService,
+        CatalogosDoCronograma,
         GravacaoDosCamposPressupostos,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),

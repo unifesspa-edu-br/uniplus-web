@@ -14,7 +14,7 @@ import {
   type FatoEscolhivel,
 } from '../../shared/gatilho-de-exigencia';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { regrasEscolhiveis, rotuloDaRegraEscolhida } from '../classificacao/regra-escolhivel';
 import { AreasDoDesempate } from './areas-do-desempate.service';
 import {
@@ -42,7 +42,7 @@ import { OrdemDasAreasComponent, type MovimentoDeArea } from './ordem-das-areas.
 })
 export class CriterioDeDesempateComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly catalogos = inject(CatalogosDeClassificacaoService);
+  protected readonly catalogos = inject(CatalogosDeClassificacao);
   protected readonly areas = inject(AreasDoDesempate);
 
   readonly indice = input.required<number>();

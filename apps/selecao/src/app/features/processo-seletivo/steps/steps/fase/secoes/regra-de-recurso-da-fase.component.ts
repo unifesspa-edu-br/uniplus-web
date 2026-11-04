@@ -4,7 +4,7 @@ import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/for
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
 /**
@@ -56,7 +56,7 @@ const ROTULO_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
 })
 export class RegraDeRecursoDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly espelho = this.faseEmEdicao.espelho;
 

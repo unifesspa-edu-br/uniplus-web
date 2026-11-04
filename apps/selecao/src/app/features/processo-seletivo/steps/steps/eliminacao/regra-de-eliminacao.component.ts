@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 
 import type { RegraEliminacaoConfigurada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import {
   eliminacaoUsaAreaEMinimo,
   eliminacaoUsaEtapa,
@@ -35,7 +35,7 @@ import {
 })
 export class RegraDeEliminacaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDeClassificacaoService);
+  private readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly gravacao = inject(GravacaoDaClassificacao);
 
   /** A posição da regra na lista, que também compõe os ids dos campos. */

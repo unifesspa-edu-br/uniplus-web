@@ -16,7 +16,7 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { AreasDoDesempate } from './areas-do-desempate.service';
 import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
 import { DesempateStepComponent } from './desempate.component';
@@ -135,7 +135,7 @@ async function montar(opcoes: OpcoesDeMontagem = {}): Promise<Montagem> {
       ProcessoSeletivoStore,
       CadastroInicial,
       GravacaoDoProcesso,
-      CatalogosDeClassificacaoService,
+      CatalogosDeClassificacao,
       AcompanhamentoDoCadastroDePesos,
       ReleituraDoSnapshot,
       provideHttpClient(withInterceptors([apiResultInterceptor])),

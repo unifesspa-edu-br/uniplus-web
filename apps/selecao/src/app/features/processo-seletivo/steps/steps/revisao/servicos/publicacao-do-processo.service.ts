@@ -12,7 +12,7 @@ import {
   RESPOSTA_DESCARTADA,
   RespostaDescartada,
 } from '../../../shared/gravacao/gravacao-no-passo';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { comoComandoDePublicacao } from '../comando-de-publicacao';
 import { ConferenciaDaPublicacao } from './conferencia-da-publicacao.service';
 
@@ -43,7 +43,7 @@ export class PublicacaoDoProcesso {
   private readonly cadastro = inject(CadastroInicial);
   private readonly atos = inject(AtosApi);
   private readonly problemI18n = inject(ProblemI18nService);
-  private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
+  private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
 
   /** O snapshot lido depois do `204`: só existe quando esta sessão acabou de publicar. */
   readonly snapshotConfirmado = signal<SnapshotVigenteDto | null>(null);

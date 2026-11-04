@@ -12,7 +12,7 @@ import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { FaseStepComponent } from './fase.component';
 
 export const BASE = 'http://localhost:5000';
@@ -205,7 +205,7 @@ export async function montarFase(
       ProcessoSeletivoStore,
       CadastroInicial,
       GravacaoDoProcesso,
-      CatalogosDoCronogramaService,
+      CatalogosDoCronograma,
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
       { provide: SELECAO_BASE_PATH, useValue: BASE },

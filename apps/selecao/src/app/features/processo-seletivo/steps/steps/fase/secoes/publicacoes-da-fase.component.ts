@@ -4,7 +4,7 @@ import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared
 
 import { PAPEL_PRELIMINAR, type ProdutoDaFase } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { PAPEIS_ESCOLHIVEIS } from '../configuracao-da-fase';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
@@ -18,7 +18,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 })
 export class PublicacoesDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly espelho = this.faseEmEdicao.espelho;
 

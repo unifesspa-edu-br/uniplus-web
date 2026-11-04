@@ -9,12 +9,12 @@ import { afterEach, beforeEach } from 'vitest';
 
 import { EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { EliminacaoStepComponent } from './eliminacao.component';
 
 export const BASE = 'http://localhost:5000';
@@ -101,7 +101,7 @@ export function linhaDoCadastro(peso: number) {
 
 /** O cadastro de Peso por Área lido, com a resolução no peso informado. */
 export function lerCadastroComPeso(peso: number): void {
-  TestBed.inject(CatalogosDeClassificacaoService).garantirPesosAreaEnem(0);
+  TestBed.inject(CatalogosDeClassificacao).garantirPesosAreaEnem(0);
   controller
     .expectOne((requisicao) => requisicao.url.endsWith('/api/configuracao/pesos-area-enem'))
     .flush([linhaDoCadastro(peso)]);
@@ -141,8 +141,8 @@ export function montarEliminacao(): void {
         ProcessoSeletivoStore,
         CadastroInicial,
         GravacaoDoProcesso,
-        CatalogosDeClassificacaoService,
-        { provide: CatalogosDoCronogramaService, useValue: { tipoEtapaPorId } },
+        CatalogosDeClassificacao,
+        { provide: CatalogosDoCronograma, useValue: { tipoEtapaPorId } },
         AcompanhamentoDoCadastroDePesos,
         ReleituraDoSnapshot,
         provideHttpClient(withInterceptors([apiResultInterceptor])),

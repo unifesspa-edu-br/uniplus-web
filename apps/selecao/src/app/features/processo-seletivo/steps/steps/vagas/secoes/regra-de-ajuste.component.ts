@@ -6,7 +6,7 @@ import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { explicarRegra } from '../../../shared/regra-explicada/regra-em-linguagem-clara';
 import { RegraExplicadaComponent } from '../../../shared/regra-explicada/regra-explicada.component';
 import { regraPorChave } from '../../../shared/regra-por-chave';
-import { CatalogosDeDistribuicaoService } from '../catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from '../catalogos-de-distribuicao.service';
 import { EstadoDoPassoDeVagas } from '../servicos/estado-do-passo-de-vagas';
 
 /** A regra de ajuste que a Lei 12.711 exige no ramo federal. */
@@ -19,7 +19,7 @@ import { EstadoDoPassoDeVagas } from '../servicos/estado-do-passo-de-vagas';
 })
 export class RegraDeAjusteComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly catalogos = inject(CatalogosDeDistribuicaoService);
+  protected readonly catalogos = inject(CatalogosDeDistribuicao);
   protected readonly estado = inject(EstadoDoPassoDeVagas);
 
   protected readonly ajusteExplicado = computed(() =>

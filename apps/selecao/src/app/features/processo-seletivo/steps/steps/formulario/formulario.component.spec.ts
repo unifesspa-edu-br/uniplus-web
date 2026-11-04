@@ -24,7 +24,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-documentais';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { FormularioStepComponent } from './formulario.component';
@@ -171,7 +171,7 @@ describe('FormularioStepComponent', () => {
         ProcessoSeletivoStore,
         CadastroInicial,
         GravacaoDoProcesso,
-        CatalogosDoCronogramaService,
+        CatalogosDoCronograma,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -244,7 +244,7 @@ describe('FormularioStepComponent', () => {
 
     /** O processo publicado: os passos mostram o que está gravado como texto. */
     function emConsulta(): void {
-      TestBed.inject(CatalogosDoCronogramaService).fatos.set([PCD_NO_CATALOGO] as never);
+      TestBed.inject(CatalogosDoCronograma).fatos.set([PCD_NO_CATALOGO] as never);
       store.patchObjectSection('formulario', {
         conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS),
       });

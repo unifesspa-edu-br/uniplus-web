@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs';
 import { DistribuicaoDeVagas } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { regraPorChave } from '../../../shared/regra-por-chave';
-import { CatalogosDeDistribuicaoService } from '../catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from '../catalogos-de-distribuicao.service';
 import { ehRamoFederal, quantidadeEhDeclarada } from '../composicao-de-vagas';
 import { comPadraoAplicado } from '../edicao-do-quadro';
 import { leituraDoPadrao } from '../leitura-do-padrao';
@@ -35,7 +35,7 @@ export type ModalidadeDoPadrao = Pick<ModalidadeDto, 'id' | 'codigo' | 'descrica
 @Injectable()
 export class EstadoDoPassoDeVagas {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDeDistribuicaoService);
+  private readonly catalogos = inject(CatalogosDeDistribuicao);
 
   /** Enquanto não há oferta, o padrão declarado fica aqui. */
   private readonly padraoPendente = signal<PadraoDoEdital>(PADRAO_VAZIO);

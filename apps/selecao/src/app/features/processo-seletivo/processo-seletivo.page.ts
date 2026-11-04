@@ -37,11 +37,11 @@ import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-proc
 import { IdentificacaoStepComponent } from './steps/steps/identificacao/identificacao.component';
 import { PagamentoStepComponent } from './steps/steps/pagamento/pagamento.component';
 import { VagasStepComponent } from './steps/steps/vagas/vagas.component';
-import { CatalogosDoCronogramaService } from './steps/steps/cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from './steps/steps/cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './steps/steps/cronograma/cronograma.component';
 import { FormularioStepComponent } from './steps/steps/formulario/formulario.component';
 import { AcompanhamentoDoCadastroDePesos } from './steps/steps/classificacao/acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from './steps/steps/classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './steps/steps/formula/formula.component';
 import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
 import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
@@ -87,9 +87,9 @@ import {
     GravacaoDoProcesso,
     CadastroInicial,
     EnvioDoEdital,
-    CatalogosDoCronogramaService,
+    CatalogosDoCronograma,
     GravacaoDosCamposPressupostos,
-    CatalogosDeClassificacaoService,
+    CatalogosDeClassificacao,
     AcompanhamentoDoCadastroDePesos,
     ReleituraDoSnapshot,
   ],
@@ -106,7 +106,7 @@ export class ProcessoSeletivoPage {
   private readonly rascunho = inject(RascunhoDaPublicacao);
   private readonly foco = inject(FocoDoEditor);
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
-  private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
+  private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacao);
   private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);

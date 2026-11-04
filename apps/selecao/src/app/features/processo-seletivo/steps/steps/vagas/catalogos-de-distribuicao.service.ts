@@ -33,7 +33,7 @@ const TIPO_REGRA_CASCATA = 'criterio_remanejamento';
  * a página é o que o operador navega.
  */
 @Injectable()
-export class CatalogosDeDistribuicaoService {
+export class CatalogosDeDistribuicao {
   private readonly ofertasApi = inject(OfertasCursoApi);
   private readonly cursosApi = inject(CursosApi);
   private readonly modalidadesApi = inject(ModalidadesApi);

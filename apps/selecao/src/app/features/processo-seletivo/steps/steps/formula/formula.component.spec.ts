@@ -10,7 +10,7 @@ import { EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './formula.component';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 
@@ -47,7 +47,7 @@ describe('FormulaStepComponent', () => {
       providers: [
         { provide: PermissoesService, useValue: { tem: () => false } },
         ProcessoSeletivoStore,
-        CatalogosDeClassificacaoService,
+        CatalogosDeClassificacao,
         AcompanhamentoDoCadastroDePesos,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),

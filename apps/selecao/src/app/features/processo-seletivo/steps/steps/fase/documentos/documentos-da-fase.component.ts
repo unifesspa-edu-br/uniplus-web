@@ -22,7 +22,7 @@ import {
   mostraFormulario,
   formulariosEscolhiveis,
 } from '../../../shared/exigencias/formulario-da-exigencia';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { nomeDaFinalidade } from '../../formulario/formularios-por-finalidade';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import {
@@ -60,7 +60,7 @@ import { LinhaDoDocumentoComponent } from './linha-do-documento.component';
 })
 export class DocumentosDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   protected readonly exigencias = inject(ExigenciasDaFaseStore);
   private readonly gatilho = inject(GatilhoDasExigenciasStore);

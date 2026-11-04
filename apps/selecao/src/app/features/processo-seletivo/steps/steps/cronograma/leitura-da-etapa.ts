@@ -9,7 +9,7 @@ import {
 import { rotuloDaFormaDeAvaliacao } from '../../shared/forma-de-avaliacao';
 import { decimalLido, textoDaSoma } from '../../shared/itens-de-avaliacao';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
-import type { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
+import type { CatalogosDoCronograma } from './catalogos-do-cronograma.service';
 import type { EtapaForm } from './cronograma-form';
 import {
   etapaDeclaraNotaMaxima,
@@ -20,7 +20,7 @@ import {
 import { caracteresAdmitidos, eliminaPorCarater, pontuaPorCarater } from './regras-da-etapa';
 
 export type CatalogosDaLeitura = Pick<
-  CatalogosDoCronogramaService,
+  CatalogosDoCronograma,
   'rotuloDoAto' | 'rotuloDoTipoEtapa' | 'bancas' | 'tipoEtapaPorId'
 >;
 

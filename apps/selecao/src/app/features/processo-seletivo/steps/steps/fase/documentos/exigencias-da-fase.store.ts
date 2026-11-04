@@ -31,7 +31,7 @@ import {
   semAExigencia,
 } from '../../../shared/exigencias/exigencias-documentais';
 import { finalidadeDaExigencia } from '../../../shared/exigencias/formulario-da-exigencia';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
 /**
@@ -42,7 +42,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 @Injectable()
 export class ExigenciasDaFaseStore {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly faseDoRascunho = this.faseEmEdicao.faseDoRascunho;
   private readonly fasesDoCronograma = this.faseEmEdicao.fasesDoCronograma;

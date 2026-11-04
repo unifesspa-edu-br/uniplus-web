@@ -22,7 +22,7 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { IdentificadorLegivelComponent } from './identificador-legivel.component';
 import { MunicipioDoProcessoComponent } from './municipio-do-processo.component';
 import { BuscaDeMunicipio } from './servicos/busca-de-municipio.service';
-import { CatalogoDeUnidadesService } from './servicos/catalogo-de-unidades.service';
+import { CatalogoDeUnidades } from './servicos/catalogo-de-unidades.service';
 import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
 import { validarIdentificacao } from './validacao-da-identificacao';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -53,7 +53,7 @@ export const ORIGENS_CANDIDATOS: readonly {
   templateUrl: './identificacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    CatalogoDeUnidadesService,
+    CatalogoDeUnidades,
     BuscaDeMunicipio,
     GravacaoDaIdentificacao,
     provePassoDoWizard(IdentificacaoStepComponent),
@@ -61,7 +61,7 @@ export const ORIGENS_CANDIDATOS: readonly {
 })
 export class IdentificacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  protected readonly unidades = inject(CatalogoDeUnidadesService);
+  protected readonly unidades = inject(CatalogoDeUnidades);
   protected readonly gravacao = inject(GravacaoDaIdentificacao);
   private readonly destroyRef = inject(DestroyRef);
 

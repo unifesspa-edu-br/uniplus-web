@@ -17,7 +17,7 @@ import { AnexoEditalComponent } from '../../shared/anexo-edital/anexo-edital.com
 import { AnexosDoEditalComponent } from '../../shared/anexos-do-edital/anexos-do-edital.component';
 import { documentosPorFase } from '../../shared/documentos-exigidos';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
 import { confirmacaoDaPublicacao } from './confirmacao-da-publicacao';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
@@ -69,7 +69,7 @@ export class RevisaoStepComponent {
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
   protected readonly publicacao = inject(PublicacaoDoProcesso);
   private readonly permissoes = inject(PermissoesService);
-  private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
+  private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
 
   protected readonly permissaoDePublicar = PERMISSAO.selecao.processosPublicar;
 

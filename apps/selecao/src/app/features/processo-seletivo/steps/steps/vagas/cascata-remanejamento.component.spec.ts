@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
-import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
 
 const BASE = 'http://localhost:5000';
 const LB_PPI = '01960000-0000-7000-0000-0000000000b1';
@@ -116,7 +116,7 @@ describe('CascataRemanejamentoComponent', () => {
       imports: [CascataRemanejamentoComponent],
       providers: [
         ProcessoSeletivoStore,
-        CatalogosDeDistribuicaoService,
+        CatalogosDeDistribuicao,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },

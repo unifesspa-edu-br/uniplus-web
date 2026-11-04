@@ -8,7 +8,7 @@ import {
   relerProcessoAPedido,
 } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { desempateUsaAreas } from './desempate-para-comando';
 import {
   areasCitadasPor,
@@ -31,7 +31,7 @@ export type ResultadoDaReleitura = 'lida' | 'superada' | 'ainda-por-reler';
 @Injectable()
 export class AreasDoDesempate {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDeClassificacaoService);
+  private readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
   private readonly releitura = inject(ReleituraDoSnapshot);
 

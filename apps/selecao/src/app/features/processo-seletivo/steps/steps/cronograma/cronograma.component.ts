@@ -12,7 +12,7 @@ import { CabecalhoDaFaseComponent } from './fase/cabecalho-da-fase.component';
 import { NovaFaseComponent } from './fase/nova-fase.component';
 import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component';
 import { FaseEmConsultaComponent } from './consulta/fase-em-consulta.component';
-import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from './catalogos-do-cronograma.service';
 import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
 import { EdicaoDaEtapa } from './servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
@@ -58,7 +58,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
 })
 export class CronogramaStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDoCronogramaService);
+  readonly catalogos = inject(CatalogosDoCronograma);
   protected readonly reconciliacao = inject(ReconciliacaoDasEtapas);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly conferencia = inject(ConferenciaDoCronograma);

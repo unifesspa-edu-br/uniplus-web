@@ -57,7 +57,7 @@ import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { RascunhoDaPublicacao } from './editor/rascunho-da-publicacao.service';
 import { PASSOS } from './steps/processo-seletivo.data';
 import { CadastroInicial } from './steps/shared/cadastro-inicial.service';
-import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from './steps/steps/classificacao/catalogos-de-classificacao.service';
 import { PROCESSO_SELETIVO_ROUTES } from './processo-seletivo.routes';
 
 const PROCESSO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
@@ -896,7 +896,7 @@ describe('ProcessoSeletivoPage — rascunho da publicação', () => {
       paramMap,
     });
     await propagar();
-    const catalogos = cenario.fixture.debugElement.injector.get(CatalogosDeClassificacaoService);
+    const catalogos = cenario.fixture.debugElement.injector.get(CatalogosDeClassificacao);
     const esquecer = vi.spyOn(catalogos, 'esquecerPesosAreaEnem');
 
     paramMap.next({ get: () => OUTRO_ID });

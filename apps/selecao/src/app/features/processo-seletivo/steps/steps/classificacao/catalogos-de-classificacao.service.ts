@@ -38,7 +38,7 @@ const COMPARADOR_DE_RESOLUCAO = new Intl.Collator('pt-BR', { numeric: true, sens
  * das áreas é estática: lida uma vez, quando dá certo.
  */
 @Injectable()
-export class CatalogosDeClassificacaoService {
+export class CatalogosDeClassificacao {
   private readonly regrasApi = inject(RegrasCatalogoApi);
   private readonly destroyRef = inject(DestroyRef);
 

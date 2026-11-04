@@ -3,7 +3,7 @@ import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
 
 import { StepValidation } from '../../processo-seletivo.models';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 
 import {
   PROCESSO_ID,
@@ -63,7 +63,7 @@ describe('recusa por um critério de desempate já gravado', () => {
 
     it('guarda com a recusa a última leitura do cadastro pedida: só uma pedida depois conta como posterior', async () => {
       lerCadastroComPeso(2);
-      const catalogos = TestBed.inject(CatalogosDeClassificacaoService);
+      const catalogos = TestBed.inject(CatalogosDeClassificacao);
       // Uma leitura pedida antes da recusa e respondida depois dela não é posterior.
       catalogos.recarregarPesosAreaEnem(0);
       const emVoo = controller.expectOne((requisicao) =>
@@ -444,7 +444,7 @@ describe('recusa por um critério de desempate já gravado', () => {
   });
 
   it('não grava a resolução que o cadastro lido já não tem', async () => {
-    TestBed.inject(CatalogosDeClassificacaoService).garantirPesosAreaEnem(0);
+    TestBed.inject(CatalogosDeClassificacao).garantirPesosAreaEnem(0);
     controller
       .expectOne((requisicao) => requisicao.url.endsWith('/api/configuracao/pesos-area-enem'))
       .flush([]);

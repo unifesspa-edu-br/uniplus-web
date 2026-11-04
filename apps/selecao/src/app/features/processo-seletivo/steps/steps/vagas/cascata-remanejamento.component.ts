@@ -25,7 +25,7 @@ import {
   ProblemaDaCascata,
   problemasDaCascata,
 } from './cascata-de-remanejamento';
-import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
 import { modalidadesGravadasPorId } from './modalidades-da-distribuicao';
 import { MatrizDaCascataComponent } from './matriz-da-cascata.component';
 import {
@@ -70,7 +70,7 @@ import { VersaoDeRegraForaDaListagemService } from './versao-de-regra-fora-da-li
 })
 export class CascataRemanejamentoComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDeDistribuicaoService);
+  readonly catalogos = inject(CatalogosDeDistribuicao);
   private readonly versaoDaRegra = inject(VersaoDeRegraForaDaListagemService);
 
   private readonly ofertas = computed(() => this.store.draft().vagas.ofertas);

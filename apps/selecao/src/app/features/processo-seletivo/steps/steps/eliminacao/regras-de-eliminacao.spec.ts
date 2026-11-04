@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 
 import {
   RESOLUCAO,
@@ -38,7 +38,7 @@ describe('regras de eliminação por área', () => {
         baseadoEmEnem: true,
         resolucaoPesoAreaEnem: RESOLUCAO,
       });
-      TestBed.inject(CatalogosDeClassificacaoService).garantirPesosAreaEnem(0);
+      TestBed.inject(CatalogosDeClassificacao).garantirPesosAreaEnem(0);
       controller
         .expectOne((requisicao) => requisicao.url.endsWith('/api/configuracao/pesos-area-enem'))
         .flush([
@@ -146,7 +146,7 @@ describe('regras de eliminação por área', () => {
         baseadoEmEnem: true,
         resolucaoPesoAreaEnem: RESOLUCAO,
       });
-      TestBed.inject(CatalogosDeClassificacaoService).garantirPesosAreaEnem(0);
+      TestBed.inject(CatalogosDeClassificacao).garantirPesosAreaEnem(0);
       controller
         .expectOne((requisicao) => requisicao.url.endsWith('/api/configuracao/pesos-area-enem'))
         .flush([

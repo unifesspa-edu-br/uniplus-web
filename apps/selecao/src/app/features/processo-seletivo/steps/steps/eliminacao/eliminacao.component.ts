@@ -14,13 +14,13 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import {
   classificacaoUsaFormulaLocal,
   divisorDaMediaValido,
   mensagensDeClassificacaoBase,
 } from '../classificacao/classificacao-para-comando';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { declaraNotaDoEnem } from '../cronograma/regras-da-etapa';
 import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
 import { confirmacaoDaClassificacao } from '../classificacao/confirmacao-da-classificacao';
@@ -60,9 +60,9 @@ import { recusaPorCriterioGravadoSemQuadro } from '../desempate/recusas-do-desem
 })
 export class EliminacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDeClassificacaoService);
+  readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
-  private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
+  private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
   private readonly gravacao = inject(GravacaoDaClassificacao);
 
   constructor() {

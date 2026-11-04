@@ -13,7 +13,7 @@ import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { explicarRegra } from '../../../shared/regra-explicada/regra-em-linguagem-clara';
 import { RegraExplicadaComponent } from '../../../shared/regra-explicada/regra-explicada.component';
 import { regraPorChave } from '../../../shared/regra-por-chave';
-import { CatalogosDeDistribuicaoService } from '../catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from '../catalogos-de-distribuicao.service';
 import { padraoAposTrocarDeRegra } from '../edicao-do-padrao';
 import { EstadoDoPassoDeVagas } from '../servicos/estado-do-passo-de-vagas';
 
@@ -30,7 +30,7 @@ export const AVISO_DA_TROCA_DE_REGRA =
 })
 export class RegraDaDistribuicaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly catalogos = inject(CatalogosDeDistribuicaoService);
+  protected readonly catalogos = inject(CatalogosDeDistribuicao);
   protected readonly estado = inject(EstadoDoPassoDeVagas);
 
   /**

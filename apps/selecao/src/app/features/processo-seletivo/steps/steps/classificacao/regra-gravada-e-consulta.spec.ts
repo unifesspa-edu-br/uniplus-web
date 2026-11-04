@@ -20,11 +20,11 @@ import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service'
 import { BonusStepComponent } from '../bonus/bonus.component';
 import { DesempateStepComponent } from '../desempate/desempate.component';
 import { EdicaoDosCriterios } from '../desempate/edicao-dos-criterios.service';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { EliminacaoStepComponent } from '../eliminacao/eliminacao.component';
 import { FormulaStepComponent } from '../formula/formula.component';
 import { AcompanhamentoDoCadastroDePesos } from './acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from './catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-000000000898';
@@ -46,7 +46,7 @@ interface Montagem<T> {
   fixture: ComponentFixture<T>;
   host: HTMLElement;
   store: ProcessoSeletivoStore;
-  catalogos: CatalogosDeClassificacaoService;
+  catalogos: CatalogosDeClassificacao;
 }
 
 async function montar<T>(componente: Type<T>): Promise<Montagem<T>> {
@@ -57,9 +57,9 @@ async function montar<T>(componente: Type<T>): Promise<Montagem<T>> {
       ProcessoSeletivoStore,
       CadastroInicial,
       GravacaoDoProcesso,
-      CatalogosDeClassificacaoService,
+      CatalogosDeClassificacao,
       AcompanhamentoDoCadastroDePesos,
-      { provide: CatalogosDoCronogramaService, useValue: { tipoEtapaPorId: signal(new Map()) } },
+      { provide: CatalogosDoCronograma, useValue: { tipoEtapaPorId: signal(new Map()) } },
       { provide: ReleituraDoSnapshot, useValue: { reler: async () => true } },
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
@@ -70,7 +70,7 @@ async function montar<T>(componente: Type<T>): Promise<Montagem<T>> {
 
   const fixture = TestBed.createComponent(componente);
   const store = TestBed.inject(ProcessoSeletivoStore);
-  const catalogos = TestBed.inject(CatalogosDeClassificacaoService);
+  const catalogos = TestBed.inject(CatalogosDeClassificacao);
   store.processoSeletivoId.set(PROCESSO_ID);
   detectar(fixture);
   return { fixture, host: fixture.nativeElement as HTMLElement, store, catalogos };

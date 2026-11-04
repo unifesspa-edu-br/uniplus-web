@@ -21,7 +21,7 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import {
   lerChaveDaRegra,
@@ -59,7 +59,7 @@ import {
 })
 export class BonusStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDeClassificacaoService);
+  readonly catalogos = inject(CatalogosDeClassificacao);
   protected readonly basesLegais = inject(BasesLegaisDeBonus);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cadastro = inject(CadastroInicial);

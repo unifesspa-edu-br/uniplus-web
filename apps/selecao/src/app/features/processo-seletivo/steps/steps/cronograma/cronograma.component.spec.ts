@@ -27,7 +27,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
-import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from './catalogos-do-cronograma.service';
 import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component';
 import { CronogramaStepComponent } from './cronograma.component';
 import type { EtapaForm } from './cronograma-form';
@@ -95,7 +95,7 @@ describe('CronogramaStepComponent', () => {
         CadastroInicial,
         GravacaoDoProcesso,
         GravacaoDosCamposPressupostos,
-        CatalogosDoCronogramaService,
+        CatalogosDoCronograma,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -565,7 +565,7 @@ describe('CronogramaStepComponent', () => {
     const CGA = { id: ID_CGA, sigla: 'CGA', nome: 'Centro de Gestão Acadêmica' };
 
     function comUnidadesNoCadastro(): void {
-      const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+      const catalogos = TestBed.inject(CatalogosDoCronograma);
       catalogos.unidades.set([CEPS, CGA] as never);
       catalogos.unidadesCarregadas.set(true);
       detectar();
@@ -618,7 +618,7 @@ describe('CronogramaStepComponent', () => {
 
     describe('unidade inicial da fase acrescentada', () => {
       it('não deixa acrescentar fase enquanto as unidades ainda carregam', () => {
-        const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+        const catalogos = TestBed.inject(CatalogosDoCronograma);
         cronograma.formulario.controls.faseAAcrescentar.setValue(ID_AVALIACAO);
         comUnidadesNoCadastro();
         expect(botaoAcrescentar().disabled).toBe(false);
@@ -629,7 +629,7 @@ describe('CronogramaStepComponent', () => {
       });
 
       it('mostra o erro e bloqueia acrescentar fase enquanto a carga das unidades falha', () => {
-        const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+        const catalogos = TestBed.inject(CatalogosDoCronograma);
         catalogos.unidadesCarregadas.set(false);
         catalogos.erroDeUnidades.set('falhou');
         detectar();
@@ -649,7 +649,7 @@ describe('CronogramaStepComponent', () => {
         const doCatalogo = FASES_CANONICAS.map((fase) =>
           fase.id === ID_AVALIACAO ? { ...fase, unidadeSugerida } : fase,
         );
-        TestBed.inject(CatalogosDoCronogramaService).fases.set(doCatalogo as never);
+        TestBed.inject(CatalogosDoCronograma).fases.set(doCatalogo as never);
       }
 
       it('é a unidade que a fase canônica sugere, quando ela está entre as do cadastro', () => {
@@ -788,7 +788,7 @@ describe('CronogramaStepComponent', () => {
 
     it('nunca mostra o identificador da unidade que não está no cadastro nem no processo', () => {
       comUnidadesNoCadastro();
-      TestBed.inject(CatalogosDoCronogramaService).unidadesCarregadas.set(true);
+      TestBed.inject(CatalogosDoCronograma).unidadesCarregadas.set(true);
       comFases(ID_INSCRICAO);
       cronograma.fases
         .at(0)
@@ -798,7 +798,7 @@ describe('CronogramaStepComponent', () => {
     });
 
     it('não afirma que a unidade falta enquanto o cadastro carrega nem se ele falhou', () => {
-      const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+      const catalogos = TestBed.inject(CatalogosDoCronograma);
       comFases(ID_INSCRICAO);
       cronograma.fases
         .at(0)
@@ -2814,7 +2814,7 @@ describe('CronogramaStepComponent', () => {
       store.patchObjectSection('identificacao', {
         origemCandidatos: OrigemCandidatos.inscricaoPropria,
       });
-      TestBed.inject(CatalogosDoCronogramaService).fatos.set([
+      TestBed.inject(CatalogosDoCronograma).fatos.set([
         {
           codigo: 'CONCORRER_PCD',
           nome: 'Concorrer na reserva para pessoa com deficiência',
@@ -2932,7 +2932,7 @@ describe('CronogramaStepComponent', () => {
      * dele não pode depender dela, e a conferência diz para onde levar a exigência.
      */
     it('acusa o gatilho que cita dado conhecido só depois da fase da exigência, com o que fazer', () => {
-      TestBed.inject(CatalogosDoCronogramaService).fatos.set([
+      TestBed.inject(CatalogosDoCronograma).fatos.set([
         {
           codigo: 'MODALIDADE_CONVOCACAO',
           nome: 'Modalidade da convocação',
@@ -3029,7 +3029,7 @@ describe('CronogramaStepComponent', () => {
     });
 
     it('não põe na inscrição o fato que outra finalidade do rascunho, ainda não gravada, já coleta', async () => {
-      TestBed.inject(CatalogosDoCronogramaService).fatos.set([
+      TestBed.inject(CatalogosDoCronograma).fatos.set([
         {
           codigo: 'RENDA_FAMILIAR',
           nome: 'Renda familiar',
@@ -3090,7 +3090,7 @@ describe('CronogramaStepComponent', () => {
      * é esse registro que autoriza tirá-lo quando o gatilho sair.
      */
     it('cria o formulário de inscrição que falta, relê e grava os campos que as exigências pressupõem', async () => {
-      const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+      const catalogos = TestBed.inject(CatalogosDoCronograma);
       catalogos.fatos.set([
         {
           codigo: 'RENDA_FAMILIAR',

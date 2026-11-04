@@ -16,7 +16,7 @@ import {
   RegrasCatalogoQuery,
 } from '@uniplus/shared-data/selecao';
 
-import { CatalogosDeClassificacaoService } from './catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
 function pagina(dados: readonly RegraCatalogoDto[]) {
   return of(apiOk(dados, 200, new HttpHeaders()));
@@ -77,21 +77,21 @@ function montar(
     providers: [
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
-      CatalogosDeClassificacaoService,
+      CatalogosDeClassificacao,
       { provide: RegrasCatalogoApi, useValue: { listar } },
       { provide: PesosEnemApi, useValue: { listar: listarPesos, listarAreas } },
     ],
   });
 
   return {
-    servico: TestBed.inject(CatalogosDeClassificacaoService),
+    servico: TestBed.inject(CatalogosDeClassificacao),
     listar,
     listarPesos,
     listarAreas,
   };
 }
 
-describe('CatalogosDeClassificacaoService', () => {
+describe('CatalogosDeClassificacao', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('carrega os seis tipos de regra por `tipo`, cada um na sua própria consulta', () => {

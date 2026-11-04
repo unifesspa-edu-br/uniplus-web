@@ -13,7 +13,7 @@ import {
 } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
-import { CatalogosDoCronogramaService } from '../steps/cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../steps/cronograma/catalogos-do-cronograma.service';
 import { comCamposQueAsExigenciasPressupoem } from '../steps/formulario/campos-pressupostos-da-inscricao';
 import {
   fatosCitadosPelaDerivacao,
@@ -83,7 +83,7 @@ export class GravacaoDosCamposPressupostos {
   private readonly cadastro = inject(CadastroInicial);
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly problemI18n = inject(ProblemI18nService);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
 
   /** O formulário de inscrição gravado já coleta todos os fatos citados. */
   coletaTudo(servidor: ProcessoSeletivoDto, citados: ReadonlySet<string>): boolean {

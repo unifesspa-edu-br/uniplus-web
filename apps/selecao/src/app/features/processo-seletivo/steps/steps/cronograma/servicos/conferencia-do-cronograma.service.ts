@@ -3,7 +3,7 @@ import { computed, inject, Injectable } from '@angular/core';
 import type { StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { gruposSemNormaResolvida } from '../../../shared/exigencias/consulta-das-exigencias';
-import { CatalogosDoCronogramaService } from '../catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
 import { avisosDosGrupos, type GrupoDeclarado } from '../conferencia-das-exigencias-declaradas';
 import { problemasDoCronograma } from '../cronograma-do-certame';
 import { faseDoFormulario } from '../cronograma-form';
@@ -15,7 +15,7 @@ import { AGUARDA_RELEITURA, ReconciliacaoDasEtapas } from './reconciliacao-das-e
 @Injectable()
 export class ConferenciaDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly reconciliacao = inject(ReconciliacaoDasEtapas);
 

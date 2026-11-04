@@ -8,7 +8,7 @@ import { of } from 'rxjs';
 
 import { DistribuicaoDeVagas, ModalidadeGravada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
 import { ConferenciaDoQuadro } from './servicos/conferencia-do-quadro.service';
 import { EstadoDoPassoDeVagas } from './servicos/estado-do-passo-de-vagas';
 import { SimulacaoDoQuadro } from './servicos/simulacao-do-quadro.service';
@@ -287,7 +287,7 @@ export interface ServicosDasVagas {
   readonly estado: EstadoDoPassoDeVagas;
   readonly simulacao: SimulacaoDoQuadro;
   readonly conferencia: ConferenciaDoQuadro;
-  readonly catalogos: CatalogosDeDistribuicaoService;
+  readonly catalogos: CatalogosDeDistribuicao;
 }
 
 export function servicosDe(fixture: ComponentFixture<VagasStepComponent>): ServicosDasVagas {
@@ -296,7 +296,7 @@ export function servicosDe(fixture: ComponentFixture<VagasStepComponent>): Servi
     estado: injetor.get(EstadoDoPassoDeVagas),
     simulacao: injetor.get(SimulacaoDoQuadro),
     conferencia: injetor.get(ConferenciaDoQuadro),
-    catalogos: injetor.get(CatalogosDeDistribuicaoService),
+    catalogos: injetor.get(CatalogosDeDistribuicao),
   };
 }
 

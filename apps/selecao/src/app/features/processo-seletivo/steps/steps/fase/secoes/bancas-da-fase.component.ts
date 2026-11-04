@@ -4,7 +4,7 @@ import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared
 
 import type { BancaRequeridaDaFase } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
 /** As bancas que a fase requer, com o recorte de categorias de documento que cada uma julga. */
@@ -17,7 +17,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 })
 export class BancasDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly espelho = this.faseEmEdicao.espelho;
 

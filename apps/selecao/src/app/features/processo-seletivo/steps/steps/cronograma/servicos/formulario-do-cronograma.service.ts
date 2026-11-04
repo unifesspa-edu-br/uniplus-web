@@ -8,7 +8,7 @@ import { mesmoConteudo } from '../../../shared/conteudo-canonico';
 import { descreverFase, renumerar, type DescricaoDaFase } from '../../../shared/descricao-da-fase';
 import { exigenciasDaFase } from '../../../shared/exigencias/consulta-das-exigencias';
 import { semAEtapa, semAFase } from '../../../shared/exigencias/exigencias-documentais';
-import { CatalogosDoCronogramaService } from '../catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
 import {
   etapaDoFormulario,
   faseDoFormulario,
@@ -36,7 +36,7 @@ export interface FaseNaLinhaDoTempo extends DescricaoDaFase {
 @Injectable()
 export class FormularioDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly unidades = inject(UnidadesDasFases);
   private readonly reconciliacao = inject(ReconciliacaoDasEtapas);
 

@@ -17,7 +17,7 @@ import {
   baseLegalNova,
 } from '../../../shared/exigencias/exigencias-documentais';
 import { mostraFormulario } from '../../../shared/exigencias/formulario-da-exigencia';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import { ModeloDaExigenciaComponent } from '../modelo-da-exigencia/modelo-da-exigencia.component';
 import { rotuloDaConsequencia } from '../resumo-da-exigencia';
@@ -51,7 +51,7 @@ export class EditorDaExigenciaComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
   protected readonly exigencias = inject(ExigenciasDaFaseStore);
   protected readonly gatilho = inject(GatilhoDasExigenciasStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
 
   readonly resumo = input.required<ResumoDoDocumento>();

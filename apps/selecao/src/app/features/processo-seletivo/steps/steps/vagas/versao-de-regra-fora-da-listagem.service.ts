@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { regraPorChave } from '../../shared/regra-por-chave';
-import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
 
 interface SelecaoDaRegra {
   readonly regraCodigo: string;
@@ -35,7 +35,7 @@ type BuscaDaVersao =
 @Injectable()
 export class VersaoDeRegraForaDaListagemService {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDeDistribuicaoService);
+  private readonly catalogos = inject(CatalogosDeDistribuicao);
   private readonly regrasCatalogoApi = inject(RegrasCatalogoApi);
   private readonly destroyRef = inject(DestroyRef);
 

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { FormsModule } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
-import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from './catalogos-do-cronograma.service';
 import { baseLegalDaConvencao, invariantesDaConvencao } from './convencao-de-contagem';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
 import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service';
@@ -16,7 +16,7 @@ import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service'
   styles: ':host { display: block; }',
 })
 export class ConvencaoDeContagemComponent {
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly gravacao = inject(GravacaoDoCronograma);
   protected readonly edicaoLiberada = this.cronograma.edicaoLiberada;

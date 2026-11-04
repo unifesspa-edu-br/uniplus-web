@@ -12,7 +12,7 @@ import {
 
 /** As unidades administradoras que o operador pode escolher, com a leitura do catálogo e sua falha. */
 @Injectable()
-export class CatalogoDeUnidadesService {
+export class CatalogoDeUnidades {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly unidadesApi = inject(UnidadesApi);
   private readonly destroyRef = inject(DestroyRef);

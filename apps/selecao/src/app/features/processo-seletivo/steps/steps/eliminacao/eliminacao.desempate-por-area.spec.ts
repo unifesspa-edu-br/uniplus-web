@@ -3,7 +3,7 @@ import { StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/s
 import { describe, expect, it } from 'vitest';
 
 import { StepValidation } from '../../processo-seletivo.models';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 
 import {
   RESOLUCAO,
@@ -35,7 +35,7 @@ describe('Eliminação diante do desempate por área', () => {
     };
 
     function lerCadastro(areasDaSaude: unknown[]): void {
-      TestBed.inject(CatalogosDeClassificacaoService).garantirPesosAreaEnem(0);
+      TestBed.inject(CatalogosDeClassificacao).garantirPesosAreaEnem(0);
       const grupo = (codigo: string, areas: unknown[]) => ({
         id: codigo,
         resolucao: RESOLUCAO,

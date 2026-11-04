@@ -12,7 +12,7 @@ import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { IdentificacaoStepComponent } from './identificacao.component';
 import { BuscaDeMunicipio } from './servicos/busca-de-municipio.service';
-import { CatalogoDeUnidadesService } from './servicos/catalogo-de-unidades.service';
+import { CatalogoDeUnidades } from './servicos/catalogo-de-unidades.service';
 import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
@@ -67,7 +67,7 @@ function problema(status: number, code: string, title: string) {
 
 describe('IdentificacaoStepComponent', () => {
   let componente: IdentificacaoStepComponent;
-  let unidades: CatalogoDeUnidadesService;
+  let unidades: CatalogoDeUnidades;
   let municipio: BuscaDeMunicipio;
   let gravacao: GravacaoDaIdentificacao;
   let store: ProcessoSeletivoStore;
@@ -92,7 +92,7 @@ describe('IdentificacaoStepComponent', () => {
 
     const fixture = TestBed.createComponent(IdentificacaoStepComponent);
     componente = fixture.componentInstance;
-    unidades = fixture.debugElement.injector.get(CatalogoDeUnidadesService);
+    unidades = fixture.debugElement.injector.get(CatalogoDeUnidades);
     municipio = fixture.debugElement.injector.get(BuscaDeMunicipio);
     gravacao = fixture.debugElement.injector.get(GravacaoDaIdentificacao);
     host = fixture.nativeElement as HTMLElement;

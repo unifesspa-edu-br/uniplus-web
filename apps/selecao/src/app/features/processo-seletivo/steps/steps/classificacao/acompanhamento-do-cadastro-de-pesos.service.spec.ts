@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { AcompanhamentoDoCadastroDePesos } from './acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from './catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
 const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
 
@@ -50,7 +50,7 @@ function montar(areasDaSaude: readonly string[] = ['MATEMATICA']) {
   TestBed.configureTestingModule({
     providers: [
       ProcessoSeletivoStore,
-      CatalogosDeClassificacaoService,
+      CatalogosDeClassificacao,
       AcompanhamentoDoCadastroDePesos,
       { provide: RegrasCatalogoApi, useValue: { listar: vi.fn() } },
       {
@@ -156,7 +156,7 @@ describe('AcompanhamentoDoCadastroDePesos', () => {
       expect(listarPesos).toHaveBeenCalledTimes(2);
       expect(acompanhamento.leitura()).toMatchObject({ lido: false, carregando: true });
       expect(acompanhamento.quadroDaResolucaoEscolhida()).toHaveLength(2);
-      expect(TestBed.inject(CatalogosDeClassificacaoService).resolucoesPesoAreaEnem()).toEqual([
+      expect(TestBed.inject(CatalogosDeClassificacao).resolucoesPesoAreaEnem()).toEqual([
         RESOLUCAO,
       ]);
     });

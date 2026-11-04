@@ -32,7 +32,7 @@ import {
   type LugarDaExigencia,
   type ProducaoDosFatos,
 } from '../../../shared/producao-dos-fatos';
-import type { CatalogosDoCronogramaService } from '../catalogos-do-cronograma.service';
+import type { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
 import type { ExigenciaDeclarada } from '../conferencia-das-exigencias-declaradas';
 
 /**
@@ -43,7 +43,7 @@ export function exigenciasDeclaradas(
   fases: readonly FaseDoCronograma[],
   store: Pick<ProcessoSeletivoStore, 'draft' | 'modalidadesDoProcesso'>,
   catalogos: Pick<
-    CatalogosDoCronogramaService,
+    CatalogosDoCronograma,
     'tiposDocumento' | 'fatos' | 'fasePorId' | 'nomeDaFase'
   >,
 ): readonly ExigenciaDeclarada[] {

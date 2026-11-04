@@ -25,7 +25,7 @@ import {
 import { RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
 import { hojeNoFusoInstitucional } from '../../shared/fuso-institucional';
-import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from './catalogos-do-cronograma.service';
 
 /** Página única: sem header `Link`, `coletarPaginas` para na primeira. */
 function pagina<T>(dados: readonly T[]) {
@@ -80,7 +80,7 @@ function montar(cenario: Cenario = {}) {
     providers: [
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
-      CatalogosDoCronogramaService,
+      CatalogosDoCronograma,
       {
         provide: FasesCanonicasApi,
         useValue: { listar: () => pagina(cenario.fases ?? []) },
@@ -115,12 +115,12 @@ function montar(cenario: Cenario = {}) {
     ],
   });
 
-  const servico = TestBed.inject(CatalogosDoCronogramaService);
+  const servico = TestBed.inject(CatalogosDoCronograma);
   servico.carregar();
   return { servico, listarAtos };
 }
 
-describe('CatalogosDoCronogramaService — carregamento', () => {
+describe('CatalogosDoCronograma — carregamento', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   /**
@@ -138,7 +138,7 @@ describe('CatalogosDoCronogramaService — carregamento', () => {
 });
 
 
-describe('CatalogosDoCronogramaService — tipos de ato', () => {
+describe('CatalogosDoCronograma — tipos de ato', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   /**
@@ -172,7 +172,7 @@ describe('CatalogosDoCronogramaService — tipos de ato', () => {
   });
 });
 
-describe('CatalogosDoCronogramaService — unidades', () => {
+describe('CatalogosDoCronograma — unidades', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   const CGA = { id: 'unidade-cga', sigla: 'CGA', nome: 'Centro de Gestão Acadêmica' } as UnidadeDto;
@@ -215,7 +215,7 @@ describe('CatalogosDoCronogramaService — unidades', () => {
   });
 });
 
-describe('CatalogosDoCronogramaService — tipos que aguardam a proteção de dados', () => {
+describe('CatalogosDoCronograma — tipos que aguardam a proteção de dados', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   const tipo = (id: string, protecaoAprovada: boolean): TipoDocumentoDto => ({

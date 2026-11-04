@@ -32,7 +32,7 @@ import {
   comRepeticao,
   comRepeticaoEmTodasAsFases,
 } from '../../../shared/exigencias/exigencias-documentais';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import type { RepeticaoDoDocumento } from '../tipos-da-conferencia';
 import { SEM_REPETICAO } from '../tipos-da-conferencia';
@@ -52,7 +52,7 @@ const SEM_ERROS: Readonly<Record<number, string>> = {};
 @Injectable()
 export class GatilhoDasExigenciasStore {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly exigencias = inject(ExigenciasDaFaseStore);
   private readonly faseDoRascunho = this.faseEmEdicao.faseDoRascunho;

@@ -13,7 +13,7 @@ import {
   TipoDeficienciaDto,
 } from '@uniplus/shared-data/configuracao';
 
-import { CatalogosDeAtendimentoService } from './catalogos-de-atendimento.service';
+import { CatalogosDeAtendimento } from './catalogos-de-atendimento.service';
 
 /** Página única: sem header `Link`, `coletarPaginas` para na primeira. */
 function pagina<T>(dados: readonly T[]) {
@@ -64,7 +64,7 @@ function montar(cenario: Cenario = {}) {
     providers: [
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
-      CatalogosDeAtendimentoService,
+      CatalogosDeAtendimento,
       { provide: CondicoesAtendimentoApi, useValue: { listar: listarCondicoes } },
       { provide: RecursoAcessibilidadeApi, useValue: { listar: () => pagina(cenario.recursos ?? []) } },
       {
@@ -74,12 +74,12 @@ function montar(cenario: Cenario = {}) {
     ],
   });
 
-  const servico = TestBed.inject(CatalogosDeAtendimentoService);
+  const servico = TestBed.inject(CatalogosDeAtendimento);
   servico.carregar();
   return { servico, listarCondicoes };
 }
 
-describe('CatalogosDeAtendimentoService', () => {
+describe('CatalogosDeAtendimento', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('carrega os três catálogos', () => {
@@ -123,7 +123,7 @@ describe('CatalogosDeAtendimentoService', () => {
       providers: [
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
-        CatalogosDeAtendimentoService,
+        CatalogosDeAtendimento,
         { provide: CondicoesAtendimentoApi, useValue: { listar: () => pagina([]) } },
         {
           provide: RecursoAcessibilidadeApi,
@@ -139,7 +139,7 @@ describe('CatalogosDeAtendimentoService', () => {
       ],
     });
 
-    const servico = TestBed.inject(CatalogosDeAtendimentoService);
+    const servico = TestBed.inject(CatalogosDeAtendimento);
     servico.carregar();
 
     expect(servico.erro()).not.toBeNull();

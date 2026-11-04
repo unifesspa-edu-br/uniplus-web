@@ -54,7 +54,7 @@ const TIPO_REGRA_RECURSO = 'regra_prazo_recurso';
  * baixaria duas vezes para responder a mesma coisa.
  */
 @Injectable()
-export class CatalogosDoCronogramaService {
+export class CatalogosDoCronograma {
   private readonly fasesApi = inject(FasesCanonicasApi);
   private readonly precedenciasApi = inject(PrecedenciasFaseApi);
   private readonly bancasApi = inject(TiposBancaApi);

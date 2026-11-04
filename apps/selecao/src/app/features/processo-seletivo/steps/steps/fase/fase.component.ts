@@ -17,7 +17,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarCronogramaFases } from '../cronograma/servicos/gravacao-do-cronograma.service';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { problemasDaFase } from './configuracao-da-fase';
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
@@ -62,7 +62,7 @@ import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.compone
 })
 export class FaseStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDoCronogramaService);
+  readonly catalogos = inject(CatalogosDoCronograma);
   private readonly cadastro = inject(CadastroInicial);
   private readonly destruicao = inject(DestroyRef);
 

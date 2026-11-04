@@ -14,7 +14,7 @@ import { ProcessoSeletivoStore } from '../steps/processo-seletivo.store';
 import { CadastroInicial } from '../steps/shared/cadastro-inicial.service';
 import { classificarDocumentos } from '../steps/shared/hidratacao';
 import { passosConcluidosDe } from '../steps/shared/passos-concluidos';
-import { CatalogosDeClassificacaoService } from '../steps/steps/classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../steps/steps/classificacao/catalogos-de-classificacao.service';
 import { ConducaoDoWizard } from './conducao-do-wizard.service';
 import { RascunhoDaPublicacao } from './rascunho-da-publicacao.service';
 
@@ -46,7 +46,7 @@ export class LeituraDoProcesso {
   private readonly documentosApi = inject(DocumentosEAtosDoProcessoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly cadastro = inject(CadastroInicial);
-  private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
+  private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacao);
   private readonly rascunho = inject(RascunhoDaPublicacao);
   private readonly conducao = inject(ConducaoDoWizard);
 

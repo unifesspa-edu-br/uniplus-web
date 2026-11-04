@@ -10,14 +10,14 @@ import {
   UNIDADE_SEM_CADASTRO_CARREGADO,
   type UnidadeGravada,
 } from '../../../shared/unidades-do-cadastro';
-import { CatalogosDoCronogramaService } from '../catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
 import type { FaseForm } from '../cronograma-form';
 
 /** As unidades que respondem pelas fases: o que o cadastro oferece, o que o processo gravou e o que o servidor recusou. */
 @Injectable()
 export class UnidadesDasFases {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
 
   /**
    * Unidades oferecidas a cada fase: o cadastro e, quando faltar, a unidade que o processo

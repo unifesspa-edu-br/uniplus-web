@@ -2,7 +2,7 @@ import { computed, inject, Injectable } from '@angular/core';
 
 import { DistribuicaoDeVagas } from '../../../processo-seletivo.models';
 import { regraPorChave } from '../../../shared/regra-por-chave';
-import { CatalogosDeDistribuicaoService } from '../catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from '../catalogos-de-distribuicao.service';
 import {
   pendenciasDoQuadro,
   pendenciasQueImpedemGravar,
@@ -17,7 +17,7 @@ import { EstadoDoPassoDeVagas } from './estado-do-passo-de-vagas';
 @Injectable()
 export class ConferenciaDoQuadro {
   private readonly estado = inject(EstadoDoPassoDeVagas);
-  private readonly catalogos = inject(CatalogosDeDistribuicaoService);
+  private readonly catalogos = inject(CatalogosDeDistribuicao);
 
   /**
    * Problemas que vêm do padrão, e não de uma oferta em particular. Repetidos linha a linha, três

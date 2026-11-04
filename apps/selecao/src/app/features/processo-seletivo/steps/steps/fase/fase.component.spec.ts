@@ -26,7 +26,7 @@ import {
   folhaDe,
 } from '../../shared/exigencias/exigencias-documentais';
 import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
 import { EditorDaExigenciaComponent } from './documentos/editor-da-exigencia.component';
 import { EixoEtapaComponent } from './documentos/eixos/eixo-etapa.component';
@@ -661,7 +661,7 @@ describe('FaseStepComponent', () => {
       };
 
       beforeEach(() => {
-        TestBed.inject(CatalogosDoCronogramaService).fatos.set([LAUDO]);
+        TestBed.inject(CatalogosDoCronograma).fatos.set([LAUDO]);
         comCronograma(
           fase({}),
           fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
@@ -828,7 +828,7 @@ describe('FaseStepComponent', () => {
         ).find(({ documento }) => documento.tipoDocumentoId === ID_CPF);
 
       beforeEach(() => {
-        TestBed.inject(CatalogosDoCronogramaService).fatos.set([PARENTESCO]);
+        TestBed.inject(CatalogosDoCronograma).fatos.set([PARENTESCO]);
         comCronograma(
           fase({}),
           fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
@@ -1107,7 +1107,7 @@ describe('FaseStepComponent', () => {
       });
 
       it('mostra a norma de cada documento quando elas diferem', () => {
-        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+        TestBed.inject(CatalogosDoCronograma).tiposDocumento.set([
           ...TIPOS_DOCUMENTO,
           { ...TIPOS_DOCUMENTO[0], id: ID_RG, codigo: 'RG', nome: 'RG' },
         ]);
@@ -1173,7 +1173,7 @@ describe('FaseStepComponent', () => {
       });
 
       it('filtra os documentos pelo público e diz quantos sobraram', () => {
-        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+        TestBed.inject(CatalogosDoCronograma).tiposDocumento.set([
           ...TIPOS_DOCUMENTO,
           { ...TIPOS_DOCUMENTO[0], id: ID_RG, codigo: 'RG', nome: 'RG' },
         ]);
@@ -1375,7 +1375,7 @@ describe('FaseStepComponent', () => {
 
       /** O aviso compara com o cadastro vigente: serve a quem edita, e não ao que se publicou. */
       it('em consulta, não mistura o aviso do cadastro vigente com os formatos publicados', () => {
-        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+        TestBed.inject(CatalogosDoCronograma).tiposDocumento.set([
           { ...TIPOS_DOCUMENTO[0], formatosAceitos: 'pdf,tiff' },
         ]);
         exigencias().alternarExigencia(ID_CPF, true);
@@ -1414,7 +1414,7 @@ describe('FaseStepComponent', () => {
        */
       it('em consulta, lê os formatos e o limite gravados quando o cadastro diverge', () => {
         exigencias().alternarExigencia(ID_CPF, true);
-        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+        TestBed.inject(CatalogosDoCronograma).tiposDocumento.set([
           {
             ...TIPOS_DOCUMENTO[0],
             descricao: 'Documento oficial com foto',
@@ -1436,7 +1436,7 @@ describe('FaseStepComponent', () => {
 
       it('em consulta, lê os formatos gravados do documento cujo tipo saiu do cadastro', () => {
         exigencias().alternarExigencia(ID_CPF, true);
-        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([]);
+        TestBed.inject(CatalogosDoCronograma).tiposDocumento.set([]);
         store.remoteSnapshot.set({
           status: StatusProcesso.publicado,
         } as unknown as ProcessoSeletivoDto);
@@ -1454,7 +1454,7 @@ describe('FaseStepComponent', () => {
         comCronograma(fase({}));
         documentos().escolherDocumento(ID_CPF);
         documentos().acrescentarDocumento();
-        TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([]);
+        TestBed.inject(CatalogosDoCronograma).tiposDocumento.set([]);
         detectar();
         expect(documentos().resumos()[0].orientacao).toContain('Remova-o');
 
@@ -1519,7 +1519,7 @@ describe('FaseStepComponent', () => {
     });
 
     it('mostra indisponível, com o motivo, o tipo cuja proteção de dados aguarda aprovação', () => {
-      TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+      TestBed.inject(CatalogosDoCronograma).tiposDocumento.set([
         { ...TIPOS_DOCUMENTO[0], protecaoAprovada: false },
       ]);
       comCronograma(fase({}));
@@ -1550,7 +1550,7 @@ describe('FaseStepComponent', () => {
       ).toEqual([ID_CPF]);
 
       // O cadastro inativa o tipo: ele deixa de vir no catálogo.
-      TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set(
+      TestBed.inject(CatalogosDoCronograma).tiposDocumento.set(
         TIPOS_DOCUMENTO.filter((tipo) => tipo.id !== ID_CPF),
       );
       detectar();
@@ -2054,7 +2054,7 @@ describe('FaseStepComponent', () => {
     const ID_RG = '01960000-0000-7000-0000-0000000000f2';
 
     beforeEach(() => {
-      TestBed.inject(CatalogosDoCronogramaService).tiposDocumento.set([
+      TestBed.inject(CatalogosDoCronograma).tiposDocumento.set([
         ...TIPOS_DOCUMENTO,
         { ...TIPOS_DOCUMENTO[0], id: ID_RG, codigo: 'RG', nome: 'RG' },
       ]);

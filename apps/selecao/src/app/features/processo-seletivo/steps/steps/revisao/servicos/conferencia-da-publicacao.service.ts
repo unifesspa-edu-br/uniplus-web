@@ -3,7 +3,7 @@ import { ProblemDetails } from '@uniplus/shared-core/http';
 
 import { StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { mensagensDePublicacao } from '../comando-de-publicacao';
 import { dataReferenciaLegalDe } from '../periodo-de-inscricao';
 import { agruparPorDimensao, comoAvisosDaRevisao, comoGruposDaRevisao } from '../grupos-da-revisao';
@@ -28,7 +28,7 @@ function recusado(mensagem: string): StepValidation {
 export class ConferenciaDaPublicacao {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly preflight = inject(PreflightDaPublicacaoService);
-  private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
+  private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
 
   /** A última recusa da publicação, ou `null` enquanto não houve tentativa (ou ela publicou). */
   readonly ultimaRecusa = signal<RecusaDePublicacao | null>(null);

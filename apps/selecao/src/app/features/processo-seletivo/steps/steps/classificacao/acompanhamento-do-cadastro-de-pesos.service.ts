@@ -2,7 +2,7 @@ import { Injectable, Injector, computed, effect, inject, untracked } from '@angu
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { quadroDoCadastro, type GrupoDoQuadro } from '../../shared/quadro-de-pesos';
-import { CatalogosDeClassificacaoService } from './catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 import { exigeResolucaoPesoAreaEnem } from './classificacao-para-comando';
 
 /** O cadastro de Peso por Área como os passos o conferem. */
@@ -34,7 +34,7 @@ export interface LeituraDoCadastro {
 @Injectable()
 export class AcompanhamentoDoCadastroDePesos {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDeClassificacaoService);
+  private readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly injector = inject(Injector);
   private acompanhando = false;
 

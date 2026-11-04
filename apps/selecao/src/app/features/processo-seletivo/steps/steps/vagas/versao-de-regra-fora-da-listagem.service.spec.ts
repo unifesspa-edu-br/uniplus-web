@@ -7,7 +7,7 @@ import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
 import { VersaoDeRegraForaDaListagemService } from './versao-de-regra-fora-da-listagem.service';
 
 const BASE = 'http://localhost:5000';
@@ -34,7 +34,7 @@ describe('VersaoDeRegraForaDaListagemService', () => {
     TestBed.configureTestingModule({
       providers: [
         ProcessoSeletivoStore,
-        CatalogosDeDistribuicaoService,
+        CatalogosDeDistribuicao,
         VersaoDeRegraForaDaListagemService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -47,7 +47,7 @@ describe('VersaoDeRegraForaDaListagemService', () => {
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
 
-    TestBed.inject(CatalogosDeDistribuicaoService).carregar();
+    TestBed.inject(CatalogosDeDistribuicao).carregar();
     for (const requisicao of controller.match(() => true)) requisicao.flush([]);
     TestBed.tick();
   });

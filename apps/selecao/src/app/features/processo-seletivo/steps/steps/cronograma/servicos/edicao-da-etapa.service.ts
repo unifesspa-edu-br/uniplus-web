@@ -5,7 +5,7 @@ import type { ProdutoDaFase, RecursoDaEtapa } from '../../../processo-seletivo.m
 import { FORMAS_DE_AVALIACAO } from '../../../shared/forma-de-avaliacao';
 import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../../shared/instancia-superior';
 import { PAPEIS_ESCOLHIVEIS } from '../../fase/configuracao-da-fase';
-import { CatalogosDoCronogramaService } from '../catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
 import { textosDoCatalogo } from '../convencao-de-contagem';
 import type { EtapaForm } from '../cronograma-form';
 import {
@@ -44,7 +44,7 @@ import { FormularioDoCronograma } from './formulario-do-cronograma.service';
  */
 @Injectable()
 export class EdicaoDaEtapa {
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly versaoDoFormulario = this.cronograma.versao;
 

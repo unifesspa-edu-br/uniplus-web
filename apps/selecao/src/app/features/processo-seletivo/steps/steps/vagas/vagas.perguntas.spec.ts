@@ -11,7 +11,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { VagasStepComponent } from './vagas.component';
 import {
   ACEITA_AS_OPCOES,
@@ -51,7 +51,7 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
         ProcessoSeletivoStore,
         CadastroInicial,
         GravacaoDoProcesso,
-        CatalogosDoCronogramaService,
+        CatalogosDoCronograma,
         GravacaoDosCamposPressupostos,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor, ACEITA_AS_OPCOES])),
@@ -101,7 +101,7 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
     fixture.detectChanges();
 
     // O catálogo do cronograma já carregado: a seção das regras o pede ao aparecer.
-    const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+    const catalogos = TestBed.inject(CatalogosDoCronograma);
     catalogos.carregar();
     for (const requisicao of controller.match(() => true)) requisicao.flush([]);
     catalogos.fatos.set([
@@ -270,7 +270,7 @@ describe('VagasStepComponent — perguntas das modalidades ofertadas', () => {
   });
 
   it('recusa e pede o catálogo de fatos de novo quando ele falhou', async () => {
-    const catalogos = TestBed.inject(CatalogosDoCronogramaService);
+    const catalogos = TestBed.inject(CatalogosDoCronograma);
     catalogos.fatos.set([]);
     catalogos.erro.set('Não foi possível carregar os catálogos.');
     const carregar = vi.spyOn(catalogos, 'carregar');

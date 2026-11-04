@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { OrigemCandidatosSelecionada } from '../../processo-seletivo.models';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 
 import {
   PROCESSO_ID,
@@ -244,7 +244,7 @@ describe('gravação da classificação', () => {
     });
 
     it('linhas do cadastro sem leitura válida não servem de cópia presumida', async () => {
-      TestBed.inject(CatalogosDeClassificacaoService).pesosAreaEnem.set([linhaDoCadastro(2)]);
+      TestBed.inject(CatalogosDeClassificacao).pesosAreaEnem.set([linhaDoCadastro(2)]);
       prepararClassificacaoLocal();
       store.patchObjectSection('classificacao', {
         baseadoEmEnem: true,

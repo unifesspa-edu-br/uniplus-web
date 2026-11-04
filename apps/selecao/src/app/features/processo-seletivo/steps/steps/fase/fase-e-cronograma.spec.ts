@@ -13,7 +13,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from '../cronograma/cronograma.component';
 import { FormularioDoCronograma } from '../cronograma/servicos/formulario-do-cronograma.service';
 import { FaseStepComponent } from './fase.component';
@@ -188,7 +188,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
         CadastroInicial,
         GravacaoDoProcesso,
         GravacaoDosCamposPressupostos,
-        CatalogosDoCronogramaService,
+        CatalogosDoCronograma,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },

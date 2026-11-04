@@ -3,7 +3,7 @@ import { Injectable, computed, effect, inject, signal, untracked } from '@angula
 import type { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { descreverFase } from '../../shared/descricao-da-fase';
-import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import {
   problemasDaFase,
   type AtoDoCatalogo,
@@ -34,7 +34,7 @@ export interface FaseNoSeletor {
 @Injectable()
 export class FaseEmEdicao {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
 
   /** Fase aberta, pelo id da fase canônica — o identificador sempre presente. */
   readonly faseAberta = signal('');

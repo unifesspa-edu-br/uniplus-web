@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { deClausulasDoWire, fatosParaLeitura, resumoDaRegra } from '@uniplus/shared-ui/components';
 
-import { CatalogosDoCronogramaService } from '../steps/cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../steps/cronograma/catalogos-do-cronograma.service';
 import type { RegraDaModalidadeOfertada } from './regras-das-modalidades';
 
 let proximoId = 0;
@@ -50,7 +50,7 @@ let proximoId = 0;
 export class RegrasDasModalidadesComponent {
   readonly modalidades = input.required<readonly RegraDaModalidadeOfertada[]>();
 
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
 
   protected readonly tituloId = `regras-das-modalidades-${proximoId++}`;
 

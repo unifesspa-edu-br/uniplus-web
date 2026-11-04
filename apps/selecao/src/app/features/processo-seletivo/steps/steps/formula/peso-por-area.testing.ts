@@ -17,7 +17,7 @@ import { vi } from 'vitest';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 
 export const BASE = 'http://localhost:5000';
 export const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
@@ -106,7 +106,7 @@ export async function montar<T>(
     imports: [tipo],
     providers: [
       ProcessoSeletivoStore,
-      CatalogosDeClassificacaoService,
+      CatalogosDeClassificacao,
       AcompanhamentoDoCadastroDePesos,
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
@@ -126,7 +126,7 @@ export async function montar<T>(
   opcoes.antesDeMontar?.(store);
   if (opcoes.comoSecao) {
     TestBed.inject(AcompanhamentoDoCadastroDePesos).acompanhar();
-    TestBed.inject(CatalogosDeClassificacaoService).carregar();
+    TestBed.inject(CatalogosDeClassificacao).carregar();
   }
 
   const fixture = TestBed.createComponent(tipo);
@@ -278,8 +278,8 @@ export const QUADRO_CONGELADO = [
 ];
 
 /** O catálogo que a seção lê, para conferir a leitura do cadastro. */
-export function catalogos(): CatalogosDeClassificacaoService {
-  return TestBed.inject(CatalogosDeClassificacaoService);
+export function catalogos(): CatalogosDeClassificacao {
+  return TestBed.inject(CatalogosDeClassificacao);
 }
 
 /** Monta só a seção, como o passo a usa: ele é quem acompanha o cadastro e carrega os catálogos. */

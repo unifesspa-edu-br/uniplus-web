@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDeDistribuicaoService } from '../catalogos-de-distribuicao.service';
+import { CatalogosDeDistribuicao } from '../catalogos-de-distribuicao.service';
 import { comOfertasAdicionadas } from '../edicao-do-quadro';
 import { EstadoDoPassoDeVagas } from '../servicos/estado-do-passo-de-vagas';
 
@@ -16,7 +16,7 @@ import { EstadoDoPassoDeVagas } from '../servicos/estado-do-passo-de-vagas';
 })
 export class OfertaParaAdicionarComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly catalogos = inject(CatalogosDeDistribuicaoService);
+  protected readonly catalogos = inject(CatalogosDeDistribuicao);
   protected readonly estado = inject(EstadoDoPassoDeVagas);
 
   protected alternarMarcada(ofertaCursoId: string): void {

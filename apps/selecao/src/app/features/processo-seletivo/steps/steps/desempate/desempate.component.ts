@@ -13,7 +13,7 @@ import { FatosDoDesempate } from './fatos-do-desempate.service';
 import { GravacaoDoDesempate } from './gravacao-do-desempate.service';
 import { CriterioDeDesempateComponent } from './criterio-de-desempate.component';
 import { textoDoCriterio } from '../classificacao/confirmacao-da-classificacao';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import {
   desempateIdosoSemApuracao,
   desempateSemDataDeNascimento,
@@ -44,7 +44,7 @@ import { mensagensDoDesempate } from './validacao-do-desempate';
 })
 export class DesempateStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDeClassificacaoService);
+  readonly catalogos = inject(CatalogosDeClassificacao);
   protected readonly areas = inject(AreasDoDesempate);
   protected readonly fatos = inject(FatosDoDesempate);
   private readonly gravacao = inject(GravacaoDoDesempate);

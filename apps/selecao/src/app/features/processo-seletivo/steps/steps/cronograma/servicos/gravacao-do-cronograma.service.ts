@@ -9,7 +9,7 @@ import {
   type ResultadoGravacao,
 } from '../../../shared/cadastro-inicial.service';
 import { resumoDaRecusa } from '../../../shared/resumo-da-recusa';
-import { CatalogosDoCronogramaService } from '../catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
 import { type FaseForm, faseDoFormulario } from '../cronograma-form';
 import { comoComandoDeEtapa, comoComandoDeFase } from '../cronograma-para-comando';
 import {
@@ -91,7 +91,7 @@ export async function gravarCronogramaFases(
 @Injectable()
 export class GravacaoDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly exigencias = inject(GravacaoDasExigenciasDocumentais);

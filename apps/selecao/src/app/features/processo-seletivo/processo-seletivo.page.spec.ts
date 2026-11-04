@@ -54,7 +54,7 @@ import { CadastroInicial } from './steps/shared/cadastro-inicial.service';
 import { quadroCongelado } from './steps/shared/quadro-de-pesos';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
 import type { PassoDoWizard } from './steps/passo-do-wizard';
-import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from './steps/steps/classificacao/catalogos-de-classificacao.service';
 import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
 import type { CriterioDesempateConfigurado } from './steps/processo-seletivo.models';
 
@@ -820,7 +820,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     store.classificacao.recusarPeloDesempate('Recusa pelo desempate.', 0);
 
     fixture.debugElement.injector
-      .get(CatalogosDeClassificacaoService)
+      .get(CatalogosDeClassificacao)
       .pesosLidosNaLeitura.update((leitura) => leitura + 1);
     TestBed.tick();
 

@@ -4,7 +4,7 @@ import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverFase } from '../../../shared/descricao-da-fase';
 import { fatosParaLerOGatilho } from '../../../shared/documentos-exigidos';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import type { FaseDoCronograma } from '../abas-do-formulario';
 import {
   faseEfetiva,
@@ -21,7 +21,7 @@ import {
 @Injectable()
 export class FasesDosFormularios {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
 
   private readonly formularios = computed(() =>
     formulariosDoRascunho(this.store.draft().formulario),

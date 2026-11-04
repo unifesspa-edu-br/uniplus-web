@@ -23,7 +23,7 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
 import { camposSemValoresOfertados } from '../formulario/problemas-do-formulario';
 import { anunciarRemocao } from './anuncio-de-remocao';
-import { CatalogosDeAtendimentoService } from './catalogos-de-atendimento.service';
+import { CatalogosDeAtendimento } from './catalogos-de-atendimento.service';
 import {
   aposMarcarCondicao,
   aposMarcarTodas,
@@ -53,11 +53,11 @@ import { mensagemDeInativos, referenciasInativas } from './referencias-inativas'
   imports: [ValorEmConsultaComponent],
   templateUrl: './atendimento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [CatalogosDeAtendimentoService, provePassoDoWizard(AtendimentoStepComponent)],
+  providers: [CatalogosDeAtendimento, provePassoDoWizard(AtendimentoStepComponent)],
 })
 export class AtendimentoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDeAtendimentoService);
+  readonly catalogos = inject(CatalogosDeAtendimento);
   private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
 

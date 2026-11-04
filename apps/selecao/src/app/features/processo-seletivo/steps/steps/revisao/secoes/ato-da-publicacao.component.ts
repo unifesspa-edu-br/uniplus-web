@@ -12,7 +12,7 @@ import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { itensDoAto, rotuloDoTipoDeAto } from '../itens-do-ato';
 import { janelaDaInscricao, temFaseDeColetaInscricao } from '../periodo-de-inscricao';
 import { PreflightDaPublicacaoService } from '../preflight-da-publicacao.service';
@@ -42,7 +42,7 @@ export class AtoDaPublicacaoComponent {
   protected readonly preflight = inject(PreflightDaPublicacaoService);
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
   protected readonly publicacao = inject(PublicacaoDoProcesso);
-  private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
+  private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
   private readonly dataBr = new DateBrPipe();
 
   protected readonly form = new FormGroup({

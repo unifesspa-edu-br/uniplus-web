@@ -2,7 +2,7 @@ import { computed, effect, inject, Injectable, untracked } from '@angular/core';
 import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { comCamposQueAsExigenciasPressupoem } from '../campos-pressupostos-da-inscricao';
 import { quemCitaNoProcesso, remocoesTravadasPor } from '../citantes-no-processo';
 import { fatosColetadosPor } from '../formulario-do-processo';
@@ -16,7 +16,7 @@ import { CatalogosDoFormulario } from './catalogos-do-formulario.service';
 @Injectable()
 export class CamposPressupostosDoFormulario {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronogramaService);
+  private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly dados = inject(CatalogosDoFormulario);
 
   constructor() {

@@ -6,7 +6,7 @@ import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import {
   REGRA_CALCULO_IMPORTADA,
   classificacaoUsaFormulaLocal,
@@ -61,7 +61,7 @@ const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
 })
 export class FormulaStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDeClassificacaoService);
+  readonly catalogos = inject(CatalogosDeClassificacao);
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
 
   readonly idDoCampoEscala = ID_DO_CAMPO_ESCALA;
