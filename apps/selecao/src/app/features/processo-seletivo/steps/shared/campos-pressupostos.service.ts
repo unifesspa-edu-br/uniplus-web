@@ -1,7 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
-import { ProcessosSeletivosApi, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import {
+  ProcessosSeletivosApi,
+  type FormularioDto,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import {
   conteudoInicial,
   FINALIDADE_INSCRICAO,
@@ -58,6 +62,15 @@ export function fatosCitadosPelasModalidadesOfertadas(
   return citados;
 }
 
+/** O que a gravação dos campos precisa: o que o servidor tem, o que desejar e em que fase. */
+interface PlanoDosCampos {
+  readonly gravado: FormularioDto | null;
+  readonly conteudoGravado: ConteudoDoFormulario;
+  readonly pressuposto: (conteudo: ConteudoDoFormulario) => ConteudoDoFormulario;
+  readonly desejado: ConteudoDoFormulario;
+  readonly faseId: string;
+}
+
 /**
  * Os campos do formulário de inscrição que o processo pressupõe: os que coletam os fatos que as
  * exigências e as regras das modalidades ofertadas citam. O servidor recusa a regra que cita fato
@@ -96,6 +109,40 @@ export class CamposPressupostosService {
     citados: ReadonlySet<string>,
   ): Promise<CamposPressupostos> {
     const geracao = this.store.geracao();
+    const plano = this.planejar(servidor, citados);
+    if ('tipo' in plano) return plano;
+
+    const preparo =
+      plano.gravado === null
+        ? await this.criarFormulario(processoId, plano)
+        : {
+            base: { faseId: plano.gravado.faseId, conteudo: plano.conteudoGravado },
+            final: plano.desejado,
+          };
+    if ('tipo' in preparo) return preparo;
+
+    const gravacao = await this.cadastro.gravarFormulario(
+      processoId,
+      FINALIDADE_INSCRICAO,
+      preparo.base,
+      { faseId: plano.faseId, conteudo: preparo.final },
+    );
+    if (geracao !== this.store.geracao()) return { tipo: 'garantidos' };
+    if (!gravacao.ok)
+      return { tipo: 'recusados', motivo: this.problemI18n.resolve(gravacao.problem).title };
+
+    await this.acompanharNoRascunho(processoId, plano.conteudoGravado, plano.pressuposto);
+    return { tipo: 'garantidos' };
+  }
+
+  /**
+   * O que gravar: o conteúdo desejado e a fase de inscrição. Devolve o desfecho quando não há o que
+   * gravar — o catálogo recusa, o formulário já coleta tudo ou o cronograma não tem a fase.
+   */
+  private planejar(
+    servidor: ProcessoSeletivoDto,
+    citados: ReadonlySet<string>,
+  ): PlanoDosCampos | CamposPressupostos {
     const gravado = formularioDaFinalidade(servidor.formularios ?? [], FINALIDADE_INSCRICAO);
     const conteudoGravado = gravado === null ? conteudoInicial() : conteudoDoFormulario(gravado);
     const pressuposto = this.pressuposto(servidor, citados);
@@ -108,45 +155,42 @@ export class CamposPressupostosService {
 
     const faseId = gravado?.faseId ?? faseDaInscricao(servidor.cronogramaFases)?.id ?? null;
     if (faseId === null) return { tipo: 'semFaseDeInscricao' };
+    return { gravado, conteudoGravado, pressuposto, desejado, faseId };
+  }
 
-    let base: FormularioParaGravar | null =
-      gravado === null ? null : { faseId: gravado.faseId, conteudo: conteudoGravado };
-    let final = desejado;
-    if (gravado === null) {
-      const criacao = await this.cadastro.gravarFormulario(processoId, FINALIDADE_INSCRICAO, null, {
-        faseId,
-        conteudo: { ...desejado, itens: [], grupos: [], termos: [] },
-      });
-      if (geracao !== this.store.geracao()) return { tipo: 'garantidos' };
-      if (!criacao.ok)
-        return { tipo: 'recusados', motivo: this.problemI18n.resolve(criacao.problem).title };
-
-      const relido = await firstValueFrom(this.api.obter(processoId));
-      if (geracao !== this.store.geracao()) return { tipo: 'garantidos' };
-      const criado = isApiOk(relido)
-        ? formularioDaFinalidade(relido.data.formularios, FINALIDADE_INSCRICAO)
-        : null;
-      if (criado === null) {
-        return {
-          tipo: 'recusados',
-          motivo:
-            'O formulário de inscrição foi criado, mas não foi possível relê-lo para acrescentar os campos. Tente gravar de novo.',
-        };
-      }
-      base = { faseId: criado.faseId, conteudo: conteudoDoFormulario(criado) };
-      final = pressuposto(base.conteudo);
-    }
-
-    const gravacao = await this.cadastro.gravarFormulario(processoId, FINALIDADE_INSCRICAO, base, {
+  /**
+   * Cria o formulário de inscrição pelo cabeçalho e o relê: a API o cria com a seção dos dados
+   * básicos, e os itens se conferem contra ela. Devolve o que gravar em seguida, ou o desfecho
+   * quando a criação foi recusada ou o processo mudou no meio.
+   */
+  private async criarFormulario(
+    processoId: string,
+    plano: PlanoDosCampos,
+  ): Promise<{ base: FormularioParaGravar; final: ConteudoDoFormulario } | CamposPressupostos> {
+    const { faseId, desejado, pressuposto } = plano;
+    const geracao = this.store.geracao();
+    const criacao = await this.cadastro.gravarFormulario(processoId, FINALIDADE_INSCRICAO, null, {
       faseId,
-      conteudo: final,
+      conteudo: { ...desejado, itens: [], grupos: [], termos: [] },
     });
     if (geracao !== this.store.geracao()) return { tipo: 'garantidos' };
-    if (!gravacao.ok)
-      return { tipo: 'recusados', motivo: this.problemI18n.resolve(gravacao.problem).title };
+    if (!criacao.ok)
+      return { tipo: 'recusados', motivo: this.problemI18n.resolve(criacao.problem).title };
 
-    await this.acompanharNoRascunho(processoId, conteudoGravado, pressuposto);
-    return { tipo: 'garantidos' };
+    const relido = await firstValueFrom(this.api.obter(processoId));
+    if (geracao !== this.store.geracao()) return { tipo: 'garantidos' };
+    const criado = isApiOk(relido)
+      ? formularioDaFinalidade(relido.data.formularios, FINALIDADE_INSCRICAO)
+      : null;
+    if (criado === null) {
+      return {
+        tipo: 'recusados',
+        motivo:
+          'O formulário de inscrição foi criado, mas não foi possível relê-lo para acrescentar os campos. Tente gravar de novo.',
+      };
+    }
+    const base = { faseId: criado.faseId, conteudo: conteudoDoFormulario(criado) };
+    return { base, final: pressuposto(base.conteudo) };
   }
 
   /**
@@ -232,21 +276,11 @@ export class CamposPressupostosService {
     const semEdicaoPendente =
       JSON.stringify(formulario.conteudo) === JSON.stringify(conteudoGravadoAntes);
 
-    let depois: ConteudoDoFormulario | null = null;
-    if (semEdicaoPendente) {
-      const relido = await firstValueFrom(this.api.obter(processoId));
-      if (geracao !== this.store.geracao()) return;
-      if (isApiOk(relido)) {
-        const servidor = inscricaoDoServidor(relido.data);
-        this.store.projetarSecao('formulario', servidor);
-        depois = servidor.conteudo;
-      }
-    }
-    if (depois === null) {
-      depois = pressuposto(formulario.conteudo);
-      if (depois !== formulario.conteudo)
-        this.store.patchSection('formulario', { ...formulario, conteudo: depois });
-    }
+    const doServidor = semEdicaoPendente
+      ? await this.projetarDoServidor(processoId, geracao)
+      : null;
+    if (doServidor === 'obsoleto') return;
+    const depois = doServidor ?? this.acrescentarNoRascunho(pressuposto);
 
     const acrescentados = fatosColetadosPor(depois).filter((codigo) => !antes.has(codigo));
     if (acrescentados.length > 0) {
@@ -254,5 +288,30 @@ export class CamposPressupostosService {
         (atual) => new Set([...atual, ...acrescentados]),
       );
     }
+  }
+
+  /** Relê o processo e o projeta no rascunho. `null` se a leitura falhou; `'obsoleto'` se o processo mudou. */
+  private async projetarDoServidor(
+    processoId: string,
+    geracao: number,
+  ): Promise<ConteudoDoFormulario | 'obsoleto' | null> {
+    const relido = await firstValueFrom(this.api.obter(processoId));
+    if (geracao !== this.store.geracao()) return 'obsoleto';
+    if (!isApiOk(relido)) return null;
+
+    const servidor = inscricaoDoServidor(relido.data);
+    this.store.projetarSecao('formulario', servidor);
+    return servidor.conteudo;
+  }
+
+  /** Com edição pendente ela fica, e só os campos acrescentados entram nela. */
+  private acrescentarNoRascunho(
+    pressuposto: (conteudo: ConteudoDoFormulario) => ConteudoDoFormulario,
+  ): ConteudoDoFormulario {
+    const formulario = this.store.draft().formulario;
+    const depois = pressuposto(formulario.conteudo);
+    if (depois !== formulario.conteudo)
+      this.store.patchSection('formulario', { ...formulario, conteudo: depois });
+    return depois;
   }
 }
