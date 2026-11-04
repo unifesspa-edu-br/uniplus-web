@@ -11,7 +11,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { AcompanhamentoDoCadastroDePesos } from './acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from './leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
 const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
@@ -51,7 +51,7 @@ function montar(areasDaSaude: readonly string[] = ['MATEMATICA']) {
     providers: [
       ProcessoSeletivoStore,
       CatalogosDeClassificacao,
-      AcompanhamentoDoCadastroDePesos,
+      LeituraDoCadastroDePesos,
       { provide: RegrasCatalogoApi, useValue: { listar: vi.fn() } },
       {
         provide: PesosEnemApi,
@@ -68,33 +68,33 @@ function montar(areasDaSaude: readonly string[] = ['MATEMATICA']) {
     baseadoEmEnem: true,
     resolucaoPesoAreaEnem: RESOLUCAO,
   });
-  return { store, acompanhamento: TestBed.inject(AcompanhamentoDoCadastroDePesos), listarPesos };
+  return { store, cadastroDePesos: TestBed.inject(LeituraDoCadastroDePesos), listarPesos };
 }
 
-describe('AcompanhamentoDoCadastroDePesos', () => {
+describe('LeituraDoCadastroDePesos', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   describe('acompanhar', () => {
     it('lê o cadastro uma vez para o editor, quando a classificação exige a resolução', () => {
-      const { acompanhamento, listarPesos } = montar();
-      acompanhamento.acompanhar();
-      // Os passos que usam o quadro pedem o mesmo acompanhamento: continua um só.
-      acompanhamento.acompanhar();
+      const { cadastroDePesos, listarPesos } = montar();
+      cadastroDePesos.iniciarLeitura();
+      // Os passos que usam o quadro pedem a mesma leitura: continua um só.
+      cadastroDePesos.iniciarLeitura();
 
       TestBed.tick();
 
       expect(listarPesos).toHaveBeenCalledTimes(1);
-      expect(acompanhamento.quadroDaResolucaoEscolhida().map((grupo) => grupo.codigo)).toEqual([
+      expect(cadastroDePesos.quadroDaResolucaoEscolhida().map((grupo) => grupo.codigo)).toEqual([
         'SAUDE',
         'TECNOLOGICA',
       ]);
     });
 
     it('só para consulta, com a cópia gravada, não relê o cadastro, e a leitura anterior deixa de valer', () => {
-      const { store, acompanhamento, listarPesos } = montar();
-      acompanhamento.acompanhar();
+      const { store, cadastroDePesos, listarPesos } = montar();
+      cadastroDePesos.iniciarLeitura();
       TestBed.tick();
-      expect(acompanhamento.leitura().lido).toBe(true);
+      expect(cadastroDePesos.leitura().lido).toBe(true);
 
       store.remoteSnapshot.set({
         status: StatusProcesso.publicado,
@@ -108,27 +108,27 @@ describe('AcompanhamentoDoCadastroDePesos', () => {
       TestBed.tick();
 
       expect(listarPesos).toHaveBeenCalledTimes(1);
-      expect(acompanhamento.leitura().lido).toBe(false);
+      expect(cadastroDePesos.leitura().lido).toBe(false);
     });
 
     it('uma tecla em outro campo do rascunho não refaz o quadro da resolução', () => {
-      const { store, acompanhamento } = montar();
-      acompanhamento.acompanhar();
+      const { store, cadastroDePesos } = montar();
+      cadastroDePesos.iniciarLeitura();
       TestBed.tick();
-      const antes = acompanhamento.quadroDaResolucaoEscolhida();
+      const antes = cadastroDePesos.quadroDaResolucaoEscolhida();
 
       store.patchObjectSection('identificacao', { nome: 'Processo de teste' });
 
-      expect(acompanhamento.quadroDaResolucaoEscolhida()).toBe(antes);
+      expect(cadastroDePesos.quadroDaResolucaoEscolhida()).toBe(antes);
     });
   });
 
   describe('leitura', () => {
     it('a resposta de uma leitura pedida antes de a classificação mudar não conta como lida', () => {
-      const { store, acompanhamento, listarPesos } = montar();
+      const { store, cadastroDePesos, listarPesos } = montar();
       const emVoo = new Subject<ReturnType<typeof apiOk>>();
       listarPesos.mockReturnValueOnce(emVoo as never);
-      acompanhamento.acompanhar();
+      cadastroDePesos.iniciarLeitura();
       TestBed.tick();
       // Só para consulta, com a cópia: a classificação nova não pede outra leitura.
       store.remoteSnapshot.set({
@@ -140,13 +140,13 @@ describe('AcompanhamentoDoCadastroDePesos', () => {
       emVoo.next(apiOk([linha('SAUDE', ['MATEMATICA'])], 200, new HttpHeaders()));
       emVoo.complete();
 
-      expect(acompanhamento.leitura().lido).toBe(false);
-      expect(acompanhamento.resolucaoForaDoCadastro('Outra')).toBe(false);
+      expect(cadastroDePesos.leitura().lido).toBe(false);
+      expect(cadastroDePesos.resolucaoForaDoCadastro('Outra')).toBe(false);
     });
 
     it('as linhas da leitura anterior ficam como prévia enquanto a nova não chega, sem julgar', () => {
-      const { store, acompanhamento, listarPesos } = montar();
-      acompanhamento.acompanhar();
+      const { store, cadastroDePesos, listarPesos } = montar();
+      cadastroDePesos.iniciarLeitura();
       TestBed.tick();
       listarPesos.mockReturnValueOnce(new Subject() as never);
 
@@ -154,44 +154,44 @@ describe('AcompanhamentoDoCadastroDePesos', () => {
       TestBed.tick();
 
       expect(listarPesos).toHaveBeenCalledTimes(2);
-      expect(acompanhamento.leitura()).toMatchObject({ lido: false, carregando: true });
-      expect(acompanhamento.quadroDaResolucaoEscolhida()).toHaveLength(2);
+      expect(cadastroDePesos.leitura()).toMatchObject({ lido: false, carregando: true });
+      expect(cadastroDePesos.quadroDaResolucaoEscolhida()).toHaveLength(2);
       expect(TestBed.inject(CatalogosDeClassificacao).resolucoesPesoAreaEnem()).toEqual([
         RESOLUCAO,
       ]);
     });
 
     it('só acusa resolução fora do cadastro lido para a versão atual', () => {
-      const { acompanhamento } = montar();
-      expect(acompanhamento.resolucaoForaDoCadastro('Outra')).toBe(false);
+      const { cadastroDePesos } = montar();
+      expect(cadastroDePesos.resolucaoForaDoCadastro('Outra')).toBe(false);
 
-      acompanhamento.acompanhar();
+      cadastroDePesos.iniciarLeitura();
       TestBed.tick();
 
-      expect(acompanhamento.resolucaoForaDoCadastro('Outra')).toBe(true);
-      expect(acompanhamento.resolucaoForaDoCadastro(RESOLUCAO)).toBe(false);
+      expect(cadastroDePesos.resolucaoForaDoCadastro('Outra')).toBe(true);
+      expect(cadastroDePesos.resolucaoForaDoCadastro(RESOLUCAO)).toBe(false);
     });
 
     it('cada leitura que dá certo tem um número maior que a anterior', () => {
-      const { acompanhamento } = montar();
-      acompanhamento.acompanhar();
+      const { cadastroDePesos } = montar();
+      cadastroDePesos.iniciarLeitura();
       TestBed.tick();
-      const primeira = acompanhamento.leitura().leitura;
+      const primeira = cadastroDePesos.leitura().leitura;
 
-      acompanhamento.relerCadastroAPedido(() => undefined);
+      cadastroDePesos.relerCadastroAPedido(() => undefined);
 
-      expect(acompanhamento.leitura().leitura).toBe(primeira + 1);
+      expect(cadastroDePesos.leitura().leitura).toBe(primeira + 1);
     });
   });
 
   describe('relerCadastroAPedido', () => {
     it('tira a recusa da resolução, que julgou o cadastro de antes, e avisa quem pediu', () => {
-      const { store, acompanhamento } = montar();
+      const { store, cadastroDePesos } = montar();
       store.classificacao.recusaDaResolucaoPesoAreaEnem.set('Recusa da resolução.');
       store.classificacao.recusaPeloDesempatePorArea.set('Recusa pelo desempate.');
       const depoisDeLer = vi.fn();
 
-      acompanhamento.relerCadastroAPedido(depoisDeLer);
+      cadastroDePesos.relerCadastroAPedido(depoisDeLer);
 
       expect(store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
       // A do desempate é de quem orquestra a reavaliação, não do cadastro.

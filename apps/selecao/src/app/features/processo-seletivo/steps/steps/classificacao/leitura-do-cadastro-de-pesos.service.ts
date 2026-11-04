@@ -32,7 +32,7 @@ export interface LeituraDoCadastro {
  * a releitura falhar —, mas não provam nada.
  */
 @Injectable()
-export class AcompanhamentoDoCadastroDePesos {
+export class LeituraDoCadastroDePesos {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly injector = inject(Injector);
@@ -72,7 +72,7 @@ export class AcompanhamentoDoCadastroDePesos {
 
   /**
    * Mantém o cadastro lido. Chamado pelos passos que mostram o quadro; repetir a chamada não abre
-   * outro acompanhamento.
+   * outra leitura.
    *
    * O cadastro só é lido quando a classificação exige a resolução, e o processo aceita edição ou
    * não tem cópia congelada em vigor: sem ENEM ou com a nota importada não há o que escolher, e só
@@ -81,7 +81,7 @@ export class AcompanhamentoDoCadastroDePesos {
    * repete a cada leitura da classificação que muda o que se sabia dela, para o cadastro em mãos
    * ser posterior ao que o processo congelou.
    */
-  acompanhar(): void {
+  iniciarLeitura(): void {
     if (this.acompanhando) return;
     this.acompanhando = true;
     const exigeResolucao = computed(() =>

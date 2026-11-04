@@ -15,7 +15,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
-import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { AreasDoDesempate } from './areas-do-desempate.service';
 import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
@@ -136,7 +136,7 @@ async function montar(opcoes: OpcoesDeMontagem = {}): Promise<Montagem> {
       CadastroInicial,
       GravacaoDoProcesso,
       CatalogosDeClassificacao,
-      AcompanhamentoDoCadastroDePesos,
+      LeituraDoCadastroDePesos,
       ReleituraDoSnapshot,
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
@@ -1065,7 +1065,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       }));
       classificacaoGravada(RESOLUCAO, copia)(m.store);
       m.fixture.detectChanges();
-      expect(TestBed.inject(AcompanhamentoDoCadastroDePesos).leitura().lido).toBe(false);
+      expect(TestBed.inject(LeituraDoCadastroDePesos).leitura().lido).toBe(false);
       expect(seletor(m, 0)?.value).toBe('MATEMATICA');
       responderPendentes(m.controller);
       m.fixture.detectChanges();

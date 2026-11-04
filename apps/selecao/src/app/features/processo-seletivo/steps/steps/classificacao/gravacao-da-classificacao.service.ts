@@ -20,7 +20,7 @@ import {
   recusasDoCorte,
   type CampoDaRegra,
 } from '../eliminacao/recusas-da-eliminacao';
-import { AcompanhamentoDoCadastroDePesos } from './acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from './leitura-do-cadastro-de-pesos.service';
 import {
   comoComandoDeClassificacao,
   ehCampoDaEscala,
@@ -46,7 +46,7 @@ import { recusaDaClassificacaoPeloDesempate } from '../desempate/recusas-do-dese
 export class GravacaoDaClassificacao {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicial);
-  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
+  private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
   private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly problemI18n = inject(ProblemI18nService);
 

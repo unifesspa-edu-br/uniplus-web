@@ -17,7 +17,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
-import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { DesempateStepComponent } from './desempate.component';
 import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
@@ -104,7 +104,7 @@ describe('DesempateStepComponent', () => {
         CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDeClassificacao,
-        AcompanhamentoDoCadastroDePesos,
+        LeituraDoCadastroDePesos,
         ReleituraDoSnapshot,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -148,7 +148,7 @@ describe('DesempateStepComponent', () => {
         CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDeClassificacao,
-        AcompanhamentoDoCadastroDePesos,
+        LeituraDoCadastroDePesos,
         ReleituraDoSnapshot,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -200,7 +200,7 @@ describe('DesempateStepComponent', () => {
         CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDeClassificacao,
-        AcompanhamentoDoCadastroDePesos,
+        LeituraDoCadastroDePesos,
         ReleituraDoSnapshot,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),

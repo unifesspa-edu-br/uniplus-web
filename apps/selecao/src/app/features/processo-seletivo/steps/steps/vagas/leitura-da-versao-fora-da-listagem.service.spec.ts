@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
-import { VersaoDeRegraForaDaListagemService } from './versao-de-regra-fora-da-listagem.service';
+import { LeituraDaVersaoForaDaListagem } from './leitura-da-versao-fora-da-listagem.service';
 
 const BASE = 'http://localhost:5000';
 const URL_V0 = `${BASE}/api/selecao/regras-catalogo/REMANEJ-CASCATA-LEI-12711/versoes/v0`;
@@ -25,8 +25,8 @@ const REGRA_V0 = {
   modalidadesAdmitidas: null,
 };
 
-describe('VersaoDeRegraForaDaListagemService', () => {
-  let servico: VersaoDeRegraForaDaListagemService;
+describe('LeituraDaVersaoForaDaListagem', () => {
+  let servico: LeituraDaVersaoForaDaListagem;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 
@@ -35,7 +35,7 @@ describe('VersaoDeRegraForaDaListagemService', () => {
       providers: [
         ProcessoSeletivoStore,
         CatalogosDeDistribuicao,
-        VersaoDeRegraForaDaListagemService,
+        LeituraDaVersaoForaDaListagem,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -43,7 +43,7 @@ describe('VersaoDeRegraForaDaListagemService', () => {
       ],
     });
 
-    servico = TestBed.inject(VersaoDeRegraForaDaListagemService);
+    servico = TestBed.inject(LeituraDaVersaoForaDaListagem);
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
 

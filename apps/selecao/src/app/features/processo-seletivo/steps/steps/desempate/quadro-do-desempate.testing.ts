@@ -1,7 +1,7 @@
 import type { CriterioDesempateConfigurado, WizardDraft } from '../../processo-seletivo.models';
 import type { ClassificacaoGravada } from '../../classificacao-no-servidor';
 import type { GrupoDoQuadro } from '../../shared/quadro-de-pesos';
-import type { LeituraDoCadastro } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import type { LeituraDoCadastro } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { REGRA_CALCULO_MEDIA_PONDERADA } from '../classificacao/classificacao-para-comando';
 
 export const GRAVADA = 'Resolução gravada';

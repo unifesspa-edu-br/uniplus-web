@@ -16,7 +16,7 @@ import { vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
-import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 
 export const BASE = 'http://localhost:5000';
@@ -107,7 +107,7 @@ export async function montar<T>(
     providers: [
       ProcessoSeletivoStore,
       CatalogosDeClassificacao,
-      AcompanhamentoDoCadastroDePesos,
+      LeituraDoCadastroDePesos,
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),
       {
@@ -125,7 +125,7 @@ export async function montar<T>(
   const store = TestBed.inject(ProcessoSeletivoStore);
   opcoes.antesDeMontar?.(store);
   if (opcoes.comoSecao) {
-    TestBed.inject(AcompanhamentoDoCadastroDePesos).acompanhar();
+    TestBed.inject(LeituraDoCadastroDePesos).iniciarLeitura();
     TestBed.inject(CatalogosDeClassificacao).carregar();
   }
 

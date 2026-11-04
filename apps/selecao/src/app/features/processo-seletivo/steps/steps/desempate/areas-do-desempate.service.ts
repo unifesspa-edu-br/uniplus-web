@@ -7,7 +7,7 @@ import {
   ReleituraDoSnapshot,
   relerProcessoAPedido,
 } from '../../shared/releitura-do-snapshot.service';
-import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { desempateUsaAreas } from './desempate-para-comando';
 import {
@@ -32,7 +32,7 @@ export type ResultadoDaReleitura = 'lida' | 'superada' | 'ainda-por-reler';
 export class AreasDoDesempate {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDeClassificacao);
-  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
+  private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
   private readonly releitura = inject(ReleituraDoSnapshot);
 
   private readonly criterios = computed(() => this.store.draft().desempate);
@@ -40,7 +40,7 @@ export class AreasDoDesempate {
   readonly relendoProcesso = signal(false);
 
   constructor() {
-    this.cadastroDePesos.acompanhar();
+    this.cadastroDePesos.iniciarLeitura();
     this.acompanharListaCanonicaDasAreas();
   }
 

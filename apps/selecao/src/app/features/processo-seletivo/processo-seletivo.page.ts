@@ -40,7 +40,7 @@ import { VagasStepComponent } from './steps/steps/vagas/vagas.component';
 import { CatalogosDoCronograma } from './steps/steps/cronograma/catalogos-do-cronograma.service';
 import { CronogramaStepComponent } from './steps/steps/cronograma/cronograma.component';
 import { FormularioStepComponent } from './steps/steps/formulario/formulario.component';
-import { AcompanhamentoDoCadastroDePesos } from './steps/steps/classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from './steps/steps/classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from './steps/steps/classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './steps/steps/formula/formula.component';
 import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
@@ -90,7 +90,7 @@ import {
     CatalogosDoCronograma,
     GravacaoDosCamposPressupostos,
     CatalogosDeClassificacao,
-    AcompanhamentoDoCadastroDePesos,
+    LeituraDoCadastroDePesos,
     ReleituraDoSnapshot,
   ],
   templateUrl: './processo-seletivo.page.html',
@@ -105,7 +105,7 @@ export class ProcessoSeletivoPage {
   private readonly leitura = inject(LeituraDoProcesso);
   private readonly rascunho = inject(RascunhoDaPublicacao);
   private readonly foco = inject(FocoDoEditor);
-  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
+  private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
   private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacao);
   private readonly confirmacaoDeSaida = inject(ConfirmacaoDeSaida);
   private readonly destroyRef = inject(DestroyRef);

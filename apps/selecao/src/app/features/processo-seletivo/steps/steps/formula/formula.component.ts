@@ -5,7 +5,7 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
-import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import {
   REGRA_CALCULO_IMPORTADA,
@@ -76,10 +76,10 @@ export class FormulaStepComponent {
     exigeResolucaoPesoAreaEnem(this.store.draft().classificacao),
   );
 
-  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
+  private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
 
   constructor() {
-    this.cadastroDePesos.acompanhar();
+    this.cadastroDePesos.iniciarLeitura();
     this.catalogos.carregar();
   }
 

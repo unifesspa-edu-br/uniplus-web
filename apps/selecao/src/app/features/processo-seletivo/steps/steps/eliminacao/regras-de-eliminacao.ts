@@ -13,7 +13,7 @@ import {
   type ColunaDoQuadro,
   type GrupoDoQuadro,
 } from '../../shared/quadro-de-pesos';
-import type { LeituraDoCadastro } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import type { LeituraDoCadastro } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import {
   eliminacaoUsaAreaEMinimo,
   eliminacaoUsaEtapa,

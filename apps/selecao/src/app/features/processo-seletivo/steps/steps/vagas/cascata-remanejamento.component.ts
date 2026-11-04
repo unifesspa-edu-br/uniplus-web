@@ -34,7 +34,7 @@ import {
 } from '../../shared/regra-explicada/regra-em-linguagem-clara';
 import { regraPorChave } from '../../shared/regra-por-chave';
 import { RegraExplicadaComponent } from '../../shared/regra-explicada/regra-explicada.component';
-import { VersaoDeRegraForaDaListagemService } from './versao-de-regra-fora-da-listagem.service';
+import { LeituraDaVersaoForaDaListagem } from './leitura-da-versao-fora-da-listagem.service';
 
 /**
  * A seção da cascata de remanejamento, dentro do passo Vagas (UNI-REQ-0134 e
@@ -65,13 +65,13 @@ import { VersaoDeRegraForaDaListagemService } from './versao-de-regra-fora-da-li
     RegraExplicadaComponent,
   ],
   templateUrl: './cascata-remanejamento.component.html',
-  providers: [VersaoDeRegraForaDaListagemService],
+  providers: [LeituraDaVersaoForaDaListagem],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CascataRemanejamentoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeDistribuicao);
-  private readonly versaoDaRegra = inject(VersaoDeRegraForaDaListagemService);
+  private readonly versaoDaRegra = inject(LeituraDaVersaoForaDaListagem);
 
   private readonly ofertas = computed(() => this.store.draft().vagas.ofertas);
   readonly cascata = computed(() => this.store.draft().vagas.cascata);

@@ -23,7 +23,7 @@ import { EdicaoDosCriterios } from '../desempate/edicao-dos-criterios.service';
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { EliminacaoStepComponent } from '../eliminacao/eliminacao.component';
 import { FormulaStepComponent } from '../formula/formula.component';
-import { AcompanhamentoDoCadastroDePesos } from './acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from './leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
 const BASE = 'http://localhost:5000';
@@ -58,7 +58,7 @@ async function montar<T>(componente: Type<T>): Promise<Montagem<T>> {
       CadastroInicial,
       GravacaoDoProcesso,
       CatalogosDeClassificacao,
-      AcompanhamentoDoCadastroDePesos,
+      LeituraDoCadastroDePesos,
       { provide: CatalogosDoCronograma, useValue: { tipoEtapaPorId: signal(new Map()) } },
       { provide: ReleituraDoSnapshot, useValue: { reler: async () => true } },
       provideHttpClient(withInterceptors([apiResultInterceptor])),

@@ -13,7 +13,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
-import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import {
   classificacaoUsaFormulaLocal,
@@ -61,7 +61,7 @@ import { recusaPorCriterioGravadoSemQuadro } from '../desempate/recusas-do-desem
 export class EliminacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
-  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
+  private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
   private readonly gravacao = inject(GravacaoDaClassificacao);
 

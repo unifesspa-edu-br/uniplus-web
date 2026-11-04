@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
-import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { FormulaStepComponent } from './formula.component';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
@@ -48,7 +48,7 @@ describe('FormulaStepComponent', () => {
         { provide: PermissoesService, useValue: { tem: () => false } },
         ProcessoSeletivoStore,
         CatalogosDeClassificacao,
-        AcompanhamentoDoCadastroDePesos,
+        LeituraDoCadastroDePesos,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },

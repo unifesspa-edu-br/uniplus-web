@@ -30,7 +30,7 @@ import {
   ReleituraDoSnapshot,
   relerProcessoAPedido,
 } from '../../shared/releitura-do-snapshot.service';
-import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import {
   TEXTO_DA_PENDENCIA_DA_RESOLUCAO,
@@ -64,7 +64,7 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 export class PesoPorAreaComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
   protected readonly catalogos = inject(CatalogosDeClassificacao);
-  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
+  private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
   private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly appConfig = inject(AppConfigService);
   private readonly permissoes = inject(PermissoesService);
@@ -172,7 +172,7 @@ export class PesoPorAreaComponent {
       this.mostraQuadroGravado() &&
       // Só um cadastro lido depois da cópia pode dizer que ela ficou para trás: a leitura da
       // classificação que traz outra cópia deixa a do cadastro sem valer até ele ser relido (ver
-      // `AcompanhamentoDoCadastroDePesos`).
+      // `LeituraDoCadastroDePesos`).
       this.cadastroDePesos.leitura().lido &&
       !this.resolucaoForaDoCadastro() &&
       !mesmoQuadro(this.quadroGravado(), this.cadastroDePesos.quadroDaResolucaoEscolhida()),

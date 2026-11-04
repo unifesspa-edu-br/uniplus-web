@@ -8,7 +8,7 @@ import {
   type GrupoDoQuadro,
 } from '../../shared/quadro-de-pesos';
 import { MOTIVO_DA_RELEITURA, type MotivoDaReleitura } from '../../shared/motivo-da-releitura';
-import type { LeituraDoCadastro } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import type { LeituraDoCadastro } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { exigeResolucaoPesoAreaEnem } from '../classificacao/classificacao-para-comando';
 import { desempateUsaAreas } from './desempate-para-comando';
 

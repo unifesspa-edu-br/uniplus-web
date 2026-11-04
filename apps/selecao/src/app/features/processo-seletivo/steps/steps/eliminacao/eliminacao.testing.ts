@@ -13,7 +13,7 @@ import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.ser
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
-import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 import { EliminacaoStepComponent } from './eliminacao.component';
 
@@ -143,7 +143,7 @@ export function montarEliminacao(): void {
         GravacaoDoProcesso,
         CatalogosDeClassificacao,
         { provide: CatalogosDoCronograma, useValue: { tipoEtapaPorId } },
-        AcompanhamentoDoCadastroDePesos,
+        LeituraDoCadastroDePesos,
         ReleituraDoSnapshot,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),

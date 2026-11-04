@@ -1,7 +1,7 @@
 import type { ColunaDoQuadro } from '../../shared/quadro-de-pesos';
 import type { CriterioDesempateConfigurado, WizardDraft } from '../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import type { LeituraDoCadastro } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
+import type { LeituraDoCadastro } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { desempateUsaAreas } from './desempate-para-comando';
 import { areasForaDoQuadro, rotulosDasAreas, situacaoDoQuadro } from './situacao-do-quadro';
 

@@ -33,7 +33,7 @@ type BuscaDaVersao =
  * uma substituta.
  */
 @Injectable()
-export class VersaoDeRegraForaDaListagemService {
+export class LeituraDaVersaoForaDaListagem {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDeDistribuicao);
   private readonly regrasCatalogoApi = inject(RegrasCatalogoApi);
