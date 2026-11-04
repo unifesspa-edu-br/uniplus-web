@@ -88,8 +88,8 @@ export async function gravarCronogramaFases(
   return cadastro.definirCronogramaFases(processoSeletivoId, fases.map(comoComandoDeFase));
 }
 
-/** O que uma gravação do cronograma envia, congelado no instante em que o operador manda gravar. */
-interface EnvioDoCronograma {
+/** O que uma gravação do cronograma escreve, congelado no instante em que o operador manda gravar. */
+interface ConteudoDaGravacao {
   readonly processoId: string;
   readonly geracao: number;
   readonly enviadas: readonly FormGroup<FaseForm>[];
@@ -152,35 +152,26 @@ export class GravacaoDoCronograma {
   }
 
   /**
-   * Grava as três dimensões: etapas e cronograma de fases, na ordem que a
-   * bicondicional do agregado exige, e por último a convenção de contagem de
-   * prazo — só quando o rascunho declara uma.
+   * Grava o cronograma na ordem fases, etapas, releitura dos identificadores, exigências
+   * documentais e, por último, a convenção de contagem de prazo — só quando o rascunho declara
+   * uma. Para na primeira recusa.
    *
-   * A ordem entre etapas e cronograma não é preferência: a fase que agrupa
-   * etapas é recusada na hora se o processo não tiver nenhuma etapa, então
-   * gravar o cronograma antes das etapas derrubaria a gravação de um
-   * cronograma que é válido.
+   * As fases vão primeiro, sempre: a etapa declara a fase em que acontece, e o servidor recusa
+   * etapa cuja fase ainda não está no cronograma. Um certame montado do zero não teria como
+   * gravar etapa nenhuma na ordem inversa; remover uma fase também é seguro por aqui, porque o
+   * agregado poda as etapas dela. Fases e etapas vão juntas mesmo quando só uma mudou: a
+   * conferência anterior recusa e aponta a etapa malformada antes de qualquer envio, e um `PUT`
+   * que substitui a coleção pelo mesmo conteúdo não muda nada no servidor.
    *
-   * As duas vão juntas mesmo quando só uma mudou. O acoplamento que isso
-   * poderia criar — uma etapa malformada impedindo a correção de uma data — não
-   * chega a existir, porque a conferência acima recusa antes de qualquer envio e
-   * aponta a etapa; e um `PUT` que substitui a coleção pelo mesmo conteúdo não
-   * muda nada no servidor.
+   * Depois das etapas, a releitura recolhe os identificadores que o servidor atribuiu: deixá-la
+   * para o fim a perderia se uma etapa seguinte fosse recusada, e a tentativa seguinte recriaria
+   * etapas que já existem. Se ela falha, a tela trava, porque o rascunho ainda tem `id: null`
+   * nas etapas criadas. As exigências documentais dependem das fases e dos ids das etapas.
    *
-   * O algoritmo vem por último e é opcional: ausência é estado válido
-   * enquanto rascunho — o endpoint recusa código ou versão nulos, e
-   * não existe caminho para desdeclarar a convenção depois de escolhida. Se
-   * ele falhar, as duas primeiras chamadas já gravaram, e a mensagem diz isso
-   * em vez de tratar a falha como se nada tivesse sido salvo.
-   *
-   * O cronograma vai primeiro porque a etapa declara a fase em que acontece, e o servidor recusa
-   * etapa cuja fase ainda não está no cronograma; remover uma fase é seguro, o agregado poda as
-   * etapas dela. Depois das etapas, a releitura recolhe os identificadores que o servidor
-   * atribuiu: deixar para o fim perderia a releitura se o cronograma fosse recusado, e a
-   * tentativa seguinte recriaria etapas que já existem. Se ela falha, a tela trava, porque o
-   * rascunho ainda tem `id: null` nas etapas criadas. As exigências documentais dependem dos
-   * dois ids. A convenção só é gravada quando há escolha, e dali em diante o endpoint não tem
-   * remoção: o seletor deixa de oferecer "nenhuma convenção".
+   * A convenção é opcional: ausência é estado válido enquanto rascunho, e o endpoint recusa
+   * código ou versão nulos. Uma vez gravada, não existe remoção, e o seletor deixa de oferecer
+   * "nenhuma convenção". Se ela falhar, o restante já foi gravado, e a mensagem diz isso em vez
+   * de tratar a falha como se nada tivesse sido salvo.
    */
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
@@ -197,16 +188,16 @@ export class GravacaoDoCronograma {
       return conferencia;
     }
 
-    const envio = this.congelarEnvio(processoId);
+    const conteudo = this.congelarConteudo(processoId);
     this.store.salvando.set(true);
     try {
-      return (await this.gravarEmSequencia(envio)) ?? { valid: true };
+      return (await this.gravarEmSequencia(conteudo)) ?? { valid: true };
     } finally {
-      if (envio.geracao === this.store.geracao()) this.store.salvando.set(false);
+      if (conteudo.geracao === this.store.geracao()) this.store.salvando.set(false);
     }
   }
 
-  private congelarEnvio(processoId: string): EnvioDoCronograma {
+  private congelarConteudo(processoId: string): ConteudoDaGravacao {
     return {
       processoId,
       geracao: this.store.geracao(),
@@ -217,13 +208,13 @@ export class GravacaoDoCronograma {
     };
   }
 
-  private async gravarEmSequencia(envio: EnvioDoCronograma): Promise<ValidacaoDoPasso | null> {
+  private async gravarEmSequencia(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
     const passos = [
-      () => this.gravarFases(envio),
-      () => this.gravarEtapas(envio),
-      () => this.recolherIdentificadores(envio),
-      () => this.gravarExigencias(envio),
-      () => this.gravarConvencao(envio),
+      () => this.gravarFases(conteudo),
+      () => this.gravarEtapas(conteudo),
+      () => this.recolherIdentificadores(conteudo),
+      () => this.gravarExigencias(conteudo),
+      () => this.gravarConvencao(conteudo),
     ];
     for (const passo of passos) {
       const recusa = await passo();
@@ -232,16 +223,20 @@ export class GravacaoDoCronograma {
     return null;
   }
 
-  private superada(envio: EnvioDoCronograma): boolean {
-    return envio.geracao !== this.store.geracao();
+  private superada(conteudo: ConteudoDaGravacao): boolean {
+    return conteudo.geracao !== this.store.geracao();
   }
 
-  private async gravarFases(envio: EnvioDoCronograma): Promise<ValidacaoDoPasso | null> {
-    const cronograma = await gravarCronogramaFases(this.cadastro, envio.processoId, envio.fases);
-    if (this.superada(envio)) return GRAVACAO_SUPERADA;
+  private async gravarFases(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
+    const cronograma = await gravarCronogramaFases(
+      this.cadastro,
+      conteudo.processoId,
+      conteudo.fases,
+    );
+    if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     if (!cronograma.ok) {
       this.recusarUnidades(
-        envio.enviadas,
+        conteudo.enviadas,
         fasesComUnidadeNaoEncontrada(cronograma.problem.errors ?? []),
       );
       return {
@@ -255,26 +250,26 @@ export class GravacaoDoCronograma {
     return null;
   }
 
-  private async gravarEtapas(envio: EnvioDoCronograma): Promise<ValidacaoDoPasso | null> {
+  private async gravarEtapas(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
     const gravacao = await this.cadastro.definirEtapas(
-      envio.processoId,
-      envio.etapas.map(comoComandoDeEtapa),
+      conteudo.processoId,
+      conteudo.etapas.map(comoComandoDeEtapa),
     );
-    if (this.superada(envio)) return GRAVACAO_SUPERADA;
+    if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     if (gravacao.ok) return null;
 
-    this.recusas.aplicar(envio.grupos, gravacao.problem.errors ?? []);
-    return { valid: false, messages: this.mensagensDaRecusaDasEtapas(gravacao.problem, envio) };
+    this.recusas.aplicar(conteudo.grupos, gravacao.problem.errors ?? []);
+    return { valid: false, messages: this.mensagensDaRecusaDasEtapas(gravacao.problem, conteudo) };
   }
 
   private mensagensDaRecusaDasEtapas(
     problema: Extract<ResultadoGravacao, { ok: false }>['problem'],
-    envio: EnvioDoCronograma,
+    conteudo: ConteudoDaGravacao,
   ): string[] {
     const daRaiz = recusaDaEtapaDeNotaDoEnem(problema.code);
     const resumo = resumoDaRecusa(
       problema,
-      (erro) => this.mensagemDoErroDaEtapa(erro, envio.etapas),
+      (erro) => this.mensagemDoErroDaEtapa(erro, conteudo.etapas),
       () => this.problemI18n.resolve(problema).title,
     );
     return daRaiz === null || resumo.includes(daRaiz) ? resumo : [daRaiz, ...resumo];
@@ -282,7 +277,7 @@ export class GravacaoDoCronograma {
 
   private mensagemDoErroDaEtapa(
     erro: { readonly code: string; readonly field: string },
-    etapas: EnvioDoCronograma['etapas'],
+    etapas: ConteudoDaGravacao['etapas'],
   ): string | null {
     const texto = recusaDoCampoDaEtapa(erro.code);
     if (texto === null) return recusaDaEtapaDeNotaDoEnem(erro.code);
@@ -293,34 +288,34 @@ export class GravacaoDoCronograma {
   }
 
   private async recolherIdentificadores(
-    envio: EnvioDoCronograma,
+    conteudo: ConteudoDaGravacao,
   ): Promise<ValidacaoDoPasso | null> {
     const recolheu = await this.releituraDasEtapas.recolherIdentificadoresDasEtapas(
-      envio.processoId,
+      conteudo.processoId,
     );
-    if (this.superada(envio)) return GRAVACAO_SUPERADA;
+    if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     if (recolheu) return null;
 
     this.releituraDasEtapas.releituraPendente.set(true);
     return { valid: false, messages: [AGUARDA_RELEITURA] };
   }
 
-  private async gravarExigencias(envio: EnvioDoCronograma): Promise<ValidacaoDoPasso | null> {
-    const exigencias = await this.exigencias.gravar(envio.processoId);
-    if (this.superada(envio)) return GRAVACAO_SUPERADA;
+  private async gravarExigencias(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
+    const exigencias = await this.exigencias.gravar(conteudo.processoId);
+    if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     return exigencias.valid ? null : exigencias;
   }
 
-  private async gravarConvencao(envio: EnvioDoCronograma): Promise<ValidacaoDoPasso | null> {
+  private async gravarConvencao(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
     const formulario = this.cronograma.formulario.controls;
     const codigo = formulario.algoritmoContagemCodigo.value;
     if (codigo === '') return null;
 
-    const algoritmo = await this.cadastro.definirAlgoritmoContagemPrazo(envio.processoId, {
+    const algoritmo = await this.cadastro.definirAlgoritmoContagemPrazo(conteudo.processoId, {
       codigo,
       versao: formulario.algoritmoContagemVersao.value,
     });
-    if (this.superada(envio)) return GRAVACAO_SUPERADA;
+    if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     if (!algoritmo.ok) {
       return {
         valid: false,
