@@ -38,6 +38,11 @@ const ROTULO_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
   SegundaInstancia: '2ª',
 };
 
+function valorComUnidade(valor: string, unidade: string): string {
+  if (valor === '') return '';
+  return `${valor} ${UNIDADES.find((u) => u.valor === unidade)?.rotulo ?? unidade}`;
+}
+
 /** A regra de recurso da fase: a regra de contagem, o prazo, a âncora e as suspensividades. */
 @Component({
   selector: 'sel-regra-de-recurso-da-fase',
@@ -124,10 +129,6 @@ export class RegraDeRecursoDaFaseComponent {
 
     const rotulosDosAtos = this.catalogoDeAtos.rotuloDoAto();
     const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
-    const par = (valor: string, unidade: string): string =>
-      valor === ''
-        ? ''
-        : `${valor} ${UNIDADES.find((u) => u.valor === unidade)?.rotulo ?? unidade}`;
     const recurso = form.controls.recurso.controls;
 
     return {
@@ -135,19 +136,19 @@ export class RegraDeRecursoDaFaseComponent {
       regraDeRecurso: recurso.regraCodigo.value
         ? `${recurso.regraCodigo.value} · versão ${recurso.regraVersao.value}`
         : null,
-      prazo: par(recurso.prazoValor.value, recurso.prazoUnidade.value) || null,
+      prazo: valorComUnidade(recurso.prazoValor.value, recurso.prazoUnidade.value) || null,
       publicacaoDoPrazo: recurso.atoAncoraCodigo.value
         ? nomeDoAto(recurso.atoAncoraCodigo.value)
         : null,
       suspensividadePrimeiraInstancia:
-        par(
+        valorComUnidade(
           recurso.suspensividadePrimeiraInstanciaValor.value,
           recurso.suspensividadePrimeiraInstanciaUnidade.value,
         ) || null,
       admiteInstanciaSuperior: recurso.admiteInstanciaSuperior.value,
       suspensividadeSegundaInstancia:
         recurso.admiteInstanciaSuperior.value === true
-          ? par(
+          ? valorComUnidade(
               recurso.suspensividadeSegundaInstanciaValor.value,
               recurso.suspensividadeSegundaInstanciaUnidade.value,
             ) || null

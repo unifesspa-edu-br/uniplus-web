@@ -94,7 +94,13 @@ export class FasePassoComponent {
   constructor() {
     this.situacao.carregar();
     this.destruicao.onDestroy(() => this.faseEmEdicao.espelho.encerrar());
+    this.manterAFaseAbertaNoCronograma();
+    this.espelharORascunhoNoFormulario();
+    this.travarForaDeRascunho();
+    this.preselecionarAAncoraUnica();
+  }
 
+  private manterAFaseAbertaNoCronograma(): void {
     // A fase aberta acompanha o cronograma: sem escolha, ou com a escolha já
     // removida da linha do tempo, abre a primeira. Deixar a tela apontando para
     // uma fase que saiu mostraria um formulário sem dono.
@@ -111,14 +117,18 @@ export class FasePassoComponent {
         this.faseAberta.set(fases[0]?.faseCanonicaId ?? '');
       });
     });
+  }
 
+  private espelharORascunhoNoFormulario(): void {
     // Rascunho → formulário. É a única entrada que não veio da digitação: a
     // hidratação da leitura e a troca de fase chegam por aqui.
     effect(() => {
       const fase = this.faseDoRascunho();
       untracked(() => this.faseEmEdicao.espelho.espelhar(fase));
     });
+  }
 
+  private travarForaDeRascunho(): void {
     // Fora de rascunho o servidor recusa qualquer gravação, e deixar a tela
     // aceitar digitação faria a revisão exibir o que o avanço descarta.
     effect(() => {
@@ -130,7 +140,9 @@ export class FasePassoComponent {
         else formulario.disable({ emitEvent: false });
       });
     });
+  }
 
+  private preselecionarAAncoraUnica(): void {
     // Com um só resultado preliminar não há escolha a fazer, e pré-selecionar
     // poupa um clique. Com dois — gabarito e resultado, por exemplo — a escolha
     // é do operador: eleger um deles contaria a janela da publicação errada.
