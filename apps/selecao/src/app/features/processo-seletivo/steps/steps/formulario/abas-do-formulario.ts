@@ -66,68 +66,105 @@ export interface EntradaDasAbas {
  * novo.
  */
 export function abasDoFormulario(entrada: EntradaDasAbas) {
-  const { formularios, fases, vocabulario, textos } = entrada;
-  const outras = entrada.outrasFinalidades;
   const finalidadesDaFase = new Map(
     entrada.fasesDoCronograma.map((fase) => [fase.codigo, finalidadesQueAtende(fase)]),
   );
-  return formularios.map((formulario) => {
-    const ehInscricao = formulario.finalidade === FINALIDADE_INSCRICAO;
-    const sufixo = sufixoDaFinalidade(formulario.finalidade);
-    const fase = fases.get(formulario.finalidade) ?? { opcoes: [], escolhida: '' };
-    const recusaDaRemocao = textos.recusasDaRemocao.get(formulario.finalidade) ?? null;
-    const recusaDaAplicacao = textos.recusasDaAplicacao.get(formulario.finalidade) ?? null;
-    return {
-      finalidade: formulario.finalidade,
-      rotulo:
-        FINALIDADES.find((opcao) => opcao.valor === formulario.finalidade)?.rotulo ??
-        formulario.finalidade,
-      nome: nomeDaFinalidade(formulario.finalidade),
-      ehInscricao,
-      aba: `form-aba-${sufixo}`,
-      painel: `form-painel-${sufixo}`,
-      idBase: `form-${sufixo}`,
-      campoDaFase: `form-fase-${sufixo}`,
-      conteudo: formulario.conteudo,
-      fases: fase.opcoes,
-      fase: fase.escolhida,
-      nomeDaFase: fase.opcoes.find((opcao) => opcao.codigo === fase.escolhida)?.nome ?? null,
-      recusas: textos.recusasDaGravacao.get(formulario.finalidade) ?? null,
-      recusaDaRemocao,
-      recusada:
-        textos.recusasDaGravacao.has(formulario.finalidade) ||
-        recusaDaRemocao !== null ||
-        recusaDaAplicacao !== null,
-      modelos: textos.modelos.get(formulario.finalidade) ?? [],
-      modeloEscolhido: textos.modeloEscolhido.get(formulario.finalidade) ?? '',
-      modeloOrigemCodigo: formulario.modeloOrigemCodigo ?? null,
-      recusaDaAplicacao,
-      resumoDaAplicacao: textos.resumosDaAplicacao.get(formulario.finalidade) ?? null,
-      fatosDaInscricao: ehInscricao ? null : entrada.fatosDaInscricao,
-      fatosIndisponiveis: ehInscricao
-        ? fatosForaDaColetaDaInscricao(
-            formulario.conteudo,
-            fatosColetadosPelasOutras(formularios, FINALIDADE_INSCRICAO),
-          )
-        : fatosColetadosPelasOutras(formularios, formulario.finalidade),
-      fatosQueExigemRespostaPorFora: ehInscricao
-        ? fatosDaInscricaoQueOutrasExigem(formulario.conteudo, outras)
-        : [],
-      leitura: leituraDe(formulario.conteudo),
-      temBlocoDocumental: etapasEmOrdem(formulario.conteudo).some(
-        (etapa) => etapa.bloco === BLOCO_COMPROVACAO_DOCUMENTAL,
-      ),
-      documentos: documentosDoFormulario(
-        entrada.documentos,
-        fase.escolhida,
-        formulario.finalidade,
-        finalidadesDaFase.get(fase.escolhida) ?? [],
-        vocabulario,
-        entrada.fasesDoCronograma.map((faseDoCronograma) => faseDoCronograma.codigo),
-      ),
-      semFaseParaDocumentos: fase.escolhida === '',
-    };
-  });
+  return entrada.formularios.map((formulario) => ({
+    ...identificacaoDaAba(formulario),
+    ...faseDaAba(entrada, formulario),
+    ...textosDaAba(entrada.textos, formulario),
+    ...fatosDaAba(entrada, formulario),
+    ...conteudoDaAba(entrada, formulario, finalidadesDaFase),
+  }));
+}
+
+/** Os ids e os nomes da aba, pela finalidade. */
+function identificacaoDaAba(formulario: FormularioDaFinalidade) {
+  const sufixo = sufixoDaFinalidade(formulario.finalidade);
+  return {
+    finalidade: formulario.finalidade,
+    rotulo:
+      FINALIDADES.find((opcao) => opcao.valor === formulario.finalidade)?.rotulo ??
+      formulario.finalidade,
+    nome: nomeDaFinalidade(formulario.finalidade),
+    ehInscricao: formulario.finalidade === FINALIDADE_INSCRICAO,
+    aba: `form-aba-${sufixo}`,
+    painel: `form-painel-${sufixo}`,
+    idBase: `form-${sufixo}`,
+    campoDaFase: `form-fase-${sufixo}`,
+    modeloOrigemCodigo: formulario.modeloOrigemCodigo ?? null,
+  };
+}
+
+/** A fase em que o formulário é respondido: as que servem a ele e a escolhida. */
+function faseDaAba(entrada: EntradaDasAbas, formulario: FormularioDaFinalidade) {
+  const fase = entrada.fases.get(formulario.finalidade) ?? { opcoes: [], escolhida: '' };
+  return {
+    fases: fase.opcoes,
+    fase: fase.escolhida,
+    nomeDaFase: fase.opcoes.find((opcao) => opcao.codigo === fase.escolhida)?.nome ?? null,
+    semFaseParaDocumentos: fase.escolhida === '',
+  };
+}
+
+/** As recusas, os modelos e o resumo da aplicação que a aba mostra. */
+function textosDaAba(textos: TextosDasAbas, formulario: FormularioDaFinalidade) {
+  const { finalidade } = formulario;
+  const recusaDaRemocao = textos.recusasDaRemocao.get(finalidade) ?? null;
+  const recusaDaAplicacao = textos.recusasDaAplicacao.get(finalidade) ?? null;
+  return {
+    recusas: textos.recusasDaGravacao.get(finalidade) ?? null,
+    recusaDaRemocao,
+    recusaDaAplicacao,
+    recusada:
+      textos.recusasDaGravacao.has(finalidade) ||
+      recusaDaRemocao !== null ||
+      recusaDaAplicacao !== null,
+    modelos: textos.modelos.get(finalidade) ?? [],
+    modeloEscolhido: textos.modeloEscolhido.get(finalidade) ?? '',
+    resumoDaAplicacao: textos.resumosDaAplicacao.get(finalidade) ?? null,
+  };
+}
+
+/** Os fatos que o editor da aba pode citar, os que não pode coletar e os que a inscrição deve manter. */
+function fatosDaAba(entrada: EntradaDasAbas, formulario: FormularioDaFinalidade) {
+  const ehInscricao = formulario.finalidade === FINALIDADE_INSCRICAO;
+  return {
+    fatosDaInscricao: ehInscricao ? null : entrada.fatosDaInscricao,
+    fatosIndisponiveis: ehInscricao
+      ? fatosForaDaColetaDaInscricao(
+          formulario.conteudo,
+          fatosColetadosPelasOutras(entrada.formularios, FINALIDADE_INSCRICAO),
+        )
+      : fatosColetadosPelasOutras(entrada.formularios, formulario.finalidade),
+    fatosQueExigemRespostaPorFora: ehInscricao
+      ? fatosDaInscricaoQueOutrasExigem(formulario.conteudo, entrada.outrasFinalidades)
+      : [],
+  };
+}
+
+/** O conteúdo do formulário, como o editor o recebe e como a consulta o lê, e os documentos dele. */
+function conteudoDaAba(
+  entrada: EntradaDasAbas,
+  formulario: FormularioDaFinalidade,
+  finalidadesDaFase: ReadonlyMap<string, readonly string[]>,
+) {
+  const escolhida = entrada.fases.get(formulario.finalidade)?.escolhida ?? '';
+  return {
+    conteudo: formulario.conteudo,
+    leitura: leituraDe(formulario.conteudo),
+    temBlocoDocumental: etapasEmOrdem(formulario.conteudo).some(
+      (etapa) => etapa.bloco === BLOCO_COMPROVACAO_DOCUMENTAL,
+    ),
+    documentos: documentosDoFormulario(
+      entrada.documentos,
+      escolhida,
+      formulario.finalidade,
+      finalidadesDaFase.get(escolhida) ?? [],
+      entrada.vocabulario,
+      entrada.fasesDoCronograma.map((fase) => fase.codigo),
+    ),
+  };
 }
 
 /** Uma aba do passo, como o modelo de exibição a monta. */
