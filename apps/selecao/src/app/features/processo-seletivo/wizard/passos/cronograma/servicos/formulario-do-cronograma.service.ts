@@ -302,6 +302,40 @@ export class FormularioDoCronograma {
     this.fases.updateValueAndValidity();
   }
 
+  private jaEspelha(cronograma: WizardDraft['cronograma']): boolean {
+    const controles = this.formulario.controls;
+    return (
+      mesmoConteudo(this.fases.controls.map(faseDoFormulario), cronograma.fases) &&
+      mesmoConteudo(this.etapas.controls.map(etapaDoFormulario), cronograma.etapas) &&
+      controles.algoritmoContagemCodigo.value === cronograma.algoritmoContagemCodigo &&
+      controles.algoritmoContagemVersao.value === cronograma.algoritmoContagemVersao
+    );
+  }
+
+  /**
+   * A ordem das etapas vem resolvida da hidratação, que renumera o que o servidor devolveu:
+   * corrigir de novo aqui deixaria o formulário e o rascunho descrevendo posições diferentes.
+   */
+  private reconstruirDe(cronograma: WizardDraft['cronograma']): void {
+    this.fases.clear({ emitEvent: false });
+    for (const fase of renumerar(cronograma.fases)) {
+      this.fases.push(grupoDaFase(fase), { emitEvent: false });
+    }
+
+    this.etapas.clear({ emitEvent: false });
+    for (const etapa of cronograma.etapas) {
+      this.etapas.push(grupoDaEtapa(etapa), { emitEvent: false });
+    }
+
+    const controles = this.formulario.controls;
+    controles.algoritmoContagemCodigo.setValue(cronograma.algoritmoContagemCodigo, {
+      emitEvent: false,
+    });
+    controles.algoritmoContagemVersao.setValue(cronograma.algoritmoContagemVersao, {
+      emitEvent: false,
+    });
+  }
+
   /**
    * Traz o rascunho para o formulário, sem desfazer a digitação em curso.
    *
@@ -310,47 +344,11 @@ export class FormularioDoCronograma {
    * controles a cada uma tiraria o foco do campo que está sendo preenchido.
    */
   private espelharRascunho(cronograma: WizardDraft['cronograma']): void {
-    const atuais = {
-      fases: this.fases.controls.map(faseDoFormulario),
-      etapas: this.etapas.controls.map(etapaDoFormulario),
-    };
-    const algoritmoIgual =
-      this.formulario.controls.algoritmoContagemCodigo.value ===
-        cronograma.algoritmoContagemCodigo &&
-      this.formulario.controls.algoritmoContagemVersao.value === cronograma.algoritmoContagemVersao;
-
-    if (
-      mesmoConteudo(atuais.fases, cronograma.fases) &&
-      mesmoConteudo(atuais.etapas, cronograma.etapas) &&
-      algoritmoIgual
-    ) {
-      return;
-    }
+    if (this.jaEspelha(cronograma)) return;
 
     this.espelhando = true;
     try {
-      this.fases.clear({ emitEvent: false });
-      for (const fase of renumerar(cronograma.fases)) {
-        this.fases.push(grupoDaFase(fase), { emitEvent: false });
-      }
-
-      // A ordem das etapas vem resolvida da hidratação, que renumera o que o
-      // servidor devolveu — corrigir de novo aqui deixaria o formulário e o
-      // rascunho descrevendo posições diferentes.
-      this.etapas.clear({ emitEvent: false });
-      for (const etapa of cronograma.etapas) {
-        this.etapas.push(grupoDaEtapa(etapa), { emitEvent: false });
-      }
-
-      this.formulario.controls.algoritmoContagemCodigo.setValue(
-        cronograma.algoritmoContagemCodigo,
-        { emitEvent: false },
-      );
-      this.formulario.controls.algoritmoContagemVersao.setValue(
-        cronograma.algoritmoContagemVersao,
-        { emitEvent: false },
-      );
-
+      this.reconstruirDe(cronograma);
       if (!this.edicaoLiberada()) this.formulario.disable({ emitEvent: false });
       this.versao.update((versao) => versao + 1);
     } finally {
