@@ -7,10 +7,11 @@ import { EstadoDoPassoDeVagas } from '../servicos/estado-do-passo-de-vagas';
 
 /** O número de opções de curso que o candidato escolhe na inscrição. */
 @Component({
-  selector: 'div[selOpcoesDeCurso]',
+  selector: 'sel-opcoes-de-curso',
   imports: [ValorLegivelDirective, ValorEmConsultaComponent],
   templateUrl: './opcoes-de-curso.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class OpcoesDeCursoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

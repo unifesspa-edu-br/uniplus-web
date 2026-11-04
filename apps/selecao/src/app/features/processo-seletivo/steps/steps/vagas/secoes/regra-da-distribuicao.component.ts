@@ -22,10 +22,11 @@ export const AVISO_DA_TROCA_DE_REGRA =
 
 /** A regra de distribuição de vagas do edital e o que ela passa a exigir do resto do formulário. */
 @Component({
-  selector: 'div[selRegraDaDistribuicao]',
+  selector: 'sel-regra-da-distribuicao',
   imports: [ValorLegivelDirective, ValorEmConsultaComponent, FormsModule, RegraExplicadaComponent],
   templateUrl: './regra-da-distribuicao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class RegraDaDistribuicaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

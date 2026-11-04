@@ -27,8 +27,8 @@
       </p>
     }
     <div class="form-grid">
-      <div selOpcoesDeCurso class="form-field form-grid__full"></div>
-      <div selRegraDaDistribuicao class="form-field form-grid__full"></div>
+      <sel-opcoes-de-curso class="form-field form-grid__full"></sel-opcoes-de-curso>
+      <sel-regra-da-distribuicao class="form-field form-grid__full"></sel-regra-da-distribuicao>
       @if (store.emConsulta()) {
         <ui-valor-em-consulta
           rotulo="Percentual de reserva"
@@ -51,7 +51,7 @@
       }
 
       @if (estado.ehFederal()) {
-        <div selRegraDeAjuste class="form-field"></div>
+        <sel-regra-de-ajuste class="form-field"></sel-regra-de-ajuste>
         @if (store.emConsulta()) {
           <ui-valor-em-consulta
             class="form-grid__full"
@@ -191,7 +191,7 @@
         }
       </p>
     } @else {
-      <div class="table-responsive" selTabelaDoQuadro></div>
+      <sel-tabela-do-quadro class="table-responsive"></sel-tabela-do-quadro>
 
       @if (!store.emConsulta()) {
       <div class="vagas-simulacao">
@@ -223,7 +223,7 @@
       }
 
       @if (simulacao.ofertasComEstouro().length > 0) {
-        <div class="alert alert--info vagas-estouro" role="status" selEstouroDaReserva></div>
+        <sel-estouro-da-reserva class="alert alert--info vagas-estouro" role="status"></sel-estouro-da-reserva>
       }
 
       @if (!store.emConsulta()) {
@@ -233,7 +233,7 @@
       }
 
       @if (estado.ofertasForaDoPadrao().length > 0 && !store.emConsulta()) {
-        <div class="alert alert--warning vagas-divergencia" role="status" selOfertasForaDoPadrao></div>
+        <sel-ofertas-fora-do-padrao class="alert alert--warning vagas-divergencia" role="status"></sel-ofertas-fora-do-padrao>
       }
 
     }

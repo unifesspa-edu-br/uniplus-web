@@ -5,7 +5,7 @@ import { SimulacaoDoQuadroService } from '../servicos/simulacao-do-quadro.servic
 
 /** As ofertas em que a reserva final passou do percentual declarado, e por quê. */
 @Component({
-  selector: 'div[selEstouroDaReserva]',
+  selector: 'sel-estouro-da-reserva',
   templateUrl: './estouro-da-reserva.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

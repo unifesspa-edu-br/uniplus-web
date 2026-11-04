@@ -5,7 +5,7 @@ import { EstadoDoPassoDeVagas } from '../servicos/estado-do-passo-de-vagas';
 
 /** O aviso das ofertas gravadas com padrão diferente do que está em tela, e a saída para igualá-las. */
 @Component({
-  selector: 'div[selOfertasForaDoPadrao]',
+  selector: 'sel-ofertas-fora-do-padrao',
   templateUrl: './ofertas-fora-do-padrao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -13,10 +13,11 @@ import { quantidadeDoQuadro } from '../totais-do-quadro';
 
 /** O quadro de vagas: uma linha por oferta, uma coluna por modalidade e os totais no rodapé. */
 @Component({
-  selector: 'div[selTabelaDoQuadro]',
+  selector: 'sel-tabela-do-quadro',
   imports: [ValorLegivelDirective, FormsModule],
   templateUrl: './tabela-do-quadro.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class TabelaDoQuadroComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

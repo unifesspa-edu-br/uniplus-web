@@ -11,10 +11,11 @@ import { EstadoDoPassoDeVagas } from '../servicos/estado-do-passo-de-vagas';
 
 /** A regra de ajuste que a Lei 12.711 exige no ramo federal. */
 @Component({
-  selector: 'div[selRegraDeAjuste]',
+  selector: 'sel-regra-de-ajuste',
   imports: [ValorLegivelDirective, ValorEmConsultaComponent, FormsModule, RegraExplicadaComponent],
   templateUrl: './regra-de-ajuste.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class RegraDeAjusteComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
