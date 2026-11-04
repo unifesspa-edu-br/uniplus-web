@@ -29,6 +29,12 @@ import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 
 type ModoFormulario = 'criar' | 'editar';
 
+/** O formulário (a abertura) e o modo que originaram uma escrita; a resposta só se aplica a eles. */
+interface OrigemDaEscrita {
+  readonly sessao: number;
+  readonly modo: ModoFormulario;
+}
+
 /** O que o formulário precisa saber do vocabulário de grupos de área do ENEM. */
 export interface GruposDoFormulario {
   readonly falhou: boolean;
@@ -82,6 +88,8 @@ export class EdicaoDosCursos {
 
   private readonly cursoEmEdicaoId = signal<string | null>(null);
   private readonly chaveDeIdempotencia = signal(idempotencyKey.create());
+  /** Conta as aberturas do formulário: uma resposta de abertura anterior não mexe na atual. */
+  private sessao = 0;
   /** Grupo que o curso em edição já tem, como a tela o mostra. */
   private readonly grupoDoCursoEmEdicao = signal<GrupoAreaEnemDto | null>(null);
 
@@ -156,9 +164,6 @@ export class EdicaoDosCursos {
   }
 
   salvar(): void {
-    if (this.gravando()) {
-      return;
-    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -171,7 +176,8 @@ export class EdicaoDosCursos {
       this.modo() === 'criar'
         ? this.api.criar(comandoDeCriacao(valores), chave)
         : this.api.atualizar(id ?? '', comandoDeAtualizacao(id ?? '', valores), chave);
-    this.gravar(operacao, (result) => this.concluirGravacao(result));
+    const origem: OrigemDaEscrita = { sessao: this.sessao, modo: this.modo() };
+    this.gravar(operacao, (result) => this.concluirGravacao(result, origem));
   }
 
   pedirRemocao(curso: CursoDto): void {
@@ -231,21 +237,36 @@ export class EdicaoDosCursos {
   }
 
   private abrir(): void {
+    this.sessao++;
     this.vocabulario.garantirCarregado();
     this.erro.set(null);
     this.renovarChaveDeIdempotencia();
     this.aberto.set(true);
   }
 
-  private concluirGravacao(result: ApiResult<string | void>): void {
+  private concluirGravacao(result: ApiResult<string | void>, origem: OrigemDaEscrita): void {
+    const formularioDeOrigem = origem.sessao === this.sessao;
     if (!result.ok) {
-      this.aplicarFalha(result.problem);
+      this.recusarGravacao(result.problem, formularioDeOrigem);
       return;
     }
-    this.notifications.success(this.modo() === 'criar' ? 'Curso criado' : 'Curso atualizado');
-    this.aberto.set(false);
-    this.renovarChaveDeIdempotencia();
+    this.notifications.success(origem.modo === 'criar' ? 'Curso criado' : 'Curso atualizado');
     this.store.recarregar();
+    if (formularioDeOrigem) {
+      this.aberto.set(false);
+      this.renovarChaveDeIdempotencia();
+    }
+  }
+
+  /** Recusa de um formulário que já não está aberto vira aviso: não há campo onde mostrá-la. */
+  private recusarGravacao(problem: ProblemDetails, formularioDeOrigem: boolean): void {
+    if (formularioDeOrigem) {
+      this.aplicarFalha(problem);
+      return;
+    }
+    this.notifications.errorFromProblem(problem, {
+      title: this.problemI18n.resolve(problem).title,
+    });
   }
 
   private aplicarFalha(problem: ProblemDetails): void {

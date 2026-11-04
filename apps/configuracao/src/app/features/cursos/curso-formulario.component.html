@@ -1,6 +1,7 @@
 <ui-drawer
   class="cfg-form-drawer"
   [(visible)]="aberto"
+  [closable]="!gravando()"
   [heading]="titulo()"
   ariaLabel="Formulário de curso"
   position="right"
@@ -135,7 +136,12 @@
   </form>
 
   <div class="cfg-form-footer">
-    <button type="button" class="btn btn--tertiary btn--rect" (click)="cancelar.emit()">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="gravando()"
+      (click)="cancelar.emit()"
+    >
       Cancelar
     </button>
     <button type="submit" form="cfg-curso-form" class="btn btn--primary" [disabled]="gravando()">

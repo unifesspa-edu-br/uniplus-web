@@ -4,10 +4,11 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CampusDto, CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CampiPage } from './campi.page';
 import { EdicaoDosCampi } from './edicao-dos-campi';
 
@@ -117,32 +118,143 @@ describe('CampiPage — escritas pela interface', () => {
     });
   }
 
-  it('gravação pendente bloqueia nova submissão e a remoção', async () => {
+  const botao = (seletor: string, texto: string): HTMLButtonElement => {
+    const achado = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(seletor),
+    ].find((b) => b.textContent?.trim() === texto);
+    expect(achado, `${seletor} "${texto}"`).toBeDefined();
+    return achado as HTMLButtonElement;
+  };
+
+  const drawerDoFormulario = (): HTMLDialogElement =>
+    elemento<HTMLDialogElement>('dialog[aria-label="Formulário de campus"]');
+
+  it('gravação pendente deixa indisponível salvar, cancelar e fechar o formulário', async () => {
     await preencherNovoCampus();
     enviarFormulario();
     const post = controller.expectOne(ESCRITA_URL);
+    await propagar();
 
-    enviarFormulario();
-    await pedirRemocao();
+    expect(elemento<HTMLButtonElement>('button[form="cfg-campus-form"]').disabled).toBe(true);
+    expect(botao('.cfg-form-footer button', 'Cancelar').disabled).toBe(true);
+    expect(
+      drawerDoFormulario().querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')
+        ?.disabled,
+    ).toBe(true);
+    // Esc: o <dialog> emite `cancel`; com a escrita em curso o drawer recusa fechar.
+    drawerDoFormulario().dispatchEvent(new Event('cancel', { cancelable: true }));
+    await propagar();
+    expect(edicao.aberto()).toBe(true);
 
-    controller.expectNone((r) => r.url.startsWith(ESCRITA_URL));
-    expect(edicao.gravando()).toBe(true);
     post.flush('novo-id', { status: 201, statusText: 'Created' });
     await propagar();
+    expect(edicao.aberto()).toBe(false);
     controller.expectOne((r) => r.url === LISTA_URL).flush([campusSeed]);
   });
 
-  it('remoção pendente bloqueia a submissão do formulário', async () => {
+  it('remoção pendente deixa o botão de salvar desabilitado', async () => {
     await pedirRemocao();
-    const delete$ = controller.expectOne(`${ESCRITA_URL}/${campusSeed.id}`);
+    const remocao = controller.expectOne(`${ESCRITA_URL}/${campusSeed.id}`);
 
     await preencherNovoCampus();
-    enviarFormulario();
+    const salvar = elemento<HTMLButtonElement>('button[form="cfg-campus-form"]');
+    expect(salvar.disabled).toBe(true);
+    salvar.click();
 
     controller.expectNone(ESCRITA_URL);
-    delete$.flush(null, { status: 204, statusText: 'No Content' });
+    remocao.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
     controller.expectOne((r) => r.url === LISTA_URL).flush([]);
+  });
+
+  describe('trava da classe de edição contra chamadas concorrentes', () => {
+    it('uma segunda submissão não parte enquanto a primeira corre', async () => {
+      await preencherNovoCampus();
+      edicao.salvar();
+      edicao.salvar();
+
+      controller.expectOne(ESCRITA_URL).flush('id', { status: 201, statusText: 'Created' });
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA_URL).flush([campusSeed]);
+    });
+
+    it('a remoção não parte enquanto uma gravação corre', async () => {
+      await preencherNovoCampus();
+      edicao.salvar();
+      edicao.pedirRemocao(campusSeed);
+      edicao.removerConfirmado();
+
+      controller.expectNone(`${ESCRITA_URL}/${campusSeed.id}`);
+      controller.expectOne(ESCRITA_URL).flush('id', { status: 201, statusText: 'Created' });
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA_URL).flush([campusSeed]);
+    });
+
+    it('a submissão não parte enquanto uma remoção corre', async () => {
+      edicao.pedirRemocao(campusSeed);
+      edicao.removerConfirmado();
+      await preencherNovoCampus();
+      edicao.salvar();
+
+      controller.expectNone(ESCRITA_URL);
+      controller
+        .expectOne(`${ESCRITA_URL}/${campusSeed.id}`)
+        .flush(null, { status: 204, statusText: 'No Content' });
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA_URL).flush([]);
+    });
+  });
+
+  describe('resposta de uma abertura anterior do formulário', () => {
+    it('sucesso não fecha nem altera o formulário aberto depois, mas atualiza a lista', async () => {
+      const notificacoes = vi.spyOn(TestBed.inject(NotificationService), 'success');
+      await preencherNovoCampus();
+      edicao.salvar();
+      const post = controller.expectOne(ESCRITA_URL);
+
+      edicao.abrirEdicao(campusSeed);
+      post.flush('novo-id', { status: 201, statusText: 'Created' });
+      await propagar();
+
+      expect(notificacoes).toHaveBeenCalledWith('Campus criado');
+      expect(edicao.aberto()).toBe(true);
+      expect(edicao.modo()).toBe('editar');
+      expect(edicao.form.controls.sigla.value).toBe('MARABA');
+      controller.expectOne((r) => r.url === LISTA_URL).flush([campusSeed]);
+    });
+
+    it('recusa não marca campo do formulário aberto depois', async () => {
+      await preencherNovoCampus();
+      edicao.salvar();
+      const post = controller.expectOne(ESCRITA_URL);
+
+      edicao.abrirCadastro();
+      post.flush(
+        JSON.stringify({
+          type: 'about:blank',
+          title: 'Dados inválidos',
+          status: 422,
+          code: 'uniplus.validacao',
+          traceId: 'test-trace',
+          errors: [
+            {
+              field: 'Sigla',
+              code: 'uniplus.configuracao.campus.sigla_ja_existe',
+              message: 'Sigla já cadastrada.',
+            },
+          ],
+        }),
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+      await propagar();
+
+      expect(edicao.form.controls.sigla.errors?.['backend']).toBeUndefined();
+      expect(edicao.erro()).toBeNull();
+    });
   });
 
   it('recusa do servidor é mostrada no campo recusado', async () => {

@@ -24,6 +24,12 @@ import {
 
 type ModoFormulario = 'criar' | 'editar';
 
+/** O formulário (a abertura) e o modo que originaram uma escrita; a resposta só se aplica a eles. */
+interface OrigemDaEscrita {
+  readonly sessao: number;
+  readonly modo: ModoFormulario;
+}
+
 /**
  * As escritas de campus: o formulário de cadastro e edição (abertura, validação, recusas do
  * servidor) e a remoção com confirmação. Salvar e remover compartilham um só indicador, então
@@ -56,6 +62,8 @@ export class EdicaoDosCampi {
 
   private readonly campusEmEdicaoId = signal<string | null>(null);
   private readonly chaveDeIdempotencia = signal(idempotencyKey.create());
+  /** Conta as aberturas do formulário: uma resposta de abertura anterior não mexe na atual. */
+  private sessao = 0;
 
   abrirCadastro(): void {
     this.modo.set('criar');
@@ -76,9 +84,6 @@ export class EdicaoDosCampi {
   }
 
   salvar(): void {
-    if (this.gravando()) {
-      return;
-    }
     if (this.form.invalid) {
       this.recusarFormularioInvalido();
       return;
@@ -91,7 +96,8 @@ export class EdicaoDosCampi {
       this.modo() === 'criar'
         ? this.api.criar(comandoDeCriacao(valores), chave)
         : this.api.atualizar(id ?? '', comandoDeAtualizacao(id ?? '', valores), chave);
-    this.gravar(operacao, (result) => this.concluirGravacao(result));
+    const origem: OrigemDaEscrita = { sessao: this.sessao, modo: this.modo() };
+    this.gravar(operacao, (result) => this.concluirGravacao(result, origem));
   }
 
   pedirRemocao(campus: CampusDto): void {
@@ -133,6 +139,7 @@ export class EdicaoDosCampi {
   }
 
   private abrir(): void {
+    this.sessao++;
     this.erro.set(null);
     this.erroDoEndereco.set(null);
     this.renovarChaveDeIdempotencia();
@@ -146,16 +153,30 @@ export class EdicaoDosCampi {
     }
   }
 
-  private concluirGravacao(result: ApiResult<string | void>): void {
+  private concluirGravacao(result: ApiResult<string | void>, origem: OrigemDaEscrita): void {
+    const formularioDeOrigem = origem.sessao === this.sessao;
     if (!result.ok) {
-      this.aplicarFalha(result.problem);
+      this.recusarGravacao(result.problem, formularioDeOrigem);
       return;
     }
-    this.notifications.success(this.modo() === 'criar' ? 'Campus criado' : 'Campus atualizado');
-    this.aberto.set(false);
-    this.erroDoEndereco.set(null);
-    this.renovarChaveDeIdempotencia();
+    this.notifications.success(origem.modo === 'criar' ? 'Campus criado' : 'Campus atualizado');
     this.store.recarregar();
+    if (formularioDeOrigem) {
+      this.aberto.set(false);
+      this.erroDoEndereco.set(null);
+      this.renovarChaveDeIdempotencia();
+    }
+  }
+
+  /** Recusa de um formulário que já não está aberto vira aviso: não há campo onde mostrá-la. */
+  private recusarGravacao(problem: ProblemDetails, formularioDeOrigem: boolean): void {
+    if (formularioDeOrigem) {
+      this.aplicarFalha(problem);
+      return;
+    }
+    this.notifications.errorFromProblem(problem, {
+      title: this.problemI18n.resolve(problem).title,
+    });
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
