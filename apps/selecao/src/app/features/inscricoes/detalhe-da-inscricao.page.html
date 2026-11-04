@@ -1,0 +1,119 @@
+<ui-page-header [heading]="titulo()" [description]="descricaoDoCabecalho()">
+  <div uiPageActions class="insc-det__acoes">
+    <a
+      class="btn btn--tertiary"
+      [routerLink]="['/processo-seletivo', detalhe.processoId(), 'inscricoes']"
+    >
+      Voltar às inscrições
+    </a>
+  </div>
+</ui-page-header>
+
+@let situacao = detalhe.situacao();
+<p class="insc-det__lendo" role="status">
+  @if (detalhe.carregando()) {
+  <ui-spinner spinnerSize="sm" />
+  Carregando a inscrição }
+</p>
+@switch (situacao.estado) { @case ('nao-encontrada') {
+<ui-alert variant="danger" heading="Inscrição não encontrada">
+  A inscrição não existe neste processo seletivo ou não está disponível para você.
+</ui-alert>
+} @case ('falha') {
+<ui-alert variant="danger" heading="Não foi possível carregar a inscrição">
+  {{ situacao.mensagem }}
+  <span class="insc-det__tentar">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="detalhe.carregando() ? 'true' : null"
+      [attr.aria-busy]="detalhe.carregando() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </span>
+</ui-alert>
+} @case ('lida') { @if (inscricao(); as insc) { @if (identificacao(); as ident) {
+<section class="panel" aria-labelledby="insc-det-identificacao">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="insc-det-identificacao">Inscrição</h2>
+    </div>
+  </div>
+  <div class="insc-det__corpo">
+    <ui-lista-de-dados [colunas]="2">
+      @if (ident.numero; as numero) {
+      <ng-template uiDado rotulo="Número" [valor]="numero" />
+      } @if (ident.situacao; as situacaoDaInscricao) {
+      <ng-template uiDado rotulo="Situação">
+        <ui-tag [variant]="varianteDaSituacao(situacaoDaInscricao)">
+          {{ rotuloDaSituacao(situacaoDaInscricao) }}
+        </ui-tag>
+      </ng-template>
+      } @if (ident.ofertas.length > 0) {
+      <ng-template
+        uiDado
+        [rotulo]="ident.ofertas.length === 1 ? 'Oferta escolhida' : 'Ofertas escolhidas'"
+      >
+        <sel-ofertas-escolhidas [ofertas]="ident.ofertas" />
+      </ng-template>
+      } @if (ident.enviadaEm; as enviadaEm) {
+      <ng-template uiDado rotulo="Enviada em"> {{ enviadaEm | dateBr: 'datetime' }} </ng-template>
+      } @if (ident.canceladaEm; as canceladaEm) {
+      <ng-template uiDado rotulo="Cancelada em">
+        {{ canceladaEm | dateBr: 'datetime' }}
+      </ng-template>
+      } @if (ident.motivoDoCancelamento; as motivo) {
+      <ng-template uiDado rotulo="Motivo do cancelamento" [valor]="motivo" />
+      }
+    </ui-lista-de-dados>
+  </div>
+</section>
+} @if (temRespostas()) {
+<section class="panel" aria-labelledby="insc-det-respostas">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="insc-det-respostas">Respostas do formulário</h2>
+    </div>
+  </div>
+  <div class="insc-det__corpo">
+    <sel-secoes-da-inscricao
+      [secoes]="insc.secoes"
+      [revelacoes]="detalhe.revelacoes()"
+      (revelar)="revelar($event)"
+      (ocultar)="ocultar($event)"
+    />
+  </div>
+</section>
+} @if (insc.derivados.length > 0) {
+<section class="panel" aria-labelledby="insc-det-derivados">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="insc-det-derivados">Calculado pelo sistema</h2>
+    </div>
+  </div>
+  <div class="insc-det__corpo">
+    <sel-respostas-da-inscricao
+      [itens]="insc.derivados"
+      [revelacoes]="detalhe.revelacoes()"
+      (revelar)="revelar($event)"
+      (ocultar)="ocultar($event)"
+    />
+  </div>
+</section>
+} @if (arquivos().length > 0) {
+<section class="panel" aria-labelledby="insc-det-arquivos">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="insc-det-arquivos">Arquivos enviados</h2>
+    </div>
+  </div>
+  <sel-arquivos-da-inscricao
+    [arquivos]="arquivos()"
+    [abrindo]="arquivoAberto.abrindo()"
+    [recusa]="arquivoAberto.recusa()"
+    (abrir)="arquivoAberto.abrir($event)"
+  />
+</section>
+} } } }

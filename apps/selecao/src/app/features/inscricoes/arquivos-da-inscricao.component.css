@@ -1,0 +1,46 @@
+:host {
+  display: block;
+}
+
+.insc-arquivos {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.insc-arquivos__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.insc-arquivos__cabeca {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.insc-arquivos__cabeca > div {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.insc-arquivos__nome,
+.insc-arquivos__detalhe {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.insc-arquivos__nome {
+  font-weight: var(--weight-semibold);
+}
+
+.insc-arquivos__detalhe {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}

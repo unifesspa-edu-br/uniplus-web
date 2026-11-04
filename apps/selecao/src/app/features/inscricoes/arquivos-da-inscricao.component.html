@@ -1,0 +1,32 @@
+<ul class="insc-arquivos" role="list">
+  @for (arquivo of arquivos(); track arquivo.id) {
+    <li class="insc-arquivos__item">
+      <div class="insc-arquivos__cabeca">
+        <div>
+          <p class="insc-arquivos__nome">{{ arquivo.nome }}</p>
+          <p class="insc-arquivos__detalhe">{{ arquivo.detalhe }}</p>
+        </div>
+        <ui-tag [variant]="varianteDaSituacaoDoArquivo(arquivo.situacao)">
+          {{ rotuloDaSituacaoDoArquivo(arquivo.situacao) }}
+        </ui-tag>
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [attr.aria-label]="arquivo.nomeDoAbrir"
+          [attr.aria-disabled]="abrindo() !== null ? 'true' : null"
+          [attr.aria-busy]="abrindo() === arquivo.id ? 'true' : null"
+          (click)="pedirParaAbrir(arquivo.id)"
+        >
+          Abrir
+        </button>
+      </div>
+      @if (recusa(); as recusada) {
+        @if (recusada.arquivoId === arquivo.id) {
+          <ui-alert variant="danger" [heading]="recusada.mensagem">
+            Não foi possível abrir {{ arquivo.nome }}.
+          </ui-alert>
+        }
+      }
+    </li>
+  }
+</ul>

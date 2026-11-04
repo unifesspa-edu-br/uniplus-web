@@ -1,0 +1,45 @@
+@for (secao of secoes(); track $index) {
+  @if (secao.itens.length > 0 || secao.grupos.length > 0) {
+    @let posicao = $index;
+    @let tituloDaSecao = secao.titulo?.trim();
+    @let nivel = tituloDaSecao ? 4 : 3;
+    @if (tituloDaSecao) {
+      <h3 class="insc-secoes__secao-titulo">{{ tituloDaSecao }}</h3>
+    }
+    @if (secao.itens.length > 0) {
+      <sel-respostas-da-inscricao
+        [itens]="secao.itens"
+        [revelacoes]="revelacoes()"
+        (revelar)="revelar.emit($event)"
+        (ocultar)="ocultar.emit($event)"
+      />
+    }
+    @for (grupo of secao.grupos; track grupo.codigo) {
+      <section
+        class="insc-secoes__grupo"
+        [attr.aria-labelledby]="'insc-det-grupo-' + posicao + '-' + grupo.codigo"
+      >
+        <div
+          role="heading"
+          class="insc-secoes__grupo-titulo"
+          [attr.aria-level]="nivel"
+          [id]="'insc-det-grupo-' + posicao + '-' + grupo.codigo"
+        >
+          {{ grupo.rotulo }}
+        </div>
+        @for (ocorrencia of grupo.ocorrencias; track ocorrencia.id) {
+          <div role="heading" class="insc-secoes__ocorrencia-titulo" [attr.aria-level]="nivel + 1">
+            {{ $index + 1 }}ª ocorrência
+          </div>
+          <sel-respostas-da-inscricao
+            [itens]="ocorrencia.itens"
+            [ocorrenciaId]="ocorrencia.id"
+            [revelacoes]="revelacoes()"
+            (revelar)="revelar.emit($event)"
+            (ocultar)="ocultar.emit($event)"
+          />
+        }
+      </section>
+    }
+  }
+}

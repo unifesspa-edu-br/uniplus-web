@@ -1,0 +1,27 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.insc-secoes__secao-titulo,
+.insc-secoes__grupo-titulo,
+.insc-secoes__ocorrencia-titulo {
+  margin: 0 0 var(--space-2);
+}
+
+.insc-secoes__secao-titulo {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.insc-secoes__grupo-titulo {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.insc-secoes__ocorrencia-titulo {
+  margin-top: var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}

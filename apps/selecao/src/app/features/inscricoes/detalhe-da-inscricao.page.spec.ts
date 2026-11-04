@@ -226,6 +226,9 @@ describe('DetalheDaInscricaoPage', () => {
   const botoesAbrir = (): HTMLButtonElement[] =>
     Array.from(host().querySelectorAll('button')).filter((b) => b.textContent?.trim() === 'Abrir');
 
+  const indisponivel = (botao: HTMLElement): boolean =>
+    botao.getAttribute('aria-disabled') === 'true';
+
   it('mostra identificação, respostas pelo tipo, derivados e arquivos', async () => {
     await abrir(FERNANDA);
 
@@ -272,13 +275,15 @@ describe('DetalheDaInscricaoPage', () => {
   it('mostra o título da seção como cabeçalho, com os grupos um nível abaixo', async () => {
     await abrir(FERNANDA);
 
-    expect(host().querySelector('h3.insc-det__secao-titulo')?.textContent?.trim()).toBe(
+    expect(host().querySelector('h3.insc-secoes__secao-titulo')?.textContent?.trim()).toBe(
       'Dados pessoais',
     );
-    expect(host().querySelector('.insc-det__grupo-titulo')?.getAttribute('aria-level')).toBe('4');
-    expect(host().querySelector('.insc-det__ocorrencia-titulo')?.getAttribute('aria-level')).toBe(
-      '5',
+    expect(host().querySelector('.insc-secoes__grupo-titulo')?.getAttribute('aria-level')).toBe(
+      '4',
     );
+    expect(
+      host().querySelector('.insc-secoes__ocorrencia-titulo')?.getAttribute('aria-level'),
+    ).toBe('5');
   });
 
   it('sem título da seção não há cabeçalho nem o código cru, e os grupos sobem de nível', async () => {
@@ -287,9 +292,11 @@ describe('DetalheDaInscricaoPage', () => {
       secoes: [{ ...FERNANDA.secoes[0], titulo: undefined }],
     });
 
-    expect(host().querySelector('.insc-det__secao-titulo')).toBeNull();
+    expect(host().querySelector('.insc-secoes__secao-titulo')).toBeNull();
     expect(texto()).not.toContain('identificacao');
-    expect(host().querySelector('.insc-det__grupo-titulo')?.getAttribute('aria-level')).toBe('3');
+    expect(host().querySelector('.insc-secoes__grupo-titulo')?.getAttribute('aria-level')).toBe(
+      '3',
+    );
     expect(dado('Nome completo')).toBe('Fernanda Laura Nicole Drumond');
   });
 
@@ -346,7 +353,7 @@ describe('DetalheDaInscricaoPage', () => {
   it('lista cada arquivo com a exigência, a situação e um Abrir de nome acessível próprio', async () => {
     await abrir(FERNANDA);
 
-    const itens = Array.from(host().querySelectorAll('.insc-det__arquivo')).map(
+    const itens = Array.from(host().querySelectorAll('.insc-arquivos__item')).map(
       (li) => li.textContent?.replace(/\s+/g, ' ').trim() ?? '',
     );
     expect(itens[0]).toContain('Laudo médico');
@@ -487,6 +494,26 @@ describe('DetalheDaInscricaoPage', () => {
 
     expect(dado('Número')).toBe('2027-000101');
     expect(texto()).not.toContain('Não foi possível carregar a inscrição');
+  });
+
+  it('com a releitura em curso, Tentar novamente mantém o foco e não parte outra leitura', async () => {
+    await criarPagina();
+    doDetalhe().flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Server Error' });
+    await propagar();
+    const tentar = botao('Tentar novamente');
+    tentar.focus();
+
+    tentar.click();
+    await propagar();
+    tentar.click();
+    await propagar();
+
+    expect(document.activeElement).toBe(tentar);
+    expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(tentar.getAttribute('aria-busy')).toBe('true');
+    doDetalhe().flush(FERNANDA);
+    await propagar();
+    expect(dado('Número')).toBe('2027-000101');
   });
 
   it('anuncia o carregamento numa região viva que já estava no DOM e a esvazia ao terminar', async () => {
@@ -1030,7 +1057,7 @@ describe('DetalheDaInscricaoPage', () => {
 
       botoesAbrir()[0].click();
       await propagar();
-      expect(botoesAbrir().every((b) => b.disabled)).toBe(true);
+      expect(botoesAbrir().every(indisponivel)).toBe(true);
       recusar(LAUDO_ID, 404);
       await propagar();
       botoesAbrir()[1].click();
@@ -1038,6 +1065,25 @@ describe('DetalheDaInscricaoPage', () => {
 
       expect(host().querySelector('ui-alert')).toBeNull();
       liberar(COMPROVANTE_ID);
+      await propagar();
+    });
+
+    it('com um arquivo sendo aberto, o botão acionado mantém o foco e marca a espera', async () => {
+      await abrir(FERNANDA);
+      const [primeiro, segundo] = botoesAbrir();
+      primeiro.focus();
+
+      primeiro.click();
+      await propagar();
+
+      expect(document.activeElement).toBe(primeiro);
+      expect(primeiro.getAttribute('aria-busy')).toBe('true');
+      expect(segundo.getAttribute('aria-busy')).toBeNull();
+      expect(botoesAbrir().every(indisponivel)).toBe(true);
+      segundo.click();
+      await propagar();
+      controller.expectNone(acesso(COMPROVANTE_ID));
+      liberar(LAUDO_ID);
       await propagar();
     });
 
@@ -1062,7 +1108,7 @@ describe('DetalheDaInscricaoPage', () => {
 
       controller.expectNone(acesso(LAUDO_ID));
       expect(host().querySelector('ui-alert')?.textContent).toContain('bloqueou');
-      expect(botoesAbrir().every((b) => !b.disabled)).toBe(true);
+      expect(botoesAbrir().every((b) => !indisponivel(b))).toBe(true);
     });
 
     it('descarta o acesso que chega depois da troca de inscrição e libera os botões da nova', async () => {
@@ -1074,14 +1120,14 @@ describe('DetalheDaInscricaoPage', () => {
       await propagar();
       doDetalhe(ROTA_OUTRA).flush(FERNANDA);
       await propagar();
-      expect(botoesAbrir().every((b) => !b.disabled)).toBe(true);
+      expect(botoesAbrir().every((b) => !indisponivel(b))).toBe(true);
 
       liberar(LAUDO_ID);
       await propagar();
 
       expect(abas[0].location.href).toBe('');
       expect(abas[0].close).toHaveBeenCalled();
-      expect(botoesAbrir().every((b) => !b.disabled)).toBe(true);
+      expect(botoesAbrir().every((b) => !indisponivel(b))).toBe(true);
       expect(host().querySelector('ui-alert')).toBeNull();
     });
 
@@ -1108,7 +1154,7 @@ describe('DetalheDaInscricaoPage', () => {
 
       expect(host().querySelector('ui-alert')?.textContent).toContain('Não foi possível abrir');
       expect(abas[0].close).toHaveBeenCalled();
-      expect(botoesAbrir().every((b) => !b.disabled)).toBe(true);
+      expect(botoesAbrir().every((b) => !indisponivel(b))).toBe(true);
     });
   });
 
