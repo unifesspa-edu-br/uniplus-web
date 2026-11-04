@@ -305,6 +305,41 @@ function temRolagemHorizontal(page: Page): Promise<boolean> {
   });
 }
 
+test.describe('Curso — página com os drawers fechados', () => {
+  test('os drawers fechados não ocupam espaço nem consomem o espaçamento entre os blocos', async ({
+    page,
+  }, testInfo) => {
+    await mockConfiguracaoRuntimeConfig(page);
+    await page.addInitScript((dsTheme: VisualTheme) => {
+      window.localStorage.setItem(
+        'uniplus.a11y',
+        JSON.stringify({
+          theme: dsTheme === 'contrast' ? 'auto' : dsTheme,
+          contrast: dsTheme === 'contrast',
+          fontMode: 'default',
+        }),
+      );
+    }, metadataTheme(testInfo));
+    await mockApi(page);
+    await page.goto('/cursos');
+    await expect(page.locator('.panel table')).toBeVisible();
+
+    const pagina = page.locator('.cfg-page');
+    const geoPagina = await caixa(pagina);
+    const geoCabecalho = await caixa(page.locator('.page-header'));
+    const geoPainel = await caixa(page.locator('.panel'));
+    const espacamento = await pagina.evaluate((el) =>
+      Number.parseFloat(getComputedStyle(el).rowGap),
+    );
+
+    // Cabeçalho e painel são os únicos blocos em fluxo: o painel começa um espaçamento abaixo
+    // do cabeçalho e a página termina nele. Drawer ou diálogo fechado que virasse item do flex
+    // acrescentaria um espaçamento morto no fim da página.
+    expect(Math.abs(geoPainel.y - geoCabecalho.base - espacamento)).toBeLessThanOrEqual(TOLERANCIA);
+    expect(Math.abs(geoPagina.base - geoPainel.base)).toBeLessThanOrEqual(TOLERANCIA);
+  });
+});
+
 function metadataTheme(testInfo: TestInfo): VisualTheme {
   const theme = testInfo.project.metadata['theme'];
   return theme === 'dark' || theme === 'contrast' ? theme : 'light';
