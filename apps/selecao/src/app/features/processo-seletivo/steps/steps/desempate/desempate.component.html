@@ -10,7 +10,7 @@
   <p class="alert alert--danger" role="alert">{{ erro }}</p>
 }
 
-@if (!store.emConsulta() && falhaDoCadastroDePesos(); as falha) {
+@if (!store.emConsulta() && areas.falhaDoCadastroDePesos(); as falha) {
   <div class="alert alert--danger" role="alert">
     <p>{{ falha }}</p>
     <button
@@ -25,24 +25,24 @@
   </div>
 }
 
-@if (gravaComAClassificacao()) {
+@if (areas.gravaComAClassificacao()) {
   <p class="alert alert--info" role="status">
     Os critérios de desempate serão gravados junto com a classificação, no passo Eliminação: o
     critério por área precisa do quadro de Peso por Área, que é congelado nessa gravação.
   </p>
 }
 
-@if (avisoDaReleitura(); as aviso) {
+@if (areas.avisoDaReleitura(); as aviso) {
   <div class="alert alert--warning" role="alert">
     <p>{{ aviso }}</p>
     <button
       type="button"
       class="btn btn--secondary btn--sm"
       id="desemp-reler-processo"
-      [attr.aria-disabled]="relendoProcesso() ? 'true' : null"
+      [attr.aria-disabled]="areas.relendoProcesso() ? 'true' : null"
       (click)="relerProcesso()"
     >
-      {{ relendoProcesso() ? 'Relendo…' : 'Reler o processo' }}
+      {{ areas.relendoProcesso() ? 'Relendo…' : 'Reler o processo' }}
     </button>
   </div>
 }
@@ -169,7 +169,7 @@
                 rotulo="Ordem das áreas do ENEM"
                 ordenada
                 [valor]="leitura.areas"
-                [dica]="dicaDaOrigem()"
+                [dica]="areas.dicaDaOrigem()"
               />
             }
           } @else {
@@ -245,8 +245,8 @@
             @if (usaAreas(criterio)) {
               <div class="form-field form-grid__full">
                 <span class="label" [id]="'desemp-areas-rotulo-' + indice">Ordem das áreas do ENEM</span>
-                @let situacao = situacaoDoQuadro();
-                @if (dicaDaOrigem(); as dica) {
+                @let situacao = areas.situacaoDoQuadro();
+                @if (areas.dicaDaOrigem(); as dica) {
                   <p class="field__hint" [id]="'desemp-areas-dica-' + indice">{{ dica }}</p>
                 }
 
@@ -254,7 +254,7 @@
                   <ol
                     class="desempate-areas"
                     [attr.aria-labelledby]="'desemp-areas-rotulo-' + indice"
-                    [attr.aria-describedby]="dicaDaOrigem() === null ? null : 'desemp-areas-dica-' + indice"
+                    [attr.aria-describedby]="areas.dicaDaOrigem() === null ? null : 'desemp-areas-dica-' + indice"
                   >
                     @for (
                       codigo of criterio.areas;
@@ -264,13 +264,13 @@
                       let ultima = $last
                     ) {
                       <li class="desempate-area">
-                        <span class="desempate-area__nome">{{ posicao + 1 }}ª {{ rotuloDaArea(codigo) }}</span>
+                        <span class="desempate-area__nome">{{ posicao + 1 }}ª {{ areas.rotuloDaArea(codigo) }}</span>
                         <span class="desempate-actions">
                           <button
                             class="desempate-btn"
                             type="button"
                             [id]="'desemp-area-subir-' + indice + '-' + posicao"
-                            [attr.aria-label]="'Mover a área ' + rotuloDaArea(codigo) + ' para cima'"
+                            [attr.aria-label]="'Mover a área ' + areas.rotuloDaArea(codigo) + ' para cima'"
                             [disabled]="primeira || !store.aceitaEdicao()"
                             (click)="moverArea(indice, posicao, -1)"
                           >
@@ -281,7 +281,7 @@
                             class="desempate-btn"
                             type="button"
                             [id]="'desemp-area-descer-' + indice + '-' + posicao"
-                            [attr.aria-label]="'Mover a área ' + rotuloDaArea(codigo) + ' para baixo'"
+                            [attr.aria-label]="'Mover a área ' + areas.rotuloDaArea(codigo) + ' para baixo'"
                             [disabled]="ultima || !store.aceitaEdicao()"
                             (click)="moverArea(indice, posicao, 1)"
                           >
@@ -292,7 +292,7 @@
                             class="desempate-btn"
                             type="button"
                             [id]="'desemp-area-remover-' + indice + '-' + posicao"
-                            [attr.aria-label]="'Retirar a área ' + rotuloDaArea(codigo) + ' do critério'"
+                            [attr.aria-label]="'Retirar a área ' + areas.rotuloDaArea(codigo) + ' do critério'"
                             [disabled]="!store.aceitaEdicao()"
                             (click)="removerArea(indice, posicao)"
                           >
@@ -317,14 +317,14 @@
                       #seletorDeArea
                       class="select"
                       [id]="'desemp-area-nova-' + indice"
-                      [attr.aria-describedby]="dicaDaOrigem() === null ? null : 'desemp-areas-dica-' + indice"
-                      [disabled]="!store.aceitaEdicao() || areasOferecidas().length === 0"
+                      [attr.aria-describedby]="areas.dicaDaOrigem() === null ? null : 'desemp-areas-dica-' + indice"
+                      [disabled]="!store.aceitaEdicao() || areas.areasOferecidas().length === 0"
                       (change)="escolherArea(indice, seletorDeArea)"
                     >
                       <option value="" [selected]="escolhaPendente(indice) === ''">
-                        {{ areasOferecidas().length === 0 ? semAreaAOferecer(criterio) : '— escolher —' }}
+                        {{ areas.areasOferecidas().length === 0 ? areas.semAreaAOferecer(criterio) : '— escolher —' }}
                       </option>
-                      @for (area of areasOferecidas(); track area.codigo) {
+                      @for (area of areas.areasOferecidas(); track area.codigo) {
                         <option
                           [value]="area.codigo"
                           [selected]="area.codigo === escolhaPendente(indice)"
@@ -337,7 +337,7 @@
                       type="button"
                       class="btn btn--secondary btn--sm"
                       [id]="'desemp-area-acrescentar-' + indice"
-                      [disabled]="!store.aceitaEdicao() || areasOferecidas().length === 0"
+                      [disabled]="!store.aceitaEdicao() || areas.areasOferecidas().length === 0"
                       (click)="acrescentarAreaEscolhida(indice)"
                     >
                       Acrescentar

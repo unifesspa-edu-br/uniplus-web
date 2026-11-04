@@ -38,16 +38,12 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import {
-  ReleituraDoSnapshot,
-  relerProcessoAPedido,
-} from '../../shared/releitura-do-snapshot.service';
-import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
+import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
+import { AreasDoDesempateService } from './areas-do-desempate.service';
 import { textoDoCriterio } from '../classificacao/confirmacao-da-classificacao';
-import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import {
   lerChaveDaRegra,
@@ -69,13 +65,6 @@ import {
 } from './desempate-para-comando';
 import { comAreaAcrescentada, comAreasTrocadas, semAreaNaPosicao } from './areas-do-criterio';
 import { mensagensDoDesempate } from './validacao-do-desempate';
-import {
-  areasCitadasPor,
-  dicaDaSituacao,
-  rotulosDasAreas,
-  DEPENDEM_DA_RELEITURA,
-  situacaoDoQuadro,
-} from './situacao-do-quadro';
 import { recusaAoGravarODesempate } from './recusas-do-desempate';
 
 const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
@@ -101,11 +90,12 @@ const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
   templateUrl: './desempate.component.html',
   imports: [ValorLegivelDirective, CondicaoDeFatoComponent, ValorEmConsultaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(DesempateStepComponent)],
+  providers: [AreasDoDesempateService, provePassoDoWizard(DesempateStepComponent)],
 })
 export class DesempateStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
+  protected readonly areas = inject(AreasDoDesempateService);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly problemI18n = inject(ProblemI18nService);
@@ -146,13 +136,9 @@ export class DesempateStepComponent {
    */
   readonly falhaDoCatalogoDeFatos = signal<string | null>(null);
 
-  private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
-
   constructor() {
-    this.cadastroDePesos.acompanhar();
     this.catalogos.carregar();
     this.carregarFatos();
-    this.acompanharListaCanonicaDasAreas();
     this.descartarEscolhasQueSairamDoSeletor();
     this.esquecerEscolhasQuandoAListaForSubstituida();
   }
@@ -186,32 +172,13 @@ export class DesempateStepComponent {
    */
   private descartarEscolhasQueSairamDoSeletor(): void {
     effect(() => {
-      if (this.situacaoDoQuadro().tipo !== 'lido') return;
-      const oferecidas = new Set(this.areasOferecidas().map((area) => area.codigo));
+      if (this.areas.situacaoDoQuadro().tipo !== 'lido') return;
+      const oferecidas = new Set(this.areas.areasOferecidas().map((area) => area.codigo));
       const escolhas = untracked(() => this.escolhasPendentes());
       const validas = [...escolhas].filter(([, codigo]) => oferecidas.has(codigo));
       if (validas.length < escolhas.size) this.escolhasPendentes.set(new Map(validas));
     });
   }
-
-  /**
-   * A lista canônica dá a ordem das áreas oferecidas e o rótulo das citadas, qualquer que seja a
-   * origem do quadro — inclusive sem quadro ou com o cadastro em falha. O serviço não a pede de
-   * novo enquanto a leitura do cadastro, que também a traz, está em curso; a que falhou é pedida de
-   * novo a cada leitura da classificação que muda o que se sabia dela, e a cada leitura do
-   * cadastro.
-   */
-  private acompanharListaCanonicaDasAreas(): void {
-    effect(() => {
-      this.store.classificacao.versaoLida();
-      this.catalogos.pesosLidosNaLeitura();
-      if (this.temCriterioPorArea()) untracked(() => this.catalogos.garantirAreasEnem());
-    });
-  }
-
-  private readonly temCriterioPorArea = computed(() =>
-    this.criterios().some((criterio) => this.usaAreas(criterio)),
-  );
 
   /** Busca o vocabulário de fatos. Exposto porque a tela oferece nova tentativa. */
   carregarFatos(): void {
@@ -265,96 +232,19 @@ export class DesempateStepComponent {
     return valoresDeListaDe(criterio);
   }
 
-  /** Só a classificação: uma tecla em outro passo não chega ao quadro. */
-  private readonly classificacao = computed(() => this.store.draft().classificacao);
-
-  readonly situacaoDoQuadro = computed(() =>
-    situacaoDoQuadro(
-      this.classificacao(),
-      this.store.classificacao.gravada(),
-      this.cadastroDePesos.leitura(),
-    ),
-  );
-
-  private readonly gruposDoQuadro = computed(() => {
-    const situacao = this.situacaoDoQuadro();
-    return 'grupos' in situacao ? situacao.grupos : [];
-  });
-
-  private readonly areasAceitas = computed(() => {
-    const situacao = this.situacaoDoQuadro();
-    return situacao.tipo === 'lido' ? situacao.aceitas : [];
-  });
-
-  private readonly rotuloDaAreaPorCodigo = computed(() =>
-    rotulosDasAreas(this.catalogos.areasEnem(), this.gruposDoQuadro()),
-  );
-
-  rotuloDaArea(codigo: string): string {
-    return this.rotuloDaAreaPorCodigo().get(codigo) ?? codigo;
-  }
-
-  private readonly areasCitadas = computed(() => new Set(areasCitadasPor(this.criterios())));
+  readonly criterios = computed(() => this.store.draft().desempate);
 
   /**
-   * As áreas que ainda podem entrar num critério: cada área é citada uma vez só, no critério e
-   * entre os critérios por área — a segunda citação nunca desempataria ninguém.
-   */
-  readonly areasOferecidas = computed(() =>
-    this.areasAceitas().filter((area) => !this.areasCitadas().has(area.codigo)),
-  );
-
-  /** De onde vêm as áreas, ou por que não há nenhuma: a mesma dica para todo critério por área. */
-  readonly dicaDaOrigem = computed(() => dicaDaSituacao(this.situacaoDoQuadro()));
-
-  /**
-   * A falha de leitura do cadastro, dita uma vez no passo, e só quando algum critério depende dele.
-   * Vem da falha, e não da situação: a nova tentativa em curso deixa a situação "carregando", e o
-   * alerta, com o botão focado, fica na tela até a leitura dar certo.
-   */
-  readonly falhaDoCadastroDePesos = computed(() => {
-    const tipo = this.situacaoDoQuadro().tipo;
-    const falha = this.cadastroDePesos.leitura().falha;
-    return (tipo === 'falha' || tipo === 'carregando') && this.temCriterioPorArea() ? falha : null;
-  });
-
-  /** O aviso no início do passo, com o botão que relê o processo, quando algum critério depende dele. */
-  readonly avisoDaReleitura = computed(() => {
-    const situacao = this.situacaoDoQuadro();
-    return situacao.tipo === 'por-reler' && this.temCriterioPorArea()
-      ? `${MOTIVO_DA_RELEITURA[situacao.motivo]}, e ${DEPENDEM_DA_RELEITURA}. Releia o processo para saber o que ele tem.`
-      : null;
-  });
-
-  /**
-   * Os critérios por área só são gravados depois da classificação com o quadro: o servidor os
-   * recusa enquanto o processo não tem o quadro congelado.
-   */
-  private readonly adiaAGravacao = computed(
-    () => this.temCriterioPorArea() && this.store.classificacao.copiaCongeladaEmVigor() === null,
-  );
-
-  /** A nota de que os critérios serão gravados junto com a classificação. */
-  readonly gravaComAClassificacao = computed(
-    () => this.store.aceitaEdicao() && this.adiaAGravacao(),
-  );
-
-  readonly relendoProcesso = signal(false);
-
-  /**
-   * "Reler o processo" do aviso de releitura. O aviso fica, com o botão focado,
-   * enquanto a leitura corre. Quando ela decide, o aviso sai e o foco vai ao primeiro critério por
-   * área; se ela falha, o aviso fica e a falha é anunciada.
+   * "Reler o processo" do aviso de releitura. Quando ela decide e o aviso sai, o foco vai ao
+   * primeiro critério por área; se ela falha, o aviso fica e a falha é anunciada.
    */
   async relerProcesso(): Promise<void> {
-    // Uma leitura superada por outra, ou por uma troca de processo, não falhou: quem decide é a
-    // mais nova.
-    if (!(await relerProcessoAPedido(this.releitura, this.relendoProcesso))) return;
-    if (this.situacaoDoQuadro().tipo === 'por-reler') {
+    const resultado = await this.areas.relerProcesso();
+    if (resultado === 'ainda-por-reler') {
       this.anunciar('Não foi possível reler o processo. Tente novamente.');
-      return;
+    } else if (resultado === 'lida') {
+      this.focarNoPrimeiroCriterioPorArea();
     }
-    this.focarNoPrimeiroCriterioPorArea();
   }
 
   /**
@@ -362,7 +252,7 @@ export class DesempateStepComponent {
    * certo e ele sai, o foco vai ao primeiro critério por área.
    */
   tentarLerOCadastroDeNovo(): void {
-    this.cadastroDePesos.relerCadastroAPedido(() => this.focarNoPrimeiroCriterioPorArea());
+    this.areas.relerCadastro(() => this.focarNoPrimeiroCriterioPorArea());
   }
 
   private focarNoPrimeiroCriterioPorArea(): void {
@@ -375,8 +265,6 @@ export class DesempateStepComponent {
       'desempate-acrescentar',
     );
   }
-
-  readonly criterios = computed(() => this.store.draft().desempate);
 
   /**
    * Com inscrição feita no sistema o desempate é obrigatório; com resultado importado a lista já
@@ -489,7 +377,7 @@ export class DesempateStepComponent {
         : booleano
           ? (RESPOSTAS_BOOLEANAS.find((resposta) => resposta.valor === escalar)?.rotulo ?? escalar)
           : escalar,
-      areas: criterio.areas.map((codigo) => this.rotuloDaArea(codigo)),
+      areas: criterio.areas.map((codigo) => this.areas.rotuloDaArea(codigo)),
     };
   }
 
@@ -585,13 +473,6 @@ export class DesempateStepComponent {
    */
   private readonly escolhasPendentes = signal<ReadonlyMap<number, string>>(new Map());
 
-  /** Por que o seletor do critério está vazio: as áreas que faltam nele estão em outros critérios. */
-  semAreaAOferecer(criterio: CriterioDesempateConfigurado): string {
-    return this.areasAceitas().every((area) => criterio.areas.includes(area.codigo))
-      ? 'Todas as áreas do quadro já estão na ordem'
-      : 'As demais áreas do quadro já estão em outros critérios';
-  }
-
   escolhaPendente(indice: number): string {
     return this.escolhasPendentes().get(indice) ?? '';
   }
@@ -620,7 +501,7 @@ export class DesempateStepComponent {
     const criterio = this.criterios()[indice];
     if (criterio === undefined) return;
     const codigo = this.escolhaPendente(indice);
-    if (!this.areasOferecidas().some((area) => area.codigo === codigo)) {
+    if (!this.areas.areasOferecidas().some((area) => area.codigo === codigo)) {
       this.anunciar('Escolha no seletor a área a acrescentar.');
       focarAposRenderizar(this.injector, `desemp-area-nova-${indice}`);
       return;
@@ -629,7 +510,7 @@ export class DesempateStepComponent {
     const areas = comAreaAcrescentada(criterio.areas, codigo);
     this.atualizar(indice, { areas });
     this.anunciar(
-      `Área ${this.rotuloDaArea(codigo)} acrescentada ao critério ${indice + 1}, na posição ${areas.length}.`,
+      `Área ${this.areas.rotuloDaArea(codigo)} acrescentada ao critério ${indice + 1}, na posição ${areas.length}.`,
     );
     // Acrescentada a última área oferecida, o botão fica indisponível e perderia o foco.
     focarAposRenderizar(
@@ -645,7 +526,7 @@ export class DesempateStepComponent {
 
     const codigo = criterio.areas[posicao];
     this.atualizar(indice, { areas: semAreaNaPosicao(criterio.areas, posicao) });
-    this.anunciar(`Área ${this.rotuloDaArea(codigo)} retirada do critério ${indice + 1}.`);
+    this.anunciar(`Área ${this.areas.rotuloDaArea(codigo)} retirada do critério ${indice + 1}.`);
     // O botão clicado sai do DOM com a linha: o foco vai para a área anterior; da primeira, para a
     // que passou a ocupar a posição dela; sem nenhuma, para o seletor de acrescentar e, quando ele
     // não está na tela, para a regra do critério.
@@ -668,7 +549,7 @@ export class DesempateStepComponent {
 
     this.atualizar(indice, { areas });
     this.anunciar(
-      `Área ${this.rotuloDaArea(areas[destino])} movida para a posição ${destino + 1} de ${areas.length} no critério ${indice + 1}.`,
+      `Área ${this.areas.rotuloDaArea(areas[destino])} movida para a posição ${destino + 1} de ${areas.length} no critério ${indice + 1}.`,
     );
     focarAposRenderizar(
       this.injector,
@@ -748,7 +629,7 @@ export class DesempateStepComponent {
       };
     }
 
-    const adia = this.adiaAGravacao();
+    const adia = this.areas.adiaAGravacao();
     return {
       titulo: 'Confirmar os critérios de desempate',
       aviso: adia
@@ -757,7 +638,7 @@ export class DesempateStepComponent {
       rotuloDeConfirmar: adia ? 'Confirmar critérios' : 'Gravar critérios',
       itens: criterios.map((criterio, indice) => ({
         rotulo: `${indice + 1}º critério`,
-        valor: textoDoCriterio(criterio, (codigo) => this.rotuloDaArea(codigo)),
+        valor: textoDoCriterio(criterio, (codigo) => this.areas.rotuloDaArea(codigo)),
       })),
     };
   }
@@ -769,8 +650,8 @@ export class DesempateStepComponent {
       obrigatorio: this.desempateObrigatorio(),
       etapas: this.etapasReferenciaveis(),
       fatos: this.fatoPorCodigo(),
-      situacaoDoQuadro: this.situacaoDoQuadro(),
-      rotuloDaArea: (codigo) => this.rotuloDaArea(codigo),
+      situacaoDoQuadro: this.areas.situacaoDoQuadro(),
+      rotuloDaArea: (codigo) => this.areas.rotuloDaArea(codigo),
     });
     return messages.length ? { valid: false, messages } : { valid: true };
   }
@@ -785,7 +666,8 @@ export class DesempateStepComponent {
   ): string[] {
     return resumoDaRecusa(
       problema,
-      (erro) => recusaAoGravarODesempate(erro, criterios, (codigo) => this.rotuloDaArea(codigo)),
+      (erro) =>
+        recusaAoGravarODesempate(erro, criterios, (codigo) => this.areas.rotuloDaArea(codigo)),
       () => this.problemI18n.resolve(problema).title,
     );
   }
@@ -798,7 +680,7 @@ export class DesempateStepComponent {
   async persistir(): Promise<StepValidation> {
     const conferencia = this.validate();
     if (!conferencia.valid) return conferencia;
-    if (this.store.processoSeletivoId() !== null && this.adiaAGravacao()) {
+    if (this.store.processoSeletivoId() !== null && this.areas.adiaAGravacao()) {
       this.store.classificacao.desempatePendenteDeGravacao.set(true);
       return { valid: true };
     }

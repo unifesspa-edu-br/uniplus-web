@@ -17,6 +17,7 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
+import { AreasDoDesempateService } from './areas-do-desempate.service';
 import { DesempateStepComponent } from './desempate.component';
 
 const BASE = 'http://localhost:5000';
@@ -275,6 +276,10 @@ function textoDaTela(m: Montagem): string {
   return m.el.textContent?.replace(/\s+/g, ' ') ?? '';
 }
 
+function areasDoDesempate(m: Montagem): AreasDoDesempateService {
+  return m.fixture.debugElement.injector.get(AreasDoDesempateService);
+}
+
 describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
   afterEach(() => {
     // Solta o módulo mesmo quando a conferência falha: senão a falha de um teste vaza para os
@@ -433,11 +438,11 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
 
     it('uma tecla em outro passo não recalcula o quadro', async () => {
       const m = await montar();
-      const antes = m.componente.situacaoDoQuadro();
+      const antes = areasDoDesempate(m).situacaoDoQuadro();
 
       m.store.patchObjectSection('identificacao', { nome: 'Processo de teste' });
 
-      expect(m.componente.situacaoDoQuadro()).toBe(antes);
+      expect(areasDoDesempate(m).situacaoDoQuadro()).toBe(antes);
     });
 
     describe('com a classificação gravada desconhecida', () => {
@@ -553,7 +558,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         await releitura;
         m.fixture.detectChanges();
 
-        expect(m.componente.situacaoDoQuadro()).toEqual({
+        expect(areasDoDesempate(m).situacaoDoQuadro()).toEqual({
           tipo: 'por-reler',
           motivo: 'por-confirmar',
         });
@@ -575,7 +580,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         },
       });
 
-      expect(m.componente.situacaoDoQuadro().tipo).toBe('resolucoes-sem-area-em-comum');
+      expect(areasDoDesempate(m).situacaoDoQuadro().tipo).toBe('resolucoes-sem-area-em-comum');
       expect(areasNaTela(m, 0)).toEqual(['1ª Área da cópia']);
     });
 

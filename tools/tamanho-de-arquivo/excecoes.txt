@@ -44,7 +44,7 @@
 2710 apps/selecao/src/app/features/processo-seletivo/processo-seletivo.css
 551 apps/selecao/src/app/features/processo-seletivo/publicacoes/publicar-documento.component.ts
 430 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.html
-855 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.ts
+737 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.ts
 481 apps/selecao/src/app/features/processo-seletivo/steps/steps/formulario/formulario-de-inscricao.ts
 556 apps/selecao/src/app/features/processo-seletivo/steps/steps/formulario/formulario.component.html
 1297 apps/selecao/src/app/features/processo-seletivo/steps/steps/formulario/formulario.component.ts
