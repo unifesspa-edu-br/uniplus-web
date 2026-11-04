@@ -1,0 +1,10 @@
+.form-section__title {
+  margin: 0 0 var(--space-4);
+  color: var(--text-heading);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.form-section {
+  margin-bottom: var(--space-6);
+}

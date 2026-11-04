@@ -1,0 +1,66 @@
+.form-drawer .uni-drawer__panel {
+  max-width: min(480px, 100vw);
+}
+
+/*
+ * O body é padding: 0 + overflow: hidden de propósito: quem rola é o .form-drawer__form
+ * e o .form-drawer__footer fica como barra full-bleed ancorada no fundo do painel,
+ * com o border-top atravessando a largura toda. Dar padding ao body recua essa
+ * barra e quebra as 21 páginas do módulo que a usam.
+ */
+.form-drawer .uni-drawer__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+/*
+ * Único container de rolagem do drawer de formulário, e quem carrega o recuo
+ * do conteúdo. Alerta, aviso e seções de campos vão dentro do <form> para
+ * receberem esse recuo — fora dele ficam colados na borda do painel.
+ */
+.form-drawer__form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-5);
+}
+
+/*
+ * Espaça os elementos internos da seção (título, alerta, grade de campos) via
+ * gap do flex em vez de depender só da margem do título — assim um ui-alert
+ * inserido entre o título e os campos recebe respiro nos dois lados.
+ */
+.form-drawer__form > section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* O gap acima já separa o título; zera a margem para não dobrar o espaço. */
+.form-drawer__form > section > .form-section__title {
+  margin-bottom: 0;
+}
+
+.form-drawer__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface-card);
+  border-top: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 1200px) {
+  .form-drawer .uni-drawer__panel {
+    max-width: min(760px, 100vw);
+  }
+}

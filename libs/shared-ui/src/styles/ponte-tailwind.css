@@ -1,0 +1,28 @@
+/* Ponte do Tailwind 4: os tokens semânticos do Uni+ DS viram utilidades sem duplicar valores. */
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-primary-50: var(--color-primary-50);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-700: var(--color-primary-700);
+  --color-danger: var(--color-danger-500);
+  --color-success: var(--color-success-600);
+  --color-warning: var(--color-warning-600);
+  --color-info: var(--color-info-600);
+  --color-surface-page: var(--surface-page);
+  --color-surface-card: var(--surface-card);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-heading: var(--text-heading);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border-default);
+  --color-border-subtle: var(--border-subtle);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-pill: var(--radius-pill);
+  --font-sans: var(--font-sans);
+  --font-legible: var(--font-legible);
+  --font-mono: var(--font-mono);
+}

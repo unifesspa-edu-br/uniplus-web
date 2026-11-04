@@ -20,6 +20,11 @@
     white-space: nowrap;
   }
 
+  /* Ações em texto numa tabela larga ficam lado a lado, em vez de empilhar numa coluna estreita. */
+  .table-responsive td.table-responsive__actions:not(:has(> ui-icon-button)) {
+    white-space: nowrap;
+  }
+
   .table-responsive td.table-responsive__actions:not(:has(> ui-icon-button)) .btn {
     margin-block: var(--space-1);
   }

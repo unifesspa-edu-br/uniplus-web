@@ -156,6 +156,12 @@
   .table-responsive__num {
     text-align: right;
   }
+  .table-responsive__actions {
+    width: 100%;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
 }
 
 /* Tabela de muitas colunas: recuo lateral menor nas células, para os valores curtos caberem numa linha

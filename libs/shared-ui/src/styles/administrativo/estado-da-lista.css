@@ -1,0 +1,22 @@
+.list-state__retry {
+  margin-top: var(--space-3);
+}
+
+.list-state__loading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* "Tentar novamente" durante a espera: o botão fica com aria-disabled, e não disabled,
+   para continuar focável; o DS só estiliza :disabled, então o mesmo visual vem aqui. */
+.list-state__retry .btn[aria-disabled='true'],
+.list-state__retry .btn[aria-disabled='true']:hover,
+.list-state__retry .btn[aria-disabled='true']:active {
+  cursor: progress;
+  background: var(--surface-disabled);
+  color: var(--text-disabled);
+  border-color: transparent;
+}

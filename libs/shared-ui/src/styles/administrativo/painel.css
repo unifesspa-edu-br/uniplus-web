@@ -1,7 +1,7 @@
-.cfg-unidades-scope {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
+.panel > .pager {
+  padding: var(--space-3) var(--space-5);
+  margin: 0;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .panel {
@@ -43,10 +43,4 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
-}
-
-.filter-bar__group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
 }

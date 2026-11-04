@@ -1,0 +1,6 @@
+/* Estilos compartilhados pelos apps administrativos (Seleção e Configuração). */
+
+@import './administrativo/painel.css';
+@import './administrativo/estado-da-lista.css';
+@import './administrativo/formulario-em-gaveta.css';
+@import './administrativo/secao-de-formulario.css';
