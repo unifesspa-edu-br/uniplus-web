@@ -34,6 +34,7 @@ interface SelNavGroup {
   standalone: true,
   imports: [RouterOutlet, AppShellComponent, UserHeaderInfoComponent, PerfisDaBarraComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './layout.css',
   template: `
     <ui-app-shell
       appName="Uni+"

@@ -15,6 +15,7 @@ import { NotificationHostComponent } from '@uniplus/shared-ui/notifications';
     LoginErrorBannerComponent,
     NotificationHostComponent,
   ],
+  styleUrl: './app.css',
   template: `
     <auth-error-banner />
     <auth-login-error-banner />

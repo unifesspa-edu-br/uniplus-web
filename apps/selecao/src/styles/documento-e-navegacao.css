@@ -1,0 +1,17 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--surface-page);
+}
+
+@media (max-width: 767px) {
+  .breadcrumb__item:nth-child(2) {
+    display: none;
+  }
+}

@@ -1,5 +1,5 @@
 <ui-drawer
-  class="cfg-form-drawer"
+  class="form-drawer"
   [(visible)]="aberto"
   [closable]="!publicando()"
   [heading]="titulo()"
@@ -32,7 +32,7 @@
 
   <form
     id="pub-form"
-    class="cfg-form"
+    class="form-drawer__form"
     [formGroup]="form"
     (ngSubmit)="solicitar()"
     novalidate
@@ -250,7 +250,7 @@
     }
   </form>
 
-  <div class="cfg-form-footer">
+  <div class="form-drawer__footer">
     <button type="button" class="btn btn--tertiary btn--rect" [disabled]="publicando()" (click)="fechar()">
       Cancelar
     </button>

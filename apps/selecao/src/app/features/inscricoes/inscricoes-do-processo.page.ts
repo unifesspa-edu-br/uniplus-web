@@ -256,7 +256,6 @@ function nomeDoLink(linha: Omit<LinhaDaInscricao, 'nomeDoLink'>, posicao: number
     }
   `,
   styleUrl: './inscricoes-do-processo.page.css',
-  host: { class: 'cfg-page' },
 })
 export class InscricoesDoProcessoPage {
   private readonly rota = inject(ActivatedRoute);

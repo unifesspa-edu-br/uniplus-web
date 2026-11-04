@@ -109,7 +109,7 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
       <ui-alert variant="danger" heading="Não foi possível carregar os processos seletivos">
         {{ erro() }}
 
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button
             type="button"
             class="btn btn--secondary btn--sm"
@@ -132,7 +132,7 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
           </span>
 
           @if (loading()) {
-            <span class="cfg-list__loading">
+            <span class="list-state__loading">
               <ui-spinner spinnerSize="sm" />
               Carregando
             </span>
@@ -246,9 +246,6 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
       />
     </section>
   `,
-  host: {
-    class: 'cfg-page',
-  },
 })
 export class ProcessosSeletivosListaPage {
   private readonly api = inject(ProcessosSeletivosApi);

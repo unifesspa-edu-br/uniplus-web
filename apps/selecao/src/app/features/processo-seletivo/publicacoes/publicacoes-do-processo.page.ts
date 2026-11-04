@@ -52,7 +52,6 @@ import { PublicarDocumentoComponent } from './publicar-documento.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './publicacoes-do-processo.page.html',
   styleUrl: './publicacoes-do-processo.page.css',
-  host: { class: 'cfg-page' },
 })
 export class PublicacoesDoProcessoPage {
   private readonly rota = inject(ActivatedRoute);

@@ -36,7 +36,6 @@ import { NotasDoEnemDoProcesso } from './notas-do-enem-do-processo.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notas-do-enem.page.html',
   styleUrls: ['./compartilhado.css', './notas-do-enem.page.css'],
-  host: { class: 'cfg-page' },
 })
 export class NotasDoEnemPage {
   private readonly rota = inject(ActivatedRoute);

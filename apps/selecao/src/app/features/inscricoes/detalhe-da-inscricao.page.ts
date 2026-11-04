@@ -51,7 +51,6 @@ import { rotuloDaSituacao, varianteDaSituacao } from './situacao-da-inscricao';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './detalhe-da-inscricao.page.html',
   styleUrl: './detalhe-da-inscricao.page.css',
-  host: { class: 'cfg-page' },
 })
 export class DetalheDaInscricaoPage {
   private readonly rota = inject(ActivatedRoute);
