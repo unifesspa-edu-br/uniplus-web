@@ -1,4 +1,5 @@
 import nx from '@nx/eslint-plugin';
+import sonarjs from 'eslint-plugin-sonarjs';
 
 export default [
   ...nx.configs['flat/base'],
@@ -97,6 +98,29 @@ export default [
           ],
         },
       ],
+    },
+  },
+  {
+    // Métricas de qualidade do LT: valem para código de produção e rodam como aviso até o fim
+    // da refatoração. O gate de tamanho (`npm run check:tamanho`) segue sendo o que reprova.
+    files: ['**/*.ts'],
+    ignores: [
+      '**/*.spec.ts',
+      '**/*.testing.ts',
+      '**/*.mock.ts',
+      '**/test-setup.ts',
+      '**/src/fixtures/**',
+      '**/src/support/**',
+      'libs/shared-data/src/lib/api/*/schema.ts',
+      'src/lib/api/*/schema.ts',
+    ],
+    plugins: { sonarjs },
+    rules: {
+      'max-lines': ['warn', { max: 400, skipBlankLines: false, skipComments: false }],
+      'max-lines-per-function': ['warn', { max: 30, skipBlankLines: true, skipComments: true }],
+      complexity: ['warn', 10],
+      'max-params': ['warn', 4],
+      'sonarjs/cognitive-complexity': ['warn', 15],
     },
   },
   {
