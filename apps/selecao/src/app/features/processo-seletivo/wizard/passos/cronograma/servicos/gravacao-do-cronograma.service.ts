@@ -2,15 +2,16 @@ import { computed, effect, inject, Injectable, signal, untracked } from '@angula
 import type { FormGroup } from '@angular/forms';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 
-import type { FaseDoCronograma, ValidacaoDoPasso } from '../../../processo-seletivo.models';
+import type {
+  EtapaPontuada,
+  FaseDoCronograma,
+  ValidacaoDoPasso,
+} from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import {
-  CadastroInicial,
-  type ResultadoGravacao,
-} from '../../../shared/cadastro-inicial.service';
+import { CadastroInicial, type ResultadoGravacao } from '../../../shared/cadastro-inicial.service';
 import { resumoDaRecusa } from '../../../shared/resumo-da-recusa';
 import { CatalogoDeUnidadesDoCadastro } from '../catalogos/catalogo-de-unidades-do-cadastro.service';
-import { type FaseForm, faseDoFormulario } from '../cronograma-form';
+import { type EtapaForm, type FaseForm, faseDoFormulario } from '../cronograma-form';
 import { comoComandoDeEtapa, comoComandoDeFase } from '../cronograma-para-comando';
 import {
   localDoErroDaEtapa,
@@ -87,6 +88,19 @@ export async function gravarCronogramaFases(
   return cadastro.definirCronogramaFases(processoSeletivoId, fases.map(comoComandoDeFase));
 }
 
+/** O que uma gravação do cronograma envia, congelado no instante em que o operador manda gravar. */
+interface EnvioDoCronograma {
+  readonly processoId: string;
+  readonly geracao: number;
+  readonly enviadas: readonly FormGroup<FaseForm>[];
+  readonly fases: readonly FaseDoCronograma[];
+  readonly grupos: readonly FormGroup<EtapaForm>[];
+  readonly etapas: readonly EtapaPontuada[];
+}
+
+/** A gravação foi superada por troca de processo ou de rascunho: nada a relatar ao operador. */
+const GRAVACAO_SUPERADA: ValidacaoDoPasso = { valid: false, messages: [] };
+
 /** A sequência de gravação do passo: fases, etapas, releitura, exigências documentais e convenção de contagem. */
 @Injectable()
 export class GravacaoDoCronograma {
@@ -158,6 +172,15 @@ export class GravacaoDoCronograma {
    * não existe caminho para desdeclarar a convenção depois de escolhida. Se
    * ele falhar, as duas primeiras chamadas já gravaram, e a mensagem diz isso
    * em vez de tratar a falha como se nada tivesse sido salvo.
+   *
+   * O cronograma vai primeiro porque a etapa declara a fase em que acontece, e o servidor recusa
+   * etapa cuja fase ainda não está no cronograma; remover uma fase é seguro, o agregado poda as
+   * etapas dela. Depois das etapas, a releitura recolhe os identificadores que o servidor
+   * atribuiu: deixar para o fim perderia a releitura se o cronograma fosse recusado, e a
+   * tentativa seguinte recriaria etapas que já existem. Se ela falha, a tela trava, porque o
+   * rascunho ainda tem `id: null` nas etapas criadas. As exigências documentais dependem dos
+   * dois ids. A convenção só é gravada quando há escolha, e dali em diante o endpoint não tem
+   * remoção: o seletor deixa de oferecer "nenhuma convenção".
    */
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
@@ -170,117 +193,145 @@ export class GravacaoDoCronograma {
 
     const conferencia = this.conferencia.validar();
     if (!conferencia.valid) {
-      // O que a conferência acusa pode estar numa fase fechada: abrir todas põe o problema à
-      // vista, em vez de deixar a mensagem apontar para um lugar que não está na tela.
       this.expansao.expandirTodasAsFases(this.cronograma.linhaDoTempo().map((item) => item.indice));
       return conferencia;
     }
 
-    const fases = this.cronograma.fases.controls.map(faseDoFormulario);
-    const grupos = [...this.cronograma.etapas.controls];
-    const etapas = this.cronograma.etapasParaEnvio();
-    const geracao = this.store.geracao();
+    const envio = this.congelarEnvio(processoId);
     this.store.salvando.set(true);
     try {
-      // O cronograma vai primeiro, sempre: a etapa declara a fase em que acontece, e o
-      // servidor recusa etapa cuja fase ainda não está no cronograma. Um certame montado do
-      // zero — nenhuma fase gravada ainda — não teria como gravar etapa nenhuma na ordem
-      // inversa.
-      // Remover uma fase também é seguro por aqui: o agregado poda as etapas dela junto.
-      const enviadas = [...this.cronograma.fases.controls];
-      const cronograma = await gravarCronogramaFases(this.cadastro, processoId, fases);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!cronograma.ok) {
-        this.recusarUnidades(
-          enviadas,
-          fasesComUnidadeNaoEncontrada(cronograma.problem.errors ?? []),
-        );
-        return {
-          valid: false,
-          messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
-        };
-      }
-
-      this.unidades.limparRecusadas();
-      this.recusas.limpar();
-      const gravacaoDeEtapas = await this.cadastro.definirEtapas(
-        processoId,
-        etapas.map(comoComandoDeEtapa),
-      );
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!gravacaoDeEtapas.ok) {
-        const problema = gravacaoDeEtapas.problem;
-        this.recusas.aplicar(grupos, problema.errors ?? []);
-        const daRaiz = recusaDaEtapaDeNotaDoEnem(problema.code);
-        const resumo = resumoDaRecusa(
-          problema,
-          (erro) => {
-            const texto = recusaDoCampoDaEtapa(erro.code);
-            if (texto === null) return recusaDaEtapaDeNotaDoEnem(erro.code);
-            const indice = localDoErroDaEtapa(erro.field)?.indice;
-            if (indice === undefined) return texto;
-            const nome = etapas[indice]?.nome.trim() ?? '';
-            return `${nome === '' ? `Etapa ${indice + 1}` : nome}: ${texto}`;
-          },
-          () => this.problemI18n.resolve(problema).title,
-        );
-        return {
-          valid: false,
-          messages: daRaiz === null || resumo.includes(daRaiz) ? resumo : [daRaiz, ...resumo],
-        };
-      }
-
-      // As etapas já mudaram no servidor: é aqui que o rascunho recolhe os
-      // identificadores atribuídos. Deixar para o fim perderia a releitura
-      // se o cronograma fosse recusado, e a tentativa seguinte reenviaria
-      // etapas que já existem sem o `id`, recriando-as.
-      const recolheu = await this.releituraDasEtapas.recolherIdentificadoresDasEtapas(processoId);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!recolheu) {
-        // Trava a tela em vez de só avisar: o `finally` logo abaixo devolve o
-        // botão de gravar, e o rascunho ainda tem `id: null` nas etapas que o
-        // servidor acabou de criar.
-        this.releituraDasEtapas.releituraPendente.set(true);
-        return { valid: false, messages: [AGUARDA_RELEITURA] };
-      }
-
-      // As exigências documentais vão por último e dependem das duas gravações
-      // anteriores: a exigência referencia a fase pelo id que o servidor atribui, e
-      // a etapa que a coleta pelo id que a releitura acabou de recolher.
-      const exigencias = await this.exigencias.gravar(processoId);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!exigencias.valid) return exigencias;
-
-      // Ausência é estado válido em rascunho: a chamada só acontece
-      // quando há escolha. O código e a versão do formulário sempre andam
-      // juntos — `escolherAlgoritmo` os grava ao mesmo tempo —, então checar
-      // um basta para saber que o par está completo.
-      const codigoAlgoritmo = this.cronograma.formulario.controls.algoritmoContagemCodigo.value;
-      if (codigoAlgoritmo !== '') {
-        const algoritmo = await this.cadastro.definirAlgoritmoContagemPrazo(processoId, {
-          codigo: codigoAlgoritmo,
-          versao: this.cronograma.formulario.controls.algoritmoContagemVersao.value,
-        });
-        if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-        if (!algoritmo.ok) {
-          return {
-            valid: false,
-            messages: [
-              `As etapas e o cronograma de fases foram gravados. ${this.problemI18n.resolve(algoritmo.problem).title}`,
-            ],
-          };
-        }
-
-        // A partir daqui o endpoint não tem operação de remoção: o seletor
-        // deixa de oferecer "nenhuma convenção" para não convidar a uma
-        // gravação futura que a tela pularia em silêncio.
-        this.algoritmoConfirmadoNestaSessao.set(true);
-      }
-
-      return { valid: true };
+      return (await this.gravarEmSequencia(envio)) ?? { valid: true };
     } finally {
-      if (geracao === this.store.geracao()) this.store.salvando.set(false);
+      if (envio.geracao === this.store.geracao()) this.store.salvando.set(false);
     }
+  }
+
+  private congelarEnvio(processoId: string): EnvioDoCronograma {
+    return {
+      processoId,
+      geracao: this.store.geracao(),
+      enviadas: [...this.cronograma.fases.controls],
+      fases: this.cronograma.fases.controls.map(faseDoFormulario),
+      grupos: [...this.cronograma.etapas.controls],
+      etapas: this.cronograma.etapasParaEnvio(),
+    };
+  }
+
+  private async gravarEmSequencia(envio: EnvioDoCronograma): Promise<ValidacaoDoPasso | null> {
+    const passos = [
+      () => this.gravarFases(envio),
+      () => this.gravarEtapas(envio),
+      () => this.recolherIdentificadores(envio),
+      () => this.gravarExigencias(envio),
+      () => this.gravarConvencao(envio),
+    ];
+    for (const passo of passos) {
+      const recusa = await passo();
+      if (recusa !== null) return recusa;
+    }
+    return null;
+  }
+
+  private superada(envio: EnvioDoCronograma): boolean {
+    return envio.geracao !== this.store.geracao();
+  }
+
+  private async gravarFases(envio: EnvioDoCronograma): Promise<ValidacaoDoPasso | null> {
+    const cronograma = await gravarCronogramaFases(this.cadastro, envio.processoId, envio.fases);
+    if (this.superada(envio)) return GRAVACAO_SUPERADA;
+    if (!cronograma.ok) {
+      this.recusarUnidades(
+        envio.enviadas,
+        fasesComUnidadeNaoEncontrada(cronograma.problem.errors ?? []),
+      );
+      return {
+        valid: false,
+        messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
+      };
+    }
+
+    this.unidades.limparRecusadas();
+    this.recusas.limpar();
+    return null;
+  }
+
+  private async gravarEtapas(envio: EnvioDoCronograma): Promise<ValidacaoDoPasso | null> {
+    const gravacao = await this.cadastro.definirEtapas(
+      envio.processoId,
+      envio.etapas.map(comoComandoDeEtapa),
+    );
+    if (this.superada(envio)) return GRAVACAO_SUPERADA;
+    if (gravacao.ok) return null;
+
+    this.recusas.aplicar(envio.grupos, gravacao.problem.errors ?? []);
+    return { valid: false, messages: this.mensagensDaRecusaDasEtapas(gravacao.problem, envio) };
+  }
+
+  private mensagensDaRecusaDasEtapas(
+    problema: Extract<ResultadoGravacao, { ok: false }>['problem'],
+    envio: EnvioDoCronograma,
+  ): string[] {
+    const daRaiz = recusaDaEtapaDeNotaDoEnem(problema.code);
+    const resumo = resumoDaRecusa(
+      problema,
+      (erro) => this.mensagemDoErroDaEtapa(erro, envio.etapas),
+      () => this.problemI18n.resolve(problema).title,
+    );
+    return daRaiz === null || resumo.includes(daRaiz) ? resumo : [daRaiz, ...resumo];
+  }
+
+  private mensagemDoErroDaEtapa(
+    erro: { readonly code: string; readonly field: string },
+    etapas: EnvioDoCronograma['etapas'],
+  ): string | null {
+    const texto = recusaDoCampoDaEtapa(erro.code);
+    if (texto === null) return recusaDaEtapaDeNotaDoEnem(erro.code);
+    const indice = localDoErroDaEtapa(erro.field)?.indice;
+    if (indice === undefined) return texto;
+    const nome = etapas[indice]?.nome.trim() ?? '';
+    return `${nome === '' ? `Etapa ${indice + 1}` : nome}: ${texto}`;
+  }
+
+  private async recolherIdentificadores(
+    envio: EnvioDoCronograma,
+  ): Promise<ValidacaoDoPasso | null> {
+    const recolheu = await this.releituraDasEtapas.recolherIdentificadoresDasEtapas(
+      envio.processoId,
+    );
+    if (this.superada(envio)) return GRAVACAO_SUPERADA;
+    if (recolheu) return null;
+
+    this.releituraDasEtapas.releituraPendente.set(true);
+    return { valid: false, messages: [AGUARDA_RELEITURA] };
+  }
+
+  private async gravarExigencias(envio: EnvioDoCronograma): Promise<ValidacaoDoPasso | null> {
+    const exigencias = await this.exigencias.gravar(envio.processoId);
+    if (this.superada(envio)) return GRAVACAO_SUPERADA;
+    return exigencias.valid ? null : exigencias;
+  }
+
+  private async gravarConvencao(envio: EnvioDoCronograma): Promise<ValidacaoDoPasso | null> {
+    const formulario = this.cronograma.formulario.controls;
+    const codigo = formulario.algoritmoContagemCodigo.value;
+    if (codigo === '') return null;
+
+    const algoritmo = await this.cadastro.definirAlgoritmoContagemPrazo(envio.processoId, {
+      codigo,
+      versao: formulario.algoritmoContagemVersao.value,
+    });
+    if (this.superada(envio)) return GRAVACAO_SUPERADA;
+    if (!algoritmo.ok) {
+      return {
+        valid: false,
+        messages: [
+          `As etapas e o cronograma de fases foram gravados. ${this.problemI18n.resolve(algoritmo.problem).title}`,
+        ],
+      };
+    }
+
+    this.algoritmoConfirmadoNestaSessao.set(true);
+    return null;
   }
 
   /**
