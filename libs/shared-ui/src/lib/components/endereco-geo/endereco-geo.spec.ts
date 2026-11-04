@@ -34,6 +34,15 @@ class AnfitriaoComponent {
 @Component({
   standalone: true,
   imports: [ReactiveFormsModule, EnderecoGeoComponent],
+  template: `<ui-endereco-geo [formControl]="controle" idPrefix="t" [exigeCep]="true" />`,
+})
+class AnfitriaoQueExigeCepComponent {
+  readonly controle = new FormControl<EnderecoEstruturado | null>(null, { updateOn: 'blur' });
+}
+
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule, EnderecoGeoComponent],
   template: `<ui-endereco-geo [formControl]="controle" idPrefix="t" />`,
 })
 class AnfitriaoQueAtualizaNoBlurComponent {
@@ -247,21 +256,6 @@ describe('EnderecoGeoComponent com a busca em andamento', () => {
     expect(fixture.componentInstance.controle.touched).toBe(true);
   });
 
-  it.each(['Enter', ' '])(
-    'ativar o botão do CEP com "%s" durante a busca não repete a requisição',
-    async (tecla) => {
-      await iniciarBusca();
-
-      for (let i = 0; i < 3; i++) {
-        botaoDoCep().dispatchEvent(new KeyboardEvent('keydown', { key: tecla, bubbles: true }));
-        botaoDoCep().click();
-      }
-      await atualizar();
-
-      expect(buscas).toBe(1);
-    },
-  );
-
   it('o foco sair do grupo marca o campo como tocado; mudar de campo dentro dele não', async () => {
     campoCep().focus();
     campoCep().dispatchEvent(
@@ -304,13 +298,22 @@ describe('EnderecoGeoComponent num controle que atualiza no blur', () => {
       imports: [AnfitriaoQueAtualizaNoBlurComponent],
       providers: [
         { provide: BUSCA_DE_CEP, useValue: () => buscaEmAndamento },
-        { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },
+        {
+          provide: BUSCA_DE_MUNICIPIOS,
+          useValue: () =>
+            of({ ok: true, data: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }] }),
+        },
       ],
     });
     fixture = TestBed.createComponent(AnfitriaoQueAtualizaNoBlurComponent);
     document.body.appendChild(fixture.nativeElement);
     fixture.detectChanges();
   });
+
+  const botaoDo = (texto: string) =>
+    (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]).find(
+      (b) => b.textContent?.includes(texto),
+    ) as HTMLButtonElement;
 
   async function escrever(valor: EnderecoEstruturado): Promise<void> {
     fixture.componentInstance.controle.setValue(valor);
@@ -345,6 +348,63 @@ describe('EnderecoGeoComponent num controle que atualiza no blur', () => {
     expect(fixture.componentInstance.controle.value?.cep).toBe('68507590');
   });
 
+  it('resposta descartada da busca não aplica ao pai a edição em curso', async () => {
+    await escrever(endereco(marata, 'geo-api'));
+    botaoDo('Trocar CEP').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const cep = fixture.nativeElement.querySelector('#t-cep') as HTMLInputElement;
+
+    cep.value = '68507-111';
+    cep.dispatchEvent(new Event('input'));
+    cep.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    cep.value = '68507-222';
+    cep.dispatchEvent(new Event('input'));
+    const numero = fixture.nativeElement.querySelector('#t-numero') as HTMLInputElement;
+    numero.value = '12';
+    numero.dispatchEvent(new Event('input'));
+    buscaEmAndamento.next(apiOk(CEP_DO_GEO, 200, new HttpHeaders()));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.controle.value?.numero).toBeNull();
+  });
+
+  it('limpar a cidade aplica ao controle o valor sem a cidade', async () => {
+    await escrever(endereco(marata, 'manual'));
+    const limpar = fixture.nativeElement.querySelector(
+      'button[aria-label="Limpar cidade"]',
+    ) as HTMLButtonElement;
+
+    limpar.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.controle.value).toBeNull();
+  });
+
+  it('escolher a cidade aplica ao controle o valor com a cidade', async () => {
+    await escrever(endereco(null, 'manual'));
+    const uf = fixture.nativeElement.querySelector('#t-uf') as HTMLSelectElement;
+    uf.value = 'PA';
+    uf.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const campo = fixture.nativeElement.querySelector('input[role="combobox"]') as HTMLInputElement;
+    campo.value = 'Mara';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    fixture.detectChanges();
+    const opcao = Array.from(
+      fixture.nativeElement.querySelectorAll('[role="option"]') as NodeListOf<HTMLElement>,
+    ).find((item) => item.textContent?.includes('Marabá'));
+
+    opcao?.dispatchEvent(new MouseEvent('mousedown'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.controle.value?.cidade?.codigoIbge).toBe('1504208');
+  });
+
   it('alternar para o endereço sem CEP aplica ao controle a origem manual', async () => {
     await escrever(endereco(marata, 'geo-api'));
     const alternar = fixture.nativeElement.querySelector(
@@ -356,5 +416,41 @@ describe('EnderecoGeoComponent num controle que atualiza no blur', () => {
 
     expect(fixture.componentInstance.controle.touched).toBe(true);
     expect(fixture.componentInstance.controle.value?.origem).toBe('manual');
+  });
+});
+
+describe('EnderecoGeoComponent com CEP de faixa num controle que atualiza no blur', () => {
+  it('confirmar o CEP aplica ao controle a confirmação', async () => {
+    TestBed.configureTestingModule({
+      imports: [AnfitriaoQueExigeCepComponent],
+      providers: [{ provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) }],
+    });
+    const fixture = TestBed.createComponent(AnfitriaoQueExigeCepComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+    fixture.componentInstance.controle.setValue({
+      cep: '68507590',
+      logradouro: null,
+      numero: null,
+      complemento: null,
+      bairro: null,
+      distrito: null,
+      cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+      latitude: null,
+      longitude: null,
+      nivelResolucao: 'cidade',
+      origem: 'faixa-cidade',
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const confirmacao = fixture.nativeElement.querySelector(
+      'input[type="checkbox"]',
+    ) as HTMLInputElement;
+
+    confirmacao.checked = true;
+    confirmacao.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.controle.value?.cepConfirmado).toBe(true);
   });
 });

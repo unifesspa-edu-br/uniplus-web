@@ -31,8 +31,11 @@ export interface DependenciasDaConducao {
   readonly destroyRef: DestroyRef;
   readonly aoMudarOValor: (valor: EnderecoEstruturado | null) => void;
   readonly aoMudarAValidade: () => void;
-  /** A busca assíncrona terminou e já emitiu o valor: quem hospeda pode aplicá-lo ao formulário pai. */
-  readonly aoConcluirABusca: () => void;
+  /**
+   * A busca emitiu o valor do CEP resolvido, depois de a pessoa ter saído do campo: quem hospeda o
+   * aplica ao formulário pai. Resposta descartada ou recusada não chama.
+   */
+  readonly aoAplicarOValorDaBusca: () => void;
 }
 
 /**
@@ -175,8 +178,9 @@ export class ConducaoDoEndereco {
       .buscaDeCep(digitos)
       .pipe(takeUntilDestroyed(this.dependencias.destroyRef))
       .subscribe((resultado) => {
-        this.concluirBusca(resultado, digitos);
-        this.dependencias.aoConcluirABusca();
+        if (this.concluirBusca(resultado, digitos)) {
+          this.dependencias.aoAplicarOValorDaBusca();
+        }
       });
   }
 
@@ -222,18 +226,21 @@ export class ConducaoDoEndereco {
     this.emitir();
   }
 
-  private concluirBusca(resultado: ApiResult<CepEncontrado>, digitos: string): void {
+  /** Devolve se a resposta era do CEP vigente e resolvido, e portanto emitiu o valor. */
+  private concluirBusca(resultado: ApiResult<CepEncontrado>, digitos: string): boolean {
     this.resolvendoCep.set(false);
     // Resposta obsoleta: o CEP mudou durante a busca e não pode sobrescrever o formulário.
-    if (somenteDigitos(this.form.controls.cep.value) !== digitos) {
-      this.anuncioDoCep.set('');
-    } else if (resultado.ok) {
+    const vigente = somenteDigitos(this.form.controls.cep.value) === digitos;
+    if (vigente && resultado.ok) {
       this.aplicarCepResolvido(resultado.data, digitos);
-    } else {
-      // A recusa é anunciada pela mensagem de erro do campo.
-      this.anuncioDoCep.set('');
+      return true;
+    }
+    // A recusa é anunciada pela mensagem de erro do campo.
+    this.anuncioDoCep.set('');
+    if (vigente && !resultado.ok) {
       this.recusarCep(resultado);
     }
+    return false;
   }
 
   private logradouroOuBairroVazios(): boolean {

@@ -130,6 +130,42 @@ test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
     await expect(cep).toHaveAttribute('aria-describedby', /campus-endereco-cep-pendente/);
   });
 
+  for (const tecla of ['Enter', 'Space']) {
+    test(`"Buscar CEP" ativado com ${tecla} inicia a busca, e repetir durante a espera não a repete`, async ({
+      page,
+    }) => {
+      await mockApi(page, {});
+      let buscas = 0;
+      let liberar!: () => void;
+      const resposta = new Promise<void>((resolve) => (liberar = resolve));
+      await page.route(/\/api\/cep\/68507590$/, async (route) => {
+        if (route.request().method() === 'GET') {
+          buscas++;
+          await resposta;
+        }
+        await jsonRoute(route, CEP_LOGRADOURO);
+      });
+      await abrirCadastroCampus(page);
+      const buscar = page.getByRole('button', { name: 'Buscar CEP' });
+
+      await buscar.focus();
+      await page.locator('#campus-endereco-cep').evaluate((campo: HTMLInputElement) => {
+        campo.value = '68507590';
+        campo.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      await page.keyboard.press(tecla);
+      await expect(page.locator('#campus-endereco-cep-status')).toHaveText(/Buscando CEP/);
+      await page.keyboard.press(tecla);
+      await page.keyboard.press(tecla);
+      await expect.poll(() => buscas).toBe(1);
+
+      liberar();
+      await expect(page.getByRole('button', { name: 'Trocar CEP' })).toBeFocused();
+      await expect(page.locator('#campus-endereco-cep-status')).toHaveText(/CEP encontrado/);
+      expect(buscas).toBe(1);
+    });
+  }
+
   test('CA-02: fluxo sem CEP escolhe a UF e busca a cidade no campo de município', async ({
     page,
   }) => {
