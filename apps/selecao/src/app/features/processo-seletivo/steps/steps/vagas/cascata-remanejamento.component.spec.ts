@@ -372,7 +372,7 @@ describe('CascataRemanejamentoComponent', () => {
    * Reproduz o achado de revisão: a seleção hidratada (ou de uma gravação
    * anterior) pode referenciar uma versão que a listagem ativa não traz mais
    * — `regraEscolhida()` não pode ficar `undefined` só porque a listagem
-   * não tem a versão, senão a tabela e o checkbox somem e `validate()` cai
+   * não tem a versão, senão a tabela e o checkbox somem e `validar()` cai
    * no "confirme a cascata" sem controle nenhum na tela (CA-03: item já
    * referenciado permanece legível como snapshot).
    */

@@ -163,7 +163,7 @@ export class FaseStepComponent {
    * navegação do wizard é livre, e conferir apenas o que está à vista deixaria
    * publicar um certame com outra fase mal declarada.
    */
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     const fases = this.fasesDoCronograma();
     const nomes = new Map(this.fasesNoSeletor().map((fase) => [fase.faseCanonicaId, fase.nome]));
 
@@ -181,7 +181,7 @@ export class FaseStepComponent {
    *
    * Esta superfície é embutida no passo do Cronograma com `faseFixada`, e a página do wizard
    * coleta os passos por `viewChildren` — só o Cronograma é um passo declarado, então este
-   * `validate()` nunca é chamado. Conferência escrita aqui é conferência que não roda: as três
+   * `validar()` nunca é chamado. Conferência escrita aqui é conferência que não roda: as três
    * que existiam (fase fora do cronograma, exigência sem modalidade, reenvio sem
    * complementação) estão em `problemasDeAncoragem`, alimentadas por `exigenciasDeclaradas`
    * do Cronograma.
@@ -215,7 +215,7 @@ export class FaseStepComponent {
       };
     }
 
-    const conferencia = this.validate();
+    const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
     const fases = this.store.draft().cronograma.fases;

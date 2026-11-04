@@ -87,7 +87,7 @@ describe('o que impede gravar o cronograma', () => {
   /**
    * A conferência de ancoragem: fase que saiu do cronograma, exigência que não alcança
    * modalidade nenhuma, e reenvio onde a fase não admite complementação. Ela mora aqui porque
-   * é o `validate()` do Cronograma que o wizard chama — escrita na superfície da fase, que é
+   * é o `validar()` do Cronograma que o wizard chama — escrita na superfície da fase, que é
    * embutida com `faseFixada`, a conferência existia e nunca rodava.
    */
 

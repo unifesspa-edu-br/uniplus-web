@@ -213,7 +213,7 @@ describe('Eliminação diante do desempate por área', () => {
         { ...CRITERIO_POR_AREA, regraCodigo: 'DESEMPATE-MAIOR-IDADE', areas: [] },
       ]);
 
-      expect(componente.validate()).toEqual({ valid: true });
+      expect(componente.validar()).toEqual({ valid: true });
 
       // A varredura grava o Desempate, e o que está gravado passa a ser o rascunho.
       store.classificacao.criteriosDesempateGravados.set(store.draft().desempate);

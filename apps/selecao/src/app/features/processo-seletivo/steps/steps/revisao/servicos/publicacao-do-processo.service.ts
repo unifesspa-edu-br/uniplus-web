@@ -111,7 +111,7 @@ export class PublicacaoDoProcesso {
     if (processoId === null)
       return recusado('Conclua a identificação do processo antes de publicar.');
 
-    const conferencia = this.conferencia.validate();
+    const conferencia = this.conferencia.validar();
     if (!conferencia.valid) return conferencia;
 
     // A conferência já cobre a ausência do documento; a checagem estreita o tipo para o comando.

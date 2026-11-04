@@ -159,7 +159,7 @@ export class EliminacaoStepComponent {
    * mostra a recusa sem chamar a API.
    */
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
-    if (!this.validate().valid || this.recusasCertasPeloDesempate().length > 0) return null;
+    if (!this.validar().valid || this.recusasCertasPeloDesempate().length > 0) return null;
 
     return confirmacaoDaClassificacao({
       draft: this.store.draft(),
@@ -181,7 +181,7 @@ export class EliminacaoStepComponent {
    * então não pode supor que o operador passou pela Fórmula antes de chegar
    * aqui.
    */
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     const classificacao = this.store.draft().classificacao;
     // A resolução que o cadastro lido já não tem seria recusada pela gravação, que relê o
     // cadastro; a completude dos grupos continua sendo julgada pelo servidor.
@@ -215,7 +215,7 @@ export class EliminacaoStepComponent {
   /**
    * O servidor recusa a classificação que deixa sem nota de área um critério de desempate já
    * gravado que a cita. Com o rascunho fora do ENEM pela média ponderada, a recusa é certa, e a
-   * gravação nem é tentada. Confere o que está gravado, e por isso fica fora do `validate()`: a
+   * gravação nem é tentada. Confere o que está gravado, e por isso fica fora do `validar()`: a
    * publicação valida todos os passos antes de gravá-los, e o Desempate, gravado antes deste, pode
    * resolver a pendência.
    */
@@ -282,7 +282,7 @@ export class EliminacaoStepComponent {
       };
     }
 
-    const conferencia = this.validate();
+    const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
     const doDesempate = this.recusasCertasPeloDesempate();

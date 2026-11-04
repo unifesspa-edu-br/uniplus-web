@@ -365,7 +365,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
 
       // Redação vale na gravada, mas a próxima gravação da classificação a recusaria.
       m.store.patchSection('desempate', [criterio(['REDACAO'])]);
-      expect(m.componente.validate()).toEqual({
+      expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
           'Critério de desempate 1: a área Redação não é comum a todos os grupos da resolução de Peso por Área.',
@@ -400,7 +400,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       expect(seletor(m, 0)).toBeNull();
       // O que já está configurado continua à vista, para ser retirado.
       expect(areasNaTela(m, 0)).toEqual(['1ª Redação']);
-      expect(m.componente.validate()).toEqual({
+      expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
           'Critério de desempate 1: a classificação escolhida no passo Fórmula não é baseada no ENEM pela média ponderada, e a gravação dela no passo Eliminação vai recusar o critério por área; troque a regra do critério ou remova-o, ou volte a classificação para o ENEM no passo Fórmula.',
@@ -468,7 +468,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
 
         expect(seletor(m, 0)).toBeNull();
         expect(m.el.querySelector('#desemp-reler-processo')).not.toBeNull();
-        expect(m.componente.validate()).toEqual({
+        expect(m.componente.validar()).toEqual({
           valid: false,
           messages: [
             'Critério de desempate 1: não se sabe o que a classificação gravada tem agora, porque a última gravação ficou sem resposta ou a releitura do processo falhou, e as áreas que o desempate pode citar dependem disso; releia o processo pelo aviso no início do passo.',
@@ -547,7 +547,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         expect(seletor(m, 0)).toBeNull();
         expect(m.el.querySelector('#desemp-reler-processo')).not.toBeNull();
         expect(textoDaTela(m)).toContain('ainda não foi confirmado');
-        expect(m.componente.validate()).toEqual({
+        expect(m.componente.validar()).toEqual({
           valid: false,
           messages: [
             'Critério de desempate 1: o quadro de Peso por Área que a última gravação da classificação congelou no processo ainda não foi confirmado por uma releitura, e as áreas que o desempate pode citar dependem disso; releia o processo pelo aviso no início do passo.',
@@ -643,7 +643,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         'A nota de área do ENEM só desempata quando a classificação é baseada no ENEM pela média ponderada',
       );
       expect(areasNaTela(m, 0)).toEqual(['1ª Redação']);
-      expect(m.componente.validate()).toEqual({
+      expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
           'Critério de desempate 1: a nota de área do ENEM só desempata quando a classificação é baseada no ENEM pela média ponderada, com a resolução de Peso por Área escolhida no passo Fórmula.',
@@ -664,7 +664,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       expect(seletor(m, 0)).toBeNull();
       expect(textoDaTela(m)).toContain('Escolha a resolução de Peso por Área no passo Fórmula');
       expect(textoDaTela(m)).not.toContain('Todas as áreas do quadro já estão na ordem');
-      expect(m.componente.validate()).toEqual({
+      expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
           'Critério de desempate 1: escolha a resolução de Peso por Área no passo Fórmula: as áreas que o desempate pode citar vêm do quadro dela.',
@@ -1219,7 +1219,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       const m = await montar();
       criterioPorArea(m);
 
-      expect(m.componente.validate()).toEqual({
+      expect(m.componente.validar()).toEqual({
         valid: false,
         messages: ['Critério de desempate 1: acrescente ao menos uma área do ENEM.'],
       });
@@ -1231,7 +1231,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       m.fixture.detectChanges();
 
       expect(areasNaTela(m, 0)).toEqual(['1ª Área de um grupo só']);
-      expect(m.componente.validate()).toEqual({
+      expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
           'Critério de desempate 1: a área Área de um grupo só não é comum a todos os grupos da resolução de Peso por Área.',
@@ -1251,7 +1251,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
 
       expect(seletor(m, 0)).toBeNull();
       expect(textoDaTela(m)).toContain('Nenhuma área do ENEM está em todos os grupos');
-      expect(m.componente.validate()).toEqual({
+      expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
           'Critério de desempate 1: nenhuma área do ENEM está em todos os grupos do quadro de Peso por Área, e só uma área comum a todos desempata; troque a regra do critério ou escolha outra resolução no passo Fórmula.',
@@ -1271,7 +1271,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       const m = await montar();
       m.store.patchSection('desempate', [criterio(['REDACAO', 'MATEMATICA', 'REDACAO'])]);
 
-      expect(m.componente.validate()).toEqual({
+      expect(m.componente.validar()).toEqual({
         valid: false,
         messages: [
           'Critério de desempate 1: a área Redação aparece mais de uma vez na ordem de desempate.',
@@ -1286,7 +1286,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         criterio(['MATEMATICA', 'REDACAO']),
       ]);
 
-      expect(m.componente.validate()).toEqual({
+      expect(m.componente.validar()).toEqual({
         valid: false,
         messages: ['Critério de desempate 2: a área Redação já é citada pelo critério 1.'],
       });

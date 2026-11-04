@@ -141,7 +141,7 @@ describe('AtendimentoStepComponent', () => {
     });
     detectar();
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
 
     // O tipo de deficiência oferece os tipos do cadastro, com ou sem oferta (UNI-REQ-0012).
     expect(componente.pcdAusenteDoCadastro()).toBe(true);
@@ -201,13 +201,13 @@ describe('AtendimentoStepComponent', () => {
   it('recusa validar tipo de deficiência sem a condição PcD marcada', () => {
     // Estado que a tela não deveria produzir sozinha (o toggle da condição já
     // esvazia), mas o rascunho pode chegar assim por hidratação de um
-    // processo editado por outro caminho — validate() precisa recusar mesmo
+    // processo editado por outro caminho — validar() precisa recusar mesmo
     // assim.
     store.patchObjectSection('atendimento', {
       tiposDeficiencia: [{ id: TIPO_ID, nome: 'Deficiência visual' }],
     });
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
 
     expect(resultado.valid).toBe(false);
   });
@@ -251,7 +251,7 @@ describe('AtendimentoStepComponent', () => {
     componente.toggleCondicao(CONDICOES[0], true);
     detectar();
 
-    expect(componente.validate().messages).toContain(
+    expect(componente.validar().messages).toContain(
       'A condição "Pessoa com deficiência" exige ao menos um tipo de deficiência marcado. Marque um tipo ou desmarque a condição.',
     );
     const resultado = await componente.persistir();
@@ -309,7 +309,7 @@ describe('AtendimentoStepComponent', () => {
    * Isso não torna o registro gravável do jeito que está: a mesma condição
    * inativa também aparece em `condicoesInativas()`, e o
    * `DefinirOfertaAtendimentoCommandHandler` recusaria o id dela com 422 —
-   * `validate()` precisa dizer isso antes da ida ao servidor, nomeando a
+   * `validar()` precisa dizer isso antes da ida ao servidor, nomeando a
    * condição, sem esconder a seção de tipos de deficiência que o operador
    * ainda precisa revisar.
    */
@@ -323,7 +323,7 @@ describe('AtendimentoStepComponent', () => {
     expect(componente.pcdSelecionada()).toBe(true);
     expect(elemento.textContent).toContain('Tipos de deficiência reconhecidos');
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('Pessoa com deficiência'))).toBe(true);
   });
@@ -477,7 +477,7 @@ describe('AtendimentoStepComponent', () => {
     );
     detectar();
 
-    expect(componente.validate()).toEqual({ valid: true });
+    expect(componente.validar()).toEqual({ valid: true });
   });
 
   /** Mesmo caso acima, mas durante o carregamento inicial — antes de qualquer resposta chegar. */
@@ -490,7 +490,7 @@ describe('AtendimentoStepComponent', () => {
     componente.catalogos.carregando.set(true);
     detectar();
 
-    expect(componente.validate()).toEqual({ valid: true });
+    expect(componente.validar()).toEqual({ valid: true });
   });
 
   /**
@@ -527,7 +527,7 @@ describe('AtendimentoStepComponent', () => {
 
   /**
    * Reproduz o achado de revisão sobre a própria correção anterior: fechar
-   * `validate()` atrás de `catalogoConfirmado()` impede que a tela *mande*
+   * `validar()` atrás de `catalogoConfirmado()` impede que a tela *mande*
    * apagar a oferta, mas os checkboxes de remoção continuavam habilitados —
    * o operador ainda *conseguia* desmarcar um item sem querer, sem opção de
    * catálogo que o restaure, e o próximo avanço persistiria a lista
@@ -624,7 +624,7 @@ describe('AtendimentoStepComponent', () => {
     expect(checkboxes.length).toBeGreaterThan(0);
     expect(checkboxes.every((input) => input.disabled)).toBe(true);
 
-    expect(componente.validate()).toEqual({ valid: true });
+    expect(componente.validar()).toEqual({ valid: true });
 
     const gravacao = componente.persistir();
     const requisicao = controller.expectOne(ROTA_ATENDIMENTO);
@@ -651,7 +651,7 @@ describe('AtendimentoStepComponent', () => {
     });
     detectar();
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('Recurso descontinuado'))).toBe(true);
@@ -672,7 +672,7 @@ describe('AtendimentoStepComponent', () => {
     });
     detectar();
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('Lactante (antiga)'))).toBe(true);

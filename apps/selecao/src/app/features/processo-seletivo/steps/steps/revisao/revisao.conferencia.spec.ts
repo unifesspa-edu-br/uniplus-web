@@ -34,14 +34,14 @@ describe('RevisaoStepComponent — conferência', () => {
 
   afterEach(() => controller.verify());
 
-  describe('validate()', () => {
+  describe('validar()', () => {
     it('recusa sem processo criado', () => {
-      expect(componente.validate().valid).toBe(false);
+      expect(componente.validar().valid).toBe(false);
     });
 
     it('recusa enquanto a prontidão ainda carrega', async () => {
       await criarProcesso(cenario);
-      expect(componente.validate().valid).toBe(false);
+      expect(componente.validar().valid).toBe(false);
 
       controller.expectOne(ROTA_CONFORMIDADE).flush(CONFORMIDADE_VERDE);
       controller
@@ -63,7 +63,7 @@ describe('RevisaoStepComponent — conferência', () => {
         .flush(CONFORMIDADE_LEGAL_VERDE);
       await flushMicrotasks();
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.some((m) => m.includes('estruturais'))).toBe(true);
     });
@@ -73,7 +73,7 @@ describe('RevisaoStepComponent — conferência', () => {
       store.patchObjectSection('publicacao', { ato: atoCompleto() });
       await flushProntidaoVerde(cenario);
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.some((m) => m.includes('documento'))).toBe(true);
     });
@@ -83,26 +83,26 @@ describe('RevisaoStepComponent — conferência', () => {
       await criarProcesso(cenario);
       await flushProntidaoVerde(cenario);
 
-      expect(componente.validate()).toEqual({ valid: true });
+      expect(componente.validar()).toEqual({ valid: true });
     });
 
     /**
      * O checklist legal foi avaliado para a data de referência de QUANDO ele
      * carregou — se o operador muda o período depois, sem recarregar,
-     * `validate()` não pode aprovar um checklist que já não corresponde ao
+     * `validar()` não pode aprovar um checklist que já não corresponde ao
      * que vai ser publicado.
      */
     it('recusa quando a data de referência mudou depois do último carregamento do checklist legal', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
       await flushProntidaoVerde(cenario);
-      expect(componente.validate()).toEqual({ valid: true });
+      expect(componente.validar()).toEqual({ valid: true });
 
       // Sem fase de coleta nestes testes — a data de referência vem do campo.
       // Mudar o início do período invalida o checklist legal já carregado.
       store.patchObjectSection('publicacao', { periodoInscricaoInicio: '2027-06-15T09:00' });
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.some((m) => m.includes('Atualizar checklist'))).toBe(true);
     });
@@ -167,7 +167,7 @@ describe('RevisaoStepComponent — conferência', () => {
       await criarProcesso(cenario);
       await flushProntidaoComPendenciaLegal();
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.valid).toBe(false);
       expect(
         resultado.messages?.some((m) => m.includes('período de inscrição precisa ser informado')),

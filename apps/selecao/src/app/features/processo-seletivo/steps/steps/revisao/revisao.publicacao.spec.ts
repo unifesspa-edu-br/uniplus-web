@@ -175,7 +175,7 @@ describe('RevisaoStepComponent — publicação', () => {
 
       // A tela não pode cobrar o período: a fase de coleta existe, só ainda
       // não foi relida do servidor.
-      expect(componente.validate()).toEqual({ valid: true });
+      expect(componente.validar()).toEqual({ valid: true });
 
       const gravacao = componente.persistir();
       const requisicao = controller.expectOne(ROTA_PUBLICACAO);

@@ -364,7 +364,7 @@ describe('FormularioStepComponent', () => {
     expect(fixture.debugElement.injector.get(FasesDosFormularios).faseDaInscricao()).toBe(
       'INSCRICAO',
     );
-    expect(fixture.componentInstance.validate()).toEqual({ valid: true });
+    expect(fixture.componentInstance.validar()).toEqual({ valid: true });
   });
 
   it('antes de o formulário existir no servidor, o combo não oferece o conjunto básico, que a API põe na seção reservada', () => {
@@ -386,7 +386,7 @@ describe('FormularioStepComponent', () => {
     });
     store.patchObjectSection('pagamento', { cobra: false });
 
-    const validacao = fixture.componentInstance.validate();
+    const validacao = fixture.componentInstance.validar();
 
     expect(validacao.valid).toBe(false);
     expect(validacao.messages?.join(' ')).toContain(
@@ -492,7 +492,7 @@ describe('FormularioStepComponent', () => {
       },
     });
 
-    expect(fixture.componentInstance.validate()).toEqual({
+    expect(fixture.componentInstance.validar()).toEqual({
       valid: false,
       messages: [
         'O formulário de inscrição tem campos que não são números: veja os campos marcados na aba dele.',
@@ -986,7 +986,7 @@ describe('FormularioStepComponent', () => {
       );
       await aplicacao;
 
-      const validacao = fixture.componentInstance.validate();
+      const validacao = fixture.componentInstance.validar();
       expect(validacao.valid).toBe(false);
       expect(validacao.messages?.join(' ')).toContain(
         'Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado ao formulário de inscrição',
@@ -1107,7 +1107,7 @@ describe('FormularioStepComponent', () => {
         'foi aplicado ao formulário de inscrição, mas não foi possível reler o processo. Recarregue o processo',
       );
       expect(naAba).not.toContain('Não foi possível confirmar');
-      expect(fixture.componentInstance.validate().valid).toBe(false);
+      expect(fixture.componentInstance.validar().valid).toBe(false);
     });
 
     it('a troca de processo descarta a aplicação que aguardava confirmação', () => {

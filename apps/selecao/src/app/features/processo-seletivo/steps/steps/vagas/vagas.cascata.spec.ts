@@ -221,14 +221,14 @@ describe('VagasStepComponent — gravação da cascata de remanejamento', () => 
     store.remoteSnapshot.set({ cascata: null } as unknown as ProcessoSeletivoDto);
     detectar();
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
   });
 
   /**
    * Reproduz o beco sem saída: a regra existe no catálogo, mas seu
    * `esquemaArgs` não declara a matriz no formato esperado — a tabela e o
    * checkbox de confirmação não aparecem no template. Sem o desvio em
-   * `pendenciasDaCascata()`, `validate()` pedia para "confirmar a cascata",
+   * `pendenciasDaCascata()`, `validar()` pedia para "confirmar a cascata",
    * mandando o operador marcar um controle que a tela nem renderiza.
    */
   it('recusa avançar com mensagem acionável quando a regra escolhida não tem matriz reconhecida', async () => {

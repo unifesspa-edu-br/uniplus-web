@@ -57,7 +57,7 @@ export class ConferenciaDaPublicacao {
     return itens === null ? null : comoGruposDaRevisao(agruparPorDimensao(itens));
   });
 
-  /** Avisos que não impedem publicar: nunca entram em `estruturalOk()` nem em `validate()`. */
+  /** Avisos que não impedem publicar: nunca entram em `estruturalOk()` nem em `validar()`. */
   readonly avisosDaRevisao = computed(() => comoAvisosDaRevisao(this.prontidao.avisos()));
 
   readonly estruturalOk = computed(
@@ -135,7 +135,7 @@ export class ConferenciaDaPublicacao {
   }
 
   /** O que falta nesta tela: campo em branco, checklist reprovado ou documento ainda não escolhido. */
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     if (this.store.processoSeletivoId() === null) {
       return recusado('Conclua a identificação do processo antes de revisar a conformidade.');
     }

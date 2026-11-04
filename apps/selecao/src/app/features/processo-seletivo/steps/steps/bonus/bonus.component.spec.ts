@@ -65,7 +65,7 @@ describe('BonusStepComponent', () => {
   });
 
   it('recusa enquanto a declaração de aplicar ou não o bônus não foi respondida', () => {
-    const resultado = componente.validate();
+    const resultado = componente.validar();
 
     expect(resultado.valid).toBe(false);
     expect(resultado).toMatchObject({
@@ -76,12 +76,12 @@ describe('BonusStepComponent', () => {
   it('é válido declarando que não aplica, sem nenhum campo preenchido', () => {
     componente.escolherAplicacao(false);
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
   });
 
   it('recusa ativo sem regra escolhida', () => {
     componente.escolherAplicacao(true);
-    expect(componente.validate().valid).toBe(false);
+    expect(componente.validar().valid).toBe(false);
   });
 
   it('recusa fator zero ou negativo', () => {
@@ -90,7 +90,7 @@ describe('BonusStepComponent', () => {
     componente.escolherBaseLegal(BASE_LEGAL_ID);
     componente.alterarFator('0');
 
-    expect(componente.validate().valid).toBe(false);
+    expect(componente.validar().valid).toBe(false);
   });
 
   it('recusa ativo sem base legal escolhida', () => {
@@ -98,7 +98,7 @@ describe('BonusStepComponent', () => {
     componente.escolherRegra('BONUS-MULTIPLICATIVO|1.0');
     componente.alterarFator('1.2');
 
-    expect(componente.validate().valid).toBe(false);
+    expect(componente.validar().valid).toBe(false);
   });
 
   it('aceita ativo com regra, fator e base legal válidos, sem teto', () => {
@@ -107,7 +107,7 @@ describe('BonusStepComponent', () => {
     componente.alterarFator('1.2');
     componente.escolherBaseLegal(BASE_LEGAL_ID);
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
   });
 
   it('recusa teto informado igual ou menor que zero', () => {
@@ -117,7 +117,7 @@ describe('BonusStepComponent', () => {
     componente.escolherBaseLegal(BASE_LEGAL_ID);
     componente.alterarTeto('0');
 
-    expect(componente.validate().valid).toBe(false);
+    expect(componente.validar().valid).toBe(false);
   });
 
   /**
@@ -132,7 +132,7 @@ describe('BonusStepComponent', () => {
     componente.escolherBaseLegal(BASE_LEGAL_ID);
     componente.alterarTeto('100');
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('99,9999');
   });
@@ -143,7 +143,7 @@ describe('BonusStepComponent', () => {
     componente.alterarFator('1.23456');
     componente.escolherBaseLegal(BASE_LEGAL_ID);
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.[0]).toContain('4 casas decimais');
   });
@@ -154,7 +154,7 @@ describe('BonusStepComponent', () => {
     componente.alterarFator('99.9999');
     componente.escolherBaseLegal(BASE_LEGAL_ID);
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
   });
 
   describe('persistir()', () => {

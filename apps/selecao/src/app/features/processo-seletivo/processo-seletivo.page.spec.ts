@@ -199,7 +199,7 @@ describe('ProcessoSeletivoPage — estrutura', () => {
    * um `viewChildren` que lê a ordem de declaração.
    *
    * Reordenar um passo mexendo só em `PASSOS` dessincroniza os dois lados **sem erro de
-   * compilação**: o stepper anuncia um passo e a tela mostra outro, e `validate()`/`persistir()`
+   * compilação**: o stepper anuncia um passo e a tela mostra outro, e `validar()`/`persistir()`
    * operam no componente errado. Este teste amarra os dois.
    */
   it('o painel visível em cada índice é o do passo que o stepper anuncia', () => {
@@ -634,7 +634,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
   it('sem pendência local, segue para gravarEAvancar em vez de travar no aviso genérico', () => {
     const { fixture, page, store } = montar();
-    const stub = { validate: () => ({ valid: true }) };
+    const stub = { validar: () => ({ valid: true }) };
 
     vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockReturnValue(stub);
 
@@ -660,9 +660,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
   it('grava de novo um passo anterior antes de publicar, mesmo sem editar via avançar', async () => {
     const { fixture, page, store } = montar();
     const persistirDoPassoAnterior = vi.fn().mockResolvedValue({ valid: true });
-    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubSemPersistir = { validar: () => ({ valid: true }) };
     const stubComPersistir = {
-      validate: () => ({ valid: true }),
+      validar: () => ({ valid: true }),
       persistir: persistirDoPassoAnterior,
     };
 
@@ -683,13 +683,13 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const releitura = fixture.debugElement.injector.get(ReleituraDoSnapshot);
     const reler = vi.spyOn(releitura, 'reler').mockResolvedValue(true);
     const stubQueMarca = {
-      validate: () => ({ valid: true }),
+      validar: () => ({ valid: true }),
       persistir: vi.fn(async () => {
         store.classificacao.marcarDesconhecida();
         return { valid: false, messages: ['Falha ao gravar de novo.'] };
       }),
     };
-    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubSemPersistir = { validar: () => ({ valid: true }) };
 
     vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
       (index: number) => (index === 2 ? stubQueMarca : stubSemPersistir),
@@ -727,7 +727,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       .mockResolvedValue(apiOk(detalhe, 200, new HttpHeaders()));
     // O cadastro lido aqui tinha peso 1; o servidor copiou o dele, mais novo, com peso 3.
     const stubDaEliminacao = {
-      validate: () => ({ valid: true }),
+      validar: () => ({ valid: true }),
       persistir: vi.fn(async () => {
         store.classificacao.registrarGravadaComQuadro('Resolução nova', [
           {
@@ -740,9 +740,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
         return { valid: true };
       }),
     };
-    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubSemPersistir = { validar: () => ({ valid: true }) };
     // A Revisão para a publicação depois da releitura: o que importa aqui é o que veio antes.
-    const stubDaRevisao = { validate: () => ({ valid: false, messages: ['Revisão pendente.'] }) };
+    const stubDaRevisao = { validar: () => ({ valid: false, messages: ['Revisão pendente.'] }) };
     vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
       (index: number) =>
         index === 2
@@ -775,7 +775,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
     });
     // O Desempate recusa enquanto não se sabe o que a classificação gravada tem.
     const stubQueDependeDaClassificacao = {
-      validate: () => {
+      validar: () => {
         ordem.push('validou');
         return store.classificacao.motivoDaReleitura() === 'desconhecida'
           ? { valid: false, messages: ['Classificação desconhecida.'] }
@@ -801,7 +801,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
   it('sem nada por reler, o rascunho incompleto é barrado sem ir à rede', async () => {
     const { fixture, page, store } = montar();
     const reler = vi.spyOn(fixture.debugElement.injector.get(ReleituraDoSnapshot), 'reler');
-    const stubIncompleto = { validate: () => ({ valid: false, messages: ['Falta a regra.'] }) };
+    const stubIncompleto = { validar: () => ({ valid: false, messages: ['Falta a regra.'] }) };
     vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
       () => stubIncompleto,
     );
@@ -899,7 +899,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
         return { valid: true };
       });
       const stubDoDesempate = {
-        validate: () => ({ valid: true }),
+        validar: () => ({ valid: true }),
         persistir: vi.fn(async () => {
           ordem.push('critérios adiados');
           store.classificacao.desempatePendenteDeGravacao.set(true);
@@ -907,14 +907,14 @@ describe('ProcessoSeletivoPage — publicação', () => {
         }),
       };
       const stubDaEliminacao = {
-        validate: () => ({ valid: true }),
+        validar: () => ({ valid: true }),
         persistir: vi.fn(async () => {
           ordem.push('classificação');
           store.classificacao.registrarGravadaComQuadro(RESOLUCAO, COPIA_PRESUMIDA);
           return { valid: true };
         }),
       };
-      const stubSemPersistir = { validate: () => ({ valid: true }) };
+      const stubSemPersistir = { validar: () => ({ valid: true }) };
       vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
         (index: number) =>
           index === INDICE_DO_DESEMPATE
@@ -1031,14 +1031,14 @@ describe('ProcessoSeletivoPage — publicação', () => {
         });
       const passos = (page as unknown as { passos: () => readonly PassoDoWizard[] }).passos();
       const stubDaEliminacao = {
-        validate: () => ({ valid: true }),
+        validar: () => ({ valid: true }),
         persistir: vi.fn(async () => {
           ordem.push('classificação');
           aoGravarAClassificacao(store);
           return { valid: true };
         }),
       };
-      const stubSemPersistir = { validate: () => ({ valid: true }) };
+      const stubSemPersistir = { validar: () => ({ valid: true }) };
       vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
         (index: number) =>
           index === INDICE_DO_DESEMPATE
@@ -1134,10 +1134,10 @@ describe('ProcessoSeletivoPage — publicação', () => {
         }),
     );
     const persistir = vi.fn().mockResolvedValue({ valid: true });
-    const stubComPersistir = { validate: () => ({ valid: true }), persistir };
+    const stubComPersistir = { validar: () => ({ valid: true }), persistir };
     // Com a classificação desconhecida o passo recusa, e a publicação relê antes de validar de novo.
     const stubQueAguarda = {
-      validate: () =>
+      validar: () =>
         store.classificacao.motivoDaReleitura() === 'desconhecida'
           ? { valid: false, messages: ['Classificação desconhecida.'] }
           : { valid: true },
@@ -1159,9 +1159,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
 
   it('recusa publicar e nomeia o passo quando a gravação de um passo anterior falha', async () => {
     const { fixture, page, store } = montar();
-    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubSemPersistir = { validar: () => ({ valid: true }) };
     const stubComFalha = {
-      validate: () => ({ valid: true }),
+      validar: () => ({ valid: true }),
       persistir: vi
         .fn()
         .mockResolvedValue({ valid: false, messages: ['Falha ao gravar de novo.'] }),
@@ -1184,18 +1184,18 @@ describe('ProcessoSeletivoPage — publicação', () => {
   /**
    * A Revisão fica de fora da primeira passada de `validarRascunho()`
    * porque seu checklist pode estar desatualizado — mas sem recarregá-lo
-   * entre gravar de novo e a segunda passada, `validate()` recusaria com a
+   * entre gravar de novo e a segunda passada, `validar()` recusaria com a
    * foto de antes da correção mesmo depois de ela já ter sido gravada.
    */
   it('recarrega o checklist da Revisão entre gravar de novo e validar, antes de publicar', async () => {
     const { fixture, page, store } = montar();
-    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubSemPersistir = { validar: () => ({ valid: true }) };
     let checklistRecarregado = false;
     const recarregarChecklist = vi.fn().mockImplementation(async () => {
       checklistRecarregado = true;
     });
     const stubRevisao = {
-      validate: () =>
+      validar: () =>
         checklistRecarregado
           ? { valid: true }
           : { valid: false, messages: ['Checklist desatualizado.'] },
@@ -1227,9 +1227,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
     const { fixture, page, store } = montar();
     const estadosDurante: boolean[] = [];
     const passoAtingidoDuranteATrava: number[] = [];
-    const stubSemPersistir = { validate: () => ({ valid: true }) };
+    const stubSemPersistir = { validar: () => ({ valid: true }) };
     const stubComPersistir = {
-      validate: () => ({ valid: true }),
+      validar: () => ({ valid: true }),
       // Não mexe em store.salvando — como o persistir() real de cada passo
       // já soltou o próprio no finally antes de retornar, chegar aqui com
       // operacaoEmAndamento() ainda true só é possível pela trava nova.
@@ -1240,7 +1240,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       store.goTo(0); // tentativa de navegar por baixo, durante a recarga
       passoAtingidoDuranteATrava.push(store.currentStep());
     });
-    const stubRevisao = { validate: () => ({ valid: true }), recarregarChecklist };
+    const stubRevisao = { validar: () => ({ valid: true }), recarregarChecklist };
 
     vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
       (index: number) => {
@@ -1275,9 +1275,9 @@ describe('ProcessoSeletivoPage — publicação', () => {
       store.reset();
       return { valid: true };
     });
-    const stubSemPersistir = { validate: () => ({ valid: true }) };
-    const stub1 = { validate: () => ({ valid: true }), persistir: persistirDoPrimeiroPasso };
-    const stub2 = { validate: () => ({ valid: true }), persistir: persistirDoSegundoPasso };
+    const stubSemPersistir = { validar: () => ({ valid: true }) };
+    const stub1 = { validar: () => ({ valid: true }), persistir: persistirDoPrimeiroPasso };
+    const stub2 = { validar: () => ({ valid: true }), persistir: persistirDoSegundoPasso };
 
     vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
       (index: number) => {

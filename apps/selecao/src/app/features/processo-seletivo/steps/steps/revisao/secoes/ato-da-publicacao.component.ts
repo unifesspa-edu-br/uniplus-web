@@ -124,7 +124,7 @@ export class AtoDaPublicacaoComponent {
   /**
    * Um "Atualizar checklist" pode trazer um catálogo sem o tipo escolhido antes, que deixou de ser
    * vigente entre as duas leituras. O `<select>` recua para o placeholder, e sem a limpeza o
-   * rascunho guardaria o código velho, aprovado por `validate()` e recusado só depois da
+   * rascunho guardaria o código velho, aprovado por `validar()` e recusado só depois da
    * confirmação. Só limpa com o catálogo definitivamente carregado, nunca durante a primeira carga.
    */
   private limparTipoDeAtoForaDoCatalogo(): void {

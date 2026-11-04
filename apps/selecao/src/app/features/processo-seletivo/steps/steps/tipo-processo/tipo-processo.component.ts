@@ -127,7 +127,7 @@ export class TipoProcessoStepComponent {
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     return this.store.draft().tipoProcesso.selected
       ? { valid: true }
       : { valid: false, message: 'Selecione um tipo de processo seletivo para continuar.' };

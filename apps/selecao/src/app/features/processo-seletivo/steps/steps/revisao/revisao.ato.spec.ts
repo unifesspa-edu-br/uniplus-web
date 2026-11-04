@@ -98,7 +98,7 @@ describe('RevisaoStepComponent — ato e período', () => {
       ano.dispatchEvent(new Event('input'));
       fixture.detectChanges();
 
-      expect(() => componente.validate()).not.toThrow();
+      expect(() => componente.validar()).not.toThrow();
       expect(store.draft().publicacao.ato.ano).toBe('2027');
     });
 

@@ -11,7 +11,7 @@ const DESEMPATE_AINDA_PENDENTE =
  *
  * Duas passadas de `validarRascunho()`, e a ordem não é a intuitiva. A primeira cobre só os passos
  * ANTERIORES à Revisão: é rápida, sem rede, e barra de imediato um passo incompleto. A Revisão
- * fica de fora dela porque o `validate()` dela recusaria com o checklist ainda velho sempre que o
+ * fica de fora dela porque o `validar()` dela recusaria com o checklist ainda velho sempre que o
  * operador tivesse corrigido um passo e voltado direto à Revisão pelo stepper livre, antes de
  * `gravarPassosAnteriores()` gravar a correção. Só depois de gravar de novo e recarregar o
  * checklist a segunda passada, com a Revisão incluída, vê o que a primeira acabou de produzir.
@@ -127,7 +127,7 @@ async function gravarPassosAnteriores(conducao: ConducaoDoWizard): Promise<strin
     // Confere localmente antes de gravar, para não mandar ao servidor o comando de um passo que o
     // operador ainda não terminou de preencher, e para manter a ordem e o texto de
     // `validarRascunho()`: quem lê "Passo 1" quer o primeiro passo REALMENTE incompleto.
-    const conferencia = validator.validate();
+    const conferencia = validator.validar();
     if (!conferencia.valid) {
       pendencias.push(conducao.pendenciaDoPasso(index, mensagensDe(conferencia)));
       continue;

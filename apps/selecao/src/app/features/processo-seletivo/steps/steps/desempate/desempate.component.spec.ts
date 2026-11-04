@@ -334,7 +334,7 @@ describe('DesempateStepComponent', () => {
       origemCandidatos: OrigemCandidatos.inscricaoPropria,
     });
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
 
     expect(resultado.valid).toBe(false);
     expect(resultado).toMatchObject({
@@ -347,7 +347,7 @@ describe('DesempateStepComponent', () => {
       origemCandidatos: OrigemCandidatos.importacaoExterna,
     });
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
   });
 
   it('reordena com mover()', () => {
@@ -380,7 +380,7 @@ describe('DesempateStepComponent', () => {
         criterio({ regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA', regraVersao: '1.0' }),
       ]);
 
-      expect(componente.validate().valid).toBe(false);
+      expect(componente.validar().valid).toBe(false);
     });
 
     it('recusa quando a etapa referenciada não existe mais', () => {
@@ -392,7 +392,7 @@ describe('DesempateStepComponent', () => {
         }),
       ]);
 
-      expect(componente.validate().valid).toBe(false);
+      expect(componente.validar().valid).toBe(false);
     });
 
     it('aceita com etapaRef existente', () => {
@@ -404,7 +404,7 @@ describe('DesempateStepComponent', () => {
         }),
       ]);
 
-      expect(componente.validate().valid).toBe(true);
+      expect(componente.validar().valid).toBe(true);
     });
   });
 
@@ -414,7 +414,7 @@ describe('DesempateStepComponent', () => {
         criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0' }),
       ]);
 
-      expect(componente.validate().valid).toBe(false);
+      expect(componente.validar().valid).toBe(false);
     });
 
     it('aceita com idade mínima informada', () => {
@@ -422,7 +422,7 @@ describe('DesempateStepComponent', () => {
         criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
       ]);
 
-      expect(componente.validate().valid).toBe(true);
+      expect(componente.validar().valid).toBe(true);
     });
   });
 
@@ -432,7 +432,7 @@ describe('DesempateStepComponent', () => {
         criterio({ regraCodigo: 'DESEMPATE-PREDICADO-FATO', regraVersao: '1.0', fato: 'RENDA' }),
       ]);
 
-      expect(componente.validate().valid).toBe(false);
+      expect(componente.validar().valid).toBe(false);
     });
 
     it('aceita completo', () => {
@@ -446,7 +446,7 @@ describe('DesempateStepComponent', () => {
         }),
       ]);
 
-      expect(componente.validate().valid).toBe(true);
+      expect(componente.validar().valid).toBe(true);
     });
 
     /**
@@ -465,7 +465,7 @@ describe('DesempateStepComponent', () => {
         }),
       ]);
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.[0]).toContain('não admite a comparação escolhida');
     });
@@ -482,7 +482,7 @@ describe('DesempateStepComponent', () => {
         }),
       ]);
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.[0]).toContain('fora do domínio declarado');
     });
@@ -516,7 +516,7 @@ describe('DesempateStepComponent', () => {
       expect(criterioAtual.fato).toBe('');
       expect(criterioAtual.operador).toBe('');
       expect(criterioAtual.valor).toBe('');
-      expect(componente.validate().valid).toBe(false);
+      expect(componente.validar().valid).toBe(false);
     });
 
     /**
@@ -540,7 +540,7 @@ describe('DesempateStepComponent', () => {
         '#desemp-0-valor',
       );
       expect(valor?.value).toBe('PRETA');
-      expect(componente.validate().valid).toBe(true);
+      expect(componente.validar().valid).toBe(true);
     });
 
     /** Fato que não está no catálogo é acusado pelo código, não silenciosamente aceito. */
@@ -555,7 +555,7 @@ describe('DesempateStepComponent', () => {
         }),
       ]);
 
-      expect(componente.validate().valid).toBe(false);
+      expect(componente.validar().valid).toBe(false);
     });
   });
 
@@ -565,7 +565,7 @@ describe('DesempateStepComponent', () => {
         criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: '1.0' }),
       ]);
 
-      expect(componente.validate().valid).toBe(true);
+      expect(componente.validar().valid).toBe(true);
     });
   });
 

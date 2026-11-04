@@ -3356,7 +3356,7 @@ describe('CronogramaStepComponent', () => {
 
     /**
      * A recusa de complementação é do passo do CRONOGRAMA, não da superfície da fase: aquela
-     * é embutida com `faseFixada` e o `validate()` dela nunca é chamado pela página. Escrita
+     * é embutida com `faseFixada` e o `validar()` dela nunca é chamado pela página. Escrita
      * lá, a conferência existia e não rodava.
      */
     it('acusa o reenvio declarado em fase que não admite complementação', () => {

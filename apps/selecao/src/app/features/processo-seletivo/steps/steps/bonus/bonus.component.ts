@@ -168,7 +168,7 @@ export class BonusStepComponent {
   }
 
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
-    if (!this.validate().valid) return null;
+    if (!this.validar().valid) return null;
 
     const bonus = this.store.draft().bonus;
     return confirmacaoDoBonus({
@@ -182,7 +182,7 @@ export class BonusStepComponent {
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     const messages = validarBonus(this.store.draft().bonus);
     return messages.length ? { valid: false, messages: [...messages] } : { valid: true };
   }
@@ -197,7 +197,7 @@ export class BonusStepComponent {
       };
     }
 
-    const conferencia = this.validate();
+    const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
     return gravarNoPasso(this.store, async () => {

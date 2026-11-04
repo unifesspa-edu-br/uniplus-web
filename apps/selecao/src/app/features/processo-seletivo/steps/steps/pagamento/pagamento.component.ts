@@ -109,7 +109,7 @@ export class PagamentoStepComponent {
   readonly selecionados = computed(() => this.store.draft().pagamento.fundamentos);
 
   /**
-   * Pendência do grupo de fundamentos, acesa por `validate()` e apagada assim
+   * Pendência do grupo de fundamentos, acesa por `validar()` e apagada assim
    * que o operador marca o primeiro. Vive aqui, e não em `selecionados()`,
    * porque o passo não pode nascer vermelho: quem abre o passo 3 ainda não
    * teve chance de escolher.
@@ -228,7 +228,7 @@ export class PagamentoStepComponent {
     // O comando não sai de um passo que a validação recusaria: sem isto, um
     // texto que não é valor viraria `null` no envio e o servidor recusaria a
     // combinação "cobra sem valor", com mensagem que não aponta o campo.
-    const conferencia = this.validate();
+    const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
     const pagamento = this.store.draft().pagamento;
@@ -250,7 +250,7 @@ export class PagamentoStepComponent {
     return { valid: true };
   }
 
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     const pagamento = this.store.draft().pagamento;
     const mensagens: string[] = [];
 

@@ -186,7 +186,7 @@ export class IdentificacaoStepComponent {
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     const resultado = validarIdentificacao(
       this.store.draft().identificacao,
       this.gravacao.identificadorDeclaravel(),

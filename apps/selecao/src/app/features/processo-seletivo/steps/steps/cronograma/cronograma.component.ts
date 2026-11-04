@@ -87,7 +87,7 @@ export class CronogramaStepComponent {
     return convencaoLida(algoritmoContagemCodigo.value, algoritmoContagemVersao.value);
   });
 
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     return this.conferencia.validar();
   }
 

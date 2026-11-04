@@ -34,8 +34,8 @@ export interface ExigenciaDeclarada {
  * alcança modalidade nenhuma, ou pede reenvio onde a fase não admite complementação.
  *
  * Mora aqui, e não na superfície da fase, porque é o passo do Cronograma que grava as
- * exigências e é o `validate()` dele que o wizard chama — a superfície da fase é embutida com
- * `faseFixada` e o `validate()` dela nunca é invocado pela página.
+ * exigências e é o `validar()` dele que o wizard chama — a superfície da fase é embutida com
+ * `faseFixada` e o `validar()` dela nunca é invocado pela página.
  */
 function problemasDeAncoragem(exigencias: readonly ExigenciaDeclarada[]): readonly string[] {
   const problemas: string[] = [];

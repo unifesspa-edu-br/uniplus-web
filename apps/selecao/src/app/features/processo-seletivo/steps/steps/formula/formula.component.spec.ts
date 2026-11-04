@@ -71,7 +71,7 @@ describe('FormulaStepComponent', () => {
   afterEach(() => controller.verify());
 
   it('recusa sem a regra de cálculo escolhida', () => {
-    expect(componente.validate().valid).toBe(false);
+    expect(componente.validar().valid).toBe(false);
   });
 
   it('sob classificação importada, não exige arredondamento nem casas', () => {
@@ -81,7 +81,7 @@ describe('FormulaStepComponent', () => {
       regraOrdemAlocacaoVersao: '1.0',
     });
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
   });
 
   it('sob fórmula local, exige regra de arredondamento e casas maior que zero', () => {
@@ -91,12 +91,12 @@ describe('FormulaStepComponent', () => {
       regraOrdemAlocacaoVersao: '1.0',
     });
 
-    expect(componente.validate().valid).toBe(false);
+    expect(componente.validar().valid).toBe(false);
 
     componente.escolherRegraArredondamento('ARRED-TRUNCAR|1.0');
     componente.alterarCasasArredondamento('2');
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
   });
 
   /**
@@ -163,7 +163,7 @@ describe('FormulaStepComponent', () => {
           ?.textContent,
       ).toContain('Escala da nota final');
       expect(campo().getAttribute('aria-describedby')).toBe('f-escala-nota-final-dica');
-      expect(componente.validate().valid).toBe(true);
+      expect(componente.validar().valid).toBe(true);
     });
 
     it('sob classificação importada, o campo não aparece e a recusa guardada some', () => {
@@ -180,7 +180,7 @@ describe('FormulaStepComponent', () => {
     it('o texto que não é número recusa o passo e o erro descreve o campo', () => {
       passoValidoComEscala('cem');
 
-      const validacao = componente.validate();
+      const validacao = componente.validar();
       fixture.detectChanges();
 
       expect(validacao.valid).toBe(false);
@@ -256,7 +256,7 @@ describe('FormulaStepComponent', () => {
     it('sem edição escolhida, o passo é recusado e o campo do ano fica marcado como inválido', () => {
       processoDeInscricaoComEnem([]);
 
-      const validacao = componente.validate();
+      const validacao = componente.validar();
       fixture.detectChanges();
 
       expect(validacao.valid).toBe(false);

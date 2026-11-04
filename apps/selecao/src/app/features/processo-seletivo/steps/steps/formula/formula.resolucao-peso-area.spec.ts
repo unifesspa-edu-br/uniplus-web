@@ -113,7 +113,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       expect(opcoes).toContain('Resolução revogada (fora do cadastro)');
       expect(texto(m.el)).toContain('não está no cadastro de Peso por Área lido');
 
-      const resultado = m.componente.validate();
+      const resultado = m.componente.validar();
       m.fixture.detectChanges();
 
       expect(resultado.valid).toBe(false);
@@ -143,7 +143,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       m.componente.alternarBaseadoEmEnem(true);
       m.fixture.detectChanges();
       expect(seletor(m).value).toBe('');
-      expect(m.componente.validate().valid).toBe(false);
+      expect(m.componente.validar().valid).toBe(false);
     });
 
     it('marcado sem escolha, bloqueia o avanço e aponta a pendência no campo', async () => {
@@ -158,7 +158,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
         regraOrdemAlocacaoVersao: '1.0',
       });
 
-      const resultado = m.componente.validate();
+      const resultado = m.componente.validar();
       m.fixture.detectChanges();
 
       expect(resultado.valid).toBe(false);
@@ -175,7 +175,7 @@ describe('FormulaStepComponent — resolução de Peso por Área', () => {
       );
 
       escolherNoSeletor(m, RESOLUCAO);
-      expect(m.componente.validate().valid).toBe(true);
+      expect(m.componente.validar().valid).toBe(true);
       m.fixture.detectChanges();
       expect(m.el.querySelector('#f-resolucao-peso-area-erro')).toBeNull();
     });

@@ -29,20 +29,20 @@ export interface GravacaoDoPasso {
 }
 
 /**
- * O que o wizard espera de um passo. `validate()` é o mínimo; o resto é de quem
+ * O que o wizard espera de um passo. `validar()` é o mínimo; o resto é de quem
  * grava na API.
  *
  * A posição não está aqui de propósito: o passo não sabe se é o segundo ou o
  * quinto, e é isso que permite reordená-los sem tocar em nenhum.
  */
 export interface PassoDoWizard {
-  validate(): ValidacaoDoPasso;
+  validar(): ValidacaoDoPasso;
 
   /** Grava na API antes de liberar o avanço. */
   persistir?(gravacao?: GravacaoDoPasso): Promise<ValidacaoDoPasso>;
 
   /**
-   * Leva o foco ao primeiro campo que `validate()` recusou, abrindo a aba ou a seção que o guarda.
+   * Leva o foco ao primeiro campo que `validar()` recusou, abrindo a aba ou a seção que o guarda.
    * Resolve para `true` só quando o foco chegou ao campo; sem isso o wizard cai no aviso.
    */
   revelarCampoInvalido?(): Promise<boolean>;
@@ -60,11 +60,11 @@ export interface PassoDoWizard {
   gravarAposAClassificacao?(): Promise<ValidacaoDoPasso>;
 
   /**
-   * Refaz, a partir do servidor, o que este passo cacheia para `validate()`
+   * Refaz, a partir do servidor, o que este passo cacheia para `validar()`
    * decidir. A maioria dos passos não tem cache — só a Revisão, cujo
    * checklist é lido uma vez e reaproveitado enquanto o operador estiver
    * nela. Sem isto, gravar de novo um passo anterior (`gravarPassosAnte-
-   * riores`) não se reflete no checklist da Revisão, e `validate()` recusa
+   * riores`) não se reflete no checklist da Revisão, e `validar()` recusa
    * com a foto de antes da correção.
    */
   recarregarChecklist?(): Promise<void>;

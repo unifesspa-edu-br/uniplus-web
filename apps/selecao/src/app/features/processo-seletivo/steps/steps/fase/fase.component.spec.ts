@@ -404,7 +404,7 @@ describe('FaseStepComponent', () => {
       detectar();
 
       expect(store.draft().cronograma.fases[0].faseConcluinteCodigo).toBeNull();
-      expect(componente.validate().valid).toBe(true);
+      expect(componente.validar().valid).toBe(true);
     });
 
     it('esquece a fase concluinte quando a publicação preliminar é removida', () => {
@@ -1718,7 +1718,7 @@ describe('FaseStepComponent', () => {
 
     /**
      * A recusa de quem JÁ tem o reenvio gravado é conferida na prontidão do Cronograma, não
-     * aqui: esta superfície é embutida com `faseFixada` e o `validate()` dela nunca é chamado
+     * aqui: esta superfície é embutida com `faseFixada` e o `validar()` dela nunca é chamado
      * pela página. O teste correspondente vive em `cronograma.component.spec.ts`.
      */
     it('deixa escrever o reenvio quando ele já está no rascunho', () => {

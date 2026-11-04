@@ -99,7 +99,7 @@ export class ConducaoDoWizard {
     }
 
     const validator = this.passoNo(this.store.currentStep());
-    const result = validator?.validate();
+    const result = validator?.validar();
 
     if (result && !result.valid) {
       this.store.setStepError(mensagensDe(result));
@@ -233,12 +233,12 @@ export class ConducaoDoWizard {
   }
 
   /**
-   * Roda `validate()` dos passos de `0` até `ateIndice` (exclusive; todos por padrão), reconcilia o
+   * Roda `validar()` dos passos de `0` até `ateIndice` (exclusive; todos por padrão), reconcilia o
    * progresso exibido nesse intervalo e devolve uma mensagem por pendência, identificada pelo
    * passo de origem. Todos os passos ficam montados (`[hidden]`), então todos respondem.
    *
    * `ateIndice` existe para a publicação chamar em duas passadas: a primeira sem a Revisão, cujo
-   * `validate()` depende de um checklist que só fica correto depois de gravar as correções e
+   * `validar()` depende de um checklist que só fica correto depois de gravar as correções e
    * recarregá-lo. Passos fora do intervalo mantêm o progresso que já tinham.
    */
   validarRascunho(ateIndice = this.store.totalSteps): string[] {
@@ -246,7 +246,7 @@ export class ConducaoDoWizard {
     const concluidos = new Set<number>(this.store.completedSteps());
 
     for (let index = 0; index < ateIndice; index += 1) {
-      const resultado = this.passoNo(index)?.validate();
+      const resultado = this.passoNo(index)?.validar();
 
       if (resultado && !resultado.valid) {
         pendencias.push(this.pendenciaDoPasso(index, mensagensDe(resultado)));

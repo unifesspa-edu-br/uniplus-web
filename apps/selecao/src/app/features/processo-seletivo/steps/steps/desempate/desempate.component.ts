@@ -149,7 +149,7 @@ export class DesempateStepComponent {
   }
 
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
-    if (!this.validate().valid) return null;
+    if (!this.validar().valid) return null;
 
     const criterios = this.criterios();
     if (criterios.length === 0) {
@@ -176,7 +176,7 @@ export class DesempateStepComponent {
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     const messages = mensagensDoDesempate({
       criterios: this.criterios(),
       obrigatorio: this.desempateObrigatorio(),
@@ -194,7 +194,7 @@ export class DesempateStepComponent {
    * critérios em seguida (`gravarAposAClassificacao`).
    */
   async persistir(): Promise<ValidacaoDoPasso> {
-    const conferencia = this.validate();
+    const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
     if (this.store.processoSeletivoId() !== null && this.areas.adiaAGravacao()) {
       this.store.classificacao.desempatePendenteDeGravacao.set(true);
@@ -206,7 +206,7 @@ export class DesempateStepComponent {
   /** Grava os critérios que ficaram para depois da classificação, se ficaram. */
   async gravarAposAClassificacao(): Promise<ValidacaoDoPasso> {
     if (!this.store.classificacao.desempatePendenteDeGravacao()) return { valid: true };
-    const conferencia = this.validate();
+    const conferencia = this.validar();
     return conferencia.valid ? this.gravar() : conferencia;
   }
 

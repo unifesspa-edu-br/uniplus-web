@@ -11,7 +11,7 @@ describe('EliminacaoStepComponent', () => {
   montarEliminacao();
 
   it('recusa sem a regra de cálculo escolhida no passo Fórmula', () => {
-    expect(componente.validate().valid).toBe(false);
+    expect(componente.validar().valid).toBe(false);
   });
 
   it('sob classificação importada, ainda exige a ordem de alocação', () => {
@@ -22,7 +22,7 @@ describe('EliminacaoStepComponent', () => {
 
     // Regra de cálculo escolhida, mas o restante do passo Fórmula não — o
     // wizard navega livremente, e a Eliminação grava o comando inteiro.
-    expect(componente.validate().valid).toBe(false);
+    expect(componente.validar().valid).toBe(false);
   });
 
   it('sob classificação importada com Fórmula completa, ignora regras de eliminação e valida', () => {
@@ -33,7 +33,7 @@ describe('EliminacaoStepComponent', () => {
       regraOrdemAlocacaoVersao: '1.0',
     });
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
   });
 
   it('recusa quando a Fórmula não declarou a ordem de alocação, mesmo com o restante completo', () => {
@@ -43,7 +43,7 @@ describe('EliminacaoStepComponent', () => {
       regraOrdemAlocacaoVersao: '',
     });
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.join(' ')).toContain('ordem de alocação');
   });
@@ -52,7 +52,7 @@ describe('EliminacaoStepComponent', () => {
     prepararClassificacaoLocal();
     store.patchObjectSection('cronograma', { etapas: [] });
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.join(' ')).toContain('compõe a nota');
   });

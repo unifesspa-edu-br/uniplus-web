@@ -37,7 +37,7 @@ function contagemEmTexto(quantidade: number, singular: string, plural: string): 
  * Passo Revisão e Publicação. Confere, contra o que o servidor realmente aplica, o checklist
  * estrutural, a conformidade legal e o par documento e tipo de ato, e publica o processo.
  *
- * O passo é o único que entra e sai do wizard (`validate`, `persistir`, `confirmacaoDeGravacao`):
+ * O passo é o único que entra e sai do wizard (`validar`, `persistir`, `confirmacaoDeGravacao`):
  * a conferência e a publicação são serviços do passo, e as seções que mostram o resultado
  * injetam o que ele provê. Recarrega o checklist a cada entrada, porque qualquer passo anterior
  * muda o que o servidor considera conforme.
@@ -121,8 +121,8 @@ export class RevisaoStepComponent {
     });
   }
 
-  validate(): ValidacaoDoPasso {
-    return this.conferencia.validate();
+  validar(): ValidacaoDoPasso {
+    return this.conferencia.validar();
   }
 
   persistir(): Promise<ValidacaoDoPasso> {
@@ -142,7 +142,7 @@ export class RevisaoStepComponent {
   }
 
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
-    if (!this.conferencia.validate().valid) return null;
+    if (!this.conferencia.validar().valid) return null;
 
     return confirmacaoDaPublicacao(
       this.store.draft(),

@@ -149,7 +149,7 @@ describe('IdentificacaoStepComponent', () => {
       nome: 'Processo Seletivo 2027',
     });
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages).toContain('Selecione a unidade administradora.');
@@ -314,7 +314,7 @@ describe('IdentificacaoStepComponent', () => {
       origemCandidatos: OrigemCandidatos.inscricaoPropria,
     });
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages).toContain(
@@ -535,7 +535,7 @@ describe('IdentificacaoStepComponent', () => {
       preencherCamposDoComando();
       store.patchObjectSection('identificacao', { identificadorLegivel: 'PSIQ 2026' });
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       detectar();
 
       expect(resultado.valid).toBe(false);
@@ -553,7 +553,7 @@ describe('IdentificacaoStepComponent', () => {
       preencherCamposDoComando();
       store.patchObjectSection('identificacao', { identificadorLegivel: '' });
 
-      expect(componente.validate().messages).toContain(
+      expect(componente.validar().messages).toContain(
         'Informe o identificador legível do processo seletivo.',
       );
     });
@@ -564,7 +564,7 @@ describe('IdentificacaoStepComponent', () => {
         identificadorLegivel: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       });
 
-      expect(componente.validate().messages).toContain(
+      expect(componente.validar().messages).toContain(
         'O identificador legível não pode ter a forma de um identificador técnico (Guid).',
       );
     });
@@ -668,7 +668,7 @@ describe('IdentificacaoStepComponent', () => {
       store.patchObjectSection('identificacao', { identificadorLegivel: 'medicina-2027' });
       store.travamentoDeOrquestracao.set(true);
 
-      expect(componente.validate().valid).toBe(true);
+      expect(componente.validar().valid).toBe(true);
       const gravado = componente.persistir();
       const req = controller.expectOne(URL_DO_IDENTIFICADOR);
       expect(req.request.body).toEqual({ identificadorLegivel: 'medicina-2027' });
@@ -684,7 +684,7 @@ describe('IdentificacaoStepComponent', () => {
       store.patchObjectSection('identificacao', { identificadorLegivel: 'Medicina 2027' });
       store.travamentoDeOrquestracao.set(true);
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       detectar();
 
       expect(resultado.valid).toBe(false);
@@ -750,7 +750,7 @@ describe('IdentificacaoStepComponent', () => {
 
       expect(host.querySelector('#f-identificador')).toBeNull();
       expect(valorEmConsulta('Identificador legível')).toBe('Não informado');
-      expect(componente.validate().messages ?? []).not.toContain(
+      expect(componente.validar().messages ?? []).not.toContain(
         'Informe o identificador legível do processo seletivo.',
       );
       expect(componente.rotuloDeAvanco()).toBe('Próximo');

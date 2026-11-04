@@ -328,7 +328,7 @@ export class FormularioStepComponent {
     return camposSemValoresOfertados(draft.formulario, draft.atendimento);
   });
 
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     const mensagens = mensagensDoFormulario({
       abas: this.abas().map((aba) => ({
         ...aba,
@@ -357,7 +357,7 @@ export class FormularioStepComponent {
       };
     }
 
-    const conferencia = this.validate();
+    const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
     return this.gravacao.gravar(

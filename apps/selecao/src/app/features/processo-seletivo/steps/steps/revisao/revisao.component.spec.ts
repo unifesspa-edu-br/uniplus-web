@@ -245,7 +245,7 @@ describe('RevisaoStepComponent', () => {
     it('não bloqueia a publicação e o banner dos itens conformes traz a ressalva', async () => {
       const tela = await abrirComAvisos([AVISO]);
 
-      expect(componente.validate()).toEqual({ valid: true });
+      expect(componente.validar()).toEqual({ valid: true });
       expect(tela.textContent).toContain('Há avisos abaixo, que não impedem a publicação');
     });
 

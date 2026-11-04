@@ -53,7 +53,7 @@ describe('ausência na etapa, pelo passo', () => {
     it('aceita a etapa escolhida sem nota mínima, mesmo fora do ENEM', () => {
       store.patchObjectSection('classificacao', { regrasEliminacao: [AUSENCIA] });
 
-      expect(componente.validate().valid).toBe(true);
+      expect(componente.validar().valid).toBe(true);
     });
 
     it('recusa sem etapa', () => {
@@ -61,7 +61,7 @@ describe('ausência na etapa, pelo passo', () => {
         regrasEliminacao: [{ ...AUSENCIA, etapaRef: '' }],
       });
 
-      expect(componente.validate().messages?.join(' ')).toContain('selecione a etapa');
+      expect(componente.validar().messages?.join(' ')).toContain('selecione a etapa');
     });
 
     it('oferece as etapas com e sem nota, nunca a do ENEM', () => {
@@ -77,7 +77,7 @@ describe('ausência na etapa, pelo passo', () => {
       expect(oferecidas('elim-etapa-1')).toEqual(['etapa-2']);
 
       store.patchObjectSection('classificacao', { regrasEliminacao: [AUSENCIA, AUSENCIA] });
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.messages?.join(' ')).toContain('Regra de eliminação 2');
       expect(resultado.messages?.join(' ')).toContain('já foi declarada');
     });
@@ -104,7 +104,7 @@ describe('ausência na etapa, pelo passo', () => {
       store.patchObjectSection('classificacao', { regrasEliminacao: [AUSENCIA] });
 
       expect(oferecidas('elim-etapa-0')).toEqual(['etapa-1']);
-      expect(componente.validate().messages?.join(' ')).toContain('etapa de nota do ENEM');
+      expect(componente.validar().messages?.join(' ')).toContain('etapa de nota do ENEM');
     });
 
     it('recusa a etapa do ENEM gravada, que continua visível para ser trocada', () => {
@@ -113,7 +113,7 @@ describe('ausência na etapa, pelo passo', () => {
       });
 
       expect(oferecidas('elim-etapa-0')).toContain('etapa-enem');
-      expect(componente.validate().messages?.join(' ')).toContain('etapa de nota do ENEM');
+      expect(componente.validar().messages?.join(' ')).toContain('etapa de nota do ENEM');
     });
 
     it('põe a recusa da repetição junto do campo da etapa', async () => {

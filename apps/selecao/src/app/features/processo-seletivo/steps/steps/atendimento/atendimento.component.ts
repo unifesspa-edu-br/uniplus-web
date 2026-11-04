@@ -93,7 +93,7 @@ export class AtendimentoStepComponent {
   /**
    * A condição PcD está entre as selecionadas: é o que libera tipos de deficiência (ADR-0067).
    * Deriva do **rascunho**, não do catálogo ativo: depender de `catalogos.condicaoPcd()` faria a
-   * seção de tipos sumir, e `validate()` recusar sem saída, assim que a condição fosse inativada
+   * seção de tipos sumir, e `validar()` recusar sem saída, assim que a condição fosse inativada
    * ou o carregamento falhasse, mesmo com ela marcada e visível na tela.
    */
   readonly pcdSelecionada = computed(() =>
@@ -307,7 +307,7 @@ export class AtendimentoStepComponent {
   );
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     const mensagens: string[] = [];
 
     // Espelha o gate de publicação: o formulário pergunta ao candidato algo cujo domínio sai
@@ -363,7 +363,7 @@ export class AtendimentoStepComponent {
       };
     }
 
-    const conferencia = this.validate();
+    const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
     const atendimento = this.atendimento();

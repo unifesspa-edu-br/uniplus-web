@@ -63,7 +63,7 @@ describe('regras de eliminação por área', () => {
         regrasEliminacao: [{ ...CORTE, areaCodigo: 'REDACAO', minimo: '400' }],
       });
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain('baseada em ENEM');
     });
@@ -74,7 +74,7 @@ describe('regras de eliminação por área', () => {
         regrasEliminacao: [{ ...CORTE, minimo: '400' }],
       });
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain('selecione a área do ENEM');
     });
@@ -85,7 +85,7 @@ describe('regras de eliminação por área', () => {
         regrasEliminacao: [{ ...CORTE, areaCodigo: 'REDACAO', minimo: '400' }],
       });
 
-      expect(componente.validate()).toEqual({ valid: true });
+      expect(componente.validar()).toEqual({ valid: true });
     });
 
     it('recusa a área que o quadro da resolução não tem em todos os grupos', () => {
@@ -94,7 +94,7 @@ describe('regras de eliminação por área', () => {
         regrasEliminacao: [{ ...CORTE, areaCodigo: 'MATEMATICA', minimo: '400' }],
       });
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.join(' ')).toContain(
         'Matemática e suas Tecnologias não está em todos os grupos',
@@ -110,7 +110,7 @@ describe('regras de eliminação por área', () => {
         ],
       });
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages).toContain(
         'Regra de eliminação 2: Redação já tem um corte em outra regra.',

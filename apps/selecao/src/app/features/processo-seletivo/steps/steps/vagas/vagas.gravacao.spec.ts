@@ -208,7 +208,7 @@ describe('VagasStepComponent — gravação da distribuição', () => {
   it('grava depois de simular, sem exigir declaração do operador', async () => {
     simular([OFERTA, OUTRA_OFERTA]);
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
   });
 
   /** Ninguém confirma um quadro que o passo não vai gravar. */
@@ -262,13 +262,13 @@ describe('VagasStepComponent — gravação da distribuição', () => {
    */
   it('editar o quadro derruba a simulação e volta a impedir a gravação', () => {
     simularEConferir([OFERTA, OUTRA_OFERTA]);
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
 
     operador.alterarVoBase(OFERTA, '35');
 
     expect(store.draft().vagas.ofertas[0].voBase).toBe('35');
     expect(servicos.estado.simulacaoCobreOQuadro()).toBe(false);
-    expect(componente.validate().valid).toBe(false);
+    expect(componente.validar().valid).toBe(false);
   });
 
   /**

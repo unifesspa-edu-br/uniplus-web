@@ -17,7 +17,7 @@ describe('ConducaoDoWizard', () => {
   let conducao: ConducaoDoWizard;
   let store: ProcessoSeletivoStore;
 
-  const passoComum: PassoDoWizard = { validate: () => ({ valid: true }) };
+  const passoComum: PassoDoWizard = { validar: () => ({ valid: true }) };
   const gravarAposAClassificacao = vi.fn(async () => ({ valid: true }));
   const passoDoDesempate: PassoDoWizard = { ...passoComum, gravarAposAClassificacao };
 

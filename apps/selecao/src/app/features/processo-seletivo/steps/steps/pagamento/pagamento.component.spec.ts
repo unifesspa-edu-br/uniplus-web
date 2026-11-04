@@ -76,8 +76,8 @@ describe('PagamentoStepComponent', () => {
 
   /** Ausência de declaração não é "não cobra" — a publicação recusa quem não declarou. */
   it('exige a declaração de cobrança', () => {
-    expect(componente.validate().valid).toBe(false);
-    expect(componente.validate().messages?.[0]).toContain('Declare se o processo cobra');
+    expect(componente.validar().valid).toBe(false);
+    expect(componente.validar().messages?.[0]).toContain('Declare se o processo cobra');
   });
 
   it('exige valor positivo quando declara cobrança', () => {
@@ -87,21 +87,21 @@ describe('PagamentoStepComponent', () => {
       fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
-    expect(componente.validate().valid).toBe(false);
-    expect(componente.validate().messages?.[0]).toContain('maior que zero');
+    expect(componente.validar().valid).toBe(false);
+    expect(componente.validar().messages?.[0]).toContain('maior que zero');
   });
 
   it('aceita ausência de valor quando o processo é gratuito', () => {
     store.patchObjectSection('pagamento', { cobra: false, valor: '' });
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
   });
 
   /** UNI-REQ-0099: quem cobra reconhece ao menos um fundamento (issue #638). */
   it('recusa cobrança sem nenhum fundamento de isenção', () => {
     store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: [] });
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages).toContain('Selecione ao menos um fundamento de isenção.');
@@ -115,13 +115,13 @@ describe('PagamentoStepComponent', () => {
       fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
     });
 
-    expect(componente.validate().valid).toBe(true);
+    expect(componente.validar().valid).toBe(true);
     expect(componente.fundamentosInvalidos()).toBe(false);
   });
 
   it('apaga a pendência de fundamento assim que o operador seleciona um', () => {
     store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: [] });
-    componente.validate();
+    componente.validar();
     expect(componente.fundamentosInvalidos()).toBe(true);
 
     componente.alternarFundamento(FundamentoIsencao.CADASTRO_UNICO);
@@ -131,7 +131,7 @@ describe('PagamentoStepComponent', () => {
 
   it('não carrega a pendência de fundamento para outro processo do editor', () => {
     store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: [] });
-    componente.validate();
+    componente.validar();
     expect(componente.fundamentosInvalidos()).toBe(true);
 
     // O editor é reusado entre processos: trocar de rascunho não pode levar o
@@ -148,7 +148,7 @@ describe('PagamentoStepComponent', () => {
 
   it('preserva a pendência enquanto o rascunho segue sem fundamento', () => {
     store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: [] });
-    componente.validate();
+    componente.validar();
 
     store.patchObjectSection('pagamento', { valor: '180,00' });
     detectar();
@@ -162,7 +162,7 @@ describe('PagamentoStepComponent', () => {
   it('não acusa fundamento ausente em processo gratuito', () => {
     store.patchObjectSection('pagamento', { cobra: false, valor: '', fundamentos: [] });
 
-    const resultado = componente.validate();
+    const resultado = componente.validar();
 
     expect(resultado.valid).toBe(true);
     expect(componente.fundamentosInvalidos()).toBe(false);
@@ -580,7 +580,7 @@ describe('PagamentoStepComponent', () => {
         fundamentos: [FundamentoIsencao.CADASTRO_UNICO],
       });
 
-      const resultado = componente.validate();
+      const resultado = componente.validar();
 
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.[0]).toContain('1.000,50');

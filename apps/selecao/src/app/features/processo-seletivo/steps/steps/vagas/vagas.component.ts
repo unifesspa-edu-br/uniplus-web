@@ -86,7 +86,7 @@ export class VagasStepComponent {
 
   /**
    * A cascata é seção deste passo, não passo próprio: lida por `viewChild` para
-   * `validate()`/`persistir()` consultarem o mesmo estado derivado que a seção já computa, sem
+   * `validar()`/`persistir()` consultarem o mesmo estado derivado que a seção já computa, sem
    * duplicar a lógica de encaixe por oferta aqui.
    */
   private readonly cascataSecao = viewChild(CascataRemanejamentoComponent);
@@ -147,7 +147,7 @@ export class VagasStepComponent {
     this.catalogos.carregar();
   }
 
-  validate(): ValidacaoDoPasso {
+  validar(): ValidacaoDoPasso {
     const mensagens = [
       ...this.conferencia.pendenciasQueImpedemGravar(),
       ...(this.cascataSecao()?.pendenciasParaGravar() ?? []),
@@ -170,7 +170,7 @@ export class VagasStepComponent {
 
     // O comando não sai de um passo que a validação recusaria: os campos são texto até a conversão,
     // e o que não é número vira zero no envio — o servidor recusaria com mensagem que não aponta a célula.
-    const conferencia = this.validate();
+    const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
     return this.gravacao.gravar(processoId, this.cascataSecao());
@@ -186,7 +186,7 @@ export class VagasStepComponent {
    * que o passo não vai gravar.
    */
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
-    if (!this.validate().valid) return null;
+    if (!this.validar().valid) return null;
 
     const padrao = this.estado.padrao();
     return confirmacaoDasVagas({
