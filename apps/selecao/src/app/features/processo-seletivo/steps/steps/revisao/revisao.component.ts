@@ -27,6 +27,12 @@ import { ConformidadeLegalComponent } from './secoes/conformidade-legal.componen
 import { ConferenciaDaPublicacaoService } from './servicos/conferencia-da-publicacao.service';
 import { PublicacaoDoProcessoService } from './servicos/publicacao-do-processo.service';
 
+const TAMANHO_DO_HASH_ABREVIADO = 12;
+
+function contagemEmTexto(quantidade: number, singular: string, plural: string): string {
+  return quantidade === 1 ? `1 ${singular}` : `${quantidade} ${plural}`;
+}
+
 /**
  * Passo Revisão e Publicação. Confere, contra o que o servidor realmente aplica, o checklist
  * estrutural, a conformidade legal e o par documento e tipo de ato, e publica o processo.
@@ -83,7 +89,26 @@ export class RevisaoStepComponent {
     return documentosPorFase(
       documentos,
       cronograma.fases.map((fase) => fase.codigo),
-    ).map((fase) => ({ ...fase, nome: nomeDaFase(fase.faseCodigo) }));
+    ).map((fase) => ({
+      ...fase,
+      nome: nomeDaFase(fase.faseCodigo),
+      obrigatoriosEmTexto: contagemEmTexto(fase.obrigatorios, 'obrigatório', 'obrigatórios'),
+      facultativosEmTexto: contagemEmTexto(fase.facultativos, 'facultativo', 'facultativos'),
+      semNormaEmTexto: contagemEmTexto(fase.semNorma, 'exigência', 'exigências'),
+    }));
+  });
+
+  /** A publicação que esta sessão acabou de confirmar, com os hashes abreviados para caber na tela. */
+  protected readonly resumoDaPublicacao = computed(() => {
+    const snapshot = this.publicacao.snapshotConfirmado();
+    if (snapshot === null) return null;
+
+    return {
+      snapshotPublicacaoId: snapshot.snapshotPublicacaoId,
+      schemaVersion: snapshot.schemaVersion,
+      hashConfiguracao: snapshot.hashConfiguracao.slice(0, TAMANHO_DO_HASH_ABREVIADO),
+      hashEdital: snapshot.hashEdital.slice(0, TAMANHO_DO_HASH_ABREVIADO),
+    };
   });
 
   constructor() {

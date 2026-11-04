@@ -2,8 +2,8 @@
   @if (store.emConsulta()) {
     O checklist estrutural, a conformidade legal e o documento e o ato do edital, como ficaram.
   } @else {
-    Confira o que o servidor exige para publicar — o checklist estrutural, a conformidade legal e
-    o documento e o ato do edital — e informe os dados que faltam antes de publicar.
+    Confira o que o servidor exige para publicar — o checklist estrutural, a conformidade legal e o
+    documento e o ato do edital — e informe os dados que faltam antes de publicar.
   }
 </p>
 
@@ -11,7 +11,7 @@
   <p class="alert alert--info" role="status">{{ motivo }}</p>
 }
 
-@if (publicacao.snapshotConfirmado(); as snapshot) {
+@if (resumoDaPublicacao(); as resumo) {
   <div class="alert alert--success" role="status">
     <!-- Destino de foco explícito: no último passo, `store.next()` não avança
          (não há passo seguinte), então o efeito de troca de passo da página —
@@ -24,19 +24,19 @@
     <dl class="confirmacao-lista">
       <div class="confirmacao-lista__linha">
         <dt class="confirmacao-lista__rotulo">Snapshot da publicação</dt>
-        <dd class="confirmacao-lista__valor">{{ snapshot.snapshotPublicacaoId }}</dd>
+        <dd class="confirmacao-lista__valor">{{ resumo.snapshotPublicacaoId }}</dd>
       </div>
       <div class="confirmacao-lista__linha">
         <dt class="confirmacao-lista__rotulo">Versão do schema</dt>
-        <dd class="confirmacao-lista__valor">{{ snapshot.schemaVersion }}</dd>
+        <dd class="confirmacao-lista__valor">{{ resumo.schemaVersion }}</dd>
       </div>
       <div class="confirmacao-lista__linha">
         <dt class="confirmacao-lista__rotulo">Hash da configuração</dt>
-        <dd class="confirmacao-lista__valor">{{ snapshot.hashConfiguracao.slice(0, 12) }}…</dd>
+        <dd class="confirmacao-lista__valor">{{ resumo.hashConfiguracao }}…</dd>
       </div>
       <div class="confirmacao-lista__linha">
         <dt class="confirmacao-lista__rotulo">Hash do edital</dt>
-        <dd class="confirmacao-lista__valor">{{ snapshot.hashEdital.slice(0, 12) }}…</dd>
+        <dd class="confirmacao-lista__valor">{{ resumo.hashEdital }}…</dd>
       </div>
     </dl>
   </div>
@@ -61,9 +61,12 @@
      meio-tempo (retomada em curso, escolha de documento pendente). -->
 <!-- O envio e a leitura dos documentos a publicar são da permissão de publicar. -->
 <ng-container *authTemPermissao="permissaoDePublicar">
-<sel-anexo-edital />
+  <sel-anexo-edital />
 
-<sel-anexos-do-edital [publicado]="publicacao.jaPublicado()" [atoId]="publicacao.atoVigenteId()" />
+  <sel-anexos-do-edital
+    [publicado]="publicacao.jaPublicado()"
+    [atoId]="publicacao.atoVigenteId()"
+  />
 </ng-container>
 
 @if (store.processoSeletivoId() === null) {
@@ -94,13 +97,11 @@
       <h2 id="revisao-documentos-titulo" class="step-section__title">Documentos exigidos</h2>
       @for (fase of documentosDasFases(); track fase.faseCodigo) {
         <p>
-          <strong>{{ fase.nome }}</strong>:
-          {{ fase.obrigatorios === 1 ? '1 obrigatório' : fase.obrigatorios + ' obrigatórios' }},
-          {{ fase.facultativos === 1 ? '1 facultativo' : fase.facultativos + ' facultativos' }}.
+          <strong>{{ fase.nome }}</strong
+          >: {{ fase.obrigatoriosEmTexto }}, {{ fase.facultativosEmTexto }}.
           @if (fase.semNorma > 0) {
             <span class="revisao-chip revisao-chip--pending"
-              >Base legal pendente em
-              {{ fase.semNorma === 1 ? '1 exigência' : fase.semNorma + ' exigências' }}</span
+              >Base legal pendente em {{ fase.semNormaEmTexto }}</span
             >
           } @else if (fase.comNormaExigida > 0) {
             <span class="revisao-chip revisao-chip--ok">Base legal resolvida</span>
@@ -113,7 +114,11 @@
       }
     </section>
 
-    <section selConformidadeEstrutural class="step-section" aria-labelledby="revisao-estrutural-titulo"></section>
+    <section
+      selConformidadeEstrutural
+      class="step-section"
+      aria-labelledby="revisao-estrutural-titulo"
+    ></section>
 
     <sel-avisos-da-revisao
       [avisos]="conferencia.avisosDaRevisao()"
@@ -121,8 +126,16 @@
       (irParaPasso)="store.goTo($event)"
     />
 
-    <section selConformidadeLegal class="step-section" aria-labelledby="revisao-legal-titulo"></section>
+    <section
+      selConformidadeLegal
+      class="step-section"
+      aria-labelledby="revisao-legal-titulo"
+    ></section>
 
-    <section selAtoDaPublicacao class="step-section" aria-labelledby="revisao-documento-titulo"></section>
+    <section
+      selAtoDaPublicacao
+      class="step-section"
+      aria-labelledby="revisao-documento-titulo"
+    ></section>
   }
 }
