@@ -43,6 +43,28 @@ function valorComUnidade(valor: string, unidade: string): string {
   return `${valor} ${UNIDADES.find((u) => u.valor === unidade)?.rotulo ?? unidade}`;
 }
 
+type RecursoDaFase = NonNullable<
+  ReturnType<FaseEmEdicao['espelho']['formulario']>
+>['controls']['recurso']['controls'];
+
+/** As suspensividades das instâncias em texto; a da segunda só existe se o recurso admite instância superior. */
+function suspensividadesLidas(recurso: RecursoDaFase) {
+  const admiteSuperior = recurso.admiteInstanciaSuperior.value;
+  const segunda = valorComUnidade(
+    recurso.suspensividadeSegundaInstanciaValor.value,
+    recurso.suspensividadeSegundaInstanciaUnidade.value,
+  );
+  return {
+    suspensividadePrimeiraInstancia:
+      valorComUnidade(
+        recurso.suspensividadePrimeiraInstanciaValor.value,
+        recurso.suspensividadePrimeiraInstanciaUnidade.value,
+      ) || null,
+    admiteInstanciaSuperior: admiteSuperior,
+    suspensividadeSegundaInstancia: admiteSuperior === true ? segunda || null : null,
+  };
+}
+
 /** A regra de recurso da fase: a regra de contagem, o prazo, a âncora e as suspensividades. */
 @Component({
   selector: 'sel-regra-de-recurso-da-fase',
@@ -128,8 +150,8 @@ export class RegraDeRecursoDaFaseComponent {
     this.espelho.versao();
 
     const rotulosDosAtos = this.catalogoDeAtos.rotuloDoAto();
-    const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
     const recurso = form.controls.recurso.controls;
+    const ancora = recurso.atoAncoraCodigo.value;
 
     return {
       admiteRecurso: form.controls.admiteRecurso.value,
@@ -137,22 +159,8 @@ export class RegraDeRecursoDaFaseComponent {
         ? `${recurso.regraCodigo.value} · versão ${recurso.regraVersao.value}`
         : null,
       prazo: valorComUnidade(recurso.prazoValor.value, recurso.prazoUnidade.value) || null,
-      publicacaoDoPrazo: recurso.atoAncoraCodigo.value
-        ? nomeDoAto(recurso.atoAncoraCodigo.value)
-        : null,
-      suspensividadePrimeiraInstancia:
-        valorComUnidade(
-          recurso.suspensividadePrimeiraInstanciaValor.value,
-          recurso.suspensividadePrimeiraInstanciaUnidade.value,
-        ) || null,
-      admiteInstanciaSuperior: recurso.admiteInstanciaSuperior.value,
-      suspensividadeSegundaInstancia:
-        recurso.admiteInstanciaSuperior.value === true
-          ? valorComUnidade(
-              recurso.suspensividadeSegundaInstanciaValor.value,
-              recurso.suspensividadeSegundaInstanciaUnidade.value,
-            ) || null
-          : null,
+      publicacaoDoPrazo: ancora ? (rotulosDosAtos.get(ancora) ?? ancora) : null,
+      ...suspensividadesLidas(recurso),
     };
   }
 

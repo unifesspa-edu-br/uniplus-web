@@ -55,6 +55,22 @@ interface ContextoDasExigencias {
   readonly nomes: NomesDaOrientacao;
 }
 
+/**
+ * Os fatos que o gatilho pode citar, conferidos contra o MESMO catálogo que a superfície da fase
+ * oferece: o que a tela não soube propor, ela também não sabe validar, e apontar um fato que o
+ * editor não mostra deixaria o operador sem o que fazer.
+ */
+function fatosDoGatilhoPorCodigo(
+  store: Pick<ProcessoSeletivoStore, 'draft'>,
+  catalogos: CatalogosDasExigencias,
+  ofertadas: readonly string[],
+): ReadonlyMap<string, FatoEscolhivel> {
+  const fatos = catalogos.fatos();
+  const condicoes = store.draft().atendimento.condicoes.map((condicao) => condicao.codigo);
+  const fatosDoGatilho = fatosParaGatilho(fatos, dominiosDoGatilho(fatos, condicoes, ofertadas));
+  return new Map(fatosDoGatilho.map((fato) => [fato.codigo, fato]));
+}
+
 function contextoDasExigencias(
   fases: readonly FaseDoCronograma[],
   store: Pick<ProcessoSeletivoStore, 'draft' | 'modalidadesDoProcesso'>,
@@ -63,24 +79,13 @@ function contextoDasExigencias(
   const ofertadas = [...new Set(store.modalidadesDoProcesso())];
   const fasePorId = catalogos.fasePorId();
   const nomePorCodigo = nomesDoCatalogo(catalogos.fatos());
-  // O gatilho é conferido contra o MESMO catálogo que a superfície da fase oferece: o que a
-  // tela não soube propor, ela também não sabe validar, e apontar um fato que o editor não
-  // mostra deixaria o operador sem o que fazer.
-  const fatosDoGatilho = fatosParaGatilho(
-    catalogos.fatos(),
-    dominiosDoGatilho(
-      catalogos.fatos(),
-      store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
-      ofertadas,
-    ),
-  );
 
   return {
     nomePorId: new Map(catalogos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome])),
     fasePorCodigo: new Map(fases.map((fase) => [fase.codigo, fase])),
     fasePorId,
     ofertadas,
-    fatoPorCodigo: new Map(fatosDoGatilho.map((fato) => [fato.codigo, fato])),
+    fatoPorCodigo: fatosDoGatilhoPorCodigo(store, catalogos, ofertadas),
     nomePorCodigo,
     // A fase de cada fato é lida das fases como estão na tela, não das gravadas: reordenar o
     // cronograma pode deixar um gatilho citando o que só se conhece depois da exigência.
@@ -141,24 +146,33 @@ export function exigenciasDeclaradas(
   );
 }
 
+/** O que a fase em que a exigência cai diz dela: se existe, se aceita reenvio e se tem o formulário. */
+function situacaoNaFase(exigencia: ExigenciaDeDocumento, contexto: ContextoDasExigencias) {
+  const fase = contexto.fasePorCodigo.get(exigencia.faseCodigo);
+  if (fase === undefined) {
+    return { faseViva: false, admiteComplementacao: false, semFormulario: false };
+  }
+  return {
+    faseViva: true,
+    admiteComplementacao: descreverFase(fase, contexto.fasePorId).permiteComplementacao,
+    semFormulario:
+      faltaOFormulario(exigencia.finalidade, finalidadesDaFase(fase, contexto.fasePorId)) !== null,
+  };
+}
+
 function exigenciaDeclarada(
   exigencia: ExigenciaDeDocumento,
   repeticao: RepeticaoDaExigencia | null,
   contexto: ContextoDasExigencias,
 ): ExigenciaDeclarada {
-  const fase = contexto.fasePorCodigo.get(exigencia.faseCodigo);
-  const descricao = fase === undefined ? null : descreverFase(fase, contexto.fasePorId);
-  const admiteComplementacao = descricao?.permiteComplementacao ?? false;
-  const semFormulario =
-    fase !== undefined &&
-    faltaOFormulario(exigencia.finalidade, finalidadesDaFase(fase, contexto.fasePorId)) !== null;
+  const { faseViva, admiteComplementacao, semFormulario } = situacaoNaFase(exigencia, contexto);
 
   return {
     nome: contexto.nomePorId.get(exigencia.tipoDocumentoId) ?? exigencia.tipoDocumentoId,
     decideResultado: exigenciaDecideResultado(exigencia),
     normaResolvida: temNormaResolvida(exigencia.basesLegais),
     faseCodigo: exigencia.faseCodigo,
-    faseViva: fase !== undefined,
+    faseViva,
     alcancaModalidade: contexto.ofertadas.some((codigo) =>
       podeAlcancarModalidade(exigencia, codigo),
     ),
