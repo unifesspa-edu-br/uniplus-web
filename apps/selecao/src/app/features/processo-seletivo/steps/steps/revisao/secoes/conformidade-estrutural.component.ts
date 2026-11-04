@@ -7,9 +7,11 @@ import { ConferenciaDaPublicacaoService } from '../servicos/conferencia-da-publi
 
 /** O checklist estrutural da publicação, agrupado por dimensão, com o atalho para o passo que resolve cada pendência. */
 @Component({
-  selector: 'section[selConformidadeEstrutural]',
+  selector: 'sel-conformidade-estrutural',
   templateUrl: './conformidade-estrutural.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // O elemento nasce inline; como bloco, a seção mantém a margem de `.step-section`.
+  host: { style: 'display: block' },
 })
 export class ConformidadeEstruturalComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

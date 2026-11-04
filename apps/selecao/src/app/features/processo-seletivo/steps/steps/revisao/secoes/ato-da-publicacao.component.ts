@@ -27,10 +27,12 @@ import { PublicacaoDoProcessoService } from '../servicos/publicacao-do-processo.
  * nunca `[disabled]` no template, que perde a corrida contra o `FormGroup`.
  */
 @Component({
-  selector: 'section[selAtoDaPublicacao]',
+  selector: 'sel-ato-da-publicacao',
   imports: [ReactiveFormsModule, ValorEmConsultaComponent],
   templateUrl: './ato-da-publicacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // O elemento nasce inline; como bloco, a seção mantém a margem de `.step-section`.
+  host: { style: 'display: block' },
 })
 export class AtoDaPublicacaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
