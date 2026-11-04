@@ -105,42 +105,10 @@ export class AtoDaPublicacaoComponent {
   });
 
   constructor() {
-    effect(() => {
-      const valores = this.valoresDoRascunho();
-      untracked(() => {
-        for (const chave of Object.keys(valores) as (keyof typeof valores)[]) {
-          const controle = this.form.controls[chave];
-          if (controle.value !== valores[chave])
-            controle.setValue(valores[chave], { emitEvent: false });
-        }
-      });
-    });
-
-    effect(() => {
-      const habilitado = this.store.aceitaEdicao();
-      untracked(() => {
-        if (habilitado && this.form.disabled) this.form.enable({ emitEvent: false });
-        if (!habilitado && this.form.enabled) this.form.disable({ emitEvent: false });
-      });
-    });
-
+    this.empurrarRascunhoParaOFormulario();
+    this.habilitarFormularioConformeAEdicao();
     this.limparTipoDeAtoForaDoCatalogo();
-
-    this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe((valores) => {
-      this.store.patchObjectSection('publicacao', {
-        numero: valores.numero ?? '',
-        periodoInscricaoInicio: valores.periodoInscricaoInicio ?? '',
-        periodoInscricaoFim: valores.periodoInscricaoFim ?? '',
-        ato: {
-          orgao: valores.orgao ?? '',
-          serie: valores.serie ?? '',
-          ano: valores.ano ?? '',
-          dataPublicacao: valores.dataPublicacao ?? '',
-          assinante: valores.assinante ?? '',
-          tipoAtoCodigo: valores.tipoAtoCodigo ?? '',
-        },
-      });
-    });
+    this.gravarFormularioNoRascunho();
   }
 
   protected tentarLerAtoDeNovo(): void {
@@ -166,6 +134,47 @@ export class AtoDaPublicacaoComponent {
         if (ato.tipoAtoCodigo !== '' && !tipos.some((tipo) => tipo.codigo === ato.tipoAtoCodigo)) {
           this.store.patchObjectSection('publicacao', { ato: { ...ato, tipoAtoCodigo: '' } });
         }
+      });
+    });
+  }
+
+  private empurrarRascunhoParaOFormulario(): void {
+    effect(() => {
+      const valores = this.valoresDoRascunho();
+      untracked(() => {
+        for (const chave of Object.keys(valores) as (keyof typeof valores)[]) {
+          const controle = this.form.controls[chave];
+          if (controle.value !== valores[chave])
+            controle.setValue(valores[chave], { emitEvent: false });
+        }
+      });
+    });
+  }
+
+  private habilitarFormularioConformeAEdicao(): void {
+    effect(() => {
+      const habilitado = this.store.aceitaEdicao();
+      untracked(() => {
+        if (habilitado && this.form.disabled) this.form.enable({ emitEvent: false });
+        if (!habilitado && this.form.enabled) this.form.disable({ emitEvent: false });
+      });
+    });
+  }
+
+  private gravarFormularioNoRascunho(): void {
+    this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe((valores) => {
+      this.store.patchObjectSection('publicacao', {
+        numero: valores.numero ?? '',
+        periodoInscricaoInicio: valores.periodoInscricaoInicio ?? '',
+        periodoInscricaoFim: valores.periodoInscricaoFim ?? '',
+        ato: {
+          orgao: valores.orgao ?? '',
+          serie: valores.serie ?? '',
+          ano: valores.ano ?? '',
+          dataPublicacao: valores.dataPublicacao ?? '',
+          assinante: valores.assinante ?? '',
+          tipoAtoCodigo: valores.tipoAtoCodigo ?? '',
+        },
       });
     });
   }
