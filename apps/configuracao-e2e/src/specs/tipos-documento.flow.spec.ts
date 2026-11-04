@@ -1,7 +1,8 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 import { assertSemViolacoesGraves } from '../support/a11y';
 import { abrirFiltros } from '../support/filtros';
+import { laudoSeed, mockApi, novoCapturado, rgSeed } from '../support/tipos-documento-api';
 
 /**
  * E2E funcional do cadastro de Tipo de Documento (issue #392). Convenção do
@@ -14,123 +15,27 @@ import { abrirFiltros } from '../support/filtros';
  * API, espelhando `cursos.flow.spec.ts`/`pesos-enem.flow.spec.ts`.
  */
 
-const CORS_HEADERS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
-};
-
-/**
- * Catálogo de categorias servido pelo endpoint `GET
- * /api/configuracao/categorias-documento`. Espelha o seed do backend — as dez
- * categorias na ordem de exibição — porque é dele que a tela deriva as opções do
- * `select`, os chips de filtro e o rótulo da coluna. Mockar só as três usadas
- * pelos casos daria uma tela que não existe em nenhum ambiente.
- */
-const categoriasSeed = [
-  { codigo: 'IDENTIFICACAO', nome: 'Identificação' },
-  { codigo: 'ESCOLARIDADE', nome: 'Escolaridade' },
-  { codigo: 'TITULACAO_EXPERIENCIA', nome: 'Titulação e experiência' },
-  { codigo: 'RENDA', nome: 'Renda' },
-  { codigo: 'RESIDENCIA', nome: 'Residência' },
-  { codigo: 'RACA_ETNIA', nome: 'Raça/etnia' },
-  { codigo: 'SAUDE', nome: 'Saúde' },
-  { codigo: 'DOCUMENTO_PROCESSUAL', nome: 'Documento processual' },
-  { codigo: 'PRODUCAO_AVALIATIVA', nome: 'Produção avaliativa' },
-  { codigo: 'OUTROS', nome: 'Outros' },
-].map((categoria, indice) => ({
-  id: `01990000-0000-7000-0000-0000000000${(indice + 1).toString(16).padStart(2, '0')}`,
-  codigo: categoria.codigo,
-  nome: categoria.nome,
-  descricao: null,
-  ordem: indice + 1,
-  criadoEm: '2026-08-30T12:00:00Z',
-}));
-
-const RG_ID = '01960000-0000-7000-0000-0000000000d1';
-const LAUDO_ID = '01960000-0000-7000-0000-0000000000d2';
-
-const rgSeed = {
-  id: RG_ID,
-  codigo: 'RG',
-  nome: 'Registro Geral',
-  descricao: 'Documento de identificação civil.',
-  categoria: 'IDENTIFICACAO',
-  formatosAceitos: 'pdf,jpg',
-  tamanhoMaximoMb: 10,
-  tipoEquivalente: 'CIN',
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-const laudoSeed = {
-  id: LAUDO_ID,
-  codigo: 'LAUDO_MEDICO',
-  nome: 'Laudo médico — PcD',
-  descricao: null,
-  categoria: 'SAUDE',
-  formatosAceitos: null,
-  tamanhoMaximoMb: null,
-  tipoEquivalente: null,
-  criadoEm: '2026-06-11T12:00:00Z',
-};
-
-interface Capturado {
-  readonly posts: unknown[];
-  readonly deletedIds: string[];
+function dialogDeRemocao(page: Page) {
+  return page.getByRole('dialog', { name: 'Remover tipo de documento', exact: true });
 }
 
-function novoCapturado(): Capturado {
-  return { posts: [], deletedIds: [] };
+function drawerDoFormulario(page: Page) {
+  return page.getByRole('dialog', { name: 'Formulário de tipo de documento', exact: true });
 }
 
-async function mockApi(
-  page: Page,
-  capturado: Capturado,
-  lista: readonly unknown[],
-  opcoes: { readonly criarStatus?: number; readonly criarBody?: unknown } = {},
-): Promise<void> {
-  await page.route(/\/api\/configuracao\/admin\/tipos-documento\/[^/?]+$/, async (route) => {
-    if (route.request().method() === 'DELETE') {
-      const partes = route.request().url().split('/');
-      capturado.deletedIds.push(partes[partes.length - 1] ?? '');
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    await route.fulfill({ status: 204, headers: CORS_HEADERS });
-  });
-  await page.route(/\/api\/configuracao\/admin\/tipos-documento(\?.*)?$/, async (route) => {
-    if (route.request().method() === 'POST') {
-      capturado.posts.push(route.request().postDataJSON());
-      const status = opcoes.criarStatus ?? 201;
-      await route.fulfill({
-        status,
-        contentType: status >= 400 ? 'application/problem+json' : 'application/json',
-        headers: CORS_HEADERS,
-        body: JSON.stringify(opcoes.criarBody ?? 'novo-tipo-documento-id'),
-      });
-      return;
-    }
-    await route.fulfill({ status: 204, headers: CORS_HEADERS });
-  });
-  await page.route(/\/api\/configuracao\/tipos-documento(\?.*)?$/, (route) =>
-    jsonRoute(route, lista),
-  );
-  await page.route(/\/api\/configuracao\/categorias-documento(\?.*)?$/, (route) =>
-    jsonRoute(route, categoriasSeed),
-  );
+function linhasDaLista(page: Page) {
+  return page.getByRole('region', { name: 'Tipos de documento', exact: true }).locator('tbody tr');
 }
 
-async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {
-  if (route.request().method() === 'OPTIONS') {
-    await route.fulfill({ status: 204, headers: CORS_HEADERS });
-    return;
-  }
-  await route.fulfill({
-    status,
-    contentType: 'application/json',
-    headers: CORS_HEADERS,
-    body: JSON.stringify(body),
-  });
+/** A proteção de dados é obrigatória no cadastro: classificação, hipótese legal e finalidade. */
+async function preencherProtecao(page: Page): Promise<void> {
+  await page.locator('[formControlName="classificacaoProtecao"]').selectOption({ label: 'Pessoal' });
+  await page
+    .locator('[formControlName="hipoteseLegal"]')
+    .selectOption({ label: 'Execução de políticas públicas' });
+  await page
+    .locator('[formControlName="finalidadeTratamento"]')
+    .fill('Comprovar a identificação do candidato na inscrição.');
 }
 
 async function abrirPagina(page: Page): Promise<void> {
@@ -162,25 +67,26 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     await mockApi(page, capturado, [rgSeed, laudoSeed]);
     await abrirPagina(page);
 
-    await expect(page.getByText('RG')).toBeVisible();
+    await expect(page.getByText('RG', { exact: true })).toBeVisible();
     await expect(page.getByText('Laudo médico — PcD')).toBeVisible();
 
     // Filtro por categoria (chip "Saúde 1" — ui-filter-chips inclui o contador no nome acessível)
     await abrirFiltros(page);
     await chipLocator(page, 'Saúde').click();
-    await expect(page.locator('table tbody tr')).toHaveCount(1);
+    await expect(linhasDaLista(page)).toHaveCount(1);
     await expect(page.getByText('Laudo médico — PcD')).toBeVisible();
     await expect(chipLocator(page, 'Saúde')).toHaveAttribute('aria-pressed', 'true');
 
     // Volta para "Todas 2"
     await chipLocator(page, 'Todas').click();
-    await expect(page.locator('table tbody tr')).toHaveCount(2);
+    await expect(linhasDaLista(page)).toHaveCount(2);
 
     // Criar
     await page.getByRole('button', { name: 'Novo tipo' }).first().click();
     await page.locator('[formControlName="codigo"]').fill('DECL_LIDERANCA');
     await page.locator('[formControlName="nome"]').fill('Declaração de liderança');
     await page.locator('[formControlName="categoria"]').selectOption('OUTROS');
+    await preencherProtecao(page);
     await page.getByRole('button', { name: 'Criar tipo de documento' }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(1);
@@ -189,7 +95,7 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     await page
       .getByRole('button', { name: `Remover tipo de documento ${rgSeed.codigo}`, exact: true })
       .click();
-    const dialog = page.locator('dialog.uni-dialog');
+    const dialog = dialogDeRemocao(page);
     await expect(dialog.getByText('parâmetros foram congelados na configuração do edital')).toBeVisible();
     await dialog.getByRole('button', { name: 'Remover' }).click();
 
@@ -225,7 +131,7 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     await page
       .getByRole('button', { name: `Remover tipo de documento ${rgSeed.codigo}`, exact: true })
       .click();
-    const dialog = page.locator('dialog.uni-dialog');
+    const dialog = dialogDeRemocao(page);
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText(/bloque/i)).toHaveCount(0);
   });
@@ -244,7 +150,7 @@ test.describe('Tipo de Documento — validação (#392)', () => {
       criarStatus: 409,
       criarBody: {
         type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_documento.codigo_ja_existe',
-        title: 'Já existe um tipo de documento ativo com este código',
+        title: 'Já existe um tipo de documento vivo com este código',
         status: 409,
         code: 'uniplus.configuracao.tipo_documento.codigo_ja_existe',
       },
@@ -255,9 +161,10 @@ test.describe('Tipo de Documento — validação (#392)', () => {
     await page.locator('[formControlName="codigo"]').fill('RG');
     await page.locator('[formControlName="nome"]').fill('Registro Geral (dup)');
     await page.locator('[formControlName="categoria"]').selectOption('IDENTIFICACAO');
+    await preencherProtecao(page);
     await page.getByRole('button', { name: 'Criar tipo de documento' }).click();
 
-    await expect(page.getByText('Já existe um tipo de documento ativo com este código')).toBeVisible();
+    await expect(page.getByText('Já existe um tipo de documento vivo com este código')).toBeVisible();
     await expect(page.locator('#cfg-tipo-documento-form')).toBeVisible();
   });
 
@@ -285,7 +192,7 @@ test.describe('Tipo de Documento — acessibilidade axe-core (#392)', () => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-    test('lista não tem violações serious/critical', async ({ page }) => {
+  test('lista não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [rgSeed, laudoSeed]);
     await abrirPagina(page);
     await assertSemViolacoesGraves(page);
@@ -295,7 +202,7 @@ test.describe('Tipo de Documento — acessibilidade axe-core (#392)', () => {
     await mockApi(page, novoCapturado(), []);
     await abrirPagina(page);
     await page.getByRole('button', { name: 'Novo tipo' }).first().click();
-    await expect(page.locator('dialog.uni-drawer')).toBeVisible();
+    await expect(drawerDoFormulario(page)).toBeVisible();
     await assertSemViolacoesGraves(page);
   });
 
@@ -305,7 +212,7 @@ test.describe('Tipo de Documento — acessibilidade axe-core (#392)', () => {
     await page
       .getByRole('button', { name: `Remover tipo de documento ${rgSeed.codigo}`, exact: true })
       .click();
-    await expect(page.locator('dialog.uni-dialog')).toBeVisible();
+    await expect(dialogDeRemocao(page)).toBeVisible();
     await assertSemViolacoesGraves(page);
   });
 });
@@ -338,11 +245,12 @@ test.describe('Tipo de Documento — navegação por teclado (#392)', () => {
 
     await page.getByRole('button', { name: 'Novo tipo' }).first().focus();
     await page.keyboard.press('Enter');
-    await expect(page.locator('dialog.uni-drawer')).toBeVisible();
+    await expect(drawerDoFormulario(page)).toBeVisible();
 
     await page.locator('[formControlName="codigo"]').fill('DECL_TECLADO');
     await page.locator('[formControlName="nome"]').fill('Declaração via teclado');
     await page.locator('[formControlName="categoria"]').selectOption('OUTROS');
+    await preencherProtecao(page);
 
     await page.getByRole('button', { name: 'Criar tipo de documento' }).focus();
     await page.keyboard.press('Enter');
@@ -370,7 +278,7 @@ test.describe('Tipo de Documento — responsividade 375px (#392)', () => {
     expect(semOverflowLista.scrollWidth).toBeLessThanOrEqual(semOverflowLista.clientWidth);
 
     await page.getByRole('button', { name: 'Novo tipo' }).first().click();
-    await expect(page.locator('dialog.uni-drawer')).toBeVisible();
+    await expect(drawerDoFormulario(page)).toBeVisible();
 
     const semOverflowDrawer = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
@@ -392,10 +300,10 @@ test.describe('Tipo de Documento — foco e Esc (#392)', () => {
 
     const gatilho = page.getByRole('button', { name: 'Novo tipo' }).first();
     await gatilho.click();
-    await expect(page.locator('dialog.uni-drawer')).toBeVisible();
+    await expect(drawerDoFormulario(page)).toBeVisible();
 
     await page.keyboard.press('Escape');
-    await expect(page.locator('dialog.uni-drawer')).toBeHidden();
+    await expect(drawerDoFormulario(page)).toBeHidden();
     await expect(gatilho).toBeFocused();
   });
 });
