@@ -5,6 +5,7 @@ import {
   RegraEliminacaoConfigurada,
   WizardDraft,
 } from '../../processo-seletivo.models';
+import { decimalNaForma, inteiroNaForma } from '../../shared/numero-do-campo';
 import { componeNota } from '../cronograma/regras-da-etapa';
 import {
   FORMATO_DA_ESCALA_DA_NOTA_FINAL,
@@ -100,17 +101,6 @@ function naoVazio(texto: string): string | null {
   return limpo === '' ? null : limpo;
 }
 
-function inteiro(texto: string): number | null {
-  const limpo = texto.trim();
-  return /^\d+$/.test(limpo) ? Number(limpo) : null;
-}
-
-/** Vírgula ou ponto como separador decimal — a mesma gramática do resto do wizard. */
-function decimal(texto: string): number | null {
-  const limpo = texto.trim().replace(',', '.');
-  return /^\d+(\.\d+)?$/.test(limpo) ? Number(limpo) : null;
-}
-
 /**
  * Converte uma regra de eliminação configurada no `RegraEliminacaoInput` que o
  * servidor espera. O campo não aplicável ao `regraCodigo` viaja `null`
@@ -128,8 +118,8 @@ export function comoComandoDeRegraEliminacao(
     regraCodigo: regra.regraCodigo,
     regraVersao: regra.regraVersao,
     etapaRef: usaEtapa ? naoVazio(regra.etapaRef) : null,
-    notaMinima: usaNotaMinima ? decimal(regra.notaMinima) : null,
-    minimo: usaAreaEMinimo ? decimal(regra.minimo) : null,
+    notaMinima: usaNotaMinima ? decimalNaForma(regra.notaMinima) : null,
+    minimo: usaAreaEMinimo ? decimalNaForma(regra.minimo) : null,
     areaCodigo: usaAreaEMinimo ? naoVazio(regra.areaCodigo) : null,
   };
 }
@@ -153,7 +143,7 @@ export function comoComandoDeClassificacao(
     regraCalculoVersao: classificacao.regraCalculoVersao,
     regraArredondamentoCodigo: local ? naoVazio(classificacao.regraArredondamentoCodigo) : null,
     regraArredondamentoVersao: local ? naoVazio(classificacao.regraArredondamentoVersao) : null,
-    casasArredondamento: local ? inteiro(classificacao.casasArredondamento) : null,
+    casasArredondamento: local ? inteiroNaForma(classificacao.casasArredondamento) : null,
     regraOrdemAlocacaoCodigo: classificacao.regraOrdemAlocacaoCodigo,
     regraOrdemAlocacaoVersao: classificacao.regraOrdemAlocacaoVersao,
     regrasEliminacao: local ? classificacao.regrasEliminacao.map(comoComandoDeRegraEliminacao) : [],
@@ -203,52 +193,88 @@ export function pendenciaDaResolucao(
   return resolucaoForaDoCadastro(resolucao) ? 'fora-do-cadastro' : null;
 }
 
+/** Campo do passo Fórmula que a classificação base recusa, com a mensagem que o explica. */
+export interface PendenciaDaClassificacaoBase {
+  readonly campo: CampoDaClassificacaoBase;
+  readonly mensagem: string;
+}
+
+export type CampoDaClassificacaoBase =
+  | 'regraCalculo'
+  | 'regraArredondamento'
+  | 'casasArredondamento'
+  | 'escalaNotaFinal'
+  | 'regraOrdemAlocacao'
+  | 'resolucaoPesoAreaEnem';
+
 /**
- * Mensagens de recusa dos campos que o passo Fórmula coleta — regra de
- * cálculo, ordem de alocação, sob fórmula local o
- * arredondamento e, quando a classificação a exige, a resolução de Peso por
- * Área. Compartilhada entre `FormulaStepComponent.validate()` e
- * `EliminacaoStepComponent.validate()`: a navegação do wizard é livre, então
- * a Eliminação — que grava o comando de classificação inteiro — não pode
- * supor que o operador passou pela Fórmula antes de chegar aqui. Sem esta
- * checagem também na Eliminação, um `PUT /classificacao` sairia com
- * `regraOrdemAlocacaoCodigo: ''` sempre que o
- * operador pulasse direto para o último passo.
+ * O que falta nos campos que o passo Fórmula coleta — regra de cálculo, ordem de alocação, sob
+ * fórmula local o arredondamento e, quando a classificação a exige, a resolução de Peso por Área —,
+ * na ordem em que a tela os mostra. É a fonte única do destaque dos campos na Fórmula e das
+ * mensagens na Fórmula e na Eliminação: a navegação do wizard é livre, e a Eliminação, que grava o
+ * comando de classificação inteiro, não pode supor que o operador passou pela Fórmula antes.
  */
-export function mensagensDeClassificacaoBase(
+export function pendenciasDaClassificacaoBase(
   classificacao: WizardDraft['classificacao'],
   resolucaoForaDoCadastro: (resolucao: string) => boolean = () => false,
-): readonly string[] {
-  const messages: string[] = [];
+): readonly PendenciaDaClassificacaoBase[] {
+  const pendencias: PendenciaDaClassificacaoBase[] = [];
 
   if (!classificacao.regraCalculoCodigo) {
-    messages.push('Selecione a regra de cálculo da nota, no passo Fórmula.');
+    pendencias.push({
+      campo: 'regraCalculo',
+      mensagem: 'Selecione a regra de cálculo da nota, no passo Fórmula.',
+    });
   }
 
   if (classificacaoUsaFormulaLocal(classificacao.regraCalculoCodigo)) {
     if (!classificacao.regraArredondamentoCodigo) {
-      messages.push('Selecione a regra de arredondamento, no passo Fórmula.');
+      pendencias.push({
+        campo: 'regraArredondamento',
+        mensagem: 'Selecione a regra de arredondamento, no passo Fórmula.',
+      });
     }
-    const casas = inteiro(classificacao.casasArredondamento);
+    const casas = inteiroNaForma(classificacao.casasArredondamento);
     if (casas === null || casas <= 0) {
-      messages.push(
-        'Informe as casas decimais de arredondamento, maior que zero, no passo Fórmula.',
-      );
+      pendencias.push({
+        campo: 'casasArredondamento',
+        mensagem: 'Informe as casas decimais de arredondamento, maior que zero, no passo Fórmula.',
+      });
     }
     if (escalaDaNotaFinalIlegivel(classificacao.escalaNotaFinal)) {
-      messages.push(`Escala da nota final, no passo Fórmula: ${FORMATO_DA_ESCALA_DA_NOTA_FINAL}`);
+      pendencias.push({
+        campo: 'escalaNotaFinal',
+        mensagem: `Escala da nota final, no passo Fórmula: ${FORMATO_DA_ESCALA_DA_NOTA_FINAL}`,
+      });
     }
   }
 
   if (!classificacao.regraOrdemAlocacaoCodigo) {
-    messages.push('Selecione a regra de ordem de alocação, no passo Fórmula.');
+    pendencias.push({
+      campo: 'regraOrdemAlocacao',
+      mensagem: 'Selecione a regra de ordem de alocação, no passo Fórmula.',
+    });
   }
 
-  // Por último porque é o último campo da tela: o resumo segue a ordem em que o operador os vê.
   const pendencia = pendenciaDaResolucao(classificacao, resolucaoForaDoCadastro);
-  if (pendencia !== null) messages.push(TEXTO_DA_PENDENCIA_DA_RESOLUCAO[pendencia].resumo);
+  if (pendencia !== null) {
+    pendencias.push({
+      campo: 'resolucaoPesoAreaEnem',
+      mensagem: TEXTO_DA_PENDENCIA_DA_RESOLUCAO[pendencia].resumo,
+    });
+  }
 
-  return messages;
+  return pendencias;
+}
+
+/** As mensagens de `pendenciasDaClassificacaoBase`, na mesma ordem. */
+export function mensagensDeClassificacaoBase(
+  classificacao: WizardDraft['classificacao'],
+  resolucaoForaDoCadastro: (resolucao: string) => boolean = () => false,
+): readonly string[] {
+  return pendenciasDaClassificacaoBase(classificacao, resolucaoForaDoCadastro).map(
+    (pendencia) => pendencia.mensagem,
+  );
 }
 
 /**

@@ -45,7 +45,7 @@ import {
   relerProcessoAPedido,
 } from '../../shared/releitura-do-snapshot.service';
 import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
-import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import { inteiroNaForma, leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
@@ -259,8 +259,6 @@ export class DesempateStepComponent {
     return this.fatoDoCriterio(codigo)?.tipoDominio === 'BOOLEANO';
   }
 
-
-
   valorDoCriterio(criterio: CriterioDesempateConfigurado): string {
     return valorEscalarDe(criterio);
   }
@@ -268,7 +266,6 @@ export class DesempateStepComponent {
   valoresDoCriterio(criterio: CriterioDesempateConfigurado): readonly string[] {
     return valoresDeListaDe(criterio);
   }
-
 
   /** Só a classificação: uma tecla em outro passo não chega ao quadro. */
   private readonly classificacao = computed(() => this.store.draft().classificacao);
@@ -412,10 +409,7 @@ export class DesempateStepComponent {
   readonly idosoSemApuracao = computed(
     () =>
       !this.store.emConsulta() &&
-      desempateIdosoSemApuracao(
-        this.criterios(),
-        this.store.draft().formulario.referenciaTemporal,
-      ),
+      desempateIdosoSemApuracao(this.criterios(), this.store.draft().formulario.referenciaTemporal),
   );
 
   irParaFormulario(): void {
@@ -732,9 +726,6 @@ export class DesempateStepComponent {
     this.atualizar(indice, { fato: codigo, operador: operadoresDoFato(fato)[0].valor, valor: '' });
   }
 
-
-
-
   /** O que o predicado alcança — a mesma leitura que a exigência documental oferece. */
   alcanceDoCriterio(criterio: CriterioDesempateConfigurado): string {
     const fato = this.fatoDoCriterio(criterio.fato);
@@ -818,7 +809,7 @@ export class DesempateStepComponent {
           );
         }
       } else if (this.usaIdadeMinima(criterio)) {
-        const idade = inteiro(criterio.idadeMinima);
+        const idade = inteiroNaForma(criterio.idadeMinima);
         if (idade === null || idade <= 0) {
           messages.push(
             `Critério de desempate ${posicao}: informe a idade mínima, maior que zero.`,
@@ -952,9 +943,4 @@ export class DesempateStepComponent {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
   }
-}
-
-function inteiro(texto: string): number | null {
-  const limpo = texto.trim();
-  return /^\d+$/.test(limpo) ? Number(limpo) : null;
 }

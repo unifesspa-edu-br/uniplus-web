@@ -30,6 +30,7 @@ import {
   divisorDaMediaValido,
   exigeResolucaoPesoAreaEnem,
   mensagensDeClassificacaoBase,
+  pendenciasDaClassificacaoBase,
   pendenciaDaResolucao,
 } from '../classificacao/classificacao-para-comando';
 import {
@@ -545,24 +546,12 @@ export class FormulaStepComponent {
    */
   validate(): StepValidation {
     const classificacao = this.store.draft().classificacao;
-    const invalid = new Set<string>();
-
-    if (!classificacao.regraCalculoCodigo) invalid.add('regraCalculo');
-
-    if (this.usaFormulaLocal()) {
-      if (!classificacao.regraArredondamentoCodigo) invalid.add('regraArredondamento');
-      const casas = numero(classificacao.casasArredondamento);
-      if (casas === null || casas <= 0) invalid.add('casasArredondamento');
-      if (escalaDaNotaFinalIlegivel(classificacao.escalaNotaFinal)) invalid.add('escalaNotaFinal');
-    }
-
-    if (!classificacao.regraOrdemAlocacaoCodigo) invalid.add('regraOrdemAlocacao');
-
-    if (
-      pendenciaDaResolucao(classificacao, this.cadastroDePesos.resolucaoForaDoCadastro) !== null
-    ) {
-      invalid.add('resolucaoPesoAreaEnem');
-    }
+    const invalid = new Set<string>(
+      pendenciasDaClassificacaoBase(
+        classificacao,
+        this.cadastroDePesos.resolucaoForaDoCadastro,
+      ).map((pendencia) => pendencia.campo),
+    );
 
     const semEdicao = this.declaraEdicoes() && classificacao.edicoesEnem.length === 0;
     if (semEdicao) invalid.add('edicoesEnem');
@@ -575,9 +564,4 @@ export class FormulaStepComponent {
     ];
     return messages.length ? { valid: false, messages } : { valid: true };
   }
-}
-
-function numero(texto: string): number | null {
-  const limpo = texto.trim();
-  return /^\d+$/.test(limpo) ? Number(limpo) : null;
 }

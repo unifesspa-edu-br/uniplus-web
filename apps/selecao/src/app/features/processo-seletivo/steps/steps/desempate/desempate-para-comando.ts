@@ -1,6 +1,7 @@
 import { CriterioDesempateInput } from '@uniplus/shared-data/selecao';
 
 import { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
+import { inteiroNaForma } from '../../shared/numero-do-campo';
 
 /**
  * Códigos de `CriterioDesempateCodigo` — o discriminador do shape de args de
@@ -57,11 +58,6 @@ function naoVazio(texto: string): string | null {
   return limpo === '' ? null : limpo;
 }
 
-function inteiro(texto: string): number | null {
-  const limpo = texto.trim();
-  return /^\d+$/.test(limpo) ? Number(limpo) : null;
-}
-
 /**
  * Converte um critério configurado no `CriterioDesempateInput` — o campo não
  * aplicável ao `regraCodigo` viaja `null` explícito, nunca omitido. `ordem` é
@@ -82,7 +78,7 @@ export function comoComandoDeCriterioDesempate(
     regraCodigo: criterio.regraCodigo,
     regraVersao: criterio.regraVersao,
     etapaRef: usaEtapa ? naoVazio(criterio.etapaRef) : null,
-    idadeMinima: usaIdade ? inteiro(criterio.idadeMinima) : null,
+    idadeMinima: usaIdade ? inteiroNaForma(criterio.idadeMinima) : null,
     fato: usaPredicado ? naoVazio(criterio.fato) : null,
     operador: usaPredicado ? naoVazio(criterio.operador) : null,
     valor: usaPredicado ? naoVazio(criterio.valor) : null,

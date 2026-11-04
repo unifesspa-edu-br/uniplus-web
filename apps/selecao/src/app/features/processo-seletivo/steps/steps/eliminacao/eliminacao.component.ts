@@ -24,7 +24,7 @@ import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
-import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import { decimalNaForma, leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { leituraDaEscalaDaNotaFinal } from '../classificacao/escala-da-nota-final';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
@@ -526,7 +526,7 @@ export class EliminacaoStepComponent {
             `Regra de eliminação ${posicao}: a etapa referenciada não existe mais no cronograma.`,
           );
         }
-        if (this.usaEtapaENotaMinima(regra) && !decimalValido(regra.notaMinima)) {
+        if (this.usaEtapaENotaMinima(regra) && decimalNaForma(regra.notaMinima) === null) {
           messages.push(`Regra de eliminação ${posicao}: informe a nota mínima.`);
         }
         if (this.usaSoEtapa(regra)) messages.push(...this.mensagensDaAusencia(regra, indice));
@@ -594,7 +594,7 @@ export class EliminacaoStepComponent {
         );
       }
     }
-    if (!decimalValido(regra.minimo)) {
+    if (decimalNaForma(regra.minimo) === null) {
       mensagens.push(`Regra de eliminação ${posicao}: informe a nota mínima.`);
     }
     return mensagens;
@@ -940,9 +940,4 @@ const MENSAGEM_DE_RECUSA_DESCONHECIDA =
 
 function mensagemDaRecusaDaResolucao(erro: Pick<ProblemValidationError, 'code'>): string {
   return MENSAGEM_POR_CODIGO_DA_RESOLUCAO.get(erro.code) ?? MENSAGEM_DE_RECUSA_DESCONHECIDA;
-}
-
-function decimalValido(texto: string): boolean {
-  const limpo = texto.trim().replace(',', '.');
-  return /^\d+(\.\d+)?$/.test(limpo);
 }

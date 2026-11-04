@@ -18,6 +18,7 @@ import {
   eliminacaoUsaSoEtapa,
   eliminacaoUsaAreaEMinimo,
   mensagensDeClassificacaoBase,
+  pendenciasDaClassificacaoBase,
 } from './classificacao-para-comando';
 
 function classificacaoBase(): WizardDraft['classificacao'] {
@@ -381,6 +382,21 @@ describe('mensagensDeClassificacaoBase', () => {
     casasArredondamento: '2',
     regraOrdemAlocacaoCodigo: 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
     regraOrdemAlocacaoVersao: '1.0',
+  });
+
+  it('nomeia o campo de cada pendência, na ordem em que a tela os mostra', () => {
+    const pendencias = pendenciasDaClassificacaoBase({
+      ...classificacaoCompleta(),
+      regraArredondamentoCodigo: '',
+      casasArredondamento: '0',
+      regraOrdemAlocacaoCodigo: '',
+    });
+
+    expect(pendencias.map((pendencia) => pendencia.campo)).toEqual([
+      'regraArredondamento',
+      'casasArredondamento',
+      'regraOrdemAlocacao',
+    ]);
   });
 
   it('sem mensagens quando a base está completa (fórmula local)', () => {
