@@ -28,6 +28,9 @@ import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronogr
 import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { FormularioStepComponent } from './formulario.component';
+import { GravacaoDosFormulariosService } from './servicos/gravacao-dos-formularios.service';
+import { RemocaoDoFormularioService } from './servicos/remocao-do-formulario.service';
+import { AplicacaoDeModeloService } from './servicos/aplicacao-de-modelo.service';
 import { conteudoDoFormulario } from './formulario-do-processo';
 
 const BASE = 'http://localhost:5000';
@@ -149,6 +152,8 @@ const PCD_NO_CATALOGO = {
 
 describe('FormularioStepComponent', () => {
   let fixture: ComponentFixture<FormularioStepComponent>;
+  const servicoDeModelos = (): AplicacaoDeModeloService =>
+    fixture.debugElement.injector.get(AplicacaoDeModeloService);
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let host: HTMLElement;
@@ -514,9 +519,13 @@ describe('FormularioStepComponent', () => {
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    expect(fixture.componentInstance.recusas().get('INSCRICAO')?.porItem.get('PCD')).toEqual([
-      'Rótulo recusado.',
-    ]);
+    expect(
+      fixture.debugElement.injector
+        .get(GravacaoDosFormulariosService)
+        .recusas()
+        .get('INSCRICAO')
+        ?.porItem.get('PCD'),
+    ).toEqual(['Rótulo recusado.']);
   });
 
   it('avisa do desempate por idoso sem apuração da idade e leva ao passo Desempate', () => {
@@ -643,7 +652,7 @@ describe('FormularioStepComponent', () => {
     });
 
     it('a recusa da remoção aparece em texto na aba, que continua, e a remoção trava o passo enquanto está no ar', async () => {
-      fixture.componentInstance.pedirRemocao('HABILITACAO');
+      fixture.debugElement.injector.get(RemocaoDoFormularioService).pedir('HABILITACAO');
       const remocao = fixture.componentInstance.confirmarRemocao();
       controller
         .expectOne(ROTA_PROCESSO)
@@ -679,7 +688,7 @@ describe('FormularioStepComponent', () => {
     });
 
     it('removido o penúltimo formulário, sem abas, o foco vai ao título do painel que sobra', async () => {
-      fixture.componentInstance.pedirRemocao('HABILITACAO');
+      fixture.debugElement.injector.get(RemocaoDoFormularioService).pedir('HABILITACAO');
       const remocao = fixture.componentInstance.confirmarRemocao();
       controller
         .expectOne(ROTA_PROCESSO)
@@ -759,14 +768,14 @@ describe('FormularioStepComponent', () => {
     });
 
     function escolherEAplicar(finalidade: string, modeloId: string): Promise<void> {
-      fixture.componentInstance.escolherModelo(finalidade, modeloId);
-      fixture.componentInstance.pedirAplicacao(finalidade);
+      servicoDeModelos().escolher(finalidade, modeloId);
+      servicoDeModelos().pedir(finalidade);
       return fixture.componentInstance.confirmarAplicacao();
     }
 
     it('lista os modelos ativos do tipo do processo, e cada aba só os da finalidade dela', () => {
       // O beforeEach já respondeu; a requisição é refeita para conferir os filtros que ela leva.
-      fixture.componentInstance.carregarModelos();
+      servicoDeModelos().carregarModelos();
       const listagem = controller.expectOne((r) => r.url === ROTA_MODELOS);
       expect(listagem.request.params.get('tipoProcesso')).toBe('MEDICINA');
       expect(listagem.request.params.get('ativo')).toBe('true');
@@ -783,7 +792,7 @@ describe('FormularioStepComponent', () => {
     });
 
     it('antes de o processo existir, aplicar fica indisponível e a ajuda diz por quê', () => {
-      fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
+      servicoDeModelos().escolher('INSCRICAO', 'insc');
       store.processoSeletivoId.set(null);
       fixture.detectChanges();
 
@@ -796,18 +805,18 @@ describe('FormularioStepComponent', () => {
     });
 
     it('pede confirmação antes de substituir, dizendo que as edições não gravadas saem', () => {
-      fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
+      servicoDeModelos().escolher('INSCRICAO', 'insc');
       fixture.detectChanges();
       (host.querySelector('#form-inscricao-aplicar-modelo') as HTMLButtonElement).click();
       fixture.detectChanges();
 
       // Nenhuma requisição saiu: o afterEach confere.
-      expect(fixture.componentInstance.aplicacaoPendente()?.modelo.id).toBe('insc');
-      expect(fixture.componentInstance.avisoDaAplicacao()).toContain(
+      expect(servicoDeModelos().pendente()?.modelo.id).toBe('insc');
+      expect(servicoDeModelos().aviso()).toContain(
         'inclusive as edições desta aba ainda não gravadas',
       );
-      fixture.componentInstance.cancelarAplicacao();
-      expect(fixture.componentInstance.aplicacaoPendente()).toBeNull();
+      servicoDeModelos().cancelar();
+      expect(servicoDeModelos().pendente()).toBeNull();
     });
 
     it('relê o processo e devolve ao formulário o que as exigências pressupõem, trava o passo enquanto aplica e mostra o resumo e a origem', async () => {
@@ -976,7 +985,7 @@ describe('FormularioStepComponent', () => {
     });
 
     it('sem saber se a cópia aconteceu, só o mesmo modelo pode ser aplicado de novo', async () => {
-      fixture.componentInstance.modelos.set(
+      servicoDeModelos().modelos.set(
         new Map([
           [
             'INSCRICAO',
@@ -1002,22 +1011,22 @@ describe('FormularioStepComponent', () => {
       );
       await aplicacao;
 
-      fixture.componentInstance.escolherModelo('INSCRICAO', 'outro');
-      fixture.componentInstance.pedirAplicacao('INSCRICAO');
+      servicoDeModelos().escolher('INSCRICAO', 'outro');
+      servicoDeModelos().pedir('INSCRICAO');
       expect(
-        fixture.componentInstance.aplicacaoPendente(),
+        servicoDeModelos().pendente(),
         'outro modelo trocaria a chave, e a primeira cópia ainda pode chegar',
       ).toBeNull();
-      fixture.componentInstance.escolherModelo('HABILITACAO', 'hab');
-      fixture.componentInstance.pedirAplicacao('HABILITACAO');
+      servicoDeModelos().escolher('HABILITACAO', 'hab');
+      servicoDeModelos().pedir('HABILITACAO');
       expect(
-        fixture.componentInstance.aplicacaoPendente(),
+        servicoDeModelos().pendente(),
         'nem em outra aba: as cópias mexem no que é do processo inteiro',
       ).toBeNull();
 
-      fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
-      fixture.componentInstance.pedirAplicacao('INSCRICAO');
-      expect(fixture.componentInstance.aplicacaoPendente()?.modelo.id).toBe('insc');
+      servicoDeModelos().escolher('INSCRICAO', 'insc');
+      servicoDeModelos().pedir('INSCRICAO');
+      expect(servicoDeModelos().pendente()?.modelo.id).toBe('insc');
 
       // A nova tentativa recusada de vez não desfaz a cópia que a primeira pode ter feito.
       const nova = fixture.componentInstance.confirmarAplicacao();
@@ -1043,8 +1052,8 @@ describe('FormularioStepComponent', () => {
         'Não foi possível confirmar se o modelo “Inscrição de Medicina” foi aplicado',
       );
       // A cópia em aberto se resolve: a outra aba deixa de ser recusada por causa dela.
-      fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
-      fixture.componentInstance.pedirAplicacao('INSCRICAO');
+      servicoDeModelos().escolher('INSCRICAO', 'insc');
+      servicoDeModelos().pedir('INSCRICAO');
       const resolvida = fixture.componentInstance.confirmarAplicacao();
       controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_DERIVACOES);
       await proximoPasso();
@@ -1055,7 +1064,7 @@ describe('FormularioStepComponent', () => {
         .flush({ ...PROCESSO_COM_DERIVACOES, formularios: [INSCRICAO_COPIADA] });
       await resolvida;
       expect(
-        fixture.componentInstance.recusasDaAplicacao().has('HABILITACAO'),
+        servicoDeModelos().recusas().has('HABILITACAO'),
         'a recusa da habilitação era só o bloqueio',
       ).toBe(false);
     });
@@ -1087,17 +1096,17 @@ describe('FormularioStepComponent', () => {
     });
 
     it('a troca de processo descarta a aplicação que aguardava confirmação', () => {
-      fixture.componentInstance.escolherModelo('INSCRICAO', 'insc');
-      fixture.componentInstance.pedirAplicacao('INSCRICAO');
+      servicoDeModelos().escolher('INSCRICAO', 'insc');
+      servicoDeModelos().pedir('INSCRICAO');
 
       store.reset();
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.aplicacaoPendente()).toBeNull();
+      expect(servicoDeModelos().pendente()).toBeNull();
     });
 
     it('a lista de um tipo já trocado não chega por cima da do tipo atual', () => {
-      fixture.componentInstance.carregarModelos();
+      servicoDeModelos().carregarModelos();
       const doTipoAnterior = controller.expectOne((r) => r.url === ROTA_MODELOS);
 
       store.patchObjectSection('tipoProcesso', { codigo: 'PSIQ' });
@@ -1108,7 +1117,7 @@ describe('FormularioStepComponent', () => {
       doTipoAnterior.flush(MODELOS);
 
       expect(
-        fixture.componentInstance
+        servicoDeModelos()
           .modelos()
           .get('INSCRICAO')
           ?.map((m) => m.id),

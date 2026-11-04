@@ -29,7 +29,7 @@
   }
 }
 
-<p class="sr-only" role="status" aria-live="polite" id="form-anuncio">{{ anuncio() }}</p>
+<p class="sr-only" role="status" aria-live="polite" id="form-anuncio">{{ anuncio.texto() }}</p>
 
 <div class="form-abas">
   <!-- O tablist só contém abas: acrescentar formulário é outro controle, logo depois dele. Com um
@@ -123,12 +123,12 @@
           </p>
         }
 
-        @if (modelosCarregando()) {
+        @if (aplicacao.modelosCarregando()) {
           <p class="field__hint" role="status">Carregando os modelos de formulário…</p>
-        } @else if (modelosErro(); as erro) {
+        } @else if (aplicacao.modelosErro(); as erro) {
           <p class="alert alert--warning" role="alert">
             Não foi possível carregar os modelos de formulário. {{ erro }}
-            <button type="button" class="btn btn--tertiary btn--sm" (click)="carregarModelos()">
+            <button type="button" class="btn btn--tertiary btn--sm" (click)="aplicacao.carregarModelos()">
               Tentar novamente
             </button>
           </p>
@@ -145,7 +145,7 @@
                 [id]="aba.idBase + '-modelo'"
                 [attr.aria-describedby]="aba.idBase + '-modelo-ajuda'"
                 [disabled]="!store.aceitaEdicao()"
-                (change)="escolherModelo(aba.finalidade, $any($event.target).value)"
+                (change)="aplicacao.escolher(aba.finalidade, $any($event.target).value)"
               >
                 <option value="" [selected]="aba.modeloEscolhido === ''">Escolha o modelo</option>
                 @for (modelo of aba.modelos; track modelo.id) {
@@ -167,7 +167,7 @@
                 aba.modeloEscolhido === '' ||
                 store.processoSeletivoId() === null
               "
-              (click)="pedirAplicacao(aba.finalidade)"
+              (click)="aplicacao.pedir(aba.finalidade)"
             >
               Aplicar modelo
             </button>
@@ -376,7 +376,7 @@
         class="btn btn--tertiary"
         [id]="aba.idBase + '-remover'"
         [disabled]="!store.aceitaEdicao() || store.salvando()"
-        (click)="pedirRemocao(aba.finalidade)"
+        (click)="remocao.pedir(aba.finalidade)"
       >
         Remover o formulário de {{ aba.nome }}
       </button>
@@ -408,23 +408,23 @@
 -->
 @if (!store.emConsulta()) {
   <ui-confirm-dialog
-    [visible]="remocaoPendente() !== null"
+    [visible]="remocao.pendente() !== null"
     heading="Remover formulário"
-    [message]="avisoDaRemocao()"
+    [message]="remocao.aviso()"
     confirmLabel="Remover formulário"
     cancelLabel="Manter formulário"
     confirmVariant="danger"
     (confirmed)="confirmarRemocao()"
-    (cancelled)="cancelarRemocao()"
+    (cancelled)="remocao.cancelar()"
   />
   <ui-confirm-dialog
-    [visible]="aplicacaoPendente() !== null"
+    [visible]="aplicacao.pendente() !== null"
     heading="Aplicar modelo"
-    [message]="avisoDaAplicacao()"
+    [message]="aplicacao.aviso()"
     confirmLabel="Substituir pelo modelo"
     cancelLabel="Manter o formulário"
     confirmVariant="danger"
     (confirmed)="confirmarAplicacao()"
-    (cancelled)="cancelarAplicacao()"
+    (cancelled)="aplicacao.cancelar()"
   />
 }
