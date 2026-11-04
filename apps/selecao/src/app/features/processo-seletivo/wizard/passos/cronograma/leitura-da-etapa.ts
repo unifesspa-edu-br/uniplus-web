@@ -94,56 +94,77 @@ function recursoLido(recurso: RecursoDaEtapa, nomeDoAto: (codigo: string) => str
   return partes.join('; ');
 }
 
-/**
- * A etapa como a consulta a lê: cada declaração em texto, sem o controle que a edita.
- * Peso e nota mínima só aparecem quando o caráter da etapa os admite, como na edição.
- */
-export function etapaLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLeitura) {
-  const rotulosDosAtos = catalogos.rotuloDoAto();
-  const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
-  const tipos = catalogos.tipoEtapaPorId();
+type TiposDeEtapa = ReturnType<CatalogosDaLeitura['tipoEtapaPorId']>;
+
+function janelaLida(controles: EtapaForm): string {
+  if (!controles.inicio.value && !controles.fim.value) return '';
+  return `${dataHoraLida(controles.inicio.value) || '—'} até ${dataHoraLida(controles.fim.value) || '—'}`;
+}
+
+function regraDeConsolidacaoLida(controles: EtapaForm): string {
+  const codigo = controles.regraConsolidacaoCodigo.value;
+  return codigo ? `${codigo} (${controles.regraConsolidacaoVersao.value})` : '';
+}
+
+/** Quem é a etapa e como o caráter a pontua: tipo, caráter, peso, nota mínima e janela. */
+function identificacaoLida(
+  grupo: FormGroup<EtapaForm>,
+  catalogos: CatalogosDaLeitura,
+  tipos: TiposDeEtapa,
+) {
   const controles = grupo.controls;
-  const tipo = tipos.get(controles.tipoEtapaOrigemId.value);
+  const caraterAtual = controles.carater.value;
   const carater = caracteresAdmitidos(
-    tipo,
+    tipos.get(controles.tipoEtapaOrigemId.value),
     etapaDeNotaDoEnem(grupo, tipos),
-    controles.carater.value,
-  ).find((opcao) => opcao.valor === controles.carater.value);
-  const janela =
-    controles.inicio.value || controles.fim.value
-      ? `${dataHoraLida(controles.inicio.value) || '—'} até ${dataHoraLida(controles.fim.value) || '—'}`
-      : '';
-  const nomesDasBancas = catalogos.bancas();
-  const declaraNota = etapaDeclaraNotaMaxima(grupo, tipos);
-  const avaliacaoHumana = etapaEhDeAvaliacaoHumana(grupo, tipos);
+    caraterAtual,
+  ).find((opcao) => opcao.valor === caraterAtual);
 
   return {
     nome: nomeDaEtapa(grupo),
     tipo: catalogos.rotuloDoTipoEtapa().get(controles.tipoEtapaOrigemId.value) ?? '',
     carater: carater?.rotulo ?? '',
-    peso: pontuaPorCarater(controles.carater.value) ? controles.peso.value : null,
-    notaMinima: eliminaPorCarater(controles.carater.value) ? controles.notaMinima.value : null,
+    peso: pontuaPorCarater(caraterAtual) ? controles.peso.value : null,
+    notaMinima: eliminaPorCarater(caraterAtual) ? controles.notaMinima.value : null,
+    janela: janelaLida(controles),
+  };
+}
+
+/** Como a etapa é avaliada: nota máxima, forma, consolidação, lançamento, itens e escala. */
+function avaliacaoLida(grupo: FormGroup<EtapaForm>, tipos: TiposDeEtapa) {
+  const controles = grupo.controls;
+  const declaraNota = etapaDeclaraNotaMaxima(grupo, tipos);
+  const avaliacaoHumana = etapaEhDeAvaliacaoHumana(grupo, tipos);
+  const usaEscala = etapaUsaEscalaDeAtendimento(grupo, tipos);
+
+  return {
     notaMaxima: declaraNota ? leituraDoCampoDecimal(controles.notaMaxima.value) : null,
     formaDeAvaliacao: declaraNota
       ? rotuloDaFormaDeAvaliacao(controles.formaDeAvaliacao.value)
       : null,
-    regraDeConsolidacao: avaliacaoHumana
-      ? controles.regraConsolidacaoCodigo.value
-        ? `${controles.regraConsolidacaoCodigo.value} (${controles.regraConsolidacaoVersao.value})`
-        : ''
-      : null,
+    regraDeConsolidacao: avaliacaoHumana ? regraDeConsolidacaoLida(controles) : null,
     passoDoLancamento:
-      avaliacaoHumana && !etapaUsaEscalaDeAtendimento(grupo, tipos)
+      avaliacaoHumana && !usaEscala
         ? leituraDoCampoDecimal(controles.passoDoLancamento.value)
         : null,
     itensDeAvaliacao: declaraNota ? itensLidos(grupo) : null,
-    escalaDeAtendimento: etapaUsaEscalaDeAtendimento(grupo, tipos)
+    escalaDeAtendimento: usaEscala
       ? controles.escalaDeAtendimento.value.map(
           (nivel) => `${nivel.rotulo} — ${decimalLido(nivel.percentual)}%`,
         )
       : null,
     notaDoEnem: etapaDeNotaDoEnem(grupo, tipos),
-    janela,
+  };
+}
+
+/** O que a etapa entrega e quem a conduz: parecer, bancas, publicações e recursos. */
+function divulgacaoLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLeitura) {
+  const controles = grupo.controls;
+  const rotulosDosAtos = catalogos.rotuloDoAto();
+  const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
+  const nomesDasBancas = catalogos.bancas();
+
+  return {
     parecerIndividual: controles.emiteParecerIndividual.value,
     bancas: controles.bancas.value.map(
       (id) => nomesDasBancas.find((banca) => banca.id === id)?.nome ?? id,
@@ -152,5 +173,17 @@ export function etapaLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLei
       .filter((produto: ProdutoDaFase) => produto.atoCodigo !== '')
       .map((produto) => `${nomeDoAto(produto.atoCodigo)} — ${rotuloDoPapel(produto.papel)}`),
     recursos: controles.recursos.value.map((recurso) => recursoLido(recurso, nomeDoAto)),
+  };
+}
+
+/**
+ * A etapa como a consulta a lê: cada declaração em texto, sem o controle que a edita.
+ * Peso e nota mínima só aparecem quando o caráter da etapa os admite, como na edição.
+ */
+export function etapaLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLeitura) {
+  return {
+    ...identificacaoLida(grupo, catalogos, catalogos.tipoEtapaPorId()),
+    ...avaliacaoLida(grupo, catalogos.tipoEtapaPorId()),
+    ...divulgacaoLida(grupo, catalogos),
   };
 }
