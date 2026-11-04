@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test';
+import type { TipoDocumentoDto } from '@uniplus/shared-data/configuracao';
 
 /** API mockada do cadastro de Tipo de Documento, compartilhada pelos specs da tela. */
 const CORS_HEADERS = {
@@ -37,7 +38,14 @@ export const categoriasSeed = [
 const RG_ID = '01960000-0000-7000-0000-0000000000d1';
 const LAUDO_ID = '01960000-0000-7000-0000-0000000000d2';
 
-export const rgSeed = {
+const PROTECAO_SEED = {
+  classificacaoProtecao: 'PESSOAL',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  finalidadeTratamento: 'Comprovar a identificação do candidato na inscrição.',
+  protecaoAprovada: true,
+} as const;
+
+export const rgSeed: TipoDocumentoDto = {
   id: RG_ID,
   codigo: 'RG',
   nome: 'Registro Geral',
@@ -46,10 +54,11 @@ export const rgSeed = {
   formatosAceitos: 'pdf,jpg',
   tamanhoMaximoMb: 10,
   tipoEquivalente: 'CIN',
+  ...PROTECAO_SEED,
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
-export const laudoSeed = {
+export const laudoSeed: TipoDocumentoDto = {
   id: LAUDO_ID,
   codigo: 'LAUDO_MEDICO',
   nome: 'Laudo médico — PcD',
@@ -58,6 +67,7 @@ export const laudoSeed = {
   formatosAceitos: null,
   tamanhoMaximoMb: null,
   tipoEquivalente: null,
+  ...PROTECAO_SEED,
   criadoEm: '2026-06-11T12:00:00Z',
 };
 
@@ -70,35 +80,63 @@ export function novoCapturado(): Capturado {
   return { posts: [], deletedIds: [] };
 }
 
+export interface OpcoesDaCriacao {
+  readonly criarStatus?: number;
+  readonly criarBody?: unknown;
+}
+
+/** Problem details do conflito de código, como a API devolve (registro de erros do tipo de documento). */
+export const CODIGO_DUPLICADO_PROBLEM = {
+  type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_documento.codigo_ja_existe',
+  title: 'Já existe um tipo de documento ativo com este código',
+  detail: 'Já existe um tipo de documento vivo com o código informado.',
+  status: 409,
+  code: 'uniplus.configuracao.tipo_documento.codigo_ja_existe',
+} as const;
+
 export async function mockApi(
   page: Page,
   capturado: Capturado,
-  lista: readonly unknown[],
-  opcoes: { readonly criarStatus?: number; readonly criarBody?: unknown } = {},
+  lista: readonly TipoDocumentoDto[],
+  opcoes: OpcoesDaCriacao = {},
 ): Promise<void> {
+  await mockRemocao(page, capturado);
+  await mockCriacao(page, capturado, opcoes);
+  await mockLeitura(page, lista);
+}
+
+async function mockRemocao(page: Page, capturado: Capturado): Promise<void> {
   await page.route(/\/api\/configuracao\/admin\/tipos-documento\/[^/?]+$/, async (route) => {
     if (route.request().method() === 'DELETE') {
       const partes = route.request().url().split('/');
       capturado.deletedIds.push(partes[partes.length - 1] ?? '');
+    }
+    await route.fulfill({ status: 204, headers: CORS_HEADERS });
+  });
+}
+
+async function mockCriacao(
+  page: Page,
+  capturado: Capturado,
+  opcoes: OpcoesDaCriacao,
+): Promise<void> {
+  await page.route(/\/api\/configuracao\/admin\/tipos-documento(\?.*)?$/, async (route) => {
+    if (route.request().method() !== 'POST') {
       await route.fulfill({ status: 204, headers: CORS_HEADERS });
       return;
     }
-    await route.fulfill({ status: 204, headers: CORS_HEADERS });
+    capturado.posts.push(route.request().postDataJSON());
+    const status = opcoes.criarStatus ?? 201;
+    await route.fulfill({
+      status,
+      contentType: status >= 400 ? 'application/problem+json' : 'application/json',
+      headers: CORS_HEADERS,
+      body: JSON.stringify(opcoes.criarBody ?? 'novo-tipo-documento-id'),
+    });
   });
-  await page.route(/\/api\/configuracao\/admin\/tipos-documento(\?.*)?$/, async (route) => {
-    if (route.request().method() === 'POST') {
-      capturado.posts.push(route.request().postDataJSON());
-      const status = opcoes.criarStatus ?? 201;
-      await route.fulfill({
-        status,
-        contentType: status >= 400 ? 'application/problem+json' : 'application/json',
-        headers: CORS_HEADERS,
-        body: JSON.stringify(opcoes.criarBody ?? 'novo-tipo-documento-id'),
-      });
-      return;
-    }
-    await route.fulfill({ status: 204, headers: CORS_HEADERS });
-  });
+}
+
+async function mockLeitura(page: Page, lista: readonly TipoDocumentoDto[]): Promise<void> {
   await page.route(/\/api\/configuracao\/tipos-documento(\?.*)?$/, (route) =>
     jsonRoute(route, lista),
   );

@@ -2,7 +2,13 @@ import { expect, test, type Page } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 import { assertSemViolacoesGraves } from '../support/a11y';
 import { abrirFiltros } from '../support/filtros';
-import { laudoSeed, mockApi, novoCapturado, rgSeed } from '../support/tipos-documento-api';
+import {
+  CODIGO_DUPLICADO_PROBLEM,
+  laudoSeed,
+  mockApi,
+  novoCapturado,
+  rgSeed,
+} from '../support/tipos-documento-api';
 
 /**
  * E2E funcional do cadastro de Tipo de Documento (issue #392). Convenção do
@@ -29,7 +35,9 @@ function linhasDaLista(page: Page) {
 
 /** A proteção de dados é obrigatória no cadastro: classificação, hipótese legal e finalidade. */
 async function preencherProtecao(page: Page): Promise<void> {
-  await page.locator('[formControlName="classificacaoProtecao"]').selectOption({ label: 'Pessoal' });
+  await page
+    .locator('[formControlName="classificacaoProtecao"]')
+    .selectOption({ label: 'Pessoal' });
   await page
     .locator('[formControlName="hipoteseLegal"]')
     .selectOption({ label: 'Execução de políticas públicas' });
@@ -96,7 +104,9 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
       .getByRole('button', { name: `Remover tipo de documento ${rgSeed.codigo}`, exact: true })
       .click();
     const dialog = dialogDeRemocao(page);
-    await expect(dialog.getByText('parâmetros foram congelados na configuração do edital')).toBeVisible();
+    await expect(
+      dialog.getByText('parâmetros foram congelados na configuração do edital'),
+    ).toBeVisible();
     await dialog.getByRole('button', { name: 'Remover' }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
@@ -148,12 +158,7 @@ test.describe('Tipo de Documento — validação (#392)', () => {
   }) => {
     await mockApi(page, novoCapturado(), [], {
       criarStatus: 409,
-      criarBody: {
-        type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_documento.codigo_ja_existe',
-        title: 'Já existe um tipo de documento vivo com este código',
-        status: 409,
-        code: 'uniplus.configuracao.tipo_documento.codigo_ja_existe',
-      },
+      criarBody: CODIGO_DUPLICADO_PROBLEM,
     });
     await abrirPagina(page);
 
@@ -164,7 +169,7 @@ test.describe('Tipo de Documento — validação (#392)', () => {
     await preencherProtecao(page);
     await page.getByRole('button', { name: 'Criar tipo de documento' }).click();
 
-    await expect(page.getByText('Já existe um tipo de documento vivo com este código')).toBeVisible();
+    await expect(page.getByText(CODIGO_DUPLICADO_PROBLEM.title)).toBeVisible();
     await expect(page.locator('#cfg-tipo-documento-form')).toBeVisible();
   });
 
@@ -177,11 +182,19 @@ test.describe('Tipo de Documento — validação (#392)', () => {
     await page.locator('[formControlName="codigo"]').fill('DECL');
     await page.locator('[formControlName="nome"]').fill('Declaração');
     await page.locator('[formControlName="categoria"]').selectOption('OUTROS');
-    await page.locator('[formControlName="tamanhoMaximoMb"]').fill('0');
-    await page.locator('[formControlName="tamanhoMaximoMb"]').blur();
+    await preencherProtecao(page);
+    const tamanho = page.locator('[formControlName="tamanhoMaximoMb"]');
+    await tamanho.fill('0');
+    await tamanho.blur();
     await page.getByRole('button', { name: 'Criar tipo de documento' }).click();
 
+    await expect(tamanho).toHaveAttribute('aria-invalid', 'true');
     expect(capturado.posts).toHaveLength(0);
+
+    // Controle: com tamanho válido o mesmo formulário envia, logo só o tamanho bloqueava.
+    await tamanho.fill('5');
+    await page.getByRole('button', { name: 'Criar tipo de documento' }).click();
+    await expect.poll(() => capturado.posts.length).toBe(1);
   });
 });
 
