@@ -37,13 +37,14 @@ const NAO_DECLARA_CATALOGO = [
     'Catálogo institucional vem de um cliente de @uniplus/shared-data, não de uma lista declarada no wizard.',
 }));
 
+const ROTULOS_DE_NAVEGACAO = 'PASSOS|ROTULOS_DOS_PASSOS|REVIEW_NAMES';
 const SOMENTE_ROTULOS_DE_NAVEGACAO = [
-  {
-    selector:
-      'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[id.name!=/^(PASSOS|ROTULOS_DOS_PASSOS|REVIEW_NAMES)$/]',
-    message: 'Este arquivo só exporta rótulos de navegação dos passos.',
-  },
-];
+  `ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[id.name!=/^(${ROTULOS_DE_NAVEGACAO})$/]`,
+  `ExportNamedDeclaration > ExportSpecifier[local.name!=/^(${ROTULOS_DE_NAVEGACAO})$/]`,
+].map((selector) => ({
+  selector,
+  message: 'Este arquivo só exporta rótulos de navegação dos passos.',
+}));
 
 const NAO_INJETA_HTTP_CLIENT = [
   {
@@ -111,6 +112,13 @@ export default [
           ],
         },
       ],
+    },
+  },
+  {
+    files: ['**/src/app/features/processo-seletivo/wizard/**/*.page.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...DO_WIZARD, ...NAO_INJETA_HTTP_CLIENT],
     },
   },
   {
