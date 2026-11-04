@@ -12,7 +12,7 @@ import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { itensDoAto, rotuloDoTipoDeAto } from '../itens-do-ato';
 import { janelaDaInscricao, temFaseDeColetaInscricao } from '../periodo-de-inscricao';
 import { ProntidaoDaPublicacao } from '../prontidao-da-publicacao.service';
@@ -42,7 +42,7 @@ export class AtoDaPublicacaoComponent {
   protected readonly prontidao = inject(ProntidaoDaPublicacao);
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
   protected readonly publicacao = inject(PublicacaoDoProcesso);
-  private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
   private readonly dataBr = new DateBrPipe();
 
   protected readonly form = new FormGroup({
@@ -64,11 +64,11 @@ export class AtoDaPublicacaoComponent {
   });
 
   protected readonly temFaseDeColeta = computed(() =>
-    temFaseDeColetaInscricao(this.store.draft(), this.catalogosDoCronograma.fasePorId()),
+    temFaseDeColetaInscricao(this.store.draft(), this.catalogoDeFases.fasePorId()),
   );
 
   protected readonly janelaDaInscricao = computed(() =>
-    janelaDaInscricao(this.store.draft(), this.catalogosDoCronograma.fasePorId()),
+    janelaDaInscricao(this.store.draft(), this.catalogoDeFases.fasePorId()),
   );
 
   /** O período de inscrição transcrito, quando o cronograma não tem fase que o derive. */

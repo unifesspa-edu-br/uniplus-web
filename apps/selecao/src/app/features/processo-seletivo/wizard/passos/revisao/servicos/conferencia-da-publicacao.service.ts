@@ -3,7 +3,7 @@ import { ProblemDetails } from '@uniplus/shared-core/http';
 
 import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { mensagensDePublicacao } from '../comando-de-publicacao';
 import { dataReferenciaLegalDe } from '../periodo-de-inscricao';
 import { agruparPorDimensao, comoAvisosDaRevisao, comoGruposDaRevisao } from '../grupos-da-revisao';
@@ -28,7 +28,7 @@ function recusado(mensagem: string): ValidacaoDoPasso {
 export class ConferenciaDaPublicacao {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly prontidao = inject(ProntidaoDaPublicacao);
-  private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
 
   /** A última recusa da publicação, ou `null` enquanto não houve tentativa (ou ela publicou). */
   readonly ultimaRecusa = signal<RecusaDePublicacao | null>(null);
@@ -91,7 +91,7 @@ export class ConferenciaDaPublicacao {
   /** As fases do rascunho sem unidade responsável, quando é isso que a recusa cita. */
   readonly fasesSemUnidadeDaRecusa = computed(() => {
     if (!this.ultimaRecusa()?.citaFaseSemUnidade) return [];
-    const nomeDaFase = this.catalogosDoCronograma.nomeDaFase();
+    const nomeDaFase = this.catalogoDeFases.nomeDaFase();
     return this.store
       .draft()
       .cronograma.fases.filter((fase) => fase.unidadeResponsavelId === null)
@@ -114,7 +114,7 @@ export class ConferenciaDaPublicacao {
 
   /** O dia civil contra o qual a conformidade legal é avaliada, ou `null` enquanto não se conhece. */
   dataReferenciaLegal(): string | null {
-    return dataReferenciaLegalDe(this.store.draft(), this.catalogosDoCronograma.fasePorId());
+    return dataReferenciaLegalDe(this.store.draft(), this.catalogoDeFases.fasePorId());
   }
 
   /** Guarda o que o servidor recusou; `titulo` é o texto que o operador lê da recusa. */
@@ -152,7 +152,7 @@ export class ConferenciaDaPublicacao {
       ...mensagensDePublicacao(
         this.store.draft(),
         this.documentoAPublicarId(),
-        this.catalogosDoCronograma.fasePorId(),
+        this.catalogoDeFases.fasePorId(),
       ),
     ];
     return messages.length ? { valid: false, messages } : { valid: true };

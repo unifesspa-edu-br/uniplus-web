@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
-import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
+import { CatalogoDeUnidadesDoCadastro } from '../catalogos/catalogo-de-unidades-do-cadastro.service';
 import { FORMULARIO_DO_PAI } from '../formulario-do-pai';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
 
@@ -15,7 +15,7 @@ import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.ser
   styles: ':host { display: block; }',
 })
 export class NovaFaseComponent {
-  protected readonly catalogos = inject(CatalogosDoCronograma);
+  protected readonly catalogoDeUnidades = inject(CatalogoDeUnidadesDoCadastro);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly edicaoLiberada = this.cronograma.edicaoLiberada;
   protected readonly formulario = this.cronograma.formulario;

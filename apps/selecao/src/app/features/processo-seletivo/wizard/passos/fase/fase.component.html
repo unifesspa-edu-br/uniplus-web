@@ -5,14 +5,14 @@
   </p>
 }
 
-@if (catalogos.carregando()) {
+@if (situacao.carregando()) {
   <p class="field__hint" role="status">
     Carregando fases, bancas, categorias de documento, atos e regras…
   </p>
-} @else if (catalogos.erro(); as erro) {
+} @else if (situacao.erro(); as erro) {
   <div class="field__erro" role="alert">
     <p>{{ erro }}</p>
-    <button class="btn btn--tertiary" type="button" (click)="catalogos.carregar()">
+    <button class="btn btn--tertiary" type="button" (click)="situacao.carregar()">
       Tentar novamente
     </button>
   </div>

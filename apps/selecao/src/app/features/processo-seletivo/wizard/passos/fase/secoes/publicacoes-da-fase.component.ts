@@ -4,7 +4,7 @@ import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared
 
 import { PAPEL_PRELIMINAR, type ProdutoDaFase } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeAtos } from '../../cronograma/catalogos/catalogo-de-atos.service';
 import { PAPEIS_ESCOLHIVEIS } from '../configuracao-da-fase';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
@@ -18,7 +18,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 })
 export class PublicacoesDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeAtos = inject(CatalogoDeAtos);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly espelho = this.faseEmEdicao.espelho;
 
@@ -29,7 +29,7 @@ export class PublicacoesDaFaseComponent {
   /** A leitura da consulta: cada publicação em texto, sem o controle que a edita. */
   protected faseLida() {
     if (this.espelho.formulario() === null) return null;
-    const rotulos = this.catalogos.rotuloDoAto();
+    const rotulos = this.catalogoDeAtos.rotuloDoAto();
     const nomeDoAto = (codigo: string): string => rotulos.get(codigo) ?? codigo;
     const papel = (valor: string | null): string =>
       PAPEIS_ESCOLHIVEIS.find((opcao) => opcao.valor === (valor ?? ''))?.rotulo ?? valor ?? '';
@@ -42,7 +42,7 @@ export class PublicacoesDaFaseComponent {
 
   /** Atos escolhíveis hoje, com a marca de resultado que decide o papel. */
   readonly atosEscolhiveis = computed(() =>
-    this.catalogos
+    this.catalogoDeAtos
       .atosVigentes()
       .map((ato) => ({ codigo: ato.codigo, nome: ato.nome, ehResultado: ato.ehResultado })),
   );
@@ -95,7 +95,7 @@ export class PublicacoesDaFaseComponent {
     const vigentes = this.atosEscolhiveis();
     if (codigo === '' || vigentes.some((ato) => ato.codigo === codigo)) return vigentes;
 
-    const nome = this.catalogos.rotuloDoAto().get(codigo);
+    const nome = this.catalogoDeAtos.rotuloDoAto().get(codigo);
     return [
       ...vigentes,
       { codigo, nome: nome === undefined ? codigo : `${nome} (fora de vigência)` },

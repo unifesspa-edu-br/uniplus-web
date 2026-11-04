@@ -12,7 +12,7 @@ import {
   RESPOSTA_DESCARTADA,
   RespostaDescartada,
 } from '../../../shared/gravacao/gravacao-no-passo';
-import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { comoComandoDePublicacao } from '../comando-de-publicacao';
 import { ConferenciaDaPublicacao } from './conferencia-da-publicacao.service';
 
@@ -43,7 +43,7 @@ export class PublicacaoDoProcesso {
   private readonly cadastro = inject(CadastroInicial);
   private readonly atos = inject(AtosApi);
   private readonly problemI18n = inject(ProblemI18nService);
-  private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
 
   /** O snapshot lido depois do `204`: só existe quando esta sessão acabou de publicar. */
   readonly snapshotConfirmado = signal<SnapshotVigenteDto | null>(null);
@@ -128,7 +128,7 @@ export class PublicacaoDoProcesso {
     const comando = comoComandoDePublicacao(
       this.store.draft(),
       documentoEditalId,
-      this.catalogosDoCronograma.fasePorId(),
+      this.catalogoDeFases.fasePorId(),
     );
     const geracao = this.store.geracao();
     this.conferencia.descartarRecusa();

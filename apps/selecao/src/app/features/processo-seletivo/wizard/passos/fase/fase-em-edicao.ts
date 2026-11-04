@@ -2,8 +2,10 @@ import { Injectable, computed, effect, inject, signal, untracked } from '@angula
 
 import type { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { descreverFase } from '../../shared/descricao-da-fase';
-import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
+import { descreverFase, finalidadesDaFase } from '../../shared/descricao-da-fase';
+import { CatalogoDeAtos } from '../cronograma/catalogos/catalogo-de-atos.service';
+import { CatalogoDeBancas } from '../cronograma/catalogos/catalogo-de-bancas.service';
+import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
 import {
   problemasDaFase,
   type AtoDoCatalogo,
@@ -34,7 +36,9 @@ export interface FaseNoSeletor {
 @Injectable()
 export class FaseEmEdicao {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeAtos = inject(CatalogoDeAtos);
+  private readonly catalogoDeBancas = inject(CatalogoDeBancas);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
 
   /** Fase aberta, pelo id da fase canônica — o identificador sempre presente. */
   readonly faseAberta = signal('');
@@ -54,7 +58,7 @@ export class FaseEmEdicao {
 
   /** As fases como o seletor as nomeia. */
   readonly fasesNoSeletor = computed<readonly FaseNoSeletor[]>(() => {
-    const fasePorId = this.catalogos.fasePorId();
+    const fasePorId = this.catalogoDeFases.fasePorId();
     return this.fasesDoCronograma().map((fase) => ({
       faseCanonicaId: fase.faseCanonicaId,
       codigo: fase.codigo,
@@ -69,6 +73,15 @@ export class FaseEmEdicao {
     return this.fasesDoCronograma().find((fase) => fase.faseCanonicaId === aberta) ?? null;
   });
 
+  /**
+   * Os formulários que se respondem na fase aberta — onde o documento pode ser apresentado. Vazio
+   * na fase que não responde formulário nenhum, e aí não há o que escolher.
+   */
+  readonly finalidadesDaFaseAberta = computed<readonly string[]>(() => {
+    const fase = this.faseDoRascunho();
+    return fase === null ? [] : finalidadesDaFase(fase, this.catalogoDeFases.fasePorId());
+  });
+
   /** Nome da fase aberta, para o cabeçalho e para as mensagens. */
   readonly nomeDaFaseAberta = computed(() => {
     const aberta = this.faseAberta();
@@ -80,7 +93,7 @@ export class FaseEmEdicao {
     const fase = this.faseDoRascunho();
     if (fase === null) return [];
 
-    const rotulos = this.catalogos.rotuloDoAto();
+    const rotulos = this.catalogoDeAtos.rotuloDoAto();
     return produtosPreliminares(fase.produtos).map((produto) => ({
       codigo: produto.atoCodigo,
       nome: rotulos.get(produto.atoCodigo) ?? produto.atoCodigo,
@@ -99,14 +112,14 @@ export class FaseEmEdicao {
   /** Bancas que o seletor oferece. */
   readonly bancasEscolhiveis = computed(() => {
     this.espelho.versao();
-    const doCadastro = this.catalogos.bancas().map((banca) => ({ id: banca.id, nome: banca.nome }));
+    const doCadastro = this.catalogoDeBancas.bancas().map((banca) => ({ id: banca.id, nome: banca.nome }));
     return bancasEscolhiveis(doCadastro, this.faseDoRascunho());
   });
 
   readonly atoPorCodigo = computed<ReadonlyMap<string, AtoDoCatalogo>>(
     () =>
       new Map(
-        [...this.catalogos.atoPorCodigo()].map(([codigo, ato]) => [
+        [...this.catalogoDeAtos.atoPorCodigo()].map(([codigo, ato]) => [
           codigo,
           { nome: ato.nome, ehResultado: ato.ehResultado },
         ]),

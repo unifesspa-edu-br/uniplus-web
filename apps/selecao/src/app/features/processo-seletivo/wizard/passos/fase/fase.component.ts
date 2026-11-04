@@ -17,7 +17,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarCronogramaFases } from '../cronograma/servicos/gravacao-do-cronograma.service';
-import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
+import { SituacaoDosCatalogosDoCronograma } from '../cronograma/catalogos/situacao-dos-catalogos-do-cronograma.service';
 import { problemasDaFase } from './configuracao-da-fase';
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
@@ -62,7 +62,7 @@ import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.compone
 })
 export class FasePassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDoCronograma);
+  readonly situacao = inject(SituacaoDosCatalogosDoCronograma);
   private readonly cadastro = inject(CadastroInicial);
   private readonly destruicao = inject(DestroyRef);
 
@@ -92,7 +92,7 @@ export class FasePassoComponent {
   private readonly atoPorCodigo = this.faseEmEdicao.atoPorCodigo;
 
   constructor() {
-    this.catalogos.carregar();
+    this.situacao.carregar();
     this.destruicao.onDestroy(() => this.faseEmEdicao.espelho.encerrar());
 
     // A fase aberta acompanha o cronograma: sem escolha, ou com a escolha já

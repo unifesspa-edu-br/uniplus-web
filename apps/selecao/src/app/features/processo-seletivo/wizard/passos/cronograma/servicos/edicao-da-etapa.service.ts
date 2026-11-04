@@ -5,7 +5,10 @@ import type { ProdutoDaFase, RecursoDaEtapa } from '../../../processo-seletivo.m
 import { FORMAS_DE_AVALIACAO } from '../../../shared/forma-de-avaliacao';
 import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../../shared/instancia-superior';
 import { PAPEIS_ESCOLHIVEIS } from '../../fase/configuracao-da-fase';
-import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
+import { CatalogoDeAtos } from '../catalogos/catalogo-de-atos.service';
+import { CatalogoDeBancas } from '../catalogos/catalogo-de-bancas.service';
+import { CatalogoDeRegras } from '../catalogos/catalogo-de-regras.service';
+import { CatalogoDeTiposDeEtapa } from '../catalogos/catalogo-de-tipos-de-etapa.service';
 import { textosDoCatalogo } from '../convencao-de-contagem';
 import type { EtapaForm } from '../cronograma-form';
 import {
@@ -20,7 +23,12 @@ import {
   trocarRegraDeConsolidacao,
   trocarTipoDaEtapa,
 } from '../edicao-da-etapa';
-import { dataHoraLida, etapaLida, nomeDaEtapa } from '../leitura-da-etapa';
+import {
+  dataHoraLida,
+  etapaLida,
+  nomeDaEtapa,
+  type CatalogosDaLeitura,
+} from '../leitura-da-etapa';
 import {
   acrescentarProduto,
   escolherAtoDoProduto,
@@ -44,7 +52,16 @@ import { FormularioDoCronograma } from './formulario-do-cronograma.service';
  */
 @Injectable()
 export class EdicaoDaEtapa {
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeAtos = inject(CatalogoDeAtos);
+  private readonly catalogoDeBancas = inject(CatalogoDeBancas);
+  private readonly catalogoDeRegras = inject(CatalogoDeRegras);
+  private readonly catalogoDeTiposDeEtapa = inject(CatalogoDeTiposDeEtapa);
+  private readonly catalogosDaLeitura: CatalogosDaLeitura = {
+    rotuloDoAto: this.catalogoDeAtos.rotuloDoAto,
+    rotuloDoTipoEtapa: this.catalogoDeTiposDeEtapa.rotuloDoTipoEtapa,
+    tipoEtapaPorId: this.catalogoDeTiposDeEtapa.tipoEtapaPorId,
+    bancas: this.catalogoDeBancas.bancas,
+  };
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly versaoDoFormulario = this.cronograma.versao;
 
@@ -64,7 +81,7 @@ export class EdicaoDaEtapa {
    */
   tiposEscolhiveisPara(grupo: FormGroup<EtapaForm>): readonly { id: string; nome: string }[] {
     const referenciado = grupo.controls.tipoEtapaOrigemId.value;
-    const ativos = this.catalogos
+    const ativos = this.catalogoDeTiposDeEtapa
       .tiposEtapaAtivos()
       .map((tipo) => ({ id: tipo.id, nome: tipo.nome }));
 
@@ -72,7 +89,7 @@ export class EdicaoDaEtapa {
       return ativos;
     }
 
-    const rotulo = this.catalogos.rotuloDoTipoEtapa().get(referenciado);
+    const rotulo = this.catalogoDeTiposDeEtapa.rotuloDoTipoEtapa().get(referenciado);
     return [
       ...ativos,
       {
@@ -99,20 +116,20 @@ export class EdicaoDaEtapa {
   caracteresPara(grupo: FormGroup<EtapaForm>): readonly { valor: string; rotulo: string }[] {
     this.versaoDoFormulario();
     return caracteresAdmitidos(
-      this.catalogos.tipoEtapaPorId().get(grupo.controls.tipoEtapaOrigemId.value),
+      this.catalogoDeTiposDeEtapa.tipoEtapaPorId().get(grupo.controls.tipoEtapaOrigemId.value),
       this.etapaDeNotaDoEnem(grupo),
       grupo.controls.carater.value,
     );
   }
 
   escolherTipoEtapa(grupo: FormGroup<EtapaForm>, tipoEtapaOrigemId: string): void {
-    trocarTipoDaEtapa(grupo, tipoEtapaOrigemId, this.catalogos.tipoEtapaPorId());
+    trocarTipoDaEtapa(grupo, tipoEtapaOrigemId, this.catalogoDeTiposDeEtapa.tipoEtapaPorId());
     this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
   etapaDeNotaDoEnem(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    return etapaDeNotaDoEnem(grupo, this.catalogos.tipoEtapaPorId());
+    return etapaDeNotaDoEnem(grupo, this.catalogoDeTiposDeEtapa.tipoEtapaPorId());
   }
 
   /**
@@ -129,14 +146,14 @@ export class EdicaoDaEtapa {
 
   etapaDeclaraNotaMaxima(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    return etapaDeclaraNotaMaxima(grupo, this.catalogos.tipoEtapaPorId());
+    return etapaDeclaraNotaMaxima(grupo, this.catalogoDeTiposDeEtapa.tipoEtapaPorId());
   }
 
   readonly formasDeAvaliacao = FORMAS_DE_AVALIACAO;
 
   etapaEhDeAvaliacaoHumana(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    return etapaEhDeAvaliacaoHumana(grupo, this.catalogos.tipoEtapaPorId());
+    return etapaEhDeAvaliacaoHumana(grupo, this.catalogoDeTiposDeEtapa.tipoEtapaPorId());
   }
 
   escolherFormaDeAvaliacao(grupo: FormGroup<EtapaForm>, forma: string): void {
@@ -149,7 +166,7 @@ export class EdicaoDaEtapa {
    * descrição. O DTO não tem `nome`: o código é o que identifica, e nenhuma lista é escrita aqui.
    */
   readonly regrasDeConsolidacao = computed(() =>
-    this.catalogos.regrasConsolidacao().map((regra) => ({
+    this.catalogoDeRegras.regrasConsolidacao().map((regra) => ({
       codigo: regra.codigo,
       versao: regra.versao,
       descricao: textosDoCatalogo(regra.invariantes),
@@ -163,7 +180,7 @@ export class EdicaoDaEtapa {
 
   etapaUsaEscalaDeAtendimento(grupo: FormGroup<EtapaForm>): boolean {
     this.versaoDoFormulario();
-    return etapaUsaEscalaDeAtendimento(grupo, this.catalogos.tipoEtapaPorId());
+    return etapaUsaEscalaDeAtendimento(grupo, this.catalogoDeTiposDeEtapa.tipoEtapaPorId());
   }
 
   /** A etapa corta candidato — é onde a nota mínima tem o que fazer. */
@@ -173,7 +190,7 @@ export class EdicaoDaEtapa {
   }
 
   escolherCarater(grupo: FormGroup<EtapaForm>, carater: string): void {
-    trocarCaraterDaEtapa(grupo, carater, this.catalogos.tipoEtapaPorId());
+    trocarCaraterDaEtapa(grupo, carater, this.catalogoDeTiposDeEtapa.tipoEtapaPorId());
     this.versaoDoFormulario.update((versao) => versao + 1);
   }
 
@@ -186,7 +203,7 @@ export class EdicaoDaEtapa {
   marcasDaEtapa(grupo: FormGroup<EtapaForm>): readonly string[] {
     const marcas: string[] = [];
 
-    const tipo = this.catalogos.rotuloDoTipoEtapa().get(grupo.controls.tipoEtapaOrigemId.value);
+    const tipo = this.catalogoDeTiposDeEtapa.rotuloDoTipoEtapa().get(grupo.controls.tipoEtapaOrigemId.value);
     if (tipo !== undefined) marcas.push(tipo);
 
     const publicacoes = this.produtosDaEtapa(grupo).filter((p) => p.atoCodigo !== '').length;
@@ -210,7 +227,7 @@ export class EdicaoDaEtapa {
   readonly dataHoraLida = dataHoraLida;
 
   etapaLida(grupo: FormGroup<EtapaForm>) {
-    return etapaLida(grupo, this.catalogos);
+    return etapaLida(grupo, this.catalogosDaLeitura);
   }
 
   produtosDaEtapa(grupo: FormGroup<EtapaForm>): readonly ProdutoDaFase[] {
@@ -228,7 +245,7 @@ export class EdicaoDaEtapa {
 
   /** Só ato que o catálogo marca como resultado admite papel no ciclo recursal. */
   atoEhResultado(atoCodigo: string): boolean {
-    return this.catalogos.atoPorCodigo().get(atoCodigo)?.ehResultado === true;
+    return this.catalogoDeAtos.atoPorCodigo().get(atoCodigo)?.ehResultado === true;
   }
 
   // ── Bancas e janelas recursais da etapa ────────────────────────────────────
@@ -253,12 +270,12 @@ export class EdicaoDaEtapa {
   }
 
   acrescentarRecursoNaEtapa(grupo: FormGroup<EtapaForm>): void {
-    acrescentarRecurso(grupo, this.catalogos.regrasRecurso(), this.etapaDeNotaDoEnem(grupo));
+    acrescentarRecurso(grupo, this.catalogoDeRegras.regrasRecurso(), this.etapaDeNotaDoEnem(grupo));
   }
 
   /** Sem regra de prazo no catálogo, não há janela recursal declarável. */
   temRegraDeRecurso(): boolean {
-    return this.catalogos.regrasRecurso().length > 0;
+    return this.catalogoDeRegras.regrasRecurso().length > 0;
   }
 
   readonly removerRecursoDaEtapa = removerRecurso;
@@ -269,7 +286,7 @@ export class EdicaoDaEtapa {
     campo: keyof RecursoDaEtapa,
     valor: string,
   ): void {
-    alterarRecurso(grupo, posicao, campo, valor, this.catalogos.regrasRecurso());
+    alterarRecurso(grupo, posicao, campo, valor, this.catalogoDeRegras.regrasRecurso());
   }
 
   readonly declararInstanciaSuperiorDaEtapa = declararInstanciaSuperior;

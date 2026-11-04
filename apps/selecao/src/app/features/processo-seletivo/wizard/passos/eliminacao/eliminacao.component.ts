@@ -20,7 +20,7 @@ import {
   divisorDaMediaValido,
   mensagensDeClassificacaoBase,
 } from '../classificacao/classificacao-para-comando';
-import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeTiposDeEtapa } from '../cronograma/catalogos/catalogo-de-tipos-de-etapa.service';
 import { declaraNotaDoEnem } from '../cronograma/regras-da-etapa';
 import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
 import { confirmacaoDaClassificacao } from '../classificacao/confirmacao-da-classificacao';
@@ -62,7 +62,7 @@ export class EliminacaoPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacao);
   private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
-  private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
+  private readonly catalogoDeTiposDeEtapa = inject(CatalogoDeTiposDeEtapa);
   private readonly gravacao = inject(GravacaoDaClassificacao);
 
   constructor() {
@@ -82,7 +82,7 @@ export class EliminacaoPassoComponent {
   readonly etapasReferenciaveis = computed<readonly EtapaReferenciavel[]>(() => {
     // Vale o tipo do catálogo quando o rascunho já trocou o da etapa gravada, como no cronograma: a
     // tela julga a etapa como o servidor, que confere o tipo que a gravação levaria.
-    const tipos = this.catalogosDoCronograma.tipoEtapaPorId();
+    const tipos = this.catalogoDeTiposDeEtapa.tipoEtapaPorId();
     return this.store
       .draft()
       .cronograma.etapas.filter(

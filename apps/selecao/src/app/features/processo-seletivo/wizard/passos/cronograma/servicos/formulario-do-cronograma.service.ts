@@ -8,7 +8,8 @@ import { mesmoConteudo } from '../../../shared/conteudo-canonico';
 import { descreverFase, renumerar, type DescricaoDaFase } from '../../../shared/descricao-da-fase';
 import { exigenciasDaFase } from '../../../shared/exigencias/consulta-das-exigencias';
 import { semAEtapa, semAFase } from '../../../shared/exigencias/exigencias-documentais';
-import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
+import { CatalogoDeFases } from '../catalogos/catalogo-de-fases.service';
+import { CatalogoDeTiposDeEtapa } from '../catalogos/catalogo-de-tipos-de-etapa.service';
 import {
   etapaDoFormulario,
   faseDoFormulario,
@@ -36,7 +37,8 @@ export interface FaseNaLinhaDoTempo extends DescricaoDaFase {
 @Injectable()
 export class FormularioDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
+  private readonly catalogoDeTiposDeEtapa = inject(CatalogoDeTiposDeEtapa);
   private readonly unidades = inject(UnidadesResponsaveisDasFases);
   private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
 
@@ -82,7 +84,7 @@ export class FormularioDoCronograma {
    */
   readonly linhaDoTempo = computed<readonly FaseNaLinhaDoTempo[]>(() => {
     this.versao();
-    const fasePorId = this.catalogos.fasePorId();
+    const fasePorId = this.catalogoDeFases.fasePorId();
 
     return this.fases.controls.map((grupo, indice) => ({
       grupo,
@@ -99,7 +101,7 @@ export class FormularioDoCronograma {
   readonly fasesDisponiveis = computed(() => {
     this.versao();
     const usadas = new Set(this.fases.controls.map((grupo) => grupo.controls.faseCanonicaId.value));
-    return this.catalogos.fasesEmOrdemSugerida().filter((fase) => !usadas.has(fase.id));
+    return this.catalogoDeFases.fasesEmOrdemSugerida().filter((fase) => !usadas.has(fase.id));
   });
 
   /**
@@ -111,7 +113,7 @@ export class FormularioDoCronograma {
       const etapa = etapaDoFormulario(grupo);
       return etapaComOQueDeclara(
         etapa,
-        this.catalogos.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId),
+        this.catalogoDeTiposDeEtapa.tipoEtapaPorId().get(etapa.tipoEtapaOrigemId),
       );
     });
   }
@@ -123,7 +125,7 @@ export class FormularioDoCronograma {
     this.fases.push(
       grupoDaFase({
         faseCanonicaId: escolhida,
-        codigo: this.catalogos.fasePorId().get(escolhida)?.codigo ?? '',
+        codigo: this.catalogoDeFases.fasePorId().get(escolhida)?.codigo ?? '',
         ordem: this.fases.length + 1,
         inicio: null,
         fim: null,

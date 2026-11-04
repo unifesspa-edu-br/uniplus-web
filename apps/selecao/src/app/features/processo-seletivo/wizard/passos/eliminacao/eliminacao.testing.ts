@@ -9,7 +9,7 @@ import { afterEach, beforeEach } from 'vitest';
 
 import { EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeTiposDeEtapa } from '../cronograma/catalogos/catalogo-de-tipos-de-etapa.service';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
@@ -142,7 +142,7 @@ export function montarEliminacao(): void {
         CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDeClassificacao,
-        { provide: CatalogosDoCronograma, useValue: { tipoEtapaPorId } },
+        { provide: CatalogoDeTiposDeEtapa, useValue: { tipoEtapaPorId } },
         LeituraDoCadastroDePesos,
         ReleituraDoSnapshot,
         provideHttpClient(withInterceptors([apiResultInterceptor])),

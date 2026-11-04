@@ -1,9 +1,9 @@
 @let etapa = grupo();
 
 <h4 class="form-section__title">Quem julga esta etapa</h4>
-@if (catalogos.bancas().length > 0) {
+@if (catalogoDeBancas.bancas().length > 0) {
   <div class="checkbox-grid">
-    @for (banca of catalogos.bancas(); track banca.id) {
+    @for (banca of catalogoDeBancas.bancas(); track banca.id) {
       <label class="checkbox">
         <input
           type="checkbox"

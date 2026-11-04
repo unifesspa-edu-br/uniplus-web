@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { deClausulasDoWire, fatosParaLeitura, resumoDaRegra } from '@uniplus/shared-ui/components';
 
-import { CatalogosDoCronograma } from '../passos/cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeFatos } from '../passos/cronograma/catalogos/catalogo-de-fatos.service';
 import type { RegraDaModalidadeOfertada } from './regras-das-modalidades';
 
 let proximoId = 0;
@@ -50,18 +50,18 @@ let proximoId = 0;
 export class RegrasDasModalidadesComponent {
   readonly modalidades = input.required<readonly RegraDaModalidadeOfertada[]>();
 
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeFatos = inject(CatalogoDeFatos);
 
   protected readonly tituloId = `regras-das-modalidades-${proximoId++}`;
 
   constructor() {
-    this.catalogos.carregar();
+    this.catalogoDeFatos.carregar();
   }
 
   protected readonly linhas = computed(() => {
     // Sem o catálogo, as condições não se leem pelos nomes dos fatos.
-    const semCatalogo = this.catalogos.carregando() || this.catalogos.erro() !== null;
-    const fatos = semCatalogo ? null : fatosParaLeitura(this.catalogos.fatos());
+    const semCatalogo = this.catalogoDeFatos.carregando() || this.catalogoDeFatos.erro() !== null;
+    const fatos = semCatalogo ? null : fatosParaLeitura(this.catalogoDeFatos.fatos());
     return this.modalidades().map((modalidade) => ({
       codigo: modalidade.codigo,
       descricao: modalidade.descricao,

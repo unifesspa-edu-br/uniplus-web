@@ -22,7 +22,7 @@ import {
   mostraFormulario,
   formulariosEscolhiveis,
 } from '../../../shared/exigencias/formulario-da-exigencia';
-import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { nomeDaFinalidade } from '../../formulario/formularios-por-finalidade';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import {
@@ -60,7 +60,7 @@ import { LinhaDoDocumentoComponent } from './linha-do-documento.component';
 })
 export class DocumentosDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   protected readonly exigencias = inject(ExigenciasDaFaseStore);
   private readonly gatilho = inject(GatilhoDasExigenciasStore);
@@ -83,9 +83,9 @@ export class DocumentosDaFaseComponent {
    */
   readonly documentosDisponiveis = computed<readonly UiComboboxGroup[]>(() => {
     const jaExigidos = new Set(this.exigencias.documentosDaFase().map((doc) => doc.id));
-    const aguardandoProtecao = this.catalogos.tiposAguardandoProtecao();
+    const aguardandoProtecao = this.catalogoDeDocumentos.tiposAguardandoProtecao();
 
-    return this.catalogos
+    return this.catalogoDeDocumentos
       .documentosPorCategoria()
       .map((grupo) => ({
         label: grupo.label,

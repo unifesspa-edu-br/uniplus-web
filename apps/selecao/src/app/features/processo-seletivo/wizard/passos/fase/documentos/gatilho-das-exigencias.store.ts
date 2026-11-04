@@ -32,7 +32,8 @@ import {
   comRepeticao,
   comRepeticaoEmTodasAsFases,
 } from '../../../shared/exigencias/exigencias-documentais';
-import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
+import { CatalogoDeFatos } from '../../cronograma/catalogos/catalogo-de-fatos.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import type { RepeticaoDoDocumento } from '../tipos-da-conferencia';
 import { SEM_REPETICAO } from '../tipos-da-conferencia';
@@ -52,7 +53,8 @@ const SEM_ERROS: Readonly<Record<number, string>> = {};
 @Injectable()
 export class GatilhoDasExigenciasStore {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
+  private readonly catalogoDeFatos = inject(CatalogoDeFatos);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly exigencias = inject(ExigenciasDaFaseStore);
   private readonly faseDoRascunho = this.faseEmEdicao.faseDoRascunho;
@@ -64,7 +66,7 @@ export class GatilhoDasExigenciasStore {
    */
   readonly dominiosDoGatilho = computed(() =>
     dominiosDoGatilho(
-      this.catalogos.fatos(),
+      this.catalogoDeFatos.fatos(),
       this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
       this.store.modalidadesDoProcesso(),
     ),
@@ -78,7 +80,7 @@ export class GatilhoDasExigenciasStore {
    * que exista código sabendo resolver — e o catálogo é semeado por migration.
    */
   readonly fatosDoGatilho = computed<readonly FatoEscolhivel[]>(() =>
-    fatosParaGatilho(this.catalogos.fatos(), this.dominiosDoGatilho()),
+    fatosParaGatilho(this.catalogoDeFatos.fatos(), this.dominiosDoGatilho()),
   );
 
   readonly fatoPorCodigo = computed(
@@ -89,17 +91,17 @@ export class GatilhoDasExigenciasStore {
   readonly producaoDosFatos = computed(() =>
     producaoDoRascunho(
       this.store.draft().formulario,
-      fasesNoCronograma(this.fasesDoCronograma(), this.catalogos.fasePorId()),
-      this.catalogos.fatos(),
+      fasesNoCronograma(this.fasesDoCronograma(), this.catalogoDeFases.fasePorId()),
+      this.catalogoDeFatos.fatos(),
     ),
   );
 
   /** Como a orientação nomeia o fato e a fase. */
   readonly nomesDaOrientacao = computed<NomesDaOrientacao>(() => {
-    const nomeDoFato = new Map(this.catalogos.fatos().map((fato) => [fato.codigo, fato.nome]));
+    const nomeDoFato = new Map(this.catalogoDeFatos.fatos().map((fato) => [fato.codigo, fato.nome]));
     return {
       fato: (codigo: string) => nomeDoFato.get(codigo) ?? codigo,
-      fase: this.catalogos.nomeDaFase(),
+      fase: this.catalogoDeFases.nomeDaFase(),
     };
   });
 
@@ -128,7 +130,7 @@ export class GatilhoDasExigenciasStore {
           doc.id,
           {
             fatos: fatosDoGatilhoNaFase(
-              this.catalogos.fatos(),
+              this.catalogoDeFatos.fatos(),
               exigencia,
               producao,
               this.dominiosDoGatilho(),
@@ -219,7 +221,7 @@ export class GatilhoDasExigenciasStore {
    * fase — nada do candidato é conhecido até ela —, e mandar recarregar a página não resolveria.
    */
   readonly textoSemFatosDoGatilho = computed(() =>
-    this.catalogos.fatos().length === 0
+    this.catalogoDeFatos.fatos().length === 0
       ? 'O catálogo de fatos do candidato não foi carregado. Recarregue a página para declarar condições.'
       : 'Nenhum dado do candidato é conhecido até esta fase para condicionar o documento.',
   );

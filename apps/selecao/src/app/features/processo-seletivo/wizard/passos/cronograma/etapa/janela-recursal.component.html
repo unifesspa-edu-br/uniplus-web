@@ -43,7 +43,7 @@
           [value]="preliminar.atoCodigo"
           [selected]="preliminar.atoCodigo === recurso.atoAncoraCodigo"
         >
-          {{ catalogos.rotuloDoAto().get(preliminar.atoCodigo) ?? preliminar.atoCodigo }}
+          {{ catalogoDeAtos.rotuloDoAto().get(preliminar.atoCodigo) ?? preliminar.atoCodigo }}
         </option>
       }
     </select>

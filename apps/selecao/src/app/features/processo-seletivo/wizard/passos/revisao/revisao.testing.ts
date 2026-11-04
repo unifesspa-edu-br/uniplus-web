@@ -19,7 +19,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { EnvioDoEdital } from '../../shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
-import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
 import { RevisaoPassoComponent } from './revisao.component';
 import { PublicacaoDoProcesso } from './servicos/publicacao-do-processo.service';
 
@@ -223,7 +223,7 @@ export async function montarOCenario(): Promise<CenarioDaRevisao> {
       { provide: AtosApi, useValue: atosApi },
       // Só o que a Revisão lê do catálogo de fases, sem puxar as sete APIs do serviço real.
       {
-        provide: CatalogosDoCronograma,
+        provide: CatalogoDeFases,
         useValue: { fasePorId, nomeDaFase: signal((codigo: string) => `Fase ${codigo}`) },
       },
     ],

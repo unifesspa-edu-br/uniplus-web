@@ -11,7 +11,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
-import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { VagasPassoComponent } from './vagas.component';
 import {
   BASE,
@@ -45,7 +45,7 @@ describe('VagasPassoComponent — regra determina o rol de modalidades', () => {
         ProcessoSeletivoStore,
         CadastroInicial,
         GravacaoDoProcesso,
-        CatalogosDoCronograma,
+        CatalogoDeFatos,
         GravacaoDosCamposPressupostos,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),

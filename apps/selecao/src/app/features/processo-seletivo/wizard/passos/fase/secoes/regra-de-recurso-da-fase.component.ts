@@ -4,7 +4,8 @@ import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/for
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeAtos } from '../../cronograma/catalogos/catalogo-de-atos.service';
+import { CatalogoDeRegras } from '../../cronograma/catalogos/catalogo-de-regras.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
 /**
@@ -56,7 +57,8 @@ const ROTULO_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
 })
 export class RegraDeRecursoDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeAtos = inject(CatalogoDeAtos);
+  private readonly catalogoDeRegras = inject(CatalogoDeRegras);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly espelho = this.faseEmEdicao.espelho;
 
@@ -68,7 +70,7 @@ export class RegraDeRecursoDaFaseComponent {
 
   /** Regras de prazo de recurso publicadas no catálogo versionado. */
   protected readonly regrasDeRecurso = computed(() =>
-    this.catalogos
+    this.catalogoDeRegras
       .regrasRecurso()
       .map((regra) => ({ codigo: regra.codigo, versao: regra.versao, baseLegal: regra.baseLegal })),
   );
@@ -120,7 +122,7 @@ export class RegraDeRecursoDaFaseComponent {
     if (form === null) return null;
     this.espelho.versao();
 
-    const rotulosDosAtos = this.catalogos.rotuloDoAto();
+    const rotulosDosAtos = this.catalogoDeAtos.rotuloDoAto();
     const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
     const par = (valor: string, unidade: string): string =>
       valor === ''

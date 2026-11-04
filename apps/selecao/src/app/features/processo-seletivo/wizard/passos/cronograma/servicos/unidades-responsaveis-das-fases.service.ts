@@ -10,14 +10,16 @@ import {
   UNIDADE_SEM_CADASTRO_CARREGADO,
   type UnidadeGravada,
 } from '../../../shared/unidades-do-cadastro';
-import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
+import { CatalogoDeFases } from '../catalogos/catalogo-de-fases.service';
+import { CatalogoDeUnidadesDoCadastro } from '../catalogos/catalogo-de-unidades-do-cadastro.service';
 import type { FaseForm } from '../cronograma-form';
 
 /** As unidades que respondem pelas fases: o que o cadastro oferece, o que o processo gravou e o que o servidor recusou. */
 @Injectable()
 export class UnidadesResponsaveisDasFases {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
+  private readonly catalogoDeUnidades = inject(CatalogoDeUnidadesDoCadastro);
 
   /**
    * Unidades oferecidas a cada fase: o cadastro e, quando faltar, a unidade que o processo
@@ -25,7 +27,7 @@ export class UnidadesResponsaveisDasFases {
    */
   readonly unidadesParaEscolha = computed(() =>
     opcoesComAsGravadas(
-      this.catalogos.opcoesDeUnidade(),
+      this.catalogoDeUnidades.opcoes(),
       (this.store.remoteSnapshot()?.cronogramaFases ?? []).flatMap((fase) =>
         fase.unidadeResponsavel === null ? [] : [fase.unidadeResponsavel],
       ),
@@ -81,8 +83,8 @@ export class UnidadesResponsaveisDasFases {
     const rotulo =
       gravada?.origemId === id ? rotuloDaUnidade(gravada) : this.rotuloNoCadastro().get(id);
     if (rotulo !== undefined) return rotulo;
-    if (this.catalogos.unidadesCarregadas()) return UNIDADE_FORA_DO_CADASTRO;
-    return this.catalogos.erroDeUnidades() === null
+    if (this.catalogoDeUnidades.carregada()) return UNIDADE_FORA_DO_CADASTRO;
+    return this.catalogoDeUnidades.erro() === null
       ? UNIDADE_EM_CARGA
       : UNIDADE_SEM_CADASTRO_CARREGADO;
   }
@@ -92,10 +94,10 @@ export class UnidadesResponsaveisDasFases {
    * unidade administradora do processo.
    */
   unidadeInicialDaFase(faseCanonicaId: string): string | null {
-    const sugerida = this.catalogos.fasePorId().get(faseCanonicaId)?.unidadeSugerida?.origemId;
+    const sugerida = this.catalogoDeFases.fasePorId().get(faseCanonicaId)?.unidadeSugerida?.origemId;
     if (
       sugerida !== undefined &&
-      this.catalogos.opcoesDeUnidade().some((opcao) => opcao.id === sugerida)
+      this.catalogoDeUnidades.opcoes().some((opcao) => opcao.id === sugerida)
     )
       return sugerida;
     return this.store.draft().identificacao.unidadeAdministradoraId || null;

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { ReactiveFormsModule } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
-import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
+import { CatalogoDeUnidadesDoCadastro } from '../catalogos/catalogo-de-unidades-do-cadastro.service';
 import { pisoDeData } from '../cronograma-form';
 import { FORMULARIO_DO_PAI } from '../formulario-do-pai';
 import type { FaseNaLinhaDoTempo } from '../servicos/formulario-do-cronograma.service';
@@ -18,7 +18,7 @@ import { UnidadesResponsaveisDasFases } from '../servicos/unidades-responsaveis-
 })
 export class DadosDaFaseComponent {
   readonly fase = input.required<FaseNaLinhaDoTempo>();
-  protected readonly catalogos = inject(CatalogosDoCronograma);
+  protected readonly catalogoDeUnidades = inject(CatalogoDeUnidadesDoCadastro);
   protected readonly unidades = inject(UnidadesResponsaveisDasFases);
   protected readonly leitura = inject(LeituraDaLinhaDoTempo);
   protected readonly pisoDeData = pisoDeData;

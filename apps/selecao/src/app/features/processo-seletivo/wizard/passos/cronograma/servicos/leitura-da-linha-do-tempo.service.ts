@@ -1,7 +1,7 @@
 import { computed, inject, Injectable } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
 
-import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
+import { CatalogoDeAtos } from '../catalogos/catalogo-de-atos.service';
 import { etapaDoFormulario, type EtapaForm, type FaseForm } from '../cronograma-form';
 import { rotuloDoPapel } from '../leitura-da-etapa';
 import { componeNota } from '../regras-da-etapa';
@@ -10,7 +10,7 @@ import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 /** O que a linha do tempo lê do formulário para mostrar: as etapas de cada fase, o que ela publica e as marcas do cabeçalho. */
 @Injectable()
 export class LeituraDaLinhaDoTempo {
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeAtos = inject(CatalogoDeAtos);
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly versaoDoFormulario = this.cronograma.versao;
 
@@ -89,7 +89,7 @@ export class LeituraDaLinhaDoTempo {
   produtosDaFase(
     grupo: FormGroup<FaseForm>,
   ): readonly { atoCodigo: string; nome: string; papel: string }[] {
-    const rotulos = this.catalogos.rotuloDoAto();
+    const rotulos = this.catalogoDeAtos.rotuloDoAto();
 
     return grupo.controls.produtos.value.map((produto) => ({
       atoCodigo: produto.atoCodigo,

@@ -39,7 +39,6 @@ import { ModeloDoFormularioComponent } from './secoes/modelo.component';
 import { ApuracaoDaIdadeComponent } from './secoes/apuracao-da-idade.component';
 import { SimulacaoDoFormularioComponent } from './secoes/simulacao.component';
 import { DocumentosDoFormularioComponent } from './documentos-do-formulario.component';
-import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { desempateSemDataDeNascimento, PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { camposSemUsoDeclarado } from './citantes-no-processo';
@@ -95,7 +94,6 @@ import {
 })
 export class FormularioPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDoCronograma);
   protected readonly dados = inject(CatalogosDoFormulario);
   /** O que o leitor de tela ouve depois de acrescentar ou remover um formulário, ou de aplicar um modelo. */
   protected readonly anuncio = signal('');

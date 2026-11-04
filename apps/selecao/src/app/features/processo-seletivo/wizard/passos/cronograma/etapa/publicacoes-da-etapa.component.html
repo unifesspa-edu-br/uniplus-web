@@ -34,7 +34,7 @@
     no mesmo ciclo do @for, e o select ainda não as conhece quando
     o valor é atribuído.
   -->
-            @for (ato of catalogos.atosVigentes(); track ato.codigo) {
+            @for (ato of catalogoDeAtos.atosVigentes(); track ato.codigo) {
               <option [value]="ato.codigo" [selected]="ato.codigo === produto.atoCodigo">
                 {{ ato.nome }}
               </option>

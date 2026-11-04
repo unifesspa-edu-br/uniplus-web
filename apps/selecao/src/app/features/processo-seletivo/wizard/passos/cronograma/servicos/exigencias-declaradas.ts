@@ -32,8 +32,15 @@ import {
   type LugarDaExigencia,
   type ProducaoDosFatos,
 } from '../../../shared/producao-dos-fatos';
-import type { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
+import type { CatalogoDeDocumentos } from '../catalogos/catalogo-de-documentos.service';
+import type { CatalogoDeFases } from '../catalogos/catalogo-de-fases.service';
+import type { CatalogoDeFatos } from '../catalogos/catalogo-de-fatos.service';
 import type { ExigenciaDeclarada } from '../conferencia-das-exigencias-declaradas';
+
+/** O que a conferência das exigências lê dos catálogos, para nomear documento, fato e fase. */
+export type CatalogosDasExigencias = Pick<CatalogoDeDocumentos, 'tiposDocumento'> &
+  Pick<CatalogoDeFatos, 'fatos'> &
+  Pick<CatalogoDeFases, 'fasePorId' | 'nomeDaFase'>;
 
 /**
  * As exigências que o rascunho declara, na forma que a conferência entende: o nome que a
@@ -42,10 +49,7 @@ import type { ExigenciaDeclarada } from '../conferencia-das-exigencias-declarada
 export function exigenciasDeclaradas(
   fases: readonly FaseDoCronograma[],
   store: Pick<ProcessoSeletivoStore, 'draft' | 'modalidadesDoProcesso'>,
-  catalogos: Pick<
-    CatalogosDoCronograma,
-    'tiposDocumento' | 'fatos' | 'fasePorId' | 'nomeDaFase'
-  >,
+  catalogos: CatalogosDasExigencias,
 ): readonly ExigenciaDeclarada[] {
   const nomePorId = new Map(catalogos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]));
   // Percorre as exigências, não os tipos de documento: a norma é declarada POR exigência,

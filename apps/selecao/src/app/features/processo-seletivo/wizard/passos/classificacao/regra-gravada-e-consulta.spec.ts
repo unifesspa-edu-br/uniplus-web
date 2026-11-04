@@ -20,7 +20,7 @@ import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service'
 import { BonusPassoComponent } from '../bonus/bonus.component';
 import { DesempatePassoComponent } from '../desempate/desempate.component';
 import { EdicaoDosCriterios } from '../desempate/edicao-dos-criterios.service';
-import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeTiposDeEtapa } from '../cronograma/catalogos/catalogo-de-tipos-de-etapa.service';
 import { EliminacaoPassoComponent } from '../eliminacao/eliminacao.component';
 import { FormulaPassoComponent } from '../formula/formula.component';
 import { LeituraDoCadastroDePesos } from './leitura-do-cadastro-de-pesos.service';
@@ -59,7 +59,7 @@ async function montar<T>(componente: Type<T>): Promise<Montagem<T>> {
       GravacaoDoProcesso,
       CatalogosDeClassificacao,
       LeituraDoCadastroDePesos,
-      { provide: CatalogosDoCronograma, useValue: { tipoEtapaPorId: signal(new Map()) } },
+      { provide: CatalogoDeTiposDeEtapa, useValue: { tipoEtapaPorId: signal(new Map()) } },
       { provide: ReleituraDoSnapshot, useValue: { reler: async () => true } },
       provideHttpClient(withInterceptors([apiResultInterceptor])),
       provideHttpClientTesting(),

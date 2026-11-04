@@ -9,7 +9,9 @@ import {
 import { rotuloDaFormaDeAvaliacao } from '../../shared/forma-de-avaliacao';
 import { decimalLido, textoDaSoma } from '../../shared/itens-de-avaliacao';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
-import type { CatalogosDoCronograma } from './catalogos-do-cronograma.service';
+import type { CatalogoDeAtos } from './catalogos/catalogo-de-atos.service';
+import type { CatalogoDeBancas } from './catalogos/catalogo-de-bancas.service';
+import type { CatalogoDeTiposDeEtapa } from './catalogos/catalogo-de-tipos-de-etapa.service';
 import type { EtapaForm } from './cronograma-form';
 import {
   etapaDeclaraNotaMaxima,
@@ -19,10 +21,10 @@ import {
 } from './declaracoes-da-etapa';
 import { caracteresAdmitidos, eliminaPorCarater, pontuaPorCarater } from './regras-da-etapa';
 
-export type CatalogosDaLeitura = Pick<
-  CatalogosDoCronograma,
-  'rotuloDoAto' | 'rotuloDoTipoEtapa' | 'bancas' | 'tipoEtapaPorId'
->;
+/** O que a consulta da etapa lê dos catálogos, para nomear ato, tipo e banca. */
+export type CatalogosDaLeitura = Pick<CatalogoDeAtos, 'rotuloDoAto'> &
+  Pick<CatalogoDeTiposDeEtapa, 'rotuloDoTipoEtapa' | 'tipoEtapaPorId'> &
+  Pick<CatalogoDeBancas, 'bancas'>;
 
 /**
  * Como a tela nomeia o papel de uma publicação. O token que o contrato venha a

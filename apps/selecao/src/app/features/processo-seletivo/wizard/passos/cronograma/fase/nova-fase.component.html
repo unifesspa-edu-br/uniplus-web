@@ -20,21 +20,21 @@
     (click)="cronograma.acrescentarFase()"
     [disabled]="
       !edicaoLiberada() ||
-      !catalogos.unidadesCarregadas() ||
+      !catalogoDeUnidades.carregada() ||
       formulario.controls.faseAAcrescentar.value === ''
     "
   >
     Acrescentar à linha do tempo
   </button>
 </div>
-@if (catalogos.erroDeUnidades(); as erroDeUnidades) {
+@if (catalogoDeUnidades.erro(); as erroDeUnidades) {
   <div class="field__erro" role="alert">
     <p>{{ erroDeUnidades }}</p>
-    <button class="btn btn--tertiary" type="button" (click)="catalogos.carregarUnidades()">
+    <button class="btn btn--tertiary" type="button" (click)="catalogoDeUnidades.recarregar()">
       Tentar novamente
     </button>
   </div>
-} @else if (!catalogos.unidadesCarregadas()) {
+} @else if (!catalogoDeUnidades.carregada()) {
   <p class="field__hint" role="status">Carregando unidades…</p>
 }
 <p class="field__hint escolher-e-acrescentar__ajuda" id="cr-nova-fase-ajuda">

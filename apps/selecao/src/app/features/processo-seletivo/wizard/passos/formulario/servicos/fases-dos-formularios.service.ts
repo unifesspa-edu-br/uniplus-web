@@ -4,7 +4,9 @@ import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverFase } from '../../../shared/descricao-da-fase';
 import { fatosParaLerOGatilho } from '../../../shared/documentos-exigidos';
-import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
+import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
+import { CatalogoDeFatos } from '../../cronograma/catalogos/catalogo-de-fatos.service';
 import type { FaseDoCronograma } from '../abas-do-formulario';
 import {
   faseEfetiva,
@@ -21,7 +23,9 @@ import {
 @Injectable()
 export class FasesDosFormularios {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
+  private readonly catalogoDeFatos = inject(CatalogoDeFatos);
 
   private readonly formularios = computed(() =>
     formulariosDoRascunho(this.store.draft().formulario),
@@ -29,7 +33,7 @@ export class FasesDosFormularios {
 
   /** As fases do cronograma, com o que decide a finalidade que cada uma atende. */
   readonly fasesDoCronograma = computed<readonly FaseDoCronograma[]>(() => {
-    const fasePorId = this.catalogos.fasePorId();
+    const fasePorId = this.catalogoDeFases.fasePorId();
     return this.store.draft().cronograma.fases.map((fase) => {
       const descricao = descreverFase(fase, fasePorId);
       return {
@@ -72,10 +76,10 @@ export class FasesDosFormularios {
 
   /** Como a lista de documentos do formulário nomeia o tipo de documento e lê o público de cada um. */
   readonly vocabularioDosDocumentos = computed(() => {
-    const tipoPorId = this.catalogos.tipoDocumentoPorId();
+    const tipoPorId = this.catalogoDeDocumentos.tipoDocumentoPorId();
     return {
       fatoPorCodigo: fatosParaLerOGatilho(
-        this.catalogos.fatos(),
+        this.catalogoDeFatos.fatos(),
         this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
         this.store.modalidadesDoProcesso(),
       ),

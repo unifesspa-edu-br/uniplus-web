@@ -17,7 +17,7 @@ import { AnexoEditalComponent } from '../../shared/anexo-edital/anexo-edital.com
 import { AnexosDoEditalComponent } from '../../shared/anexos-do-edital/anexos-do-edital.component';
 import { documentosPorFase } from '../../shared/documentos-exigidos';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
-import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
 import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
 import { confirmacaoDaPublicacao } from './confirmacao-da-publicacao';
 import { ProntidaoDaPublicacao } from './prontidao-da-publicacao.service';
@@ -69,7 +69,7 @@ export class RevisaoPassoComponent {
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
   protected readonly publicacao = inject(PublicacaoDoProcesso);
   private readonly permissoes = inject(PermissoesService);
-  private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
 
   protected readonly permissaoDePublicar = PERMISSAO.selecao.processosPublicar;
 
@@ -85,7 +85,7 @@ export class RevisaoPassoComponent {
    */
   protected readonly documentosDasFases = computed(() => {
     const { documentos, cronograma } = this.store.draft();
-    const nomeDaFase = this.catalogosDoCronograma.nomeDaFase();
+    const nomeDaFase = this.catalogoDeFases.nomeDaFase();
     return documentosPorFase(
       documentos,
       cronograma.fases.map((fase) => fase.codigo),
@@ -147,7 +147,7 @@ export class RevisaoPassoComponent {
     return confirmacaoDaPublicacao(
       this.store.draft(),
       this.prontidao.tiposAto(),
-      this.catalogosDoCronograma.fasePorId(),
+      this.catalogoDeFases.fasePorId(),
     );
   }
 }

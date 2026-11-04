@@ -2,7 +2,7 @@ import { computed, effect, inject, Injectable, untracked } from '@angular/core';
 import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { comCamposQueAsExigenciasPressupoem } from '../campos-pressupostos-da-inscricao';
 import { quemCitaNoProcesso, remocoesTravadasPor } from '../citantes-no-processo';
 import { fatosColetadosPor } from '../formulario-do-processo';
@@ -16,7 +16,7 @@ import { CatalogosDoFormulario } from './catalogos-do-formulario.service';
 @Injectable()
 export class CamposPressupostosDoFormulario {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
   private readonly dados = inject(CatalogosDoFormulario);
 
   constructor() {
@@ -34,7 +34,7 @@ export class CamposPressupostosDoFormulario {
   /** Quem, no processo, cita cada fato — a fonte única do que entra sozinho e do que não sai. */
   readonly citantes = computed(() => {
     const draft = this.store.draft();
-    const tipoDocumento = this.catalogos.tipoDocumentoPorId();
+    const tipoDocumento = this.catalogoDeDocumentos.tipoDocumentoPorId();
     const nomeDoFato = new Map(this.dados.catalogo().map((fato) => [fato.codigo, fato.nome]));
     return quemCitaNoProcesso(
       {

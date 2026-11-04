@@ -13,7 +13,7 @@ import {
 } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
-import { CatalogosDoCronograma } from '../passos/cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeFatos } from '../passos/cronograma/catalogos/catalogo-de-fatos.service';
 import { comCamposQueAsExigenciasPressupoem } from '../passos/formulario/campos-pressupostos-da-inscricao';
 import {
   fatosCitadosPelaDerivacao,
@@ -83,7 +83,7 @@ export class GravacaoDosCamposPressupostos {
   private readonly cadastro = inject(CadastroInicial);
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly problemI18n = inject(ProblemI18nService);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeFatos = inject(CatalogoDeFatos);
 
   /** O formulário de inscrição gravado já coleta todos os fatos citados. */
   coletaTudo(servidor: ProcessoSeletivoDto, citados: ReadonlySet<string>): boolean {
@@ -210,7 +210,7 @@ export class GravacaoDosCamposPressupostos {
     return (conteudo) =>
       comCamposQueAsExigenciasPressupoem(conteudo, {
         citados,
-        catalogo: this.catalogos.fatos(),
+        catalogo: this.catalogoDeFatos.fatos(),
         postosPelasExigencias: new Set(),
         fatosDeOutrasFinalidades: outras,
       });
@@ -245,12 +245,12 @@ export class GravacaoDosCamposPressupostos {
     const naoColetados = [...citados].filter((codigo) => !coletados.has(codigo));
     if (naoColetados.length === 0) return null;
 
-    if (this.catalogos.carregando() || this.catalogos.erro() !== null) {
-      this.catalogos.carregar();
+    if (this.catalogoDeFatos.carregando() || this.catalogoDeFatos.erro() !== null) {
+      this.catalogoDeFatos.carregar();
       return 'O catálogo de fatos do candidato ainda não carregou, e sem ele não é possível pôr no formulário de inscrição as perguntas de que o processo depende. Grave de novo em instantes.';
     }
 
-    const conhecidos = new Set(this.catalogos.fatos().map((fato) => fato.codigo));
+    const conhecidos = new Set(this.catalogoDeFatos.fatos().map((fato) => fato.codigo));
     const desconhecidos = naoColetados.filter((codigo) => !conhecidos.has(codigo));
     if (desconhecidos.length === 0) return null;
     return `O catálogo de fatos do candidato não tem ${desconhecidos.join(', ')}, de que o processo depende, e não há como perguntar isso no formulário de inscrição. Avise o suporte.`;

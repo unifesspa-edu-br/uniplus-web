@@ -37,7 +37,7 @@ import { TipoProcessoPassoComponent } from './wizard/passos/tipo-processo/tipo-p
 import { IdentificacaoPassoComponent } from './wizard/passos/identificacao/identificacao.component';
 import { PagamentoPassoComponent } from './wizard/passos/pagamento/pagamento.component';
 import { VagasPassoComponent } from './wizard/passos/vagas/vagas.component';
-import { CatalogosDoCronograma } from './wizard/passos/cronograma/catalogos-do-cronograma.service';
+import { CATALOGOS_DO_CRONOGRAMA } from './wizard/passos/cronograma/catalogos/catalogos-do-cronograma';
 import { CronogramaPassoComponent } from './wizard/passos/cronograma/cronograma.component';
 import { FormularioPassoComponent } from './wizard/passos/formulario/formulario.component';
 import { LeituraDoCadastroDePesos } from './wizard/passos/classificacao/leitura-do-cadastro-de-pesos.service';
@@ -87,7 +87,7 @@ import {
     GravacaoDoProcesso,
     CadastroInicial,
     EnvioDoEdital,
-    CatalogosDoCronograma,
+    ...CATALOGOS_DO_CRONOGRAMA,
     GravacaoDosCamposPressupostos,
     CatalogosDeClassificacao,
     LeituraDoCadastroDePesos,

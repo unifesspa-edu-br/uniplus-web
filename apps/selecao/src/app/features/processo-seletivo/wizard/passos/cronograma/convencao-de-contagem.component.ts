@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { FormsModule } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
-import { CatalogosDoCronograma } from './catalogos-do-cronograma.service';
+import { CatalogoDeRegras } from './catalogos/catalogo-de-regras.service';
 import { baseLegalDaConvencao, invariantesDaConvencao } from './convencao-de-contagem';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
 import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service';
@@ -16,7 +16,7 @@ import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service'
   styles: ':host { display: block; }',
 })
 export class ConvencaoDeContagemComponent {
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeRegras = inject(CatalogoDeRegras);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly gravacao = inject(GravacaoDoCronograma);
   protected readonly edicaoLiberada = this.cronograma.edicaoLiberada;
@@ -30,7 +30,7 @@ export class ConvencaoDeContagemComponent {
    * escrito aqui: seria vocabulário institucional duplicado no frontend.
    */
   readonly regrasDeContagem = computed(() =>
-    this.catalogos
+    this.catalogoDeRegras
       .regrasContagem()
       .map((regra) => ({ codigo: regra.codigo, versao: regra.versao, baseLegal: regra.baseLegal })),
   );
@@ -38,7 +38,7 @@ export class ConvencaoDeContagemComponent {
   readonly invariantesDaContagem = computed<readonly string[]>(() => {
     this.cronograma.versao();
     return invariantesDaConvencao(
-      this.catalogos.regrasContagem(),
+      this.catalogoDeRegras.regrasContagem(),
       this.cronograma.formulario.controls.algoritmoContagemCodigo.value,
     );
   });
@@ -46,7 +46,7 @@ export class ConvencaoDeContagemComponent {
   readonly baseLegalDaContagem = computed<string>(() => {
     this.cronograma.versao();
     return baseLegalDaConvencao(
-      this.catalogos.regrasContagem(),
+      this.catalogoDeRegras.regrasContagem(),
       this.cronograma.formulario.controls.algoritmoContagemCodigo.value,
     );
   });

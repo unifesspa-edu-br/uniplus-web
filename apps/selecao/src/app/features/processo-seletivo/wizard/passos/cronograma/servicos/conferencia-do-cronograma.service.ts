@@ -3,11 +3,16 @@ import { computed, inject, Injectable } from '@angular/core';
 import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { gruposSemNormaResolvida } from '../../../shared/exigencias/consulta-das-exigencias';
-import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
+import { CatalogoDeAtos } from '../catalogos/catalogo-de-atos.service';
+import { CatalogoDeBancas } from '../catalogos/catalogo-de-bancas.service';
+import { CatalogoDeDocumentos } from '../catalogos/catalogo-de-documentos.service';
+import { CatalogoDeFases } from '../catalogos/catalogo-de-fases.service';
+import { CatalogoDeFatos } from '../catalogos/catalogo-de-fatos.service';
+import { CatalogoDeTiposDeEtapa } from '../catalogos/catalogo-de-tipos-de-etapa.service';
 import { avisosDosGrupos, type GrupoDeclarado } from '../conferencia-das-exigencias-declaradas';
 import { problemasDoCronograma } from '../cronograma-do-certame';
 import { faseDoFormulario } from '../cronograma-form';
-import { exigenciasDeclaradas } from './exigencias-declaradas';
+import { exigenciasDeclaradas, type CatalogosDasExigencias } from './exigencias-declaradas';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 import { AGUARDA_RELEITURA, ReleituraDasEtapas } from './releitura-das-etapas.service';
 
@@ -15,7 +20,12 @@ import { AGUARDA_RELEITURA, ReleituraDasEtapas } from './releitura-das-etapas.se
 @Injectable()
 export class ConferenciaDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeAtos = inject(CatalogoDeAtos);
+  private readonly catalogoDeBancas = inject(CatalogoDeBancas);
+  private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
+  private readonly catalogoDeFases = inject(CatalogoDeFases);
+  private readonly catalogoDeFatos = inject(CatalogoDeFatos);
+  private readonly catalogoDeTiposDeEtapa = inject(CatalogoDeTiposDeEtapa);
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
 
@@ -25,7 +35,7 @@ export class ConferenciaDoCronograma {
    * resultado, e é melhor dizer isso aqui do que no último passo.
    */
   private readonly gruposDeclarados = computed<readonly GrupoDeclarado[]>(() => {
-    const nomePorId = new Map(this.catalogos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]));
+    const nomePorId = new Map(this.catalogoDeDocumentos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]));
 
     return gruposSemNormaResolvida(this.store.draft().documentos).map((grupo) => ({
       decideResultado: true,
@@ -34,11 +44,18 @@ export class ConferenciaDoCronograma {
     }));
   });
 
+  private readonly catalogosDasExigencias: CatalogosDasExigencias = {
+    tiposDocumento: this.catalogoDeDocumentos.tiposDocumento,
+    fatos: this.catalogoDeFatos.fatos,
+    fasePorId: this.catalogoDeFases.fasePorId,
+    nomeDaFase: this.catalogoDeFases.nomeDaFase,
+  };
+
   private readonly exigenciasDeclaradas = computed(() =>
     exigenciasDeclaradas(
       this.cronograma.fases.controls.map(faseDoFormulario),
       this.store,
-      this.catalogos,
+      this.catalogosDasExigencias,
     ),
   );
 
@@ -48,11 +65,11 @@ export class ConferenciaDoCronograma {
     return problemasDoCronograma(
       this.cronograma.fases.controls.map(faseDoFormulario),
       this.cronograma.etapasParaEnvio(),
-      this.catalogos.fasePorId(),
-      this.catalogos.precedencias(),
-      this.catalogos.atoPorCodigo(),
-      (tipoBancaId) => this.catalogos.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
-      (tipoEtapaOrigemId) => this.catalogos.tipoEtapaPorId().get(tipoEtapaOrigemId),
+      this.catalogoDeFases.fasePorId(),
+      this.catalogoDeFases.precedencias(),
+      this.catalogoDeAtos.atoPorCodigo(),
+      (tipoBancaId) => this.catalogoDeBancas.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
+      (tipoEtapaOrigemId) => this.catalogoDeTiposDeEtapa.tipoEtapaPorId().get(tipoEtapaOrigemId),
       this.exigenciasDeclaradas(),
     );
   });

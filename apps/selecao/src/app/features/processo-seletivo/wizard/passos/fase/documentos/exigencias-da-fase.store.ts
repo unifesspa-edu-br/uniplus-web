@@ -7,7 +7,6 @@ import {
   type ExigenciasDoRascunho,
 } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { finalidadesDaFase } from '../../../shared/descricao-da-fase';
 import {
   comAlcanceDeTodasAsFases,
   recortadoPorFase,
@@ -31,7 +30,7 @@ import {
   semAExigencia,
 } from '../../../shared/exigencias/exigencias-documentais';
 import { finalidadeDaExigencia } from '../../../shared/exigencias/formulario-da-exigencia';
-import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
 /**
@@ -42,7 +41,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 @Injectable()
 export class ExigenciasDaFaseStore {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly catalogos = inject(CatalogosDoCronograma);
+  private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly faseDoRascunho = this.faseEmEdicao.faseDoRascunho;
   private readonly fasesDoCronograma = this.faseEmEdicao.fasesDoCronograma;
@@ -137,7 +136,7 @@ export class ExigenciasDaFaseStore {
       ...exigenciasDaFase(exigencias, fase.codigo).map((e) => e.tipoDocumentoId),
       ...exigencias.emTodasAsFases,
     ]);
-    const doCatalogo = this.catalogos
+    const doCatalogo = this.catalogoDeDocumentos
       .documentosPorCategoria()
       .flatMap((grupo) => grupo.docs)
       .filter((doc) => declarados.has(doc.id));
@@ -199,7 +198,7 @@ export class ExigenciasDaFaseStore {
     if (modelo !== undefined)
       return { ...modelo, faseCodigo: codigo, etapaId: null, finalidade: null };
 
-    return exigenciaNova(id, codigo, this.catalogos.tipoDocumentoPorId().get(id));
+    return exigenciaNova(id, codigo, this.catalogoDeDocumentos.tipoDocumentoPorId().get(id));
   }
 
   /**
@@ -220,14 +219,7 @@ export class ExigenciasDaFaseStore {
     return this.exigenciaDoDocumento(id).etapaId ?? '';
   }
 
-  /**
-   * Os formulários que se respondem na fase aberta — onde o documento pode ser apresentado. Vazio
-   * na fase que não responde formulário nenhum, e aí não há o que escolher.
-   */
-  readonly finalidadesDaFaseAberta = computed<readonly string[]>(() => {
-    const fase = this.faseDoRascunho();
-    return fase === null ? [] : finalidadesDaFase(fase, this.catalogos.fasePorId());
-  });
+  readonly finalidadesDaFaseAberta = this.faseEmEdicao.finalidadesDaFaseAberta;
 
   /** O formulário em que o documento é apresentado; `null` enquanto não está definido. */
   finalidadeDoDocumento(id: string): string | null {
@@ -249,7 +241,7 @@ export class ExigenciasDaFaseStore {
    * exigência recusaria na entrega.
    */
   formatosForaDoContrato(id: string): readonly string[] {
-    const tipo = this.catalogos.tipoDocumentoPorId().get(id);
+    const tipo = this.catalogoDeDocumentos.tipoDocumentoPorId().get(id);
     return formatosDeclarados(tipo?.formatosAceitos).naoExpressos;
   }
 
@@ -316,7 +308,7 @@ export class ExigenciasDaFaseStore {
       'documentos',
       comExigencia(
         exigencias,
-        exigenciaNova(id, fase.codigo, this.catalogos.tipoDocumentoPorId().get(id)),
+        exigenciaNova(id, fase.codigo, this.catalogoDeDocumentos.tipoDocumentoPorId().get(id)),
       ),
     );
   }
@@ -348,7 +340,7 @@ export class ExigenciasDaFaseStore {
       faseAberta: this.faseDoRascunho()?.codigo ?? fases[0] ?? '',
       modelo: this.exigenciaDoDocumento(id),
       repeticao: this.repeticaoDeclarada(id),
-      restricao: this.catalogos.tipoDocumentoPorId().get(id),
+      restricao: this.catalogoDeDocumentos.tipoDocumentoPorId().get(id),
     };
   }
 

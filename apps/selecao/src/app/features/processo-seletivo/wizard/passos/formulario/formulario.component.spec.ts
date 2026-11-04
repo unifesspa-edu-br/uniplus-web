@@ -24,7 +24,8 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-documentais';
-import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
+import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
+import { CATALOGOS_DO_CRONOGRAMA } from '../cronograma/catalogos/catalogos-do-cronograma';
 import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { FormularioPassoComponent } from './formulario.component';
@@ -171,7 +172,7 @@ describe('FormularioPassoComponent', () => {
         ProcessoSeletivoStore,
         CadastroInicial,
         GravacaoDoProcesso,
-        CatalogosDoCronograma,
+        ...CATALOGOS_DO_CRONOGRAMA,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -244,7 +245,7 @@ describe('FormularioPassoComponent', () => {
 
     /** O processo publicado: os passos mostram o que está gravado como texto. */
     function emConsulta(): void {
-      TestBed.inject(CatalogosDoCronograma).fatos.set([PCD_NO_CATALOGO] as never);
+      TestBed.inject(CatalogoDeFatos).fatos.set([PCD_NO_CATALOGO] as never);
       store.patchObjectSection('formulario', {
         conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS),
       });

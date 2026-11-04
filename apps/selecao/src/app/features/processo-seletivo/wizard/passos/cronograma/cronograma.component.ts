@@ -12,7 +12,7 @@ import { CabecalhoDaFaseComponent } from './fase/cabecalho-da-fase.component';
 import { NovaFaseComponent } from './fase/nova-fase.component';
 import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component';
 import { FaseEmConsultaComponent } from './consulta/fase-em-consulta.component';
-import { CatalogosDoCronograma } from './catalogos-do-cronograma.service';
+import { SituacaoDosCatalogosDoCronograma } from './catalogos/situacao-dos-catalogos-do-cronograma.service';
 import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
 import { EdicaoDaEtapa } from './servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
@@ -58,7 +58,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
 })
 export class CronogramaPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  readonly catalogos = inject(CatalogosDoCronograma);
+  readonly situacao = inject(SituacaoDosCatalogosDoCronograma);
   protected readonly releituraDasEtapas = inject(ReleituraDasEtapas);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly conferencia = inject(ConferenciaDoCronograma);
@@ -78,7 +78,7 @@ export class CronogramaPassoComponent {
   private readonly versaoDoFormulario = this.cronograma.versao;
 
   constructor() {
-    this.catalogos.carregar();
+    this.situacao.carregar();
   }
 
   readonly convencaoDeContagemLida = computed(() => {
