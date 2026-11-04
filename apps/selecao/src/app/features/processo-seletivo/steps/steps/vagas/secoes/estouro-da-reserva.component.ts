@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { CatalogosDeDistribuicaoService } from '../catalogos-de-distribuicao.service';
-import { SimulacaoDoQuadroService } from '../servicos/simulacao-do-quadro.service';
+import { SimulacaoDoQuadro } from '../servicos/simulacao-do-quadro.service';
 
 /** As ofertas em que a reserva final passou do percentual declarado, e por quê. */
 @Component({
@@ -11,5 +11,5 @@ import { SimulacaoDoQuadroService } from '../servicos/simulacao-do-quadro.servic
 })
 export class EstouroDaReservaComponent {
   protected readonly catalogos = inject(CatalogosDeDistribuicaoService);
-  protected readonly simulacao = inject(SimulacaoDoQuadroService);
+  protected readonly simulacao = inject(SimulacaoDoQuadro);
 }

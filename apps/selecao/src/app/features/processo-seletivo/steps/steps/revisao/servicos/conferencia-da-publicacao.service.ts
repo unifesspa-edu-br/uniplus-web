@@ -25,7 +25,7 @@ function recusado(mensagem: string): StepValidation {
  * desatualizado, e mostrar os grupos antigos ao lado de um banner verde contradiria a própria tela.
  */
 @Injectable()
-export class ConferenciaDaPublicacaoService {
+export class ConferenciaDaPublicacao {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly preflight = inject(PreflightDaPublicacaoService);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);

@@ -9,9 +9,9 @@ import { of } from 'rxjs';
 import { DistribuicaoDeVagas, ModalidadeGravada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CatalogosDeDistribuicaoService } from './catalogos-de-distribuicao.service';
-import { ConferenciaDoQuadroService } from './servicos/conferencia-do-quadro.service';
+import { ConferenciaDoQuadro } from './servicos/conferencia-do-quadro.service';
 import { EstadoDoPassoDeVagas } from './servicos/estado-do-passo-de-vagas';
-import { SimulacaoDoQuadroService } from './servicos/simulacao-do-quadro.service';
+import { SimulacaoDoQuadro } from './servicos/simulacao-do-quadro.service';
 import { VagasStepComponent } from './vagas.component';
 
 export const BASE = 'http://localhost:5000';
@@ -285,8 +285,8 @@ export const REGRA_PSIQ = {
 
 export interface ServicosDasVagas {
   readonly estado: EstadoDoPassoDeVagas;
-  readonly simulacao: SimulacaoDoQuadroService;
-  readonly conferencia: ConferenciaDoQuadroService;
+  readonly simulacao: SimulacaoDoQuadro;
+  readonly conferencia: ConferenciaDoQuadro;
   readonly catalogos: CatalogosDeDistribuicaoService;
 }
 
@@ -294,8 +294,8 @@ export function servicosDe(fixture: ComponentFixture<VagasStepComponent>): Servi
   const injetor = fixture.debugElement.injector;
   return {
     estado: injetor.get(EstadoDoPassoDeVagas),
-    simulacao: injetor.get(SimulacaoDoQuadroService),
-    conferencia: injetor.get(ConferenciaDoQuadroService),
+    simulacao: injetor.get(SimulacaoDoQuadro),
+    conferencia: injetor.get(ConferenciaDoQuadro),
     catalogos: injetor.get(CatalogosDeDistribuicaoService),
   };
 }

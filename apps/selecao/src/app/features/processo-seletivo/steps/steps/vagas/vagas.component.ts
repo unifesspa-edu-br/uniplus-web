@@ -27,10 +27,10 @@ import {
 } from './secoes/regra-da-distribuicao.component';
 import { RegraDeAjusteComponent } from './secoes/regra-de-ajuste.component';
 import { TabelaDoQuadroComponent } from './secoes/tabela-do-quadro.component';
-import { ConferenciaDoQuadroService } from './servicos/conferencia-do-quadro.service';
+import { ConferenciaDoQuadro } from './servicos/conferencia-do-quadro.service';
 import { EstadoDoPassoDeVagas } from './servicos/estado-do-passo-de-vagas';
 import { GravacaoDasVagas } from './servicos/gravacao-das-vagas.service';
-import { SimulacaoDoQuadroService } from './servicos/simulacao-do-quadro.service';
+import { SimulacaoDoQuadro } from './servicos/simulacao-do-quadro.service';
 import { totalDeVagasInformadas } from './totais-do-quadro';
 
 /**
@@ -70,8 +70,8 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
   providers: [
     CatalogosDeDistribuicaoService,
     EstadoDoPassoDeVagas,
-    SimulacaoDoQuadroService,
-    ConferenciaDoQuadroService,
+    SimulacaoDoQuadro,
+    ConferenciaDoQuadro,
     GravacaoDasVagas,
     provePassoDoWizard(VagasStepComponent),
   ],
@@ -80,8 +80,8 @@ export class VagasStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeDistribuicaoService);
   protected readonly estado = inject(EstadoDoPassoDeVagas);
-  protected readonly simulacao = inject(SimulacaoDoQuadroService);
-  protected readonly conferencia = inject(ConferenciaDoQuadroService);
+  protected readonly simulacao = inject(SimulacaoDoQuadro);
+  protected readonly conferencia = inject(ConferenciaDoQuadro);
   private readonly gravacao = inject(GravacaoDasVagas);
 
   /**

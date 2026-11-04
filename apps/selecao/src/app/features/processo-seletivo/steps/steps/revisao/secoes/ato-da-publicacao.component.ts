@@ -16,7 +16,7 @@ import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cron
 import { itensDoAto, rotuloDoTipoDeAto } from '../itens-do-ato';
 import { janelaDaInscricao, temFaseDeColetaInscricao } from '../periodo-de-inscricao';
 import { PreflightDaPublicacaoService } from '../preflight-da-publicacao.service';
-import { ConferenciaDaPublicacaoService } from '../servicos/conferencia-da-publicacao.service';
+import { ConferenciaDaPublicacao } from '../servicos/conferencia-da-publicacao.service';
 import { PublicacaoDoProcessoService } from '../servicos/publicacao-do-processo.service';
 
 /**
@@ -40,7 +40,7 @@ import { PublicacaoDoProcessoService } from '../servicos/publicacao-do-processo.
 export class AtoDaPublicacaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
   protected readonly preflight = inject(PreflightDaPublicacaoService);
-  protected readonly conferencia = inject(ConferenciaDaPublicacaoService);
+  protected readonly conferencia = inject(ConferenciaDaPublicacao);
   protected readonly publicacao = inject(PublicacaoDoProcessoService);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
   private readonly dataBr = new DateBrPipe();

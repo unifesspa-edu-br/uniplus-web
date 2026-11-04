@@ -3,7 +3,7 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { ehEnderecoNavegavel } from '../endereco-navegavel';
 import { PreflightDaPublicacaoService } from '../preflight-da-publicacao.service';
-import { ConferenciaDaPublicacaoService } from '../servicos/conferencia-da-publicacao.service';
+import { ConferenciaDaPublicacao } from '../servicos/conferencia-da-publicacao.service';
 
 /** A conformidade legal da publicação: as obrigatoriedades reprovadas, com a norma que as reprovou. */
 @Component({
@@ -19,7 +19,7 @@ import { ConferenciaDaPublicacaoService } from '../servicos/conferencia-da-publi
 })
 export class ConformidadeLegalComponent {
   protected readonly preflight = inject(PreflightDaPublicacaoService);
-  protected readonly conferencia = inject(ConferenciaDaPublicacaoService);
+  protected readonly conferencia = inject(ConferenciaDaPublicacao);
 
   protected readonly ehEnderecoNavegavel = ehEnderecoNavegavel;
 }

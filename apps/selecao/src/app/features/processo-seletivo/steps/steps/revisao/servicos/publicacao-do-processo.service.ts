@@ -14,7 +14,7 @@ import {
 } from '../../../shared/gravacao/gravacao-no-passo';
 import { CatalogosDoCronogramaService } from '../../cronograma/catalogos-do-cronograma.service';
 import { comoComandoDePublicacao } from '../comando-de-publicacao';
-import { ConferenciaDaPublicacaoService } from './conferencia-da-publicacao.service';
+import { ConferenciaDaPublicacao } from './conferencia-da-publicacao.service';
 
 /**
  * O ato vigente de um processo já publicado. A tela o lê do servidor ao abrir, porque o
@@ -39,7 +39,7 @@ function recusado(mensagem: string): StepValidation {
 @Injectable()
 export class PublicacaoDoProcessoService {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly conferencia = inject(ConferenciaDaPublicacaoService);
+  private readonly conferencia = inject(ConferenciaDaPublicacao);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly atos = inject(AtosApi);
   private readonly problemI18n = inject(ProblemI18nService);

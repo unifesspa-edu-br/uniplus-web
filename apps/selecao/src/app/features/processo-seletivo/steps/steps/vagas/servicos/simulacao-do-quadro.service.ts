@@ -16,7 +16,7 @@ import { EstadoDoPassoDeVagas } from './estado-do-passo-de-vagas';
  * implementações da mesma norma.
  */
 @Injectable()
-export class SimulacaoDoQuadroService {
+export class SimulacaoDoQuadro {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly estado = inject(EstadoDoPassoDeVagas);
   private readonly vagasApi = inject(VagasDoProcessoApi);

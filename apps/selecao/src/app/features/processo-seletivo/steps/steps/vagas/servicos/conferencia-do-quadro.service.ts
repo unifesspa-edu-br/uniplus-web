@@ -15,7 +15,7 @@ import { EstadoDoPassoDeVagas } from './estado-do-passo-de-vagas';
 
 /** O que a conferência diz do quadro: por que ele ainda não pode ser gravado. */
 @Injectable()
-export class ConferenciaDoQuadroService {
+export class ConferenciaDoQuadro {
   private readonly estado = inject(EstadoDoPassoDeVagas);
   private readonly catalogos = inject(CatalogosDeDistribuicaoService);
 
