@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
-import {} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { StepValidation } from '../../processo-seletivo.models';

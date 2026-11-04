@@ -1,7 +1,4 @@
-import {} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
-
-import {} from '../../processo-seletivo.models';
 
 import {
   RESOLUCAO,

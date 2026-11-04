@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injector } from '@angular/core';
-import {} from '@uniplus/shared-ui/components';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 
 import { CriterioDesempateConfigurado, StepValidation } from '../../processo-seletivo.models';

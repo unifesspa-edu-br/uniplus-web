@@ -1,4 +1,3 @@
-import {} from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { EtapaPontuada } from '../../processo-seletivo.models';

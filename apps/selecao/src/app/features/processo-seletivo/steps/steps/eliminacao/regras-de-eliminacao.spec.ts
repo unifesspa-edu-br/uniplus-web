@@ -1,8 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import {} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import {} from '../../processo-seletivo.models';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 
 import {

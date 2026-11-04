@@ -15,7 +15,6 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import {} from '../classificacao/edicoes-do-enem';
 import {
   classificacaoUsaFormulaLocal,
   divisorDaMediaValido,

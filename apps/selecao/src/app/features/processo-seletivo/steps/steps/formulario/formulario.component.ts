@@ -8,7 +8,6 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
-import {} from '@uniplus/shared-core/http';
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
   BUSCA_DE_MUNICIPIOS,
@@ -102,7 +101,6 @@ export class FormularioStepComponent {
   protected readonly remocao = inject(RemocaoDoFormularioService);
   protected readonly aplicacao = inject(AplicacaoDeModeloService);
   private readonly gravacao = inject(GravacaoDosFormulariosService);
-  private readonly leitura = inject(LeituraDoProcessoNoFormularioService);
   protected readonly fases = inject(FasesDosFormulariosService);
   protected readonly campos = inject(CamposPressupostosDoFormularioService);
   private readonly injector = inject(Injector);
