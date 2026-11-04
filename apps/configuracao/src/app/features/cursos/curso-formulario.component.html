@@ -1,0 +1,161 @@
+<ui-drawer
+  class="cfg-form-drawer"
+  [(visible)]="formulario.aberto"
+  [heading]="formulario.titulo()"
+  ariaLabel="Formulário de curso"
+  position="right"
+>
+  <form
+    [formGroup]="formulario.form"
+    id="cfg-curso-form"
+    (ngSubmit)="formulario.salvar()"
+    novalidate
+    class="cfg-form"
+  >
+    @if (formulario.erro()) {
+      <ui-alert variant="danger" heading="Não foi possível salvar">{{
+        formulario.erro()
+      }}</ui-alert>
+    }
+    <ui-alert variant="info" [dynamic]="false" heading="Curso é a matriz curricular pura">
+      Código e-MEC, local, unidade ofertante, programa, formato, regime e turnos pertencem à Oferta
+      de Curso, não ao Curso.
+    </ui-alert>
+    <section aria-labelledby="cfg-curso-identificacao">
+      <h3 id="cfg-curso-identificacao" class="form-section__title">Dados curriculares</h3>
+      <div class="form-grid form-grid--1col">
+        <label class="field" [class.is-error]="formulario.erroDoCampo('codigo')">
+          <span class="field__label is-required">Código</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="codigo"
+            [attr.aria-invalid]="formulario.erroDoCampo('codigo') ? 'true' : null"
+          />
+          <span class="field__hint">
+            Chave curricular do curso. Diferente do código e-MEC (que pertence à oferta).
+          </span>
+          @if (formulario.erroDoCampo('codigo')) {
+            <span class="field__error">{{ formulario.erroDoCampo('codigo') }}</span>
+          }
+        </label>
+        <label class="field" [class.is-error]="formulario.erroDoCampo('nome')">
+          <span class="field__label is-required">Nome</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="nome"
+            [attr.aria-invalid]="formulario.erroDoCampo('nome') ? 'true' : null"
+          />
+          @if (formulario.erroDoCampo('nome')) {
+            <span class="field__error">{{ formulario.erroDoCampo('nome') }}</span>
+          }
+        </label>
+        <label class="field" [class.is-error]="formulario.erroDoCampo('grau')">
+          <span class="field__label is-required">Grau</span>
+          <input
+            class="input"
+            type="text"
+            list="cfg-curso-graus-sugestoes"
+            formControlName="grau"
+            [attr.aria-invalid]="formulario.erroDoCampo('grau') ? 'true' : null"
+          />
+          <datalist id="cfg-curso-graus-sugestoes">
+            <option value="Bacharelado"></option>
+            <option value="Licenciatura"></option>
+            <option value="Tecnólogo"></option>
+            <option value="Especialização"></option>
+          </datalist>
+          <span class="field__hint">Titulação conferida pelo curso.</span>
+          @if (formulario.erroDoCampo('grau')) {
+            <span class="field__error">{{ formulario.erroDoCampo('grau') }}</span>
+          }
+        </label>
+        <label class="field" [class.is-error]="formulario.erroDoCampo('nivelEnsino')">
+          <span class="field__label is-required">Nível de ensino</span>
+          <input
+            class="input"
+            type="text"
+            list="cfg-curso-niveis-sugestoes"
+            formControlName="nivelEnsino"
+            [attr.aria-invalid]="formulario.erroDoCampo('nivelEnsino') ? 'true' : null"
+          />
+          <datalist id="cfg-curso-niveis-sugestoes">
+            <option value="Graduação"></option>
+            <option value="Mestrado"></option>
+            <option value="Doutorado"></option>
+            <option value="Técnico"></option>
+          </datalist>
+          <span class="field__hint">Etapa de ensino — independente do grau.</span>
+          @if (formulario.erroDoCampo('nivelEnsino')) {
+            <span class="field__error">{{ formulario.erroDoCampo('nivelEnsino') }}</span>
+          }
+        </label>
+        <!-- Só com o formulário aberto: a carga de fundo que falha não vira alerta
+             escondido no formulário fechado. -->
+        @if (formulario.aberto() && gruposAreaEnem.falhou()) {
+          <cfg-alerta-nova-tentativa
+            variante="warning"
+            titulo="Grupos de área do ENEM não carregados"
+            [mensagem]="formulario.mensagemFalhaGrupos()"
+            [pendente]="gruposAreaEnem.pendente()"
+            [tentativasSemSucesso]="gruposAreaEnem.tentativasSemSucesso()"
+            idBotao="cfg-curso-grupos-tentar"
+            idMensagem="cfg-curso-grupos-falha"
+            (tentar)="formulario.tentarCarregarGrupos()"
+          />
+        }
+        <label class="field" [class.is-error]="formulario.erroDoCampo('grupoAreaEnem')">
+          <span class="field__label">Grupo de área do ENEM</span>
+          <select
+            id="cfg-curso-grupo-area-enem"
+            class="select"
+            formControlName="grupoAreaEnem"
+            [attr.aria-busy]="gruposAreaEnem.pendente() ? 'true' : null"
+            [attr.aria-invalid]="formulario.erroDoCampo('grupoAreaEnem') ? 'true' : null"
+            [attr.aria-describedby]="formulario.descricaoDoGrupo()"
+          >
+            <option value="">Não classificado</option>
+            @if (formulario.grupoForaDasOpcoes(); as grupoAtual) {
+              <option [value]="grupoAtual.codigo">{{ grupoAtual.rotulo }}</option>
+            }
+            @for (grupo of gruposAreaEnem.opcoes(); track grupo.codigo) {
+              <option [value]="grupo.codigo">{{ grupo.rotulo }}</option>
+            }
+          </select>
+          <span class="field__hint">
+            Quando presente, liga ao cadastro de pesos por grupo do ENEM.
+          </span>
+          @if (formulario.erroDoCampo('grupoAreaEnem')) {
+            <span class="field__error" id="cfg-curso-grupo-erro" role="alert">{{
+              formulario.erroDoCampo('grupoAreaEnem')
+            }}</span>
+          }
+        </label>
+      </div>
+    </section>
+  </form>
+
+  <div class="cfg-form-footer">
+    <button type="button" class="btn btn--tertiary btn--rect" (click)="formulario.fechar()">
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-curso-form"
+      class="btn btn--primary"
+      [disabled]="store.gravando()"
+    >
+      @if (store.gravando()) {
+        <ui-spinner size="sm" />
+      }
+      {{
+        store.gravando()
+          ? 'Salvando...'
+          : formulario.modo() === 'criar'
+            ? 'Criar curso'
+            : 'Salvar curso'
+      }}
+    </button>
+  </div>
+</ui-drawer>

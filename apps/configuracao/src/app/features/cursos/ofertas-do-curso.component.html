@@ -1,0 +1,70 @@
+<ui-drawer
+  class="cfg-detail-drawer"
+  [(visible)]="ofertas.aberto"
+  [heading]="ofertas.titulo()"
+  ariaLabel="Ofertas de curso do curso selecionado"
+  position="right"
+  (closed)="ofertas.aoFechar()"
+>
+  @if (ofertas.bloqueio()) {
+    <ui-alert variant="danger" heading="Remoção bloqueada">
+      {{ ofertas.bloqueio() }} Remova as ofertas abaixo antes de excluir o curso.
+    </ui-alert>
+  } @else {
+    <ui-alert variant="info" [dynamic]="false" heading="Ofertas vivas deste curso">
+      Instâncias regulatórias (Oferta de curso) que referenciam este curso. Enquanto houver ofertas
+      ativas, a remoção do curso é bloqueada.
+    </ui-alert>
+  }
+
+  @if (ofertas.mensagemDeErro()) {
+    <ui-alert variant="danger" heading="Não foi possível carregar as ofertas">
+      {{ ofertas.mensagemDeErro() }}
+      <div class="cfg-ofertas__retry">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [disabled]="ofertas.carregando()"
+          (click)="ofertas.recarregar()"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </ui-alert>
+  }
+
+  @if (ofertas.carregando()) {
+    <p class="cfg-ofertas__loading"><ui-spinner size="sm" /> Carregando ofertas…</p>
+  }
+
+  @if (ofertas.itens().length > 0) {
+    <ul class="cfg-ofertas-list" role="list">
+      @for (oferta of ofertas.itens(); track oferta.id) {
+        <li class="cfg-ofertas-list__item">
+          <p class="cfg-ofertas-list__unidade">
+            {{ oferta.unidadeOfertante.sigla }} — {{ oferta.unidadeOfertante.nome }}
+          </p>
+          <p class="cfg-ofertas-list__meta">
+            <span class="tag">{{ programaLabel(oferta.programaDeOferta) }}</span>
+            <span class="tag">{{ regimeLabel(oferta.regimeDeTurno) }}</span>
+            <span>{{ turnosLabel(oferta.turnos) }}</span>
+          </p>
+        </li>
+      }
+    </ul>
+  } @else if (!ofertas.carregando() && !ofertas.mensagemDeErro()) {
+    <ui-empty-state
+      heading="Nenhuma oferta ativa"
+      description="Este curso não possui ofertas de curso vivas — a remoção não será bloqueada."
+    />
+  }
+
+  <ui-list-footer
+    navigationLabel="Paginação de ofertas do curso"
+    [hasPrevious]="ofertas.anterior() !== null"
+    [hasNext]="ofertas.proximo() !== null"
+    [isDisabled]="ofertas.carregando()"
+    (previous)="ofertas.paginaAnterior()"
+    (next)="ofertas.proximaPagina()"
+  />
+</ui-drawer>

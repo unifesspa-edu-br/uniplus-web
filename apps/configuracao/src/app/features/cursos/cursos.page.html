@@ -1,0 +1,40 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Curso</h1>
+    <p class="page-header__desc">
+      Matriz curricular pura — código, nome, grau, nível de ensino e grupo de área do ENEM opcional.
+      Local, unidade e e-MEC pertencem à Oferta de Curso. UNI-REQ-0010.
+    </p>
+  </div>
+</div>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os cursos">
+  {{ store.mensagemDeErro() }}
+  <div class="cfg-cursos__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [disabled]="store.carregando()"
+      (click)="store.tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<cfg-cursos-lista />
+
+<cfg-curso-formulario />
+
+<ui-confirm-dialog
+  [(visible)]="store.confirmando"
+  heading="Remover curso"
+  [message]="store.mensagemDaConfirmacao()"
+  confirmLabel="Remover"
+  confirmVariant="danger"
+  (confirmed)="store.removerConfirmado()"
+/>
+
+<cfg-ofertas-do-curso />

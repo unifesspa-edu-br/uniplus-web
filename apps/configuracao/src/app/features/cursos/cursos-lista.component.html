@@ -1,0 +1,112 @@
+<section class="panel" aria-labelledby="cfg-cursos-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-cursos-list-title">Cursos</h2>
+      @if (store.carregando()) {
+        <span class="cfg-cursos__loading"><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+    <button type="button" class="btn btn--primary" (click)="formulario.abrirCadastro()">
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Novo curso
+    </button>
+  </div>
+
+  <ui-filter-bar
+    ariaLabel="Filtrar cursos"
+    searchPlaceholder="Buscar por código ou nome..."
+    searchAriaLabel="Buscar curso"
+    [(searchValue)]="store.termoBusca"
+  />
+
+  @if (store.cursos().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Cursos cadastrados, com código, grau, nível e grupo ENEM
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Código</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Grau</th>
+            <th scope="col">Nível</th>
+            <th scope="col">Grupo ENEM</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (curso of store.cursosExibidos(); track curso.id) {
+            <tr>
+              <td data-label="Código">
+                <code>{{ curso.codigo }}</code>
+              </td>
+              <td data-label="Nome">{{ curso.nome }}</td>
+              <td data-label="Grau">
+                <span class="tag">{{ curso.grau }}</span>
+              </td>
+              <td data-label="Nível">{{ curso.nivelEnsino }}</td>
+              <td data-label="Grupo ENEM">{{ textoExibivel(curso.grupoAreaEnem) }}</td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <ui-icon-button
+                  icon="pi-briefcase"
+                  [accessibleName]="'Ofertas de ' + curso.codigo"
+                  tooltip="Ofertas do curso"
+                  [isDisabled]="store.carregando()"
+                  (triggered)="ofertas.abrir(curso)"
+                />
+                <ui-icon-button
+                  icon="pi-pencil"
+                  [accessibleName]="'Editar curso ' + curso.codigo"
+                  tooltip="Editar curso"
+                  [isDisabled]="store.carregando()"
+                  (triggered)="formulario.abrirEdicao(curso)"
+                />
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="'Remover curso ' + curso.codigo"
+                  tooltip="Remover curso"
+                  [isDisabled]="store.carregando()"
+                  (triggered)="store.pedirRemocao(curso)"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!store.carregando() && !store.mensagemDeErro()) {
+    @if (store.temBusca()) {
+      <ui-empty-state
+        heading="Nenhum curso encontrado"
+        description="Nenhum curso corresponde à busca. Ajuste o código ou o nome."
+      >
+        <button type="button" class="btn btn--secondary" (click)="store.limparBusca()">
+          Limpar busca
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhum curso cadastrado"
+        description="Cadastre o primeiro curso para vincular ofertas de curso."
+      >
+        <button type="button" class="btn btn--primary" (click)="formulario.abrirCadastro()">
+          Novo curso
+        </button>
+      </ui-empty-state>
+    }
+  }
+
+  <ui-list-footer
+    navigationLabel="Paginação de cursos"
+    [pageSizeOptions]="store.opcoesLimite"
+    [pageSize]="store.limite()"
+    (pageSizeChange)="store.aoTrocarLimite($event)"
+    [hasRows]="store.cursos().length > 0"
+    [hasPrevious]="store.anterior() !== null"
+    [hasNext]="store.proximo() !== null"
+    [isDisabled]="store.carregando()"
+    (previous)="store.paginaAnterior()"
+    (next)="store.proximaPagina()"
+  />
+</section>
