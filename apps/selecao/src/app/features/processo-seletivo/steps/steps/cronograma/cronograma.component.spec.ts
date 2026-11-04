@@ -37,9 +37,9 @@ import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service'
 import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
 import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
-import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
+import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-etapas.service';
 import { ReleituraDasEtapas } from './servicos/releitura-das-etapas.service';
-import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
+import { UnidadesResponsaveisDasFases } from './servicos/unidades-responsaveis-das-fases.service';
 import {
   BASE,
   PROCESSO_ID,
@@ -76,10 +76,10 @@ describe('CronogramaStepComponent', () => {
   let edicao: EdicaoDaEtapa;
   let exigencias: GravacaoDasExigenciasDocumentais;
   let conferencia: ConferenciaDoCronograma;
-  let recusas: RecusasDasEtapas;
+  let recusas: RecusasDoServidorNasEtapas;
   let cronograma: FormularioDoCronograma;
   let releituraDasEtapas: ReleituraDasEtapas;
-  let unidades: UnidadesDasFases;
+  let unidades: UnidadesResponsaveisDasFases;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let detectar: () => void;
@@ -113,10 +113,10 @@ describe('CronogramaStepComponent', () => {
     edicao = fixture.debugElement.injector.get(EdicaoDaEtapa);
     exigencias = fixture.debugElement.injector.get(GravacaoDasExigenciasDocumentais);
     conferencia = fixture.debugElement.injector.get(ConferenciaDoCronograma);
-    recusas = fixture.debugElement.injector.get(RecusasDasEtapas);
+    recusas = fixture.debugElement.injector.get(RecusasDoServidorNasEtapas);
     cronograma = fixture.debugElement.injector.get(FormularioDoCronograma);
     releituraDasEtapas = fixture.debugElement.injector.get(ReleituraDasEtapas);
-    unidades = fixture.debugElement.injector.get(UnidadesDasFases);
+    unidades = fixture.debugElement.injector.get(UnidadesResponsaveisDasFases);
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
     detectar = () => fixture.detectChanges();

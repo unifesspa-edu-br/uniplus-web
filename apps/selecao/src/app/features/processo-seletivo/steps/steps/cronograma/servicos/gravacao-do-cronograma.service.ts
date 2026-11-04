@@ -23,8 +23,8 @@ import { ExpansaoDoCronograma } from './expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 import { GravacaoDasExigenciasDocumentais } from './gravacao-das-exigencias-documentais.service';
 import { ReleituraDasEtapas, AGUARDA_RELEITURA } from './releitura-das-etapas.service';
-import { RecusasDasEtapas } from './recusas-das-etapas.service';
-import { UnidadesDasFases } from './unidades-das-fases.service';
+import { RecusasDoServidorNasEtapas } from './recusas-do-servidor-nas-etapas.service';
+import { UnidadesResponsaveisDasFases } from './unidades-responsaveis-das-fases.service';
 
 /**
  * Recusa do servidor quando a nova ordem troca a posição entre fases que já
@@ -98,8 +98,8 @@ export class GravacaoDoCronograma {
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly conferencia = inject(ConferenciaDoCronograma);
   private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
-  private readonly recusas = inject(RecusasDasEtapas);
-  private readonly unidades = inject(UnidadesDasFases);
+  private readonly recusas = inject(RecusasDoServidorNasEtapas);
+  private readonly unidades = inject(UnidadesResponsaveisDasFases);
   private readonly expansao = inject(ExpansaoDoCronograma);
 
   /**

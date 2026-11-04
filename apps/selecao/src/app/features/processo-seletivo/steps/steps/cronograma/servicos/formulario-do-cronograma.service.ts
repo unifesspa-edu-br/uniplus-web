@@ -19,7 +19,7 @@ import {
 } from '../cronograma-form';
 import { etapaComOQueDeclara } from '../regras-da-etapa';
 import { ReleituraDasEtapas } from './releitura-das-etapas.service';
-import { UnidadesDasFases } from './unidades-das-fases.service';
+import { UnidadesResponsaveisDasFases } from './unidades-responsaveis-das-fases.service';
 
 /**
  * A fase na tela: o formulário que o operador edita, junto do que o catálogo
@@ -37,7 +37,7 @@ export interface FaseNaLinhaDoTempo extends DescricaoDaFase {
 export class FormularioDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDoCronograma);
-  private readonly unidades = inject(UnidadesDasFases);
+  private readonly unidades = inject(UnidadesResponsaveisDasFases);
   private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
 
   readonly formulario = novoFormularioDoCronograma();

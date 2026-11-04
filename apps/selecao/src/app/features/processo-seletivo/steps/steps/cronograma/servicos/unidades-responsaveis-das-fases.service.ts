@@ -15,7 +15,7 @@ import type { FaseForm } from '../cronograma-form';
 
 /** As unidades que respondem pelas fases: o que o cadastro oferece, o que o processo gravou e o que o servidor recusou. */
 @Injectable()
-export class UnidadesDasFases {
+export class UnidadesResponsaveisDasFases {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDoCronograma);
 

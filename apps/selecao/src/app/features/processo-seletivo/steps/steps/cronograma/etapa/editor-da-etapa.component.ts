@@ -10,7 +10,7 @@ import {
   FormularioDoCronograma,
   type FaseNaLinhaDoTempo,
 } from '../servicos/formulario-do-cronograma.service';
-import { RecusasDasEtapas } from '../servicos/recusas-das-etapas.service';
+import { RecusasDoServidorNasEtapas } from '../servicos/recusas-do-servidor-nas-etapas.service';
 import { BancasDaEtapaComponent } from './bancas-da-etapa.component';
 import { CabecalhoDaEtapaComponent } from './cabecalho-da-etapa.component';
 import { JanelaDaEtapaComponent } from './janela-da-etapa.component';
@@ -39,7 +39,7 @@ export class EditorDaEtapaComponent {
   readonly fase = input.required<FaseNaLinhaDoTempo>();
   protected readonly edicao = inject(EdicaoDaEtapa);
   protected readonly expansao = inject(ExpansaoDoCronograma);
-  protected readonly recusas = inject(RecusasDasEtapas);
+  protected readonly recusas = inject(RecusasDoServidorNasEtapas);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly edicaoLiberada = this.cronograma.edicaoLiberada;
 }

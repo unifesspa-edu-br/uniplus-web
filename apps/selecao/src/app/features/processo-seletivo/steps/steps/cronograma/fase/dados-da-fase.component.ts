@@ -7,7 +7,7 @@ import { pisoDeData } from '../cronograma-form';
 import { FORMULARIO_DO_PAI } from '../formulario-do-pai';
 import type { FaseNaLinhaDoTempo } from '../servicos/formulario-do-cronograma.service';
 import { LeituraDaLinhaDoTempo } from '../servicos/leitura-da-linha-do-tempo.service';
-import { UnidadesDasFases } from '../servicos/unidades-das-fases.service';
+import { UnidadesResponsaveisDasFases } from '../servicos/unidades-responsaveis-das-fases.service';
 
 @Component({
   selector: 'sel-dados-da-fase',
@@ -19,7 +19,7 @@ import { UnidadesDasFases } from '../servicos/unidades-das-fases.service';
 export class DadosDaFaseComponent {
   readonly fase = input.required<FaseNaLinhaDoTempo>();
   protected readonly catalogos = inject(CatalogosDoCronograma);
-  protected readonly unidades = inject(UnidadesDasFases);
+  protected readonly unidades = inject(UnidadesResponsaveisDasFases);
   protected readonly leitura = inject(LeituraDaLinhaDoTempo);
   protected readonly pisoDeData = pisoDeData;
 }

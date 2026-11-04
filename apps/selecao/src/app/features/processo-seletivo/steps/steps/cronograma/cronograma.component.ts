@@ -20,9 +20,9 @@ import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.serv
 import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
 import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service';
 import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
-import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
+import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-etapas.service';
 import { ReleituraDasEtapas } from './servicos/releitura-das-etapas.service';
-import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
+import { UnidadesResponsaveisDasFases } from './servicos/unidades-responsaveis-das-fases.service';
 import { convencaoLida } from './convencao-de-contagem';
 import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
 
@@ -44,10 +44,10 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provePassoDoWizard(CronogramaStepComponent),
-    UnidadesDasFases,
+    UnidadesResponsaveisDasFases,
     ReleituraDasEtapas,
     FormularioDoCronograma,
-    RecusasDasEtapas,
+    RecusasDoServidorNasEtapas,
     EdicaoDaEtapa,
     LeituraDaLinhaDoTempo,
     ConferenciaDoCronograma,

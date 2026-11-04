@@ -16,7 +16,7 @@ const SEM_RECUSAS: ReadonlyMap<CampoComRecusa, string> = new Map();
 
 /** O que o servidor recusou em cada campo da etapa, e que dura até o campo mudar. */
 @Injectable()
-export class RecusasDasEtapas {
+export class RecusasDoServidorNasEtapas {
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly destroyRef = inject(DestroyRef);
 
