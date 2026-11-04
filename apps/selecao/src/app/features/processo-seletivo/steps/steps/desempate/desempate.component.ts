@@ -24,7 +24,6 @@ import {
   comparaComLista,
   fatosParaGatilho,
   operadoresDoFato,
-  problemaDaCondicao,
   RESPOSTAS_BOOLEANAS,
   valorEscalarDe,
   valoresDeListaDe,
@@ -45,7 +44,7 @@ import {
 } from '../../shared/releitura-do-snapshot.service';
 import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
-import { inteiroNaForma, leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { textoDoCriterio } from '../classificacao/confirmacao-da-classificacao';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
@@ -68,20 +67,16 @@ import {
   desempateTemShapeConhecido,
   desempateUsaPredicadoFato,
 } from './desempate-para-comando';
+import { comAreaAcrescentada, comAreasTrocadas, semAreaNaPosicao } from './areas-do-criterio';
+import { mensagensDoDesempate } from './validacao-do-desempate';
 import {
   areasCitadasPor,
-  areasForaDoQuadro,
   dicaDaSituacao,
-  recusaSemAreas,
   rotulosDasAreas,
   DEPENDEM_DA_RELEITURA,
   situacaoDoQuadro,
 } from './situacao-do-quadro';
-import {
-  outroCriterioQueCita,
-  RECUSA_DA_AREA,
-  recusaAoGravarODesempate,
-} from './recusas-do-desempate';
+import { recusaAoGravarODesempate } from './recusas-do-desempate';
 
 const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
   regraCodigo: '',
@@ -631,7 +626,7 @@ export class DesempateStepComponent {
       return;
     }
 
-    const areas = [...criterio.areas, codigo];
+    const areas = comAreaAcrescentada(criterio.areas, codigo);
     this.atualizar(indice, { areas });
     this.anunciar(
       `Área ${this.rotuloDaArea(codigo)} acrescentada ao critério ${indice + 1}, na posição ${areas.length}.`,
@@ -649,7 +644,7 @@ export class DesempateStepComponent {
     if (criterio === undefined) return;
 
     const codigo = criterio.areas[posicao];
-    this.atualizar(indice, { areas: criterio.areas.filter((_, item) => item !== posicao) });
+    this.atualizar(indice, { areas: semAreaNaPosicao(criterio.areas, posicao) });
     this.anunciar(`Área ${this.rotuloDaArea(codigo)} retirada do critério ${indice + 1}.`);
     // O botão clicado sai do DOM com a linha: o foco vai para a área anterior; da primeira, para a
     // que passou a ocupar a posição dela; sem nenhuma, para o seletor de acrescentar e, quando ele
@@ -667,10 +662,10 @@ export class DesempateStepComponent {
   moverArea(indice: number, posicao: number, delta: number): void {
     const criterio = this.criterios()[indice];
     const destino = posicao + delta;
-    if (criterio === undefined || destino < 0 || destino >= criterio.areas.length) return;
+    const areas =
+      criterio === undefined ? null : comAreasTrocadas(criterio.areas, posicao, destino);
+    if (areas === null) return;
 
-    const areas = [...criterio.areas];
-    [areas[posicao], areas[destino]] = [areas[destino], areas[posicao]];
     this.atualizar(indice, { areas });
     this.anunciar(
       `Área ${this.rotuloDaArea(areas[destino])} movida para a posição ${destino + 1} de ${areas.length} no critério ${indice + 1}.`,
@@ -769,86 +764,15 @@ export class DesempateStepComponent {
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
   validate(): StepValidation {
-    const idsDeEtapa = new Set(this.etapasReferenciaveis().map((etapa) => etapa.id));
-    const messages: string[] = [];
-
-    if (this.desempateObrigatorio() && this.criterios().length === 0) {
-      messages.push(
-        'Informe ao menos um critério de desempate: com inscrição feita no sistema, ele é obrigatório.',
-      );
-    }
-
-    this.criterios().forEach((criterio, indice) => {
-      const posicao = indice + 1;
-      if (!criterio.regraCodigo) {
-        messages.push(`Critério de desempate ${posicao}: selecione uma regra.`);
-        return;
-      }
-
-      if (this.usaEtapa(criterio)) {
-        if (criterio.etapaRef === '') {
-          messages.push(`Critério de desempate ${posicao}: selecione a etapa referenciada.`);
-        } else if (!idsDeEtapa.has(criterio.etapaRef)) {
-          messages.push(
-            `Critério de desempate ${posicao}: a etapa referenciada não existe mais no cronograma.`,
-          );
-        }
-      } else if (this.usaIdadeMinima(criterio)) {
-        const idade = inteiroNaForma(criterio.idadeMinima);
-        if (idade === null || idade <= 0) {
-          messages.push(
-            `Critério de desempate ${posicao}: informe a idade mínima, maior que zero.`,
-          );
-        }
-      } else if (this.usaPredicadoFato(criterio)) {
-        // Espelha o validador do domínio — fato do vocabulário, operador que o domínio admite,
-        // valor dentro do domínio declarado. Conferir só "os três campos estão preenchidos"
-        // aprovava texto que o servidor recusava sem dizer qual das três coisas estava errada.
-        const problema = problemaDaCondicao(criterio, this.fatoPorCodigo());
-        if (problema !== null) {
-          messages.push(`Critério de desempate ${posicao}: ${problema}.`);
-        }
-      } else if (this.usaAreas(criterio)) {
-        const problema = this.problemaDasAreas(criterio, indice);
-        if (problema !== null) {
-          messages.push(`Critério de desempate ${posicao}: ${problema}.`);
-        }
-      }
+    const messages = mensagensDoDesempate({
+      criterios: this.criterios(),
+      obrigatorio: this.desempateObrigatorio(),
+      etapas: this.etapasReferenciaveis(),
+      fatos: this.fatoPorCodigo(),
+      situacaoDoQuadro: this.situacaoDoQuadro(),
+      rotuloDaArea: (codigo) => this.rotuloDaArea(codigo),
     });
-
     return messages.length ? { valid: false, messages } : { valid: true };
-  }
-
-  /**
-   * Espelha o que o servidor recusa no critério por área. A conferência contra o quadro só vale
-   * com o quadro lido: sem ele, "não achei" é "ainda não sei", e a recusa fica com o servidor.
-   */
-  private problemaDasAreas(criterio: CriterioDesempateConfigurado, indice: number): string | null {
-    const situacao = this.situacaoDoQuadro();
-    const semAreas = recusaSemAreas(situacao);
-    if (semAreas !== null) return semAreas;
-    if (criterio.areas.length === 0) return RECUSA_DA_AREA.obrigatorias();
-
-    if (situacao.tipo === 'lido') {
-      const [foraDoQuadro] = areasForaDoQuadro(criterio.areas, situacao.aceitas);
-      if (foraDoQuadro !== undefined) {
-        return RECUSA_DA_AREA.foraDoQuadro(this.rotuloDaArea(foraDoQuadro));
-      }
-    }
-
-    const repetida = criterio.areas.find(
-      (codigo, posicao) => criterio.areas.indexOf(codigo) !== posicao,
-    );
-    if (repetida !== undefined) return RECUSA_DA_AREA.repetida(this.rotuloDaArea(repetida));
-
-    const anteriores = new Set(areasCitadasPor(this.criterios().slice(0, indice)));
-    const citada = criterio.areas.find((codigo) => anteriores.has(codigo));
-    return citada === undefined
-      ? null
-      : RECUSA_DA_AREA.citadaPorOutro(
-          this.rotuloDaArea(citada),
-          outroCriterioQueCita(this.criterios(), citada, indice),
-        );
   }
 
   /**
