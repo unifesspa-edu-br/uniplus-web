@@ -66,7 +66,7 @@ export interface WizardDraft {
   };
   vagas: {
     ofertas: DistribuicaoDeVagas[];
-    /** `null` enquanto não há decisão, inclusive quando nenhuma oferta federal exige cascata: a ausência nunca vira sequência pré-selecionada (CA-04). */
+    /** `null` enquanto não há decisão, inclusive quando nenhuma oferta federal exige cascata: a ausência nunca vira sequência pré-selecionada. */
     cascata: CascataSelecionada | null;
   };
   /**
@@ -86,7 +86,7 @@ export interface WizardDraft {
    * repartida entre dois passos: Fórmula preenche até `regrasEliminacao`, Eliminação preenche o
    * vetor e grava.
    *
-   * Arredondamento só vale sob `FORMULA-MEDIA-PONDERADA` (INV-B8): sob `CLASSIFICACAO-IMPORTADA`
+   * Arredondamento só vale sob `FORMULA-MEDIA-PONDERADA`: sob `CLASSIFICACAO-IMPORTADA`
    * o mapeador envia `null` independentemente do digitado, e `regrasEliminacao` é vazio.
    */
   classificacao: {
@@ -142,13 +142,13 @@ export interface WizardDraft {
     tiposDeficiencia: readonly ReferenciaDeAtendimento[];
   };
   /**
-   * O que o passo Revisão coleta para `POST …/publicacao` (Story #486). Fica **fora de
+   * O que o passo Revisão coleta para `POST …/publicacao`. Fica **fora de
    * `hidratarDraft`**: depois do `204` o processo é somente leitura. É a única seção que volta de
    * outra rota: a página a repõe de `GET …/rascunho-da-publicacao` depois de hidratar. Publicar
    * lê o que está em tela, nunca o que está guardado.
    *
    * `periodoInscricaoInicio`/`…Fim` só valem quando o cronograma NÃO tem fase com
-   * `coletaInscricao` (armadilha do período, #486): a tela os abre só nesse ramo, e o mapeador os
+   * `coletaInscricao` (armadilha do período): a tela os abre só nesse ramo, e o mapeador os
    * ignora no outro. São `date-time` no contrato; o valor aqui é o de `<input type="datetime-local">`, sem fuso.
    */
   publicacao: {

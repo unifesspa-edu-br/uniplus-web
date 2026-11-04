@@ -324,7 +324,7 @@ describe('IdentificacaoPassoComponent', () => {
 
   /**
    * O texto de ajuda já foi corrigido para não sugerir que a unidade define a
-   * localidade/prazos (#539), mas nada travava essa explicação: bastava uma
+   * localidade/prazos, mas nada travava essa explicação: bastava uma
    * revisão editorial descuidada para a dedução automática voltar em
    * silêncio. As asserções checam o papel de cada campo pelo id do hint em
    * `aria-describedby` — não por posição no DOM — e a negação explícita da
@@ -788,7 +788,7 @@ describe('IdentificacaoPassoComponent', () => {
     const subtitulo = host.querySelector('.step-subtitle')?.textContent?.trim();
 
     expect(subtitulo).toBe('Informe os dados de identificação do Processo Seletivo.');
-    // O documento oficial passou a ser tratado na publicação (#609); o passo não o exige.
+    // O documento oficial passou a ser tratado na publicação; o passo não o exige.
     expect(subtitulo).not.toMatch(/PDF|edital|LGPD|RN[o]?\d+|UNI-REQ-\d{4}/i);
   });
 });

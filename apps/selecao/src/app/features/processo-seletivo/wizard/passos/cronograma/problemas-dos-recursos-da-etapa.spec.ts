@@ -121,7 +121,7 @@ describe('janela de recurso da etapa', () => {
 
   /**
    * As duas conferências que só a fase tinha. O prazo e a suspensividade vivem no MESMO value
-   * object nos dois donos, e o servidor passou a prová-las nos dois — a tela que aprovasse
+   * object nos dois donos, e o servidor as prova nos dois — a tela que aprovasse
    * aqui mandaria o operador colher um 422 que a fase nunca deixaria acontecer.
    */
   it('acusa fração de dia útil no prazo', () => {

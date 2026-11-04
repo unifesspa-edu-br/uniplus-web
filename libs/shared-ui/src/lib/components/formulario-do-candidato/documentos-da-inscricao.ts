@@ -207,11 +207,11 @@ export class DocumentosDaInscricaoComponent {
   readonly envioDeDocumentos = input<EnvioDeDocumentos | null>(null);
   /**
    * Os arquivos que a API já registrou, com a chave da exigência e da ocorrência (`ExigenciaPedida.chave`).
-   * É por aqui que a avaliação da API (api#2037) traz de volta o que foi enviado.
+   * É por aqui que a avaliação da API traz de volta o que foi enviado.
    */
   readonly arquivosEnviados = input<readonly ArquivoEnviado[]>([]);
   /**
-   * A situação de cada exigência, pela chave dela, como a avaliação da API a devolve (api#2037); sem
+   * A situação de cada exigência, pela chave dela, como a avaliação da API a devolve; sem
    * entrada, a tela não afirma se a exigência está atendida.
    */
   readonly situacoes = input<Readonly<Partial<Record<string, SituacaoDaExigencia>>>>({});

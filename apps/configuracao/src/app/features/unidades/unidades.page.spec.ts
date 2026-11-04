@@ -998,10 +998,8 @@ describe('UnidadesPage', () => {
     expect(compiled.textContent).not.toContain('Instituto de Ciências Exatas');
   });
 
-  // Cobertura repositada pela #796: comportamento de formulário/mutação que a
-  // reescrita do #747 (simplificação para árvore, #736) deixou de fora — nenhum
-  // é código tocado por aquela Task, então nenhum destes casos protege a
-  // árvore em si, e sim as regras abaixo dela.
+  // Comportamento de formulário e de mutação: estes casos não protegem a árvore em si, e sim
+  // as regras abaixo dela.
 
   it('cria sem cidade selecionada enviando o trio (cidadeCodigoIbge/cidadeNome/cidadeUf) como null', async () => {
     await responderListaUnidades();
@@ -1125,7 +1123,7 @@ describe('UnidadesPage', () => {
             status: 422,
             type: 'reference-error',
             title: 'Cidade inválida',
-            // Sem `errors[]` (all-or-nothing, CA-06) — só o `code` de topo distingue
+            // Sem `errors[]` (all-or-nothing) — só o `code` de topo distingue
             // este 422 do 422 de validação de campo tratado no ramo anterior.
             code: 'CidadeCodigoIbge',
           }),

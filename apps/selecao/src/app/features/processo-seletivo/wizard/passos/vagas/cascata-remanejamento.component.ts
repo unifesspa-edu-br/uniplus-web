@@ -45,7 +45,7 @@ import { LeituraDaVersaoForaDaListagem } from './leitura-da-versao-fora-da-lista
  * processo. `VagasPassoComponent` lê este componente por `viewChild` para
  * validar e gravar — a cascata é gravada no `persistir()` do passo Vagas,
  * depois da distribuição, porque referencia modalidades que só existem
- * depois de a oferta ser gravada (CA-06).
+ * depois de a oferta ser gravada.
  *
  * **A tela confirma, não compõe.** O operador escolhe regra e versão; o
  * `fallbackCodigo` e os `destinos[]` são derivados do `esquemaArgs`

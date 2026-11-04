@@ -729,7 +729,7 @@ export class CalendarioDiasUteisDetalhePage {
     this.drawerVisivel.set(true);
   }
 
-  /** Nome acessível do dia — cobre a mesma informação da prévia visual (CA-06), sem depender de hover. */
+  /** Nome acessível do dia — cobre a mesma informação da prévia visual, sem depender de hover. */
   protected ariaLabelDia(celula: CelulaCalendarioMensal): string {
     const dataPorExtenso = formatIsoDateLong(celula.data);
     if (celula.ocorrencias.length === 1) {

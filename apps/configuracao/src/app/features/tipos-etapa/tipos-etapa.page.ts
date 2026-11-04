@@ -671,7 +671,7 @@ export class TiposEtapaPage {
     this.saving.set(false);
     const aviso = modoDoEnvio === 'criar' ? 'Tipo de etapa criado' : 'Tipo de etapa atualizado';
 
-    // O editor passou a tratar de outro registro. A resposta ainda vale como notícia, e o
+    // O editor trata de outro registro. A resposta ainda vale como notícia, e o
     // sucesso ainda obriga a reler a lista — o que ela não pode é tocar no formulário em tela,
     // fechando o drawer de quem está sendo editado agora ou marcando os campos dele com um
     // erro que é de outro tipo de etapa.

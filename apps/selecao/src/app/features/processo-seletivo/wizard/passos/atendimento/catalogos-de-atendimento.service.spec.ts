@@ -95,7 +95,7 @@ describe('CatalogosDeAtendimento', () => {
     expect(servico.carregando()).toBe(false);
   });
 
-  /** O código canônico é `PCD`, não um id nem um rótulo — é a exceção nomeada do §4. */
+  /** O código canônico é `PCD`, não um id nem um rótulo. */
   it('reconhece a condição PCD pelo código, sem depender da caixa', () => {
     const { servico } = montar({
       condicoes: [condicao('pcd', 'Pessoa com deficiência (smoke)'), condicao('OUTRA')],

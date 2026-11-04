@@ -65,8 +65,8 @@ export class AuthService {
       });
 
       // Renovação periódica: o keycloak-js dispara `onTokenExpired`
-      // quando o access token expira. Como `refreshToken()` é serializado
-      // (Task #61), é seguro chamá-lo aqui sem risco de corrida com
+      // quando o access token expira. Como `refreshToken()` é serializado,
+      // é seguro chamá-lo aqui sem risco de corrida com
       // refreshes disparados pelo interceptor.
       this.keycloak.onTokenExpired = () => {
         void this.refreshToken(30);
@@ -113,9 +113,9 @@ export class AuthService {
 
   /**
    * Redireciona de volta ao mount point do app (`document.baseURI`), não à
-   * origem do domínio (Story #447). Sob subpath (`/portal`, `/selecao`,
-   * `/ingresso`, PathPrefix sem StripPrefix — nginx.conf parametrizado pela
-   * Story #448), `window.location.origin` aponta pra raiz do host, que não
+   * origem do domínio. Sob subpath (`/portal`, `/selecao`,
+   * `/ingresso`, PathPrefix sem StripPrefix),
+   * `window.location.origin` aponta pra raiz do host, que não
    * tem rota própria e cai no 404 do Traefik. Mesma resolução relativa já
    * usada em `silentCheckSsoRedirectUri` (init acima) — preserva a raiz em
    * standalone-compact/lab, onde `document.baseURI` já é a própria origem.
@@ -142,7 +142,7 @@ export class AuthService {
    * Renova o access token de forma **serializada**: múltiplas chamadas
    * concorrentes compartilham a mesma Promise de rede, evitando que o
    * Keycloak rejeite o segundo refresh com `invalid_grant: reuse
-   * exceeded` (Story uniplus-api#67 / PR #84 — `revokeRefreshToken=true`).
+   * exceeded` (`revokeRefreshToken=true`).
    *
    * Se a renovação falhar com marcador de replay/sessão morta, dispara
    * `logout()` — a sessão está comprometida e um novo login é exigido.

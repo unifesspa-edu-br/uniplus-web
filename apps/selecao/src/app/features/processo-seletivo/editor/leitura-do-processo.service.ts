@@ -54,7 +54,7 @@ export class LeituraDoProcesso {
   private leituraEmCurso = 0;
 
   /**
-   * Retomada por endereço (CA-05, CA-06, CA-08): lê o detalhe canônico e o readback dos documentos
+   * Retomada por endereço: lê o detalhe canônico e o readback dos documentos
    * do edital. Falha de leitura nunca vira rascunho vazio: abrir um cadastro novo sob o id de
    * outro processo levaria o operador a preencher tudo de novo e, na identificação, a criar uma
    * duplicata.
@@ -155,7 +155,7 @@ export class LeituraDoProcesso {
 
   /**
    * Um único documento confirmado restaura o vínculo sozinho; havendo mais de um, a escolha é do
-   * administrador (CA-06), porque presumir o mais recente trocaria o edital do certame em silêncio.
+   * administrador, porque presumir o mais recente trocaria o edital do certame em silêncio.
    *
    * Falha aqui não bloqueia o editor: o aviso diz que o anexo existente não pôde ser verificado,
    * para o operador não concluir que não há nenhum.

@@ -147,7 +147,7 @@ export class EdicaoDosCriterios {
   escolherRegra(indice: number, valor: string): void {
     const { codigo, versao } = lerChaveDaRegra(valor);
     this.remapearEscolhas((anterior) => (anterior === indice ? null : anterior));
-    // Trocar de regra some com o que a variante anterior usava — CA-05: só os
+    // Trocar de regra some com o que a variante anterior usava: só os
     // argumentos aplicáveis à regra atual permanecem.
     this.atualizar(indice, {
       regraCodigo: codigo,

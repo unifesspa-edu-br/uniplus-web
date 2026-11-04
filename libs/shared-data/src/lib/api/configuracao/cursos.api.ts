@@ -9,7 +9,7 @@ export type CursoDto = components['schemas']['CursoDto'];
 export type CriarCursoCommand = components['schemas']['CriarCursoCommand'];
 export type AtualizarCursoCommand = components['schemas']['AtualizarCursoCommand'];
 
-/** Filtro de listagem de Cursos (cursor pagination, ADR-0026; busca/ordenação, uniplus-api#1419). */
+/** Filtro de listagem de Cursos (cursor pagination, ADR-0026; busca/ordenação). */
 export interface CursosQuery {
   readonly cursor?: string;
   readonly direction?: 'next' | 'prev';

@@ -19,7 +19,7 @@ export interface FasesCanonicasQuery {
 /**
  * Código canônico das fases fixas do ciclo de vida do processo seletivo
  * (UNI-REQ-0139). Roster fechado — provisionado pelo seed da API; a tela de
- * Fase canônica não cria fases (issue #698) e a edição trata `codigo` como
+ * Fase canônica não cria fases e a edição trata `codigo` como
  * imutável (readonly). Consumido pela tela de Precedências de fase. Espelha
  * `FaseCanonicaCatalogo.Codigos` do backend, que não declara o enum no
  * OpenAPI: `codigo` é string no contrato e a pertença é guarda de domínio.

@@ -110,7 +110,7 @@ export function enderecoEstruturadoDe(
  * Traduz o endereço estruturado do componente para os campos do command: a
  * cidade vira a referência top-level (`cidade*`); o `endereco` aninhado só é
  * enviado quando há um CEP de 8 dígitos (o backend exige CEP no VO de endereço).
- * Sem CEP, persiste só a cidade (fluxo "sem CEP", CA-02). Compartilhado pelas
+ * Sem CEP, persiste só a cidade (fluxo "sem CEP"). Compartilhado pelas
  * três telas.
  */
 export function enderecoParaCommand(e: EnderecoEstruturado | null): EnderecoCommandPart {

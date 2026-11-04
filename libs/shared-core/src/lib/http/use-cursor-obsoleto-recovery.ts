@@ -26,7 +26,7 @@ export interface UseCursorObsoletoRecoveryOptions {
 
 /**
  * Trata cursor de paginação obsoleto (400 `uniplus.cursor.invalido` / 410
- * `uniplus.cursor.expirado`, CA-14c): ao navegar para uma página cujo cursor
+ * `uniplus.cursor.expirado`): ao navegar para uma página cujo cursor
  * não continua mais a consulta, reinicia a paginação do começo e avisa o
  * operador — em vez de deixar a tela vazia ou presa numa página que não
  * existe mais.

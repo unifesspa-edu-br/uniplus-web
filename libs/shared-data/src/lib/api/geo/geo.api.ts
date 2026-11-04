@@ -58,7 +58,7 @@ export class GeoApi {
 
   /**
    * GET `/api/cidades` — lista cidades para o seletor direto do fluxo "sem CEP"
-   * (CA-02). Aceita `uf`, `q` (busca textual) e `limit`; devolve `CidadeResumoDto`
+   * Aceita `uf`, `q` (busca textual) e `limit`; devolve `CidadeResumoDto`
    * com `codigoIbge`/`nome`/`uf` — os campos que viram a `CidadeReferenciaInput`
    * dos commands.
    */

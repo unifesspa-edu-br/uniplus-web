@@ -16,7 +16,7 @@ declare global {
 
 /**
  * Resolve um asset self-hosted relativo ao `<base href>` do documento —
- * respeita subpath (Feature #444) sem depender do `DOCUMENT` injetado do
+ * respeita subpath sem depender do `DOCUMENT` injetado do
  * componente, que só fica disponível depois dos campos de `input()` na
  * ordem de inicialização da classe.
  */

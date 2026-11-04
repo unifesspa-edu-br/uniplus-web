@@ -148,7 +148,7 @@ export interface ProblemaDaCascata {
  * contra o quadro de vagas. Sem esta segunda checagem, o PUT aceita uma
  * cascata que a prontidão de conformidade (`PendenciaDaCascata`) recusa na
  * publicação — silenciosamente, porque `GET /conformidade` não tem tela
- * própria ainda (Story #486).
+ * própria ainda.
  */
 export function problemasDaCascata(
   ofertas: readonly DistribuicaoDeVagas[],

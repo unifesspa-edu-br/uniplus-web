@@ -11,7 +11,7 @@ import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui/com
  * homologações pendentes, prazos e atividade recente — eram valores escritos no
  * template, incluindo nomes de pessoas. Nenhum tinha endpoint por trás, e
  * apresentá-los como número de produção é pior do que não os apresentar
- * (Story #478, CA-02). Ficam de fora até existir a agregação que os informe.
+ * Ficam de fora até existir a agregação que os informe.
  *
  * A listagem real dos processos seletivos vive em `/processo-seletivo`, sob a
  * permissão de configurar processo — este painel é acessível a todo o backoffice e não

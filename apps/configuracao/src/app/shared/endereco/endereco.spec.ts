@@ -494,7 +494,7 @@ describe('EnderecoGeoComponent com o Geo', () => {
     fixture.detectChanges();
 
     // "abc" não tem dígitos, mas o campo não está vazio — é formato pendente
-    // (CA-06), não abandono da correção. A resolução preservada continua ali.
+    // Não abandono da correção. A resolução preservada continua ali.
     setInput(fixture, 't-cep', 'abc');
     fixture.detectChanges();
 

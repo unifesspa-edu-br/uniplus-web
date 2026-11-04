@@ -1,7 +1,7 @@
-/* ---- Step 11: Atendimento especializado ----
-   Reconstruído sobre os cadastros de Configuração (#543): usa quase só
+/* Step 11: Atendimento especializado ----
+   Reconstruído sobre os cadastros de Configuração: usa quase só
    classes compartilhadas do passo (`.step-card`, `.form-section__title`,
-   `.check-item`, `.field__hint`, `.tag`) — `.atendimento__atalhos` (#788) é
+   `.check-item`, `.field__hint`, `.tag`) — `.atendimento__atalhos` é
    a única classe própria, espelhando `.vagas-modalidades__atalhos`. */
 .atendimento__atalhos {
   display: flex;

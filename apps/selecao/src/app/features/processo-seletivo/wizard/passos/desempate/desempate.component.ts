@@ -189,7 +189,7 @@ export class DesempatePassoComponent {
   }
 
   /**
-   * Grava a coleção inteira, na ordem em que está na tela (CA-05). Com critério por área e sem o
+   * Grava a coleção inteira, na ordem em que está na tela. Com critério por área e sem o
    * quadro gravado, só marca a gravação como pendente: quem grava a classificação grava os
    * critérios em seguida (`gravarAposAClassificacao`).
    */

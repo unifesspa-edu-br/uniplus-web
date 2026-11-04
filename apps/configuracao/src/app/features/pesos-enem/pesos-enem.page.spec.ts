@@ -1676,7 +1676,7 @@ describe('PesosEnemPage', () => {
   it('PesosEnemPage_InativarResolucaoEmEdicao_LimpaSessaoAntesDoReload', async () => {
     // Regressão: inativar a MESMA resolução que está em
     // edição deixa editandoResolucao()/editForm() presos aos ids antigos.
-    // Como o identificador pode ser reaproveitado (§5.3), um novo cadastro
+    // Como o identificador pode ser reaproveitado, um novo cadastro
     // com o mesmo texto de resolução faria o panel novo renderizar "já em
     // edição" com o form antigo — e Salvar tentaria PUT em linhas que não
     // existem mais.

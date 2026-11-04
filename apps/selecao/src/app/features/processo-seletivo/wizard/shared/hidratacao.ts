@@ -133,7 +133,7 @@ function ehFundamentoConhecido(codigo: string): codigo is FundamentoIsencaoCodig
 /**
  * A leitura devolve o nome do enum de domínio (`InscricaoPropria`) e a criação recebe
  * `inscricaoPropria`. Sem traduzir, a retomada gravaria no rascunho um valor que nenhuma `<option>`
- * tem (uniplus-api#1294). Valor fora do vocabulário vira `''`, e a validação cobra a escolha.
+ * tem. Valor fora do vocabulário vira `''`, e a validação cobra a escolha.
  */
 export function decodificarOrigemCandidatos(valor: string): OrigemCandidatosSelecionada {
   const normalizado = valor.charAt(0).toLowerCase() + valor.slice(1);

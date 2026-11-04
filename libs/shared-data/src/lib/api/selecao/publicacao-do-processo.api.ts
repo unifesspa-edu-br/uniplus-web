@@ -94,7 +94,7 @@ export class PublicacaoDoProcessoApi {
    * `schemaVersion`, o hash do algoritmo, o hash da configuração e do
    * edital, e a `configuracao` congelada em si.
    *
-   * CA-08 da #486: depois do `204` de `publicar()`, é esta leitura — ao lado
+   * Depois do `204` de `publicar()`, é esta leitura — ao lado
    * de `obter()` — que confirma que a versão 1 ficou vigente. O campo
    * `configuracao` é o JSON canônico congelado no instante da publicação, não
    * um DTO editável: interpretá-lo como comando de gravação reabriria um

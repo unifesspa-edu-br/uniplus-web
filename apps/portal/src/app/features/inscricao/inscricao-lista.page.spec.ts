@@ -174,7 +174,7 @@ describe('InscricaoListaPage', () => {
     expect(host().querySelector('ui-spinner')).toBeNull();
   });
 
-  // --- saudação (CA-03, CA-04) ---
+  // Saudação ---
 
   it('exibe saudação com o nome do candidato autenticado', async () => {
     displayName.set('Ana Silva');
@@ -490,7 +490,7 @@ describe('InscricaoListaPage', () => {
     expect(host().querySelector('h3.inscricao-lista-item__titulo')).toBeNull();
   });
 
-  // --- estado vazio (CA-05) ---
+  // Estado vazio ---
 
   it('exibe estado vazio sem filtro quando não há inscrições', async () => {
     listagemService.flush([]);
@@ -552,7 +552,7 @@ describe('InscricaoListaPage', () => {
     expect(host().querySelectorAll('li.inscricao-lista-item').length).toBe(INSCRICOES.length);
   });
 
-  // --- erro e recarregar (CA-06) ---
+  // Erro e recarregar ---
 
   it('exibe alerta de erro com botão "Tentar novamente"', async () => {
     listagemService.rejeitar();

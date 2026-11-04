@@ -109,7 +109,7 @@ describe('DesempatePassoComponent', () => {
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
-        // O passo passou a ler o catálogo de fatos do candidato, que é do módulo Configuração.
+        // O passo lê o catálogo de fatos do candidato, que é do módulo Configuração.
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
       ],
     }).compileComponents();

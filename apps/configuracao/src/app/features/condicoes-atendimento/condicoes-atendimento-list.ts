@@ -433,7 +433,7 @@ export class CondicoesAtendimentoListPage implements OnInit {
       return [...envelope.data];
     },
   });
-  // Busca client-side sobre a página carregada: o backend (api#588) só pagina
+  // Busca client-side sobre a página carregada: o backend só pagina
   // por cursor, sem filtro de texto/código/nome no contrato.
   protected readonly condicoesFiltradas = computed(() => {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
@@ -610,7 +610,7 @@ export class CondicoesAtendimentoListPage implements OnInit {
     }
 
     // — esse array só existe no pipeline FluentValidation/422); mapeado ao
-    // campo manualmente para exibir o erro inline exigido pelo CA-07.
+    // campo manualmente para exibir o erro inline.
     if (problem.code === CONDICAO_ATENDIMENTO_CODIGO_JA_EXISTE_CODE) {
       this.notifications.errorFromProblem(problem);
       this.renovarIdempotencyKey();

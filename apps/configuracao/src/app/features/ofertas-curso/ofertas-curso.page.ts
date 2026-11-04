@@ -646,9 +646,9 @@ export class OfertasCursoPage {
   // Percorrem todas as páginas por cursor em vez de truncar em
   // API_MAX_PAGE_SIZE: um select de FK não pode esconder opções silenciosamente.
   // A primeira página não manda `sort`: a API devolve os cursos em ordem
-  // alfabética por padrão (uniplus-api#1371) e o cursor carrega essa ordenação
+  // alfabética por padrão e o cursor carrega essa ordenação
   // pelas páginas seguintes — o seletor de Curso sai numa sequência alfabética
-  // única (CA-03), sem ordenação local.
+  // única, sem ordenação local.
   protected readonly cursos = lookupCompleto(
     (cursor) => this.cursosApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
     this.destroyRef,
@@ -778,7 +778,7 @@ export class OfertasCursoPage {
   });
 
   // Cursor que não continua esta consulta (400) ou que expirou (410):
-  // recomeça a paginação sem cursor e avisa o operador (CA-14c).
+  // recomeça a paginação sem cursor e avisa o operador.
   private readonly recuperandoDeCursorObsoleto = useCursorObsoletoRecovery({
     problem: this.lista.problem,
     pagina: this.pagina,
@@ -804,7 +804,7 @@ export class OfertasCursoPage {
     if (problem) {
       const { title, detail } = this.problemI18n.resolve(problem);
       // 422 de `q`/`sort`: a API nomeia o campo recusado e lista os aceitos no
-      // `detail` — é o texto que o operador precisa para corrigir (CA-14b).
+      // `detail` — é o texto que o operador precisa para corrigir.
       return problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && detail ? detail : title;
     }
     return this.lista.error() ? 'Erro inesperado ao carregar ofertas de curso.' : null;
@@ -1103,7 +1103,7 @@ export class OfertasCursoPage {
   /**
    * Estado da resolução do Curso da linha — o que a listagem exibe. Distingue
    * carregando, catálogo recusado e id fora do catálogo, que o rótulo único
-   * ("Vinculado") colapsava num texto de aparência normal (#579).
+   * ("Vinculado") colapsava num texto de aparência normal.
    */
   protected cursoDaOferta(cursoId: string): ResolucaoDeVinculo {
     return resolverVinculo(this.cursos, this.cursosPorId().get(cursoId), rotularCursoNaListagem);

@@ -22,7 +22,7 @@ export const appRoutes: Routes = [
     children: [
       {
         // Consulta pública de processos seletivos — sem autenticação. Traz o
-        // destaque de hero e a lista de certames (issue #779) na mesma tela.
+        // destaque de hero e a lista de certames na mesma tela.
         path: 'processos',
         loadChildren: () =>
           import('./features/processos/processos.routes').then((m) => m.PROCESSOS_ROUTES),

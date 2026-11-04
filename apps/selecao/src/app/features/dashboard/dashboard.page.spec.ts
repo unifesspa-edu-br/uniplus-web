@@ -26,11 +26,7 @@ describe('DashboardPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  /**
-   * Os processos, KPIs, prazos e atividades desta tela eram valores escritos no
-   * template — inclusive nomes de pessoas. Nenhum tinha endpoint por trás
-   * (Story #478, CA-02).
-   */
+  /** Processo, KPI, prazo e atividade só aparecem se tiverem endpoint por trás. */
   it('não apresenta processo, número ou atividade sem origem de dados', () => {
     const host = montar();
 

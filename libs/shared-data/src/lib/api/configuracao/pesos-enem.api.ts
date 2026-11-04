@@ -22,8 +22,7 @@ export interface PesosAreaEnemQuery {
 /**
  * Cliente Angular standalone do recurso Peso do ENEM por grupo de curso
  * (módulo Configuração). Cada resolução materializa uma linha por grupo de área;
- * não há endpoint de lote — a coordenação das linhas é responsabilidade da página
- * (issue #395 §6.2).
+ * não há endpoint de lote — a coordenação das linhas é responsabilidade da página.
  *
  * API thin (ADR-0013): tipos do `schema.ts`; resposta envelopada em
  * `ApiResult<T>` (ADR-0011); vendor MIME `peso-area-enem v1` (ADR-0016 —

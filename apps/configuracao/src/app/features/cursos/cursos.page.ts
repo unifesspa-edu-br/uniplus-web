@@ -536,7 +536,7 @@ export class CursosPage {
   protected readonly temBusca = computed(() => this.buscaAplicada().length > 0);
 
   // Drawer "Ofertas do curso" — inspeção sob demanda das ofertas vivas de um
-  // curso via filtro `?cursoId` (api#755, issue #435).
+  // curso via filtro `?cursoId`.
   protected readonly ofertasOpen = signal(false);
   protected readonly cursoParaOfertas = signal<CursoDto | null>(null);
   protected readonly ofertasBloqueio = signal<string | null>(null);
@@ -618,7 +618,7 @@ export class CursosPage {
 
   // Ofertas vivas do curso selecionado — só dispara quando o drawer tem um
   // curso (request fn `undefined` = sem fetch). Filtro `?cursoId` reanexado a
-  // cada página; prev/next lidos do header Link (ADR-0026 web + api#755).
+  // cada página; prev/next lidos do header Link (ADR-0026 web).
   private readonly listaOfertas = useApiResource<readonly OfertaCursoDto[]>(() => {
     const curso = this.cursoParaOfertas();
     if (curso === null) {
@@ -688,7 +688,7 @@ export class CursosPage {
 
   // Cursor que não continua esta consulta (400) ou que expirou (410):
   // recomeça a paginação sem cursor e avisa o operador, em vez de deixar a
-  // tela vazia ou presa numa página que não existe mais (CA-14c).
+  // tela vazia ou presa numa página que não existe mais.
   private readonly recuperandoDeCursorObsoleto = useCursorObsoletoRecovery({
     problem: this.lista.problem,
     pagina: this.pagina,
@@ -969,7 +969,7 @@ export class CursosPage {
         // 409 é o único conflito possível no DELETE do curso: referenciado por
         // oferta viva. Em vez de só reexibir o texto, fecha o confirm e abre o
         // drawer de Ofertas com o preview das ofertas que bloqueiam a remoção
-        // (issue #435, CA2) — o operador vê exatamente o que impede a exclusão.
+        // O operador vê exatamente o que impede a exclusão.
         if (result.problem.status === STATUS_HTTP.CONFLITO) {
           this.confirmOpen.set(false);
           this.cursoParaRemover.set(null);
@@ -1044,14 +1044,14 @@ export class CursosPage {
     const pagina = this.pagina();
     if (pagina === undefined) {
       // Sem `sort`: a apresentação padrão consome a ordem alfabética que a API
-      // já devolve por padrão (CA-14a). Mandar `sort=nome` produziria a mesma
+      // já devolve por padrão. Mandar `sort=nome` produziria a mesma
       // ordem, mas com assinatura de cursor divergente da consulta sem parâmetro.
       return params.set('limit', String(this.limite()));
     }
     return params.set('cursor', cursorToString(pagina.cursor)).set('direction', pagina.direction);
   }
 
-  /** Params da listagem de ofertas do curso — `cursoId` reanexado em toda página (api#755). */
+  /** Params da listagem de ofertas do curso — `cursoId` reanexado em toda página. */
   private montarParamsOfertas(cursoId: string): HttpParams {
     const pagina = this.ofertasPagina();
     if (pagina === undefined) {
@@ -1095,7 +1095,7 @@ export class CursosPage {
     }
     // Curso.CodigoJaExiste é um DomainError único (409, sem `errors[]` — esse
     // array só existe no pipeline FluentValidation/422); mapeado ao campo
-    // manualmente para exibir o erro inline exigido pelo CA-03.
+    // manualmente para exibir o erro inline.
     if (problem.code === CURSO_CODIGO_JA_EXISTE_CODE) {
       this.renovarIdempotencyKey();
       this.form.controls.codigo.setErrors({

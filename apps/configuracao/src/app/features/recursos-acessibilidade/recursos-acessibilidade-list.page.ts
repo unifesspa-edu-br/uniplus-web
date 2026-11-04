@@ -430,7 +430,7 @@ export class RecursosAcessibilidadeListPage {
       return [...envelope.data];
     },
   });
-  // Busca client-side sobre a página carregada: o backend (api#588) só pagina
+  // Busca client-side sobre a página carregada: o backend só pagina
   // por cursor, sem filtro de texto/código/nome no contrato.
   protected readonly recursosFiltrados = computed(() => {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');

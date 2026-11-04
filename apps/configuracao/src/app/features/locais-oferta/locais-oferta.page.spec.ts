@@ -207,7 +207,7 @@ describe('LocaisOfertaPage', () => {
 
   // A coluna resolvia o campus por lookup e, quando a busca falhava, trocava o
   // rótulo por "Vinculado" — texto de aparência normal que escondia a falha
-  // (#579). Cada desfecho agora tem marcador próprio.
+  // Cada desfecho agora tem marcador próprio.
   it('lookup de campi recusado sinaliza a coluna e oferece recarregar', async () => {
     const localVinculado: LocalOfertaDto = { ...localSeed, campusResponsavelId: 'cmp1' };
     await flushLista([localVinculado]);

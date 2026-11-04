@@ -73,7 +73,7 @@ const PAGE_SIZE = 50;
 /** Espera após a última tecla antes de buscar municípios (mesmo valor do calendário de dias úteis). */
 const MUNICIPIO_BUSCA_DEBOUNCE_MS = 300;
 
-/** Nome completo evita lista poluída com resultados irrelevantes (CA-04 da issue). */
+/** Nome completo evita lista poluída com resultados irrelevantes. */
 const MUNICIPIO_BUSCA_MIN_CHARS = 3;
 
 /** Janela de resultados da busca de município (mesmo valor do calendário de dias úteis). */
@@ -761,7 +761,7 @@ export class BaseLegalBonusRegionalListPage {
   /**
    * Resolução do tipo de instrumento para exibição na listagem — nunca o
    * token cru do backend quando o vocabulário falha ou ainda não chegou
-   * (mesmo padrão de `categoriaDoTipo` em Tipo de Documento, #579).
+   * (mesmo padrão de `categoriaDoTipo` em Tipo de Documento).
    */
   protected tipoInstrumentoDoRegistro(codigo: string): ResolucaoDeVinculo {
     return resolverVinculo(

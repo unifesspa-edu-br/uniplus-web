@@ -4,7 +4,7 @@ import type { DiaNaoUtilDto } from '@uniplus/shared-data/configuracao';
 /**
  * Uma célula de dia do calendário mensal. `ocorrencias` vazio representa um
  * dia civil sem feriado (renderizado como texto neutro); mais de um item
- * representa múltiplos dias não úteis na mesma data (CA-09).
+ * representa múltiplos dias não úteis na mesma data.
  */
 export interface CelulaCalendarioMensal {
   readonly data: string; // YYYY-MM-DD
@@ -38,7 +38,7 @@ const NOMES_MES = [
 
 /**
  * Monta os 12 meses (Janeiro a Dezembro) de um único ano, prontos para exibição em grade
- * civil de 7 colunas. Meses sem registros permanecem visíveis sem marcações (CA01-CA05).
+ * civil de 7 colunas. Meses sem registros permanecem visíveis sem marcações.
  * Dias não úteis de outros anos são ignorados — quem decide quais anos mostrar é o
  * chamador, via {@link anosDoCalendario}, não esta função.
  */
@@ -56,9 +56,9 @@ export function agruparPorMes(dias: readonly DiaNaoUtilDto[], ano: number): MesC
 
 /**
  * Anos com ao menos um dia não útil no dataset, em ordem crescente. A tela ainda não
- * tem seletor de ano (issue #712): até que exista, todo ano presente no dataset precisa
+ * tem seletor de ano: até que exista, todo ano presente no dataset precisa
  * ser exibido, para não fazer feriados cadastrados sumirem da visualização quando o
- * dataset atravessa a virada do ano (issue #525, CA05). Dataset vazio cai no ano
+ * dataset atravessa a virada do ano. Dataset vazio cai no ano
  * corrente, só para não devolver uma tela sem nenhum mês.
  */
 export function anosDoCalendario(dias: readonly DiaNaoUtilDto[]): number[] {

@@ -47,7 +47,7 @@ export function consomeOTotalDeVagas(composicaoVagas: string, federal: boolean):
  *
  * O catálogo de Configuração publica o token canônico (`RETIRA_DE`), mas o
  * detalhe de Seleção serializa o nome do membro do enum (`RetiraDe`) — a
- * assimetria de contrato registrada em uniplus-api#1294. O resto da tela
+ * assimetria de contrato do contrato. O resto da tela
  * compara com o canônico, então a grafia do detalhe se resolve aqui.
  *
  * Composição fora do vocabulário devolve `null`: o que a tela não reconhece é

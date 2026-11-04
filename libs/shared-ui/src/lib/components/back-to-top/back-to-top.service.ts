@@ -3,7 +3,7 @@ import { Injectable, Signal, signal } from '@angular/core';
 /**
  * Registro do contêiner de rolagem principal de uma rota.
  *
- * O padrão do shell é `main.page` (PR #671). Uma rota cujo conteúdo rola num
+ * O padrão do shell é `main.page`. Uma rota cujo conteúdo rola num
  * contêiner interno — como `.wiz-content` no editor de Processo Seletivo —
  * registra-o aqui pela diretiva `uiBackToTopContainer`; enquanto essa diretiva
  * está montada, o `ui-back-to-top` do shell observa o contêiner registrado no

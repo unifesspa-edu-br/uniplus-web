@@ -175,7 +175,7 @@ function numeroDoHeader(
 }
 
 /**
- * Vitrine pública de certames (issue #779) — a lista vem de `GET /api/selecao/certames`,
+ * Vitrine pública de certames — a lista vem de `GET /api/selecao/certames`,
  * do módulo Seleção (ADR-0131/ADR-0133 da `uniplus-api`; anônimo), e as publicações e o
  * "Ver edital" de cada certame vêm da página pública dele na Portal API
  * (`GET /api/portal/certames/{identificador}`). Busca e situação viram parâmetros

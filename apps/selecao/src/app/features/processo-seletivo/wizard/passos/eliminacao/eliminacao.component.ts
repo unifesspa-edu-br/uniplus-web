@@ -46,7 +46,7 @@ import { recusaPorCriterioGravadoSemQuadro } from '../desempate/recusas-do-desem
  * o comando inteiro — regra de cálculo e precisão vêm do passo Fórmula, que
  * não persiste nada por conta própria.
  *
- * Sob `CLASSIFICACAO-IMPORTADA` (INV-B8), esta seção não se aplica: a lista
+ * Sob `CLASSIFICACAO-IMPORTADA`, esta seção não se aplica: a lista
  * de regras é ignorada na gravação (o mapeador força `[]`), e a tela não
  * oferece edição.
  */

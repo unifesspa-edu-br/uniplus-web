@@ -7,7 +7,7 @@ import { LookupCompleto } from './lookup-completo';
  * Os três desfechos que não resolvem têm causas distintas e pedem reações
  * distintas de quem está na tela — esperar, tentar de novo, ou procurar o
  * vínculo no cadastro de origem. Um fallback único para os três esconde a
- * diferença e faz falha de rede parecer dado legítimo (#579).
+ * diferença e faz falha de rede parecer dado legítimo.
  */
 export type EstadoDoVinculo =
   /** O item foi encontrado no catálogo e o rótulo está pronto. */

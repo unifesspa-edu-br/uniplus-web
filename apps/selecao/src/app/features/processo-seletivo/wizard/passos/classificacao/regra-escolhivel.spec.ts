@@ -46,7 +46,7 @@ describe('regrasEscolhiveis', () => {
   });
 
   /**
-   * CA-08: entrada de catálogo que não esteja mais disponível ainda aparece —
+   * Entrada de catálogo que não esteja mais disponível ainda aparece —
    * senão o `<select>` de um processo hidratado ficaria em branco, e o
    * operador gravaria por cima sem perceber que trocou de regra.
    */

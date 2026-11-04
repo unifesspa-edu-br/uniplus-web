@@ -16,7 +16,7 @@ import { comoInteiro, comoTexto } from './campos-lidos';
 
 /**
  * Projeta a classificação já gravada (UNI-REQ-0482). Ausente é estado válido (a Eliminação ainda
- * não gravou) e volta com os campos vazios da criação; a bimodalidade de INV-B8 não pede projeção
+ * não gravou) e volta com os campos vazios da criação; a bimodalidade da classificação não pede projeção
  * especial, porque o `regraArredondamento` nulo vira `''` e o mapeador para o comando decide o que
  * enviar.
  */
@@ -120,7 +120,7 @@ export function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempat
 /**
  * Projeta a oferta de atendimento gravada com o id **de origem**, que é o que a gravação recebe,
  * junto do nome (e do código, nas condições) devolvido na leitura: a referência continua legível
- * mesmo se o item já saiu do cadastro ativo (CA-05). `null` é "nenhuma oferta declarada", e as três
+ * mesmo se o item já saiu do cadastro ativo. `null` é "nenhuma oferta declarada", e as três
  * listas voltam vazias.
  */
 export function atendimentoDe(dto: ProcessoSeletivoDto): WizardDraft['atendimento'] {

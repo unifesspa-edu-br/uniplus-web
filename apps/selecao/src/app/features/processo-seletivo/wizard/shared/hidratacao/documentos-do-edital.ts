@@ -25,7 +25,7 @@ export const TIPO_DE_MIDIA_DO_EDITAL = 'application/pdf';
 export interface ReadbackDocumentos {
   /** Documento confirmado único — vínculo restaurável sem decisão. */
   readonly vinculo: UploadItem | null;
-  /** Confirmados que exigem escolha explícita do administrador (CA-06). */
+  /** Confirmados que exigem escolha explícita do administrador. */
   readonly escolha: readonly DocumentoAPublicarDto[];
 }
 
@@ -49,7 +49,7 @@ export function classificarDocumentos(
 }
 
 /**
- * Como apresentar um documento confirmado na escolha do oficial (CA-06). Não há rota de download
+ * Como apresentar um documento confirmado na escolha do oficial. Não há rota de download
  * para inspecionar o conteúdo, então além do nome vão metadados estáveis: o instante da confirmação
  * com segundos (duas confirmações no mesmo minuto ficariam idênticas), o tamanho e o início do hash,
  * que é a identidade do arquivo.

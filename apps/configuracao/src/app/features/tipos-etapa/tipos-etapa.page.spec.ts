@@ -219,8 +219,7 @@ describe('TiposEtapaPage', () => {
   });
 
   /**
-   * As duas ações deixaram de ser botões de texto com `(click)` próprio e passaram a
-   * delegar ao `ui-icon-button`, que emite `(triggered)`. Acionar pela instância não
+   * As duas ações delegam ao `ui-icon-button`, que emite `(triggered)`. Acionar pela instância não
    * exercita essa ligação: sem clicar no DOM, um binding trocado ou ausente passa por
    * lint, teste e build sem nada acusar.
    */

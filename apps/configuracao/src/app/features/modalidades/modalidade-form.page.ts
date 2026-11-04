@@ -670,7 +670,7 @@ export class ModalidadeFormPage {
   protected aoMudarNatureza(): void {
     const nova = this.form.controls.naturezaLegal.value;
     if (nova === this.naturezaAnterior) return;
-    // Precisa resetar remanejamento e há dados preenchidos? Pede confirmação (§5).
+    // Precisa resetar remanejamento e há dados preenchidos? Pede confirmação.
     if (this.remanejamentoPreenchido() && !this.naturezaCompativelComRegraAtual(nova)) {
       this.naturezaPendente = nova;
       this.confirmResetAberto.set(true);
@@ -783,7 +783,7 @@ export class ModalidadeFormPage {
 
   /**
    * Reconcilia validação e valores condicionais espelhando as invariantes do
-   * agregado `Modalidade` (uniplus-api #589): coerência natureza↔regra, equivalência
+   * agregado `Modalidade`: coerência natureza↔regra, equivalência
    * composição RETIRA_DE⟺origem e args por regra. Campos inaplicáveis são limpos aqui
    * e também anulados no comando, evitando valores ocultos obsoletos.
    */
@@ -936,7 +936,7 @@ export class ModalidadeFormPage {
     }
     // Unicidade de código (409). O código comparado é o do WIRE — `problem.code`
     // carrega a taxonomia `uniplus.<modulo>.<razao>`, e o código de domínio
-    // (`Modalidade.CodigoJaExiste`) é chave de lookup do servidor (`#743`).
+    // (`Modalidade.CodigoJaExiste`) é chave de lookup do servidor.
     if (
       problem.status === STATUS_HTTP.CONFLITO ||
       problem.code === 'uniplus.configuracao.modalidade.codigo_ja_existe'

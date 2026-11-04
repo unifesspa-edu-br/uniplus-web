@@ -2280,7 +2280,7 @@ describe('CronogramaPassoComponent', () => {
   });
 
   /**
-   * As bancas requeridas e o recorte que cada uma julga passaram a ser editados
+   * As bancas requeridas e o recorte que cada uma julga são editados
    * na superfície da fase, e este passo apenas os carrega. A gravação substitui
    * a coleção inteira: sem reenviá-los, mudar uma data desfaria a competência
    * declarada de cada banca.
@@ -2482,9 +2482,9 @@ describe('CronogramaPassoComponent', () => {
     controller.expectNone(ROTA_FASES);
   });
 
-  // ─── Convenção de contagem de prazo (#480) ──────────────────────────────
+  // ─── Convenção de contagem de prazo ──────────────────────────────
 
-  /** CA-05: ausência é estado válido enquanto rascunho — nenhum default. */
+  /** Ausência é estado válido enquanto rascunho — nenhum default. */
   it('não pré-seleciona nenhuma convenção de contagem de prazo', () => {
     expect(cronograma.formulario.controls.algoritmoContagemCodigo.value).toBe('');
     expect(cronograma.formulario.controls.algoritmoContagemVersao.value).toBe('');
@@ -2504,7 +2504,7 @@ describe('CronogramaPassoComponent', () => {
   });
 
   /**
-   * A prova do bug que esta Story fecha: sem esconder a opção, o operador
+   * A prova do defeito coberto: sem esconder a opção, o operador
    * escolhia "Nenhuma convenção declarada" sobre um processo que já tinha
    * convenção no servidor, `persistir()` pulava a terceira chamada em
    * silêncio e devolvia sucesso — a tela passava a mostrar "nenhuma" enquanto
@@ -2576,7 +2576,7 @@ describe('CronogramaPassoComponent', () => {
 
   /**
    * O `RegraCatalogoDto` não tem `nome` nem `descricao` — inventar um mapa código→rótulo no
-   * frontend é achado bloqueante (#511). A opção mostra o código e a versão, que são o que
+   * frontend é achado bloqueante. A opção mostra o código e a versão, que são o que
    * identifica a convenção; a base legal saiu do rótulo porque as três convenções de
    * contagem do catálogo têm a MESMA, com quatrocentos e sessenta e nove caracteres, e
    * repeti-la em cada linha empurrava o código para fora da largura do campo.
@@ -2653,7 +2653,7 @@ describe('CronogramaPassoComponent', () => {
 
   /**
    * O algoritmo é a terceira gravação, e só acontece quando há escolha
-   * (CA-05). As etapas e o cronograma de fases já foram gravados quando o
+   * As etapas e o cronograma de fases já foram gravados quando o
    * `PUT` do algoritmo sai.
    */
   it('grava a convenção de contagem depois das etapas e do cronograma de fases', async () => {
@@ -2690,7 +2690,7 @@ describe('CronogramaPassoComponent', () => {
     await expect(gravacao).resolves.toEqual({ valid: true });
   });
 
-  /** CA-05: sem escolha, a terceira chamada simplesmente não acontece. */
+  /** Sem escolha, a terceira chamada simplesmente não acontece. */
   it('não grava convenção de contagem quando nenhuma foi escolhida', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_INSCRICAO);
@@ -2706,7 +2706,7 @@ describe('CronogramaPassoComponent', () => {
   });
 
   /**
-   * CA-08: se a última chamada falhar, as duas primeiras já gravaram — a
+   * Se a última chamada falhar, as duas primeiras já gravaram — a
    * mensagem tem de dizer isso, não "não foi possível concluir a operação".
    */
   it('diz que etapas e cronograma já gravaram quando só a convenção falha', async () => {

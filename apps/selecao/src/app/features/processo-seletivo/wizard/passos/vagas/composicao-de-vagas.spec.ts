@@ -29,7 +29,7 @@ describe('decodificarComposicaoVagas', () => {
     },
   );
 
-  /** O detalhe de Seleção emite o nome do membro do enum (uniplus-api#1294). */
+  /** O detalhe de Seleção emite o nome do membro do enum. */
   it.each([
     ['RetiraDe', 'RETIRA_DE'],
     ['DentroDoVr', 'DENTRO_DO_VR'],

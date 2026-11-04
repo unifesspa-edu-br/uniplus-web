@@ -201,7 +201,7 @@ export class ProcessoSeletivoPage {
   }
 
   /**
-   * CA-04: assim que a criação — disparada dentro do passo 2 — devolve o id, o endereço passa a
+   * Assim que a criação — disparada dentro do passo 2 — devolve o id, o endereço passa a
    * contê-lo. Sem isto, recarregar `/novo` depois de já ter criado perderia o vínculo, e o passo 2
    * dispararia um segundo POST para o mesmo rascunho.
    *

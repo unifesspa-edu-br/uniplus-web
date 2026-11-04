@@ -97,7 +97,7 @@ describe('PagamentoPassoComponent', () => {
     expect(componente.validar().valid).toBe(true);
   });
 
-  /** UNI-REQ-0099: quem cobra reconhece ao menos um fundamento (issue #638). */
+  /** UNI-REQ-0099: quem cobra reconhece ao menos um fundamento. */
   it('recusa cobrança sem nenhum fundamento de isenção', () => {
     store.patchObjectSection('pagamento', { cobra: true, valor: '150,00', fundamentos: [] });
 

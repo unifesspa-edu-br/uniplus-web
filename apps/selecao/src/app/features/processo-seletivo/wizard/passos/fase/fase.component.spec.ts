@@ -588,7 +588,7 @@ describe('FasePassoComponent', () => {
     });
 
     /**
-     * O CA-03 pede mensagem por campo, não erro genérico do formulário: a
+     * A recusa precisa de mensagem por campo, não erro genérico do formulário: a
      * recusa do domínio precisa aparecer sob o controle que a provocou.
      */
     it('leva a recusa do domínio para o campo que a provocou', async () => {

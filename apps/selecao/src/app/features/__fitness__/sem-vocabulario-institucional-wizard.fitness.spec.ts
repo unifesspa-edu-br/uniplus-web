@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Fitness test do wizard de Processo Seletivo (`#511`): impede a volta de
+ * Fitness test do wizard de Processo Seletivo: impede a volta de
  * catálogos institucionais locais para conceitos cujo vocabulário pertence
  * à API, depois que `#480`–`#482` migraram seus consumidores. Inventário
  * reconciliado na própria issue `#511` e detalhado no §7 do plano de
@@ -148,7 +148,7 @@ function exportsConstDe(source: string): string[] {
  * inteiroDoCampo }`), então uma constante banida também poderia sair por
  * aqui, sem nunca aparecer como `export const` no mesmo arquivo. Não cobre
  * `export * from` — o gate é anchorado em nomes conhecidos (nota técnica da
- * issue #511), não em análise semântica de valor.
+ *), não em análise semântica de valor.
  */
 function exportsEspecificadorDe(source: string): string[] {
   const regex = /export\s*\{([^}]*)\}/g;

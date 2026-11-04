@@ -10,7 +10,7 @@ const DRAFT = { identificacao: {} } as unknown as WizardDraft;
 
 /**
  * Grafia do wire que o detalhe de Seleção emite — PascalCase, e não o token
- * canônico do catálogo de Configuração (uniplus-api#1294). Escrever a fixture
+ * canônico do catálogo de Configuração. Escrever a fixture
  * com o vocabulário do catálogo esconderia o defeito que este arquivo cobre.
  */
 const DISTRIBUICAO = {
@@ -606,7 +606,7 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
     ).toBe('');
   });
 
-  /** Sob classificação importada (INV-B8), o arredondamento é ausente — `null`, não zero. */
+  /** Sob classificação importada, o arredondamento é ausente — `null`, não zero. */
   it('projeta classificação importada sem arredondamento como campo vazio', () => {
     const importada = {
       ...CLASSIFICACAO,

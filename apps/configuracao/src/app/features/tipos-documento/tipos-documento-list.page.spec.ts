@@ -27,7 +27,7 @@ const PROTECAO_PREENCHIDA = {
 
 const concedidas = signal<readonly string[]>([]);
 
-/** As dez categorias semeadas pelo cadastro (uniplus-api#1342). */
+/** As dez categorias semeadas pelo cadastro. */
 const CATEGORIAS: readonly CategoriaDocumentoDto[] = [
   ['IDENTIFICACAO', 'Identificação', 1],
   ['ESCOLARIDADE', 'Escolaridade', 2],
@@ -650,7 +650,7 @@ describe('TiposDocumentoListPage', () => {
     expect(component['confirmRemoverAberto']()).toBe(false);
   });
   // ---------------------------------------------------------------------------
-  // Cenários da issue #651 — o vocabulário de categoria passa a vir do cadastro
+  // Cenários — o vocabulário de categoria passa a vir do cadastro
   // ---------------------------------------------------------------------------
 
   // Cenário: Formulário oferece as categorias vindas do cadastro

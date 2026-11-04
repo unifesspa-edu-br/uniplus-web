@@ -7,8 +7,8 @@ import { LoginErrorCode, classifyLoginError } from '@uniplus/shared-auth/bootstr
 /**
  * Banner contextual exibido quando o provedor OIDC redireciona de volta à
  * SPA com `error` / `error_description` na query string. Distingue
- * credenciais inválidas de conta bloqueada (H2 — brute force protection)
- * para cumprir a DoD da Task #62 sem exigir um formulário de login
+ * credenciais inválidas de conta bloqueada (proteção contra
+ * força bruta) sem exigir um formulário de login
  * customizado (o login acontece 100% na UI hospedada pelo provedor).
  *
  * Acessibilidade: `role="alert"` + `aria-live="assertive"`, com tokens

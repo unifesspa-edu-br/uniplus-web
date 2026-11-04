@@ -108,7 +108,7 @@ interface FormatoAceitoOpcao {
  * Roster fechado de formatos de arquivo aceitos (checkboxes do drawer,
  * serializados para a string orientativa `"pdf,jpg,png"` que o backend
  * persiste em `formatosAceitos`). A extensão `jpg` (não `jpeg`) é a canônica
- * de serialização — espelha o exemplo da issue #392.
+ * de serialização — espelha o exemplo.
  */
 const FORMATOS_ACEITOS_OPCOES: readonly FormatoAceitoOpcao[] = [
   { key: 'formatoPdf', extensao: 'pdf', label: 'PDF' },
@@ -807,7 +807,7 @@ export class TiposDocumentoListPage {
   });
 
   // Busca client-side sobre a página carregada: o backend só pagina por
-  // cursor, sem filtro de texto/categoria no contrato (issue #392 §4).
+  // cursor, sem filtro de texto/categoria no contrato.
   protected readonly registrosBuscados = computed(() => {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
     const registros = this.tiposDocumento();
@@ -842,7 +842,7 @@ export class TiposDocumentoListPage {
 
   /**
    * Chips de categoria com contador dinâmico sobre o conjunto já filtrado por
-   * busca textual (CA-01) — refletem quantos registros de cada categoria
+   * busca textual — refletem quantos registros de cada categoria
    * casam com o termo digitado, antes de aplicar o próprio filtro de chip.
    *
    * As opções vêm do cadastro, não de um roster escrito à mão: uma categoria
@@ -998,7 +998,7 @@ export class TiposDocumentoListPage {
   );
 
   // Valor reativo do formulário — só para a checagem de auto-equivalência
-  // client-side (§5.2 da issue #392), que precisa reagir a cada tecla/blur
+  // client-side, que precisa reagir a cada tecla/blur
   // sem depender de round-trip ao backend. `getRawValue()` (não `.value` do
   // próprio `valueChanges`) preserva os campos como não-opcionais mesmo com
   // nenhum control desabilitado.
@@ -1010,7 +1010,7 @@ export class TiposDocumentoListPage {
   /**
    * `tipoEquivalente` igual ao próprio `codigo` (trim, case-sensitive —
    * espelha o guard `StringComparison.Ordinal` do backend). Gate do botão
-   * Salvar e fonte do erro inline — sem chamada de rede (§5.2).
+   * Salvar e fonte do erro inline — sem chamada de rede.
    */
   protected readonly tipoEquivalenteIgualCodigo = computed(() => {
     const valor = this.formValue();
@@ -1104,7 +1104,7 @@ export class TiposDocumentoListPage {
    * Distingue carregando, catálogo recusado e código fora do cadastro. O
    * fallback anterior devolvia o próprio token quando não achava o rótulo, e
    * `TITULACAO_EXPERIENCIA` em caixa alta no meio da tabela parecia dado
-   * legítimo, não catálogo desatualizado (#579).
+   * legítimo, não catálogo desatualizado.
    */
   protected categoriaDoTipo(codigo: string): ResolucaoDeVinculo {
     return resolverVinculo(
@@ -1430,7 +1430,7 @@ export class TiposDocumentoListPage {
     }
     // TipoDocumento.CodigoJaExiste é um DomainError único (409, sem
     // `errors[]` — esse array só existe no pipeline FluentValidation/422);
-    // mapeado ao campo manualmente para exibir o erro inline exigido pelo CA-03.
+    // mapeado ao campo manualmente para exibir o erro inline.
     if (problem.code === TIPO_DOCUMENTO_CODIGO_JA_EXISTE_CODE) {
       this.renovarIdempotencyKey();
       this.form.controls.codigo.setErrors({
@@ -1523,7 +1523,7 @@ function nullIfBlank(value: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-/** Serializa os checkboxes marcados para a string orientativa `"pdf,jpg,png"` (§5.5 da issue #392). */
+/** Serializa os checkboxes marcados para a string orientativa `"pdf,jpg,png"`. */
 function serializarFormatosAceitos(raw: Record<FormatoAceitoChave, boolean>): string | null {
   const extensoes = FORMATOS_ACEITOS_OPCOES.filter((opcao) => raw[opcao.key]).map(
     (opcao) => opcao.extensao,

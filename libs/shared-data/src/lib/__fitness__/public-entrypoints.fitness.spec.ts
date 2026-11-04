@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 /**
  * Fitness dos contratos publicos granulares das libs Angular.
  *
- * O PR #378 precisou trocar root barrels por subpaths para preservar bundle.
+ * precisou trocar root barrels por subpaths para preservar bundle.
  * Este gate garante que os subpaths usados por apps sao secondary entrypoints
  * reais de ng-packagr, nao aliases wildcard para `src/lib/*`.
  */

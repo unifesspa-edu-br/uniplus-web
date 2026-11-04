@@ -110,7 +110,7 @@ export interface CronogramaForm {
   /**
    * Convenção de contagem de prazo do processo, por código e versão do
    * catálogo — declaração do processo inteiro, não de uma fase. Vazio é
-   * estado válido enquanto rascunho (CA-05): nenhuma convenção vem
+   * estado válido enquanto rascunho: nenhuma convenção vem
    * pré-selecionada.
    */
   readonly algoritmoContagemCodigo: FormControl<string>;

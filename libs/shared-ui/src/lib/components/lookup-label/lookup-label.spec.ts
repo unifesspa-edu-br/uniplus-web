@@ -26,7 +26,7 @@ describe('LookupLabelComponent', () => {
   });
 
   /**
-   * O ponto da issue #579: os três desfechos que não resolvem precisam ser
+   * O ponto: os três desfechos que não resolvem precisam ser
    * distinguíveis entre si na tela, não colapsados num "Vinculado" só.
    */
   it.each<[EstadoDoVinculo, string, string]>([

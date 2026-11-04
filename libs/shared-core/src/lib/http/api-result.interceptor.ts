@@ -40,7 +40,7 @@ const PROBLEM_DETAILS_MEDIA_TYPE = 'application/problem+json';
  *
  * O interceptor não loga `problem.detail` nem `errors[].message` — esses
  * campos podem conter PII residual e a invariante LGPD é nunca emiti-los
- * em logs (CA-05 da issue #169).
+ * em logs.
  */
 export const apiResultInterceptor: HttpInterceptorFn = (req, next) => {
   const requestWithHeaders = appendContextHeaders(req);
@@ -161,10 +161,10 @@ function isProblemShape(body: unknown): body is ProblemDetails {
  *
  * Endpoints específicos anexam extensions próprias — `pendencias` e
  * `obrigatoriedadesReprovadas` do preflight de publicação de Processo
- * Seletivo (`ProcessoSeletivoController`, issue #1096) são um exemplo, não a
+ * Seletivo (`ProcessoSeletivoController`) são um exemplo, não a
  * lista inteira. Reconstruir o objeto só com os campos abaixo, como a versão
- * anterior desta função fazia, descartava toda extension nomeada por uma
- * Story específica antes de ela chegar ao componente que a lê.
+ * anterior desta função fazia, descartava toda extension nomeada por um
+ * endpoint específico antes de ela chegar ao componente que a lê.
  */
 const CAMPOS_NORMALIZADOS = new Set<string>([
   'type',

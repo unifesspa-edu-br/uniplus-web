@@ -109,7 +109,7 @@ describe('ProcessosSeletivosListaPage', () => {
     expect(linha?.querySelector('[data-label="Processo"]')?.textContent).toContain(
       'Vestibular 2026.1',
     );
-    // O código do tipo é identificador técnico: serve à integração, não ao operador (#759).
+    // O código do tipo é identificador técnico: serve à integração, não ao operador.
     expect(celulaTipo).toContain('Vestibular');
     expect(celulaTipo).not.toContain('VESTIBULAR');
     expect(linha?.querySelector('[data-label="Data de criação"]')?.textContent?.trim()).toMatch(
@@ -119,7 +119,7 @@ describe('ProcessosSeletivosListaPage', () => {
 
   /**
    * O token do wire e o rótulo exibido são coisas diferentes: a API emite
-   * `rascunho` (uniplus-api#1294) e a tela mostra `Rascunho`. A primeira
+   * `rascunho` e a tela mostra `Rascunho`. A primeira
    * coluna é o que chega do servidor; a segunda, o que o operador lê. Casar a
    * grafia errada deixaria toda tag em `neutral` e apagaria a distinção visual
    * entre um rascunho e um certame publicado.
@@ -464,7 +464,7 @@ describe('ProcessosSeletivosListaPage', () => {
   });
 
   /**
-   * O percurso que a Story existe para garantir: cadastrar e voltar à listagem
+   * O percurso a garantir: cadastrar e voltar à listagem
    * mostra o processo novo. Prova que a página relê da API ao ser montada, em
    * vez de servir o que trouxe da visita anterior — se ela guardasse a coleção,
    * o registro recém-criado não apareceria sem um refresh do navegador.

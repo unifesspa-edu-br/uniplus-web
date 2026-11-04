@@ -10,7 +10,7 @@
       Carregada em iframe durante o init com `onLoad: 'check-sso'` e
       `silentCheckSsoRedirectUri` resolvido em runtime relativo ao
       `<base href>` do app (`new URL('assets/silent-check-sso.html',
-      document.baseURI)`, Story #446), não mais um path absoluto fixo.
+      document.baseURI)`), não mais um path absoluto fixo.
       Retransmite o hash/query com o resultado para a janela pai.
       Não deve conter lógica adicional nem recursos externos.
     -->

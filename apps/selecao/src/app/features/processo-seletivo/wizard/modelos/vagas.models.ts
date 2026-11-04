@@ -4,7 +4,7 @@
  * produziu o quadro fictício que este modelo substitui.
  *
  * Os números são texto porque é o que o campo edita: `Number` ao digitar leria `1.000` como 1
- * (#624). A conversão acontece no envio, com gramática explícita.
+ * A conversão acontece no envio, com gramática explícita.
  */
 export interface DistribuicaoDeVagas {
   readonly ofertaCursoId: string;

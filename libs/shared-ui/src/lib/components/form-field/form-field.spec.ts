@@ -179,7 +179,7 @@ describe('FormFieldComponent', () => {
   // 'input[type=number][formControl]'). Sem essa cobertura, refactors
   // que tentem fundir os ramos de novo em um [type] dinamico
   // regridem para DefaultValueAccessor entregando string ao FormControl<number>
-  // — exatamente o bug runtime identificado na issue #374 (criar edital
+  // Exatamente o bug runtime identificado (criar edital
   // via SPA falhava com 400 porque tipoProcesso chegava ao backend como
   // string e quebrava o binding do enum integer).
   it('type="number": NumberValueAccessor entrega valor como number ao FormControl<number>', () => {

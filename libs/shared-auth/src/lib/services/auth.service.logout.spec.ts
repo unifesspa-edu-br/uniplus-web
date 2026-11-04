@@ -113,7 +113,7 @@ describe('AuthService.logout — redireciona ao mount point (Story #447)', () =>
         expect.objectContaining({ redirectUri: 'http://localhost:3000/portal/' }),
       );
       // Regressão explícita: window.location.origin não tem rota própria
-      // sob PathPrefix (nginx.conf parametrizado pela Story #448) —
+      // sob PathPrefix (nginx.conf parametrizado) —
       // cairia no 404 do Traefik.
       expect(logoutSpy.mock.calls[0][0]).not.toEqual(
         expect.objectContaining({ redirectUri: window.location.origin }),

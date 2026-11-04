@@ -40,7 +40,7 @@ const PAGE_SIZE = 50;
 /**
  * Rótulo de exibição por status. As chaves vêm do enum gerado a partir do
  * contrato, não de uma cópia escrita à mão — o schema declara os valores
- * admissíveis desde uniplus-api#1294, e derivá-los dali é o que impede a
+ * admissíveis e derivá-los dali é o que impede a
  * grafia divergir do que o servidor emite. Um token fora deste conjunto é
  * exibido cru, para que um status introduzido por um backend mais novo
  * apareça ao operador em vez de sumir atrás de um rótulo genérico.
@@ -64,7 +64,7 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
 ]);
 
 /**
- * Listagem administrativa dos Processos Seletivos (Story #478, CA-01).
+ * Listagem administrativa dos Processos Seletivos.
  *
  * A leitura passa pelo client tipado `ProcessosSeletivosApi` — a página não
  * monta URL nem injeta `HttpClient` (ADR-0017, coberto pelo fitness test

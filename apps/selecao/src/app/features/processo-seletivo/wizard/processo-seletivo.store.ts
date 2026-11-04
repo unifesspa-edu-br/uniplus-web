@@ -59,10 +59,10 @@ export class ProcessoSeletivoStore {
 
   /**
    * Detalhe canônico como o servidor o devolveu, preservado **inteiro**
-   * (Story #478, CA-05). O rascunho é buffer de edição e só carrega as
+   * O rascunho é buffer de edição e só carrega as
    * dimensões que já têm tela; as demais — etapas, distribuição de vagas,
-   * cronograma, atendimento e as outras — vivem aqui até a Story que as
-   * implementa estender o adaptador. Guardar só o que o wizard sabe editar
+   * cronograma, atendimento e as outras — vivem aqui até o adaptador
+   * passar a editá-las. Guardar só o que o wizard sabe editar
    * perderia silenciosamente o resto do agregado.
    */
   readonly remoteSnapshot = signal<ProcessoSeletivoDto | null>(null);
@@ -88,13 +88,13 @@ export class ProcessoSeletivoStore {
   /**
    * A leitura por URL falhou. `motivo` decide o que a tela oferece: um id que
    * não corresponde a processo algum não tem retentativa útil, uma falha de
-   * rede tem. Em nenhum caso vira rascunho vazio (CA-08) — abrir um cadastro
+   * rede tem. Em nenhum caso vira rascunho vazio — abrir um cadastro
    * novo sob o id de outro processo é pior do que não abrir nada.
    */
   readonly falhaDeLeitura = signal<FalhaDeLeitura | null>(null);
 
   /**
-   * Documentos do edital confirmados quando há mais de um (CA-06). O wizard
+   * Documentos do edital confirmados quando há mais de um. O wizard
    * não elege o oficial: fica vazio enquanto o administrador não decide, e a
    * decisão zera a lista.
    */

@@ -91,7 +91,7 @@ const catalogoVazioStub = {
 /**
  * Detalhe canônico mínimo. As dimensões que o wizard ainda não edita entram
  * vazias de propósito — o teste do snapshot remoto confere que elas sobrevivem
- * à projeção, e é isso que o CA-05 protege.
+ * à projeção, e é isso que o teste protege.
  */
 function detalhe(overrides: Partial<ProcessoSeletivoDto> = {}): ProcessoSeletivoDto {
   return {
@@ -99,8 +99,8 @@ function detalhe(overrides: Partial<ProcessoSeletivoDto> = {}): ProcessoSeletivo
     nome: 'Vestibular 2026.1',
     tipoProcesso: { origemId: TIPO_ORIGEM_ID, codigo: 'VESTIBULAR', nome: 'Vestibular' },
     status: StatusProcesso.rascunho,
-    // Os dois campos saem do enum gerado, não de literal escrito à mão: desde
-    // uniplus-api#1294 o contrato os declara, e derivá-los dali é o que garante
+    // Os dois campos saem do enum gerado, não de literal escrito à mão: o
+    // contrato os declara, e derivá-los dali é o que garante
     // que a fixture use o vocabulário que a API realmente emite.
     origemCandidatos: OrigemCandidatos.inscricaoPropria,
     unidadeAdministradora: {
@@ -351,12 +351,12 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
   });
 
   /**
-   * CA-05: as dimensões sem tela própria não podem sumir só porque o wizard
+   * As dimensões sem tela própria não podem sumir só porque o wizard
    * ainda não sabe editá-las — o snapshot guarda o agregado inteiro.
    *
-   * A etapa vem completa porque a dimensão passou a ter projeção no rascunho: o
+   * A etapa vem completa porque a dimensão tem projeção no rascunho: o
    * adaptador confia no contrato, que declara `tipoEtapa` obrigatório, do mesmo
-   * modo que já lê `tipoProcesso` e `unidadeAdministradora` sem guarda. Fixture
+   * modo que lê `tipoProcesso` e `unidadeAdministradora` sem guarda. Fixture
    * parcial aqui não testaria tolerância a dado malformado — testaria o
    * adaptador contra um DTO que a API não emite.
    */
@@ -441,7 +441,7 @@ describe('ProcessoSeletivoPage — retomada por endereço', () => {
   });
 
   /**
-   * CA-06: adotar o mais recente trocaria o edital do certame sem o operador
+   * Adotar o mais recente trocaria o edital do certame sem o operador
    * perceber. Nenhum é vinculado até haver decisão.
    */
   it('não elege o oficial quando há mais de um documento confirmado', async () => {
@@ -1259,7 +1259,7 @@ describe('ProcessoSeletivoPage — falhas de leitura', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   /**
-   * CA-08: um id inexistente não pode virar cadastro novo — o operador
+   * Um id inexistente não pode virar cadastro novo — o operador
    * preencheria tudo de novo e criaria uma duplicata no passo 2.
    */
   it('404 informa o não encontrado sem inicializar rascunho', async () => {
@@ -1669,7 +1669,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
   });
 
   /**
-   * Fecha #606. Confere o elemento, não o rascunho: com `[value]` num
+   * Confere o elemento, não o rascunho: com `[value]` num
    * `<select>` os dois divergem — o dado chega ao estado e não chega à tela.
    * `formControlName` resolve isso, e é por isso que o teste olha o DOM.
    */
@@ -1732,7 +1732,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
   });
 
   /**
-   * CA-04: sem isto, recarregar `/novo` depois de criado perderia o vínculo e
+   * Sem isto, recarregar `/novo` depois de criado perderia o vínculo e
    * o passo 2 dispararia um segundo POST para o mesmo rascunho.
    */
   it('troca o endereço pelo id assim que a criação responde', async () => {

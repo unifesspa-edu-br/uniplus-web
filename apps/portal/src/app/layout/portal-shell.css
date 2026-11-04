@@ -230,7 +230,7 @@
 
 .portal-footer__group-title {
   margin: 0 0 var(--space-3);
-  /* Não é mais <h2> (ver portal-shell.ts) — como texto comum, o piso AAA é
+  /* Texto comum, não <h2> (ver portal-shell.ts): o piso AAA é
      14px, não os 12px de --text-xs. */
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);

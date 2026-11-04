@@ -7,8 +7,7 @@ import { ResolucaoDeVinculo, descreverVinculo } from '@uniplus/shared-core/http'
  * Exibe o texto quando o vínculo resolveu e, quando não resolveu, um marcador
  * que diz **qual** dos desfechos ocorreu. Colapsar os três num fallback só
  * ("Vinculado") faz falha de carregamento parecer dado legítimo, e foi assim
- * que uma indisponibilidade dos catálogos passou despercebida na listagem
- * (#579).
+ * que uma indisponibilidade dos catálogos passou despercebida na listagem.
  *
  * O marcador não carrega a ação de nova tentativa: numa tabela ela se
  * repetiria por linha. Quem oferece o "tentar novamente" é a tela, uma vez, no

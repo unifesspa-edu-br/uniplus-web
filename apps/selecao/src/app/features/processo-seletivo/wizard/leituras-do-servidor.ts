@@ -5,7 +5,7 @@ import { desempateDe, hidratarDraft } from './shared/hidratacao';
 import { regrasDasModalidadesOfertadas } from './shared/regras-das-modalidades';
 
 /**
- * Projeta o detalhe canônico sobre o rascunho (CA-05) e marca o processo como já criado: os campos
+ * Projeta o detalhe canônico sobre o rascunho e marca o processo como já criado: os campos
  * do comando de identificação ficam bloqueados, como depois de uma criação nesta sessão, porque o
  * contrato não expõe atualização deles.
  */

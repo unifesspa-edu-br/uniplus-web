@@ -280,7 +280,7 @@ export class CadastroInicial {
     );
   }
 
-  /** Substitui a configuração inteira: lista vazia apaga o que estava declarado (CA-05). */
+  /** Substitui a configuração inteira: lista vazia apaga o que estava declarado. */
   definirOfertaAtendimento(
     processoSeletivoId: string,
     request: DefinirOfertaAtendimentoRequest,
@@ -304,7 +304,7 @@ export class CadastroInicial {
     );
   }
 
-  /** Releitura pós-publicação (CA-08 da #486): confirma `status === publicado` depois do `204`. */
+  /** Releitura pós-publicação: confirma `status === publicado` depois do `204`. */
   obterDetalhe(processoSeletivoId: string) {
     return firstValueFrom(this.api.obter(processoSeletivoId));
   }

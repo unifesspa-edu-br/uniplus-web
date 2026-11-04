@@ -149,7 +149,7 @@ export function ordenarTurnosCanonicamente(turnos: readonly string[]): readonly 
 
 /**
  * Filtro de listagem de Ofertas de Curso (cursor pagination, ADR-0026;
- * busca/ordenação, uniplus-api#1419). `cursoId` (opcional, api#755) restringe
+ * busca/ordenação). `cursoId` (opcional) restringe
  * às ofertas vivas de um curso; viaja como query param e combina com o cursor —
  * reanexado a cada página.
  */

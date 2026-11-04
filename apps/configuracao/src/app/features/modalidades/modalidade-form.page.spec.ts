@@ -238,7 +238,7 @@ describe('ModalidadeFormPage', () => {
     component['form'].controls.remanejamentoPar.setValue('AC');
     component['form'].controls.remanejamentoFallback.setValue('LB_PPI');
 
-    // Trocar para AMPLA com args preenchidos pede confirmação (§5).
+    // Trocar para AMPLA com args preenchidos pede confirmação.
     setControl('naturezaLegal', 'AMPLA');
     component['aoMudarNatureza']();
     expect(component['confirmResetAberto']()).toBe(true);

@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 /**
- * Fitness de arquitetura (Stories #245 + #246):
+ * Fitness de arquitetura:
  *
  * Defesa em profundidade behind o ESLint inline. Re-asserta os mesmos
  * invariantes que `@nx/enforce-module-boundaries` aplica no editor —

@@ -454,7 +454,7 @@ export class LocaisOfertaPage {
 
     // Ativa o lookup de campi assim que a lista trouxer algum local vinculado,
     // para a coluna "Campus responsável" exibir a sigla/nome em vez do genérico
-    // "Vinculado" já na carga inicial (mantém o lazy quando não há vínculo). #412.
+    // "Vinculado" já na carga inicial (mantém o lazy quando não há vínculo)..
     effect(() => {
       const temVinculo = this.locais().some((local) => local.campusResponsavelId !== null);
       if (temVinculo && !this.carregarCampi()) {
@@ -484,7 +484,7 @@ export class LocaisOfertaPage {
   /**
    * Estado da resolução do Campus responsável — o que a listagem exibe.
    * Distingue carregando, catálogo recusado e id fora do catálogo, que o
-   * rótulo único ("Vinculado") colapsava num texto de aparência normal (#579).
+   * rótulo único ("Vinculado") colapsava num texto de aparência normal.
    * O vínculo ausente (`null`) não chega aqui: é opcional e a tabela já o
    * mostra como "—".
    */

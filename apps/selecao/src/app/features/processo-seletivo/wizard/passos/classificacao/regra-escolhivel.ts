@@ -35,7 +35,7 @@ export function lerChaveDaRegra(chave: string): { codigo: string; versao: string
 /**
  * As opções que o seletor de uma regra oferece: o catálogo carregado, mais a
  * entrada já gravada quando ela não está mais lá — regra reeditada ou
- * inativada no catálogo entre a gravação e a releitura (CA-08).
+ * inativada no catálogo entre a gravação e a releitura.
  *
  * Sem isto, reabrir um processo cuja regra saiu do catálogo mostraria o
  * `<select>` em branco, e o operador gravaria por cima sem perceber que

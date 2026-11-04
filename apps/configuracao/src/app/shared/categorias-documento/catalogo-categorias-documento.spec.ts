@@ -58,7 +58,7 @@ describe('CatalogoCategoriasDocumento', () => {
     expect(catalogo.comErro()).toBe(false);
   });
 
-  // CA-07: reentrar no cadastro não pode custar uma requisição nova.
+  // Reentrar no cadastro não pode custar uma requisição nova.
   it('reaproveita o catálogo já carregado nas chamadas seguintes', () => {
     catalogo.garantirCarregado();
     controller.expectOne(URL).flush([identificacao]);

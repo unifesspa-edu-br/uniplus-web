@@ -410,7 +410,7 @@ describe('CursosPage', () => {
     expect(req.request.params.has('ordenarPor')).toBe(false);
 
     // A API devolve fora da ordem dos identificadores; a Web apresenta na
-    // sequência recebida, sem reordenar a página localmente (CA-13/CA-20).
+    // sequência recebida, sem reordenar a página localmente.
     const foraDeOrdem: readonly CursoDto[] = [
       { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c9', codigo: 'ADM', nome: 'Administração' },
       { ...cursoSeed, id: '01960000-0000-7000-0000-0000000000c1', codigo: 'ZOO', nome: 'Zootecnia' },

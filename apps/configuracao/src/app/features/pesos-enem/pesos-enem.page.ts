@@ -1013,8 +1013,8 @@ export class PesosEnemPage {
 
     this.salvandoEdicao.set(true);
     this.editErro.set(null);
-    // Trava as linhas pendentes DURANTE o envio (issue §5.5: "disabled em
-    // todos os inputs enquanto submit está em curso"). Sem isso havia uma
+    // Trava as linhas pendentes DURANTE o envio: todos os inputs ficam
+    // desabilitados enquanto o submit está em curso. Sem isso havia uma
     // janela de corrida: o usuário editava um valor depois do snapshot já
     // enviado ao backend, mas antes do PUT resolver, e
     // aplicarLinhasAtualizadas() gravava em registros() esse valor nunca
@@ -1378,9 +1378,8 @@ export class PesosEnemPage {
       return;
     }
     if (this.editandoResolucao() === resolucao) {
-      // O identificador pode ser reaproveitado após inativação (§5.3 da
-      // issue #395) — um novo cadastro com o MESMO texto de resolução gera
-      // ids novos. Sem limpar aqui, o panel novo renderizaria "já em
+      // O identificador pode ser reaproveitado após inativação: um novo
+      // cadastro com o MESMO texto de resolução gera ids novos. Sem limpar aqui, o panel novo renderizaria "já em
       // edição" usando o editForm() antigo (ligado aos ids agora
       // deletados), e Salvar tentaria PUT em linhas que não existem mais.
       // Reset direto (não cancelarEdicao(), que teria efeito colateral de

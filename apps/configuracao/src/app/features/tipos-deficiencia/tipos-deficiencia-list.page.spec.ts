@@ -139,8 +139,7 @@ describe('TiposDeficienciaListPage', () => {
     component['abrirDrawerCriacao']();
     component['form'].setValue({ codigo: 'VISUAL', nome: 'Visual', descricao: '   ' });
 
-    // O contrato passou a exigir descrição não vazia; antes o formulário
-    // enviava `null` e o backend recusava com 422.
+    // O contrato exige descrição não vazia: sem ela o formulário não envia a request.
     component['salvar']();
     controller.expectNone(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
 
@@ -216,7 +215,7 @@ describe('TiposDeficienciaListPage', () => {
     component['form'].setValue({
       codigo: 'VISUAL',
       nome: 'Visual',
-      // Descrição passou a ser obrigatória no contrato: sem valor, o submit
+      // A descrição é obrigatória no contrato: sem valor, o submit
       // nem chegaria a disparar a request que este teste inspeciona.
       descricao: 'Inclui baixa visão e cegueira',
     });

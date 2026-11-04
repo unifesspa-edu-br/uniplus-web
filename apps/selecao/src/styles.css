@@ -354,8 +354,7 @@ sel-layout {
 }
 
 /* Realce visual (não normativo) para campos de código curto — o valor
-   digitado não é forçado a maiúsculas, só exibido assim (Tipo de Documento,
-   issue #392 §3.1). */
+   digitado não é forçado a maiúsculas, só exibido assim (Tipo de Documento §3.1). */
 .cfg-input-uppercase {
   text-transform: uppercase;
 }

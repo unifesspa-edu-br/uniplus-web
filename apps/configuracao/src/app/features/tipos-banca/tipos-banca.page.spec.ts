@@ -68,7 +68,7 @@ describe('TiposBancaPage', () => {
   });
 
   afterEach(() => {
-    // Issue #713: a tela nunca deve emitir a criação de tipo de banca.
+    // A tela nunca deve emitir a criação de tipo de banca.
     controller.expectNone((r) => r.method === 'POST' && r.url === CRIAR_URL);
     controller.verify();
   });

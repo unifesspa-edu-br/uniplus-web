@@ -67,7 +67,7 @@ const CIDADES_LIMIT = 20;
  * originou. Termo, opções e erro andam juntos porque são partes do mesmo fato:
  * separados, um reset que esquece um deles deixa o resultado de uma busca
  * convivendo com o termo de outra — foi o que produziu o falso "nenhuma cidade
- * encontrada" da #639, e é o que deixaria uma opção obsoleta clicável.
+ * encontrada", e é o que deixaria uma opção obsoleta clicável.
  */
 interface RespostaCidade {
   readonly termo: string;
@@ -83,7 +83,7 @@ interface BuscaCidadeEmissao {
 
 /**
  * Debounce da busca textual — uma request por rajada de digitação, não por
- * tecla (critério de aceite #397). Angular 22 trará `debounced()`; no 21.x o
+ * tecla. Angular 22 trará `debounced()`; no 21.x o
  * padrão oficial é a interop `toObservable → debounceTime → toSignal`.
  */
 const BUSCA_DEBOUNCE_MS = 300;
@@ -729,7 +729,7 @@ export class UnidadesPage {
 
   protected readonly saving = signal(false);
   protected readonly formError = signal<string | null>(null);
-  /** Erro de referência de cidade (422, all-or-nothing) exibido inline (CA-06, mesmo padrão de Instituição). */
+  /** Erro de referência de cidade (422, all-or-nothing) exibido inline (mesmo padrão de Instituição). */
   protected readonly cidadeErro = signal<string | null>(null);
   protected readonly busca = signal('');
   protected readonly tipoFiltro = signal('');
@@ -756,7 +756,7 @@ export class UnidadesPage {
    * Semeado a partir da árvore que chega, não do filtro: a listagem é filtrada
    * no servidor, então o resultado da busca só existe depois da resposta. Com
    * filtro aplicado todo nó com filhos entra expandido, senão um resultado
-   * dentro de ramo recolhido ficaria invisível (CA-19). Sem filtro, o que o
+   * dentro de ramo recolhido ficaria invisível. Sem filtro, o que o
    * operador expandiu continua valendo.
    *
    * Semear, em vez de forçar `isExpanded` a devolver `true` sob filtro, é o que
@@ -980,7 +980,7 @@ export class UnidadesPage {
    * "Busquei e não achei" — distinto de "ainda nem busquei". Só é verdadeiro
    * quando a Geo respondeu para este termo e devolveu lista vazia. Condicionar
    * ao tamanho do texto digitado afirmaria o vazio dentro da janela do
-   * debounce, antes de qualquer request sair (#639).
+   * debounce, antes de qualquer request sair.
    */
   protected readonly buscaCidadeSemResultado = computed(() => {
     const resposta = this.respostaCidadeCorrente();
@@ -1034,7 +1034,7 @@ export class UnidadesPage {
   ];
 
   // A árvore reflete o conjunto carregado/filtrado. Com filtro ativo, nós cujo
-  // pai foi filtrado aparecem como raiz — comportamento documentado (#397): não
+  // pai foi filtrado aparecem como raiz — comportamento documentado: não
   // há endpoint de hierarquia dedicado.
   protected readonly arvore = computed(() => montarArvore(this.unidades()));
   protected readonly formHeading = computed(() =>
@@ -1485,7 +1485,7 @@ export class UnidadesPage {
       return;
     }
     // Erro de referência de cidade (422 sem `errors[]`, all-or-nothing) — inline
-    // no campo de cidade, mesmo padrão de Instituição (CA-06).
+    // no campo de cidade, mesmo padrão de Instituição.
     if (ehErroDeEndereco(problem.code)) {
       this.renovarIdempotencyKey();
       this.cidadeErro.set(this.problemI18n.resolve(problem).title);
@@ -1513,7 +1513,7 @@ export class UnidadesPage {
     let erroCidade: string | null = null;
     for (const erro of errors) {
       // Campos de cidade não têm controle flat no FormGroup (trio escolhido
-      // inteiro numa busca) — vão inline no campo de cidade (CA-06), mesmo
+      // inteiro numa busca) — vão inline no campo de cidade, mesmo
       // padrão de Instituição, em vez de serem descartados por
       // `controlNameFromBackendField`.
       if (ehErroDeEndereco(erro.field) || ehErroDeEndereco(erro.code)) {

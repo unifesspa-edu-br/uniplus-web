@@ -571,7 +571,7 @@ export class FasesCanonicasPage {
   });
 
   // Busca client-side sobre a página carregada: o
-  // backend (api#592) só pagina por cursor, sem filtro de texto no
+  // backend só pagina por cursor, sem filtro de texto no
   // contrato (GET /api/configuracao/fases-canonicas aceita só cursor/limit/direction).
   protected readonly fasesFiltradas = computed(() => {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
@@ -619,7 +619,7 @@ export class FasesCanonicasPage {
 
   // Código da fase em edição — carregado pelo `form.reset()` de `abrirEdicao` e
   // usado para controlar a visibilidade dos grupos condicionais (ADR de UI da
-  // story #393: fieldset segue o código).
+  // Fieldset segue o código).
   private readonly codigoAtual = toSignal(this.form.controls.codigo.valueChanges, {
     initialValue: this.form.controls.codigo.value,
   });

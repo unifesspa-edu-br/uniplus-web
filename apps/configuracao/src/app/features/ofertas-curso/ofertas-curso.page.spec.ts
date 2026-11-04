@@ -90,7 +90,7 @@ const ofertaSeed: OfertaCursoDto = {
 // Segundo curso e segunda oferta no mesmo local e na mesma unidade que
 // `ofertaSeed` — a listagem não é escopada a um curso (`ofertas-curso.routes.ts`
 // não tem parâmetro de curso), então as duas linhas convivem na mesma página.
-// Usados para provar que o identificador da linha (#835) as distingue.
+// Usados para provar que o identificador da linha as distingue.
 const CURSO_ID_2 = '01960000-0000-7000-0000-0000000000c2';
 
 const cursoSeed2: CursoDto = {
@@ -339,7 +339,7 @@ describe('OfertasCursoPage', () => {
     expect(celulaUnidade.textContent).not.toContain('Instituto de Geociências e Engenharias');
   });
 
-  // CA-11 da #696: enxugar a coluna não pode enxugar as mensagens. Aqui o curso
+  // Enxugar a coluna não pode enxugar as mensagens. Aqui o curso
   // aparece sozinho, sem as demais colunas da linha, e o código é o que
   // distingue cursos de nome semelhante numa remoção.
   it('CA-11 (#696): a confirmação de remoção identifica o curso pelo código e nome', async () => {
@@ -875,7 +875,7 @@ describe('OfertasCursoPage', () => {
   });
 
   // O rótulo resolvido e o fallback de lookup falho são indistinguíveis quando
-  // a falha só troca o texto da célula (#579): o teste cobra a diferença.
+  // a falha só troca o texto da célula: o teste cobra a diferença.
   it('lookup de Curso recusado sinaliza a coluna e oferece recarregar só esse catálogo', async () => {
     controller
       .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
@@ -900,7 +900,7 @@ describe('OfertasCursoPage', () => {
     ).toContain('Marabá');
 
     // O nome acessível do botão repete o que a célula já mostra — não
-    // "Vinculado", que faria a falha de rede soar como dado legítimo (#579).
+    // "Vinculado", que faria a falha de rede soar como dado legítimo.
     expect(
       botaoAcao(
         'Editar oferta de curso Não carregado · IGE · Campus sede — Marabá · Regular · Matutino',
@@ -1172,7 +1172,7 @@ describe('OfertasCursoPage', () => {
     await propagate();
     expect(component['errorMessage']()).toBeNull();
     // 400 (uniplus.cursor.invalido) é "consulta mudou", não "expirou" — a
-    // distinção que o aoRecuperar do composable precisa preservar (CA-14c).
+    // distinção que o aoRecuperar do composable precisa preservar.
     expect(info).toHaveBeenCalledExactlyOnceWith(
       'A paginação foi reiniciada porque a consulta mudou.',
       'Recarregamos a listagem do começo.',

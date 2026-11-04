@@ -13,7 +13,7 @@ export type AtualizarModalidadeCommand = components['schemas']['AtualizarModalid
  * Rosters dos domínios fechados de Modalidade de concorrência — tokens
  * UPPER_SNAKE persistidos e aceitos pelo contrato (ver `NaturezasLegais`,
  * `ComposicoesVagas`, `RegrasRemanejamento` e `AcoesQuandoIndeferido` em
- * `Unifesspa.UniPlus.Configuracao.Domain.Enums`, uniplus-api #589). Não são enums
+ * `Unifesspa.UniPlus.Configuracao.Domain.Enums`). Não são enums
  * gerados pelo `openapi-typescript` — os campos chegam como `string` no
  * `schema.ts`; os tokens abaixo são copiados 1:1 do código-fonte do backend e o
  * domínio é a fonte de verdade das invariantes de coerência.
@@ -31,7 +31,7 @@ export const NATUREZAS_LEGAIS: readonly DominioOption<NaturezaLegalToken>[] = [
   { value: 'ACAO_AFIRMATIVA', label: 'Ação afirmativa' },
 ] as const;
 
-/** Natureza legal default de uma nova modalidade (§3 da story). */
+/** Natureza legal default de uma nova modalidade. */
 export const NATUREZA_LEGAL_DEFAULT: NaturezaLegalToken = 'AMPLA';
 
 export type ComposicaoVagasToken =
@@ -47,7 +47,7 @@ export const COMPOSICOES_VAGAS: readonly DominioOption<ComposicaoVagasToken>[] =
   { value: 'SUPLEMENTAR_AO_TOTAL', label: 'Suplementar ao total' },
 ] as const;
 
-/** Composição default de uma nova modalidade (§3 da story). */
+/** Composição default de uma nova modalidade. */
 export const COMPOSICAO_VAGAS_DEFAULT: ComposicaoVagasToken = 'RESIDUAL_DO_VO';
 
 /** Única composição que exige `composicaoOrigem` (equivalência exata, invariante do agregado). */

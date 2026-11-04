@@ -56,7 +56,7 @@ export class InstituicaoApi {
    * `plataforma-admin`. Idempotency-Key obrigatório (ADR-0027) — declarado via
    * `withIdempotencyKey(key)` no `context`. Retorna 409
    * (`uniplus.organizacao.instituicao.ja_existe`) se já existe uma viva
-   * (singleton — CA-06). Resposta 201 com body `string` (o ID); `Accept` fixado
+   * (singleton). Resposta 201 com body `string` (o ID); `Accept` fixado
    * em `application/json` porque o contrato também declara `text/plain` para 201.
    */
   criar(command: CriarInstituicaoCommand, context: HttpContext): Observable<ApiResult<string>> {

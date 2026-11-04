@@ -371,7 +371,7 @@ export class TiposBancaPage {
     },
   });
 
-  // Busca client-side sobre a página carregada: o backend (api#592) só pagina
+  // Busca client-side sobre a página carregada: o backend só pagina
   // por cursor, sem filtro de texto no contrato.
   protected readonly bancasFiltradas = computed(() => {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');

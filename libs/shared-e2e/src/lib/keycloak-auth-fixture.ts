@@ -7,7 +7,7 @@ import { keycloakLogin, resetPasswords } from './keycloak-login';
 /**
  * Configuração do setup de autenticação E2E reutilizável.
  *
- * **Padrão #20 reforçado:** Playwright `storageState` armazena cookies +
+ * Playwright `storageState` armazena cookies +
  * localStorage do *browser context de teste apenas* — é isolamento por test
  * run, NÃO contrato de produção. O invariante "JWT nunca em localStorage" do
  * `uniplus-web` continua valendo no código de produção; o storageState aqui

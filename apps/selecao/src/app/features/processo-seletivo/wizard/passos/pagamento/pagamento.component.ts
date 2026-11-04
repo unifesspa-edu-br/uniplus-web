@@ -267,7 +267,7 @@ export class PagamentoPassoComponent {
       }
     }
 
-    // Issue #1310: quem cobra reconhece ao menos um fundamento — é por eles que o
+    // Quem cobra reconhece ao menos um fundamento — é por eles que o
     // candidato poderá pedir isenção, e o servidor recusa a gravação sem nenhum.
     const semFundamento = pagamento.cobra === true && pagamento.fundamentos.length === 0;
     if (semFundamento) {

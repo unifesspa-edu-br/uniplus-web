@@ -394,7 +394,7 @@ describe('VagasPassoComponent — gravação da cascata de remanejamento', () =>
   });
 
   /**
-   * Reproduz o achado de revisão: um 5xx na gravação da cascata é resposta
+   * Um 5xx na gravação da cascata é resposta
    * inconclusiva (`ChaveDeSubstituicao` preserva a chave porque o servidor
    * pode ter aplicado o comando mesmo sem confirmar) — `existeNoServidor`
    * não pode ficar `false` nesse caso, senão uma mudança seguinte que torne

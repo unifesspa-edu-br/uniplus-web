@@ -1,9 +1,9 @@
-/* ---- Matriz da cascata de remanejamento (passo Vagas) ----
+/* Matriz da cascata de remanejamento (passo Vagas) ----
    Tabela própria, e não `.vagas-table`: aquela foi desenhada para a distribuição
    de vagas, onde a última coluna é a de ação e mede 56 px. Aqui a última coluna é
    o conteúdo principal — a ordem de destinos —, e herdar aquela largura espremia
    a cadeia em cinco linhas enquanto a origem, de seis caracteres, ficava com o
-   resto da tabela (#732). */
+   resto da tabela. */
 .cascata-matriz {
   width: 100%;
   border-collapse: collapse;

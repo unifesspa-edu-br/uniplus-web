@@ -39,7 +39,7 @@ const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
  * `regrasEliminacao` vazio na primeira e derrubaria o item de conformidade que a Eliminação
  * acabou de levantar.
  *
- * A classificação é bimodal (INV-B8): sob `CLASSIFICACAO-IMPORTADA`, precisão e eliminação não se
+ * A classificação é bimodal: sob `CLASSIFICACAO-IMPORTADA`, precisão e eliminação não se
  * aplicam e a seção some em vez de ficar desabilitada, porque o que o operador vê tem de bater
  * com o que será enviado (`null` nos dois campos).
  *
@@ -187,7 +187,7 @@ export class FormulaPassoComponent {
       regraCalculoVersao: versao,
       // A troca de ramo (local ↔ importada) não some com o que o operador já
       // digitou do outro lado — o mapeador para o comando é quem decide o que
-      // enviar (INV-B8). Só a saída explícita do formulário local zera o
+      // enviar. Só a saída explícita do formulário local zera o
       // arredondamento aqui, para o `<select>` não continuar mostrando uma
       // escolha que o ramo atual não usa.
       ...(local ? {} : { regraArredondamentoCodigo: '', regraArredondamentoVersao: '' }),
@@ -229,7 +229,7 @@ export class FormulaPassoComponent {
 
   /**
    * Desmarcar o ENEM é desistir da resolução: a escolha sai do rascunho, e remarcar pede uma nova.
-   * A troca de regra de cálculo, ao contrário, guarda a escolha como guarda o outro ramo (INV-B8).
+   * A troca de regra de cálculo, ao contrário, guarda a escolha como guarda o outro ramo.
    */
   alternarBaseadoEmEnem(checked: boolean): void {
     this.store.patchObjectSection('classificacao', {

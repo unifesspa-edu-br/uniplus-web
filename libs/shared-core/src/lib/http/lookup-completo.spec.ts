@@ -139,7 +139,7 @@ describe('lookupCompleto', () => {
   /**
    * Sem esse sinal, catálogo vazio por busca em andamento e catálogo vazio por
    * cadastro sem itens são o mesmo estado para quem consome o lookup — e a
-   * tela não tem como distinguir "carregando" de "não encontrado" (#579).
+   * tela não tem como distinguir "carregando" de "não encontrado".
    */
   it('nasce pendente e só se resolve quando a busca termina', () => {
     const emVoo = new Subject<ApiResult<readonly string[]>>();

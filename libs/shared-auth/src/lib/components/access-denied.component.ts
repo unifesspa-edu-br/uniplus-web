@@ -6,7 +6,7 @@ import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap'
  * Página de "Acesso negado" (HTTP 403). Exibida quando um usuário
  * autenticado tenta acessar uma rota para a qual não possui a role
  * requerida — cenário comum quando a SPA aplica `fullScopeAllowed=false`
- * + `scopeMappings` por client (Story uniplus-api#67 / PR #87).
+ * + `scopeMappings` por client.
  *
  * Não redireciona para login automaticamente (diferente de 401): o usuário já
  * está autenticado; precisa de outra conta ou de solicitação de papel.

@@ -1,8 +1,7 @@
 /**
  * Publicações de um certame, como o accordion "Ver publicações" e o link "Ver edital" (em
  * /processos) as mostram: só os atos publicados, cada um com os documentos no acervo público quando houver.
- * Marcos do cronograma, como a abertura das inscrições, não entram (decisão registrada na
- * uniplus-api#1648).
+ * Marcos do cronograma, como a abertura das inscrições, não entram.
  */
 export interface PublicacaoDoCertame {
   readonly id: string;

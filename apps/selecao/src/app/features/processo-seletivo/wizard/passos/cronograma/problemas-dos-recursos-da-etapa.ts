@@ -39,7 +39,7 @@ function problemasDoPrazoDaJanela(etapas: readonly EtapaPontuada[]): readonly st
   });
 }
 
-// O value object do prazo é o mesmo na fase e na etapa, e o servidor passou a prová-lo nos dois
+// O value object do prazo é o mesmo na fase e na etapa, e o servidor o prova nos dois
 // donos: a tela que aprovasse aqui mandaria o operador colher um 422 que a fase nunca deixaria
 // acontecer.
 function problemasDeCoerenciaDaJanela(etapas: readonly EtapaPontuada[]): readonly string[] {

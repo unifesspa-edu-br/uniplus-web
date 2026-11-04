@@ -12,19 +12,19 @@ import {
 import { NavigationEnd, Router } from '@angular/router';
 import { BackToTopScrollService } from './back-to-top.service';
 
-/** Fração do intervalo rolável a partir da qual o botão aparece (CA-02/CA-03). */
+/** Fração do intervalo rolável a partir da qual o botão aparece. */
 const LIMITE_VISIBILIDADE = 0.3;
 
 /**
  * Botão global "Voltar ao topo" do shell compartilhado.
  *
  * Observa o contêiner de rolagem principal do conteúdo — `main.page` por padrão
- * (CA-07), ou o contêiner registrado por `uiBackToTopContainer` numa rota com
- * rolagem interna (CA-08) — e fica visível quando a posição atinge
- * `scrollTop / (scrollHeight - clientHeight) >= 0,30` (CA-04). Acioná-lo leva
- * esse mesmo contêiner ao topo (CA-06), sem animação sob `prefers-reduced-motion`
- * (CA-16). Rolagem de tabelas, diálogos, drawers ou da barra lateral não afeta o
- * botão porque o listener vive apenas no contêiner ativo (CA-09).
+ * Ou o contêiner registrado por `uiBackToTopContainer` numa rota com
+ * rolagem interna — e fica visível quando a posição atinge
+ * `scrollTop / (scrollHeight - clientHeight) >= 0,30`. Acioná-lo leva
+ * esse mesmo contêiner ao topo, sem animação sob `prefers-reduced-motion`
+ * Rolagem de tabelas, diálogos, drawers ou da barra lateral não afeta o
+ * botão porque o listener vive apenas no contêiner ativo.
  */
 @Component({
   selector: 'ui-back-to-top',
@@ -107,7 +107,7 @@ export class BackToTopComponent {
       // `main.page` é o mesmo elemento entre rotas do app (o `ui-app-shell` não
       // é recriado), então o efeito acima não dispara na navegação. Ainda assim
       // os filhos que o ResizeObserver acompanha foram trocados pelo conteúdo da
-      // rota nova — religa para reapontar o observer, além de recalcular (CA-10).
+      // rota nova — religa para reapontar o observer, além de recalcular.
       //
       // `setTimeout`, não `queueMicrotask`: o conteúdo da rota nova só entra no
       // DOM na detecção de mudanças que segue o `NavigationEnd`; medir/observar
@@ -137,7 +137,7 @@ export class BackToTopComponent {
     this.recalcular();
   }
 
-  /** Recalcula a visibilidade pelo percentual rolado do contêiner ativo (CA-04/CA-05). */
+  /** Recalcula a visibilidade pelo percentual rolado do contêiner ativo. */
   recalcular(): void {
     const alvo = this.containerAtivo();
     if (alvo === null) {
@@ -181,7 +181,7 @@ export class BackToTopComponent {
       this.resizeObserver = new ResizeObserver(() => this.recalcular());
       this.resizeObserver.observe(alvo);
       // O contêiner não muda de caixa quando o conteúdo interno cresce; observar
-      // os filhos cobre a mudança relevante de dimensões (CA-18).
+      // os filhos cobre a mudança relevante de dimensões.
       for (const filho of Array.from(alvo.children)) this.resizeObserver.observe(filho);
     }
   }

@@ -23,7 +23,7 @@ export class ClassificacaoDoProcessoApi {
    * de opções e o vetor de regras de eliminação (UNI-REQ-0482).
    *
    * `regraArredondamentoCodigo`/`…Versao`/`casasArredondamento` viajam `null`
-   * quando a regra de cálculo é `CLASSIFICACAO-IMPORTADA` (INV-B8) — o
+   * quando a regra de cálculo é `CLASSIFICACAO-IMPORTADA`; o
    * mapeador que monta este corpo é quem decide isso, não este método.
    *
    * Responde 204 sem corpo.

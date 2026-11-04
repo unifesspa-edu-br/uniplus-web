@@ -63,7 +63,7 @@ describe('FasesCanonicasPage', () => {
   });
 
   afterEach(() => {
-    // Issue #698: a tela nunca deve emitir a criação de fase canônica.
+    // A tela nunca deve emitir a criação de fase canônica.
     controller.expectNone((r) => r.method === 'POST' && r.url === CRIAR_URL);
     controller.verify();
   });

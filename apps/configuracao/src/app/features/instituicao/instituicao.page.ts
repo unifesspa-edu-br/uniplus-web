@@ -52,7 +52,7 @@ const PAGE_SIZE = 100;
 
 /**
  * Mensagem do banner de bloqueio quando o backend recusa uma segunda criação
- * (409 singleton — CA-06 / §5.1 da spec).
+ * (409 singleton).
  */
 const SINGLETON_CONFLITO_MSG =
   'Já existe uma instituição cadastrada nesta instância da plataforma. ' +
@@ -612,7 +612,7 @@ export class InstituicaoPage {
   protected readonly drawerAberto = signal(false);
   protected readonly submitting = signal(false);
   protected readonly submitError = signal<string | null>(null);
-  /** Erro de coerência cidade↔CEP / campos do endereço (422) exibido inline (CA-06). */
+  /** Erro de coerência cidade↔CEP / campos do endereço (422) exibido inline. */
   protected readonly enderecoErro = signal<string | null>(null);
   protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
@@ -852,7 +852,7 @@ export class InstituicaoPage {
     return 'Valor inválido.';
   }
 
-  /** Rótulo da cidade da sede na ficha de leitura (CA-03). */
+  /** Rótulo da cidade da sede na ficha de leitura. */
   protected cidadeLabel(inst: InstituicaoDto): string {
     const cidade = inst.endereco?.cidade ?? inst.cidade;
     return cidade ? `${cidade.nome} — ${cidade.uf}` : this.naoInformado;
@@ -903,7 +903,7 @@ export class InstituicaoPage {
       return;
     }
     // 2) Unidade raiz inválida — domain error 422 sem errors[], mapeado pelos
-    //    codes exatos ao controle correspondente (CA-08).
+    //    codes exatos ao controle correspondente.
     if (INSTITUICAO_UNIDADE_RAIZ_INVALIDA_CODES.has(problem.code)) {
       this.renovarIdempotencyKey();
       const control = this.form.controls.unidadeRaizId;
@@ -914,14 +914,14 @@ export class InstituicaoPage {
       this.submitError.set(null);
       return;
     }
-    // 2b) Erro de endereço/coerência cidade↔CEP — inline no componente (CA-06).
+    // 2b) Erro de endereço/coerência cidade↔CEP — inline no componente.
     if (ehErroDeEndereco(problem.code)) {
       this.renovarIdempotencyKey();
       this.enderecoErro.set(this.problemI18n.resolve(problem).title);
       this.submitError.set(null);
       return;
     }
-    // 3) Conflito singleton (409) — banner de bloqueio, não inline (CA-06).
+    // 3) Conflito singleton (409) — banner de bloqueio, não inline.
     //    Só o code exato do conflito de singleton produz esta mensagem fixa;
     //    qualquer outro 409 (ex.: `uniplus.idempotency.processing_conflict`,
     //    ou um conflito de concorrência) cai no ramo genérico abaixo e
@@ -950,7 +950,7 @@ export class InstituicaoPage {
     let erroEndereco: string | null = null;
     for (const erro of errors) {
       // Campos do endereço/cidade não têm controle flat — vão inline no
-      // componente de endereço (CA-06) em vez de serem descartados.
+      // componente de endereço em vez de serem descartados.
       if (ehErroDeEndereco(erro.field) || ehErroDeEndereco(erro.code)) {
         erroEndereco ??= erro.message;
         aplicouAlgum = true;

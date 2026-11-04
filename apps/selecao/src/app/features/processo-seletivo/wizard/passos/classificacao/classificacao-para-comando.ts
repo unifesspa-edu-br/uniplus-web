@@ -15,8 +15,7 @@ import {
 
 /**
  * Código de `RegraCalculoCodigo.ClassificacaoImportada` — a única regra de
- * cálculo cujo ramo dispensa arredondamento e eliminação locais (INV-B8,
- * `ConfiguracaoClassificacao.cs:117-168`). Não é rótulo do frontend: é o
+ * cálculo cujo ramo dispensa arredondamento e eliminação locais. Não é rótulo do frontend: é o
  * discriminador que decide o shape do corpo, o mesmo que o servidor usa em
  * `DefinirClassificacaoCommandHandler`.
  */
@@ -127,7 +126,7 @@ export function comoComandoDeRegraEliminacao(
 /**
  * Converte o rascunho de classificação no `DefinirClassificacaoRequest`
  * inteiro. Sob `CLASSIFICACAO-IMPORTADA`, os três campos de precisão e o vetor
- * de eliminação são forçados aos valores que INV-B8 exige — `null` ou
+ * de eliminação são forçados aos valores que a regra exige — `null` ou
  * vazio — **independentemente** do que esteja digitado no rascunho, porque
  * trocar de regra de cálculo não precisa apagar o que o operador já preencheu
  * do outro ramo. A resolução de Peso por Área segue a mesma lógica: só viaja quando a
@@ -288,7 +287,7 @@ export function mensagensDeClassificacaoBase(
  * Sob fórmula local, o divisor da média (`ProcessoSeletivo.CalcularDivisorMedia`)
  * é a soma dos pesos das etapas que compõem a nota — e precisa ser maior que
  * zero, senão o item de conformidade `classificacao_divisor_media_invalido`
- * nasce vermelho (Story #482). Como toda etapa que compõe a nota declara peso
+ * nasce vermelho. Como toda etapa que compõe a nota declara peso
  * **positivo** (`componeNota`), a soma é positiva sse existe ao menos uma —
  * não há cancelamento a temer.
  */

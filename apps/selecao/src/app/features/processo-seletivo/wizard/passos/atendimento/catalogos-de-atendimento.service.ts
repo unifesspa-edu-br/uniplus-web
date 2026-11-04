@@ -16,8 +16,7 @@ import {
  * protegida do catálogo, ancorada no ADR-0067
  * (`OfertaAtendimentoEspecializado.CodigoCondicaoPcd` no domínio). Não é
  * rótulo inventado pelo frontend: é o valor que a API devolve, e a regra
- * local não é escrevível sem citá-lo (exceção nomeada, §4 do plano da
- * frente).
+ * local não é escrevível sem citá-lo.
  */
 export const CODIGO_CONDICAO_PCD = 'PCD';
 

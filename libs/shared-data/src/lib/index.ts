@@ -3,8 +3,7 @@ export * from './models/candidato.model';
 export * from './models/cota.model';
 
 // HTTP — `ProblemDetails` (RFC 9457) e `ApiResult<T>` vivem em
-// `@uniplus/shared-core/http` desde a ADR-0012. O antigo
-// `ApiErrorHandlerService` (RFC 7807) foi removido.
+// `@uniplus/shared-core/http` conforme a ADR-0012.
 
 // API clients gerados (ADR-0013) — types via openapi-typescript em schema.ts;
 // services Angular standalone manuais consumindo `withVendorMime` + `ApiResult`.

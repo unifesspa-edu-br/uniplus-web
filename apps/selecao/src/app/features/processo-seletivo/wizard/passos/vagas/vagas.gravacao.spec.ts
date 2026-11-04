@@ -89,8 +89,8 @@ describe('VagasPassoComponent — gravação da distribuição', () => {
   /**
    * A gravação exige a simulação: gravar sem simular é declarar um quadro que ninguém viu.
    *
-   * A conferência do operador deixou de ser estado do componente e virou o diálogo que a página
-   * abre no instante de gravar — por isso não há mais nada a marcar aqui.
+   * A conferência do operador é o diálogo que a página abre no instante de gravar, e não
+   * estado do componente.
    */
   function simularEConferir(ofertas: readonly string[]): void {
     simular(ofertas);
@@ -141,7 +141,7 @@ describe('VagasPassoComponent — gravação da distribuição', () => {
   });
 
   /**
-   * Cenário de aceite da #541: a recusa da API não pode apagar o formulário —
+   * A recusa da API não pode apagar o formulário —
    * o operador precisa corrigir a partir do que já preencheu.
    */
   it('preserva o rascunho quando a API recusa a coleção', async () => {

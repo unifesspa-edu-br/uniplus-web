@@ -132,7 +132,7 @@ describe('RevisaoPassoComponent — conferência', () => {
     }
 
     /**
-     * O defeito que originou a issue: o 422 acendia o alerta de erro, e a seção
+     * O defeito coberto: o 422 acendia o alerta de erro, e a seção
      * "Documento e ato de publicação" — que mora dentro do `@else` desse erro —
      * não renderizava. O campo onde o período seria informado ficava escondido
      * atrás da recusa que só o período resolveria, e o certame de origem

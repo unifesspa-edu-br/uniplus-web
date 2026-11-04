@@ -24,7 +24,7 @@ export interface PaginacaoQuery {
  * Rosters dos domínios fechados de Modalidade de concorrência — tokens
  * UPPER_SNAKE persistidos e aceitos pelo contrato (ver `NaturezasLegais`,
  * `ComposicoesVagas`, `RegrasRemanejamento` e `AcoesQuandoIndeferido` em
- * `Unifesspa.UniPlus.Configuracao.Domain.Enums`, uniplus-api #589). Não são enums
+ * `Unifesspa.UniPlus.Configuracao.Domain.Enums`). Não são enums
  * gerados pelo `openapi-typescript` — os campos chegam como `string` no
  * `schema.ts`; os tokens abaixo são copiados 1:1 do código-fonte do backend e o
  * domínio é a fonte de verdade das invariantes de coerência.

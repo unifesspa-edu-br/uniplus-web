@@ -369,12 +369,12 @@ describe('CascataRemanejamentoComponent', () => {
   });
 
   /**
-   * Reproduz o achado de revisão: a seleção hidratada (ou de uma gravação
+   * A seleção hidratada (ou de uma gravação
    * anterior) pode referenciar uma versão que a listagem ativa não traz mais
    * — `regraEscolhida()` não pode ficar `undefined` só porque a listagem
    * não tem a versão, senão a tabela e o checkbox somem e `validar()` cai
-   * no "confirme a cascata" sem controle nenhum na tela (CA-03: item já
-   * referenciado permanece legível como snapshot).
+   * no "confirme a cascata" sem controle nenhum na tela (item já referenciado
+   * permanece legível como snapshot).
    */
   it('busca a versão específica quando a seleção hidratada não está na listagem, e resolve a matriz normalmente', () => {
     store.patchObjectSection('vagas', {
@@ -434,7 +434,7 @@ describe('CascataRemanejamentoComponent', () => {
   });
 
   /**
-   * Reproduz o achado de revisão: um 5xx (ou falha de rede/autorização) na
+   * Um 5xx (ou falha de rede/autorização) na
    * busca da versão fora da listagem não prova que a regra não existe —
    * classificar como `nao_encontrada` transformaria uma indisponibilidade
    * transitória num veredito permanente, e a busca nunca mais tentaria de
@@ -621,7 +621,7 @@ describe('CascataRemanejamentoComponent', () => {
   });
 
   /**
-   * #729: trocar de processo (A → B sem cascata) com a busca direta da versão
+   * Trocar de processo (A → B sem cascata) com a busca direta da versão
    * de A ainda em curso abandona essa busca — a resposta, quando vier, não é
    * mais de quem está na tela. Ao voltar para A, o `buscando` abandonado não
    * pode passar por "já tratado", senão nenhuma consulta nova sai e a matriz

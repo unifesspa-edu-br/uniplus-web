@@ -65,22 +65,22 @@ interface EnderecoFormControls {
  * Implementa `ControlValueAccessor` sobre um `EnderecoEstruturado | null`. Dois
  * fluxos:
  *
- * - **Autofill por CEP** (CA-01): o usuário informa o CEP, o componente resolve
+ * - **Autofill por CEP**: o usuário informa o CEP, o componente resolve
  *   pela busca de CEP e preenche o formulário. Os campos resolvidos pelo
  *   DNE ficam **read-only (âncora)** conforme o `nivelResolucao`; os não
  *   resolvidos ficam editáveis (`camposAncorados`). `numero`/`complemento` são
  *   dado próprio, sempre editáveis e nunca preenchidos pelo CEP: o complemento do
  *   DNE descreve o CEP ("lado par", "Clique e Retire Correios"), não a residência.
- * - **Fallback manual / sem CEP** (CA-02): o usuário escolhe a cidade pelo
+ * - **Fallback manual / sem CEP**: o usuário escolhe a cidade pelo
  *   campo de município com busca e digita o endereço manualmente.
  *
  * Um CEP já resolvido pode ser corrigido via botão "Trocar CEP" — reabre só o
  * campo CEP (`iniciarEdicaoCep`) sem descartar o restante do endereço já
- * preenchido; uma nova resolução bem-sucedida re-ancora o campo. #438.
+ * preenchido; uma nova resolução bem-sucedida re-ancora o campo..
  *
- * Erros de CEP (formato/404) são exibidos inline (CA-06); o erro de coerência
+ * Erros de CEP (formato/404) são exibidos inline; o erro de coerência
  * cidade↔CEP (422) do backend chega via `erroExterno` do parent. Acessibilidade
- * WCAG 2.1 AA / e-MAG (CA-05): `fieldset/legend`, labels associadas,
+ * WCAG 2.1 AA / e-MAG: `fieldset/legend`, labels associadas,
  * `aria-invalid`/`aria-describedby`, estados read-only anunciados.
  */
 @Component({
@@ -441,11 +441,11 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
-  /** Prefixo dos `id`/`for` — único por instância para a11y (CA-05). */
+  /** Prefixo dos `id`/`for` — único por instância para a11y. */
   readonly idPrefix = input('endereco');
   /** Texto do `<legend>` do grupo. */
   readonly legend = input('Endereço');
-  /** Erro de coerência cidade↔CEP (422) ou de campo vindo do backend (CA-06). */
+  /** Erro de coerência cidade↔CEP (422) ou de campo vindo do backend. */
   readonly erroExterno = input<string | null>(null);
   /** Marca a legenda como de resposta obrigatória. */
   readonly obrigatorio = input(false);
@@ -531,7 +531,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
    * quando há um CEP **resolvido** (`nivel !== null`). Sem resolução — formulário
    * inicial, após 404, ou no fluxo "sem CEP" — esses campos não persistem (o
    * backend exige CEP no endereço), então exibi-los editáveis descartaria a
-   * digitação em silêncio. #412.
+   * digitação em silêncio..
    */
   protected readonly mostrarDetalheEndereco = computed(
     () => this.nivel() !== null && !this.cepDeFaixaSemConfirmacao(),
@@ -570,7 +570,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   /**
    * Há um CEP digitado que ainda não foi resolvido pelo Geo (formato inválido,
    * sem dígitos, 404, ou ainda sem "Buscar"). Bloqueia o save mesmo em endereço
-   * opcional — senão a tentativa de CEP seria descartada em silêncio (#412).
+   * opcional — senão a tentativa de CEP seria descartada em silêncio.
    * Considera o texto cru: qualquer valor não-vazio que não seja exatamente o
    * CEP resolvido (8 dígitos) é pendente.
    */
@@ -659,7 +659,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   /**
    * Inválido enquanto houver um CEP digitado que não foi resolvido pelo Geo —
    * bloqueia o save mesmo quando o endereço é opcional (Instituição), para a
-   * tentativa de CEP não ser descartada em silêncio (#412).
+   * tentativa de CEP não ser descartada em silêncio.
    */
   validate(): ValidationErrors | null {
     if (this.cepPendente()) {
@@ -726,7 +726,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   /**
    * Reabre o campo CEP para correção sem descartar o restante do endereço já
    * resolvido — antes disso, a única forma de corrigir um CEP ancorado era o
-   * fluxo "sem CEP", que zera CEP e campos derivados como efeito colateral. #438.
+   * fluxo "sem CEP", que zera CEP e campos derivados como efeito colateral..
    */
   protected iniciarEdicaoCep(): void {
     this.editandoCep.set(true);
@@ -750,7 +750,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
       .subscribe((result) => {
         this.resolvendoCep.set(false);
         // Resposta obsoleta: o usuário alterou o CEP enquanto o lookup estava em
-        // voo — ignora para não sobrescrever o formulário com um CEP antigo. #412.
+        // voo — ignora para não sobrescrever o formulário com um CEP antigo..
         if (this.form.controls.cep.value.replace(/\D/g, '') !== digitos) {
           return;
         }
@@ -764,7 +764,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
           // (editandoCep), preserva a última resolução válida em vez de
           // descartá-la — do contrário, retornar ao CEP original sem uma nova
           // busca reaprovaria o formulário com `nivelResolucao` nulo enquanto
-          // os campos de detalhe ainda carregam os dados da resolução antiga. #438.
+          // os campos de detalhe ainda carregam os dados da resolução antiga..
           if (this.cepResolvido().length === 0) {
             this.nivel.set(null);
           }
@@ -833,7 +833,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
       this.origem.set(ORIGEM_MANUAL);
       // Fluxo "sem CEP" persiste só a cidade (o `endereco` do backend exige CEP).
       // Limpa CEP + os campos derivados do CEP: senão valores resolvidos antes
-      // ficariam visíveis e seriam descartados silenciosamente no save. #412.
+      // ficariam visíveis e seriam descartados silenciosamente no save..
       this.form.reset(
         {
           cep: '',
@@ -886,7 +886,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
       // havia uma resolução preservada — descarta a resolução antiga e os
       // campos derivados dela em vez de deixá-los visíveis mas fora do que é
       // submetido (`enderecoParaCommand` só monta `endereco` com CEP de 8
-      // dígitos; sem cidade, a cidade top-level também some). #438.
+      // dígitos; sem cidade, a cidade top-level também some)..
       this.nivel.set(null);
       this.cidade.set(null);
       this.origem.set(null);
@@ -910,7 +910,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     // Só um CEP efetivamente resolvido pelo Geo entra no valor. Um CEP digitado
     // mas não resolvido (ex.: lookup 404, ou ainda sem "Buscar") NÃO deve virar
     // `endereco`: o mapeamento trataria os 8 dígitos como endereço válido e
-    // submeteria um CEP que o usuário não conseguiu validar. #412.
+    // submeteria um CEP que o usuário não conseguiu validar..
     this.tamanhoDoComplemento.set(raw.complemento.length);
     if (cepDigitos !== this.cepResolvido()) {
       // Trocar o CEP desfaz a confirmação.
@@ -923,7 +923,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
       // O usuário voltou ao CEP já resolvido (ex.: desistiu de uma correção que
       // falhou) sem disparar nova busca — limpa um eventual erro de tentativa
       // anterior, que do contrário ficaria preso na tela mesmo com o formulário
-      // válido outra vez. #438.
+      // válido outra vez..
       this.cepErro.set(null);
     }
     this.onValidatorChange();
@@ -972,7 +972,7 @@ function textoDeCoordenada(valor: string | number | null | undefined): string {
  * Nome completo do logradouro para exibição — o Geo devolve `tipo` (ex.
  * "Rua", "Avenida", "Terceira") separado de `logradouro` porque a API não
  * expõe um campo agregado; a concatenação precisa ser feita no client para
- * refletir o nome real do DNE (ex. "Terceira Avenida Bloco 1740"). #439.
+ * refletir o nome real do DNE (ex. "Terceira Avenida Bloco 1740")..
  */
 function logradouroCompleto(tipo: string | null, logradouro: string | null): string {
   if (logradouro === null || logradouro.length === 0) {

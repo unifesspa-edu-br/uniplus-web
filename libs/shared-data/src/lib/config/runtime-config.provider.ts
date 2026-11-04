@@ -26,8 +26,7 @@ import { resolveOidcConfig, type AppConfig } from './app-config.model';
  * em produção) com `Cache-Control: no-store`.
  *
  * Resolvido relativo a `document.baseURI` (não fixo em `/assets/...`) para
- * respeitar o `<base href>` quando o app é servido sob subpath (Feature
- * #444) — o mesmo `baseHref: "./"` que já faz o Angular resolver assets e
+ * respeitar o `<base href>` quando o app é servido sob subpath, o mesmo `baseHref: "./"` que já faz o Angular resolver assets e
  * rotas corretamente sob `/portal/`, `/selecao/` etc.
  */
 export function resolveRuntimeConfigPath(): string {
@@ -69,7 +68,7 @@ export function resolveGeoBasePath(store: AppConfigService): string {
  *
  * Erros de fetch (404, JSON malformado, network) são re-lançados — o
  * Angular aborta o bootstrap e exibe console error claro, em vez de
- * subir a app em estado inconsistente (CA-02 da Story #84).
+ * subir a app em estado inconsistente.
  */
 export function provideRuntimeConfig(): EnvironmentProviders {
   return makeEnvironmentProviders([

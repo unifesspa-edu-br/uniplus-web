@@ -114,7 +114,7 @@ export class GravacaoDoCronograma {
   /**
    * A convenção já foi declarada no servidor — pela última leitura completa
    * (`remoteSnapshot`) ou por uma gravação desta sessão. Enquanto for
-   * `false`, "nenhuma convenção" é opção legítima (CA-05); depois, deixa de
+   * `false`, "nenhuma convenção" é opção legítima; depois, deixa de
    * ser: o endpoint não tem operação de remoção —
    * `DefinirAlgoritmoContagemPrazoRequest` exige `codigo` e `versao` — e
    * oferecer a opção de novo convidaria a uma gravação que a tela pularia em
@@ -154,7 +154,7 @@ export class GravacaoDoCronograma {
    * muda nada no servidor.
    *
    * O algoritmo vem por último e é opcional: ausência é estado válido
-   * enquanto rascunho (CA-05) — o endpoint recusa código ou versão nulos, e
+   * enquanto rascunho — o endpoint recusa código ou versão nulos, e
    * não existe caminho para desdeclarar a convenção depois de escolhida. Se
    * ele falhar, as duas primeiras chamadas já gravaram, e a mensagem diz isso
    * em vez de tratar a falha como se nada tivesse sido salvo.
@@ -251,7 +251,7 @@ export class GravacaoDoCronograma {
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!exigencias.valid) return exigencias;
 
-      // Ausência é estado válido em rascunho (CA-05): a chamada só acontece
+      // Ausência é estado válido em rascunho: a chamada só acontece
       // quando há escolha. O código e a versão do formulário sempre andam
       // juntos — `escolherAlgoritmo` os grava ao mesmo tempo —, então checar
       // um basta para saber que o par está completo.

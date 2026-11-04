@@ -172,7 +172,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Espelha o achado de revisão em `removerCondicaoInativa()`: desmarcar uma
+   * Em `removerCondicaoInativa()`, desmarcar uma
    * condição PcD só pode esvaziar os tipos de deficiência quando, depois da
    * desmarcação, não resta nenhuma outra condição de código PcD marcada — se
    * o operador tinha uma condição PcD hidratada (inativa) e marcou também a
@@ -301,7 +301,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Reproduz o achado de revisão: a condição PcD segue marcada no rascunho,
+   * A condição PcD segue marcada no rascunho,
    * mas o catálogo ativo não a tem mais (inativada, ou falhou ao carregar) —
    * `pcdSelecionada()` não pode depender do catálogo, senão a seção de tipos
    * de deficiência some sem que o operador tenha como corrigir pela tela.
@@ -343,7 +343,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Reproduz o achado de revisão: se o operador já marcou a condição PcD
+   * Se o operador já marcou a condição PcD
    * ativa que substituiu a inativa (mesmo código, id novo), o pré-requisito
    * do ADR-0067 continua satisfeito depois da remoção — esvaziar os tipos
    * de deficiência apagaria uma seleção válida sem motivo, só porque a
@@ -421,7 +421,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Reproduz o achado de revisão: uma falha ao carregar qualquer catálogo de
+   * Uma falha ao carregar qualquer catálogo de
    * Configuração substituía a tela inteira pelo erro, mesmo com o rascunho
    * já tendo os nomes de condição, recurso e tipo de deficiência (populados
    * por `hidratarDraft()` a partir de `dto.ofertaAtendimento`) — o operador
@@ -455,7 +455,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Reproduz o achado mais grave da revisão: com o catálogo indisponível,
+   * Com o catálogo indisponível,
    * `condicoesInativas()`/`recursosInativos()`/`tiposDeficienciaInativos()`
    * comparam contra um catálogo ativo vazio — não porque nada está ativo,
    * mas porque a tela ainda não sabe — e a validação (introduzida para
@@ -494,7 +494,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * A interação completa que a revisão pediu: catálogo indisponível com
+   * A interação completa: catálogo indisponível com
    * rascunho hidratado não bloqueia o avanço, não propõe remoção de nada, e
    * a gravação segue as listas como estão no rascunho — nunca vazias por
    * omissão da indisponibilidade do catálogo.
@@ -526,7 +526,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Reproduz o achado de revisão sobre a própria correção anterior: fechar
+   * Fechar
    * `validar()` atrás de `catalogoConfirmado()` impede que a tela *mande*
    * apagar a oferta, mas os checkboxes de remoção continuavam habilitados —
    * o operador ainda *conseguia* desmarcar um item sem querer, sem opção de
@@ -578,8 +578,8 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Reproduz o achado de revisão: a correção do estado de carregamento faz
-   * as seleções hidratadas renderizarem enquanto `carregando()` é `true` —
+   * As seleções hidratadas renderizam
+   * enquanto `carregando()` é `true` —
    * mas o catálogo ativo ainda está vazio nesse momento, então
    * `rotuloDeSituacaoInativa()` não pode dizer "Inativo no cadastro" (uma
    * afirmação que só o catálogo carregado sustenta). "Ainda não sei" não é
@@ -639,7 +639,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Reproduz o achado de revisão: o `DefinirOfertaAtendimentoCommandHandler`
+   * O `DefinirOfertaAtendimentoCommandHandler`
    * resolve cada id no cadastro vivo e recusa com 422 quando uma referência
    * já saiu de lá — sem este diagnóstico local, "Gravar e avançar" falharia
    * sempre que o rascunho guardasse uma referência inativa, e nada na tela
@@ -694,7 +694,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(store.draft().atendimento.condicoes.map((item) => item.id)).toContain(PCD_ID);
   });
 
-  // ── "Marcar todas" (#788) ───────────────────────────────────────────────
+  // ── "Marcar todas" ───────────────────────────────────────────────
 
   function marcarTodasCheckbox(): HTMLInputElement {
     const checkbox = Array.from(
