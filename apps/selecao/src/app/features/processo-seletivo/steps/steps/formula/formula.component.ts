@@ -11,6 +11,7 @@ import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { AppConfigService, resolveConfiguracaoWebUrl } from '@uniplus/shared-data/config';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { formatarNumeroPtBr } from '@uniplus/shared-utils';
+import { EdicoesDoEnemComponent } from './edicoes-do-enem.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { StepValidation } from '../../processo-seletivo.models';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -19,10 +20,7 @@ import {
   relerProcessoAPedido,
 } from '../../shared/releitura-do-snapshot.service';
 import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
-import {
-  focarAposRenderizar,
-  focarAposRenderizarSeSemFoco,
-} from '../../shared/foco-apos-renderizar';
+import { focarAposRenderizarSeSemFoco } from '../../shared/foco-apos-renderizar';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
@@ -36,12 +34,7 @@ import {
   pendenciasDaClassificacaoBase,
   pendenciaDaResolucao,
 } from '../classificacao/classificacao-para-comando';
-import {
-  anoDaEdicao,
-  comEdicao,
-  declaraEdicoesDoEnem,
-  rotuloDaEdicao,
-} from '../classificacao/edicoes-do-enem';
+import { declaraEdicoesDoEnem, rotuloDaEdicao } from '../classificacao/edicoes-do-enem';
 import {
   FORMATO_DA_ESCALA_DA_NOTA_FINAL,
   escalaDaNotaFinalIlegivel,
@@ -70,7 +63,6 @@ interface ResolucaoEscolhivel {
 }
 
 const ID_DO_CAMPO_RESOLUCAO = 'f-resolucao-peso-area';
-const ID_DO_CAMPO_EDICAO = 'f-edicao-enem';
 const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
 const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 
@@ -95,7 +87,7 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
 @Component({
   selector: 'sel-step-formula',
   standalone: true,
-  imports: [ValorLegivelDirective, ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, ValorEmConsultaComponent, EdicoesDoEnemComponent],
   templateUrl: './formula.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(FormulaStepComponent)],
@@ -114,15 +106,12 @@ export class FormulaStepComponent {
   readonly invalidFields = signal<ReadonlySet<string>>(new Set());
 
   readonly idDoCampoResolucao = ID_DO_CAMPO_RESOLUCAO;
-  readonly idDoCampoEdicao = ID_DO_CAMPO_EDICAO;
   readonly idDoCampoEscala = ID_DO_CAMPO_ESCALA;
   readonly formatoDaEscala = FORMATO_DA_ESCALA_DA_NOTA_FINAL;
 
   /** O candidato escolhe a edição na inscrição, entre as que o processo aceita. */
   readonly declaraEdicoes = computed(() => declaraEdicoesDoEnem(this.store.draft()));
   readonly edicoes = computed(() => this.store.draft().classificacao.edicoesEnem);
-  readonly anoDaNovaEdicao = signal('');
-  readonly recusaDoAno = signal<string | null>(null);
   readonly rotuloDaEdicao = rotuloDaEdicao;
 
   readonly avisoDaLista = signal<string | null>(null);
@@ -422,28 +411,6 @@ export class FormulaStepComponent {
     });
   }
 
-  acrescentarEdicao(): void {
-    const lido = anoDaEdicao(this.anoDaNovaEdicao(), this.edicoes(), new Date().getFullYear());
-    if ('recusa' in lido) {
-      this.recusaDoAno.set(lido.recusa);
-      return;
-    }
-    this.store.patchObjectSection('classificacao', {
-      edicoesEnem: comEdicao(this.edicoes(), lido.ano),
-    });
-    this.anoDaNovaEdicao.set('');
-    this.recusaDoAno.set(null);
-    this.store.classificacao.recusaDasEdicoesDoEnem.set(null);
-  }
-
-  removerEdicao(ano: string): void {
-    this.store.patchObjectSection('classificacao', {
-      edicoesEnem: this.edicoes().filter((e) => e !== ano),
-    });
-    this.store.classificacao.recusaDasEdicoesDoEnem.set(null);
-    focarAposRenderizar(this.injector, ID_DO_CAMPO_EDICAO);
-  }
-
   aoAlternarBaseadoEmEnem(evento: Event): void {
     if (evento.target instanceof HTMLInputElement)
       this.alternarBaseadoEmEnem(evento.target.checked);
@@ -531,12 +498,9 @@ export class FormulaStepComponent {
   }
 
   /**
-   * Validação declarativa — acionada pela page ao clicar em "Próximo". As
-   * mensagens vêm de `mensagensDeClassificacaoBase`, a mesma fonte que a
-   * Eliminação usa para os campos desta tela — a Eliminação persiste o
-   * comando inteiro e não pode divergir sobre o que conta como válido aqui.
-   * O `Set` de campos inválidos é só para o destaque `.is-invalid` deste
-   * template, então continua calculado à parte.
+   * Validação declarativa — acionada pela page ao clicar em "Próximo". Os campos destacados e as
+   * mensagens vêm de `pendenciasDaClassificacaoBase`, a mesma fonte que a Eliminação usa — ela
+   * persiste o comando inteiro e não pode divergir sobre o que conta como válido aqui.
    */
   validate(): StepValidation {
     const classificacao = this.store.draft().classificacao;

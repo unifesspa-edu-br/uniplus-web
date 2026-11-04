@@ -263,16 +263,5 @@ describe('FormulaStepComponent', () => {
       expect(validacao.messages).toContain('Escolha ao menos uma edição do ENEM aceita.');
       expect(campoDoAno().getAttribute('aria-invalid')).toBe('true');
     });
-
-    it('a recusa do servidor às edições aparece junto da lista e descreve o campo do ano', () => {
-      processoDeInscricaoComEnem(['2026']);
-
-      store.classificacao.recusaDasEdicoesDoEnem.set('A edição informada não é aceita.');
-      fixture.detectChanges();
-
-      const recusa = (fixture.nativeElement as HTMLElement).querySelector('#edicoes-enem-servidor');
-      expect(recusa?.textContent?.trim()).toBe('A edição informada não é aceita.');
-      expect(campoDoAno().getAttribute('aria-describedby')).toContain('edicoes-enem-servidor');
-    });
   });
 });

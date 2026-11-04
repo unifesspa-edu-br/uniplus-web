@@ -113,9 +113,9 @@
             <p class="field__error" [id]="idDoCampoEscala + '-erro'">{{ erro }}</p>
           }
           <p class="field__hint" [id]="idDoCampoEscala + '-dica'">
-            A nota final é publicada nesta escala, de zero até o valor informado. A nota de cada etapa
-            é convertida para ela antes dos pesos. {{ formatoDaEscala }} O rascunho pode ficar sem a
-            escala, mas a publicação a exige.
+            A nota final é publicada nesta escala, de zero até o valor informado. A nota de cada
+            etapa é convertida para ela antes dos pesos. {{ formatoDaEscala }} O rascunho pode ficar
+            sem a escala, mas a publicação a exige.
           </p>
         </div>
       </div>
@@ -137,7 +137,10 @@
           [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
           (change)="escolherRegraOrdemAlocacao($any($event.target).value)"
         >
-          <option value="|" [selected]="store.draft().classificacao.regraOrdemAlocacaoCodigo === ''">
+          <option
+            value="|"
+            [selected]="store.draft().classificacao.regraOrdemAlocacaoCodigo === ''"
+          >
             — escolher —
           </option>
           @for (regra of regrasOrdemAlocacao(); track regra.codigo + regra.versao) {
@@ -156,79 +159,19 @@
         [disabled]="!store.aceitaEdicao()"
         (change)="aoAlternarBaseadoEmEnem($event)"
       /><span
-        >Classificação baseada em provas e notas do ENEM (define a resolução de Peso por Área que pesa
-        as notas das áreas e habilita as regras de eliminação por corte por área e zero em área, no
-        passo Eliminação)</span
+        >Classificação baseada em provas e notas do ENEM (define a resolução de Peso por Área que
+        pesa as notas das áreas e habilita as regras de eliminação por corte por área e zero em
+        área, no passo Eliminação)</span
       ></label
     >
 
     @if (declaraEdicoes()) {
-      <fieldset class="form-section" style="margin-top: var(--space-5)">
-        <legend class="form-section__title">Edições do ENEM aceitas</legend>
-        <p class="field__hint" id="edicoes-enem-ajuda">
-          O candidato escolhe, na inscrição, uma destas edições, e a nota dela é a que conta.
-        </p>
-        @if (edicoes().length > 0) {
-          <ul aria-label="Edições do ENEM aceitas">
-            @for (ano of edicoes(); track ano) {
-              <li>
-                {{ rotuloDaEdicao(ano) }}
-                <button
-                  type="button"
-                  class="btn btn--tertiary btn--sm"
-                  [disabled]="!store.aceitaEdicao()"
-                  [attr.aria-label]="'Remover ' + rotuloDaEdicao(ano)"
-                  (click)="removerEdicao(ano)"
-                >
-                  Remover
-                </button>
-              </li>
-            }
-          </ul>
-        } @else {
-          <p class="field__hint">Nenhuma edição escolhida ainda.</p>
-        }
-        <div class="form-field">
-          <label class="label" [for]="idDoCampoEdicao">Ano da edição</label
-          ><input
-            class="input"
-            type="text"
-            inputmode="numeric"
-            maxlength="4"
-            autocomplete="off"
-            [id]="idDoCampoEdicao"
-            [value]="anoDaNovaEdicao()"
-            [disabled]="!store.aceitaEdicao()"
-            [class.is-invalid]="
-              recusaDoAno() !== null || invalidFields().has('edicoesEnem')
-            "
-            [attr.aria-invalid]="
-              recusaDoAno() !== null || invalidFields().has('edicoesEnem') ? 'true' : null
-            "
-            [attr.aria-describedby]="
-              'edicoes-enem-ajuda' +
-              (recusaDoAno() !== null ? ' edicoes-enem-recusa' : '') +
-              (store.classificacao.recusaDasEdicoesDoEnem() !== null ? ' edicoes-enem-servidor' : '')
-            "
-            (input)="anoDaNovaEdicao.set($any($event.target).value)"
-            (keydown.enter)="$event.preventDefault(); acrescentarEdicao()"
-          />
-          @if (recusaDoAno(); as recusa) {
-            <p class="field__error" id="edicoes-enem-recusa" role="alert">{{ recusa }}</p>
-          }
-          @if (store.classificacao.recusaDasEdicoesDoEnem(); as recusa) {
-            <p class="field__error" id="edicoes-enem-servidor" role="alert">{{ recusa }}</p>
-          }
-        </div>
-        <button
-          type="button"
-          class="btn btn--secondary btn--sm"
-          [disabled]="!store.aceitaEdicao()"
-          (click)="acrescentarEdicao()"
-        >
-          Acrescentar edição
-        </button>
-      </fieldset>
+      <fieldset
+        selEdicoesDoEnem
+        class="form-section"
+        style="margin-top: var(--space-5)"
+        [invalido]="invalidFields().has('edicoesEnem')"
+      ></fieldset>
     }
   }
 
@@ -261,10 +204,7 @@
 
       <!-- Em consulta o cadastro não é lido: vale o nome gravado, sem "(fora do cadastro)". -->
       @if (store.emConsulta()) {
-        <ui-valor-em-consulta
-          rotulo="Resolução de Peso por Área"
-          [valor]="resolucaoEscolhida()"
-        />
+        <ui-valor-em-consulta rotulo="Resolução de Peso por Área" [valor]="resolucaoEscolhida()" />
       } @else {
         <div class="escolher-e-acrescentar">
           <div class="form-field">
