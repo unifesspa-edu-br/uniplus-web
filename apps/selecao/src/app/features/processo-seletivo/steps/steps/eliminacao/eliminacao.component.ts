@@ -20,7 +20,6 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
-import { leituraDaEscalaDaNotaFinal } from '../classificacao/escala-da-nota-final';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
@@ -28,7 +27,6 @@ import {
   FATO_DA_EDICAO_DO_ENEM,
   comoOpcoesDasEdicoes,
   declaraEdicoesDoEnem,
-  rotuloDaEdicao,
 } from '../classificacao/edicoes-do-enem';
 import {
   classificacaoUsaFormulaLocal,
@@ -40,7 +38,6 @@ import {
   eliminacaoUsaSoEtapa,
   ehCampoDaEscala,
   ehCampoDaResolucao,
-  exigeResolucaoPesoAreaEnem,
   mensagensDeClassificacaoBase,
 } from '../classificacao/classificacao-para-comando';
 import {
@@ -52,6 +49,7 @@ import { declaraNotaDoEnem } from '../cronograma/regras-da-etapa';
 import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import { type ColunaDoQuadro } from '../../shared/quadro-de-pesos';
 import { recusaDaEliminacao, recusasDoCorte, type CampoDaRegra } from './recusas-da-eliminacao';
+import { confirmacaoDaClassificacao } from '../classificacao/confirmacao-da-classificacao';
 import {
   REGRA_ELIMINACAO_VAZIA,
   areasEscolhiveis,
@@ -299,70 +297,17 @@ export class EliminacaoStepComponent {
    */
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
     if (!this.validate().valid || this.recusasCertasPeloDesempate().length > 0) return null;
-    const avisoDoDesempate = this.avisoDoDesempatePorArea();
 
-    const classificacao = this.store.draft().classificacao;
-    const local = this.usaFormulaLocal();
-    // O passo Desempate adia a gravação dos critérios por área até a classificação: é aqui que eles
-    // saem, e quem confirma precisa ver quais são.
-    const criteriosAdiados = this.store.classificacao.desempatePendenteDeGravacao()
-      ? this.store.draft().desempate
-      : [];
-
-    return {
-      titulo: 'Confirmar a classificação do processo',
-      aviso: [
-        criteriosAdiados.length > 0
-          ? 'A classificação, a precisão, a eliminação e os critérios de desempate serão gravados juntos nesta confirmação.'
-          : 'A classificação, a precisão e a eliminação serão gravadas juntas nesta confirmação.',
-        ...avisoDoDesempate,
-      ].join(' '),
-      rotuloDeConfirmar: 'Gravar classificação',
-      itens: [
-        { rotulo: 'Regra de cálculo', valor: classificacao.regraCalculoCodigo },
-        {
-          rotulo: 'Arredondamento',
-          valor: local
-            ? `${classificacao.regraArredondamentoCodigo} — ${classificacao.casasArredondamento} casas`
-            : 'não se aplica (classificação importada)',
-        },
-        { rotulo: 'Ordem de alocação', valor: classificacao.regraOrdemAlocacaoCodigo },
-        {
-          rotulo: 'Escala da nota final',
-          valor: local
-            ? leituraDaEscalaDaNotaFinal(classificacao.escalaNotaFinal)
-            : 'não se aplica (classificação importada)',
-        },
-        { rotulo: 'Baseada em ENEM', valor: classificacao.baseadoEmEnem ? 'Sim' : 'Não' },
-        {
-          rotulo: 'Resolução de Peso por Área',
-          valor: exigeResolucaoPesoAreaEnem(classificacao)
-            ? classificacao.resolucaoPesoAreaEnem
-            : 'não se aplica',
-        },
-        {
-          rotulo: 'Regras de eliminação',
-          valor: local
-            ? `${classificacao.regrasEliminacao.length} regra(s)`
-            : 'nenhuma (classificação importada)',
-        },
-        {
-          rotulo: 'Edições do ENEM aceitas',
-          valor: !declaraEdicoesDoEnem(this.store.draft())
-            ? 'não se aplica'
-            : classificacao.edicoesEnem.length > 0
-              ? classificacao.edicoesEnem.map(rotuloDaEdicao).join(', ')
-              : 'nenhuma escolhida',
-        },
-        ...criteriosAdiados.map((criterio, indice) => ({
-          rotulo: `${indice + 1}º critério de desempate`,
-          valor:
-            criterio.areas.length > 0
-              ? `${criterio.regraCodigo}: ${criterio.areas.map((codigo) => this.rotuloDaArea(codigo)).join(', ')}`
-              : criterio.regraCodigo,
-        })),
-      ],
-    };
+    return confirmacaoDaClassificacao({
+      draft: this.store.draft(),
+      avisosDoDesempate: this.avisoDoDesempatePorArea(),
+      // O passo Desempate adia a gravação dos critérios por área até a classificação: é aqui que
+      // eles saem, e quem confirma precisa ver quais são.
+      criteriosAdiados: this.store.classificacao.desempatePendenteDeGravacao()
+        ? this.store.draft().desempate
+        : [],
+      rotuloDaArea: (codigo) => this.rotuloDaArea(codigo),
+    });
   }
 
   /**

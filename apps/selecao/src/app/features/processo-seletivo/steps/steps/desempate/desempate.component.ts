@@ -47,6 +47,7 @@ import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { inteiroNaForma, leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
+import { textoDoCriterio } from '../classificacao/confirmacao-da-classificacao';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import {
@@ -764,9 +765,7 @@ export class DesempateStepComponent {
       rotuloDeConfirmar: adia ? 'Confirmar critérios' : 'Gravar critérios',
       itens: criterios.map((criterio, indice) => ({
         rotulo: `${indice + 1}º critério`,
-        valor: this.usaAreas(criterio)
-          ? `${criterio.regraCodigo}: ${criterio.areas.map((codigo) => this.rotuloDaArea(codigo)).join(', ')}`
-          : criterio.regraCodigo,
+        valor: textoDoCriterio(criterio, (codigo) => this.rotuloDaArea(codigo)),
       })),
     };
   }
