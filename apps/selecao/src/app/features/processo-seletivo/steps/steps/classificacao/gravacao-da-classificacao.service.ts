@@ -28,7 +28,7 @@ import {
   declaraEdicoesDoEnem,
 } from './edicoes-do-enem';
 import { mensagemDaRecusaDaEscala, mensagemDaRecusaDaResolucao } from './recusas-da-classificacao';
-import { recusaDaClassificacaoPeloDesempate } from '../desempate/quadro-do-desempate';
+import { recusaDaClassificacaoPeloDesempate } from '../desempate/recusas-do-desempate';
 
 /**
  * A gravação da classificação inteira — regra de cálculo, precisão, ordem de alocação e o vetor de

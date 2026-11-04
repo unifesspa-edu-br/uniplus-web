@@ -36,9 +36,9 @@ import {
 import { mensagensDasRegras } from './validacao-da-eliminacao';
 import {
   conferirDesempateGravado,
-  recusaPorCriterioGravadoSemQuadro,
   type PendenciaDoCriterioGravado,
-} from '../desempate/quadro-do-desempate';
+} from '../desempate/conferencia-do-desempate-gravado';
+import { recusaPorCriterioGravadoSemQuadro } from '../desempate/recusas-do-desempate';
 
 /**
  * Regras de eliminação — a coleção que fecha o corpo de `PUT

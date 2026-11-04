@@ -27,7 +27,7 @@ import {
   regrasEscolhiveis,
   rotuloDaRegraEscolhida,
 } from '../classificacao/regra-escolhivel';
-import { rotulosDasAreas } from '../desempate/quadro-do-desempate';
+import { rotulosDasAreas } from '../desempate/situacao-do-quadro';
 
 /**
  * Uma etapa já persistida do cronograma, que uma regra pode citar por `etapaRef`. `doEnem` diz se

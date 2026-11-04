@@ -72,14 +72,16 @@ import {
   areasCitadasPor,
   areasForaDoQuadro,
   dicaDaSituacao,
-  outroCriterioQueCita,
-  RECUSA_DA_AREA,
-  recusaAoGravarODesempate,
   recusaSemAreas,
   rotulosDasAreas,
   DEPENDEM_DA_RELEITURA,
   situacaoDoQuadro,
-} from './quadro-do-desempate';
+} from './situacao-do-quadro';
+import {
+  outroCriterioQueCita,
+  RECUSA_DA_AREA,
+  recusaAoGravarODesempate,
+} from './recusas-do-desempate';
 
 const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
   regraCodigo: '',
@@ -372,7 +374,8 @@ export class DesempateStepComponent {
     const indice = this.criterios().findIndex((criterio) => this.usaAreas(criterio));
     // Sem critério por área — a regra pode ter sido trocada enquanto a leitura corria —, o destino
     // é o botão de acrescentar critério, que está sempre na tela.
-    this.focar(
+    focarAposRenderizar(
+      this.injector,
       ...(indice < 0 ? [] : [`desemp-area-nova-${indice}`, `desemp-regra-${indice}`]),
       'desempate-acrescentar',
     );
@@ -508,7 +511,11 @@ export class DesempateStepComponent {
     this.anunciar(`Critério ${indice + 1} removido.`);
     // O botão clicado sai do DOM junto com a linha e o foco cairia no corpo da página. Quem
     // navega por teclado perderia o lugar a cada remoção.
-    this.focar(`desemp-remover-${Math.max(0, indice - 1)}`, 'desempate-acrescentar');
+    focarAposRenderizar(
+      this.injector,
+      `desemp-remover-${Math.max(0, indice - 1)}`,
+      'desempate-acrescentar',
+    );
   }
 
   /**
@@ -531,7 +538,8 @@ export class DesempateStepComponent {
     );
 
     this.anunciar(`Critério movido para a posição ${destino + 1} de ${ordem.length}.`);
-    this.focar(
+    focarAposRenderizar(
+      this.injector,
       delta < 0 ? `desemp-subir-${destino}` : `desemp-descer-${destino}`,
       delta < 0 ? `desemp-descer-${destino}` : `desemp-subir-${destino}`,
     );
@@ -556,20 +564,6 @@ export class DesempateStepComponent {
     this.anuncio.set(
       this.repeticoesDoAnuncio > 1 ? `${mensagem} (${this.repeticoesDoAnuncio}ª vez)` : mensagem,
     );
-  }
-
-  /**
-   * Põe o foco no primeiro dos alvos que estiver disponível, DEPOIS de a lista ser
-   * reprojetada.
-   *
-   * A espera é por renderização, não por microtask: o ciclo de detecção do Angular roda depois
-   * que a fila de microtasks drena, então um `queueMicrotask` consultaria o DOM antigo — acha
-   * o botão que está prestes a sair, põe o foco nele, e o re-render o arranca em seguida,
-   * deixando o foco no corpo da página. É o caso de remover o último item, justamente aquele
-   * em que a queda para "Acrescentar" existe.
-   */
-  private focar(...alvos: string[]): void {
-    focarAposRenderizar(this.injector, ...alvos);
   }
 
   escolherRegra(indice: number, valor: string): void {
@@ -633,7 +627,7 @@ export class DesempateStepComponent {
     const codigo = this.escolhaPendente(indice);
     if (!this.areasOferecidas().some((area) => area.codigo === codigo)) {
       this.anunciar('Escolha no seletor a área a acrescentar.');
-      this.focar(`desemp-area-nova-${indice}`);
+      focarAposRenderizar(this.injector, `desemp-area-nova-${indice}`);
       return;
     }
 
@@ -643,7 +637,8 @@ export class DesempateStepComponent {
       `Área ${this.rotuloDaArea(codigo)} acrescentada ao critério ${indice + 1}, na posição ${areas.length}.`,
     );
     // Acrescentada a última área oferecida, o botão fica indisponível e perderia o foco.
-    this.focar(
+    focarAposRenderizar(
+      this.injector,
       `desemp-area-acrescentar-${indice}`,
       `desemp-area-remover-${indice}-${areas.length - 1}`,
     );
@@ -660,7 +655,8 @@ export class DesempateStepComponent {
     // que passou a ocupar a posição dela; sem nenhuma, para o seletor de acrescentar e, quando ele
     // não está na tela, para a regra do critério.
     const vizinha = posicao > 0 ? posicao - 1 : 0;
-    this.focar(
+    focarAposRenderizar(
+      this.injector,
       `desemp-area-remover-${indice}-${vizinha}`,
       `desemp-area-nova-${indice}`,
       `desemp-regra-${indice}`,
@@ -679,7 +675,8 @@ export class DesempateStepComponent {
     this.anunciar(
       `Área ${this.rotuloDaArea(areas[destino])} movida para a posição ${destino + 1} de ${areas.length} no critério ${indice + 1}.`,
     );
-    this.focar(
+    focarAposRenderizar(
+      this.injector,
       delta < 0
         ? `desemp-area-subir-${indice}-${destino}`
         : `desemp-area-descer-${indice}-${destino}`,

@@ -45,7 +45,7 @@ import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/cat
 import { FormulaStepComponent } from './steps/steps/formula/formula.component';
 import { BonusStepComponent } from './steps/steps/bonus/bonus.component';
 import { DesempateStepComponent } from './steps/steps/desempate/desempate.component';
-import { reavaliarRecusaPeloDesempate } from './steps/steps/desempate/quadro-do-desempate';
+import { reavaliarRecusaPeloDesempate } from './steps/steps/desempate/conferencia-do-desempate-gravado';
 import { EliminacaoStepComponent } from './steps/steps/eliminacao/eliminacao.component';
 import { AtendimentoStepComponent } from './steps/steps/atendimento/atendimento.component';
 import { RevisaoStepComponent } from './steps/steps/revisao/revisao.component';
