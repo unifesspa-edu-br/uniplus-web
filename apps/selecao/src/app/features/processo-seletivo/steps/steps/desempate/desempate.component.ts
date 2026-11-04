@@ -10,26 +10,12 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  CondicaoDeFatoComponent,
-  ValorEmConsultaComponent,
-  ValorLegivelDirective,
-} from '@uniplus/shared-ui/components';
+import {} from '@uniplus/shared-ui/components';
 import { isApiOk } from '@uniplus/shared-core/http';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { FatoCandidatoView, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
 
-import {
-  alcanceDaCondicao,
-  comparaComLista,
-  fatosParaGatilho,
-  operadoresDoFato,
-  RESPOSTAS_BOOLEANAS,
-  valorEscalarDe,
-  valoresDeListaDe,
-  type CondicaoDeFato,
-  type FatoEscolhivel,
-} from '../../shared/gatilho-de-exigencia';
+import { fatosParaGatilho } from '../../shared/gatilho-de-exigencia';
 import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
 
 import { CriterioDesempateConfigurado, StepValidation } from '../../processo-seletivo.models';
@@ -40,16 +26,12 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
-import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AreasDoDesempateService } from './areas-do-desempate.service';
+import { CriterioDeDesempateComponent } from './criterio-de-desempate.component';
 import { textoDoCriterio } from '../classificacao/confirmacao-da-classificacao';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import {
-  lerChaveDaRegra,
-  regrasEscolhiveis,
-  rotuloDaRegraEscolhida,
-} from '../classificacao/regra-escolhivel';
+import { lerChaveDaRegra } from '../classificacao/regra-escolhivel';
 import {
   desempateIdosoSemApuracao,
   desempateSemDataDeNascimento,
@@ -58,10 +40,7 @@ import {
 import {
   comoComandoDeCriteriosDesempate,
   desempateUsaAreas,
-  desempateUsaEtapa,
-  desempateUsaIdadeMinima,
   desempateTemShapeConhecido,
-  desempateUsaPredicadoFato,
 } from './desempate-para-comando';
 import { comAreaAcrescentada, comAreasTrocadas, semAreaNaPosicao } from './areas-do-criterio';
 import { mensagensDoDesempate } from './validacao-do-desempate';
@@ -88,7 +67,7 @@ const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
   selector: 'sel-step-desempate',
   standalone: true,
   templateUrl: './desempate.component.html',
-  imports: [ValorLegivelDirective, CondicaoDeFatoComponent, ValorEmConsultaComponent],
+  imports: [CriterioDeDesempateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [AreasDoDesempateService, provePassoDoWizard(DesempateStepComponent)],
 })
@@ -118,7 +97,7 @@ export class DesempateStepComponent {
    * Só um catálogo lido permite dizer que um fato saiu dele: enquanto a busca não responde,
    * ou quando falha, o vazio é falta de dado, não ausência do fato.
    */
-  private readonly catalogoDeFatosLido = signal(false);
+  protected readonly catalogoDeFatosLido = signal(false);
 
   readonly fatosEscolhiveis = computed(() => fatosParaGatilho(this.catalogoDeFatos()));
 
@@ -203,35 +182,6 @@ export class DesempateStepComponent {
       });
   }
 
-  /** O fato citado por um critério, ou `undefined` quando ele saiu do catálogo. */
-  fatoDoCriterio(codigo: string): FatoEscolhivel | undefined {
-    return this.fatoPorCodigo().get(codigo);
-  }
-
-  /** As comparações que o domínio daquele fato admite. */
-  operadoresDoCriterio(
-    codigo: string,
-  ): readonly { readonly valor: string; readonly rotulo: string }[] {
-    const fato = this.fatoDoCriterio(codigo);
-    return fato === undefined ? [] : operadoresDoFato(fato);
-  }
-
-  criterioComparaComLista(operador: string): boolean {
-    return comparaComLista(operador);
-  }
-
-  ehBooleano(codigo: string): boolean {
-    return this.fatoDoCriterio(codigo)?.tipoDominio === 'BOOLEANO';
-  }
-
-  valorDoCriterio(criterio: CriterioDesempateConfigurado): string {
-    return valorEscalarDe(criterio);
-  }
-
-  valoresDoCriterio(criterio: CriterioDesempateConfigurado): readonly string[] {
-    return valoresDeListaDe(criterio);
-  }
-
   readonly criterios = computed(() => this.store.draft().desempate);
 
   /**
@@ -307,24 +257,6 @@ export class DesempateStepComponent {
     this.store.draft().cronograma.etapas.filter((etapa) => etapa.id !== null),
   );
 
-  /**
-   * As regras que o seletor oferece: as do catálogo cujos argumentos esta tela sabe montar,
-   * mais a que já está escolhida — mesmo desconhecida, ela precisa continuar visível, senão o
-   * critério gravado aparece sem regra nenhuma.
-   */
-  regraEscolhivel(criterio: CriterioDesempateConfigurado) {
-    return regrasEscolhiveis(
-      this.catalogos
-        .criteriosDesempate()
-        .filter(
-          (regra) =>
-            desempateTemShapeConhecido(regra.codigo) || regra.codigo === criterio.regraCodigo,
-        ),
-      criterio.regraCodigo,
-      criterio.regraVersao,
-    );
-  }
-
   /** Quantas regras do catálogo esta tela ainda não sabe configurar. */
   readonly regrasSemSuporte = computed(
     () =>
@@ -333,52 +265,8 @@ export class DesempateStepComponent {
         .filter((regra) => !desempateTemShapeConhecido(regra.codigo)).length,
   );
 
-  usaEtapa(criterio: CriterioDesempateConfigurado): boolean {
-    return desempateUsaEtapa(criterio.regraCodigo);
-  }
-
-  usaIdadeMinima(criterio: CriterioDesempateConfigurado): boolean {
-    return desempateUsaIdadeMinima(criterio.regraCodigo);
-  }
-
-  usaPredicadoFato(criterio: CriterioDesempateConfigurado): boolean {
-    return desempateUsaPredicadoFato(criterio.regraCodigo);
-  }
-
-  usaAreas(criterio: CriterioDesempateConfigurado): boolean {
+  private usaAreas(criterio: CriterioDesempateConfigurado): boolean {
     return desempateUsaAreas(criterio.regraCodigo);
-  }
-
-  /** O critério como se lê em consulta, com o rótulo de cada escolha e os campos que a edição usa. */
-  leituraDoCriterio(criterio: CriterioDesempateConfigurado) {
-    const etapa = this.etapasReferenciaveis().find((item) => item.id === criterio.etapaRef);
-    const fato = this.fatoDoCriterio(criterio.fato);
-    const comparacao = this.operadoresDoCriterio(criterio.fato).find(
-      (opcao) => opcao.valor === criterio.operador,
-    );
-    const porLista = this.criterioComparaComLista(criterio.operador);
-    const booleano = this.ehBooleano(criterio.fato);
-    const escalar = this.valorDoCriterio(criterio);
-    return {
-      regra: rotuloDaRegraEscolhida(this.regraEscolhivel(criterio)),
-      etapa: etapa === undefined ? null : etapa.nome || 'Etapa sem nome',
-      idadeMinima: leituraDoCampoDecimal(criterio.idadeMinima),
-      fato:
-        fato?.nome ??
-        (criterio.fato === ''
-          ? null
-          : this.catalogoDeFatosLido()
-            ? `${criterio.fato} — fora do catálogo`
-            : criterio.fato),
-      comparacao: comparacao?.rotulo ?? (criterio.operador || null),
-      rotuloDoValor: porLista ? 'Valores' : booleano ? 'Resposta' : 'Valor',
-      valor: porLista
-        ? this.valoresDoCriterio(criterio)
-        : booleano
-          ? (RESPOSTAS_BOOLEANAS.find((resposta) => resposta.valor === escalar)?.rotulo ?? escalar)
-          : escalar,
-      areas: criterio.areas.map((codigo) => this.areas.rotuloDaArea(codigo)),
-    };
   }
 
   acrescentar(): void {
@@ -481,8 +369,8 @@ export class DesempateStepComponent {
    * Só guarda a escolha. Incluir é outro gesto, pelo botão: no seletor fechado, cada seta dispara
    * `change`, e incluir ali acrescentaria uma área a cada tecla.
    */
-  escolherArea(indice: number, seletor: HTMLSelectElement): void {
-    this.escolhasPendentes.set(new Map([...this.escolhasPendentes(), [indice, seletor.value]]));
+  escolherArea(indice: number, codigo: string): void {
+    this.escolhasPendentes.set(new Map([...this.escolhasPendentes(), [indice, codigo]]));
   }
 
   /** Leva as escolhas pendentes para as posições novas dos critérios; a de um removido cai. */
@@ -562,49 +450,7 @@ export class DesempateStepComponent {
     );
   }
 
-  alterarEtapaRef(indice: number, etapaRef: string): void {
-    this.atualizar(indice, { etapaRef });
-  }
-
-  alterarIdadeMinima(indice: number, idadeMinima: string): void {
-    this.atualizar(indice, { idadeMinima });
-  }
-
-  /**
-   * Troca o fato do predicado. Operador e valor recomeçam: eles pertenciam ao domínio do fato
-   * anterior, e carregá-los para outro domínio grava uma comparação que o servidor recusa.
-   */
-  alterarFato(indice: number, codigo: string): void {
-    // Voltar o seletor para "escolha o fato" LIMPA o critério. Ignorar a escolha em branco
-    // deixava a tela dizendo que não havia fato enquanto o rascunho continuava com o anterior
-    // — e a gravação saía com um critério que o operador acreditava ter apagado.
-    if (codigo === '') {
-      this.atualizar(indice, { fato: '', operador: '', valor: '' });
-      return;
-    }
-
-    const fato = this.fatoDoCriterio(codigo);
-    if (fato === undefined) return;
-
-    this.atualizar(indice, { fato: codigo, operador: operadoresDoFato(fato)[0].valor, valor: '' });
-  }
-
-  /** O que o predicado alcança — a mesma leitura que a exigência documental oferece. */
-  alcanceDoCriterio(criterio: CriterioDesempateConfigurado): string {
-    const fato = this.fatoDoCriterio(criterio.fato);
-    return fato === undefined ? '' : alcanceDaCondicao(criterio, fato);
-  }
-
-  /** A condição que o componente devolve: só os três campos do predicado entram no critério. */
-  alterarCondicao(indice: number, condicao: CondicaoDeFato): void {
-    this.atualizar(indice, {
-      fato: condicao.fato,
-      operador: condicao.operador,
-      valor: condicao.valor,
-    });
-  }
-
-  private atualizar(indice: number, patch: Partial<CriterioDesempateConfigurado>): void {
+  protected atualizar(indice: number, patch: Partial<CriterioDesempateConfigurado>): void {
     this.gravarNoRascunho(
       this.criterios().map((criterio, item) =>
         item === indice ? { ...criterio, ...patch } : criterio,

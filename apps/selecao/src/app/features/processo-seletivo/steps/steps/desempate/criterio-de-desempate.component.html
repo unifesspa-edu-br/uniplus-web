@@ -1,0 +1,183 @@
+<div class="desempate-item">
+  <span class="desempate-num">{{ indice() + 1 }}º</span>
+  <div class="form-grid desempate-item__campos">
+    @if (store.emConsulta()) {
+      @let leitura = leituraDoCriterio();
+      <ui-valor-em-consulta
+        class="form-grid__full"
+        rotulo="Regra do critério"
+        [valor]="leitura.regra"
+      />
+      @if (usaEtapa()) {
+        <ui-valor-em-consulta rotulo="Etapa" [valor]="leitura.etapa" />
+      }
+      @if (usaIdadeMinima()) {
+        <ui-valor-em-consulta rotulo="Idade mínima" [valor]="leitura.idadeMinima" />
+      }
+      @if (usaPredicadoFato()) {
+        <ui-valor-em-consulta rotulo="Fato do candidato" [valor]="leitura.fato" />
+        @if (criterio().fato !== '') {
+          <ui-valor-em-consulta rotulo="Comparação" [valor]="leitura.comparacao" />
+          <ui-valor-em-consulta [rotulo]="leitura.rotuloDoValor" [valor]="leitura.valor" />
+          @if (alcance() !== '') {
+            <p class="field__hint form-grid__full">{{ alcance() }}</p>
+          }
+        }
+      }
+      @if (usaAreas()) {
+        <ui-valor-em-consulta
+          class="form-grid__full"
+          rotulo="Ordem das áreas do ENEM"
+          ordenada
+          [valor]="leitura.areas"
+          [dica]="areas.dicaDaOrigem()"
+        />
+      }
+    } @else {
+      <div class="form-field form-grid__full">
+        <label class="label" [attr.for]="'desemp-regra-' + indice()">Regra do critério</label
+        ><select
+          class="input"
+          [id]="'desemp-regra-' + indice()"
+          [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
+          (change)="regraEscolhida.emit($any($event.target).value)"
+        >
+          <option value="|" [selected]="criterio().regraCodigo === ''">— escolher —</option>
+          @for (opcao of opcoesDaRegra(); track opcao.chave) {
+            <option [value]="opcao.chave" [selected]="opcao.selecionada">
+              {{ opcao.rotulo }}
+            </option>
+          }
+        </select>
+      </div>
+
+      @if (usaEtapa()) {
+        <div class="form-field">
+          <label class="label" [attr.for]="'desemp-etapa-' + indice()">Etapa</label
+          ><select
+            class="input"
+            [id]="'desemp-etapa-' + indice()"
+            [disabled]="!store.aceitaEdicao()"
+            (change)="alterar.emit({ etapaRef: $any($event.target).value })"
+          >
+            <option value="" [selected]="criterio().etapaRef === ''">— escolher —</option>
+            @for (etapa of etapas(); track etapa.id) {
+              <option [value]="etapa.id" [selected]="etapa.id === criterio().etapaRef">
+                {{ etapa.nome || 'Etapa sem nome' }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+
+      @if (usaIdadeMinima()) {
+        <div class="form-field">
+          <label class="label" [attr.for]="'desemp-idade-' + indice()">Idade mínima</label
+          ><input
+            class="input"
+            [id]="'desemp-idade-' + indice()"
+            type="number"
+            min="1"
+            step="1"
+            [value]="criterio().idadeMinima"
+            [disabled]="!store.aceitaEdicao()"
+            (input)="alterar.emit({ idadeMinima: $any($event.target).value })"
+          />
+        </div>
+      }
+
+      @if (usaPredicadoFato()) {
+        <!--
+          Fato, comparação e valor vêm do catálogo institucional, não de texto livre: os
+          três são vocabulário fechado do lado do servidor, e digitar "=" onde ele espera
+          "IGUAL" era recusado no 422 sem dizer qual dos três campos estava errado.
+        -->
+        <ui-condicao-de-fato
+          [condicao]="criterio()"
+          [fatos]="fatos()"
+          [idBase]="'desemp-' + indice()"
+          [disabled]="!store.aceitaEdicao()"
+          [permiteSemFato]="true"
+          rotuloDosValores="Valores que satisfazem o critério"
+          (condicaoChange)="alterarCondicao($event)"
+        />
+      }
+
+      @if (usaAreas()) {
+        <div
+          selOrdemDasAreas
+          class="form-field form-grid__full"
+          [indice]="indice()"
+          [criterio]="criterio()"
+          [escolha]="escolhaDeArea()"
+          (escolher)="areaEscolhida.emit($event)"
+          (acrescentar)="areaAcrescentada.emit()"
+          (remover)="areaRemovida.emit($event)"
+          (mover)="areaMovida.emit($event)"
+        ></div>
+      }
+    }
+  </div>
+  @if (!store.emConsulta()) {
+    <div class="desempate-actions">
+      <button
+        class="desempate-btn"
+        type="button"
+        [id]="'desemp-subir-' + indice()"
+        [attr.aria-label]="'Mover o critério ' + (indice() + 1) + ' para cima'"
+        [disabled]="indice() === 0 || !store.aceitaEdicao()"
+        (click)="mover.emit(-1)"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        >
+          <path d="M18 15l-6-6-6 6" />
+        </svg></button
+      ><button
+        class="desempate-btn"
+        type="button"
+        [id]="'desemp-descer-' + indice()"
+        [attr.aria-label]="'Mover o critério ' + (indice() + 1) + ' para baixo'"
+        [disabled]="ultimo() || !store.aceitaEdicao()"
+        (click)="mover.emit(1)"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg></button
+      ><button
+        class="desempate-btn"
+        type="button"
+        [id]="'desemp-remover-' + indice()"
+        [attr.aria-label]="'Remover critério de desempate ' + (indice() + 1)"
+        [disabled]="!store.aceitaEdicao()"
+        (click)="remover.emit()"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        >
+          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+        </svg>
+      </button>
+    </div>
+  }
+</div>

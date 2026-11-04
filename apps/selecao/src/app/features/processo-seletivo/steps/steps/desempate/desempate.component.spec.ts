@@ -1,6 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import {
@@ -89,6 +89,7 @@ function criterio(patch: Partial<CriterioDesempateConfigurado>): CriterioDesempa
 
 describe('DesempateStepComponent', () => {
   let componente: DesempateStepComponent;
+  let fixture: ComponentFixture<DesempateStepComponent>;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 
@@ -110,7 +111,7 @@ describe('DesempateStepComponent', () => {
       ],
     }).compileComponents();
 
-    const fixture = TestBed.createComponent(DesempateStepComponent);
+    fixture = TestBed.createComponent(DesempateStepComponent);
     componente = fixture.componentInstance;
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
@@ -252,7 +253,16 @@ describe('DesempateStepComponent', () => {
 
   it('avisa que o maior idade não tem data de nascimento no formulário e leva a ele', () => {
     // A data de nascimento é dos dados básicos: só falta quando a seção deles veio sem ela.
-    const secao = { codigo: 'DADOS_BASICOS', ordem: 0, tipo: 'SECAO', bloco: null, titulo: 'Dados', descricao: null, aviso: null, exibicao: null };
+    const secao = {
+      codigo: 'DADOS_BASICOS',
+      ordem: 0,
+      tipo: 'SECAO',
+      bloco: null,
+      titulo: 'Dados',
+      descricao: null,
+      aviso: null,
+      exibicao: null,
+    };
     const item = (fatoCodigo: string, ordem: number) => ({
       fatoCodigo,
       ordem,
@@ -263,7 +273,14 @@ describe('DesempateStepComponent', () => {
       etapaCodigo: 'DADOS_BASICOS',
       pedirConfirmacao: false,
     });
-    const conteudo = (...itens: ReturnType<typeof item>[]) => ({ titulo: null, etapas: [secao], itens, termos: [], pressupostos: [], grupos: [] });
+    const conteudo = (...itens: ReturnType<typeof item>[]) => ({
+      titulo: null,
+      etapas: [secao],
+      itens,
+      termos: [],
+      pressupostos: [],
+      grupos: [],
+    });
     store.patchObjectSection('formulario', { conteudo: conteudo(item('NOME', 0)) });
     expect(componente.semDataDeNascimento()).toBe(false);
 
@@ -275,7 +292,9 @@ describe('DesempateStepComponent', () => {
     componente.irParaFormulario();
     expect(store.currentStep()).toBe(PASSO_FORMULARIO);
 
-    store.patchObjectSection('formulario', { conteudo: conteudo(item('NOME', 0), item('DATA_NASCIMENTO', 1)) });
+    store.patchObjectSection('formulario', {
+      conteudo: conteudo(item('NOME', 0), item('DATA_NASCIMENTO', 1)),
+    });
     expect(componente.semDataDeNascimento()).toBe(false);
   });
 
@@ -482,7 +501,14 @@ describe('DesempateStepComponent', () => {
         }),
       ]);
 
-      componente.alterarFato(0, '');
+      fixture.detectChanges();
+      const fato = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+        '#desemp-0-fato',
+      );
+      if (fato === null) throw new Error('seletor do fato ausente');
+      fato.value = '';
+      fato.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
 
       const criterioAtual = store.draft().desempate[0];
       expect(criterioAtual.fato).toBe('');
@@ -507,7 +533,11 @@ describe('DesempateStepComponent', () => {
         }),
       ]);
 
-      expect(componente.valorDoCriterio(store.draft().desempate[0])).toBe('PRETA');
+      fixture.detectChanges();
+      const valor = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+        '#desemp-0-valor',
+      );
+      expect(valor?.value).toBe('PRETA');
       expect(componente.validate().valid).toBe(true);
     });
 

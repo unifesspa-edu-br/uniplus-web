@@ -124,7 +124,6 @@
     criterio of criterios();
     track $index;
     let indice = $index;
-    let first = $first;
     let last = $last
   ) {
     <!--
@@ -133,285 +132,26 @@
       com os landmarks reais da página.
     -->
     <div
+      selCriterioDeDesempate
       class="step-section"
       role="group"
       [attr.aria-label]="'Critério de desempate ' + (indice + 1)"
-    >
-      <div class="desempate-item">
-        <span class="desempate-num">{{ indice + 1 }}º</span>
-        <div class="form-grid desempate-item__campos">
-          @if (store.emConsulta()) {
-            @let leitura = leituraDoCriterio(criterio);
-            <ui-valor-em-consulta
-              class="form-grid__full"
-              rotulo="Regra do critério"
-              [valor]="leitura.regra"
-            />
-            @if (usaEtapa(criterio)) {
-              <ui-valor-em-consulta rotulo="Etapa" [valor]="leitura.etapa" />
-            }
-            @if (usaIdadeMinima(criterio)) {
-              <ui-valor-em-consulta rotulo="Idade mínima" [valor]="leitura.idadeMinima" />
-            }
-            @if (usaPredicadoFato(criterio)) {
-              <ui-valor-em-consulta rotulo="Fato do candidato" [valor]="leitura.fato" />
-              @if (criterio.fato !== '') {
-                <ui-valor-em-consulta rotulo="Comparação" [valor]="leitura.comparacao" />
-                <ui-valor-em-consulta [rotulo]="leitura.rotuloDoValor" [valor]="leitura.valor" />
-                @if (alcanceDoCriterio(criterio) !== '') {
-                  <p class="field__hint form-grid__full">{{ alcanceDoCriterio(criterio) }}</p>
-                }
-              }
-            }
-            @if (usaAreas(criterio)) {
-              <ui-valor-em-consulta
-                class="form-grid__full"
-                rotulo="Ordem das áreas do ENEM"
-                ordenada
-                [valor]="leitura.areas"
-                [dica]="areas.dicaDaOrigem()"
-              />
-            }
-          } @else {
-            <div class="form-field form-grid__full">
-              <label class="label" [attr.for]="'desemp-regra-' + indice">Regra do critério</label
-              ><select
-                class="input"
-                [id]="'desemp-regra-' + indice"
-                [disabled]="catalogos.carregando() || !store.aceitaEdicao()"
-                (change)="escolherRegra(indice, $any($event.target).value)"
-              >
-                <option value="|" [selected]="criterio.regraCodigo === ''">— escolher —</option>
-                @for (opcao of regraEscolhivel(criterio); track opcao.chave) {
-                  <option [value]="opcao.chave" [selected]="opcao.selecionada">
-                    {{ opcao.rotulo }}
-                  </option>
-                }
-              </select>
-            </div>
-
-            @if (usaEtapa(criterio)) {
-              <div class="form-field">
-                <label class="label" [attr.for]="'desemp-etapa-' + indice">Etapa</label
-                ><select
-                  class="input"
-                  [id]="'desemp-etapa-' + indice"
-                  [disabled]="!store.aceitaEdicao()"
-                  (change)="alterarEtapaRef(indice, $any($event.target).value)"
-                >
-                  <option value="" [selected]="criterio.etapaRef === ''">— escolher —</option>
-                  @for (etapa of etapasReferenciaveis(); track etapa.id) {
-                    <option [value]="etapa.id" [selected]="etapa.id === criterio.etapaRef">
-                      {{ etapa.nome || 'Etapa sem nome' }}
-                    </option>
-                  }
-                </select>
-              </div>
-            }
-
-            @if (usaIdadeMinima(criterio)) {
-              <div class="form-field">
-                <label class="label" [attr.for]="'desemp-idade-' + indice">Idade mínima</label
-                ><input
-                  class="input"
-                  [id]="'desemp-idade-' + indice"
-                  type="number"
-                  min="1"
-                  step="1"
-                  [value]="criterio.idadeMinima"
-                  [disabled]="!store.aceitaEdicao()"
-                  (input)="alterarIdadeMinima(indice, $any($event.target).value)"
-                />
-              </div>
-            }
-
-            @if (usaPredicadoFato(criterio)) {
-              <!--
-                Fato, comparação e valor vêm do catálogo institucional, não de texto livre: os
-                três são vocabulário fechado do lado do servidor, e digitar "=" onde ele espera
-                "IGUAL" era recusado no 422 sem dizer qual dos três campos estava errado.
-              -->
-              <ui-condicao-de-fato
-                [condicao]="criterio"
-                [fatos]="fatosEscolhiveis()"
-                [idBase]="'desemp-' + indice"
-                [disabled]="!store.aceitaEdicao()"
-                [permiteSemFato]="true"
-                rotuloDosValores="Valores que satisfazem o critério"
-                (condicaoChange)="alterarCondicao(indice, $event)"
-              />
-            }
-
-            @if (usaAreas(criterio)) {
-              <div class="form-field form-grid__full">
-                <span class="label" [id]="'desemp-areas-rotulo-' + indice">Ordem das áreas do ENEM</span>
-                @let situacao = areas.situacaoDoQuadro();
-                @if (areas.dicaDaOrigem(); as dica) {
-                  <p class="field__hint" [id]="'desemp-areas-dica-' + indice">{{ dica }}</p>
-                }
-
-                @if (criterio.areas.length > 0) {
-                  <ol
-                    class="desempate-areas"
-                    [attr.aria-labelledby]="'desemp-areas-rotulo-' + indice"
-                    [attr.aria-describedby]="areas.dicaDaOrigem() === null ? null : 'desemp-areas-dica-' + indice"
-                  >
-                    @for (
-                      codigo of criterio.areas;
-                      track $index;
-                      let posicao = $index;
-                      let primeira = $first;
-                      let ultima = $last
-                    ) {
-                      <li class="desempate-area">
-                        <span class="desempate-area__nome">{{ posicao + 1 }}ª {{ areas.rotuloDaArea(codigo) }}</span>
-                        <span class="desempate-actions">
-                          <button
-                            class="desempate-btn"
-                            type="button"
-                            [id]="'desemp-area-subir-' + indice + '-' + posicao"
-                            [attr.aria-label]="'Mover a área ' + areas.rotuloDaArea(codigo) + ' para cima'"
-                            [disabled]="primeira || !store.aceitaEdicao()"
-                            (click)="moverArea(indice, posicao, -1)"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-                              <path d="M18 15l-6-6-6 6" />
-                            </svg></button
-                          ><button
-                            class="desempate-btn"
-                            type="button"
-                            [id]="'desemp-area-descer-' + indice + '-' + posicao"
-                            [attr.aria-label]="'Mover a área ' + areas.rotuloDaArea(codigo) + ' para baixo'"
-                            [disabled]="ultima || !store.aceitaEdicao()"
-                            (click)="moverArea(indice, posicao, 1)"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-                              <path d="M6 9l6 6 6-6" />
-                            </svg></button
-                          ><button
-                            class="desempate-btn"
-                            type="button"
-                            [id]="'desemp-area-remover-' + indice + '-' + posicao"
-                            [attr.aria-label]="'Retirar a área ' + areas.rotuloDaArea(codigo) + ' do critério'"
-                            [disabled]="!store.aceitaEdicao()"
-                            (click)="removerArea(indice, posicao)"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                            </svg>
-                          </button>
-                        </span>
-                      </li>
-                    }
-                  </ol>
-                } @else if (situacao.tipo === 'lido') {
-                  <p class="field__hint">
-                    Acrescente as áreas na ordem em que devem desempatar: a primeira compara primeiro.
-                  </p>
-                }
-
-                @if (situacao.tipo === 'lido') {
-                  <label class="label" [attr.for]="'desemp-area-nova-' + indice">Área a acrescentar</label>
-                  <div class="desempate-area-nova">
-                    <select
-                      #seletorDeArea
-                      class="select"
-                      [id]="'desemp-area-nova-' + indice"
-                      [attr.aria-describedby]="areas.dicaDaOrigem() === null ? null : 'desemp-areas-dica-' + indice"
-                      [disabled]="!store.aceitaEdicao() || areas.areasOferecidas().length === 0"
-                      (change)="escolherArea(indice, seletorDeArea)"
-                    >
-                      <option value="" [selected]="escolhaPendente(indice) === ''">
-                        {{ areas.areasOferecidas().length === 0 ? areas.semAreaAOferecer(criterio) : '— escolher —' }}
-                      </option>
-                      @for (area of areas.areasOferecidas(); track area.codigo) {
-                        <option
-                          [value]="area.codigo"
-                          [selected]="area.codigo === escolhaPendente(indice)"
-                        >
-                          {{ area.rotulo }}
-                        </option>
-                      }
-                    </select>
-                    <button
-                      type="button"
-                      class="btn btn--secondary btn--sm"
-                      [id]="'desemp-area-acrescentar-' + indice"
-                      [disabled]="!store.aceitaEdicao() || areas.areasOferecidas().length === 0"
-                      (click)="acrescentarAreaEscolhida(indice)"
-                    >
-                      Acrescentar
-                    </button>
-                  </div>
-                }
-              </div>
-            }
-          }
-        </div>
-        @if (!store.emConsulta()) {
-          <div class="desempate-actions">
-            <button
-              class="desempate-btn"
-              type="button"
-              [id]="'desemp-subir-' + indice"
-              [attr.aria-label]="'Mover o critério ' + (indice + 1) + ' para cima'"
-              [disabled]="first || !store.aceitaEdicao()"
-              (click)="mover(indice, -1)"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-              >
-                <path d="M18 15l-6-6-6 6" />
-              </svg></button
-            ><button
-              class="desempate-btn"
-              type="button"
-              [id]="'desemp-descer-' + indice"
-              [attr.aria-label]="'Mover o critério ' + (indice + 1) + ' para baixo'"
-              [disabled]="last || !store.aceitaEdicao()"
-              (click)="mover(indice, 1)"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg></button
-            ><button
-              class="desempate-btn"
-              type="button"
-              [id]="'desemp-remover-' + indice"
-              [attr.aria-label]="'Remover critério de desempate ' + (indice + 1)"
-              [disabled]="!store.aceitaEdicao()"
-              (click)="remover(indice)"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-              </svg>
-            </button>
-          </div>
-        }
-      </div>
-    </div>
+      [indice]="indice"
+      [criterio]="criterio"
+      [ultimo]="last"
+      [etapas]="etapasReferenciaveis()"
+      [fatos]="fatosEscolhiveis()"
+      [fatosLidos]="catalogoDeFatosLido()"
+      [escolhaDeArea]="escolhaPendente(indice)"
+      (alterar)="atualizar(indice, $event)"
+      (regraEscolhida)="escolherRegra(indice, $event)"
+      (mover)="mover(indice, $event)"
+      (remover)="remover(indice)"
+      (areaEscolhida)="escolherArea(indice, $event)"
+      (areaAcrescentada)="acrescentarAreaEscolhida(indice)"
+      (areaRemovida)="removerArea(indice, $event)"
+      (areaMovida)="moverArea(indice, $event.posicao, $event.delta)"
+    ></div>
   }
 </div>
 
