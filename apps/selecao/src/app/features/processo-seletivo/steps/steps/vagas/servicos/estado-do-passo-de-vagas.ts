@@ -247,10 +247,6 @@ export class EstadoDoPassoDeVagas {
     this.simulacaoEmVoo.set(null);
   }
 
-  guardarComoPendente(padrao: PadraoDoEdital): void {
-    this.padraoPendente.set(padrao);
-  }
-
   /** Troca as ofertas do rascunho; o quadro mudou, então a simulação deixa de valer. */
   substituir(ofertas: readonly DistribuicaoDeVagas[]): void {
     this.descartarSimulacao();
