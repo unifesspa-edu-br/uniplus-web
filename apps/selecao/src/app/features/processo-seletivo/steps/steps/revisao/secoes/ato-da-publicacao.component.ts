@@ -81,8 +81,8 @@ export class AtoDaPublicacaoComponent {
   protected readonly atoDoRascunhoLido = computed(() => {
     const { numero, ato } = this.store.draft().publicacao;
     return itensDoAto({
-      numero,
       ...ato,
+      numero: numero.trim() || 'Não informado',
       tipo: rotuloDoTipoDeAto(this.preflight.tiposAto(), ato.tipoAtoCodigo),
       dataPublicacao: ato.dataPublicacao ? this.dataBr.transform(ato.dataPublicacao) : '',
     });
@@ -94,9 +94,11 @@ export class AtoDaPublicacaoComponent {
     if (leitura?.estado !== 'lido') return [];
 
     const { ato } = leitura;
+    const tipo = this.preflight.tiposAto().find((item) => item.codigo === ato.tipoCodigo);
     return itensDoAto({
       ...ato,
-      tipo: rotuloDoTipoDeAto(this.preflight.tiposAto(), ato.tipoCodigo),
+      numero: ato.numero?.trim() || 'não informado',
+      tipo: tipo?.nome ?? ato.tipoCodigo,
       ano: String(ato.ano),
       dataPublicacao: this.dataBr.transform(ato.dataPublicacao),
     });

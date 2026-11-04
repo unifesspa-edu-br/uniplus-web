@@ -30,7 +30,11 @@ export function confirmacaoDaPublicacao(
       'Depois de publicado, este processo vira somente leitura nesta jornada — não é possível desfazer aqui.',
     rotuloDeConfirmar: 'Publicar processo',
     itens: [
-      ...itensDoAto({ numero, ...ato, tipo: rotuloDoTipoDeAto(tiposDeAto, ato.tipoAtoCodigo) }),
+      ...itensDoAto({
+        ...ato,
+        numero: numero.trim() || 'não informado',
+        tipo: rotuloDoTipoDeAto(tiposDeAto, ato.tipoAtoCodigo),
+      }),
       { rotulo: 'Período de inscrição', valor: periodoDeInscricao(draft, fasePorId) },
     ],
   };

@@ -1,11 +1,21 @@
 import { ComponentFixture } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
+import { HttpHeaders } from '@angular/common/http';
+import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { apiOk } from '@uniplus/shared-core/http';
+import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { RevisaoStepComponent } from './revisao.component';
 import {
+  ATO_PUBLICADO,
+  PROCESSO_DTO_MINIMO,
+  ROTA_ATOS,
+  ROTA_SNAPSHOT,
+  SNAPSHOT_DTO,
+  textoDaTela,
   CONFORMIDADE_LEGAL_VERDE,
   CONFORMIDADE_VERDE,
   ROTA_CONFORMIDADE,
@@ -32,6 +42,39 @@ describe('RevisaoStepComponent — ato e período', () => {
   });
 
   afterEach(() => controller.verify());
+
+  describe('texto do número do ato sem valor', () => {
+    it('na consulta do rascunho, diz "Não informado"', async () => {
+      store.remoteSnapshot.set({
+        ...PROCESSO_DTO_MINIMO,
+        status: StatusProcesso.cancelado,
+      } as never);
+      await criarProcesso(cenario);
+      await flushPreflightVerde(cenario);
+      fixture.detectChanges();
+
+      expect(textoDaTela(cenario)).toContain('Não informado');
+      expect(textoDaTela(cenario)).not.toContain('não informado');
+    });
+
+    it('no resumo do ato publicado, diz "não informado" e o tipo pelo nome', async () => {
+      cenario.respostaDoAto = of(apiOk({ ...ATO_PUBLICADO, numero: null }, 200, new HttpHeaders()));
+      store.remoteSnapshot.set(PROCESSO_DTO_MINIMO as never);
+      await criarProcesso(cenario);
+      await flushPreflightVerde(cenario);
+      controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
+      await flushMicrotasks();
+      fixture.detectChanges();
+      controller.expectOne(ROTA_ATOS).flush([]);
+
+      const lista = (fixture.nativeElement as HTMLElement).querySelector(
+        'dl[aria-label="Ato publicado"]',
+      );
+      expect(lista?.textContent).toContain('Número do atonão informado');
+      expect(lista?.textContent).toContain('Tipo de atoPortaria');
+      expect(lista?.textContent).not.toContain('Portaria (PORTARIA)');
+    });
+  });
 
   describe('select de tipo de ato — sobrevive a destruir e recriar a seção', () => {
     /**
