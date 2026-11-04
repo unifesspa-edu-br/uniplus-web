@@ -118,6 +118,13 @@ async function caixa(locator: Locator): Promise<Caixa> {
   };
 }
 
+/** A gaveta desliza ao abrir; a geometria só é estável depois que a animação de entrada termina. */
+async function aguardarFimDaEntrada(drawer: Locator): Promise<void> {
+  await drawer.evaluate((el) =>
+    Promise.all(el.getAnimations({ subtree: true }).map((animacao) => animacao.finished)),
+  );
+}
+
 const RECUO = 20; // var(--space-5), o recuo do conteúdo dos drawers do módulo.
 const TOLERANCIA = 1; // arredondamento de subpixel do layout.
 
@@ -145,6 +152,7 @@ test.describe('Curso — geometria dos drawers (#816)', () => {
 
     const drawer = page.getByRole('dialog', { name: 'Formulário de curso' });
     await expect(drawer).toBeVisible();
+    await aguardarFimDaEntrada(drawer);
     const painel = drawer.locator('.uni-drawer__panel');
     const formulario = drawer.locator('form.cfg-form');
     const rodape = drawer.locator('.cfg-form-footer');
@@ -210,6 +218,7 @@ test.describe('Curso — geometria dos drawers (#816)', () => {
 
     const drawer = page.getByRole('dialog', { name: 'Ofertas de curso do curso selecionado' });
     await expect(drawer).toBeVisible();
+    await aguardarFimDaEntrada(drawer);
     const painel = drawer.locator('.uni-drawer__panel');
     const corpo = drawer.locator('.uni-drawer__body');
 
@@ -272,6 +281,7 @@ test.describe('Curso — geometria dos drawers (#816)', () => {
 
     const drawer = page.getByRole('dialog', { name: 'Ofertas de curso do curso selecionado' });
     await expect(drawer).toBeVisible();
+    await aguardarFimDaEntrada(drawer);
     const painel = drawer.locator('.uni-drawer__panel');
 
     // clamp(20rem, 55vw, 47.5rem): ocupa a tela inteira no piso de 320px,
