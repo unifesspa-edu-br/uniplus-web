@@ -107,6 +107,29 @@ test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
     await conferirCidadeDoCep(page);
   });
 
+  test('"Trocar CEP" por teclado leva o foco ao campo do CEP e a pendência fica anunciada', async ({
+    page,
+  }) => {
+    await mockApi(page, {});
+    await abrirCadastroCampus(page);
+    const cep = page.locator('#campus-endereco-cep');
+
+    await cep.fill('68507590');
+    await page.getByRole('button', { name: 'Buscar CEP' }).focus();
+    await page.keyboard.press('Enter');
+    const trocar = page.getByRole('button', { name: 'Trocar CEP' });
+    await expect(trocar).toBeFocused();
+
+    await page.keyboard.press('Enter');
+    await expect(cep).toBeFocused();
+    await expect(cep).not.toHaveAttribute('readonly', '');
+
+    await cep.fill('68507591');
+    await expect(cep).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#campus-endereco-cep-pendente')).toHaveText(/Valide o CEP/);
+    await expect(cep).toHaveAttribute('aria-describedby', /campus-endereco-cep-pendente/);
+  });
+
   test('CA-02: fluxo sem CEP escolhe a UF e busca a cidade no campo de município', async ({
     page,
   }) => {

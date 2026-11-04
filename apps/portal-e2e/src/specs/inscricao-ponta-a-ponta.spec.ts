@@ -351,6 +351,16 @@ async function enviarPeloTeclado(page: Page): Promise<void> {
   await page.keyboard.press('Enter');
 }
 
+/**
+ * A vitrine pagina os certames por data de encerramento, e a base local acumula processos de
+ * teste: a busca traz o processo da execução à primeira página.
+ */
+async function abrirVitrineDo(page: Page, processo: string): Promise<void> {
+  await page.goto('/processos');
+  await page.getByRole('searchbox', { name: 'Buscar por edital ou título' }).fill(processo);
+  await expect(page.getByRole('heading', { level: 3, name: processo }).first()).toBeVisible();
+}
+
 /** O nome com que o processo de teste foi divulgado, como a lista de inscrições o mostra. */
 async function nomeDivulgado(request: APIRequestContext): Promise<string> {
   const certame = await request.get(`${API_URL}/api/selecao/certames/${PROCESSO_ID}`, {
@@ -433,7 +443,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     page,
   }) => {
     await test.step('a vitrine leva ao PDF do edital no acervo público, que abre sem credencial', async () => {
-      await page.goto('/processos');
+      await abrirVitrineDo(page, processo);
       const verEdital = page
         .getByRole('link', { name: `Ver edital — ${processo} (abre em nova aba)` })
         .first();
@@ -444,7 +454,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     });
 
     await test.step('"Ver publicações" lista os atos do certame, com o PDF, e não oferece inscrição', async () => {
-      await page.goto('/processos');
+      await abrirVitrineDo(page, processo);
       await page
         .getByRole('button', { name: `Ver publicações — ${processo}` })
         .first()
@@ -464,7 +474,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     });
 
     await test.step('entra pela vitrine e volta à inscrição escolhida', async () => {
-      await page.goto('/processos');
+      await abrirVitrineDo(page, processo);
       await page.locator(`a[href="/inscricao/${PROCESSO_ID}"]`).first().click();
       await keycloakLogin(page, PERSONA.usuario, PERSONA.senha, {
         expectRedirectTo: new RegExp(`/inscricao/${PROCESSO_ID}`),
