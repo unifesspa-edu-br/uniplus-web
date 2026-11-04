@@ -126,26 +126,34 @@ export function producaoDoRascunho(
           ? fatosColetadosPelaInscricao(daFinalidade.conteudo)
           : new Set(todosOsCampos(daFinalidade.conteudo).map((campo) => campo.fatoCodigo)),
     })),
-    derivacoes: new Map(
-      formulario.derivacao.map((config) => [
-        config.codigoFato,
-        fatosCitadosPelaDerivacao(config.regras).filter((fato) => fato !== config.codigoFato),
+    derivacoes: derivacoesDoRascunho(formulario),
+    catalogo: new Map(catalogo.map((fato) => [fato.codigo, fato])),
+    grupos: gruposDoRascunho(formulario),
+  };
+}
+
+function derivacoesDoRascunho(formulario: FormularioDeInscricao): ProducaoDosFatos['derivacoes'] {
+  return new Map(
+    formulario.derivacao.map((config) => [
+      config.codigoFato,
+      fatosCitadosPelaDerivacao(config.regras).filter((fato) => fato !== config.codigoFato),
+    ]),
+  );
+}
+
+function gruposDoRascunho(formulario: FormularioDeInscricao): ProducaoDosFatos['grupos'] {
+  return new Map(
+    formulariosDoRascunho(formulario).flatMap((daFinalidade) =>
+      (daFinalidade.conteudo.grupos ?? []).map((grupo): [string, GrupoDaProducao] => [
+        grupo.codigo,
+        {
+          codigo: grupo.codigo,
+          rotulo: grupo.rotulo,
+          campos: grupo.subitens.map((campo) => campo.fatoCodigo),
+        },
       ]),
     ),
-    catalogo: new Map(catalogo.map((fato) => [fato.codigo, fato])),
-    grupos: new Map(
-      formulariosDoRascunho(formulario).flatMap((daFinalidade) =>
-        (daFinalidade.conteudo.grupos ?? []).map((grupo): [string, GrupoDaProducao] => [
-          grupo.codigo,
-          {
-            codigo: grupo.codigo,
-            rotulo: grupo.rotulo,
-            campos: grupo.subitens.map((campo) => campo.fatoCodigo),
-          },
-        ]),
-      ),
-    ),
-  };
+  );
 }
 
 /**
@@ -256,37 +264,51 @@ function faseEfetiva(
   producao: ProducaoDosFatos,
   emAvaliacao: Set<string>,
 ): FaseEfetiva {
-  let maisTardia: FaseNoCronograma | null = null;
-  const considerar = (fase: FaseNoCronograma | null | undefined): void => {
-    if (
-      fase !== null &&
-      fase !== undefined &&
-      (maisTardia === null || fase.ordem > maisTardia.ordem)
-    )
-      maisTardia = fase;
-  };
+  const proprias = fasesProprias(fato, producao);
+  if ('foraDoCronograma' in proprias) return proprias;
 
-  const ponto = producao.catalogo.get(fato)?.pontoResolucao;
-  if (ponto !== undefined) {
-    const doPonto = producao.fases.find((fase) => fase.codigo === ponto);
-    if (doPonto === undefined) return { foraDoCronograma: { origem: fato, faseCodigo: ponto } };
-    considerar(doPonto);
-  }
-
-  const coletor = formularioQueColeta(fato, producao);
-  if (coletor !== null)
-    considerar(producao.fases.find((fase) => fase.codigo === coletor.faseCodigo));
-
+  const fases = [...proprias.fases];
   if (!emAvaliacao.has(fato)) {
     emAvaliacao.add(fato);
     for (const dependencia of dependenciasDoFato(fato, producao)) {
       const daDependencia = faseEfetiva(dependencia, producao, emAvaliacao);
       if ('foraDoCronograma' in daDependencia) return daDependencia;
-      considerar(daDependencia.fase);
+      if (daDependencia.fase !== null) fases.push(daDependencia.fase);
     }
   }
+  return { fase: maisTardia(fases) };
+}
 
-  return { fase: maisTardia };
+/** A fase do ponto de resolução do fato e a do formulário que o coleta. */
+function fasesProprias(
+  fato: string,
+  producao: ProducaoDosFatos,
+):
+  | { readonly fases: readonly FaseNoCronograma[] }
+  | Extract<FaseEfetiva, { foraDoCronograma: unknown }> {
+  const fases: FaseNoCronograma[] = [];
+  const ponto = producao.catalogo.get(fato)?.pontoResolucao;
+  if (ponto !== undefined) {
+    const doPonto = producao.fases.find((fase) => fase.codigo === ponto);
+    if (doPonto === undefined) return { foraDoCronograma: { origem: fato, faseCodigo: ponto } };
+    fases.push(doPonto);
+  }
+
+  const coletor = formularioQueColeta(fato, producao);
+  const doColetor =
+    coletor === null
+      ? undefined
+      : producao.fases.find((fase) => fase.codigo === coletor.faseCodigo);
+  if (doColetor !== undefined) fases.push(doColetor);
+  return { fases };
+}
+
+/** A de maior ordem; na igualdade, a primeira. */
+function maisTardia(fases: readonly FaseNoCronograma[]): FaseNoCronograma | null {
+  return fases.reduce<FaseNoCronograma | null>(
+    (tardia, fase) => (tardia === null || fase.ordem > tardia.ordem ? fase : tardia),
+    null,
+  );
 }
 
 /**
