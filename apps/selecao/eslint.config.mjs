@@ -1,6 +1,9 @@
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
 
+// Seletor com atributo em qualquer elemento que não seja `tr`, `table` ou `details`.
+const ATRIBUTO_FORA_DE_TR_TABLE_DETAILS = String.raw`/(^|,)\s*(?!(tr|table|details)\[)[a-zA-Z0-9-]*\[/`;
+
 export default [
   ...nx.configs['flat/angular'],
   ...nx.configs['flat/angular-template'],
@@ -26,12 +29,14 @@ export default [
       // Seletor de atributo só onde o HTML obriga: `tr`, `table` e `details`.
       'no-restricted-syntax': [
         'error',
-        {
-          selector:
-            "Decorator[expression.callee.name='Component'] Property[key.name='selector'] > Literal[value=/(^|,)\\s*(?!(tr|table|details)\\[)[a-z-]*\\[/]",
+        ...[
+          'Literal[value=%ATRIBUTO%]',
+          'TemplateLiteral > TemplateElement[value.cooked=%ATRIBUTO%]',
+        ].map((alvo) => ({
+          selector: `Decorator[expression.callee.name='Component'] Property[key.name='selector'] > ${alvo.replaceAll('%ATRIBUTO%', ATRIBUTO_FORA_DE_TR_TABLE_DETAILS)}`,
           message:
             'Componente usa seletor de elemento (`sel-x`). Seletor de atributo só vale em `tr`, `table` e `details`, onde o HTML obriga.',
-        },
+        })),
       ],
     },
   },
