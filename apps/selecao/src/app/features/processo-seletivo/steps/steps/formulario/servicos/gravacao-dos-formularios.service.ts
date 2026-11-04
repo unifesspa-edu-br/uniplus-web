@@ -30,7 +30,7 @@ import {
   nomeDaFinalidade,
   ordemDeGravacao,
 } from '../formularios-por-finalidade';
-import { LeituraDoProcessoNoFormularioService } from './leitura-do-processo-no-formulario.service';
+import { LeituraDoProcessoNoFormulario } from './leitura-do-processo-no-formulario.service';
 import { semChave } from './sem-chave';
 
 /** O que a gravação de um formulário precisa: a fase, a finalidade e o conteúdo desejado. */
@@ -54,7 +54,7 @@ export interface FormularioParaGravar {
 export class GravacaoDosFormularios {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
-  private readonly leitura = inject(LeituraDoProcessoNoFormularioService);
+  private readonly leitura = inject(LeituraDoProcessoNoFormulario);
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** As recusas da última gravação, por finalidade, distribuídas contra o conteúdo ENVIADO — sem os dados básicos. */

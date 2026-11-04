@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input, output } from '@angu
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import type { AbaDoFormulario } from '../abas-do-formulario';
-import { AplicacaoDeModeloService } from '../servicos/aplicacao-de-modelo.service';
+import { AplicacaoDeModelo } from '../servicos/aplicacao-de-modelo.service';
 
 /**
  * Partir de um modelo da Configuração: a escolha do modelo da aba e o pedido de aplicação, com a
@@ -16,7 +16,7 @@ import { AplicacaoDeModeloService } from '../servicos/aplicacao-de-modelo.servic
 })
 export class ModeloDoFormularioComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly aplicacao = inject(AplicacaoDeModeloService);
+  protected readonly aplicacao = inject(AplicacaoDeModelo);
 
   readonly aba = input.required<AbaDoFormulario>();
   /** A recusa do pedido de aplicação, para o leitor de tela ouvir. */

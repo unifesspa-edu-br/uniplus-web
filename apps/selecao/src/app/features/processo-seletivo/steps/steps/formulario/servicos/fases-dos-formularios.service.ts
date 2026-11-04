@@ -19,7 +19,7 @@ import {
  * finalidade, e enviar a fase nula apagaria a gravada — a publicação recusa formulário sem fase.
  */
 @Injectable()
-export class FasesDosFormulariosService {
+export class FasesDosFormularios {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDoCronogramaService);
 

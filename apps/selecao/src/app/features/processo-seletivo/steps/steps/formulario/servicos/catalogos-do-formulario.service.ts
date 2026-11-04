@@ -10,7 +10,7 @@ import { termoDisponivelDe, type TermoDisponivel } from '@uniplus/shared-ui/comp
 
 /** O vocabulário de fatos do candidato e os termos de consentimento que o formulário pode exigir. */
 @Injectable()
-export class CatalogosDoFormularioService {
+export class CatalogosDoFormulario {
   private readonly fatosApi = inject(FatosCandidatoApi);
   private readonly termosApi = inject(TermosConsentimentoApi);
   private readonly problemI18n = inject(ProblemI18nService);

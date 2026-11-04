@@ -29,10 +29,10 @@ import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { FormularioStepComponent } from './formulario.component';
 import { GravacaoDosFormularios } from './servicos/gravacao-dos-formularios.service';
-import { CamposPressupostosDoFormularioService } from './servicos/campos-pressupostos-do-formulario.service';
-import { FasesDosFormulariosService } from './servicos/fases-dos-formularios.service';
-import { RemocaoDoFormularioService } from './servicos/remocao-do-formulario.service';
-import { AplicacaoDeModeloService } from './servicos/aplicacao-de-modelo.service';
+import { CamposPressupostosDoFormulario } from './servicos/campos-pressupostos-do-formulario.service';
+import { FasesDosFormularios } from './servicos/fases-dos-formularios.service';
+import { RemocaoDoFormulario } from './servicos/remocao-do-formulario.service';
+import { AplicacaoDeModelo } from './servicos/aplicacao-de-modelo.service';
 import { conteudoDoFormulario } from './formulario-do-processo';
 
 const BASE = 'http://localhost:5000';
@@ -154,8 +154,8 @@ const PCD_NO_CATALOGO = {
 
 describe('FormularioStepComponent', () => {
   let fixture: ComponentFixture<FormularioStepComponent>;
-  const servicoDeModelos = (): AplicacaoDeModeloService =>
-    fixture.debugElement.injector.get(AplicacaoDeModeloService);
+  const servicoDeModelos = (): AplicacaoDeModelo =>
+    fixture.debugElement.injector.get(AplicacaoDeModelo);
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let host: HTMLElement;
@@ -361,7 +361,7 @@ describe('FormularioStepComponent', () => {
 
   it('com uma só fase que coleta inscrição, a escolhe sozinho', () => {
     expect(store.draft().formulario.faseCodigo).toBe('');
-    expect(fixture.debugElement.injector.get(FasesDosFormulariosService).faseDaInscricao()).toBe(
+    expect(fixture.debugElement.injector.get(FasesDosFormularios).faseDaInscricao()).toBe(
       'INSCRICAO',
     );
     expect(fixture.componentInstance.validate()).toEqual({ valid: true });
@@ -405,7 +405,7 @@ describe('FormularioStepComponent', () => {
 
     expect(
       fixture.debugElement.injector
-        .get(CamposPressupostosDoFormularioService)
+        .get(CamposPressupostosDoFormulario)
         .remocoesTravadas()
         .get('PCD'),
     ).toMatch(/^Não pode sair: o documento/);
@@ -430,7 +430,7 @@ describe('FormularioStepComponent', () => {
 
     expect(
       fixture.debugElement.injector
-        .get(CamposPressupostosDoFormularioService)
+        .get(CamposPressupostosDoFormulario)
         .remocoesTravadas()
         .get('PCD'),
     ).toBe(
@@ -660,14 +660,14 @@ describe('FormularioStepComponent', () => {
 
       expect(
         fixture.debugElement.injector
-          .get(CamposPressupostosDoFormularioService)
+          .get(CamposPressupostosDoFormulario)
           .remocoesTravadas()
           .get('PCD'),
       ).toMatch(/o formulário de habilitação depende deste dado/);
     });
 
     it('a recusa da remoção aparece em texto na aba, que continua, e a remoção trava o passo enquanto está no ar', async () => {
-      fixture.debugElement.injector.get(RemocaoDoFormularioService).pedir('HABILITACAO');
+      fixture.debugElement.injector.get(RemocaoDoFormulario).pedir('HABILITACAO');
       const remocao = fixture.componentInstance.confirmarRemocao();
       controller
         .expectOne(ROTA_PROCESSO)
@@ -703,7 +703,7 @@ describe('FormularioStepComponent', () => {
     });
 
     it('removido o penúltimo formulário, sem abas, o foco vai ao título do painel que sobra', async () => {
-      fixture.debugElement.injector.get(RemocaoDoFormularioService).pedir('HABILITACAO');
+      fixture.debugElement.injector.get(RemocaoDoFormulario).pedir('HABILITACAO');
       const remocao = fixture.componentInstance.confirmarRemocao();
       controller
         .expectOne(ROTA_PROCESSO)

@@ -7,17 +7,17 @@ import { comCamposQueAsExigenciasPressupoem } from '../campos-pressupostos-da-in
 import { quemCitaNoProcesso, remocoesTravadasPor } from '../citantes-no-processo';
 import { fatosColetadosPor } from '../formulario-do-processo';
 import { fatosColetadosPelasOutras, formulariosDoRascunho } from '../formularios-por-finalidade';
-import { CatalogosDoFormularioService } from './catalogos-do-formulario.service';
+import { CatalogosDoFormulario } from './catalogos-do-formulario.service';
 
 /**
  * Os campos que o processo pressupõe no formulário de inscrição: quem, no processo, cita cada fato,
  * e a reconciliação que põe no formulário o que é citado e tira o que nada cita mais.
  */
 @Injectable()
-export class CamposPressupostosDoFormularioService {
+export class CamposPressupostosDoFormulario {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDoCronogramaService);
-  private readonly dados = inject(CatalogosDoFormularioService);
+  private readonly dados = inject(CatalogosDoFormulario);
 
   constructor() {
     // Reconcilia a cada mudança do que cita fatos no processo, e não só quando o catálogo

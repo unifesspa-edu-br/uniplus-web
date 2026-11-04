@@ -14,10 +14,10 @@ import {
   type ModeloOferecido,
 } from '../modelo-de-formulario';
 import { nomeDaFinalidade } from '../formularios-por-finalidade';
-import { CatalogosDoFormularioService } from './catalogos-do-formulario.service';
+import { CatalogosDoFormulario } from './catalogos-do-formulario.service';
 import { GravacaoDosFormularios } from './gravacao-dos-formularios.service';
 import {
-  AplicacaoNoServidorService,
+  AplicacaoNoServidor,
   type DesfechoDaAplicacao,
 } from './aplicacao-no-servidor.service';
 import { semChave } from './sem-chave';
@@ -28,13 +28,13 @@ import { semChave } from './sem-chave';
  * ou a recusa que ficam em texto na aba.
  */
 @Injectable()
-export class AplicacaoDeModeloService {
+export class AplicacaoDeModelo {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly servidor = inject(AplicacaoNoServidorService);
+  private readonly servidor = inject(AplicacaoNoServidor);
   private readonly modelosApi = inject(ModelosFormularioApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly dados = inject(CatalogosDoFormularioService);
+  private readonly dados = inject(CatalogosDoFormulario);
   private readonly gravacao = inject(GravacaoDosFormularios);
 
   /** Os modelos ativos que servem ao tipo do processo, por finalidade. */

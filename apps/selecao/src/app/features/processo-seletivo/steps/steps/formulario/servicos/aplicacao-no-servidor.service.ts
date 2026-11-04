@@ -10,7 +10,7 @@ import {
   type FaseDaAplicacao,
   type ProcessoAposAplicacao,
 } from '../modelo-de-formulario';
-import { LeituraDoProcessoNoFormularioService } from './leitura-do-processo-no-formulario.service';
+import { LeituraDoProcessoNoFormulario } from './leitura-do-processo-no-formulario.service';
 import { textoDaRecusa } from './texto-da-recusa';
 
 /** O desfecho da aplicação de um modelo: a recusa a mostrar, ou o que o servidor relatou e ficou tendo. */
@@ -32,9 +32,9 @@ export type DesfechoDaAplicacao =
  * declarada quando a cópia ficou sem ela e a releitura que projeta o resultado.
  */
 @Injectable()
-export class AplicacaoNoServidorService {
+export class AplicacaoNoServidor {
   private readonly cadastro = inject(CadastroInicialService);
-  private readonly leitura = inject(LeituraDoProcessoNoFormularioService);
+  private readonly leitura = inject(LeituraDoProcessoNoFormulario);
   private readonly problemI18n = inject(ProblemI18nService);
 
   /**

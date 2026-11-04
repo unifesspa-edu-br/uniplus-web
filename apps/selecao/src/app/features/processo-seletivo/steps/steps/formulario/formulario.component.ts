@@ -27,14 +27,14 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { abasDoFormulario } from './abas-do-formulario';
 import { mensagensDoFormulario } from './validacao-do-formulario';
-import { AplicacaoNoServidorService } from './servicos/aplicacao-no-servidor.service';
-import { AplicacaoDeModeloService } from './servicos/aplicacao-de-modelo.service';
+import { AplicacaoNoServidor } from './servicos/aplicacao-no-servidor.service';
+import { AplicacaoDeModelo } from './servicos/aplicacao-de-modelo.service';
 import { GravacaoDosFormularios } from './servicos/gravacao-dos-formularios.service';
-import { RemocaoDoFormularioService } from './servicos/remocao-do-formulario.service';
-import { CamposPressupostosDoFormularioService } from './servicos/campos-pressupostos-do-formulario.service';
-import { FasesDosFormulariosService } from './servicos/fases-dos-formularios.service';
-import { CatalogosDoFormularioService } from './servicos/catalogos-do-formulario.service';
-import { LeituraDoProcessoNoFormularioService } from './servicos/leitura-do-processo-no-formulario.service';
+import { RemocaoDoFormulario } from './servicos/remocao-do-formulario.service';
+import { CamposPressupostosDoFormulario } from './servicos/campos-pressupostos-do-formulario.service';
+import { FasesDosFormularios } from './servicos/fases-dos-formularios.service';
+import { CatalogosDoFormulario } from './servicos/catalogos-do-formulario.service';
+import { LeituraDoProcessoNoFormulario } from './servicos/leitura-do-processo-no-formulario.service';
 import { ModeloDoFormularioComponent } from './secoes/modelo.component';
 import { ApuracaoDaIdadeComponent } from './secoes/apuracao-da-idade.component';
 import { SimulacaoDoFormularioComponent } from './secoes/simulacao.component';
@@ -79,14 +79,14 @@ import {
   templateUrl: './formulario.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    AplicacaoDeModeloService,
-    AplicacaoNoServidorService,
-    CatalogosDoFormularioService,
+    AplicacaoDeModelo,
+    AplicacaoNoServidor,
+    CatalogosDoFormulario,
     GravacaoDosFormularios,
-    RemocaoDoFormularioService,
-    CamposPressupostosDoFormularioService,
-    FasesDosFormulariosService,
-    LeituraDoProcessoNoFormularioService,
+    RemocaoDoFormulario,
+    CamposPressupostosDoFormulario,
+    FasesDosFormularios,
+    LeituraDoProcessoNoFormulario,
     provePassoDoWizard(FormularioStepComponent),
     // A condição sobre município — o impedimento do campo de município, inclusive — escolhe o
     // valor pela busca no Geo.
@@ -96,14 +96,14 @@ import {
 export class FormularioStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDoCronogramaService);
-  protected readonly dados = inject(CatalogosDoFormularioService);
+  protected readonly dados = inject(CatalogosDoFormulario);
   /** O que o leitor de tela ouve depois de acrescentar ou remover um formulário, ou de aplicar um modelo. */
   protected readonly anuncio = signal('');
-  protected readonly remocao = inject(RemocaoDoFormularioService);
-  protected readonly aplicacao = inject(AplicacaoDeModeloService);
+  protected readonly remocao = inject(RemocaoDoFormulario);
+  protected readonly aplicacao = inject(AplicacaoDeModelo);
   private readonly gravacao = inject(GravacaoDosFormularios);
-  protected readonly fases = inject(FasesDosFormulariosService);
-  protected readonly campos = inject(CamposPressupostosDoFormularioService);
+  protected readonly fases = inject(FasesDosFormularios);
+  protected readonly campos = inject(CamposPressupostosDoFormulario);
   private readonly injector = inject(Injector);
   private readonly editores = viewChildren(EditorDeFormularioComponent);
 

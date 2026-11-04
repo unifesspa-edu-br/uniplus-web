@@ -8,7 +8,7 @@ import {
   formulariosDoRascunho,
   nomeDaFinalidade,
 } from '../formularios-por-finalidade';
-import { LeituraDoProcessoNoFormularioService } from '../servicos/leitura-do-processo-no-formulario.service';
+import { LeituraDoProcessoNoFormulario } from '../servicos/leitura-do-processo-no-formulario.service';
 
 /**
  * Os links que abrem a simulação da inscrição em nova aba, sem sair do assistente. Ela usa o
@@ -30,7 +30,7 @@ import { LeituraDoProcessoNoFormularioService } from '../servicos/leitura-do-pro
 })
 export class SimulacaoDoFormularioComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  private readonly leitura = inject(LeituraDoProcessoNoFormularioService);
+  private readonly leitura = inject(LeituraDoProcessoNoFormulario);
 
   /** Os formulários que se pode simular: os gravados, porque a API monta a simulação deles. */
   protected readonly formulariosParaSimular = computed(() =>

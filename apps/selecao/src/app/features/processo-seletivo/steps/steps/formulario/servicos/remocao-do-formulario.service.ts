@@ -6,7 +6,7 @@ import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicialService } from '../../../shared/cadastro-inicial.service';
 import { formularioDaFinalidade } from '../formulario-do-processo';
 import { nomeDaFinalidade } from '../formularios-por-finalidade';
-import { LeituraDoProcessoNoFormularioService } from './leitura-do-processo-no-formulario.service';
+import { LeituraDoProcessoNoFormulario } from './leitura-do-processo-no-formulario.service';
 import { semChave } from './sem-chave';
 import { textoDaRecusa } from './texto-da-recusa';
 
@@ -21,10 +21,10 @@ export interface DesfechoDaRemocao {
  * — que não espera a gravação do passo — e a recusa, que fica em texto na aba que não saiu.
  */
 @Injectable()
-export class RemocaoDoFormularioService {
+export class RemocaoDoFormulario {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
-  private readonly leitura = inject(LeituraDoProcessoNoFormularioService);
+  private readonly leitura = inject(LeituraDoProcessoNoFormulario);
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** A finalidade cuja remoção aguarda confirmação. */

@@ -10,7 +10,7 @@ import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
  * gravação, aplicação ou remoção deste passo.
  */
 @Injectable()
-export class LeituraDoProcessoNoFormularioService {
+export class LeituraDoProcessoNoFormulario {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly api = inject(ProcessosSeletivosApi);
 
