@@ -1,0 +1,37 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Campi</h1>
+    <p class="page-header__desc">
+      Campi da instituição com endereço estruturado (referência ao Geo) · UNI-REQ-0009.
+    </p>
+  </div>
+</div>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os campi">
+  {{ store.mensagemDeErro() }}
+  <div class="cfg-campi__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [disabled]="store.carregando()"
+      (click)="store.tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<cfg-campi-lista />
+
+<cfg-campus-formulario />
+
+<ui-confirm-dialog
+  [(visible)]="store.confirmando"
+  heading="Remover campus"
+  [message]="store.mensagemDaConfirmacao()"
+  confirmLabel="Remover"
+  confirmVariant="danger"
+  (confirmed)="store.removerConfirmado()"
+/>

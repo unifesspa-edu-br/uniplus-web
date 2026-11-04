@@ -1,0 +1,92 @@
+<ui-drawer
+  class="cfg-form-drawer"
+  [(visible)]="formulario.aberto"
+  [heading]="formulario.titulo()"
+  ariaLabel="Formulário de campus"
+  position="right"
+>
+  @if (formulario.erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ formulario.erro() }}</ui-alert>
+  }
+
+  <form
+    [formGroup]="formulario.form"
+    id="cfg-campus-form"
+    (ngSubmit)="formulario.salvar()"
+    novalidate
+    class="cfg-form"
+  >
+    <section aria-labelledby="cfg-campus-identificacao">
+      <h3 id="cfg-campus-identificacao" class="form-section__title">Identificação</h3>
+      <div class="form-grid">
+        <label class="field" [class.is-error]="formulario.erroDoCampo('sigla')">
+          <span class="field__label is-required">Sigla</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="sigla"
+            [attr.aria-invalid]="formulario.erroDoCampo('sigla') ? 'true' : null"
+          />
+          @if (formulario.erroDoCampo('sigla')) {
+            <span class="field__error">{{ formulario.erroDoCampo('sigla') }}</span>
+          }
+        </label>
+        <label class="field" [class.is-error]="formulario.erroDoCampo('codigoEmec')">
+          <span class="field__label">Código e-MEC</span>
+          <input
+            class="input"
+            type="text"
+            inputmode="numeric"
+            formControlName="codigoEmec"
+            [attr.aria-invalid]="formulario.erroDoCampo('codigoEmec') ? 'true' : null"
+          />
+          @if (formulario.erroDoCampo('codigoEmec')) {
+            <span class="field__error">{{ formulario.erroDoCampo('codigoEmec') }}</span>
+          }
+        </label>
+        <label class="field form-grid__full" [class.is-error]="formulario.erroDoCampo('nome')">
+          <span class="field__label is-required">Nome</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="nome"
+            [attr.aria-invalid]="formulario.erroDoCampo('nome') ? 'true' : null"
+          />
+          @if (formulario.erroDoCampo('nome')) {
+            <span class="field__error">{{ formulario.erroDoCampo('nome') }}</span>
+          }
+        </label>
+      </div>
+    </section>
+
+    <ui-endereco-geo
+      formControlName="endereco"
+      idPrefix="campus-endereco"
+      legend="Endereço do campus"
+      [erroExterno]="formulario.erroDoEndereco()"
+    />
+  </form>
+
+  <div class="cfg-form-footer">
+    <button type="button" class="btn btn--tertiary btn--rect" (click)="formulario.fechar()">
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-campus-form"
+      class="btn btn--primary"
+      [disabled]="store.gravando()"
+    >
+      @if (store.gravando()) {
+        <ui-spinner size="sm" />
+      }
+      {{
+        store.gravando()
+          ? 'Salvando...'
+          : formulario.modo() === 'criar'
+            ? 'Criar campus'
+            : 'Salvar campus'
+      }}
+    </button>
+  </div>
+</ui-drawer>

@@ -10,7 +10,6 @@
 1110 apps/configuracao/src/app/features/base-legal-bonus-regional/base-legal-bonus-regional-list.page.ts
 1049 apps/configuracao/src/app/features/calendario-dias-uteis/calendario-dias-uteis-detalhe.page.ts
 1023 apps/configuracao/src/app/features/calendario-dias-uteis/calendario-dias-uteis-novo.page.ts
-655 apps/configuracao/src/app/features/campi/campi.page.ts
 752 apps/configuracao/src/app/features/condicoes-atendimento/condicoes-atendimento-list.ts
 1173 apps/configuracao/src/app/features/cursos/cursos.page.ts
 903 apps/configuracao/src/app/features/fases-canonicas/fases-canonicas.page.ts
