@@ -121,6 +121,16 @@ export class FileUploadComponent {
     () => this.messages().length > 0 || (this.itens() ?? []).some((a) => a.fase === 'erro'),
   );
 
+  /**
+   * O botão da zona é o controle focável, e `aria-required`/`aria-invalid` não valem no papel de
+   * botão: o estado vai no texto lido junto do nome do controle.
+   */
+  protected readonly estadoParaLeitor = computed(() => {
+    const estados = [this.isRequired() ? 'obrigatório' : null, this.comErro() ? 'com erro' : null];
+    const lidos = estados.filter((estado) => estado !== null);
+    return lidos.length > 0 ? `(${lidos.join(', ')})` : '';
+  });
+
   /** Vários arquivos só valem no modo controlado, em que o consumidor guarda a lista. */
   protected readonly modoMultiplo = computed(() => this.multiple() && this.itens() !== null);
   readonly dropTitle = computed(() =>

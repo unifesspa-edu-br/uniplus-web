@@ -29,6 +29,9 @@
     <span [id]="dropTextId" class="uni-uploader__text">
       <span class="uni-uploader__title">{{ dropTitle() }}</span>
       <span class="uni-uploader__hint">{{ dropHint() }}</span>
+      @if (estadoParaLeitor(); as estado) {
+      <span class="sr-only">{{ estado }}</span>
+      }
     </span>
   </button>
   }
