@@ -1,6 +1,7 @@
 import type { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
 import { problemaDaCondicao, type FatoEscolhivel } from '../../shared/gatilho-de-exigencia';
 import { inteiroNaForma } from '../../shared/numero-do-campo';
+import { repetidos } from '../../shared/repetidos';
 import {
   desempateUsaAreas,
   desempateUsaEtapa,
@@ -102,9 +103,7 @@ function problemaDasAreas(
     }
   }
 
-  const repetida = criterio.areas.find(
-    (codigo, posicao) => criterio.areas.indexOf(codigo) !== posicao,
-  );
+  const [repetida] = repetidos(criterio.areas);
   if (repetida !== undefined) return RECUSA_DA_AREA.repetida(entrada.rotuloDaArea(repetida));
 
   const anteriores = new Set(areasCitadasPor(entrada.criterios.slice(0, indice)));

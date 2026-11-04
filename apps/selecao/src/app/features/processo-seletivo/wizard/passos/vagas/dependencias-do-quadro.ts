@@ -142,7 +142,7 @@ export function problemasDeQuadro(
 ): ProblemaDaDistribuicao[] {
   const selecionadas = new Set(distribuicao.modalidades.map((modalidade) => modalidade.id));
   const fixadas = new Map(distribuicao.quadro.map((item) => [item.modalidadeId, item.quantidade]));
-  const repetida = fixadas.size !== distribuicao.quadro.length;
+  const repetida = repetidos(distribuicao.quadro.map((item) => item.modalidadeId)).length > 0;
 
   return [
     ...(repetida
