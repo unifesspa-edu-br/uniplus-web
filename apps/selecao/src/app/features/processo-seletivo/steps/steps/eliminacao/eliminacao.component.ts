@@ -6,7 +6,6 @@ import {
   Injector,
   signal,
 } from '@angular/core';
-import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import {
@@ -17,38 +16,25 @@ import {
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
-import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import {
-  FATO_DA_EDICAO_DO_ENEM,
-  comoOpcoesDasEdicoes,
-  declaraEdicoesDoEnem,
-} from '../classificacao/edicoes-do-enem';
+import {} from '../classificacao/edicoes-do-enem';
 import {
   classificacaoUsaFormulaLocal,
-  comoComandoDeClassificacao,
   divisorDaMediaValido,
   eliminacaoUsaAreaEMinimo,
   eliminacaoUsaEtapa,
   eliminacaoUsaEtapaENotaMinima,
   eliminacaoUsaSoEtapa,
-  ehCampoDaEscala,
-  ehCampoDaResolucao,
   mensagensDeClassificacaoBase,
 } from '../classificacao/classificacao-para-comando';
-import {
-  mensagemDaRecusaDaEscala,
-  mensagemDaRecusaDaResolucao,
-} from '../classificacao/recusas-da-classificacao';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { declaraNotaDoEnem } from '../cronograma/regras-da-etapa';
 import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import { type ColunaDoQuadro } from '../../shared/quadro-de-pesos';
-import { recusaDaEliminacao, recusasDoCorte, type CampoDaRegra } from './recusas-da-eliminacao';
+import { type CampoDaRegra } from './recusas-da-eliminacao';
+import { GravacaoDaClassificacaoService } from '../classificacao/gravacao-da-classificacao.service';
 import { confirmacaoDaClassificacao } from '../classificacao/confirmacao-da-classificacao';
 import {
   REGRA_ELIMINACAO_VAZIA,
@@ -66,7 +52,6 @@ import {
 import { mensagensDasRegras } from './validacao-da-eliminacao';
 import {
   conferirDesempateGravado,
-  recusaDaClassificacaoPeloDesempate,
   recusaPorCriterioGravadoSemQuadro,
   type PendenciaDoCriterioGravado,
 } from '../desempate/quadro-do-desempate';
@@ -88,16 +73,14 @@ import {
   imports: [ValorLegivelDirective, ValorEmConsultaComponent],
   templateUrl: './eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(EliminacaoStepComponent)],
+  providers: [GravacaoDaClassificacaoService, provePassoDoWizard(EliminacaoStepComponent)],
 })
 export class EliminacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
-  private readonly cadastro = inject(CadastroInicialService);
-  private readonly releitura = inject(ReleituraDoSnapshot);
-  private readonly problemI18n = inject(ProblemI18nService);
+  private readonly gravacao = inject(GravacaoDaClassificacaoService);
 
   constructor() {
     this.catalogos.carregar();
@@ -188,14 +171,8 @@ export class EliminacaoStepComponent {
     return corteSugerido(regra, this.quadro());
   }
 
-  /**
-   * As recusas do servidor a um campo de uma regra, por `índice.campo`. Ficam junto do campo até
-   * a regra mudar ou a gravação seguinte responder.
-   */
-  readonly recusasPorCampo = signal<ReadonlyMap<string, string>>(new Map());
-
   recusaDoCampo(indice: number, campo: CampoDaRegra): string | null {
-    return this.recusasPorCampo().get(`${indice}.${campo}`) ?? null;
+    return this.gravacao.recusaDoCampo(indice, campo);
   }
 
   /** O `aria-describedby` do campo: a recusa, quando há, e a dica, quando há. */
@@ -234,7 +211,7 @@ export class EliminacaoStepComponent {
 
   removerRegra(indice: number): void {
     // As posições seguintes mudam: as recusas guardadas por índice deixam de apontar a regra certa.
-    this.recusasPorCampo.set(new Map());
+    this.gravacao.esquecerRecusas();
     this.store.patchObjectSection('classificacao', {
       regrasEliminacao: this.regras().filter((_, item) => item !== indice),
     });
@@ -271,20 +248,12 @@ export class EliminacaoStepComponent {
   }
 
   private atualizarRegra(indice: number, patch: Partial<RegraEliminacaoConfigurada>): void {
-    this.esquecerRecusasDa(indice);
+    this.gravacao.esquecerRecusasDa(indice);
     this.store.patchObjectSection('classificacao', {
       regrasEliminacao: this.regras().map((regra, item) =>
         item === indice ? { ...regra, ...patch } : regra,
       ),
     });
-  }
-
-  private esquecerRecusasDa(indice: number): void {
-    const restantes = [...this.recusasPorCampo()].filter(
-      ([chave]) => !chave.startsWith(`${indice}.`),
-    );
-    if (restantes.length < this.recusasPorCampo().size)
-      this.recusasPorCampo.set(new Map(restantes));
   }
 
   rotuloDeAvanco(): string {
@@ -425,130 +394,6 @@ export class EliminacaoStepComponent {
     const doDesempate = this.recusasCertasPeloDesempate();
     if (doDesempate.length > 0) return { valid: false, messages: doDesempate };
 
-    const geracao = this.store.geracao();
-    this.store.salvando.set(true);
-    try {
-      const comando = comoComandoDeClassificacao(this.store.draft().classificacao);
-      const resultado = await this.releitura.gravando(async () => {
-        const resposta = await this.cadastro.definirClassificacao(processoId, comando);
-        if (geracao !== this.store.geracao()) return resposta;
-        if (resposta.ok) {
-          this.recusasPorCampo.set(new Map());
-          this.store.classificacao.descartarRecusas();
-          this.store.classificacao.recusaDaEscalaDaNotaFinal.set(null);
-          this.registrarQuadroCongelado(comando.resolucaoPesoAreaEnem ?? null);
-        } else if (resposta.inconclusiva) {
-          // O servidor pode ter gravado — com ou sem quadro —, e o que ele tem fica desconhecido.
-          this.store.classificacao.marcarDesconhecida();
-        }
-        return resposta;
-      });
-
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!resultado.ok) {
-        return { valid: false, messages: this.mensagensDaRecusa(resultado.problem) };
-      }
-      const edicoes = await this.gravarEdicoesDoEnem(processoId);
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      return edicoes;
-    } finally {
-      if (geracao === this.store.geracao()) this.store.salvando.set(false);
-    }
-  }
-
-  /**
-   * As edições do ENEM escolhidas na fórmula, gravadas depois da classificação: o servidor só as
-   * aceita de processo cuja classificação gravada é baseada em ENEM. Sem edição escolhida não há o
-   * que gravar, e a pendência de publicação diz que falta declará-las.
-   */
-  private async gravarEdicoesDoEnem(processoId: string): Promise<StepValidation> {
-    const draft = this.store.draft();
-    if (!declaraEdicoesDoEnem(draft) || draft.classificacao.edicoesEnem.length === 0) {
-      return { valid: true };
-    }
-
-    const resposta = await this.cadastro.definirOpcoesDeclaradas(
-      processoId,
-      FATO_DA_EDICAO_DO_ENEM,
-      { opcoes: comoOpcoesDasEdicoes(draft.classificacao.edicoesEnem) },
-    );
-    if (resposta.ok) {
-      this.store.classificacao.recusaDasEdicoesDoEnem.set(null);
-      return { valid: true };
-    }
-
-    const { title, detail } = this.problemI18n.resolve(resposta.problem);
-    const recusa = detail ?? title;
-    this.store.classificacao.recusaDasEdicoesDoEnem.set(recusa);
-    return { valid: false, messages: [`Edições do ENEM, no passo Fórmula: ${recusa}`] };
-  }
-
-  /**
-   * O resumo da recusa: a recusa da resolução, com o texto da tela e o passo onde corrigir; a
-   * recusa por um critério de desempate já gravado, com o texto da tela, qualquer que seja o campo
-   * que o servidor apontou; e o título da raiz, pelo `ProblemI18nService`, para o que a tela não
-   * explica.
-   *
-   * As recusas sob o campo da resolução ficam guardadas para aparecer no passo da fórmula. Uma
-   * resposta que julgou o campo substitui as duas — a da resolução e a de um critério de desempate
-   * gravado — pelo que ela traz. Uma resposta sem ele não as apaga: o servidor recusa outros campos
-   * antes de chegar a julgar a resolução, e só a gravação que dá certo prova que ela passou.
-   */
-  private mensagensDaRecusa(problema: ProblemDetails): string[] {
-    this.recusasPorCampo.set(recusasDoCorte(problema.errors ?? []));
-    const sobOCampo = (problema.errors ?? []).filter((erro) => ehCampoDaResolucao(erro.field));
-    if (sobOCampo.length > 0) {
-      const peloDesempate = sobOCampo.map(recusaDaClassificacaoPeloDesempate);
-      const [daResolucao] = sobOCampo.filter((_, indice) => peloDesempate[indice] === null);
-      this.store.classificacao.recusarPeloDesempate(
-        peloDesempate.find((recusa) => recusa !== null) ?? null,
-        this.cadastroDePesos.leitura().pedida,
-      );
-      this.store.classificacao.recusaDaResolucaoPesoAreaEnem.set(
-        daResolucao === undefined ? null : mensagemDaRecusaDaResolucao(daResolucao),
-      );
-    }
-
-    const daEscala = (problema.errors ?? []).find((erro) => ehCampoDaEscala(erro.field));
-    const recusaDaEscala = daEscala === undefined ? null : mensagemDaRecusaDaEscala(daEscala);
-    if (recusaDaEscala !== null)
-      this.store.classificacao.recusaDaEscalaDaNotaFinal.set(recusaDaEscala);
-
-    return resumoDaRecusa(
-      problema,
-      (erro) =>
-        recusaDaEliminacao(erro) ??
-        (ehCampoDaEscala(erro.field) && recusaDaEscala !== null
-          ? `Escala da nota final, no passo Fórmula: ${recusaDaEscala}`
-          : null) ??
-        recusaDaClassificacaoPeloDesempate(erro) ??
-        (ehCampoDaResolucao(erro.field)
-          ? `Resolução de Peso por Área, no passo Fórmula: ${mensagemDaRecusaDaResolucao(erro)}`
-          : null),
-      () => this.problemI18n.resolve(problema).title,
-    );
-  }
-
-  /**
-   * A gravação que deu certo diz o que o processo passou a ter: sem resolução, nenhum quadro; com
-   * ela, o quadro que o cadastro do servidor tinha para a resolução. O cadastro lido aqui dá a
-   * cópia presumida, por confirmar na releitura que `gravando` faz — ou que a publicação faz no fim
-   * da varredura; sem ele lido, só a releitura diz o que foi copiado.
-   */
-  private registrarQuadroCongelado(resolucaoGravada: string | null): void {
-    if (resolucaoGravada === null) {
-      this.store.classificacao.registrarGravadaSemQuadro();
-      return;
-    }
-
-    const cadastro = this.cadastroDePesos.leitura();
-    if (cadastro.lido && cadastro.quadroDaResolucaoEscolhida.length > 0) {
-      this.store.classificacao.registrarGravadaComQuadro(
-        resolucaoGravada,
-        cadastro.quadroDaResolucaoEscolhida,
-      );
-    } else {
-      this.store.classificacao.marcarDesconhecida();
-    }
+    return this.gravacao.gravar(processoId);
   }
 }
