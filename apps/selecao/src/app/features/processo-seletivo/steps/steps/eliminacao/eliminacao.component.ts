@@ -6,11 +6,7 @@ import {
   Injector,
   signal,
 } from '@angular/core';
-import {
-  ProblemI18nService,
-  type ProblemDetails,
-  type ProblemValidationError,
-} from '@uniplus/shared-core/http';
+import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import {
@@ -49,8 +45,11 @@ import {
   ehCampoDaResolucao,
   exigeResolucaoPesoAreaEnem,
   mensagensDeClassificacaoBase,
-  TEXTO_DA_PENDENCIA_DA_RESOLUCAO,
 } from '../classificacao/classificacao-para-comando';
+import {
+  mensagemDaRecusaDaEscala,
+  mensagemDaRecusaDaResolucao,
+} from '../classificacao/recusas-da-classificacao';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { declaraNotaDoEnem } from '../cronograma/regras-da-etapa';
 import {
@@ -65,6 +64,7 @@ import {
   type ColunaDoQuadro,
   type GrupoDoQuadro,
 } from '../../shared/quadro-de-pesos';
+import { recusaDaEliminacao, recusasDoCorte, type CampoDaRegra } from './recusas-da-eliminacao';
 import {
   conferirDesempateGravado,
   recusaDaClassificacaoPeloDesempate,
@@ -796,142 +796,4 @@ export class EliminacaoStepComponent {
       this.store.classificacao.marcarDesconhecida();
     }
   }
-}
-
-const PREFIXO_DA_RECUSA = 'uniplus.selecao.configuracao_classificacao.';
-
-/**
- * O que a tela diz para cada recusa da resolução. O texto é daqui, e não o `message` que o
- * servidor devolve: a mensagem ao operador é contrato da tela, e o `code` é o que é estável.
- */
-const MENSAGEM_POR_CODIGO_DA_RESOLUCAO: ReadonlyMap<string, string> = new Map([
-  [
-    `${PREFIXO_DA_RECUSA}resolucao_peso_area_enem_obrigatoria`,
-    TEXTO_DA_PENDENCIA_DA_RESOLUCAO.obrigatoria.campo,
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}resolucao_peso_area_enem_indevida`,
-    'A resolução de Peso por Área só se aplica à classificação baseada em ENEM com a média ponderada.',
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}resolucao_peso_area_enem_invalida`,
-    'O nome da resolução de Peso por Área não é válido. Escolha a resolução na lista.',
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}resolucao_peso_area_enem_nao_encontrada`,
-    'A resolução escolhida não está no cadastro de Peso por Área. Escolha outra.',
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}resolucao_peso_area_enem_incompleta`,
-    'A resolução escolhida não tem pesos cadastrados para todos os grupos de área. Complete-a no cadastro de Peso por Área ou escolha outra.',
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}quadro_peso_area_enem_vazio`,
-    'A resolução escolhida não tem nenhum grupo de área no cadastro de Peso por Área.',
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}quadro_peso_area_enem_grupo_repetido`,
-    'A resolução escolhida repete um grupo de área no cadastro de Peso por Área.',
-  ],
-]);
-
-/**
- * O que a tela diz para cada recusa das regras de eliminação. O servidor aponta a regra pelo campo
- * `regrasEliminacao[i]`, e a tela a nomeia pela posição, como na própria validação.
- */
-const RECUSA_DA_ELIMINACAO: ReadonlyMap<string, string> = new Map([
-  [
-    `${PREFIXO_DA_RECUSA}corte_em_area_repetido`,
-    'a área já tem um corte em outra regra; deixe um corte por área',
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}corte_em_area_fora_do_quadro`,
-    'a área não está em todos os grupos da resolução de Peso por Área; escolha outra área ou outra resolução no passo Fórmula',
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}falta_em_dia_de_prova_enem_repetida`,
-    'a falta em dia de prova do ENEM já foi declarada em outra regra; deixe uma só',
-  ],
-  [
-    `${PREFIXO_DA_RECUSA}ausencia_na_etapa_repetida`,
-    'a ausência nesta etapa já foi declarada em outra regra; deixe uma só',
-  ],
-  [
-    'uniplus.selecao.regra_eliminacao.etapa_ref_obrigatorio',
-    'a eliminação por ausência exige a etapa',
-  ],
-  [
-    'uniplus.selecao.processo_seletivo.ausencia_na_etapa_do_enem',
-    'a ausência não se aplica à etapa de nota do ENEM; escolha outra etapa',
-  ],
-  [
-    'uniplus.selecao.regra_eliminacao.area_invalida',
-    'a área do corte não é uma área do ENEM válida; escolha a área na lista',
-  ],
-  [
-    'uniplus.selecao.regra_eliminacao.area_e_minimo_obrigatorios',
-    'o corte por área exige a área do ENEM e a nota mínima',
-  ],
-  [
-    'uniplus.selecao.processo_seletivo.eliminacao_enem_fora_de_processo_enem',
-    'as regras de eliminação do ENEM só se aplicam à classificação baseada em ENEM; marque o ENEM no passo Fórmula ou retire essas regras',
-  ],
-]);
-
-type CampoDaRegra = 'etapa' | 'area' | 'minimo';
-
-const CAMPO_DA_REGRA: Readonly<Record<string, CampoDaRegra>> = {
-  etapaRef: 'etapa',
-  areaCodigo: 'area',
-  minimo: 'minimo',
-};
-
-/**
- * O campo de cada recusa que o servidor aponta só pela regra, sem sufixo: a repetição da área e a
- * da etapa são recusadas em `regrasEliminacao[i]`, e é o campo delas que as corrige.
- */
-const CAMPO_DA_RECUSA_SEM_SUFIXO: Readonly<Record<string, CampoDaRegra>> = {
-  [`${PREFIXO_DA_RECUSA}corte_em_area_repetido`]: 'area',
-  [`${PREFIXO_DA_RECUSA}ausencia_na_etapa_repetida`]: 'etapa',
-};
-
-/** As recusas que o servidor aponta num campo de uma regra, por `índice.campo`. */
-function recusasDoCorte(
-  erros: readonly { readonly field: string; readonly code: string }[],
-): ReadonlyMap<string, string> {
-  const recusas = new Map<string, string>();
-  for (const erro of erros) {
-    const [, indice, nome] = /^regrasEliminacao\[(\d+)\](?:\.(\w+))?$/.exec(erro.field) ?? [];
-    const campo = nome === undefined ? CAMPO_DA_RECUSA_SEM_SUFIXO[erro.code] : CAMPO_DA_REGRA[nome];
-    const texto = RECUSA_DA_ELIMINACAO.get(erro.code);
-    if (indice === undefined || campo === undefined || texto === undefined) continue;
-    recusas.set(`${indice}.${campo}`, `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`);
-  }
-  return recusas;
-}
-
-function recusaDaEliminacao(erro: {
-  readonly field: string;
-  readonly code: string;
-}): string | null {
-  const texto = RECUSA_DA_ELIMINACAO.get(erro.code);
-  if (texto === undefined) return null;
-  const indice = /^regrasEliminacao\[(\d+)\]/.exec(erro.field)?.[1];
-  return indice === undefined
-    ? `${texto.charAt(0).toUpperCase()}${texto.slice(1)}.`
-    : `Regra de eliminação ${Number(indice) + 1}: ${texto}.`;
-}
-
-/** A tela mostra o que o servidor disse da escala; sem mensagem, orienta pelo campo. */
-function mensagemDaRecusaDaEscala(erro: Pick<ProblemValidationError, 'message'>): string {
-  return (
-    erro.message?.trim() || 'O servidor recusou a escala da nota final. Confira o valor informado.'
-  );
-}
-
-const MENSAGEM_DE_RECUSA_DESCONHECIDA =
-  'O servidor recusou a resolução de Peso por Área escolhida. Confira o cadastro de Peso por Área ou escolha outra.';
-
-function mensagemDaRecusaDaResolucao(erro: Pick<ProblemValidationError, 'code'>): string {
-  return MENSAGEM_POR_CODIGO_DA_RESOLUCAO.get(erro.code) ?? MENSAGEM_DE_RECUSA_DESCONHECIDA;
 }
