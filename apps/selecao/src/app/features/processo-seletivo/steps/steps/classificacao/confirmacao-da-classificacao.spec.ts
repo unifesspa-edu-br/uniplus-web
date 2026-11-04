@@ -8,6 +8,8 @@ import {
   store,
 } from '../eliminacao/eliminacao.testing';
 
+const REGRA_POR_AREA = 'DESEMPATE-MAIOR-NOTA-AREA-ENEM';
+
 describe('confirmação da classificação', () => {
   montarEliminacao();
 
@@ -71,6 +73,19 @@ describe('confirmação da classificação', () => {
       expect(confirmacao?.itens).toContainEqual({
         rotulo: '1º critério de desempate',
         valor: 'DESEMPATE-MAIOR-IDADE',
+      });
+    });
+
+    it('lista só a regra do critério por área que ainda não tem áreas', () => {
+      prepararClassificacaoLocal();
+      store.classificacao.desempatePendenteDeGravacao.set(true);
+      store.patchSection('desempate', [{ ...MAIOR_IDADE, regraCodigo: REGRA_POR_AREA }]);
+
+      const confirmacao = componente.confirmacaoDeGravacao();
+
+      expect(confirmacao?.itens).toContainEqual({
+        rotulo: '1º critério de desempate',
+        valor: REGRA_POR_AREA,
       });
     });
 

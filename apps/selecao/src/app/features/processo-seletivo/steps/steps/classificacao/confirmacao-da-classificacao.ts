@@ -1,6 +1,5 @@
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import type { CriterioDesempateConfigurado, WizardDraft } from '../../processo-seletivo.models';
-import { desempateUsaAreas } from '../desempate/desempate-para-comando';
 import {
   classificacaoUsaFormulaLocal,
   exigeResolucaoPesoAreaEnem,
@@ -23,7 +22,7 @@ export function textoDoCriterio(
   criterio: CriterioDesempateConfigurado,
   rotuloDaArea: (codigo: string) => string,
 ): string {
-  return desempateUsaAreas(criterio.regraCodigo)
+  return criterio.areas.length > 0
     ? `${criterio.regraCodigo}: ${criterio.areas.map(rotuloDaArea).join(', ')}`
     : criterio.regraCodigo;
 }
