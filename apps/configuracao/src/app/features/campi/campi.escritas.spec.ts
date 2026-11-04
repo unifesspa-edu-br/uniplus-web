@@ -165,6 +165,9 @@ describe('CampiPage — escritas pela interface', () => {
     await propagar();
 
     expect(elemento('.panel-head').textContent).toContain('Removendo');
+    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe(
+      'Removendo o campus MARABA.',
+    );
     expect(edicao.salvando()).toBe(false);
     expect(edicao.removendo()).toBe(true);
     expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(true);
@@ -178,6 +181,8 @@ describe('CampiPage — escritas pela interface', () => {
     remocao.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
     controller.expectOne((r) => r.url === LISTA_URL).flush([]);
+    await propagar();
+    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe('Campus MARABA removido.');
     expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(false);
   });
 
@@ -264,6 +269,80 @@ describe('CampiPage — escritas pela interface', () => {
 
     const erro = elemento('ui-endereco-geo .field__error');
     expect(erro.textContent?.trim()).toBe('A cidade não corresponde ao CEP informado.');
+  });
+
+  describe('ativação enquanto o envio corre', () => {
+    it('clique e envio do formulário não chamam salvar de novo', async () => {
+      const salvarDaClasse = vi.spyOn(edicao, 'salvar');
+      await preencherNovoCampus();
+      enviarFormulario();
+      const post = controller.expectOne(ESCRITA_URL);
+      await propagar();
+
+      enviarFormulario();
+      elemento<HTMLFormElement>('#cfg-campus-form').dispatchEvent(
+        new Event('submit', { cancelable: true }),
+      );
+      await propagar();
+
+      expect(salvarDaClasse).toHaveBeenCalledTimes(1);
+      post.flush('novo-id', { status: 201, statusText: 'Created' });
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA_URL).flush([campusSeed]);
+    });
+  });
+
+  describe('recusa só do endereço', () => {
+    const recusaDeEndereco = {
+      type: 'about:blank',
+      title: 'Dados inválidos',
+      status: 422,
+      code: 'uniplus.validacao',
+      traceId: 'test-trace',
+      errors: [
+        {
+          field: 'CidadeCodigoIbge',
+          code: 'uniplus.configuracao.campus.cidade_divergente',
+          message: 'A cidade não corresponde ao CEP informado.',
+        },
+      ],
+    };
+
+    async function enviarERecusar(): Promise<void> {
+      const salvar = elemento<HTMLButtonElement>('button[form="cfg-campus-form"]');
+      salvar.focus();
+      salvar.click();
+      await propagar();
+      recusar(recusaDeEndereco);
+      await propagar();
+      await propagar();
+    }
+
+    it('com o endereço resolvido por CEP, o foco vai à mensagem da recusa', async () => {
+      await preencherNovoCampus();
+      await enviarERecusar();
+
+      const mensagem = elemento('ui-endereco-geo .field__error');
+      expect(document.activeElement).toBe(mensagem);
+      expect(elemento('ui-endereco-geo fieldset').getAttribute('aria-describedby')).toBe(
+        mensagem.id,
+      );
+    });
+
+    it('com o endereço manual, o foco também vai à mensagem da recusa', async () => {
+      await preencherNovoCampus();
+      edicao.form.controls.endereco.setValue({
+        ...enderecoResolvido,
+        cep: null,
+        logradouro: 'Rua Sem CEP',
+        origem: 'manual',
+        nivelResolucao: null,
+      });
+      await propagar();
+      await enviarERecusar();
+
+      expect(document.activeElement).toBe(elemento('ui-endereco-geo .field__error'));
+    });
   });
 
   describe('foco', () => {

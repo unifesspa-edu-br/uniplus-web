@@ -6,8 +6,11 @@
         <span class="cfg-cursos__loading"><ui-spinner size="sm" /> Carregando</span>
       }
       @if (removendo()) {
-        <span class="cfg-cursos__loading"><ui-spinner size="sm" /> Removendo</span>
+        <span class="cfg-cursos__loading" aria-hidden="true"
+          ><ui-spinner size="sm" /> Removendo</span
+        >
       }
+      <span class="sr-only" role="status">{{ anuncioDaRemocao() }}</span>
     </div>
     <button
       type="button"
@@ -89,7 +92,12 @@
         heading="Nenhum curso encontrado"
         description="Nenhum curso corresponde à busca. Ajuste o código ou o nome."
       >
-        <button type="button" class="btn btn--secondary" (click)="termoBusca.set('')">
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="removendo()"
+          (click)="termoBusca.set('')"
+        >
           Limpar busca
         </button>
       </ui-empty-state>

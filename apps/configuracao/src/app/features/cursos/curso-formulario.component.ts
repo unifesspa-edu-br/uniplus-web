@@ -80,6 +80,20 @@ export class CursoFormularioComponent {
     invalido?.focus();
   }
 
+  /** Enquanto envia, o botão está indisponível: o clique (e Enter ou Espaço, que o geram) não envia. */
+  protected aoClicarEmSalvar(evento: Event): void {
+    if (this.salvando()) {
+      evento.preventDefault();
+    }
+  }
+
+  /** O envio do formulário (Enter num campo, por exemplo) também espera o envio em curso. */
+  protected aoEnviar(): void {
+    if (!this.salvando()) {
+      this.salvar.emit();
+    }
+  }
+
   protected erroDoCampo(nome: keyof CursoForm): string | null {
     return mensagemDeErroDoControle(this.form().controls[nome]);
   }

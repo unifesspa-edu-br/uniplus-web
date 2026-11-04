@@ -5,7 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, CursoDto } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CursosPage } from './cursos.page';
 import { EdicaoDosCursos } from './edicao-dos-cursos';
 
@@ -152,6 +152,9 @@ describe('CursosPage — escritas pela interface', () => {
     await propagar();
 
     expect(elemento('.panel-head').textContent).toContain('Removendo');
+    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe(
+      'Removendo o curso ENG-CIV.',
+    );
     expect(edicao.salvando()).toBe(false);
     expect(edicao.removendo()).toBe(true);
     expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(true);
@@ -165,6 +168,7 @@ describe('CursosPage — escritas pela interface', () => {
     remocao.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
     await responderLista([]);
+    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe('Curso ENG-CIV removido.');
     expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(false);
   });
 
@@ -230,6 +234,27 @@ describe('CursosPage — escritas pela interface', () => {
       'Nome fora do padrão do catálogo.',
     );
     expect(elemento('input[formcontrolname="nome"]').getAttribute('aria-invalid')).toBe('true');
+  });
+
+  describe('ativação enquanto o envio corre', () => {
+    it('clique e envio do formulário não chamam salvar de novo', async () => {
+      const salvarDaClasse = vi.spyOn(edicao, 'salvar');
+      await preencherNovoCurso();
+      enviarFormulario();
+      const post = controller.expectOne(ESCRITA_URL);
+      await propagar();
+
+      enviarFormulario();
+      elemento<HTMLFormElement>('#cfg-curso-form').dispatchEvent(
+        new Event('submit', { cancelable: true }),
+      );
+      await propagar();
+
+      expect(salvarDaClasse).toHaveBeenCalledTimes(1);
+      post.flush('novo-id', { status: 201, statusText: 'Created' });
+      await propagar();
+      await responderLista([cursoSeed]);
+    });
   });
 
   describe('foco', () => {

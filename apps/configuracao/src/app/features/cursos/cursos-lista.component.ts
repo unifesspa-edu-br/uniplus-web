@@ -28,6 +28,8 @@ export class CursosListaComponent {
   readonly cursos = input.required<readonly CursoDto[]>();
   readonly carregando = input.required<boolean>();
   readonly removendo = input.required<boolean>();
+  /** Texto da região de status da remoção (início e fim). */
+  readonly anuncioDaRemocao = input.required<string>();
   readonly mensagemDeErro = input.required<string | null>();
   readonly temBusca = input.required<boolean>();
   readonly limite = input.required<number>();

@@ -47,12 +47,21 @@ export class EdicaoDosCampi {
   readonly salvando = computed(() => this.escrita() === 'salvando');
   /** Uma remoção está em curso; o formulário não foi enviado. */
   readonly removendo = computed(() => this.escrita() === 'removendo');
+  /** Texto da região de status: anuncia o início e o fim da remoção. */
+  readonly anuncioDaRemocao = computed(() => {
+    const campus = this.campusParaRemover();
+    if (this.removendo() && campus !== null) {
+      return `Removendo o campus ${campus.sigla}.`;
+    }
+    return this.resultadoDaRemocao();
+  });
   readonly aberto = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
   readonly erroDoEndereco = signal<string | null>(null);
   readonly titulo = computed(() => (this.modo() === 'criar' ? 'Novo campus' : 'Editar campus'));
 
+  private readonly resultadoDaRemocao = signal('');
   readonly confirmando = signal(false);
   readonly campusParaRemover = signal<CampusDto | null>(null);
   readonly mensagemDaConfirmacao = computed(() => {
@@ -111,12 +120,14 @@ export class EdicaoDosCampi {
     }
     this.gravar('removendo', this.api.remover(campus.id), (result) => {
       if (result.ok) {
+        this.resultadoDaRemocao.set(`Campus ${campus.sigla} removido.`);
         this.notifications.success('Campus removido', campus.sigla);
         this.confirmando.set(false);
         this.campusParaRemover.set(null);
         this.store.recarregar();
         return;
       }
+      this.resultadoDaRemocao.set(`Não foi possível remover o campus ${campus.sigla}.`);
       this.notifications.errorFromProblem(result.problem, {
         title: this.problemI18n.resolve(result.problem).title,
       });

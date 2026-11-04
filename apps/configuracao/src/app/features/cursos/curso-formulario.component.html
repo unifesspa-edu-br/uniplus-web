@@ -9,7 +9,7 @@
   <form
     [formGroup]="form()"
     id="cfg-curso-form"
-    (ngSubmit)="salvar.emit()"
+    (ngSubmit)="aoEnviar()"
     novalidate
     class="cfg-form"
   >
@@ -150,6 +150,7 @@
       class="btn btn--primary"
       [attr.aria-disabled]="salvando() ? 'true' : null"
       [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
     >
       @if (salvando()) {
         <ui-spinner size="sm" />

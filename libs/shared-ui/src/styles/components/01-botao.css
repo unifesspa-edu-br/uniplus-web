@@ -41,14 +41,15 @@
     border-color var(--duration-fast) var(--ease-standard),
     color var(--duration-fast) var(--ease-standard);
 }
-.btn:hover:not([disabled]):not(:disabled) {
+.btn:hover:not([disabled]):not(:disabled):not([aria-disabled='true']) {
   background: var(--btn-bg-hover);
 }
-.btn:active:not([disabled]):not(:disabled) {
+.btn:active:not([disabled]):not(:disabled):not([aria-disabled='true']) {
   background: var(--btn-bg-active);
 }
 .btn[disabled],
-.btn:disabled {
+.btn:disabled,
+.btn[aria-disabled='true'] {
   cursor: not-allowed;
   background: var(--surface-disabled);
   color: var(--text-disabled);
@@ -62,7 +63,7 @@
   --btn-bg-hover: var(--color-primary-50);
   --btn-bg-active: var(--color-primary-100);
 }
-.btn--secondary:hover:not([disabled]):not(:disabled) {
+.btn--secondary:hover:not([disabled]):not(:disabled):not([aria-disabled='true']) {
   color: var(--text-on-primary-tint);
   border-color: var(--color-primary-700);
 }
@@ -80,7 +81,7 @@
   --btn-bg-hover: var(--color-primary-50);
   --btn-bg-active: var(--color-primary-100);
 }
-.btn--tertiary:hover:not([disabled]):not(:disabled) {
+.btn--tertiary:hover:not([disabled]):not(:disabled):not([aria-disabled='true']) {
   color: var(--text-on-primary-tint);
 }
 

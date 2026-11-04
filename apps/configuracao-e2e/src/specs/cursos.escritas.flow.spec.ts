@@ -35,6 +35,7 @@ async function responder(route: Route, status: number, body: unknown, tipo = 'ap
 /** A resposta do POST fica retida até `liberar`, para o teste observar o envio em curso. */
 async function mockApi(page: Page, resposta: { status: number; corpo: unknown; tipo?: string }) {
   let liberar: () => void = () => undefined;
+  const envios = { total: 0 };
   const retida = new Promise<void>((resolve) => (liberar = resolve));
   await page.route(/\/api\/configuracao\/vocabularios\/grupos-area-enem$/, (r) =>
     responder(r, 200, []),
@@ -49,10 +50,11 @@ async function mockApi(page: Page, resposta: { status: number; corpo: unknown; t
       await r.fulfill({ status: 204, headers: CORS_HEADERS });
       return;
     }
+    envios.total += 1;
     await retida;
     await responder(r, resposta.status, resposta.corpo, resposta.tipo);
   });
-  return liberar;
+  return { liberar, envios };
 }
 
 async function preencher(page: Page): Promise<void> {
@@ -70,7 +72,7 @@ test.describe('Curso — escrita do formulário', () => {
   test('o envio deixa o formulário só leitura e o foco segue no botão; a recusa leva o foco ao campo', async ({
     page,
   }) => {
-    const liberar = await mockApi(page, {
+    const { liberar } = await mockApi(page, {
       status: 422,
       tipo: 'application/problem+json',
       corpo: {
@@ -112,7 +114,7 @@ test.describe('Curso — escrita do formulário', () => {
   });
 
   test('após o sucesso o foco volta ao botão que abriu o drawer', async ({ page }) => {
-    const liberar = await mockApi(page, { status: 201, corpo: 'novo-id' });
+    const { liberar } = await mockApi(page, { status: 201, corpo: 'novo-id' });
     await page.goto('/cursos');
     const acionador = page.getByRole('button', { name: 'Novo curso' }).first();
     await acionador.focus();
@@ -124,5 +126,31 @@ test.describe('Curso — escrita do formulário', () => {
     liberar();
     await expect(drawer).toBeHidden();
     await expect(acionador).toBeFocused();
+  });
+
+  test('com o envio em curso, clique, Enter e Espaço no botão não enviam de novo e ele parece indisponível', async ({
+    page,
+  }) => {
+    const { liberar, envios } = await mockApi(page, { status: 201, corpo: 'novo-id' });
+    await page.goto('/cursos');
+    await page.getByRole('button', { name: 'Novo curso' }).first().click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de curso' });
+    await preencher(page);
+    const salvar = drawer.getByRole('button', { name: 'Criar curso' });
+    await salvar.focus();
+    await salvar.click();
+
+    const emCurso = drawer.getByRole('button', { name: 'Salvando...' });
+    await expect(emCurso).toHaveAttribute('aria-disabled', 'true');
+    await expect(emCurso).toHaveCSS('cursor', 'not-allowed');
+    await emCurso.dispatchEvent('click');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Space');
+    await page.evaluate(() => new Promise((resolver) => requestAnimationFrame(resolver)));
+    expect(envios.total).toBe(1);
+
+    liberar();
+    await expect(drawer).toBeHidden();
+    expect(envios.total).toBe(1);
   });
 });

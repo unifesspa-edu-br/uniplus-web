@@ -6,8 +6,11 @@
         <span class="cfg-campi__loading"><ui-spinner size="sm" /> Carregando</span>
       }
       @if (removendo()) {
-        <span class="cfg-campi__loading"><ui-spinner size="sm" /> Removendo</span>
+        <span class="cfg-campi__loading" aria-hidden="true"
+          ><ui-spinner size="sm" /> Removendo</span
+        >
       }
+      <span class="sr-only" role="status">{{ anuncioDaRemocao() }}</span>
     </div>
     <button
       type="button"
@@ -70,7 +73,14 @@
       heading="Nenhum campus cadastrado"
       description="Cadastre o primeiro campus para vincular cursos e ofertas."
     >
-      <button type="button" class="btn btn--primary" (click)="cadastrar.emit()">Novo campus</button>
+      <button
+        type="button"
+        class="btn btn--primary"
+        [disabled]="removendo()"
+        (click)="cadastrar.emit()"
+      >
+        Novo campus
+      </button>
     </ui-empty-state>
   }
 

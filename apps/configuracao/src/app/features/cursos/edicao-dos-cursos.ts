@@ -68,11 +68,20 @@ export class EdicaoDosCursos {
   readonly salvando = computed(() => this.escrita() === 'salvando');
   /** Uma remoção está em curso; o formulário não foi enviado. */
   readonly removendo = computed(() => this.escrita() === 'removendo');
+  /** Texto da região de status: anuncia o início e o fim da remoção. */
+  readonly anuncioDaRemocao = computed(() => {
+    const curso = this.cursoParaRemover();
+    if (this.removendo() && curso !== null) {
+      return `Removendo o curso ${curso.codigo}.`;
+    }
+    return this.resultadoDaRemocao();
+  });
   readonly aberto = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
   readonly titulo = computed(() => (this.modo() === 'criar' ? 'Novo curso' : 'Editar curso'));
 
+  private readonly resultadoDaRemocao = signal('');
   readonly confirmando = signal(false);
   readonly cursoParaRemover = signal<CursoDto | null>(null);
   private readonly erroDaRemocao = signal<string | null>(null);
@@ -192,6 +201,7 @@ export class EdicaoDosCursos {
     }
     this.gravar('removendo', this.api.remover(curso.id), (result) => {
       if (result.ok) {
+        this.resultadoDaRemocao.set(`Curso ${curso.codigo} removido.`);
         this.notifications.success('Curso removido', curso.codigo);
         this.confirmando.set(false);
         this.cursoParaRemover.set(null);
@@ -227,6 +237,7 @@ export class EdicaoDosCursos {
 
   private recusarRemocao(curso: CursoDto, problem: ProblemDetails): void {
     const titulo = this.problemI18n.resolve(problem).title;
+    this.resultadoDaRemocao.set(`Não foi possível remover o curso ${curso.codigo}.`);
     // 409 é o único conflito possível no DELETE do curso: referenciado por oferta viva. Em vez de
     // só reexibir o texto, abre o drawer de ofertas com as que bloqueiam a remoção.
     if (problem.status === STATUS_HTTP.CONFLITO) {

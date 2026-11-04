@@ -13,7 +13,7 @@
   <form
     [formGroup]="form()"
     id="cfg-campus-form"
-    (ngSubmit)="salvar.emit()"
+    (ngSubmit)="aoEnviar()"
     novalidate
     class="cfg-form"
   >
@@ -62,9 +62,10 @@
 
     <ui-endereco-geo
       formControlName="endereco"
-      idPrefix="campus-endereco"
+      [idPrefix]="prefixoDoEndereco"
       legend="Endereço do campus"
       [erroExterno]="erroDoEndereco()"
+      [descritoPor]="erroDoEndereco() ? idDoErroDoEndereco : null"
     />
   </form>
 
@@ -83,6 +84,7 @@
       class="btn btn--primary"
       [attr.aria-disabled]="salvando() ? 'true' : null"
       [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
     >
       @if (salvando()) {
         <ui-spinner size="sm" />
