@@ -26,7 +26,7 @@ import {
   recusaDoNomeDoAnexo,
   tipoDeMidiaDoAnexo,
 } from './anexos-do-edital';
-import { AnexosDoEditalService } from './envio-do-anexo.service';
+import { AnexosDoEdital } from './envio-do-anexo.service';
 
 /** Os anexos que o ato da versão vigente publicou, lidos do servidor. */
 type AnexosPublicados =
@@ -59,11 +59,11 @@ interface AnexoEmConsulta {
   imports: [FileUploadComponent],
   templateUrl: './anexos-do-edital.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [AnexosDoEditalService],
+  providers: [AnexosDoEdital],
 })
 export class AnexosDoEditalComponent {
   readonly store = inject(ProcessoSeletivoStore);
-  private readonly servico = inject(AnexosDoEditalService);
+  private readonly servico = inject(AnexosDoEdital);
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** O processo já foi publicado: a consulta lê os anexos do ato da versão vigente. */

@@ -26,7 +26,7 @@ import {
  * modelo saem com chave nova.
  */
 @Injectable()
-export class EnvioDoModeloService {
+export class EnvioDoModelo {
   private readonly api = inject(DocumentosEAtosDoProcessoApi);
   private readonly upload = inject(SignedUploadClient);
 

@@ -20,7 +20,7 @@ import type { IniciarEnvioDoModeloDeDocumentoDto } from '@uniplus/shared-data/se
 
 import type { ModeloDaExigencia } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { EnvioDoModeloService } from './envio-do-modelo.service';
+import { EnvioDoModelo } from './envio-do-modelo.service';
 
 /** O teto do modelo no domínio: 10 MB. */
 const TAMANHO_MAXIMO_MB = 10;
@@ -63,11 +63,11 @@ interface EnvioEmCurso {
   imports: [FileUploadComponent],
   templateUrl: './modelo-da-exigencia.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [EnvioDoModeloService],
+  providers: [EnvioDoModelo],
 })
 export class ModeloDaExigenciaComponent {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly envioDoModelo = inject(EnvioDoModeloService);
+  private readonly envioDoModelo = inject(EnvioDoModelo);
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** O modelo vinculado à exigência; `null` quando ela não oferece modelo. */

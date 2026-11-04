@@ -66,7 +66,7 @@ export class EnvioDoAnexo {
 
 /** Abre os envios dos anexos e lê o que o processo publicou. Provido por componente. */
 @Injectable()
-export class AnexosDoEditalService {
+export class AnexosDoEdital {
   private readonly api = inject(DocumentosEAtosDoProcessoApi);
   private readonly upload = inject(SignedUploadClient);
 

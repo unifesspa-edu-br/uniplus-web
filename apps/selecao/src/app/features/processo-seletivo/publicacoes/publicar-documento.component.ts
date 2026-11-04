@@ -49,7 +49,7 @@ import {
   nomeInicialDoAnexo,
   tipoDeMidiaDoAnexo,
 } from '../steps/shared/anexos-do-edital/anexos-do-edital';
-import { AnexosDoEditalService } from '../steps/shared/anexos-do-edital/envio-do-anexo.service';
+import { AnexosDoEdital } from '../steps/shared/anexos-do-edital/envio-do-anexo.service';
 import { AnexosDaPublicacaoComponent } from './anexos-da-publicacao.component';
 import { rotuloDoAto } from './apresentacao-do-ato';
 import {
@@ -105,14 +105,14 @@ interface EnvioDaPublicacao {
     SpinnerComponent,
     AnexosDaPublicacaoComponent,
   ],
-  providers: [AnexosDoEditalService],
+  providers: [AnexosDoEdital],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './publicar-documento.component.html',
   styleUrl: './publicar-documento.component.css',
 })
 export class PublicarDocumentoComponent {
   private readonly api = inject(DocumentosEAtosDoProcessoApi);
-  private readonly envios = inject(AnexosDoEditalService);
+  private readonly envios = inject(AnexosDoEdital);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
   private readonly injector = inject(Injector);
