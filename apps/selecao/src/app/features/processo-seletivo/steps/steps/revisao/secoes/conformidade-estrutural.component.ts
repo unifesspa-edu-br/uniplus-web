@@ -10,12 +10,10 @@ import { ConferenciaDaPublicacaoService } from '../servicos/conferencia-da-publi
   selector: 'sel-conformidade-estrutural',
   templateUrl: './conformidade-estrutural.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  // O elemento nasce inline; como bloco, a seção mantém a margem de `.step-section`.
   host: {
     class: 'step-section',
     role: 'region',
     'aria-labelledby': 'revisao-estrutural-titulo',
-    style: 'display: block',
   },
 })
 export class ConformidadeEstruturalComponent {

@@ -31,12 +31,10 @@ import { PublicacaoDoProcessoService } from '../servicos/publicacao-do-processo.
   imports: [ReactiveFormsModule, ValorEmConsultaComponent],
   templateUrl: './ato-da-publicacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  // O elemento nasce inline; como bloco, a seção mantém a margem de `.step-section`.
   host: {
     class: 'step-section',
     role: 'region',
     'aria-labelledby': 'revisao-documento-titulo',
-    style: 'display: block',
   },
 })
 export class AtoDaPublicacaoComponent {

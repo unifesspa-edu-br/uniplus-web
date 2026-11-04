@@ -11,12 +11,10 @@ import { ConferenciaDaPublicacaoService } from '../servicos/conferencia-da-publi
   imports: [DateBrPipe],
   templateUrl: './conformidade-legal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  // O elemento nasce inline; como bloco, a seção mantém a margem de `.step-section`.
   host: {
     class: 'step-section',
     role: 'region',
     'aria-labelledby': 'revisao-legal-titulo',
-    style: 'display: block',
   },
 })
 export class ConformidadeLegalComponent {
