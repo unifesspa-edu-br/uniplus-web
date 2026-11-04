@@ -71,4 +71,9 @@ export class CatalogoDeAtos {
   carregar(): void {
     this.leitura.carregar();
   }
+
+  /** Busca de novo, descartando a resposta de uma busca anterior ainda em voo. */
+  recarregar(): void {
+    this.leitura.recarregar();
+  }
 }

@@ -12,7 +12,7 @@
 } @else if (situacao.erro(); as erro) {
   <div class="field__erro" role="alert">
     <p>{{ erro }}</p>
-    <button class="btn btn--tertiary" type="button" (click)="situacao.carregar()">
+    <button class="btn btn--tertiary" type="button" (click)="situacao.recarregar()">
       Tentar novamente
     </button>
   </div>

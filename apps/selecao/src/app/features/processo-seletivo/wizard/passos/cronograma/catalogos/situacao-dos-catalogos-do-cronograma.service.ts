@@ -43,4 +43,13 @@ export class SituacaoDosCatalogosDoCronograma {
     this.unidades.carregar();
     this.exigidos.forEach((catalogo) => catalogo.carregar());
   }
+
+  /**
+   * Repete a rodada inteira, e não só o que falhou: refazer um catálogo e manter outro de uma
+   * rodada anterior abriria a tela com dados de momentos diferentes.
+   */
+  recarregar(): void {
+    this.unidades.recarregar();
+    this.exigidos.forEach((catalogo) => catalogo.recarregar());
+  }
 }

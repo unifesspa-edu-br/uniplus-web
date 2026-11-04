@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CategoriasDocumentoApi,
   FasesCanonicasApi,
@@ -23,12 +23,25 @@ interface Falhas {
   readonly unidades?: boolean;
 }
 
-function montar(falhas: Falhas = {}) {
+interface Buscas {
+  readonly fases: () => void;
+  readonly unidades: () => void;
+}
+
+function montar(falhas: Falhas = {}, buscas?: Buscas) {
   const listarVazio = { listar: () => pagina([]) };
   TestBed.configureTestingModule({
     providers: [
       ...CATALOGOS_DO_CRONOGRAMA,
-      { provide: FasesCanonicasApi, useValue: listarVazio },
+      {
+        provide: FasesCanonicasApi,
+        useValue: {
+          listar: () => {
+            buscas?.fases();
+            return pagina([]);
+          },
+        },
+      },
       { provide: PrecedenciasFaseApi, useValue: listarVazio },
       { provide: TiposBancaApi, useValue: listarVazio },
       { provide: CategoriasDocumentoApi, useValue: listarVazio },
@@ -42,7 +55,12 @@ function montar(falhas: Falhas = {}) {
       },
       {
         provide: UnidadesApi,
-        useValue: { listar: () => (falhas.unidades ? falhaDoServidor() : pagina([])) },
+        useValue: {
+          listar: () => {
+            buscas?.unidades();
+            return falhas.unidades ? falhaDoServidor() : pagina([]);
+          },
+        },
       },
     ],
   });
@@ -74,5 +92,16 @@ describe('SituacaoDosCatalogosDoCronograma', () => {
     const situacao = montar({ unidades: true });
 
     expect(situacao.erro()).toBeNull();
+  });
+
+  /** Refazer só o que falhou abriria a tela com catálogos de rodadas diferentes. */
+  it('repete a rodada inteira, inclusive os catálogos que já tinham carregado e as unidades', () => {
+    const buscas = { fases: vi.fn(), unidades: vi.fn() };
+    const situacao = montar({ fatos: true, unidades: true }, buscas);
+
+    situacao.recarregar();
+
+    expect(buscas.fases).toHaveBeenCalledTimes(2);
+    expect(buscas.unidades).toHaveBeenCalledTimes(2);
   });
 });

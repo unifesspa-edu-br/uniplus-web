@@ -48,6 +48,11 @@ export class CatalogoDeRegras {
     this.leitura.carregar();
   }
 
+  /** Busca de novo, descartando a resposta de uma busca anterior ainda em voo. */
+  recarregar(): void {
+    this.leitura.recarregar();
+  }
+
   private regrasDoTipo(tipo: string) {
     return coletarPaginas((cursor) => this.regrasApi.listar({ tipo, cursor })).pipe(
       map(dadosOuNulo),
