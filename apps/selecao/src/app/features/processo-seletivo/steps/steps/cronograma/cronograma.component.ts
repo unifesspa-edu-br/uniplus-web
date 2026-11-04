@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { ReactiveFormsModule } from '@angular/forms';
 import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
-import { type StepValidation } from '../../processo-seletivo.models';
+import { type ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { FaseStepComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -87,11 +87,11 @@ export class CronogramaStepComponent {
     return convencaoLida(algoritmoContagemCodigo.value, algoritmoContagemVersao.value);
   });
 
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     return this.conferencia.validar();
   }
 
-  persistir(): Promise<StepValidation> {
+  persistir(): Promise<ValidacaoDoPasso> {
     return this.gravacao.persistir();
   }
 

@@ -5,7 +5,7 @@ import {
   type ProblemValidationError,
 } from '@uniplus/shared-core/http';
 
-import { StepValidation } from '../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import {
@@ -74,7 +74,7 @@ export class GravacaoDaClassificacao {
   }
 
   /** Grava a classificação do rascunho e, dando certo, as edições do ENEM aceitas. */
-  gravar(processoId: string): Promise<StepValidation | RespostaDescartada> {
+  gravar(processoId: string): Promise<ValidacaoDoPasso | RespostaDescartada> {
     return gravarNoPasso(this.store, async () => {
       const geracao = this.store.geracao();
       const comando = comoComandoDeClassificacao(this.store.draft().classificacao);
@@ -107,7 +107,7 @@ export class GravacaoDaClassificacao {
    * aceita de processo cuja classificação gravada é baseada em ENEM. Sem edição escolhida não há o
    * que gravar, e a pendência de publicação diz que falta declará-las.
    */
-  private async gravarEdicoesDoEnem(processoId: string): Promise<StepValidation> {
+  private async gravarEdicoesDoEnem(processoId: string): Promise<ValidacaoDoPasso> {
     const draft = this.store.draft();
     if (!declaraEdicoesDoEnem(draft) || draft.classificacao.edicoesEnem.length === 0) {
       return { valid: true };

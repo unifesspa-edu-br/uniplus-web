@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
-import { EtapaPontuada, StepValidation } from '../../processo-seletivo.models';
+import { EtapaPontuada, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -181,7 +181,7 @@ export class EliminacaoStepComponent {
    * então não pode supor que o operador passou pela Fórmula antes de chegar
    * aqui.
    */
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     const classificacao = this.store.draft().classificacao;
     // A resolução que o cadastro lido já não tem seria recusada pela gravação, que relê o
     // cadastro; a completude dos grupos continua sendo julgada pelo servidor.
@@ -271,7 +271,7 @@ export class EliminacaoStepComponent {
    * vazio antes da hora e derrubaria o item de conformidade que esta gravação
    * levanta.
    */
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {

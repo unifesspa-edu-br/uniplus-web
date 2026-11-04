@@ -11,7 +11,7 @@ import {
 
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { StepValidation } from '../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { AnexoEditalComponent } from '../../shared/anexo-edital/anexo-edital.component';
 import { AnexosDoEditalComponent } from '../../shared/anexos-do-edital/anexos-do-edital.component';
@@ -121,11 +121,11 @@ export class RevisaoStepComponent {
     });
   }
 
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     return this.conferencia.validate();
   }
 
-  persistir(): Promise<StepValidation> {
+  persistir(): Promise<ValidacaoDoPasso> {
     return this.publicacao.persistir();
   }
 

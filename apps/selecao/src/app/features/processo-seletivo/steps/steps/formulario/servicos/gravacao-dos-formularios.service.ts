@@ -13,7 +13,7 @@ import {
 } from '@uniplus/shared-ui/components';
 
 import type { FormularioDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
-import type { StepValidation } from '../../../processo-seletivo.models';
+import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
@@ -80,7 +80,7 @@ export class GravacaoDosFormularios {
     processoId: string,
     formularios: readonly FormularioParaGravar[],
     aoRecusar: (finalidade: string) => void,
-  ): Promise<StepValidation | RespostaDescartada> {
+  ): Promise<ValidacaoDoPasso | RespostaDescartada> {
     return gravarNoPasso(this.store, async () => {
       const geracao = this.store.geracao();
       const detalhe = await this.leitura.ler(processoId);
@@ -119,7 +119,7 @@ export class GravacaoDosFormularios {
     geracao: number,
     plano: PlanoDeEnvio,
     aoRecusar: (finalidade: string) => void,
-  ): Promise<StepValidation | RespostaDescartada | null> {
+  ): Promise<ValidacaoDoPasso | RespostaDescartada | null> {
     const gravadas: string[] = [];
     for (const finalidade of plano.ordem) {
       const desejado = plano.paraEnvio.find((formulario) => formulario.finalidade === finalidade);
@@ -149,7 +149,7 @@ export class GravacaoDosFormularios {
   private async gravarPoliticaDaIdade(
     processoId: string,
     faseIdPorCodigo: ReadonlyMap<string, string>,
-  ): Promise<StepValidation | null> {
+  ): Promise<ValidacaoDoPasso | null> {
     const temporal = await this.cadastro.definirReferenciaTemporalFatos(
       processoId,
       comoComandoDeReferenciaTemporal(
@@ -237,7 +237,7 @@ interface PlanoDeEnvio {
 function planoDeEnvio(
   formularios: readonly FormularioParaGravar[],
   processo: ProcessoSeletivoDto,
-): PlanoDeEnvio | StepValidation {
+): PlanoDeEnvio | ValidacaoDoPasso {
   const faseIdPorCodigo = new Map(
     processo.cronogramaFases.map((fase) => [fase.codigo, fase.id] as const),
   );
@@ -262,7 +262,7 @@ function planoDeEnvio(
 function comFaseResolvida(
   formularios: readonly FormularioParaGravar[],
   faseIdPorCodigo: ReadonlyMap<string, string>,
-): PlanoDeEnvio['paraEnvio'] | StepValidation {
+): PlanoDeEnvio['paraEnvio'] | ValidacaoDoPasso {
   const paraEnvio: PlanoDeEnvio['paraEnvio'][number][] = [];
   for (const formulario of formularios) {
     const faseId = faseIdPorCodigo.get(formulario.fase);

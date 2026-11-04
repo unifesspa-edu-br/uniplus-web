@@ -20,7 +20,7 @@ import {
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
-import { StepValidation, WizardDraft } from '../../processo-seletivo.models';
+import { ValidacaoDoPasso, WizardDraft } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
@@ -216,7 +216,7 @@ export class PagamentoStepComponent {
    * Grava a declaração ao concluir o passo. O processo já existe aqui — ele é
    * criado na identificação, que é o passo anterior.
    */
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {
@@ -250,7 +250,7 @@ export class PagamentoStepComponent {
     return { valid: true };
   }
 
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     const pagamento = this.store.draft().pagamento;
     const mensagens: string[] = [];
 

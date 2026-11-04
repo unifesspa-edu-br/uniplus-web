@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
 
-import { StepValidation } from '../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 
 import {
@@ -36,7 +36,7 @@ describe('recusa por um critério de desempate já gravado', () => {
     async function recusar(
       codigo: string,
       errors: readonly { field: string; code: string; message: string }[],
-    ): Promise<StepValidation> {
+    ): Promise<ValidacaoDoPasso> {
       prepararClassificacaoLocal();
       store.patchObjectSection('classificacao', {
         baseadoEmEnem: true,

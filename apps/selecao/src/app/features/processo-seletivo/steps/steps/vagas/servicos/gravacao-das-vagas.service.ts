@@ -3,7 +3,7 @@ import { isApiOk, ProblemDetails, ProblemI18nService } from '@uniplus/shared-cor
 import { OrigemCandidatos, ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
 import { firstValueFrom } from 'rxjs';
 
-import { StepValidation } from '../../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
@@ -54,7 +54,7 @@ export class GravacaoDasVagas {
   gravar(
     processoId: string,
     cascata: CascataRemanejamentoComponent | undefined,
-  ): Promise<StepValidation | RespostaDescartada> {
+  ): Promise<ValidacaoDoPasso | RespostaDescartada> {
     return gravarNoPasso(this.store, async () => {
       const geracao = this.store.geracao();
       this.estado.recusaDaApiNasOpcoes.set(null);
@@ -73,7 +73,7 @@ export class GravacaoDasVagas {
     });
   }
 
-  private cascataNaoGravada(resultado: StepValidation): StepValidation {
+  private cascataNaoGravada(resultado: ValidacaoDoPasso): ValidacaoDoPasso {
     this.store.vagasGravadasDefasadas.set(true);
     return {
       valid: false,
@@ -90,7 +90,7 @@ export class GravacaoDasVagas {
   private async gravarOpcoesEDistribuicao(
     processoId: string,
     geracao: number,
-  ): Promise<StepValidation | null> {
+  ): Promise<ValidacaoDoPasso | null> {
     // Depois de uma resposta inconclusiva o número gravado pode ter mudado sem que a tela saiba, e
     // a releitura vem antes de decidir a ordem.
     if (this.store.vagasGravadasDefasadas()) {
@@ -111,7 +111,7 @@ export class GravacaoDasVagas {
     return null;
   }
 
-  private async reler(processoId: string, geracao: number): Promise<StepValidation | null> {
+  private async reler(processoId: string, geracao: number): Promise<ValidacaoDoPasso | null> {
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
     if (!isApiOk(detalhe)) {
@@ -157,7 +157,7 @@ export class GravacaoDasVagas {
   private recusaDaGravacao(
     falha: { problem: ProblemDetails; inconclusiva: boolean },
     jaGravada: string | null,
-  ): StepValidation {
+  ): ValidacaoDoPasso {
     // Sem resposta conclusiva o servidor pode ter aplicado o comando: o que ele tem só uma
     // releitura diz.
     if (falha.inconclusiva) this.store.vagasGravadasDefasadas.set(true);
@@ -184,7 +184,7 @@ export class GravacaoDasVagas {
    * Sem fase de inscrição no cronograma, as perguntas esperam: o formulário que as coleta ainda
    * não tem onde existir, e o cronograma as põe ao ganhar a fase.
    */
-  private async acompanharAsRegrasDasModalidades(processoId: string): Promise<StepValidation> {
+  private async acompanharAsRegrasDasModalidades(processoId: string): Promise<ValidacaoDoPasso> {
     const geracao = this.store.geracao();
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return { valid: true };
@@ -210,7 +210,7 @@ export class GravacaoDasVagas {
     return campos.tipo === 'recusados' ? this.gravadaMas(campos.motivo) : { valid: true };
   }
 
-  private gravadaMas(motivo: string): StepValidation {
+  private gravadaMas(motivo: string): ValidacaoDoPasso {
     return { valid: false, messages: [`A distribuição de vagas foi gravada. ${motivo}`] };
   }
 
@@ -230,7 +230,7 @@ export class GravacaoDasVagas {
   private async persistirCascata(
     processoId: string,
     secao: CascataRemanejamentoComponent | undefined,
-  ): Promise<StepValidation> {
+  ): Promise<ValidacaoDoPasso> {
     if (secao === undefined || !secao.precisaExibir()) {
       return secao?.existeNoServidor() ? this.removerCascata(processoId, secao) : { valid: true };
     }
@@ -263,7 +263,7 @@ export class GravacaoDasVagas {
   private async removerCascata(
     processoId: string,
     secao: CascataRemanejamentoComponent,
-  ): Promise<StepValidation> {
+  ): Promise<ValidacaoDoPasso> {
     const resultado = await this.cadastro.definirCascataRemanejamento(
       processoId,
       comandoDeRemocaoDaCascata(),
@@ -274,7 +274,7 @@ export class GravacaoDasVagas {
 
   private validacaoDa(
     resultado: { ok: true } | { ok: false; problem: ProblemDetails },
-  ): StepValidation {
+  ): ValidacaoDoPasso {
     return resultado.ok
       ? { valid: true }
       : { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };

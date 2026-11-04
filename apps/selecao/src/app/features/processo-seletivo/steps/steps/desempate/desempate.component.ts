@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injector } from '@angular/core';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 
-import { CriterioDesempateConfigurado, StepValidation } from '../../processo-seletivo.models';
+import { CriterioDesempateConfigurado, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { fatosColetadosPelaInscricao } from '../formulario/fatos-coletados-da-inscricao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
@@ -176,7 +176,7 @@ export class DesempateStepComponent {
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     const messages = mensagensDoDesempate({
       criterios: this.criterios(),
       obrigatorio: this.desempateObrigatorio(),
@@ -193,7 +193,7 @@ export class DesempateStepComponent {
    * quadro gravado, só marca a gravação como pendente: quem grava a classificação grava os
    * critérios em seguida (`gravarAposAClassificacao`).
    */
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     const conferencia = this.validate();
     if (!conferencia.valid) return conferencia;
     if (this.store.processoSeletivoId() !== null && this.areas.adiaAGravacao()) {
@@ -204,13 +204,13 @@ export class DesempateStepComponent {
   }
 
   /** Grava os critérios que ficaram para depois da classificação, se ficaram. */
-  async gravarAposAClassificacao(): Promise<StepValidation> {
+  async gravarAposAClassificacao(): Promise<ValidacaoDoPasso> {
     if (!this.store.classificacao.desempatePendenteDeGravacao()) return { valid: true };
     const conferencia = this.validate();
     return conferencia.valid ? this.gravar() : conferencia;
   }
 
-  private gravar(): Promise<StepValidation> {
+  private gravar(): Promise<ValidacaoDoPasso> {
     return this.gravacao.gravar(this.criterios(), (codigo) => this.areas.rotuloDaArea(codigo));
   }
 }

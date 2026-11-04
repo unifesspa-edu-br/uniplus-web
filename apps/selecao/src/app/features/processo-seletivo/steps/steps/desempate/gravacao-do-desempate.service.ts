@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
 
-import type { CriterioDesempateConfigurado, StepValidation } from '../../processo-seletivo.models';
+import type { CriterioDesempateConfigurado, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import {
@@ -28,7 +28,7 @@ export class GravacaoDoDesempate {
   gravar(
     criterios: readonly CriterioDesempateConfigurado[],
     rotuloDaArea: (codigo: string) => string,
-  ): Promise<StepValidation | RespostaDescartada> {
+  ): Promise<ValidacaoDoPasso | RespostaDescartada> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return Promise.resolve({

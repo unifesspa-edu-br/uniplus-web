@@ -2,7 +2,7 @@ import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { type ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 
-import { StepValidation } from '../../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
@@ -104,7 +104,7 @@ export class GravacaoDaIdentificacao {
    * Commit assíncrono do passo: cria o cadastro inicial ao concluir a identificação. É aqui que o
    * processo nasce. Idempotente: repetir o passo não cria um segundo.
    */
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     const existente = this.store.processoSeletivoId();
     if (existente !== null) return this.gravarIdentificador(existente);
 
@@ -176,7 +176,7 @@ export class GravacaoDaIdentificacao {
   }
 
   /** Grava o identificador de um processo já criado, quando ele mudou. */
-  private async gravarIdentificador(processoId: string): Promise<StepValidation> {
+  private async gravarIdentificador(processoId: string): Promise<ValidacaoDoPasso> {
     const identificador = this.identificadorAGravar();
     if (identificador === null) return { valid: true };
     if (this.store.salvando()) return { valid: false, messages: [] };

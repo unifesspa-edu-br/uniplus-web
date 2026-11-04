@@ -22,7 +22,7 @@ import {
   type ConteudoDoFormulario,
 } from '@uniplus/shared-ui/components';
 
-import type { FormularioDaFinalidade, StepValidation } from '../../processo-seletivo.models';
+import type { FormularioDaFinalidade, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { abasDoFormulario } from './abas-do-formulario';
@@ -328,7 +328,7 @@ export class FormularioStepComponent {
     return camposSemValoresOfertados(draft.formulario, draft.atendimento);
   });
 
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     const mensagens = mensagensDoFormulario({
       abas: this.abas().map((aba) => ({
         ...aba,
@@ -346,7 +346,7 @@ export class FormularioStepComponent {
   }
 
   /** Grava os formulários de cada finalidade e a política que ancora a apuração da idade. */
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {

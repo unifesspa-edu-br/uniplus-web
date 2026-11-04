@@ -1,6 +1,6 @@
 import { InjectionToken, Provider, Type, forwardRef } from '@angular/core';
 
-import { StepValidation } from './processo-seletivo.models';
+import { ValidacaoDoPasso } from './processo-seletivo.models';
 
 /**
  * Resumo do que será gravado, exibido antes de qualquer requisição.
@@ -36,10 +36,10 @@ export interface GravacaoDoPasso {
  * quinto, e é isso que permite reordená-los sem tocar em nenhum.
  */
 export interface PassoDoWizard {
-  validate(): StepValidation;
+  validate(): ValidacaoDoPasso;
 
   /** Grava na API antes de liberar o avanço. */
-  persistir?(gravacao?: GravacaoDoPasso): Promise<StepValidation>;
+  persistir?(gravacao?: GravacaoDoPasso): Promise<ValidacaoDoPasso>;
 
   /**
    * Leva o foco ao primeiro campo que `validate()` recusou, abrindo a aba ou a seção que o guarda.
@@ -57,7 +57,7 @@ export interface PassoDoWizard {
    * Grava o que o passo deixou para depois de a classificação congelar o quadro de que depende.
    * A orquestração a chama logo depois de gravar a classificação, sem conhecer o passo.
    */
-  gravarAposAClassificacao?(): Promise<StepValidation>;
+  gravarAposAClassificacao?(): Promise<ValidacaoDoPasso>;
 
   /**
    * Refaz, a partir do servidor, o que este passo cacheia para `validate()`

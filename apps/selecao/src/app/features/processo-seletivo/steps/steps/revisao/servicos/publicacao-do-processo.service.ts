@@ -4,7 +4,7 @@ import { AtoNormativoDto, AtosApi } from '@uniplus/shared-data/publicacoes';
 import { SnapshotVigenteDto, StatusProcesso } from '@uniplus/shared-data/selecao';
 import { firstValueFrom } from 'rxjs';
 
-import { StepValidation } from '../../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
@@ -28,7 +28,7 @@ export type AtoPublicado =
 const PUBLICACAO_NAO_CONFIRMADA =
   'A publicação foi aceita, mas não foi possível confirmar o estado do processo. Recarregue a página para conferir.';
 
-function recusado(mensagem: string): StepValidation {
+function recusado(mensagem: string): ValidacaoDoPasso {
   return { valid: false, messages: [mensagem] };
 }
 
@@ -106,7 +106,7 @@ export class PublicacaoDoProcesso {
   }
 
   /** Publica e, com `204`, confirma o snapshot antes de devolver sucesso. */
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null)
       return recusado('Conclua a identificação do processo antes de publicar.');
@@ -124,7 +124,7 @@ export class PublicacaoDoProcesso {
   private async publicar(
     processoId: string,
     documentoEditalId: string,
-  ): Promise<StepValidation | RespostaDescartada> {
+  ): Promise<ValidacaoDoPasso | RespostaDescartada> {
     const comando = comoComandoDePublicacao(
       this.store.draft(),
       documentoEditalId,
@@ -145,7 +145,7 @@ export class PublicacaoDoProcesso {
   private recusada(resultado: {
     readonly problem: ProblemDetails;
     readonly inconclusiva: boolean;
-  }): StepValidation {
+  }): ValidacaoDoPasso {
     // Sem resposta conclusiva o comando pode já ter sido executado. Editar um campo antes de tentar
     // de novo giraria a chave de idempotência e deixaria o retry correr contra a primeira tentativa,
     // por isso a tela segue travada até uma releitura dizer o que o servidor tem.

@@ -1,6 +1,6 @@
 import { computed, inject, Injectable } from '@angular/core';
 
-import type { StepValidation } from '../../../processo-seletivo.models';
+import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { gruposSemNormaResolvida } from '../../../shared/exigencias/consulta-das-exigencias';
 import { CatalogosDoCronograma } from '../catalogos-do-cronograma.service';
@@ -69,7 +69,7 @@ export class ConferenciaDoCronograma {
    * recriar etapas que já existem, e é o que impede a revisão final de declarar
    * íntegro um cronograma que o servidor ainda não confirmou.
    */
-  validar(): StepValidation {
+  validar(): ValidacaoDoPasso {
     if (this.releituraDasEtapas.releituraPendente()) {
       return { valid: false, messages: [AGUARDA_RELEITURA] };
     }

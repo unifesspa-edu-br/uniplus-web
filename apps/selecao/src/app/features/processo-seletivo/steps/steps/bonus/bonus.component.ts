@@ -15,7 +15,7 @@ import {
   ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
 
-import { StepValidation } from '../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -182,13 +182,13 @@ export class BonusStepComponent {
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     const messages = validarBonus(this.store.draft().bonus);
     return messages.length ? { valid: false, messages: [...messages] } : { valid: true };
   }
 
   /** Grava a declaração do bônus regional — aplica ou não, o passo sempre grava. */
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {

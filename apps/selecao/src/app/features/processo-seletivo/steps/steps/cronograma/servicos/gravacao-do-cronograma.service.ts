@@ -2,7 +2,7 @@ import { computed, effect, inject, Injectable, signal, untracked } from '@angula
 import type { FormGroup } from '@angular/forms';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 
-import type { FaseDoCronograma, StepValidation } from '../../../processo-seletivo.models';
+import type { FaseDoCronograma, ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import {
   CadastroInicial,
@@ -159,7 +159,7 @@ export class GravacaoDoCronograma {
    * ele falhar, as duas primeiras chamadas já gravaram, e a mensagem diz isso
    * em vez de tratar a falha como se nada tivesse sido salvo.
    */
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {

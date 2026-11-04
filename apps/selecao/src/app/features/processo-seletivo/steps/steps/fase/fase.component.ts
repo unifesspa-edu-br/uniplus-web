@@ -12,7 +12,7 @@ import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 
-import { type FaseDoCronograma, type StepValidation } from '../../processo-seletivo.models';
+import { type FaseDoCronograma, type ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
@@ -163,7 +163,7 @@ export class FaseStepComponent {
    * navegação do wizard é livre, e conferir apenas o que está à vista deixaria
    * publicar um certame com outra fase mal declarada.
    */
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     const fases = this.fasesDoCronograma();
     const nomes = new Map(this.fasesNoSeletor().map((fase) => [fase.faseCanonicaId, fase.nome]));
 
@@ -201,7 +201,7 @@ export class FaseStepComponent {
    * quem grava pode ser esta tela. Sem o contorno da permutação, ela devolveria
    * a recusa de uma troca de posições que nem dá para desfazer daqui.
    */
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     // Embutido na linha do tempo, a gravação é do passo que contém: as duas leem as
     // mesmas fases do rascunho, e gravar de novo por fase mandaria o cronograma inteiro
     // uma vez para cada uma.
@@ -236,7 +236,7 @@ export class FaseStepComponent {
   private registrarRecusa(
     problema: ProblemDetails,
     fases: readonly FaseDoCronograma[],
-  ): StepValidation {
+  ): ValidacaoDoPasso {
     const recusa = recusaDaGravacao(
       problema,
       fases,

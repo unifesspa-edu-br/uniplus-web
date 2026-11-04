@@ -16,7 +16,7 @@ import {
   TipoDeficienciaDto,
 } from '@uniplus/shared-data/configuracao';
 
-import { ReferenciaDeAtendimento, StepValidation } from '../../processo-seletivo.models';
+import { ReferenciaDeAtendimento, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
@@ -307,7 +307,7 @@ export class AtendimentoStepComponent {
   );
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     const mensagens: string[] = [];
 
     // Espelha o gate de publicação: o formulário pergunta ao candidato algo cujo domínio sai
@@ -352,7 +352,7 @@ export class AtendimentoStepComponent {
     ].filter((mensagem): mensagem is string => mensagem !== undefined);
   }
 
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {

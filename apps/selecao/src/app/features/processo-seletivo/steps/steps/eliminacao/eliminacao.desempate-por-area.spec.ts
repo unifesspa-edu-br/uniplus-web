@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import { StepValidation } from '../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
 
 import {
@@ -69,7 +69,7 @@ describe('Eliminação diante do desempate por área', () => {
     }
 
     /** Responde a gravação e a releitura, se saírem: a conferência recusada não chama a API. */
-    async function gravar(): Promise<StepValidation> {
+    async function gravar(): Promise<ValidacaoDoPasso> {
       const gravacao = componente.persistir();
       for (const pedido of controller.match(ROTA_CLASSIFICACAO)) {
         pedido.flush(null, { status: 204, statusText: 'No Content' });

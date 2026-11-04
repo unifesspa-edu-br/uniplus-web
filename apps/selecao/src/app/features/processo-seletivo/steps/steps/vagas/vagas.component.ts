@@ -9,7 +9,7 @@ import {
 
 import type { ConfirmacaoDeGravacao, ItemDeConfirmacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { StepValidation } from '../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
 import { CascataRemanejamentoComponent } from './cascata-remanejamento.component';
@@ -147,7 +147,7 @@ export class VagasStepComponent {
     this.catalogos.carregar();
   }
 
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     const mensagens = [
       ...this.conferencia.pendenciasQueImpedemGravar(),
       ...(this.cascataSecao()?.pendenciasParaGravar() ?? []),
@@ -159,7 +159,7 @@ export class VagasStepComponent {
     return mensagens.length > 0 ? { valid: false, messages: mensagens } : { valid: true };
   }
 
-  async persistir(): Promise<StepValidation> {
+  async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) {
       return {

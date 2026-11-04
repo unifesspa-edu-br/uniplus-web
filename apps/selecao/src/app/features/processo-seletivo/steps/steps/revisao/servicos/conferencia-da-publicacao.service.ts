@@ -1,7 +1,7 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { ProblemDetails } from '@uniplus/shared-core/http';
 
-import { StepValidation } from '../../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { mensagensDePublicacao } from '../comando-de-publicacao';
@@ -14,7 +14,7 @@ import {
   RecusaDePublicacao,
 } from '../problemas-da-publicacao';
 
-function recusado(mensagem: string): StepValidation {
+function recusado(mensagem: string): ValidacaoDoPasso {
   return { valid: false, messages: [mensagem] };
 }
 
@@ -135,7 +135,7 @@ export class ConferenciaDaPublicacao {
   }
 
   /** O que falta nesta tela: campo em branco, checklist reprovado ou documento ainda não escolhido. */
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     if (this.store.processoSeletivoId() === null) {
       return recusado('Conclua a identificação do processo antes de revisar a conformidade.');
     }

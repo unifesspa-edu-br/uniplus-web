@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { StepValidation } from '../../processo-seletivo.models';
+import { ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
@@ -253,7 +253,7 @@ export class FormulaStepComponent {
    * mensagens vêm de `pendenciasDaClassificacaoBase`, a mesma fonte que a Eliminação usa — ela
    * persiste o comando inteiro e não pode divergir sobre o que conta como válido aqui.
    */
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     const classificacao = this.store.draft().classificacao;
     const invalid = new Set<string>(
       pendenciasDaClassificacaoBase(

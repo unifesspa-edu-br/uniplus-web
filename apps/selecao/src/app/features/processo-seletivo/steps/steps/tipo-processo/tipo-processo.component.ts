@@ -12,7 +12,7 @@ import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configur
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { TypeCardComponent } from '../../../components/type-card/type-card.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { StepValidation, TipoProcessoOption } from '../../processo-seletivo.models';
+import { ValidacaoDoPasso, TipoProcessoOption } from '../../processo-seletivo.models';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 
 @Component({
@@ -127,7 +127,7 @@ export class TipoProcessoStepComponent {
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     return this.store.draft().tipoProcesso.selected
       ? { valid: true }
       : { valid: false, message: 'Selecione um tipo de processo seletivo para continuar.' };

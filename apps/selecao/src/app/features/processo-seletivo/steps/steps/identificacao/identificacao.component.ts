@@ -17,7 +17,7 @@ import {
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { OrigemCandidatosSelecionada, StepValidation } from '../../processo-seletivo.models';
+import { OrigemCandidatosSelecionada, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { IdentificadorLegivelComponent } from './identificador-legivel.component';
 import { MunicipioDoProcessoComponent } from './municipio-do-processo.component';
@@ -186,7 +186,7 @@ export class IdentificacaoStepComponent {
   }
 
   /** Validação declarativa — acionada pela page ao clicar em "Próximo". */
-  validate(): StepValidation {
+  validate(): ValidacaoDoPasso {
     const resultado = validarIdentificacao(
       this.store.draft().identificacao,
       this.gravacao.identificadorDeclaravel(),
@@ -200,7 +200,7 @@ export class IdentificacaoStepComponent {
       : { valid: true };
   }
 
-  persistir(): Promise<StepValidation> {
+  persistir(): Promise<ValidacaoDoPasso> {
     return this.gravacao.persistir();
   }
 

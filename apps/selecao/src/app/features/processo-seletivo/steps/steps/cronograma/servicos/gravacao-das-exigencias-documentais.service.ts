@@ -7,7 +7,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { firstValueFrom } from 'rxjs';
 
-import type { StepValidation } from '../../../processo-seletivo.models';
+import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
@@ -38,7 +38,7 @@ export class GravacaoDasExigenciasDocumentais {
    * releitura aqui é a que traduz um no outro; sem ela, a exigência sairia apontando
    * para uma fase que só existe no rascunho.
    */
-  async gravar(processoId: string): Promise<StepValidation> {
+  async gravar(processoId: string): Promise<ValidacaoDoPasso> {
     const geracao = this.store.geracao();
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (geracao !== this.store.geracao()) return { valid: true };
@@ -82,7 +82,7 @@ export class GravacaoDasExigenciasDocumentais {
     processoId: string,
     processo: ProcessoSeletivoDto,
     geracao: number,
-  ): Promise<StepValidation | null> {
+  ): Promise<ValidacaoDoPasso | null> {
     const recorta = todasAsExigencias(this.store.draft().documentos).some(
       (exigencia) => modalidadesDaExigencia(exigencia) !== null,
     );
@@ -133,7 +133,7 @@ export class GravacaoDasExigenciasDocumentais {
     processo: ProcessoSeletivoDto,
     recorta: boolean,
     citadosPelasExigencias: ReadonlySet<string>,
-  ): StepValidation | null {
+  ): ValidacaoDoPasso | null {
     if (campos.tipo === 'recusados') {
       return {
         valid: false,

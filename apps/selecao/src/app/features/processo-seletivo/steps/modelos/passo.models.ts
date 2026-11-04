@@ -1,8 +1,8 @@
 /**
  * Resultado da validação declarativa de um passo. Passos de domínio implementam
- * `validate(): StepValidation`; os de formulário clássico traduzem o estado do form para ela.
+ * `validate(): ValidacaoDoPasso`; os de formulário clássico traduzem o estado do form para ela.
  */
-export interface StepValidation {
+export interface ValidacaoDoPasso {
   valid: boolean;
   /** Lista de mensagens exibida com role="alert" quando `valid === false`. */
   messages?: string[];
