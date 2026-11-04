@@ -12,6 +12,7 @@ import {
   type RecusasDoConteudo,
 } from '@uniplus/shared-ui/components';
 
+import type { FormularioDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type { StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicialService } from '../../../shared/cadastro-inicial.service';
@@ -93,84 +94,76 @@ export class GravacaoDosFormulariosService {
         };
       }
 
-      const faseIdPorCodigo = new Map(
-        detalhe.data.cronogramaFases.map((fase) => [fase.codigo, fase.id] as const),
-      );
-      const paraEnvio = [];
-      for (const formulario of formularios) {
-        const faseId = faseIdPorCodigo.get(formulario.fase);
-        if (faseId === undefined) {
-          return {
-            valid: false,
-            messages: [
-              `A fase do formulário de ${formulario.nome} ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.`,
-            ],
-          };
-        }
-        paraEnvio.push({
-          finalidade: formulario.finalidade,
-          faseId,
-          conteudo: formulario.conteudo,
-        });
-      }
+      const plano = planoDeEnvio(formularios, detalhe.data);
+      if ('valid' in plano) return plano;
 
-      const gravados = (finalidade: string) =>
-        formularioDaFinalidade(detalhe.data.formularios, finalidade);
-      const ordem = ordemDeGravacao(
-        paraEnvio.map((formulario) => {
-          const gravado = gravados(formulario.finalidade);
-          return {
-            finalidade: formulario.finalidade,
-            servidor: gravado === null ? null : conteudoDoFormulario(gravado),
-            desejado: formulario.conteudo,
-          };
-        }),
-      );
-
-      const gravadas: string[] = [];
-      for (const finalidade of ordem) {
-        const desejado = paraEnvio.find((formulario) => formulario.finalidade === finalidade);
-        if (desejado === undefined) continue;
-        const gravado = gravados(finalidade);
-        const gravacao = await this.cadastro.gravarFormulario(
-          processoId,
-          finalidade,
-          gravado === null
-            ? null
-            : { faseId: gravado.faseId, conteudo: conteudoDoFormulario(gravado) },
-          { faseId: desejado.faseId, conteudo: desejado.conteudo },
-        );
-        if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-        if (!gravacao.ok) {
-          const mensagens = this.aplicarRecusa(finalidade, gravacao.problem, desejado.conteudo);
-          aoRecusar(finalidade);
-          await this.reconciliarComOServidor(processoId, geracao, gravadas);
-          return { valid: false, messages: [...mensagens] };
-        }
-        gravadas.push(finalidade);
-      }
+      const recusa = await this.gravarNaOrdem(processoId, geracao, plano, aoRecusar);
+      if (recusa !== null) return recusa;
       this.recusas.set(new Map());
 
-      const temporal = await this.cadastro.definirReferenciaTemporalFatos(
-        processoId,
-        comoComandoDeReferenciaTemporal(
-          this.store.draft().formulario.referenciaTemporal,
-          faseIdPorCodigo,
-        ),
-      );
+      const temporal = await this.gravarPoliticaDaIdade(processoId, plano.faseIdPorCodigo);
       if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-      if (!temporal.ok) {
-        return {
-          valid: false,
-          messages: [
-            `Os formulários foram gravados. ${this.problemI18n.resolve(temporal.problem).title}`,
-          ],
-        };
-      }
+      if (temporal !== null) return temporal;
 
       await this.reconciliarComOServidor(processoId, geracao, null);
       return { valid: true };
     });
+  }
+
+  /**
+   * Grava as finalidades na ordem em que a API aceita cada uma. A primeira recusa interrompe a
+   * sequência. `null` quando todas gravaram.
+   */
+  private async gravarNaOrdem(
+    processoId: string,
+    geracao: number,
+    plano: PlanoDeEnvio,
+    aoRecusar: (finalidade: string) => void,
+  ): Promise<StepValidation | RespostaDescartada | null> {
+    const gravadas: string[] = [];
+    for (const finalidade of plano.ordem) {
+      const desejado = plano.paraEnvio.find((formulario) => formulario.finalidade === finalidade);
+      if (desejado === undefined) continue;
+      const gravado = plano.gravados(finalidade);
+      const gravacao = await this.cadastro.gravarFormulario(
+        processoId,
+        finalidade,
+        gravado === null
+          ? null
+          : { faseId: gravado.faseId, conteudo: conteudoDoFormulario(gravado) },
+        { faseId: desejado.faseId, conteudo: desejado.conteudo },
+      );
+      if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+      if (!gravacao.ok) {
+        const mensagens = this.aplicarRecusa(finalidade, gravacao.problem, desejado.conteudo);
+        aoRecusar(finalidade);
+        await this.reconciliarComOServidor(processoId, geracao, gravadas);
+        return { valid: false, messages: [...mensagens] };
+      }
+      gravadas.push(finalidade);
+    }
+    return null;
+  }
+
+  /** Grava a política que ancora a apuração da idade. `null` quando gravou. */
+  private async gravarPoliticaDaIdade(
+    processoId: string,
+    faseIdPorCodigo: ReadonlyMap<string, string>,
+  ): Promise<StepValidation | null> {
+    const temporal = await this.cadastro.definirReferenciaTemporalFatos(
+      processoId,
+      comoComandoDeReferenciaTemporal(
+        this.store.draft().formulario.referenciaTemporal,
+        faseIdPorCodigo,
+      ),
+    );
+    if (temporal.ok) return null;
+    return {
+      valid: false,
+      messages: [
+        `Os formulários foram gravados. ${this.problemI18n.resolve(temporal.problem).title}`,
+      ],
+    };
   }
 
   /**
@@ -223,4 +216,55 @@ export class GravacaoDosFormulariosService {
     }
     this.store.projetarSecao('formulario', formulario);
   }
+}
+
+/** O que vai ao servidor: cada formulário com a fase resolvida, a ordem de gravação e o que já está gravado. */
+interface PlanoDeEnvio {
+  readonly paraEnvio: readonly {
+    finalidade: string;
+    faseId: string;
+    conteudo: ConteudoDoFormulario;
+  }[];
+  readonly ordem: readonly string[];
+  readonly faseIdPorCodigo: ReadonlyMap<string, string>;
+  readonly gravados: (finalidade: string) => FormularioDto | null;
+}
+
+/**
+ * Compara cada formulário com o que o servidor tem, a partir de uma releitura fresca, e decide a
+ * ordem de gravação. Devolve a recusa quando a fase de algum ainda não está no cronograma gravado.
+ */
+function planoDeEnvio(
+  formularios: readonly FormularioParaGravar[],
+  processo: ProcessoSeletivoDto,
+): PlanoDeEnvio | StepValidation {
+  const faseIdPorCodigo = new Map(
+    processo.cronogramaFases.map((fase) => [fase.codigo, fase.id] as const),
+  );
+  const paraEnvio: PlanoDeEnvio['paraEnvio'][number][] = [];
+  for (const formulario of formularios) {
+    const faseId = faseIdPorCodigo.get(formulario.fase);
+    if (faseId === undefined) {
+      return {
+        valid: false,
+        messages: [
+          `A fase do formulário de ${formulario.nome} ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.`,
+        ],
+      };
+    }
+    paraEnvio.push({ finalidade: formulario.finalidade, faseId, conteudo: formulario.conteudo });
+  }
+
+  const gravados = (finalidade: string) => formularioDaFinalidade(processo.formularios, finalidade);
+  const ordem = ordemDeGravacao(
+    paraEnvio.map((formulario) => {
+      const gravado = gravados(formulario.finalidade);
+      return {
+        finalidade: formulario.finalidade,
+        servidor: gravado === null ? null : conteudoDoFormulario(gravado),
+        desejado: formulario.conteudo,
+      };
+    }),
+  );
+  return { paraEnvio, ordem, faseIdPorCodigo, gravados };
 }
