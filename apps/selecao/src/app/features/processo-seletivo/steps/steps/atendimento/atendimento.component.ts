@@ -21,7 +21,7 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
-import { camposSemValoresOfertados } from '../formulario/formulario-de-inscricao';
+import { camposSemValoresOfertados } from '../formulario/problemas-do-formulario';
 import { anunciarRemocao } from './anuncio-de-remocao';
 import { CatalogosDeAtendimentoService } from './catalogos-de-atendimento.service';
 import {

@@ -10,11 +10,11 @@ import {
 
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
 import { CatalogosDoCronogramaService } from '../steps/cronograma/catalogos-do-cronograma.service';
+import { comCamposQueAsExigenciasPressupoem } from '../steps/formulario/campos-pressupostos-da-inscricao';
 import {
-  comCamposQueAsExigenciasPressupoem,
   fatosCitadosPelaDerivacao,
   fatosCitadosPeloPredicado,
-} from '../steps/formulario/formulario-de-inscricao';
+} from '../steps/formulario/citantes-no-processo';
 import {
   conteudoDoFormulario,
   faseDaInscricao,

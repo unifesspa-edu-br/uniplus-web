@@ -66,19 +66,19 @@ import {
   desempateSemDataDeNascimento,
   PASSO_DESEMPATE,
 } from '../desempate/desempate-por-idade';
+import { ANCORAS_DA_IDADE, comoComandoDeReferenciaTemporal } from './apuracao-da-idade';
 import {
-  ANCORAS_DA_IDADE,
   camposSemUsoDeclarado,
-  camposSemValoresOfertados,
-  comCamposQueAsExigenciasPressupoem,
-  comoComandoDeReferenciaTemporal,
+  quemCitaNoProcesso,
+  remocoesTravadasPor,
+} from './citantes-no-processo';
+import { camposSemValoresOfertados, problemasDoFormulario } from './problemas-do-formulario';
+import { comCamposQueAsExigenciasPressupoem } from './campos-pressupostos-da-inscricao';
+import {
   fatosCitadosPelasExigencias,
   fatosColetadosPelaInscricao,
   fatosForaDaColetaDaInscricao,
-  problemasDoFormulario,
-  quemCitaNoProcesso,
-  remocoesTravadasPor,
-} from './formulario-de-inscricao';
+} from './fatos-coletados-da-inscricao';
 import {
   conteudoDoFormulario,
   fatosColetadosPor,

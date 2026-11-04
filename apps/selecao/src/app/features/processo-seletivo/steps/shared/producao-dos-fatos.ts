@@ -10,10 +10,8 @@ import {
 import type { FaseDoCronograma, FormularioDeInscricao } from '../processo-seletivo.models';
 import { finalidadesDaFase } from './descricao-da-fase';
 import { finalidadeDaExigencia } from './exigencias/formulario-da-exigencia';
-import {
-  fatosCitadosPelaDerivacao,
-  fatosColetadosPelaInscricao,
-} from '../steps/formulario/formulario-de-inscricao';
+import { fatosCitadosPelaDerivacao } from '../steps/formulario/citantes-no-processo';
+import { fatosColetadosPelaInscricao } from '../steps/formulario/fatos-coletados-da-inscricao';
 import {
   FINALIDADE_ISENCAO_TAXA,
   formulariosDoRascunho,

@@ -14,7 +14,7 @@ import { todasAsExigencias } from '../../../shared/exigencias/consulta-das-exige
 import { arvoreDeExigencias } from '../../../shared/exigencias/gravacao-das-exigencias';
 import { modalidadesDaExigencia } from '../../../shared/exigencias/recorte-por-modalidade';
 import { recusaDaExigenciaDoServidor } from '../../../shared/orientacao-da-recusa-do-fato';
-import { quemCitaNoProcesso } from '../../formulario/formulario-de-inscricao';
+import { quemCitaNoProcesso } from '../../formulario/citantes-no-processo';
 import { finalidadesQueAtende } from '../../formulario/formularios-por-finalidade';
 
 /** A última gravação do passo: os documentos que cada fase exige, depois das fases e das etapas. */

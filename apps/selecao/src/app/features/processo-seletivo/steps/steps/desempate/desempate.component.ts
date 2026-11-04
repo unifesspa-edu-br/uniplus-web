@@ -3,7 +3,7 @@ import {} from '@uniplus/shared-ui/components';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 
 import { CriterioDesempateConfigurado, StepValidation } from '../../processo-seletivo.models';
-import { fatosColetadosPelaInscricao } from '../formulario/formulario-de-inscricao';
+import { fatosColetadosPelaInscricao } from '../formulario/fatos-coletados-da-inscricao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
