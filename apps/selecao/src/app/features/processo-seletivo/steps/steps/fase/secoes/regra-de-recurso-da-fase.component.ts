@@ -39,7 +39,7 @@ const ROTULO_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
 
 /** A regra de recurso da fase: a regra de contagem, o prazo, a âncora e as suspensividades. */
 @Component({
-  selector: 'div[selRegraDeRecursoDaFase]',
+  selector: 'sel-regra-de-recurso-da-fase',
   imports: [
     FormsModule,
     NgTemplateOutlet,
@@ -49,6 +49,7 @@ const ROTULO_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
   ],
   templateUrl: './regra-de-recurso-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
   viewProviders: [
     { provide: ControlContainer, useFactory: () => inject(ControlContainer, { skipSelf: true }) },
   ],

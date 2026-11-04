@@ -5,9 +5,10 @@ import { ExigenciasDaFaseStore } from '../exigencias-da-fase.store';
 import { FaseEmEdicao } from '../../fase-em-edicao';
 
 @Component({
-  selector: 'div[selEixoEtapa]',
+  selector: 'sel-eixo-etapa',
   templateUrl: './eixo-etapa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class EixoEtapaComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

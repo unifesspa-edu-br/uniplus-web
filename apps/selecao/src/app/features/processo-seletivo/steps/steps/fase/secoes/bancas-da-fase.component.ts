@@ -9,10 +9,11 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 
 /** As bancas que a fase requer, com o recorte de categorias de documento que cada uma julga. */
 @Component({
-  selector: 'div[selBancasDaFase]',
+  selector: 'sel-bancas-da-fase',
   imports: [ValorLegivelDirective, FormsModule, ValorEmConsultaComponent],
   templateUrl: './bancas-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class BancasDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

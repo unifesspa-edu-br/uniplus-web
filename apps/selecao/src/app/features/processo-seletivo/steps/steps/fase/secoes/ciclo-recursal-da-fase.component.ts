@@ -8,10 +8,11 @@ import { FaseEmEdicao, type FaseNoSeletor } from '../fase-em-edicao';
 
 /** A conclusão do ciclo recursal da matéria e a promessa de parecer individual. */
 @Component({
-  selector: 'div[selCicloRecursalDaFase]',
+  selector: 'sel-ciclo-recursal-da-fase',
   imports: [ValorLegivelDirective, ReactiveFormsModule, ValorEmConsultaComponent],
   templateUrl: './ciclo-recursal-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
   viewProviders: [
     { provide: ControlContainer, useFactory: () => inject(ControlContainer, { skipSelf: true }) },
   ],

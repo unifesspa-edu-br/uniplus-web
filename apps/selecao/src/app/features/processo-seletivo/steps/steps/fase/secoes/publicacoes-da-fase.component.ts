@@ -10,10 +10,11 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 
 /** As publicações que a fase declara, cada uma um tipo de ato do catálogo, com o papel que ela tem. */
 @Component({
-  selector: 'div[selPublicacoesDaFase]',
+  selector: 'sel-publicacoes-da-fase',
   imports: [ValorLegivelDirective, FormsModule, ValorEmConsultaComponent],
   templateUrl: './publicacoes-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class PublicacoesDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

@@ -47,7 +47,7 @@ import { LinhaDoDocumentoComponent } from './linha-do-documento.component';
 
 /** Os documentos que a fase exige: o seletor para acrescentar e a conferência com o que decide cada um. */
 @Component({
-  selector: 'div[selDocumentosDaFase]',
+  selector: 'sel-documentos-da-fase',
   imports: [
     ComboboxComponent,
     DetalheDoDocumentoComponent,
@@ -56,6 +56,7 @@ import { LinhaDoDocumentoComponent } from './linha-do-documento.component';
   ],
   templateUrl: './documentos-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class DocumentosDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

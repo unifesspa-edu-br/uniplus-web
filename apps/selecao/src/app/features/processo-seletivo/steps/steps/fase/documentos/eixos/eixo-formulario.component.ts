@@ -16,9 +16,10 @@ import { FaseEmEdicao } from '../../fase-em-edicao';
  * trocado: o campo aparece com o erro até o operador escolher.
  */
 @Component({
-  selector: 'div[selEixoFormulario]',
+  selector: 'sel-eixo-formulario',
   templateUrl: './eixo-formulario.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class EixoFormularioComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

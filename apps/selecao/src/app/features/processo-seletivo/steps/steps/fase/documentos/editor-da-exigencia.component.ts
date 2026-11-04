@@ -31,7 +31,7 @@ import { GatilhoDasExigenciasStore } from './gatilho-das-exigencias.store';
 
 /** A exigência de um documento na fase aberta: os campos que o operador edita. */
 @Component({
-  selector: 'div[selEditorDaExigencia]',
+  selector: 'sel-editor-da-exigencia',
   imports: [
     ValorLegivelDirective,
     ComboboxComponent,
@@ -44,6 +44,7 @@ import { GatilhoDasExigenciasStore } from './gatilho-das-exigencias.store';
   ],
   templateUrl: './editor-da-exigencia.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
   host: { class: 'doc-item doc-item--exigido' },
 })
 export class EditorDaExigenciaComponent {

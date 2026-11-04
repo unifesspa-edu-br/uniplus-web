@@ -33,13 +33,13 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
 -->
 <div class="doc-item__eixos">
   @if (mostraFormulario(doc.id)) {
-    <div selEixoFormulario class="form-field" [documentoId]="doc.id"></div>
+    <sel-eixo-formulario class="form-field" [documentoId]="doc.id"></sel-eixo-formulario>
   }
 
-  <div selEixoAlcance class="form-field" [documentoId]="doc.id"></div>
+  <sel-eixo-alcance class="form-field" [documentoId]="doc.id"></sel-eixo-alcance>
 
   @if (exigencias.etapasDaFaseAberta().length > 0) {
-    <div selEixoEtapa class="form-field" [documentoId]="doc.id"></div>
+    <sel-eixo-etapa class="form-field" [documentoId]="doc.id"></sel-eixo-etapa>
   }
 
   <!--
@@ -73,7 +73,7 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
     </div>
   }
 
-  <div selEixoRepeticao class="form-field" [documentoId]="doc.id"></div>
+  <sel-eixo-repeticao class="form-field" [documentoId]="doc.id"></sel-eixo-repeticao>
 
   <div class="form-field">
     <label

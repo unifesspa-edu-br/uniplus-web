@@ -6,9 +6,10 @@ import { GatilhoDasExigenciasStore } from '../gatilho-das-exigencias.store';
 import { FaseEmEdicao } from '../../fase-em-edicao';
 
 @Component({
-  selector: 'div[selEixoRepeticao]',
+  selector: 'sel-eixo-repeticao',
   templateUrl: './eixo-repeticao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class EixoRepeticaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

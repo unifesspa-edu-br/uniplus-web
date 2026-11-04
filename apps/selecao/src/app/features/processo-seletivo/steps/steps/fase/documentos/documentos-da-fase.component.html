@@ -123,7 +123,7 @@
                   [attr.id]="idDaFase('doc-campos-' + resumo.id)"
                 >
                   <td [attr.colspan]="colunasDaConferencia()">
-                    <div selEditorDaExigencia [resumo]="resumo" (remover)="removerDocumento(resumo.id, seletorDoPublico)"></div>
+                    <sel-editor-da-exigencia [resumo]="resumo" (remover)="removerDocumento(resumo.id, seletorDoPublico)"></sel-editor-da-exigencia>
                   </td>
                 </tr>
               }
