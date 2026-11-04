@@ -342,14 +342,14 @@ sel-layout {
  * gap do flex em vez de depender só da margem do título — assim um ui-alert
  * inserido entre o título e os campos recebe respiro nos dois lados.
  */
-.cfg-form > section {
+.cfg-form > :is(section, sel-anexos-da-publicacao) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 }
 
 /* O gap acima já separa o título; zera a margem para não dobrar o espaço. */
-.cfg-form > section > .form-section__title {
+.cfg-form > :is(section, sel-anexos-da-publicacao) > .form-section__title {
   margin-bottom: 0;
 }
 
