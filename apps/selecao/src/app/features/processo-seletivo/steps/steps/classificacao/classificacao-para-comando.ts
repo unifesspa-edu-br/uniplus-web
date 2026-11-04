@@ -226,29 +226,9 @@ export function pendenciasDaClassificacaoBase(
       mensagem: 'Selecione a regra de cálculo da nota, no passo Fórmula.',
     });
   }
-
   if (classificacaoUsaFormulaLocal(classificacao.regraCalculoCodigo)) {
-    if (!classificacao.regraArredondamentoCodigo) {
-      pendencias.push({
-        campo: 'regraArredondamento',
-        mensagem: 'Selecione a regra de arredondamento, no passo Fórmula.',
-      });
-    }
-    const casas = inteiroNaForma(classificacao.casasArredondamento);
-    if (casas === null || casas <= 0) {
-      pendencias.push({
-        campo: 'casasArredondamento',
-        mensagem: 'Informe as casas decimais de arredondamento, maior que zero, no passo Fórmula.',
-      });
-    }
-    if (escalaDaNotaFinalIlegivel(classificacao.escalaNotaFinal)) {
-      pendencias.push({
-        campo: 'escalaNotaFinal',
-        mensagem: `Escala da nota final, no passo Fórmula: ${FORMATO_DA_ESCALA_DA_NOTA_FINAL}`,
-      });
-    }
+    pendencias.push(...pendenciasDaPrecisao(classificacao));
   }
-
   if (!classificacao.regraOrdemAlocacaoCodigo) {
     pendencias.push({
       campo: 'regraOrdemAlocacao',
@@ -264,6 +244,33 @@ export function pendenciasDaClassificacaoBase(
     });
   }
 
+  return pendencias;
+}
+
+/** O arredondamento e a escala da nota final, que só a fórmula local usa. */
+function pendenciasDaPrecisao(
+  classificacao: WizardDraft['classificacao'],
+): PendenciaDaClassificacaoBase[] {
+  const pendencias: PendenciaDaClassificacaoBase[] = [];
+  if (!classificacao.regraArredondamentoCodigo) {
+    pendencias.push({
+      campo: 'regraArredondamento',
+      mensagem: 'Selecione a regra de arredondamento, no passo Fórmula.',
+    });
+  }
+  const casas = inteiroNaForma(classificacao.casasArredondamento);
+  if (casas === null || casas <= 0) {
+    pendencias.push({
+      campo: 'casasArredondamento',
+      mensagem: 'Informe as casas decimais de arredondamento, maior que zero, no passo Fórmula.',
+    });
+  }
+  if (escalaDaNotaFinalIlegivel(classificacao.escalaNotaFinal)) {
+    pendencias.push({
+      campo: 'escalaNotaFinal',
+      mensagem: `Escala da nota final, no passo Fórmula: ${FORMATO_DA_ESCALA_DA_NOTA_FINAL}`,
+    });
+  }
   return pendencias;
 }
 

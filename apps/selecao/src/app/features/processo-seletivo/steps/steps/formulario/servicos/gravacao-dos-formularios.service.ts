@@ -241,19 +241,8 @@ function planoDeEnvio(
   const faseIdPorCodigo = new Map(
     processo.cronogramaFases.map((fase) => [fase.codigo, fase.id] as const),
   );
-  const paraEnvio: PlanoDeEnvio['paraEnvio'][number][] = [];
-  for (const formulario of formularios) {
-    const faseId = faseIdPorCodigo.get(formulario.fase);
-    if (faseId === undefined) {
-      return {
-        valid: false,
-        messages: [
-          `A fase do formulário de ${formulario.nome} ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.`,
-        ],
-      };
-    }
-    paraEnvio.push({ finalidade: formulario.finalidade, faseId, conteudo: formulario.conteudo });
-  }
+  const paraEnvio = comFaseResolvida(formularios, faseIdPorCodigo);
+  if ('valid' in paraEnvio) return paraEnvio;
 
   const gravados = (finalidade: string) => formularioDaFinalidade(processo.formularios, finalidade);
   const ordem = ordemDeGravacao(
@@ -267,4 +256,25 @@ function planoDeEnvio(
     }),
   );
   return { paraEnvio, ordem, faseIdPorCodigo, gravados };
+}
+
+/** Cada formulário com o id da fase; a recusa quando a fase de algum ainda não está gravada. */
+function comFaseResolvida(
+  formularios: readonly FormularioParaGravar[],
+  faseIdPorCodigo: ReadonlyMap<string, string>,
+): PlanoDeEnvio['paraEnvio'] | StepValidation {
+  const paraEnvio: PlanoDeEnvio['paraEnvio'][number][] = [];
+  for (const formulario of formularios) {
+    const faseId = faseIdPorCodigo.get(formulario.fase);
+    if (faseId === undefined) {
+      return {
+        valid: false,
+        messages: [
+          `A fase do formulário de ${formulario.nome} ainda não está no cronograma gravado. Grave o passo Cronograma e tente de novo.`,
+        ],
+      };
+    }
+    paraEnvio.push({ finalidade: formulario.finalidade, faseId, conteudo: formulario.conteudo });
+  }
+  return paraEnvio;
 }

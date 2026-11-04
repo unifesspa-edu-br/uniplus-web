@@ -41,21 +41,9 @@ export class GravacaoDoDesempateService {
 
     return gravarNoPasso(this.store, async () => {
       const geracao = this.store.geracao();
-      const resultado = await this.releitura.gravando(async () => {
-        const resposta = await this.cadastro.definirCriteriosDesempate(
-          processoId,
-          comoComandoDeCriteriosDesempate(criterios),
-        );
-        if (geracao !== this.store.geracao()) return resposta;
-        if (resposta.ok) {
-          this.store.classificacao.criteriosDesempateGravados.set(criterios);
-          this.store.classificacao.desempatePendenteDeGravacao.set(false);
-        } else if (resposta.inconclusiva) {
-          // O servidor pode ter gravado: o que ele tem deixa de ser sabido até a releitura.
-          this.store.classificacao.criteriosDesempateGravados.set(null);
-        }
-        return resposta;
-      });
+      const resultado = await this.releitura.gravando(() =>
+        this.enviar(processoId, criterios, geracao),
+      );
 
       if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
       return resultado.ok
@@ -65,6 +53,27 @@ export class GravacaoDoDesempateService {
             messages: this.mensagensDaRecusa(resultado.problem, criterios, rotuloDaArea),
           };
     });
+  }
+
+  /** Envia os critérios e registra no store o que o servidor passou a ter. */
+  private async enviar(
+    processoId: string,
+    criterios: readonly CriterioDesempateConfigurado[],
+    geracao: number,
+  ) {
+    const resposta = await this.cadastro.definirCriteriosDesempate(
+      processoId,
+      comoComandoDeCriteriosDesempate(criterios),
+    );
+    if (geracao !== this.store.geracao()) return resposta;
+    if (resposta.ok) {
+      this.store.classificacao.criteriosDesempateGravados.set(criterios);
+      this.store.classificacao.desempatePendenteDeGravacao.set(false);
+    } else if (resposta.inconclusiva) {
+      // O servidor pode ter gravado: o que ele tem deixa de ser sabido até a releitura.
+      this.store.classificacao.criteriosDesempateGravados.set(null);
+    }
+    return resposta;
   }
 
   /**

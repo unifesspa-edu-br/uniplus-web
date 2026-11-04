@@ -55,21 +55,9 @@ function avisoDaGravacao(comDesempate: boolean): string {
 function itensDaClassificacao(draft: WizardDraft): ItemDeConfirmacao[] {
   const classificacao = draft.classificacao;
   const local = classificacaoUsaFormulaLocal(classificacao.regraCalculoCodigo);
-  const naoSeAplica = 'não se aplica (classificação importada)';
 
   return [
-    { rotulo: 'Regra de cálculo', valor: classificacao.regraCalculoCodigo },
-    {
-      rotulo: 'Arredondamento',
-      valor: local
-        ? `${classificacao.regraArredondamentoCodigo} — ${classificacao.casasArredondamento} casas`
-        : naoSeAplica,
-    },
-    { rotulo: 'Ordem de alocação', valor: classificacao.regraOrdemAlocacaoCodigo },
-    {
-      rotulo: 'Escala da nota final',
-      valor: local ? leituraDaEscalaDaNotaFinal(classificacao.escalaNotaFinal) : naoSeAplica,
-    },
+    ...itensDoCalculo(classificacao, local),
     { rotulo: 'Baseada em ENEM', valor: classificacao.baseadoEmEnem ? 'Sim' : 'Não' },
     {
       rotulo: 'Resolução de Peso por Área',
@@ -84,6 +72,28 @@ function itensDaClassificacao(draft: WizardDraft): ItemDeConfirmacao[] {
         : 'nenhuma (classificação importada)',
     },
     { rotulo: 'Edições do ENEM aceitas', valor: edicoesAceitas(draft) },
+  ];
+}
+
+/** A regra de cálculo, o arredondamento, a ordem de alocação e a escala da nota final. */
+function itensDoCalculo(
+  classificacao: WizardDraft['classificacao'],
+  local: boolean,
+): ItemDeConfirmacao[] {
+  const naoSeAplica = 'não se aplica (classificação importada)';
+  return [
+    { rotulo: 'Regra de cálculo', valor: classificacao.regraCalculoCodigo },
+    {
+      rotulo: 'Arredondamento',
+      valor: local
+        ? `${classificacao.regraArredondamentoCodigo} — ${classificacao.casasArredondamento} casas`
+        : naoSeAplica,
+    },
+    { rotulo: 'Ordem de alocação', valor: classificacao.regraOrdemAlocacaoCodigo },
+    {
+      rotulo: 'Escala da nota final',
+      valor: local ? leituraDaEscalaDaNotaFinal(classificacao.escalaNotaFinal) : naoSeAplica,
+    },
   ];
 }
 

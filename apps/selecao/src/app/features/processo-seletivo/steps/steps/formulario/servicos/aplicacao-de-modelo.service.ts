@@ -3,41 +3,24 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DestroyRef } from '@angular/core';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
-import type { AplicacaoDeModeloDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CadastroInicialService } from '../../../shared/cadastro-inicial.service';
-import { conteudoDoFormulario, formularioDaFinalidade } from '../formulario-do-processo';
 import {
   comAplicacaoDoServidor,
-  faseQueAAplicacaoDeclara,
   modelosPorFinalidade,
   resumoDaAplicacao,
   textoDaAplicacaoEmAberto,
   type ModeloOferecido,
-  type ProcessoAposAplicacao,
 } from '../modelo-de-formulario';
 import { nomeDaFinalidade } from '../formularios-por-finalidade';
 import { CatalogosDoFormularioService } from './catalogos-do-formulario.service';
 import { GravacaoDosFormulariosService } from './gravacao-dos-formularios.service';
-import { LeituraDoProcessoNoFormularioService } from './leitura-do-processo-no-formulario.service';
+import {
+  AplicacaoNoServidorService,
+  type DesfechoDaAplicacao,
+} from './aplicacao-no-servidor.service';
 import { semChave } from './sem-chave';
-import { textoDaRecusa } from './texto-da-recusa';
-
-/** O desfecho da aplicação de um modelo: a recusa a mostrar, ou o que o servidor relatou e ficou tendo. */
-type DesfechoDaAplicacao =
-  /**
-   * `copiaConfirmada`: nulo quando a recusa é definitiva e nada foi copiado; `false` quando a cópia
-   * pode ter acontecido; `true` quando aconteceu e a releitura falhou.
-   */
-  | { readonly ok: false; readonly recusa: string; readonly copiaConfirmada: boolean | null }
-  | {
-      readonly ok: true;
-      readonly relato: AplicacaoDeModeloDto;
-      readonly servidor: ProcessoAposAplicacao;
-      readonly avisoDaFase: string | null;
-    };
 
 /**
  * Partir de um modelo da Configuração: os modelos que servem ao tipo do processo, a escolha em
@@ -47,12 +30,11 @@ type DesfechoDaAplicacao =
 @Injectable()
 export class AplicacaoDeModeloService {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly servidor = inject(AplicacaoNoServidorService);
   private readonly modelosApi = inject(ModelosFormularioApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dados = inject(CatalogosDoFormularioService);
-  private readonly leitura = inject(LeituraDoProcessoNoFormularioService);
   private readonly gravacao = inject(GravacaoDosFormulariosService);
 
   /** Os modelos ativos que servem ao tipo do processo, por finalidade. */
@@ -226,7 +208,7 @@ export class AplicacaoDeModeloService {
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
-      const desfecho = await this.aplicarNoServidor(processoId, finalidade, modeloId, faseDaAba);
+      const desfecho = await this.servidor.aplicar(processoId, finalidade, modeloId, faseDaAba);
       return geracao === this.store.geracao() ? desfecho : null;
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
@@ -307,89 +289,5 @@ export class AplicacaoDeModeloService {
     ];
     this.resumos.update((atuais) => new Map([...atuais, [finalidade, resumo]]));
     return resumo.join(' ');
-  }
-
-  /**
-   * A aplicação no servidor: relê o processo para saber se o formulário existe e com que fase, aplica
-   * o modelo, declara a fase quando a cópia ficou sem ela e relê de novo para projetar o resultado.
-   * A fase precisa estar no cronograma gravado ANTES da cópia: sem ela, o formulário nasceria sem
-   * fase, e a publicação o recusa.
-   */
-  private async aplicarNoServidor(
-    processoId: string,
-    finalidade: string,
-    modeloId: string,
-    faseDaAba: string,
-  ): Promise<DesfechoDaAplicacao> {
-    const antes = await this.leitura.ler(processoId);
-    if (!isApiOk(antes))
-      return {
-        ok: false,
-        recusa: 'Não foi possível reler o processo para aplicar o modelo. Tente de novo.',
-        copiaConfirmada: null,
-      };
-    const fase = faseQueAAplicacaoDeclara(
-      formularioDaFinalidade(antes.data.formularios, finalidade),
-      faseDaAba,
-      antes.data.cronogramaFases,
-    );
-    if (fase.declarar && fase.faseId === null) {
-      return {
-        ok: false,
-        recusa: `O formulário de ${nomeDaFinalidade(finalidade)} precisa de uma fase do cronograma gravado antes de partir de um modelo. Escolha a fase nesta aba; se ela é nova, grave antes o passo Cronograma.`,
-        copiaConfirmada: null,
-      };
-    }
-
-    const aplicacao = await this.cadastro.aplicarModeloDeFormulario(processoId, modeloId);
-    if (!aplicacao.ok)
-      return {
-        ok: false,
-        recusa: textoDaRecusa(aplicacao.problem, this.problemI18n),
-        copiaConfirmada: aplicacao.inconclusiva ? false : null,
-      };
-
-    const depois = await this.leitura.ler(processoId);
-    if (!isApiOk(depois)) return { ok: false, recusa: '', copiaConfirmada: true };
-
-    const avisoDaFase =
-      fase.declarar && fase.faseId !== null
-        ? await this.declararFase(processoId, finalidade, depois.data, fase.faseId)
-        : null;
-    return {
-      ok: true,
-      relato: aplicacao.relato,
-      avisoDaFase,
-      servidor: {
-        formularios: depois.data.formularios,
-        cronogramaFases: depois.data.cronogramaFases,
-        regrasDerivacao: depois.data.regrasDerivacao.map((config) => ({
-          codigoFato: config.codigoFato,
-          regras: config.regras,
-        })),
-      },
-    };
-  }
-
-  /** Declara a fase quando a cópia ficou sem ela. Devolve o aviso quando o servidor recusou. */
-  private async declararFase(
-    processoId: string,
-    finalidade: string,
-    processo: ProcessoSeletivoDto,
-    faseId: string,
-  ): Promise<string | null> {
-    const copiado = formularioDaFinalidade(processo.formularios, finalidade);
-    if (copiado === null) return null;
-
-    const conteudo = conteudoDoFormulario(copiado);
-    const cabecalho = await this.cadastro.gravarFormulario(
-      processoId,
-      finalidade,
-      { faseId: copiado.faseId, conteudo },
-      { faseId, conteudo },
-    );
-    return cabecalho.ok
-      ? null
-      : `A fase do formulário não foi gravada: ${textoDaRecusa(cabecalho.problem, this.problemI18n)} Grave o passo para declará-la.`;
   }
 }

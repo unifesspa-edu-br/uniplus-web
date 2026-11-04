@@ -27,6 +27,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { abasDoFormulario } from './abas-do-formulario';
 import { mensagensDoFormulario } from './validacao-do-formulario';
+import { AplicacaoNoServidorService } from './servicos/aplicacao-no-servidor.service';
 import { AplicacaoDeModeloService } from './servicos/aplicacao-de-modelo.service';
 import { GravacaoDosFormulariosService } from './servicos/gravacao-dos-formularios.service';
 import { RemocaoDoFormularioService } from './servicos/remocao-do-formulario.service';
@@ -79,6 +80,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     AplicacaoDeModeloService,
+    AplicacaoNoServidorService,
     CatalogosDoFormularioService,
     GravacaoDosFormulariosService,
     RemocaoDoFormularioService,
