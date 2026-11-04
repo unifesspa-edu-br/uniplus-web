@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+
+.portal-hero {
+  display: grid;
+  align-items: center;
+  gap: var(--space-7);
+  background: var(--surface-banner);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-7) var(--space-6);
+}
+
+@media (min-width: 900px) {
+  .portal-hero {
+    grid-template-columns: 1fr auto;
+    padding: var(--space-9);
+  }
+}
+
+.portal-hero__content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.portal-hero__title {
+  margin: 0;
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-heading);
+  line-height: var(--leading-tight);
+}
+
+.portal-hero__desc {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-md);
+  /* --text-secondary (6.96:1) fica abaixo do 7:1 AAA sobre --surface-banner;
+     --text-primary é a alternativa mais escura já pensada pra texto de corpo. */
+  color: var(--text-primary);
+  line-height: var(--leading-relaxed);
+}
+
+.portal-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* --btn-fg padrão do .btn--secondary (--color-primary, 6.73:1) fica abaixo do
+   7:1 AAA sobre o fundo tingido do hero (--surface-banner). --text-on-primary-tint
+   é o token do próprio DS pensado pra texto/realce sobre tint (8:1+). */
+.portal-hero__actions .btn--secondary {
+  --btn-fg: var(--text-on-primary-tint);
+  --btn-bd: var(--text-on-primary-tint);
+}
+
+.portal-hero__art {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .portal-hero__art {
+    display: block;
+    width: 160px;
+    height: 160px;
+    flex-shrink: 0;
+  }
+}

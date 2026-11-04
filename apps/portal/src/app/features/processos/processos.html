@@ -9,44 +9,8 @@
   [level]="1"
 />
 
-@if (destaque(); as certameDestaque) {
-  <section class="portal-hero" aria-labelledby="portal-hero-title">
-    <div class="portal-hero__content">
-      <ui-tag [variant]="statusVariant(certameDestaque.situacao)" [solid]="true">
-        {{ statusLabel(certameDestaque.situacao) }}
-      </ui-tag>
-      <h2 id="portal-hero-title" class="portal-hero__title">{{ certameDestaque.nome }}</h2>
-      <p class="portal-hero__desc">
-        As inscrições vão até
-        <strong>{{ certameDestaque.inscricoesAte | dateBr: 'long' }}</strong>. Você pode se
-        inscrever em etapas curtas e voltar quando quiser para concluir.
-      </p>
-      <div class="portal-hero__actions">
-        <a class="btn btn--primary btn--lg" [routerLink]="['/inscricao', certameDestaque.processoSeletivoId]">
-          <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-          Inscrever-me agora
-        </a>
-        <a class="btn btn--secondary btn--lg" href="#certames-lista">Ver todos os editais</a>
-      </div>
-    </div>
-    <div class="portal-hero__art" aria-hidden="true">
-      <svg width="220" height="180" viewBox="0 0 240 200" fill="none">
-        <rect x="60" y="20" width="120" height="160" rx="8" fill="var(--color-neutral-0)"
-          stroke="var(--color-primary-800)" stroke-width="2"></rect>
-        <line x1="78" y1="56" x2="162" y2="56" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
-        </line>
-        <line x1="78" y1="76" x2="162" y2="76" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
-        </line>
-        <line x1="78" y1="96" x2="142" y2="96" stroke="var(--color-neutral-200)" stroke-width="4" stroke-linecap="round">
-        </line>
-        <line x1="78" y1="116" x2="162" y2="116" stroke="var(--color-neutral-200)" stroke-width="4"
-          stroke-linecap="round"></line>
-        <circle cx="170" cy="156" r="24" fill="var(--color-success-600)"></circle>
-        <path d="M159 156l7 7 14-14" stroke="var(--color-neutral-0)" stroke-width="3.5" stroke-linecap="round"
-          stroke-linejoin="round"></path>
-      </svg>
-    </div>
-  </section>
+@if (vitrine.destaque(); as certameDestaque) {
+<ptl-destaque-do-certame [certame]="certameDestaque" />
 }
 
 <ui-page-header id="certames-lista" heading="Editais" [level]="2" />
@@ -57,20 +21,17 @@
     a cada estado faz o leitor de tela perder o anúncio.
   -->
   <span class="certames-count" role="status" aria-live="polite">
-    @if (carregando()) {
-      Carregando certames…
-    } @else if (!erro()) {
-      {{ certames().length }}
-      {{ certames().length === 1 ? 'certame nesta página' : 'certames nesta página' }}
-    }
+    @if (vitrine.carregando()) { Carregando certames… } @else if (!vitrine.erro()) { {{
+    vitrine.certames().length }} {{ vitrine.certames().length === 1 ? 'certame nesta página' :
+    'certames nesta página' }} }
   </span>
-  @if (!isCompacto()) {
-    <ui-segmented
-      accessibleName="Alternar entre lista e cards"
-      [choices]="viewOptions"
-      [selectedValue]="visao()"
-      (selectedValueChange)="setVisao($event)"
-    />
+  @if (!visao.isCompacto()) {
+  <ui-segmented
+    accessibleName="Alternar entre lista e cards"
+    [choices]="opcoesDeVisao"
+    [selectedValue]="visao.visao()"
+    (selectedValueChange)="visao.escolher($event)"
+  />
   }
 </div>
 
@@ -83,8 +44,8 @@
   ariaLabel="Buscar certames"
   searchPlaceholder="Buscar por edital ou título..."
   searchAriaLabel="Buscar por edital ou título"
-  [(searchValue)]="termoBusca"
-  [filtrosAtivos]="filtrosAtivos()"
+  [(searchValue)]="vitrine.termoBusca"
+  [filtrosAtivos]="vitrine.filtrosAtivos()"
   secondaryRole="group"
   secondaryAriaLabel="Filtrar certames"
 >
@@ -92,8 +53,8 @@
     uiFilterBarActions
     type="button"
     class="btn btn--tertiary btn--sm"
-    [disabled]="!temFiltrosAtivos()"
-    (click)="limparFiltros()"
+    [attr.aria-disabled]="vitrine.temFiltrosAtivos() ? null : 'true'"
+    (click)="vitrine.limparFiltros()"
   >
     Limpar filtros
   </button>
@@ -102,183 +63,81 @@
       <span class="u-eyebrow">Situação</span>
       <ui-filter-chips
         ariaLabel="Filtrar por situação"
-        [options]="statusChips()"
-        [(selected)]="situacaoSelecionada"
+        [options]="vitrine.statusChips()"
+        [(selected)]="vitrine.situacaoSelecionada"
       />
     </div>
   </ng-container>
 </ui-filter-bar>
 
-@if (erro(); as mensagem) {
-  <ui-alert variant="danger" heading="Não foi possível carregar os certames">
-    {{ mensagem }}
-    <div class="certames-retry">
-      <button
-        type="button"
-        class="btn btn--secondary btn--sm"
-        [disabled]="carregando()"
-        (click)="tentarNovamente()"
-      >
-        Tentar novamente
-      </button>
-    </div>
-  </ui-alert>
-} @else if (carregando()) {
-  <div class="certames-loading" role="status">
-    <ui-spinner spinnerSize="sm" accessibleName="Carregando certames" />
-    Carregando certames…
-  </div>
-} @else if (certames().length > 0) {
-  @if (visaoEfetiva() === 'lista') {
-    <ul class="certames-list" role="list">
-      @for (certame of certames(); track certame.processoSeletivoId) {
-        <li class="edital-row">
-          <div class="edital-row__body">
-            <div class="edital-row__head">
-              @if (certame.numero) {
-                <span class="card__meta">{{ certame.numero }}</span>
-              }
-              <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
-                {{ statusLabel(certame.situacao) }}
-              </ui-tag>
-              <ui-tag>{{ certame.tipoProcesso.nome }}</ui-tag>
-            </div>
-            <h3 class="edital-row__title">{{ certame.nome }}</h3>
-            <div class="edital-row__meta">
-              @if (aberturaDe(certame); as abertura) {
-                <span><strong>Abre:</strong> {{ abertura }}</span>
-              }
-              <span><strong>Encerra:</strong> {{ certame.inscricoesAte | dateBr: 'shortMonth' }}</span>
-              <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
-            </div>
-          </div>
-          <div class="edital-row__actions certame-acoes">
-            @if (editalDe(certame); as edital) {
-              <a
-                class="certame-edital-link"
-                [href]="edital.documentoUrl"
-                target="_blank"
-                rel="noopener"
-              >
-                Ver edital
-                <span class="sr-only"> — {{ certame.nome }} (abre em nova aba)</span>
-              </a>
-            }
-            @if (recebeInscricao(certame)) {
-              <a class="btn btn--primary" [routerLink]="['/inscricao', certame.processoSeletivoId]">
-                <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-                Inscrever-me
-                <span class="sr-only"> em {{ certame.nome }}</span>
-              </a>
-            }
-          </div>
-          <ptl-certame-publicacoes
-            class="edital-row__publicacoes"
-            [certameId]="certame.processoSeletivoId"
-            [certameNome]="certame.nome"
-            [publicacoes]="publicacoesDe(certame)"
-            [carregando]="publicacoesCarregando()"
-            [erro]="publicacoesComErroDe(certame)"
-          />
-        </li>
-      }
-    </ul>
-  } @else {
-    <div class="certames-grid">
-      @for (certame of certames(); track certame.processoSeletivoId) {
-        <article class="card">
-          <div class="card__header">
-            @if (certame.numero) {
-              <span class="card__meta">{{ certame.numero }}</span>
-            }
-            <ui-tag [variant]="statusVariant(certame.situacao)" [solid]="true">
-              {{ statusLabel(certame.situacao) }}
-            </ui-tag>
-          </div>
-          <h3 class="card__title">{{ certame.nome }}</h3>
-          <div class="edital-row__meta">
-            @if (aberturaDe(certame); as abertura) {
-              <span><strong>Abre:</strong> {{ abertura }}</span>
-            }
-            <span><strong>Encerra:</strong> {{ certame.inscricoesAte | dateBr: 'shortMonth' }}</span>
-            <span><strong>Vagas:</strong> {{ vagasFormatadas(certame.totalDeVagas) }}</span>
-          </div>
-          @if (editalDe(certame); as edital) {
-            <a
-              class="certame-edital-link"
-              [href]="edital.documentoUrl"
-              target="_blank"
-              rel="noopener"
-            >
-              Ver edital
-              <span class="sr-only"> — {{ certame.nome }} (abre em nova aba)</span>
-            </a>
-          }
-          <div class="card__footer">
-            <ui-tag variant="neutral">{{ certame.tipoProcesso.nome }}</ui-tag>
-            @if (recebeInscricao(certame)) {
-              <a class="btn btn--primary btn--sm" [routerLink]="['/inscricao', certame.processoSeletivoId]">
-                <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-                Inscrever-me
-                <span class="sr-only"> em {{ certame.nome }}</span>
-              </a>
-            }
-          </div>
-          <ptl-certame-publicacoes
-            class="edital-row__publicacoes"
-            [certameId]="certame.processoSeletivoId"
-            [certameNome]="certame.nome"
-            [publicacoes]="publicacoesDe(certame)"
-            [carregando]="publicacoesCarregando()"
-            [erro]="publicacoesComErroDe(certame)"
-          />
-        </article>
-      }
-    </div>
-  }
-
-  <ui-list-footer
-    navigationLabel="Paginação de certames"
-    [hasRows]="certames().length > 0"
-    [hasPrevious]="hasPrevious()"
-    [hasNext]="hasNext()"
-    [isDisabled]="carregando()"
-    (previous)="paginaAnterior()"
-    (next)="proximaPagina()"
-  />
-} @else if (temFiltrosAtivos()) {
-  <ui-empty-state
-    heading="Nenhum certame encontrado"
-    description="Ajuste a busca ou limpe os filtros para ver todos os certames."
-  >
-    <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
-      Limpar filtros
+@if (vitrine.erro(); as mensagem) {
+<ui-alert variant="danger" heading="Não foi possível carregar os certames">
+  {{ mensagem }}
+  <div class="certames-retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="vitrine.carregando() ? 'true' : null"
+      [attr.aria-busy]="vitrine.carregando() ? 'true' : null"
+      (click)="vitrine.tentarNovamente()"
+    >
+      Tentar novamente
     </button>
-  </ui-empty-state>
+  </div>
+</ui-alert>
+} @else if (vitrine.carregando()) {
+<div class="certames-loading" role="status">
+  <ui-spinner spinnerSize="sm" accessibleName="Carregando certames" />
+  Carregando certames…
+</div>
+} @else if (vitrine.certames().length > 0) { @if (visao.visaoEfetiva() === 'lista') {
+<ul class="certames-list" role="list">
+  @for (certame of vitrine.certames(); track certame.processoSeletivoId) {
+  <li
+    ptlCertameEmLinha
+    [certame]="certame"
+    [abertura]="aberturaDe(certame)"
+    [publicacoes]="publicacoes.porCertame().get(certame.processoSeletivoId)"
+  ></li>
+  }
+</ul>
 } @else {
-  <ui-empty-state
-    heading="Nenhum certame publicado no momento"
-    description="Volte em breve — novos editais aparecem aqui assim que forem publicados."
+<div class="certames-grid">
+  @for (certame of vitrine.certames(); track certame.processoSeletivoId) {
+  <ptl-certame-em-card
+    [certame]="certame"
+    [abertura]="aberturaDe(certame)"
+    [publicacoes]="publicacoes.porCertame().get(certame.processoSeletivoId)"
   />
+  }
+</div>
 }
 
-<section class="portal-section" aria-labelledby="portal-como-funciona-title">
-  <div class="portal-section__head">
-    <div>
-      <h2 id="portal-como-funciona-title" class="portal-section__title">Como funciona</h2>
-      <p class="portal-section__desc">Da inscrição até a matrícula, em etapas curtas.</p>
-    </div>
-  </div>
+<ui-list-footer
+  navigationLabel="Paginação de certames"
+  [hasRows]="vitrine.certames().length > 0"
+  [hasPrevious]="vitrine.hasPrevious()"
+  [hasNext]="vitrine.hasNext()"
+  [isDisabled]="vitrine.carregando()"
+  (previous)="vitrine.paginaAnterior()"
+  (next)="vitrine.proximaPagina()"
+/>
+} @else if (vitrine.temFiltrosAtivos()) {
+<ui-empty-state
+  heading="Nenhum certame encontrado"
+  description="Ajuste a busca ou limpe os filtros para ver todos os certames."
+>
+  <button type="button" class="btn btn--secondary" (click)="vitrine.limparFiltros()">
+    Limpar filtros
+  </button>
+</ui-empty-state>
+} @else {
+<ui-empty-state
+  heading="Nenhum certame publicado no momento"
+  description="Volte em breve — novos editais aparecem aqui assim que forem publicados."
+/>
+}
 
-  <ol class="portal-steps" role="list">
-    @for (passo of passos; track passo.numero) {
-      <li class="portal-steps__item card">
-        <span class="portal-steps__number" aria-hidden="true">{{ passo.numero }}</span>
-        <h3 class="portal-steps__title">{{ passo.titulo }}</h3>
-        <p class="portal-steps__desc">{{ passo.descricao }}</p>
-      </li>
-    }
-  </ol>
-</section>
+<ptl-como-funciona />
 
 <router-outlet />

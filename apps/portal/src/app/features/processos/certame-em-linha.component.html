@@ -1,0 +1,43 @@
+@let item = certame();
+<div class="edital-row__body">
+  <div class="edital-row__head">
+    @if (item.numero) {
+      <span class="card__meta">{{ item.numero }}</span>
+    }
+    <ui-tag [variant]="varianteDaSituacao(item.situacao)" [solid]="true">
+      {{ rotuloDaSituacao(item.situacao) }}
+    </ui-tag>
+    <ui-tag>{{ item.tipoProcesso.nome }}</ui-tag>
+  </div>
+  <h3 class="edital-row__title">{{ item.nome }}</h3>
+  <div class="edital-row__meta">
+    @if (abertura(); as quando) {
+      <span><strong>Abre:</strong> {{ quando }}</span>
+    }
+    <span><strong>Encerra:</strong> {{ item.inscricoesAte | dateBr: 'shortMonth' }}</span>
+    <span><strong>Vagas:</strong> {{ vagasFormatadas(item.totalDeVagas) }}</span>
+  </div>
+</div>
+<div class="edital-row__actions certame-acoes">
+  @if (publicacoes()?.edital; as edital) {
+    <a class="certame-edital-link" [href]="edital.documentoUrl" target="_blank" rel="noopener">
+      Ver edital
+      <span class="sr-only"> — {{ item.nome }} (abre em nova aba)</span>
+    </a>
+  }
+  @if (recebeInscricao(item)) {
+    <a class="btn btn--primary" [routerLink]="['/inscricao', item.processoSeletivoId]">
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Inscrever-me
+      <span class="sr-only"> em {{ item.nome }}</span>
+    </a>
+  }
+</div>
+<ptl-certame-publicacoes
+  class="edital-row__publicacoes"
+  [certameId]="item.processoSeletivoId"
+  [certameNome]="item.nome"
+  [publicacoes]="publicacoes()?.publicacoes"
+  [carregando]="publicacoes()?.carregando ?? false"
+  [erro]="publicacoes()?.erro ?? false"
+/>

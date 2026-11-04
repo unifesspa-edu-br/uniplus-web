@@ -19,6 +19,8 @@ import {
   PublicacoesRepository,
 } from '../publicacoes/publicacoes.repository';
 import { ProcessosComponent } from './processos';
+import { VisaoDosCertames } from './visao-dos-certames';
+import { VitrineDeCertames } from './vitrine-de-certames';
 
 const BASE = 'http://localhost:5000';
 const CERTAMES_URL = `${BASE}/api/selecao/certames`;
@@ -103,7 +105,6 @@ function stubMatchMedia(matches: boolean): void {
 
 describe('ProcessosComponent', () => {
   let fixture: ComponentFixture<ProcessosComponent>;
-  let component: ProcessosComponent;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
   const matchMediaOriginal = window.matchMedia;
@@ -127,7 +128,6 @@ describe('ProcessosComponent', () => {
     });
 
     fixture = TestBed.createComponent(ProcessosComponent);
-    component = fixture.componentInstance;
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
@@ -137,6 +137,9 @@ describe('ProcessosComponent', () => {
     window.matchMedia = matchMediaOriginal;
     controller.verify();
   });
+
+  const vitrine = (): VitrineDeCertames => fixture.debugElement.injector.get(VitrineDeCertames);
+  const visao = (): VisaoDosCertames => fixture.debugElement.injector.get(VisaoDosCertames);
 
   const propagate = async (): Promise<void> => {
     await Promise.resolve();
@@ -185,7 +188,7 @@ describe('ProcessosComponent', () => {
   };
 
   it('mostra o estado de carregando antes dos dados chegarem', async () => {
-    expect(component['carregando']()).toBe(true);
+    expect(vitrine().carregando()).toBe(true);
     const status = host().querySelector('.certames-count[role="status"]');
     expect(status?.textContent).toContain('Carregando');
     await flushLista([], contadoresHeaders);
@@ -198,13 +201,13 @@ describe('ProcessosComponent', () => {
     expect(req.request.params.has('limit')).toBe(true);
     req.flush([sisu, tecnicoEnfermagem], { headers: contadoresHeaders });
     await propagate();
-    expect(component['certames']()).toHaveLength(2);
+    expect(vitrine().certames()).toHaveLength(2);
   });
 
   it('carrega os certames e anuncia a contagem numa região viva', async () => {
     await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
 
-    expect(component['carregando']()).toBe(false);
+    expect(vitrine().carregando()).toBe(false);
     const status = host().querySelector('.certames-count[role="status"][aria-live="polite"]');
     expect(status).toBeTruthy();
     expect(status?.textContent).toContain('2 certames nesta página');
@@ -221,7 +224,7 @@ describe('ProcessosComponent', () => {
       expect(itensDaLista).toHaveLength(2);
       itensDaLista.forEach((texto) => expect(texto).not.toContain('Documentos exigidos'));
 
-      component['setVisao']('cards');
+      visao().escolher('cards');
       fixture.detectChanges();
       const cards = textoDosItens('.certames-grid .card');
       expect(cards).toHaveLength(2);
@@ -266,7 +269,7 @@ describe('ProcessosComponent', () => {
 
     it('a visão em cards também traz o accordion em cada card', async () => {
       await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
-      component['setVisao']('cards');
+      visao().escolher('cards');
       fixture.detectChanges();
 
       expect(host().querySelectorAll('.card .publicacoes-toggle')).toHaveLength(2);
@@ -332,7 +335,7 @@ describe('ProcessosComponent', () => {
   it('o hero exibe o primeiro certame da primeira página sem filtro', async () => {
     await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
 
-    expect(component['destaque']()?.nome).toBe(sisu.nome);
+    expect(vitrine().destaque()?.nome).toBe(sisu.nome);
     const heroTitle = host().querySelector('#portal-hero-title');
     expect(heroTitle?.textContent?.trim()).toBe(sisu.nome);
   });
@@ -340,13 +343,13 @@ describe('ProcessosComponent', () => {
   it('o hero pula os certames que não recebem mais inscrição', async () => {
     await flushLista([encerrado, sisu], contadoresHeaders);
 
-    expect(component['destaque']()?.nome).toBe(sisu.nome);
+    expect(vitrine().destaque()?.nome).toBe(sisu.nome);
   });
 
   it('sem certame recebendo inscrição, não há hero convidando a se inscrever', async () => {
     await flushLista([encerrado], contadoresHeaders);
 
-    expect(component['destaque']()).toBeNull();
+    expect(vitrine().destaque()).toBeNull();
     expect(host().querySelector('.portal-hero')).toBeNull();
   });
 
@@ -369,9 +372,9 @@ describe('ProcessosComponent', () => {
   it('busca server-side: digitação em rajada dispara um único GET com q após o debounce, na primeira página', async () => {
     await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
 
-    component['termoBusca'].set('t');
-    component['termoBusca'].set('te');
-    component['termoBusca'].set('tecnico');
+    vitrine().termoBusca.set('t');
+    vitrine().termoBusca.set('te');
+    vitrine().termoBusca.set('tecnico');
     appRef.tick();
     controller.expectNone((r) => r.url === CERTAMES_URL && r.params.has('q'));
 
@@ -383,9 +386,9 @@ describe('ProcessosComponent', () => {
     expect(req.request.params.has('cursor')).toBe(false);
     req.flush([tecnicoEnfermagem], { headers: contadoresHeaders });
     await propagate();
-    expect(component['certames']()).toHaveLength(1);
+    expect(vitrine().certames()).toHaveLength(1);
     // Sem hero enquanto há busca ativa.
-    expect(component['destaque']()).toBeNull();
+    expect(vitrine().destaque()).toBeNull();
   });
 
   it('filtro por situação dispara GET com situacao e reseta a paginação', async () => {
@@ -399,18 +402,18 @@ describe('ProcessosComponent', () => {
     expect(req.request.params.has('cursor')).toBe(false);
     req.flush([tecnicoEnfermagem], { headers: contadoresHeaders });
     await propagate();
-    expect(component['certames']()).toEqual([tecnicoEnfermagem]);
+    expect(vitrine().certames()).toEqual([tecnicoEnfermagem]);
   });
 
   it('"Limpar filtros" reseta busca e situação, refazendo a request sem elas', async () => {
     await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
 
-    component['termoBusca'].set('tecnico');
+    vitrine().termoBusca.set('tecnico');
     await sleep(DEBOUNCE_FOLGA_MS);
     await propagate();
     await flushLista([tecnicoEnfermagem], contadoresHeaders);
 
-    expect(component['temFiltrosAtivos']()).toBe(true);
+    expect(vitrine().temFiltrosAtivos()).toBe(true);
     botao('Limpar filtros')?.click();
     fixture.detectChanges();
     // `termoBusca` limpo também passa pelo debounce antes de virar `buscaAplicada`.
@@ -422,7 +425,7 @@ describe('ProcessosComponent', () => {
     expect(req.request.params.has('situacao')).toBe(false);
     req.flush([sisu, tecnicoEnfermagem], { headers: contadoresHeaders });
     await propagate();
-    expect(component['temFiltrosAtivos']()).toBe(false);
+    expect(vitrine().temFiltrosAtivos()).toBe(false);
   });
 
   it('pagina os resultados: Próximo segue o cursor do Link e Anterior volta', async () => {
@@ -431,10 +434,10 @@ describe('ProcessosComponent', () => {
       Link: `<${CERTAMES_URL}?cursor=p2&direction=next>; rel="next"`,
     });
 
-    expect(component['hasPrevious']()).toBe(false);
-    expect(component['hasNext']()).toBe(true);
+    expect(vitrine().hasPrevious()).toBe(false);
+    expect(vitrine().hasNext()).toBe(true);
 
-    component['proximaPagina']();
+    vitrine().proximaPagina();
     await propagate();
 
     const req = controller.expectOne((r) => r.url === CERTAMES_URL);
@@ -448,16 +451,16 @@ describe('ProcessosComponent', () => {
     });
     await propagate();
 
-    expect(component['hasPrevious']()).toBe(true);
-    expect(component['hasNext']()).toBe(false);
+    expect(vitrine().hasPrevious()).toBe(true);
+    expect(vitrine().hasNext()).toBe(false);
     // Página navegada não mostra hero, mesmo sem filtro de busca/situação.
-    expect(component['destaque']()).toBeNull();
+    expect(vitrine().destaque()).toBeNull();
   });
 
   it('estado vazio: busca sem resultado orienta a limpar os filtros', async () => {
     await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
 
-    component['termoBusca'].set('curso que não existe');
+    vitrine().termoBusca.set('curso que não existe');
     await sleep(DEBOUNCE_FOLGA_MS);
     await propagate();
     await flushLista([], contadoresHeaders);
@@ -508,7 +511,60 @@ describe('ProcessosComponent', () => {
       .expectOne((r) => r.url === CERTAMES_URL)
       .flush([sisu], { headers: contadoresHeaders });
     await propagate();
-    expect(component['erro']()).toBeNull();
+    expect(vitrine().erro()).toBeNull();
+  });
+
+  it('"Limpar filtros" acionado mantém o foco no botão, que passa a indisponível sem sair da ordem de tab', async () => {
+    await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
+    vitrine().termoBusca.set('tecnico');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+    await flushLista([tecnicoEnfermagem], contadoresHeaders);
+    const limpar = botao('Limpar filtros');
+    limpar?.focus();
+
+    limpar?.click();
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(limpar);
+    expect(limpar?.getAttribute('aria-disabled')).toBe('true');
+    expect(limpar?.disabled).toBe(false);
+    controller
+      .expectOne((r) => r.url === CERTAMES_URL)
+      .flush([sisu], { headers: contadoresHeaders });
+    await propagate();
+  });
+
+  it('"Tentar novamente" com a consulta em curso mantém o foco e não parte outra requisição', async () => {
+    await flushLista([sisu], contadoresHeaders);
+    vitrine().situacaoSelecionada.set('INSCRICOES_ABERTAS');
+    await propagate();
+    controller
+      .expectOne((r) => r.url === CERTAMES_URL)
+      .flush(JSON.stringify({ title: 'Erro', status: 500, code: 'uniplus.infra.erro_interno' }), {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'content-type': 'application/problem+json' },
+      });
+    await propagate();
+    fixture.detectChanges();
+    const tentar = botao('Tentar novamente');
+    tentar?.focus();
+
+    tentar?.click();
+    await propagate();
+    tentar?.click();
+    await propagate();
+
+    expect(document.activeElement).toBe(tentar);
+    expect(tentar?.getAttribute('aria-disabled')).toBe('true');
+    expect(tentar?.getAttribute('aria-busy')).toBe('true');
+    controller
+      .expectOne((r) => r.url === CERTAMES_URL)
+      .flush([sisu], { headers: contadoresHeaders });
+    await propagate();
   });
 
   it('"Tentar novamente" repete a página em que o erro aconteceu, sem voltar à primeira', async () => {
@@ -517,7 +573,7 @@ describe('ProcessosComponent', () => {
       Link: `<${CERTAMES_URL}?cursor=p2&direction=next>; rel="next"`,
     });
 
-    component['proximaPagina']();
+    vitrine().proximaPagina();
     await propagate();
     controller
       .expectOne((r) => r.url === CERTAMES_URL)
@@ -546,7 +602,7 @@ describe('ProcessosComponent', () => {
     expect(repetida.request.params.get('direction')).toBe('next');
     repetida.flush([tecnicoEnfermagem], { headers: contadoresHeaders });
     await propagate();
-    expect(component['erro']()).toBeNull();
+    expect(vitrine().erro()).toBeNull();
   });
 
   it('cursor expirado (410) numa página navegada recarrega do início em silêncio', async () => {
@@ -555,7 +611,7 @@ describe('ProcessosComponent', () => {
       Link: `<${CERTAMES_URL}?cursor=p2&direction=next>; rel="next"`,
     });
 
-    component['proximaPagina']();
+    vitrine().proximaPagina();
     await propagate();
     controller
       .expectOne((r) => r.url === CERTAMES_URL)
@@ -579,7 +635,7 @@ describe('ProcessosComponent', () => {
     expect(recarga.request.params.has('cursor')).toBe(false);
     recarga.flush([sisu], { headers: contadoresHeaders });
     await propagate();
-    expect(component['erro']()).toBeNull();
+    expect(vitrine().erro()).toBeNull();
   });
 
   it('abaixo de 600px o controle de alternância some e a lista é canônica', async () => {
@@ -588,7 +644,6 @@ describe('ProcessosComponent', () => {
     // resolve as duas requests pendentes ao final.
     stubMatchMedia(true);
     const fixtureCompacto = TestBed.createComponent(ProcessosComponent);
-    const componenteCompacto = fixtureCompacto.componentInstance;
     fixtureCompacto.detectChanges();
 
     const requests = controller.match((r) => r.url === CERTAMES_URL);
@@ -597,10 +652,12 @@ describe('ProcessosComponent', () => {
     await propagate();
     fixtureCompacto.detectChanges();
 
-    componenteCompacto['visao'].set('cards');
+    fixtureCompacto.debugElement.injector.get(VisaoDosCertames).escolher('cards');
     fixtureCompacto.detectChanges();
 
-    expect(componenteCompacto['visaoEfetiva']()).toBe('lista');
+    expect(fixtureCompacto.debugElement.injector.get(VisaoDosCertames).visaoEfetiva()).toBe(
+      'lista',
+    );
     const hostCompacto = fixtureCompacto.nativeElement as HTMLElement;
     expect(hostCompacto.querySelector('ui-segmented')).toBeNull();
     expect(hostCompacto.querySelector('.certames-list')).toBeTruthy();
@@ -610,7 +667,7 @@ describe('ProcessosComponent', () => {
   it('lembra a visão escolhida entre visitas (localStorage)', async () => {
     await flushLista([sisu], contadoresHeaders);
 
-    component['setVisao']('cards');
+    visao().escolher('cards');
     fixture.detectChanges();
 
     expect(localStorage.getItem('uniplus.portal.certames-visao')).toBe('cards');
@@ -632,7 +689,7 @@ describe('ProcessosComponent', () => {
       expect(lista).toContain('Abre: 20 out 2026');
       expect(lista).toContain('Encerra: 13 nov 2026');
 
-      component['setVisao']('cards');
+      visao().escolher('cards');
       fixture.detectChanges();
       expect(host().querySelector('.card .edital-row__meta')?.textContent).toContain(
         'Abre: 20 out 2026',

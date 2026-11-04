@@ -1,0 +1,18 @@
+<section class="portal-section" aria-labelledby="portal-como-funciona-title">
+  <div class="portal-section__head">
+    <div>
+      <h2 id="portal-como-funciona-title" class="portal-section__title">Como funciona</h2>
+      <p class="portal-section__desc">Da inscrição até a matrícula, em etapas curtas.</p>
+    </div>
+  </div>
+
+  <ol class="portal-steps" role="list">
+    @for (passo of passos; track passo.numero) {
+      <li class="portal-steps__item card">
+        <span class="portal-steps__number" aria-hidden="true">{{ passo.numero }}</span>
+        <h3 class="portal-steps__title">{{ passo.titulo }}</h3>
+        <p class="portal-steps__desc">{{ passo.descricao }}</p>
+      </li>
+    }
+  </ol>
+</section>
