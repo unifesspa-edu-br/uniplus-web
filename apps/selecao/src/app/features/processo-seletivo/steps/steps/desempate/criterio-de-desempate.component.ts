@@ -16,7 +16,7 @@ import {
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { regrasEscolhiveis, rotuloDaRegraEscolhida } from '../classificacao/regra-escolhivel';
-import { AreasDoDesempateService } from './areas-do-desempate.service';
+import { AreasDoDesempate } from './areas-do-desempate.service';
 import {
   desempateTemShapeConhecido,
   desempateUsaAreas,
@@ -43,7 +43,7 @@ import { OrdemDasAreasComponent, type MovimentoDeArea } from './ordem-das-areas.
 export class CriterioDeDesempateComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
   protected readonly catalogos = inject(CatalogosDeClassificacaoService);
-  protected readonly areas = inject(AreasDoDesempateService);
+  protected readonly areas = inject(AreasDoDesempate);
 
   readonly indice = input.required<number>();
   readonly criterio = input.required<CriterioDesempateConfigurado>();

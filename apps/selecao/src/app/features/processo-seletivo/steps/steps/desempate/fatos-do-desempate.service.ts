@@ -14,7 +14,7 @@ import { fatosParaGatilho } from '../../shared/gatilho-de-exigencia';
  * gravação desfaz.
  */
 @Injectable()
-export class FatosDoDesempateService {
+export class FatosDoDesempate {
   private readonly api = inject(FatosCandidatoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);

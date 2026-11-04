@@ -17,8 +17,8 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import { AreasDoDesempateService } from './areas-do-desempate.service';
-import { EdicaoDosCriteriosService } from './edicao-dos-criterios.service';
+import { AreasDoDesempate } from './areas-do-desempate.service';
+import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
 import { DesempateStepComponent } from './desempate.component';
 
 const BASE = 'http://localhost:5000';
@@ -277,12 +277,12 @@ function textoDaTela(m: Montagem): string {
   return m.el.textContent?.replace(/\s+/g, ' ') ?? '';
 }
 
-function edicaoDosCriterios(m: Montagem): EdicaoDosCriteriosService {
-  return m.fixture.debugElement.injector.get(EdicaoDosCriteriosService);
+function edicaoDosCriterios(m: Montagem): EdicaoDosCriterios {
+  return m.fixture.debugElement.injector.get(EdicaoDosCriterios);
 }
 
-function areasDoDesempate(m: Montagem): AreasDoDesempateService {
-  return m.fixture.debugElement.injector.get(AreasDoDesempateService);
+function areasDoDesempate(m: Montagem): AreasDoDesempate {
+  return m.fixture.debugElement.injector.get(AreasDoDesempate);
 }
 
 describe('DesempateStepComponent — ordem das áreas do ENEM', () => {

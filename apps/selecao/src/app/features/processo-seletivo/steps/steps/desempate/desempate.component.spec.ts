@@ -20,7 +20,7 @@ import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service'
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { DesempateStepComponent } from './desempate.component';
-import { EdicaoDosCriteriosService } from './edicao-dos-criterios.service';
+import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
 import { PASSO_FORMULARIO } from './desempate-por-idade';
 
 const BASE = 'http://localhost:5000';
@@ -91,8 +91,8 @@ function criterio(patch: Partial<CriterioDesempateConfigurado>): CriterioDesempa
 describe('DesempateStepComponent', () => {
   let componente: DesempateStepComponent;
   let fixture: ComponentFixture<DesempateStepComponent>;
-  const edicao = (): EdicaoDosCriteriosService =>
-    fixture.debugElement.injector.get(EdicaoDosCriteriosService);
+  const edicao = (): EdicaoDosCriterios =>
+    fixture.debugElement.injector.get(EdicaoDosCriterios);
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 

@@ -29,7 +29,7 @@ export type ResultadoDaReleitura = 'lida' | 'superada' | 'ainda-por-reler';
  * canônica dá o rótulo das citadas, qualquer que seja a origem do quadro.
  */
 @Injectable()
-export class AreasDoDesempateService {
+export class AreasDoDesempate {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDeClassificacaoService);
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);

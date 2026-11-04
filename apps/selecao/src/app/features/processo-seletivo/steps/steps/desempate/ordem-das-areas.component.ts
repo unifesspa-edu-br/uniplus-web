@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 
 import type { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { AreasDoDesempateService } from './areas-do-desempate.service';
+import { AreasDoDesempate } from './areas-do-desempate.service';
 
 /** Troca de posição de uma área da ordem: `delta` é -1 para subir e 1 para descer. */
 export interface MovimentoDeArea {
@@ -25,7 +25,7 @@ export interface MovimentoDeArea {
 })
 export class OrdemDasAreasComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  private readonly areas = inject(AreasDoDesempateService);
+  private readonly areas = inject(AreasDoDesempate);
 
   readonly indice = input.required<number>();
   readonly criterio = input.required<CriterioDesempateConfigurado>();

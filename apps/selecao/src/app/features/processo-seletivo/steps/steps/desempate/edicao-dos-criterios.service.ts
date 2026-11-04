@@ -5,7 +5,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { lerChaveDaRegra } from '../classificacao/regra-escolhivel';
 import { comAreaAcrescentada, comAreasTrocadas, semAreaNaPosicao } from './areas-do-criterio';
-import { AreasDoDesempateService } from './areas-do-desempate.service';
+import { AreasDoDesempate } from './areas-do-desempate.service';
 
 const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
   regraCodigo: '',
@@ -27,9 +27,9 @@ const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
  * também.
  */
 @Injectable()
-export class EdicaoDosCriteriosService {
+export class EdicaoDosCriterios {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly areas = inject(AreasDoDesempateService);
+  private readonly areas = inject(AreasDoDesempate);
   private readonly injector = inject(Injector);
 
   readonly criterios = computed(() => this.store.draft().desempate);

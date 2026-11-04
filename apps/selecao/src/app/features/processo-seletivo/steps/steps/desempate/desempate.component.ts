@@ -7,9 +7,9 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
-import { AreasDoDesempateService } from './areas-do-desempate.service';
-import { EdicaoDosCriteriosService } from './edicao-dos-criterios.service';
-import { FatosDoDesempateService } from './fatos-do-desempate.service';
+import { AreasDoDesempate } from './areas-do-desempate.service';
+import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
+import { FatosDoDesempate } from './fatos-do-desempate.service';
 import { GravacaoDoDesempate } from './gravacao-do-desempate.service';
 import { CriterioDeDesempateComponent } from './criterio-de-desempate.component';
 import { textoDoCriterio } from '../classificacao/confirmacao-da-classificacao';
@@ -35,9 +35,9 @@ import { mensagensDoDesempate } from './validacao-do-desempate';
   imports: [CriterioDeDesempateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    AreasDoDesempateService,
-    EdicaoDosCriteriosService,
-    FatosDoDesempateService,
+    AreasDoDesempate,
+    EdicaoDosCriterios,
+    FatosDoDesempate,
     GravacaoDoDesempate,
     provePassoDoWizard(DesempateStepComponent),
   ],
@@ -45,8 +45,8 @@ import { mensagensDoDesempate } from './validacao-do-desempate';
 export class DesempateStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
-  protected readonly areas = inject(AreasDoDesempateService);
-  protected readonly fatos = inject(FatosDoDesempateService);
+  protected readonly areas = inject(AreasDoDesempate);
+  protected readonly fatos = inject(FatosDoDesempate);
   private readonly gravacao = inject(GravacaoDoDesempate);
 
   private readonly injector = inject(Injector);
@@ -56,7 +56,7 @@ export class DesempateStepComponent {
     this.fatos.carregar();
   }
 
-  protected readonly edicao = inject(EdicaoDosCriteriosService);
+  protected readonly edicao = inject(EdicaoDosCriterios);
   readonly criterios = this.edicao.criterios;
 
   /**
