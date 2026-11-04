@@ -11,11 +11,11 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { RevisaoStepComponent } from './revisao.component';
 import {
   ATO_PUBLICADO,
+  atoCompleto,
   PROCESSO_DTO_MINIMO,
   ROTA_ATOS,
   ROTA_SNAPSHOT,
   SNAPSHOT_DTO,
-  textoDaTela,
   CONFORMIDADE_LEGAL_VERDE,
   CONFORMIDADE_VERDE,
   ROTA_CONFORMIDADE,
@@ -44,7 +44,16 @@ describe('RevisaoStepComponent — ato e período', () => {
   afterEach(() => controller.verify());
 
   describe('texto do número do ato sem valor', () => {
-    it('na consulta do rascunho, diz "Não informado"', async () => {
+    /** O valor que a consulta mostra ao lado do rótulo, linha a linha. */
+    function valorDaLinha(rotulo: string): string | undefined {
+      const rotulos = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('dt'));
+      return rotulos
+        .find((dt) => dt.textContent?.trim() === rotulo)
+        ?.nextElementSibling?.textContent?.trim();
+    }
+
+    it('na consulta do rascunho, diz "Não informado" no número e o tipo com o código', async () => {
+      store.patchObjectSection('publicacao', { numero: '', ato: atoCompleto() });
       store.remoteSnapshot.set({
         ...PROCESSO_DTO_MINIMO,
         status: StatusProcesso.cancelado,
@@ -53,8 +62,8 @@ describe('RevisaoStepComponent — ato e período', () => {
       await flushPreflightVerde(cenario);
       fixture.detectChanges();
 
-      expect(textoDaTela(cenario)).toContain('Não informado');
-      expect(textoDaTela(cenario)).not.toContain('não informado');
+      expect(valorDaLinha('Número do ato')).toBe('Não informado');
+      expect(valorDaLinha('Tipo de ato')).toBe('Portaria (PORTARIA)');
     });
 
     it('no resumo do ato publicado, diz "não informado" e o tipo pelo nome', async () => {
