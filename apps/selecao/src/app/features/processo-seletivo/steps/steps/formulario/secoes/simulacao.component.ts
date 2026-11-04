@@ -19,7 +19,6 @@ import { LeituraDoProcessoNoFormularioService } from '../servicos/leitura-do-pro
   imports: [RouterLink],
   templateUrl: './simulacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [':host { display: block; }'],
 })
 export class SimulacaoDoFormularioComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

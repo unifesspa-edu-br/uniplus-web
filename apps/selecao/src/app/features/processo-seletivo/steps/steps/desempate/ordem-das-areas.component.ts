@@ -22,7 +22,6 @@ export interface MovimentoDeArea {
   selector: 'sel-ordem-das-areas',
   templateUrl: './ordem-das-areas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [':host { display: block; }'],
 })
 export class OrdemDasAreasComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

@@ -60,7 +60,6 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
   imports: [ValorEmConsultaComponent],
   templateUrl: './peso-por-area.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [':host { display: block; }'],
 })
 export class PesoPorAreaComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

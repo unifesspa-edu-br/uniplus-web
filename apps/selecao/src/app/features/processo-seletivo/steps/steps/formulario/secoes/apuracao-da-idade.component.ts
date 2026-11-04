@@ -16,7 +16,6 @@ import { fatosCitadosPelasExigencias } from '../fatos-coletados-da-inscricao';
   imports: [ValorEmConsultaComponent, DateBrPipe],
   templateUrl: './apuracao-da-idade.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [':host { display: block; }'],
 })
 export class ApuracaoDaIdadeComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

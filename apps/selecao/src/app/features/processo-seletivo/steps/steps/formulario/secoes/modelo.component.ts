@@ -12,7 +12,6 @@ import { AplicacaoDeModeloService } from '../servicos/aplicacao-de-modelo.servic
   selector: 'sel-modelo-do-formulario',
   templateUrl: './modelo.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [':host { display: block; }'],
 })
 export class ModeloDoFormularioComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
