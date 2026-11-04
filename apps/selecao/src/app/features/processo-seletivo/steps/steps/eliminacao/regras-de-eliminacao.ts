@@ -16,6 +16,8 @@ import {
 import type { LeituraDoCadastro } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import {
   eliminacaoUsaAreaEMinimo,
+  eliminacaoUsaEtapa,
+  eliminacaoUsaEtapaENotaMinima,
   eliminacaoUsaSoEtapa,
   exigeResolucaoPesoAreaEnem,
 } from '../classificacao/classificacao-para-comando';
@@ -211,6 +213,10 @@ export function leituraDaRegra(
 ) {
   const etapa = etapas.find((item) => item.id === regra.etapaRef);
   return {
+    usaEtapa: eliminacaoUsaEtapa(regra.regraCodigo),
+    usaEtapaENotaMinima: eliminacaoUsaEtapaENotaMinima(regra.regraCodigo),
+    usaAreaEMinimo: eliminacaoUsaAreaEMinimo(regra.regraCodigo),
+    rotuloDoMinimo: rotuloDoMinimo(regra, quadro),
     regra: rotuloDaRegraEscolhida(
       regrasEscolhiveis(catalogo, regra.regraCodigo, regra.regraVersao),
     ),

@@ -395,7 +395,7 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
       expect(controlesEditaveis(host, '#elim-remover-0, #eliminacao-acrescentar')).toEqual([]);
     });
 
-    it('com o processo publicado, acrescentar, trocar e remover pelo código não mudam o rascunho', async () => {
+    it('com o processo publicado, acrescentar, alterar e remover pelo código não mudam o rascunho', async () => {
       const { fixture, store } = await montar(EliminacaoStepComponent);
       store.patchObjectSection('classificacao', {
         ...CLASSIFICACAO_LOCAL,
@@ -406,7 +406,9 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
       const componente = fixture.componentInstance;
 
       componente.acrescentarRegra();
-      componente.escolherRegra(0, 'ELIM-ZERO-EM-AREA|1.0');
+      store.patchObjectSection('classificacao', {
+        regrasEliminacao: [{ ...regraGravada, regraCodigo: 'ELIM-ZERO-EM-AREA' }],
+      });
       componente.removerRegra(0);
 
       expect(store.draft().classificacao.regrasEliminacao).toEqual([regraGravada]);

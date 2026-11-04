@@ -113,6 +113,37 @@ describe('EliminacaoStepComponent', () => {
 
   afterEach(() => controller.verify());
 
+  /** O que o seletor oferece, pelo valor de cada opção, sem o convite "— escolher —". */
+  function oferecidas(id: string): string[] {
+    fixture.detectChanges();
+    const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+      `#${id}`,
+    );
+    return Array.from(select?.options ?? [])
+      .map((opcao) => opcao.value)
+      .filter((valor) => valor !== '');
+  }
+
+  function escolherNoSeletor(id: string, valor: string): void {
+    fixture.detectChanges();
+    const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+      `#${id}`,
+    );
+    if (select === null) throw new Error(`seletor ${id} ausente`);
+    select.value = valor;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  function digitar(id: string, valor: string): void {
+    fixture.detectChanges();
+    const campo = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(`#${id}`);
+    if (campo === null) throw new Error(`campo ${id} ausente`);
+    campo.value = valor;
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
   function linhaDoCadastro(peso: number) {
     return {
       id: 'g',
@@ -356,15 +387,15 @@ describe('EliminacaoStepComponent', () => {
         regrasEliminacao: [{ ...CORTE, areaCodigo: 'REDACAO', minimo: '400' }, CORTE],
       });
 
-      expect(componente.areasEscolhiveis(1).map((area) => area.codigo)).not.toContain('REDACAO');
-      expect(componente.areasEscolhiveis(0).map((area) => area.codigo)).toContain('REDACAO');
+      expect(oferecidas('elim-area-1')).not.toContain('REDACAO');
+      expect(oferecidas('elim-area-0')).toContain('REDACAO');
     });
 
     it('sugere o corte da área no quadro quando o mínimo está vazio', () => {
       comCadastroLido(450);
       store.patchObjectSection('classificacao', { regrasEliminacao: [CORTE] });
 
-      componente.escolherArea(0, 'REDACAO');
+      escolherNoSeletor('elim-area-0', 'REDACAO');
 
       expect(store.draft().classificacao.regrasEliminacao[0]).toMatchObject({
         areaCodigo: 'REDACAO',
@@ -410,8 +441,8 @@ describe('EliminacaoStepComponent', () => {
       comDuasAreasComCorte();
       store.patchObjectSection('classificacao', { regrasEliminacao: [CORTE] });
 
-      componente.escolherArea(0, 'REDACAO');
-      componente.escolherArea(0, 'MATEMATICA');
+      escolherNoSeletor('elim-area-0', 'REDACAO');
+      escolherNoSeletor('elim-area-0', 'MATEMATICA');
 
       expect(store.draft().classificacao.regrasEliminacao[0]).toMatchObject({
         areaCodigo: 'MATEMATICA',
@@ -423,9 +454,9 @@ describe('EliminacaoStepComponent', () => {
       comDuasAreasComCorte();
       store.patchObjectSection('classificacao', { regrasEliminacao: [CORTE] });
 
-      componente.escolherArea(0, 'REDACAO');
-      componente.alterarMinimo(0, '500');
-      componente.escolherArea(0, 'MATEMATICA');
+      escolherNoSeletor('elim-area-0', 'REDACAO');
+      digitar('elim-minimo-0', '500');
+      escolherNoSeletor('elim-area-0', 'MATEMATICA');
 
       expect(store.draft().classificacao.regrasEliminacao[0].minimo).toBe('500');
     });
@@ -436,7 +467,7 @@ describe('EliminacaoStepComponent', () => {
         regrasEliminacao: [{ ...CORTE, minimo: '380' }],
       });
 
-      componente.escolherArea(0, 'REDACAO');
+      escolherNoSeletor('elim-area-0', 'REDACAO');
 
       expect(store.draft().classificacao.regrasEliminacao[0].minimo).toBe('380');
     });
@@ -529,7 +560,10 @@ describe('EliminacaoStepComponent', () => {
       store.patchObjectSection('classificacao', {
         regrasEliminacao: [{ ...CORTE, areaCodigo: 'REDACAO' }],
       });
-      expect(componente.corteSugerido(componente.regras()[0])).toBe(450);
+      fixture.detectChanges();
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector('#elim-minimo-dica-0')?.textContent,
+      ).toContain('corte 450');
     });
 
     it('com o rascunho fora da média ponderada do ENEM, oferece qualquer área, mesmo com cópia gravada', () => {
@@ -560,7 +594,7 @@ describe('EliminacaoStepComponent', () => {
         regrasEliminacao: [{ ...CORTE, areaCodigo: 'MATEMATICA', minimo: '400' }],
       });
 
-      expect(componente.areasEscolhiveis(0).map((area) => area.codigo)).toContain('MATEMATICA');
+      expect(oferecidas('elim-area-0')).toContain('MATEMATICA');
     });
 
     it('põe a recusa do servidor junto do campo, com aria-invalid, e a tira quando a regra muda', async () => {
@@ -601,7 +635,7 @@ describe('EliminacaoStepComponent', () => {
       expect(raiz.querySelector('#elim-area-erro-0')?.textContent).toContain('já tem um corte');
       expect(raiz.querySelector('#elim-minimo-0')?.getAttribute('aria-invalid')).toBeNull();
 
-      componente.alterarMinimo(0, '410');
+      digitar('elim-minimo-0', '410');
       fixture.detectChanges();
       expect(raiz.querySelector('#elim-area-erro-0')).toBeNull();
     });
@@ -778,17 +812,14 @@ describe('EliminacaoStepComponent', () => {
     it('oferece as etapas com e sem nota, nunca a do ENEM', () => {
       store.patchObjectSection('classificacao', { regrasEliminacao: [AUSENCIA] });
 
-      expect(componente.etapasEscolhiveis(0).map((etapa) => etapa.id)).toEqual([
-        'etapa-1',
-        'etapa-2',
-      ]);
+      expect(oferecidas('elim-etapa-0')).toEqual(['etapa-1', 'etapa-2']);
     });
 
     it('não oferece a etapa que outra regra de ausência já cita, e recusa a repetição', () => {
       store.patchObjectSection('classificacao', {
         regrasEliminacao: [AUSENCIA, { ...AUSENCIA, etapaRef: '' }],
       });
-      expect(componente.etapasEscolhiveis(1).map((etapa) => etapa.id)).toEqual(['etapa-2']);
+      expect(oferecidas('elim-etapa-1')).toEqual(['etapa-2']);
 
       store.patchObjectSection('classificacao', { regrasEliminacao: [AUSENCIA, AUSENCIA] });
       const resultado = componente.validate();
@@ -817,7 +848,7 @@ describe('EliminacaoStepComponent', () => {
       );
       store.patchObjectSection('classificacao', { regrasEliminacao: [AUSENCIA] });
 
-      expect(componente.etapasEscolhiveis(0).map((etapa) => etapa.id)).toEqual(['etapa-1']);
+      expect(oferecidas('elim-etapa-0')).toEqual(['etapa-1']);
       expect(componente.validate().messages?.join(' ')).toContain('etapa de nota do ENEM');
     });
 
@@ -826,7 +857,7 @@ describe('EliminacaoStepComponent', () => {
         regrasEliminacao: [{ ...AUSENCIA, etapaRef: 'etapa-enem' }],
       });
 
-      expect(componente.etapasEscolhiveis(0).map((etapa) => etapa.id)).toContain('etapa-enem');
+      expect(oferecidas('elim-etapa-0')).toContain('etapa-enem');
       expect(componente.validate().messages?.join(' ')).toContain('etapa de nota do ENEM');
     });
 

@@ -32,8 +32,7 @@
     </p>
   } @else {
     <div class="eliminacao-list">
-      @for (regra of regras(); track $index; let indice = $index) {
-        @let leitura = leituraDaRegra(regra);
+      @for (leitura of leituras(); track $index; let indice = $index) {
         <div
           class="step-section"
           role="group"
@@ -46,15 +45,15 @@
               [rotulo]="'Regra de eliminação ' + (indice + 1)"
               [valor]="leitura.regra"
             />
-            @if (usaEtapa(regra)) {
+            @if (leitura.usaEtapa) {
               <ui-valor-em-consulta rotulo="Etapa" [valor]="leitura.etapa" />
             }
-            @if (usaEtapaENotaMinima(regra)) {
+            @if (leitura.usaEtapaENotaMinima) {
               <ui-valor-em-consulta rotulo="Nota mínima" [valor]="leitura.notaMinima" />
             }
-            @if (usaAreaEMinimo(regra)) {
+            @if (leitura.usaAreaEMinimo) {
               <ui-valor-em-consulta rotulo="Área do ENEM" [valor]="leitura.area" />
-              <ui-valor-em-consulta [rotulo]="rotuloDoMinimo(regra)" [valor]="leitura.minimo" />
+              <ui-valor-em-consulta [rotulo]="leitura.rotuloDoMinimo" [valor]="leitura.minimo" />
             }
           </div>
         </div>
@@ -90,168 +89,15 @@
           e uma lista de regras punha uma landmark por item na navegação do leitor de tela.
         -->
         <div
+          selRegraDeEliminacao
           class="step-section"
           role="group"
           [attr.aria-label]="'Regra de eliminação ' + (indice + 1)"
-        >
-          <div class="form-grid form-grid--3">
-            <div class="form-field">
-              <label class="label" [attr.for]="'elim-regra-' + indice">Regra de eliminação</label
-              ><select
-                class="input"
-                [id]="'elim-regra-' + indice"
-                [disabled]="!store.aceitaEdicao()"
-                (change)="escolherRegra(indice, $any($event.target).value)"
-              >
-                <option value="|" [selected]="regra.regraCodigo === ''">— escolher —</option>
-                @for (opcao of regraEscolhivel(regra); track opcao.chave) {
-                  <option [value]="opcao.chave" [selected]="opcao.selecionada">
-                    {{ opcao.rotulo }}
-                  </option>
-                }
-              </select>
-            </div>
-
-            @if (usaEtapa(regra)) {
-              @let recusaDaEtapa = recusaDoCampo(indice, 'etapa');
-              <div class="form-field">
-                <label class="label" [attr.for]="'elim-etapa-' + indice">Etapa</label
-                ><select
-                  class="input"
-                  [id]="'elim-etapa-' + indice"
-                  [disabled]="!store.aceitaEdicao()"
-                  [attr.aria-invalid]="recusaDaEtapa ? 'true' : null"
-                  [attr.aria-describedby]="descritoPor(indice, 'etapa', null)"
-                  (change)="alterarEtapaRef(indice, $any($event.target).value)"
-                >
-                  <option value="" [selected]="regra.etapaRef === ''">— escolher —</option>
-                  @for (etapa of etapasEscolhiveis(indice); track etapa.id) {
-                    <option [value]="etapa.id" [selected]="etapa.id === regra.etapaRef">
-                      {{ etapa.nome || 'Etapa sem nome' }}
-                    </option>
-                  }
-                </select>
-                @if (recusaDaEtapa) {
-                  <p class="field__error" [id]="'elim-etapa-erro-' + indice">{{ recusaDaEtapa }}</p>
-                }
-              </div>
-            }
-            @if (usaEtapaENotaMinima(regra)) {
-              <div class="form-field">
-                <label class="label" [attr.for]="'elim-nota-' + indice">Nota mínima</label
-                ><input
-                  class="input"
-                  [id]="'elim-nota-' + indice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  [value]="regra.notaMinima"
-                  [disabled]="!store.aceitaEdicao()"
-                  (input)="alterarNotaMinima(indice, $any($event.target).value)"
-                />
-              </div>
-            }
-
-            @if (usaAreaEMinimo(regra)) {
-              @let semAreas = quadro().areas === null;
-              @let recusaDaArea = recusaDoCampo(indice, 'area');
-              <div class="form-field">
-                <label class="label" [attr.for]="'elim-area-' + indice">Área do ENEM</label
-                ><select
-                  class="input"
-                  [id]="'elim-area-' + indice"
-                  [disabled]="!store.aceitaEdicao() || (semAreas && regra.areaCodigo === '')"
-                  [attr.aria-invalid]="recusaDaArea ? 'true' : null"
-                  [attr.aria-describedby]="
-                    descritoPor(indice, 'area', semAreas ? 'elim-area-dica-' + indice : null)
-                  "
-                  (change)="escolherArea(indice, $any($event.target).value)"
-                >
-                  <option value="" [selected]="regra.areaCodigo === ''">— escolher —</option>
-                  @for (area of areasEscolhiveis(indice); track area.codigo) {
-                    <option [value]="area.codigo" [selected]="area.codigo === regra.areaCodigo">
-                      {{ area.rotulo }}
-                    </option>
-                  }
-                </select>
-                @if (recusaDaArea) {
-                  <p class="field__error" [id]="'elim-area-erro-' + indice">{{ recusaDaArea }}</p>
-                }
-                @if (semAreas) {
-                  <p class="field__hint" [id]="'elim-area-dica-' + indice">
-                    As áreas vêm do quadro de Peso por Área da resolução escolhida no passo Fórmula,
-                    que ainda não está disponível.
-                  </p>
-                }
-              </div>
-              @let corte = corteSugerido(regra);
-              @let recusaDoMinimo = recusaDoCampo(indice, 'minimo');
-              <div class="form-field">
-                <label class="label" [attr.for]="'elim-minimo-' + indice">{{
-                  rotuloDoMinimo(regra)
-                }}</label
-                ><input
-                  class="input"
-                  [id]="'elim-minimo-' + indice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  [value]="regra.minimo"
-                  [disabled]="!store.aceitaEdicao()"
-                  [attr.aria-invalid]="recusaDoMinimo ? 'true' : null"
-                  [attr.aria-describedby]="
-                    descritoPor(
-                      indice,
-                      'minimo',
-                      corte !== null ? 'elim-minimo-dica-' + indice : null
-                    )
-                  "
-                  (input)="alterarMinimo(indice, $any($event.target).value)"
-                />
-                @if (recusaDoMinimo) {
-                  <p class="field__error" [id]="'elim-minimo-erro-' + indice">
-                    {{ recusaDoMinimo }}
-                  </p>
-                }
-                @if (corte !== null) {
-                  <p class="field__hint" [id]="'elim-minimo-dica-' + indice">
-                    A resolução de Peso por Área dá o corte {{ corte }} para esta área; o valor pode
-                    ser alterado.
-                  </p>
-                }
-              </div>
-            }
-          </div>
-          <!--
-            Ação só-ícone, igual à do critério de desempate: remover uma regra é secundário, e um botão
-            cheio por regra disputava o peso visual com a ação principal do passo. Sem texto visível, o
-            nome acessível diz qual regra o botão remove — dez "Remover" seriam indistinguíveis na
-            lista de elementos do leitor de tela.
-          -->
-          <div class="eliminacao-acoes">
-            <button
-              class="desempate-btn"
-              type="button"
-              [id]="'elim-remover-' + indice"
-              [attr.aria-label]="'Remover regra de eliminação ' + (indice + 1)"
-              [disabled]="!store.aceitaEdicao()"
-              (click)="removerRegra(indice)"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                aria-hidden="true"
-              >
-                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-              </svg>
-            </button>
-          </div>
-        </div>
+          [indice]="indice"
+          [etapas]="etapasReferenciaveis()"
+          [quadro]="quadro()"
+          (remover)="removerRegra(indice)"
+        ></div>
       }
     </div>
 

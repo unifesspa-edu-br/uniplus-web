@@ -6,13 +6,9 @@ import {
   Injector,
   signal,
 } from '@angular/core';
-import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
-import {
-  EtapaPontuada,
-  RegraEliminacaoConfigurada,
-  StepValidation,
-} from '../../processo-seletivo.models';
+import { EtapaPontuada, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -23,30 +19,18 @@ import {} from '../classificacao/edicoes-do-enem';
 import {
   classificacaoUsaFormulaLocal,
   divisorDaMediaValido,
-  eliminacaoUsaAreaEMinimo,
-  eliminacaoUsaEtapa,
-  eliminacaoUsaEtapaENotaMinima,
-  eliminacaoUsaSoEtapa,
   mensagensDeClassificacaoBase,
 } from '../classificacao/classificacao-para-comando';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { declaraNotaDoEnem } from '../cronograma/regras-da-etapa';
-import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
-import { type ColunaDoQuadro } from '../../shared/quadro-de-pesos';
-import { type CampoDaRegra } from './recusas-da-eliminacao';
 import { GravacaoDaClassificacaoService } from '../classificacao/gravacao-da-classificacao.service';
 import { confirmacaoDaClassificacao } from '../classificacao/confirmacao-da-classificacao';
+import { RegraDeEliminacaoComponent } from './regra-de-eliminacao.component';
 import {
   REGRA_ELIMINACAO_VAZIA,
-  areasEscolhiveis,
-  corteSugerido,
-  etapasEscolhiveis,
   leituraDaRegra,
   quadroDoCorte,
   rotuloDaArea,
-  rotuloDoMinimo,
-  trocaDeArea,
-  trocaDeRegra,
   type EtapaReferenciavel,
 } from './regras-de-eliminacao';
 import { mensagensDasRegras } from './validacao-da-eliminacao';
@@ -70,7 +54,7 @@ import {
 @Component({
   selector: 'sel-step-eliminacao',
   standalone: true,
-  imports: [ValorLegivelDirective, ValorEmConsultaComponent],
+  imports: [ValorEmConsultaComponent, RegraDeEliminacaoComponent],
   templateUrl: './eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [GravacaoDaClassificacaoService, provePassoDoWizard(EliminacaoStepComponent)],
@@ -111,7 +95,7 @@ export class EliminacaoStepComponent {
       }));
   });
 
-  readonly regrasDoCatalogo = computed(() => this.catalogos.regrasEliminacao());
+  private readonly regrasDoCatalogo = computed(() => this.catalogos.regrasEliminacao());
 
   /** O quadro dos cortes por área: as áreas oferecidas, os grupos e os rótulos. */
   readonly quadro = computed(() =>
@@ -122,72 +106,12 @@ export class EliminacaoStepComponent {
     ),
   );
 
-  regraEscolhivel(regra: RegraEliminacaoConfigurada) {
-    return regrasEscolhiveis(this.regrasDoCatalogo(), regra.regraCodigo, regra.regraVersao);
-  }
-
-  usaEtapaENotaMinima(regra: RegraEliminacaoConfigurada): boolean {
-    return eliminacaoUsaEtapaENotaMinima(regra.regraCodigo);
-  }
-
-  usaSoEtapa(regra: RegraEliminacaoConfigurada): boolean {
-    return eliminacaoUsaSoEtapa(regra.regraCodigo);
-  }
-
-  usaEtapa(regra: RegraEliminacaoConfigurada): boolean {
-    return eliminacaoUsaEtapa(regra.regraCodigo);
-  }
-
-  usaAreaEMinimo(regra: RegraEliminacaoConfigurada): boolean {
-    return eliminacaoUsaAreaEMinimo(regra.regraCodigo);
-  }
-
-  etapasEscolhiveis(indice: number): readonly EtapaReferenciavel[] {
-    return etapasEscolhiveis(this.regras(), this.etapasReferenciaveis(), indice);
-  }
-
-  areasEscolhiveis(indice: number): readonly ColunaDoQuadro[] {
-    return areasEscolhiveis(this.regras(), this.quadro(), indice);
-  }
-
-  rotuloDaArea(codigo: string): string {
-    return rotuloDaArea(this.quadro(), codigo);
-  }
-
-  leituraDaRegra(regra: RegraEliminacaoConfigurada) {
-    return leituraDaRegra(
-      regra,
-      this.regrasDoCatalogo(),
-      this.etapasReferenciaveis(),
-      this.quadro(),
-    );
-  }
-
-  rotuloDoMinimo(regra: RegraEliminacaoConfigurada): string {
-    return rotuloDoMinimo(regra, this.quadro());
-  }
-
-  corteSugerido(regra: RegraEliminacaoConfigurada): number | null {
-    return corteSugerido(regra, this.quadro());
-  }
-
-  recusaDoCampo(indice: number, campo: CampoDaRegra): string | null {
-    return this.gravacao.recusaDoCampo(indice, campo);
-  }
-
-  /** O `aria-describedby` do campo: a recusa, quando há, e a dica, quando há. */
-  descritoPor(indice: number, campo: CampoDaRegra, dica: string | null): string | null {
-    const ids = [
-      this.recusaDoCampo(indice, campo) === null ? null : `elim-${campo}-erro-${indice}`,
-      dica,
-    ].filter((id): id is string => id !== null);
-    return ids.length > 0 ? ids.join(' ') : null;
-  }
-
-  rotuloDaEtapa(etapaId: string): string {
-    const etapa = this.store.draft().cronograma.etapas.find((item) => item.id === etapaId);
-    return etapa === undefined ? 'Etapa removida do cronograma' : etapa.nome || 'Etapa sem nome';
-  }
+  /** As regras como a consulta as mostra. */
+  protected readonly leituras = computed(() =>
+    this.regras().map((regra) =>
+      leituraDaRegra(regra, this.regrasDoCatalogo(), this.etapasReferenciaveis(), this.quadro()),
+    ),
+  );
 
   /** O divisor da média fica zero sem etapa que componha a nota (item `classificacao_divisor_media_invalido`). */
   readonly divisorInvalido = computed(
@@ -227,35 +151,6 @@ export class EliminacaoStepComponent {
     );
   }
 
-  escolherRegra(indice: number, valor: string): void {
-    this.atualizarRegra(indice, trocaDeRegra(valor));
-  }
-
-  escolherArea(indice: number, areaCodigo: string): void {
-    this.atualizarRegra(indice, trocaDeArea(this.regras()[indice], areaCodigo, this.quadro()));
-  }
-
-  alterarEtapaRef(indice: number, etapaRef: string): void {
-    this.atualizarRegra(indice, { etapaRef });
-  }
-
-  alterarNotaMinima(indice: number, notaMinima: string): void {
-    this.atualizarRegra(indice, { notaMinima });
-  }
-
-  alterarMinimo(indice: number, minimo: string): void {
-    this.atualizarRegra(indice, { minimo });
-  }
-
-  private atualizarRegra(indice: number, patch: Partial<RegraEliminacaoConfigurada>): void {
-    this.gravacao.esquecerRecusasDa(indice);
-    this.store.patchObjectSection('classificacao', {
-      regrasEliminacao: this.regras().map((regra, item) =>
-        item === indice ? { ...regra, ...patch } : regra,
-      ),
-    });
-  }
-
   rotuloDeAvanco(): string {
     return 'Gravar e avançar';
   }
@@ -275,7 +170,7 @@ export class EliminacaoStepComponent {
       criteriosAdiados: this.store.classificacao.desempatePendenteDeGravacao()
         ? this.store.draft().desempate
         : [],
-      rotuloDaArea: (codigo) => this.rotuloDaArea(codigo),
+      rotuloDaArea: (codigo) => rotuloDaArea(this.quadro(), codigo),
     });
   }
 
