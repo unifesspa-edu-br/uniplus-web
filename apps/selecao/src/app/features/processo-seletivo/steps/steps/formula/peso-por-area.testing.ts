@@ -1,3 +1,4 @@
+import { PesoPorAreaComponent } from './peso-por-area.component';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -279,4 +280,11 @@ export const QUADRO_CONGELADO = [
 /** O catálogo que a seção lê, para conferir a leitura do cadastro. */
 export function catalogos(): CatalogosDeClassificacaoService {
   return TestBed.inject(CatalogosDeClassificacaoService);
+}
+
+/** Monta só a seção, como o passo a usa: ele é quem acompanha o cadastro e carrega os catálogos. */
+export async function montarSecao(
+  opcoes: Omit<OpcoesDaMontagem, 'comoSecao'> = {},
+): Promise<MontagemDe<PesoPorAreaComponent>> {
+  return montar(PesoPorAreaComponent, { ...opcoes, comoSecao: true });
 }
