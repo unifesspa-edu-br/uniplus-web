@@ -1,4 +1,8 @@
 /*
+ * A fase fechada: só o cabeçalho, com o que há dentro dela resumido ao lado. Sete fases
+ * fechadas cabem numa tela — que é o que o passo promete ao se chamar linha do tempo.
+ */
+/*
  * Título e ações na mesma linha. Empilhados, as ações de reordenar e remover — secundárias —
  * gastavam uma linha inteira por fase e apareciam com mais peso que o nome da fase.
  */
