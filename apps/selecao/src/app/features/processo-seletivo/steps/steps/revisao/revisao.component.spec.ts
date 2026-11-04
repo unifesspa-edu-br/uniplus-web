@@ -509,4 +509,21 @@ describe('RevisaoStepComponent', () => {
       },
     );
   });
+
+  it('nomeia as seções da conferência como regiões pelo título de cada uma', async () => {
+    await criarProcesso(cenario);
+    await flushPreflightVerde(cenario);
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    for (const [id, titulo] of [
+      ['revisao-estrutural-titulo', 'Checklist estrutural'],
+      ['revisao-legal-titulo', 'Conformidade legal'],
+      ['revisao-documento-titulo', 'Documento e ato de publicação'],
+    ]) {
+      const regiao = raiz.querySelector(`[role="region"][aria-labelledby="${id}"]`);
+      expect(regiao, id).not.toBeNull();
+      expect(regiao?.querySelector(`#${id}`)?.textContent?.trim()).toBe(titulo);
+    }
+  });
 });

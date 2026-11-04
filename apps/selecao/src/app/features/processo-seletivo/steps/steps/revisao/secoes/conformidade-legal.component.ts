@@ -12,7 +12,12 @@ import { ConferenciaDaPublicacaoService } from '../servicos/conferencia-da-publi
   templateUrl: './conformidade-legal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   // O elemento nasce inline; como bloco, a seção mantém a margem de `.step-section`.
-  host: { style: 'display: block' },
+  host: {
+    class: 'step-section',
+    role: 'region',
+    'aria-labelledby': 'revisao-legal-titulo',
+    style: 'display: block',
+  },
 })
 export class ConformidadeLegalComponent {
   protected readonly preflight = inject(PreflightDaPublicacaoService);

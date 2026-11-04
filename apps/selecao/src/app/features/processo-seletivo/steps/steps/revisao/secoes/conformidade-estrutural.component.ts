@@ -11,7 +11,12 @@ import { ConferenciaDaPublicacaoService } from '../servicos/conferencia-da-publi
   templateUrl: './conformidade-estrutural.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   // O elemento nasce inline; como bloco, a seção mantém a margem de `.step-section`.
-  host: { style: 'display: block' },
+  host: {
+    class: 'step-section',
+    role: 'region',
+    'aria-labelledby': 'revisao-estrutural-titulo',
+    style: 'display: block',
+  },
 })
 export class ConformidadeEstruturalComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

@@ -111,10 +111,7 @@
       }
     </section>
 
-    <sel-conformidade-estrutural
-      class="step-section"
-      aria-labelledby="revisao-estrutural-titulo"
-    ></sel-conformidade-estrutural>
+    <sel-conformidade-estrutural></sel-conformidade-estrutural>
 
     <sel-avisos-da-revisao
       [avisos]="conferencia.avisosDaRevisao()"
@@ -122,14 +119,8 @@
       (irParaPasso)="store.goTo($event)"
     />
 
-    <sel-conformidade-legal
-      class="step-section"
-      aria-labelledby="revisao-legal-titulo"
-    ></sel-conformidade-legal>
+    <sel-conformidade-legal></sel-conformidade-legal>
 
-    <sel-ato-da-publicacao
-      class="step-section"
-      aria-labelledby="revisao-documento-titulo"
-    ></sel-ato-da-publicacao>
+    <sel-ato-da-publicacao></sel-ato-da-publicacao>
   }
 }
