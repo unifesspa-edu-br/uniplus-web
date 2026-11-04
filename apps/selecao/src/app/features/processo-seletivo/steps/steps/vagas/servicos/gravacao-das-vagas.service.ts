@@ -43,7 +43,7 @@ interface EtapaDeGravacao {
  * não desfaz a outra, e a mensagem diz qual parte gravou.
  */
 @Injectable()
-export class GravacaoDasVagasService {
+export class GravacaoDasVagas {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly estado = inject(EstadoDoPassoDeVagas);
   private readonly api = inject(ProcessosSeletivosApi);

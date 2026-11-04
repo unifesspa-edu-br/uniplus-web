@@ -28,7 +28,7 @@ import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronogr
 import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { FormularioStepComponent } from './formulario.component';
-import { GravacaoDosFormulariosService } from './servicos/gravacao-dos-formularios.service';
+import { GravacaoDosFormularios } from './servicos/gravacao-dos-formularios.service';
 import { CamposPressupostosDoFormularioService } from './servicos/campos-pressupostos-do-formulario.service';
 import { FasesDosFormulariosService } from './servicos/fases-dos-formularios.service';
 import { RemocaoDoFormularioService } from './servicos/remocao-do-formulario.service';
@@ -533,7 +533,7 @@ describe('FormularioStepComponent', () => {
     expect(resultado.valid).toBe(false);
     expect(
       fixture.debugElement.injector
-        .get(GravacaoDosFormulariosService)
+        .get(GravacaoDosFormularios)
         .recusas()
         .get('INSCRICAO')
         ?.porItem.get('PCD'),

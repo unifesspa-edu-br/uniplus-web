@@ -22,7 +22,7 @@ import {
 } from '../classificacao/classificacao-para-comando';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { declaraNotaDoEnem } from '../cronograma/regras-da-etapa';
-import { GravacaoDaClassificacaoService } from '../classificacao/gravacao-da-classificacao.service';
+import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
 import { confirmacaoDaClassificacao } from '../classificacao/confirmacao-da-classificacao';
 import { RegraDeEliminacaoComponent } from './regra-de-eliminacao.component';
 import {
@@ -56,14 +56,14 @@ import { recusaPorCriterioGravadoSemQuadro } from '../desempate/recusas-do-desem
   imports: [ValorEmConsultaComponent, RegraDeEliminacaoComponent],
   templateUrl: './eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [GravacaoDaClassificacaoService, provePassoDoWizard(EliminacaoStepComponent)],
+  providers: [GravacaoDaClassificacao, provePassoDoWizard(EliminacaoStepComponent)],
 })
 export class EliminacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
-  private readonly gravacao = inject(GravacaoDaClassificacaoService);
+  private readonly gravacao = inject(GravacaoDaClassificacao);
 
   constructor() {
     this.catalogos.carregar();

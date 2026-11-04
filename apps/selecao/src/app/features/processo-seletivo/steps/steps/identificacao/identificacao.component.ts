@@ -23,7 +23,7 @@ import { IdentificadorLegivelComponent } from './identificador-legivel.component
 import { MunicipioDoProcessoComponent } from './municipio-do-processo.component';
 import { BuscaDeMunicipioService } from './servicos/busca-de-municipio.service';
 import { CatalogoDeUnidadesService } from './servicos/catalogo-de-unidades.service';
-import { GravacaoDaIdentificacaoService } from './servicos/gravacao-da-identificacao.service';
+import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
 import { validarIdentificacao } from './validacao-da-identificacao';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 
@@ -55,14 +55,14 @@ export const ORIGENS_CANDIDATOS: readonly {
   providers: [
     CatalogoDeUnidadesService,
     BuscaDeMunicipioService,
-    GravacaoDaIdentificacaoService,
+    GravacaoDaIdentificacao,
     provePassoDoWizard(IdentificacaoStepComponent),
   ],
 })
 export class IdentificacaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   protected readonly unidades = inject(CatalogoDeUnidadesService);
-  protected readonly gravacao = inject(GravacaoDaIdentificacaoService);
+  protected readonly gravacao = inject(GravacaoDaIdentificacao);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly origens = ORIGENS_CANDIDATOS;

@@ -8,7 +8,7 @@ import {
   eliminacaoUsaEtapa,
   eliminacaoUsaEtapaENotaMinima,
 } from '../classificacao/classificacao-para-comando';
-import { GravacaoDaClassificacaoService } from '../classificacao/gravacao-da-classificacao.service';
+import { GravacaoDaClassificacao } from '../classificacao/gravacao-da-classificacao.service';
 import { regrasEscolhiveis } from '../classificacao/regra-escolhivel';
 import type { CampoDaRegra } from './recusas-da-eliminacao';
 import {
@@ -36,7 +36,7 @@ import {
 export class RegraDeEliminacaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDeClassificacaoService);
-  private readonly gravacao = inject(GravacaoDaClassificacaoService);
+  private readonly gravacao = inject(GravacaoDaClassificacao);
 
   /** A posição da regra na lista, que também compõe os ids dos campos. */
   readonly indice = input.required<number>();

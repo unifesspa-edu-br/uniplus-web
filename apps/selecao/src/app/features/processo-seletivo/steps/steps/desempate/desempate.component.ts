@@ -10,7 +10,7 @@ import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { AreasDoDesempateService } from './areas-do-desempate.service';
 import { EdicaoDosCriteriosService } from './edicao-dos-criterios.service';
 import { FatosDoDesempateService } from './fatos-do-desempate.service';
-import { GravacaoDoDesempateService } from './gravacao-do-desempate.service';
+import { GravacaoDoDesempate } from './gravacao-do-desempate.service';
 import { CriterioDeDesempateComponent } from './criterio-de-desempate.component';
 import { textoDoCriterio } from '../classificacao/confirmacao-da-classificacao';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
@@ -38,7 +38,7 @@ import { mensagensDoDesempate } from './validacao-do-desempate';
     AreasDoDesempateService,
     EdicaoDosCriteriosService,
     FatosDoDesempateService,
-    GravacaoDoDesempateService,
+    GravacaoDoDesempate,
     provePassoDoWizard(DesempateStepComponent),
   ],
 })
@@ -47,7 +47,7 @@ export class DesempateStepComponent {
   readonly catalogos = inject(CatalogosDeClassificacaoService);
   protected readonly areas = inject(AreasDoDesempateService);
   protected readonly fatos = inject(FatosDoDesempateService);
-  private readonly gravacao = inject(GravacaoDoDesempateService);
+  private readonly gravacao = inject(GravacaoDoDesempate);
 
   private readonly injector = inject(Injector);
 

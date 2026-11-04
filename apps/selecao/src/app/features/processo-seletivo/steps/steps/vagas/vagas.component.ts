@@ -29,7 +29,7 @@ import { RegraDeAjusteComponent } from './secoes/regra-de-ajuste.component';
 import { TabelaDoQuadroComponent } from './secoes/tabela-do-quadro.component';
 import { ConferenciaDoQuadroService } from './servicos/conferencia-do-quadro.service';
 import { EstadoDoPassoDeVagas } from './servicos/estado-do-passo-de-vagas';
-import { GravacaoDasVagasService } from './servicos/gravacao-das-vagas.service';
+import { GravacaoDasVagas } from './servicos/gravacao-das-vagas.service';
 import { SimulacaoDoQuadroService } from './servicos/simulacao-do-quadro.service';
 import { totalDeVagasInformadas } from './totais-do-quadro';
 
@@ -72,7 +72,7 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
     EstadoDoPassoDeVagas,
     SimulacaoDoQuadroService,
     ConferenciaDoQuadroService,
-    GravacaoDasVagasService,
+    GravacaoDasVagas,
     provePassoDoWizard(VagasStepComponent),
   ],
 })
@@ -82,7 +82,7 @@ export class VagasStepComponent {
   protected readonly estado = inject(EstadoDoPassoDeVagas);
   protected readonly simulacao = inject(SimulacaoDoQuadroService);
   protected readonly conferencia = inject(ConferenciaDoQuadroService);
-  private readonly gravacao = inject(GravacaoDasVagasService);
+  private readonly gravacao = inject(GravacaoDasVagas);
 
   /**
    * A cascata é seção deste passo, não passo próprio: lida por `viewChild` para

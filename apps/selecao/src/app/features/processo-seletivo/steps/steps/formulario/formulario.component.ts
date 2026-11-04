@@ -29,7 +29,7 @@ import { abasDoFormulario } from './abas-do-formulario';
 import { mensagensDoFormulario } from './validacao-do-formulario';
 import { AplicacaoNoServidorService } from './servicos/aplicacao-no-servidor.service';
 import { AplicacaoDeModeloService } from './servicos/aplicacao-de-modelo.service';
-import { GravacaoDosFormulariosService } from './servicos/gravacao-dos-formularios.service';
+import { GravacaoDosFormularios } from './servicos/gravacao-dos-formularios.service';
 import { RemocaoDoFormularioService } from './servicos/remocao-do-formulario.service';
 import { CamposPressupostosDoFormularioService } from './servicos/campos-pressupostos-do-formulario.service';
 import { FasesDosFormulariosService } from './servicos/fases-dos-formularios.service';
@@ -82,7 +82,7 @@ import {
     AplicacaoDeModeloService,
     AplicacaoNoServidorService,
     CatalogosDoFormularioService,
-    GravacaoDosFormulariosService,
+    GravacaoDosFormularios,
     RemocaoDoFormularioService,
     CamposPressupostosDoFormularioService,
     FasesDosFormulariosService,
@@ -101,7 +101,7 @@ export class FormularioStepComponent {
   protected readonly anuncio = signal('');
   protected readonly remocao = inject(RemocaoDoFormularioService);
   protected readonly aplicacao = inject(AplicacaoDeModeloService);
-  private readonly gravacao = inject(GravacaoDosFormulariosService);
+  private readonly gravacao = inject(GravacaoDosFormularios);
   protected readonly fases = inject(FasesDosFormulariosService);
   protected readonly campos = inject(CamposPressupostosDoFormularioService);
   private readonly injector = inject(Injector);

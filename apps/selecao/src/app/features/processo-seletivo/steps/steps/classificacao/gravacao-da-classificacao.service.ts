@@ -43,7 +43,7 @@ import { recusaDaClassificacaoPeloDesempate } from '../desempate/recusas-do-dese
  * antes da hora e derrubaria o item de conformidade que esta gravação levanta.
  */
 @Injectable()
-export class GravacaoDaClassificacaoService {
+export class GravacaoDaClassificacao {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);

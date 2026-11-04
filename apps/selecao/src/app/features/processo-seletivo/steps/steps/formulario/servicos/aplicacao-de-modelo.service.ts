@@ -15,7 +15,7 @@ import {
 } from '../modelo-de-formulario';
 import { nomeDaFinalidade } from '../formularios-por-finalidade';
 import { CatalogosDoFormularioService } from './catalogos-do-formulario.service';
-import { GravacaoDosFormulariosService } from './gravacao-dos-formularios.service';
+import { GravacaoDosFormularios } from './gravacao-dos-formularios.service';
 import {
   AplicacaoNoServidorService,
   type DesfechoDaAplicacao,
@@ -35,7 +35,7 @@ export class AplicacaoDeModeloService {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dados = inject(CatalogosDoFormularioService);
-  private readonly gravacao = inject(GravacaoDosFormulariosService);
+  private readonly gravacao = inject(GravacaoDosFormularios);
 
   /** Os modelos ativos que servem ao tipo do processo, por finalidade. */
   readonly modelos = signal<ReadonlyMap<string, readonly ModeloOferecido[]>>(new Map());

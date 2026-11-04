@@ -51,7 +51,7 @@ export interface FormularioParaGravar {
  * aceita cada uma, e a primeira recusa interrompe a sequência e vai à aba dela.
  */
 @Injectable()
-export class GravacaoDosFormulariosService {
+export class GravacaoDosFormularios {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly leitura = inject(LeituraDoProcessoNoFormularioService);

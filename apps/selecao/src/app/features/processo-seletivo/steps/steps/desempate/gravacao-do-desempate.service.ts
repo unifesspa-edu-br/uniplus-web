@@ -19,7 +19,7 @@ import { recusaAoGravarODesempate } from './recusas-do-desempate';
  * responder: os critérios que o servidor passou a ter e a recusa com o texto da tela.
  */
 @Injectable()
-export class GravacaoDoDesempateService {
+export class GravacaoDoDesempate {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly releitura = inject(ReleituraDoSnapshot);

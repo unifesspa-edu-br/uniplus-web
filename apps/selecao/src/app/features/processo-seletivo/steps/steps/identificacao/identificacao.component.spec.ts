@@ -13,7 +13,7 @@ import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { IdentificacaoStepComponent } from './identificacao.component';
 import { BuscaDeMunicipioService } from './servicos/busca-de-municipio.service';
 import { CatalogoDeUnidadesService } from './servicos/catalogo-de-unidades.service';
-import { GravacaoDaIdentificacaoService } from './servicos/gravacao-da-identificacao.service';
+import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -69,7 +69,7 @@ describe('IdentificacaoStepComponent', () => {
   let componente: IdentificacaoStepComponent;
   let unidades: CatalogoDeUnidadesService;
   let municipio: BuscaDeMunicipioService;
-  let gravacao: GravacaoDaIdentificacaoService;
+  let gravacao: GravacaoDaIdentificacao;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let host: HTMLElement;
@@ -94,7 +94,7 @@ describe('IdentificacaoStepComponent', () => {
     componente = fixture.componentInstance;
     unidades = fixture.debugElement.injector.get(CatalogoDeUnidadesService);
     municipio = fixture.debugElement.injector.get(BuscaDeMunicipioService);
-    gravacao = fixture.debugElement.injector.get(GravacaoDaIdentificacaoService);
+    gravacao = fixture.debugElement.injector.get(GravacaoDaIdentificacao);
     host = fixture.nativeElement as HTMLElement;
     detectar = () => fixture.detectChanges();
     store = TestBed.inject(ProcessoSeletivoStore);

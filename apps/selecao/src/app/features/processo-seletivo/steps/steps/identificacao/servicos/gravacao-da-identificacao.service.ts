@@ -20,7 +20,7 @@ import {
  * declara o identificador legível quando ele mudou.
  */
 @Injectable()
-export class GravacaoDaIdentificacaoService {
+export class GravacaoDaIdentificacao {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
   private readonly problemI18n = inject(ProblemI18nService);
