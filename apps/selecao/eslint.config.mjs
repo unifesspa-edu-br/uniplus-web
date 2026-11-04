@@ -41,6 +41,8 @@ const ROTULOS_DE_NAVEGACAO = 'PASSOS|ROTULOS_DOS_PASSOS|REVIEW_NAMES';
 const SOMENTE_ROTULOS_DE_NAVEGACAO = [
   `ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[id.name!=/^(${ROTULOS_DE_NAVEGACAO})$/]`,
   `ExportNamedDeclaration > ExportSpecifier[local.name!=/^(${ROTULOS_DE_NAVEGACAO})$/]`,
+  `ExportNamedDeclaration > ExportSpecifier[exported.name!=/^(${ROTULOS_DE_NAVEGACAO})$/]`,
+  'ExportNamedDeclaration > :matches(FunctionDeclaration, ClassDeclaration)',
 ].map((selector) => ({
   selector,
   message: 'Este arquivo só exporta rótulos de navegação dos passos.',
