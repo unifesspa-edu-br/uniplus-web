@@ -47,7 +47,7 @@
 583 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.ts
 416 apps/selecao/src/app/features/processo-seletivo/steps/shared/anexo-edital/anexo-edital.component.ts
 430 apps/selecao/src/app/features/processo-seletivo/steps/steps/formulario/formulario.component.html
-619 apps/selecao/src/app/features/processo-seletivo/steps/steps/formulario/formulario.component.ts
+504 apps/selecao/src/app/features/processo-seletivo/steps/steps/formulario/formulario.component.ts
 769 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/publicacao-para-comando.ts
 481 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/revisao.component.html
 834 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/revisao.component.ts

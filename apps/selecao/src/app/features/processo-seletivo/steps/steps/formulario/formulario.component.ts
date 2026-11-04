@@ -17,14 +17,10 @@ import {
   ConfirmDialogComponent,
   EditorDeFormularioComponent,
   FINALIDADE_INSCRICAO,
-  FINALIDADES,
   BLOCO_COMPROVACAO_DOCUMENTAL,
-  OBRIGATORIEDADES,
   ValorEmConsultaComponent,
   conteudoInicial,
   conteudoParaEnvio,
-  entradasDaSecao,
-  etapasEmOrdem,
   semDadosBasicos,
   type ConteudoDoFormulario,
 } from '@uniplus/shared-ui/components';
@@ -32,6 +28,8 @@ import {
 import type { FormularioDaFinalidade, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
+import { abasDoFormulario } from './abas-do-formulario';
+import { mensagensDoFormulario } from './validacao-do-formulario';
 import { AnuncioDoFormularioService } from './servicos/anuncio-do-formulario.service';
 import { AplicacaoDeModeloService } from './servicos/aplicacao-de-modelo.service';
 import { GravacaoDosFormulariosService } from './servicos/gravacao-dos-formularios.service';
@@ -41,7 +39,7 @@ import { LeituraDoProcessoNoFormularioService } from './servicos/leitura-do-proc
 import { ApuracaoDaIdadeComponent } from './secoes/apuracao-da-idade.component';
 import { SimulacaoDoFormularioComponent } from './secoes/simulacao.component';
 import { DocumentosDoFormularioComponent } from './documentos-do-formulario.component';
-import { documentosDoFormulario, fatosParaLerOGatilho } from '../../shared/documentos-exigidos';
+import { fatosParaLerOGatilho } from '../../shared/documentos-exigidos';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { descreverFase } from '../../shared/descricao-da-fase';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
@@ -51,27 +49,20 @@ import {
   quemCitaNoProcesso,
   remocoesTravadasPor,
 } from './citantes-no-processo';
-import { camposSemValoresOfertados, problemasDoFormulario } from './problemas-do-formulario';
+import { camposSemValoresOfertados } from './problemas-do-formulario';
 import { comCamposQueAsExigenciasPressupoem } from './campos-pressupostos-da-inscricao';
-import {
-  fatosColetadosPelaInscricao,
-  fatosForaDaColetaDaInscricao,
-} from './fatos-coletados-da-inscricao';
+import { fatosColetadosPelaInscricao } from './fatos-coletados-da-inscricao';
 import { fatosColetadosPor } from './formulario-do-processo';
-import { textoDaAplicacaoEmAberto } from './modelo-de-formulario';
 import {
   abaPelaTecla,
   comFormulario,
   faseEfetiva,
   faseServeAFinalidade,
   fatosColetadosPelasOutras,
-  fatosDaInscricaoQueOutrasExigem,
-  finalidadeCabeNaCobranca,
   finalidadesParaAcrescentar,
   formulariosDoRascunho,
   nomeDaFinalidade,
   sufixoDaFinalidade,
-  finalidadesQueAtende,
 } from './formularios-por-finalidade';
 
 /**
@@ -254,73 +245,25 @@ export class FormularioStepComponent {
    * outras, os fatos da inscrição são citáveis — o candidato já os respondeu — e nunca coletados de
    * novo.
    */
-  readonly abas = computed(() => {
-    const formularios = this.formularios();
-    const outras = this.store.draft().formulario.outrasFinalidades;
-    const fases = this.fasesDosFormularios();
-    const draft = this.store.draft();
-    const finalidadesDaFase = new Map(
-      this.fasesDoCronograma().map((fase) => [fase.codigo, finalidadesQueAtende(fase)]),
-    );
-    const vocabulario = this.vocabularioDosDocumentos();
-    return formularios.map((formulario) => {
-      const ehInscricao = formulario.finalidade === FINALIDADE_INSCRICAO;
-      const sufixo = sufixoDaFinalidade(formulario.finalidade);
-      const fase = fases.get(formulario.finalidade) ?? { opcoes: [], escolhida: '' };
-      const recusaDaRemocao = this.remocao.recusas().get(formulario.finalidade) ?? null;
-      const recusaDaAplicacao = this.aplicacao.recusas().get(formulario.finalidade) ?? null;
-      return {
-        finalidade: formulario.finalidade,
-        rotulo:
-          FINALIDADES.find((opcao) => opcao.valor === formulario.finalidade)?.rotulo ??
-          formulario.finalidade,
-        nome: nomeDaFinalidade(formulario.finalidade),
-        ehInscricao,
-        aba: `form-aba-${sufixo}`,
-        painel: `form-painel-${sufixo}`,
-        idBase: `form-${sufixo}`,
-        campoDaFase: `form-fase-${sufixo}`,
-        conteudo: formulario.conteudo,
-        fases: fase.opcoes,
-        fase: fase.escolhida,
-        nomeDaFase: fase.opcoes.find((opcao) => opcao.codigo === fase.escolhida)?.nome ?? null,
-        recusas: this.gravacao.recusas().get(formulario.finalidade) ?? null,
-        recusaDaRemocao,
-        recusada:
-          this.gravacao.recusas().has(formulario.finalidade) ||
-          recusaDaRemocao !== null ||
-          recusaDaAplicacao !== null,
-        modelos: this.aplicacao.modelos().get(formulario.finalidade) ?? [],
-        modeloEscolhido: this.aplicacao.escolhidos().get(formulario.finalidade) ?? '',
-        modeloOrigemCodigo: formulario.modeloOrigemCodigo ?? null,
-        recusaDaAplicacao,
-        resumoDaAplicacao: this.aplicacao.resumos().get(formulario.finalidade) ?? null,
-        fatosDaInscricao: ehInscricao ? null : this.fatosDaInscricao(),
-        fatosIndisponiveis: ehInscricao
-          ? fatosForaDaColetaDaInscricao(
-              formulario.conteudo,
-              fatosColetadosPelasOutras(formularios, FINALIDADE_INSCRICAO),
-            )
-          : fatosColetadosPelasOutras(formularios, formulario.finalidade),
-        fatosQueExigemRespostaPorFora: ehInscricao
-          ? fatosDaInscricaoQueOutrasExigem(formulario.conteudo, outras)
-          : [],
-        leitura: leituraDe(formulario.conteudo),
-        temBlocoDocumental: etapasEmOrdem(formulario.conteudo).some(
-          (etapa) => etapa.bloco === BLOCO_COMPROVACAO_DOCUMENTAL,
-        ),
-        documentos: documentosDoFormulario(
-          draft.documentos,
-          fase.escolhida,
-          formulario.finalidade,
-          finalidadesDaFase.get(fase.escolhida) ?? [],
-          vocabulario,
-          this.fasesDoCronograma().map((faseDoCronograma) => faseDoCronograma.codigo),
-        ),
-        semFaseParaDocumentos: fase.escolhida === '',
-      };
-    });
-  });
+  readonly abas = computed(() =>
+    abasDoFormulario({
+      formularios: this.formularios(),
+      fases: this.fasesDosFormularios(),
+      fasesDoCronograma: this.fasesDoCronograma(),
+      documentos: this.store.draft().documentos,
+      vocabulario: this.vocabularioDosDocumentos(),
+      outrasFinalidades: this.store.draft().formulario.outrasFinalidades,
+      fatosDaInscricao: this.fatosDaInscricao(),
+      textos: {
+        recusasDaGravacao: this.gravacao.recusas(),
+        recusasDaRemocao: this.remocao.recusas(),
+        recusasDaAplicacao: this.aplicacao.recusas(),
+        resumosDaAplicacao: this.aplicacao.resumos(),
+        modelos: this.aplicacao.modelos(),
+        modeloEscolhido: this.aplicacao.escolhidos(),
+      },
+    }),
+  );
 
   private abasComNumeroInvalido() {
     return this.abas().filter((aba) => conteudoParaEnvio(semDadosBasicos(aba.conteudo)) === null);
@@ -516,36 +459,16 @@ export class FormularioStepComponent {
   });
 
   validate(): StepValidation {
-    const draft = this.store.draft();
-    const mensagens = [
-      ...this.abas()
-        .filter((aba) => aba.fase === '')
-        .map((aba) => mensagemDaFaseQueFalta(aba.finalidade, aba.fases.length === 0)),
-      ...this.abas()
-        .filter((aba) => !finalidadeCabeNaCobranca(aba.finalidade, draft.pagamento.cobra === true))
-        .map(
-          (aba) =>
-            `O processo não cobra taxa de inscrição, e o formulário de ${aba.nome} só existe quando há cobrança. Remova o formulário, ou volte a cobrar a taxa em "Pagamento".`,
-        ),
-      ...[...this.store.aplicacoesDeModeloEmAberto()].map(([finalidade, emAberto]) =>
-        textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto),
-      ),
-      ...this.abasComNumeroInvalido().map(
-        (aba) =>
-          `O formulário de ${aba.nome} tem campos que não são números: veja os campos marcados na aba dele.`,
-      ),
-      ...problemasDoFormulario(
-        draft.formulario,
-        draft.documentos,
-        new Set(draft.cronograma.fases.map((fase) => fase.codigo)),
-      ),
-      ...this.camposSemValoresOfertados().map(
-        (campo) =>
-          `O formulário pergunta ${campo} ao candidato, e a oferta de atendimento especializado não declara nenhum valor para escolher. Declare ao menos um em "Atend. especial", ou retire o campo daqui.`,
-      ),
-    ];
-
-    return mensagens.length === 0 ? { valid: true } : { valid: false, messages: [...mensagens] };
+    const mensagens = mensagensDoFormulario({
+      abas: this.abas().map((aba) => ({
+        ...aba,
+        numeroInvalido: conteudoParaEnvio(semDadosBasicos(aba.conteudo)) === null,
+      })),
+      draft: this.store.draft(),
+      aplicacoesEmAberto: this.store.aplicacoesDeModeloEmAberto(),
+      camposSemValoresOfertados: this.camposSemValoresOfertados(),
+    });
+    return mensagens.length === 0 ? { valid: true } : { valid: false, messages: mensagens };
   }
 
   rotuloDeAvanco(): string {
@@ -578,42 +501,4 @@ export class FormularioStepComponent {
       (finalidade) => this.selecionarAba(finalidade),
     );
   }
-}
-
-/** O formulário como texto, para o processo em consulta: cada etapa com os campos e os grupos dela, e se a resposta é obrigatória. */
-function leituraDe(conteudo: ConteudoDoFormulario) {
-  const obrigatoriedadeDe = (obrigatoriedade: string | null): string =>
-    (
-      OBRIGATORIEDADES.find((opcao) => opcao.valor === obrigatoriedade)?.rotulo ?? 'Opcional'
-    ).toLocaleLowerCase('pt-BR');
-  return etapasEmOrdem(conteudo).map((etapa) => ({
-    codigo: etapa.codigo,
-    bloco: etapa.bloco,
-    titulo: etapa.titulo,
-    entradas: entradasDaSecao(conteudo, etapa.codigo).map((entrada) =>
-      entrada.tipo === 'item'
-        ? {
-            chave: entrada.item.fatoCodigo,
-            rotulo: entrada.item.rotulo,
-            obrigatoriedade: obrigatoriedadeDe(entrada.item.obrigatoriedade),
-          }
-        : {
-            chave: entrada.grupo.codigo,
-            rotulo: entrada.grupo.rotulo,
-            obrigatoriedade: `repetível, ${obrigatoriedadeDe(entrada.grupo.obrigatoriedade)}`,
-          },
-    ),
-  }));
-}
-
-/** Por que o formulário não tem fase: o cronograma não tem a que serve, ou o operador ainda não escolheu entre as que servem. */
-function mensagemDaFaseQueFalta(finalidade: string, semFaseQueServe: boolean): string {
-  if (finalidade === FINALIDADE_INSCRICAO) {
-    return semFaseQueServe
-      ? 'O cronograma não tem fase em que a inscrição é respondida. Acrescente a fase de inscrição no passo Cronograma.'
-      : 'Escolha em que fase do cronograma a inscrição é respondida.';
-  }
-  return semFaseQueServe
-    ? `O cronograma não tem fase em que o formulário de ${nomeDaFinalidade(finalidade)} é respondido. Acrescente a fase no passo Cronograma, ou remova o formulário.`
-    : `Escolha em que fase do cronograma o formulário de ${nomeDaFinalidade(finalidade)} é respondido.`;
 }
