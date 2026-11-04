@@ -30,7 +30,6 @@ export function mensagensDePublicacao(
   fasePorId: ReadonlyMap<string, FaseCanonicaDto> = SEM_CATALOGO,
 ): string[] {
   const mensagens: string[] = [];
-  const publicacao = draft.publicacao;
 
   if (documentoEditalId === null) {
     mensagens.push(
@@ -39,38 +38,44 @@ export function mensagensDePublicacao(
   }
 
   if (!temFaseDeColetaInscricao(draft, fasePorId)) {
-    const inicio = instanteDoCampo(publicacao.periodoInscricaoInicio);
-    const fim = instanteDoCampo(publicacao.periodoInscricaoFim);
-
-    if (inicio === null) {
-      mensagens.push(
-        'Informe o início do período de inscrição — o cronograma não tem fase que colete inscrição pelo sistema.',
-      );
-    }
-    if (fim === null) {
-      mensagens.push(
-        'Informe o fim do período de inscrição — o cronograma não tem fase que colete inscrição pelo sistema.',
-      );
-    }
-    if (inicio !== null && fim !== null && fim < inicio) {
-      mensagens.push('O fim do período de inscrição não pode anteceder o início.');
-    }
+    mensagens.push(...mensagensDoPeriodoDeInscricao(draft.publicacao));
   }
+  mensagens.push(...mensagensDosCamposDoAto(draft.publicacao.ato));
+  mensagens.push(...excessosDeComprimento(draft.publicacao));
+  mensagens.push(...mensagensDosAnexos(draft.publicacao.anexos));
 
-  if (!publicacao.ato.orgao.trim()) mensagens.push('Informe o órgão do ato de publicação.');
-  if (!publicacao.ato.serie.trim()) mensagens.push('Informe a série do ato de publicação.');
+  return mensagens;
+}
+
+/** O período digitado, que só vale quando o cronograma não tem fase que colete inscrição. */
+function mensagensDoPeriodoDeInscricao(publicacao: WizardDraft['publicacao']): string[] {
+  const inicio = instanteDoCampo(publicacao.periodoInscricaoInicio);
+  const fim = instanteDoCampo(publicacao.periodoInscricaoFim);
+  const semFaseDeColeta = 'o cronograma não tem fase que colete inscrição pelo sistema.';
+  const mensagens: string[] = [];
+
+  if (inicio === null)
+    mensagens.push(`Informe o início do período de inscrição — ${semFaseDeColeta}`);
+  if (fim === null) mensagens.push(`Informe o fim do período de inscrição — ${semFaseDeColeta}`);
+  if (inicio !== null && fim !== null && fim < inicio) {
+    mensagens.push('O fim do período de inscrição não pode anteceder o início.');
+  }
+  return mensagens;
+}
+
+/** Os campos do ato em branco, na ordem em que o formulário os apresenta. */
+function mensagensDosCamposDoAto(ato: WizardDraft['publicacao']['ato']): string[] {
+  const mensagens: string[] = [];
+  if (!ato.orgao.trim()) mensagens.push('Informe o órgão do ato de publicação.');
+  if (!ato.serie.trim()) mensagens.push('Informe a série do ato de publicação.');
 
   // `0` atravessa `inteiro()` como número válido e só o servidor o recusaria, depois da confirmação.
-  const ano = inteiro(publicacao.ato.ano);
+  const ano = inteiro(ato.ano);
   if (ano === null || ano <= 0) mensagens.push('Informe o ano do ato de publicação.');
 
-  if (!publicacao.ato.dataPublicacao.trim()) mensagens.push('Informe a data de publicação do ato.');
-  if (!publicacao.ato.assinante.trim()) mensagens.push('Informe quem assina o ato.');
-  if (!publicacao.ato.tipoAtoCodigo.trim()) mensagens.push('Selecione o tipo do ato.');
-
-  mensagens.push(...excessosDeComprimento(publicacao));
-  mensagens.push(...mensagensDosAnexos(publicacao.anexos));
-
+  if (!ato.dataPublicacao.trim()) mensagens.push('Informe a data de publicação do ato.');
+  if (!ato.assinante.trim()) mensagens.push('Informe quem assina o ato.');
+  if (!ato.tipoAtoCodigo.trim()) mensagens.push('Selecione o tipo do ato.');
   return mensagens;
 }
 
