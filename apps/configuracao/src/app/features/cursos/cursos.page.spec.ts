@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { CursosPage } from './cursos.page';
 import { CursosStore } from './cursos.store';
-import { FormularioDoCurso } from './formulario-do-curso';
+import { EdicaoDosCursos } from './edicao-dos-cursos';
 import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 
 const BASE = 'http://localhost:5000';
@@ -66,7 +66,7 @@ const ofertaSeed: OfertaCursoDto = {
 describe('CursosPage', () => {
   let fixture: ComponentFixture<CursosPage>;
   let store: CursosStore;
-  let formulario: FormularioDoCurso;
+  let edicao: EdicaoDosCursos;
   let ofertasDoCurso: OfertasDoCursoStore;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
@@ -83,7 +83,7 @@ describe('CursosPage', () => {
     });
     fixture = TestBed.createComponent(CursosPage);
     store = fixture.debugElement.injector.get(CursosStore);
-    formulario = fixture.debugElement.injector.get(FormularioDoCurso);
+    edicao = fixture.debugElement.injector.get(EdicaoDosCursos);
     ofertasDoCurso = fixture.debugElement.injector.get(OfertasDoCursoStore);
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
@@ -130,18 +130,18 @@ describe('CursosPage', () => {
   it('CA-02: cria curso com código único, nome, grau e nível válidos', async () => {
     await flushLista([]);
 
-    formulario.abrirCadastro();
+    edicao.abrirCadastro();
     responderGrupos();
-    formulario.form.setValue({
+    edicao.form.setValue({
       codigo: 'ADM',
       nome: 'Administração',
       grau: 'Bacharelado',
       nivelEnsino: 'Graduação',
       grupoAreaEnem: '',
     });
-    const key = formulario['chaveDeIdempotencia']();
+    const key = edicao['chaveDeIdempotencia']();
 
-    formulario.salvar();
+    edicao.salvar();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/cursos`);
     expect(post.request.method).toBe('POST');
@@ -157,21 +157,21 @@ describe('CursosPage', () => {
     await propagate();
 
     await flushLista([cursoSeed]);
-    expect(formulario.aberto()).toBe(false);
+    expect(edicao.aberto()).toBe(false);
   });
 
   it('CA-02: cria curso sem grupo de área do ENEM (campo opcional)', async () => {
     await flushLista([]);
-    formulario.abrirCadastro();
+    edicao.abrirCadastro();
     responderGrupos();
-    formulario.form.setValue({
+    edicao.form.setValue({
       codigo: 'HIST',
       nome: 'História',
       grau: 'Licenciatura',
       nivelEnsino: 'Graduação',
       grupoAreaEnem: '',
     });
-    formulario.salvar();
+    edicao.salvar();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/cursos`);
     expect(post.request.body.grupoAreaEnem).toBeNull();
@@ -182,7 +182,7 @@ describe('CursosPage', () => {
 
   it('bloqueia salvar com campos obrigatórios vazios', async () => {
     await flushLista([]);
-    formulario.abrirCadastro();
+    edicao.abrirCadastro();
     responderGrupos();
     fixture.detectChanges();
 
@@ -191,23 +191,23 @@ describe('CursosPage', () => {
     ) as HTMLButtonElement;
     expect(submit.disabled).toBe(false);
 
-    formulario.salvar();
+    edicao.salvar();
 
     controller.expectNone(`${BASE}/api/configuracao/admin/cursos`);
   });
 
   it('CA-03: código duplicado (409) é mapeado ao campo Código sem fechar o drawer', async () => {
     await flushLista([]);
-    formulario.abrirCadastro();
+    edicao.abrirCadastro();
     responderGrupos();
-    formulario.form.setValue({
+    edicao.form.setValue({
       codigo: 'ENG-CIV',
       nome: 'Engenharia Civil (duplicado)',
       grau: 'Bacharelado',
       nivelEnsino: 'Graduação',
       grupoAreaEnem: '',
     });
-    formulario.salvar();
+    edicao.salvar();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/cursos`);
     post.flush(
@@ -226,17 +226,17 @@ describe('CursosPage', () => {
     );
     await propagate();
 
-    expect(formulario.aberto()).toBe(true);
-    expect(formulario.form.controls.codigo.errors?.['backend']).toBeTruthy();
+    expect(edicao.aberto()).toBe(true);
+    expect(edicao.form.controls.codigo.errors?.['backend']).toBeTruthy();
   });
 
   it('CA-08/CA2: remoção bloqueada (409) fecha o confirm e abre o drawer de Ofertas com o preview do bloqueio', async () => {
     await flushLista([cursoSeed]);
-    store.pedirRemocao(cursoSeed);
-    store.removerConfirmado();
+    edicao.pedirRemocao(cursoSeed);
+    edicao.removerConfirmado();
     // Reproduz o fechamento síncrono que o `ui-confirm-dialog` real faz ao
     // emitir `confirmed` — antes desta resposta HTTP assíncrona chegar.
-    store.confirmando.set(false);
+    edicao.confirmando.set(false);
 
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/cursos/${cursoSeed.id}`);
     req.flush(
@@ -257,7 +257,7 @@ describe('CursosPage', () => {
 
     // O confirm não reabre; abre o drawer de Ofertas com a mensagem que a API
     // devolveu (sem acoplar a UI ao vendor code — ramifica por status 409).
-    expect(store.confirmando()).toBe(false);
+    expect(edicao.confirmando()).toBe(false);
     expect(ofertasDoCurso.aberto()).toBe(true);
     expect(ofertasDoCurso.bloqueio()).toBe(
       'Não é possível remover um curso referenciado por uma oferta de curso ativa',
@@ -360,15 +360,15 @@ describe('CursosPage', () => {
 
   it('remove um curso sem oferta viva após confirmação', async () => {
     await flushLista([cursoSeed]);
-    store.pedirRemocao(cursoSeed);
-    store.removerConfirmado();
+    edicao.pedirRemocao(cursoSeed);
+    edicao.removerConfirmado();
 
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/cursos/${cursoSeed.id}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([]);
-    expect(store.confirmando()).toBe(false);
+    expect(edicao.confirmando()).toBe(false);
   });
 
   it('trocar itens por página recarrega a primeira página com o novo limit', async () => {
@@ -626,7 +626,7 @@ describe('CursosPage', () => {
     await flushLista([cursoSeed]);
     responderGrupos();
 
-    formulario.abrirCadastro();
+    edicao.abrirCadastro();
     controller.expectNone(GRUPOS_URL);
   });
 
@@ -701,7 +701,7 @@ describe('CursosPage', () => {
       await flushLista([cursoSeed]);
       expect(erroSpy).not.toHaveBeenCalled();
 
-      formulario.abrirCadastro();
+      edicao.abrirCadastro();
       falha503();
       fixture.detectChanges();
       await propagate();
@@ -715,11 +715,11 @@ describe('CursosPage', () => {
     it('grupo do curso sem código e sem rótulo não gera opção vazia', async () => {
       const semGrupo = { ...cursoSeed, grupoAreaEnem: { codigo: ' ', rotulo: ' ' } };
       await flushLista([semGrupo]);
-      formulario.abrirEdicao(semGrupo);
+      edicao.abrirEdicao(semGrupo);
       controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
       fixture.detectChanges();
 
-      expect(formulario.grupoForaDasOpcoes()).toBeNull();
+      expect(edicao.grupos().foraDasOpcoes).toBeNull();
       expect(opcoes()).toEqual(['', ...GRUPOS.map((g) => g.codigo)]);
     });
 
@@ -729,17 +729,17 @@ describe('CursosPage', () => {
         grupoAreaEnem: { codigo: ' TECNOLOGICA ', rotulo: 'Tecnológica' },
       };
       await flushLista([comEspacos]);
-      formulario.abrirEdicao(comEspacos);
+      edicao.abrirEdicao(comEspacos);
       controller
         .expectOne(GRUPOS_URL)
         .flush([{ codigo: ' TECNOLOGICA ', rotulo: 'Tecnológica' }, ...GRUPOS.slice(1)]);
       fixture.detectChanges();
 
       expect(opcoes()).toEqual(['', ...GRUPOS.map((g) => g.codigo)]);
-      expect(formulario.grupoForaDasOpcoes()).toBeNull();
-      expect(formulario.form.controls.grupoAreaEnem.value).toBe('TECNOLOGICA');
+      expect(edicao.grupos().foraDasOpcoes).toBeNull();
+      expect(edicao.form.controls.grupoAreaEnem.value).toBe('TECNOLOGICA');
 
-      formulario.salvar();
+      edicao.salvar();
       const put = controller.expectOne((r) => r.method === 'PUT');
       expect(put.request.body.grupoAreaEnem).toBe('TECNOLOGICA');
       put.flush(null, { status: 204, statusText: 'No Content' });
@@ -770,7 +770,7 @@ describe('CursosPage', () => {
         { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
       ]);
       // A lista já chegou: abrir o formulário não a pede de novo.
-      formulario.abrirCadastro();
+      edicao.abrirCadastro();
       fixture.detectChanges();
 
       expect(opcoesDoSelect()).toEqual([
@@ -786,7 +786,7 @@ describe('CursosPage', () => {
         { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
         { codigo: 'OUTRO', rotulo: ' ' },
       ]);
-      formulario.abrirCadastro();
+      edicao.abrirCadastro();
       fixture.detectChanges();
 
       expect(opcoesDoSelect()).toContainEqual({ value: 'OUTRO', texto: 'OUTRO' });
@@ -826,7 +826,7 @@ describe('CursosPage', () => {
       await flushLista([
         { ...cursoSeed, grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Rótulo do registro' } },
       ]);
-      formulario.abrirCadastro();
+      edicao.abrirCadastro();
       fixture.detectChanges();
 
       const naTabela = (fixture.nativeElement as HTMLElement)
@@ -872,9 +872,9 @@ describe('CursosPage', () => {
 
     it('CA-02: o grupo escolhido no select é enviado pelo código', async () => {
       await flushLista([]);
-      formulario.abrirCadastro();
+      edicao.abrirCadastro();
       controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
-      formulario.form.patchValue({
+      edicao.form.patchValue({
         codigo: 'DIR',
         nome: 'Direito',
         grau: 'Bacharelado',
@@ -888,7 +888,7 @@ describe('CursosPage', () => {
       );
       select.value = humanistica?.value ?? '';
       select.dispatchEvent(new Event('change'));
-      formulario.salvar();
+      edicao.salvar();
 
       const post = controller.expectOne(`${BASE}/api/configuracao/admin/cursos`);
       expect(post.request.body.grupoAreaEnem).toBe('HUMANISTICA_I');
@@ -899,15 +899,15 @@ describe('CursosPage', () => {
 
     it('CA-02: editar um curso seleciona o grupo dele pelo código e o reenvia pelo código', async () => {
       await flushLista([cursoSeed]);
-      formulario.abrirEdicao(cursoSeed);
+      edicao.abrirEdicao(cursoSeed);
       controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
       fixture.detectChanges();
 
-      expect(formulario.form.controls.grupoAreaEnem.value).toBe('TECNOLOGICA');
+      expect(edicao.form.controls.grupoAreaEnem.value).toBe('TECNOLOGICA');
       const select = selectDoGrupo();
       expect(select.options[select.selectedIndex]?.textContent?.trim()).toBe('Tecnológica');
 
-      formulario.salvar();
+      edicao.salvar();
       const put = controller.expectOne(`${BASE}/api/configuracao/admin/cursos/${cursoSeed.id}`);
       expect(put.request.method).toBe('PUT');
       expect(put.request.body.grupoAreaEnem).toBe('TECNOLOGICA');
@@ -918,16 +918,16 @@ describe('CursosPage', () => {
 
     it('CA-03: grupo recusado pela API aparece no campo do grupo, com a mensagem dela', async () => {
       await flushLista([]);
-      formulario.abrirCadastro();
+      edicao.abrirCadastro();
       responderGrupos();
-      formulario.form.setValue({
+      edicao.form.setValue({
         codigo: 'DIR',
         nome: 'Direito',
         grau: 'Bacharelado',
         nivelEnsino: 'Graduação',
         grupoAreaEnem: 'TECNOLOGICA',
       });
-      formulario.salvar();
+      edicao.salvar();
 
       controller.expectOne(`${BASE}/api/configuracao/admin/cursos`).flush(
         JSON.stringify({
@@ -962,14 +962,14 @@ describe('CursosPage', () => {
       const erro = campo.querySelector('.field__error');
       expect(erro?.getAttribute('role')).toBe('alert');
       expect(selectDoGrupo().getAttribute('aria-describedby')?.split(' ')).toContain(erro?.id);
-      expect(formulario.erro()).toBeNull();
+      expect(edicao.erro()).toBeNull();
     });
   });
 });
 
 describe('CursosPage — lista de grupos de área do ENEM que não chega', () => {
   let fixture: ComponentFixture<CursosPage>;
-  let formulario: FormularioDoCurso;
+  let edicao: EdicaoDosCursos;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
 
@@ -992,7 +992,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
       ],
     });
     fixture = TestBed.createComponent(CursosPage);
-    formulario = fixture.debugElement.injector.get(FormularioDoCurso);
+    edicao = fixture.debugElement.injector.get(EdicaoDosCursos);
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
@@ -1004,7 +1004,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   afterEach(() => controller.verify());
 
   it('a edição mostra o grupo do curso pelo rótulo da API, e o alerta oferece tentar de novo', () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     // A lista de grupos, pedida ao abrir o formulário, não chega.
     indisponivel();
     fixture.detectChanges();
@@ -1035,7 +1035,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('tentar de novo mantém o foco no formulário: o alerta fica até a tentativa terminar e o foco vai ao select', async () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     indisponivel();
     fixture.detectChanges();
     // O drawer leva o foco ao botão de fechar logo depois de abrir: deixa isso acontecer antes.
@@ -1069,7 +1069,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('nova tentativa que falha de novo mantém o alerta e o foco no botão', async () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     indisponivel();
     fixture.detectChanges();
     await Promise.resolve();
@@ -1090,7 +1090,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('nova falha pedida pelo operador é anunciada de novo, com o texto pontuado que descreve o select', async () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     indisponivel();
     fixture.detectChanges();
 
@@ -1107,7 +1107,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('recusa sem título mostra só o texto padrão, sem ponto solto no início', () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     controller.expectOne(GRUPOS_URL).flush(
       {
         type: 'about:blank',
@@ -1132,7 +1132,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('curso cru com o grupo sem rótulo, com a lista em falha: a opção do grupo mostra o código', () => {
-    formulario.abrirEdicao({ ...cursoSeed, grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: '' } });
+    edicao.abrirEdicao({ ...cursoSeed, grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: '' } });
     indisponivel();
     fixture.detectChanges();
 
@@ -1144,7 +1144,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('motivo só com espaços cai no texto padrão', () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     controller.expectOne(GRUPOS_URL).flush(
       {
         type: 'about:blank',
@@ -1169,7 +1169,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('lista vazia é falha de carga: alerta com tentar de novo, como na recusa', () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     controller.expectOne(GRUPOS_URL).flush([]);
     fixture.detectChanges();
 
@@ -1179,7 +1179,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('o select do grupo é descrito pelo alerta de falha enquanto a lista não chega', () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     indisponivel();
     fixture.detectChanges();
 
@@ -1197,7 +1197,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('recarga em segundo plano que dá certo não mexe no foco', async () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     indisponivel();
     fixture.detectChanges();
     await Promise.resolve();
@@ -1219,7 +1219,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('clique que não levou o foco ao botão não move o foco quando a lista chega', async () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     indisponivel();
     fixture.detectChanges();
     await Promise.resolve();
@@ -1240,7 +1240,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('foco levado para fora do botão durante a espera não é movido quando a lista chega', async () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     indisponivel();
     fixture.detectChanges();
     await Promise.resolve();
@@ -1263,7 +1263,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
   });
 
   it('com a lista em falha, dá para trocar para "Não classificado" e voltar ao grupo original do curso', () => {
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     indisponivel();
     fixture.detectChanges();
 
@@ -1282,7 +1282,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     select.value = 'TECNOLOGICA';
     select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
-    expect(formulario.form.controls.grupoAreaEnem.value).toBe('TECNOLOGICA');
+    expect(edicao.form.controls.grupoAreaEnem.value).toBe('TECNOLOGICA');
     expect(select.options[select.selectedIndex]?.textContent?.trim()).toBe('Tecnológica');
   });
 
@@ -1292,7 +1292,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     catalogo.garantirCarregado();
     controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
 
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     catalogo.recarregar();
     indisponivel();
     fixture.detectChanges();
@@ -1308,7 +1308,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
 
   it('falha de servidor dos grupos mostra o motivo no alerta e avisa com o traceId', () => {
     const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     controller.expectOne(GRUPOS_URL).flush(
       JSON.stringify({
         title: 'Serviço indisponível',
@@ -1335,7 +1335,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
 
   it('grupos recusados por permissão mostram o motivo sem aviso de servidor', () => {
     const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
-    formulario.abrirEdicao(cursoSeed);
+    edicao.abrirEdicao(cursoSeed);
     const semPermissao = {
       title: 'Acesso negado',
       status: 403,

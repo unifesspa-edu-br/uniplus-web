@@ -9,7 +9,7 @@ import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CampiPage } from './campi.page';
 import { CampiStore } from './campi.store';
-import { FormularioDoCampus } from './formulario-do-campus';
+import { EdicaoDosCampi } from './edicao-dos-campi';
 import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
 
 const BASE = 'http://localhost:5000';
@@ -41,7 +41,7 @@ const enderecoResolvido: EnderecoEstruturado = {
 describe('CampiPage', () => {
   let fixture: ComponentFixture<CampiPage>;
   let store: CampiStore;
-  let formulario: FormularioDoCampus;
+  let edicao: EdicaoDosCampi;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
 
@@ -58,7 +58,7 @@ describe('CampiPage', () => {
     });
     fixture = TestBed.createComponent(CampiPage);
     store = fixture.debugElement.injector.get(CampiStore);
-    formulario = fixture.debugElement.injector.get(FormularioDoCampus);
+    edicao = fixture.debugElement.injector.get(EdicaoDosCampi);
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
@@ -89,16 +89,16 @@ describe('CampiPage', () => {
   it('CA-04: cria campus com cidade + endereço aninhado e recarrega a lista', async () => {
     await flushLista([]);
 
-    formulario.abrirCadastro();
-    formulario.form.setValue({
+    edicao.abrirCadastro();
+    edicao.form.setValue({
       sigla: 'PARAUAPEBAS',
       nome: 'Campus de Parauapebas',
       codigoEmec: '67890',
       endereco: enderecoResolvido,
     });
-    const key = formulario['chaveDeIdempotencia']();
+    const key = edicao['chaveDeIdempotencia']();
 
-    formulario.salvar();
+    edicao.salvar();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/campi`);
     expect(post.request.method).toBe('POST');
@@ -114,23 +114,23 @@ describe('CampiPage', () => {
     await propagate();
 
     await flushLista([campusSeed]); // refetch pós-mutação
-    expect(formulario.aberto()).toBe(false);
+    expect(edicao.aberto()).toBe(false);
   });
 
   it('envia null nos campos obrigatórios preenchidos só com espaços', async () => {
     await flushLista([]);
 
-    formulario.abrirCadastro();
+    edicao.abrirCadastro();
     // `Validators.required` aceita espaços em branco: sem normalizar, o payload
     // levaria '' e o backend responderia sobre formato, não sobre ausência.
-    formulario.form.setValue({
+    edicao.form.setValue({
       sigla: '   ',
       nome: '  ',
       codigoEmec: '',
       endereco: enderecoResolvido,
     });
 
-    formulario.salvar();
+    edicao.salvar();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/campi`);
     expect(post.request.body).toMatchObject({
@@ -145,8 +145,8 @@ describe('CampiPage', () => {
 
   it('bloqueia salvar sem cidade e sinaliza erro no endereço', async () => {
     await flushLista([]);
-    formulario.abrirCadastro();
-    formulario.form.patchValue({ sigla: 'X', nome: 'Sem cidade', endereco: null });
+    edicao.abrirCadastro();
+    edicao.form.patchValue({ sigla: 'X', nome: 'Sem cidade', endereco: null });
     fixture.detectChanges();
 
     // O submit não fica desabilitado por form inválido — senão o usuário não
@@ -156,16 +156,16 @@ describe('CampiPage', () => {
     ) as HTMLButtonElement;
     expect(submit.disabled).toBe(false);
 
-    formulario.salvar();
+    edicao.salvar();
 
     controller.expectNone(`${BASE}/api/configuracao/admin/campi`);
-    expect(formulario.erroDoEndereco()).toContain('cidade');
+    expect(edicao.erroDoEndereco()).toContain('cidade');
   });
 
   it('remove um campus após confirmação', async () => {
     await flushLista([campusSeed]);
-    store.pedirRemocao(campusSeed);
-    store.removerConfirmado();
+    edicao.pedirRemocao(campusSeed);
+    edicao.removerConfirmado();
 
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/campi/${campusSeed.id}`);
     expect(req.request.method).toBe('DELETE');

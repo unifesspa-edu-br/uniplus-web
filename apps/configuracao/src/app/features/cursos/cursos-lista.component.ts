@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { CursoDto } from '@uniplus/shared-data/configuracao';
 import {
+  DEFAULT_PAGE_SIZE_OPTIONS,
   EmptyStateComponent,
   FilterBarComponent,
   IconButtonComponent,
@@ -7,9 +9,6 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { textoExibivel } from '../../shared/codigo-e-rotulo';
-import { CursosStore } from './cursos.store';
-import { FormularioDoCurso } from './formulario-do-curso';
-import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 
 /** O painel com a busca, a tabela de cursos, o estado vazio e a paginação. */
 @Component({
@@ -24,11 +23,25 @@ import { OfertasDoCursoStore } from './ofertas-do-curso.store';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cursos-lista.component.html',
-  host: { style: 'display: contents' },
 })
 export class CursosListaComponent {
-  protected readonly store = inject(CursosStore);
-  protected readonly formulario = inject(FormularioDoCurso);
-  protected readonly ofertas = inject(OfertasDoCursoStore);
+  readonly cursos = input.required<readonly CursoDto[]>();
+  readonly carregando = input.required<boolean>();
+  readonly mensagemDeErro = input.required<string | null>();
+  readonly temBusca = input.required<boolean>();
+  readonly limite = input.required<number>();
+  readonly temAnterior = input.required<boolean>();
+  readonly temProximo = input.required<boolean>();
+  readonly termoBusca = model.required<string>();
+
+  readonly cadastrar = output<void>();
+  readonly editar = output<CursoDto>();
+  readonly remover = output<CursoDto>();
+  readonly verOfertas = output<CursoDto>();
+  readonly trocarLimite = output<number | null>();
+  readonly anterior = output<void>();
+  readonly proximo = output<void>();
+
+  protected readonly opcoesLimite = DEFAULT_PAGE_SIZE_OPTIONS;
   protected readonly textoExibivel = textoExibivel;
 }

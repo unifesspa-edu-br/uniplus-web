@@ -1,4 +1,5 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
@@ -11,13 +12,12 @@ import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempot
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CursoDto, CursosApi, type GrupoAreaEnemDto } from '@uniplus/shared-data/configuracao';
 import { focarAposNovaTentativa } from '../../shared/foco';
-import { mensagemDeErroDoControle, nullIfBlank } from '../../shared/formulario';
+import { nullIfBlank } from '../../shared/formulario';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { motivoDaFalha } from '../../shared/lista-de-referencia';
 import { comPontoFinal } from '../../shared/texto';
 import {
   CURSO_EM_BRANCO,
-  CursoForm,
   comandoDeAtualizacao,
   comandoDeCriacao,
   controleDoCampoDoServidor,
@@ -25,29 +25,60 @@ import {
   valoresDoCurso,
 } from './curso-form';
 import { CursosStore } from './cursos.store';
+import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 
 type ModoFormulario = 'criar' | 'editar';
+
+/** O que o formulário precisa saber do vocabulário de grupos de área do ENEM. */
+export interface GruposDoFormulario {
+  readonly falhou: boolean;
+  readonly pendente: boolean;
+  readonly tentativasSemSucesso: number;
+  readonly opcoes: readonly GrupoAreaEnemDto[];
+  readonly mensagemDeFalha: string;
+  readonly foraDasOpcoes: GrupoAreaEnemDto | null;
+}
 
 /** Vendor code do DomainError `Curso.CodigoJaExiste` (uniplus-api, 409 Conflict). */
 const CURSO_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.curso.codigo_ja_existe';
 
 /**
- * O formulário de cadastro e edição de curso: abertura, validação, gravação, recusas do servidor e
- * o grupo de área do ENEM, cuja lista vem da API.
+ * As escritas de curso: o formulário de cadastro e edição (abertura, validação, recusas do
+ * servidor e o grupo de área do ENEM, cuja lista vem da API) e a remoção com confirmação. Salvar
+ * e remover compartilham um só indicador, então enquanto uma escrita está em curso a outra não
+ * parte.
  */
 @Injectable()
-export class FormularioDoCurso {
+export class EdicaoDosCursos {
   private readonly api = inject(CursosApi);
   private readonly store = inject(CursosStore);
+  private readonly ofertas = inject(OfertasDoCursoStore);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
-  private readonly grupos = inject(CatalogoGruposAreaEnem);
+  private readonly vocabulario = inject(CatalogoGruposAreaEnem);
 
   readonly form = criarFormularioDeCurso();
+  readonly gravando = signal(false);
   readonly aberto = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
   readonly titulo = computed(() => (this.modo() === 'criar' ? 'Novo curso' : 'Editar curso'));
+
+  readonly confirmando = signal(false);
+  readonly cursoParaRemover = signal<CursoDto | null>(null);
+  private readonly erroDaRemocao = signal<string | null>(null);
+
+  readonly mensagemDaConfirmacao = computed(() => {
+    const erro = this.erroDaRemocao();
+    if (erro !== null) {
+      return erro;
+    }
+    const curso = this.cursoParaRemover();
+    return curso
+      ? `Deseja remover ${curso.codigo} — ${curso.nome}? A remoção é lógica (soft-delete) e preserva o histórico. Se o curso for a matriz de uma oferta de curso ativa, a remoção será bloqueada.`
+      : 'Deseja remover este curso?';
+  });
 
   private readonly cursoEmEdicaoId = signal<string | null>(null);
   private readonly chaveDeIdempotencia = signal(idempotencyKey.create());
@@ -55,9 +86,9 @@ export class FormularioDoCurso {
   private readonly grupoDoCursoEmEdicao = signal<GrupoAreaEnemDto | null>(null);
 
   // Carga de fundo da tabela: só avisa quando o formulário, que depende dos grupos, está aberto.
-  private readonly motivoFalhaGrupos = motivoDaFalha(this.grupos, () => this.aberto());
+  private readonly motivoFalhaGrupos = motivoDaFalha(this.vocabulario, () => this.aberto());
 
-  readonly mensagemFalhaGrupos = computed(() => {
+  private readonly mensagemFalhaGrupos = computed(() => {
     const semLista = 'Sem a lista de grupos não é possível classificar o curso.';
     const motivo = nullIfBlank(this.motivoFalhaGrupos());
     return motivo ? `${comPontoFinal(motivo)} ${semLista}` : semLista;
@@ -70,22 +101,31 @@ export class FormularioDoCurso {
    * depende do grupo original do curso, e não do valor escolhido: trocar para "Não classificado"
    * não a tira, e dá para voltar a ele.
    */
-  readonly grupoForaDasOpcoes = computed<GrupoAreaEnemDto | null>(() => {
+  private readonly grupoForaDasOpcoes = computed<GrupoAreaEnemDto | null>(() => {
     const doCurso = this.grupoDoCursoEmEdicao();
-    if (doCurso === null || this.grupos.porCodigo().has(doCurso.codigo)) {
+    if (doCurso === null || this.vocabulario.porCodigo().has(doCurso.codigo)) {
       return null;
     }
     // Sem código não há o que selecionar nem gravar: o "—" é só da tabela.
     return nullIfBlank(doCurso.codigo) === null ? null : doCurso;
   });
 
+  readonly grupos = computed<GruposDoFormulario>(() => ({
+    falhou: this.vocabulario.falhou(),
+    pendente: this.vocabulario.pendente(),
+    tentativasSemSucesso: this.vocabulario.tentativasSemSucesso(),
+    opcoes: this.vocabulario.opcoes(),
+    mensagemDeFalha: this.mensagemFalhaGrupos(),
+    foraDasOpcoes: this.grupoForaDasOpcoes(),
+  }));
+
   /**
    * A lista chegou depois do "Tentar novamente": o alerta sai com o botão, e o foco vai ao select
    * que a lista alimenta, sem sair do formulário.
    */
   private readonly novaTentativaDosGrupos = focarAposNovaTentativa(
-    this.grupos.pendente,
-    this.grupos.falhou,
+    this.vocabulario.pendente,
+    this.vocabulario.falhou,
     () => document.getElementById('cfg-curso-grupo-area-enem'),
   );
 
@@ -102,7 +142,7 @@ export class FormularioDoCurso {
     this.cursoEmEdicaoId.set(curso.id);
     this.form.reset(valoresDoCurso(curso));
     this.grupoDoCursoEmEdicao.set(
-      curso.grupoAreaEnem ? this.grupos.exibivel(curso.grupoAreaEnem) : null,
+      curso.grupoAreaEnem ? this.vocabulario.exibivel(curso.grupoAreaEnem) : null,
     );
     this.abrir();
   }
@@ -111,25 +151,12 @@ export class FormularioDoCurso {
     this.aberto.set(false);
   }
 
-  erroDoCampo(nome: keyof CursoForm): string | null {
-    return mensagemDeErroDoControle(this.form.controls[nome]);
-  }
-
-  /** O select do grupo é descrito pela falha da lista e pelo erro do campo, quando há. */
-  descricaoDoGrupo(): string | null {
-    const ids = [
-      this.aberto() && this.grupos.falhou() ? 'cfg-curso-grupos-falha' : null,
-      this.erroDoCampo('grupoAreaEnem') ? 'cfg-curso-grupo-erro' : null,
-    ].filter((id): id is string => id !== null);
-    return ids.length > 0 ? ids.join(' ') : null;
-  }
-
   tentarCarregarGrupos(): void {
-    this.novaTentativaDosGrupos.executar(() => this.grupos.tentarDeNovo());
+    this.novaTentativaDosGrupos.executar(() => this.vocabulario.tentarDeNovo());
   }
 
   salvar(): void {
-    if (this.store.gravando()) {
+    if (this.gravando()) {
       return;
     }
     if (this.form.invalid) {
@@ -144,11 +171,67 @@ export class FormularioDoCurso {
       this.modo() === 'criar'
         ? this.api.criar(comandoDeCriacao(valores), chave)
         : this.api.atualizar(id ?? '', comandoDeAtualizacao(id ?? '', valores), chave);
-    this.store.gravar(operacao, (result) => this.concluirGravacao(result));
+    this.gravar(operacao, (result) => this.concluirGravacao(result));
+  }
+
+  pedirRemocao(curso: CursoDto): void {
+    this.cursoParaRemover.set(curso);
+    this.erroDaRemocao.set(null);
+    this.confirmando.set(true);
+  }
+
+  removerConfirmado(): void {
+    const curso = this.cursoParaRemover();
+    if (curso === null) {
+      return;
+    }
+    this.gravar(this.api.remover(curso.id), (result) => {
+      if (result.ok) {
+        this.notifications.success('Curso removido', curso.codigo);
+        this.confirmando.set(false);
+        this.cursoParaRemover.set(null);
+        this.store.recarregar();
+        return;
+      }
+      this.recusarRemocao(curso, result.problem);
+    });
+  }
+
+  private gravar<T>(
+    operacao: Observable<ApiResult<T>>,
+    aoConcluir: (result: ApiResult<T>) => void,
+  ): void {
+    if (this.gravando()) {
+      return;
+    }
+    this.gravando.set(true);
+    operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+      this.gravando.set(false);
+      aoConcluir(result);
+    });
+  }
+
+  private recusarRemocao(curso: CursoDto, problem: ProblemDetails): void {
+    const titulo = this.problemI18n.resolve(problem).title;
+    // 409 é o único conflito possível no DELETE do curso: referenciado por oferta viva. Em vez de
+    // só reexibir o texto, abre o drawer de ofertas com as que bloqueiam a remoção.
+    if (problem.status === STATUS_HTTP.CONFLITO) {
+      this.confirmando.set(false);
+      this.cursoParaRemover.set(null);
+      this.ofertas.abrirPorBloqueio(curso, titulo);
+      return;
+    }
+    // Demais falhas (5xx, rede): mantém a confirmação aberta com a mensagem. O diálogo fecha a si
+    // mesmo de forma síncrona ao emitir `confirmed`; reabrir explicitamente mantém o erro visível.
+    this.erroDaRemocao.set(titulo);
+    this.confirmando.set(true);
+    if (problem.status >= 500) {
+      this.notifications.errorFromProblem(problem, { title: titulo });
+    }
   }
 
   private abrir(): void {
-    this.grupos.garantirCarregado();
+    this.vocabulario.garantirCarregado();
     this.erro.set(null);
     this.renovarChaveDeIdempotencia();
     this.aberto.set(true);

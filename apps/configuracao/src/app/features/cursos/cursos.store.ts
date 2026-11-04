@@ -1,6 +1,5 @@
 import { HttpParams } from '@angular/common/http';
 import {
-  DestroyRef,
   Injectable,
   computed,
   effect,
@@ -9,12 +8,10 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Observable, debounceTime, distinctUntilChanged, map } from 'rxjs';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import {
-  ApiResult,
   CursorPagina,
-  ProblemDetails,
   ProblemI18nService,
   STATUS_HTTP,
   cursorToString,
@@ -24,11 +21,10 @@ import {
   withVendorMime,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { CONFIGURACAO_BASE_PATH, CursoDto, CursosApi } from '@uniplus/shared-data/configuracao';
+import { CONFIGURACAO_BASE_PATH, CursoDto } from '@uniplus/shared-data/configuracao';
 import { DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE_OPTIONS } from '@uniplus/shared-ui/components';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
-import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 
 /**
  * Debounce da busca textual — uma request por rajada de digitação, não por tecla (mesmo padrão de
@@ -37,28 +33,19 @@ import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 const BUSCA_DEBOUNCE_MS = 300;
 
 /**
- * Estado da listagem de cursos (busca no servidor, limite e paginação) e da remoção. A gravação
- * (remover ou salvar) tem um só indicador: enquanto uma está em curso a outra não parte.
+ * Estado da listagem de cursos: busca no servidor, limite, paginação e recarga.
  */
 @Injectable()
 export class CursosStore {
-  private readonly api = inject(CursosApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
-  private readonly ofertas = inject(OfertasDoCursoStore);
   private readonly grupos = inject(CatalogoGruposAreaEnem);
 
-  readonly gravando = signal(false);
-  readonly confirmando = signal(false);
-  readonly cursoParaRemover = signal<CursoDto | null>(null);
   readonly termoBusca = signal('');
   /** Itens por página escolhidos no rodapé; só em memória (volta ao padrão a cada visita). */
   readonly limite = signal<number>(DEFAULT_PAGE_SIZE);
   readonly opcoesLimite = DEFAULT_PAGE_SIZE_OPTIONS;
-
-  private readonly erroDaRemocao = signal<string | null>(null);
 
   /**
    * Termo aplicado à busca server-side (`?q=`) — debounced. O backend filtra por código/nome; o
@@ -145,17 +132,6 @@ export class CursosStore {
     return this.lista.error() ? 'Erro inesperado ao carregar cursos.' : null;
   });
 
-  readonly mensagemDaConfirmacao = computed(() => {
-    const erro = this.erroDaRemocao();
-    if (erro !== null) {
-      return erro;
-    }
-    const curso = this.cursoParaRemover();
-    return curso
-      ? `Deseja remover ${curso.codigo} — ${curso.nome}? A remoção é lógica (soft-delete) e preserva o histórico. Se o curso for a matriz de uma oferta de curso ativa, a remoção será bloqueada.`
-      : 'Deseja remover este curso?';
-  });
-
   constructor() {
     // A tabela usa o rótulo do vocabulário. A falha desta carga de fundo não aparece na
     // listagem: o alerta de grupos só existe no formulário, que tenta de novo ao abrir.
@@ -203,60 +179,6 @@ export class CursosStore {
       this.lista.reload();
     } else {
       this.pagina.set(undefined);
-    }
-  }
-
-  pedirRemocao(curso: CursoDto): void {
-    this.cursoParaRemover.set(curso);
-    this.erroDaRemocao.set(null);
-    this.confirmando.set(true);
-  }
-
-  removerConfirmado(): void {
-    const curso = this.cursoParaRemover();
-    if (curso === null) {
-      return;
-    }
-    this.gravar(this.api.remover(curso.id), (result) => {
-      if (result.ok) {
-        this.notifications.success('Curso removido', curso.codigo);
-        this.confirmando.set(false);
-        this.cursoParaRemover.set(null);
-        this.recarregar();
-        return;
-      }
-      this.recusarRemocao(curso, result.problem);
-    });
-  }
-
-  /** Executa uma gravação se nenhuma outra estiver em curso e entrega o resultado a `aoConcluir`. */
-  gravar<T>(operacao: Observable<ApiResult<T>>, aoConcluir: (result: ApiResult<T>) => void): void {
-    if (this.gravando()) {
-      return;
-    }
-    this.gravando.set(true);
-    operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      this.gravando.set(false);
-      aoConcluir(result);
-    });
-  }
-
-  private recusarRemocao(curso: CursoDto, problem: ProblemDetails): void {
-    const titulo = this.problemI18n.resolve(problem).title;
-    // 409 é o único conflito possível no DELETE do curso: referenciado por oferta viva. Em vez de
-    // só reexibir o texto, abre o drawer de ofertas com as que bloqueiam a remoção.
-    if (problem.status === STATUS_HTTP.CONFLITO) {
-      this.confirmando.set(false);
-      this.cursoParaRemover.set(null);
-      this.ofertas.abrirPorBloqueio(curso, titulo);
-      return;
-    }
-    // Demais falhas (5xx, rede): mantém a confirmação aberta com a mensagem. O diálogo fecha a si
-    // mesmo de forma síncrona ao emitir `confirmed`; reabrir explicitamente mantém o erro visível.
-    this.erroDaRemocao.set(titulo);
-    this.confirmando.set(true);
-    if (problem.status >= 500) {
-      this.notifications.errorFromProblem(problem, { title: titulo });
     }
   }
 

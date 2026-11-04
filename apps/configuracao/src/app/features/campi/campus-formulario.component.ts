@@ -1,13 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import {
   AlertComponent,
   DrawerComponent,
   EnderecoGeoComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
-import { CampiStore } from './campi.store';
-import { FormularioDoCampus } from './formulario-do-campus';
+import { mensagemDeErroDoControle } from '../../shared/formulario';
+import { CampusForm } from './campus-form';
 
 /** O drawer com o formulário de cadastro e edição de campus. */
 @Component({
@@ -22,9 +22,21 @@ import { FormularioDoCampus } from './formulario-do-campus';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campus-formulario.component.html',
-  host: { style: 'display: contents' },
+  styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class CampusFormularioComponent {
-  protected readonly store = inject(CampiStore);
-  protected readonly formulario = inject(FormularioDoCampus);
+  readonly aberto = model.required<boolean>();
+  readonly form = input.required<FormGroup<CampusForm>>();
+  readonly modo = input.required<'criar' | 'editar'>();
+  readonly titulo = input.required<string>();
+  readonly erro = input.required<string | null>();
+  readonly erroDoEndereco = input.required<string | null>();
+  readonly gravando = input.required<boolean>();
+
+  readonly salvar = output<void>();
+  readonly cancelar = output<void>();
+
+  protected erroDoCampo(nome: keyof CampusForm): string | null {
+    return mensagemDeErroDoControle(this.form().controls[nome]);
+  }
 }

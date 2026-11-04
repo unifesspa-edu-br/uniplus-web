@@ -3,7 +3,7 @@ import { AlertComponent, ConfirmDialogComponent } from '@uniplus/shared-ui/compo
 import { CursoFormularioComponent } from './curso-formulario.component';
 import { CursosListaComponent } from './cursos-lista.component';
 import { CursosStore } from './cursos.store';
-import { FormularioDoCurso } from './formulario-do-curso';
+import { EdicaoDosCursos } from './edicao-dos-cursos';
 import { OfertasDoCursoComponent } from './ofertas-do-curso.component';
 import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 
@@ -11,7 +11,7 @@ import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 @Component({
   selector: 'cfg-cursos-page',
   standalone: true,
-  providers: [CursosStore, FormularioDoCurso, OfertasDoCursoStore],
+  providers: [CursosStore, EdicaoDosCursos, OfertasDoCursoStore],
   imports: [
     AlertComponent,
     ConfirmDialogComponent,
@@ -25,4 +25,6 @@ import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 })
 export class CursosPage {
   protected readonly store = inject(CursosStore);
+  protected readonly edicao = inject(EdicaoDosCursos);
+  protected readonly ofertas = inject(OfertasDoCursoStore);
 }

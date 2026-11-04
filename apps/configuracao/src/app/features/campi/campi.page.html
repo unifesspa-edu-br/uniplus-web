@@ -23,15 +23,36 @@
 </ui-alert>
 }
 
-<cfg-campi-lista />
+<cfg-campi-lista
+  [campi]="store.campi()"
+  [carregando]="store.carregando()"
+  [mensagemDeErro]="store.mensagemDeErro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
 
-<cfg-campus-formulario />
+<cfg-campus-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [titulo]="edicao.titulo()"
+  [erro]="edicao.erro()"
+  [erroDoEndereco]="edicao.erroDoEndereco()"
+  [gravando]="edicao.gravando()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+/>
 
 <ui-confirm-dialog
-  [(visible)]="store.confirmando"
+  [(visible)]="edicao.confirmando"
   heading="Remover campus"
-  [message]="store.mensagemDaConfirmacao()"
+  [message]="edicao.mensagemDaConfirmacao()"
   confirmLabel="Remover"
   confirmVariant="danger"
-  (confirmed)="store.removerConfirmado()"
+  (confirmed)="edicao.removerConfirmado()"
 />

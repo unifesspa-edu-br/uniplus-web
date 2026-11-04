@@ -1,4 +1,5 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
@@ -11,11 +12,9 @@ import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempot
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CampiApi, CampusDto } from '@uniplus/shared-data/configuracao';
 import { ehErroDeEndereco } from '../../shared/endereco';
-import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { CampiStore } from './campi.store';
 import {
   CAMPUS_EM_BRANCO,
-  CampusForm,
   comandoDeAtualizacao,
   comandoDeCriacao,
   controleDoCampoDoServidor,
@@ -25,20 +24,35 @@ import {
 
 type ModoFormulario = 'criar' | 'editar';
 
-/** O formulário de cadastro e edição de campus: abertura, validação, gravação e recusas do servidor. */
+/**
+ * As escritas de campus: o formulário de cadastro e edição (abertura, validação, recusas do
+ * servidor) e a remoção com confirmação. Salvar e remover compartilham um só indicador, então
+ * enquanto uma escrita está em curso a outra não parte.
+ */
 @Injectable()
-export class FormularioDoCampus {
+export class EdicaoDosCampi {
   private readonly api = inject(CampiApi);
   private readonly store = inject(CampiStore);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly form = criarFormularioDeCampus();
+  readonly gravando = signal(false);
   readonly aberto = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
   readonly erroDoEndereco = signal<string | null>(null);
   readonly titulo = computed(() => (this.modo() === 'criar' ? 'Novo campus' : 'Editar campus'));
+
+  readonly confirmando = signal(false);
+  readonly campusParaRemover = signal<CampusDto | null>(null);
+  readonly mensagemDaConfirmacao = computed(() => {
+    const campus = this.campusParaRemover();
+    return campus
+      ? `Deseja remover ${campus.sigla}? A remoção é lógica (soft-delete) e preserva o histórico.`
+      : 'Deseja remover este campus?';
+  });
 
   private readonly campusEmEdicaoId = signal<string | null>(null);
   private readonly chaveDeIdempotencia = signal(idempotencyKey.create());
@@ -61,12 +75,8 @@ export class FormularioDoCampus {
     this.aberto.set(false);
   }
 
-  erroDoCampo(nome: keyof CampusForm): string | null {
-    return mensagemDeErroDoControle(this.form.controls[nome]);
-  }
-
   salvar(): void {
-    if (this.store.gravando()) {
+    if (this.gravando()) {
       return;
     }
     if (this.form.invalid) {
@@ -81,7 +91,45 @@ export class FormularioDoCampus {
       this.modo() === 'criar'
         ? this.api.criar(comandoDeCriacao(valores), chave)
         : this.api.atualizar(id ?? '', comandoDeAtualizacao(id ?? '', valores), chave);
-    this.store.gravar(operacao, (result) => this.concluirGravacao(result));
+    this.gravar(operacao, (result) => this.concluirGravacao(result));
+  }
+
+  pedirRemocao(campus: CampusDto): void {
+    this.campusParaRemover.set(campus);
+    this.confirmando.set(true);
+  }
+
+  removerConfirmado(): void {
+    const campus = this.campusParaRemover();
+    if (campus === null) {
+      return;
+    }
+    this.gravar(this.api.remover(campus.id), (result) => {
+      if (result.ok) {
+        this.notifications.success('Campus removido', campus.sigla);
+        this.confirmando.set(false);
+        this.campusParaRemover.set(null);
+        this.store.recarregar();
+        return;
+      }
+      this.notifications.errorFromProblem(result.problem, {
+        title: this.problemI18n.resolve(result.problem).title,
+      });
+    });
+  }
+
+  private gravar<T>(
+    operacao: Observable<ApiResult<T>>,
+    aoConcluir: (result: ApiResult<T>) => void,
+  ): void {
+    if (this.gravando()) {
+      return;
+    }
+    this.gravando.set(true);
+    operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+      this.gravando.set(false);
+      aoConcluir(result);
+    });
   }
 
   private abrir(): void {

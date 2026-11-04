@@ -1,0 +1,6 @@
+/* Componente que só hospeda drawer ou diálogo: com a sobreposição fechada o host não tem conteúdo,
+   mas, como item do flex da página, consumiria um espaçamento. Fora do fluxo, não ocupa espaço; a
+   sobreposição aberta vai para a camada superior do <dialog>. */
+:host {
+  position: absolute;
+}

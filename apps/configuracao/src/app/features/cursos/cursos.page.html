@@ -24,17 +24,57 @@
 </ui-alert>
 }
 
-<cfg-cursos-lista />
-
-<cfg-curso-formulario />
-
-<ui-confirm-dialog
-  [(visible)]="store.confirmando"
-  heading="Remover curso"
-  [message]="store.mensagemDaConfirmacao()"
-  confirmLabel="Remover"
-  confirmVariant="danger"
-  (confirmed)="store.removerConfirmado()"
+<cfg-cursos-lista
+  [cursos]="store.cursosExibidos()"
+  [carregando]="store.carregando()"
+  [mensagemDeErro]="store.mensagemDeErro()"
+  [temBusca]="store.temBusca()"
+  [limite]="store.limite()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [(termoBusca)]="store.termoBusca"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (verOfertas)="ofertas.abrir($event)"
+  (trocarLimite)="store.aoTrocarLimite($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
 />
 
-<cfg-ofertas-do-curso />
+<cfg-curso-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [titulo]="edicao.titulo()"
+  [erro]="edicao.erro()"
+  [gravando]="edicao.gravando()"
+  [grupos]="edicao.grupos()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+  (tentarGrupos)="edicao.tentarCarregarGrupos()"
+/>
+
+<ui-confirm-dialog
+  [(visible)]="edicao.confirmando"
+  heading="Remover curso"
+  [message]="edicao.mensagemDaConfirmacao()"
+  confirmLabel="Remover"
+  confirmVariant="danger"
+  (confirmed)="edicao.removerConfirmado()"
+/>
+
+<cfg-ofertas-do-curso
+  [(aberto)]="ofertas.aberto"
+  [titulo]="ofertas.titulo()"
+  [bloqueio]="ofertas.bloqueio()"
+  [mensagemDeErro]="ofertas.mensagemDeErro()"
+  [carregando]="ofertas.carregando()"
+  [ofertas]="ofertas.itens()"
+  [temAnterior]="ofertas.anterior() !== null"
+  [temProximo]="ofertas.proximo() !== null"
+  (fechado)="ofertas.aoFechar()"
+  (recarregar)="ofertas.recarregar()"
+  (anterior)="ofertas.paginaAnterior()"
+  (proximo)="ofertas.proximaPagina()"
+/>

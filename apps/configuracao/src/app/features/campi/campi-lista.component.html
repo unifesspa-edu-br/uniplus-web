@@ -2,17 +2,17 @@
   <div class="panel-head">
     <div class="panel-head__title">
       <h2 id="cfg-campi-list-title">Campi</h2>
-      @if (store.carregando()) {
+      @if (carregando()) {
         <span class="cfg-campi__loading"><ui-spinner size="sm" /> Carregando</span>
       }
     </div>
-    <button type="button" class="btn btn--primary" (click)="formulario.abrirCadastro()">
+    <button type="button" class="btn btn--primary" (click)="cadastrar.emit()">
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
       Novo campus
     </button>
   </div>
 
-  @if (store.campi().length > 0) {
+  @if (campi().length > 0) {
     <div class="table-responsive">
       <table>
         <caption class="sr-only">
@@ -28,7 +28,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (campus of store.campi(); track campus.id) {
+          @for (campus of campi(); track campus.id) {
             <tr>
               <td data-label="Sigla">
                 <code>{{ campus.sigla }}</code>
@@ -41,15 +41,15 @@
                   icon="pi-pencil"
                   [accessibleName]="'Editar campus ' + campus.sigla"
                   tooltip="Editar campus"
-                  [isDisabled]="store.carregando()"
-                  (triggered)="formulario.abrirEdicao(campus)"
+                  [isDisabled]="carregando()"
+                  (triggered)="editar.emit(campus)"
                 />
                 <ui-icon-button
                   icon="pi-trash"
                   [accessibleName]="'Remover campus ' + campus.sigla"
                   tooltip="Remover campus"
-                  [isDisabled]="store.carregando()"
-                  (triggered)="store.pedirRemocao(campus)"
+                  [isDisabled]="carregando()"
+                  (triggered)="remover.emit(campus)"
                 />
               </td>
             </tr>
@@ -57,26 +57,24 @@
         </tbody>
       </table>
     </div>
-  } @else if (!store.carregando() && !store.mensagemDeErro()) {
+  } @else if (!carregando() && !mensagemDeErro()) {
     <ui-empty-state
       heading="Nenhum campus cadastrado"
       description="Cadastre o primeiro campus para vincular cursos e ofertas."
     >
-      <button type="button" class="btn btn--primary" (click)="formulario.abrirCadastro()">
-        Novo campus
-      </button>
+      <button type="button" class="btn btn--primary" (click)="cadastrar.emit()">Novo campus</button>
     </ui-empty-state>
   }
 
-  @if (store.anterior() !== null || store.proximo() !== null) {
+  @if (temAnterior() || temProximo()) {
     <ui-pager
       statusText="Navegação por páginas"
       navigationLabel="Paginação de campi"
-      [hasPrevious]="store.anterior() !== null"
-      [hasNext]="store.proximo() !== null"
-      [isDisabled]="store.carregando()"
-      (previous)="store.paginaAnterior()"
-      (next)="store.proximaPagina()"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="carregando()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
     />
   }
 </section>

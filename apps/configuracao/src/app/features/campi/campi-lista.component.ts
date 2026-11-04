@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { CampusDto } from '@uniplus/shared-data/configuracao';
 import {
   EmptyStateComponent,
@@ -6,8 +6,6 @@ import {
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
-import { CampiStore } from './campi.store';
-import { FormularioDoCampus } from './formulario-do-campus';
 
 /** O painel com a tabela de campi, o estado vazio e a paginação. */
 @Component({
@@ -16,11 +14,19 @@ import { FormularioDoCampus } from './formulario-do-campus';
   imports: [EmptyStateComponent, IconButtonComponent, PagerComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campi-lista.component.html',
-  host: { style: 'display: contents' },
 })
 export class CampiListaComponent {
-  protected readonly store = inject(CampiStore);
-  protected readonly formulario = inject(FormularioDoCampus);
+  readonly campi = input.required<readonly CampusDto[]>();
+  readonly carregando = input.required<boolean>();
+  readonly mensagemDeErro = input.required<string | null>();
+  readonly temAnterior = input.required<boolean>();
+  readonly temProximo = input.required<boolean>();
+
+  readonly cadastrar = output<void>();
+  readonly editar = output<CampusDto>();
+  readonly remover = output<CampusDto>();
+  readonly anterior = output<void>();
+  readonly proximo = output<void>();
 
   protected cidadeLabel(campus: CampusDto): string {
     const cidade = campus.endereco?.cidade ?? campus.cidade;

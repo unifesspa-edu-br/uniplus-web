@@ -1,14 +1,14 @@
 <ui-drawer
   class="cfg-detail-drawer"
-  [(visible)]="ofertas.aberto"
-  [heading]="ofertas.titulo()"
+  [(visible)]="aberto"
+  [heading]="titulo()"
   ariaLabel="Ofertas de curso do curso selecionado"
   position="right"
-  (closed)="ofertas.aoFechar()"
+  (closed)="fechado.emit()"
 >
-  @if (ofertas.bloqueio()) {
+  @if (bloqueio()) {
     <ui-alert variant="danger" heading="Remoção bloqueada">
-      {{ ofertas.bloqueio() }} Remova as ofertas abaixo antes de excluir o curso.
+      {{ bloqueio() }} Remova as ofertas abaixo antes de excluir o curso.
     </ui-alert>
   } @else {
     <ui-alert variant="info" [dynamic]="false" heading="Ofertas vivas deste curso">
@@ -17,15 +17,15 @@
     </ui-alert>
   }
 
-  @if (ofertas.mensagemDeErro()) {
+  @if (mensagemDeErro()) {
     <ui-alert variant="danger" heading="Não foi possível carregar as ofertas">
-      {{ ofertas.mensagemDeErro() }}
+      {{ mensagemDeErro() }}
       <div class="cfg-ofertas__retry">
         <button
           type="button"
           class="btn btn--secondary btn--sm"
-          [disabled]="ofertas.carregando()"
-          (click)="ofertas.recarregar()"
+          [disabled]="carregando()"
+          (click)="recarregar.emit()"
         >
           Tentar novamente
         </button>
@@ -33,13 +33,13 @@
     </ui-alert>
   }
 
-  @if (ofertas.carregando()) {
+  @if (carregando()) {
     <p class="cfg-ofertas__loading"><ui-spinner size="sm" /> Carregando ofertas…</p>
   }
 
-  @if (ofertas.itens().length > 0) {
+  @if (ofertas().length > 0) {
     <ul class="cfg-ofertas-list" role="list">
-      @for (oferta of ofertas.itens(); track oferta.id) {
+      @for (oferta of ofertas(); track oferta.id) {
         <li class="cfg-ofertas-list__item">
           <p class="cfg-ofertas-list__unidade">
             {{ oferta.unidadeOfertante.sigla }} — {{ oferta.unidadeOfertante.nome }}
@@ -52,7 +52,7 @@
         </li>
       }
     </ul>
-  } @else if (!ofertas.carregando() && !ofertas.mensagemDeErro()) {
+  } @else if (!carregando() && !mensagemDeErro()) {
     <ui-empty-state
       heading="Nenhuma oferta ativa"
       description="Este curso não possui ofertas de curso vivas — a remoção não será bloqueada."
@@ -61,10 +61,10 @@
 
   <ui-list-footer
     navigationLabel="Paginação de ofertas do curso"
-    [hasPrevious]="ofertas.anterior() !== null"
-    [hasNext]="ofertas.proximo() !== null"
-    [isDisabled]="ofertas.carregando()"
-    (previous)="ofertas.paginaAnterior()"
-    (next)="ofertas.proximaPagina()"
+    [hasPrevious]="temAnterior()"
+    [hasNext]="temProximo()"
+    [isDisabled]="carregando()"
+    (previous)="anterior.emit()"
+    (next)="proximo.emit()"
   />
 </ui-drawer>

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import {
   OfertaCursoDto,
   PROGRAMAS_DE_OFERTA,
@@ -13,7 +13,6 @@ import {
   ListFooterComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
-import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 
 /** Rótulos dos tokens de programa, regime e turno da oferta (domínios fechados, ofertas-curso.api). */
 const PROGRAMA_LABELS = new Map(PROGRAMAS_DE_OFERTA.map((opcao) => [opcao.value, opcao.label]));
@@ -33,11 +32,22 @@ const REGIME_LABELS = new Map(REGIMES_DE_TURNO.map((opcao) => [opcao.value, opca
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './ofertas-do-curso.component.html',
-  styleUrl: './ofertas-do-curso.component.css',
-  host: { style: 'display: contents' },
+  styleUrls: ['../../shared/sobreposicao/sobreposicao.css', './ofertas-do-curso.component.css'],
 })
 export class OfertasDoCursoComponent {
-  protected readonly ofertas = inject(OfertasDoCursoStore);
+  readonly aberto = model.required<boolean>();
+  readonly titulo = input.required<string>();
+  readonly bloqueio = input.required<string | null>();
+  readonly mensagemDeErro = input.required<string | null>();
+  readonly carregando = input.required<boolean>();
+  readonly ofertas = input.required<readonly OfertaCursoDto[]>();
+  readonly temAnterior = input.required<boolean>();
+  readonly temProximo = input.required<boolean>();
+
+  readonly fechado = output<void>();
+  readonly recarregar = output<void>();
+  readonly anterior = output<void>();
+  readonly proximo = output<void>();
 
   protected programaLabel(token: OfertaCursoDto['programaDeOferta']): string {
     return PROGRAMA_LABELS.get(token) ?? token;
