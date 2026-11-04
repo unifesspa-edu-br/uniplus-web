@@ -1,35 +1,35 @@
 <ui-page-header
   heading="Inscrição"
   [description]="
-    enviada()
+    gravacao.enviada()
       ? 'Revise as respostas e envie de novo para corrigir a inscrição.'
       : 'Responda em passos. Você pode salvar o rascunho e voltar depois para concluir.'
   "
   [level]="1"
 />
 
-<p class="sr-only" aria-live="polite">{{ aviso() }}</p>
+<p class="sr-only" aria-live="polite">{{ anuncio.aviso() }}</p>
 
-@switch (estado()) { @case ('carregando') {
+@switch (leitura.estado()) { @case ('carregando') {
 <div class="inscricao-carregando" role="status" aria-busy="true">
   <ui-spinner size="md" /> Carregando a inscrição...
 </div>
 } @case ('erro') {
 <ui-alert variant="danger" heading="Não foi possível abrir a inscrição">
-  {{ erroAoCarregar() }}
+  {{ leitura.erroAoCarregar() }}
   <p>
     <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
       Tentar novamente
     </button>
   </p>
 </ui-alert>
-} @case ('pronto') { @if (comprovante(); as enviado) {
+} @case ('pronto') { @if (gravacao.comprovante(); as enviado) {
 <ui-alert variant="success" heading="Inscrição enviada">
   Sua inscrição recebeu o número <strong>{{ enviado.numeroInscricao }}</strong>. Você pode
   corrigi-la até o fim do período de inscrição.
   <p><a routerLink="/inscricao">Ver minhas inscrições</a></p>
 </ui-alert>
-} @switch (motivoDoRecarregar()) { @case ('envio') {
+} @switch (leitura.motivoDoRecarregar()) { @case ('envio') {
 <ui-alert variant="warning" heading="Recarregue a página para corrigir a inscrição">
   Sua inscrição foi enviada, mas não conseguimos atualizar a tela. Recarregue a página antes de
   corrigir qualquer resposta.
@@ -38,97 +38,60 @@
 <ui-alert variant="warning" heading="Recarregue a página para continuar">
   Não conseguimos confirmar se a inscrição foi gravada. Recarregue a página antes de continuar.
 </ui-alert>
-} } @if (conflito(); as aviso) {
+} } @if (gravacao.conflito(); as aviso) {
 <ui-alert variant="warning" heading="A inscrição foi atualizada">{{ aviso }}</ui-alert>
-} @if (recusaGeral(); as recusa) {
+} @if (gravacao.recusaGeral(); as recusa) {
 <ui-alert variant="danger" [heading]="recusa.titulo">{{ recusa.texto }}</ui-alert>
-} @if (ofertas().length === 1) {
+} @if (escolha.ofertas().length === 1) {
 <p class="inscricao-curso">
-  <span class="inscricao-curso__rotulo">Curso:</span> {{ ofertas()[0].nome }}
+  <span class="inscricao-curso__rotulo">Curso:</span> {{ escolha.ofertas()[0].nome }}
 </p>
-} @if (formulario(); as renderizavel) {
-<ui-formulario-do-candidato
-  #formDoCandidato
-  idBase="inscricao"
-  apresentacaoDosPassos="lateral"
-  [passosPrefixados]="passosPrefixados()"
-  [formulario]="renderizavel"
-  [inicial]="inicial()"
-  [municipiosGravados]="municipiosGravados()"
-  [termosAceitosIniciais]="termosAceitosIniciais()"
-  [respostasFixas]="respostasFixas()"
-  [pressupostos]="pressupostos()"
-  [semDocumentos]="semDocumentos"
-  [errosDoServidor]="errosDoServidor()"
-  [passoDaRecusa]="erroDaOferta() || erroDaSegundaOferta() ? PASSO_DO_CURSO : null"
-  [concluirNaUltimaSecao]="false"
-  [exigirSecaoValida]="true"
-  [envio]="envio()"
-  [avaliacao]="avaliacaoNaTela()"
-  [envioDeDocumentos]="envioDeDocumentos()"
-  [podeEnviarDocumentos]="!ocupada() && !precisaRecarregar()"
-  [podeRemoverDocumentos]="!enviada() && !bloqueada()"
-  [ocorrenciasGravadas]="ocorrenciasGravadas()"
-  (simulacaoChange)="responder($event)"
-  (avancoBarrado)="recusarCursoAusente()"
-  (pendenciasChange)="pendenciasDasSecoes.set($event)"
-  (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
->
-  @if (formDoCandidato.passoPrefixadoAtual() === PASSO_DO_CURSO) {
-  <div class="field inscricao-oferta">
-    <label class="field__label is-required" for="inscricao-oferta"
-      >{{ comSegundaOpcao() ? '1ª opção' : 'Curso em que você se inscreve' }}</label
-    >
-    <select
-      #selectDaOferta
-      class="select"
-      id="inscricao-oferta"
-      [attr.aria-invalid]="erroDaOferta() ? 'true' : null"
-      [attr.aria-describedby]="erroDaOferta() ? 'inscricao-oferta-erro' : null"
-      (change)="escolherOferta($event)"
-    >
-      <option value="" [selected]="ofertaEscolhida() === null">Selecione</option>
-      @for (oferta of ofertas(); track oferta.id) {
-      <option [value]="oferta.id" [selected]="ofertaEscolhida() === oferta.id">
-        {{ oferta.nome }}
-      </option>
-      }
-    </select>
-    @if (erroDaOferta(); as erro) {
-    <span class="field__error" id="inscricao-oferta-erro">{{ erro }}</span>
+} @if (leitura.carregada(); as carregada) {
+<fieldset class="inscricao-formulario" role="none" [disabled]="gravacao.ocupada()">
+  <ui-formulario-do-candidato
+    #formDoCandidato
+    idBase="inscricao"
+    apresentacaoDosPassos="lateral"
+    [passosPrefixados]="escolha.passosPrefixados()"
+    [formulario]="carregada.formulario"
+    [inicial]="carregada.inicial"
+    [municipiosGravados]="carregada.municipiosGravados"
+    [termosAceitosIniciais]="carregada.termosAceitos"
+    [respostasFixas]="respostasFixas()"
+    [pressupostos]="pressupostos()"
+    [semDocumentos]="semDocumentos"
+    [errosDoServidor]="gravacao.errosDoServidor()"
+    [passoDaRecusa]="passoDaRecusa()"
+    [concluirNaUltimaSecao]="false"
+    [exigirSecaoValida]="true"
+    [envio]="dia.envio()"
+    [avaliacao]="avaliacaoNaTela()"
+    [envioDeDocumentos]="gravacao.envioDeDocumentos()"
+    [podeEnviarDocumentos]="!gravacao.ocupada() && !leitura.precisaRecarregar()"
+    [podeRemoverDocumentos]="!gravacao.enviada() && !gravacao.bloqueada()"
+    [ocorrenciasGravadas]="ocorrenciasGravadas()"
+    (simulacaoChange)="responder($event)"
+    (avancoBarrado)="recusarCursoAusente()"
+    (pendenciasChange)="pendenciasDasSecoes.set($event)"
+    (tentarAvaliarDeNovo)="avaliacao.tentarDeNovo()"
+  >
+    @if (formDoCandidato.passoPrefixadoAtual() === PASSO_DO_CURSO) {
+    <ptl-escolha-do-curso
+      [ofertas]="escolha.ofertas()"
+      [ofertasDaSegunda]="escolha.ofertasDaSegunda()"
+      [ofertaEscolhida]="escolha.ofertaEscolhida()"
+      [primeiraEscolhida]="escolha.ofertaEscolhidaValida() !== null"
+      [segundaEscolhida]="escolha.segundaOfertaEscolhida()"
+      [comSegundaOpcao]="escolha.comSegundaOpcao()"
+      [erroDaOferta]="escolha.erroDaOferta()"
+      [erroDaSegundaOferta]="escolha.erroDaSegundaOferta()"
+      [avisoDaSegundaLimpa]="escolha.avisoDaSegundaLimpa()"
+      (escolherOferta)="escolherOferta($event)"
+      (escolherSegundaOferta)="escolherSegundaOferta($event)"
+    />
     }
-  </div>
-  @if (comSegundaOpcao()) {
-  <div class="field inscricao-oferta">
-    <label class="field__label" for="inscricao-segunda-oferta">2ª opção (opcional)</label>
-    <select
-      #selectDaSegundaOferta
-      class="select"
-      id="inscricao-segunda-oferta"
-      [disabled]="ofertaEscolhidaValida() === null"
-      [attr.aria-invalid]="erroDaSegundaOferta() ? 'true' : null"
-      [attr.aria-describedby]="descricaoDaSegunda()"
-      (change)="escolherSegundaOferta($event)"
-    >
-      <option value="" [selected]="segundaOfertaEscolhida() === null">Nenhuma</option>
-      @for (oferta of ofertasDaSegunda(); track oferta.id) {
-      <option [value]="oferta.id" [selected]="segundaOfertaEscolhida() === oferta.id">
-        {{ oferta.nome }}
-      </option>
-      }
-    </select>
-    <span class="field__hint" id="inscricao-segunda-oferta-ajuda">
-      @if (ofertaEscolhidaValida() === null) { Escolha a 1ª opção para poder indicar a 2ª. } @else {
-      A 2ª opção tem de ser um curso diferente da 1ª. }
-    </span>
-    @if (avisoDaSegundaLimpa(); as limpa) {
-    <span class="field__hint" id="inscricao-segunda-oferta-aviso">{{ limpa }}</span>
-    } @if (erroDaSegundaOferta(); as erro) {
-    <span class="field__error" id="inscricao-segunda-oferta-erro">{{ erro }}</span>
-    }
-  </div>
-  } }
-</ui-formulario-do-candidato>
+  </ui-formulario-do-candidato>
+</fieldset>
 } @if (derivados().length > 0) {
 <section class="inscricao-derivados" aria-labelledby="inscricao-derivados-titulo">
   <h2 id="inscricao-derivados-titulo" class="inscricao-derivados__titulo">
@@ -144,45 +107,17 @@
   </dl>
   <p class="field__hint">O sistema confirma estes dados quando a inscrição é enviada.</p>
 </section>
-} @if (enviada()) {
-<p class="field__hint" id="inscricao-correcao">
-  Sua inscrição já foi enviada. Para corrigi-la, envie de novo: cada envio gera um novo comprovante.
-</p>
-} @if (motivoDoEnvioBloqueado(); as motivo) {
-<div class="inscricao-motivo" id="inscricao-motivo-envio">
-  <p class="inscricao-motivo__texto">{{ motivo }}</p>
-  <ul class="inscricao-motivo__lista">
-    @if (semCurso()) {
-    <li>
-      <button type="button" class="btn btn--tertiary btn--sm" (click)="irAoCurso()">
-        Escolher o curso
-      </button>
-    </li>
-    } @for (secao of pendenciasDasSecoes(); track secao.chave) {
-    <li>
-      <button type="button" class="btn btn--tertiary btn--sm" (click)="irAPendencia(secao.chave)">
-        {{ secao.titulo }}<span class="sr-only">:</span> ({{ secao.quantidade }} {{ secao.quantidade
-        === 1 ? 'item' : 'itens' }})
-      </button>
-    </li>
-    }
-  </ul>
-</div>
 }
-<div class="inscricao-acoes">
-  @if (!enviada()) {
-  <button type="button" class="btn btn--secondary" [disabled]="bloqueada()" (click)="salvar()">
-    Salvar rascunho
-  </button>
-  }
-  <button
-    type="button"
-    class="btn btn--primary"
-    [disabled]="bloqueada() || motivoDoEnvioBloqueado() !== null"
-    [attr.aria-describedby]="descricaoDoEnvio()"
-    (click)="enviar()"
-  >
-    Enviar inscrição
-  </button>
-</div>
+<ptl-acoes-da-inscricao
+  [motivoDoEnvioBloqueado]="motivoDoEnvioBloqueado()"
+  [pendencias]="pendenciasDasSecoes()"
+  [semCurso]="escolha.semCurso()"
+  [enviada]="gravacao.enviada()"
+  [bloqueada]="gravacao.bloqueada()"
+  [operacao]="gravacao.operacao()"
+  (salvar)="salvar()"
+  (enviar)="enviar()"
+  (irAoCurso)="irAoCurso()"
+  (irAPendencia)="irAPendencia($event)"
+/>
 } }

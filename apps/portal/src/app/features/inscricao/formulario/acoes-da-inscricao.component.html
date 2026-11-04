@@ -1,0 +1,55 @@
+@if (enviada()) {
+  <p class="field__hint" id="inscricao-correcao">
+    Sua inscrição já foi enviada. Para corrigi-la, envie de novo: cada envio gera um novo
+    comprovante.
+  </p>
+}
+@if (motivoDoEnvioBloqueado(); as motivo) {
+  <div class="inscricao-motivo" id="inscricao-motivo-envio">
+    <p class="inscricao-motivo__texto">{{ motivo }}</p>
+    <ul class="inscricao-motivo__lista">
+      @if (semCurso()) {
+        <li>
+          <button type="button" class="btn btn--tertiary btn--sm" (click)="irAoCurso.emit()">
+            Escolher o curso
+          </button>
+        </li>
+      }
+      @for (secao of pendencias(); track secao.chave) {
+        <li>
+          <button
+            type="button"
+            class="btn btn--tertiary btn--sm"
+            (click)="irAPendencia.emit(secao.chave)"
+          >
+            {{ secao.titulo }}<span class="sr-only">:</span> ({{ secao.quantidade }}
+            {{ secao.quantidade === 1 ? 'item' : 'itens' }})
+          </button>
+        </li>
+      }
+    </ul>
+  </div>
+}
+<div class="inscricao-acoes">
+  @if (!enviada()) {
+    <button
+      type="button"
+      class="btn btn--secondary"
+      [attr.aria-disabled]="bloqueada() ? 'true' : null"
+      [attr.aria-busy]="operacao() === 'salvando' ? 'true' : null"
+      (click)="pedirParaSalvar()"
+    >
+      {{ operacao() === 'salvando' ? 'Salvando…' : 'Salvar rascunho' }}
+    </button>
+  }
+  <button
+    type="button"
+    class="btn btn--primary"
+    [attr.aria-disabled]="envioIndisponivel() ? 'true' : null"
+    [attr.aria-busy]="operacao() === 'enviando' ? 'true' : null"
+    [attr.aria-describedby]="descricaoDoEnvio()"
+    (click)="pedirParaEnviar()"
+  >
+    {{ operacao() === 'enviando' ? 'Enviando…' : 'Enviar inscrição' }}
+  </button>
+</div>

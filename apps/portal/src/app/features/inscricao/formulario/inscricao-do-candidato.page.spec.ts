@@ -252,6 +252,8 @@ describe('InscricaoDoCandidatoPage', () => {
     [...tela.querySelectorAll('button')].find((b) =>
       b.textContent?.trim().startsWith(texto),
     ) as HTMLButtonElement;
+  const indisponivel = (botao: HTMLElement | undefined): boolean =>
+    botao?.getAttribute('aria-disabled') === 'true';
   const clicar = async (elemento: HTMLElement): Promise<void> => {
     elemento.click();
     fixture.detectChanges();
@@ -656,7 +658,7 @@ describe('InscricaoDoCandidatoPage', () => {
     const tela = await abrir();
 
     expect(tela.querySelector('#inscricao-motivo-envio')?.textContent).toContain(AGUARDE);
-    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+    expect(indisponivel(botao(tela, 'Enviar inscrição'))).toBe(true);
   });
 
   it('consulta a verificação com espera crescente até o resultado e então libera o envio', async () => {
@@ -800,7 +802,7 @@ describe('InscricaoDoCandidatoPage', () => {
     fixture.detectChanges();
 
     expect(tela.textContent).toContain('Recarregue a página para continuar');
-    expect(botao(tela, 'Salvar rascunho')?.disabled).toBe(true);
+    expect(indisponivel(botao(tela, 'Salvar rascunho'))).toBe(true);
   });
 
   it('com envio de documento em andamento, não deixa gravar com a revisão velha', async () => {
@@ -810,7 +812,7 @@ describe('InscricaoDoCandidatoPage', () => {
     ocupadoDoEnvio.set(true);
     fixture.detectChanges();
 
-    expect(botao(tela, 'Salvar rascunho')?.disabled).toBe(true);
+    expect(indisponivel(botao(tela, 'Salvar rascunho'))).toBe(true);
   });
 
   it('a consulta de avaliação leva a oferta escolhida na tela, ou null quando não há escolha', async () => {
@@ -910,7 +912,7 @@ describe('InscricaoDoCandidatoPage', () => {
     const tela = await abrir();
 
     const enviar = botao(tela, 'Enviar inscrição');
-    expect(enviar.disabled).toBe(true);
+    expect(indisponivel(enviar)).toBe(true);
     const motivo = tela.querySelector('#inscricao-motivo-envio');
     expect(motivo?.textContent).toMatch(/Falt(a|am) corrigir \d+ itens?\./);
     expect(motivo?.querySelectorAll('li button').length).toBeGreaterThan(0);
@@ -938,7 +940,7 @@ describe('InscricaoDoCandidatoPage', () => {
     servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
 
-    expect(botao(tela, 'Enviar inscrição').disabled).toBe(false);
+    expect(indisponivel(botao(tela, 'Enviar inscrição'))).toBe(false);
     expect(tela.querySelector('#inscricao-motivo-envio')).toBeNull();
   });
 
@@ -1231,14 +1233,15 @@ describe('InscricaoDoCandidatoPage', () => {
     servico.obter = () => releitura;
 
     await clicar(botao(tela, 'Enviar inscrição'));
-    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+    expect(indisponivel(botao(tela, 'Enviando'))).toBe(true);
+    expect(botao(tela, 'Enviando').getAttribute('aria-busy')).toBe('true');
 
     releitura.next(
       apiOk(inscricao({ ...RESPONDIDA, eTag: '"inscricao-1:2"' }), 200, new HttpHeaders()),
     );
     fixture.detectChanges();
 
-    expect(botao(tela, 'Enviar inscrição').disabled).toBe(false);
+    expect(indisponivel(botao(tela, 'Enviar inscrição'))).toBe(false);
   });
 
   it('a releitura que falha depois do envio manda recarregar a página e não deixa enviar com o ETag velho', async () => {
@@ -1249,7 +1252,7 @@ describe('InscricaoDoCandidatoPage', () => {
     await clicar(botao(tela, 'Enviar inscrição'));
 
     expect(tela.textContent).toContain('Recarregue a página antes de corrigir');
-    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+    expect(indisponivel(botao(tela, 'Enviar inscrição'))).toBe(true);
     botao(tela, 'Enviar inscrição').click();
     expect(servico.enviados).toHaveLength(1);
   });
@@ -1262,14 +1265,15 @@ describe('InscricaoDoCandidatoPage', () => {
     servico.obter = () => releitura;
 
     await clicar(botao(tela, 'Enviar inscrição'));
-    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+    expect(indisponivel(botao(tela, 'Enviando'))).toBe(true);
+    expect(botao(tela, 'Enviando').getAttribute('aria-busy')).toBe('true');
 
     releitura.next(
       apiOk(inscricao({ ...RESPONDIDA, eTag: '"inscricao-1:2"' }), 200, new HttpHeaders()),
     );
     fixture.detectChanges();
 
-    expect(botao(tela, 'Enviar inscrição').disabled).toBe(false);
+    expect(indisponivel(botao(tela, 'Enviar inscrição'))).toBe(false);
   });
 
   it('a releitura que falha depois de uma falha sem resposta manda recarregar a página', async () => {
@@ -1283,7 +1287,7 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(tela.textContent).toContain('Não conseguimos confirmar se a inscrição foi gravada');
     expect(tela.textContent).not.toContain('foi enviada');
     expect(tela.textContent).not.toContain('A inscrição não foi gravada');
-    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+    expect(indisponivel(botao(tela, 'Enviar inscrição'))).toBe(true);
   });
 
   it('o seletor de curso só aparece quando o processo oferece mais de um', async () => {
@@ -1295,6 +1299,13 @@ describe('InscricaoDoCandidatoPage', () => {
     servico.ofertas = [MEDICINA, DIREITO];
     tela = await abrir();
     expect(tela.querySelector('#inscricao-oferta')).not.toBeNull();
+  });
+
+  it('o seletor da 1ª opção declara que o curso é obrigatório', async () => {
+    servico.ofertas = [MEDICINA, DIREITO];
+    const tela = await abrir();
+
+    expect(tela.querySelector('#inscricao-oferta')?.getAttribute('aria-required')).toBe('true');
   });
 
   const escolherCurso = async (tela: HTMLElement, id: string): Promise<void> => {
@@ -1418,7 +1429,7 @@ describe('InscricaoDoCandidatoPage', () => {
     const tela = await abrir();
     await clicar(passos(tela)[1]);
 
-    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+    expect(indisponivel(botao(tela, 'Enviar inscrição'))).toBe(true);
     expect(tela.querySelector('#inscricao-motivo-envio')?.textContent).toContain(
       'Escolha o curso.',
     );
@@ -1782,7 +1793,97 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(
       tela.querySelectorAll('nav[aria-label="Passos da inscrição"] li.is-done, nav li.is-done'),
     ).toHaveLength(0);
-    expect(botao(tela, 'Enviar inscrição').disabled).toBe(true);
+    expect(indisponivel(botao(tela, 'Enviar inscrição'))).toBe(true);
+  });
+
+  describe('gravação em curso', () => {
+    const emCurso = async (): Promise<{
+      tela: HTMLElement;
+      salvar: HTMLButtonElement;
+      resposta: Subject<ApiResult<InscricaoDto>>;
+    }> => {
+      servico.inscricao = inscricao(RESPONDIDA);
+      const tela = await abrir();
+      const resposta = new Subject<ApiResult<InscricaoDto>>();
+      servico.salvar = (_: string, request: InscricaoRequest) => {
+        servico.salvos.push(request);
+        return resposta;
+      };
+      const salvar = botao(tela, 'Salvar rascunho');
+      salvar.focus();
+      await clicar(salvar);
+      return { tela, salvar, resposta };
+    };
+
+    it('deixa o formulário somente leitura, sem tirar o foco nem os valores', async () => {
+      const { tela, salvar } = await emCurso();
+
+      expect(campoDe(tela, 'NOME').closest('fieldset')?.disabled).toBe(true);
+      expect(campoDe(tela, 'NOME').matches(':disabled')).toBe(true);
+      expect(campoDe(tela, 'NOME').value).not.toBe('');
+      expect(salvar.textContent?.trim()).toBe('Salvando…');
+      expect(salvar.getAttribute('aria-busy')).toBe('true');
+      expect(indisponivel(salvar)).toBe(true);
+      expect(document.activeElement).toBe(salvar);
+    });
+
+    it('não parte outra gravação por clique nem pelo teclado', async () => {
+      const { tela, salvar } = await emCurso();
+
+      salvar.click();
+      salvar.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      botao(tela, 'Enviar inscrição').click();
+      fixture.detectChanges();
+
+      expect(servico.salvos).toHaveLength(1);
+      expect(servico.enviados).toHaveLength(0);
+    });
+
+    it('devolve o formulário ao fim e anuncia o rascunho salvo', async () => {
+      const { tela, salvar, resposta } = await emCurso();
+
+      resposta.next(apiOk(inscricao(RESPONDIDA), 200, new HttpHeaders()));
+      fixture.detectChanges();
+
+      expect(campoDe(tela, 'NOME').closest('fieldset')?.disabled).toBe(false);
+      expect(salvar.textContent?.trim()).toBe('Salvar rascunho');
+      expect(salvar.getAttribute('aria-busy')).toBeNull();
+      expect(tela.querySelector('[aria-live="polite"].sr-only')?.textContent).toBe(
+        'Rascunho salvo.',
+      );
+      expect(document.activeElement).toBe(salvar);
+    });
+
+    it('reabilita o formulário ao receber a recusa, para o foco chegar ao campo recusado', async () => {
+      const { tela, resposta } = await emCurso();
+
+      resposta.next(
+        apiFailure(
+          {
+            type: 'about:blank',
+            title: 'Recusada',
+            status: 422,
+            code: 'uniplus.selecao.inscricao.item_obrigatorio_ausente',
+            traceId: '',
+            errors: [
+              {
+                field: 'NOME',
+                code: 'uniplus.selecao.inscricao.item_obrigatorio_ausente',
+                message: "O item 'NOME' é obrigatório e está sem resposta.",
+              },
+            ],
+          },
+          422,
+          new HttpHeaders(),
+        ),
+      );
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(campoDe(tela, 'NOME').closest('fieldset')?.disabled).toBe(false);
+      expect(document.activeElement).toBe(campoDe(tela, 'NOME'));
+    });
   });
 
   it('o rascunho não vai para o armazenamento do navegador', async () => {

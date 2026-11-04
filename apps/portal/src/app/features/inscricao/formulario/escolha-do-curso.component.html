@@ -1,0 +1,58 @@
+<div class="field inscricao-oferta">
+  <label class="field__label is-required" for="inscricao-oferta">{{
+    comSegundaOpcao() ? '1ª opção' : 'Curso em que você se inscreve'
+  }}</label>
+  <select
+    #seletorDaOferta
+    class="select"
+    id="inscricao-oferta"
+    aria-required="true"
+    [attr.aria-invalid]="erroDaOferta() ? 'true' : null"
+    [attr.aria-describedby]="erroDaOferta() ? 'inscricao-oferta-erro' : null"
+    (change)="escolherOferta.emit(valorDe($event))"
+  >
+    <option value="" [selected]="ofertaEscolhida() === null">Selecione</option>
+    @for (oferta of ofertas(); track oferta.id) {
+      <option [value]="oferta.id" [selected]="ofertaEscolhida() === oferta.id">
+        {{ oferta.nome }}
+      </option>
+    }
+  </select>
+  @if (erroDaOferta(); as erro) {
+    <span class="field__error" id="inscricao-oferta-erro">{{ erro }}</span>
+  }
+</div>
+@if (comSegundaOpcao()) {
+  <div class="field inscricao-oferta">
+    <label class="field__label" for="inscricao-segunda-oferta">2ª opção (opcional)</label>
+    <select
+      #seletorDaSegundaOferta
+      class="select"
+      id="inscricao-segunda-oferta"
+      [disabled]="!primeiraEscolhida()"
+      [attr.aria-invalid]="erroDaSegundaOferta() ? 'true' : null"
+      [attr.aria-describedby]="descricaoDaSegunda()"
+      (change)="escolherSegundaOferta.emit(valorDe($event))"
+    >
+      <option value="" [selected]="segundaEscolhida() === null">Nenhuma</option>
+      @for (oferta of ofertasDaSegunda(); track oferta.id) {
+        <option [value]="oferta.id" [selected]="segundaEscolhida() === oferta.id">
+          {{ oferta.nome }}
+        </option>
+      }
+    </select>
+    <span class="field__hint" id="inscricao-segunda-oferta-ajuda">
+      @if (!primeiraEscolhida()) {
+        Escolha a 1ª opção para poder indicar a 2ª.
+      } @else {
+        A 2ª opção tem de ser um curso diferente da 1ª.
+      }
+    </span>
+    @if (avisoDaSegundaLimpa(); as limpa) {
+      <span class="field__hint" id="inscricao-segunda-oferta-aviso">{{ limpa }}</span>
+    }
+    @if (erroDaSegundaOferta(); as erro) {
+      <span class="field__error" id="inscricao-segunda-oferta-erro">{{ erro }}</span>
+    }
+  </div>
+}
