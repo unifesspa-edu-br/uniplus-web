@@ -55,10 +55,7 @@
   }
 }
 
-<!-- Fora do gate de `processoSeletivoId()`: o próprio anexo sabe lidar com o
-     processo ainda não criado — sempre foi assim, e um componente a menos no
-     DOM enquanto o preflight não carrega quebraria quem depende dele nesse
-     meio-tempo (retomada em curso, escolha de documento pendente). -->
+<!-- Fora do gate de `processoSeletivoId()`: o anexo sabe lidar com o processo ainda não criado. -->
 <!-- O envio e a leitura dos documentos a publicar são da permissão de publicar. -->
 <ng-container *authTemPermissao="permissaoDePublicar">
   <sel-anexo-edital />

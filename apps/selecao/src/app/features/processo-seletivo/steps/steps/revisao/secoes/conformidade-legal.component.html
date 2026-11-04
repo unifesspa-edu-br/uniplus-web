@@ -1,10 +1,6 @@
 <h2 id="revisao-legal-titulo" class="step-section__title">Conformidade legal</h2>
 
-<!--
-  A conformidade legal é avaliada CONTRA UMA DATA — a norma vigente naquele dia. Sem
-  dizer qual, o aviso de que a data mudou pedia para atualizar o checklist sem nunca
-  dizer de que data para qual.
--->
+<!-- A conformidade legal vale para uma data: a norma vigente naquele dia. -->
 @if (preflight.legal(); as legal) {
   <p class="field__hint">
     Avaliada contra a data de {{ legal.dataReferencia | dateBr }}, que é a da publicação do ato.
@@ -12,10 +8,7 @@
 }
 
 @if (preflight.legalIndisponivel(); as motivo) {
-  <!-- Pendência do rascunho, não falha de carga: o servidor respondeu por
-       que ainda não há como avaliar, e o que destrava está nesta mesma
-       tela (o período do ato) ou no Cronograma. Sem "Tentar novamente",
-       que aqui não resolveria nada (`#742`). -->
+  <!-- Pendência do rascunho, não falha de carga: "Tentar novamente" não a resolveria. -->
   <p class="alert alert--info" role="status">{{ motivo }}</p>
 } @else if (conferencia.legalOk()) {
   <p class="alert alert--success" role="status">Nenhuma obrigatoriedade legal reprovada.</p>
@@ -42,9 +35,7 @@
                 >Ler a norma (abre em nova aba)</a
               >
             } @else {
-              <!-- Citação que não é endereço — um DOI, uma URN — é mostrada como texto:
-                   vira identificador para procurar, não um link que não leva a lugar
-                   nenhum. -->
+              <!-- DOI ou URN não é endereço: aparece como texto, não como link. -->
               <span class="step-hint">Citação da norma: {{ regra.atoNormativoUrl }}</span>
             }
           }

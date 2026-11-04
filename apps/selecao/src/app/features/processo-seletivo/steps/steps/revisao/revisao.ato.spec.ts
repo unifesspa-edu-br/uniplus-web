@@ -77,27 +77,7 @@ describe('RevisaoStepComponent — ato e período', () => {
   });
 
   describe('select de tipo de ato — sobrevive a destruir e recriar a seção', () => {
-    /**
-     * O bloco do formulário só existe dentro do `@else` de
-     * `preflight.erro()`: uma recarga que falhe destrói o `<select>`
-     * inteiro, e uma recarga seguinte que dê certo o recria do zero, com as
-     * `<option>` do `@for` de novo. O binding é `formControlName`, não
-     * `[value]` cru — `NgSelectOption` reaplica `writeValue()` do controle a
-     * cada `<option>` que se registra, então a seleção sobrevive mesmo
-     * quando as opções são criadas depois do valor já estar no controle.
-     */
-    /**
-     * Regressão de `#738`. Os demais testes deste arquivo preenchem o rascunho
-     * pelo store, então o mapeador sempre recebia texto — e o defeito vivia
-     * justamente **entre** o template e o mapeador: com `type="number"`, o
-     * `NumberValueAccessor` do Angular grava número num controle declarado
-     * como texto, e `validate()` estourava com `texto.trim is not a function`.
-     *
-     * Por isso este teste atravessa o DOM: escreve no `<input>` e dispara o
-     * evento, que é o caminho que o operador percorre. Preencher o controle por
-     * `setValue` não reproduz o defeito, porque aí o valor já é do tipo
-     * declarado.
-     */
+    /** O `<input type="number"` gravaria número num controle de texto; por isso o teste digita no campo. */
     it('valida sem estourar quando o ano é digitado no campo, e não posto no controle', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
@@ -113,6 +93,11 @@ describe('RevisaoStepComponent — ato e período', () => {
       expect(store.draft().publicacao.ato.ano).toBe('2027');
     });
 
+    /**
+     * O formulário só existe dentro do `@else` de `preflight.erro()`: uma recarga que falha
+     * destrói o `<select>`, e a seguinte o recria. A seleção sobrevive porque o rascunho é a fonte
+     * e o `formControlName` reaplica o valor a cada `<option>` que se registra.
+     */
     it('mantém o tipo de ato escolhido visível depois de uma recarga que falha e outra que dá certo', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);

@@ -94,14 +94,7 @@
 
     <div class="form-field">
       <label class="label" for="rev-ano">Ano</label>
-      <!--
-        `type="text"` com `inputmode="numeric"`, e não `type="number"`: o
-        `NumberValueAccessor` do Angular grava número no controle, que é
-        declarado como texto igual aos seus seis irmãos deste formulário, e o
-        mapeador quebrava ao chamar `trim()` sobre número (#738). O teclado
-        numérico do celular vem do `inputmode`, e a validação do formato é do
-        próprio mapeador.
-      -->
+      <!-- `type="number"` gravaria número num controle declarado como texto. -->
       <input
         class="input"
         id="rev-ano"
