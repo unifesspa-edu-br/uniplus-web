@@ -1,0 +1,133 @@
+
+/* Quadro de vagas: os campos numéricos ficam estreitos para a linha caber sem
+   rolagem, e a tabela rola sozinha quando as colunas de modalidade crescem. */
+.input--numero {
+  width: 6ch;
+  text-align: right;
+  padding-inline: var(--space-2);
+}
+
+.vagas-table__oferta {
+  text-align: left;
+  font-weight: var(--weight-medium);
+  white-space: normal;
+  min-width: 22ch;
+}
+
+/*
+ * Identidade e ação ficam presas às bordas do quadro, e o miolo rola por baixo
+ * delas: com quinze colunas, um número no meio da rolagem não diz de qual
+ * oferta é, e o botão de remover fica fora de alcance.
+ *
+ * Só acima de 768px — abaixo disso o design system empilha a tabela em
+ * cartões, cada um já encabeçado pela oferta.
+ */
+@media (min-width: 768px) {
+  .vagas-table thead th,
+  .vagas-table tbody td,
+  .vagas-table tfoot td {
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+    text-align: right;
+  }
+
+  .vagas-table thead th:first-child,
+  .vagas-table__oferta {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    border-right: 1px solid var(--border-subtle);
+  }
+
+  .vagas-table thead th:last-child,
+  .vagas-table__acoes {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    border-left: 1px solid var(--border-subtle);
+  }
+
+  /* Texto, não dígito: alinha à esquerda e mantém o respiro do design system. */
+  .vagas-table thead th:first-child,
+  .vagas-table__oferta {
+    text-align: left;
+  }
+
+  .vagas-table thead th:first-child,
+  .vagas-table thead th:last-child,
+  .vagas-table__oferta,
+  .vagas-table__acoes {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+
+  /* Fundo opaco, senão o miolo aparece por baixo da coluna presa. O seletor
+     inclui `.table-responsive` para alcançar o `th` do design system. */
+  .table-responsive .vagas-table__oferta,
+  .table-responsive .vagas-table__acoes {
+    background: var(--surface-card);
+  }
+
+  .table-responsive tbody tr:hover .vagas-table__oferta,
+  .table-responsive tbody tr:hover .vagas-table__acoes {
+    background: var(--surface-page);
+  }
+
+  /* Sobre as células do corpo, que dividem a mesma camada presa. */
+  .vagas-table thead th:first-child,
+  .vagas-table thead th:last-child {
+    z-index: 2;
+    background: var(--surface-page);
+  }
+
+  /* O cabeçalho quebra em vez de impor a largura do seu texto à coluna. */
+  .vagas-table thead th {
+    white-space: normal;
+    vertical-align: bottom;
+  }
+}
+
+/* Segue um alerta, que já tem peso visual próprio: sem o afastamento a nota
+   parece parte dele. */
+.vagas-calculadas__resumo {
+  margin-top: var(--space-3);
+}
+
+/* A linha de totais fecha o quadro: separa-se das ofertas por uma borda mais
+   firme que a que divide as linhas entre si. Empilhada, ela é o último cartão, e a
+   borda mais firme é a do cartão. */
+.vagas-table tfoot th,
+.vagas-table tfoot td {
+  font-weight: var(--weight-semibold);
+}
+
+@media (min-width: 768px) {
+  .vagas-table tfoot th,
+  .vagas-table tfoot td {
+    border-top: 2px solid var(--border-default);
+  }
+}
+
+@media (max-width: 767px) {
+  .table-responsive .vagas-table tfoot tr {
+    border-color: var(--border-default);
+  }
+
+  /* Na tabela, a célula vazia mantém a coluna de ações; no cartão seria só uma linha em branco. */
+  .table-responsive .vagas-table tfoot .vagas-table__acoes {
+    display: none;
+  }
+}
+
+.vagas-table tfoot .vagas-table__oferta {
+  color: var(--text-secondary);
+  font-weight: var(--weight-medium);
+}
+
+/* Classe própria, sem `.table-responsive__actions`: no desktop a célula de ações das vagas
+   fica `table-cell` e acompanha a altura da linha; abaixo de 768 px o DS a empilha no cartão,
+   como as demais células. */
+.vagas-table__acoes {
+  text-align: right;
+  white-space: nowrap;
+}

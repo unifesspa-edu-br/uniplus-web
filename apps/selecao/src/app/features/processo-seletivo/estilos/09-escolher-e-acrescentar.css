@@ -1,0 +1,78 @@
+/*
+ * Escolher e acrescentar, numa linha só.
+ *
+ * O campo tinha a largura inteira do passo — mil e trezentos pixels para um seletor cujo
+ * rótulo mais longo não passa de trinta caracteres — e a ação caía na linha de baixo, longe
+ * do que ela age. Agora o campo ocupa o que o conteúdo pede e a ação fica ao lado.
+ *
+ * O alinhamento é pela base, porque a ação não tem rótulo acima: alinhada pelo topo, ela
+ * flutuaria na altura do rótulo do campo. É pela base também que a dica precisa sair de
+ * dentro do campo e virar uma linha própria abaixo — dentro, ela empurraria a ação para
+ * baixo a altura do texto.
+ */
+.sel-processo .escolher-e-acrescentar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-4);
+  /* Respiro acima: o rótulo do campo vem logo abaixo do texto que explica a seção, e
+     colado nele os dois se leem como um parágrafo só. */
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.sel-processo .escolher-e-acrescentar > .form-field {
+  flex: 1 1 18rem;
+  min-width: 0;
+  max-width: 34rem;
+  margin: 0;
+}
+
+/* A ação tem a altura do campo ao lado, para as duas bases coincidirem. */
+.sel-processo .escolher-e-acrescentar > .btn {
+  --btn-height: var(--touch-comfortable);
+  flex: 0 1 auto;
+}
+
+/*
+ * Campo e ação quando o próprio campo carrega o seu aviso embaixo — o de busca conta o que o
+ * termo alcança. Aqui o alinhamento é pelo TOPO, que é onde o controle começa: pela base, a
+ * ação descia a altura do aviso e deixava de parecer da mesma linha.
+ */
+.sel-processo .campo-com-acao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3) var(--space-4);
+}
+
+.sel-processo .campo-com-acao > ui-combobox {
+  display: block;
+  flex: 1 1 18rem;
+  min-width: 0;
+  max-width: 34rem;
+}
+
+/* A ação quebra o próprio rótulo em vez de passar da borda do card numa tela estreita. */
+.sel-processo .campo-com-acao > .btn,
+.sel-processo .doc-item__acoes > .btn {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: normal;
+  line-height: var(--leading-snug);
+}
+
+/* O campo que abriga a própria ação não tem teto: quem o tem é o controle dentro dele. */
+.sel-processo .escolher-e-acrescentar > .form-field:has(.campo-com-acao) {
+  max-width: none;
+  flex-basis: 100%;
+}
+
+/* A dica e o aviso de contagem, agora abaixo da linha inteira. */
+.sel-processo .escolher-e-acrescentar__ajuda {
+  margin-top: 0;
+}
+
+/*
+ * A fase fechada: só o cabeçalho, com o que há dentro dela resumido ao lado. Sete fases
+ * fechadas cabem numa tela — que é o que o passo promete ao se chamar linha do tempo.
+ */

@@ -1,0 +1,52 @@
+/* Wizard footer */
+.wiz-footer {
+  /* Os botões de navegação ficam à vista enquanto o passo rola. */
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: var(--surface-card);
+  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-4) var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .wiz-footer {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .wiz-footer .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* As ações do rascunho da publicação ficam à ESQUERDA do botão que publica: são a gravação
+   reversível, e encostá-las no botão irreversível convidaria ao clique errado. O `margin-right:
+   auto` é o que as empurra para lá dentro do rodapé alinhado à direita. */
+.rascunho-publicacao {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-right: auto;
+  flex-wrap: wrap;
+}
+
+.rascunho-publicacao__carimbo {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 767px) {
+  /* Empilhado, o `margin-right: auto` não tem o que empurrar e a linha de ações ocupa a largura
+     toda, acima dos botões de navegação. */
+  .rascunho-publicacao {
+    width: 100%;
+    margin-right: 0;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,371 @@
+/*
+ * Título e ações na mesma linha. Empilhados, as ações de reordenar e remover — secundárias —
+ * gastavam uma linha inteira por fase e apareciam com mais peso que o nome da fase.
+ */
+.sel-processo .fase-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.sel-processo .fase-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-left: auto;
+  /* Sem encolher e sem quebrar, os três botões somam quase trezentos pixels e empurram o
+     cabeçalho para fora da tela estreita. */
+  min-width: 0;
+}
+.sel-processo .fase-titulo {
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.sel-processo .fase-alternar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  /* Item de grid e de flex tem piso intrínseco: sem isto o nome da fase estica o cabeçalho
+     e o passo transborda na horizontal, nas cinco larguras da matriz. */
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: var(--space-2) 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .fase-alternar > span:not([aria-hidden]) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .fase-alternar:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+
+.sel-processo .fase-bloco--aberta {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-5);
+}
+
+/*
+ * A fase aberta é um bloco delimitado: com várias abertas, sem a borda não se vê onde uma
+ * termina e a próxima começa. Abaixo de 768 o `.step-card` já é cartão.
+ */
+@media (min-width: 768px) {
+  .sel-processo .fase-bloco--aberta {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2) var(--space-4) var(--space-5);
+  }
+}
+
+/* As seções da fase ficam um nível abaixo do título dela, também no tamanho. */
+.sel-processo .fase-bloco :is(h3, h4).form-section__title {
+  font-size: var(--text-base);
+}
+
+/*
+ * A etapa fechada em uma linha: nome à esquerda, o que já está declarado à direita. Aberta,
+ * ela passa de mil pixels — oito delas faziam a habilitação valer catorze telas de rolagem.
+ */
+.sel-processo .etapa-bloco {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: var(--space-3);
+  background: var(--surface-card);
+  overflow: hidden;
+}
+
+.sel-processo .etapa-bloco--aberta {
+  border-color: var(--color-primary);
+}
+
+/*
+ * Nome e ações na mesma linha, como no cabeçalho da fase. As ações ficam FORA do botão que
+ * abre o cartão — botão não aninha botão — e por isso o invólucro é quem alinha os dois.
+ */
+.sel-processo .etapa-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sel-processo .etapa-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-left: auto;
+  padding-right: var(--space-4);
+  /* Sem encolher, os três botões empurram o nome da etapa para fora da tela estreita. */
+  min-width: 0;
+}
+
+/*
+ * Subir, Descer e Remover são o mesmo controle, e precisam parecer o mesmo controle.
+ *
+ * Eles já eram todos terciários; o que os separava era o ESTADO. O terciário habilitado tem
+ * fundo transparente e lê como texto, enquanto o desabilitado recebe `--surface-disabled` e
+ * vira pílula cinza — de modo que, numa etapa que não pode subir, "Subir" e "Descer" viravam
+ * dois blocos sólidos e só "Remover" continuava texto. O que está indisponível ganhava mais
+ * peso visual que a única ação disponível.
+ *
+ * Aqui o desabilitado mantém o fundo transparente e apenas esmaece: os três leem como a mesma
+ * coisa, e a diferença passa a ser a cor do texto. Também segue a intenção já registrada no
+ * cabeçalho da fase — estas ações são secundárias e não devem pesar mais que o nome.
+ */
+.sel-processo .fase-acoes .btn[disabled],
+.sel-processo .etapa-acoes .btn[disabled] {
+  background: transparent;
+}
+
+/* O botão do resumo deixa de ocupar a linha inteira: agora divide com as ações. */
+.sel-processo .etapa-cabecalho > .etapa-resumo {
+  width: auto;
+  flex: 1 1 auto;
+}
+
+.sel-processo .etapa-resumo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .etapa-resumo:hover {
+  background: var(--color-primary-50);
+}
+
+.sel-processo .etapa-resumo:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+}
+
+/* Triângulo que gira: é o estado aberto/fechado visível sem depender de cor. */
+.sel-processo .etapa-resumo__seta {
+  flex-shrink: 0;
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transition: transform var(--duration-fast, 150ms) var(--ease-standard, ease);
+}
+
+.sel-processo .etapa-bloco--aberta > .etapa-cabecalho > .etapa-resumo .etapa-resumo__seta,
+.sel-processo .fase-bloco--aberta > .fase-cabecalho .etapa-resumo__seta {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sel-processo .etapa-resumo__seta {
+    transition: none;
+  }
+}
+
+.sel-processo .etapa-resumo__nome {
+  font-weight: var(--weight-semibold);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .etapa-resumo__marcas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.sel-processo .etapa-resumo__marca {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Abaixo do estreito, as marcas descem para a linha de baixo em vez de espremer o nome. */
+@media (max-width: 767px) {
+  .sel-processo .etapa-resumo {
+    flex-wrap: wrap;
+  }
+
+  .sel-processo .etapa-resumo__marcas {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.sel-processo .etapa-bloco .etapa-linha {
+  padding: 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-4);
+}
+
+/*
+ * A confirmação da remoção da fase, ancorada logo abaixo do cabeçalho dela: quem lê a
+ * contagem do que vai junto está olhando a fase que a provocou.
+ */
+.sel-processo .confirma-remocao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-danger-500);
+  border-left: 3px solid var(--color-danger-solid);
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--color-danger-500) 6%, var(--surface-card));
+}
+
+.sel-processo .confirma-remocao__texto {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  min-width: 0;
+}
+
+.sel-processo .confirma-remocao__acoes {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/*
+ * O botão fecha a lista de etapas, e a configuração da fase começa logo abaixo:
+ * encostado no título seguinte, ele parecia pertencer a ele.
+ */
+.sel-processo .acao-de-etapa {
+  margin: var(--space-3) 0 var(--space-6);
+}
+
+.sel-processo .etapa-publica {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-subtle);
+  display: grid;
+  gap: var(--space-3);
+}
+
+/*
+ * Campos alinham pelo topo: o rótulo e o controle de cada coluna ficam na mesma linha,
+ * e a dica de um campo desce por baixo dele em vez de empurrar o vizinho para cima.
+ * Alinhar pela base fazia o campo com dica — "Contra qual publicação" — subir o próprio
+ * seletor a altura da dica, deixando as duas colunas desencontradas.
+ */
+.sel-processo .etapa-publica > .form-grid {
+  align-items: start;
+}
+
+/*
+ * Bloco da etapa que cresce com o que se declara nele — as janelas recursais e as
+ * publicações — recolhido como a etapa e a fase, com a contagem no cabeçalho.
+ */
+.sel-processo .etapa-publica--recolhivel {
+  gap: 0;
+}
+
+.sel-processo .etapa-publica__cabecalho {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sel-processo .etapa-publica__cabecalho:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-xs, 4px);
+}
+
+.sel-processo .etapa-publica__cabecalho .form-section__title {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .etapa-publica--recolhivel.is-aberto > div {
+  margin-top: var(--space-3);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sel-processo .etapa-publica--recolhivel.is-aberto > .etapa-publica__cabecalho .etapa-resumo__seta {
+  transform: rotate(90deg);
+}
+
+/*
+ * A ação não tem rótulo acima: alinhada pelo topo, ela flutuaria na altura dos rótulos
+ * dos campos vizinhos em vez de na altura dos controles.
+ */
+.sel-processo .etapa-publica > .form-grid > .btn {
+  align-self: end;
+}
+
+.sel-processo .form-field .input,
+.sel-processo .form-field select.input {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Rótulo comprido de opção não deve vazar o campo enquanto fechado. */
+.sel-processo .form-field select.input {
+  text-overflow: ellipsis;
+}
+
+/*
+ * Recusa de carregamento com ação de repetir: texto e botão em blocos, nunca
+ * lado a lado. Em 320 px o botão inline não quebra linha e leva o passo inteiro
+ * a transbordar na horizontal — mesmo arranjo já usado no passo 1.
+ */
+.sel-processo .field__erro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-block-end: var(--space-2);
+  color: var(--color-danger-fg, currentColor);
+}
+
+.sel-processo .field__erro p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

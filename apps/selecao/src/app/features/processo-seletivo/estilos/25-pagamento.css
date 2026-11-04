@@ -1,0 +1,26 @@
+/* Fundamentos de isenção: cada item traz a caixa e, abaixo, a descrição que
+   distingue um fundamento do outro — os critérios de renda e de origem escolar
+   diferem entre eles, e é por isso que a descrição não é decorativa. */
+.pagamento-fundamentos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pagamento-fundamentos__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pagamento-fundamentos__nome {
+  font-weight: var(--weight-medium);
+}
+
+.pagamento-fundamentos__item .field__hint {
+  margin: 0;
+  padding-left: calc(var(--space-6) + var(--space-1));
+}

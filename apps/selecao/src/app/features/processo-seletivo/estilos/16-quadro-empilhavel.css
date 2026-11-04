@@ -1,0 +1,72 @@
+/*
+ * O DS empilha a tabela em cartões pela largura da janela, mas no editor o stepper lateral come
+ * parte dela: em 768 sobram ~460px para as colunas. O quadro empilhável empilha pela largura que
+ * ele mesmo recebe, abaixo da qual os cabeçalhos não cabem sem rolagem. As regras do cartão
+ * repetem as do DS porque o DS empilha por `@media`, e uma regra não une as duas condições.
+ */
+.quadro-empilhavel {
+  container: quadro-empilhavel / inline-size;
+}
+
+.table-responsive.quadro-empilhavel :is(th, td) {
+  padding-inline: var(--space-3);
+}
+
+@container quadro-empilhavel (max-width: 48rem) {
+  .quadro-empilhavel thead {
+    display: none;
+  }
+
+  .quadro-empilhavel table,
+  .quadro-empilhavel caption:not(.sr-only),
+  .quadro-empilhavel tbody,
+  .quadro-empilhavel tr,
+  .quadro-empilhavel td,
+  .quadro-empilhavel tbody th[scope='row'] {
+    display: block;
+    width: 100%;
+  }
+
+  .quadro-empilhavel tbody {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .quadro-empilhavel tbody tr {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+  }
+
+  /* O realce de linha da tabela do DS apagaria o fundo do cartão; o cartão realça pela borda. */
+  .table-responsive.quadro-empilhavel tbody tr:hover {
+    background: var(--surface-card);
+    border-color: var(--border-default);
+  }
+
+  .table-responsive.quadro-empilhavel tbody th[scope='row'] {
+    border: none;
+    padding: 0 0 var(--space-1);
+    font-weight: var(--weight-medium);
+  }
+
+  .table-responsive.quadro-empilhavel td {
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+  }
+
+  .quadro-empilhavel td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: left;
+  }
+}

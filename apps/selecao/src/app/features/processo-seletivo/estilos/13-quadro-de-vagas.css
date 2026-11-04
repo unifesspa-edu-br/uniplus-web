@@ -1,0 +1,46 @@
+/* ---- Step 4: Vagas ---- */
+
+.vagas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.vagas-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-subtle);
+  padding: var(--space-2) var(--space-4);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border-default);
+  white-space: nowrap;
+}
+
+.vagas-table thead th:last-child {
+  text-align: center;
+  width: 56px;
+}
+
+.vagas-table tbody td {
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+/* Recuo e divisória de célula de tabela. Empilhada, a célula é linha do cartão, e o recuo
+   é o do design system: com este, o rótulo saía do alinhamento com o nome da oferta. */
+@media (min-width: 768px) {
+  .vagas-table tbody td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .vagas-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+}

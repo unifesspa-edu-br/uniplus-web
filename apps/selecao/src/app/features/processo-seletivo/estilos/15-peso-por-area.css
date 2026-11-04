@@ -1,0 +1,43 @@
+/* ---- Step 6: Fórmula — resolução de Peso por Área ---- */
+.peso-area {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.peso-area .field__hint a {
+  overflow-wrap: anywhere;
+}
+
+.peso-area__legenda {
+  caption-side: top;
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  padding-bottom: var(--space-2);
+}
+
+/* O corte vem abaixo do peso na mesma célula, menor: é complemento da área, não outra coluna. */
+.peso-area__corte {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.peso-area__valor {
+  white-space: nowrap;
+}
+
+.peso-area__base-legal {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.peso-area__base-legal-rotulo {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}

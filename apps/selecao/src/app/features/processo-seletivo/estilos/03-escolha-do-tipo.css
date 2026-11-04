@@ -1,0 +1,111 @@
+/* Search */
+.type-search {
+  display: block;
+  margin-bottom: var(--space-4);
+}
+
+/* Campo de busca não precisa acompanhar a largura da tela. */
+.type-search .input-group {
+  max-width: 400px;
+}
+
+/* Type cards — a grade se ajusta sozinha da tela de 320 px à de TV, sem
+   escalonar colunas por breakpoint. */
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-4);
+  border: 0;
+  margin: 0;
+  padding: var(--space-1);
+}
+
+/* Mesma razão para o agrupamento de tipos do passo 1. */
+.type-grid {
+  min-inline-size: 0;
+}
+
+.type-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+  background: var(--surface-card);
+}
+
+.type-card:hover {
+  border-color: var(--color-primary-300);
+}
+
+.type-card:has(input:checked),
+.type-card.is-selected {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--surface-card));
+}
+
+.type-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+}
+
+.type-card__check {
+  color: var(--color-success-600);
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.type-card:has(input:checked) .type-card__check,
+.type-card.is-selected .type-card__check {
+  opacity: 1;
+}
+
+.type-card__desc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.55;
+  flex: 1;
+  margin: 0;
+}
+
+.type-card__name {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-primary);
+  line-height: 1.3;
+}
+
+.type-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+}
+
+.type-card__tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: var(--weight-medium);
+  line-height: 1.6;
+}
+
+.type-card__legal {
+  font-size: var(--text-xs);
+  color: var(--text-link);
+  font-style: italic;
+  line-height: 1.5;
+  margin-top: auto;
+}
+
+/* `.sr-only` vem de `libs/shared-ui/src/styles/base.css`. */

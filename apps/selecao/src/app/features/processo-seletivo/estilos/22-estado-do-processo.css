@@ -1,0 +1,17 @@
+/* ── Estados da retomada por endereço ────────────────────────────── */
+
+.ps-estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+}
+
+.ps-estado__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}

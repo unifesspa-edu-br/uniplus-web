@@ -1,0 +1,115 @@
+/* O que a regra escolhida estabelece. Fica recolhido: é referência para
+   conferir a fundamentação do quadro, não algo que se leia a cada edição, e
+   aberto empurrava o formulário inteiro para baixo. O resumo do que a regra
+   passa a exigir continua fora, porque muda os campos logo abaixo. */
+.regra-explicada {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--color-primary);
+  background: var(--surface-subtle, var(--surface-card));
+  border-radius: var(--radius-xs);
+  font-size: var(--text-sm);
+}
+
+.regra-explicada__rotulo {
+  margin: var(--space-3) 0 var(--space-1);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.regra-explicada__rotulo:first-child {
+  margin-top: 0;
+}
+
+.regra-explicada__legal {
+  margin: 0;
+}
+
+.regra-explicada__invariantes {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-1);
+}
+
+/* A garantia costuma ser fórmula sem espaço ("VRSI=VR−VRRI"): como item de grade, ela impunha
+   a própria largura à coluna e saía da caixa na tela estreita. */
+.regra-explicada__invariantes li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.regra-explicada details {
+  margin-top: var(--space-2);
+}
+
+.regra-explicada > summary {
+  cursor: pointer;
+  color: var(--color-primary);
+  font-weight: var(--weight-medium);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* Com `display: flex` o navegador some com o marcador nativo do `summary`: sem ele, o quadro
+   fechado parecia um link solto. É o mesmo triângulo que gira no cabeçalho da fase. */
+.regra-explicada > summary::before {
+  content: '';
+  flex-shrink: 0;
+  align-self: center;
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transition: transform var(--duration-fast, 150ms) var(--ease-standard, ease);
+}
+
+.regra-explicada[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .regra-explicada > summary::before {
+    transition: none;
+  }
+}
+
+.regra-explicada__contagem {
+  color: var(--text-secondary);
+  font-weight: var(--weight-regular);
+  font-size: var(--text-xs);
+}
+
+/* Fechado, o bloco é só o resumo: sem borda nem fundo ele não compete com os
+   campos ao redor. */
+.regra-explicada:not([open]) {
+  border-left-color: transparent;
+  background: none;
+  padding-block: var(--space-2);
+}
+
+.regra-explicada ul {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+  color: var(--text-secondary);
+}
+
+.regra-explicada__parametros {
+  margin: var(--space-2) 0 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.regra-explicada__parametros dt {
+  color: var(--text-secondary);
+}
+
+.regra-explicada__parametros dd {
+  margin: 0;
+}

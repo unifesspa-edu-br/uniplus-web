@@ -1,0 +1,144 @@
+/* ---- Step 8: Desempate ---- */
+/* A lista é o contêiner que decide quando o cartão do critério empilha (ver abaixo). */
+.desempate-list {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/*
+ * Número, campos e ações ficam no topo do cartão: centralizados num critério alto, o número e
+ * as ações se afastavam do título do critério e pareciam soltos.
+ */
+.desempate-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.desempate-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.desempate-actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* Os campos do critério ocupam o espaço entre o número e as ações, e podem encolher. */
+.desempate-item__campos {
+  flex: 1;
+  min-width: 0;
+}
+
+/*
+ * Cartão estreito: número e ações ficam numa linha de cabeçalho e os campos descem para a
+ * largura inteira do cartão. Ao lado deles sobravam cerca de 110 px no celular, e o seletor da
+ * regra cortava o código em 768. A medida é a da lista, não a da tela, porque a largura útil
+ * depende do menu e do stepper laterais.
+ */
+@container (max-width: 40rem) {
+  .desempate-item {
+    flex-wrap: wrap;
+  }
+
+  .desempate-item > .desempate-actions {
+    margin-left: auto;
+  }
+
+  .desempate-item__campos {
+    order: 1;
+    flex-basis: 100%;
+  }
+}
+
+.desempate-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast, 120ms) ease,
+    color var(--duration-fast, 120ms) ease;
+}
+
+.desempate-btn:hover {
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+}
+
+.desempate-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* A remoção de uma regra de eliminação fica no canto da regra, como a do critério de desempate. */
+.eliminacao-acoes {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-2);
+}
+
+/* Ordem das áreas do ENEM num critério de desempate: a posição é a regra. */
+.desempate-areas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.desempate-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+/*
+ * O nome da área quebra entre palavras, nunca no meio: com `anywhere`, numa coluna estreita,
+ * "Redação" saía uma letra por linha. Sem espaço para uma palavra inteira ao lado dos botões,
+ * a linha quebra e os botões descem.
+ */
+.desempate-area__nome {
+  flex: 1 1 12ch;
+  overflow-wrap: break-word;
+}
+
+.desempate-area > .desempate-actions {
+  margin-left: auto;
+}
+
+.desempate-area-nova {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}

@@ -1,0 +1,69 @@
+/* Step card (mobile wrapper) */
+.step-card {
+  margin-bottom: var(--space-4);
+}
+
+@media (max-width: 767px) {
+  .step-card {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    background: var(--surface-card);
+  }
+
+  .step-card .label {
+    text-transform: uppercase;
+    font-size: var(--text-xs);
+    letter-spacing: 0.07em;
+  }
+}
+
+/* Cartão dentro de cartão, na tela estreita, vira seção do cartão de fora: cada borda com o
+   seu recuo tirava do conteúdo a largura que ele não tem de sobra. */
+@media (max-width: 479px) {
+  .step-card .step-card {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    border-radius: 0;
+    padding: var(--space-4) 0 0;
+  }
+
+  .step-card .table-responsive tbody tr,
+  .step-card .table-responsive tfoot tr {
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
+/* Step subtitle */
+.step-subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-link);
+  margin: 0 0 var(--space-5);
+}
+
+/* Campo inválido — borda vermelha para ajudar a identificar o item vazio */
+.sel-processo .input.is-invalid,
+.sel-processo select.input.is-invalid {
+  border-color: var(--color-danger-500);
+  background: var(--color-danger-50);
+}
+
+.input[type='date']::-webkit-calendar-picker-indicator {
+  /* display: none; */
+}
+
+/* Upload section */
+.upload-section {
+  margin-top: var(--space-5);
+}
+
+.upload-section > .label {
+  display: block;
+  margin-bottom: var(--space-3);
+}
+
+@media (max-width: 767px) {
+  .upload-section {
+    margin-top: 0;
+  }
+}

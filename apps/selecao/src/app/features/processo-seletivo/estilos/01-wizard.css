@@ -1,0 +1,111 @@
+/* Estilos do wizard de Processo Seletivo.
+ *
+ * Importado globalmente por `styles.css`. O shell da aplicação (sidebar,
+ * topbar, breadcrumb) é responsabilidade do layout — nada aqui deve
+ * redefini-lo. As regras que não são exclusivas do wizard ficam escopadas
+ * sob `.sel-processo` para não vazar para as demais rotas.
+ */
+
+/* O botão de calendário próprio do wizard substitui o ícone nativo. */
+.sel-processo input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Área útil do wizard: stepper lateral + corpo, com pelo menos a altura da rota; cresce
+   com o passo, e quem rola é o `.page`. */
+.wiz-shell {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: row;
+}
+
+/* Abaixo de 768 px a barra de etapas fica sobre o conteúdo, em coluna. */
+@media (max-width: 767px) {
+  .wiz-shell {
+    flex-direction: column;
+  }
+}
+
+/* Wizard body */
+.wiz-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.wiz-content {
+  flex: 1 0 auto;
+  padding: var(--space-8);
+}
+
+/* O botão do VLibras flutua na borda direita do viewport, por cima de qualquer controle que
+   chegue lá. A faixa livre (40 px do botão + a margem dele) mantém os campos e as ações de linha,
+   como "Teto" no bônus e "Remover" no cronograma, fora do alcance dele. Só a partir de 1024 px:
+   abaixo disso cada pixel reservado sai de um conteúdo que já é justo (o stepper lateral come
+   224 px), e as tabelas e os cartões aninhados do passo Vagas deixam de caber. Nas telas menores
+   o botão pode cobrir campos próximos à borda direita. */
+@media (min-width: 1024px) {
+  .wiz-content {
+    padding-inline-end: max(var(--space-8), var(--reserva-vlibras));
+  }
+}
+
+/* O rótulo de uma ação quebra em vez de passar da borda do cartão, que o `.page` corta sem
+   rolagem: na tela estreita, "Acrescentar à linha do tempo" não cabe numa linha só. */
+.sel-processo .btn {
+  max-width: 100%;
+  white-space: normal;
+  line-height: var(--leading-snug);
+}
+
+/* No celular, a margem lateral do passo acompanha a da barra de etapas. Com 40 px de cada
+   lado, os cartões aninhados (quadro > cascata > origem) ficavam com menos de 200 px úteis. */
+@media (max-width: 479px) {
+  .wiz-content {
+    padding-inline: var(--space-4);
+  }
+}
+
+/* Mensagens de validação do step ativo (role="alert") */
+.step-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  color: var(--color-danger-700);
+  background: var(--color-danger-50);
+  border: 1px solid var(--color-danger-500);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.step-error i {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.step-error__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.step-error__summary {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}
+
+.step-error__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-normal);
+}

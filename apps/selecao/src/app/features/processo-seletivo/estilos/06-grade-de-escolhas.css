@@ -1,0 +1,45 @@
+/* Checkbox grid */
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  gap: var(--space-3) var(--space-6);
+}
+
+/*
+ * Escolhas de rótulo curto — código de modalidade, sigla — cabem em colunas mais
+ * estreitas: com a largura de 18rem da grade padrão, uma lista de "AC", "LB_PPI" e
+ * "LI_Q" gastava a linha inteira em três itens.
+ */
+.sel-processo .checkbox-grid--enxuta {
+  grid-template-columns: repeat(auto-fill, minmax(min(10rem, 100%), 1fr));
+}
+
+/* Check item (reutilizável em outros passos) */
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  line-height: 1.45;
+}
+
+/* Vale para caixa e rádio: os dois são escolhas do mesmo tipo de lista, e
+   `accent-color` é o que torna o estado marcado visível no tema escuro. */
+.check-item input[type='checkbox'],
+.check-item input[type='radio'] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+/*
+ * O que a etapa publica fica num bloco próprio dentro da linha da etapa: são
+ * declarações de outra natureza que nome, peso e caráter — o que sai da etapa,
+ * não o que ela é — e misturá-las nos mesmos campos fazia a linha parecer um
+ * formulário só, sem hierarquia.
+ */

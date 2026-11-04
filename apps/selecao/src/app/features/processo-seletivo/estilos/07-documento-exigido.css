@@ -1,0 +1,138 @@
+/*
+ * O documento já exigido é um objeto próprio na lista: o seletor acrescenta, e é aqui
+ * que ele ganha modalidades, alcance entre fases e a ação de remover.
+ */
+.sel-processo .doc-item--exigido {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  background: var(--surface-subtle);
+}
+
+/*
+ * Sobre o fundo do card, o azul de `--color-primary` do botão terciário rende 4,07:1 no tema
+ * escuro; a tinta de texto sobre tint alcança os 4,5:1 que a WCAG 2.1 AA exige.
+ */
+.sel-processo .doc-item--exigido .btn--tertiary {
+  --btn-fg: var(--text-on-primary-tint);
+}
+
+/*
+ * Os três eixos da exigência lado a lado enquanto a largura permite: em que fases vale, em
+ * que ponto desta fase é coletada, e de quem é cobrada. Empilhados, um documento gastava
+ * trezentos pixels de altura, e a fase com cinco deles virava rolagem.
+ */
+.sel-processo .doc-item__eixos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.sel-processo .doc-item__eixos > .form-field {
+  margin: 0;
+  min-width: 0;
+}
+
+/*
+ * As ações da norma ocupam uma linha inteira do grid: como item solto, o botão virava uma
+ * célula e esticava até a altura dos campos vizinhos.
+ */
+.sel-processo .doc-item__acoes {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/*
+ * O aviso de norma é da exigência, não de uma norma: vem depois de todas elas, na largura
+ * inteira, e se afasta das ações que o seguem.
+ */
+.sel-processo .doc-item__aviso-norma {
+  grid-column: 1 / -1;
+  margin: 0 0 var(--space-2);
+}
+
+/*
+ * O editor de condições atravessa o grid dos eixos: ele não é um quarto campo curto, é um
+ * bloco com tantas linhas quantas forem as condições, e espremê-lo numa coluna de dezesseis
+ * rem deixava fato, comparação e valor em três linhas cada. A aparência do bloco é do
+ * componente `ui-editor-de-condicoes`; aqui só se diz onde ele se encaixa.
+ */
+.sel-processo .doc-item__gatilho {
+  grid-column: 1 / -1;
+}
+
+/*
+ * O modelo de documento atravessa o grid dos eixos, como o editor de condições: o aviso de
+ * publicação e o hash não cabem numa coluna de campo curto.
+ */
+.sel-processo .doc-item__modelo {
+  grid-column: 1 / -1;
+}
+
+.sel-processo .modelo-da-exigencia {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sel-processo .modelo-da-exigencia__dados {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.sel-processo .modelo-da-exigencia__dados dt {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.sel-processo .modelo-da-exigencia__dados dd {
+  margin: 0;
+  min-width: 0;
+}
+
+/* O hash tem 64 caracteres sem espaço: sem quebra, estoura a largura a 320 px. */
+.sel-processo .modelo-da-exigencia__hash {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.sel-processo .modelo-da-exigencia__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/*
+ * O nome e a ação ficam na mesma linha, com a ação encostada à direita. Quando não sobra
+ * largura para o nome, a ação desce para a linha de baixo, em vez de espremer o nome numa
+ * coluna estreita ou passar por cima dele.
+ */
+.sel-processo .doc-item--exigido .doc-item__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sel-processo .doc-item--exigido .doc-item__info {
+  display: grid;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+/* O nome do documento encabeça o card, acima dos rótulos dos campos na hierarquia. */
+.sel-processo .doc-item--exigido .doc-item__name {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  cursor: default;
+}

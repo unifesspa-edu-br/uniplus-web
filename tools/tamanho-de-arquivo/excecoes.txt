@@ -41,7 +41,6 @@
 947 apps/portal/src/app/features/inscricao/formulario/inscricao-do-candidato.page.ts
 514 apps/portal/src/app/features/processos/processos.ts
 467 apps/selecao/src/app/features/inscricoes/detalhe-da-inscricao.page.ts
-2710 apps/selecao/src/app/features/processo-seletivo/processo-seletivo.css
 551 apps/selecao/src/app/features/processo-seletivo/publicacoes/publicar-documento.component.ts
 430 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.html
 583 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.ts
