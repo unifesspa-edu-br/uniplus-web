@@ -1,7 +1,7 @@
 import { DestroyRef, computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { ValidationErrors } from '@angular/forms';
-import { type ApiFailure, STATUS_HTTP } from '@uniplus/shared-core/http';
+import { type ApiFailure, type ApiResult, STATUS_HTTP } from '@uniplus/shared-core/http';
 import type { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipio';
 import {
   ENDERECO_VAZIO,
@@ -31,6 +31,8 @@ export interface DependenciasDaConducao {
   readonly destroyRef: DestroyRef;
   readonly aoMudarOValor: (valor: EnderecoEstruturado | null) => void;
   readonly aoMudarAValidade: () => void;
+  /** A busca assíncrona terminou e já emitiu o valor: quem hospeda pode aplicá-lo ao formulário pai. */
+  readonly aoConcluirABusca: () => void;
 }
 
 /**
@@ -173,19 +175,8 @@ export class ConducaoDoEndereco {
       .buscaDeCep(digitos)
       .pipe(takeUntilDestroyed(this.dependencias.destroyRef))
       .subscribe((resultado) => {
-        this.resolvendoCep.set(false);
-        // Resposta obsoleta: o CEP mudou durante a busca e não pode sobrescrever o formulário.
-        if (somenteDigitos(this.form.controls.cep.value) !== digitos) {
-          this.anuncioDoCep.set('');
-          return;
-        }
-        if (resultado.ok) {
-          this.aplicarCepResolvido(resultado.data, digitos);
-        } else {
-          // A recusa é anunciada pela mensagem de erro do campo.
-          this.anuncioDoCep.set('');
-          this.recusarCep(resultado);
-        }
+        this.concluirBusca(resultado, digitos);
+        this.dependencias.aoConcluirABusca();
       });
   }
 
@@ -229,6 +220,20 @@ export class ConducaoDoEndereco {
         : null,
     );
     this.emitir();
+  }
+
+  private concluirBusca(resultado: ApiResult<CepEncontrado>, digitos: string): void {
+    this.resolvendoCep.set(false);
+    // Resposta obsoleta: o CEP mudou durante a busca e não pode sobrescrever o formulário.
+    if (somenteDigitos(this.form.controls.cep.value) !== digitos) {
+      this.anuncioDoCep.set('');
+    } else if (resultado.ok) {
+      this.aplicarCepResolvido(resultado.data, digitos);
+    } else {
+      // A recusa é anunciada pela mensagem de erro do campo.
+      this.anuncioDoCep.set('');
+      this.recusarCep(resultado);
+    }
   }
 
   private logradouroOuBairroVazios(): boolean {

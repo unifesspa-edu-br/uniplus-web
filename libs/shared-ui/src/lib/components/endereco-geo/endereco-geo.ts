@@ -120,6 +120,8 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
     destroyRef: inject(DestroyRef),
     aoMudarOValor: (valor) => this.onChange(valor),
     aoMudarAValidade: () => this.onValidatorChange(),
+    // Num controle com updateOn blur o valor emitido depois do blur só chega ao pai ao tocar o campo.
+    aoConcluirABusca: () => this.onTouched(),
   });
 
   /** O CEP já resolvido, travado até o "Trocar CEP". */

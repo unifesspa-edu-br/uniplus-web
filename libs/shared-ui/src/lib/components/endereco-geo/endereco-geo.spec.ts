@@ -278,6 +278,7 @@ describe('EnderecoGeoComponent com a busca em andamento', () => {
 
 describe('EnderecoGeoComponent num controle que atualiza no blur', () => {
   let fixture: ComponentFixture<AnfitriaoQueAtualizaNoBlurComponent>;
+  let buscaEmAndamento: Subject<ReturnType<typeof apiOk<CepEncontrado>>>;
 
   const endereco = (
     cidade: EnderecoEstruturado['cidade'],
@@ -298,10 +299,11 @@ describe('EnderecoGeoComponent num controle que atualiza no blur', () => {
   const marata = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };
 
   beforeEach(() => {
+    buscaEmAndamento = new Subject();
     TestBed.configureTestingModule({
       imports: [AnfitriaoQueAtualizaNoBlurComponent],
       providers: [
-        { provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) },
+        { provide: BUSCA_DE_CEP, useValue: () => buscaEmAndamento },
         { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },
       ],
     });
@@ -326,6 +328,21 @@ describe('EnderecoGeoComponent num controle que atualiza no blur', () => {
 
     expect(fixture.componentInstance.controle.touched).toBe(true);
     expect(fixture.componentInstance.controle.value).toBeNull();
+  });
+
+  it('o valor da busca assíncrona do CEP chega ao controle mesmo com o blur já ocorrido', async () => {
+    const campo = fixture.nativeElement.querySelector('#t-cep') as HTMLInputElement;
+    campo.value = '68507-590';
+    campo.dispatchEvent(new Event('input'));
+    campo.dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.controle.value).toBeNull();
+
+    buscaEmAndamento.next(apiOk(CEP_DO_GEO, 200, new HttpHeaders()));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.controle.value?.cep).toBe('68507590');
   });
 
   it('alternar para o endereço sem CEP aplica ao controle a origem manual', async () => {
