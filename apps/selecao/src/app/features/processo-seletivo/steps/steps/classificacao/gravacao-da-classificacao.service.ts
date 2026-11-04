@@ -1,5 +1,9 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  type ProblemDetails,
+  type ProblemValidationError,
+} from '@uniplus/shared-core/http';
 
 import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -137,24 +141,10 @@ export class GravacaoDaClassificacaoService {
    * antes de chegar a julgar a resolução, e só a gravação que dá certo prova que ela passou.
    */
   private mensagensDaRecusa(problema: ProblemDetails): string[] {
-    this.recusasPorCampo.set(recusasDoCorte(problema.errors ?? []));
-    const sobOCampo = (problema.errors ?? []).filter((erro) => ehCampoDaResolucao(erro.field));
-    if (sobOCampo.length > 0) {
-      const peloDesempate = sobOCampo.map(recusaDaClassificacaoPeloDesempate);
-      const [daResolucao] = sobOCampo.filter((_, indice) => peloDesempate[indice] === null);
-      this.store.classificacao.recusarPeloDesempate(
-        peloDesempate.find((recusa) => recusa !== null) ?? null,
-        this.cadastroDePesos.leitura().pedida,
-      );
-      this.store.classificacao.recusaDaResolucaoPesoAreaEnem.set(
-        daResolucao === undefined ? null : mensagemDaRecusaDaResolucao(daResolucao),
-      );
-    }
-
-    const daEscala = (problema.errors ?? []).find((erro) => ehCampoDaEscala(erro.field));
-    const recusaDaEscala = daEscala === undefined ? null : mensagemDaRecusaDaEscala(daEscala);
-    if (recusaDaEscala !== null)
-      this.store.classificacao.recusaDaEscalaDaNotaFinal.set(recusaDaEscala);
+    const erros = problema.errors ?? [];
+    this.recusasPorCampo.set(recusasDoCorte(erros));
+    this.guardarRecusasDaResolucao(erros);
+    const recusaDaEscala = this.guardarRecusaDaEscala(erros);
 
     return resumoDaRecusa(
       problema,
@@ -169,6 +159,30 @@ export class GravacaoDaClassificacaoService {
           : null),
       () => this.problemI18n.resolve(problema).title,
     );
+  }
+
+  /** As recusas sob o campo da resolução: a da resolução e a de um critério de desempate gravado. */
+  private guardarRecusasDaResolucao(erros: readonly ProblemValidationError[]): void {
+    const sobOCampo = erros.filter((erro) => ehCampoDaResolucao(erro.field));
+    if (sobOCampo.length === 0) return;
+
+    const peloDesempate = sobOCampo.map(recusaDaClassificacaoPeloDesempate);
+    const [daResolucao] = sobOCampo.filter((_, indice) => peloDesempate[indice] === null);
+    this.store.classificacao.recusarPeloDesempate(
+      peloDesempate.find((recusa) => recusa !== null) ?? null,
+      this.cadastroDePesos.leitura().pedida,
+    );
+    this.store.classificacao.recusaDaResolucaoPesoAreaEnem.set(
+      daResolucao === undefined ? null : mensagemDaRecusaDaResolucao(daResolucao),
+    );
+  }
+
+  /** A recusa da escala da nota final, guardada para o passo da fórmula; `null` sem recusa dela. */
+  private guardarRecusaDaEscala(erros: readonly ProblemValidationError[]): string | null {
+    const daEscala = erros.find((erro) => ehCampoDaEscala(erro.field));
+    const recusa = daEscala === undefined ? null : mensagemDaRecusaDaEscala(daEscala);
+    if (recusa !== null) this.store.classificacao.recusaDaEscalaDaNotaFinal.set(recusa);
+    return recusa;
   }
 
   /**
