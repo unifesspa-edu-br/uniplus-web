@@ -1,0 +1,197 @@
+.cfg-drawer-actions,
+.cfg-form-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+  .table-responsive__actions {
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+.panel > .pager {
+  padding: var(--space-3) var(--space-5);
+  margin: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.cfg-link-button {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cfg-link-button:hover {
+  text-decoration: underline;
+}
+
+.cfg-muted {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.cfg-detail-list {
+  display: grid;
+  grid-template-columns: minmax(7rem, 10rem) 1fr;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-2) var(--space-5) var(--space-5);
+}
+
+.cfg-detail-list dt {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.cfg-detail-list dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+/*
+ * Corpo do card da ficha da Instituição: o panel-head já tem o seu padding, mas
+ * o body não tinha — os títulos de seção encostavam na divisória e na borda.
+ * Dá padding consistente ao body e espaça as seções via gap.
+ */
+.cfg-instituicao__ficha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-5);
+}
+
+/* O padding do body já indenta; a lista de detalhes não repete o seu. */
+.cfg-instituicao__ficha .cfg-detail-list {
+  padding: 0;
+}
+
+.cfg-drawer-actions {
+  justify-content: flex-end;
+  padding: 0 var(--space-5) var(--space-5);
+}
+
+.cfg-form-drawer .uni-drawer__panel {
+  max-width: min(480px, 100vw);
+}
+
+.cfg-form-drawer .uni-drawer__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.cfg-form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-5);
+}
+
+/*
+ * Espaça os elementos internos da seção (título, alerta, grade de campos) via
+ * gap do flex em vez de depender só da margem do título — assim um ui-alert
+ * inserido entre o título e os campos recebe respiro nos dois lados.
+ */
+.cfg-form > :is(section, sel-anexos-da-publicacao) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* O gap acima já separa o título; zera a margem para não dobrar o espaço. */
+.cfg-form > :is(section, sel-anexos-da-publicacao) > .form-section__title {
+  margin-bottom: 0;
+}
+
+/* Realce visual (não normativo) para campos de código curto — o valor
+   digitado não é forçado a maiúsculas, só exibido assim (Tipo de Documento §3.1). */
+.cfg-input-uppercase {
+  text-transform: uppercase;
+}
+
+.cfg-tipo-documento-formatos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.field__readonly {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.form-section__title {
+  margin: 0 0 var(--space-4);
+  color: var(--text-heading);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.cfg-form__checkbox {
+  align-self: start;
+}
+
+.cfg-form-footer {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface-card);
+  border-top: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 1200px) {
+  .cfg-form-drawer .uni-drawer__panel {
+    max-width: min(760px, 100vw);
+  }
+}
+
+@media (max-width: 767px) {
+  .cfg-topbar-actions auth-user-header-info {
+    display: none;
+  }
+
+  .breadcrumb__item:nth-child(2) {
+    display: none;
+  }
+
+  .unit-node__row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .unit-node__type {
+    flex-basis: calc(100% - 2rem);
+  }
+
+  .unit-node__actions,
+  .table-responsive__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
