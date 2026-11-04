@@ -16,7 +16,7 @@ export const AGUARDA_RELEITURA =
 
 /** As etapas gravadas à espera dos identificadores que o servidor atribuiu, e a releitura que os recolhe. */
 @Injectable()
-export class ReconciliacaoDasEtapas {
+export class ReleituraDasEtapas {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly api = inject(ProcessosSeletivosApi);
 
@@ -30,7 +30,7 @@ export class ReconciliacaoDasEtapas {
    * deixaram de existir. Instruir a reabrir o processo descreve a saída, mas não
    * fecha a porta — quem fecha é a recusa, e o bloqueio é a face visível dela.
    */
-  readonly reconciliacaoPendente = signal(false);
+  readonly releituraPendente = signal(false);
 
   /** Releitura em voo: o botão que a dispara não aceita um segundo clique. */
   readonly relendo = signal(false);
@@ -46,7 +46,7 @@ export class ReconciliacaoDasEtapas {
     effect(() => {
       this.store.geracao();
       untracked(() => {
-        this.reconciliacaoPendente.set(false);
+        this.releituraPendente.set(false);
         this.erroDeReleitura.set(null);
       });
     });
@@ -67,7 +67,7 @@ export class ReconciliacaoDasEtapas {
    * editou sem ter gravado ainda — o trabalho sumiria sem aviso, por causa de
    * uma gravação que nem era daquele passo.
    */
-  async reconciliarEtapas(processoId: string): Promise<boolean> {
+  async recolherIdentificadoresDasEtapas(processoId: string): Promise<boolean> {
     const geracao = this.store.geracao();
     const detalhe = await firstValueFrom(this.api.obter(processoId));
     if (!isApiOk(detalhe)) return false;
@@ -95,13 +95,13 @@ export class ReconciliacaoDasEtapas {
     this.relendo.set(true);
     this.erroDeReleitura.set(null);
     try {
-      const reconciliada = await this.reconciliarEtapas(processoId);
+      const recolheu = await this.recolherIdentificadoresDasEtapas(processoId);
       // Outro processo assumiu a tela enquanto a leitura vinha: o bloqueio que
       // existia era do anterior, e quem o desfaz é a troca, não esta resposta.
       if (geracao !== this.store.geracao()) return;
 
-      if (reconciliada) {
-        this.reconciliacaoPendente.set(false);
+      if (recolheu) {
+        this.releituraPendente.set(false);
         return;
       }
 

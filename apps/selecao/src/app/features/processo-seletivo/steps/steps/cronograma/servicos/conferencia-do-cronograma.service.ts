@@ -9,7 +9,7 @@ import { problemasDoCronograma } from '../cronograma-do-certame';
 import { faseDoFormulario } from '../cronograma-form';
 import { exigenciasDeclaradas } from './exigencias-declaradas';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
-import { AGUARDA_RELEITURA, ReconciliacaoDasEtapas } from './reconciliacao-das-etapas.service';
+import { AGUARDA_RELEITURA, ReleituraDasEtapas } from './releitura-das-etapas.service';
 
 /** O que impede o passo de gravar, e o que apenas merece aviso. */
 @Injectable()
@@ -17,7 +17,7 @@ export class ConferenciaDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly cronograma = inject(FormularioDoCronograma);
-  private readonly reconciliacao = inject(ReconciliacaoDasEtapas);
+  private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
 
   /**
    * Os grupos de exigências que o rascunho carrega. A tela não os edita — eles chegam da
@@ -70,7 +70,7 @@ export class ConferenciaDoCronograma {
    * íntegro um cronograma que o servidor ainda não confirmou.
    */
   validar(): StepValidation {
-    if (this.reconciliacao.reconciliacaoPendente()) {
+    if (this.releituraDasEtapas.releituraPendente()) {
       return { valid: false, messages: [AGUARDA_RELEITURA] };
     }
 

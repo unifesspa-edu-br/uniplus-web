@@ -22,7 +22,7 @@ import { ConferenciaDoCronograma } from './conferencia-do-cronograma.service';
 import { ExpansaoDoCronograma } from './expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 import { GravacaoDasExigenciasDocumentais } from './gravacao-das-exigencias-documentais.service';
-import { ReconciliacaoDasEtapas, AGUARDA_RELEITURA } from './reconciliacao-das-etapas.service';
+import { ReleituraDasEtapas, AGUARDA_RELEITURA } from './releitura-das-etapas.service';
 import { RecusasDasEtapas } from './recusas-das-etapas.service';
 import { UnidadesDasFases } from './unidades-das-fases.service';
 
@@ -97,7 +97,7 @@ export class GravacaoDoCronograma {
   private readonly exigencias = inject(GravacaoDasExigenciasDocumentais);
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly conferencia = inject(ConferenciaDoCronograma);
-  private readonly reconciliacao = inject(ReconciliacaoDasEtapas);
+  private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
   private readonly recusas = inject(RecusasDasEtapas);
   private readonly unidades = inject(UnidadesDasFases);
   private readonly expansao = inject(ExpansaoDoCronograma);
@@ -106,7 +106,7 @@ export class GravacaoDoCronograma {
    * A convenção foi gravada com sucesso nesta sessão. Só `persistir()`
    * escreve aqui, no sucesso da terceira chamada — nunca a mirror genérica de
    * `espelharRascunho`, que roda por causa de qualquer uma das três dimensões
-   * (inclusive uma reconciliação de etapas que nada tem a ver com o
+   * (inclusive uma releitura de etapas que nada tem a ver com o
    * algoritmo) e daria falso positivo se lida como confirmação do servidor.
    */
   private readonly algoritmoConfirmadoNestaSessao = signal(false);
@@ -231,22 +231,22 @@ export class GravacaoDoCronograma {
       }
 
       // As etapas já mudaram no servidor: é aqui que o rascunho recolhe os
-      // identificadores atribuídos. Deixar para o fim perderia a reconciliação
+      // identificadores atribuídos. Deixar para o fim perderia a releitura
       // se o cronograma fosse recusado, e a tentativa seguinte reenviaria
       // etapas que já existem sem o `id`, recriando-as.
-      const reconciliada = await this.reconciliacao.reconciliarEtapas(processoId);
+      const recolheu = await this.releituraDasEtapas.recolherIdentificadoresDasEtapas(processoId);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!reconciliada) {
+      if (!recolheu) {
         // Trava a tela em vez de só avisar: o `finally` logo abaixo devolve o
         // botão de gravar, e o rascunho ainda tem `id: null` nas etapas que o
         // servidor acabou de criar.
-        this.reconciliacao.reconciliacaoPendente.set(true);
+        this.releituraDasEtapas.releituraPendente.set(true);
         return { valid: false, messages: [AGUARDA_RELEITURA] };
       }
 
       // As exigências documentais vão por último e dependem das duas gravações
       // anteriores: a exigência referencia a fase pelo id que o servidor atribui, e
-      // a etapa que a coleta pelo id que a reconciliação acabou de recolher.
+      // a etapa que a coleta pelo id que a releitura acabou de recolher.
       const exigencias = await this.exigencias.gravar(processoId);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!exigencias.valid) return exigencias;

@@ -21,7 +21,7 @@ import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigen
 import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service';
 import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
 import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
-import { ReconciliacaoDasEtapas } from './servicos/reconciliacao-das-etapas.service';
+import { ReleituraDasEtapas } from './servicos/releitura-das-etapas.service';
 import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
 import { convencaoLida } from './convencao-de-contagem';
 import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
@@ -45,7 +45,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
   providers: [
     provePassoDoWizard(CronogramaStepComponent),
     UnidadesDasFases,
-    ReconciliacaoDasEtapas,
+    ReleituraDasEtapas,
     FormularioDoCronograma,
     RecusasDasEtapas,
     EdicaoDaEtapa,
@@ -59,7 +59,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
 export class CronogramaStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDoCronograma);
-  protected readonly reconciliacao = inject(ReconciliacaoDasEtapas);
+  protected readonly releituraDasEtapas = inject(ReleituraDasEtapas);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly conferencia = inject(ConferenciaDoCronograma);
   protected readonly gravacao = inject(GravacaoDoCronograma);
@@ -72,9 +72,9 @@ export class CronogramaStepComponent {
   readonly linhaDoTempo = this.cronograma.linhaDoTempo;
   readonly edicaoLiberada = this.cronograma.edicaoLiberada;
   readonly avisoDeReordenacao = this.cronograma.avisoDeReordenacao;
-  readonly reconciliacaoPendente = this.reconciliacao.reconciliacaoPendente;
-  readonly relendo = this.reconciliacao.relendo;
-  readonly erroDeReleitura = this.reconciliacao.erroDeReleitura;
+  readonly releituraPendente = this.releituraDasEtapas.releituraPendente;
+  readonly relendo = this.releituraDasEtapas.relendo;
+  readonly erroDeReleitura = this.releituraDasEtapas.erroDeReleitura;
   private readonly versaoDoFormulario = this.cronograma.versao;
 
   constructor() {

@@ -38,7 +38,7 @@ import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.serv
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
 import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
 import { RecusasDasEtapas } from './servicos/recusas-das-etapas.service';
-import { ReconciliacaoDasEtapas } from './servicos/reconciliacao-das-etapas.service';
+import { ReleituraDasEtapas } from './servicos/releitura-das-etapas.service';
 import { UnidadesDasFases } from './servicos/unidades-das-fases.service';
 import {
   BASE,
@@ -78,7 +78,7 @@ describe('CronogramaStepComponent', () => {
   let conferencia: ConferenciaDoCronograma;
   let recusas: RecusasDasEtapas;
   let cronograma: FormularioDoCronograma;
-  let reconciliacao: ReconciliacaoDasEtapas;
+  let releituraDasEtapas: ReleituraDasEtapas;
   let unidades: UnidadesDasFases;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
@@ -115,7 +115,7 @@ describe('CronogramaStepComponent', () => {
     conferencia = fixture.debugElement.injector.get(ConferenciaDoCronograma);
     recusas = fixture.debugElement.injector.get(RecusasDasEtapas);
     cronograma = fixture.debugElement.injector.get(FormularioDoCronograma);
-    reconciliacao = fixture.debugElement.injector.get(ReconciliacaoDasEtapas);
+    releituraDasEtapas = fixture.debugElement.injector.get(ReleituraDasEtapas);
     unidades = fixture.debugElement.injector.get(UnidadesDasFases);
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
@@ -2048,7 +2048,7 @@ describe('CronogramaStepComponent', () => {
     controller.expectNone(ROTA_FASES);
   });
 
-  it('suspende a edição enquanto a releitura não reconcilia', async () => {
+  it('suspende a edição enquanto a releitura não recolhe os identificadores', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_AVALIACAO);
     comUmaEtapa();
@@ -2090,12 +2090,12 @@ describe('CronogramaStepComponent', () => {
     await proximoPasso();
     await gravacao;
 
-    const releitura = reconciliacao.relerEtapas();
+    const releitura = releituraDasEtapas.relerEtapas();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await releitura;
     detectar();
 
-    expect(reconciliacao.reconciliacaoPendente()).toBe(false);
+    expect(releituraDasEtapas.releituraPendente()).toBe(false);
     expect(cronograma.edicaoLiberada()).toBe(true);
     expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
 
@@ -2135,7 +2135,7 @@ describe('CronogramaStepComponent', () => {
     store.reset();
     detectar();
 
-    expect(reconciliacao.reconciliacaoPendente()).toBe(false);
+    expect(releituraDasEtapas.releituraPendente()).toBe(false);
   });
 
   /**
@@ -2379,7 +2379,7 @@ describe('CronogramaStepComponent', () => {
    * vir gravar o cronograma. Hidratar o processo inteiro aqui apagaria aquele
    * trabalho, por causa de uma gravação que nem era daquele passo.
    */
-  it('reconcilia só as etapas, preservando o que outro passo tem sem gravar', async () => {
+  it('relê só as etapas, preservando o que outro passo tem sem gravar', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_AVALIACAO);
     comUmaEtapa();

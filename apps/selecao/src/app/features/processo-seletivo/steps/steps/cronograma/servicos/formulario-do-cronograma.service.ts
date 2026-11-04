@@ -18,7 +18,7 @@ import {
   type FaseForm,
 } from '../cronograma-form';
 import { etapaComOQueDeclara } from '../regras-da-etapa';
-import { ReconciliacaoDasEtapas } from './reconciliacao-das-etapas.service';
+import { ReleituraDasEtapas } from './releitura-das-etapas.service';
 import { UnidadesDasFases } from './unidades-das-fases.service';
 
 /**
@@ -38,7 +38,7 @@ export class FormularioDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDoCronograma);
   private readonly unidades = inject(UnidadesDasFases);
-  private readonly reconciliacao = inject(ReconciliacaoDasEtapas);
+  private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
 
   readonly formulario = novoFormularioDoCronograma();
 
@@ -71,7 +71,7 @@ export class FormularioDoCronograma {
    * resposta, resolvidas aqui para que nenhum controle repita a conjunção.
    */
   readonly edicaoLiberada = computed(
-    () => this.store.aceitaEdicao() && !this.reconciliacao.reconciliacaoPendente(),
+    () => this.store.aceitaEdicao() && !this.releituraDasEtapas.releituraPendente(),
   );
 
   /**
