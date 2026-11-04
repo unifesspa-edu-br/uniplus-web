@@ -33,7 +33,8 @@
         <button
           type="button"
           class="btn btn--secondary btn--rect"
-          [disabled]="conducao.disabled() || (!cepTravado() && conducao.resolvendoCep())"
+          [disabled]="conducao.disabled()"
+          [attr.aria-disabled]="!cepTravado() && conducao.resolvendoCep() ? 'true' : null"
           [attr.aria-busy]="!cepTravado() && conducao.resolvendoCep() ? 'true' : null"
           (click)="cepTravado() ? trocarCep() : conducao.resolverCep()"
         >
