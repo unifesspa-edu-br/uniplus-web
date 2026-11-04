@@ -280,6 +280,18 @@ describe('RevisaoStepComponent', () => {
     });
   }
 
+  function textoDaTela(): string {
+    return (fixture.nativeElement as HTMLElement).textContent ?? '';
+  }
+
+  function clicarEm(texto: string): void {
+    const botao = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find(
+      (candidato) => candidato.textContent?.trim() === texto,
+    );
+    expect(botao, `botão "${texto}"`).toBeDefined();
+    botao?.click();
+  }
+
   async function flushPreflightVerde(): Promise<void> {
     controller.expectOne(ROTA_CONFORMIDADE).flush(CONFORMIDADE_VERDE);
     controller
@@ -744,11 +756,12 @@ describe('RevisaoStepComponent', () => {
       );
 
       const resultado = await gravacao;
+      fixture.detectChanges();
       expect(resultado.valid).toBe(false);
-      expect(componente.ultimaRecusa()?.pendencias).toHaveLength(1);
-      // obrigatoriedadesReprovadas não foi avaliada nesta tentativa — null, não [].
-      expect(componente.ultimaRecusa()?.obrigatoriedadesReprovadas).toBeNull();
-      expect(componente.estruturalOk()).toBe(false);
+      expect(textoDaTela()).toContain('falta declarar');
+      expect(textoDaTela()).not.toContain('Nenhuma pendência estrutural.');
+      // A conformidade legal não foi avaliada nesta tentativa: vale a leitura anterior, e não "sem reprovação".
+      expect(textoDaTela()).toContain('Nenhuma obrigatoriedade legal reprovada.');
       expect(store.remoteSnapshot()).toBeNull();
     });
 
@@ -806,9 +819,10 @@ describe('RevisaoStepComponent', () => {
       );
 
       const resultado = await gravacao;
+      fixture.detectChanges();
       expect(resultado.valid).toBe(false);
-      expect(componente.ultimaRecusa()?.obrigatoriedadesReprovadas).toHaveLength(1);
-      expect(componente.legalOk()).toBe(false);
+      expect(textoDaTela()).toContain('Lei x');
+      expect(textoDaTela()).not.toContain('Nenhuma obrigatoriedade legal reprovada.');
     });
 
     it('na recusa por fase sem unidade, lista só as fases sem unidade e leva ao Cronograma na fase escolhida', async () => {
@@ -851,9 +865,10 @@ describe('RevisaoStepComponent', () => {
       await gravacao;
       fixture.detectChanges();
 
-      expect(componente.fasesSemUnidadeDaRecusa()).toEqual([
-        { codigo: 'MATRICULA', nome: 'Fase MATRICULA' },
-      ]);
+      const fasesCitadas = Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll('#revisao-fase-sem-unidade ~ ul li'),
+      );
+      expect(fasesCitadas).toHaveLength(1);
       const botao = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
         '#revisao-fase-sem-unidade ~ ul button',
       );
@@ -869,7 +884,8 @@ describe('RevisaoStepComponent', () => {
         fases: [fase('INSCRICAO', 'unidade-ceps'), fase('MATRICULA', 'unidade-ceps')],
       });
 
-      expect(componente.fasesSemUnidadeDaRecusa()).toEqual([]);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('#revisao-fase-sem-unidade')).toBeNull();
     });
 
     it('em erro nomeado de documento/ato, marca o bloco próprio sem tocar nos dois checklists', async () => {
@@ -890,10 +906,12 @@ describe('RevisaoStepComponent', () => {
       );
 
       const resultado = await gravacao;
+      fixture.detectChanges();
       expect(resultado.valid).toBe(false);
-      expect(componente.ultimaRecusa()?.documentoOuAto).toContain('documento confirmado');
-      expect(componente.ultimaRecusa()?.pendencias).toEqual([]);
-      expect(componente.ultimaRecusa()?.obrigatoriedadesReprovadas).toBeNull();
+      expect(textoDaTela()).toContain('documento confirmado');
+      // Nenhum dos dois checklists é tocado: o estrutural segue verde e o legal mantém a leitura anterior.
+      expect(textoDaTela()).toContain('Nenhuma pendência estrutural.');
+      expect(textoDaTela()).toContain('Nenhuma obrigatoriedade legal reprovada.');
     });
 
     it('a segunda tentativa depois de um 422 usa uma Idempotency-Key diferente (CA-07)', async () => {
@@ -999,7 +1017,7 @@ describe('RevisaoStepComponent', () => {
       expect(select?.value).toBe('PORTARIA');
 
       // Recarga que falha — o `@else` inteiro sai da árvore, o `<select>` é destruído.
-      componente.recarregarPreflight();
+      clicarEm('Atualizar checklist');
       controller.expectOne(ROTA_CONFORMIDADE).flush(
         { type: 'about:blank', title: 'x', status: 500, code: 'erro', traceId: 't' },
         { status: 500, statusText: 'Internal Server Error', headers: { 'Content-Type': 'application/problem+json' } },
@@ -1012,7 +1030,7 @@ describe('RevisaoStepComponent', () => {
       expect(fixture.nativeElement.querySelector('#rev-tipo-ato')).toBeNull();
 
       // Recarga que dá certo — o `@else` volta, o `<select>` é recriado do zero.
-      componente.recarregarPreflight();
+      clicarEm('Tentar novamente');
       controller.expectOne(ROTA_CONFORMIDADE).flush(CONFORMIDADE_VERDE);
       controller
         .expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL)

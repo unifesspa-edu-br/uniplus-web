@@ -4,7 +4,6 @@ import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   computed,
   effect,
   inject,
@@ -32,55 +31,12 @@ import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidad
 import { documentosPorFase } from '../../shared/documentos-exigidos';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
+import { ehEnderecoNavegavel } from './endereco-navegavel';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
-import {
-  dataReferenciaLegalDe,
-  faseQueAncoraOPeriodoDeInscricao,
-  temFaseDeColetaInscricao,
-} from './periodo-de-inscricao';
-import { mensagensDePublicacao, comoComandoDePublicacao } from './comando-de-publicacao';
-import {
-  agruparPorDimensao,
-  comoAvisosDaRevisao,
-  comoGruposDaRevisao,
-  rotuloDaDimensao as rotularDimensao,
-} from './grupos-da-revisao';
-import {
-  ObrigatoriedadeReprovadaProblem,
-  PendenciaEstruturalProblem,
-  comExtensoesDePublicacao,
-  eErroDeDocumentoOuAto,
-  eErroDeFaseSemUnidade,
-} from './problemas-da-publicacao';
-
-/**
- * O que a última tentativa de publicar devolveu — CA-06: a corrida entre
- * preview e comando mostra o estado atual, não o congelado no `GET` anterior.
- *
- * `obrigatoriedadesReprovadas` é `null` quando esta tentativa **não chegou**
- * a avaliar a conformidade legal — o handler roda os gates estruturais
- * primeiro (`PublicarProcessoSeletivoCommandHandler.cs`) e só passa à
- * conferência legal se todos passarem; a extensão só vem preenchida quando o
- * erro É `ConformidadeLegalInsuficiente`
- * (`ProcessoSeletivoController.cs:810`). Tratar `null` como "sem reprovação"
- * anunciaria "legal ok" sobre um estado que a tentativa nem chegou a checar.
- */
-interface RecusaDePublicacao {
-  readonly pendencias: readonly PendenciaEstruturalProblem[];
-  readonly obrigatoriedadesReprovadas: readonly ObrigatoriedadeReprovadaProblem[] | null;
-  /** Preenchido só para os erros nomeados que nenhum dos dois checklists cobre (documento, tipo de ato). */
-  readonly documentoOuAto: string | null;
-  /** A recusa cita fase do cronograma sem unidade responsável; a lista é lida do rascunho atual. */
-  readonly citaFaseSemUnidade: boolean;
-}
-
-/**
- * O código do WIRE, não o de domínio: `problem.code` carrega a taxonomia
- * `uniplus.<modulo>.<razao>` (`#743`). Comparado com `ProcessoSeletivo.*`, isto
- * nunca casava, e `obrigatoriedadesReprovadas` do 422 era descartado sempre.
- */
-const CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE =
-  'uniplus.selecao.processo_seletivo.conformidade_legal_insuficiente';
+import { ConferenciaDaPublicacaoService } from './servicos/conferencia-da-publicacao.service';
+import { faseQueAncoraOPeriodoDeInscricao, temFaseDeColetaInscricao } from './periodo-de-inscricao';
+import { comoComandoDePublicacao } from './comando-de-publicacao';
+import { rotuloDaDimensao } from './grupos-da-revisao';
 
 /**
  * O ato vigente de um processo já publicado. A tela o lê do servidor ao abrir, porque o
@@ -120,7 +76,11 @@ export type AtoPublicado =
   ],
   templateUrl: './revisao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [provePassoDoWizard(RevisaoStepComponent), PreflightDaPublicacaoService],
+  providers: [
+    provePassoDoWizard(RevisaoStepComponent),
+    PreflightDaPublicacaoService,
+    ConferenciaDaPublicacaoService,
+  ],
 })
 export class RevisaoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
@@ -129,6 +89,7 @@ export class RevisaoStepComponent {
   /** Só quem publica vê o campo de anexo; a orientação de anexar não serve a quem não o vê. */
   protected readonly podePublicar = computed(() => this.permissoes.tem(this.permissaoDePublicar));
   readonly preflight = inject(PreflightDaPublicacaoService);
+  protected readonly conferencia = inject(ConferenciaDaPublicacaoService);
 
   /**
    * Os documentos exigidos por fase, com a situação da base legal que a publicação confere: a
@@ -151,9 +112,6 @@ export class RevisaoStepComponent {
   private readonly problemI18n = inject(ProblemI18nService);
   /** Provido na página, a mesma instância do cronograma: resolve `coletaInscricao` da fase acrescentada nesta sessão. */
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
-
-  /** O que a última tentativa de `POST …/publicacao` devolveu, ou `null` enquanto não houve tentativa (ou ela publicou). */
-  readonly ultimaRecusa = signal<RecusaDePublicacao | null>(null);
 
   /** O snapshot lido depois do `204` (CA-08) — só existe quando esta sessão acabou de publicar. */
   readonly snapshotConfirmado = signal<SnapshotVigenteDto | null>(null);
@@ -263,53 +221,25 @@ export class RevisaoStepComponent {
   });
 
   constructor() {
-    // Todos os passos ficam montados (`[hidden]`) desde a entrada na
-    // página — não há criação/destruição deste componente ao navegar pelo
-    // stepper, então "entrar no passo" só existe como transição de sinal,
-    // nunca como ciclo de vida. `store.isLast()` é como o passo se
-    // identifica sem saber a própria posição (o mesmo princípio de
-    // `passo-do-wizard.ts`: "o passo não sabe se é o segundo ou o quinto"),
-    // e a Revisão é sempre o último (`PASSOS.slice(0, -1)` em
-    // `processo-seletivo.data.ts`).
-    //
-    // Recarrega — força, não só popula o cache — a cada entrada, porque
-    // qualquer dimensão gravada num passo anterior (Vagas, Cronograma,
-    // Taxa…) muda o que o servidor considera conforme, e nenhuma delas sabe
-    // invalidar o cache deste serviço. Sem isto, o fluxo normal de criação
-    // chegava aqui com o checklist de quando o processo foi criado — todo
-    // vermelho, porque nenhuma dimensão existia ainda —, e `validate()`
-    // bloqueava a publicação até o operador descobrir sozinho o botão
-    // "Atualizar checklist".
+    // Recarrega a cada entrada no passo, porque qualquer dimensão gravada num passo anterior muda o
+    // que o servidor considera conforme, e nenhuma delas sabe invalidar o cache do checklist.
+    // `isLast()` é como o passo se identifica sem saber a própria posição: a Revisão é sempre a última.
     effect(() => {
       const id = this.store.processoSeletivoId();
       const entrouNoPasso = this.store.isLast();
       if (id === null || !entrouNoPasso) return;
       untracked(() => {
-        void this.preflight.recarregar(id, this.dataReferenciaLegal());
+        void this.preflight.recarregar(id, this.conferencia.dataReferenciaLegal());
       });
     });
 
-    // O reuseKey da rota mantém esta instância viva ao trocar de processo por
-    // endereço — só o `id` muda, o componente não é recriado. `ultimaRecusa`
-    // e `snapshotConfirmado` são estado LOCAL desta sessão de revisão, e sem
-    // este reset a recusa (ou o snapshot) do processo A continuaria valendo
-    // para o processo B assim que ele carregasse.
-    // `store.geracao()` já é o sinal que o resto do wizard usa para "o
-    // processo em tela mudou" — `cronograma.component.ts` reseta seu próprio
-    // estado local do mesmo jeito.
     effect(() => {
       this.store.geracao();
       untracked(() => {
-        this.ultimaRecusa.set(null);
         this.snapshotConfirmado.set(null);
         this.atoPublicado.set(null);
       });
     });
-
-    // Os outros passos leem da conferência o que lhes cabe; ao sair da Revisão a conferência
-    // deixa de valer para eles.
-    effect(() => this.store.classificacao.pendenciasDaConferencia.set(this.codigosPendentes()));
-    inject(DestroyRef).onDestroy(() => this.store.classificacao.pendenciasDaConferencia.set([]));
 
     // Processo publicado: o ato que vale é o do servidor, lido uma vez ao entrar
     // no passo. Uma falha fica visível com "Tentar novamente", em vez de o formulário vazio.
@@ -415,43 +345,13 @@ export class RevisaoStepComponent {
     if (id !== null) void this.lerAtoPublicado(id);
   }
 
-  recarregarPreflight(): void {
-    void this.recarregarChecklist();
-  }
-
   /**
-   * `PassoDoWizard.recarregarChecklist()` — o mesmo recarregar do botão
-   * "Atualizar checklist", mas aguardável: `ProcessoSeletivoPage.publicar()`
-   * chama isto depois de `gravarPassosAnteriores()` gravar de novo um passo
-   * anterior corrigido, para o checklist em tela refletir a correção antes
-   * de `validarRascunho()` julgar de novo — sem isto, a correção fica
-   * gravada no servidor, mas `validate()` desta tela ainda recusa com o
-   * checklist de antes dela.
+   * Relê o checklist do servidor. `ProcessoSeletivoPage.publicar()` o chama depois de gravar de novo
+   * um passo anterior corrigido, para a conferência em tela refletir a correção antes de julgar de novo.
    */
-  async recarregarChecklist(): Promise<void> {
-    const id = this.store.processoSeletivoId();
-    if (id === null) return;
-    this.ultimaRecusa.set(null);
-    await this.preflight.recarregar(id, this.dataReferenciaLegal());
+  recarregarChecklist(): Promise<void> {
+    return this.conferencia.atualizar();
   }
-
-  private dataReferenciaLegal(): string | null {
-    return dataReferenciaLegalDe(this.store.draft(), this.catalogosDoCronograma.fasePorId());
-  }
-
-  /**
-   * O edital confirmado escolhido para a publicação — o vínculo que
-   * `sel-anexo-edital`, hospedado nesta mesma tela, restaura ou grava
-   * (Story #478). `null` enquanto não há um só documento confirmado
-   * vinculado: sem escolha explícita (CA-02) ou sem upload nenhum ainda.
-   */
-  readonly documentoAPublicarId = computed(() => {
-    const upload = this.store.draft().identificacao.uploads[0];
-    return upload && upload.fase === 'confirmado' ? (upload.documentoAPublicarId ?? null) : null;
-  });
-
-  /** Mais de um documento confirmado aguardando escolha explícita — resolvida na Identificação (CA-02). */
-  readonly precisaEscolherDocumento = computed(() => this.store.documentosParaEscolha().length > 0);
 
   readonly temFaseDeColeta = computed(() =>
     temFaseDeColetaInscricao(this.store.draft(), this.catalogosDoCronograma.fasePorId()),
@@ -473,119 +373,14 @@ export class RevisaoStepComponent {
     return { nome, janela };
   });
 
-  /**
-   * Checklist estrutural agrupado por dimensão — `null` enquanto não carregou.
-   *
-   * Enquanto `ultimaRecusa()` existir, ela é a fonte inteira (não só para
-   * decidir "ok"): o `GET` anterior pode estar desatualizado, e mostrar os
-   * grupos antigos ao lado do banner verde de `estruturalOk()` contradiria a
-   * própria tela — a pendência reaparece só quando `recarregarPreflight()`
-   * busca um novo `GET` e `ultimaRecusa()` é limpa.
-   */
-  readonly gruposEstruturais = computed(() => {
-    const recusa = this.ultimaRecusa();
-    const itens =
-      recusa === null
-        ? this.preflight.estrutural()
-        : recusa.pendencias.map((pendencia) => ({ ...pendencia, ok: false }));
-    return itens === null ? null : comoGruposDaRevisao(agruparPorDimensao(itens));
-  });
-
-  /** Os códigos dos itens pendentes da conferência em tela. */
-  private readonly codigosPendentes = computed(() => {
-    const recusa = this.ultimaRecusa();
-    const pendentes =
-      recusa === null
-        ? (this.preflight.estrutural() ?? []).filter((item) => !item.ok)
-        : recusa.pendencias;
-    return pendentes.map((item) => item.codigo);
-  });
-
-  /** Avisos que não impedem publicar: nunca entram em `estruturalOk()` nem em `validate()`. */
-  readonly avisosDaRevisao = computed(() => comoAvisosDaRevisao(this.preflight.avisos()));
-
-  readonly estruturalOk = computed(() => {
-    const recusa = this.ultimaRecusa();
-    if (recusa !== null) return recusa.pendencias.length === 0;
-    const itens = this.preflight.estrutural();
-    return itens !== null && itens.every((item) => item.ok);
-  });
-
-  readonly regrasLegaisReprovadas = computed<readonly ObrigatoriedadeReprovadaProblem[]>(() => {
-    const daUltimaRecusa = this.ultimaRecusa()?.obrigatoriedadesReprovadas;
-    if (daUltimaRecusa !== null && daUltimaRecusa !== undefined) return daUltimaRecusa;
-
-    const legal = this.preflight.legal();
-    if (legal === null) return [];
-    return legal.regras
-      .filter((regra) => !regra.aprovada)
-      .map((regra) => ({
-        regraCodigo: regra.regraCodigo,
-        descricaoHumana: regra.descricaoHumana,
-        baseLegal: regra.baseLegal,
-        motivo: regra.motivo,
-        atoNormativoUrl: regra.atoNormativoUrl,
-        portariaInterna: regra.portariaInterna,
-        vigenciaInicio: regra.vigenciaInicio,
-      }));
-  });
-
-  /**
-   * Se a citação da norma é um endereço que o navegador sabe abrir.
-   *
-   * O campo é texto livre de citação normativa — pode ser um DOI (`10.1590/abc`) ou uma URN
-   * (`urn:lex:br:federal:lei:2012-08-29;12711`), que o cadastro guarda como o administrador
-   * escreveu. Um DOI nu como `href` abriria uma rota da própria aplicação, e a URN é barrada
-   * pelo sanitizador — nos dois casos o único caminho até a norma que reprovou a publicação
-   * seria um beco sem saída.
-   */
-  ehEnderecoNavegavel(citacao: string | null | undefined): boolean {
-    return citacao !== null && citacao !== undefined && /^https?:\/\//i.test(citacao.trim());
-  }
-
-  readonly legalOk = computed(() => {
-    const daUltimaRecusa = this.ultimaRecusa()?.obrigatoriedadesReprovadas;
-    if (daUltimaRecusa !== null && daUltimaRecusa !== undefined) return daUltimaRecusa.length === 0;
-
-    const legal = this.preflight.legal();
-    return legal !== null && legal.regras.every((regra) => regra.aprovada);
-  });
-
-  /**
-   * O checklist legal em tela foi avaliado para uma `dataReferencia` que já
-   * não é a que o rascunho declara agora — a fase de coleta mudou, ou o
-   * operador terminou de digitar o início do período depois de o preflight
-   * ter carregado sem essa data (sem esta checagem, `validate()` podia aprovar
-   * um checklist legal avaliado para a data errada). Não recarrega sozinho —
-   * `dataReferenciaLegalDe` muda a cada tecla no campo de período, e recarregar
-   * a cada tecla é justamente a corrida que `PreflightDaPublicacaoService` foi
-   * corrigido para evitar; o operador usa "Atualizar checklist", que já existe
-   * na tela.
-   */
-  readonly legalDesatualizada = computed(() => {
-    if (this.preflight.legal() === null) return false;
-    return this.preflight.dataReferenciaCarregada() !== this.dataReferenciaLegal();
-  });
-
-  readonly rotuloDaDimensao = rotularDimensao;
-
-  /** As fases do rascunho sem unidade responsável, com o nome que o operador reconhece. */
-  private fasesSemUnidade(): readonly { readonly codigo: string; readonly nome: string }[] {
-    const nomeDaFase = this.catalogosDoCronograma.nomeDaFase();
-    return this.store
-      .draft()
-      .cronograma.fases.filter((fase) => fase.unidadeResponsavelId === null)
-      .map((fase) => ({ codigo: fase.codigo, nome: nomeDaFase(fase.codigo) }));
-  }
+  protected readonly rotuloDaDimensao = rotuloDaDimensao;
+  protected readonly ehEnderecoNavegavel = ehEnderecoNavegavel;
 
   /** Leva ao Cronograma já na fase citada pela recusa. */
   irParaFase(codigo: string): void {
     this.store.irParaFase(codigo);
   }
 
-  readonly fasesSemUnidadeDaRecusa = computed(() =>
-    this.ultimaRecusa()?.citaFaseSemUnidade ? this.fasesSemUnidade() : [],
-  );
   /** Navega ao passo dono do item, pelo código estável — nunca por comparação de frase (CA-04). */
   irParaSecao(index: number): void {
     this.store.goTo(index);
@@ -596,7 +391,7 @@ export class RevisaoStepComponent {
   }
 
   confirmacaoDeGravacao(): ConfirmacaoDeGravacao | null {
-    if (!this.validate().valid) return null;
+    if (!this.conferencia.validate().valid) return null;
 
     const draft = this.store.draft();
     const ato = draft.publicacao.ato;
@@ -629,63 +424,8 @@ export class RevisaoStepComponent {
     };
   }
 
-  /**
-   * O que falta NESTA tela — campo em branco, checklist reprovado ou
-   * documento ainda não escolhido. Não repete `validarRascunho()` da página,
-   * que cobre os passos anteriores (CA-01).
-   */
   validate(): StepValidation {
-    if (this.store.processoSeletivoId() === null) {
-      return {
-        valid: false,
-        messages: ['Conclua a identificação do processo antes de revisar a conformidade.'],
-      };
-    }
-
-    const erroDoPreflight = this.preflight.erro();
-    if (erroDoPreflight !== null) {
-      return { valid: false, messages: [erroDoPreflight] };
-    }
-
-    if (this.preflight.carregando() || this.preflight.estrutural() === null) {
-      return {
-        valid: false,
-        messages: ['Aguarde o carregamento do checklist de conformidade.'],
-      };
-    }
-
-    const messages: string[] = [];
-    if (!this.estruturalOk()) {
-      messages.push('Há pendências estruturais no checklist. Corrija-as antes de publicar.');
-    }
-    const legalIndisponivel = this.preflight.legalIndisponivel();
-    if (legalIndisponivel !== null) {
-      // A conformidade legal não chegou a ser avaliada — dizer "há
-      // obrigatoriedades reprovadas" mandaria o operador procurar uma
-      // reprovação que não existe. O que falta é o insumo que o próprio
-      // servidor nomeou (`#742`).
-      messages.push(legalIndisponivel);
-    } else if (this.legalDesatualizada()) {
-      messages.push(
-        'A data de referência do checklist legal mudou desde a última carga. Use "Atualizar checklist" antes de publicar.',
-      );
-    } else if (!this.legalOk()) {
-      messages.push('Há obrigatoriedades legais reprovadas. Corrija-as antes de publicar.');
-    }
-    if (this.precisaEscolherDocumento()) {
-      messages.push(
-        'Há mais de um documento confirmado. Escolha o oficial na Identificação antes de publicar.',
-      );
-    }
-    messages.push(
-      ...mensagensDePublicacao(
-        this.store.draft(),
-        this.documentoAPublicarId(),
-        this.catalogosDoCronograma.fasePorId(),
-      ),
-    );
-
-    return messages.length ? { valid: false, messages } : { valid: true };
+    return this.conferencia.validate();
   }
 
   /**
@@ -703,10 +443,10 @@ export class RevisaoStepComponent {
       };
     }
 
-    const conferencia = this.validate();
+    const conferencia = this.conferencia.validate();
     if (!conferencia.valid) return conferencia;
 
-    const documentoAPublicarId = this.documentoAPublicarId();
+    const documentoAPublicarId = this.conferencia.documentoAPublicarId();
     if (documentoAPublicarId === null) {
       // `validate()` já cobre este caso via `mensagensDePublicacao`; a
       // checagem aqui só estreita o tipo para `comoComandoDePublicacao`.
@@ -720,7 +460,7 @@ export class RevisaoStepComponent {
     );
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
-    this.ultimaRecusa.set(null);
+    this.conferencia.descartarRecusa();
 
     try {
       const resultado = await this.cadastro.publicar(processoId, comando);
@@ -739,23 +479,8 @@ export class RevisaoStepComponent {
         // não se sabe se aplicou.
         if (resultado.inconclusiva) this.store.publicacaoNaoConfirmada.set(true);
 
-        const problem = comExtensoesDePublicacao(resultado.problem);
-        this.ultimaRecusa.set({
-          pendencias: problem.pendencias ?? [],
-          // A extensão só vem quando ESTA tentativa avaliou a conformidade
-          // legal (ver doc de `RecusaDePublicacao`) — fora desse código,
-          // `null` preserva o último estado conhecido em vez de anunciar
-          // "sem reprovação" sobre o que a tentativa nem chegou a checar.
-          obrigatoriedadesReprovadas:
-            problem.code === CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE
-              ? (problem.obrigatoriedadesReprovadas ?? [])
-              : null,
-          documentoOuAto: eErroDeDocumentoOuAto(problem.code)
-            ? this.problemI18n.resolve(problem).title
-            : null,
-          citaFaseSemUnidade: eErroDeFaseSemUnidade(problem.code),
-        });
-        return { valid: false, messages: [this.problemI18n.resolve(problem).title] };
+        this.conferencia.registrarRecusa(resultado.problem);
+        return { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
       }
 
       const confirmado = await this.confirmarPublicacao(processoId);

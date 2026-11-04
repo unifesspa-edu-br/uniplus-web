@@ -62,6 +62,27 @@ export interface ProblemComExtensoesDePublicacao extends ProblemDetails {
   readonly obrigatoriedadesReprovadas?: readonly ObrigatoriedadeReprovadaProblem[];
 }
 
+/**
+ * O que a última tentativa de publicar devolveu. Enquanto ela existir, vale mais que a leitura
+ * anterior do checklist: o servidor acabou de dizer o que está pendente.
+ */
+export interface RecusaDePublicacao {
+  readonly pendencias: readonly PendenciaEstruturalProblem[];
+  /**
+   * `null` quando a tentativa não chegou a avaliar a conformidade legal: o servidor só a avalia
+   * depois de os gates estruturais passarem. Tratar `null` como "sem reprovação" anunciaria "legal
+   * ok" sobre um estado que a tentativa nem chegou a checar.
+   */
+  readonly obrigatoriedadesReprovadas: readonly ObrigatoriedadeReprovadaProblem[] | null;
+  /** Preenchido só para os erros nomeados que nenhum dos dois checklists cobre (documento, tipo de ato). */
+  readonly documentoOuAto: string | null;
+  /** A recusa cita fase do cronograma sem unidade responsável; a lista é lida do rascunho atual. */
+  readonly citaFaseSemUnidade: boolean;
+}
+
+const CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE =
+  'uniplus.selecao.processo_seletivo.conformidade_legal_insuficiente';
+
 export function eErroDeDocumentoOuAto(codigo: string): boolean {
   return CODIGOS_DE_DOCUMENTO_OU_ATO.has(codigo);
 }
@@ -82,4 +103,21 @@ export function motivoDeConformidadeLegalNaoAvaliavel(problem: ProblemDetails): 
 
 export function comExtensoesDePublicacao(problem: ProblemDetails): ProblemComExtensoesDePublicacao {
   return problem as ProblemComExtensoesDePublicacao;
+}
+
+/** Guarda o que a recusa trouxe; `titulo` é o texto que o operador lê quando o erro é de documento ou ato. */
+export function comoRecusaDePublicacao(
+  problem: ProblemDetails,
+  titulo: string,
+): RecusaDePublicacao {
+  const { pendencias, obrigatoriedadesReprovadas } = comExtensoesDePublicacao(problem);
+  return {
+    pendencias: pendencias ?? [],
+    obrigatoriedadesReprovadas:
+      problem.code === CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE
+        ? (obrigatoriedadesReprovadas ?? [])
+        : null,
+    documentoOuAto: eErroDeDocumentoOuAto(problem.code) ? titulo : null,
+    citaFaseSemUnidade: eErroDeFaseSemUnidade(problem.code),
+  };
 }

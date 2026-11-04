@@ -44,11 +44,11 @@
 
 <!-- As orientações de preenchimento só valem para quem ainda pode anexar e escolher. -->
 @if (!store.emConsulta()) {
-  @if (precisaEscolherDocumento()) {
+  @if (conferencia.precisaEscolherDocumento()) {
     <p class="alert alert--info" role="status">
       Há mais de um documento confirmado. Escolha o oficial abaixo antes de publicar.
     </p>
-  } @else if (documentoAPublicarId() === null && podePublicar()) {
+  } @else if (conferencia.documentoAPublicarId() === null && podePublicar()) {
     <p class="alert alert--info" role="status">
       Anexe e confirme o edital em PDF para publicar o processo.
     </p>
@@ -76,11 +76,11 @@
   @if (preflight.erro(); as erro) {
     <div class="alert alert--danger" role="alert">
       <p>{{ erro }}</p>
-      <button class="btn btn--sm btn--secondary" type="button" (click)="recarregarPreflight()">
+      <button class="btn btn--sm btn--secondary" type="button" (click)="conferencia.atualizar()">
         Tentar novamente
       </button>
     </div>
-  } @else if (preflight.carregando() && gruposEstruturais() === null) {
+  } @else if (preflight.carregando() && conferencia.gruposEstruturais() === null) {
     <p class="alert alert--info" role="status">Carregando o checklist de conformidade…</p>
   } @else {
     @if (regrasDasModalidades().length > 0) {
@@ -125,16 +125,16 @@
           class="btn btn--sm btn--ghost"
           type="button"
           [disabled]="preflight.carregando()"
-          (click)="recarregarPreflight()"
+          (click)="conferencia.atualizar()"
         >
           {{ preflight.carregando() ? 'Atualizando…' : 'Atualizar checklist' }}
         </button>
         }
       </div>
 
-      @if (estruturalOk()) {
+      @if (conferencia.estruturalOk()) {
         <p class="alert alert--success" role="status">
-          @if (avisosDaRevisao().length > 0) {
+          @if (conferencia.avisosDaRevisao().length > 0) {
             Nenhuma pendência estrutural. Há avisos abaixo, que não impedem a publicação, para você conferir.
           } @else {
             Nenhuma pendência estrutural.
@@ -143,7 +143,7 @@
       }
 
       <div class="revisao-list">
-        @for (grupo of gruposEstruturais(); track grupo.dimensao) {
+        @for (grupo of conferencia.gruposEstruturais(); track grupo.dimensao) {
           <details class="revisao-grupo" [open]="!grupo.ok">
             <summary class="revisao-grupo__resumo">
               <span
@@ -205,7 +205,7 @@
     </section>
 
     <sel-avisos-da-revisao
-      [avisos]="avisosDaRevisao()"
+      [avisos]="conferencia.avisosDaRevisao()"
       [navegavel]="!store.emConsulta()"
       (irParaPasso)="irParaSecao($event)"
     />
@@ -231,13 +231,13 @@
              tela (o período do ato) ou no Cronograma. Sem "Tentar novamente",
              que aqui não resolveria nada (`#742`). -->
         <p class="alert alert--info" role="status">{{ motivo }}</p>
-      } @else if (legalOk()) {
+      } @else if (conferencia.legalOk()) {
         <p class="alert alert--success" role="status">
           Nenhuma obrigatoriedade legal reprovada.
         </p>
       } @else {
         <ul class="revisao-list">
-          @for (regra of regrasLegaisReprovadas(); track regra.regraCodigo) {
+          @for (regra of conferencia.regrasLegaisReprovadas(); track regra.regraCodigo) {
             <li class="revisao-item revisao-item--pending">
               <div class="revisao-item__meta">
                 <span class="revisao-item__name">{{ regra.descricaoHumana }}</span
@@ -293,13 +293,13 @@
         Documento e ato de publicação
       </h2>
 
-      @if (fasesSemUnidadeDaRecusa().length > 0) {
+      @if (conferencia.fasesSemUnidadeDaRecusa().length > 0) {
         <div class="alert alert--danger" role="alert">
           <p id="revisao-fase-sem-unidade">
             Toda fase do cronograma precisa de unidade responsável para publicar.
           </p>
           <ul>
-            @for (fase of fasesSemUnidadeDaRecusa(); track fase.codigo) {
+            @for (fase of conferencia.fasesSemUnidadeDaRecusa(); track fase.codigo) {
               <li>
                 {{ fase.nome }}
                 @if (!store.emConsulta()) {
@@ -318,7 +318,7 @@
         </div>
       }
 
-      @if (ultimaRecusa()?.documentoOuAto; as erroDoc) {
+      @if (conferencia.ultimaRecusa()?.documentoOuAto; as erroDoc) {
         <p class="alert alert--danger" role="alert">{{ erroDoc }}</p>
       }
 
