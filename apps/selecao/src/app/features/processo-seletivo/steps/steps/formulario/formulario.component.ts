@@ -4,10 +4,8 @@ import {
   Injector,
   afterNextRender,
   computed,
-  effect,
   inject,
   signal,
-  untracked,
   viewChildren,
 } from '@angular/core';
 import {} from '@uniplus/shared-core/http';
@@ -34,32 +32,24 @@ import { AnuncioDoFormularioService } from './servicos/anuncio-do-formulario.ser
 import { AplicacaoDeModeloService } from './servicos/aplicacao-de-modelo.service';
 import { GravacaoDosFormulariosService } from './servicos/gravacao-dos-formularios.service';
 import { RemocaoDoFormularioService } from './servicos/remocao-do-formulario.service';
+import { CamposPressupostosDoFormularioService } from './servicos/campos-pressupostos-do-formulario.service';
+import { FasesDosFormulariosService } from './servicos/fases-dos-formularios.service';
 import { CatalogosDoFormularioService } from './servicos/catalogos-do-formulario.service';
 import { LeituraDoProcessoNoFormularioService } from './servicos/leitura-do-processo-no-formulario.service';
+import { ModeloDoFormularioComponent } from './secoes/modelo.component';
 import { ApuracaoDaIdadeComponent } from './secoes/apuracao-da-idade.component';
 import { SimulacaoDoFormularioComponent } from './secoes/simulacao.component';
 import { DocumentosDoFormularioComponent } from './documentos-do-formulario.component';
-import { fatosParaLerOGatilho } from '../../shared/documentos-exigidos';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import { descreverFase } from '../../shared/descricao-da-fase';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { desempateSemDataDeNascimento, PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
-import {
-  camposSemUsoDeclarado,
-  quemCitaNoProcesso,
-  remocoesTravadasPor,
-} from './citantes-no-processo';
+import { camposSemUsoDeclarado } from './citantes-no-processo';
 import { camposSemValoresOfertados } from './problemas-do-formulario';
-import { comCamposQueAsExigenciasPressupoem } from './campos-pressupostos-da-inscricao';
 import { fatosColetadosPelaInscricao } from './fatos-coletados-da-inscricao';
 import { fatosColetadosPor } from './formulario-do-processo';
 import {
   abaPelaTecla,
   comFormulario,
-  faseEfetiva,
-  faseServeAFinalidade,
-  fatosColetadosPelasOutras,
-  finalidadesParaAcrescentar,
   formulariosDoRascunho,
   nomeDaFinalidade,
   sufixoDaFinalidade,
@@ -84,6 +74,7 @@ import {
     EditorDeFormularioComponent,
     ValorEmConsultaComponent,
     ApuracaoDaIdadeComponent,
+    ModeloDoFormularioComponent,
     SimulacaoDoFormularioComponent,
   ],
   templateUrl: './formulario.component.html',
@@ -94,6 +85,8 @@ import {
     CatalogosDoFormularioService,
     GravacaoDosFormulariosService,
     RemocaoDoFormularioService,
+    CamposPressupostosDoFormularioService,
+    FasesDosFormulariosService,
     LeituraDoProcessoNoFormularioService,
     provePassoDoWizard(FormularioStepComponent),
     // A condição sobre município — o impedimento do campo de município, inclusive — escolhe o
@@ -110,6 +103,8 @@ export class FormularioStepComponent {
   protected readonly aplicacao = inject(AplicacaoDeModeloService);
   private readonly gravacao = inject(GravacaoDosFormulariosService);
   private readonly leitura = inject(LeituraDoProcessoNoFormularioService);
+  protected readonly fases = inject(FasesDosFormulariosService);
+  protected readonly campos = inject(CamposPressupostosDoFormularioService);
   private readonly injector = inject(Injector);
   private readonly editores = viewChildren(EditorDeFormularioComponent);
 
@@ -119,16 +114,6 @@ export class FormularioStepComponent {
   constructor() {
     this.dados.carregarCatalogo();
     this.dados.carregarTermos();
-
-    // Reconcilia a cada mudança do que cita fatos no processo, e não só quando o catálogo
-    // responde. Os passos do wizard ficam todos montados, então "abrir o passo" não executa nada:
-    // sem este efeito, o campo que um gatilho trouxe sobrevivia à remoção desse gatilho pelo resto
-    // da sessão — inclusive o que o passo do cronograma acrescenta, já que aquele caminho só
-    // acrescenta. Sobra dado pessoal no formulário sem nada que o justifique.
-    effect(() => {
-      this.citantes();
-      if (this.dados.catalogo().length > 0) untracked(() => this.reconciliar());
-    });
   }
 
   /** Os formulários do rascunho, a inscrição primeiro. */
@@ -143,67 +128,6 @@ export class FormularioStepComponent {
       : FINALIDADE_INSCRICAO;
   });
 
-  /** As fases do cronograma, com o que decide a finalidade que cada uma atende. */
-  private readonly fasesDoCronograma = computed(() => {
-    const fasePorId = this.catalogos.fasePorId();
-    return this.store.draft().cronograma.fases.map((fase) => {
-      const descricao = descreverFase(fase, fasePorId);
-      return {
-        codigo: fase.codigo,
-        nome: descricao.nome,
-        coletaInscricao: descricao.coletaInscricao,
-        coletaSolicitacaoIsencao: descricao.coletaSolicitacaoIsencao,
-      };
-    });
-  });
-
-  /**
-   * A fase de cada formulário: a escolhida, enquanto estiver entre as que servem à finalidade, ou
-   * a única que serve. A API recusa fase de outra finalidade, e enviar a fase nula apagaria a
-   * gravada — a publicação recusa formulário sem fase.
-   */
-  private readonly fasesDosFormularios = computed(
-    () =>
-      new Map(
-        this.formularios().map((formulario) => {
-          const opcoes = this.fasesDoCronograma().filter((fase) =>
-            faseServeAFinalidade(formulario.finalidade, fase),
-          );
-          return [
-            formulario.finalidade,
-            { opcoes, escolhida: faseEfetiva(formulario.faseCodigo, opcoes) },
-          ] as const;
-        }),
-      ),
-  );
-
-  readonly faseDaInscricao = computed(
-    () => this.fasesDosFormularios().get(FINALIDADE_INSCRICAO)?.escolhida ?? '',
-  );
-
-  /** As finalidades que o operador pode acrescentar agora. */
-  readonly finalidadesOferecidas = computed(() =>
-    finalidadesParaAcrescentar(
-      this.formularios().map((formulario) => formulario.finalidade),
-      this.store.draft().pagamento.cobra === true,
-      this.fasesDoCronograma(),
-    ),
-  );
-
-  /** Como a lista de documentos do formulário nomeia o tipo de documento e lê o público de cada um. */
-  private readonly vocabularioDosDocumentos = computed(() => {
-    const tipoPorId = this.catalogos.tipoDocumentoPorId();
-    return {
-      fatoPorCodigo: fatosParaLerOGatilho(
-        this.catalogos.fatos(),
-        this.store.draft().atendimento.condicoes.map((condicao) => condicao.codigo),
-        this.store.modalidadesDoProcesso(),
-      ),
-      nomeDoTipo: (id: string, nomeGuardado: string | undefined) =>
-        tipoPorId.get(id)?.nome ?? nomeGuardado ?? id,
-    };
-  });
-
   /** O bloco de comprovação documental, que o formulário em consulta lê como lista de documentos. */
   protected readonly blocoDocumental = BLOCO_COMPROVACAO_DOCUMENTAL;
 
@@ -211,30 +135,6 @@ export class FormularioStepComponent {
   private readonly fatosDaInscricao = computed(() => [
     ...fatosColetadosPelaInscricao(this.conteudo()),
   ]);
-
-  private readonly regrasDasModalidades = this.store.regrasDasModalidades;
-
-  /** Quem, no processo, cita cada fato — a fonte única do que entra sozinho e do que não sai. */
-  readonly citantes = computed(() => {
-    const draft = this.store.draft();
-    const tipoDocumento = this.catalogos.tipoDocumentoPorId();
-    const nomeDoFato = new Map(this.dados.catalogo().map((fato) => [fato.codigo, fato.nome]));
-    return quemCitaNoProcesso(
-      {
-        documentos: draft.documentos,
-        derivacao: draft.formulario.derivacao,
-        desempate: draft.desempate,
-        outrasFinalidades: draft.formulario.outrasFinalidades,
-        modalidades: this.regrasDasModalidades(),
-      },
-      {
-        documento: (id) => tipoDocumento.get(id)?.nome ?? id,
-        fato: (codigo) => nomeDoFato.get(codigo) ?? codigo,
-      },
-    );
-  });
-
-  readonly remocoesTravadas = computed(() => remocoesTravadasPor(this.citantes()));
 
   /** Abas só quando há entre o que navegar: com um formulário só, o painel basta. */
   readonly comAbas = computed(() => this.abas().length > 1);
@@ -248,10 +148,10 @@ export class FormularioStepComponent {
   readonly abas = computed(() =>
     abasDoFormulario({
       formularios: this.formularios(),
-      fases: this.fasesDosFormularios(),
-      fasesDoCronograma: this.fasesDoCronograma(),
+      fases: this.fases.porFinalidade(),
+      fasesDoCronograma: this.fases.fasesDoCronograma(),
       documentos: this.store.draft().documentos,
-      vocabulario: this.vocabularioDosDocumentos(),
+      vocabulario: this.fases.vocabularioDosDocumentos(),
       outrasFinalidades: this.store.draft().formulario.outrasFinalidades,
       fatosDaInscricao: this.fatosDaInscricao(),
       textos: {
@@ -299,36 +199,6 @@ export class FormularioStepComponent {
   }
 
   /**
-   * Põe no formulário de inscrição o que o processo pressupõe e tira o que nada cita mais. Roda a
-   * cada mudança das exigências, da derivação, do desempate e dos formulários das outras
-   * finalidades: são declarados noutros lugares, e o operador não deveria precisar lembrar que
-   * mudá-los mexe aqui.
-   */
-  reconciliar(): readonly string[] {
-    const formulario = this.store.draft().formulario;
-    const antes = new Set(fatosColetadosPor(formulario.conteudo));
-    const reconciliado = comCamposQueAsExigenciasPressupoem(
-      formulario.conteudo,
-      new Set(this.citantes().keys()),
-      this.dados.catalogo(),
-      this.store.camposPostosPelasExigencias(),
-      fatosColetadosPelasOutras(this.formularios(), FINALIDADE_INSCRICAO),
-    );
-    if (reconciliado === formulario.conteudo) return [];
-
-    // Registra o que ENTROU agora: é esse conjunto que a reconciliação seguinte pode remover
-    // quando a exigência que o pediu deixar de existir.
-    const acrescentados = fatosColetadosPor(reconciliado).filter((codigo) => !antes.has(codigo));
-    if (acrescentados.length > 0) {
-      this.store.camposPostosPelasExigencias.update(
-        (atual) => new Set([...atual, ...acrescentados]),
-      );
-    }
-    this.store.patchSection('formulario', { ...formulario, conteudo: reconciliado });
-    return acrescentados;
-  }
-
-  /**
    * A edição feita no editor de uma aba. Na inscrição, o campo que o operador tira deixa de ser
    * "posto pela exigência": se voltar, voltou por decisão dele.
    */
@@ -365,7 +235,7 @@ export class FormularioStepComponent {
    */
   acrescentarFinalidade(): void {
     const finalidade = this.finalidadeAAcrescentar();
-    if (!this.finalidadesOferecidas().some((opcao) => opcao.valor === finalidade)) return;
+    if (!this.fases.finalidadesOferecidas().some((opcao) => opcao.valor === finalidade)) return;
 
     this.store.patchSection(
       'formulario',
@@ -405,8 +275,8 @@ export class FormularioStepComponent {
   /** Aplica o modelo confirmado: a reconciliação devolve ao formulário o que o processo pressupõe. */
   confirmarAplicacao(): Promise<void> {
     return this.aplicacao.confirmar(
-      (finalidade) => this.fasesDosFormularios().get(finalidade)?.escolhida ?? '',
-      () => this.reconciliar(),
+      (finalidade) => this.fases.porFinalidade().get(finalidade)?.escolhida ?? '',
+      () => this.campos.reconciliar(),
     );
   }
 
@@ -444,7 +314,7 @@ export class FormularioStepComponent {
       draft.formulario,
       draft.documentos,
       draft.desempate,
-      this.regrasDasModalidades(),
+      this.store.regrasDasModalidades(),
     ).map((campo) => (campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo));
   });
 

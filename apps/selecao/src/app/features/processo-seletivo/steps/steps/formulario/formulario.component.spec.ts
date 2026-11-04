@@ -29,6 +29,8 @@ import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
 import { PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
 import { FormularioStepComponent } from './formulario.component';
 import { GravacaoDosFormulariosService } from './servicos/gravacao-dos-formularios.service';
+import { CamposPressupostosDoFormularioService } from './servicos/campos-pressupostos-do-formulario.service';
+import { FasesDosFormulariosService } from './servicos/fases-dos-formularios.service';
 import { RemocaoDoFormularioService } from './servicos/remocao-do-formulario.service';
 import { AplicacaoDeModeloService } from './servicos/aplicacao-de-modelo.service';
 import { conteudoDoFormulario } from './formulario-do-processo';
@@ -359,7 +361,9 @@ describe('FormularioStepComponent', () => {
 
   it('com uma só fase que coleta inscrição, a escolhe sozinho', () => {
     expect(store.draft().formulario.faseCodigo).toBe('');
-    expect(fixture.componentInstance.faseDaInscricao()).toBe('INSCRICAO');
+    expect(fixture.debugElement.injector.get(FasesDosFormulariosService).faseDaInscricao()).toBe(
+      'INSCRICAO',
+    );
     expect(fixture.componentInstance.validate()).toEqual({ valid: true });
   });
 
@@ -399,9 +403,12 @@ describe('FormularioStepComponent', () => {
     store.patchSection('documentos', comExigencia({ raizes: [], emTodasAsFases: [] }, exigencia));
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.remocoesTravadas().get('PCD')).toMatch(
-      /^Não pode sair: o documento/,
-    );
+    expect(
+      fixture.debugElement.injector
+        .get(CamposPressupostosDoFormularioService)
+        .remocoesTravadas()
+        .get('PCD'),
+    ).toMatch(/^Não pode sair: o documento/);
     expect(host.textContent).toContain('Não pode sair: o documento');
   });
 
@@ -421,7 +428,12 @@ describe('FormularioStepComponent', () => {
     } as unknown as ProcessoSeletivoDto);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.remocoesTravadas().get('PCD')).toBe(
+    expect(
+      fixture.debugElement.injector
+        .get(CamposPressupostosDoFormularioService)
+        .remocoesTravadas()
+        .get('PCD'),
+    ).toBe(
       'Não pode sair: a regra de quem concorre em AC_PCD depende deste dado. Desfaça a dependência antes de remover o campo.',
     );
   });
@@ -646,9 +658,12 @@ describe('FormularioStepComponent', () => {
         ],
       });
 
-      expect(fixture.componentInstance.remocoesTravadas().get('PCD')).toMatch(
-        /o formulário de habilitação depende deste dado/,
-      );
+      expect(
+        fixture.debugElement.injector
+          .get(CamposPressupostosDoFormularioService)
+          .remocoesTravadas()
+          .get('PCD'),
+      ).toMatch(/o formulário de habilitação depende deste dado/);
     });
 
     it('a recusa da remoção aparece em texto na aba, que continua, e a remoção trava o passo enquanto está no ar', async () => {
