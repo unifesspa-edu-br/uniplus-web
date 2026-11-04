@@ -37,7 +37,6 @@
 790 apps/configuracao/src/app/features/tipos-etapa/tipos-etapa.page.ts
 841 apps/configuracao/src/app/features/tipos-processo/tipos-processo.page.ts
 1693 apps/configuracao/src/app/features/unidades/unidades.page.ts
-1113 apps/configuracao/src/styles.css
 947 apps/portal/src/app/features/inscricao/formulario/inscricao-do-candidato.page.ts
 514 apps/portal/src/app/features/processos/processos.ts
 467 apps/selecao/src/app/features/inscricoes/detalhe-da-inscricao.page.ts
