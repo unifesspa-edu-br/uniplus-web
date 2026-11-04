@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DestroyRef } from '@angular/core';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
-import type { AplicacaoDeModeloDto } from '@uniplus/shared-data/selecao';
+import type { AplicacaoDeModeloDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -19,7 +19,6 @@ import {
   type ProcessoAposAplicacao,
 } from '../modelo-de-formulario';
 import { nomeDaFinalidade } from '../formularios-por-finalidade';
-import { AnuncioDoFormularioService } from './anuncio-do-formulario.service';
 import { CatalogosDoFormularioService } from './catalogos-do-formulario.service';
 import { GravacaoDosFormulariosService } from './gravacao-dos-formularios.service';
 import { LeituraDoProcessoNoFormularioService } from './leitura-do-processo-no-formulario.service';
@@ -55,7 +54,6 @@ export class AplicacaoDeModeloService {
   private readonly dados = inject(CatalogosDoFormularioService);
   private readonly leitura = inject(LeituraDoProcessoNoFormularioService);
   private readonly gravacao = inject(GravacaoDosFormulariosService);
-  private readonly anuncio = inject(AnuncioDoFormularioService);
 
   /** Os modelos ativos que servem ao tipo do processo, por finalidade. */
   readonly modelos = signal<ReadonlyMap<string, readonly ModeloOferecido[]>>(new Map());
@@ -134,12 +132,13 @@ export class AplicacaoDeModeloService {
     this.escolhidos.update((atuais) => new Map([...atuais, [finalidade, modeloId]]));
   }
 
-  pedir(finalidade: string): void {
+  /** Pede a aplicação do modelo escolhido na aba. Devolve a recusa a anunciar, quando houver. */
+  pedir(finalidade: string): string | null {
     const escolhido = this.escolhidos().get(finalidade);
     const modelo = this.modelos()
       .get(finalidade)
       ?.find((oferecido) => oferecido.id === escolhido);
-    if (modelo === undefined) return;
+    if (modelo === undefined) return null;
     // Uma aplicação sem desfecho, em qualquer aba, só admite a nova tentativa dela: as cópias
     // mexem no que é do processo inteiro (fatos da inscrição, derivações) e dividem a mesma chave.
     const bloqueio = [...this.store.aplicacoesDeModeloEmAberto()].find(
@@ -148,16 +147,17 @@ export class AplicacaoDeModeloService {
     );
     if (bloqueio !== undefined) {
       const [outra, emAberto] = bloqueio;
-      this.mostrarRecusa(finalidade, textoDaAplicacaoEmAberto(nomeDaFinalidade(outra), emAberto));
+      const texto = textoDaAplicacaoEmAberto(nomeDaFinalidade(outra), emAberto);
+      this.mostrarRecusa(finalidade, texto);
       this.bloqueadasPorCopiaEmAberto.update((atuais) => new Set([...atuais, finalidade]));
-      return;
+      return texto;
     }
     this.pendente.set({ finalidade, modelo });
+    return null;
   }
 
   private mostrarRecusa(finalidade: string, texto: string): void {
     this.recusas.update((atuais) => new Map([...atuais, [finalidade, texto]]));
-    this.anuncio.anunciar(texto);
   }
 
   cancelar(): void {
@@ -183,38 +183,67 @@ export class AplicacaoDeModeloService {
    * trava o passo enquanto está no ar: um PUT da aba chegando depois substituiria a cópia pelo que
    * estava na tela. Depois, o rascunho recebe o que o servidor ficou tendo, e a reconciliação
    * devolve ao formulário o que o processo pressupõe e o modelo não trazia — a cópia não confere as
-   * exigências. O resumo e a recusa ficam em texto na aba.
+   * exigências. O resumo e a recusa ficam em texto na aba, e o texto também volta para ser anunciado.
    */
   async confirmar(
     faseDaAbaPor: (finalidade: string) => string,
     reconciliar: () => readonly string[],
-  ): Promise<void> {
+  ): Promise<string | null> {
     const pendente = this.pendente();
     this.pendente.set(null);
     const processoId = this.store.processoSeletivoId();
-    if (pendente === null || processoId === null) return;
+    if (pendente === null || processoId === null) return null;
     const { finalidade, modelo } = pendente;
     const faseDaAba = faseDaAbaPor(finalidade);
+    this.esquecerAplicacaoAnterior(finalidade);
+
+    const desfecho = await this.aplicarTravandoOPasso(processoId, finalidade, modelo.id, faseDaAba);
+    if (desfecho === null) return null;
+
+    if (!desfecho.ok) return this.registrarRecusa(finalidade, modelo, desfecho);
+
+    this.store.aplicacoesDeModeloEmAberto.update((atuais) => semChave(atuais, finalidade));
+    if (this.store.aplicacoesDeModeloEmAberto().size === 0) this.esquecerBloqueios();
+    this.projetar(finalidade, desfecho, faseDaAba);
+    return this.registrarResumo(finalidade, modelo, desfecho, reconciliar());
+  }
+
+  private esquecerAplicacaoAnterior(finalidade: string): void {
     this.recusas.update((atuais) => semChave(atuais, finalidade));
     this.bloqueadasPorCopiaEmAberto.update(
       (atuais) => new Set([...atuais].filter((aba) => aba !== finalidade)),
     );
     this.resumos.update((atuais) => semChave(atuais, finalidade));
+  }
 
+  /** Aplica no servidor com o passo travado; `null` quando o processo mudou no meio. */
+  private async aplicarTravandoOPasso(
+    processoId: string,
+    finalidade: string,
+    modeloId: string,
+    faseDaAba: string,
+  ): Promise<DesfechoDaAplicacao | null> {
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
-    let desfecho: DesfechoDaAplicacao;
     try {
-      desfecho = await this.aplicarNoServidor(processoId, finalidade, modelo.id, faseDaAba);
+      const desfecho = await this.aplicarNoServidor(processoId, finalidade, modeloId, faseDaAba);
+      return geracao === this.store.geracao() ? desfecho : null;
     } finally {
       if (geracao === this.store.geracao()) this.store.salvando.set(false);
     }
-    if (geracao !== this.store.geracao()) return;
+  }
 
-    if (desfecho.ok) {
-      this.store.aplicacoesDeModeloEmAberto.update((atuais) => semChave(atuais, finalidade));
-      if (this.store.aplicacoesDeModeloEmAberto().size === 0) this.esquecerBloqueios();
-    } else if (desfecho.copiaConfirmada !== null) {
+  /**
+   * Guarda a recusa na aba. Enquanto houver cópia sem desfecho — desta tentativa ou de uma
+   * anterior —, a aba diz o mesmo que a trava do passo: uma recusa nova não desfaz a cópia que pode
+   * ter chegado. A recusa da nova tentativa vem antes, para o operador saber o que corrigir.
+   */
+  private registrarRecusa(
+    finalidade: string,
+    modelo: ModeloOferecido,
+    desfecho: Extract<DesfechoDaAplicacao, { ok: false }>,
+  ): string {
+    if (desfecho.copiaConfirmada !== null) {
       const emAberto = {
         modeloId: modelo.id,
         modeloNome: modelo.nome,
@@ -224,27 +253,28 @@ export class AplicacaoDeModeloService {
         (atuais) => new Map([...atuais, [finalidade, emAberto]]),
       );
     }
-    if (!desfecho.ok) {
-      // Enquanto houver cópia sem desfecho — desta tentativa ou de uma anterior —, a aba diz o
-      // mesmo que a trava do passo: uma recusa nova não desfaz a cópia que pode ter chegado. A
-      // recusa da nova tentativa vem antes, para o operador saber o que corrigir.
-      const emAberto = this.store.aplicacoesDeModeloEmAberto().get(finalidade);
-      const textoEmAberto =
-        emAberto === undefined
-          ? null
-          : textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto);
-      const texto =
-        textoEmAberto === null
-          ? `O modelo não foi aplicado ao formulário de ${nomeDaFinalidade(finalidade)}. ${desfecho.recusa}`
-          : desfecho.copiaConfirmada === null
-            ? `A nova tentativa foi recusada: ${desfecho.recusa} ${textoEmAberto}`
-            : textoEmAberto;
-      this.mostrarRecusa(finalidade, texto);
-      return;
-    }
+    const emAberto = this.store.aplicacoesDeModeloEmAberto().get(finalidade);
+    const nome = nomeDaFinalidade(finalidade);
+    const textoEmAberto = emAberto === undefined ? null : textoDaAplicacaoEmAberto(nome, emAberto);
+    const texto =
+      textoEmAberto === null
+        ? `O modelo não foi aplicado ao formulário de ${nome}. ${desfecho.recusa}`
+        : desfecho.copiaConfirmada === null
+          ? `A nova tentativa foi recusada: ${desfecho.recusa} ${textoEmAberto}`
+          : textoEmAberto;
+    this.mostrarRecusa(finalidade, texto);
+    return texto;
+  }
 
-    // O que o rascunho marcava como posto pelas exigências era do formulário que saiu: a cópia é
-    // decisão do modelo, e só o que a reconciliação acrescentar agora volta a ser dela.
+  /**
+   * O rascunho recebe o que o servidor ficou tendo. O que ele marcava como posto pelas exigências
+   * era do formulário que saiu: a cópia é decisão do modelo.
+   */
+  private projetar(
+    finalidade: string,
+    desfecho: Extract<DesfechoDaAplicacao, { ok: true }>,
+    faseDaAba: string,
+  ): void {
     if (finalidade === FINALIDADE_INSCRICAO) this.store.camposPostosPelasExigencias.set(new Set());
     this.store.projetarSecao(
       'formulario',
@@ -255,9 +285,16 @@ export class AplicacaoDeModeloService {
         faseDaAba,
       ),
     );
-    const acrescentados = reconciliar();
-    this.gravacao.esquecerRecusasDa(finalidade);
+  }
 
+  /** O resumo da aplicação, guardado na aba. Só o que a reconciliação acrescentar volta a ser dela. */
+  private registrarResumo(
+    finalidade: string,
+    modelo: ModeloOferecido,
+    desfecho: Extract<DesfechoDaAplicacao, { ok: true }>,
+    acrescentados: readonly string[],
+  ): string {
+    this.gravacao.esquecerRecusasDa(finalidade);
     const nomeDoFato = new Map(this.dados.catalogo().map((fato) => [fato.codigo, fato.nome]));
     const resumo = [
       ...resumoDaAplicacao(
@@ -269,7 +306,7 @@ export class AplicacaoDeModeloService {
       ...(desfecho.avisoDaFase === null ? [] : [desfecho.avisoDaFase]),
     ];
     this.resumos.update((atuais) => new Map([...atuais, [finalidade, resumo]]));
-    this.anuncio.anunciar(resumo.join(' '));
+    return resumo.join(' ');
   }
 
   /**
@@ -313,24 +350,12 @@ export class AplicacaoDeModeloService {
       };
 
     const depois = await this.leitura.ler(processoId);
-    if (!isApiOk(depois)) {
-      return { ok: false, recusa: '', copiaConfirmada: true };
-    }
+    if (!isApiOk(depois)) return { ok: false, recusa: '', copiaConfirmada: true };
 
-    let avisoDaFase: string | null = null;
-    const copiado = formularioDaFinalidade(depois.data.formularios, finalidade);
-    if (fase.declarar && copiado !== null) {
-      const conteudo = conteudoDoFormulario(copiado);
-      const cabecalho = await this.cadastro.gravarFormulario(
-        processoId,
-        finalidade,
-        { faseId: copiado.faseId, conteudo },
-        { faseId: fase.faseId, conteudo },
-      );
-      if (!cabecalho.ok)
-        avisoDaFase = `A fase do formulário não foi gravada: ${textoDaRecusa(cabecalho.problem, this.problemI18n)} Grave o passo para declará-la.`;
-    }
-
+    const avisoDaFase =
+      fase.declarar && fase.faseId !== null
+        ? await this.declararFase(processoId, finalidade, depois.data, fase.faseId)
+        : null;
     return {
       ok: true,
       relato: aplicacao.relato,
@@ -344,5 +369,27 @@ export class AplicacaoDeModeloService {
         })),
       },
     };
+  }
+
+  /** Declara a fase quando a cópia ficou sem ela. Devolve o aviso quando o servidor recusou. */
+  private async declararFase(
+    processoId: string,
+    finalidade: string,
+    processo: ProcessoSeletivoDto,
+    faseId: string,
+  ): Promise<string | null> {
+    const copiado = formularioDaFinalidade(processo.formularios, finalidade);
+    if (copiado === null) return null;
+
+    const conteudo = conteudoDoFormulario(copiado);
+    const cabecalho = await this.cadastro.gravarFormulario(
+      processoId,
+      finalidade,
+      { faseId: copiado.faseId, conteudo },
+      { faseId, conteudo },
+    );
+    return cabecalho.ok
+      ? null
+      : `A fase do formulário não foi gravada: ${textoDaRecusa(cabecalho.problem, this.problemI18n)} Grave o passo para declará-la.`;
   }
 }

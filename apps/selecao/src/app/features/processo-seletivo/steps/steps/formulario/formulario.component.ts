@@ -27,7 +27,6 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { abasDoFormulario } from './abas-do-formulario';
 import { mensagensDoFormulario } from './validacao-do-formulario';
-import { AnuncioDoFormularioService } from './servicos/anuncio-do-formulario.service';
 import { AplicacaoDeModeloService } from './servicos/aplicacao-de-modelo.service';
 import { GravacaoDosFormulariosService } from './servicos/gravacao-dos-formularios.service';
 import { RemocaoDoFormularioService } from './servicos/remocao-do-formulario.service';
@@ -79,7 +78,6 @@ import {
   templateUrl: './formulario.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    AnuncioDoFormularioService,
     AplicacaoDeModeloService,
     CatalogosDoFormularioService,
     GravacaoDosFormulariosService,
@@ -97,7 +95,8 @@ export class FormularioStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDoCronogramaService);
   protected readonly dados = inject(CatalogosDoFormularioService);
-  protected readonly anuncio = inject(AnuncioDoFormularioService);
+  /** O que o leitor de tela ouve depois de acrescentar ou remover um formulário, ou de aplicar um modelo. */
+  protected readonly anuncio = signal('');
   protected readonly remocao = inject(RemocaoDoFormularioService);
   protected readonly aplicacao = inject(AplicacaoDeModeloService);
   private readonly gravacao = inject(GravacaoDosFormulariosService);
@@ -245,7 +244,7 @@ export class FormularioStepComponent {
     );
     this.finalidadeAAcrescentar.set('');
     this.selecionarAba(finalidade);
-    this.anuncio.anunciar(
+    this.anuncio.set(
       `Formulário de ${nomeDaFinalidade(finalidade)} acrescentado. Ele é criado no processo ao gravar o passo.`,
     );
     this.focarAba(finalidade);
@@ -261,21 +260,22 @@ export class FormularioStepComponent {
 
     const nome = nomeDaFinalidade(desfecho.finalidade);
     if (desfecho.recusa !== null) {
-      this.anuncio.anunciar(`O formulário de ${nome} não foi removido. ${desfecho.recusa}`);
+      this.anuncio.set(`O formulário de ${nome} não foi removido. ${desfecho.recusa}`);
       return;
     }
     this.gravacao.esquecerRecusasDa(desfecho.finalidade);
     this.selecionarAba(FINALIDADE_INSCRICAO);
-    this.anuncio.anunciar(`Formulário de ${nome} removido.`);
+    this.anuncio.set(`Formulário de ${nome} removido.`);
     this.focarAba(FINALIDADE_INSCRICAO);
   }
 
   /** Aplica o modelo confirmado: a reconciliação devolve ao formulário o que o processo pressupõe. */
-  confirmarAplicacao(): Promise<void> {
-    return this.aplicacao.confirmar(
+  async confirmarAplicacao(): Promise<void> {
+    const texto = await this.aplicacao.confirmar(
       (finalidade) => this.fases.porFinalidade().get(finalidade)?.escolhida ?? '',
       () => this.campos.reconciliar(),
     );
+    if (texto !== null) this.anuncio.set(texto);
   }
 
   /**

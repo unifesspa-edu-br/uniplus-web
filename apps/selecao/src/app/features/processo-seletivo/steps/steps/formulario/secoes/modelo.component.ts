@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import type { AbaDoFormulario } from '../abas-do-formulario';
@@ -18,4 +18,11 @@ export class ModeloDoFormularioComponent {
   protected readonly aplicacao = inject(AplicacaoDeModeloService);
 
   readonly aba = input.required<AbaDoFormulario>();
+  /** A recusa do pedido de aplicação, para o leitor de tela ouvir. */
+  readonly anunciou = output<string>();
+
+  protected pedir(): void {
+    const recusa = this.aplicacao.pedir(this.aba().finalidade);
+    if (recusa !== null) this.anunciou.emit(recusa);
+  }
 }

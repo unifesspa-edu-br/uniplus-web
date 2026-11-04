@@ -29,7 +29,7 @@
   }
 }
 
-<p class="sr-only" role="status" aria-live="polite" id="form-anuncio">{{ anuncio.texto() }}</p>
+<p class="sr-only" role="status" aria-live="polite" id="form-anuncio">{{ anuncio() }}</p>
 
 <div class="form-abas">
   <!-- O tablist só contém abas: acrescentar formulário é outro controle, logo depois dele. Com um
@@ -111,7 +111,7 @@
 
     <!-- Partir de um modelo substitui o formulário: só em rascunho, e a consulta só lê a origem. -->
     @if (!store.emConsulta()) {
-      <sel-modelo-do-formulario [aba]="aba" />
+      <sel-modelo-do-formulario [aba]="aba" (anunciou)="anuncio.set($event)" />
     }
 
     <section class="step-section" [attr.aria-labelledby]="aba.idBase + '-fase-titulo'">
