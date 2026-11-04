@@ -10,7 +10,11 @@
   irmãs do botão que abre o cartão — não podem estar dentro dele, porque
   botão não aninha botão. Mesmo desenho que a fase um nível acima.
 -->
-<div class="etapa-cabecalho" selCabecalhoDaEtapa [grupo]="etapa" [indiceDaEtapa]="posicao"></div>
+<sel-cabecalho-da-etapa
+  class="etapa-cabecalho"
+  [grupo]="etapa"
+  [indiceDaEtapa]="posicao"
+></sel-cabecalho-da-etapa>
 
 @if (etapaAberta) {
   <div class="form-grid etapa-linha" [formGroup]="etapa" [attr.id]="'cr-etapa-corpo-' + posicao">
@@ -245,40 +249,36 @@
       />
     }
     <!-- Janela própria da etapa e promessa de devolutiva. -->
-    <div
+    <sel-janela-da-etapa
       class="form-grid__full etapa-publica"
-      selJanelaDaEtapa
       [grupo]="etapa"
       [indiceDaEtapa]="posicao"
       [fase]="item"
-    ></div>
+    ></sel-janela-da-etapa>
 
     <!-- Quem julga a etapa. -->
     @if (!notaDoEnem) {
-      <div
+      <sel-bancas-da-etapa
         class="form-grid__full etapa-publica"
-        selBancasDaEtapa
         [grupo]="etapa"
         [indiceDaEtapa]="posicao"
-      ></div>
+      ></sel-bancas-da-etapa>
     }
 
     @if (!notaDoEnem) {
-      <div
+      <sel-publicacoes-da-etapa
         class="form-grid__full etapa-publica etapa-publica--recolhivel"
         [class.is-aberto]="expansao.blocoAberto(posicao, 'publica')"
-        selPublicacoesDaEtapa
         [grupo]="etapa"
         [indiceDaEtapa]="posicao"
-      ></div>
+      ></sel-publicacoes-da-etapa>
     }
 
-    <div
+    <sel-recursos-da-etapa
       class="form-grid__full etapa-publica etapa-publica--recolhivel"
       [class.is-aberto]="expansao.blocoAberto(posicao, 'recursos')"
-      selRecursosDaEtapa
       [grupo]="etapa"
       [indiceDaEtapa]="posicao"
-    ></div>
+    ></sel-recursos-da-etapa>
   </div>
 }

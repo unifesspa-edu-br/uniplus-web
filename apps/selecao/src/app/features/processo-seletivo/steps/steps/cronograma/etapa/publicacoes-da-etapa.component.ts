@@ -8,7 +8,7 @@ import { ExpansaoDoCronograma } from '../servicos/expansao-do-cronograma.service
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
 
 @Component({
-  selector: 'div[selPublicacoesDaEtapa]',
+  selector: 'sel-publicacoes-da-etapa',
   templateUrl: './publicacoes-da-etapa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

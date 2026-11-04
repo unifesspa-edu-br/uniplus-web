@@ -9,10 +9,11 @@ import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service'
 
 /** A convenção de contagem de prazo do processo: o que o catálogo oferece e o que cada uma garante. */
 @Component({
-  selector: 'div[selConvencaoDeContagem]',
+  selector: 'sel-convencao-de-contagem',
   imports: [ValorLegivelDirective, FormsModule],
   templateUrl: './convencao-de-contagem.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class ConvencaoDeContagemComponent {
   private readonly catalogos = inject(CatalogosDoCronogramaService);

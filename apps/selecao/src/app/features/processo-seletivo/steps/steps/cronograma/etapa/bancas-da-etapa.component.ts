@@ -7,7 +7,7 @@ import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
 
 @Component({
-  selector: 'div[selBancasDaEtapa]',
+  selector: 'sel-bancas-da-etapa',
   templateUrl: './bancas-da-etapa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

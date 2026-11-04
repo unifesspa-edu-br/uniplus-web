@@ -7,7 +7,7 @@ import { ExpansaoDoCronograma } from '../servicos/expansao-do-cronograma.service
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
 
 @Component({
-  selector: 'div[selCabecalhoDaEtapa]',
+  selector: 'sel-cabecalho-da-etapa',
   templateUrl: './cabecalho-da-etapa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

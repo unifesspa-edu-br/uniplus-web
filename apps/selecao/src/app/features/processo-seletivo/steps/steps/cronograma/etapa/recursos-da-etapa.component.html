@@ -18,14 +18,13 @@
 @if (expansao.blocoAberto(posicao, 'recursos')) {
   <div [attr.id]="'cr-etapa-recursos-' + posicao">
     @for (recurso of edicao.recursosDaEtapa(etapa); track $index) {
-      <div
+      <sel-janela-recursal
         class="form-grid"
-        selJanelaRecursal
         [grupo]="etapa"
         [indiceDaEtapa]="posicao"
         [recursoDaEtapa]="recurso"
         [indiceDoRecurso]="$index"
-      ></div>
+      ></sel-janela-recursal>
     } @empty {
       <p class="field__hint">Esta etapa não admite recurso.</p>
     }

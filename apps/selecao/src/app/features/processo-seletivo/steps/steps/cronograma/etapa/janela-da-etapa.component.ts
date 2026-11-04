@@ -8,7 +8,7 @@ import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
 import type { FaseNaLinhaDoTempo } from '../servicos/formulario-do-cronograma.service';
 
 @Component({
-  selector: 'div[selJanelaDaEtapa]',
+  selector: 'sel-janela-da-etapa',
   imports: [ValorLegivelDirective, ReactiveFormsModule],
   templateUrl: './janela-da-etapa.component.html',
   viewProviders: [FORMULARIO_DO_PAI],

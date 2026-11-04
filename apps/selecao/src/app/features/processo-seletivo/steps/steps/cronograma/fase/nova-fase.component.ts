@@ -7,11 +7,12 @@ import { FORMULARIO_DO_PAI } from '../formulario-do-pai';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
 
 @Component({
-  selector: 'div[selNovaFase]',
+  selector: 'sel-nova-fase',
   imports: [ValorLegivelDirective, ReactiveFormsModule],
   templateUrl: './nova-fase.component.html',
   viewProviders: [FORMULARIO_DO_PAI],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class NovaFaseComponent {
   protected readonly catalogos = inject(CatalogosDoCronogramaService);

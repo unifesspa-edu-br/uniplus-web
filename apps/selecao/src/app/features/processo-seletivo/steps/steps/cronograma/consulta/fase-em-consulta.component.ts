@@ -8,10 +8,11 @@ import { LeituraDaLinhaDoTempo } from '../servicos/leitura-da-linha-do-tempo.ser
 
 /** A fase de um processo que só se lê: cada declaração em texto, sem campo nem ação de edição. */
 @Component({
-  selector: 'div[selFaseEmConsulta]',
+  selector: 'sel-fase-em-consulta',
   imports: [ValorEmConsultaComponent, FaseStepComponent],
   templateUrl: './fase-em-consulta.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class FaseEmConsultaComponent {
   readonly fase = input.required<FaseNaLinhaDoTempo>();

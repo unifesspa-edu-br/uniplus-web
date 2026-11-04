@@ -19,7 +19,7 @@
   }
 
   @for (item of linhaDoTempo(); track item.grupo) {
-    <div class="step-card fase-bloco" selFaseEmConsulta [fase]="item"></div>
+    <sel-fase-em-consulta class="step-card fase-bloco" [fase]="item"></sel-fase-em-consulta>
   }
 
   <div class="step-card">
@@ -32,7 +32,7 @@
   </div>
 } @else {
   <form [formGroup]="formulario">
-    <div class="step-card" selNovaFase></div>
+    <sel-nova-fase class="step-card"></sel-nova-fase>
 
     @if (reconciliacaoPendente()) {
       <div class="field__erro" role="alert">
@@ -79,7 +79,7 @@
           [class.fase-bloco--aberta]="expansao.faseExpandida(item.indice)"
           [formGroupName]="item.indice"
         >
-          <div class="fase-cabecalho" selCabecalhoDaFase [fase]="item"></div>
+          <sel-cabecalho-da-fase class="fase-cabecalho" [fase]="item"></sel-cabecalho-da-fase>
 
           <!--
             Etapa e documento existem por causa da fase e saem com ela. A confirmação diz
@@ -144,7 +144,7 @@
                   </p>
                 }
 
-                <div class="form-grid" selDadosDaFase [fase]="item"></div>
+                <sel-dados-da-fase class="form-grid" [fase]="item"></sel-dados-da-fase>
 
                 <h3 class="form-section__title">Etapas desta fase</h3>
                 <p class="field__hint">
@@ -163,7 +163,7 @@
                 fase, que não a contém. Por isso a ligação é por referência, e o recorte
                 por fase acontece em `etapasDaFase`.
               -->
-                <div selEtapasDaFase [fase]="item"></div>
+                <sel-etapas-da-fase [fase]="item"></sel-etapas-da-fase>
 
                 <button
                   class="btn btn--secondary acao-de-etapa"
@@ -190,7 +190,7 @@
       falta é a fase que as avalia.
     -->
     @if (leitura.etapasOrfas().length > 0) {
-      <div class="step-card" selEtapasOrfas></div>
+      <sel-etapas-orfas class="step-card"></sel-etapas-orfas>
     }
 
     <!--
@@ -199,7 +199,7 @@
       enquanto rascunho — nenhuma opção vem pré-selecionada, e o seletor exibe
       só `codigo` e `baseLegal`, que é o que o catálogo tem de legível.
     -->
-    <div class="step-card" selConvencaoDeContagem></div>
+    <sel-convencao-de-contagem class="step-card"></sel-convencao-de-contagem>
   </form>
 
   @if (conferencia.problemas().length > 0) {

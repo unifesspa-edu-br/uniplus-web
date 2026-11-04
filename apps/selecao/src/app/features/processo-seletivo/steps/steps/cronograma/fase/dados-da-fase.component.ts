@@ -10,7 +10,7 @@ import { LeituraDaLinhaDoTempo } from '../servicos/leitura-da-linha-do-tempo.ser
 import { UnidadesDasFases } from '../servicos/unidades-das-fases.service';
 
 @Component({
-  selector: 'div[selDadosDaFase]',
+  selector: 'sel-dados-da-fase',
   imports: [ValorLegivelDirective, ReactiveFormsModule],
   templateUrl: './dados-da-fase.component.html',
   viewProviders: [FORMULARIO_DO_PAI],

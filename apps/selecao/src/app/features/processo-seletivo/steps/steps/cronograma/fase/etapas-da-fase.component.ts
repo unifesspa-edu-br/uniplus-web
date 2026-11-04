@@ -6,10 +6,11 @@ import type { FaseNaLinhaDoTempo } from '../servicos/formulario-do-cronograma.se
 import { LeituraDaLinhaDoTempo } from '../servicos/leitura-da-linha-do-tempo.service';
 
 @Component({
-  selector: 'div[selEtapasDaFase]',
+  selector: 'sel-etapas-da-fase',
   imports: [EditorDaEtapaComponent],
   templateUrl: './etapas-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class EtapasDaFaseComponent {
   readonly fase = input.required<FaseNaLinhaDoTempo>();

@@ -8,7 +8,7 @@ import {
 import { LeituraDaLinhaDoTempo } from '../servicos/leitura-da-linha-do-tempo.service';
 
 @Component({
-  selector: 'div[selCabecalhoDaFase]',
+  selector: 'sel-cabecalho-da-fase',
   templateUrl: './cabecalho-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -4,9 +4,10 @@ import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.serv
 import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
 
 @Component({
-  selector: 'div[selEtapasOrfas]',
+  selector: 'sel-etapas-orfas',
   templateUrl: './etapas-orfas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class EtapasOrfasComponent {
   protected readonly leitura = inject(LeituraDaLinhaDoTempo);

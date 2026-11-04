@@ -9,7 +9,7 @@ import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
 
 @Component({
-  selector: 'div[selJanelaRecursal]',
+  selector: 'sel-janela-recursal',
   imports: [ValorLegivelDirective],
   templateUrl: './janela-recursal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

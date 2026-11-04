@@ -18,7 +18,7 @@ import { PublicacoesDaEtapaComponent } from './publicacoes-da-etapa.component';
 import { RecursosDaEtapaComponent } from './recursos-da-etapa.component';
 
 @Component({
-  selector: 'div[selEditorDaEtapa]',
+  selector: 'sel-editor-da-etapa',
   imports: [
     ValorLegivelDirective,
     ReactiveFormsModule,
@@ -31,6 +31,7 @@ import { RecursosDaEtapaComponent } from './recursos-da-etapa.component';
   ],
   templateUrl: './editor-da-etapa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class EditorDaEtapaComponent {
   readonly grupo = input.required<FormGroup<EtapaForm>>();

@@ -8,7 +8,7 @@ import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.ser
 import { JanelaRecursalComponent } from './janela-recursal.component';
 
 @Component({
-  selector: 'div[selRecursosDaEtapa]',
+  selector: 'sel-recursos-da-etapa',
   imports: [JanelaRecursalComponent],
   templateUrl: './recursos-da-etapa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
