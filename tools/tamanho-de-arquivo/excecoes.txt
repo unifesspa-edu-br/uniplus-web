@@ -23,7 +23,7 @@
 561 apps/configuracao/src/app/features/modelos-formulario/modelo-formulario-edicao.page.ts
 762 apps/configuracao/src/app/features/modelos-formulario/modelos-formulario.page.ts
 1595 apps/configuracao/src/app/features/ofertas-curso/ofertas-curso.page.ts
-1754 apps/configuracao/src/app/features/pesos-enem/pesos-enem.page.ts
+1753 apps/configuracao/src/app/features/pesos-enem/pesos-enem.page.ts
 1059 apps/configuracao/src/app/features/precedencias-fase/precedencias-fase.page.ts
 536 apps/configuracao/src/app/features/protecao-do-catalogo/decisoes-da-protecao.component.ts
 696 apps/configuracao/src/app/features/protecao-do-catalogo/protecao-do-catalogo.page.ts
@@ -37,7 +37,7 @@
 790 apps/configuracao/src/app/features/tipos-etapa/tipos-etapa.page.ts
 841 apps/configuracao/src/app/features/tipos-processo/tipos-processo.page.ts
 1693 apps/configuracao/src/app/features/unidades/unidades.page.ts
-1115 apps/configuracao/src/styles.css
+1113 apps/configuracao/src/styles.css
 947 apps/portal/src/app/features/inscricao/formulario/inscricao-do-candidato.page.ts
 514 apps/portal/src/app/features/processos/processos.ts
 467 apps/selecao/src/app/features/inscricoes/detalhe-da-inscricao.page.ts
@@ -48,7 +48,7 @@
 769 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/publicacao-para-comando.ts
 481 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/revisao.component.html
 834 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/revisao.component.ts
-761 apps/selecao/src/styles.css
+760 apps/selecao/src/styles.css
 637 libs/shared-ui/src/lib/components/editor-de-condicoes/condicoes-de-fatos.ts
 572 libs/shared-ui/src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos.ts
 993 libs/shared-ui/src/lib/components/editor-de-formulario/editor-de-formulario.ts
