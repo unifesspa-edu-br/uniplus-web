@@ -494,7 +494,7 @@ interface TipoDocumentoForm {
             />
             <span class="field__hint" id="cfg-tdoc-codigo-dica">
               Identidade do cadastro: caixa alta, começando por letra, com letras, números e
-              sublinhado, de 2 a 50 caracteres. Único entre os tipos ativos. Sugerido a partir do
+              sublinhado, de 2 a 50 caracteres. Único entre os tipos vivos. Sugerido a partir do
               nome e editável antes de salvar.
             </span>
             @if (erroCampoCodigo) {
