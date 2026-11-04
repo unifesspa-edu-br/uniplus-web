@@ -34,21 +34,24 @@ import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronogr
 import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
 import {
-  ObrigatoriedadeReprovadaProblem,
-  PendenciaEstruturalProblem,
+  dataReferenciaLegalDe,
+  faseQueAncoraOPeriodoDeInscricao,
+  temFaseDeColetaInscricao,
+} from './periodo-de-inscricao';
+import { mensagensDePublicacao, comoComandoDePublicacao } from './comando-de-publicacao';
+import {
   agruparPorDimensao,
-  comExtensoesDePublicacao,
   comoAvisosDaRevisao,
   comoGruposDaRevisao,
-  comoComandoDePublicacao,
-  dataReferenciaLegalDe,
+  rotuloDaDimensao as rotularDimensao,
+} from './grupos-da-revisao';
+import {
+  ObrigatoriedadeReprovadaProblem,
+  PendenciaEstruturalProblem,
+  comExtensoesDePublicacao,
   eErroDeDocumentoOuAto,
   eErroDeFaseSemUnidade,
-  faseQueAncoraOPeriodoDeInscricao,
-  mensagensDePublicacao,
-  rotuloDaDimensao as rotularDimensao,
-  temFaseDeColetaInscricao,
-} from './publicacao-para-comando';
+} from './problemas-da-publicacao';
 
 /**
  * O que a última tentativa de publicar devolveu — CA-06: a corrida entre
@@ -146,11 +149,7 @@ export class RevisaoStepComponent {
   private readonly atos = inject(AtosApi);
   private readonly dataBr = new DateBrPipe();
   private readonly problemI18n = inject(ProblemI18nService);
-  /**
-   * Provido na página, mesma instância que `CronogramaStepComponent` já usa.
-   * Necessário para resolver `coletaInscricao` de uma fase acrescentada nesta
-   * sessão — ver `coletaInscricao()` em `publicacao-para-comando.ts`.
-   */
+  /** Provido na página, a mesma instância do cronograma: resolve `coletaInscricao` da fase acrescentada nesta sessão. */
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
 
   /** O que a última tentativa de `POST …/publicacao` devolveu, ou `null` enquanto não houve tentativa (ou ela publicou). */

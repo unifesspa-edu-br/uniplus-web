@@ -4,7 +4,7 @@ import type { ItemConformidadeDto, ProcessoSeletivoDto } from '@uniplus/shared-d
 import { PASSOS } from '../processo-seletivo.data';
 import { decodificarOrigemCandidatos } from './hidratacao';
 import type { RotuloDePasso } from '../processo-seletivo.data';
-import { passosComPendencia } from '../steps/revisao/publicacao-para-comando';
+import { passosComPendencia } from '../steps/revisao/grupos-da-revisao';
 
 /** Os passos que gravam conteúdo: a Revisão publica, não declara nada que o servidor devolva. */
 type PassoQueGrava = Exclude<RotuloDePasso, 'Revisão e publicação'>;

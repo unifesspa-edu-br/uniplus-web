@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import type { AvisoDaRevisao } from './publicacao-para-comando';
+import type { AvisoDaRevisao } from './grupos-da-revisao';
 
 /**
  * Os avisos de conformidade da revisão do processo. Ficam à parte das pendências porque não

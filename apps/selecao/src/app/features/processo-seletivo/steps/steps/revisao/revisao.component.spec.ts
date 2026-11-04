@@ -34,7 +34,7 @@ import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { EnvioDoEdital } from '../../shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
-import { nomeDoPasso } from './publicacao-para-comando';
+import { nomeDoPasso } from './destino-das-pendencias';
 import { RevisaoStepComponent } from './revisao.component';
 
 const BASE = 'http://localhost:5000';
