@@ -1,5 +1,4 @@
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -45,6 +44,7 @@ import {
   relerProcessoAPedido,
 } from '../../shared/releitura-do-snapshot.service';
 import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
+import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { inteiroNaForma, leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
@@ -568,18 +568,7 @@ export class DesempateStepComponent {
    * em que a queda para "Acrescentar" existe.
    */
   private focar(...alvos: string[]): void {
-    afterNextRender(
-      () => {
-        const disponivel = alvos
-          .map((id) => document.getElementById(id))
-          .find(
-            (elemento): elemento is HTMLElement =>
-              elemento !== null && !(elemento as HTMLButtonElement).disabled,
-          );
-        disponivel?.focus();
-      },
-      { injector: this.injector },
-    );
+    focarAposRenderizar(this.injector, ...alvos);
   }
 
   escolherRegra(indice: number, valor: string): void {

@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   Injector,
-  afterNextRender,
   computed,
   inject,
   signal,
@@ -20,6 +19,10 @@ import {
   relerProcessoAPedido,
 } from '../../shared/releitura-do-snapshot.service';
 import { MOTIVO_DA_RELEITURA } from '../../shared/motivo-da-releitura';
+import {
+  focarAposRenderizar,
+  focarAposRenderizarSeSemFoco,
+} from '../../shared/foco-apos-renderizar';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
@@ -438,9 +441,7 @@ export class FormulaStepComponent {
       edicoesEnem: this.edicoes().filter((e) => e !== ano),
     });
     this.store.classificacao.recusaDasEdicoesDoEnem.set(null);
-    afterNextRender(() => document.getElementById(ID_DO_CAMPO_EDICAO)?.focus(), {
-      injector: this.injector,
-    });
+    focarAposRenderizar(this.injector, ID_DO_CAMPO_EDICAO);
   }
 
   aoAlternarBaseadoEmEnem(evento: Event): void {
@@ -526,14 +527,7 @@ export class FormulaStepComponent {
    */
   private focarQuemSobrou(destino: string): void {
     if (this.destruida) return;
-    afterNextRender(
-      () => {
-        const ativo = document.activeElement;
-        if (ativo !== null && ativo !== document.body) return;
-        document.getElementById(destino)?.focus();
-      },
-      { injector: this.injector },
-    );
+    focarAposRenderizarSeSemFoco(this.injector, destino);
   }
 
   /**

@@ -57,12 +57,10 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { DocumentosDoFormularioComponent } from './documentos-do-formulario.component';
-import {
-  documentosDoFormulario,
-  fatosParaLerOGatilho,
-} from '../../shared/documentos-exigidos';
+import { documentosDoFormulario, fatosParaLerOGatilho } from '../../shared/documentos-exigidos';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { descreverFase } from '../../shared/descricao-da-fase';
+import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import {
   desempateIdosoSemApuracao,
   desempateSemDataDeNascimento,
@@ -536,9 +534,13 @@ export class FormularioStepComponent {
     const aba = this.abasComNumeroInvalido()[0];
     if (aba === undefined) return false;
     this.selecionarAba(aba.finalidade);
-    await new Promise<void>((resolve) => afterNextRender(() => resolve(), { injector: this.injector }));
+    await new Promise<void>((resolve) =>
+      afterNextRender(() => resolve(), { injector: this.injector }),
+    );
     return (
-      (await this.editores().find((editor) => editor.idBase() === aba.idBase)?.focarPrimeiroCampoInvalido()) ?? false
+      (await this.editores()
+        .find((editor) => editor.idBase() === aba.idBase)
+        ?.focarPrimeiroCampoInvalido()) ?? false
     );
   }
 
@@ -955,14 +957,7 @@ export class FormularioStepComponent {
    */
   private focarAba(finalidade: string): void {
     const sufixo = sufixoDaFinalidade(finalidade);
-    afterNextRender(
-      () =>
-        (
-          document.getElementById(`form-aba-${sufixo}`) ??
-          document.getElementById(`form-${sufixo}-fase-titulo`)
-        )?.focus(),
-      { injector: this.injector },
-    );
+    focarAposRenderizar(this.injector, `form-aba-${sufixo}`, `form-${sufixo}-fase-titulo`);
   }
 
   readonly referencia = computed(() => this.store.draft().formulario.referenciaTemporal);

@@ -1,5 +1,4 @@
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -25,6 +24,7 @@ import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { decimalNaForma, leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 import { leituraDaEscalaDaNotaFinal } from '../classificacao/escala-da-nota-final';
 import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
@@ -330,18 +330,12 @@ export class EliminacaoStepComponent {
     this.anuncio.set(`Regra ${indice + 1} removida.`);
 
     // O botão clicado sai do DOM junto com a regra, e o foco cairia no corpo da página — quem
-    // navega por teclado perderia o lugar a cada remoção.
-    //
-    // A espera é por renderização, não por microtask: o ciclo de detecção do Angular roda
-    // depois que a fila de microtasks drena, e consultar o DOM antigo acharia o botão que está
-    // prestes a sair — pôr o foco nele e vê-lo ser arrancado em seguida é o mesmo que não
-    // fazer nada. Removida a última regra, é a queda para "Acrescentar" que vale.
-    afterNextRender(
-      () => {
-        const anterior = document.getElementById(`elim-remover-${Math.max(0, indice - 1)}`);
-        (anterior ?? document.getElementById('eliminacao-acrescentar'))?.focus();
-      },
-      { injector: this.injector },
+    // navega por teclado perderia o lugar a cada remoção. Removida a última regra, vale
+    // "Acrescentar".
+    focarAposRenderizar(
+      this.injector,
+      `elim-remover-${Math.max(0, indice - 1)}`,
+      'eliminacao-acrescentar',
     );
   }
 

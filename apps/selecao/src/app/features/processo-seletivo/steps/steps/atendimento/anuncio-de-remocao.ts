@@ -1,4 +1,6 @@
-import { afterNextRender, Injector, type WritableSignal } from '@angular/core';
+import { Injector, type WritableSignal } from '@angular/core';
+
+import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
 
 /**
  * Anuncia a remoção, para quem não vê a tela, e devolve o foco à lista. Sem isto o botão clicado
@@ -21,15 +23,11 @@ export function anunciarRemocao(
     remocao.nome === undefined ? 'Item removido.' : `${remocao.nome} removido da oferta.`,
   );
 
-  afterNextRender(
-    () => {
-      const anterior = document.getElementById(
-        `${remocao.prefixoDoId}-${Math.max(0, remocao.indice - 1)}`,
-      );
-      // Removido o último da lista, o foco volta ao título da seção, que existe sempre e diz onde
-      // a pessoa está.
-      (anterior ?? document.getElementById(remocao.tituloDaSecao))?.focus();
-    },
-    { injector },
+  // Removido o último da lista, o foco volta ao título da seção, que existe sempre e diz onde a
+  // pessoa está.
+  focarAposRenderizar(
+    injector,
+    `${remocao.prefixoDoId}-${Math.max(0, remocao.indice - 1)}`,
+    remocao.tituloDaSecao,
   );
 }
