@@ -1,4 +1,8 @@
-<fieldset class="endereco-geo" [disabled]="disabled()" [attr.aria-describedby]="descritoPor()">
+<fieldset
+  class="endereco-geo"
+  [disabled]="conducao.disabled()"
+  [attr.aria-describedby]="descritoPor()"
+>
   <legend
     [class]="aparencia() === 'campo' ? 'field__label' : 'form-section__title'"
     [class.is-required]="obrigatorio()"
@@ -7,13 +11,11 @@
   </legend>
 
   <div class="form-grid">
-    <div
-      class="field form-grid__full"
-      [class.is-error]="cepErro() !== null || resolucao.cepPendente()"
-    >
+    <div class="field form-grid__full" [class.is-error]="cepInvalido()">
       <label [for]="id('cep')" class="field__label">CEP</label>
       <div class="input-group">
         <input
+          #campoCep
           [id]="id('cep')"
           class="input"
           type="text"
@@ -21,35 +23,24 @@
           autocomplete="postal-code"
           placeholder="00000-000"
           maxlength="9"
-          [formControl]="form.controls.cep"
-          [readonly]="(resolucao.ehAncorado('cep') && !editandoCep()) || resolvendoCep()"
-          [attr.aria-readonly]="(resolucao.ehAncorado('cep') && !editandoCep()) || resolvendoCep() ? 'true' : null"
-          [attr.aria-invalid]="cepErro() !== null ? 'true' : null"
+          [formControl]="conducao.form.controls.cep"
+          [readonly]="cepTravado() || conducao.resolvendoCep()"
+          [attr.aria-readonly]="cepTravado() || conducao.resolvendoCep() ? 'true' : null"
+          [attr.aria-invalid]="cepInvalido() ? 'true' : null"
           [attr.aria-describedby]="descricaoDoCep()"
           (blur)="aoSairDoCep()"
         />
-        @if (resolucao.ehAncorado('cep') && !editandoCep()) {
         <button
           type="button"
           class="btn btn--secondary btn--rect"
-          [disabled]="disabled()"
-          (click)="iniciarEdicaoCep()"
+          [disabled]="conducao.disabled() || (!cepTravado() && conducao.resolvendoCep())"
+          [attr.aria-busy]="!cepTravado() && conducao.resolvendoCep() ? 'true' : null"
+          (click)="cepTravado() ? trocarCep() : conducao.resolverCep()"
         >
-          Trocar CEP
-        </button>
-        } @else {
-        <button
-          type="button"
-          class="btn btn--secondary btn--rect"
-          [disabled]="disabled() || resolvendoCep()"
-          [attr.aria-busy]="resolvendoCep() ? 'true' : null"
-          (click)="resolverCep()"
-        >
-          @if (resolvendoCep()) {
+          @if (cepTravado()) { Trocar CEP } @else { @if (conducao.resolvendoCep()) {
           <ui-spinner size="sm" />
-          } Buscar CEP
+          } Buscar CEP }
         </button>
-        }
       </div>
       @if (exigeCep()) {
       <span [id]="id('cep') + '-hint'" class="field__hint">
@@ -58,42 +49,42 @@
       } @else {
       <span [id]="id('cep') + '-hint'" class="field__hint">
         Informe o CEP para preencher o endereço automaticamente, ou
-        <button type="button" class="endereco-geo__link" (click)="alternarModoManual()">
-          {{ modoManual() ? 'voltar a buscar por CEP' : 'preencher sem CEP' }}
+        <button type="button" class="endereco-geo__link" (click)="conducao.alternarModoManual()">
+          {{ conducao.modoManual() ? 'voltar a buscar por CEP' : 'preencher sem CEP' }}
         </button>
         .
       </span>
-      } @if (resolucao.cepGeral() && resolucao.cidade(); as c) {
+      } @if (conducao.resolucao.cepGeral() && conducao.resolucao.cidade(); as c) {
       <span [id]="id('cep') + '-geral'" class="field__hint">
         Este é o CEP geral de {{ c.nome }}/{{ c.uf }}
       </span>
-      } @if (resolucao.cepEmFaixa() && resolucao.cidade(); as c) {
+      } @if (conducao.resolucao.cepEmFaixa() && conducao.resolucao.cidade(); as c) {
       <p [id]="id('cep') + '-faixa'" class="field__error" role="alert">
-        O CEP {{ form.controls.cep.value }} não corresponde a uma rua cadastrada nos Correios. Ele
-        fica na faixa de CEPs de {{ c.nome }}/{{ c.uf }}. Se você digitou errado, corrija; se o seu
-        endereço usa o CEP geral da cidade ou do bairro, confirme abaixo.
+        O CEP {{ conducao.form.controls.cep.value }} não corresponde a uma rua cadastrada nos
+        Correios. Ele fica na faixa de CEPs de {{ c.nome }}/{{ c.uf }}. Se você digitou errado,
+        corrija; se o seu endereço usa o CEP geral da cidade ou do bairro, confirme abaixo.
       </p>
       <label class="checkbox">
         <input
           type="checkbox"
-          [checked]="resolucao.cepConfirmado()"
-          [attr.aria-invalid]="resolucao.cepDeFaixaSemConfirmacao() ? 'true' : null"
+          [checked]="conducao.resolucao.cepConfirmado()"
+          [attr.aria-invalid]="conducao.resolucao.cepDeFaixaSemConfirmacao() ? 'true' : null"
           [attr.aria-describedby]="
-              resolucao.cepDeFaixaSemConfirmacao()
+              conducao.resolucao.cepDeFaixaSemConfirmacao()
                 ? id('cep') + '-faixa ' + id('cep') + '-confirmacao'
                 : id('cep') + '-faixa'
             "
-          [disabled]="disabled()"
+          [disabled]="conducao.disabled()"
           (change)="confirmarCep($event)"
         />
         <span class="checkbox__box" aria-hidden="true"></span>
         Confirmo que este é o CEP que uso no meu endereço
       </label>
-      @if (resolucao.cepDeFaixaSemConfirmacao()) {
+      @if (conducao.resolucao.cepDeFaixaSemConfirmacao()) {
       <span [id]="id('cep') + '-confirmacao'" class="field__error" role="alert">
         Confirme o CEP ou corrija-o para continuar.
       </span>
-      } } @if (cepSemRegistro()) {
+      } } @if (conducao.cepSemRegistro()) {
       <span [id]="id('cep') + '-error'" class="field__error" role="alert">
         CEP não encontrado. Confira o seu CEP na
         <a [href]="urlBuscaDeCepDosCorreios" target="_blank" rel="noopener noreferrer"
@@ -101,27 +92,29 @@
         >; se o seu bairro não tem CEP próprio, use o CEP geral da sua cidade e descreva o endereço
         real no complemento.
       </span>
-      } @else if (cepErro(); as erro) {
+      } @else if (conducao.cepErro(); as erro) {
       <span [id]="id('cep') + '-error'" class="field__error" role="alert">{{ erro }}</span>
-      } @else if (resolucao.cepPendente()) {
-      <span class="field__error" role="alert">
+      } @else if (conducao.resolucao.cepPendente()) {
+      <span [id]="id('cep') + '-pendente'" class="field__error" role="alert">
         Valide o CEP em "Buscar CEP" ou limpe o campo para continuar.
       </span>
       }
     </div>
 
-    @if (modoManual()) {
+    @if (conducao.modoManual()) {
     <div class="field">
       <label [for]="id('uf')" class="field__label is-required">UF</label>
       <select
         class="select"
         [id]="id('uf')"
-        [disabled]="disabled()"
-        (change)="escolherUf(valorDoSelect($event))"
+        [disabled]="conducao.disabled()"
+        (change)="escolherUf($event)"
       >
-        <option value="" [selected]="ufDaCidade() === ''">Selecione a UF</option>
+        <option value="" [selected]="conducao.ufDaCidade() === ''">Selecione a UF</option>
         @for (uf of unidadesFederativas; track uf.sigla) {
-        <option [value]="uf.sigla" [selected]="uf.sigla === ufDaCidade()">{{ uf.nome }}</option>
+        <option [value]="uf.sigla" [selected]="uf.sigla === conducao.ufDaCidade()">
+          {{ uf.nome }}
+        </option>
         }
       </select>
     </div>
@@ -131,15 +124,15 @@
         <ui-valor-de-municipio
           #municipio
           rotulo="Cidade"
-          [values]="codigoDaCidade()"
-          [uf]="ufDaCidade() || null"
-          [disabled]="disabled() || ufDaCidade() === ''"
+          [values]="conducao.codigoDaCidade()"
+          [uf]="conducao.ufDaCidade() || null"
+          [disabled]="conducao.disabled() || conducao.ufDaCidade() === ''"
           [invalido]="!!erroExterno()"
-          [descritoPor]="erroExterno() ? id('erro') : ufDaCidade() === '' ? id('cidade-uf') : null"
+          [descritoPor]="erroExterno() ? id('erro') : conducao.ufDaCidade() === '' ? id('cidade-uf') : null"
           [contagemVisivel]="false"
           (valuesChange)="selecionarCidade($event.at(0) ?? '')"
         />
-        @if (resolucao.cidade() && !disabled()) {
+        @if (conducao.resolucao.cidade() && !conducao.disabled()) {
         <button
           type="button"
           class="btn btn--secondary btn--rect"
@@ -150,11 +143,11 @@
         </button>
         }
       </div>
-      @if (ufDaCidade() === '') {
+      @if (conducao.ufDaCidade() === '') {
       <span class="field__hint" [id]="id('cidade-uf')">Escolha antes a UF.</span>
       }
     </div>
-    } @else if (resolucao.cidade(); as c) {
+    } @else if (conducao.resolucao.cidade(); as c) {
     <div class="field">
       <label [for]="id('uf')" class="field__label">UF</label>
       <input
@@ -183,12 +176,12 @@
 
     <!-- Detalhes do endereço só quando há CEP resolvido: sem resolução o
          backend não persiste endereço estruturado (só a cidade). #412 -->
-    @if (resolucao.mostrarDetalheEndereco()) { @if (!semValorDoCep('bairro')) {
-    <div class="field" [class.form-grid__full]="semValorDoCep('distrito')">
+    @if (conducao.resolucao.mostrarDetalheEndereco()) { @if (!conducao.semValorDoCep('bairro')) {
+    <div class="field" [class.form-grid__full]="conducao.semValorDoCep('distrito')">
       <label
         [for]="id('bairro')"
         class="field__label"
-        [class.is-required]="resolucao.logradouroBairroObrigatorios()"
+        [class.is-required]="conducao.resolucao.logradouroBairroObrigatorios()"
         >Bairro</label
       >
       <input
@@ -196,22 +189,22 @@
         class="input"
         type="text"
         autocomplete="address-level3"
-        [formControl]="form.controls.bairro"
-        [readonly]="resolucao.ehAncorado('bairro')"
-        [attr.aria-readonly]="resolucao.ehAncorado('bairro') ? 'true' : null"
-        [attr.aria-required]="resolucao.logradouroBairroObrigatorios() ? 'true' : null"
-        [attr.aria-invalid]="faltaPreencher('bairro') ? 'true' : null"
-        [attr.aria-describedby]="faltaPreencher('bairro') ? id('bairro') + '-error' : null"
+        [formControl]="conducao.form.controls.bairro"
+        [readonly]="conducao.resolucao.ehAncorado('bairro')"
+        [attr.aria-readonly]="conducao.resolucao.ehAncorado('bairro') ? 'true' : null"
+        [attr.aria-required]="conducao.resolucao.logradouroBairroObrigatorios() ? 'true' : null"
+        [attr.aria-invalid]="conducao.faltaPreencher('bairro') ? 'true' : null"
+        [attr.aria-describedby]="conducao.faltaPreencher('bairro') ? id('bairro') + '-error' : null"
       />
-      @if (resolucao.ehAncorado('bairro')) {
+      @if (conducao.resolucao.ehAncorado('bairro')) {
       <span class="field__hint">Preenchido pelo CEP.</span>
-      } @if (faltaPreencher('bairro')) {
+      } @if (conducao.faltaPreencher('bairro')) {
       <span [id]="id('bairro') + '-error'" class="field__error" role="alert">
         Informe o bairro.
       </span>
       }
     </div>
-    } @if (!semValorDoCep('distrito')) {
+    } @if (!conducao.semValorDoCep('distrito')) {
     <div class="field">
       <label [for]="id('distrito')" class="field__label">Distrito</label>
       <input
@@ -219,11 +212,11 @@
         class="input"
         type="text"
         autocomplete="off"
-        [formControl]="form.controls.distrito"
-        [readonly]="resolucao.ehAncorado('distrito')"
-        [attr.aria-readonly]="resolucao.ehAncorado('distrito') ? 'true' : null"
+        [formControl]="conducao.form.controls.distrito"
+        [readonly]="conducao.resolucao.ehAncorado('distrito')"
+        [attr.aria-readonly]="conducao.resolucao.ehAncorado('distrito') ? 'true' : null"
       />
-      @if (resolucao.ehAncorado('distrito')) {
+      @if (conducao.resolucao.ehAncorado('distrito')) {
       <span class="field__hint">Preenchido pelo CEP.</span>
       }
     </div>
@@ -233,7 +226,7 @@
       <label
         [for]="id('logradouro')"
         class="field__label"
-        [class.is-required]="resolucao.logradouroBairroObrigatorios()"
+        [class.is-required]="conducao.resolucao.logradouroBairroObrigatorios()"
         >Logradouro</label
       >
       <input
@@ -241,16 +234,16 @@
         class="input"
         type="text"
         autocomplete="address-line1"
-        [formControl]="form.controls.logradouro"
-        [readonly]="resolucao.ehAncorado('logradouro')"
-        [attr.aria-readonly]="resolucao.ehAncorado('logradouro') ? 'true' : null"
-        [attr.aria-required]="resolucao.logradouroBairroObrigatorios() ? 'true' : null"
-        [attr.aria-invalid]="faltaPreencher('logradouro') ? 'true' : null"
-        [attr.aria-describedby]="faltaPreencher('logradouro') ? id('logradouro') + '-error' : null"
+        [formControl]="conducao.form.controls.logradouro"
+        [readonly]="conducao.resolucao.ehAncorado('logradouro')"
+        [attr.aria-readonly]="conducao.resolucao.ehAncorado('logradouro') ? 'true' : null"
+        [attr.aria-required]="conducao.resolucao.logradouroBairroObrigatorios() ? 'true' : null"
+        [attr.aria-invalid]="conducao.faltaPreencher('logradouro') ? 'true' : null"
+        [attr.aria-describedby]="conducao.faltaPreencher('logradouro') ? id('logradouro') + '-error' : null"
       />
-      @if (resolucao.ehAncorado('logradouro')) {
+      @if (conducao.resolucao.ehAncorado('logradouro')) {
       <span class="field__hint">Preenchido pelo CEP.</span>
-      } @if (faltaPreencher('logradouro')) {
+      } @if (conducao.faltaPreencher('logradouro')) {
       <span [id]="id('logradouro') + '-error'" class="field__error" role="alert">
         Informe o logradouro.
       </span>
@@ -264,7 +257,7 @@
         class="input"
         type="text"
         autocomplete="off"
-        [formControl]="form.controls.numero"
+        [formControl]="conducao.form.controls.numero"
       />
       <span class="field__hint">Dado próprio — sempre editável.</span>
     </div>
@@ -279,14 +272,14 @@
         autocomplete="off"
         [attr.maxlength]="limiteDoComplemento"
         [attr.aria-describedby]="id('complemento') + '-hint ' + id('complemento') + '-contagem'"
-        [formControl]="form.controls.complemento"
+        [formControl]="conducao.form.controls.complemento"
       ></textarea>
       <span [id]="id('complemento') + '-hint'" class="field__hint">
         Use para indicar ponto de referência ou o endereço real, quando o CEP for o geral da cidade
         ou de outro bairro.
       </span>
       <span [id]="id('complemento') + '-contagem'" class="field__hint endereco-geo__contagem">
-        {{ tamanhoDoComplemento() }} de {{ limiteDoComplemento }} caracteres
+        {{ conducao.tamanhoDoComplemento() }} de {{ limiteDoComplemento }} caracteres
       </span>
     </div>
     } @else {
@@ -297,7 +290,7 @@
         class="input"
         type="text"
         autocomplete="off"
-        [formControl]="form.controls.complemento"
+        [formControl]="conducao.form.controls.complemento"
       />
       <span class="field__hint">Dado próprio — sempre editável.</span>
     </div>
