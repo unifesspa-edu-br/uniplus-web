@@ -43,6 +43,7 @@ const SOMENTE_ROTULOS_DE_NAVEGACAO = [
   `ExportNamedDeclaration > ExportSpecifier[local.name!=/^(${ROTULOS_DE_NAVEGACAO})$/]`,
   `ExportNamedDeclaration > ExportSpecifier[exported.name!=/^(${ROTULOS_DE_NAVEGACAO})$/]`,
   'ExportNamedDeclaration > :matches(FunctionDeclaration, ClassDeclaration)',
+  'ExportDefaultDeclaration',
 ].map((selector) => ({
   selector,
   message: 'Este arquivo só exporta rótulos de navegação dos passos.',
