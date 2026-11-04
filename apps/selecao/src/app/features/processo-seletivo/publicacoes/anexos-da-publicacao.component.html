@@ -1,0 +1,56 @@
+  <h3 id="pub-anexos-titulo" class="form-section__title">Anexos</h3>
+  <p class="field__hint" id="pub-anexos-dica">
+    Opcional. Arquivos que acompanham o documento, em PDF, DOCX ou ODT, até
+    {{ tamanhoMaximoMb }} MB cada e no máximo {{ limiteDeAnexos }}. O nome de cada anexo é o que
+    a pessoa recebe ao baixá-lo.
+  </p>
+  <ui-file-upload
+    idDoCampo="pub-anexos"
+    nomeDaLista="Anexos"
+    descritoPor="pub-anexos-titulo pub-anexos-dica"
+    [acceptedFileTypes]="extensoesDoAnexo"
+    acceptLabel="PDF, DOCX ou ODT"
+    [multiple]="true"
+    [maxFiles]="limiteDeAnexos"
+    [validarSoPelaExtensao]="true"
+    [maxSizeMb]="tamanhoMaximoMb"
+    [disabled]="desabilitado()"
+    [itens]="envios().itens()"
+    (arquivosEscolhidos)="envios().escolher($event)"
+    (itemRetirado)="envios().retirar($event)"
+    (tentarDeNovo)="envios().retomar($event)"
+  />
+
+  @if (envios().selados().length > 0) {
+    <ul class="pub__nomes" aria-label="Nomes dos anexos">
+      @for (anexo of envios().selados(); track anexo.id) {
+        @let erroDoNome = recusaDoNome(anexo);
+        <li>
+          <div class="field" [class.is-error]="erroDoNome !== null">
+            <label class="field__label" [for]="'pub-anexo-nome-' + anexo.id">
+              Nome do anexo {{ anexo.nomeArquivo }}
+            </label>
+            <input
+              class="input"
+              type="text"
+              autocomplete="off"
+              [id]="'pub-anexo-nome-' + anexo.id"
+              [value]="anexo.nome"
+              [disabled]="desabilitado()"
+              [attr.aria-invalid]="erroDoNome !== null ? 'true' : null"
+              [attr.aria-describedby]="
+                'pub-anexo-dica-' + anexo.id + (erroDoNome !== null ? ' pub-anexo-erro-' + anexo.id : '')
+              "
+              (input)="renomear(anexo, $event)"
+            />
+            <span class="field__hint" [id]="'pub-anexo-dica-' + anexo.id">
+              Baixado como “{{ nomeBaixado(anexo) }}”.
+            </span>
+            @if (erroDoNome !== null) {
+              <span class="field__error" [id]="'pub-anexo-erro-' + anexo.id">{{ erroDoNome }}</span>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }

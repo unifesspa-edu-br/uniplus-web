@@ -19,7 +19,7 @@ import {
   rotuloDoPapel,
 } from './previstos-do-edital';
 import type { PrevistosLidos } from './publicacoes-do-processo.service';
-import type { ModoDaPublicacao } from './publicar-documento.component';
+import type { ModoDaPublicacao } from './modo-da-publicacao';
 import { SituacaoDoAtoComponent } from './situacao-do-ato.component';
 
 /**

@@ -12,8 +12,8 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { PublicarDocumentoComponent, type ModoDaPublicacao } from './publicar-documento.component';
-import type { EnviosDeArquivos } from './envios-de-arquivos';
+import type { ModoDaPublicacao } from './modo-da-publicacao';
+import { PublicarDocumentoComponent } from './publicar-documento.component';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
@@ -107,7 +107,6 @@ function problema(status: number, code: string, title: string) {
 
 describe('PublicarDocumentoComponent', () => {
   let fixture: ComponentFixture<PublicarDocumentoComponent>;
-  let componente: PublicarDocumentoComponent;
   let controller: HttpTestingController;
   let host: HTMLElement;
   let publicados: number;
@@ -129,9 +128,8 @@ describe('PublicarDocumentoComponent', () => {
 
   async function abrir(modo: ModoDaPublicacao): Promise<void> {
     fixture = TestBed.createComponent(PublicarDocumentoComponent);
-    componente = fixture.componentInstance;
     host = fixture.nativeElement as HTMLElement;
-    componente.publicado.subscribe(() => (publicados += 1));
+    fixture.componentInstance.publicado.subscribe(() => (publicados += 1));
     fixture.componentRef.setInput('processoId', PROCESSO_ID);
     fixture.componentRef.setInput('modo', modo);
     fixture.componentRef.setInput('tipos', [AVISO, ERRATA]);
@@ -142,14 +140,20 @@ describe('PublicarDocumentoComponent', () => {
     fixture.detectChanges();
   }
 
-  /** Envia um arquivo até o selo e devolve quando a lista o tem como confirmado. */
+  const PRINCIPAL = '#pub-principal';
+  const ANEXOS = '#pub-anexos';
+
+  /** Escolhe o arquivo pelo campo, como a pessoa, e leva o envio até o selo do servidor. */
   async function enviar(
-    lista: EnviosDeArquivos,
+    campo: string,
     nome: string,
     documentoId: string,
     tipoDeMidia: string,
   ): Promise<void> {
-    lista.escolher([arquivo(nome)]);
+    const entrada = host.querySelector<HTMLInputElement>(`input[type="file"]${campo}`);
+    if (entrada === null) throw new Error(`campo de arquivo ${campo} ausente`);
+    Object.defineProperty(entrada, 'files', { value: [arquivo(nome)], configurable: true });
+    entrada.dispatchEvent(new Event('change'));
     await tick();
     const url = `http://localhost:9000/uniplus-selecao/atos/${documentoId}?X-Amz-Signature=a`;
     const inicio = controller.expectOne(ROTA_DOCUMENTOS);
@@ -172,18 +176,37 @@ describe('PublicarDocumentoComponent', () => {
     await tick();
     controller.expectOne(`${ROTA_DOCUMENTOS}/${documentoId}/confirmacao`).flush({ id: documentoId });
     await tick();
-  }
-
-  function preencher(valores: {
-    tipoAtoCodigo?: string;
-    numero?: string;
-    assinante?: string;
-    atoCorrigidoId?: string;
-    motivoDaCorrecao?: string;
-  }): void {
-    componente['form'].patchValue(valores);
     fixture.detectChanges();
   }
+
+  const CAMPOS = {
+    tipoAtoCodigo: '#pub-tipo',
+    numero: '#pub-numero',
+    assinante: '#pub-assinante',
+    atoCorrigidoId: '#pub-corrigido',
+    motivoDaCorrecao: '#pub-motivo',
+  } as const;
+
+  /** Preenche pelos campos da tela, na ordem dada: o ato corrigido só aparece depois do tipo. */
+  function preencher(valores: Partial<Record<keyof typeof CAMPOS, string>>): void {
+    for (const [campo, valor] of Object.entries(valores)) {
+      const controle = host.querySelector<HTMLInputElement | HTMLSelectElement>(
+        CAMPOS[campo as keyof typeof CAMPOS],
+      );
+      if (controle === null) throw new Error(`campo ${campo} ausente`);
+      controle.value = valor;
+      controle.dispatchEvent(new Event(controle instanceof HTMLSelectElement ? 'change' : 'input'));
+      fixture.detectChanges();
+    }
+  }
+
+  const valorDe = (seletor: string): string =>
+    (host.querySelector(seletor) as HTMLInputElement | HTMLSelectElement).value;
+  const confirmando = (): boolean =>
+    (host.querySelector('dialog.uni-dialog') as HTMLDialogElement).hasAttribute('open');
+  const aberto = (): boolean => fixture.componentInstance.aberto();
+  const confirmadosNo = (titulo: string): number =>
+    host.querySelectorAll(`[aria-labelledby="${titulo}"] .uni-uploader__item.is-success`).length;
 
   function clicar(seletor: string): void {
     (host.querySelector(seletor) as HTMLElement).click();
@@ -198,10 +221,8 @@ describe('PublicarDocumentoComponent', () => {
     });
 
     it('liga a mensagem de erro de cada campo ao campo, para o leitor de tela', () => {
-      preencher({ tipoAtoCodigo: 'ERRATA' });
-      componente['form'].markAllAsTouched();
-      componente['form'].controls.numero.setErrors({ servidor: { mensagem: 'Número inválido.' } });
-      fixture.detectChanges();
+      preencher({ tipoAtoCodigo: 'ERRATA', numero: 'N'.repeat(61) });
+      clicar('button[type="submit"]');
 
       for (const campo of ['pub-numero', 'pub-corrigido', 'pub-assinante', 'pub-motivo']) {
         const controle = host.querySelector(`#${campo}`) as HTMLElement;
@@ -222,13 +243,13 @@ describe('PublicarDocumentoComponent', () => {
 
     it('avisa que a publicação é irreversível e só envia depois da confirmação', async () => {
       preencher({ tipoAtoCodigo: 'AVISO', assinante: 'Pró-reitoria de Ensino', numero: '02/2026' });
-      await enviar(componente['principal'], 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
-      await enviar(componente['anexos'], 'planilha.docx', DOCUMENTO_ANEXO, DOCX);
+      await enviar(PRINCIPAL, 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(ANEXOS, 'planilha.docx', DOCUMENTO_ANEXO, DOCX);
 
       clicar('button[type="submit"]');
 
       controller.expectNone(ROTA_ATOS);
-      expect(componente['confirmando']()).toBe(true);
+      expect(confirmando()).toBe(true);
       expect(host.querySelector('.uni-dialog__body')?.textContent).toContain('não pode ser desfeita');
 
       clicar('[data-testid="confirm-dialog-confirm"]');
@@ -245,7 +266,7 @@ describe('PublicarDocumentoComponent', () => {
       await tick();
 
       expect(publicados).toBe(1);
-      expect(componente.aberto()).toBe(false);
+      expect(aberto()).toBe(false);
     });
 
     it('não envia sem o documento principal, diz o que falta e leva o foco ao aviso', async () => {
@@ -255,9 +276,24 @@ describe('PublicarDocumentoComponent', () => {
       await tick();
       fixture.detectChanges();
 
-      expect(componente['confirmando']()).toBe(false);
+      expect(confirmando()).toBe(false);
       expect(textoDoResumo()).toContain('Envie o documento principal');
       expect(document.activeElement).toBe(host.querySelector('.pub__resumo'));
+    });
+
+    it('não envia com o nome de anexo que o servidor recusaria e diz de qual anexo é', async () => {
+      preencher({ tipoAtoCodigo: 'AVISO', assinante: 'Pró-reitoria de Ensino' });
+      await enviar(PRINCIPAL, 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(ANEXOS, 'planilha.docx', DOCUMENTO_ANEXO, DOCX);
+      const nome = host.querySelector<HTMLInputElement>('input[id^="pub-anexo-nome-"]') as HTMLInputElement;
+      nome.value = 'pasta/planilha';
+      nome.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      clicar('button[type="submit"]');
+
+      expect(confirmando()).toBe(false);
+      expect(textoDoResumo()).toContain('Anexo planilha.docx: O nome do anexo não pode ter');
     });
 
     it('tira o aviso da tela quando a pessoa resolve o que faltava', async () => {
@@ -265,7 +301,7 @@ describe('PublicarDocumentoComponent', () => {
       clicar('button[type="submit"]');
       expect(textoDoResumo()).toContain('Envie o documento principal');
 
-      await enviar(componente['principal'], 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(PRINCIPAL, 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
       fixture.detectChanges();
 
       expect(host.querySelector('.pub__resumo')).toBeNull();
@@ -278,7 +314,7 @@ describe('PublicarDocumentoComponent', () => {
         motivoDaCorrecao: 'Corrige a data.',
       });
       preencher({ tipoAtoCodigo: 'AVISO', assinante: 'Pró-reitoria de Ensino' });
-      await enviar(componente['principal'], 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(PRINCIPAL, 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
 
       clicar('button[type="submit"]');
       clicar('[data-testid="confirm-dialog-confirm"]');
@@ -297,7 +333,7 @@ describe('PublicarDocumentoComponent', () => {
         atoCorrigidoId: ATO_AVISO,
         motivoDaCorrecao: 'Corrige a data de abertura.',
       });
-      await enviar(componente['principal'], 'errata.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(PRINCIPAL, 'errata.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
 
       clicar('button[type="submit"]');
       clicar('[data-testid="confirm-dialog-confirm"]');
@@ -319,7 +355,7 @@ describe('PublicarDocumentoComponent', () => {
         atoCorrigidoId: ATO_AVISO,
         motivoDaCorrecao: 'Corrige a data de abertura.',
       });
-      await enviar(componente['principal'], 'errata.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(PRINCIPAL, 'errata.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
       clicar('button[type="submit"]');
       clicar('[data-testid="confirm-dialog-confirm"]');
 
@@ -334,20 +370,18 @@ describe('PublicarDocumentoComponent', () => {
       fixture.detectChanges();
 
       expect(textoDoResumo()).toContain('O ato corrigido já foi corrigido');
-      expect(componente.aberto()).toBe(true);
+      expect(aberto()).toBe(true);
       expect(publicados).toBe(0);
-      expect(componente['form'].getRawValue()).toMatchObject({
-        tipoAtoCodigo: 'ERRATA',
-        assinante: 'Pró-reitoria de Ensino',
-        motivoDaCorrecao: 'Corrige a data de abertura.',
-      });
-      expect(componente['principal'].confirmados()).toHaveLength(1);
+      expect(valorDe('#pub-tipo')).toBe('ERRATA');
+      expect(valorDe('#pub-assinante')).toBe('Pró-reitoria de Ensino');
+      expect(valorDe('#pub-motivo')).toBe('Corrige a data de abertura.');
+      expect(confirmadosNo('pub-principal-titulo')).toBe(1);
       expect((host.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(false);
     });
 
     it('marca o campo que o servidor recusou com a mensagem dele', async () => {
       preencher({ tipoAtoCodigo: 'AVISO', assinante: 'Pró-reitoria de Ensino' });
-      await enviar(componente['principal'], 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(PRINCIPAL, 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
       clicar('button[type="submit"]');
       clicar('[data-testid="confirm-dialog-confirm"]');
 
@@ -373,7 +407,7 @@ describe('PublicarDocumentoComponent', () => {
 
     it('repete o mesmo pedido sob a mesma chave quando a resposta se perde', async () => {
       preencher({ tipoAtoCodigo: 'AVISO', assinante: 'Pró-reitoria de Ensino' });
-      await enviar(componente['principal'], 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(PRINCIPAL, 'aviso.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
       clicar('button[type="submit"]');
       clicar('[data-testid="confirm-dialog-confirm"]');
 
@@ -416,7 +450,7 @@ describe('PublicarDocumentoComponent', () => {
         assinante: 'Pró-reitoria de Ensino',
         motivoDaCorrecao: 'Corrige a data.',
       });
-      await enviar(componente['principal'], 'aviso2.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(PRINCIPAL, 'aviso2.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
 
       clicar('button[type="submit"]');
       clicar('[data-testid="confirm-dialog-confirm"]');
@@ -433,11 +467,11 @@ describe('PublicarDocumentoComponent', () => {
 
     it('exige o motivo da correção', async () => {
       preencher({ tipoAtoCodigo: 'ERRATA', assinante: 'Pró-reitoria de Ensino' });
-      await enviar(componente['principal'], 'errata.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(PRINCIPAL, 'errata.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
 
       clicar('button[type="submit"]');
 
-      expect(componente['confirmando']()).toBe(false);
+      expect(confirmando()).toBe(false);
       expect(host.querySelector('#pub-motivo')?.closest('.field')?.textContent).toContain(
         'Campo obrigatório.',
       );
@@ -445,7 +479,7 @@ describe('PublicarDocumentoComponent', () => {
 
     it('envia o ato clicado como o corrigido', async () => {
       preencher({ tipoAtoCodigo: 'ERRATA', assinante: 'Pró-reitoria de Ensino', motivoDaCorrecao: 'Corrige a data.' });
-      await enviar(componente['principal'], 'errata.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(PRINCIPAL, 'errata.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
 
       clicar('button[type="submit"]');
       clicar('[data-testid="confirm-dialog-confirm"]');
@@ -464,13 +498,13 @@ describe('PublicarDocumentoComponent', () => {
   describe('item do edital', () => {
     const confirmar = (): void => {
       clicar('button[type="submit"]');
-      if (componente['confirmando']()) clicar('[data-testid="confirm-dialog-confirm"]');
+      if (confirmando()) clicar('[data-testid="confirm-dialog-confirm"]');
     };
 
     async function preparar(modo: ModoDaPublicacao): Promise<void> {
       await abrir(modo);
       preencher({ assinante: 'Pró-reitoria de Ensino', numero: '01/2026' });
-      await enviar(componente['principal'], 'lista.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
+      await enviar(PRINCIPAL, 'lista.pdf', DOCUMENTO_PRINCIPAL, 'application/pdf');
     }
 
     const publicarResultado: ModoDaPublicacao = {
@@ -499,7 +533,7 @@ describe('PublicarDocumentoComponent', () => {
       fixture.detectChanges();
 
       controller.expectNone(ROTA_PRODUTO);
-      expect(componente['confirmando']()).toBe(false);
+      expect(confirmando()).toBe(false);
       const caixa = host.querySelector('#pub-politica') as HTMLInputElement;
       expect(caixa.getAttribute('aria-invalid')).toBe('true');
       expect(caixa.getAttribute('aria-describedby')).toContain('pub-politica-erro');
@@ -529,7 +563,7 @@ describe('PublicarDocumentoComponent', () => {
       await tick();
 
       expect(publicados).toBe(1);
-      expect(componente.aberto()).toBe(false);
+      expect(aberto()).toBe(false);
     });
 
     it('não mostra a política nem a pede quando o item não é resultado', async () => {
@@ -549,7 +583,7 @@ describe('PublicarDocumentoComponent', () => {
       expect(host.textContent).toContain('Corrigir Aviso nº 01/2026');
 
       confirmar();
-      expect(componente['confirmando']()).toBe(false);
+      expect(confirmando()).toBe(false);
       expect(host.querySelector('#pub-motivo')?.closest('.field')?.textContent).toContain('Campo obrigatório.');
       expect(host.querySelector('#pub-politica')?.getAttribute('aria-invalid')).toBe('true');
 
@@ -584,9 +618,9 @@ describe('PublicarDocumentoComponent', () => {
       fixture.detectChanges();
 
       expect(textoDoResumo()).toContain('só pode ser publicado depois do preliminar');
-      expect(componente.aberto()).toBe(true);
-      expect(componente['form'].getRawValue().politicaDeDivulgacaoConfirmada).toBe(true);
-      expect(componente['principal'].confirmados()).toHaveLength(1);
+      expect(aberto()).toBe(true);
+      expect((host.querySelector('#pub-politica') as HTMLInputElement).checked).toBe(true);
+      expect(confirmadosNo('pub-principal-titulo')).toBe(1);
     });
   });
 });

@@ -23,9 +23,10 @@ import {
 } from '@uniplus/shared-ui/components';
 
 import { AtosDoProcessoComponent } from './atos-do-processo.component';
+import type { ModoDaPublicacao } from './modo-da-publicacao';
 import { PrevistosNoEditalComponent } from './previstos-no-edital.component';
 import { PublicacoesDoProcesso } from './publicacoes-do-processo.service';
-import { PublicarDocumentoComponent, type ModoDaPublicacao } from './publicar-documento.component';
+import { PublicarDocumentoComponent } from './publicar-documento.component';
 
 /**
  * Publicações do processo seletivo: o que o edital prevê publicar e o que ele já publicou, com a

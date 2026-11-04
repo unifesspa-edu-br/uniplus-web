@@ -43,10 +43,14 @@ export class EnviosDeArquivos {
   private geracao = 0;
 
   readonly arquivos = signal<readonly ArquivoDoAto[]>([]);
-  /** Os arquivos que o servidor já selou: só eles podem compor o ato. */
+  /** Os arquivos que o servidor já selou, na forma da lista: com o nome que a pessoa pode editar. */
+  readonly selados = computed(() =>
+    this.arquivos().filter((arquivo) => arquivo.fase === 'confirmado'),
+  );
+  /** Os arquivos selados na forma que compõe o ato: só eles podem ser publicados. */
   readonly confirmados = computed<readonly AnexoConfirmado[]>(() =>
-    this.arquivos().flatMap((arquivo) =>
-      arquivo.fase === 'confirmado' && arquivo.documentoAPublicarId !== undefined
+    this.selados().flatMap((arquivo) =>
+      arquivo.documentoAPublicarId !== undefined
         ? [{ documentoAPublicarId: arquivo.documentoAPublicarId, nome: arquivo.nome }]
         : [],
     ),

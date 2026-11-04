@@ -16,13 +16,7 @@ import {
 } from '@angular/core';
 import { HttpContext } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-  type ValidatorFn,
-} from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import type { Observable } from 'rxjs';
 import {
   ProblemI18nService,
@@ -39,7 +33,6 @@ import {
   DocumentosEAtosDoProcessoApi,
   type AtoDoProcessoDto,
   type AtoPublicadoDto,
-  type ProdutoPrevistoDto,
 } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
@@ -51,64 +44,44 @@ import {
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import {
-  EXTENSOES_DO_ANEXO,
-  LIMITE_DE_ANEXOS,
   TAMANHO_MAXIMO_DO_ANEXO_MB,
   extensaoDoArquivo,
   nomeInicialDoAnexo,
-  nomeNoDownload,
-  recusaDoNomeDoAnexo,
   tipoDeMidiaDoAnexo,
 } from '../steps/shared/anexos-do-edital/anexos-do-edital';
 import { AnexosDoEditalService } from '../steps/shared/anexos-do-edital/envio-do-anexo.service';
-import { hojeNoFusoInstitucional } from '../steps/shared/fuso-institucional';
+import { AnexosDaPublicacaoComponent } from './anexos-da-publicacao.component';
 import { rotuloDoAto } from './apresentacao-do-ato';
-import { EnviosDeArquivos, type ArquivoDoAto } from './envios-de-arquivos';
-import { pedidoDoAto, pedidoDoItem } from './pedido-do-ato';
-import { rotuloDoPapel, type PoliticaParaConfirmar } from './previstos-do-edital';
+import {
+  campoDoServidor,
+  mensagemDoErroDoCampo,
+  type CampoDoFormulario,
+} from './campos-da-publicacao';
+import { EnviosDeArquivos, type DependenciasDosEnvios } from './envios-de-arquivos';
+import {
+  ajustarObrigatoriedade,
+  criarFormularioDaPublicacao,
+  esvaziar,
+} from './formulario-da-publicacao';
+import {
+  atoDaCorrecao,
+  escolheOTipo,
+  itemDo,
+  politicaDo,
+  tituloDa,
+  type ModoDaPublicacao,
+} from './modo-da-publicacao';
+import { impedimentosDosArquivos } from './impedimentos-da-publicacao';
+import { pedidoDoAto, pedidoDoItem, type DadosDoItem } from './pedido-do-ato';
+import { rotuloDoPapel } from './previstos-do-edital';
 
-/**
- * O que o formulário publica: um documento novo, a correção de um ato já publicado ou um item que
- * o edital declara — a primeira publicação dele ou a correção da publicação mais recente.
- */
-export type ModoDaPublicacao =
-  | { readonly tipo: 'avulso' }
-  | { readonly tipo: 'correcao'; readonly ato: AtoDoProcessoDto }
-  | {
-      readonly tipo: 'previsto';
-      readonly item: ProdutoPrevistoDto;
-      /** A política do certame a confirmar; `null` quando o item não é resultado. */
-      readonly politica: PoliticaParaConfirmar | null;
-      /** O ato que a publicação corrige; `null` na primeira publicação do item. */
-      readonly corrigido: AtoDoProcessoDto | null;
-    };
-
-/** O teto do documento principal: o mesmo dos anexos. */
 const TAMANHO_MAXIMO_DO_PRINCIPAL_MB = TAMANHO_MAXIMO_DO_ANEXO_MB;
 const TIPO_DE_MIDIA_DO_PRINCIPAL = 'application/pdf';
 
-const NUMERO_TAMANHO_MAXIMO = 60;
-const ASSINANTE_TAMANHO_MAXIMO = 200;
-const MOTIVO_TAMANHO_MAXIMO = 1000;
-
-type CampoDoFormulario =
-  | 'tipoAtoCodigo'
-  | 'numero'
-  | 'dataPublicacao'
-  | 'assinante'
-  | 'atoCorrigidoId'
-  | 'motivoDaCorrecao'
-  | 'politicaDeDivulgacaoConfirmada';
-
-const CAMPOS: ReadonlySet<string> = new Set<CampoDoFormulario>([
-  'tipoAtoCodigo',
-  'numero',
-  'dataPublicacao',
-  'assinante',
-  'atoCorrigidoId',
-  'motivoDaCorrecao',
-  'politicaDeDivulgacaoConfirmada',
-]);
+interface EnvioDaPublicacao {
+  readonly pedido: object;
+  readonly enviar: (contexto: HttpContext) => Observable<ApiResult<AtoPublicadoDto>>;
+}
 
 /**
  * O formulário lateral que publica um documento avulso do processo, corrige um ato já publicado
@@ -130,6 +103,7 @@ const CAMPOS: ReadonlySet<string> = new Set<CampoDoFormulario>([
     DrawerComponent,
     FileUploadComponent,
     SpinnerComponent,
+    AnexosDaPublicacaoComponent,
   ],
   providers: [AnexosDoEditalService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -156,68 +130,36 @@ export class PublicarDocumentoComponent {
   /** O ato foi aceito pelo servidor; ainda aguarda o registro. */
   readonly publicado = output<void>();
 
-  protected readonly extensoesDoAnexo = EXTENSOES_DO_ANEXO;
-  protected readonly limiteDeAnexos = LIMITE_DE_ANEXOS;
-  protected readonly tamanhoMaximoMb = TAMANHO_MAXIMO_DO_ANEXO_MB;
   protected readonly tamanhoMaximoDoPrincipalMb = TAMANHO_MAXIMO_DO_PRINCIPAL_MB;
   protected readonly apenasPdf: readonly string[] = [TIPO_DE_MIDIA_DO_PRINCIPAL];
   protected readonly rotuloDoAto = rotuloDoAto;
 
-  protected readonly form = new FormGroup({
-    tipoAtoCodigo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    numero: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(NUMERO_TAMANHO_MAXIMO)],
-    }),
-    dataPublicacao: new FormControl(hojeNoFusoInstitucional(), {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    assinante: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(ASSINANTE_TAMANHO_MAXIMO)],
-    }),
-    atoCorrigidoId: new FormControl('', { nonNullable: true }),
-    motivoDaCorrecao: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(MOTIVO_TAMANHO_MAXIMO)],
-    }),
-    politicaDeDivulgacaoConfirmada: new FormControl(false, { nonNullable: true }),
-  });
+  protected readonly form = criarFormularioDaPublicacao();
 
-  protected readonly principal = new EnviosDeArquivos({
-    finalidade: FinalidadeDoDocumento.documentoDeAto,
-    processoId: () => this.processoId(),
-    abrirEnvio: () => this.envios.abrirEnvio(),
+  protected readonly principal = this.listaDeEnvios({
     tipoDeMidiaDe: (nomeArquivo) =>
       extensaoDoArquivo(nomeArquivo) === 'pdf' ? TIPO_DE_MIDIA_DO_PRINCIPAL : null,
     recusaDoFormato: 'O documento principal precisa ser um PDF.',
-    explicar: (problema) => this.problemI18n.resolve(problema).title,
-    nomeInicial: nomeInicialDoAnexo,
   });
 
-  protected readonly anexos = new EnviosDeArquivos({
-    finalidade: FinalidadeDoDocumento.documentoDeAto,
-    processoId: () => this.processoId(),
-    abrirEnvio: () => this.envios.abrirEnvio(),
+  protected readonly anexos = this.listaDeEnvios({
     tipoDeMidiaDe: tipoDeMidiaDoAnexo,
     recusaDoFormato: 'O formato do arquivo não é aceito para anexo.',
-    explicar: (problema) => this.problemI18n.resolve(problema).title,
-    nomeInicial: nomeInicialDoAnexo,
   });
 
   protected readonly publicando = signal(false);
-  /** O que o servidor recusou, para a pessoa corrigir sem recomeçar. */
   protected readonly recusa = signal<readonly string[]>([]);
   protected readonly confirmando = signal(false);
   protected readonly tentouEnviar = signal(false);
 
-  /**
-   * Por que ainda não dá para publicar, mostrado depois da primeira tentativa e atualizado a cada
-   * mudança: a pessoa vê o aviso sumir quando resolve o que faltava.
-   */
   protected readonly impedimentos = computed(() =>
-    this.tentouEnviar() ? this.impedimentosDosArquivos() : [],
+    this.tentouEnviar()
+      ? impedimentosDosArquivos({
+          principal: this.principal,
+          anexos: this.anexos,
+          semAtoParaCorrigir: this.escolheOAtoCorrigido() && this.atosCorrigiveis().length === 0,
+        })
+      : [],
   );
 
   private chave = new ChaveDeSubstituicao();
@@ -227,28 +169,18 @@ export class PublicarDocumentoComponent {
     initialValue: this.form.controls.tipoAtoCodigo.value,
   });
 
-  /**
-   * Os tipos que a pessoa pode escolher: todos os publicáveis como documento avulso. Aviso e
-   * comunicado também corrigem um ato que não congela; `exigeAtoCorrigido` só diz que o tipo não
-   * se publica sem o ato corrigido.
-   */
   protected readonly opcoesDeTipo = computed(() => this.tipos());
 
   protected readonly tipoSelecionado = computed(() =>
     this.opcoesDeTipo().find((tipo) => tipo.codigo === this.tipoEscolhido()),
   );
 
-  /** O ato que este corrige, fixo quando a pessoa clicou em "Corrigir" num ato ou num item. */
-  protected readonly atoDaCorrecao = computed(() => {
-    const modo = this.modo();
-    if (modo?.tipo === 'correcao') return modo.ato;
-    return modo?.tipo === 'previsto' ? modo.corrigido : null;
-  });
+  protected readonly atoDaCorrecao = computed(() => atoDaCorrecao(this.modo()));
+  protected readonly escolheOTipo = computed(() => escolheOTipo(this.modo()));
+  protected readonly item = computed(() => itemDo(this.modo()));
+  protected readonly politica = computed(() => politicaDo(this.modo()));
+  protected readonly titulo = computed(() => tituloDa(this.modo()));
 
-  /** O tipo do ato é escolhido na tela, salvo no item do edital, que já o traz. */
-  protected readonly escolheOTipo = computed(() => this.modo()?.tipo !== 'previsto');
-
-  /** O ato corrigido é escolhido na tela quando o tipo o exige e nenhum foi fixado. */
   protected readonly escolheOAtoCorrigido = computed(
     () => this.atoDaCorrecao() === null && this.tipoSelecionado()?.exigeAtoCorrigido === true,
   );
@@ -257,65 +189,31 @@ export class PublicarDocumentoComponent {
     () => this.atoDaCorrecao() !== null || this.escolheOAtoCorrigido(),
   );
 
-  /** O item do edital que se publica; `null` fora do modo dos itens previstos. */
-  protected readonly item = computed(() => {
-    const modo = this.modo();
-    return modo?.tipo === 'previsto' ? modo.item : null;
-  });
-
-  /** A política a confirmar antes de enviar; só o item que é resultado a traz. */
-  protected readonly politica = computed(() => {
-    const modo = this.modo();
-    return modo?.tipo === 'previsto' ? modo.politica : null;
-  });
-
   protected readonly rotuloDoPapel = rotuloDoPapel;
-
-  protected readonly titulo = computed(() => {
-    const ato = this.atoDaCorrecao();
-    if (ato !== null) return `Corrigir ${rotuloDoAto(ato)}`;
-    const item = this.item();
-    return item === null ? 'Publicar documento' : `Publicar ${item.tipoNome ?? item.tipoCodigo}`;
-  });
 
   protected readonly semTipoParaCorrecao = computed(
     () => this.modo()?.tipo === 'correcao' && this.opcoesDeTipo().length === 0,
   );
 
-  /** O resumo que explica por que ainda não foi publicado: a recusa do servidor ou o que falta. */
   protected readonly resumoVisivel = computed(
     () => this.recusa().length > 0 || this.impedimentos().length > 0,
   );
 
-  /** Os anexos já selados, com o campo do nome; os demais só aparecem na lista de envio. */
-  protected readonly anexosConfirmados = computed(() =>
-    this.anexos.arquivos().filter((arquivo) => arquivo.fase === 'confirmado'),
-  );
-
   constructor() {
-    // Cada abertura é um documento novo: nada do anterior sobrevive, nem o que foi enviado.
     effect(() => {
       if (!this.aberto()) return;
       const modo = untracked(() => this.modo());
       untracked(() => this.iniciar(modo));
     });
 
-    // O motivo e o ato corrigido só são obrigatórios quando o ato corrige outro.
     effect(() => {
-      const exige = this.corrige();
-      const escolhe = this.escolheOAtoCorrigido();
-      const escolheTipo = this.escolheOTipo();
-      const exigeConfirmacao = this.politica() !== null;
-      untracked(() => {
-        this.trocarObrigatoriedade(this.form.controls.motivoDaCorrecao, exige);
-        this.trocarObrigatoriedade(this.form.controls.atoCorrigidoId, escolhe);
-        this.trocarObrigatoriedade(this.form.controls.tipoAtoCodigo, escolheTipo);
-        this.trocarObrigatoriedade(
-          this.form.controls.politicaDeDivulgacaoConfirmada,
-          exigeConfirmacao,
-          Validators.requiredTrue,
-        );
-      });
+      const exigencias = {
+        motivoDaCorrecao: this.corrige(),
+        atoCorrigido: this.escolheOAtoCorrigido(),
+        tipoDoAto: this.escolheOTipo(),
+        confirmacaoDaPolitica: this.politica() !== null,
+      };
+      untracked(() => ajustarObrigatoriedade(this.form, exigencias));
     });
   }
 
@@ -327,7 +225,6 @@ export class PublicarDocumentoComponent {
     this.confirmando.set(false);
   }
 
-  /** Confere o que a tela sabe conferir antes de pedir a confirmação do que não se desfaz. */
   protected solicitar(): void {
     if (this.publicando()) return;
 
@@ -375,26 +272,20 @@ export class PublicarDocumentoComponent {
     const controle = this.form.controls[campo];
     if (!(controle.touched || controle.dirty) || controle.errors === null) return null;
 
-    const doServidor = controle.errors['servidor'] as { readonly mensagem: string } | undefined;
-    if (doServidor !== undefined) return doServidor.mensagem;
-    if (campo === 'politicaDeDivulgacaoConfirmada') {
-      return 'Confirme que o documento segue a política de divulgação do certame.';
-    }
-    if (controle.errors['required']) return 'Campo obrigatório.';
-    if (controle.errors['maxlength']) return 'O texto passa do tamanho permitido.';
-    return 'Valor inválido.';
+    return mensagemDoErroDoCampo(campo, controle.errors);
   }
 
-  protected renomear(arquivo: ArquivoDoAto, evento: Event): void {
-    this.anexos.renomear(arquivo.id, (evento.target as HTMLInputElement).value);
-  }
-
-  protected recusaDoNome(arquivo: ArquivoDoAto): string | null {
-    return recusaDoNomeDoAnexo(arquivo.nome, arquivo.nomeArquivo);
-  }
-
-  protected nomeBaixado(arquivo: ArquivoDoAto): string {
-    return nomeNoDownload(arquivo.nome, arquivo.nomeArquivo);
+  private listaDeEnvios(
+    formato: Pick<DependenciasDosEnvios, 'tipoDeMidiaDe' | 'recusaDoFormato'>,
+  ): EnviosDeArquivos {
+    return new EnviosDeArquivos({
+      ...formato,
+      finalidade: FinalidadeDoDocumento.documentoDeAto,
+      processoId: () => this.processoId(),
+      abrirEnvio: () => this.envios.abrirEnvio(),
+      explicar: (problema) => this.problemI18n.resolve(problema).title,
+      nomeInicial: nomeInicialDoAnexo,
+    });
   }
 
   private iniciar(modo: ModoDaPublicacao | null): void {
@@ -405,91 +296,43 @@ export class PublicarDocumentoComponent {
     this.tentouEnviar.set(false);
     this.confirmando.set(false);
 
-    this.form.reset({
-      tipoAtoCodigo: '',
-      numero: '',
-      dataPublicacao: hojeNoFusoInstitucional(),
-      assinante: '',
-      atoCorrigidoId: '',
-      motivoDaCorrecao: '',
-      politicaDeDivulgacaoConfirmada: false,
-    });
+    esvaziar(this.form);
 
-    // Com um tipo só a oferecer, não faz sentido pedir a escolha.
     if (modo?.tipo === 'correcao' && this.tipos().length === 1) {
       this.form.controls.tipoAtoCodigo.setValue(this.tipos()[0].codigo);
     }
   }
 
-  /** O corpo do pedido e o comando que o envia: o do documento avulso ou o do item do edital. */
-  private montarEnvio(documentoPrincipalId: string): {
-    readonly pedido: object;
-    readonly enviar: (contexto: HttpContext) => Observable<ApiResult<AtoPublicadoDto>>;
-  } {
-    const valores = this.form.getRawValue();
-    const ato = this.atoDaCorrecao();
-    const processoId = this.processoId();
-    const dados = {
-      numero: valores.numero,
-      dataPublicacao: valores.dataPublicacao,
-      assinante: valores.assinante,
-      atoCorrigidoId: ato?.id ?? (this.escolheOAtoCorrigido() ? valores.atoCorrigidoId : null),
-      motivoDaCorrecao: valores.motivoDaCorrecao,
-    };
+  private montarEnvio(documentoPrincipalId: string): EnvioDaPublicacao {
+    const dados = this.dadosDoPedido();
     const anexos = this.anexos.confirmados();
-
+    const processoId = this.processoId();
     const item = this.item();
     if (item !== null) {
-      const pedido = pedidoDoItem(
-        dados,
-        documentoPrincipalId,
-        anexos,
-        this.politica() !== null && valores.politicaDeDivulgacaoConfirmada,
-      );
+      const politicaConfirmada =
+        this.politica() !== null && this.form.controls.politicaDeDivulgacaoConfirmada.value;
+      const pedido = pedidoDoItem(dados, documentoPrincipalId, anexos, politicaConfirmada);
       return {
         pedido,
         enviar: (contexto) => this.api.publicarProdutoPrevisto(processoId, item.id, pedido, contexto),
       };
     }
 
-    const pedido = pedidoDoAto(
-      { ...dados, tipoAtoCodigo: valores.tipoAtoCodigo },
-      documentoPrincipalId,
-      anexos,
-    );
+    const tipoAtoCodigo = this.form.controls.tipoAtoCodigo.value;
+    const pedido = pedidoDoAto({ ...dados, tipoAtoCodigo }, documentoPrincipalId, anexos);
     return { pedido, enviar: (contexto) => this.api.publicarAtoAvulso(processoId, pedido, contexto) };
   }
 
-  /** O que impede de publicar por causa dos arquivos: cada recusa é a que o servidor faria. */
-  private impedimentosDosArquivos(): readonly string[] {
-    const mensagens: string[] = [];
-
-    if (this.principal.arquivos().length === 0) {
-      mensagens.push('Envie o documento principal, em PDF.');
-    } else if (this.principal.naoConfirmados() > 0) {
-      mensagens.push(
-        'O documento principal não foi enviado por completo. Aguarde o envio, tente de novo ou retire o arquivo.',
-      );
-    }
-
-    if (this.anexos.arquivos().length > LIMITE_DE_ANEXOS) {
-      mensagens.push(`O documento aceita no máximo ${LIMITE_DE_ANEXOS} anexos.`);
-    }
-    if (this.anexos.naoConfirmados() > 0) {
-      mensagens.push(
-        'Há anexo que não foi enviado por completo. Aguarde o envio, tente de novo ou retire o anexo.',
-      );
-    }
-    for (const anexo of this.anexosConfirmados()) {
-      const recusa = recusaDoNomeDoAnexo(anexo.nome, anexo.nomeArquivo);
-      if (recusa !== null) mensagens.push(`Anexo ${anexo.nomeArquivo}: ${recusa}`);
-    }
-
-    if (this.escolheOAtoCorrigido() && this.atosCorrigiveis().length === 0) {
-      mensagens.push('Não há documento publicado que possa ser corrigido por este tipo.');
-    }
-
-    return mensagens;
+  private dadosDoPedido(): DadosDoItem {
+    const valores = this.form.getRawValue();
+    const corrigidoEscolhido = this.escolheOAtoCorrigido() ? valores.atoCorrigidoId : null;
+    return {
+      numero: valores.numero,
+      dataPublicacao: valores.dataPublicacao,
+      assinante: valores.assinante,
+      atoCorrigidoId: this.atoDaCorrecao()?.id ?? corrigidoEscolhido,
+      motivoDaCorrecao: valores.motivoDaCorrecao,
+    };
   }
 
   private mostrarRecusa(problema: ProblemDetails, inconclusiva: boolean): void {
@@ -523,29 +366,7 @@ export class PublicarDocumentoComponent {
     );
   }
 
-  private trocarObrigatoriedade<T extends string | boolean>(
-    controle: FormControl<T>,
-    obrigatorio: boolean,
-    validador: ValidatorFn = Validators.required,
-  ): void {
-    if (obrigatorio) {
-      controle.addValidators(validador);
-    } else {
-      controle.removeValidators(validador);
-    }
-    controle.updateValueAndValidity({ emitEvent: false });
-  }
-
-  /** O foco vai ao resumo: quem navega por teclado não vê o que está acima da dobra. */
   private focarResumo(): void {
     afterNextRender(() => this.resumo()?.nativeElement.focus(), { injector: this.injector });
   }
-
-}
-
-/** O controle do formulário que o campo citado pelo servidor (`PascalCase`, às vezes com caminho) nomeia. */
-function campoDoServidor(campo: string): CampoDoFormulario | null {
-  const ultimo = campo.split('.').at(-1)?.replace(/\[\d+\]$/u, '') ?? campo;
-  const camelCase = ultimo.charAt(0).toLocaleLowerCase('pt-BR') + ultimo.slice(1);
-  return CAMPOS.has(camelCase) ? (camelCase as CampoDoFormulario) : null;
 }
