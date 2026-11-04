@@ -28,9 +28,10 @@ import {
  * servidor a um campo fica junto dele até a regra mudar.
  */
 @Component({
-  selector: 'div[selRegraDeEliminacao]',
+  selector: 'sel-regra-de-eliminacao',
   templateUrl: './regra-de-eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [':host { display: block; }'],
 })
 export class RegraDeEliminacaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

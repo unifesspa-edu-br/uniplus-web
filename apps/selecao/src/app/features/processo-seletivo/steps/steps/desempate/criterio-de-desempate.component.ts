@@ -34,10 +34,11 @@ import { OrdemDasAreasComponent, type MovimentoDeArea } from './ordem-das-areas.
  * Quem altera a lista é o passo: o componente emite o que o operador pediu.
  */
 @Component({
-  selector: 'div[selCriterioDeDesempate]',
+  selector: 'sel-criterio-de-desempate',
   imports: [ValorEmConsultaComponent, CondicaoDeFatoComponent, OrdemDasAreasComponent],
   templateUrl: './criterio-de-desempate.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [':host { display: block; }'],
 })
 export class CriterioDeDesempateComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

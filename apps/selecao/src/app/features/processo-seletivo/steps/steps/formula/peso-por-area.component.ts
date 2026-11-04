@@ -56,10 +56,11 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
  * ponderada local).
  */
 @Component({
-  selector: 'section[selPesoPorArea]',
+  selector: 'sel-peso-por-area',
   imports: [ValorEmConsultaComponent],
   templateUrl: './peso-por-area.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [':host { display: block; }'],
 })
 export class PesoPorAreaComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

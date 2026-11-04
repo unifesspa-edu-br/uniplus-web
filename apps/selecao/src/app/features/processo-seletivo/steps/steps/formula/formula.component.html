@@ -166,12 +166,7 @@
     >
 
     @if (declaraEdicoes()) {
-      <fieldset
-        selEdicoesDoEnem
-        class="form-section"
-        style="margin-top: var(--space-5)"
-        [invalido]="invalidFields().has('edicoesEnem')"
-      ></fieldset>
+      <sel-edicoes-do-enem [invalido]="invalidFields().has('edicoesEnem')" />
     }
   }
 
@@ -183,11 +178,11 @@
   }
 
   @if (exigeResolucao()) {
-    <section
-      selPesoPorArea
+    <sel-peso-por-area
       class="peso-area"
+      role="region"
       aria-labelledby="peso-area-titulo"
       [invalido]="invalidFields().has('resolucaoPesoAreaEnem')"
-    ></section>
+    />
   }
 </div>

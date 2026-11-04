@@ -131,8 +131,7 @@
       dez critérios punham dez landmarks na lista de navegação do leitor de tela, competindo
       com os landmarks reais da página.
     -->
-    <div
-      selCriterioDeDesempate
+    <sel-criterio-de-desempate
       class="step-section"
       role="group"
       [attr.aria-label]="'Critério de desempate ' + (indice + 1)"
@@ -151,7 +150,7 @@
       (areaAcrescentada)="edicao.acrescentarAreaEscolhida(indice)"
       (areaRemovida)="edicao.removerArea(indice, $event)"
       (areaMovida)="edicao.moverArea(indice, $event.posicao, $event.delta)"
-    ></div>
+    />
   }
 </div>
 

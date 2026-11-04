@@ -1,60 +1,62 @@
-<legend class="form-section__title">Edições do ENEM aceitas</legend>
-<p class="field__hint" id="edicoes-enem-ajuda">
-  O candidato escolhe, na inscrição, uma destas edições, e a nota dela é a que conta.
-</p>
-@if (edicoes().length > 0) {
-  <ul aria-label="Edições do ENEM aceitas">
-    @for (ano of edicoes(); track ano) {
-      <li>
-        {{ rotuloDaEdicao(ano) }}
-        <button
-          type="button"
-          class="btn btn--tertiary btn--sm"
-          [disabled]="!store.aceitaEdicao()"
-          [attr.aria-label]="'Remover ' + rotuloDaEdicao(ano)"
-          (click)="remover(ano)"
-        >
-          Remover
-        </button>
-      </li>
+<fieldset class="form-section" style="margin-top: var(--space-5)">
+  <legend class="form-section__title">Edições do ENEM aceitas</legend>
+  <p class="field__hint" id="edicoes-enem-ajuda">
+    O candidato escolhe, na inscrição, uma destas edições, e a nota dela é a que conta.
+  </p>
+  @if (edicoes().length > 0) {
+    <ul aria-label="Edições do ENEM aceitas">
+      @for (ano of edicoes(); track ano) {
+        <li>
+          {{ rotuloDaEdicao(ano) }}
+          <button
+            type="button"
+            class="btn btn--tertiary btn--sm"
+            [disabled]="!store.aceitaEdicao()"
+            [attr.aria-label]="'Remover ' + rotuloDaEdicao(ano)"
+            (click)="remover(ano)"
+          >
+            Remover
+          </button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="field__hint">Nenhuma edição escolhida ainda.</p>
+  }
+  <div class="form-field">
+    <label class="label" [for]="idDoCampo">Ano da edição</label
+    ><input
+      class="input"
+      type="text"
+      inputmode="numeric"
+      maxlength="4"
+      autocomplete="off"
+      [id]="idDoCampo"
+      [value]="anoDaNovaEdicao()"
+      [disabled]="!store.aceitaEdicao()"
+      [class.is-invalid]="campoInvalido()"
+      [attr.aria-invalid]="campoInvalido() ? 'true' : null"
+      [attr.aria-describedby]="
+        'edicoes-enem-ajuda' +
+        (recusaDoAno() !== null ? ' edicoes-enem-recusa' : '') +
+        (store.classificacao.recusaDasEdicoesDoEnem() !== null ? ' edicoes-enem-servidor' : '')
+      "
+      (input)="anoDaNovaEdicao.set($any($event.target).value)"
+      (keydown.enter)="$event.preventDefault(); acrescentar()"
+    />
+    @if (recusaDoAno(); as recusa) {
+      <p class="field__error" id="edicoes-enem-recusa" role="alert">{{ recusa }}</p>
     }
-  </ul>
-} @else {
-  <p class="field__hint">Nenhuma edição escolhida ainda.</p>
-}
-<div class="form-field">
-  <label class="label" [for]="idDoCampo">Ano da edição</label
-  ><input
-    class="input"
-    type="text"
-    inputmode="numeric"
-    maxlength="4"
-    autocomplete="off"
-    [id]="idDoCampo"
-    [value]="anoDaNovaEdicao()"
+    @if (store.classificacao.recusaDasEdicoesDoEnem(); as recusa) {
+      <p class="field__error" id="edicoes-enem-servidor" role="alert">{{ recusa }}</p>
+    }
+  </div>
+  <button
+    type="button"
+    class="btn btn--secondary btn--sm"
     [disabled]="!store.aceitaEdicao()"
-    [class.is-invalid]="campoInvalido()"
-    [attr.aria-invalid]="campoInvalido() ? 'true' : null"
-    [attr.aria-describedby]="
-      'edicoes-enem-ajuda' +
-      (recusaDoAno() !== null ? ' edicoes-enem-recusa' : '') +
-      (store.classificacao.recusaDasEdicoesDoEnem() !== null ? ' edicoes-enem-servidor' : '')
-    "
-    (input)="anoDaNovaEdicao.set($any($event.target).value)"
-    (keydown.enter)="$event.preventDefault(); acrescentar()"
-  />
-  @if (recusaDoAno(); as recusa) {
-    <p class="field__error" id="edicoes-enem-recusa" role="alert">{{ recusa }}</p>
-  }
-  @if (store.classificacao.recusaDasEdicoesDoEnem(); as recusa) {
-    <p class="field__error" id="edicoes-enem-servidor" role="alert">{{ recusa }}</p>
-  }
-</div>
-<button
-  type="button"
-  class="btn btn--secondary btn--sm"
-  [disabled]="!store.aceitaEdicao()"
-  (click)="acrescentar()"
->
-  Acrescentar edição
-</button>
+    (click)="acrescentar()"
+  >
+    Acrescentar edição
+  </button>
+</fieldset>

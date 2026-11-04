@@ -17,9 +17,10 @@ import { anoDaEdicao, comEdicao, rotuloDaEdicao } from '../classificacao/edicoes
  * dela é a que conta. A lista é do rascunho da classificação; quem a grava é a Eliminação.
  */
 @Component({
-  selector: 'fieldset[selEdicoesDoEnem]',
+  selector: 'sel-edicoes-do-enem',
   templateUrl: './edicoes-do-enem.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [':host { display: block; }'],
 })
 export class EdicoesDoEnemComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

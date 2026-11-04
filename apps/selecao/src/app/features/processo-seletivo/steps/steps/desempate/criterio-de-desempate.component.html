@@ -104,8 +104,7 @@
       }
 
       @if (usaAreas()) {
-        <div
-          selOrdemDasAreas
+        <sel-ordem-das-areas
           class="form-field form-grid__full"
           [indice]="indice()"
           [criterio]="criterio()"
@@ -114,7 +113,7 @@
           (acrescentar)="areaAcrescentada.emit()"
           (remover)="areaRemovida.emit($event)"
           (mover)="areaMovida.emit($event)"
-        ></div>
+        />
       }
     }
   </div>

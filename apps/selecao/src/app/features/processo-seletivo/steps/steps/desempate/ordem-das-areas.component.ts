@@ -19,9 +19,10 @@ export interface MovimentoDeArea {
  * escolhida no seletor e ainda não incluída é do passo, que a remapeia quando a lista muda.
  */
 @Component({
-  selector: 'div[selOrdemDasAreas]',
+  selector: 'sel-ordem-das-areas',
   templateUrl: './ordem-das-areas.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [':host { display: block; }'],
 })
 export class OrdemDasAreasComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
