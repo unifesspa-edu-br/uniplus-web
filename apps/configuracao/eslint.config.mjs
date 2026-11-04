@@ -28,7 +28,7 @@ export default [
   },
   {
     // As páginas consomem a API por meio dos clientes de `@uniplus/shared-data`, nunca pelo HttpClient.
-    files: ['src/app/features/**/*.ts'],
+    files: ['**/src/app/features/**/*.ts'],
     ignores: ['**/*.spec.ts'],
     rules: {
       'no-restricted-imports': [

@@ -37,6 +37,23 @@ const NAO_DECLARA_CATALOGO = [
     'Catálogo institucional vem de um cliente de @uniplus/shared-data, não de uma lista declarada no wizard.',
 }));
 
+const SOMENTE_ROTULOS_DE_NAVEGACAO = [
+  {
+    selector:
+      'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[id.name!=/^(PASSOS|ROTULOS_DOS_PASSOS|REVIEW_NAMES)$/]',
+    message: 'Este arquivo só exporta rótulos de navegação dos passos.',
+  },
+];
+
+const NAO_INJETA_HTTP_CLIENT = [
+  {
+    selector: "CallExpression[callee.name='inject'][arguments.0.name='HttpClient']",
+    message: 'Use um cliente de @uniplus/shared-data em vez de injetar o HttpClient.',
+  },
+];
+
+const DO_WIZARD = [...SELETORES_DE_COMPONENTE, ...NAO_DECLARA_CATALOGO];
+
 export default [
   ...nx.configs['flat/angular'],
   ...nx.configs['flat/angular-template'],
@@ -64,23 +81,16 @@ export default [
     },
   },
   {
-    files: ['src/app/features/processo-seletivo/wizard/**/*.ts'],
+    files: ['**/src/app/features/processo-seletivo/wizard/**/*.ts'],
     ignores: ['**/*.spec.ts'],
     rules: {
-      'no-restricted-syntax': ['error', ...SELETORES_DE_COMPONENTE, ...NAO_DECLARA_CATALOGO],
+      'no-restricted-syntax': ['error', ...DO_WIZARD],
     },
   },
   {
-    files: ['src/app/features/processo-seletivo/wizard/processo-seletivo.data.ts'],
+    files: ['**/src/app/features/processo-seletivo/wizard/processo-seletivo.data.ts'],
     rules: {
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector:
-            'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[id.name!=/^(PASSOS|ROTULOS_DOS_PASSOS|REVIEW_NAMES)$/]',
-          message: 'Este arquivo só exporta rótulos de navegação dos passos.',
-        },
-      ],
+      'no-restricted-syntax': ['error', ...DO_WIZARD, ...SOMENTE_ROTULOS_DE_NAVEGACAO],
     },
   },
   {
@@ -88,6 +98,7 @@ export default [
     files: ['**/*.page.ts'],
     ignores: ['**/*.spec.ts'],
     rules: {
+      'no-restricted-syntax': ['error', ...SELETORES_DE_COMPONENTE, ...NAO_INJETA_HTTP_CLIENT],
       'no-restricted-imports': [
         'error',
         {
