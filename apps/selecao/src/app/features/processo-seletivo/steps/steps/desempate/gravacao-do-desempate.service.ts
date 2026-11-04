@@ -3,7 +3,7 @@ import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/ht
 
 import type { CriterioDesempateConfigurado, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import {
   gravarNoPasso,
   RESPOSTA_DESCARTADA,
@@ -21,7 +21,7 @@ import { recusaAoGravarODesempate } from './recusas-do-desempate';
 @Injectable()
 export class GravacaoDoDesempate {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly problemI18n = inject(ProblemI18nService);
 

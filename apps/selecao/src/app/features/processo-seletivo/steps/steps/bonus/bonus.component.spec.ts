@@ -7,10 +7,10 @@ import { OrigemCandidatos, SELECAO_BASE_PATH } from '@uniplus/shared-data/seleca
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import { BasesLegaisDeBonusService } from './bases-legais-de-bonus.service';
+import { BasesLegaisDeBonus } from './bases-legais-de-bonus.service';
 import { BonusStepComponent } from './bonus.component';
 
 const BASE = 'http://localhost:5000';
@@ -20,7 +20,7 @@ const BASE_LEGAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
 
 describe('BonusStepComponent', () => {
   let componente: BonusStepComponent;
-  let basesLegais: BasesLegaisDeBonusService;
+  let basesLegais: BasesLegaisDeBonus;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let fixture: ComponentFixture<BonusStepComponent>;
@@ -30,7 +30,7 @@ describe('BonusStepComponent', () => {
       imports: [BonusStepComponent],
       providers: [
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDeClassificacaoService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
@@ -42,7 +42,7 @@ describe('BonusStepComponent', () => {
 
     fixture = TestBed.createComponent(BonusStepComponent);
     componente = fixture.componentInstance;
-    basesLegais = fixture.debugElement.injector.get(BasesLegaisDeBonusService);
+    basesLegais = fixture.debugElement.injector.get(BasesLegaisDeBonus);
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
 

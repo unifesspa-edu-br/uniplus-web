@@ -25,7 +25,7 @@ import { AtoDaPublicacaoComponent } from './secoes/ato-da-publicacao.component';
 import { ConformidadeEstruturalComponent } from './secoes/conformidade-estrutural.component';
 import { ConformidadeLegalComponent } from './secoes/conformidade-legal.component';
 import { ConferenciaDaPublicacao } from './servicos/conferencia-da-publicacao.service';
-import { PublicacaoDoProcessoService } from './servicos/publicacao-do-processo.service';
+import { PublicacaoDoProcesso } from './servicos/publicacao-do-processo.service';
 
 const TAMANHO_DO_HASH_ABREVIADO = 12;
 
@@ -60,14 +60,14 @@ function contagemEmTexto(quantidade: number, singular: string, plural: string): 
     provePassoDoWizard(RevisaoStepComponent),
     PreflightDaPublicacaoService,
     ConferenciaDaPublicacao,
-    PublicacaoDoProcessoService,
+    PublicacaoDoProcesso,
   ],
 })
 export class RevisaoStepComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
   protected readonly preflight = inject(PreflightDaPublicacaoService);
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
-  protected readonly publicacao = inject(PublicacaoDoProcessoService);
+  protected readonly publicacao = inject(PublicacaoDoProcesso);
   private readonly permissoes = inject(PermissoesService);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
 

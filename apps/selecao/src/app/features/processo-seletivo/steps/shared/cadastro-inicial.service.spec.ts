@@ -16,10 +16,10 @@ import {
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 
-import { CadastroInicialService } from './cadastro-inicial.service';
+import { CadastroInicial } from './cadastro-inicial.service';
 import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
 
-describe('CadastroInicialService — descarte do cadastro em andamento', () => {
+describe('CadastroInicial — descarte do cadastro em andamento', () => {
   const ROTA = 'http://localhost:5000/api/selecao/processos-seletivos';
   const PROCESSO_ID = '01960000-0000-7000-0000-000000000515';
 
@@ -37,14 +37,14 @@ describe('CadastroInicialService — descarte do cadastro em andamento', () => {
   it('envia o comando novo depois do descarte, com outra chave, e não o retido do processo anterior', async () => {
     TestBed.configureTestingModule({
       providers: [
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         { provide: SELECAO_BASE_PATH, useValue: 'http://localhost:5000' },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
       ],
     });
-    const servico = TestBed.inject(CadastroInicialService);
+    const servico = TestBed.inject(CadastroInicial);
     const http = TestBed.inject(HttpTestingController);
 
     const primeira = servico.criar(comando('Processo Seletivo A'));
@@ -70,14 +70,14 @@ describe('CadastroInicialService — descarte do cadastro em andamento', () => {
   it('entrega à API de remoção o mesmo contexto que a gravação montou para o pedido', async () => {
     TestBed.configureTestingModule({
       providers: [
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         { provide: SELECAO_BASE_PATH, useValue: 'http://localhost:5000' },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
       ],
     });
-    const servico = TestBed.inject(CadastroInicialService);
+    const servico = TestBed.inject(CadastroInicial);
     const gravacao = TestBed.inject(GravacaoDoProcesso);
     const api = TestBed.inject(FormulariosDoProcessoApi);
     const removerNaApi = vi

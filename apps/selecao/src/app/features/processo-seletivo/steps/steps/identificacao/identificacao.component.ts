@@ -21,7 +21,7 @@ import { OrigemCandidatosSelecionada, StepValidation } from '../../processo-sele
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { IdentificadorLegivelComponent } from './identificador-legivel.component';
 import { MunicipioDoProcessoComponent } from './municipio-do-processo.component';
-import { BuscaDeMunicipioService } from './servicos/busca-de-municipio.service';
+import { BuscaDeMunicipio } from './servicos/busca-de-municipio.service';
 import { CatalogoDeUnidadesService } from './servicos/catalogo-de-unidades.service';
 import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
 import { validarIdentificacao } from './validacao-da-identificacao';
@@ -54,7 +54,7 @@ export const ORIGENS_CANDIDATOS: readonly {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     CatalogoDeUnidadesService,
-    BuscaDeMunicipioService,
+    BuscaDeMunicipio,
     GravacaoDaIdentificacao,
     provePassoDoWizard(IdentificacaoStepComponent),
   ],

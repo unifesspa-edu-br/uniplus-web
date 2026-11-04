@@ -10,7 +10,7 @@ import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
 import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { FaseStepComponent } from './fase.component';
@@ -203,7 +203,7 @@ export async function montarFase(
     imports: [FaseStepComponent],
     providers: [
       ProcessoSeletivoStore,
-      CadastroInicialService,
+      CadastroInicial,
       GravacaoDoProcesso,
       CatalogosDoCronogramaService,
       provideHttpClient(withInterceptors([apiResultInterceptor])),

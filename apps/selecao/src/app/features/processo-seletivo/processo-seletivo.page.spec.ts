@@ -50,7 +50,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
-import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
+import { CadastroInicial } from './steps/shared/cadastro-inicial.service';
 import { quadroCongelado } from './steps/shared/quadro-de-pesos';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
 import type { PassoDoWizard } from './steps/passo-do-wizard';
@@ -98,7 +98,7 @@ const catalogoVazioStub = {
 };
 
 /**
- * A page provê `CadastroInicialService`, que injeta o client de Processo
+ * A page provê `CadastroInicial`, que injeta o client de Processo
  * Seletivo. Nenhum teste desta suíte chega a gravar — o stub existe para o
  * grafo de injeção fechar sem `HttpClient` real.
  */
@@ -723,7 +723,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       criteriosDesempate: [],
     } as unknown as ProcessoSeletivoDto;
     const obterDetalhe = vi
-      .spyOn(fixture.debugElement.injector.get(CadastroInicialService), 'obterDetalhe')
+      .spyOn(fixture.debugElement.injector.get(CadastroInicial), 'obterDetalhe')
       .mockResolvedValue(apiOk(detalhe, 200, new HttpHeaders()));
     // O cadastro lido aqui tinha peso 1; o servidor copiou o dele, mais novo, com peso 3.
     const stubDaEliminacao = {
@@ -1018,7 +1018,7 @@ describe('ProcessoSeletivoPage — publicação', () => {
       await fixture.whenStable();
 
       const ordem: string[] = [];
-      const cadastro = fixture.debugElement.injector.get(CadastroInicialService);
+      const cadastro = fixture.debugElement.injector.get(CadastroInicial);
       vi.spyOn(cadastro, 'obterDetalhe').mockImplementation(async () => {
         ordem.push('releitura');
         return apiOk(detalhe, 200, new HttpHeaders());

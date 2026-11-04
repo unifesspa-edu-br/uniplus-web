@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import type { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
@@ -133,7 +133,7 @@ async function montar(opcoes: OpcoesDeMontagem = {}): Promise<Montagem> {
     imports: [DesempateStepComponent],
     providers: [
       ProcessoSeletivoStore,
-      CadastroInicialService,
+      CadastroInicial,
       GravacaoDoProcesso,
       CatalogosDeClassificacaoService,
       AcompanhamentoDoCadastroDePesos,

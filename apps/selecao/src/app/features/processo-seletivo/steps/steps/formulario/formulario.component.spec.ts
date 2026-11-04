@@ -21,7 +21,7 @@ import type {
   FaseDoCronograma,
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-documentais';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
@@ -169,7 +169,7 @@ describe('FormularioStepComponent', () => {
       providers: [
         provideRouter([]),
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDoCronogramaService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),

@@ -15,7 +15,7 @@ import {
 import type { FormularioDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type { StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CadastroInicialService } from '../../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
   gravarNoPasso,
   RESPOSTA_DESCARTADA,
@@ -53,7 +53,7 @@ export interface FormularioParaGravar {
 @Injectable()
 export class GravacaoDosFormularios {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly leitura = inject(LeituraDoProcessoNoFormulario);
   private readonly problemI18n = inject(ProblemI18nService);
 

@@ -11,7 +11,7 @@ import {
 
 import type { MotivoFalhaDeLeitura } from '../steps/processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../steps/processo-seletivo.store';
-import { CadastroInicialService } from '../steps/shared/cadastro-inicial.service';
+import { CadastroInicial } from '../steps/shared/cadastro-inicial.service';
 import { classificarDocumentos } from '../steps/shared/hidratacao';
 import { passosConcluidosDe } from '../steps/shared/passos-concluidos';
 import { CatalogosDeClassificacaoService } from '../steps/steps/classificacao/catalogos-de-classificacao.service';
@@ -45,7 +45,7 @@ export class LeituraDoProcesso {
   private readonly publicacaoApi = inject(PublicacaoDoProcessoApi);
   private readonly documentosApi = inject(DocumentosEAtosDoProcessoApi);
   private readonly problemI18n = inject(ProblemI18nService);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacaoService);
   private readonly rascunho = inject(RascunhoDaPublicacao);
   private readonly conducao = inject(ConducaoDoWizard);

@@ -48,7 +48,7 @@ export type {
 
 /** Cadastro do Processo Seletivo: cada comando de gravação entra por `GravacaoDoProcesso`. */
 @Injectable()
-export class CadastroInicialService {
+export class CadastroInicial {
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly cronogramaApi = inject(CronogramaDoProcessoApi);
   private readonly vagasApi = inject(VagasDoProcessoApi);

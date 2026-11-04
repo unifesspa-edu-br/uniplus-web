@@ -35,7 +35,7 @@ export interface MunicipioBeneficiado {
 
 /** As bases legais do bônus regional e o vocabulário que dá nome ao tipo de cada norma. */
 @Injectable()
-export class BasesLegaisDeBonusService {
+export class BasesLegaisDeBonus {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly baseLegalApi = inject(BaseLegalBonusRegionalApi);
   private readonly tiposInstrumentoApi = inject(TiposInstrumentoNormativoApi);

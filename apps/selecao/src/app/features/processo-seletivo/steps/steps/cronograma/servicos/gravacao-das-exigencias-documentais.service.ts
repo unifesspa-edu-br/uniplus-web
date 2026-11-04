@@ -9,9 +9,9 @@ import { firstValueFrom } from 'rxjs';
 
 import type { StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CadastroInicialService } from '../../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
-  CamposPressupostosService,
+  GravacaoDosCamposPressupostos,
   fatosCitadosPelasModalidadesOfertadas,
 } from '../../../shared/campos-pressupostos.service';
 import { todasAsExigencias } from '../../../shared/exigencias/consulta-das-exigencias';
@@ -25,10 +25,10 @@ import { finalidadesQueAtende } from '../../formulario/formularios-por-finalidad
 @Injectable()
 export class GravacaoDasExigenciasDocumentais {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly api = inject(ProcessosSeletivosApi);
-  private readonly camposPressupostos = inject(CamposPressupostosService);
+  private readonly camposPressupostos = inject(GravacaoDosCamposPressupostos);
 
   /**
    * Grava os documentos que cada fase exige.
@@ -129,7 +129,7 @@ export class GravacaoDasExigenciasDocumentais {
 
   /** A recusa quando os campos que o processo pressupõe não ficaram no formulário; `null` se ficaram. */
   private recusaDosCampos(
-    campos: Awaited<ReturnType<CamposPressupostosService['garantirCampos']>>,
+    campos: Awaited<ReturnType<GravacaoDosCamposPressupostos['garantirCampos']>>,
     processo: ProcessoSeletivoDto,
     recorta: boolean,
     citadosPelasExigencias: ReadonlySet<string>,

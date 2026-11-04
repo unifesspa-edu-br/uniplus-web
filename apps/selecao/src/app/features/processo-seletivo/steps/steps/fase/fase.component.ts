@@ -15,7 +15,7 @@ import type { ProblemDetails } from '@uniplus/shared-core/http';
 import { type FaseDoCronograma, type StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarCronogramaFases } from '../cronograma/servicos/gravacao-do-cronograma.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { problemasDaFase } from './configuracao-da-fase';
@@ -63,7 +63,7 @@ import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.compone
 export class FaseStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDoCronogramaService);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly destruicao = inject(DestroyRef);
 
   /**

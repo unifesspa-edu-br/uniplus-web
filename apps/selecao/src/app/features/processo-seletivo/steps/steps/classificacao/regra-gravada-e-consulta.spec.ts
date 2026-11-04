@@ -14,7 +14,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { BonusStepComponent } from '../bonus/bonus.component';
@@ -55,7 +55,7 @@ async function montar<T>(componente: Type<T>): Promise<Montagem<T>> {
     providers: [
       { provide: PermissoesService, useValue: { tem: () => false } },
       ProcessoSeletivoStore,
-      CadastroInicialService,
+      CadastroInicial,
       GravacaoDoProcesso,
       CatalogosDeClassificacaoService,
       AcompanhamentoDoCadastroDePesos,

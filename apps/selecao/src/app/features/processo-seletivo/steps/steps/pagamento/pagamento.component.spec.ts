@@ -6,7 +6,7 @@ import { FundamentoIsencao, SELECAO_BASE_PATH } from '@uniplus/shared-data/selec
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { PagamentoStepComponent } from './pagamento.component';
 
@@ -48,7 +48,7 @@ describe('PagamentoStepComponent', () => {
       imports: [PagamentoStepComponent],
       providers: [
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),

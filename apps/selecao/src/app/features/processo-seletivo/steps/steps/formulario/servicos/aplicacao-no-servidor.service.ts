@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import type { AplicacaoDeModeloDto, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
-import { CadastroInicialService } from '../../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import { conteudoDoFormulario, formularioDaFinalidade } from '../formulario-do-processo';
 import { nomeDaFinalidade } from '../formularios-por-finalidade';
 import {
@@ -33,7 +33,7 @@ export type DesfechoDaAplicacao =
  */
 @Injectable()
 export class AplicacaoNoServidor {
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly leitura = inject(LeituraDoProcessoNoFormulario);
   private readonly problemI18n = inject(ProblemI18nService);
 

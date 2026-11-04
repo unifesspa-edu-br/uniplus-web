@@ -56,7 +56,7 @@ import { ConfirmacaoDeSaida } from './steps/shared/rascunho-nao-gravado.guard';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { RascunhoDaPublicacao } from './editor/rascunho-da-publicacao.service';
 import { PASSOS } from './steps/processo-seletivo.data';
-import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
+import { CadastroInicial } from './steps/shared/cadastro-inicial.service';
 import { CatalogosDeClassificacaoService } from './steps/steps/classificacao/catalogos-de-classificacao.service';
 import { PROCESSO_SELETIVO_ROUTES } from './processo-seletivo.routes';
 
@@ -1601,7 +1601,7 @@ describe('ProcessoSeletivoPage — cadastro novo', () => {
     const cenario = montar({ id: PROCESSO_ID, paramMap });
     await propagar();
 
-    const cadastro = cenario.fixture.debugElement.injector.get(CadastroInicialService);
+    const cadastro = cenario.fixture.debugElement.injector.get(CadastroInicial);
     const descartar = vi.spyOn(cadastro, 'descartarCadastroEmAndamento');
 
     paramMap.next({ get: () => null });

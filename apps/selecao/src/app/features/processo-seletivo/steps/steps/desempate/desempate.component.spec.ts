@@ -14,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { CriterioDesempateConfigurado, EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
@@ -101,7 +101,7 @@ describe('DesempateStepComponent', () => {
       imports: [DesempateStepComponent],
       providers: [
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDeClassificacaoService,
         AcompanhamentoDoCadastroDePesos,
@@ -145,7 +145,7 @@ describe('DesempateStepComponent', () => {
       imports: [DesempateStepComponent],
       providers: [
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDeClassificacaoService,
         AcompanhamentoDoCadastroDePesos,
@@ -197,7 +197,7 @@ describe('DesempateStepComponent', () => {
       imports: [DesempateStepComponent],
       providers: [
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDeClassificacaoService,
         AcompanhamentoDoCadastroDePesos,

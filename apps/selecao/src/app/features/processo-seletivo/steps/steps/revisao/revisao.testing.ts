@@ -16,12 +16,12 @@ import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { AtoNormativoDto, AtosApi, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 import { FaseUpload, UploadItem, WizardDraft } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { EnvioDoEdital } from '../../shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { RevisaoStepComponent } from './revisao.component';
-import { PublicacaoDoProcessoService } from './servicos/publicacao-do-processo.service';
+import { PublicacaoDoProcesso } from './servicos/publicacao-do-processo.service';
 
 export const BASE = 'http://localhost:5000';
 export const PROCESSO_ID = '01960000-0000-7000-0000-0000000009aa';
@@ -206,7 +206,7 @@ export async function montarOCenario(): Promise<CenarioDaRevisao> {
     imports: [RevisaoStepComponent],
     providers: [
       ProcessoSeletivoStore,
-      CadastroInicialService,
+      CadastroInicial,
       GravacaoDoProcesso,
       EnvioDoEdital,
       provideHttpClient(withInterceptors([apiResultInterceptor])),
@@ -274,8 +274,8 @@ export function prepararCamposLocais(cenario: CenarioDaRevisao): void {
   });
 }
 
-export function publicacaoDe(cenario: CenarioDaRevisao): PublicacaoDoProcessoService {
-  return cenario.fixture.debugElement.injector.get(PublicacaoDoProcessoService);
+export function publicacaoDe(cenario: CenarioDaRevisao): PublicacaoDoProcesso {
+  return cenario.fixture.debugElement.injector.get(PublicacaoDoProcesso);
 }
 
 export function textoDaTela(cenario: CenarioDaRevisao): string {

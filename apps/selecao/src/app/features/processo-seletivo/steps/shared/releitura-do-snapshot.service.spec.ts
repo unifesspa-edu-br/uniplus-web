@@ -6,7 +6,7 @@ import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
-import { CadastroInicialService } from './cadastro-inicial.service';
+import { CadastroInicial } from './cadastro-inicial.service';
 import { ReleituraDoSnapshot, relerProcessoAPedido } from './releitura-do-snapshot.service';
 
 /** Uma leitura do detalhe que o teste resolve quando quiser. */
@@ -36,7 +36,7 @@ function montar(leituras: Promise<ApiResult<ProcessoSeletivoDto>>[]) {
     providers: [
       ProcessoSeletivoStore,
       ReleituraDoSnapshot,
-      { provide: CadastroInicialService, useValue: { obterDetalhe: () => fila.shift() } },
+      { provide: CadastroInicial, useValue: { obterDetalhe: () => fila.shift() } },
     ],
   });
   const store = TestBed.inject(ProcessoSeletivoStore);

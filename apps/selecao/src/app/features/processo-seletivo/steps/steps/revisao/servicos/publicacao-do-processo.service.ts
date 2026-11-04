@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CadastroInicialService } from '../../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
   gravarNoPasso,
   RESPOSTA_DESCARTADA,
@@ -37,10 +37,10 @@ function recusado(mensagem: string): StepValidation {
  * vigente de um processo já publicado.
  */
 @Injectable()
-export class PublicacaoDoProcessoService {
+export class PublicacaoDoProcesso {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly conferencia = inject(ConferenciaDaPublicacao);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly atos = inject(AtosApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);

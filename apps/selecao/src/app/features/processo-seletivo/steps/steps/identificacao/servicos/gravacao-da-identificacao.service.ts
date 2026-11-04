@@ -4,7 +4,7 @@ import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 
 import { StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CadastroInicialService } from '../../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
   gravarNoPasso,
   RESPOSTA_DESCARTADA,
@@ -22,7 +22,7 @@ import {
 @Injectable()
 export class GravacaoDaIdentificacao {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** Recusa da criação, exibida no passo: o anexo tem o erro dele próprio. */

@@ -8,9 +8,9 @@ import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
-import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
+import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { VagasStepComponent } from './vagas.component';
 import {
@@ -46,10 +46,10 @@ describe('VagasStepComponent — gravação da distribuição', () => {
       imports: [VagasStepComponent],
       providers: [
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDoCronogramaService,
-        CamposPressupostosService,
+        GravacaoDosCamposPressupostos,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor, ACEITA_AS_OPCOES])),
         provideHttpClientTesting(),

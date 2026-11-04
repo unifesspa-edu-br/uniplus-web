@@ -12,9 +12,9 @@ import {
   StatusProcesso,
 } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
-import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
+import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { VagasStepComponent } from './vagas.component';
 import { AC_CASCATA, BASE, LB_PPI, LB_Q, distribuicaoComCascata, gravadaDe } from './vagas.testing';
@@ -40,10 +40,10 @@ describe('VagasStepComponent — consulta com o catálogo em falha', () => {
       imports: [VagasStepComponent],
       providers: [
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         CatalogosDoCronogramaService,
-        CamposPressupostosService,
+        GravacaoDosCamposPressupostos,
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),

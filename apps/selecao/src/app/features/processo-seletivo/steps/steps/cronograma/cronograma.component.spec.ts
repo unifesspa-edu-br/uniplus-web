@@ -24,9 +24,9 @@ import type {
   ProdutoDaFase,
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
-import { CamposPressupostosService } from '../../shared/campos-pressupostos.service';
+import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogosDoCronogramaService } from './catalogos-do-cronograma.service';
 import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component';
 import { CronogramaStepComponent } from './cronograma.component';
@@ -92,9 +92,9 @@ describe('CronogramaStepComponent', () => {
       imports: [CronogramaStepComponent],
       providers: [
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
-        CamposPressupostosService,
+        GravacaoDosCamposPressupostos,
         CatalogosDoCronogramaService,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -3069,7 +3069,7 @@ describe('CronogramaStepComponent', () => {
         ],
       });
 
-      const resultado = await TestBed.inject(CamposPressupostosService).garantirCampos(
+      const resultado = await TestBed.inject(GravacaoDosCamposPressupostos).garantirCampos(
         PROCESSO_ID,
         {
           formularios: [],
@@ -3167,7 +3167,7 @@ describe('CronogramaStepComponent', () => {
       };
       const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
 
-      const garantir = TestBed.inject(CamposPressupostosService).garantirCampos(
+      const garantir = TestBed.inject(GravacaoDosCamposPressupostos).garantirCampos(
         PROCESSO_ID,
         {
           formularios: [],

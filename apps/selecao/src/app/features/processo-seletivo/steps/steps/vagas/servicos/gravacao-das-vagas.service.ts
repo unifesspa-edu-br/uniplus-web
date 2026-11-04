@@ -5,9 +5,9 @@ import { firstValueFrom } from 'rxjs';
 
 import { StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CadastroInicialService } from '../../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import {
-  CamposPressupostosService,
+  GravacaoDosCamposPressupostos,
   fatosCitadosPelasModalidadesOfertadas,
 } from '../../../shared/campos-pressupostos.service';
 import {
@@ -47,9 +47,9 @@ export class GravacaoDasVagas {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly estado = inject(EstadoDoPassoDeVagas);
   private readonly api = inject(ProcessosSeletivosApi);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
-  private readonly camposPressupostos = inject(CamposPressupostosService);
+  private readonly camposPressupostos = inject(GravacaoDosCamposPressupostos);
 
   gravar(
     processoId: string,

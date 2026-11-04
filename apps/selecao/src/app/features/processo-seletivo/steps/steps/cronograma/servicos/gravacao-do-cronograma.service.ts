@@ -5,7 +5,7 @@ import { ProblemI18nService } from '@uniplus/shared-core/http';
 import type { FaseDoCronograma, StepValidation } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import {
-  CadastroInicialService,
+  CadastroInicial,
   type ResultadoGravacao,
 } from '../../../shared/cadastro-inicial.service';
 import { resumoDaRecusa } from '../../../shared/resumo-da-recusa';
@@ -61,7 +61,7 @@ export const ORIENTACAO_DE_PERMUTACAO =
  * para reordenar.
  */
 export async function gravarCronogramaFases(
-  cadastro: CadastroInicialService,
+  cadastro: CadastroInicial,
   processoSeletivoId: string,
   fases: readonly FaseDoCronograma[],
 ): Promise<ResultadoGravacao> {
@@ -92,7 +92,7 @@ export async function gravarCronogramaFases(
 export class GravacaoDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogos = inject(CatalogosDoCronogramaService);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly exigencias = inject(GravacaoDasExigenciasDocumentais);
   private readonly cronograma = inject(FormularioDoCronograma);

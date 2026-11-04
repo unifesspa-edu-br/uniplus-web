@@ -7,7 +7,7 @@ import {
 
 import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import {
   gravarNoPasso,
   RESPOSTA_DESCARTADA,
@@ -45,7 +45,7 @@ import { recusaDaClassificacaoPeloDesempate } from '../desempate/recusas-do-dese
 @Injectable()
 export class GravacaoDaClassificacao {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly cadastroDePesos = inject(AcompanhamentoDoCadastroDePesos);
   private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly problemI18n = inject(ProblemI18nService);

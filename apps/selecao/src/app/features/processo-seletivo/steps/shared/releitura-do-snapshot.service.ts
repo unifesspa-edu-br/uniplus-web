@@ -2,7 +2,7 @@ import { Injectable, inject, type WritableSignal } from '@angular/core';
 import { isApiOk } from '@uniplus/shared-core/http';
 
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
-import { CadastroInicialService } from './cadastro-inicial.service';
+import { CadastroInicial } from './cadastro-inicial.service';
 
 /**
  * Relê a classificação e os critérios de desempate do processo para atualizar o que ele tem no
@@ -17,7 +17,7 @@ import { CadastroInicialService } from './cadastro-inicial.service';
 @Injectable()
 export class ReleituraDoSnapshot {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private ultimaLeitura = 0;
 
   /** `true` quando esta leitura foi a que decidiu; `false` quando uma mais nova a superou. */

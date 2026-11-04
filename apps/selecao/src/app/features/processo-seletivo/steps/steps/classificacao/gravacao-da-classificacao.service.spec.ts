@@ -3,7 +3,7 @@ import { OrigemCandidatos, type ProcessoSeletivoDto } from '@uniplus/shared-data
 import { describe, expect, it, vi } from 'vitest';
 
 import { OrigemCandidatosSelecionada } from '../../processo-seletivo.models';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 
@@ -126,7 +126,7 @@ describe('gravação da classificação', () => {
         baseadoEmEnem: true,
         resolucaoPesoAreaEnem: RESOLUCAO,
       });
-      const cadastro = TestBed.inject(CadastroInicialService);
+      const cadastro = TestBed.inject(CadastroInicial);
       vi.spyOn(cadastro, 'obterDetalhe').mockRejectedValue(new Error('falha fora do envelope'));
 
       const gravacao = componente.persistir();
@@ -287,7 +287,7 @@ describe('gravação da classificação', () => {
       store.classificacao.marcarDesconhecida();
       const antiga = TestBed.inject(ReleituraDoSnapshot).reler();
       const leituraAntiga = controller.expectOne(ROTA_DETALHE);
-      vi.spyOn(TestBed.inject(CadastroInicialService), 'definirClassificacao').mockRejectedValue(
+      vi.spyOn(TestBed.inject(CadastroInicial), 'definirClassificacao').mockRejectedValue(
         new Error('falha fora do envelope'),
       );
 

@@ -3,7 +3,7 @@ import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CadastroInicialService } from '../../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import { formularioDaFinalidade } from '../formulario-do-processo';
 import { nomeDaFinalidade } from '../formularios-por-finalidade';
 import { LeituraDoProcessoNoFormulario } from './leitura-do-processo-no-formulario.service';
@@ -23,7 +23,7 @@ export interface DesfechoDaRemocao {
 @Injectable()
 export class RemocaoDoFormulario {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly leitura = inject(LeituraDoProcessoNoFormulario);
   private readonly problemI18n = inject(ProblemI18nService);
 

@@ -19,7 +19,7 @@ import {
 import { ReferenciaDeAtendimento, StepValidation } from '../../processo-seletivo.models';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
 import { camposSemValoresOfertados } from '../formulario/problemas-do-formulario';
 import { anunciarRemocao } from './anuncio-de-remocao';
@@ -58,7 +58,7 @@ import { mensagemDeInativos, referenciasInativas } from './referencias-inativas'
 export class AtendimentoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeAtendimentoService);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
 
   readonly erroDeGravacao = signal<string | null>(null);

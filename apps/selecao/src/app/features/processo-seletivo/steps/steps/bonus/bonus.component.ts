@@ -19,7 +19,7 @@ import { StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, RESPOSTA_DESCARTADA } from '../../shared/gravacao/gravacao-no-passo';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
@@ -28,7 +28,7 @@ import {
   regrasEscolhiveis,
   rotuloDaRegraEscolhida,
 } from '../classificacao/regra-escolhivel';
-import { BasesLegaisDeBonusService } from './bases-legais-de-bonus.service';
+import { BasesLegaisDeBonus } from './bases-legais-de-bonus.service';
 import { comoComandoDeBonus } from './bonus-para-comando';
 import { confirmacaoDoBonus } from './confirmacao-do-bonus';
 import { validarBonus } from './validacao-do-bonus';
@@ -55,14 +55,14 @@ import {
   ],
   templateUrl: './bonus.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [BasesLegaisDeBonusService, provePassoDoWizard(BonusStepComponent)],
+  providers: [BasesLegaisDeBonus, provePassoDoWizard(BonusStepComponent)],
 })
 export class BonusStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
-  protected readonly basesLegais = inject(BasesLegaisDeBonusService);
+  protected readonly basesLegais = inject(BasesLegaisDeBonus);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
 
   /**

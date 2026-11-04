@@ -17,7 +17,7 @@ import { itensDoAto, rotuloDoTipoDeAto } from '../itens-do-ato';
 import { janelaDaInscricao, temFaseDeColetaInscricao } from '../periodo-de-inscricao';
 import { PreflightDaPublicacaoService } from '../preflight-da-publicacao.service';
 import { ConferenciaDaPublicacao } from '../servicos/conferencia-da-publicacao.service';
-import { PublicacaoDoProcessoService } from '../servicos/publicacao-do-processo.service';
+import { PublicacaoDoProcesso } from '../servicos/publicacao-do-processo.service';
 
 /**
  * O documento e o ato da publicação: o formulário do ato e do período de inscrição, ou, quando o
@@ -41,7 +41,7 @@ export class AtoDaPublicacaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
   protected readonly preflight = inject(PreflightDaPublicacaoService);
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
-  protected readonly publicacao = inject(PublicacaoDoProcessoService);
+  protected readonly publicacao = inject(PublicacaoDoProcesso);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronogramaService);
   private readonly dataBr = new DateBrPipe();
 

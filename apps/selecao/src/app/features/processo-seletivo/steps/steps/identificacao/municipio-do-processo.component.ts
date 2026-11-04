@@ -9,7 +9,7 @@ import {
 import { ComboboxComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { BuscaDeMunicipioService } from './servicos/busca-de-municipio.service';
+import { BuscaDeMunicipio } from './servicos/busca-de-municipio.service';
 
 /** O município cujo calendário rege os prazos do processo. */
 @Component({
@@ -21,7 +21,7 @@ import { BuscaDeMunicipioService } from './servicos/busca-de-municipio.service';
 })
 export class MunicipioDoProcessoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly busca = inject(BuscaDeMunicipioService);
+  protected readonly busca = inject(BuscaDeMunicipio);
 
   readonly invalido = input.required<boolean>();
 

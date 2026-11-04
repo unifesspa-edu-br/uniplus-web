@@ -28,7 +28,7 @@ import {
   inscricaoDoServidor,
   type FormularioParaGravar,
 } from '../steps/formulario/formulario-do-processo';
-import { CadastroInicialService } from './cadastro-inicial.service';
+import { CadastroInicial } from './cadastro-inicial.service';
 import { regrasDasModalidadesOfertadas } from './regras-das-modalidades';
 
 export type CamposPressupostos =
@@ -78,9 +78,9 @@ interface PlanoDosCampos {
  * lembrar que decidir quem concorre ou de quem o documento é cobrado mexe no formulário.
  */
 @Injectable()
-export class CamposPressupostosService {
+export class GravacaoDosCamposPressupostos {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly api = inject(ProcessosSeletivosApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly catalogos = inject(CatalogosDoCronogramaService);

@@ -11,11 +11,11 @@ import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { IdentificacaoStepComponent } from './identificacao.component';
-import { BuscaDeMunicipioService } from './servicos/busca-de-municipio.service';
+import { BuscaDeMunicipio } from './servicos/busca-de-municipio.service';
 import { CatalogoDeUnidadesService } from './servicos/catalogo-de-unidades.service';
 import { GravacaoDaIdentificacao } from './servicos/gravacao-da-identificacao.service';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 
 const BASE = 'http://localhost:5000';
@@ -68,7 +68,7 @@ function problema(status: number, code: string, title: string) {
 describe('IdentificacaoStepComponent', () => {
   let componente: IdentificacaoStepComponent;
   let unidades: CatalogoDeUnidadesService;
-  let municipio: BuscaDeMunicipioService;
+  let municipio: BuscaDeMunicipio;
   let gravacao: GravacaoDaIdentificacao;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
@@ -80,7 +80,7 @@ describe('IdentificacaoStepComponent', () => {
       imports: [IdentificacaoStepComponent],
       providers: [
         ProcessoSeletivoStore,
-        CadastroInicialService,
+        CadastroInicial,
         GravacaoDoProcesso,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
@@ -93,7 +93,7 @@ describe('IdentificacaoStepComponent', () => {
     const fixture = TestBed.createComponent(IdentificacaoStepComponent);
     componente = fixture.componentInstance;
     unidades = fixture.debugElement.injector.get(CatalogoDeUnidadesService);
-    municipio = fixture.debugElement.injector.get(BuscaDeMunicipioService);
+    municipio = fixture.debugElement.injector.get(BuscaDeMunicipio);
     gravacao = fixture.debugElement.injector.get(GravacaoDaIdentificacao);
     host = fixture.nativeElement as HTMLElement;
     detectar = () => fixture.detectChanges();

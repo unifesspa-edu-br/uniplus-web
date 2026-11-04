@@ -23,7 +23,7 @@ import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared
 import { StepValidation, WizardDraft } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { gravarNoPasso, respostaFoiDescartada } from '../../shared/gravacao/gravacao-no-passo';
 import {
   analisarValorEmReais,
@@ -50,7 +50,7 @@ import {
 export class PagamentoStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly api = inject(ProcessosSeletivosApi);
-  private readonly cadastro = inject(CadastroInicialService);
+  private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 

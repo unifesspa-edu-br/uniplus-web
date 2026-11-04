@@ -12,7 +12,7 @@ const MUNICIPIOS_LIMIT = 20;
 
 /** A busca do município que rege os prazos, na API Geo, e a escolha dele no rascunho. */
 @Injectable()
-export class BuscaDeMunicipioService {
+export class BuscaDeMunicipio {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly geo = inject(GeoApi);
   private readonly problemI18n = inject(ProblemI18nService);

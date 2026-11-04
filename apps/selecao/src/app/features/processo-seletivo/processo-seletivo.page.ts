@@ -28,10 +28,10 @@ import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { FocoDoEditor } from './editor/foco-do-editor.service';
 import { LeituraDoProcesso } from './editor/leitura-do-processo.service';
 import { RascunhoDaPublicacao } from './editor/rascunho-da-publicacao.service';
-import { CadastroInicialService } from './steps/shared/cadastro-inicial.service';
+import { CadastroInicial } from './steps/shared/cadastro-inicial.service';
 import { EnvioDoEdital } from './steps/shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from './steps/shared/gravacao/gravacao-do-processo';
-import { CamposPressupostosService } from './steps/shared/campos-pressupostos.service';
+import { GravacaoDosCamposPressupostos } from './steps/shared/campos-pressupostos.service';
 import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
 import { TipoProcessoStepComponent } from './steps/steps/tipo-processo/tipo-processo.component';
 import { IdentificacaoStepComponent } from './steps/steps/identificacao/identificacao.component';
@@ -85,10 +85,10 @@ import {
     ConducaoDoWizard,
     LeituraDoProcesso,
     GravacaoDoProcesso,
-    CadastroInicialService,
+    CadastroInicial,
     EnvioDoEdital,
     CatalogosDoCronogramaService,
-    CamposPressupostosService,
+    GravacaoDosCamposPressupostos,
     CatalogosDeClassificacaoService,
     AcompanhamentoDoCadastroDePesos,
     ReleituraDoSnapshot,
