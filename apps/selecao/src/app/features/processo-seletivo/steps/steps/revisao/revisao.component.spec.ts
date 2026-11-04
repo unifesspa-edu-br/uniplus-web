@@ -1007,7 +1007,7 @@ describe('RevisaoStepComponent', () => {
       fixture.detectChanges();
 
       expect(() => componente.validate()).not.toThrow();
-      expect(componente.form.controls.ano.value).toBe('2027');
+      expect(store.draft().publicacao.ato.ano).toBe('2027');
     });
 
     it('mantém o tipo de ato escolhido visível depois de uma recarga que falha e outra que dá certo', async () => {
@@ -1015,11 +1015,12 @@ describe('RevisaoStepComponent', () => {
       await criarProcesso();
       await flushPreflightVerde();
 
-      componente.form.controls.tipoAtoCodigo.setValue('PORTARIA');
       fixture.detectChanges();
-
       let select = fixture.nativeElement.querySelector('#rev-tipo-ato') as HTMLSelectElement;
-      expect(select?.value).toBe('PORTARIA');
+      select.value = 'PORTARIA';
+      select.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      expect(select.value).toBe('PORTARIA');
 
       // Recarga que falha — o `@else` inteiro sai da árvore, o `<select>` é destruído.
       clicarEm('Atualizar checklist');

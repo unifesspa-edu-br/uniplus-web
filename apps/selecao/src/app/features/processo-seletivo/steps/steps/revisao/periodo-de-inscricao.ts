@@ -1,7 +1,11 @@
 import type { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 
 import { FaseDoCronograma, WizardDraft } from '../../processo-seletivo.models';
-import { hojeNoFusoInstitucional, instanteDoCampo } from '../../shared/fuso-institucional';
+import {
+  hojeNoFusoInstitucional,
+  instanteDoCampo,
+  instanteLegivel,
+} from '../../shared/fuso-institucional';
 
 /** Sem catálogo à mão, só o que já foi hidratado do servidor decide — nunca `false` por omissão do parâmetro. */
 export const SEM_CATALOGO: ReadonlyMap<string, FaseCanonicaDto> = new Map();
@@ -72,4 +76,25 @@ export function dataReferenciaLegalDe(
 
   const instante = instanteDoCampo(draft.publicacao.periodoInscricaoInicio);
   return instante === null ? null : hojeNoFusoInstitucional(new Date(instante));
+}
+
+/** A fase que ancora o período de inscrição, pelo nome e com a janela dela em data e hora locais. */
+export interface JanelaDaInscricao {
+  readonly nome: string;
+  readonly janela: string | null;
+}
+
+export function janelaDaInscricao(
+  draft: WizardDraft,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+): JanelaDaInscricao | null {
+  const fase = faseQueAncoraOPeriodoDeInscricao(draft, fasePorId);
+  if (fase === null) return null;
+
+  const nome = fasePorId.get(fase.faseCanonicaId)?.nome ?? 'de inscrição';
+  const janela =
+    fase.inicio && fase.fim
+      ? `${instanteLegivel(fase.inicio)} até ${instanteLegivel(fase.fim)}`
+      : null;
+  return { nome, janela };
 }

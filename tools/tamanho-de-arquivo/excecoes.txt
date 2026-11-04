@@ -53,7 +53,6 @@
 481 apps/selecao/src/app/features/processo-seletivo/steps/steps/formulario/formulario-de-inscricao.ts
 556 apps/selecao/src/app/features/processo-seletivo/steps/steps/formulario/formulario.component.html
 1302 apps/selecao/src/app/features/processo-seletivo/steps/steps/formulario/formulario.component.ts
-481 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/revisao.component.html
 761 apps/selecao/src/styles.css
 637 libs/shared-ui/src/lib/components/editor-de-condicoes/condicoes-de-fatos.ts
 572 libs/shared-ui/src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos.ts
