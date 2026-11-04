@@ -146,7 +146,7 @@ export interface ProblemaDaCascata {
  * oferta — e o handler de gravação também não o rejeita, porque
  * `BateComEsquemaArgs` só confere a matriz contra o `esquemaArgs`, nunca
  * contra o quadro de vagas. Sem esta segunda checagem, o PUT aceita uma
- * cascata que o preflight de conformidade (`PendenciaDaCascata`) recusa na
+ * cascata que a prontidão de conformidade (`PendenciaDaCascata`) recusa na
  * publicação — silenciosamente, porque `GET /conformidade` não tem tela
  * própria ainda (Story #486).
  */
@@ -201,7 +201,7 @@ export function problemasDaCascata(
 /**
  * A matriz enviada é sempre inteira: origem ou destino que a regra declara e
  * nenhuma oferta do processo cobre torna o processo impublicável mesmo com o
- * PUT aceito — o handler de gravação não confere isso, só o preflight de
+ * PUT aceito — o handler de gravação não confere isso, só a prontidão de
  * conformidade, na publicação. `union` é deliberadamente **sobre todas as
  * ofertas**, diferente da checagem por oferta acima: uma origem pode ser
  * `SEGUE_CASCATA` na oferta A e o destino dela estar ofertado só na B.

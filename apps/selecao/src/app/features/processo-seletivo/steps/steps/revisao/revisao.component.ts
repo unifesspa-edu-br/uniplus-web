@@ -20,7 +20,7 @@ import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidad
 import { CatalogosDoCronograma } from '../cronograma/catalogos-do-cronograma.service';
 import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
 import { confirmacaoDaPublicacao } from './confirmacao-da-publicacao';
-import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
+import { ProntidaoDaPublicacao } from './prontidao-da-publicacao.service';
 import { AtoDaPublicacaoComponent } from './secoes/ato-da-publicacao.component';
 import { ConformidadeEstruturalComponent } from './secoes/conformidade-estrutural.component';
 import { ConformidadeLegalComponent } from './secoes/conformidade-legal.component';
@@ -58,14 +58,14 @@ function contagemEmTexto(quantidade: number, singular: string, plural: string): 
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provePassoDoWizard(RevisaoStepComponent),
-    PreflightDaPublicacaoService,
+    ProntidaoDaPublicacao,
     ConferenciaDaPublicacao,
     PublicacaoDoProcesso,
   ],
 })
 export class RevisaoStepComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly preflight = inject(PreflightDaPublicacaoService);
+  protected readonly prontidao = inject(ProntidaoDaPublicacao);
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
   protected readonly publicacao = inject(PublicacaoDoProcesso);
   private readonly permissoes = inject(PermissoesService);
@@ -116,7 +116,7 @@ export class RevisaoStepComponent {
       const id = this.store.processoSeletivoId();
       if (id === null || !this.store.isLast()) return;
       untracked(() => {
-        void this.preflight.recarregar(id, this.conferencia.dataReferenciaLegal());
+        void this.prontidao.recarregar(id, this.conferencia.dataReferenciaLegal());
       });
     });
   }
@@ -146,7 +146,7 @@ export class RevisaoStepComponent {
 
     return confirmacaoDaPublicacao(
       this.store.draft(),
-      this.preflight.tiposAto(),
+      this.prontidao.tiposAto(),
       this.catalogosDoCronograma.fasePorId(),
     );
   }

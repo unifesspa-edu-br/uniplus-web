@@ -175,7 +175,7 @@ describe('problemasDaCascata', () => {
    * deixar de cobrir uma origem ou destino que a matriz declara e nenhuma
    * oferta do processo usa: o handler de gravação aceita — só confere a
    * matriz contra o `esquemaArgs`, não contra o quadro de vagas — e o
-   * processo fica impublicável, porque o preflight de conformidade
+   * processo fica impublicável, porque a prontidão de conformidade
    * (`PendenciaDaCascata`/`ExisteCascataOrigemNaoSegueCascata`) recusa depois.
    * Esta checagem é o que evita o PUT aceitar essa configuração calada.
    */

@@ -76,7 +76,7 @@
       <label class="label" for="rev-tipo-ato">Tipo de ato</label>
       <select class="input" id="rev-tipo-ato" formControlName="tipoAtoCodigo">
         <option value="">— escolher —</option>
-        @for (tipo of preflight.tiposAto(); track tipo.codigo) {
+        @for (tipo of prontidao.tiposAto(); track tipo.codigo) {
           <option [value]="tipo.codigo">{{ tipo.nome }} ({{ tipo.codigo }})</option>
         }
       </select>

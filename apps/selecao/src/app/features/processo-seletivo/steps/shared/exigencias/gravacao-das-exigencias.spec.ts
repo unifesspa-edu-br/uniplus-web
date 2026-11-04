@@ -68,7 +68,7 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
   /**
    * O recorte esvaziado pelo quadro de vagas NÃO vira "exigido de todos": alargar em silêncio o
    * alcance de um documento é decisão de negócio que ninguém tomou. A cláusula sai — o agregado
-   * recusa cláusula vazia —, a aplicabilidade declarada permanece, e o preflight acusa que a
+   * recusa cláusula vazia —, a aplicabilidade declarada permanece, e a prontidão acusa que a
    * exigência não alcança modalidade nenhuma.
    */
   it('recorte esvaziado pelo quadro de vagas não alarga o alcance sozinho', () => {

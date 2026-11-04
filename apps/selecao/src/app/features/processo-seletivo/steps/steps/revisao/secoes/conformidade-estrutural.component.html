@@ -5,10 +5,10 @@
     <button
       class="btn btn--sm btn--ghost"
       type="button"
-      [disabled]="preflight.carregando()"
+      [disabled]="prontidao.carregando()"
       (click)="conferencia.atualizar()"
     >
-      {{ preflight.carregando() ? 'Atualizando…' : 'Atualizar checklist' }}
+      {{ prontidao.carregando() ? 'Atualizando…' : 'Atualizar checklist' }}
     </button>
   }
 </div>

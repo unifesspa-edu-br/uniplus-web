@@ -15,7 +15,7 @@ import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.service';
 import { itensDoAto, rotuloDoTipoDeAto } from '../itens-do-ato';
 import { janelaDaInscricao, temFaseDeColetaInscricao } from '../periodo-de-inscricao';
-import { PreflightDaPublicacaoService } from '../preflight-da-publicacao.service';
+import { ProntidaoDaPublicacao } from '../prontidao-da-publicacao.service';
 import { ConferenciaDaPublicacao } from '../servicos/conferencia-da-publicacao.service';
 import { PublicacaoDoProcesso } from '../servicos/publicacao-do-processo.service';
 
@@ -39,7 +39,7 @@ import { PublicacaoDoProcesso } from '../servicos/publicacao-do-processo.service
 })
 export class AtoDaPublicacaoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
-  protected readonly preflight = inject(PreflightDaPublicacaoService);
+  protected readonly prontidao = inject(ProntidaoDaPublicacao);
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
   protected readonly publicacao = inject(PublicacaoDoProcesso);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
@@ -88,7 +88,7 @@ export class AtoDaPublicacaoComponent {
     return itensDoAto({
       ...ato,
       numero: numero.trim() || 'Não informado',
-      tipo: rotuloDoTipoDeAto(this.preflight.tiposAto(), ato.tipoAtoCodigo),
+      tipo: rotuloDoTipoDeAto(this.prontidao.tiposAto(), ato.tipoAtoCodigo),
       dataPublicacao: ato.dataPublicacao ? this.dataBr.transform(ato.dataPublicacao) : '',
     });
   });
@@ -99,7 +99,7 @@ export class AtoDaPublicacaoComponent {
     if (leitura?.estado !== 'lido') return [];
 
     const { ato } = leitura;
-    const tipo = this.preflight.tiposAto().find((item) => item.codigo === ato.tipoCodigo);
+    const tipo = this.prontidao.tiposAto().find((item) => item.codigo === ato.tipoCodigo);
     return itensDoAto({
       ...ato,
       numero: ato.numero?.trim() || 'não informado',
@@ -129,9 +129,9 @@ export class AtoDaPublicacaoComponent {
    */
   private limparTipoDeAtoForaDoCatalogo(): void {
     effect(() => {
-      const carregando = this.preflight.carregando();
-      const erro = this.preflight.erro();
-      const tipos = this.preflight.tiposAto();
+      const carregando = this.prontidao.carregando();
+      const erro = this.prontidao.erro();
+      const tipos = this.prontidao.tiposAto();
       if (carregando || erro !== null) return;
 
       untracked(() => {

@@ -1717,7 +1717,7 @@ describe('FaseStepComponent', () => {
     });
 
     /**
-     * A recusa de quem JÁ tem o reenvio gravado é conferida no preflight do Cronograma, não
+     * A recusa de quem JÁ tem o reenvio gravado é conferida na prontidão do Cronograma, não
      * aqui: esta superfície é embutida com `faseFixada` e o `validate()` dela nunca é chamado
      * pela página. O teste correspondente vive em `cronograma.component.spec.ts`.
      */

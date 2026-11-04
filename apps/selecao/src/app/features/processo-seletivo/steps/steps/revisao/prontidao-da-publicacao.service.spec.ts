@@ -11,7 +11,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { TipoAtoPublicadoDto, TiposAtoApi } from '@uniplus/shared-data/publicacoes';
 
-import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
+import { ProntidaoDaPublicacao } from './prontidao-da-publicacao.service';
 
 const PROCESSO_ID = '01960000-0000-7000-0000-000000000700';
 
@@ -65,21 +65,21 @@ function montar(overrides?: {
 
   TestBed.configureTestingModule({
     providers: [
-      PreflightDaPublicacaoService,
+      ProntidaoDaPublicacao,
       { provide: PublicacaoDoProcessoApi, useValue: { obterConformidade, obterConformidadeLegal } },
       { provide: TiposAtoApi, useValue: { listar: listarTiposAto } },
     ],
   });
 
   return {
-    servico: TestBed.inject(PreflightDaPublicacaoService),
+    servico: TestBed.inject(ProntidaoDaPublicacao),
     obterConformidade,
     obterConformidadeLegal,
     listarTiposAto,
   };
 }
 
-describe('PreflightDaPublicacaoService', () => {
+describe('ProntidaoDaPublicacao', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('carrega os três insumos e expõe cada um em seu próprio signal', async () => {

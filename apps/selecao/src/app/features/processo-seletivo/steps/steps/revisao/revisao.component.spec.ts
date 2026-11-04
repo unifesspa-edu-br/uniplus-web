@@ -33,7 +33,7 @@ import {
   SNAPSHOT_DTO,
   criarProcesso,
   flushMicrotasks,
-  flushPreflightVerde,
+  flushProntidaoVerde,
   montarOCenario,
   prepararCamposLocais,
   CenarioDaRevisao,
@@ -92,7 +92,7 @@ describe('RevisaoStepComponent', () => {
 
     async function abrirRevisao(): Promise<string> {
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
       fixture.detectChanges();
       return (fixture.nativeElement as HTMLElement).textContent ?? '';
     }
@@ -193,7 +193,7 @@ describe('RevisaoStepComponent', () => {
     it('resume os dados do ato quando válido', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const confirmacao = componente.confirmacaoDeGravacao();
       expect(confirmacao).not.toBeNull();
@@ -392,7 +392,7 @@ describe('RevisaoStepComponent', () => {
     async function abrirPublicado(): Promise<void> {
       store.remoteSnapshot.set(PROCESSO_DTO_MINIMO as never);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
     }
 
     function texto(): string {
@@ -471,7 +471,7 @@ describe('RevisaoStepComponent', () => {
     it('depois de publicar nesta sessão, lê o ato pelo snapshot já relido', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const gravacao = componente.persistir();
       controller.expectOne(ROTA_PUBLICACAO).flush(null, { status: 204, statusText: 'No Content' });
@@ -495,7 +495,7 @@ describe('RevisaoStepComponent', () => {
       async (status) => {
         store.remoteSnapshot.set({ ...PROCESSO_DTO_MINIMO, status } as never);
         await criarProcesso(cenario);
-        await flushPreflightVerde(cenario);
+        await flushProntidaoVerde(cenario);
         fixture.detectChanges();
 
         controller.expectNone(ROTA_SNAPSHOT);
@@ -512,7 +512,7 @@ describe('RevisaoStepComponent', () => {
 
   it('nomeia as seções da conferência como regiões pelo título de cada uma', async () => {
     await criarProcesso(cenario);
-    await flushPreflightVerde(cenario);
+    await flushProntidaoVerde(cenario);
     fixture.detectChanges();
 
     const raiz = fixture.nativeElement as HTMLElement;

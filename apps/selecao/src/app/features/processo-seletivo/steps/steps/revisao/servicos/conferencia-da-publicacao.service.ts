@@ -7,7 +7,7 @@ import { CatalogosDoCronograma } from '../../cronograma/catalogos-do-cronograma.
 import { mensagensDePublicacao } from '../comando-de-publicacao';
 import { dataReferenciaLegalDe } from '../periodo-de-inscricao';
 import { agruparPorDimensao, comoAvisosDaRevisao, comoGruposDaRevisao } from '../grupos-da-revisao';
-import { PreflightDaPublicacaoService } from '../preflight-da-publicacao.service';
+import { ProntidaoDaPublicacao } from '../prontidao-da-publicacao.service';
 import {
   comoRecusaDePublicacao,
   ObrigatoriedadeReprovadaProblem,
@@ -27,7 +27,7 @@ function recusado(mensagem: string): StepValidation {
 @Injectable()
 export class ConferenciaDaPublicacao {
   private readonly store = inject(ProcessoSeletivoStore);
-  private readonly preflight = inject(PreflightDaPublicacaoService);
+  private readonly prontidao = inject(ProntidaoDaPublicacao);
   private readonly catalogosDoCronograma = inject(CatalogosDoCronograma);
 
   /** A última recusa da publicação, ou `null` enquanto não houve tentativa (ou ela publicou). */
@@ -36,7 +36,7 @@ export class ConferenciaDaPublicacao {
   /** Os itens do checklist estrutural em tela; `null` enquanto nada foi lido. */
   private readonly itensEstruturais = computed(() => {
     const recusa = this.ultimaRecusa();
-    if (recusa === null) return this.preflight.estrutural();
+    if (recusa === null) return this.prontidao.estrutural();
     return recusa.pendencias.map((pendencia) => ({ ...pendencia, ok: false }));
   });
 
@@ -47,7 +47,7 @@ export class ConferenciaDaPublicacao {
     const daRecusa = this.ultimaRecusa()?.obrigatoriedadesReprovadas;
     if (daRecusa !== null && daRecusa !== undefined) return daRecusa;
 
-    const legal = this.preflight.legal();
+    const legal = this.prontidao.legal();
     if (legal === null) return null;
     return legal.regras.filter((regra) => !regra.aprovada);
   });
@@ -58,7 +58,7 @@ export class ConferenciaDaPublicacao {
   });
 
   /** Avisos que não impedem publicar: nunca entram em `estruturalOk()` nem em `validate()`. */
-  readonly avisosDaRevisao = computed(() => comoAvisosDaRevisao(this.preflight.avisos()));
+  readonly avisosDaRevisao = computed(() => comoAvisosDaRevisao(this.prontidao.avisos()));
 
   readonly estruturalOk = computed(
     () => this.itensEstruturais()?.every((item) => item.ok) ?? false,
@@ -75,8 +75,8 @@ export class ConferenciaDaPublicacao {
    */
   readonly legalDesatualizada = computed(
     () =>
-      this.preflight.legal() !== null &&
-      this.preflight.dataReferenciaCarregada() !== this.dataReferenciaLegal(),
+      this.prontidao.legal() !== null &&
+      this.prontidao.dataReferenciaCarregada() !== this.dataReferenciaLegal(),
   );
 
   /** O edital confirmado escolhido para a publicação, ou `null` enquanto não há um só vinculado. */
@@ -131,7 +131,7 @@ export class ConferenciaDaPublicacao {
     const id = this.store.processoSeletivoId();
     if (id === null) return;
     this.descartarRecusa();
-    await this.preflight.recarregar(id, this.dataReferenciaLegal());
+    await this.prontidao.recarregar(id, this.dataReferenciaLegal());
   }
 
   /** O que falta nesta tela: campo em branco, checklist reprovado ou documento ainda não escolhido. */
@@ -140,10 +140,10 @@ export class ConferenciaDaPublicacao {
       return recusado('Conclua a identificação do processo antes de revisar a conformidade.');
     }
 
-    const erroDoPreflight = this.preflight.erro();
-    if (erroDoPreflight !== null) return recusado(erroDoPreflight);
+    const erroDaProntidao = this.prontidao.erro();
+    if (erroDaProntidao !== null) return recusado(erroDaProntidao);
 
-    if (this.preflight.carregando() || this.preflight.estrutural() === null) {
+    if (this.prontidao.carregando() || this.prontidao.estrutural() === null) {
       return recusado('Aguarde o carregamento do checklist de conformidade.');
     }
 
@@ -164,7 +164,7 @@ export class ConferenciaDaPublicacao {
       messages.push('Há pendências estruturais no checklist. Corrija-as antes de publicar.');
     }
 
-    const legalIndisponivel = this.preflight.legalIndisponivel();
+    const legalIndisponivel = this.prontidao.legalIndisponivel();
     if (legalIndisponivel !== null) {
       // Dizer "há obrigatoriedades reprovadas" mandaria procurar uma reprovação que não existe.
       messages.push(legalIndisponivel);

@@ -2881,7 +2881,7 @@ describe('CronogramaStepComponent', () => {
   });
 
   /**
-   * O preflight do passo espelha a recusa da publicação sobre a norma da exigência. A
+   * A prontidão do passo espelha a recusa da publicação sobre a norma da exigência. A
    * conferência em si é função pura e já tinha teste; o que faltava — e por isso a ligação
    * entre o rascunho e ela pôde quebrar em silêncio numa refatoração — era provar que o
    * componente de fato ENXERGA as exigências declaradas.

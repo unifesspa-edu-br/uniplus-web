@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { ehEnderecoNavegavel } from '../endereco-navegavel';
-import { PreflightDaPublicacaoService } from '../preflight-da-publicacao.service';
+import { ProntidaoDaPublicacao } from '../prontidao-da-publicacao.service';
 import { ConferenciaDaPublicacao } from '../servicos/conferencia-da-publicacao.service';
 
 /** A conformidade legal da publicação: as obrigatoriedades reprovadas, com a norma que as reprovou. */
@@ -18,7 +18,7 @@ import { ConferenciaDaPublicacao } from '../servicos/conferencia-da-publicacao.s
   },
 })
 export class ConformidadeLegalComponent {
-  protected readonly preflight = inject(PreflightDaPublicacaoService);
+  protected readonly prontidao = inject(ProntidaoDaPublicacao);
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
 
   protected readonly ehEnderecoNavegavel = ehEnderecoNavegavel;

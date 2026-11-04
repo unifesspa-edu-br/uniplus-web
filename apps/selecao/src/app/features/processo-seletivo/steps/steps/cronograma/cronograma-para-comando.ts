@@ -11,7 +11,7 @@ import { decimalDoCampo } from '../../shared/numero-do-campo';
  * Se a janela recursal da etapa tem regra resolvida contra o catálogo — só essas viajam no
  * comando.
  *
- * Exportada porque o preflight do passo precisa do MESMO predicado para avisar o operador:
+ * Exportada porque a prontidão do passo precisa do MESMO predicado para avisar o operador:
  * quando a conferência e o mapeador divergem, a tela aprova o que a gravação descarta.
  */
 export function recursoResolvido(recurso: {
@@ -124,7 +124,7 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     bancas: etapa.bancas.map((tipoBancaId) => ({ tipoBancaId })),
     // Janela sem regra resolvida não viaja: o catálogo ainda não respondeu, e mandá-la
     // devolveria uma recusa de campo que o operador não sabe ligar ao que fez. Quem avisa
-    // que ela ficou de fora é `problemasDasEtapas`, no preflight do passo — sumir com o
+    // que ela ficou de fora é `problemasDasEtapas`, na prontidão do passo — sumir com o
     // trabalho do operador em silêncio era o defeito anterior.
     recursos: etapa.recursos.filter(recursoResolvido).map((recurso) => ({
       ancora: recurso.ancora as NonNullable<EtapaProcessoInput['recursos']>[number]['ancora'],

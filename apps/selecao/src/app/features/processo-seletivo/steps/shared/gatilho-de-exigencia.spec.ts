@@ -497,7 +497,7 @@ describe('o recorte por modalidade e o alcance declarado', () => {
   /**
    * O defeito que este teste fixa: remarcar todas as modalidades tirava a cláusula e deixava a
    * aplicabilidade em "de quem satisfaz". Sem condição nenhuma, isso é "cobrada de ninguém" —
-   * o documento sumia do edital para todo mundo, sem nada na tela nem no preflight.
+   * o documento sumia do edital para todo mundo, sem nada na tela nem no prontidao.
    */
   it('marcar todas as modalidades devolve o documento a todo candidato', () => {
     const restrita = comModalidades(exigencia(), ['LB_PPI']);

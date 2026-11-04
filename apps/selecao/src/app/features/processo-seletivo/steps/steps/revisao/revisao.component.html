@@ -73,14 +73,14 @@
     </p>
   }
 } @else {
-  @if (preflight.erro(); as erro) {
+  @if (prontidao.erro(); as erro) {
     <div class="alert alert--danger" role="alert">
       <p>{{ erro }}</p>
       <button class="btn btn--sm btn--secondary" type="button" (click)="conferencia.atualizar()">
         Tentar novamente
       </button>
     </div>
-  } @else if (preflight.carregando() && conferencia.gruposEstruturais() === null) {
+  } @else if (prontidao.carregando() && conferencia.gruposEstruturais() === null) {
     <p class="alert alert--info" role="status">Carregando o checklist de conformidade…</p>
   } @else {
     @if (regrasDasModalidades().length > 0) {

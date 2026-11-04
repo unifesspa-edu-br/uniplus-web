@@ -12,7 +12,7 @@ import {
   atoCompleto,
   criarProcesso,
   flushMicrotasks,
-  flushPreflightVerde,
+  flushProntidaoVerde,
   montarOCenario,
   prepararCamposLocais,
   CenarioDaRevisao,
@@ -39,7 +39,7 @@ describe('RevisaoStepComponent — conferência', () => {
       expect(componente.validate().valid).toBe(false);
     });
 
-    it('recusa enquanto o preflight ainda carrega', async () => {
+    it('recusa enquanto a prontidão ainda carrega', async () => {
       await criarProcesso(cenario);
       expect(componente.validate().valid).toBe(false);
 
@@ -71,17 +71,17 @@ describe('RevisaoStepComponent — conferência', () => {
     it('recusa sem documento confirmado escolhido', async () => {
       await criarProcesso(cenario);
       store.patchObjectSection('publicacao', { ato: atoCompleto() });
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const resultado = componente.validate();
       expect(resultado.valid).toBe(false);
       expect(resultado.messages?.some((m) => m.includes('documento'))).toBe(true);
     });
 
-    it('válido com preflight verde, documento confirmado e ato completo', async () => {
+    it('válido com prontidão verde, documento confirmado e ato completo', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       expect(componente.validate()).toEqual({ valid: true });
     });
@@ -95,7 +95,7 @@ describe('RevisaoStepComponent — conferência', () => {
     it('recusa quando a data de referência mudou depois do último carregamento do checklist legal', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
       expect(componente.validate()).toEqual({ valid: true });
 
       // Sem fase de coleta nestes testes — a data de referência vem do campo.
@@ -119,7 +119,7 @@ describe('RevisaoStepComponent — conferência', () => {
       traceId: 't',
     };
 
-    async function flushPreflightComPendenciaLegal(): Promise<void> {
+    async function flushProntidaoComPendenciaLegal(): Promise<void> {
       controller.expectOne(ROTA_CONFORMIDADE).flush(CONFORMIDADE_VERDE);
       controller
         .expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL)
@@ -141,7 +141,7 @@ describe('RevisaoStepComponent — conferência', () => {
     it('mantém em tela o campo de período, que é o que destrava a avaliação', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightComPendenciaLegal();
+      await flushProntidaoComPendenciaLegal();
       fixture.detectChanges();
 
       const html: HTMLElement = fixture.nativeElement;
@@ -154,7 +154,7 @@ describe('RevisaoStepComponent — conferência', () => {
     it('anuncia o motivo do servidor, sem oferecer "Tentar novamente"', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightComPendenciaLegal();
+      await flushProntidaoComPendenciaLegal();
       fixture.detectChanges();
 
       const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -165,7 +165,7 @@ describe('RevisaoStepComponent — conferência', () => {
     it('recusa a publicação com o motivo, e não com "obrigatoriedades reprovadas"', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightComPendenciaLegal();
+      await flushProntidaoComPendenciaLegal();
 
       const resultado = componente.validate();
       expect(resultado.valid).toBe(false);
@@ -181,7 +181,7 @@ describe('RevisaoStepComponent — conferência', () => {
   it('esquece a recusa da publicação quando o editor passa a outro processo', async () => {
     prepararCamposLocais(cenario);
     await criarProcesso(cenario);
-    await flushPreflightVerde(cenario);
+    await flushProntidaoVerde(cenario);
 
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_PUBLICACAO).flush(

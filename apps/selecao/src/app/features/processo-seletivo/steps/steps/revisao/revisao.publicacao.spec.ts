@@ -15,7 +15,7 @@ import {
   SNAPSHOT_DTO,
   criarProcesso,
   flushMicrotasks,
-  flushPreflightVerde,
+  flushProntidaoVerde,
   montarOCenario,
   prepararCamposLocais,
   publicacaoDe,
@@ -46,7 +46,7 @@ describe('RevisaoStepComponent — publicação', () => {
     it('publica, relê /{id} e /snapshot-vigente, e hidrata o store como publicado', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const gravacao = componente.persistir();
 
@@ -81,7 +81,7 @@ describe('RevisaoStepComponent — publicação', () => {
     it('hidrata o detalhe publicado mesmo quando a releitura do snapshot falha', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const gravacao = componente.persistir();
       controller.expectOne(ROTA_PUBLICACAO).flush(null, { status: 204, statusText: 'No Content' });
@@ -113,7 +113,7 @@ describe('RevisaoStepComponent — publicação', () => {
     it('mantém a tela travada quando a releitura pós-204 ainda mostra rascunho', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const gravacao = componente.persistir();
       controller.expectOne(ROTA_PUBLICACAO).flush(null, { status: 204, statusText: 'No Content' });
@@ -171,7 +171,7 @@ describe('RevisaoStepComponent — publicação', () => {
       store.patchObjectSection('cronograma', { fases: [faseSemCongelados] });
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       // A tela não pode cobrar o período: a fase de coleta existe, só ainda
       // não foi relida do servidor.
@@ -193,7 +193,7 @@ describe('RevisaoStepComponent — publicação', () => {
     it('em 422 estrutural, guarda as pendências da extension e não marca como publicado', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const gravacao = componente.persistir();
       controller.expectOne(ROTA_PUBLICACAO).flush(
@@ -225,7 +225,7 @@ describe('RevisaoStepComponent — publicação', () => {
     it('em 422 com a escala da nota final pendente, avisa o campo do passo Fórmula', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const gravacao = componente.persistir();
       controller.expectOne(ROTA_PUBLICACAO).flush(
@@ -262,7 +262,7 @@ describe('RevisaoStepComponent — publicação', () => {
     it('em 422 de conformidade legal, guarda as obrigatoriedades reprovadas', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const gravacao = componente.persistir();
       controller.expectOne(ROTA_PUBLICACAO).flush(
@@ -310,7 +310,7 @@ describe('RevisaoStepComponent — publicação', () => {
       });
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const gravacao = componente.persistir();
       controller.expectOne(ROTA_PUBLICACAO).flush(
@@ -358,7 +358,7 @@ describe('RevisaoStepComponent — publicação', () => {
     it('em erro nomeado de documento/ato, marca o bloco próprio sem tocar nos dois checklists', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const gravacao = componente.persistir();
       controller.expectOne(ROTA_PUBLICACAO).flush(
@@ -388,7 +388,7 @@ describe('RevisaoStepComponent — publicação', () => {
     it('a segunda tentativa depois de um 422 usa uma Idempotency-Key diferente (CA-07)', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const primeira = componente.persistir();
       const requisicao1 = controller.expectOne(ROTA_PUBLICACAO);
@@ -426,7 +426,7 @@ describe('RevisaoStepComponent — publicação', () => {
     it('marca salvando() true durante o comando em curso, e false ao concluir', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       const gravacao = componente.persistir();
       expect(store.salvando()).toBe(true);
@@ -444,7 +444,7 @@ describe('RevisaoStepComponent — publicação', () => {
   it('esquece a publicação confirmada quando o editor passa a outro processo', async () => {
     prepararCamposLocais(cenario);
     await criarProcesso(cenario);
-    await flushPreflightVerde(cenario);
+    await flushProntidaoVerde(cenario);
 
     const gravacao = componente.persistir();
     controller.expectOne(ROTA_PUBLICACAO).flush(null, { status: 204, statusText: 'No Content' });

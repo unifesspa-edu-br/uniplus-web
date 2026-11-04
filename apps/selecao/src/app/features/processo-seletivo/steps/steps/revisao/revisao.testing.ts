@@ -253,7 +253,7 @@ export function flushMicrotasks(): Promise<void> {
 }
 
 /**
- * O `effect()` que dispara o preflight roda no scheduler do Angular. Ele recarrega ao entrar no
+ * O `effect()` que dispara a prontidão roda no scheduler do Angular. Ele recarrega ao entrar no
  * passo, e a Revisão é sempre o último, então o cenário também precisa estar lá.
  */
 export async function criarProcesso(cenario: CenarioDaRevisao): Promise<void> {
@@ -263,7 +263,7 @@ export async function criarProcesso(cenario: CenarioDaRevisao): Promise<void> {
   cenario.fixture.detectChanges();
 }
 
-/** Prepara o rascunho com tudo que a conferência local cobra, exceto o preflight do servidor. */
+/** Prepara o rascunho com tudo que a conferência local cobra, exceto a prontidão do servidor. */
 export function prepararCamposLocais(cenario: CenarioDaRevisao): void {
   cenario.store.patchObjectSection('identificacao', { uploads: [edital('confirmado')] });
   cenario.store.patchObjectSection('publicacao', {
@@ -290,7 +290,7 @@ export function clicarEm(cenario: CenarioDaRevisao, texto: string): void {
   botao?.click();
 }
 
-export async function flushPreflightVerde(cenario: CenarioDaRevisao): Promise<void> {
+export async function flushProntidaoVerde(cenario: CenarioDaRevisao): Promise<void> {
   cenario.controller.expectOne(ROTA_CONFORMIDADE).flush(CONFORMIDADE_VERDE);
   cenario.controller
     .expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL)

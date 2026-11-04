@@ -1,13 +1,13 @@
 <h2 id="revisao-legal-titulo" class="step-section__title">Conformidade legal</h2>
 
 <!-- A conformidade legal vale para uma data: a norma vigente naquele dia. -->
-@if (preflight.legal(); as legal) {
+@if (prontidao.legal(); as legal) {
   <p class="field__hint">
     Avaliada contra a data de {{ legal.dataReferencia | dateBr }}, que é a da publicação do ato.
   </p>
 }
 
-@if (preflight.legalIndisponivel(); as motivo) {
+@if (prontidao.legalIndisponivel(); as motivo) {
   <!-- Pendência do rascunho, não falha de carga: "Tentar novamente" não a resolveria. -->
   <p class="alert alert--info" role="status">{{ motivo }}</p>
 } @else if (conferencia.legalOk()) {
@@ -48,7 +48,7 @@
   </ul>
 }
 
-@if (preflight.legal(); as legal) {
+@if (prontidao.legal(); as legal) {
   @if (legal.avisos.length > 0) {
     <ul class="revisao-list">
       @for (aviso of legal.avisos; track aviso) {

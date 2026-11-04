@@ -23,7 +23,7 @@ import {
   clicarEm,
   criarProcesso,
   flushMicrotasks,
-  flushPreflightVerde,
+  flushProntidaoVerde,
   montarOCenario,
   prepararCamposLocais,
   CenarioDaRevisao,
@@ -59,7 +59,7 @@ describe('RevisaoStepComponent — ato e período', () => {
         status: StatusProcesso.cancelado,
       } as never);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
       fixture.detectChanges();
 
       expect(valorDaLinha('Número do ato')).toBe('Não informado');
@@ -70,7 +70,7 @@ describe('RevisaoStepComponent — ato e período', () => {
       cenario.respostaDoAto = of(apiOk({ ...ATO_PUBLICADO, numero: null }, 200, new HttpHeaders()));
       store.remoteSnapshot.set(PROCESSO_DTO_MINIMO as never);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
       controller.expectOne(ROTA_SNAPSHOT).flush(SNAPSHOT_DTO);
       await flushMicrotasks();
       fixture.detectChanges();
@@ -90,7 +90,7 @@ describe('RevisaoStepComponent — ato e período', () => {
     it('valida sem estourar quando o ano é digitado no campo, e não posto no controle', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
       fixture.detectChanges();
 
       const ano = fixture.nativeElement.querySelector('#rev-ano') as HTMLInputElement;
@@ -103,14 +103,14 @@ describe('RevisaoStepComponent — ato e período', () => {
     });
 
     /**
-     * O formulário só existe dentro do `@else` de `preflight.erro()`: uma recarga que falha
+     * O formulário só existe dentro do `@else` de `prontidao.erro()`: uma recarga que falha
      * destrói o `<select>`, e a seguinte o recria. A seleção sobrevive porque o rascunho é a fonte
      * e o `formControlName` reaplica o valor a cada `<option>` que se registra.
      */
     it('mantém o tipo de ato escolhido visível depois de uma recarga que falha e outra que dá certo', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
 
       fixture.detectChanges();
       let select = fixture.nativeElement.querySelector('#rev-tipo-ato') as HTMLSelectElement;
@@ -182,7 +182,7 @@ describe('RevisaoStepComponent — ato e período', () => {
       );
       store.patchObjectSection('cronograma', { fases: [faseDeInscricao] });
       await criarProcesso(cenario);
-      await flushPreflightVerde(cenario);
+      await flushProntidaoVerde(cenario);
       fixture.detectChanges();
 
       const aviso = (fixture.nativeElement as HTMLElement).textContent ?? '';
