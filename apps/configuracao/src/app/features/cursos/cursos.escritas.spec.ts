@@ -4,9 +4,8 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, CursoDto } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CursosPage } from './cursos.page';
 import { EdicaoDosCursos } from './edicao-dos-cursos';
 
@@ -116,41 +115,27 @@ describe('CursosPage — escritas pela interface', () => {
   const drawerDoFormulario = (): HTMLDialogElement =>
     elemento<HTMLDialogElement>('dialog[aria-label="Formulário de curso"]');
 
-  const gravacaoRecusada = (): [string, object] => [
-    JSON.stringify({
-      type: 'about:blank',
-      title: 'Dados inválidos',
-      status: 422,
-      code: 'uniplus.validacao',
-      traceId: 'test-trace',
-      errors: [
-        {
-          field: 'Nome',
-          code: 'uniplus.configuracao.curso.nome_invalido',
-          message: 'Nome fora do padrão do catálogo.',
-        },
-      ],
-    }),
-    {
-      status: 422,
-      statusText: 'Unprocessable Entity',
-      headers: { 'content-type': 'application/problem+json' },
-    },
-  ];
-
-  it('gravação pendente deixa indisponível salvar, cancelar e fechar o formulário', async () => {
+  it('gravação pendente deixa o formulário somente leitura e impede fechar', async () => {
     await preencherNovoCurso();
-    enviarFormulario();
+    const salvar = elemento<HTMLButtonElement>('button[form="cfg-curso-form"]');
+    salvar.focus();
+    salvar.click();
     const post = controller.expectOne(ESCRITA_URL);
     await propagar();
 
-    expect(elemento<HTMLButtonElement>('button[form="cfg-curso-form"]').disabled).toBe(true);
+    // Somente leitura: os valores ficam, os campos não aceitam edição e o foco segue no botão.
+    expect(elemento<HTMLInputElement>('input[formcontrolname="codigo"]').disabled).toBe(true);
+    expect(elemento<HTMLInputElement>('input[formcontrolname="codigo"]').value).toBe('DIR');
+    expect(salvar.getAttribute('aria-disabled')).toBe('true');
+    expect(salvar.getAttribute('aria-busy')).toBe('true');
+    expect(salvar.textContent).toContain('Salvando...');
+    expect(document.activeElement).toBe(salvar);
+    // Cancelar, X e Esc ficam indisponíveis.
     expect(botao('.cfg-form-footer button', 'Cancelar').disabled).toBe(true);
     expect(
       drawerDoFormulario().querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')
         ?.disabled,
     ).toBe(true);
-    // Esc: o <dialog> emite `cancel`; com a escrita em curso o drawer recusa fechar.
     drawerDoFormulario().dispatchEvent(new Event('cancel', { cancelable: true }));
     await propagar();
     expect(edicao.aberto()).toBe(true);
@@ -161,19 +146,26 @@ describe('CursosPage — escritas pela interface', () => {
     await responderLista([cursoSeed]);
   });
 
-  it('remoção pendente deixa o botão de salvar desabilitado', async () => {
+  it('remoção pendente mostra "Removendo", indisponibiliza os acionadores e não vira salvamento', async () => {
     await pedirRemocao();
     const remocao = controller.expectOne(`${ESCRITA_URL}/${cursoSeed.id}`);
+    await propagar();
 
-    await preencherNovoCurso();
-    const salvar = elemento<HTMLButtonElement>('button[form="cfg-curso-form"]');
-    expect(salvar.disabled).toBe(true);
-    salvar.click();
+    expect(elemento('.panel-head').textContent).toContain('Removendo');
+    expect(edicao.salvando()).toBe(false);
+    expect(edicao.removendo()).toBe(true);
+    expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(true);
+    expect(elemento<HTMLButtonElement>('button[aria-label="Editar curso ENG-CIV"]').disabled).toBe(
+      true,
+    );
+    expect(elemento<HTMLButtonElement>('button[aria-label="Remover curso ENG-CIV"]').disabled).toBe(
+      true,
+    );
 
-    controller.expectNone(ESCRITA_URL);
     remocao.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
     await responderLista([]);
+    expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(false);
   });
 
   describe('trava da classe de edição contra chamadas concorrentes', () => {
@@ -214,38 +206,6 @@ describe('CursosPage — escritas pela interface', () => {
     });
   });
 
-  describe('resposta de uma abertura anterior do formulário', () => {
-    it('sucesso não fecha nem altera o formulário aberto depois, mas atualiza a lista', async () => {
-      const notificacoes = vi.spyOn(TestBed.inject(NotificationService), 'success');
-      await preencherNovoCurso();
-      edicao.salvar();
-      const post = controller.expectOne(ESCRITA_URL);
-
-      edicao.abrirEdicao(cursoSeed);
-      post.flush('novo-id', { status: 201, statusText: 'Created' });
-      await propagar();
-
-      expect(notificacoes).toHaveBeenCalledWith('Curso criado');
-      expect(edicao.aberto()).toBe(true);
-      expect(edicao.modo()).toBe('editar');
-      expect(edicao.form.controls.codigo.value).toBe('ENG-CIV');
-      await responderLista([cursoSeed]);
-    });
-
-    it('recusa não marca campo do formulário aberto depois', async () => {
-      await preencherNovoCurso();
-      edicao.salvar();
-      const post = controller.expectOne(ESCRITA_URL);
-
-      edicao.abrirCadastro();
-      post.flush(...gravacaoRecusada());
-      await propagar();
-
-      expect(edicao.form.controls.nome.errors?.['backend']).toBeUndefined();
-      expect(edicao.erro()).toBeNull();
-    });
-  });
-
   it('recusa do servidor é mostrada no campo recusado', async () => {
     await preencherNovoCurso();
     enviarFormulario();
@@ -270,5 +230,48 @@ describe('CursosPage — escritas pela interface', () => {
       'Nome fora do padrão do catálogo.',
     );
     expect(elemento('input[formcontrolname="nome"]').getAttribute('aria-invalid')).toBe('true');
+  });
+
+  describe('foco', () => {
+    it('após a recusa, vai do botão de salvar ao primeiro campo recusado', async () => {
+      await preencherNovoCurso();
+      const salvar = elemento<HTMLButtonElement>('button[form="cfg-curso-form"]');
+      salvar.focus();
+      salvar.click();
+      await propagar();
+      recusar({
+        type: 'about:blank',
+        title: 'Dados inválidos',
+        status: 422,
+        code: 'uniplus.validacao',
+        traceId: 'test-trace',
+        errors: [
+          {
+            field: 'Nome',
+            code: 'uniplus.configuracao.curso.invalido',
+            message: 'Nome fora do padrão do catálogo.',
+          },
+        ],
+      });
+      await propagar();
+      await propagar();
+
+      expect(document.activeElement).toBe(elemento('input[formcontrolname="nome"]'));
+    });
+
+    it('após o sucesso, volta ao botão que abriu o drawer', async () => {
+      const acionador = elemento<HTMLButtonElement>('.panel-head .btn--primary');
+      acionador.focus();
+      await preencherNovoCurso();
+      elemento<HTMLButtonElement>('button[form="cfg-curso-form"]').focus();
+      enviarFormulario();
+      controller.expectOne(ESCRITA_URL).flush('novo-id', { status: 201, statusText: 'Created' });
+      await propagar();
+      await propagar();
+
+      expect(edicao.aberto()).toBe(false);
+      expect(document.activeElement).toBe(acionador);
+      await responderLista([cursoSeed]);
+    });
   });
 });

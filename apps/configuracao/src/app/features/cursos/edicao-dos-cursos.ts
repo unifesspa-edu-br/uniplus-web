@@ -29,11 +29,7 @@ import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 
 type ModoFormulario = 'criar' | 'editar';
 
-/** O formulário (a abertura) e o modo que originaram uma escrita; a resposta só se aplica a eles. */
-interface OrigemDaEscrita {
-  readonly sessao: number;
-  readonly modo: ModoFormulario;
-}
+type Escrita = 'salvando' | 'removendo';
 
 /** O que o formulário precisa saber do vocabulário de grupos de área do ENEM. */
 export interface GruposDoFormulario {
@@ -65,7 +61,13 @@ export class EdicaoDosCursos {
   private readonly vocabulario = inject(CatalogoGruposAreaEnem);
 
   readonly form = criarFormularioDeCurso();
-  readonly gravando = signal(false);
+  private readonly escrita = signal<Escrita | null>(null);
+  /** Há escrita em curso, de qualquer tipo: enquanto durar, outra não parte. */
+  readonly gravando = computed(() => this.escrita() !== null);
+  /** O formulário está sendo enviado. */
+  readonly salvando = computed(() => this.escrita() === 'salvando');
+  /** Uma remoção está em curso; o formulário não foi enviado. */
+  readonly removendo = computed(() => this.escrita() === 'removendo');
   readonly aberto = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
@@ -88,8 +90,6 @@ export class EdicaoDosCursos {
 
   private readonly cursoEmEdicaoId = signal<string | null>(null);
   private readonly chaveDeIdempotencia = signal(idempotencyKey.create());
-  /** Conta as aberturas do formulário: uma resposta de abertura anterior não mexe na atual. */
-  private sessao = 0;
   /** Grupo que o curso em edição já tem, como a tela o mostra. */
   private readonly grupoDoCursoEmEdicao = signal<GrupoAreaEnemDto | null>(null);
 
@@ -176,8 +176,7 @@ export class EdicaoDosCursos {
       this.modo() === 'criar'
         ? this.api.criar(comandoDeCriacao(valores), chave)
         : this.api.atualizar(id ?? '', comandoDeAtualizacao(id ?? '', valores), chave);
-    const origem: OrigemDaEscrita = { sessao: this.sessao, modo: this.modo() };
-    this.gravar(operacao, (result) => this.concluirGravacao(result, origem));
+    this.gravar('salvando', operacao, (result) => this.concluirGravacao(result));
   }
 
   pedirRemocao(curso: CursoDto): void {
@@ -191,7 +190,7 @@ export class EdicaoDosCursos {
     if (curso === null) {
       return;
     }
-    this.gravar(this.api.remover(curso.id), (result) => {
+    this.gravar('removendo', this.api.remover(curso.id), (result) => {
       if (result.ok) {
         this.notifications.success('Curso removido', curso.codigo);
         this.confirmando.set(false);
@@ -204,15 +203,24 @@ export class EdicaoDosCursos {
   }
 
   private gravar<T>(
+    tipo: Escrita,
     operacao: Observable<ApiResult<T>>,
     aoConcluir: (result: ApiResult<T>) => void,
   ): void {
     if (this.gravando()) {
       return;
     }
-    this.gravando.set(true);
+    this.escrita.set(tipo);
+    // Enquanto o envio corre o formulário só mostra os valores: o que se alterasse agora não iria
+    // na requisição, e a recusa do servidor poderia marcar um valor já corrigido.
+    if (tipo === 'salvando') {
+      this.form.disable();
+    }
     operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      this.gravando.set(false);
+      this.escrita.set(null);
+      if (tipo === 'salvando') {
+        this.form.enable();
+      }
       aoConcluir(result);
     });
   }
@@ -237,36 +245,21 @@ export class EdicaoDosCursos {
   }
 
   private abrir(): void {
-    this.sessao++;
     this.vocabulario.garantirCarregado();
     this.erro.set(null);
     this.renovarChaveDeIdempotencia();
     this.aberto.set(true);
   }
 
-  private concluirGravacao(result: ApiResult<string | void>, origem: OrigemDaEscrita): void {
-    const formularioDeOrigem = origem.sessao === this.sessao;
+  private concluirGravacao(result: ApiResult<string | void>): void {
     if (!result.ok) {
-      this.recusarGravacao(result.problem, formularioDeOrigem);
+      this.aplicarFalha(result.problem);
       return;
     }
-    this.notifications.success(origem.modo === 'criar' ? 'Curso criado' : 'Curso atualizado');
+    this.notifications.success(this.modo() === 'criar' ? 'Curso criado' : 'Curso atualizado');
+    this.aberto.set(false);
+    this.renovarChaveDeIdempotencia();
     this.store.recarregar();
-    if (formularioDeOrigem) {
-      this.aberto.set(false);
-      this.renovarChaveDeIdempotencia();
-    }
-  }
-
-  /** Recusa de um formulário que já não está aberto vira aviso: não há campo onde mostrá-la. */
-  private recusarGravacao(problem: ProblemDetails, formularioDeOrigem: boolean): void {
-    if (formularioDeOrigem) {
-      this.aplicarFalha(problem);
-      return;
-    }
-    this.notifications.errorFromProblem(problem, {
-      title: this.problemI18n.resolve(problem).title,
-    });
   }
 
   private aplicarFalha(problem: ProblemDetails): void {

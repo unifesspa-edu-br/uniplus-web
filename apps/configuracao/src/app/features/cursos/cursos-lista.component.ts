@@ -27,6 +27,7 @@ import { textoExibivel } from '../../shared/codigo-e-rotulo';
 export class CursosListaComponent {
   readonly cursos = input.required<readonly CursoDto[]>();
   readonly carregando = input.required<boolean>();
+  readonly removendo = input.required<boolean>();
   readonly mensagemDeErro = input.required<string | null>();
   readonly temBusca = input.required<boolean>();
   readonly limite = input.required<number>();

@@ -5,8 +5,16 @@
       @if (carregando()) {
         <span class="cfg-cursos__loading"><ui-spinner size="sm" /> Carregando</span>
       }
+      @if (removendo()) {
+        <span class="cfg-cursos__loading"><ui-spinner size="sm" /> Removendo</span>
+      }
     </div>
-    <button type="button" class="btn btn--primary" (click)="cadastrar.emit()">
+    <button
+      type="button"
+      class="btn btn--primary"
+      [disabled]="removendo()"
+      (click)="cadastrar.emit()"
+    >
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
       Novo curso
     </button>
@@ -52,21 +60,21 @@
                   icon="pi-briefcase"
                   [accessibleName]="'Ofertas de ' + curso.codigo"
                   tooltip="Ofertas do curso"
-                  [isDisabled]="carregando()"
+                  [isDisabled]="carregando() || removendo()"
                   (triggered)="verOfertas.emit(curso)"
                 />
                 <ui-icon-button
                   icon="pi-pencil"
                   [accessibleName]="'Editar curso ' + curso.codigo"
                   tooltip="Editar curso"
-                  [isDisabled]="carregando()"
+                  [isDisabled]="carregando() || removendo()"
                   (triggered)="editar.emit(curso)"
                 />
                 <ui-icon-button
                   icon="pi-trash"
                   [accessibleName]="'Remover curso ' + curso.codigo"
                   tooltip="Remover curso"
-                  [isDisabled]="carregando()"
+                  [isDisabled]="carregando() || removendo()"
                   (triggered)="remover.emit(curso)"
                 />
               </td>
@@ -90,7 +98,12 @@
         heading="Nenhum curso cadastrado"
         description="Cadastre o primeiro curso para vincular ofertas de curso."
       >
-        <button type="button" class="btn btn--primary" (click)="cadastrar.emit()">
+        <button
+          type="button"
+          class="btn btn--primary"
+          [disabled]="removendo()"
+          (click)="cadastrar.emit()"
+        >
           Novo curso
         </button>
       </ui-empty-state>
@@ -105,7 +118,7 @@
     [hasRows]="cursos().length > 0"
     [hasPrevious]="temAnterior()"
     [hasNext]="temProximo()"
-    [isDisabled]="carregando()"
+    [isDisabled]="carregando() || removendo()"
     (previous)="anterior.emit()"
     (next)="proximo.emit()"
   />

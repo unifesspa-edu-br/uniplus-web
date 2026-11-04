@@ -5,8 +5,16 @@
       @if (carregando()) {
         <span class="cfg-campi__loading"><ui-spinner size="sm" /> Carregando</span>
       }
+      @if (removendo()) {
+        <span class="cfg-campi__loading"><ui-spinner size="sm" /> Removendo</span>
+      }
     </div>
-    <button type="button" class="btn btn--primary" (click)="cadastrar.emit()">
+    <button
+      type="button"
+      class="btn btn--primary"
+      [disabled]="removendo()"
+      (click)="cadastrar.emit()"
+    >
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
       Novo campus
     </button>
@@ -41,14 +49,14 @@
                   icon="pi-pencil"
                   [accessibleName]="'Editar campus ' + campus.sigla"
                   tooltip="Editar campus"
-                  [isDisabled]="carregando()"
+                  [isDisabled]="carregando() || removendo()"
                   (triggered)="editar.emit(campus)"
                 />
                 <ui-icon-button
                   icon="pi-trash"
                   [accessibleName]="'Remover campus ' + campus.sigla"
                   tooltip="Remover campus"
-                  [isDisabled]="carregando()"
+                  [isDisabled]="carregando() || removendo()"
                   (triggered)="remover.emit(campus)"
                 />
               </td>
@@ -72,7 +80,7 @@
       navigationLabel="Paginação de campi"
       [hasPrevious]="temAnterior()"
       [hasNext]="temProximo()"
-      [isDisabled]="carregando()"
+      [isDisabled]="carregando() || removendo()"
       (previous)="anterior.emit()"
       (next)="proximo.emit()"
     />

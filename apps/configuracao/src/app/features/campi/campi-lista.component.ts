@@ -18,6 +18,7 @@ import {
 export class CampiListaComponent {
   readonly campi = input.required<readonly CampusDto[]>();
   readonly carregando = input.required<boolean>();
+  readonly removendo = input.required<boolean>();
   readonly mensagemDeErro = input.required<string | null>();
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();

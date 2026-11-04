@@ -26,6 +26,7 @@
 <cfg-campi-lista
   [campi]="store.campi()"
   [carregando]="store.carregando()"
+  [removendo]="edicao.removendo()"
   [mensagemDeErro]="store.mensagemDeErro()"
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
@@ -43,7 +44,7 @@
   [titulo]="edicao.titulo()"
   [erro]="edicao.erro()"
   [erroDoEndereco]="edicao.erroDoEndereco()"
-  [gravando]="edicao.gravando()"
+  [salvando]="edicao.salvando()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
 />

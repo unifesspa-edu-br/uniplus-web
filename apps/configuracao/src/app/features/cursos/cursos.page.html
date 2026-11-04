@@ -27,6 +27,7 @@
 <cfg-cursos-lista
   [cursos]="store.cursosExibidos()"
   [carregando]="store.carregando()"
+  [removendo]="edicao.removendo()"
   [mensagemDeErro]="store.mensagemDeErro()"
   [temBusca]="store.temBusca()"
   [limite]="store.limite()"
@@ -48,7 +49,7 @@
   [modo]="edicao.modo()"
   [titulo]="edicao.titulo()"
   [erro]="edicao.erro()"
-  [gravando]="edicao.gravando()"
+  [salvando]="edicao.salvando()"
   [grupos]="edicao.grupos()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"

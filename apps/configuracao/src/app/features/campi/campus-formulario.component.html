@@ -1,7 +1,7 @@
 <ui-drawer
   class="cfg-form-drawer"
   [(visible)]="aberto"
-  [closable]="!gravando()"
+  [closable]="!salvando()"
   [heading]="titulo()"
   ariaLabel="Formulário de campus"
   position="right"
@@ -72,16 +72,22 @@
     <button
       type="button"
       class="btn btn--tertiary btn--rect"
-      [disabled]="gravando()"
+      [disabled]="salvando()"
       (click)="cancelar.emit()"
     >
       Cancelar
     </button>
-    <button type="submit" form="cfg-campus-form" class="btn btn--primary" [disabled]="gravando()">
-      @if (gravando()) {
+    <button
+      type="submit"
+      form="cfg-campus-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+    >
+      @if (salvando()) {
         <ui-spinner size="sm" />
       }
-      {{ gravando() ? 'Salvando...' : modo() === 'criar' ? 'Criar campus' : 'Salvar campus' }}
+      {{ salvando() ? 'Salvando...' : modo() === 'criar' ? 'Criar campus' : 'Salvar campus' }}
     </button>
   </div>
 </ui-drawer>
