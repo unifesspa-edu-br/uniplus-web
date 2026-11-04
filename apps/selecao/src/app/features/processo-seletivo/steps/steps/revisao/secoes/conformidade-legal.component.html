@@ -1,0 +1,68 @@
+<h2 id="revisao-legal-titulo" class="step-section__title">Conformidade legal</h2>
+
+<!--
+  A conformidade legal é avaliada CONTRA UMA DATA — a norma vigente naquele dia. Sem
+  dizer qual, o aviso de que a data mudou pedia para atualizar o checklist sem nunca
+  dizer de que data para qual.
+-->
+@if (preflight.legal(); as legal) {
+  <p class="field__hint">
+    Avaliada contra a data de {{ legal.dataReferencia | dateBr }}, que é a da publicação do ato.
+  </p>
+}
+
+@if (preflight.legalIndisponivel(); as motivo) {
+  <!-- Pendência do rascunho, não falha de carga: o servidor respondeu por
+       que ainda não há como avaliar, e o que destrava está nesta mesma
+       tela (o período do ato) ou no Cronograma. Sem "Tentar novamente",
+       que aqui não resolveria nada (`#742`). -->
+  <p class="alert alert--info" role="status">{{ motivo }}</p>
+} @else if (conferencia.legalOk()) {
+  <p class="alert alert--success" role="status">Nenhuma obrigatoriedade legal reprovada.</p>
+} @else {
+  <ul class="revisao-list">
+    @for (regra of conferencia.regrasLegaisReprovadas(); track regra.regraCodigo) {
+      <li class="revisao-item revisao-item--pending">
+        <div class="revisao-item__meta">
+          <span class="revisao-item__name">{{ regra.descricaoHumana }}</span
+          ><span class="step-hint">
+            {{ regra.baseLegal }}
+            @if (regra.vigenciaInicio) {
+              — vigente desde {{ regra.vigenciaInicio | dateBr }}
+            }
+          </span>
+          @if (regra.motivo) {
+            <span class="revisao-item__name">{{ regra.motivo }}</span>
+          }
+          <!-- Sem o endereço da norma, quem monta o edital lê o nome dela e não tem por
+               onde chegar ao texto que reprovou a publicação. -->
+          @if (regra.atoNormativoUrl) {
+            @if (ehEnderecoNavegavel(regra.atoNormativoUrl)) {
+              <a class="step-hint" [href]="regra.atoNormativoUrl" target="_blank" rel="noopener"
+                >Ler a norma (abre em nova aba)</a
+              >
+            } @else {
+              <!-- Citação que não é endereço — um DOI, uma URN — é mostrada como texto:
+                   vira identificador para procurar, não um link que não leva a lugar
+                   nenhum. -->
+              <span class="step-hint">Citação da norma: {{ regra.atoNormativoUrl }}</span>
+            }
+          }
+          @if (regra.portariaInterna) {
+            <span class="step-hint">Portaria interna: {{ regra.portariaInterna }}</span>
+          }
+        </div>
+      </li>
+    }
+  </ul>
+}
+
+@if (preflight.legal(); as legal) {
+  @if (legal.avisos.length > 0) {
+    <ul class="revisao-list">
+      @for (aviso of legal.avisos; track aviso) {
+        <li class="step-hint">{{ aviso }}</li>
+      }
+    </ul>
+  }
+}

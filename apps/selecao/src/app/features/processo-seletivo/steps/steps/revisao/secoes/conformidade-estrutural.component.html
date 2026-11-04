@@ -1,0 +1,93 @@
+<div class="step-section__header">
+  <h2 id="revisao-estrutural-titulo">Checklist estrutural</h2>
+  <!-- Desabilitado durante uma recarga: a chave de identidade do
+       preflight é determinística por processo+dataReferencia, então
+       dois cliques em sequência pedem exatamente a mesma coisa — a
+       segunda resposta apenas sobrescreve a primeira sem necessidade. -->
+  @if (!store.emConsulta()) {
+    <button
+      class="btn btn--sm btn--ghost"
+      type="button"
+      [disabled]="preflight.carregando()"
+      (click)="conferencia.atualizar()"
+    >
+      {{ preflight.carregando() ? 'Atualizando…' : 'Atualizar checklist' }}
+    </button>
+  }
+</div>
+
+@if (conferencia.estruturalOk()) {
+  <p class="alert alert--success" role="status">
+    @if (conferencia.avisosDaRevisao().length > 0) {
+      Nenhuma pendência estrutural. Há avisos abaixo, que não impedem a publicação, para você
+      conferir.
+    } @else {
+      Nenhuma pendência estrutural.
+    }
+  </p>
+}
+
+<div class="revisao-list">
+  @for (grupo of conferencia.gruposEstruturais(); track grupo.dimensao) {
+    <details class="revisao-grupo" [open]="!grupo.ok">
+      <summary class="revisao-grupo__resumo">
+        <span
+          class="revisao-chip"
+          [class.revisao-chip--ok]="grupo.ok"
+          [class.revisao-chip--pending]="!grupo.ok"
+          >{{ grupo.ok ? 'Conforme' : 'Pendente' }}</span
+        ><span class="revisao-grupo__nome">{{ rotuloDaDimensao(grupo.dimensao) }}</span>
+      </summary>
+      <ul class="revisao-grupo__itens">
+        @for (item of grupo.itens; track item.codigo) {
+          <li
+            class="revisao-item"
+            [class.revisao-item--ok]="item.ok"
+            [class.revisao-item--pending]="!item.ok"
+          >
+            <span class="revisao-item__estado">{{ item.ok ? 'Conforme' : 'Pendente' }}</span>
+            <div class="revisao-item__meta">
+              <span class="revisao-item__name" [id]="item.idDaMensagem">{{ item.mensagem }}</span>
+              <!-- O que fazer e onde quando o botão não basta: sem isto, a pendência que
+                   nenhum passo resolve aparece sem saída, e a que passa por mais de um
+                   lugar leva a um passo sem dizer o resto da correção. -->
+              @if (item.orientacao; as orientacao) {
+                <span class="revisao-item__onde" [id]="orientacao.id">{{ orientacao.texto }}</span>
+              }
+            </div>
+            @if (item.passo; as passo) {
+              @if (!store.emConsulta()) {
+                <!-- O botão é descrito pela pendência que resolve: vários itens podem levar
+                   ao mesmo passo, e "Ir para Vagas" sozinho não diz qual. -->
+                @let descritoPor =
+                  item.orientacao
+                    ? item.idDaMensagem + ' ' + item.orientacao.id
+                    : item.idDaMensagem;
+                <!-- `revisao-item__ir`, não `revisao-item__go`: esse nome
+                   já é de um widget de resumo de progresso mais antigo
+                   (`.revisao-summary`/`.revisao-progress`), sem HTML
+                   nenhum que o use mais — mas o CSS dele continua no
+                   arquivo, com um `@media (max-width: 600px) { display:
+                   none }` pensado para AQUELE botão. Reusar o nome
+                   herdava esse `display: none` a 320px sem querer — o
+                   botão desaparecia do DOM renderizado, ainda que
+                   presente no template. Este botão é a única forma
+                   de agir numa pendência a partir
+                   do checklist, em qualquer largura — não pode
+                   desaparecer no mobile. -->
+                <button
+                  class="btn btn--sm btn--ghost revisao-item__ir"
+                  type="button"
+                  [attr.aria-describedby]="descritoPor"
+                  (click)="store.goTo(passo.indice)"
+                >
+                  Ir para {{ passo.nome }}
+                </button>
+              }
+            }
+          </li>
+        }
+      </ul>
+    </details>
+  }
+</div>

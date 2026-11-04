@@ -8,7 +8,6 @@ import {
   inject,
   untracked,
 } from '@angular/core';
-import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
@@ -21,10 +20,10 @@ import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidad
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
 import { confirmacaoDaPublicacao } from './confirmacao-da-publicacao';
-import { ehEnderecoNavegavel } from './endereco-navegavel';
-import { rotuloDaDimensao } from './grupos-da-revisao';
 import { PreflightDaPublicacaoService } from './preflight-da-publicacao.service';
 import { AtoDaPublicacaoComponent } from './secoes/ato-da-publicacao.component';
+import { ConformidadeEstruturalComponent } from './secoes/conformidade-estrutural.component';
+import { ConformidadeLegalComponent } from './secoes/conformidade-legal.component';
 import { ConferenciaDaPublicacaoService } from './servicos/conferencia-da-publicacao.service';
 import { PublicacaoDoProcessoService } from './servicos/publicacao-do-processo.service';
 
@@ -42,10 +41,11 @@ import { PublicacaoDoProcessoService } from './servicos/publicacao-do-processo.s
   imports: [
     AnexoEditalComponent,
     AnexosDoEditalComponent,
-    DateBrPipe,
     RegrasDasModalidadesComponent,
     AvisosDaRevisaoComponent,
     TemPermissaoDirective,
+    ConformidadeEstruturalComponent,
+    ConformidadeLegalComponent,
     AtoDaPublicacaoComponent,
   ],
   templateUrl: './revisao.component.html',
@@ -72,9 +72,6 @@ export class RevisaoStepComponent {
 
   /** Quem concorre em cada modalidade ofertada, pela regra que o processo congelou. */
   protected readonly regrasDasModalidades = this.store.regrasDasModalidades;
-
-  protected readonly rotuloDaDimensao = rotuloDaDimensao;
-  protected readonly ehEnderecoNavegavel = ehEnderecoNavegavel;
 
   /**
    * Os documentos exigidos por fase, com a situação da base legal que a publicação confere: a
@@ -127,10 +124,5 @@ export class RevisaoStepComponent {
       this.preflight.tiposAto(),
       this.catalogosDoCronograma.fasePorId(),
     );
-  }
-
-  /** Leva ao passo que resolve o item, dado pelo índice que o checklist declara. */
-  protected irParaSecao(index: number): void {
-    this.store.goTo(index);
   }
 }
