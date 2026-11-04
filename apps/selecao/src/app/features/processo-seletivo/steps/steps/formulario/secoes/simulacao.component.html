@@ -1,0 +1,33 @@
+@if (store.processoSeletivoId(); as processoId) {
+  @if (formulariosParaSimular().length > 0) {
+    <section class="step-section" aria-labelledby="form-simulacao-titulo">
+      <h2 id="form-simulacao-titulo" class="step-section__title">Simular a inscrição</h2>
+      <p class="field__hint">
+        Responda o formulário como o candidato responderia, sem gravar nada. A simulação usa o
+        processo gravado: grave o passo para simular as alterações.
+      </p>
+      <!-- A região fica sempre na página: um leitor de tela só anuncia a mudança de uma região que já existia. -->
+      <p class="field__hint" role="status">
+        @if (simulacaoDesatualizada()) {
+          Há alteração nos formulários ainda não gravada: grave o passo para simulá-la.
+        }
+      </p>
+      <ul class="form-simulacao__links">
+        @for (formulario of formulariosParaSimular(); track formulario.finalidade) {
+          <li>
+            <a
+              class="btn btn--secondary btn--sm"
+              [routerLink]="['/processo-seletivo', processoId, 'simulacao', formulario.finalidade]"
+              target="_blank"
+              rel="noopener"
+            >
+              <i class="pi pi-play" aria-hidden="true"></i>
+              Simular {{ formulario.nome }}
+              <span class="sr-only">(abre em nova aba)</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

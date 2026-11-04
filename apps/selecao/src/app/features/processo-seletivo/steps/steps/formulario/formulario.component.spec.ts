@@ -238,7 +238,9 @@ describe('FormularioStepComponent', () => {
     /** O processo publicado: os passos mostram o que está gravado como texto. */
     function emConsulta(): void {
       TestBed.inject(CatalogosDoCronogramaService).fatos.set([PCD_NO_CATALOGO] as never);
-      store.patchObjectSection('formulario', { conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS) });
+      store.patchObjectSection('formulario', {
+        conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS),
+      });
       store.remoteSnapshot.set({ ...PROCESSO, id: PROCESSO_ID, status: 'publicado' } as never);
       fixture.detectChanges();
     }
@@ -252,7 +254,10 @@ describe('FormularioStepComponent', () => {
         formatosPermitidos: ['PDF'],
         tamanhoMaximoBytes: 5 * 1024 * 1024,
       } as ExigenciaDeDocumento;
-      const certidaoDeOutraFase = { ...exigenciaNova(TIPO_LAUDO, 'MATRICULA'), tipoDocumentoNome: 'Outra fase' };
+      const certidaoDeOutraFase = {
+        ...exigenciaNova(TIPO_LAUDO, 'MATRICULA'),
+        tipoDocumentoNome: 'Outra fase',
+      };
       store.patchSection(
         'documentos',
         comExigencia(comExigencia({ raizes: [], emTodasAsFases: [] }, laudo), certidaoDeOutraFase),
@@ -266,7 +271,9 @@ describe('FormularioStepComponent', () => {
       expect(texto).toContain('Pessoa com deficiência');
       expect(texto).toContain('PDF, até 5,0 MB');
       expect(texto).not.toContain('Outra fase');
-      expect(host.querySelector('sel-documentos-do-formulario')?.textContent).toContain('Laudo médico');
+      expect(host.querySelector('sel-documentos-do-formulario')?.textContent).toContain(
+        'Laudo médico',
+      );
     });
 
     it('não diz que a fase não exige nada quando o documento ainda não tem formulário escolhido', () => {
@@ -307,11 +314,15 @@ describe('FormularioStepComponent', () => {
 
       emConsulta();
 
-      expect(host.querySelector('sel-documentos-do-formulario')?.textContent).toContain('Laudo médico');
+      expect(host.querySelector('sel-documentos-do-formulario')?.textContent).toContain(
+        'Laudo médico',
+      );
     });
 
     it('sem documento na fase, diz que nenhum é exigido e leva ao Cronograma', () => {
-      store.patchObjectSection('formulario', { conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS) });
+      store.patchObjectSection('formulario', {
+        conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS),
+      });
       fixture.detectChanges();
 
       expect(host.textContent).toContain('Nenhum documento exigido nesta fase');
@@ -322,14 +333,14 @@ describe('FormularioStepComponent', () => {
 
   it('a simulação usa o processo gravado e avisa a alteração ainda não gravada', () => {
     comProcessoLido();
-    expect(fixture.componentInstance.simulacaoDesatualizada()).toBe(false);
+    fixture.detectChanges();
+    expect(host.textContent).not.toContain('Há alteração nos formulários ainda não gravada');
 
     store.patchObjectSection('formulario', {
       conteudo: { ...conteudoDoFormulario(GRAVADO), titulo: 'Outro título' },
     });
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.simulacaoDesatualizada()).toBe(true);
     expect(host.textContent).toContain('Há alteração nos formulários ainda não gravada');
   });
 
@@ -683,10 +694,9 @@ describe('FormularioStepComponent', () => {
 
       expect(abas()).toEqual([]);
       expect(document.activeElement?.id).toBe('form-inscricao-fase-titulo');
-      expect(
-        fixture.componentInstance.simulacaoDesatualizada(),
-        'o servidor já está como o rascunho',
-      ).toBe(false);
+      expect(host.textContent, 'o servidor já está como o rascunho').not.toContain(
+        'Há alteração nos formulários ainda não gravada',
+      );
     });
 
     it('acrescentar uma finalidade abre a aba dela, leva o foco até ela e anuncia', async () => {
@@ -1155,12 +1165,12 @@ describe('FormularioStepComponent', () => {
       store.patchObjectSection('formulario', {
         referenciaTemporal: { tipo: '', data: '', faseCodigo: '' },
       });
-      expect(fixture.componentInstance.desempateIdosoSemApuracao()).toBe(true);
+      fixture.detectChanges();
+      expect(host.querySelector('#form-idoso-sem-apuracao')).not.toBeNull();
 
       store.remoteSnapshot.set({ status: 'publicado' } as never);
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.desempateIdosoSemApuracao()).toBe(false);
       expect(host.querySelector('#form-idoso-sem-apuracao')).toBeNull();
     });
   });

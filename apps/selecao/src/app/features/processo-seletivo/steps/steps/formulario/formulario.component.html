@@ -6,23 +6,23 @@
 
 <!-- O catálogo e os termos só servem para editar: em consulta, carga e falha deles não interessam. -->
 @if (!store.emConsulta()) {
-  @if (catalogoCarregando()) {
+  @if (dados.catalogoCarregando()) {
     <p class="alert alert--info" role="status">
       Carregando os dados que o candidato pode declarar…
     </p>
-  } @else if (catalogoErro(); as erro) {
+  } @else if (dados.catalogoErro(); as erro) {
     <p class="alert alert--danger" role="alert">
       {{ erro }} Sem esses dados não é possível acrescentar campos nem declarar condições.
-      <button type="button" class="btn btn--tertiary btn--sm" (click)="carregarCatalogo()">
+      <button type="button" class="btn btn--tertiary btn--sm" (click)="dados.carregarCatalogo()">
         Tentar novamente
       </button>
     </p>
   }
-  @if (termosComErro()) {
+  @if (dados.termosComErro()) {
     <p class="alert alert--warning" role="alert">
       Não foi possível carregar os termos de consentimento. Sem eles não é possível exigir um termo
       novo nem trocar a versão.
-      <button type="button" class="btn btn--tertiary btn--sm" (click)="carregarTermos()">
+      <button type="button" class="btn btn--tertiary btn--sm" (click)="dados.carregarTermos()">
         Tentar novamente
       </button>
     </p>
@@ -336,10 +336,10 @@
           [idBase]="aba.idBase"
           [finalidade]="aba.finalidade"
           [conteudo]="aba.conteudo"
-          [catalogo]="catalogo()"
+          [catalogo]="dados.catalogo()"
           [disabled]="!store.aceitaEdicao()"
           [recusas]="aba.recusas"
-          [termosDisponiveis]="termosDisponiveis()"
+          [termosDisponiveis]="dados.termosDisponiveis()"
           [fatosDaInscricao]="aba.fatosDaInscricao"
           [fatosIndisponiveis]="aba.fatosIndisponiveis"
           [fatosQueExigemRespostaPorFora]="aba.fatosQueExigemRespostaPorFora"
@@ -385,135 +385,9 @@
 }
 
 <!-- Fora das abas: a apuração da idade é uma política do processo, não de um formulário. -->
-<section class="step-section" aria-labelledby="form-idade-titulo">
-  <h2 id="form-idade-titulo" class="step-section__title">Apuração da idade</h2>
+<sel-apuracao-da-idade />
 
-  <p class="field__hint">
-    A idade não é respondida pelo candidato: é apurada contra um instante, e uma única política vale
-    para todo o certame.
-    @if (exigeApuracaoDeIdade()) {
-      Há documento exigido por faixa etária, então declará-la é obrigatório.
-    }
-  </p>
-
-  @if (desempateIdosoSemApuracao()) {
-    <div class="alert alert--warning" role="status" id="form-idoso-sem-apuracao">
-      <p>
-        O desempate por idoso está declarado e precisa da idade apurada. Escolha abaixo em que
-        instante apurá-la, ou retire o critério no passo Desempate.
-      </p>
-      <button
-        type="button"
-        class="btn btn--secondary btn--sm"
-        id="form-ir-desempate-apuracao"
-        (click)="irParaDesempate()"
-      >
-        Ir para Desempate
-      </button>
-    </div>
-  }
-
-  @if (store.emConsulta()) {
-    <div class="form-grid">
-      <ui-valor-em-consulta rotulo="Apurar a idade em" [valor]="rotuloDaAncora()" />
-      @if (referencia().tipo === 'DATA_ESPECIFICA') {
-        <ui-valor-em-consulta rotulo="Data de apuração" [valor]="referencia().data | dateBr" />
-      }
-      @if (ancoraEmFase()) {
-        <ui-valor-em-consulta
-          rotulo="Fase que ancora a apuração"
-          [valor]="referencia().faseCodigo"
-        />
-      }
-    </div>
-  } @else {
-    <div class="form-grid">
-      <div class="form-field">
-        <label class="label" for="form-ancora">Apurar a idade em</label>
-        <select
-          class="select"
-          id="form-ancora"
-          [disabled]="!store.aceitaEdicao()"
-          (change)="escreverReferencia({ tipo: $any($event.target).value })"
-        >
-          @for (opcao of ancoras; track opcao.valor) {
-            <option [value]="opcao.valor" [selected]="opcao.valor === referencia().tipo">
-              {{ opcao.rotulo }}
-            </option>
-          }
-        </select>
-      </div>
-
-      @if (referencia().tipo === 'DATA_ESPECIFICA') {
-        <div class="form-field">
-          <label class="label" for="form-data">Data de apuração</label>
-          <input
-            class="input"
-            id="form-data"
-            type="date"
-            [value]="referencia().data"
-            [disabled]="!store.aceitaEdicao()"
-            (input)="escreverReferencia({ data: $any($event.target).value })"
-          />
-        </div>
-      }
-
-      @if (ancoraEmFase()) {
-        <div class="form-field">
-          <label class="label" for="form-fase">Fase que ancora a apuração</label>
-          <select
-            class="select"
-            id="form-fase"
-            [disabled]="!store.aceitaEdicao()"
-            (change)="escreverReferencia({ faseCodigo: $any($event.target).value })"
-          >
-            <option value="">Escolha a fase</option>
-            @for (codigo of fasesEscolhiveis(); track codigo) {
-              <option [value]="codigo" [selected]="codigo === referencia().faseCodigo">
-                {{ codigo }}
-              </option>
-            }
-          </select>
-        </div>
-      }
-    </div>
-  }
-</section>
-
-<!-- A simulação abre em nova aba, sem sair do assistente, e usa o processo gravado. -->
-@if (store.processoSeletivoId(); as processoId) {
-  @if (formulariosParaSimular().length > 0) {
-    <section class="step-section" aria-labelledby="form-simulacao-titulo">
-      <h2 id="form-simulacao-titulo" class="step-section__title">Simular a inscrição</h2>
-      <p class="field__hint">
-        Responda o formulário como o candidato responderia, sem gravar nada. A simulação usa o
-        processo gravado: grave o passo para simular as alterações.
-      </p>
-      <!-- A região fica sempre na página: um leitor de tela só anuncia a mudança de uma região que já existia. -->
-      <p class="field__hint" role="status">
-        @if (simulacaoDesatualizada()) {
-          Há alteração nos formulários ainda não gravada: grave o passo para simulá-la.
-        }
-      </p>
-      <ul class="form-simulacao__links">
-        @for (formulario of formulariosParaSimular(); track formulario.finalidade) {
-          <li>
-            <a
-              class="btn btn--secondary btn--sm"
-              [routerLink]="['/processo-seletivo', processoId, 'simulacao', formulario.finalidade]"
-              target="_blank"
-              rel="noopener"
-            >
-              <i class="pi pi-play" aria-hidden="true"></i>
-              Simular {{ formulario.nome }}
-              <span class="sr-only">(abre em nova aba)</span>
-            </a>
-          </li>
-        }
-      </ul>
-    </section>
-  }
-}
+<sel-simulacao-do-formulario />
 
 @if (camposSemValoresOfertados().length > 0 && !store.emConsulta()) {
   <!--

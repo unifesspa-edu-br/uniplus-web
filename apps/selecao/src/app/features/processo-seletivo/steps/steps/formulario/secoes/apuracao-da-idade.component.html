@@ -1,0 +1,94 @@
+<section class="step-section" aria-labelledby="form-idade-titulo">
+  <h2 id="form-idade-titulo" class="step-section__title">Apuração da idade</h2>
+
+  <p class="field__hint">
+    A idade não é respondida pelo candidato: é apurada contra um instante, e uma única política vale
+    para todo o certame.
+    @if (exigeApuracaoDeIdade()) {
+      Há documento exigido por faixa etária, então declará-la é obrigatório.
+    }
+  </p>
+
+  @if (desempateIdosoSemApuracao()) {
+    <div class="alert alert--warning" role="status" id="form-idoso-sem-apuracao">
+      <p>
+        O desempate por idoso está declarado e precisa da idade apurada. Escolha abaixo em que
+        instante apurá-la, ou retire o critério no passo Desempate.
+      </p>
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        id="form-ir-desempate-apuracao"
+        (click)="irParaDesempate()"
+      >
+        Ir para Desempate
+      </button>
+    </div>
+  }
+
+  @if (store.emConsulta()) {
+    <div class="form-grid">
+      <ui-valor-em-consulta rotulo="Apurar a idade em" [valor]="rotuloDaAncora()" />
+      @if (referencia().tipo === 'DATA_ESPECIFICA') {
+        <ui-valor-em-consulta rotulo="Data de apuração" [valor]="referencia().data | dateBr" />
+      }
+      @if (precisaDeFase()) {
+        <ui-valor-em-consulta
+          rotulo="Fase que ancora a apuração"
+          [valor]="referencia().faseCodigo"
+        />
+      }
+    </div>
+  } @else {
+    <div class="form-grid">
+      <div class="form-field">
+        <label class="label" for="form-ancora">Apurar a idade em</label>
+        <select
+          class="select"
+          id="form-ancora"
+          [disabled]="!store.aceitaEdicao()"
+          (change)="escreverReferencia({ tipo: $any($event.target).value })"
+        >
+          @for (opcao of ancoras; track opcao.valor) {
+            <option [value]="opcao.valor" [selected]="opcao.valor === referencia().tipo">
+              {{ opcao.rotulo }}
+            </option>
+          }
+        </select>
+      </div>
+
+      @if (referencia().tipo === 'DATA_ESPECIFICA') {
+        <div class="form-field">
+          <label class="label" for="form-data">Data de apuração</label>
+          <input
+            class="input"
+            id="form-data"
+            type="date"
+            [value]="referencia().data"
+            [disabled]="!store.aceitaEdicao()"
+            (input)="escreverReferencia({ data: $any($event.target).value })"
+          />
+        </div>
+      }
+
+      @if (precisaDeFase()) {
+        <div class="form-field">
+          <label class="label" for="form-fase">Fase que ancora a apuração</label>
+          <select
+            class="select"
+            id="form-fase"
+            [disabled]="!store.aceitaEdicao()"
+            (change)="escreverReferencia({ faseCodigo: $any($event.target).value })"
+          >
+            <option value="">Escolha a fase</option>
+            @for (codigo of fasesEscolhiveis(); track codigo) {
+              <option [value]="codigo" [selected]="codigo === referencia().faseCodigo">
+                {{ codigo }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+  }
+</section>

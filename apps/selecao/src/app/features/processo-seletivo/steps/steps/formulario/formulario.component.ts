@@ -1,4 +1,3 @@
-import { RouterLink } from '@angular/router';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,27 +7,20 @@ import {
   computed,
   effect,
   inject,
-  linkedSignal,
   signal,
   untracked,
   viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
 import {
   ProblemI18nService,
   STATUS_HTTP,
   isApiOk,
   type ProblemDetails,
 } from '@uniplus/shared-core/http';
-import {
-  FatoCandidatoView,
-  FatosCandidatoApi,
-  ModelosFormularioApi,
-  TermosConsentimentoApi,
-} from '@uniplus/shared-data/configuracao';
+import { ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
-import { ProcessosSeletivosApi, type AplicacaoDeModeloDto } from '@uniplus/shared-data/selecao';
+import { type AplicacaoDeModeloDto } from '@uniplus/shared-data/selecao';
 import {
   BUSCA_DE_MUNICIPIOS,
   ConfirmDialogComponent,
@@ -44,29 +36,25 @@ import {
   entradasDaSecao,
   etapasEmOrdem,
   semDadosBasicos,
-  termoDisponivelDe,
   type ConteudoDoFormulario,
   type RecusasDoConteudo,
-  type TermoDisponivel,
-  ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
-import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import type { FormularioDaFinalidade, StepValidation } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
+import { CatalogosDoFormularioService } from './servicos/catalogos-do-formulario.service';
+import { LeituraDoProcessoNoFormularioService } from './servicos/leitura-do-processo-no-formulario.service';
+import { ApuracaoDaIdadeComponent } from './secoes/apuracao-da-idade.component';
+import { SimulacaoDoFormularioComponent } from './secoes/simulacao.component';
 import { DocumentosDoFormularioComponent } from './documentos-do-formulario.component';
 import { documentosDoFormulario, fatosParaLerOGatilho } from '../../shared/documentos-exigidos';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { descreverFase } from '../../shared/descricao-da-fase';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
-import {
-  desempateIdosoSemApuracao,
-  desempateSemDataDeNascimento,
-  PASSO_DESEMPATE,
-} from '../desempate/desempate-por-idade';
-import { ANCORAS_DA_IDADE, comoComandoDeReferenciaTemporal } from './apuracao-da-idade';
+import { desempateSemDataDeNascimento, PASSO_DESEMPATE } from '../desempate/desempate-por-idade';
+import { comoComandoDeReferenciaTemporal } from './apuracao-da-idade';
 import {
   camposSemUsoDeclarado,
   quemCitaNoProcesso,
@@ -75,7 +63,6 @@ import {
 import { camposSemValoresOfertados, problemasDoFormulario } from './problemas-do-formulario';
 import { comCamposQueAsExigenciasPressupoem } from './campos-pressupostos-da-inscricao';
 import {
-  fatosCitadosPelasExigencias,
   fatosColetadosPelaInscricao,
   fatosForaDaColetaDaInscricao,
 } from './fatos-coletados-da-inscricao';
@@ -83,7 +70,6 @@ import {
   conteudoDoFormulario,
   fatosColetadosPor,
   formularioDaFinalidade,
-  rascunhoDifereDoGravado,
 } from './formulario-do-processo';
 import {
   comAplicacaoDoServidor,
@@ -109,7 +95,6 @@ import {
   nomeDaFinalidade,
   ordemDeGravacao,
   sufixoDaFinalidade,
-  emOrdemDasFinalidades,
   finalidadesQueAtende,
 } from './formularios-por-finalidade';
 
@@ -134,17 +119,18 @@ interface FormularioParaEnvio {
   selector: 'sel-step-formulario',
   standalone: true,
   imports: [
-    ValorLegivelDirective,
     ConfirmDialogComponent,
-    DateBrPipe,
     DocumentosDoFormularioComponent,
     EditorDeFormularioComponent,
-    RouterLink,
     ValorEmConsultaComponent,
+    ApuracaoDaIdadeComponent,
+    SimulacaoDoFormularioComponent,
   ],
   templateUrl: './formulario.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
+    CatalogosDoFormularioService,
+    LeituraDoProcessoNoFormularioService,
     provePassoDoWizard(FormularioStepComponent),
     // A condição sobre município — o impedimento do campo de município, inclusive — escolhe o
     // valor pela busca no Geo.
@@ -155,23 +141,13 @@ export class FormularioStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly cadastro = inject(CadastroInicialService);
   readonly catalogos = inject(CatalogosDoCronogramaService);
-  private readonly fatosApi = inject(FatosCandidatoApi);
-  private readonly termosApi = inject(TermosConsentimentoApi);
+  protected readonly dados = inject(CatalogosDoFormularioService);
+  private readonly leitura = inject(LeituraDoProcessoNoFormularioService);
   private readonly modelosApi = inject(ModelosFormularioApi);
-  private readonly api = inject(ProcessosSeletivosApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly editores = viewChildren(EditorDeFormularioComponent);
-
-  protected readonly ancoras = ANCORAS_DA_IDADE;
-
-  readonly catalogo = signal<readonly FatoCandidatoView[]>([]);
-  readonly catalogoCarregando = signal(true);
-  readonly catalogoErro = signal<string | null>(null);
-
-  readonly termosDisponiveis = signal<readonly TermoDisponivel[]>([]);
-  readonly termosComErro = signal(false);
 
   /** As recusas da última gravação, por finalidade, distribuídas contra o conteúdo ENVIADO — sem os dados básicos. */
   readonly recusas = signal<ReadonlyMap<string, RecusasDoConteudo>>(new Map());
@@ -205,8 +181,8 @@ export class FormularioStepComponent {
   private readonly bloqueadasPorCopiaEmAberto = signal<ReadonlySet<string>>(new Set());
 
   constructor() {
-    this.carregarCatalogo();
-    this.carregarTermos();
+    this.dados.carregarCatalogo();
+    this.dados.carregarTermos();
 
     // Reconcilia a cada mudança do que cita fatos no processo, e não só quando o catálogo
     // responde. Os passos do wizard ficam todos montados, então "abrir o passo" não executa nada:
@@ -215,7 +191,7 @@ export class FormularioStepComponent {
     // acrescenta. Sobra dado pessoal no formulário sem nada que o justifique.
     effect(() => {
       this.citantes();
-      if (this.catalogo().length > 0) untracked(() => this.reconciliar());
+      if (this.dados.catalogo().length > 0) untracked(() => this.reconciliar());
     });
 
     // O componente sobrevive à troca de processo na mesma rota: o que ele guarda de um processo —
@@ -278,75 +254,10 @@ export class FormularioStepComponent {
       });
   }
 
-  /**
-   * Busca o vocabulário de fatos. Exposto porque a tela oferece nova tentativa: sem ela, uma falha
-   * passageira deixava o catálogo vazio pelo resto da sessão, e não havia como acrescentar campo.
-   */
-  carregarCatalogo(): void {
-    this.catalogoCarregando.set(true);
-    this.catalogoErro.set(null);
-    this.fatosApi
-      .listar()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => {
-        this.catalogoCarregando.set(false);
-        if (!isApiOk(resultado)) {
-          this.catalogoErro.set(this.problemI18n.resolve(resultado.problem).title);
-          return;
-        }
-        this.catalogo.set(resultado.data);
-      });
-  }
-
-  /** Os termos de consentimento com as versões promovidas, que o formulário pode exigir. */
-  carregarTermos(): void {
-    this.termosComErro.set(false);
-    this.termosApi
-      .listarComVersoes()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((termos) => {
-        if (!termos.ok) {
-          this.termosComErro.set(true);
-          return;
-        }
-        this.termosDisponiveis.set(termos.data.map(termoDisponivelDe));
-      });
-  }
-
   /** Os formulários do rascunho, a inscrição primeiro. */
   readonly formularios = computed(() => formulariosDoRascunho(this.store.draft().formulario));
 
   readonly conteudo = computed(() => this.store.draft().formulario.conteudo);
-
-  /**
-   * O processo como o servidor o tem, da última leitura: a hidratação ou a releitura de uma
-   * gravação, aplicação ou remoção deste passo.
-   */
-  private readonly processoLido = linkedSignal(() => this.store.remoteSnapshot());
-
-  /**
-   * Os formulários que se pode simular: os gravados, porque a simulação abre o formulário que a API
-   * monta do processo gravado.
-   */
-  readonly formulariosParaSimular = computed(() =>
-    emOrdemDasFinalidades(this.processoLido()?.formularios ?? []).map((formulario) => ({
-      finalidade: formulario.finalidade,
-      nome: nomeDaFinalidade(formulario.finalidade),
-    })),
-  );
-
-  /** Há alteração nos formulários ainda não gravada: a simulação não a veria. */
-  readonly simulacaoDesatualizada = computed(() =>
-    rascunhoDifereDoGravado(this.processoLido()?.formularios ?? [], this.formularios()),
-  );
-
-  /** Relê o processo e guarda a leitura, quando ela ainda é do processo em edição. */
-  private async lerProcesso(processoId: string) {
-    const detalhe = await firstValueFrom(this.api.obter(processoId));
-    if (isApiOk(detalhe) && detalhe.data.id === this.store.processoSeletivoId())
-      this.processoLido.set(detalhe.data);
-    return detalhe;
-  }
 
   readonly abaAtiva = computed(() => {
     const escolhida = this.abaEscolhida();
@@ -430,7 +341,7 @@ export class FormularioStepComponent {
   readonly citantes = computed(() => {
     const draft = this.store.draft();
     const tipoDocumento = this.catalogos.tipoDocumentoPorId();
-    const nomeDoFato = new Map(this.catalogo().map((fato) => [fato.codigo, fato.nome]));
+    const nomeDoFato = new Map(this.dados.catalogo().map((fato) => [fato.codigo, fato.nome]));
     return quemCitaNoProcesso(
       {
         documentos: draft.documentos,
@@ -570,7 +481,7 @@ export class FormularioStepComponent {
     const reconciliado = comCamposQueAsExigenciasPressupoem(
       formulario.conteudo,
       new Set(this.citantes().keys()),
-      this.catalogo(),
+      this.dados.catalogo(),
       this.store.camposPostosPelasExigencias(),
       fatosColetadosPelasOutras(this.formularios(), FINALIDADE_INSCRICAO),
     );
@@ -709,7 +620,7 @@ export class FormularioStepComponent {
    * o formulário não está mais no processo — inclusive o que nunca foi gravado.
    */
   private async removerDoServidor(processoId: string, finalidade: string): Promise<string | null> {
-    const detalhe = await this.lerProcesso(processoId);
+    const detalhe = await this.leitura.ler(processoId);
     if (!isApiOk(detalhe))
       return 'Não foi possível reler o processo para remover o formulário. Tente de novo.';
     if (formularioDaFinalidade(detalhe.data.formularios, finalidade) === null) return null;
@@ -717,7 +628,7 @@ export class FormularioStepComponent {
     const remocao = await this.cadastro.removerFormulario(processoId, finalidade);
     if (remocao.ok) {
       // A leitura guardada é de antes do DELETE: sem o formulário removido, ela volta a ser o gravado.
-      this.processoLido.update((lido) =>
+      this.leitura.processoLido.update((lido) =>
         lido === null
           ? lido
           : { ...lido, formularios: lido.formularios.filter((f) => f.finalidade !== finalidade) },
@@ -855,7 +766,7 @@ export class FormularioStepComponent {
     const acrescentados = this.reconciliar();
     this.recusas.update((atuais) => semChave(atuais, finalidade));
 
-    const nomeDoFato = new Map(this.catalogo().map((fato) => [fato.codigo, fato.nome]));
+    const nomeDoFato = new Map(this.dados.catalogo().map((fato) => [fato.codigo, fato.nome]));
     const resumo = [
       ...resumoDaAplicacao(
         desfecho.relato,
@@ -881,7 +792,7 @@ export class FormularioStepComponent {
     modeloId: string,
     faseDaAba: string,
   ): Promise<DesfechoDaAplicacao> {
-    const antes = await this.lerProcesso(processoId);
+    const antes = await this.leitura.ler(processoId);
     if (!isApiOk(antes))
       return {
         ok: false,
@@ -909,7 +820,7 @@ export class FormularioStepComponent {
         copiaConfirmada: aplicacao.inconclusiva ? false : null,
       };
 
-    const depois = await this.lerProcesso(processoId);
+    const depois = await this.leitura.ler(processoId);
     if (!isApiOk(depois)) {
       return { ok: false, recusa: '', copiaConfirmada: true };
     }
@@ -960,19 +871,6 @@ export class FormularioStepComponent {
     focarAposRenderizar(this.injector, `form-aba-${sufixo}`, `form-${sufixo}-fase-titulo`);
   }
 
-  readonly referencia = computed(() => this.store.draft().formulario.referenciaTemporal);
-
-  /** A âncora da apuração como o seletor a nomeia. */
-  readonly rotuloDaAncora = computed(
-    () => this.ancoras.find((opcao) => opcao.valor === this.referencia().tipo)?.rotulo ?? null,
-  );
-
-  /** Se a apuração da idade precisa de fase — só então o seletor de fase aparece. */
-  readonly ancoraEmFase = computed(() => {
-    const tipo = this.referencia().tipo;
-    return tipo === 'INICIO_FASE' || tipo === 'FIM_FASE';
-  });
-
   /** O desempate por maior idade declarado sem a data de nascimento entre os campos. */
   readonly desempateSemDataDeNascimento = computed(() => {
     if (this.store.emConsulta()) return false;
@@ -983,26 +881,9 @@ export class FormularioStepComponent {
     );
   });
 
-  /** O desempate por idoso declarado sem apuração da idade neste formulário. */
-  readonly desempateIdosoSemApuracao = computed(() => {
-    if (this.store.emConsulta()) return false;
-    const draft = this.store.draft();
-    return desempateIdosoSemApuracao(draft.desempate, draft.formulario.referenciaTemporal);
-  });
-
   irParaDesempate(): void {
     this.store.goTo(PASSO_DESEMPATE);
   }
-
-  /** Se alguma exigência condiciona por idade — é o que torna a política obrigatória. */
-  readonly exigeApuracaoDeIdade = computed(() =>
-    fatosCitadosPelasExigencias(this.store.draft().documentos).has('FAIXA_ETARIA'),
-  );
-
-  /** As fases do cronograma, para ancorar a apuração da idade. */
-  readonly fasesEscolhiveis = computed(() =>
-    this.store.draft().cronograma.fases.map((fase) => fase.codigo),
-  );
 
   /**
    * Os campos que nada no certame usa. Existem porque a remoção automática só alcança o que a
@@ -1018,14 +899,6 @@ export class FormularioStepComponent {
       this.regrasDasModalidades(),
     ).map((campo) => (campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo));
   });
-
-  escreverReferencia(patch: Partial<{ tipo: string; data: string; faseCodigo: string }>): void {
-    const formulario = this.store.draft().formulario;
-    this.store.patchSection('formulario', {
-      ...formulario,
-      referenciaTemporal: { ...formulario.referenciaTemporal, ...patch },
-    });
-  }
 
   /**
    * Os campos que este formulário pergunta e cujos valores escolhíveis saem da oferta de
@@ -1099,7 +972,7 @@ export class FormularioStepComponent {
     const geracao = this.store.geracao();
     this.store.salvando.set(true);
     try {
-      const detalhe = await this.lerProcesso(processoId);
+      const detalhe = await this.leitura.ler(processoId);
       if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
       if (!isApiOk(detalhe)) {
         return {
@@ -1224,7 +1097,7 @@ export class FormularioStepComponent {
     geracao: number,
     gravadas: readonly string[] | null,
   ): Promise<void> {
-    const detalhe = await this.lerProcesso(processoId);
+    const detalhe = await this.leitura.ler(processoId);
     if (geracao !== this.store.geracao() || !isApiOk(detalhe)) return;
     if (gravadas === null) {
       this.store.projetarSecao('formulario', formulariosDoServidor(detalhe.data));
