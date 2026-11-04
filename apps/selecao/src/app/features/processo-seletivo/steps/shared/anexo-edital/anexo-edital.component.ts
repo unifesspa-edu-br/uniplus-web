@@ -4,21 +4,13 @@ import {
   ValorEmConsultaComponent,
   type ArquivoEmEnvio,
 } from '@uniplus/shared-ui/components';
-import {
-  ProblemI18nService,
-  isApiOk,
-  abrirAcessoEmNovaAba,
-  destinoExpirado,
-} from '@uniplus/shared-core/http';
-import {
-  DocumentoAPublicarDto,
-  IniciarEnvioDoDocumentoAPublicarDto,
-} from '@uniplus/shared-data/selecao';
+import { ProblemI18nService, isApiOk, abrirAcessoEmNovaAba } from '@uniplus/shared-core/http';
+import { DocumentoAPublicarDto } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { UploadItem } from '../../processo-seletivo.models';
 import { EnvioDoEdital } from '../envio-do-edital.service';
 import { classificarDocumentos, descreverDocumento, uploadItemDe } from '../hidratacao';
+import { EtapasDoEnvioDoEdital } from './etapas-do-envio-do-edital';
 
 /** Limite do documento do edital no domínio: 20 MB. */
 const TAMANHO_MAXIMO_MB = 20;
@@ -26,101 +18,35 @@ const TAMANHO_MAXIMO_MB = 20;
 /**
  * Anexo do documento oficial do edital.
  *
- * Vive junto da publicação, não da identificação: o edital é o ato normativo
- * que publica o certame, e exigi-lo antes de haver configuração publicável
- * invertia a ordem — a ponto de o anexo ter virado o gesto que criava o
- * rascunho, porque a rota do documento pede um processo já existente.
- *
- * O envio tem três fases e cada falha registra a sua, para a retentativa
- * recomeçar do ponto certo: repetir a confirmação de um objeto que nunca
- * chegou ao storage, ou repetir um PUT cuja URL expirou, não funciona.
+ * Vive junto da publicação, não da identificação: o edital é o ato normativo que publica o
+ * certame, e exigi-lo antes de haver configuração publicável invertia a ordem, porque a rota do
+ * documento pede um processo já existente. O envio em três fases é das etapas do envio.
  */
 @Component({
   selector: 'sel-anexo-edital',
-  standalone: true,
   imports: [FileUploadComponent, ValorEmConsultaComponent],
   templateUrl: './anexo-edital.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [EtapasDoEnvioDoEdital],
 })
 export class AnexoEditalComponent {
-  readonly store = inject(ProcessoSeletivoStore);
+  protected readonly store = inject(ProcessoSeletivoStore);
+  protected readonly etapas = inject(EtapasDoEnvioDoEdital);
   private readonly envioDoEdital = inject(EnvioDoEdital);
   private readonly problemI18n = inject(ProblemI18nService);
 
-  readonly tamanhoMaximoMb = TAMANHO_MAXIMO_MB;
-  readonly uploadError = signal<string | null>(null);
-  readonly reverificando = signal(false);
+  protected readonly tamanhoMaximoMb = TAMANHO_MAXIMO_MB;
+  protected readonly reverificando = signal(false);
 
   /** Documento cujo acesso está sendo pedido, para o botão anunciar a espera. */
-  readonly abrindoDocumento = signal<string | null>(null);
+  protected readonly abrindoDocumento = signal<string | null>(null);
 
   /** Recusa da abertura, exibida junto do documento que falhou. */
   readonly erroDeAbertura = signal<string | null>(null);
 
-  /** Impede que uma segunda escolha atropele o envio em andamento. */
-  private operacaoEmCurso = false;
-  /**
-   * O arquivo escolhido e o processo em que o foi. Sinal porque decide se a lista oferece a nova
-   * tentativa; o arquivo de um processo não vale em outro.
-   */
-  private readonly arquivoEmMemoria = signal<{ arquivo: File; geracao: number } | null>(null);
-  private readonly arquivoSelecionado = computed(() => {
-    const emMemoria = this.arquivoEmMemoria();
-    return emMemoria !== null && emMemoria.geracao === this.store.geracao()
-      ? emMemoria.arquivo
-      : null;
-  });
-  private iniciacaoAtual: IniciarEnvioDoDocumentoAPublicarDto | null = null;
-
-  /** Geração do editor quando o anexo em curso começou. */
-  private geracaoDoAnexo: number | null = null;
-
-  readonly anexo = computed<UploadItem | undefined>(
-    () => this.store.draft().identificacao.uploads[0],
-  );
-  readonly anexoConfirmado = computed(() => this.anexo()?.fase === 'confirmado');
-  readonly anexoEmCurso = computed(() => {
-    const fase = this.anexo()?.fase;
-    return fase === 'iniciando' || fase === 'enviando' || fase === 'confirmando';
-  });
-
-  /**
-   * O anexo fica indisponível enquanto qualquer gravação está em curso, depois
-   * de confirmado, e também quando a confirmação ficou sem resposta: nesse
-   * último caso o documento pode já estar selado no servidor, e substituí-lo
-   * criaria um segundo edital imutável.
-   */
-  readonly anexoBloqueado = computed(
-    () => this.anexo()?.confirmacaoIndefinida === true || this.travadoSalvoConfirmacaoIndefinida(),
-  );
-
-  /**
-   * O que trava o anexo além da confirmação sem resposta. Essa exceção é justamente o que a
-   * retomada resolve: repetir a mesma confirmação, sem criar documento novo.
-   */
-  private readonly travadoSalvoConfirmacaoIndefinida = computed(
-    () =>
-      this.anexoEmCurso() ||
-      this.anexoConfirmado() ||
-      // Cobre também a gravação em curso: anexar é escrita, e o servidor
-      // recusa a de processo fora de rascunho.
-      !this.store.aceitaEdicao() ||
-      // Escolha entre documentos confirmados pendente: enviar outro criaria um
-      // terceiro documento imutável e agravaria a ambiguidade que a escolha
-      // existe para resolver.
-      this.store.documentosParaEscolha().length > 0 ||
-      // Leitura dos documentos falhou: não dá para saber se já há edital
-      // confirmado, e a API aceita um segundo sem recusar. Enquanto a
-      // verificação não passar, anexar é apostar — daí o botão de reverificar.
-      this.store.avisoDocumentos() !== null,
-  );
-
-  /** O anexo exige o processo já criado: a rota é `/{id}/documentos-a-publicar`. */
-  private readonly semProcesso = computed(() => this.store.processoSeletivoId() === null);
-
   /** O anexo na forma que a lista do `ui-file-upload` exibe. */
-  readonly itens = computed<readonly ArquivoEmEnvio[]>(() => {
-    const item = this.anexo();
+  protected readonly itens = computed<readonly ArquivoEmEnvio[]>(() => {
+    const item = this.etapas.anexo();
     if (item === undefined) return [];
     return [
       {
@@ -129,217 +55,11 @@ export class AnexoEditalComponent {
         fase: item.fase,
         progresso: item.progress,
         mensagem: item.mensagemErro,
-        podeTentarDeNovo: this.podeRetomar(item),
-        podeRetirar: !this.anexoBloqueado(),
+        podeTentarDeNovo: this.etapas.podeRetomar(),
+        podeRetirar: !this.etapas.anexoBloqueado(),
       },
     ];
   });
-
-  /** A validação de formato e tamanho é do `ui-file-upload`, que só entrega arquivo aprovado. */
-  aoEscolherArquivo(arquivos: readonly File[]): void {
-    const arquivo = arquivos[0];
-    if (arquivo !== undefined) void this.anexar(arquivo);
-  }
-
-  private async anexar(arquivo: File): Promise<void> {
-    // Sem esta guarda, uma segunda escolha durante o envio trocaria o arquivo
-    // sob os pés do fluxo em andamento: o anexo exibiria o nome do primeiro e o
-    // storage receberia os bytes do segundo — que o backend selaria como
-    // documento imutável.
-    //
-    // A recusa vem antes de a geração ser recarimbada: fazê-lo antes desarmaria
-    // a guarda do envio que ainda está correndo, e as respostas dele passariam
-    // a escrever como se fossem do processo atual.
-    if (this.operacaoEmCurso) {
-      this.uploadError.set(
-        'Há um envio de edital em andamento. Aguarde a conclusão antes de escolher outro arquivo.',
-      );
-      return;
-    }
-
-    this.geracaoDoAnexo = this.store.geracao();
-
-    // `anexar` é a porta de todo envio, então a recusa vive aqui e não só na marcação
-    // desabilitada: cada anexo confirmado vira um documento imutável a mais no processo.
-    if (this.anexoConfirmado()) {
-      this.uploadError.set(
-        'O edital já foi anexado e não pode ser substituído. Para trocar o arquivo, cadastre um novo processo seletivo.',
-      );
-      return;
-    }
-    if (this.anexo()?.confirmacaoIndefinida === true) {
-      this.uploadError.set(
-        'A confirmação do edital anterior ficou sem resposta e pode ter sido registrada. Use "Tentar novamente" antes de escolher outro arquivo.',
-      );
-      return;
-    }
-
-    const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      this.uploadError.set(
-        'O cadastro do processo precisa estar concluído antes de anexar o edital. Volte à identificação e avance.',
-      );
-      return;
-    }
-
-    this.uploadError.set(null);
-    this.operacaoEmCurso = true;
-    try {
-      this.arquivoEmMemoria.set({ arquivo, geracao: this.store.geracao() });
-      this.iniciacaoAtual = null;
-      this.registrarAnexo(arquivo);
-      await this.executarUpload(processoId, arquivo);
-    } finally {
-      this.operacaoEmCurso = false;
-    }
-  }
-
-  /**
-   * A retomada precisa do processo e de algo a repetir: o arquivo na memória, ou o PUT já feito
-   * (só falta confirmar, o que dispensa os bytes). Após recarregar a página um anexo em erro vem do
-   * servidor sem arquivo e sem envio concluído, e repetir não teria o que enviar.
-   */
-  private podeRetomar(item: UploadItem): boolean {
-    return (
-      !this.semProcesso() &&
-      !this.travadoSalvoConfirmacaoIndefinida() &&
-      (this.arquivoSelecionado() !== null || soFaltaConfirmar(item))
-    );
-  }
-
-  /** Retoma da fase que falhou, sem repetir o que já concluiu. */
-  async retomarUpload(): Promise<void> {
-    if (this.operacaoEmCurso) return;
-    const arquivo = this.arquivoSelecionado();
-    const processoId = this.store.processoSeletivoId();
-    const atual = this.anexo();
-    if (processoId === null || atual === undefined || !this.podeRetomar(atual)) return;
-
-    // A resposta de uma retomada iniciada aqui só escreve enquanto o editor tratar deste processo.
-    this.geracaoDoAnexo = this.store.geracao();
-    this.uploadError.set(null);
-    this.operacaoEmCurso = true;
-    try {
-      await this.executarUpload(processoId, arquivo);
-    } finally {
-      this.operacaoEmCurso = false;
-    }
-  }
-
-  private registrarAnexo(arquivo: File): void {
-    const item: UploadItem = {
-      id: crypto.randomUUID(),
-      name: arquivo.name,
-      extension: 'pdf',
-      progress: 0,
-      fase: 'iniciando',
-    };
-    this.store.patchObjectSection('identificacao', { uploads: [item] });
-  }
-
-  private async executarUpload(processoId: string, arquivo: File | null): Promise<void> {
-    const atual = this.anexo();
-    if (atual === undefined) return;
-
-    // O arquivo já chegou ao storage numa tentativa anterior: repetir o PUT
-    // seria desperdício e esbarraria numa URL possivelmente expirada. Só a
-    // confirmação falta, e repeti-la com a mesma chave recupera o replay.
-    if (soFaltaConfirmar(atual) && atual.documentoAPublicarId !== undefined) {
-      await this.confirmar(processoId, atual.documentoAPublicarId);
-      return;
-    }
-    if (arquivo === null) return;
-
-    let iniciacao = this.iniciacaoAtual;
-    if (iniciacao === null || destinoExpirado(iniciacao)) {
-      this.atualizarAnexo({ fase: 'iniciando', progress: 0, mensagemErro: undefined });
-      const inicio = await this.envioDoEdital.iniciarUpload(processoId, arquivo.name);
-      if (!inicio.ok) {
-        this.falharAnexo(this.problemI18n.resolve(inicio.problem).title);
-        return;
-      }
-      iniciacao = inicio.iniciacao;
-      this.iniciacaoAtual = iniciacao;
-      this.atualizarAnexo({
-        documentoAPublicarId: iniciacao.documentoAPublicarId,
-        expiraEm: iniciacao.expiraEm,
-      });
-    }
-
-    this.atualizarAnexo({ fase: 'enviando' });
-    const envio = await this.envioDoEdital.enviarArquivo(iniciacao, arquivo, (pct) =>
-      this.atualizarAnexo({ progress: pct }),
-    );
-    if (!envio.ok) {
-      // A assinatura não volta a valer — nem por expiração, nem por divergência
-      // de content type ou política do bucket. Em todos esses casos o caminho é
-      // pedir outra URL, então a iniciação é descartada.
-      if (envio.expirada) {
-        this.iniciacaoAtual = null;
-        this.atualizarAnexo({ documentoAPublicarId: undefined, expiraEm: undefined });
-        this.falharAnexo(
-          'O endereço de envio não é mais válido. Tente novamente para obter um novo.',
-        );
-        return;
-      }
-      this.falharAnexo('Falha ao enviar o arquivo. Verifique a conexão e tente novamente.');
-      return;
-    }
-
-    this.atualizarAnexo({ enviado: true, progress: 100 });
-    // A URL cumpriu o papel; some da memória para não ficar credencial viva à toa.
-    this.iniciacaoAtual = null;
-    await this.confirmar(processoId, iniciacao.documentoAPublicarId);
-  }
-
-  private async confirmar(processoId: string, documentoAPublicarId: string): Promise<void> {
-    this.atualizarAnexo({ fase: 'confirmando', progress: 100 });
-    const confirmacao = await this.envioDoEdital.confirmarUpload(processoId, documentoAPublicarId);
-    if (!confirmacao.ok) {
-      const indefinida = this.envioDoEdital.temConfirmacaoPendente();
-      this.atualizarAnexo({ confirmacaoIndefinida: indefinida });
-      this.falharAnexo(
-        indefinida
-          ? `${this.problemI18n.resolve(confirmacao.problem).title} Não é possível saber se o edital foi registrado; use "Tentar novamente" para repetir a mesma confirmação.`
-          : this.problemI18n.resolve(confirmacao.problem).title,
-      );
-      return;
-    }
-
-    this.atualizarAnexo({
-      fase: 'confirmado',
-      progress: 100,
-      mensagemErro: undefined,
-      confirmacaoIndefinida: false,
-    });
-  }
-
-  /**
-   * Funil de toda escrita do fluxo de anexo — e, por isso, o lugar certo da
-   * guarda: a página do editor sobrevive à troca de endereço, então um envio
-   * disparado para o processo anterior continua respondendo depois que o
-   * editor já trata de outro. Escrever ali vincularia o edital de um processo
-   * ao outro.
-   */
-  private atualizarAnexo(patch: Partial<UploadItem>): void {
-    if (this.geracaoDoAnexo !== null && this.geracaoDoAnexo !== this.store.geracao()) return;
-
-    const atual = this.anexo();
-    if (atual === undefined) return;
-    this.store.patchObjectSection('identificacao', { uploads: [{ ...atual, ...patch }] });
-  }
-
-  private falharAnexo(mensagem: string): void {
-    this.atualizarAnexo({ fase: 'erro', mensagemErro: mensagem });
-  }
-
-  /** Só antes da confirmação: o documento confirmado é imutável no backend. */
-  removeUpload(): void {
-    if (this.anexoBloqueado()) return;
-    this.uploadError.set(null);
-    this.arquivoEmMemoria.set(null);
-    this.store.patchObjectSection('identificacao', { uploads: [] });
-  }
 
   /** Metadados que distinguem um confirmado do outro na escolha do oficial. */
   protected descrever(documento: DocumentoAPublicarDto): string {
@@ -398,19 +118,11 @@ export class AnexoEditalComponent {
   }
 
   /**
-   * Decisão explícita entre documentos confirmados. O wizard nunca elege
-   * sozinho: adotar o mais recente trocaria o edital do certame sem o operador
-   * perceber.
+   * Decisão explícita entre documentos confirmados. O wizard nunca elege sozinho: adotar o mais
+   * recente trocaria o edital do certame sem o operador perceber.
    */
   escolherDocumentoConfirmado(documento: DocumentoAPublicarDto): void {
     this.store.projetarSecao('identificacao', { uploads: [uploadItemDe(documento)] });
     this.store.documentosParaEscolha.set([]);
   }
-
-  protected readonly aguardandoCadastro = this.semProcesso;
-}
-
-/** O arquivo já chegou ao storage: da tentativa só resta a confirmação, que não usa os bytes. */
-function soFaltaConfirmar(item: UploadItem): boolean {
-  return item.enviado === true && item.documentoAPublicarId !== undefined;
 }

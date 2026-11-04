@@ -3,7 +3,6 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
-  FinalidadeDoDocumento,
   ProcessoSeletivoDto,
   SELECAO_BASE_PATH,
   StatusProcesso,
@@ -14,15 +13,19 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { EnvioDoEdital } from '../envio-do-edital.service';
 import { GravacaoDoProcesso } from '../gravacao/gravacao-do-processo';
 import { AnexoEditalComponent } from './anexo-edital.component';
-
-const BASE = 'http://localhost:5000';
-const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';
-const DOCUMENTO_ID = '01960000-0000-7000-0000-0000000005dd';
-const URL_ASSINADA = 'http://localhost:9000/uniplus-selecao/editais/edital.pdf?X-Amz-Signature=abc';
-
-const ROTA_DOCUMENTOS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/documentos-a-publicar`;
-const URL_LEITURA =
-  'http://localhost:9000/uniplus-selecao/editais/confirmado.pdf?X-Amz-Signature=leitura';
+import {
+  BASE,
+  DOCUMENTO_ID,
+  PROCESSO_ID,
+  ROTA_DOCUMENTOS,
+  URL_LEITURA,
+  documentoConfirmado,
+  pdf,
+  percorrerOEnvio,
+  problema,
+  tick,
+} from './anexo-edital.testing';
+import { EtapasDoEnvioDoEdital } from './etapas-do-envio-do-edital';
 
 /** Aba nova o bastante para o teste: guarda o endereço recebido e o fechamento. */
 function abaFalsa() {
@@ -36,62 +39,9 @@ function abaFalsa() {
   } as unknown as Window & { location: { href: string }; opener: unknown; fechada: boolean };
 }
 
-/** Um PDF mínimo: a assinatura importa para a recusa client-side. */
-function pdf(nome = 'edital.pdf', bytes = 2048): File {
-  return new File([new Uint8Array(bytes).fill(37)], nome, { type: 'application/pdf' });
-}
-
-/**
- * Cede o event loop para que a cadeia de `await` do componente avance até a
- * próxima requisição. `Promise.resolve()` sozinho não basta: cada fase do fluxo
- * passa por `firstValueFrom` e por mais de um microtask.
- */
-function tick(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-/**
- * Recusa no formato que a API realmente emite. O `apiResultInterceptor` só
- * parseia o `code` quando o content type é `application/problem+json`.
- */
-function problema(status: number, code: string, title: string) {
-  return {
-    body: { type: 'about:blank', title, status, code, traceId: 'trace-1' },
-    opts: {
-      status,
-      statusText: title,
-      headers: { 'Content-Type': 'application/problem+json' },
-    },
-  };
-}
-
-function iniciacao(expiraEmMs = Date.now() + 900_000) {
-  return {
-    documentoAPublicarId: DOCUMENTO_ID,
-    urlUpload: URL_ASSINADA,
-    contentTypeExigido: 'application/pdf',
-    expiraEm: new Date(expiraEmMs).toISOString(),
-  };
-}
-
-function documentoConfirmado(id: string, hash: string, confirmadoEm: string) {
-  return {
-    id,
-    processoSeletivoId: PROCESSO_ID,
-    finalidade: FinalidadeDoDocumento.documentoDoEdital,
-    nomeArquivo: 'edital.pdf',
-    tipoDeMidia: 'application/pdf',
-    status: 'Confirmado',
-    criadoEm: '2026-08-20T12:00:00Z',
-    expiraEm: '2026-08-20T12:15:00Z',
-    tamanhoBytes: 2048,
-    hashSha256: hash,
-    confirmadoEm,
-  };
-}
-
 describe('AnexoEditalComponent', () => {
   let componente: AnexoEditalComponent;
+  let etapas: EtapasDoEnvioDoEdital;
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let host: HTMLElement;
@@ -112,14 +62,14 @@ describe('AnexoEditalComponent', () => {
 
     const fixture = TestBed.createComponent(AnexoEditalComponent);
     componente = fixture.componentInstance;
+    etapas = fixture.debugElement.injector.get(EtapasDoEnvioDoEdital);
     host = fixture.nativeElement as HTMLElement;
     detectar = () => fixture.detectChanges();
     store = TestBed.inject(ProcessoSeletivoStore);
     controller = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
 
-    // O anexo pressupõe o processo já criado — a rota do documento é
-    // `/{id}/documentos-a-publicar`. Quem o cria é a conclusão da identificação.
+    // O anexo pressupõe o processo já criado: a rota do documento é `/{id}/documentos-a-publicar`.
     store.processoSeletivoId.set(PROCESSO_ID);
   });
 
@@ -137,31 +87,7 @@ describe('AnexoEditalComponent', () => {
     return host.querySelector('[role="alert"]')?.textContent ?? '';
   }
 
-  /** Percorre as três fases até o documento selado. */
-  async function anexarComSucesso(arquivo = pdf()): Promise<void> {
-    void componente['anexar'](arquivo);
-    await tick();
-
-    const inicio = controller.expectOne(ROTA_DOCUMENTOS);
-    expect(inicio.request.body).toEqual({
-      finalidade: 'documentoDoEdital',
-      nomeArquivo: arquivo.name,
-      tipoDeMidia: 'application/pdf',
-    });
-    inicio.flush(iniciacao(), {
-      status: 201,
-      statusText: 'Created',
-    });
-    await tick();
-
-    controller.expectOne(URL_ASSINADA).flush(null);
-    await tick();
-
-    controller
-      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/confirmacao`)
-      .flush({ id: DOCUMENTO_ID }, { status: 200, statusText: 'OK' });
-    await tick();
-  }
+  const anexarComSucesso = (arquivo = pdf()) => percorrerOEnvio(etapas, controller, arquivo);
 
   it('recusa arquivo que não é PDF sem chamar a API', () => {
     escolher(new File(['x'], 'edital.docx', { type: 'application/msword' }));
@@ -177,122 +103,18 @@ describe('AnexoEditalComponent', () => {
     expect(alerta()).toContain('20MB');
   });
 
-  /** O anexo não cria o processo: sem id, não há rota para onde enviar. */
-  it('recusa anexar antes de o processo existir', () => {
-    store.processoSeletivoId.set(null);
-
-    void componente['anexar'](pdf());
-
-    expect(componente.uploadError()).toContain('cadastro do processo precisa estar concluído');
-  });
-
-  it('percorre iniciação, envio e confirmação até selar o documento', async () => {
-    await anexarComSucesso();
-
-    expect(componente.anexo()?.fase).toBe('confirmado');
-    expect(componente.anexo()?.progress).toBe(100);
-    expect(componente.anexo()?.documentoAPublicarId).toBe(DOCUMENTO_ID);
-  });
-
-  /**
-   * A assinatura não volta a valer depois de recusada pelo storage: a
-   * retentativa precisa pedir outra URL, não repetir a mesma.
-   */
-  it('descarta a iniciação quando o storage recusa a URL', async () => {
-    void componente['anexar'](pdf());
-    await tick();
-
-    controller.expectOne(ROTA_DOCUMENTOS).flush(iniciacao(), {
-      status: 201,
-      statusText: 'Created',
-    });
-    await tick();
-
-    controller.expectOne(URL_ASSINADA).flush('expired', { status: 403, statusText: 'Forbidden' });
-    await tick();
-
-    expect(componente.anexo()?.fase).toBe('erro');
-    expect(componente.anexo()?.documentoAPublicarId).toBeUndefined();
-  });
-
-  /**
-   * Uma segunda escolha durante o envio trocaria o arquivo sob os pés do fluxo:
-   * o anexo exibiria o nome do primeiro e o storage receberia os bytes do
-   * segundo — que o backend selaria como documento imutável.
-   */
-  it('ignora um segundo arquivo escolhido enquanto o envio corre', async () => {
-    void componente['anexar'](pdf('primeiro.pdf'));
-    await tick();
-
-    void componente['anexar'](pdf('segundo.pdf'));
-
-    expect(componente.uploadError()).toContain('envio de edital em andamento');
-    expect(componente.anexo()?.name).toBe('primeiro.pdf');
-
-    controller.expectOne(ROTA_DOCUMENTOS).flush(iniciacao(), {
-      status: 201,
-      statusText: 'Created',
-    });
-    await tick();
-    controller.expectOne(URL_ASSINADA).flush(null);
-    await tick();
-    controller
-      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/confirmacao`)
-      .flush({ id: DOCUMENTO_ID });
-    await tick();
-  });
-
-  /**
-   * O arquivo já chegou ao storage: repetir o PUT seria desperdício e
-   * esbarraria numa URL possivelmente expirada. Só a confirmação falta.
-   */
-  it('retoma direto da confirmação quando o arquivo já foi enviado', async () => {
-    void componente['anexar'](pdf());
-    await tick();
-
-    controller.expectOne(ROTA_DOCUMENTOS).flush(iniciacao(), {
-      status: 201,
-      statusText: 'Created',
-    });
-    await tick();
-    controller.expectOne(URL_ASSINADA).flush(null);
-    await tick();
-
-    const recusa = problema(503, 'uniplus.client.network_error', 'Serviço indisponível');
-    controller
-      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/confirmacao`)
-      .flush(recusa.body, recusa.opts);
-    await tick();
-
-    expect(componente.anexo()?.fase).toBe('erro');
-    expect(componente.anexo()?.enviado).toBe(true);
-
-    void componente.retomarUpload();
-    await tick();
-
-    controller
-      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/confirmacao`)
-      .flush({ id: DOCUMENTO_ID });
-    await tick();
-
-    expect(componente.anexo()?.fase).toBe('confirmado');
-  });
-
-  it('registra o anexo em erro quando a iniciação falha', async () => {
-    void componente['anexar'](pdf());
-    await tick();
-
-    const recusa = problema(503, 'uniplus.client.network_error', 'Serviço indisponível');
-    controller.expectOne(ROTA_DOCUMENTOS).flush(recusa.body, recusa.opts);
-    await tick();
-
-    expect(componente.anexo()?.fase).toBe('erro');
-    expect(componente.anexo()?.mensagemErro).toBeTruthy();
-  });
-
   it('não oferece nova tentativa para anexo em erro sem o arquivo na memória', () => {
     store.patchObjectSection('identificacao', {
-      uploads: [{ id: 'x', name: 'edital.pdf', extension: 'pdf', progress: 40, fase: 'erro', mensagemErro: 'Falhou.' }],
+      uploads: [
+        {
+          id: 'x',
+          name: 'edital.pdf',
+          extension: 'pdf',
+          progress: 40,
+          fase: 'erro',
+          mensagemErro: 'Falhou.',
+        },
+      ],
     });
     detectar();
 
@@ -318,44 +140,18 @@ describe('AnexoEditalComponent', () => {
     detectar();
     expect(host.textContent).toContain('Tentar novamente');
 
-    void componente.retomarUpload();
+    void etapas.retomar();
     await tick();
 
     controller
       .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/confirmacao`)
       .flush({ id: DOCUMENTO_ID }, { status: 200, statusText: 'OK' });
     await tick();
-    expect(componente.anexo()?.fase).toBe('confirmado');
-  });
-
-  const SO_FALTA_CONFIRMAR = {
-    id: 'x',
-    name: 'edital.pdf',
-    extension: 'pdf' as const,
-    progress: 100,
-    fase: 'erro' as const,
-    mensagemErro: 'Sem resposta.',
-    enviado: true,
-    documentoAPublicarId: DOCUMENTO_ID,
-    confirmacaoIndefinida: true,
-  };
-
-  it('descarta a resposta da retomada quando o editor trocou de processo', async () => {
-    store.patchObjectSection('identificacao', { uploads: [SO_FALTA_CONFIRMAR] });
-    void componente.retomarUpload();
-    await tick();
-
-    store.geracao.update((geracao) => geracao + 1);
-    controller
-      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/confirmacao`)
-      .flush({ id: DOCUMENTO_ID }, { status: 200, statusText: 'OK' });
-    await tick();
-
-    expect(componente.anexo()?.fase).toBe('confirmando');
+    expect(etapas.anexo()?.fase).toBe('confirmado');
   });
 
   it('não oferece nem executa a retomada com o anexo travado por outro motivo', async () => {
-    void componente['anexar'](pdf());
+    void etapas.anexar(pdf());
     await tick();
     const recusa = problema(503, 'uniplus.client.network_error', 'Serviço indisponível');
     controller.expectOne(ROTA_DOCUMENTOS).flush(recusa.body, recusa.opts);
@@ -365,7 +161,7 @@ describe('AnexoEditalComponent', () => {
 
     store.avisoDocumentos.set('Não foi possível ler os documentos.');
     detectar();
-    void componente.retomarUpload();
+    void etapas.retomar();
     await tick();
 
     expect(host.textContent).not.toContain('Tentar novamente');
@@ -373,7 +169,7 @@ describe('AnexoEditalComponent', () => {
   });
 
   it('não reaproveita o arquivo escolhido em outro processo', async () => {
-    void componente['anexar'](pdf());
+    void etapas.anexar(pdf());
     await tick();
     const recusa = problema(503, 'uniplus.client.network_error', 'Serviço indisponível');
     controller.expectOne(ROTA_DOCUMENTOS).flush(recusa.body, recusa.opts);
@@ -383,161 +179,27 @@ describe('AnexoEditalComponent', () => {
     detectar();
 
     expect(host.textContent).not.toContain('Tentar novamente');
-    void componente.retomarUpload();
+    void etapas.retomar();
     await tick();
     controller.expectNone(ROTA_DOCUMENTOS);
-  });
-
-  it('repete a chave do início após falha de rede e gira a chave quando o arquivo muda', async () => {
-    const chaveDoInicio = (): string => {
-      const requisicao = controller.expectOne(ROTA_DOCUMENTOS);
-      const chave = requisicao.request.headers.get('Idempotency-Key') ?? '';
-      requisicao.error(new ProgressEvent('error'));
-      return chave;
-    };
-
-    void componente['anexar'](pdf('primeiro.pdf'));
-    await tick();
-    const primeira = chaveDoInicio();
-    await tick();
-
-    void componente.retomarUpload();
-    await tick();
-    const repetida = chaveDoInicio();
-    await tick();
-
-    void componente['anexar'](pdf('segundo.pdf'));
-    await tick();
-    const outroArquivo = chaveDoInicio();
-    await tick();
-
-    expect(primeira).not.toBe('');
-    expect(repetida).toBe(primeira);
-    expect(outroArquivo).not.toBe(primeira);
-  });
-
-  it('limpa a recusa anterior ao retomar o envio', async () => {
-    void componente['anexar'](pdf());
-    await tick();
-    controller
-      .expectOne(ROTA_DOCUMENTOS)
-      .flush(problema(503, 'uniplus.client.network_error', 'Indisponível').body, problema(503, 'uniplus.client.network_error', 'Indisponível').opts);
-    await tick();
-    componente.uploadError.set('Recusa antiga.');
-
-    void componente.retomarUpload();
-    await tick();
-
-    expect(componente.uploadError()).toBeNull();
-    controller.expectOne(ROTA_DOCUMENTOS);
-  });
-
-  it('limpa a recusa anterior ao remover o anexo', async () => {
-    void componente['anexar'](pdf('primeiro.pdf'));
-    await tick();
-    controller.expectOne(ROTA_DOCUMENTOS).flush(problema(500, 'x', 'Falhou').body, problema(500, 'x', 'Falhou').opts);
-    await tick();
-    componente.uploadError.set('Recusa antiga.');
-
-    componente.removeUpload();
-
-    expect(componente.uploadError()).toBeNull();
-    expect(componente.anexo()).toBeUndefined();
-  });
-
-  /** Cada anexo confirmado vira um documento imutável a mais no processo. */
-  it('recusa substituir um edital já confirmado', async () => {
-    await anexarComSucesso();
-
-    void componente['anexar'](pdf('outro.pdf'));
-
-    expect(componente.uploadError()).toContain('não pode ser substituído');
-    expect(componente.anexo()?.name).toBe('edital.pdf');
   });
 
   /** Processo publicado só se lê: o nome do edital vira texto, e sobra a ação de abri-lo. */
   it('em consulta, lê o nome do edital inteiro, sem área de envio nem remoção', async () => {
     await anexarComSucesso(pdf('edital-de-abertura-do-processo-seletivo-de-medicina-2027.pdf'));
 
-    store.remoteSnapshot.set({ status: StatusProcesso.publicado } as unknown as ProcessoSeletivoDto);
+    store.remoteSnapshot.set({
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
     detectar();
 
-    expect(host.textContent).toContain('edital-de-abertura-do-processo-seletivo-de-medicina-2027.pdf');
+    expect(host.textContent).toContain(
+      'edital-de-abertura-do-processo-seletivo-de-medicina-2027.pdf',
+    );
     expect(host.querySelector('ui-file-upload, input, [role="progressbar"]')).toBeNull();
     expect(Array.from(host.querySelectorAll('button')).map((b) => b.textContent?.trim())).toEqual([
       'Abrir o edital',
     ]);
-  });
-
-  it('não remove o anexo já confirmado', async () => {
-    await anexarComSucesso();
-
-    componente.removeUpload();
-
-    expect(componente.anexo()).toBeDefined();
-  });
-
-  /**
-   * A confirmação sem resposta pode ter sido registrada no servidor: trocar o
-   * arquivo agora criaria um segundo edital selado.
-   */
-  it('não deixa trocar nem remover o anexo com confirmação indefinida', async () => {
-    void componente['anexar'](pdf('primeiro.pdf'));
-    await tick();
-
-    controller.expectOne(ROTA_DOCUMENTOS).flush(iniciacao(), {
-      status: 201,
-      statusText: 'Created',
-    });
-    await tick();
-    controller.expectOne(URL_ASSINADA).flush(null);
-    await tick();
-
-    const inconclusiva = problema(503, 'uniplus.client.network_error', 'Sem resposta');
-    controller
-      .expectOne(`${ROTA_DOCUMENTOS}/${DOCUMENTO_ID}/confirmacao`)
-      .flush(inconclusiva.body, inconclusiva.opts);
-    await tick();
-
-    expect(componente.anexo()?.confirmacaoIndefinida).toBe(true);
-
-    void componente['anexar'](pdf('segundo.pdf'));
-    expect(componente.uploadError()).toContain('ficou sem resposta');
-
-    componente.removeUpload();
-    expect(componente.anexo()?.name).toBe('primeiro.pdf');
-  });
-
-  /** Enviar outro durante a escolha criaria um terceiro documento imutável. */
-  it('bloqueia o anexo enquanto há escolha entre documentos confirmados', () => {
-    store.documentosParaEscolha.set([
-      documentoConfirmado(DOCUMENTO_ID, 'a'.repeat(64), '2026-08-20T12:05:00Z'),
-      documentoConfirmado(
-        '01960000-0000-7000-0000-0000000005de',
-        'b'.repeat(64),
-        '2026-08-20T12:12:00Z',
-      ),
-    ]);
-
-    expect(componente.anexoBloqueado()).toBe(true);
-  });
-
-  /**
-   * Anexar é escrita, e o servidor recusa a de processo fora de rascunho. Um
-   * rascunho cancelado, por exemplo, não tem edital confirmado, então nenhum
-   * dos outros bloqueios pega — só o estado do processo.
-   */
-  it('bloqueia o anexo em processo fora de rascunho', () => {
-    store.remoteSnapshot.set({ status: 'cancelado' } as never);
-
-    expect(componente.anexoBloqueado()).toBe(true);
-  });
-
-  /** Sem saber se já existe edital, anexar é apostar que não existe. */
-  it('bloqueia o anexo enquanto o estado dos documentos é desconhecido', () => {
-    store.avisoDocumentos.set('Não foi possível verificar se já há edital anexado.');
-
-    expect(componente.anexoBloqueado()).toBe(true);
   });
 
   /**
@@ -573,7 +235,7 @@ describe('AnexoEditalComponent', () => {
     // O desacoplamento que o `noopener` daria, feito antes de navegar.
     expect(aba.opener).toBeNull();
     expect(JSON.stringify(store.draft())).not.toContain('X-Amz-Signature');
-    expect(JSON.stringify(componente.anexo() ?? {})).not.toContain('X-Amz-Signature');
+    expect(JSON.stringify(etapas.anexo() ?? {})).not.toContain('X-Amz-Signature');
     abrir.mockRestore();
   });
 
@@ -672,7 +334,7 @@ describe('AnexoEditalComponent', () => {
     ]);
     detectar();
 
-    expect(componente.anexo()).toBeUndefined();
+    expect(etapas.anexo()).toBeUndefined();
 
     const aba = abaFalsa();
     const abrir = vi.spyOn(window, 'open').mockReturnValue(aba);

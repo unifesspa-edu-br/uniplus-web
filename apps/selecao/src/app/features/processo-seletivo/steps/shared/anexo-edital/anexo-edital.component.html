@@ -1,7 +1,7 @@
 @if (store.emConsulta()) {
   <div class="step-card upload-section">
     <p class="label" id="anexo-edital-titulo">Edital de abertura</p>
-    @if (anexo(); as file) {
+    @if (etapas.anexo(); as file) {
       <ui-valor-em-consulta rotuladoPor="anexo-edital-titulo" [valor]="file.name" />
       @if (file.fase === 'confirmado' && file.documentoAPublicarId; as documentoId) {
         <button
@@ -22,93 +22,93 @@
     }
   </div>
 } @else {
-<div class="step-card upload-section">
-  <p class="label" id="anexo-edital-upload-titulo">Upload do edital de abertura</p>
-  @if (store.avisoDocumentos(); as aviso) {
-    <div class="alert alert--warning" role="alert">
-      <div class="alert__body">
-        <p>{{ aviso }}</p>
-        <button
-          type="button"
-          class="btn btn--secondary btn--sm"
-          [disabled]="reverificando()"
-          (click)="reverificarDocumentos()"
-        >
-          {{ reverificando() ? 'Verificando…' : 'Verificar novamente' }}
-        </button>
+  <div class="step-card upload-section">
+    <p class="label" id="anexo-edital-upload-titulo">Upload do edital de abertura</p>
+    @if (store.avisoDocumentos(); as aviso) {
+      <div class="alert alert--warning" role="alert">
+        <div class="alert__body">
+          <p>{{ aviso }}</p>
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [disabled]="reverificando()"
+            (click)="reverificarDocumentos()"
+          >
+            {{ reverificando() ? 'Verificando…' : 'Verificar novamente' }}
+          </button>
+        </div>
       </div>
-    </div>
-  }
+    }
 
-  @if (store.documentosParaEscolha().length > 0) {
-    <div class="alert alert--warning" role="alert">
-      <p>
-        Este processo tem mais de um documento de edital confirmado. Escolha qual é o oficial — a
-        escolha não é feita automaticamente.
-      </p>
-      <ul class="ps-doc-escolha">
-        @for (documento of store.documentosParaEscolha(); track documento.id) {
-          <li>
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [attr.aria-label]="'Usar o documento confirmado em ' + descrever(documento)"
-              (click)="escolherDocumentoConfirmado(documento)"
-            >
-              <span>Usar este documento</span>
-              <span class="ps-doc-escolha__meta">{{ descrever(documento) }}</span>
-            </button>
-            <button
-              type="button"
-              class="btn btn--tertiary btn--sm"
-              [attr.aria-label]="'Abrir o documento confirmado em ' + descrever(documento)"
-              [disabled]="abrindoDocumento() !== null"
-              (click)="abrirDocumento(documento.id)"
-            >
-              {{ abrindoDocumento() === documento.id ? 'Abrindo…' : 'Abrir' }}
-            </button>
-          </li>
-        }
-      </ul>
-    </div>
-  }
+    @if (store.documentosParaEscolha().length > 0) {
+      <div class="alert alert--warning" role="alert">
+        <p>
+          Este processo tem mais de um documento de edital confirmado. Escolha qual é o oficial — a
+          escolha não é feita automaticamente.
+        </p>
+        <ul class="ps-doc-escolha">
+          @for (documento of store.documentosParaEscolha(); track documento.id) {
+            <li>
+              <button
+                type="button"
+                class="btn btn--secondary btn--sm"
+                [attr.aria-label]="'Usar o documento confirmado em ' + descrever(documento)"
+                (click)="escolherDocumentoConfirmado(documento)"
+              >
+                <span>Usar este documento</span>
+                <span class="ps-doc-escolha__meta">{{ descrever(documento) }}</span>
+              </button>
+              <button
+                type="button"
+                class="btn btn--tertiary btn--sm"
+                [attr.aria-label]="'Abrir o documento confirmado em ' + descrever(documento)"
+                [disabled]="abrindoDocumento() !== null"
+                (click)="abrirDocumento(documento.id)"
+              >
+                {{ abrindoDocumento() === documento.id ? 'Abrindo…' : 'Abrir' }}
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    }
 
-  <!-- Acima do bloco de upload porque a abertura parte de dois lugares: do
+    <!-- Acima do bloco de upload porque a abertura parte de dois lugares: do
        anexo já vinculado e de cada opção da escolha entre confirmados. Dentro
        do ramo do anexo, a recusa vinda da escolha não teria onde aparecer —
        ali `anexo()` é indefinido, que é justamente o estado em que a escolha
        existe. -->
-  @if (erroDeAbertura(); as erro) {
-    <p class="field__erro" role="alert">{{ erro }}</p>
-  }
-
-  <ui-file-upload
-    idDoCampo="f-file"
-    nomeDaLista="Upload do edital de abertura"
-    descritoPor="anexo-edital-upload-titulo"
-    acceptedFileTypes=".pdf"
-    acceptLabel="Somente PDF"
-    [validarSoPelaExtensao]="true"
-    [maxSizeMb]="tamanhoMaximoMb"
-    [disabled]="anexoBloqueado()"
-    [itens]="itens()"
-    [mensagemExterna]="uploadError()"
-    (arquivosEscolhidos)="aoEscolherArquivo($event)"
-    (itemRetirado)="removeUpload()"
-    (tentarDeNovo)="retomarUpload()"
-  />
-  @if (anexo(); as file) {
-    @if (file.fase === 'confirmado' && file.documentoAPublicarId; as documentoId) {
-      <button
-        class="btn btn--tertiary btn--sm"
-        type="button"
-        [disabled]="abrindoDocumento() !== null"
-        [attr.aria-busy]="abrindoDocumento() === documentoId || null"
-        (click)="abrirDocumento(documentoId)"
-      >
-        {{ abrindoDocumento() === documentoId ? 'Abrindo…' : 'Abrir o edital' }}
-      </button>
+    @if (erroDeAbertura(); as erro) {
+      <p class="field__erro" role="alert">{{ erro }}</p>
     }
-  }
-</div>
+
+    <ui-file-upload
+      idDoCampo="f-file"
+      nomeDaLista="Upload do edital de abertura"
+      descritoPor="anexo-edital-upload-titulo"
+      acceptedFileTypes=".pdf"
+      acceptLabel="Somente PDF"
+      [validarSoPelaExtensao]="true"
+      [maxSizeMb]="tamanhoMaximoMb"
+      [disabled]="etapas.anexoBloqueado()"
+      [itens]="itens()"
+      [mensagemExterna]="etapas.uploadError()"
+      (arquivosEscolhidos)="etapas.escolher($event)"
+      (itemRetirado)="etapas.remover()"
+      (tentarDeNovo)="etapas.retomar()"
+    />
+    @if (etapas.anexo(); as file) {
+      @if (file.fase === 'confirmado' && file.documentoAPublicarId; as documentoId) {
+        <button
+          class="btn btn--tertiary btn--sm"
+          type="button"
+          [disabled]="abrindoDocumento() !== null"
+          [attr.aria-busy]="abrindoDocumento() === documentoId || null"
+          (click)="abrirDocumento(documentoId)"
+        >
+          {{ abrindoDocumento() === documentoId ? 'Abrindo…' : 'Abrir o edital' }}
+        </button>
+      }
+    }
+  </div>
 }
