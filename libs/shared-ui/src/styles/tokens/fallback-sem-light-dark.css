@@ -1,0 +1,74 @@
+/* ---------- 2b. Fallback for browsers without light-dark() ----------
+ * Placed AFTER :root so it WINS the cascade in unsupported browsers: custom
+ * properties don't validate at parse time, so the light-dark() declarations in
+ * :root above are stored as-is and only fail at used-value time — which would
+ * leave components with invalid colors. Redeclaring the light side here (after
+ * :root, before the theme overrides) guarantees valid light values. Theme
+ * overrides (incl. data-theme="contrast") come later and still win.
+ * Only the light side is defined — no dark theme is duplicated. */
+@supports not (color: light-dark(black, white)) {
+  :root {
+    color-scheme: light;
+    --color-primary-50:  #f0f5ff;
+    --color-primary-100: #d6e4ff;
+    --color-primary-200: #adc6ff;
+    --color-primary-300: #85a5ff;
+    --color-primary-400: #5b8def;
+    --color-primary-500: #2670e8;
+    --color-primary-600: #1351b4;
+    --color-primary-700: #0c4194;
+    --color-primary-800: #0c326f;
+    --color-primary-900: #071d41;
+    --color-primary: var(--color-primary-600);
+    --color-success-50:  #e7f4e9;
+    --color-success-100: #ccecd3;
+    --color-success-500: #22c55e;
+    --color-success-600: #168821;
+    --color-success-700: #0a5a16;
+    --color-warning-50:  #fef0c8;
+    --color-warning-100: #fde68a;
+    --color-warning-500: #ffcd07;
+    --color-warning-600: #c2850c;
+    --color-warning-700: #5a3e08;
+    --color-danger-50:   #fcf0ee;
+    --color-danger-100:  #fecaca;
+    --color-danger-500:  #991b1b;
+    --color-danger-600:  #8a1f1f;
+    --color-danger-700:  #7f1d1d;
+    --color-info-50:  #eff6ff;
+    --color-info-100: #dbeafe;
+    --color-info-500: #0ea5e9;
+    --color-info-600: #2565ae;
+    --color-info-700: #0c326f;
+    --surface-page:     #f8fafc;
+    --surface-card:     #ffffff;
+    --surface-subtle:   #f1f5f9;
+    --surface-elevated: #ffffff;
+    --surface-banner:   #eff6ff;
+    --surface-inverse:  #071d41;
+    --surface-overlay:  rgba(7, 29, 65, 0.55);
+    --surface-disabled: #e2e8f0;
+    --surface-accessibility-bar: #0b2754;
+    --border-subtle:  #e2e8f0;
+    --border-default: #cbd5e1;
+    --border-strong:  #64748b;
+    --text-primary:     #333333;
+    --text-secondary:   #475569;
+    --text-muted:       #475569;
+    --text-placeholder: #8493a8;
+    --text-disabled:    #94a3b8;
+    --text-on-primary:  #ffffff;
+    --text-heading:     #0c326f;
+    --text-title-soft:  #1351b4;
+    --text-link:        #1351b4;
+    --text-on-primary-tint: #0c4194;
+    --avatar-bg: #d6e4ff;
+    --avatar-fg: #0c326f;
+    --skeleton-from: #f1f5f9;
+    --skeleton-to:   #e2e8f0;
+    --focus-ring-color: #3b82f6;
+    --shadow-1: 0 1px 2px rgba(7, 29, 65, 0.06);
+    --shadow-2: 0 4px 12px rgba(7, 29, 65, 0.08);
+    --shadow-3: 0 12px 32px rgba(7, 29, 65, 0.12);
+  }
+}

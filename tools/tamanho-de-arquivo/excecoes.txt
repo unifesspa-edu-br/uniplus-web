@@ -62,4 +62,3 @@
 1328 libs/shared-ui/src/lib/components/formulario-do-candidato/formulario-do-candidato.ts
 507 libs/shared-ui/src/lib/components/formulario-do-candidato/interpretador/avaliador.ts
 613 libs/shared-ui/src/lib/components/formulario-do-candidato/interpretador/leitura.ts
-552 libs/shared-ui/src/styles/tokens.css

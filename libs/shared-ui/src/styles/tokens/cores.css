@@ -1,0 +1,129 @@
+:root {
+  /* ============================ BRAND PALETTE ============================
+   * Each color theme-aware via light-dark(). In dark we shift primary toward
+   * sky/blue-400 so CTAs remain legible (≥8.7:1) on dark surfaces. */
+  --color-primary-50:  light-dark(#f0f5ff, #1e293b);
+  --color-primary-100: light-dark(#d6e4ff, #1e3a5f);
+  --color-primary-200: light-dark(#adc6ff, #2a4d7a);
+  --color-primary-300: light-dark(#85a5ff, #3b6195);
+  --color-primary-400: light-dark(#5b8def, #4e7ab6);
+  --color-primary-500: light-dark(#2670e8, #60a5fa);
+  /* A escala primary é SUPERFÍCIE/FUNDO (vira azul escuro no dark). Para TEXTO
+   * use os tokens semânticos: --text-link (links), --text-heading (h1/h2),
+   * --text-on-primary-tint (texto sobre tint primary-50). Reusar a escala como
+   * texto reprova AA no dark (ex.: #2563eb sobre #1e293b = 2.8:1). */
+  --color-primary-600: light-dark(#1351b4, #60a5fa); /* fundo de CTA primário */
+  --color-primary-700: light-dark(#0c4194, #3b82f6); /* fundo de hover */
+  --color-primary-800: light-dark(#0c326f, #2563eb); /* fundo escuro / active */
+  --color-primary-900: light-dark(#071d41, #1e3a8a); /* institutional-bar background */
+  --color-primary: var(--color-primary-600);
+
+  /* ============================ NEUTRAL SCALE ============================
+   * Neutrals are a SCALE (constant set of grays), not semantic tokens. They
+   * don't flip per theme — semantic tokens (surface/text/border) flip and
+   * pull from this scale. Components should NEVER reference neutrals
+   * directly; always go through a semantic token. */
+  --color-neutral-0:   #ffffff;
+  --color-neutral-50:  #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1f2937;
+  --color-neutral-900: #0f172a;
+  --color-neutral-950: #020617;
+
+  /* ============================ FEEDBACK ============================ */
+  --color-success-50:  light-dark(#e7f4e9, #052e16);
+  --color-success-100: light-dark(#ccecd3, #14532d);
+  --color-success-500: light-dark(#22c55e, #4ade80);
+  --color-success-600: light-dark(#168821, #4ade80); /* dot on tint bg */
+  --color-success-700: light-dark(#0a5a16, #86efac); /* text on tint bg */
+
+  --color-warning-50:  light-dark(#fef0c8, #422006);
+  --color-warning-100: light-dark(#fde68a, #78350f);
+  --color-warning-500: light-dark(#ffcd07, #fbbf24);
+  --color-warning-600: light-dark(#c2850c, #fbbf24);
+  --color-warning-700: light-dark(#5a3e08, #fde68a);
+
+  --color-danger-50:   light-dark(#fcf0ee, #450a0a);
+  --color-danger-100:  light-dark(#fecaca, #7f1d1d);
+  --color-danger-500:  light-dark(#991b1b, #fca5a5);
+  --color-danger-600:  light-dark(#8a1f1f, #fecaca);
+  --color-danger-700:  light-dark(#7f1d1d, #fecaca);
+
+  --color-info-50:     light-dark(#eff6ff, #172554);
+  --color-info-100:    light-dark(#dbeafe, #1e3a8a);
+  --color-info-500:    light-dark(#0ea5e9, #60a5fa);
+  --color-info-600:    light-dark(#2565ae, #93c5fd);
+  --color-info-700:    light-dark(#0c326f, #93c5fd);
+
+  --color-help-500: #6366f1;
+  --color-help-600: #4f46e5;
+
+  /* "Solid" feedback — kept dark in BOTH themes so #fff text stays ≥4.5:1.
+   * Used on .tag--solid, .toast--*, .timeline solid bars, etc. */
+  --color-success-solid: #0d6416; /* 7.36:1 with #fff (AAA) — era #168821 (4.9:1, só AA) */
+  --color-warning-solid: #734b09; /* 7.67:1 with #fff (AAA) — era #845a0a (6.1:1, só AA) */
+  --color-danger-solid:  #991b1b; /* 8.3:1 with #fff */
+  --color-info-solid:    #1351b4; /* 7.1:1 with #fff */
+  --color-primary-solid: #1351b4;
+  --color-neutral-solid: #334155; /* 10.35:1 with #fff */
+
+  /* ============================ SEMANTIC SURFACES ============================
+   * Component layer reads from THESE — never directly from neutrals. */
+  --surface-page:     light-dark(#f8fafc, #0f172a);
+  --surface-card:     light-dark(#ffffff, #1e293b);
+  --surface-subtle:   light-dark(#f1f5f9, #334155);
+  --surface-elevated: light-dark(#ffffff, #28344a);
+  --surface-banner:   light-dark(#eff6ff, #1e2945);
+  --surface-inverse:  light-dark(#071d41, #020617);  /* institutional-bar / footer escuro */
+  --surface-overlay:  light-dark(rgba(7, 29, 65, 0.55), rgba(0, 0, 0, 0.55));
+  --surface-disabled: light-dark(#e2e8f0, #2d3a52);
+  --surface-accessibility-bar: light-dark(#0b2754, #050b1c);
+
+  /* ============================ BORDERS ============================
+   * Required ≥3:1 vs adjacent surface for non-decorative use (WCAG 1.4.11). */
+  --border-subtle:   light-dark(#e2e8f0, #3f4d65);
+  --border-default:  light-dark(#cbd5e1, #475569);
+  --border-strong:   light-dark(#64748b, #94a3b8);
+
+  /* ============================ TEXT ============================ */
+  --text-primary:     light-dark(#333333, #f1f5f9);  /* corpo */
+  --text-secondary:   light-dark(#475569, #e2e8f0);  /* AAA aplicável: 7.5:1 vs white */
+  --text-muted:       light-dark(#475569, #cbd5e1);  /* AAA aplicável: 7.5:1 vs white */
+  --text-placeholder: light-dark(#8493a8, #94a3b8);
+  --text-disabled:    light-dark(#94a3b8, #64748b);
+  --text-on-primary:  light-dark(#ffffff, #0f172a);  /* texto sobre primary */
+  --text-on-inverse:  #ffffff;
+  /* Erro sobre --surface-inverse, que é escura nos dois temas: 8.8:1 vs #071d41, 10.6:1 vs #020617. */
+  --text-danger-on-inverse: #fca5a5;
+
+  /* Text tokens are DECOUPLED from the primary/info SCALE. The scale flips dark
+   * in dark mode (it backs surfaces, buttons, institutional-bar); text must stay light to
+   * keep ≥4.5:1. Declared as explicit light/dark pairs so a heading never
+   * inherits #2563eb (primary-800 dark) onto #1e293b (2.8:1 — fails AA). */
+  --text-heading:         light-dark(#0c326f, #dbe9ff);  /* h1/h2 — light 13.4:1, dark 11.9:1 (card) */
+  --text-title-soft:      light-dark(#1351b4, #bfdbfe);  /* título suave — light 7.3:1, dark AAA */
+  --text-link:            light-dark(#1351b4, #93c5fd);  /* links — light 7.7:1, dark 9.9:1 (page) */
+  --text-on-primary-tint: light-dark(#0c4194, #93c5fd);  /* texto/realce sobre tint primary-50 — dark 8.1:1 */
+
+  /* ============================ COMPONENT-SCOPED TOKENS ============================ */
+  --avatar-bg: light-dark(
+    #d6e4ff,
+    color-mix(in srgb, var(--color-primary) 28%, #1e293b)
+  );
+  --avatar-fg: light-dark(#0c326f, #ffffff);
+
+  --skeleton-from: light-dark(#f1f5f9, #2d3a52);
+  --skeleton-to:   light-dark(#e2e8f0, #3f4d68);
+
+  /* ============================ FOCUS RING ============================ */
+  --focus-ring-color:  light-dark(#3b82f6, #93c5fd);
+  --focus-ring-width:  3px;
+  --focus-ring-offset: 2px;
+  --focus-ring: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+}

@@ -1,0 +1,15 @@
+/* ---------- 5. User-preference: legible font ----------
+ * Tamanho de fonte fica delegado ao zoom nativo do navegador. */
+:root[data-font-mode="legible"] { --font-sans: var(--font-legible); }
+
+/* ---------- 7. Reduced motion (WCAG 2.3.3) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

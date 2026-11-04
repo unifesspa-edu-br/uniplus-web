@@ -1,0 +1,110 @@
+/* ---------- 3. Theme switches ----------
+ * light-dark() reads color-scheme to decide which side of every token to render.
+ *
+ * Selectors are `[data-theme=…]` (not `:root[data-theme=…]`) so a child
+ * element can override the theme — useful for previews / side-by-side
+ * comparisons. Specificity stays low; the cascade still wins for the page
+ * root which always carries data-theme.
+ * ------------------------------------------------------------------------- */
+[data-theme="light"] { color-scheme: light; }
+[data-theme="dark"]  { color-scheme: dark;  }
+[data-theme="auto"]  { color-scheme: light dark; } /* explicit auto = same as default */
+
+/* ---------- 4. High-contrast theme ----------
+ * Dedicated AAA 7:1+ palette. Overrides all tokens, including feedback, so
+ * the page stays fully black + yellow/cyan.
+ *
+ * Selector is `[data-theme="contrast"]` (not `:root[…]`) so the contrast
+ * palette can be applied to any subtree — e.g. a swatch in colors-themes
+ * preview. The page root always carries data-theme so cascade still wins
+ * for whole-page contrast mode.
+ * ------------------------------------------------------------------------- */
+[data-theme="contrast"] {
+  color-scheme: dark;
+
+  /* Surfaces — everything collapses to pure black */
+  --surface-page:     #000000;
+  --surface-card:     #000000;
+  --surface-subtle:   #000000;
+  --surface-elevated: #000000;
+  --surface-banner:   #000000;
+  --surface-inverse:  #000000;
+  --surface-overlay:  rgba(0, 0, 0, 0.85);
+  --surface-disabled: #000000;
+  --surface-accessibility-bar: #000000;
+
+  /* Border hierarchy retained via dash + width. */
+  --border-subtle:  #666666;   /* decorative dividers */
+  --border-default: #ffff00;
+  --border-strong:  #ffff00;
+
+  /* Text */
+  --text-primary:     #ffff00;
+  --text-secondary:   #ffff00;
+  --text-muted:       #ffff00;
+  --text-placeholder: #cccc00;
+  --text-disabled:    #666666;
+  --text-on-primary:  #000000;
+  --text-on-inverse:  #ffff00;
+  --text-danger-on-inverse: #ffffff;
+  --text-heading:     #ffff00;
+  --text-title-soft:  #ffff00;
+  --text-link:        #00ffff;
+  --text-on-primary-tint: #ffff00;
+
+  /* Primary collapses to text color (max contrast) */
+  --color-primary:     #ffff00;
+  --color-primary-50:  #000000;
+  --color-primary-100: #000000;
+  --color-primary-200: #ffff00;
+  --color-primary-500: #ffff00;
+  --color-primary-600: #ffff00;
+  --color-primary-700: #ffff00;
+  --color-primary-800: #ffff00;
+  --color-primary-900: #000000;
+
+  /* Feedback semantics are expressed by icon + label, not only hue. */
+  --color-success-50:  #000000;
+  --color-success-100: #000000;
+  --color-success-500: #00ff00;
+  --color-success-600: #00ff00;
+  --color-success-700: #ffff00;
+  --color-success-solid: #00ff00;
+
+  --color-warning-50:  #000000;
+  --color-warning-100: #000000;
+  --color-warning-500: #ffff00;
+  --color-warning-600: #ffff00;
+  --color-warning-700: #ffff00;
+  --color-warning-solid: #ffff00;
+
+  --color-danger-50:   #000000;
+  --color-danger-100:  #000000;
+  --color-danger-500:  #ffffff;
+  --color-danger-600:  #ffffff;
+  --color-danger-700:  #ffffff;
+  --color-danger-solid: #ffffff;
+
+  --color-info-50:  #000000;
+  --color-info-100: #000000;
+  --color-info-500: #00ffff;
+  --color-info-600: #00ffff;
+  --color-info-700: #00ffff;
+  --color-info-solid: #00ffff;
+
+  /* Sem matiz própria no contraste: a etiqueta neutra se distingue pelo texto. */
+  --color-neutral-solid: #ffffff;
+
+  /* Component-scoped */
+  --avatar-bg: #ffff00;  /* visible plaque against any contrast surface */
+  --avatar-fg: #000000;
+  --skeleton-from: #000000;
+  --skeleton-to:   #666666;
+
+  /* Focus + elevation */
+  --focus-ring-color: #ffffff;
+  --focus-ring-width: 4px;
+  --shadow-1: 0 0 0 1px #ffff00;
+  --shadow-2: 0 0 0 2px #ffff00;
+  --shadow-3: 0 0 0 3px #ffff00;
+}
