@@ -10,6 +10,7 @@ import {
   TIPO_SECAO,
   type ConteudoDoFormulario,
   type FatoDoFormulario,
+  type ItemDoFormulario,
 } from '@uniplus/shared-ui/components';
 import {
   SECAO_OUTROS_DADOS,
@@ -38,56 +39,89 @@ import {
  */
 export function comCamposQueAsExigenciasPressupoem(
   conteudo: ConteudoDoFormulario,
-  citados: ReadonlySet<string>,
-  catalogo: readonly FatoDoFormulario[],
-  postosPelasExigencias: ReadonlySet<string>,
-  fatosDeOutrasFinalidades: readonly string[],
+  pressupostos: PressupostosDoProcesso,
 ): ConteudoDoFormulario {
-  // O campo que outra regra do próprio formulário cita fica: tirá-lo deixaria a regra citando o que
-  // ninguém coleta.
-  const citadosNoFormulario = fatosCitadosPeloConteudo(conteudo);
-  const orfaos = (conteudo.itens ?? []).filter(
-    (item) =>
-      postosPelasExigencias.has(item.fatoCodigo) &&
-      !citados.has(item.fatoCodigo) &&
-      !citadosNoFormulario.has(item.fatoCodigo),
-  );
-  let resultado =
-    orfaos.length === 0
-      ? conteudo
-      : renumerar({
-          ...conteudo,
-          itens: (conteudo.itens ?? []).filter((item) => !orfaos.includes(item)),
-        });
-
-  const presentes = new Set([
-    ...fatosColetadosPelaInscricao(resultado),
-    ...fatosDeOutrasFinalidades,
-  ]);
-  const porCodigo = new Map(catalogo.map((fato) => [fato.codigo, fato]));
-  // Fato citado que não é coletável — modalidade, faixa etária — não vira campo: ele resolve por
-  // derivação ou por atributo do candidato, não por pergunta no formulário.
-  const novos = [...citados]
-    .filter((codigo) => !presentes.has(codigo))
-    .map((codigo) => porCodigo.get(codigo))
-    .filter((fato): fato is FatoDoFormulario => fato !== undefined && ehColetavel(fato));
-
-  if (novos.length > 0) {
-    resultado = comSecaoDeOutrosDados(resultado);
-    for (const fato of novos) resultado = acrescentarItem(resultado, fato, SECAO_OUTROS_DADOS);
-  }
+  const orfaos = camposOrfaos(conteudo, pressupostos);
+  const semOrfaos = comoSemOsItens(conteudo, orfaos);
+  const comNovos = comCamposNovos(semOrfaos, pressupostos);
 
   const esvaziouOutrosDados =
     orfaos.some((item) => item.etapaCodigo === SECAO_OUTROS_DADOS) &&
-    entradasDaSecao(resultado, SECAO_OUTROS_DADOS).length === 0;
-  if (esvaziouOutrosDados) {
-    resultado = renumerar({
-      ...resultado,
-      etapas: (resultado.etapas ?? []).filter((etapa) => etapa.codigo !== SECAO_OUTROS_DADOS),
-    });
-  }
+    entradasDaSecao(comNovos, SECAO_OUTROS_DADOS).length === 0;
+  return esvaziouOutrosDados ? semSecaoDeOutrosDados(comNovos) : comNovos;
+}
 
-  return resultado;
+/** O que o processo pressupõe e o que o formulário já tem: quem cita cada fato e o que entrou sozinho. */
+export interface PressupostosDoProcesso {
+  /** Os fatos que o processo cita. */
+  readonly citados: ReadonlySet<string>;
+  readonly catalogo: readonly FatoDoFormulario[];
+  /** O que esta sessão acrescentou por exigência. */
+  readonly postosPelasExigencias: ReadonlySet<string>;
+  /** Os fatos que os formulários das outras finalidades já coletam. */
+  readonly fatosDeOutrasFinalidades: readonly string[];
+}
+
+/**
+ * Os campos que entraram sozinhos e nada cita mais. O que outra regra do próprio formulário cita
+ * fica: tirá-lo deixaria a regra citando o que ninguém coleta.
+ */
+function camposOrfaos(
+  conteudo: ConteudoDoFormulario,
+  pressupostos: PressupostosDoProcesso,
+): ItemDoFormulario[] {
+  const citadosNoFormulario = fatosCitadosPeloConteudo(conteudo);
+  return (conteudo.itens ?? []).filter(
+    (item) =>
+      pressupostos.postosPelasExigencias.has(item.fatoCodigo) &&
+      !pressupostos.citados.has(item.fatoCodigo) &&
+      !citadosNoFormulario.has(item.fatoCodigo),
+  );
+}
+
+function comoSemOsItens(
+  conteudo: ConteudoDoFormulario,
+  itens: readonly ItemDoFormulario[],
+): ConteudoDoFormulario {
+  return itens.length === 0
+    ? conteudo
+    : renumerar({
+        ...conteudo,
+        itens: (conteudo.itens ?? []).filter((item) => !itens.includes(item)),
+      });
+}
+
+/**
+ * Os campos que o processo cita e o formulário ainda não coleta. Fato citado que não é coletável —
+ * modalidade, faixa etária — não vira campo: ele resolve por derivação ou por atributo do
+ * candidato, não por pergunta no formulário.
+ */
+function comCamposNovos(
+  conteudo: ConteudoDoFormulario,
+  pressupostos: PressupostosDoProcesso,
+): ConteudoDoFormulario {
+  const presentes = new Set([
+    ...fatosColetadosPelaInscricao(conteudo),
+    ...pressupostos.fatosDeOutrasFinalidades,
+  ]);
+  const porCodigo = new Map(pressupostos.catalogo.map((fato) => [fato.codigo, fato]));
+  const novos = [...pressupostos.citados]
+    .filter((codigo) => !presentes.has(codigo))
+    .map((codigo) => porCodigo.get(codigo))
+    .filter((fato): fato is FatoDoFormulario => fato !== undefined && ehColetavel(fato));
+  if (novos.length === 0) return conteudo;
+
+  return novos.reduce(
+    (resultado, fato) => acrescentarItem(resultado, fato, SECAO_OUTROS_DADOS),
+    comSecaoDeOutrosDados(conteudo),
+  );
+}
+
+function semSecaoDeOutrosDados(conteudo: ConteudoDoFormulario): ConteudoDoFormulario {
+  return renumerar({
+    ...conteudo,
+    etapas: (conteudo.etapas ?? []).filter((etapa) => etapa.codigo !== SECAO_OUTROS_DADOS),
+  });
 }
 
 /** A seção dos outros dados, sem exibição condicional; criada antes do primeiro bloco do sistema se faltar. */

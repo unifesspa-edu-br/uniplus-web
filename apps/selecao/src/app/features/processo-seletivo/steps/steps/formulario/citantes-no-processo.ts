@@ -50,39 +50,67 @@ export function quemCitaNoProcesso(
   processo: CitantesNoProcesso,
   nomes: NomesDosCitantes = SEM_NOMES,
 ): ReadonlyMap<string, readonly string[]> {
+  const citacoes: Citacao[] = [
+    ...citacoesDosDocumentos(processo, nomes),
+    ...citacoesDaDerivacao(processo, nomes),
+    ...citacoesDasModalidades(processo),
+    ...(desempateUsaDataDeNascimento(processo.desempate)
+      ? [{ fato: FATO_DATA_NASCIMENTO, quem: 'o desempate por maior idade' }]
+      : []),
+    ...citacoesDasOutrasFinalidades(processo),
+  ];
+
   const citantes = new Map<string, string[]>();
-  const citar = (fato: string, quem: string): void => {
+  for (const { fato, quem } of citacoes) {
     const atuais = citantes.get(fato) ?? [];
     if (!atuais.includes(quem)) citantes.set(fato, [...atuais, quem]);
-  };
-
-  for (const exigencia of todasAsExigencias(processo.documentos)) {
-    for (const condicao of exigencia.condicoes) {
-      citar(condicao.fato, `o documento “${nomes.documento(exigencia.tipoDocumentoId)}”`);
-    }
   }
-  for (const config of processo.derivacao) {
-    for (const fato of fatosCitadosPelaDerivacao(config.regras)) {
-      if (fato !== config.codigoFato)
-        citar(fato, `as regras que calculam “${nomes.fato(config.codigoFato)}”`);
-    }
-  }
-  for (const modalidade of processo.modalidades ?? []) {
-    for (const fato of fatosCitadosPeloPredicado(modalidade.regra)) {
-      citar(fato, `a regra de quem concorre em ${modalidade.codigo}`);
-    }
-  }
-  if (desempateUsaDataDeNascimento(processo.desempate))
-    citar(FATO_DATA_NASCIMENTO, 'o desempate por maior idade');
-  for (const outra of processo.outrasFinalidades ?? []) {
-    // O que o formulário cita dos próprios campos não depende da inscrição.
-    const proprios = new Set(fatosColetadosPor(outra.conteudo));
-    for (const fato of fatosCitadosPeloConteudo(outra.conteudo)) {
-      if (!proprios.has(fato)) citar(fato, `o formulário de ${nomeDaFinalidade(outra.finalidade)}`);
-    }
-  }
-
   return citantes;
+}
+
+/** Um fato e quem o cita. */
+interface Citacao {
+  readonly fato: string;
+  readonly quem: string;
+}
+
+function citacoesDosDocumentos(processo: CitantesNoProcesso, nomes: NomesDosCitantes): Citacao[] {
+  return todasAsExigencias(processo.documentos).flatMap((exigencia) =>
+    exigencia.condicoes.map((condicao) => ({
+      fato: condicao.fato,
+      quem: `o documento “${nomes.documento(exigencia.tipoDocumentoId)}”`,
+    })),
+  );
+}
+
+function citacoesDaDerivacao(processo: CitantesNoProcesso, nomes: NomesDosCitantes): Citacao[] {
+  return processo.derivacao.flatMap((config) =>
+    fatosCitadosPelaDerivacao(config.regras)
+      .filter((fato) => fato !== config.codigoFato)
+      .map((fato) => ({
+        fato,
+        quem: `as regras que calculam “${nomes.fato(config.codigoFato)}”`,
+      })),
+  );
+}
+
+function citacoesDasModalidades(processo: CitantesNoProcesso): Citacao[] {
+  return (processo.modalidades ?? []).flatMap((modalidade) =>
+    fatosCitadosPeloPredicado(modalidade.regra).map((fato) => ({
+      fato,
+      quem: `a regra de quem concorre em ${modalidade.codigo}`,
+    })),
+  );
+}
+
+/** O que o formulário cita dos próprios campos não depende da inscrição. */
+function citacoesDasOutrasFinalidades(processo: CitantesNoProcesso): Citacao[] {
+  return (processo.outrasFinalidades ?? []).flatMap((outra) => {
+    const proprios = new Set(fatosColetadosPor(outra.conteudo));
+    return [...fatosCitadosPeloConteudo(outra.conteudo)]
+      .filter((fato) => !proprios.has(fato))
+      .map((fato) => ({ fato, quem: `o formulário de ${nomeDaFinalidade(outra.finalidade)}` }));
+  });
 }
 
 /** O motivo, por fato, de o campo não poder sair: alguém no processo o cita. */

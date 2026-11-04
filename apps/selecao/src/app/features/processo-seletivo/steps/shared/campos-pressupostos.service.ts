@@ -164,13 +164,12 @@ export class CamposPressupostosService {
   ): (conteudo: ConteudoDoFormulario) => ConteudoDoFormulario {
     const outras = this.coletadosPelasOutrasFinalidades(servidor);
     return (conteudo) =>
-      comCamposQueAsExigenciasPressupoem(
-        conteudo,
+      comCamposQueAsExigenciasPressupoem(conteudo, {
         citados,
-        this.catalogos.fatos(),
-        new Set(),
-        outras,
-      );
+        catalogo: this.catalogos.fatos(),
+        postosPelasExigencias: new Set(),
+        fatosDeOutrasFinalidades: outras,
+      });
   }
 
   private coletadosPelasOutrasFinalidades(servidor: ProcessoSeletivoDto): readonly string[] {

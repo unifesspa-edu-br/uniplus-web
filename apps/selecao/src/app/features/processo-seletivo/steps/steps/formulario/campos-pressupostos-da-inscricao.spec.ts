@@ -9,13 +9,12 @@ describe('os campos que o processo pressupõe na inscrição', () => {
   const citados = (...fatos: string[]): ReadonlySet<string> => new Set(fatos);
 
   it('põe o campo citado na seção "Outros dados", criada antes do primeiro bloco do sistema e sem exibição', () => {
-    const resultado = comCamposQueAsExigenciasPressupoem(
-      inscricaoGravada(),
-      citados('RENDA_FAMILIAR'),
-      CATALOGO,
-      new Set(),
-      [],
-    );
+    const resultado = comCamposQueAsExigenciasPressupoem(inscricaoGravada(), {
+      citados: citados('RENDA_FAMILIAR'),
+      catalogo: CATALOGO,
+      postosPelasExigencias: new Set(),
+      fatosDeOutrasFinalidades: [],
+    });
 
     const etapas = [...(resultado.etapas ?? [])].sort((a, b) => a.ordem - b.ordem);
     expect(etapas.map((e) => e.codigo)).toEqual([
@@ -42,13 +41,12 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       etapas: [...(base.etapas ?? []), secao(SECAO_OUTROS_DADOS, 1.5, { exibicao: condicional })],
     };
 
-    const resultado = comCamposQueAsExigenciasPressupoem(
-      comSecao,
-      citados('RENDA_FAMILIAR'),
-      CATALOGO,
-      new Set(),
-      [],
-    );
+    const resultado = comCamposQueAsExigenciasPressupoem(comSecao, {
+      citados: citados('RENDA_FAMILIAR'),
+      catalogo: CATALOGO,
+      postosPelasExigencias: new Set(),
+      fatosDeOutrasFinalidades: [],
+    });
 
     expect(resultado.etapas?.filter((e) => e.codigo === SECAO_OUTROS_DADOS)).toHaveLength(1);
     expect(resultado.etapas?.find((e) => e.codigo === SECAO_OUTROS_DADOS)?.exibicao).toBeNull();
@@ -57,13 +55,12 @@ describe('os campos que o processo pressupõe na inscrição', () => {
   /** Fora da seção reservada, o fato básico seria recusado como alteração dos dados básicos. */
   it('não põe fato do conjunto básico, nem antes de o formulário existir no servidor', () => {
     expect(
-      comCamposQueAsExigenciasPressupoem(
-        conteudoInicial(),
-        citados('SEXO'),
-        CATALOGO,
-        new Set(),
-        [],
-      ).itens,
+      comCamposQueAsExigenciasPressupoem(conteudoInicial(), {
+        citados: citados('SEXO'),
+        catalogo: CATALOGO,
+        postosPelasExigencias: new Set(),
+        fatosDeOutrasFinalidades: [],
+      }).itens,
     ).toEqual([]);
   });
 
@@ -71,13 +68,12 @@ describe('os campos que o processo pressupõe na inscrição', () => {
   it('não põe fato que outra finalidade já coleta', () => {
     const inscricao = inscricaoGravada();
     expect(
-      comCamposQueAsExigenciasPressupoem(
-        inscricao,
-        citados('RENDA_FAMILIAR'),
-        CATALOGO,
-        new Set(),
-        ['RENDA_FAMILIAR'],
-      ),
+      comCamposQueAsExigenciasPressupoem(inscricao, {
+        citados: citados('RENDA_FAMILIAR'),
+        catalogo: CATALOGO,
+        postosPelasExigencias: new Set(),
+        fatosDeOutrasFinalidades: ['RENDA_FAMILIAR'],
+      }),
     ).toBe(inscricao);
   });
 
@@ -100,39 +96,41 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       ],
     });
     expect(
-      comCamposQueAsExigenciasPressupoem(
-        inscricao,
-        citados('RENDA_FAMILIAR'),
-        CATALOGO,
-        new Set(),
-        [],
-      ),
+      comCamposQueAsExigenciasPressupoem(inscricao, {
+        citados: citados('RENDA_FAMILIAR'),
+        catalogo: CATALOGO,
+        postosPelasExigencias: new Set(),
+        fatosDeOutrasFinalidades: [],
+      }),
     ).toBe(inscricao);
   });
 
   it('não põe campo para fato derivado', () => {
     const inscricao = inscricaoGravada();
     expect(
-      comCamposQueAsExigenciasPressupoem(inscricao, citados('MODALIDADE'), CATALOGO, new Set(), []),
+      comCamposQueAsExigenciasPressupoem(inscricao, {
+        citados: citados('MODALIDADE'),
+        catalogo: CATALOGO,
+        postosPelasExigencias: new Set(),
+        fatosDeOutrasFinalidades: [],
+      }),
     ).toBe(inscricao);
   });
 
   it('tira o campo que entrou sozinho e nada cita mais, e a seção que ele esvaziou', () => {
-    const comCampo = comCamposQueAsExigenciasPressupoem(
-      inscricaoGravada(),
-      citados('RENDA_FAMILIAR'),
-      CATALOGO,
-      new Set(),
-      [],
-    );
+    const comCampo = comCamposQueAsExigenciasPressupoem(inscricaoGravada(), {
+      citados: citados('RENDA_FAMILIAR'),
+      catalogo: CATALOGO,
+      postosPelasExigencias: new Set(),
+      fatosDeOutrasFinalidades: [],
+    });
 
-    const semGatilho = comCamposQueAsExigenciasPressupoem(
-      comCampo,
-      citados(),
-      CATALOGO,
-      new Set(['RENDA_FAMILIAR']),
-      [],
-    );
+    const semGatilho = comCamposQueAsExigenciasPressupoem(comCampo, {
+      citados: citados(),
+      catalogo: CATALOGO,
+      postosPelasExigencias: new Set(['RENDA_FAMILIAR']),
+      fatosDeOutrasFinalidades: [],
+    });
 
     expect(semGatilho.itens?.map((i) => i.fatoCodigo)).not.toContain('RENDA_FAMILIAR');
     expect(semGatilho.etapas?.map((e) => e.codigo)).not.toContain(SECAO_OUTROS_DADOS);
@@ -141,9 +139,14 @@ describe('os campos que o processo pressupõe na inscrição', () => {
   /** Removê-lo apagaria no servidor uma configuração que ninguém pediu para tirar. */
   it('preserva o campo que não entrou por este mecanismo', () => {
     const inscricao = inscricaoGravada();
-    expect(comCamposQueAsExigenciasPressupoem(inscricao, citados(), CATALOGO, new Set(), [])).toBe(
-      inscricao,
-    );
+    expect(
+      comCamposQueAsExigenciasPressupoem(inscricao, {
+        citados: citados(),
+        catalogo: CATALOGO,
+        postosPelasExigencias: new Set(),
+        fatosDeOutrasFinalidades: [],
+      }),
+    ).toBe(inscricao);
   });
 
   it('não tira o campo que outra regra do formulário cita', () => {
@@ -159,7 +162,12 @@ describe('os campos que o processo pressupõe na inscrição', () => {
     };
 
     expect(
-      comCamposQueAsExigenciasPressupoem(citadoPorCampo, citados(), CATALOGO, new Set(['PCD']), []),
+      comCamposQueAsExigenciasPressupoem(citadoPorCampo, {
+        citados: citados(),
+        catalogo: CATALOGO,
+        postosPelasExigencias: new Set(['PCD']),
+        fatosDeOutrasFinalidades: [],
+      }),
     ).toBe(citadoPorCampo);
   });
 });

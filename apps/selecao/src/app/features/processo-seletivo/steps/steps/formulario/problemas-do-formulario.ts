@@ -1,3 +1,4 @@
+import { ancoraEmFase } from './apuracao-da-idade';
 import { todosOsCampos } from '@uniplus/shared-ui/components';
 import type {
   ExigenciasDoRascunho,
@@ -19,38 +20,40 @@ export function problemasDoFormulario(
   exigencias: ExigenciasDoRascunho,
   fasesVivas: ReadonlySet<string>,
 ): readonly string[] {
-  const problemas: string[] = [];
+  return [
+    ...problemasDosRotulos(formulario),
+    ...problemasDaApuracaoDaIdade(formulario.referenciaTemporal, exigencias, fasesVivas),
+  ];
+}
 
-  for (const { finalidade, conteudo } of formulariosDoRascunho(formulario)) {
-    if (todosOsCampos(conteudo).some((campo) => campo.rotulo.trim() === '')) {
-      problemas.push(
+function problemasDosRotulos(formulario: FormularioDeInscricao): string[] {
+  return formulariosDoRascunho(formulario)
+    .filter(({ conteudo }) => todosOsCampos(conteudo).some((campo) => campo.rotulo.trim() === ''))
+    .map(
+      ({ finalidade }) =>
         `Todo campo do formulário de ${nomeDaFinalidade(finalidade)} precisa do rótulo que o candidato vai ler.`,
-      );
-    }
-  }
+    );
+}
 
-  const referencia = formulario.referenciaTemporal;
-  const citaIdade = fatosCitadosPelasExigencias(exigencias).has(FATO_DA_IDADE);
-
-  if (citaIdade && referencia.tipo === '') {
+function problemasDaApuracaoDaIdade(
+  referencia: FormularioDeInscricao['referenciaTemporal'],
+  exigencias: ExigenciasDoRascunho,
+  fasesVivas: ReadonlySet<string>,
+): string[] {
+  const problemas: string[] = [];
+  if (fatosCitadosPelasExigencias(exigencias).has(FATO_DA_IDADE) && referencia.tipo === '') {
     problemas.push(
       'Há documento exigido por faixa etária. Declare contra que instante a idade do candidato é apurada — sem isso a publicação é recusada.',
     );
   }
-
   if (referencia.tipo === 'DATA_ESPECIFICA' && referencia.data === '') {
     problemas.push('A apuração por data específica precisa da data.');
   }
-
-  if (
-    (referencia.tipo === 'INICIO_FASE' || referencia.tipo === 'FIM_FASE') &&
-    !fasesVivas.has(referencia.faseCodigo)
-  ) {
+  if (ancoraEmFase(referencia.tipo) && !fasesVivas.has(referencia.faseCodigo)) {
     problemas.push(
       'A apuração da idade aponta uma fase que não está no cronograma. Escolha outra fase, ou apure por data específica.',
     );
   }
-
   return problemas;
 }
 

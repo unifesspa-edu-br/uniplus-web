@@ -1,3 +1,4 @@
+import type { ColunaDoQuadro } from '../../shared/quadro-de-pesos';
 import type { CriterioDesempateConfigurado, WizardDraft } from '../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { LeituraDoCadastro } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
@@ -43,15 +44,9 @@ export function conferirDesempateGravado(
 
   const situacao = situacaoDoQuadro(classificacao, { estado: 'nunca-gravada' }, cadastro);
   if (situacao.tipo === 'sem-quadro') {
-    return {
-      resultado: 'com-pendencias',
-      pendencias: porArea.map(({ posicao }) => ({
-        posicao,
-        semQuadro: true,
-        fora: [],
-        todas: true,
-      })),
-    };
+    return comPendencias(
+      porArea.map(({ posicao }) => ({ posicao, semQuadro: true, fora: [], todas: true })),
+    );
   }
   if (situacao.tipo !== 'lido' && situacao.tipo !== 'sem-area-em-todos-os-grupos') {
     return { resultado: 'nao-conferivel' };
@@ -59,22 +54,38 @@ export function conferirDesempateGravado(
 
   const aceitas = situacao.tipo === 'lido' ? situacao.aceitas : [];
   const rotulos = rotulosDasAreas(cadastro.canonicas, situacao.grupos);
-  const pendencias = porArea.flatMap(({ criterio, posicao }) => {
-    const fora = areasForaDoQuadro(criterio.areas, aceitas);
-    return fora.length === 0
-      ? []
-      : [
-          {
-            posicao,
-            semQuadro: false,
-            fora: fora.map((codigo) => rotulos.get(codigo) ?? codigo),
-            todas: fora.length === criterio.areas.length,
-          },
-        ];
-  });
+  return comPendencias(
+    porArea.flatMap(({ criterio, posicao }) =>
+      pendenciaForaDoQuadro(criterio, posicao, aceitas, rotulos),
+    ),
+  );
+}
+
+function comPendencias(
+  pendencias: readonly PendenciaDoCriterioGravado[],
+): ConferenciaDoDesempateGravado {
   return pendencias.length === 0
     ? { resultado: 'sem-pendencia' }
     : { resultado: 'com-pendencias', pendencias };
+}
+
+/** As áreas do critério que o quadro não aceita, pelo rótulo; nenhuma pendência quando todas cabem. */
+function pendenciaForaDoQuadro(
+  criterio: CriterioDesempateConfigurado,
+  posicao: number,
+  aceitas: readonly ColunaDoQuadro[],
+  rotulos: ReadonlyMap<string, string>,
+): PendenciaDoCriterioGravado[] {
+  const fora = areasForaDoQuadro(criterio.areas, aceitas);
+  if (fora.length === 0) return [];
+  return [
+    {
+      posicao,
+      semQuadro: false,
+      fora: fora.map((codigo) => rotulos.get(codigo) ?? codigo),
+      todas: fora.length === criterio.areas.length,
+    },
+  ];
 }
 
 /**

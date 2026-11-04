@@ -62,16 +62,15 @@ export class CamposPressupostosDoFormularioService {
   reconciliar(): readonly string[] {
     const formulario = this.store.draft().formulario;
     const antes = new Set(fatosColetadosPor(formulario.conteudo));
-    const reconciliado = comCamposQueAsExigenciasPressupoem(
-      formulario.conteudo,
-      new Set(this.citantes().keys()),
-      this.dados.catalogo(),
-      this.store.camposPostosPelasExigencias(),
-      fatosColetadosPelasOutras(
+    const reconciliado = comCamposQueAsExigenciasPressupoem(formulario.conteudo, {
+      citados: new Set(this.citantes().keys()),
+      catalogo: this.dados.catalogo(),
+      postosPelasExigencias: this.store.camposPostosPelasExigencias(),
+      fatosDeOutrasFinalidades: fatosColetadosPelasOutras(
         formulariosDoRascunho(this.store.draft().formulario),
         FINALIDADE_INSCRICAO,
       ),
-    );
+    });
     if (reconciliado === formulario.conteudo) return [];
 
     // Registra o que ENTROU agora: é esse conjunto que a reconciliação seguinte pode remover

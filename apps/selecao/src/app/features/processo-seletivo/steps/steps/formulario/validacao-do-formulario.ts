@@ -29,15 +29,7 @@ export interface FormularioParaConferir {
 export function mensagensDoFormulario(entrada: FormularioParaConferir): string[] {
   const { abas, draft } = entrada;
   return [
-    ...abas
-      .filter((aba) => aba.fase === '')
-      .map((aba) => mensagemDaFaseQueFalta(aba.finalidade, aba.fases.length === 0)),
-    ...abas
-      .filter((aba) => !finalidadeCabeNaCobranca(aba.finalidade, draft.pagamento.cobra === true))
-      .map(
-        (aba) =>
-          `O processo não cobra taxa de inscrição, e o formulário de ${aba.nome} só existe quando há cobrança. Remova o formulário, ou volte a cobrar a taxa em "Pagamento".`,
-      ),
+    ...mensagensDasAbas(abas, draft.pagamento.cobra === true),
     ...[...entrada.aplicacoesEmAberto].map(([finalidade, emAberto]) =>
       textoDaAplicacaoEmAberto(nomeDaFinalidade(finalidade), emAberto),
     ),
@@ -56,6 +48,21 @@ export function mensagensDoFormulario(entrada: FormularioParaConferir): string[]
       (campo) =>
         `O formulário pergunta ${campo} ao candidato, e a oferta de atendimento especializado não declara nenhum valor para escolher. Declare ao menos um em "Atend. especial", ou retire o campo daqui.`,
     ),
+  ];
+}
+
+/** A fase que falta em cada aba e a aba que só existe com cobrança de taxa. */
+function mensagensDasAbas(abas: readonly AbaParaConferir[], cobraTaxa: boolean): string[] {
+  return [
+    ...abas
+      .filter((aba) => aba.fase === '')
+      .map((aba) => mensagemDaFaseQueFalta(aba.finalidade, aba.fases.length === 0)),
+    ...abas
+      .filter((aba) => !finalidadeCabeNaCobranca(aba.finalidade, cobraTaxa))
+      .map(
+        (aba) =>
+          `O processo não cobra taxa de inscrição, e o formulário de ${aba.nome} só existe quando há cobrança. Remova o formulário, ou volte a cobrar a taxa em "Pagamento".`,
+      ),
   ];
 }
 
