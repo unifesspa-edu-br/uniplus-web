@@ -188,8 +188,8 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   }
 
   protected confirmarCep(evento: Event): void {
-    this.onTouched();
     this.conducao.confirmarCep((evento.target as HTMLInputElement).checked);
+    this.onTouched();
   }
 
   /** O grupo é tocado quando o foco sai dele, e não a cada troca de campo dentro dele. */
@@ -201,18 +201,18 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   }
 
   protected alternarModoManual(): void {
-    this.onTouched();
     this.conducao.alternarModoManual();
+    this.onTouched();
   }
 
   protected escolherUf(evento: Event): void {
-    this.onTouched();
     const alvo = evento.target;
     this.conducao.escolherUf(alvo instanceof HTMLSelectElement ? alvo.value : '');
+    this.onTouched();
   }
 
   protected selecionarCidade(codigo: string): void {
-    this.onTouched();
     this.conducao.selecionarCidade(codigo);
+    this.onTouched();
   }
 }

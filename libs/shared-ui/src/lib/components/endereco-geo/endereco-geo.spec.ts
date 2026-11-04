@@ -31,6 +31,15 @@ class AnfitriaoComponent {
   readonly controle = new FormControl<EnderecoEstruturado | null>(null);
 }
 
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule, EnderecoGeoComponent],
+  template: `<ui-endereco-geo [formControl]="controle" idPrefix="t" />`,
+})
+class AnfitriaoQueAtualizaNoBlurComponent {
+  readonly controle = new FormControl<EnderecoEstruturado | null>(null, { updateOn: 'blur' });
+}
+
 describe('EnderecoGeoComponent', () => {
   let fixture: ComponentFixture<AnfitriaoComponent>;
 
@@ -232,6 +241,27 @@ describe('EnderecoGeoComponent com a busca em andamento', () => {
     expect(fixture.componentInstance.controle.touched).toBe(true);
   });
 
+  it('focusout do grupo sem relatedTarget (foco vai para fora da página) marca o campo como tocado', () => {
+    campoCep().dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+
+    expect(fixture.componentInstance.controle.touched).toBe(true);
+  });
+
+  it.each(['Enter', ' '])(
+    'ativar o botão do CEP com "%s" durante a busca não repete a requisição',
+    async (tecla) => {
+      await iniciarBusca();
+
+      for (let i = 0; i < 3; i++) {
+        botaoDoCep().dispatchEvent(new KeyboardEvent('keydown', { key: tecla, bubbles: true }));
+        botaoDoCep().click();
+      }
+      await atualizar();
+
+      expect(buscas).toBe(1);
+    },
+  );
+
   it('o foco sair do grupo marca o campo como tocado; mudar de campo dentro dele não', async () => {
     campoCep().focus();
     campoCep().dispatchEvent(
@@ -243,5 +273,71 @@ describe('EnderecoGeoComponent com a busca em andamento', () => {
       new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }),
     );
     expect(fixture.componentInstance.controle.touched).toBe(true);
+  });
+});
+
+describe('EnderecoGeoComponent num controle que atualiza no blur', () => {
+  let fixture: ComponentFixture<AnfitriaoQueAtualizaNoBlurComponent>;
+
+  const endereco = (
+    cidade: EnderecoEstruturado['cidade'],
+    origem: string,
+  ): EnderecoEstruturado => ({
+    cep: origem === 'manual' ? null : '68507590',
+    logradouro: null,
+    numero: null,
+    complemento: null,
+    bairro: null,
+    distrito: null,
+    cidade,
+    latitude: null,
+    longitude: null,
+    nivelResolucao: origem === 'manual' ? null : 'cidade',
+    origem,
+  });
+  const marata = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [AnfitriaoQueAtualizaNoBlurComponent],
+      providers: [
+        { provide: BUSCA_DE_CEP, useValue: () => of({ ok: false }) },
+        { provide: BUSCA_DE_MUNICIPIOS, useValue: () => of({ ok: true, data: [] }) },
+      ],
+    });
+    fixture = TestBed.createComponent(AnfitriaoQueAtualizaNoBlurComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  });
+
+  async function escrever(valor: EnderecoEstruturado): Promise<void> {
+    fixture.componentInstance.controle.setValue(valor);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  }
+
+  it('trocar a UF aplica ao controle o valor sem a cidade, e não só o marca como tocado', async () => {
+    await escrever(endereco(marata, 'manual'));
+    const uf = fixture.nativeElement.querySelector('#t-uf') as HTMLSelectElement;
+
+    uf.value = 'SP';
+    uf.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.controle.touched).toBe(true);
+    expect(fixture.componentInstance.controle.value).toBeNull();
+  });
+
+  it('alternar para o endereço sem CEP aplica ao controle a origem manual', async () => {
+    await escrever(endereco(marata, 'geo-api'));
+    const alternar = fixture.nativeElement.querySelector(
+      '.endereco-geo__link',
+    ) as HTMLButtonElement;
+
+    alternar.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.controle.touched).toBe(true);
+    expect(fixture.componentInstance.controle.value?.origem).toBe('manual');
   });
 });
