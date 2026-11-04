@@ -6,10 +6,11 @@ import { GravacaoDaIdentificacaoService } from './servicos/gravacao-da-identific
 
 /** O endereço público do certame no portal, editável enquanto o processo for rascunho. */
 @Component({
-  selector: 'div[selIdentificadorLegivel]',
+  selector: 'sel-identificador-legivel',
   imports: [ValorLegivelDirective, ReactiveFormsModule],
   templateUrl: './identificador-legivel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class IdentificadorLegivelComponent {
   protected readonly gravacao = inject(GravacaoDaIdentificacaoService);

@@ -13,10 +13,11 @@ import { BuscaDeMunicipioService } from './servicos/busca-de-municipio.service';
 
 /** O município cujo calendário rege os prazos do processo. */
 @Component({
-  selector: 'div[selMunicipioDoProcesso]',
+  selector: 'sel-municipio-do-processo',
   imports: [ValorLegivelDirective, ComboboxComponent],
   templateUrl: './municipio-do-processo.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: ':host { display: block; }',
 })
 export class MunicipioDoProcessoComponent {
   protected readonly store = inject(ProcessoSeletivoStore);

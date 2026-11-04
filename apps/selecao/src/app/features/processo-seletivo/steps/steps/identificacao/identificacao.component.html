@@ -51,12 +51,11 @@
           [class.is-invalid]="gravacao.camposInvalidos().has('nome')"
         />
       </div>
-      <div
-        selIdentificadorLegivel
+      <sel-identificador-legivel
         class="form-field form-grid__full"
         [controle]="identificadorLegivel"
         [invalido]="gravacao.camposInvalidos().has('identificadorLegivel')"
-      ></div>
+      ></sel-identificador-legivel>
       <div class="form-field form-grid__full">
         <label class="label" for="f-unidade">Unidade administradora</label>
         @if (unidades.erro(); as erro) {
@@ -86,11 +85,10 @@
           declarado abaixo, e não decorre dela.
         </p>
       </div>
-      <div
-        selMunicipioDoProcesso
+      <sel-municipio-do-processo
         class="form-field form-grid__full"
         [invalido]="gravacao.camposInvalidos().has('localidade')"
-      ></div>
+      ></sel-municipio-do-processo>
       <div class="form-field form-grid__full">
         <label class="label" for="f-origem">Origem dos candidatos</label>
         <select
