@@ -20,6 +20,7 @@ import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service'
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { DesempateStepComponent } from './desempate.component';
+import { EdicaoDosCriteriosService } from './edicao-dos-criterios.service';
 import { PASSO_FORMULARIO } from './desempate-por-idade';
 
 const BASE = 'http://localhost:5000';
@@ -90,6 +91,8 @@ function criterio(patch: Partial<CriterioDesempateConfigurado>): CriterioDesempa
 describe('DesempateStepComponent', () => {
   let componente: DesempateStepComponent;
   let fixture: ComponentFixture<DesempateStepComponent>;
+  const edicao = (): EdicaoDosCriteriosService =>
+    fixture.debugElement.injector.get(EdicaoDosCriteriosService);
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 
@@ -155,7 +158,6 @@ describe('DesempateStepComponent', () => {
     }).compileComponents();
 
     const fixture = TestBed.createComponent(DesempateStepComponent);
-    const local = fixture.componentInstance;
     const controllerLocal = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
 
@@ -175,17 +177,17 @@ describe('DesempateStepComponent', () => {
     }
     fixture.detectChanges();
 
-    expect(local.falhaDoCatalogoDeFatos()).not.toBeNull();
-    expect(local.fatosEscolhiveis()).toHaveLength(0);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const alerta = (): Element | null => raiz.querySelector('.alert--danger');
+    expect(alerta()?.textContent).toContain('Sem esses dados');
 
     // A nova tentativa existe, e é ela que devolve o vocabulário sem recarregar a página.
-    local.carregarFatos();
+    (alerta()?.querySelector('button') as HTMLButtonElement).click();
     const retentativa = controllerLocal.expectOne((r) => r.url.includes('fatos-candidato'));
     retentativa.flush(FATOS);
     fixture.detectChanges();
 
-    expect(local.falhaDoCatalogoDeFatos()).toBeNull();
-    expect(local.fatosEscolhiveis().length).toBeGreaterThan(0);
+    expect(alerta()).toBeNull();
     controllerLocal.verify();
   });
 
@@ -354,7 +356,7 @@ describe('DesempateStepComponent', () => {
       criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
     ]);
 
-    componente.mover(1, -1);
+    edicao().mover(1, -1);
 
     expect(store.draft().desempate.map((item) => item.regraCodigo)).toEqual([
       'DESEMPATE-IDOSO',
@@ -367,7 +369,7 @@ describe('DesempateStepComponent', () => {
       criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: '1.0' }),
     ]);
 
-    componente.remover(0);
+    edicao().remover(0);
 
     expect(store.draft().desempate).toEqual([]);
   });

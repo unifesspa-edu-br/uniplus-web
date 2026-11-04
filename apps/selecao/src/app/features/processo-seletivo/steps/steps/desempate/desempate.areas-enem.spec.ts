@@ -18,6 +18,7 @@ import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service'
 import { AcompanhamentoDoCadastroDePesos } from '../classificacao/acompanhamento-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
 import { AreasDoDesempateService } from './areas-do-desempate.service';
+import { EdicaoDosCriteriosService } from './edicao-dos-criterios.service';
 import { DesempateStepComponent } from './desempate.component';
 
 const BASE = 'http://localhost:5000';
@@ -224,8 +225,8 @@ function criterio(areas: string[]): CriterioDesempateConfigurado {
 }
 
 function criterioPorArea(m: Montagem): void {
-  m.componente.acrescentar();
-  m.componente.escolherRegra(m.componente.criterios().length - 1, REGRA_POR_AREA);
+  edicaoDosCriterios(m).acrescentar();
+  edicaoDosCriterios(m).escolherRegra(m.componente.criterios().length - 1, REGRA_POR_AREA);
   m.fixture.detectChanges();
 }
 
@@ -274,6 +275,10 @@ function areasEmConsulta(m: Montagem, indice: number): readonly string[] {
 
 function textoDaTela(m: Montagem): string {
   return m.el.textContent?.replace(/\s+/g, ' ') ?? '';
+}
+
+function edicaoDosCriterios(m: Montagem): EdicaoDosCriteriosService {
+  return m.fixture.debugElement.injector.get(EdicaoDosCriteriosService);
 }
 
 function areasDoDesempate(m: Montagem): AreasDoDesempateService {
@@ -505,7 +510,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
 
         await m.componente.relerProcesso();
 
-        expect(m.componente.anuncio()).toBe('');
+        expect(edicaoDosCriterios(m).anuncio()).toBe('');
       });
 
       it('se a releitura falha, o aviso fica e a falha é anunciada', async () => {
@@ -519,7 +524,9 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
         m.fixture.detectChanges();
 
         expect(m.el.querySelector('#desemp-reler-processo')).not.toBeNull();
-        expect(m.componente.anuncio()).toBe('Não foi possível reler o processo. Tente novamente.');
+        expect(edicaoDosCriterios(m).anuncio()).toBe(
+          'Não foi possível reler o processo. Tente novamente.',
+        );
       });
     });
 
@@ -562,7 +569,9 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
           tipo: 'por-reler',
           motivo: 'por-confirmar',
         });
-        expect(m.componente.anuncio()).toBe('Não foi possível reler o processo. Tente novamente.');
+        expect(edicaoDosCriterios(m).anuncio()).toBe(
+          'Não foi possível reler o processo. Tente novamente.',
+        );
       });
     });
 
@@ -858,7 +867,9 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       acrescentarPelaTela(m, 0, 'REDACAO');
 
       expect(areasNaTela(m, 0)).toEqual(['1ª Matemática', '2ª Redação']);
-      expect(m.componente.anuncio()).toBe('Área Redação acrescentada ao critério 1, na posição 2.');
+      expect(edicaoDosCriterios(m).anuncio()).toBe(
+        'Área Redação acrescentada ao critério 1, na posição 2.',
+      );
 
       const gravacao = m.componente.persistir();
       const pedido = m.controller.expectOne((r) => r.url.endsWith(ROTA_DESEMPATE));
@@ -896,7 +907,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       primeiro.dispatchEvent(new Event('change'));
       m.fixture.detectChanges();
 
-      m.componente.remover(0);
+      edicaoDosCriterios(m).remover(0);
       m.fixture.detectChanges();
       botao(m, 'desemp-area-acrescentar-0').click();
       m.fixture.detectChanges();
@@ -915,7 +926,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       primeiro.dispatchEvent(new Event('change'));
       m.fixture.detectChanges();
 
-      m.componente.mover(0, 1);
+      edicaoDosCriterios(m).mover(0, 1);
       m.fixture.detectChanges();
 
       expect(seletor(m, 0)?.value).toBe('');
@@ -950,7 +961,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       m.fixture.detectChanges();
 
       expect(m.componente.criterios()[0].areas).toEqual([]);
-      expect(m.componente.anuncio()).toBe('Escolha no seletor a área a acrescentar.');
+      expect(edicaoDosCriterios(m).anuncio()).toBe('Escolha no seletor a área a acrescentar.');
     });
 
     it('não oferece de novo a área já citada, nem em outro critério por área', async () => {
@@ -975,7 +986,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       m.fixture.detectChanges();
 
       expect(areasNaTela(m, 0)).toEqual(['1ª Matemática', '2ª Redação']);
-      expect(m.componente.anuncio()).toBe(
+      expect(edicaoDosCriterios(m).anuncio()).toBe(
         'Área Matemática movida para a posição 1 de 2 no critério 1.',
       );
 
@@ -983,7 +994,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       m.fixture.detectChanges();
 
       expect(areasNaTela(m, 0)).toEqual(['1ª Redação']);
-      expect(m.componente.anuncio()).toBe('Área Matemática retirada do critério 1.');
+      expect(edicaoDosCriterios(m).anuncio()).toBe('Área Matemática retirada do critério 1.');
     });
 
     it('trocar de regra limpa as áreas do critério', async () => {
@@ -991,7 +1002,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       criterioPorArea(m);
       acrescentarPelaTela(m, 0, 'REDACAO');
 
-      m.componente.escolherRegra(0, 'DESEMPATE-MAIOR-IDADE|1.0');
+      edicaoDosCriterios(m).escolherRegra(0, 'DESEMPATE-MAIOR-IDADE|1.0');
 
       expect(m.componente.criterios()[0].areas).toEqual([]);
     });
@@ -1014,7 +1025,9 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       botao(m, 'desemp-area-acrescentar-0').click();
       botao(m, 'desemp-area-acrescentar-0').click();
 
-      expect(m.componente.anuncio()).toBe('Escolha no seletor a área a acrescentar. (2ª vez)');
+      expect(edicaoDosCriterios(m).anuncio()).toBe(
+        'Escolha no seletor a área a acrescentar. (2ª vez)',
+      );
     });
 
     it('a escolha pendente sobrevive a mexer nas áreas do próprio critério', async () => {
@@ -1027,7 +1040,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       elemento.dispatchEvent(new Event('change'));
       m.fixture.detectChanges();
 
-      m.componente.removerArea(0, 0);
+      edicaoDosCriterios(m).removerArea(0, 0);
       m.fixture.detectChanges();
       botao(m, 'desemp-area-acrescentar-0').click();
 
@@ -1192,7 +1205,7 @@ describe('DesempateStepComponent — ordem das áreas do ENEM', () => {
       tentar.focus();
       tentar.click();
 
-      m.componente.escolherRegra(0, 'DESEMPATE-MAIOR-IDADE|1.0');
+      edicaoDosCriterios(m).escolherRegra(0, 'DESEMPATE-MAIOR-IDADE|1.0');
       responderPendentes(m.controller);
       m.fixture.detectChanges();
       await m.fixture.whenStable();

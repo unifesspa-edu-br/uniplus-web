@@ -82,18 +82,18 @@
   </div>
 }
 
-@if (store.emConsulta() && falhaDoCatalogoDeFatos()) {
+@if (store.emConsulta() && fatos.falha()) {
   <p class="alert alert--warning" role="status">
     Não foi possível carregar os dados do candidato. Os critérios que citam um fato aparecem pelo
     código gravado.
   </p>
 }
 
-@if (!store.emConsulta() && falhaDoCatalogoDeFatos(); as falha) {
+@if (!store.emConsulta() && fatos.falha(); as falha) {
   <p class="alert alert--danger" role="alert">
     {{ falha }} Sem esses dados, um critério que cita um fato do candidato aparece como
     desconhecido e a gravação do passo é recusada.
-    <button type="button" class="btn btn--tertiary btn--sm" (click)="carregarFatos()">
+    <button type="button" class="btn btn--tertiary btn--sm" (click)="fatos.carregar()">
       Tentar novamente
     </button>
   </p>
@@ -117,7 +117,7 @@
   região fica fora do `@for` de propósito: dentro dele, ser recriada a cada mudança impediria o
   anúncio de ser lido.
 -->
-<p class="sr-only" role="status" aria-live="polite">{{ anuncio() }}</p>
+<p class="sr-only" role="status" aria-live="polite">{{ edicao.anuncio() }}</p>
 
 <div class="desempate-list">
   @for (
@@ -140,17 +140,17 @@
       [criterio]="criterio"
       [ultimo]="last"
       [etapas]="etapasReferenciaveis()"
-      [fatos]="fatosEscolhiveis()"
-      [fatosLidos]="catalogoDeFatosLido()"
-      [escolhaDeArea]="escolhaPendente(indice)"
-      (alterar)="atualizar(indice, $event)"
-      (regraEscolhida)="escolherRegra(indice, $event)"
-      (mover)="mover(indice, $event)"
-      (remover)="remover(indice)"
-      (areaEscolhida)="escolherArea(indice, $event)"
-      (areaAcrescentada)="acrescentarAreaEscolhida(indice)"
-      (areaRemovida)="removerArea(indice, $event)"
-      (areaMovida)="moverArea(indice, $event.posicao, $event.delta)"
+      [fatos]="fatos.escolhiveis()"
+      [fatosLidos]="fatos.lido()"
+      [escolhaDeArea]="edicao.escolhaPendente(indice)"
+      (alterar)="edicao.atualizar(indice, $event)"
+      (regraEscolhida)="edicao.escolherRegra(indice, $event)"
+      (mover)="edicao.mover(indice, $event)"
+      (remover)="edicao.remover(indice)"
+      (areaEscolhida)="edicao.escolherArea(indice, $event)"
+      (areaAcrescentada)="edicao.acrescentarAreaEscolhida(indice)"
+      (areaRemovida)="edicao.removerArea(indice, $event)"
+      (areaMovida)="edicao.moverArea(indice, $event.posicao, $event.delta)"
     ></div>
   }
 </div>
@@ -161,7 +161,7 @@
     type="button"
     id="desempate-acrescentar"
     [disabled]="!store.aceitaEdicao()"
-    (click)="acrescentar()"
+    (click)="edicao.acrescentar()"
   >
     + Acrescentar critério
   </button>

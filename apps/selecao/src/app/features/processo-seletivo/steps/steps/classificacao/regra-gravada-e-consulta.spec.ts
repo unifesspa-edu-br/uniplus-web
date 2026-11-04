@@ -19,6 +19,7 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { BonusStepComponent } from '../bonus/bonus.component';
 import { DesempateStepComponent } from '../desempate/desempate.component';
+import { EdicaoDosCriteriosService } from '../desempate/edicao-dos-criterios.service';
 import { CatalogosDoCronogramaService } from '../cronograma/catalogos-do-cronograma.service';
 import { EliminacaoStepComponent } from '../eliminacao/eliminacao.component';
 import { FormulaStepComponent } from '../formula/formula.component';
@@ -305,11 +306,11 @@ describe('regra gravada no select, passo lido como texto em consulta', () => {
       store.patchSection('desempate', [criterio, segundo]);
       publicar(store);
       detectar(fixture);
-      const componente = fixture.componentInstance;
+      const edicao = fixture.debugElement.injector.get(EdicaoDosCriteriosService);
 
-      componente.acrescentar();
-      componente.mover(0, 1);
-      componente.remover(0);
+      edicao.acrescentar();
+      edicao.mover(0, 1);
+      edicao.remover(0);
 
       expect(store.draft().desempate).toEqual([criterio, segundo]);
     });

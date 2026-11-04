@@ -1,61 +1,27 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  Injector,
-  signal,
-  untracked,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, inject, Injector } from '@angular/core';
 import {} from '@uniplus/shared-ui/components';
-import { isApiOk } from '@uniplus/shared-core/http';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
-import { FatoCandidatoView, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
-
-import { fatosParaGatilho } from '../../shared/gatilho-de-exigencia';
-import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
 
 import { CriterioDesempateConfigurado, StepValidation } from '../../processo-seletivo.models';
 import { fatosColetadosPelaInscricao } from '../formulario/formulario-de-inscricao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { CadastroInicialService } from '../../shared/cadastro-inicial.service';
-import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { focarAposRenderizar } from '../../shared/foco-apos-renderizar';
-import { resumoDaRecusa } from '../../shared/resumo-da-recusa';
 import { AreasDoDesempateService } from './areas-do-desempate.service';
+import { EdicaoDosCriteriosService } from './edicao-dos-criterios.service';
+import { FatosDoDesempateService } from './fatos-do-desempate.service';
+import { GravacaoDoDesempateService } from './gravacao-do-desempate.service';
 import { CriterioDeDesempateComponent } from './criterio-de-desempate.component';
 import { textoDoCriterio } from '../classificacao/confirmacao-da-classificacao';
 import { CatalogosDeClassificacaoService } from '../classificacao/catalogos-de-classificacao.service';
-import { lerChaveDaRegra } from '../classificacao/regra-escolhivel';
 import {
   desempateIdosoSemApuracao,
   desempateSemDataDeNascimento,
   PASSO_FORMULARIO,
 } from './desempate-por-idade';
-import {
-  comoComandoDeCriteriosDesempate,
-  desempateUsaAreas,
-  desempateTemShapeConhecido,
-} from './desempate-para-comando';
-import { comAreaAcrescentada, comAreasTrocadas, semAreaNaPosicao } from './areas-do-criterio';
+import { desempateUsaAreas, desempateTemShapeConhecido } from './desempate-para-comando';
 import { mensagensDoDesempate } from './validacao-do-desempate';
-import { recusaAoGravarODesempate } from './recusas-do-desempate';
-
-const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
-  regraCodigo: '',
-  regraVersao: '',
-  etapaRef: '',
-  idadeMinima: '',
-  fato: '',
-  operador: '',
-  valor: '',
-  areas: [],
-};
 
 /**
  * Critérios de desempate (`PUT …/criterios-desempate`), na ordem em que serão
@@ -69,120 +35,30 @@ const CRITERIO_VAZIO: CriterioDesempateConfigurado = {
   templateUrl: './desempate.component.html',
   imports: [CriterioDeDesempateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [AreasDoDesempateService, provePassoDoWizard(DesempateStepComponent)],
+  providers: [
+    AreasDoDesempateService,
+    EdicaoDosCriteriosService,
+    FatosDoDesempateService,
+    GravacaoDoDesempateService,
+    provePassoDoWizard(DesempateStepComponent),
+  ],
 })
 export class DesempateStepComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly catalogos = inject(CatalogosDeClassificacaoService);
   protected readonly areas = inject(AreasDoDesempateService);
-  private readonly cadastro = inject(CadastroInicialService);
-  private readonly releitura = inject(ReleituraDoSnapshot);
-  private readonly problemI18n = inject(ProblemI18nService);
+  protected readonly fatos = inject(FatosDoDesempateService);
+  private readonly gravacao = inject(GravacaoDoDesempateService);
 
-  private readonly fatosApi = inject(FatosCandidatoApi);
   private readonly injector = inject(Injector);
-  private readonly destroyRef = inject(DestroyRef);
-
-  /**
-   * O vocabulário de fatos do candidato, como o critério de desempate pode citá-lo.
-   *
-   * Não inclui fato de domínio dinâmico — modalidade, condição de atendimento —, e isso não é
-   * omissão da tela: o comando de desempate resolve o vocabulário sem eles, de modo que citar
-   * um aqui seria recusado como fato desconhecido. Oferecê-los daria ao operador uma escolha
-   * que a gravação desfaz.
-   */
-  private readonly catalogoDeFatos = signal<readonly FatoCandidatoView[]>([]);
-
-  /**
-   * Só um catálogo lido permite dizer que um fato saiu dele: enquanto a busca não responde,
-   * ou quando falha, o vazio é falta de dado, não ausência do fato.
-   */
-  protected readonly catalogoDeFatosLido = signal(false);
-
-  readonly fatosEscolhiveis = computed(() => fatosParaGatilho(this.catalogoDeFatos()));
-
-  private readonly fatoPorCodigo = computed(
-    () => new Map(this.fatosEscolhiveis().map((fato) => [fato.codigo, fato])),
-  );
-
-  /**
-   * A falha ao buscar o vocabulário de fatos, dita na tela em vez de engolida.
-   *
-   * Sem isto, um 500 passageiro deixava o catálogo vazio para sempre: todo critério por
-   * predicado já configurado aparecia como fato fora do cadastro, `validate()` o recusava, e
-   * não havia na tela nem a explicação nem um caminho de volta que não fosse recarregar a
-   * página. É a mesma política dos catálogos de regra, que já tinham erro e nova tentativa.
-   */
-  readonly falhaDoCatalogoDeFatos = signal<string | null>(null);
 
   constructor() {
     this.catalogos.carregar();
-    this.carregarFatos();
-    this.descartarEscolhasQueSairamDoSeletor();
-    this.esquecerEscolhasQuandoAListaForSubstituida();
+    this.fatos.carregar();
   }
 
-  /**
-   * As escolhas pendentes são das posições da lista que esta tela montou. Uma lista que chega de
-   * fora — hidratação, releitura, troca de processo — põe outros critérios nessas posições, e as
-   * escolhas caem.
-   */
-  private esquecerEscolhasQuandoAListaForSubstituida(): void {
-    effect(() => {
-      const criterios = this.criterios();
-      if (criterios !== this.listaMontadaAqui) {
-        untracked(() => this.escolhasPendentes.set(new Map()));
-      }
-    });
-  }
-
-  /** A última lista que esta tela gravou no rascunho. */
-  private listaMontadaAqui: readonly CriterioDesempateConfigurado[] | null = null;
-
-  private gravarNoRascunho(criterios: readonly CriterioDesempateConfigurado[]): void {
-    this.listaMontadaAqui = criterios;
-    this.store.patchSection('desempate', criterios);
-  }
-
-  /**
-   * A escolha cuja área deixou de ser oferecida — citada por outro critério, ou fora do quadro —
-   * cai: o seletor já mostra "— escolher —", e a área não pode voltar escolhida sem o operador ver.
-   * Só com o quadro lido: enquanto ele carrega, nenhuma área é oferecida, e nada saiu do seletor.
-   */
-  private descartarEscolhasQueSairamDoSeletor(): void {
-    effect(() => {
-      if (this.areas.situacaoDoQuadro().tipo !== 'lido') return;
-      const oferecidas = new Set(this.areas.areasOferecidas().map((area) => area.codigo));
-      const escolhas = untracked(() => this.escolhasPendentes());
-      const validas = [...escolhas].filter(([, codigo]) => oferecidas.has(codigo));
-      if (validas.length < escolhas.size) this.escolhasPendentes.set(new Map(validas));
-    });
-  }
-
-  /** Busca o vocabulário de fatos. Exposto porque a tela oferece nova tentativa. */
-  carregarFatos(): void {
-    this.falhaDoCatalogoDeFatos.set(null);
-    this.fatosApi
-      .listar()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (resultado) => {
-          if (isApiOk(resultado)) {
-            this.catalogoDeFatos.set(resultado.data);
-            this.catalogoDeFatosLido.set(true);
-            return;
-          }
-
-          this.falhaDoCatalogoDeFatos.set(this.problemI18n.resolve(resultado.problem).title);
-        },
-        error: () =>
-          this.falhaDoCatalogoDeFatos.set(
-            'Não foi possível carregar os dados do candidato que um critério pode citar. Tente novamente.',
-          ),
-      });
-  }
-
-  readonly criterios = computed(() => this.store.draft().desempate);
+  protected readonly edicao = inject(EdicaoDosCriteriosService);
+  readonly criterios = this.edicao.criterios;
 
   /**
    * "Reler o processo" do aviso de releitura. Quando ela decide e o aviso sai, o foco vai ao
@@ -191,7 +67,7 @@ export class DesempateStepComponent {
   async relerProcesso(): Promise<void> {
     const resultado = await this.areas.relerProcesso();
     if (resultado === 'ainda-por-reler') {
-      this.anunciar('Não foi possível reler o processo. Tente novamente.');
+      this.edicao.anunciar('Não foi possível reler o processo. Tente novamente.');
     } else if (resultado === 'lida') {
       this.focarNoPrimeiroCriterioPorArea();
     }
@@ -269,195 +145,6 @@ export class DesempateStepComponent {
     return desempateUsaAreas(criterio.regraCodigo);
   }
 
-  acrescentar(): void {
-    this.gravarNoRascunho([...this.criterios(), CRITERIO_VAZIO]);
-    this.anunciar(`Critério ${this.criterios().length} acrescentado ao fim da lista.`);
-  }
-
-  remover(indice: number): void {
-    this.gravarNoRascunho(this.criterios().filter((_, item) => item !== indice));
-    this.remapearEscolhas((anterior) =>
-      anterior === indice ? null : anterior > indice ? anterior - 1 : anterior,
-    );
-    this.anunciar(`Critério ${indice + 1} removido.`);
-    // O botão clicado sai do DOM junto com a linha e o foco cairia no corpo da página. Quem
-    // navega por teclado perderia o lugar a cada remoção.
-    focarAposRenderizar(
-      this.injector,
-      `desemp-remover-${Math.max(0, indice - 1)}`,
-      'desempate-acrescentar',
-    );
-  }
-
-  /**
-   * Troca de posição dois critérios. A ordem É a regra — o primeiro da lista desempata
-   * primeiro —, então mover não é enfeite, é configuração.
-   *
-   * O foco acompanha o critério movido, e não a posição: as linhas são reusadas por posição, e
-   * sem isto o botão que continuava focado passava a operar OUTRO critério, sem nada anunciar.
-   * No topo e no fim o botão correspondente fica indisponível, e o foco vai para o par dele.
-   */
-  mover(indice: number, delta: number): void {
-    const ordem = [...this.criterios()];
-    const destino = indice + delta;
-    if (destino < 0 || destino >= ordem.length) return;
-
-    [ordem[indice], ordem[destino]] = [ordem[destino], ordem[indice]];
-    this.gravarNoRascunho(ordem);
-    this.remapearEscolhas((anterior) =>
-      anterior === indice ? destino : anterior === destino ? indice : anterior,
-    );
-
-    this.anunciar(`Critério movido para a posição ${destino + 1} de ${ordem.length}.`);
-    focarAposRenderizar(
-      this.injector,
-      delta < 0 ? `desemp-subir-${destino}` : `desemp-descer-${destino}`,
-      delta < 0 ? `desemp-descer-${destino}` : `desemp-subir-${destino}`,
-    );
-  }
-
-  /**
-   * O que mudou na lista, para quem não vê a tela. Reordenar, acrescentar e remover eram
-   * mudanças silenciosas para leitor de tela.
-   */
-  readonly anuncio = signal('');
-
-  private ultimoAnuncio = '';
-  private repeticoesDoAnuncio = 0;
-
-  /**
-   * Um anúncio idêntico ao anterior não muda a região viva, e o leitor de tela não o repete: a
-   * partir da segunda vez seguida, o texto diz qual vez é.
-   */
-  private anunciar(mensagem: string): void {
-    this.repeticoesDoAnuncio = mensagem === this.ultimoAnuncio ? this.repeticoesDoAnuncio + 1 : 1;
-    this.ultimoAnuncio = mensagem;
-    this.anuncio.set(
-      this.repeticoesDoAnuncio > 1 ? `${mensagem} (${this.repeticoesDoAnuncio}ª vez)` : mensagem,
-    );
-  }
-
-  escolherRegra(indice: number, valor: string): void {
-    const { codigo, versao } = lerChaveDaRegra(valor);
-    this.remapearEscolhas((anterior) => (anterior === indice ? null : anterior));
-    // Trocar de regra some com o que a variante anterior usava — CA-05: só os
-    // argumentos aplicáveis à regra atual permanecem.
-    this.atualizar(indice, {
-      regraCodigo: codigo,
-      regraVersao: versao,
-      etapaRef: '',
-      idadeMinima: '',
-      fato: '',
-      operador: '',
-      valor: '',
-      areas: [],
-    });
-  }
-
-  /**
-   * A área escolhida no seletor de cada critério, ainda não incluída, pela posição do critério. A
-   * posição é a chave que a tela mantém: mover e remover critérios a acompanham, e mexer nas áreas
-   * do próprio critério não a troca.
-   */
-  private readonly escolhasPendentes = signal<ReadonlyMap<number, string>>(new Map());
-
-  escolhaPendente(indice: number): string {
-    return this.escolhasPendentes().get(indice) ?? '';
-  }
-
-  /**
-   * Só guarda a escolha. Incluir é outro gesto, pelo botão: no seletor fechado, cada seta dispara
-   * `change`, e incluir ali acrescentaria uma área a cada tecla.
-   */
-  escolherArea(indice: number, codigo: string): void {
-    this.escolhasPendentes.set(new Map([...this.escolhasPendentes(), [indice, codigo]]));
-  }
-
-  /** Leva as escolhas pendentes para as posições novas dos critérios; a de um removido cai. */
-  private remapearEscolhas(posicaoNova: (anterior: number) => number | null): void {
-    this.escolhasPendentes.set(
-      new Map(
-        [...this.escolhasPendentes()].flatMap(([anterior, codigo]) => {
-          const nova = posicaoNova(anterior);
-          return nova === null ? [] : [[nova, codigo] as const];
-        }),
-      ),
-    );
-  }
-
-  acrescentarAreaEscolhida(indice: number): void {
-    const criterio = this.criterios()[indice];
-    if (criterio === undefined) return;
-    const codigo = this.escolhaPendente(indice);
-    if (!this.areas.areasOferecidas().some((area) => area.codigo === codigo)) {
-      this.anunciar('Escolha no seletor a área a acrescentar.');
-      focarAposRenderizar(this.injector, `desemp-area-nova-${indice}`);
-      return;
-    }
-
-    const areas = comAreaAcrescentada(criterio.areas, codigo);
-    this.atualizar(indice, { areas });
-    this.anunciar(
-      `Área ${this.areas.rotuloDaArea(codigo)} acrescentada ao critério ${indice + 1}, na posição ${areas.length}.`,
-    );
-    // Acrescentada a última área oferecida, o botão fica indisponível e perderia o foco.
-    focarAposRenderizar(
-      this.injector,
-      `desemp-area-acrescentar-${indice}`,
-      `desemp-area-remover-${indice}-${areas.length - 1}`,
-    );
-  }
-
-  removerArea(indice: number, posicao: number): void {
-    const criterio = this.criterios()[indice];
-    if (criterio === undefined) return;
-
-    const codigo = criterio.areas[posicao];
-    this.atualizar(indice, { areas: semAreaNaPosicao(criterio.areas, posicao) });
-    this.anunciar(`Área ${this.areas.rotuloDaArea(codigo)} retirada do critério ${indice + 1}.`);
-    // O botão clicado sai do DOM com a linha: o foco vai para a área anterior; da primeira, para a
-    // que passou a ocupar a posição dela; sem nenhuma, para o seletor de acrescentar e, quando ele
-    // não está na tela, para a regra do critério.
-    const vizinha = posicao > 0 ? posicao - 1 : 0;
-    focarAposRenderizar(
-      this.injector,
-      `desemp-area-remover-${indice}-${vizinha}`,
-      `desemp-area-nova-${indice}`,
-      `desemp-regra-${indice}`,
-    );
-  }
-
-  /** Troca de posição duas áreas do critério. A ordem é a regra: a primeira desempata primeiro. */
-  moverArea(indice: number, posicao: number, delta: number): void {
-    const criterio = this.criterios()[indice];
-    const destino = posicao + delta;
-    const areas =
-      criterio === undefined ? null : comAreasTrocadas(criterio.areas, posicao, destino);
-    if (areas === null) return;
-
-    this.atualizar(indice, { areas });
-    this.anunciar(
-      `Área ${this.areas.rotuloDaArea(areas[destino])} movida para a posição ${destino + 1} de ${areas.length} no critério ${indice + 1}.`,
-    );
-    focarAposRenderizar(
-      this.injector,
-      delta < 0
-        ? `desemp-area-subir-${indice}-${destino}`
-        : `desemp-area-descer-${indice}-${destino}`,
-      delta < 0
-        ? `desemp-area-descer-${indice}-${destino}`
-        : `desemp-area-subir-${indice}-${destino}`,
-    );
-  }
-
-  protected atualizar(indice: number, patch: Partial<CriterioDesempateConfigurado>): void {
-    this.gravarNoRascunho(
-      this.criterios().map((criterio, item) =>
-        item === indice ? { ...criterio, ...patch } : criterio,
-      ),
-    );
-  }
-
   rotuloDeAvanco(): string {
     return 'Gravar e avançar';
   }
@@ -495,27 +182,11 @@ export class DesempateStepComponent {
       criterios: this.criterios(),
       obrigatorio: this.desempateObrigatorio(),
       etapas: this.etapasReferenciaveis(),
-      fatos: this.fatoPorCodigo(),
+      fatos: this.fatos.porCodigo(),
       situacaoDoQuadro: this.areas.situacaoDoQuadro(),
       rotuloDaArea: (codigo) => this.areas.rotuloDaArea(codigo),
     });
     return messages.length ? { valid: false, messages } : { valid: true };
-  }
-
-  /**
-   * O resumo da recusa: cada recusa ao critério por área com o texto da tela, o critério e a área
-   * que o campo aponta; e o título da raiz quando há erro de outro tipo ou nenhum erro de campo.
-   */
-  private mensagensDaRecusa(
-    problema: ProblemDetails,
-    criterios: readonly CriterioDesempateConfigurado[],
-  ): string[] {
-    return resumoDaRecusa(
-      problema,
-      (erro) =>
-        recusaAoGravarODesempate(erro, criterios, (codigo) => this.areas.rotuloDaArea(codigo)),
-      () => this.problemI18n.resolve(problema).title,
-    );
   }
 
   /**
@@ -540,44 +211,7 @@ export class DesempateStepComponent {
     return conferencia.valid ? this.gravar() : conferencia;
   }
 
-  private async gravar(): Promise<StepValidation> {
-    const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      return {
-        valid: false,
-        messages: [
-          'O cadastro do processo precisa estar concluído antes de configurar o desempate.',
-        ],
-      };
-    }
-
-    const geracao = this.store.geracao();
-    this.store.salvando.set(true);
-    try {
-      const criterios = this.criterios();
-      const resultado = await this.releitura.gravando(async () => {
-        const resposta = await this.cadastro.definirCriteriosDesempate(
-          processoId,
-          comoComandoDeCriteriosDesempate(criterios),
-        );
-        if (geracao !== this.store.geracao()) return resposta;
-        if (resposta.ok) {
-          this.store.classificacao.criteriosDesempateGravados.set(criterios);
-          this.store.classificacao.desempatePendenteDeGravacao.set(false);
-        } else if (resposta.inconclusiva) {
-          // O servidor pode ter gravado: o que ele tem deixa de ser sabido até a releitura.
-          this.store.classificacao.criteriosDesempateGravados.set(null);
-        }
-        return resposta;
-      });
-
-      if (geracao !== this.store.geracao()) return { valid: false, messages: [] };
-      if (!resultado.ok) {
-        return { valid: false, messages: this.mensagensDaRecusa(resultado.problem, criterios) };
-      }
-      return { valid: true };
-    } finally {
-      if (geracao === this.store.geracao()) this.store.salvando.set(false);
-    }
+  private gravar(): Promise<StepValidation> {
+    return this.gravacao.gravar(this.criterios(), (codigo) => this.areas.rotuloDaArea(codigo));
   }
 }
