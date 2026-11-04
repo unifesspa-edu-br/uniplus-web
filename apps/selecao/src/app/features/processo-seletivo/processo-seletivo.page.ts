@@ -21,38 +21,38 @@ import {
   type StepItem,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
-import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
-import { PASSOS } from './steps/processo-seletivo.data';
-import { PASSO_DO_WIZARD } from './steps/passo-do-wizard';
+import { ProcessoSeletivoStore } from './wizard/processo-seletivo.store';
+import { PASSOS } from './wizard/processo-seletivo.data';
+import { PASSO_DO_WIZARD } from './wizard/passo-do-wizard';
 import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { FocoDoEditor } from './editor/foco-do-editor.service';
 import { LeituraDoProcesso } from './editor/leitura-do-processo.service';
 import { RascunhoDaPublicacao } from './editor/rascunho-da-publicacao.service';
-import { CadastroInicial } from './steps/shared/cadastro-inicial.service';
-import { EnvioDoEdital } from './steps/shared/envio-do-edital.service';
-import { GravacaoDoProcesso } from './steps/shared/gravacao/gravacao-do-processo';
-import { GravacaoDosCamposPressupostos } from './steps/shared/campos-pressupostos.service';
-import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
-import { TipoProcessoPassoComponent } from './steps/steps/tipo-processo/tipo-processo.component';
-import { IdentificacaoPassoComponent } from './steps/steps/identificacao/identificacao.component';
-import { PagamentoPassoComponent } from './steps/steps/pagamento/pagamento.component';
-import { VagasPassoComponent } from './steps/steps/vagas/vagas.component';
-import { CatalogosDoCronograma } from './steps/steps/cronograma/catalogos-do-cronograma.service';
-import { CronogramaPassoComponent } from './steps/steps/cronograma/cronograma.component';
-import { FormularioPassoComponent } from './steps/steps/formulario/formulario.component';
-import { LeituraDoCadastroDePesos } from './steps/steps/classificacao/leitura-do-cadastro-de-pesos.service';
-import { CatalogosDeClassificacao } from './steps/steps/classificacao/catalogos-de-classificacao.service';
-import { FormulaPassoComponent } from './steps/steps/formula/formula.component';
-import { BonusPassoComponent } from './steps/steps/bonus/bonus.component';
-import { DesempatePassoComponent } from './steps/steps/desempate/desempate.component';
-import { reavaliarRecusaPeloDesempate } from './steps/steps/desempate/conferencia-do-desempate-gravado';
-import { EliminacaoPassoComponent } from './steps/steps/eliminacao/eliminacao.component';
-import { AtendimentoPassoComponent } from './steps/steps/atendimento/atendimento.component';
-import { RevisaoPassoComponent } from './steps/steps/revisao/revisao.component';
+import { CadastroInicial } from './wizard/shared/cadastro-inicial.service';
+import { EnvioDoEdital } from './wizard/shared/envio-do-edital.service';
+import { GravacaoDoProcesso } from './wizard/shared/gravacao/gravacao-do-processo';
+import { GravacaoDosCamposPressupostos } from './wizard/shared/campos-pressupostos.service';
+import { ReleituraDoSnapshot } from './wizard/shared/releitura-do-snapshot.service';
+import { TipoProcessoPassoComponent } from './wizard/passos/tipo-processo/tipo-processo.component';
+import { IdentificacaoPassoComponent } from './wizard/passos/identificacao/identificacao.component';
+import { PagamentoPassoComponent } from './wizard/passos/pagamento/pagamento.component';
+import { VagasPassoComponent } from './wizard/passos/vagas/vagas.component';
+import { CatalogosDoCronograma } from './wizard/passos/cronograma/catalogos-do-cronograma.service';
+import { CronogramaPassoComponent } from './wizard/passos/cronograma/cronograma.component';
+import { FormularioPassoComponent } from './wizard/passos/formulario/formulario.component';
+import { LeituraDoCadastroDePesos } from './wizard/passos/classificacao/leitura-do-cadastro-de-pesos.service';
+import { CatalogosDeClassificacao } from './wizard/passos/classificacao/catalogos-de-classificacao.service';
+import { FormulaPassoComponent } from './wizard/passos/formula/formula.component';
+import { BonusPassoComponent } from './wizard/passos/bonus/bonus.component';
+import { DesempatePassoComponent } from './wizard/passos/desempate/desempate.component';
+import { reavaliarRecusaPeloDesempate } from './wizard/passos/desempate/conferencia-do-desempate-gravado';
+import { EliminacaoPassoComponent } from './wizard/passos/eliminacao/eliminacao.component';
+import { AtendimentoPassoComponent } from './wizard/passos/atendimento/atendimento.component';
+import { RevisaoPassoComponent } from './wizard/passos/revisao/revisao.component';
 import {
   AVISO_DE_RASCUNHO_NAO_GRAVADO,
   ConfirmacaoDeSaida,
-} from './steps/shared/rascunho-nao-gravado.guard';
+} from './wizard/shared/rascunho-nao-gravado.guard';
 
 @Component({
   selector: 'sel-processo-seletivo',

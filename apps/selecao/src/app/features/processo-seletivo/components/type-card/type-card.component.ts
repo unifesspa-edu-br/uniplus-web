@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { TipoProcessoOption } from '../../steps/processo-seletivo.models';
+import { TipoProcessoOption } from '../../wizard/processo-seletivo.models';
 
 @Component({
   selector: 'sel-type-card',

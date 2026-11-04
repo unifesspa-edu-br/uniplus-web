@@ -3,7 +3,7 @@ import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { describe, expect, it } from 'vitest';
 
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
-import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
 import {
   PROCESSO_ID,

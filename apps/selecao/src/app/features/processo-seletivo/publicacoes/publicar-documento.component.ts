@@ -48,8 +48,8 @@ import {
   extensaoDoArquivo,
   nomeInicialDoAnexo,
   tipoDeMidiaDoAnexo,
-} from '../steps/shared/anexos-do-edital/anexos-do-edital';
-import { AnexosDoEdital } from '../steps/shared/anexos-do-edital/envio-do-anexo.service';
+} from '../wizard/shared/anexos-do-edital/anexos-do-edital';
+import { AnexosDoEdital } from '../wizard/shared/anexos-do-edital/envio-do-anexo.service';
 import { AnexosDaPublicacaoComponent } from './anexos-da-publicacao.component';
 import { rotuloDoAto } from './apresentacao-do-ato';
 import {

@@ -4,7 +4,7 @@ import type { DocumentoAPublicarDto, ProcessoSeletivoDto } from '@uniplus/shared
 import type { StepStatus } from '@uniplus/shared-ui/components';
 import { ROTULOS_DOS_PASSOS } from './processo-seletivo.data';
 import type { RegraDaModalidadeOfertada } from './shared/regras-das-modalidades';
-import type { AplicacaoEmAberto } from './steps/formulario/modelo-de-formulario';
+import type { AplicacaoEmAberto } from './passos/formulario/modelo-de-formulario';
 import { FalhaDeLeitura, WizardDraft } from './processo-seletivo.models';
 import { ClassificacaoNoServidor } from './classificacao-no-servidor';
 import {

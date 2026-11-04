@@ -14,7 +14,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 
 import { LENDO, type Leitura } from '../leitura';
-import { hojeNoFusoInstitucional } from '../steps/shared/fuso-institucional';
+import { hojeNoFusoInstitucional } from '../wizard/shared/fuso-institucional';
 import { atosQueAdmitemCorrecao } from './cadeia-de-correcao';
 import { codigosQueCongelam, tiposDeDocumentoAvulso } from './tipos-de-ato-avulso';
 

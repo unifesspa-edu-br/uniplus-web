@@ -5,7 +5,7 @@ import {
   decodificarComposicaoVagas,
   ehRamoFederal,
   quantidadeEhDeclarada,
-} from '../../steps/vagas/composicao-de-vagas';
+} from '../../passos/vagas/composicao-de-vagas';
 
 /**
  * Projeta a distribuição de vagas gravada com os identificadores **de origem**, que é o que o

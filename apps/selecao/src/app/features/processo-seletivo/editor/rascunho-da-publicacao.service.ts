@@ -8,14 +8,14 @@ import {
 } from '@uniplus/shared-core/http';
 import { PublicacaoDoProcessoApi } from '@uniplus/shared-data/selecao';
 
-import { ProcessoSeletivoStore } from '../steps/processo-seletivo.store';
-import { anexoConfirmado } from '../steps/shared/anexos-do-edital/anexos-do-edital';
+import { ProcessoSeletivoStore } from '../wizard/processo-seletivo.store';
+import { anexoConfirmado } from '../wizard/shared/anexos-do-edital/anexos-do-edital';
 import {
   VERSAO_DO_RASCUNHO,
   blocoDoDocumento,
   documentoDoRascunho,
   temAlgoAGuardar,
-} from '../steps/shared/rascunho-da-publicacao';
+} from '../wizard/shared/rascunho-da-publicacao';
 
 /**
  * O rascunho do bloco do ato que o operador transcreve na Revisão e ainda não publicou, e o rastro

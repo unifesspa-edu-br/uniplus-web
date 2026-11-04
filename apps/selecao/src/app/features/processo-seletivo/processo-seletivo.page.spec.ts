@@ -50,13 +50,13 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
-import { CadastroInicial } from './steps/shared/cadastro-inicial.service';
-import { quadroCongelado } from './steps/shared/quadro-de-pesos';
-import { ReleituraDoSnapshot } from './steps/shared/releitura-do-snapshot.service';
-import type { PassoDoWizard } from './steps/passo-do-wizard';
-import { CatalogosDeClassificacao } from './steps/steps/classificacao/catalogos-de-classificacao.service';
-import { DesempatePassoComponent } from './steps/steps/desempate/desempate.component';
-import type { CriterioDesempateConfigurado } from './steps/processo-seletivo.models';
+import { CadastroInicial } from './wizard/shared/cadastro-inicial.service';
+import { quadroCongelado } from './wizard/shared/quadro-de-pesos';
+import { ReleituraDoSnapshot } from './wizard/shared/releitura-do-snapshot.service';
+import type { PassoDoWizard } from './wizard/passo-do-wizard';
+import { CatalogosDeClassificacao } from './wizard/passos/classificacao/catalogos-de-classificacao.service';
+import { DesempatePassoComponent } from './wizard/passos/desempate/desempate.component';
+import type { CriterioDesempateConfigurado } from './wizard/processo-seletivo.models';
 
 const CRITERIO_POR_AREA: CriterioDesempateConfigurado = {
   regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
@@ -68,8 +68,8 @@ const CRITERIO_POR_AREA: CriterioDesempateConfigurado = {
   valor: '',
   areas: ['REDACAO'],
 };
-import { ROTULOS_DOS_PASSOS } from './steps/processo-seletivo.data';
-import { ProcessoSeletivoStore } from './steps/processo-seletivo.store';
+import { ROTULOS_DOS_PASSOS } from './wizard/processo-seletivo.data';
+import { ProcessoSeletivoStore } from './wizard/processo-seletivo.store';
 
 const tiposProcessoApiStub = {
   listar: () => of(apiOk<readonly TipoProcessoDto[]>([], 200, new HttpHeaders())),

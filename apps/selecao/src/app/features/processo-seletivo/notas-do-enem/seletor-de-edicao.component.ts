@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 
-import { rotuloDaEdicao } from '../steps/steps/classificacao/edicoes-do-enem';
+import { rotuloDaEdicao } from '../wizard/passos/classificacao/edicoes-do-enem';
 import { NotasDoEnemDoProcesso } from './notas-do-enem-do-processo.service';
 
 /** A edição do ENEM de um card; cada card tem a sua e escolher uma não muda a outra. */

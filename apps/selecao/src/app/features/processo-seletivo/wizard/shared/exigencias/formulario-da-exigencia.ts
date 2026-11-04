@@ -1,5 +1,5 @@
 import type { ExigenciasDoRascunho } from '../../processo-seletivo.models';
-import { nomeDaFinalidade } from '../../steps/formulario/formularios-por-finalidade';
+import { nomeDaFinalidade } from '../../passos/formulario/formularios-por-finalidade';
 
 import { documentosDe } from './consulta-das-exigencias';
 import { transformar } from './exigencias-documentais';

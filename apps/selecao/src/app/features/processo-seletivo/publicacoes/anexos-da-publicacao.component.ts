@@ -7,7 +7,7 @@ import {
   TAMANHO_MAXIMO_DO_ANEXO_MB,
   nomeNoDownload,
   recusaDoNomeDoAnexo,
-} from '../steps/shared/anexos-do-edital/anexos-do-edital';
+} from '../wizard/shared/anexos-do-edital/anexos-do-edital';
 import type { ArquivoDoAto, EnviosDeArquivos } from './envios-de-arquivos';
 
 /**

@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { descreverFase, exigenciasDe } from './descricao-da-fase';
-import { publicaResultadoDefinitivo } from '../steps/fase/configuracao-da-fase';
+import { publicaResultadoDefinitivo } from '../passos/fase/configuracao-da-fase';
 import {
   faseCanonica,
   fase,
   PRELIMINAR,
   DEFINITIVO,
   AVISO,
-} from '../steps/cronograma/cronograma-do-certame.testing';
+} from '../passos/cronograma/cronograma-do-certame.testing';
 
 describe('exigências da fase', () => {
   it('a fase que coleta inscrição ou isenção exige janela mesmo com a data definida na execução', () => {

@@ -1,6 +1,6 @@
 import type { TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
 
-import { vigenteNoDia } from '../steps/shared/vigencia';
+import { vigenteNoDia } from '../wizard/shared/vigencia';
 
 /**
  * Os tipos que o catálogo declara publicáveis como documento avulso e que vigoram no dia, um por

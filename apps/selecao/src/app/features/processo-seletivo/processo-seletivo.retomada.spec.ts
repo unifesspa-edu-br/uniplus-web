@@ -52,12 +52,12 @@ import { BehaviorSubject, NEVER, from, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EditorRouteReuseStrategy, ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
-import { ConfirmacaoDeSaida } from './steps/shared/rascunho-nao-gravado.guard';
+import { ConfirmacaoDeSaida } from './wizard/shared/rascunho-nao-gravado.guard';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { RascunhoDaPublicacao } from './editor/rascunho-da-publicacao.service';
-import { PASSOS } from './steps/processo-seletivo.data';
-import { CadastroInicial } from './steps/shared/cadastro-inicial.service';
-import { CatalogosDeClassificacao } from './steps/steps/classificacao/catalogos-de-classificacao.service';
+import { PASSOS } from './wizard/processo-seletivo.data';
+import { CadastroInicial } from './wizard/shared/cadastro-inicial.service';
+import { CatalogosDeClassificacao } from './wizard/passos/classificacao/catalogos-de-classificacao.service';
 import { PROCESSO_SELETIVO_ROUTES } from './processo-seletivo.routes';
 
 const PROCESSO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';

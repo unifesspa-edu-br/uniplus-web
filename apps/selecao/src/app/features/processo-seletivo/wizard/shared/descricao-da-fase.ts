@@ -5,8 +5,8 @@ import {
   type FaseDoCronograma,
   type ProdutoDaFase,
 } from '../processo-seletivo.models';
-import { publicaResultadoDefinitivo } from '../steps/fase/configuracao-da-fase';
-import { finalidadesQueAtende } from '../steps/formulario/formularios-por-finalidade';
+import { publicaResultadoDefinitivo } from '../passos/fase/configuracao-da-fase';
+import { finalidadesQueAtende } from '../passos/formulario/formularios-por-finalidade';
 
 /** Origem de data que obriga a fase a declarar janela. */
 export const ORIGEM_DATA_NO_EDITAL = 'NO_EDITAL';

@@ -4,9 +4,9 @@ import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { PassoDoWizard } from '../steps/passo-do-wizard';
-import { ProcessoSeletivoStore } from '../steps/processo-seletivo.store';
-import { ReleituraDoSnapshot } from '../steps/shared/releitura-do-snapshot.service';
+import type { PassoDoWizard } from '../wizard/passo-do-wizard';
+import { ProcessoSeletivoStore } from '../wizard/processo-seletivo.store';
+import { ReleituraDoSnapshot } from '../wizard/shared/releitura-do-snapshot.service';
 import { ConducaoDoWizard } from './conducao-do-wizard.service';
 import { FocoDoEditor } from './foco-do-editor.service';
 import { RascunhoDaPublicacao } from './rascunho-da-publicacao.service';

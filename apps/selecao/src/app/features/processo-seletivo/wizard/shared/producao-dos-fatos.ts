@@ -10,12 +10,12 @@ import {
 import type { FaseDoCronograma, FormularioDeInscricao } from '../processo-seletivo.models';
 import { finalidadesDaFase } from './descricao-da-fase';
 import { finalidadeDaExigencia } from './exigencias/formulario-da-exigencia';
-import { fatosCitadosPelaDerivacao } from '../steps/formulario/citantes-no-processo';
-import { fatosColetadosPelaInscricao } from '../steps/formulario/fatos-coletados-da-inscricao';
+import { fatosCitadosPelaDerivacao } from '../passos/formulario/citantes-no-processo';
+import { fatosColetadosPelaInscricao } from '../passos/formulario/fatos-coletados-da-inscricao';
 import {
   FINALIDADE_ISENCAO_TAXA,
   formulariosDoRascunho,
-} from '../steps/formulario/formularios-por-finalidade';
+} from '../passos/formulario/formularios-por-finalidade';
 
 /**
  * Em que fase do cronograma um fato do candidato fica conhecido no processo, e o que isso proíbe

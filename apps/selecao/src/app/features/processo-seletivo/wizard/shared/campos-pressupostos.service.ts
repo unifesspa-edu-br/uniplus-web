@@ -13,12 +13,12 @@ import {
 } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
-import { CatalogosDoCronograma } from '../steps/cronograma/catalogos-do-cronograma.service';
-import { comCamposQueAsExigenciasPressupoem } from '../steps/formulario/campos-pressupostos-da-inscricao';
+import { CatalogosDoCronograma } from '../passos/cronograma/catalogos-do-cronograma.service';
+import { comCamposQueAsExigenciasPressupoem } from '../passos/formulario/campos-pressupostos-da-inscricao';
 import {
   fatosCitadosPelaDerivacao,
   fatosCitadosPeloPredicado,
-} from '../steps/formulario/citantes-no-processo';
+} from '../passos/formulario/citantes-no-processo';
 import {
   conteudoDoFormulario,
   faseDaInscricao,
@@ -27,7 +27,7 @@ import {
   formularioDaFinalidade,
   inscricaoDoServidor,
   type FormularioParaGravar,
-} from '../steps/formulario/formulario-do-processo';
+} from '../passos/formulario/formulario-do-processo';
 import { CadastroInicial } from './cadastro-inicial.service';
 import { regrasDasModalidadesOfertadas } from './regras-das-modalidades';
 

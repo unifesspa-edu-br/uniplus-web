@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { OrigemCandidatosSelecionada } from '../../processo-seletivo.models';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
-import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
+import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 
 import {
   PROCESSO_ID,

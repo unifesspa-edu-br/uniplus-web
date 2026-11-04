@@ -40,8 +40,8 @@ import { describe, expect, it } from 'vitest';
  * item 2.
  */
 
-const STEPS_ROOT = path.resolve(__dirname, '../processo-seletivo/steps');
-const DATA_FILE = path.join(STEPS_ROOT, 'processo-seletivo.data.ts');
+const RAIZ_DO_WIZARD = path.resolve(__dirname, '../processo-seletivo/wizard');
+const DATA_FILE = path.join(RAIZ_DO_WIZARD, 'processo-seletivo.data.ts');
 
 /**
  * Inventário reconciliado (issue `#511`): conceito → fonte canônica e Story
@@ -210,7 +210,7 @@ function nomesBanidosDeclaradosEm(source: string): string[] {
 
 describe('Fitness — vocabulário institucional não duplica no wizard de Processo Seletivo', () => {
   it('o passo "Locais de prova" não voltou — sem endpoint, POLOS não vira diretório de novo (Feature #477)', () => {
-    expect(fs.existsSync(path.join(STEPS_ROOT, 'steps', 'polos'))).toBe(false);
+    expect(fs.existsSync(path.join(RAIZ_DO_WIZARD, 'passos', 'polos'))).toBe(false);
   });
 
   describe('processo-seletivo.data.ts só exporta rótulo de navegação', () => {
@@ -235,7 +235,7 @@ describe('Fitness — vocabulário institucional não duplica no wizard de Proce
   });
 
   describe('nenhum arquivo do wizard reexporta um catálogo do inventário banido, mesmo fora de data.ts', () => {
-    const arquivos = listarArquivosTs(STEPS_ROOT);
+    const arquivos = listarArquivosTs(RAIZ_DO_WIZARD);
 
     it('sanity check — o glob percorre o diretório de passos do wizard', () => {
       expect(arquivos.length).toBeGreaterThan(10);

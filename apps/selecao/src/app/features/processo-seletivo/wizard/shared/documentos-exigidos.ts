@@ -8,7 +8,7 @@ import {
   publicoDaExigencia,
   repeticaoResumida,
   rotuloDaConsequencia,
-} from '../steps/fase/resumo-da-exigencia';
+} from '../passos/fase/resumo-da-exigencia';
 import { comAlcanceDeTodasAsFases } from './exigencias/alcance-das-exigencias';
 import {
   type ExigenciaLocalizada,

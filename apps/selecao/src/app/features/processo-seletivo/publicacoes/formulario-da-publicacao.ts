@@ -1,6 +1,6 @@
 import { FormControl, FormGroup, Validators, type ValidatorFn } from '@angular/forms';
 
-import { hojeNoFusoInstitucional } from '../steps/shared/fuso-institucional';
+import { hojeNoFusoInstitucional } from '../wizard/shared/fuso-institucional';
 
 const NUMERO_TAMANHO_MAXIMO = 60;
 const ASSINANTE_TAMANHO_MAXIMO = 200;

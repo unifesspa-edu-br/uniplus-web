@@ -1,7 +1,7 @@
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 import { ehColetavel } from '@uniplus/shared-ui/components';
 
-import { nomeDaFinalidade } from '../steps/formulario/formularios-por-finalidade';
+import { nomeDaFinalidade } from '../passos/formulario/formularios-por-finalidade';
 import {
   formularioQueColeta,
   recusaDeFaseDoGatilho,

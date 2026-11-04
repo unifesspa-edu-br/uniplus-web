@@ -10,8 +10,8 @@ import type {
   RegraEliminacaoConfigurada,
   WizardDraft,
 } from '../../processo-seletivo.models';
-import { edicoesDoEnemDe } from '../../steps/classificacao/edicoes-do-enem';
-import { escalaDaNotaFinalComoTexto } from '../../steps/classificacao/escala-da-nota-final';
+import { edicoesDoEnemDe } from '../../passos/classificacao/edicoes-do-enem';
+import { escalaDaNotaFinalComoTexto } from '../../passos/classificacao/escala-da-nota-final';
 import { comoInteiro, comoTexto } from './campos-lidos';
 
 /**

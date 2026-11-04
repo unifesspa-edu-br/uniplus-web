@@ -1,4 +1,4 @@
-import { LIMITE_DE_ANEXOS, recusaDoNomeDoAnexo } from '../steps/shared/anexos-do-edital/anexos-do-edital';
+import { LIMITE_DE_ANEXOS, recusaDoNomeDoAnexo } from '../wizard/shared/anexos-do-edital/anexos-do-edital';
 import type { EnviosDeArquivos } from './envios-de-arquivos';
 
 /** Os arquivos do formulário e o que a tela sabe do ato corrigido, para conferir antes de publicar. */

@@ -3,7 +3,7 @@ import { apiOk, type ProblemDetails } from '@uniplus/shared-core/http';
 import { FinalidadeDoDocumento } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import type { EnvioDoAnexo } from '../steps/shared/anexos-do-edital/envio-do-anexo.service';
+import type { EnvioDoAnexo } from '../wizard/shared/anexos-do-edital/envio-do-anexo.service';
 import { EnviosDeArquivos } from './envios-de-arquivos';
 
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000005aa';

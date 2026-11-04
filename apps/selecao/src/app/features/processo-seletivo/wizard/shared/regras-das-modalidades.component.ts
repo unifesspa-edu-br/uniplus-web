@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { deClausulasDoWire, fatosParaLeitura, resumoDaRegra } from '@uniplus/shared-ui/components';
 
-import { CatalogosDoCronograma } from '../steps/cronograma/catalogos-do-cronograma.service';
+import { CatalogosDoCronograma } from '../passos/cronograma/catalogos-do-cronograma.service';
 import type { RegraDaModalidadeOfertada } from './regras-das-modalidades';
 
 let proximoId = 0;

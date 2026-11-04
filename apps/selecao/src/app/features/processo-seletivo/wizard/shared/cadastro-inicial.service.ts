@@ -26,7 +26,7 @@ import {
   DefinirReferenciaTemporalFatosRequest,
 } from '@uniplus/shared-data/selecao';
 
-import type { FormularioParaGravar } from '../steps/formulario/formulario-do-processo';
+import type { FormularioParaGravar } from '../passos/formulario/formulario-do-processo';
 import { gravarFormulario } from './gravacao-do-formulario';
 import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
 import type {

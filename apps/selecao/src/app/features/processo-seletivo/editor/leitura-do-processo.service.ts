@@ -9,12 +9,12 @@ import {
   DocumentosEAtosDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
 
-import type { MotivoFalhaDeLeitura } from '../steps/processo-seletivo.models';
-import { ProcessoSeletivoStore } from '../steps/processo-seletivo.store';
-import { CadastroInicial } from '../steps/shared/cadastro-inicial.service';
-import { classificarDocumentos } from '../steps/shared/hidratacao';
-import { passosConcluidosDe } from '../steps/shared/passos-concluidos';
-import { CatalogosDeClassificacao } from '../steps/steps/classificacao/catalogos-de-classificacao.service';
+import type { MotivoFalhaDeLeitura } from '../wizard/processo-seletivo.models';
+import { ProcessoSeletivoStore } from '../wizard/processo-seletivo.store';
+import { CadastroInicial } from '../wizard/shared/cadastro-inicial.service';
+import { classificarDocumentos } from '../wizard/shared/hidratacao';
+import { passosConcluidosDe } from '../wizard/shared/passos-concluidos';
+import { CatalogosDeClassificacao } from '../wizard/passos/classificacao/catalogos-de-classificacao.service';
 import { ConducaoDoWizard } from './conducao-do-wizard.service';
 import { RascunhoDaPublicacao } from './rascunho-da-publicacao.service';
 

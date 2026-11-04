@@ -4,7 +4,7 @@ import { PublicacaoDoProcessoApi } from '@uniplus/shared-data/selecao';
 import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ProcessoSeletivoStore } from '../steps/processo-seletivo.store';
+import { ProcessoSeletivoStore } from '../wizard/processo-seletivo.store';
 import { RascunhoDaPublicacao } from './rascunho-da-publicacao.service';
 
 const PROCESSO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b030';

@@ -7,7 +7,7 @@ import type {
   ProdutosPrevistosDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 
-import { PAPEL_DEFINITIVO, PAPEL_PRELIMINAR } from '../steps/processo-seletivo.models';
+import { PAPEL_DEFINITIVO, PAPEL_PRELIMINAR } from '../wizard/processo-seletivo.models';
 import { atosQueAdmitemCorrecao } from './cadeia-de-correcao';
 
 /** Uma etapa do cronograma e os itens que ela declara publicar. */

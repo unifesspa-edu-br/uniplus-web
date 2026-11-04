@@ -1,4 +1,4 @@
-import type { ValidacaoDoPasso } from '../steps/processo-seletivo.models';
+import type { ValidacaoDoPasso } from '../wizard/processo-seletivo.models';
 
 /** Normaliza `message` (forma simples) e `messages` (lista) para `string[]`. */
 export function mensagensDe(resultado: ValidacaoDoPasso): string[] {

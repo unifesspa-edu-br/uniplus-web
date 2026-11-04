@@ -4,7 +4,7 @@ import { permissaoGuard } from '@uniplus/shared-auth/guards';
 import { ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { ProcessosSeletivosListaPage } from './processos-seletivos-lista.page';
-import { rascunhoNaoGravadoGuard } from './steps/shared/rascunho-nao-gravado.guard';
+import { rascunhoNaoGravadoGuard } from './wizard/shared/rascunho-nao-gravado.guard';
 
 /**
  * A lista de processos é aberta também a quem só consulta inscrições (a guarda da rota-mãe admite as

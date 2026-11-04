@@ -8,7 +8,7 @@ import {
   termosParaEnvio,
   type FormularioParaGravar,
   type PassoDaGravacao,
-} from '../steps/formulario/formulario-do-processo';
+} from '../passos/formulario/formulario-do-processo';
 import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
 import type { ResultadoGravacao } from './gravacao/resultado-da-gravacao';
 

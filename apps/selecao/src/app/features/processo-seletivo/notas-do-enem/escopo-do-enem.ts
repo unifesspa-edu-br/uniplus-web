@@ -1,4 +1,4 @@
-import { FATO_DA_EDICAO_DO_ENEM, codigosPelaOrdem } from '../steps/steps/classificacao/edicoes-do-enem';
+import { FATO_DA_EDICAO_DO_ENEM, codigosPelaOrdem } from '../wizard/passos/classificacao/edicoes-do-enem';
 
 /** A etapa cuja nota vem do ENEM: o domínio admite no máximo uma por processo. */
 export interface EtapaDoEnem {

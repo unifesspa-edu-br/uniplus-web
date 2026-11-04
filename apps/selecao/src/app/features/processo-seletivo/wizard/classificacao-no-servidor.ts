@@ -9,7 +9,7 @@ import {
   type CopiaCongelada,
   type GrupoDoQuadro,
 } from './shared/quadro-de-pesos';
-import { CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA } from './steps/classificacao/escala-da-nota-final';
+import { CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA } from './passos/classificacao/escala-da-nota-final';
 
 /**
  * O que se sabe da classificação que o processo tem no servidor. `desconhecida` vale depois de uma

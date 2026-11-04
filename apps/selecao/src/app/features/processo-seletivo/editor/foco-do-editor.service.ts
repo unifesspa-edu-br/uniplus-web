@@ -1,6 +1,6 @@
 import { ElementRef, Injectable, effect, inject } from '@angular/core';
 
-import type { PassoDoWizard } from '../steps/passo-do-wizard';
+import type { PassoDoWizard } from '../wizard/passo-do-wizard';
 
 /** Para onde vai o foco e a rolagem do editor: o título do passo, o aviso de pendências e o campo recusado. */
 @Injectable()

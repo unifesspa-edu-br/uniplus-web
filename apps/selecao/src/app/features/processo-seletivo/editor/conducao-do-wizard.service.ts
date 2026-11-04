@@ -2,13 +2,13 @@ import { Injectable, Signal, computed, inject, signal } from '@angular/core';
 
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 
-import { ProcessoSeletivoStore } from '../steps/processo-seletivo.store';
+import { ProcessoSeletivoStore } from '../wizard/processo-seletivo.store';
 import type {
   ConfirmacaoDeGravacao,
   GravacaoDoPasso,
   PassoDoWizard,
-} from '../steps/passo-do-wizard';
-import { ReleituraDoSnapshot } from '../steps/shared/releitura-do-snapshot.service';
+} from '../wizard/passo-do-wizard';
+import { ReleituraDoSnapshot } from '../wizard/shared/releitura-do-snapshot.service';
 import { FocoDoEditor } from './foco-do-editor.service';
 import { falhaAoConcluir, mensagensDe } from './mensagens-do-passo';
 import { publicar } from './publicacao-do-rascunho';

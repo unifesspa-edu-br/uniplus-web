@@ -6,7 +6,7 @@ import type {
   OrigemCandidatosSelecionada,
   WizardDraft,
 } from '../processo-seletivo.models';
-import { formulariosDoServidor } from '../steps/formulario/formularios-por-finalidade';
+import { formulariosDoServidor } from '../passos/formulario/formularios-por-finalidade';
 import { exigenciasDe } from './exigencias/leitura-das-exigencias';
 import { comoTexto } from './hidratacao/campos-lidos';
 import {
