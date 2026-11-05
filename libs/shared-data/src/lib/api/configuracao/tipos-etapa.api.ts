@@ -54,14 +54,6 @@ export class TiposEtapaApi {
     );
   }
 
-  /** GET `/api/configuracao/tipos-etapa/{id}` — detalhe de um tipo de etapa. */
-  obter(id: string): Observable<ApiResult<TipoEtapaDto>> {
-    return this.http.get<ApiResult<TipoEtapaDto>>(
-      `${this.basePath}/api/configuracao/tipos-etapa/${encodeURIComponent(id)}`,
-      { context: withVendorMime('tipo-etapa', 1) },
-    );
-  }
-
   /** POST `/api/configuracao/admin/tipos-etapa` — cria. Idempotency-Key obrigatório. */
   criar(command: CriarTipoEtapaCommand, context: HttpContext): Observable<ApiResult<string>> {
     return this.http.post<ApiResult<string>>(

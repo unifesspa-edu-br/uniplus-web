@@ -20,7 +20,6 @@
 804 apps/configuracao/src/app/features/termos-consentimento/termos-consentimento-detail.page.ts
 1048 apps/configuracao/src/app/features/tipos-ato/tipos-ato.page.ts
 1550 apps/configuracao/src/app/features/tipos-documento/tipos-documento-list.page.ts
-790 apps/configuracao/src/app/features/tipos-etapa/tipos-etapa.page.ts
 841 apps/configuracao/src/app/features/tipos-processo/tipos-processo.page.ts
 1693 apps/configuracao/src/app/features/unidades/unidades.page.ts
 947 apps/portal/src/app/features/inscricao/formulario/inscricao-do-candidato.page.ts

@@ -1,0 +1,134 @@
+<ui-drawer
+  class="form-drawer"
+  [visible]="aberto()"
+  (visibleChange)="aoAlterarVisibilidade($event)"
+  [closable]="!salvando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário de tipo de etapa"
+  position="right"
+>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-tipo-etapa-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-etapa-identificacao">
+        <h3 id="cfg-etapa-identificacao" class="form-section__title">Identificação</h3>
+        <div class="form-grid form-grid--1col">
+          <label class="field" [class.is-error]="erroDoCampo('codigo')">
+            <span class="field__label is-required">Código</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="codigo"
+              aria-required="true"
+              [readonly]="modo() === 'editar'"
+              [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
+            />
+            <span class="field__hint">
+              Identifica o tipo para sempre — nem a inativação libera o código para reuso. Por
+              convenção, maiúsculas separadas por sublinhado, como ANALISE_DOCUMENTAL.
+            </span>
+            @if (erroDoCampo('codigo')) {
+              <span class="field__error">{{ erroDoCampo('codigo') }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('nome')">
+            <span class="field__label is-required">Nome</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="nome"
+              aria-required="true"
+              [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+            />
+            <span class="field__hint"
+              >Como o tipo aparece para quem monta o processo seletivo.</span
+            >
+            @if (erroDoCampo('nome')) {
+              <span class="field__error">{{ erroDoCampo('nome') }}</span>
+            }
+          </label>
+          <label class="field">
+            <span class="field__label">Descrição</span>
+            <textarea class="textarea" formControlName="descricao"></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section aria-labelledby="cfg-etapa-carater">
+        <h3 id="cfg-etapa-carater" class="form-section__title">O que a etapa pode fazer</h3>
+        <fieldset class="field" [class.is-error]="erroDoCampo('admitePontuacao')">
+          <legend class="field__label is-required">Admite</legend>
+          <div class="cfg-tipos-etapa__opcoes">
+            <label class="checkbox">
+              <input
+                type="checkbox"
+                formControlName="admitePontuacao"
+                aria-describedby="cfg-etapa-admite-ajuda"
+              />
+              <span class="checkbox__box" aria-hidden="true"></span>
+              Compor a nota final
+            </label>
+            <label class="checkbox">
+              <input
+                type="checkbox"
+                formControlName="admiteEliminacao"
+                aria-describedby="cfg-etapa-admite-ajuda"
+              />
+              <span class="checkbox__box" aria-hidden="true"></span>
+              Eliminar candidato
+            </label>
+          </div>
+          <span class="field__hint" id="cfg-etapa-admite-ajuda">
+            Ao menos um. Só quem compõe a nota final pode ter peso; só quem elimina pode ter nota
+            mínima.
+          </span>
+          @if (erroDoCampo('admitePontuacao')) {
+            <span class="field__error">{{ erroDoCampo('admitePontuacao') }}</span>
+          }
+          @if (erroDoCampo('admiteEliminacao')) {
+            <span class="field__error">{{ erroDoCampo('admiteEliminacao') }}</span>
+          }
+        </fieldset>
+      </section>
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-tipo-etapa-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando()"
+      [attr.aria-busy]="salvando()"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner size="sm" />
+      }
+      {{
+        salvando()
+          ? 'Salvando...'
+          : modo() === 'criar'
+            ? 'Criar tipo de etapa'
+            : 'Salvar tipo de etapa'
+      }}
+    </button>
+  </div>
+</ui-drawer>

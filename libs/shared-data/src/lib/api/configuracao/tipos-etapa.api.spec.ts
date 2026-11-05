@@ -105,17 +105,6 @@ describe('TiposEtapaApi', () => {
     }
   });
 
-  it('obter() escapa o id na URL', async () => {
-    const promise = firstValueFrom(api.obter('id/com barra'));
-    const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/configuracao/tipos-etapa/id%2Fcom%20barra`,
-    );
-
-    expect(req.request.method).toBe('GET');
-    req.flush(provaObjetiva);
-    await promise;
-  });
-
   it('criar() faz POST no recurso administrativo com Idempotency-Key e Accept JSON', async () => {
     const promise = firstValueFrom(
       api.criar(
@@ -179,9 +168,9 @@ describe('TiposEtapaApi', () => {
   });
 
   it('propaga ProblemDetails sem lançar', async () => {
-    const promise = firstValueFrom(api.obter(provaObjetiva.id));
+    const promise = firstValueFrom(api.listar());
     const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/configuracao/tipos-etapa/${provaObjetiva.id}`,
+      (request) => request.url === `${BASE}/api/configuracao/tipos-etapa`,
     );
 
     req.flush(
@@ -195,7 +184,7 @@ describe('TiposEtapaApi', () => {
       { status: 404, statusText: 'Not Found' },
     );
 
-    const result = (await promise) as ApiResult<TipoEtapaDto>;
+    const result = (await promise) as ApiResult<readonly TipoEtapaDto[]>;
     expect(isApiOk(result)).toBe(false);
     if (!result.ok) expect(result.problem.status).toBe(404);
   });

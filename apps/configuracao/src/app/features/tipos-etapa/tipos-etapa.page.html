@@ -1,0 +1,75 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Tipo de Etapa</h1>
+    <p class="page-header__desc">
+      Natureza das etapas que um processo seletivo pode ter, e o que cada uma delas pode fazer com a
+      nota do candidato · UNI-REQ-0015.
+    </p>
+  </div>
+</div>
+
+<ui-alert variant="info" heading="O que o tipo declara" [dynamic]="false">
+  Cada tipo diz se uma etapa daquela natureza pode <strong>compor a nota final</strong> — e, então,
+  ter peso — e se pode <strong>eliminar candidato</strong> — e, então, ter nota mínima. É desse par
+  que o formulário do edital tira quais caracteres oferecer: uma análise documental que não compõe
+  nota deixa de pedir peso a quem monta o processo. O código é imutável após a criação, porque os
+  editais já publicados o congelam por cópia.
+</ui-alert>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os tipos de etapa">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="store.carregando() || edicao.saving() || edicao.removendo()"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<cfg-tipos-etapa-lista
+  [tipos]="store.tiposFiltrados()"
+  [carregando]="store.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [termoBusca]="store.termoBusca()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [idEmAndamento]="edicao.idEmAndamento()"
+  [rotuloAndamento]="edicao.rotuloAndamento()"
+  (buscaAlterada)="store.termoBusca.set($event)"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-tipo-etapa-formulario
+  [aberto]="edicao.formOpen()"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [titulo]="edicao.formHeading()"
+  [erro]="edicao.formError()"
+  [salvando]="edicao.saving()"
+  (fechar)="edicao.fechar()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+/>
+@if (!edicao.confirmOpen()) {
+<span class="sr-only" role="status">{{ edicao.anuncioDaRemocao() }}</span> }
+<ui-confirm-dialog
+  [(visible)]="edicao.confirmOpen"
+  heading="Inativar tipo de etapa"
+  [message]="edicao.confirmMessage()"
+  confirmLabel="Inativar"
+  confirmVariant="danger"
+  (confirmed)="edicao.removerConfirmado()"
+>
+  <span class="sr-only" role="status">{{ edicao.anuncioDaRemocao() }}</span>
+</ui-confirm-dialog>

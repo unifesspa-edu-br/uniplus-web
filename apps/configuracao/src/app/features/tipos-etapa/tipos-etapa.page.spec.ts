@@ -7,6 +7,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TiposEtapaPage } from './tipos-etapa.page';
+import { TiposEtapaStore } from './tipos-etapa.store';
 
 const BASE = 'http://localhost:5000';
 
@@ -62,6 +63,7 @@ describe('TiposEtapaPage', () => {
   const propagate = async (): Promise<void> => {
     await Promise.resolve();
     appRef.tick();
+    fixture.detectChanges();
   };
 
   async function flushLista(itens: readonly TipoEtapaDto[]): Promise<void> {
@@ -99,17 +101,17 @@ describe('TiposEtapaPage', () => {
 
   it('cria tipo declarando o que ele admite', async () => {
     await flushLista([]);
-    component['abrirCadastro']();
+    component['edicao'].abrirCadastro();
     await propagate();
 
-    component['form'].setValue({
+    component['edicao'].form.setValue({
       codigo: 'ANALISE_SOCIOECONOMICA',
       nome: 'Análise socioeconômica',
       admitePontuacao: false,
       admiteEliminacao: true,
       descricao: '',
     });
-    component['salvar']();
+    component['edicao'].salvar();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-etapa`);
     expect(post.request.method).toBe('POST');
@@ -122,12 +124,12 @@ describe('TiposEtapaPage', () => {
     post.flush('novo-id', { status: 201, statusText: 'Created' });
     await propagate();
     await flushLista([analiseDocumental]);
-    expect(component['formOpen']()).toBe(false);
+    expect(component['edicao'].formOpen()).toBe(false);
   });
 
   it('o código é somente leitura na edição, e não vai no payload de atualização', async () => {
     await flushLista([analiseDocumental]);
-    component['abrirEdicao'](analiseDocumental);
+    component['edicao'].abrirEdicao(analiseDocumental);
     await propagate();
     fixture.detectChanges();
 
@@ -136,8 +138,8 @@ describe('TiposEtapaPage', () => {
     ) as HTMLInputElement;
     expect(codigoInput.readOnly).toBe(true);
 
-    component['form'].controls.admitePontuacao.setValue(true);
-    component['salvar']();
+    component['edicao'].form.controls.admitePontuacao.setValue(true);
+    component['edicao'].salvar();
 
     const put = controller.expectOne(
       `${BASE}/api/configuracao/admin/tipos-etapa/${analiseDocumental.id}`,
@@ -156,17 +158,17 @@ describe('TiposEtapaPage', () => {
    */
   it('a recusa do servidor por nenhum caráter admitido aparece no campo', async () => {
     await flushLista([]);
-    component['abrirCadastro']();
+    component['edicao'].abrirCadastro();
     await propagate();
 
-    component['form'].setValue({
+    component['edicao'].form.setValue({
       codigo: 'TIPO_INERTE',
       nome: 'Tipo inerte',
       admitePontuacao: false,
       admiteEliminacao: false,
       descricao: '',
     });
-    component['salvar']();
+    component['edicao'].salvar();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-etapa`);
     post.flush(
@@ -192,8 +194,8 @@ describe('TiposEtapaPage', () => {
     );
     await propagate();
 
-    expect(component['erroDoCampo']('admitePontuacao')).toContain('deve admitir');
-    expect(component['formOpen']()).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('deve admitir');
+    expect(component['edicao'].formOpen()).toBe(true);
   });
 
   /**
@@ -230,8 +232,8 @@ describe('TiposEtapaPage', () => {
     botaoDeAcao(linhaDe('PROVA_OBJETIVA'), 'Editar').click();
     await propagate();
 
-    expect(component['formOpen']()).toBe(true);
-    expect(component['form'].controls.codigo.value).toBe('PROVA_OBJETIVA');
+    expect(component['edicao'].formOpen()).toBe(true);
+    expect(component['edicao'].form.controls.codigo.value).toBe('PROVA_OBJETIVA');
   });
 
   it('o ícone de inativar pede confirmação para o tipo daquela linha', async () => {
@@ -241,8 +243,8 @@ describe('TiposEtapaPage', () => {
     botaoDeAcao(linhaDe('PROVA_OBJETIVA'), 'Inativar').click();
     await propagate();
 
-    expect(component['confirmOpen']()).toBe(true);
-    expect(component['tipoParaRemover']()?.codigo).toBe('PROVA_OBJETIVA');
+    expect(component['edicao'].confirmOpen()).toBe(true);
+    expect(component['edicao'].tipoParaRemover()?.codigo).toBe('PROVA_OBJETIVA');
   });
 
   /**
@@ -269,16 +271,16 @@ describe('TiposEtapaPage', () => {
     fixture.detectChanges();
 
     const linha = linhaDe('ANALISE_DOCUMENTAL');
-    expect(botaoDeAcao(linha, 'Editar').disabled).toBe(false);
-    expect(botaoDeAcao(linha, 'Inativar').disabled).toBe(false);
+    expect(botaoDeAcao(linha, 'Editar').getAttribute('aria-disabled')).toBe('false');
+    expect(botaoDeAcao(linha, 'Inativar').getAttribute('aria-disabled')).toBe('false');
 
     component['tentarNovamente']();
     await propagate();
     fixture.detectChanges();
 
     const recarregando = linhaDe('ANALISE_DOCUMENTAL');
-    expect(botaoDeAcao(recarregando, 'Editar').disabled).toBe(true);
-    expect(botaoDeAcao(recarregando, 'Inativar').disabled).toBe(true);
+    expect(botaoDeAcao(recarregando, 'Editar').getAttribute('aria-disabled')).toBe('true');
+    expect(botaoDeAcao(recarregando, 'Inativar').getAttribute('aria-disabled')).toBe('true');
 
     // Encerra o GET em voo para o controller.verify() do afterEach.
     await flushLista([analiseDocumental]);
@@ -286,10 +288,10 @@ describe('TiposEtapaPage', () => {
 
   it('inativar pede confirmação e chama o DELETE', async () => {
     await flushLista([analiseDocumental]);
-    component['pedirRemocao'](analiseDocumental);
-    expect(component['confirmOpen']()).toBe(true);
+    component['edicao'].pedirRemocao(analiseDocumental);
+    expect(component['edicao'].confirmOpen()).toBe(true);
 
-    component['removerConfirmado']();
+    component['edicao'].removerConfirmado();
 
     const del = controller.expectOne(
       `${BASE}/api/configuracao/admin/tipos-etapa/${analiseDocumental.id}`,
@@ -298,37 +300,115 @@ describe('TiposEtapaPage', () => {
     del.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([]);
-    expect(component['confirmOpen']()).toBe(false);
+    expect(component['edicao'].confirmOpen()).toBe(false);
   });
-  /**
-   * O drawer é um só para todos os registros: dá para mandar salvar um tipo, fechá-lo e abrir
-   * outro antes de a resposta chegar. Ela não pode então fechar o editor de quem está em tela
-   * nem marcar os campos dele com um erro que é de outro tipo de etapa.
-   */
-  it('a resposta de um tipo não mexe no editor que já abriu outro', async () => {
+  it('bloqueia a abertura de outro editor durante a gravação', async () => {
     await flushLista([analiseDocumental, provaObjetiva]);
 
-    component['abrirEdicao'](analiseDocumental);
+    component['edicao'].abrirEdicao(analiseDocumental);
     await propagate();
-    component['form'].controls.nome.setValue('Análise Documental revisada');
-    component['salvar']();
+    component['edicao'].form.controls.nome.setValue('Análise Documental revisada');
+    component['edicao'].salvar();
 
     const put = controller.expectOne(
       `${BASE}/api/configuracao/admin/tipos-etapa/${analiseDocumental.id}`,
     );
 
-    // Com a gravação em voo, o operador abre outro registro e começa a editá-lo.
-    component['abrirEdicao'](provaObjetiva);
+    component['edicao'].abrirEdicao(provaObjetiva);
     await propagate();
-    component['form'].controls.nome.setValue('Prova Objetiva revisada');
+    expect(component['edicao'].tipoEmEdicaoId()).toBe(analiseDocumental.id);
+    component['edicao'].fechar();
+    expect(component['edicao'].formOpen()).toBe(true);
 
     put.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
 
-    expect(component['formOpen']()).toBe(true);
-    expect(component['tipoEmEdicaoId']()).toBe(provaObjetiva.id);
-    expect(component['form'].controls.nome.value).toBe('Prova Objetiva revisada');
+    expect(component['edicao'].formOpen()).toBe(false);
+    expect(component['edicao'].tipoEmEdicaoId()).toBe(analiseDocumental.id);
+    expect(component['edicao'].form.controls.nome.value).toBe('Análise Documental revisada');
+    expect(component['edicao'].gravando()).toBe(true);
+    component['edicao'].abrirEdicao(provaObjetiva);
+    expect(component['edicao'].formOpen()).toBe(false);
     // O sucesso do primeiro relê a lista — o dado no servidor mudou de verdade.
     await flushLista([analiseDocumental, provaObjetiva]);
+    expect(component['edicao'].gravando()).toBe(false);
+  });
+  it('mantém a trava após falha da recarga até uma nova leitura bem-sucedida', async () => {
+    await flushLista([analiseDocumental]);
+    component['edicao'].pedirRemocao(analiseDocumental);
+    component['edicao'].removerConfirmado();
+    controller
+      .expectOne(`${BASE}/api/configuracao/admin/tipos-etapa/${analiseDocumental.id}`)
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-etapa`)
+      .flush({ title: 'Falha', status: 500 }, { status: 500, statusText: 'Erro' });
+    await propagate();
+    expect(component['edicao'].gravando()).toBe(true);
+    component['tentarNovamente']();
+    await propagate();
+    await flushLista([]);
+    expect(component['edicao'].gravando()).toBe(false);
+  });
+
+  it('foca o campo recusado pelo servidor', async () => {
+    await flushLista([]);
+    component['edicao'].abrirCadastro();
+    component['edicao'].form.patchValue({ codigo: 'PROVA', nome: 'Prova' });
+    await propagate();
+    component['edicao'].salvar();
+    await propagate();
+    controller.expectOne(`${BASE}/api/configuracao/admin/tipos-etapa`).flush(
+      {
+        type: 'about:blank',
+        title: 'Recusa',
+        status: 422,
+        code: 'uniplus.configuracao.tipo_etapa.nome_invalido',
+        errors: [
+          {
+            field: 'nome',
+            code: 'uniplus.configuracao.tipo_etapa.nome_invalido',
+            message: 'Nome recusado',
+          },
+        ],
+      },
+      {
+        status: 422,
+        statusText: 'Recusa',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+    await propagate();
+    expect(component['edicao'].form.controls.nome.errors).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('label.is-error input[formcontrolname=nome]'),
+    ).toBeTruthy();
+    expect(document.activeElement?.getAttribute('formcontrolname')).toBe('nome');
+  });
+
+  it('filtra a página atual e volta à primeira página ao recarregar', async () => {
+    const store = fixture.debugElement.injector.get(TiposEtapaStore);
+    const primeira = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-etapa`);
+    primeira.flush([analiseDocumental, provaObjetiva], {
+      headers: { Link: '</api/tipos-etapa?cursor=abc&direction=next>; rel="next"' },
+    });
+    await propagate();
+
+    store.termoBusca.set('objetiva');
+    expect(store.tiposFiltrados()).toEqual([provaObjetiva]);
+    store.proximaPagina();
+    await propagate();
+    const proxima = controller.expectOne((r) => r.params.get('cursor') === 'abc');
+    expect(proxima.request.params.get('direction')).toBe('next');
+    proxima.flush([analiseDocumental]);
+    await propagate();
+    expect(store.tiposFiltrados()).toEqual([]);
+
+    store.recarregar();
+    await propagate();
+    await flushLista([provaObjetiva]);
+    expect(store.tiposFiltrados()).toEqual([provaObjetiva]);
   });
 });

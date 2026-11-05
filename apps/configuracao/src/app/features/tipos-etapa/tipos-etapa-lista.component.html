@@ -1,0 +1,140 @@
+<section class="panel" aria-labelledby="cfg-tipos-etapa-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-tipos-etapa-list-title">Tipos de etapa</h2>
+      @if (carregando()) {
+        <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+    <button
+      type="button"
+      class="btn btn--primary"
+      [attr.aria-disabled]="bloqueado()"
+      (click)="acionarCadastro()"
+    >
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Novo tipo de etapa
+    </button>
+  </div>
+
+  <div class="filter-bar" role="search" aria-label="Filtrar tipos de etapa">
+    <div class="filter-bar__row">
+      <div class="input-group">
+        <span class="input-group__addon" aria-hidden="true"><i class="pi pi-search"></i></span>
+        <input
+          type="search"
+          class="input"
+          placeholder="Buscar por código ou nome…"
+          aria-label="Buscar tipos de etapa"
+          [attr.aria-disabled]="bloqueado()"
+          [value]="termoBusca()"
+          (input)="aoBuscar($event)"
+        />
+      </div>
+    </div>
+  </div>
+
+  @if (tipos().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Código</th>
+            <th scope="col">Nome</th>
+            <th scope="col">O que admite</th>
+            <th scope="col">Situação</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (tipo of tipos(); track tipo.id) {
+            <tr>
+              <td data-label="Código">
+                <code>{{ tipo.codigo }}</code>
+                @if (tipo.id === idEmAndamento()) {
+                  <span aria-hidden="true">{{ rotuloAndamento() }}</span>
+                }
+              </td>
+              <td data-label="Nome">{{ tipo.nome }}</td>
+              <td data-label="O que admite">{{ resumoDoQueAdmite(tipo) }}</td>
+              <td data-label="Situação">
+                @if (tipo.ativo) {
+                  <span class="tag tag--success">Ativo</span>
+                } @else {
+                  <span class="tag">Inativo</span>
+                }
+              </td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <button
+                  type="button"
+                  class="btn btn--tertiary btn--icon-only btn--rect"
+                  [attr.aria-label]="'Editar tipo de etapa ' + tipo.codigo"
+                  title="Editar tipo de etapa"
+                  data-tooltip="Editar tipo de etapa"
+                  [attr.aria-disabled]="bloqueado()"
+                  (click)="acionarEditar(tipo)"
+                >
+                  <i class="pi pi-pencil" aria-hidden="true"></i>
+                </button>
+                @if (tipo.ativo) {
+                  <button
+                    type="button"
+                    class="btn btn--tertiary btn--icon-only btn--rect"
+                    [attr.aria-label]="'Inativar tipo de etapa ' + tipo.codigo"
+                    title="Inativar tipo de etapa"
+                    data-tooltip="Inativar tipo de etapa"
+                    [attr.aria-disabled]="bloqueado()"
+                    (click)="acionarRemover(tipo)"
+                  >
+                    <i class="pi pi-power-off" aria-hidden="true"></i>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    @if (temFiltro()) {
+      <ui-empty-state
+        heading="Nenhum tipo de etapa encontrado"
+        description="Ajuste a busca para ver resultados."
+      >
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [attr.aria-disabled]="bloqueado()"
+          (click)="limpar()"
+        >
+          Limpar filtros
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhum tipo de etapa cadastrado"
+        description="Cadastre o primeiro tipo de etapa para que os processos seletivos possam declarar etapas."
+      >
+        <button
+          type="button"
+          class="btn btn--primary"
+          [attr.aria-disabled]="bloqueado()"
+          (click)="acionarCadastro()"
+        >
+          Novo tipo de etapa
+        </button>
+      </ui-empty-state>
+    }
+  }
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de tipos de etapa"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="bloqueado()"
+      (previous)="acionarAnterior()"
+      (next)="acionarProximo()"
+    />
+  }
+</section>
