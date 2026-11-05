@@ -319,6 +319,34 @@ describe('PedidoDetalhePage', () => {
     expect(pagina.erro()).toBe('Recusado');
   });
 
+  it('bloqueia nova decisão após recusa da API até reavaliar o pedido recarregado', async () => {
+    const { pagina, fixture } = await abrir([GESTOR]);
+    const recarga = new Subject<ReturnType<typeof ok>>();
+    api.obter.mockReturnValue(recarga);
+    api.recusar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.perfil_alterado')));
+    pagina.abrirRecusa();
+    pagina.motivo.setValue('Motivo');
+    await pagina.recusar();
+    await esperar(fixture);
+
+    expect(pagina.carregando()).toBe(true);
+    await pagina.recusar();
+    pagina.pedirConfirmacao('aprovar');
+    await pagina.executar();
+    expect(api.recusar).toHaveBeenCalledTimes(1);
+    expect(api.aprovar).not.toHaveBeenCalled();
+
+    recarga.next(
+      ok(pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' })),
+    );
+    recarga.complete();
+    await esperar(fixture);
+    expect(pagina.podeDecidir()).toBe(false);
+    expect(pagina.recusando()).toBe(false);
+    await pagina.recusar();
+    expect(api.recusar).toHaveBeenCalledTimes(1);
+  });
+
   it('aprova e recarrega o pedido', async () => {
     const { pagina, fixture } = await abrir([GESTOR]);
     api.aprovar.mockReturnValue(of(ok(pedido({ situacao: 'aguardando_protecao_de_dados' }))));
@@ -575,11 +603,12 @@ describe('PedidoDetalhePage', () => {
   });
 
   it('reabrir o diálogo de recusa não mostra o erro da tentativa anterior', async () => {
-    const { pagina } = await abrir([GESTOR]);
+    const { pagina, fixture } = await abrir([GESTOR]);
     api.recusar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.motivo_invalido')));
     pagina.abrirRecusa();
     pagina.motivo.setValue('x');
     await pagina.recusar();
+    await esperar(fixture);
     pagina.recusando.set?.(false);
 
     pagina.abrirRecusa();

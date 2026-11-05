@@ -66,7 +66,7 @@ export class PedidoDetalhePage {
   protected readonly pedido = this.store.pedido;
   protected readonly trilha = this.store.trilha;
   protected readonly carregando = this.store.carregando;
-  protected readonly enviando = this.edicao.enviando;
+  protected readonly enviando = computed(() => this.edicao.enviando() || this.store.carregando());
   protected readonly anexando = this.edicao.anexando;
   protected readonly erro = this.edicao.erro;
   protected readonly erroDaRecusa = this.edicao.erroDaRecusa;
@@ -136,6 +136,30 @@ export class PedidoDetalhePage {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.destruido.set(true));
+    this.acompanharId();
+    effect(() => {
+      const pedido = this.store.pedido();
+      const erro = this.store.erro();
+      untracked(() => {
+        if (erro) this.erro.set(erro);
+        if (pedido && this.prazo.pristine) {
+          const sugerido = diaDoInstante(pedido.validaAteSugerida);
+          this.prazo.setValue(diaNoPassado(sugerido) ? '' : sugerido);
+        }
+      });
+    });
+    effect(() => {
+      const carregando = this.store.carregando();
+      const erro = this.store.erro();
+      const pedido = this.store.pedido();
+      this.podeDecidir();
+      this.podeAceitar();
+      this.podeCancelar();
+      if (!carregando && !erro && pedido) untracked(() => this.reavaliarDialogos());
+    });
+  }
+
+  private acompanharId(): void {
     effect(() => {
       const id = this.id();
       untracked(() => {
@@ -145,37 +169,46 @@ export class PedidoDetalhePage {
         this.chave.renovar();
       });
     });
-    effect(() => {
-      const pedido = this.store.pedido();
-      const erro = this.store.erro();
-      untracked(() => {
-        if (erro) this.erro.set(erro);
-        if (pedido && this.recusando() && this.erroDaRecusa() && !this.podeDecidir()) {
-          this.erro.set(this.erroDaRecusa());
-          this.recusando.set(false);
-        }
-        if (pedido && this.prazo.pristine) {
-          const sugerido = diaDoInstante(pedido.validaAteSugerida);
-          this.prazo.setValue(diaNoPassado(sugerido) ? '' : sugerido);
-        }
-      });
-    });
+  }
+
+  private reavaliarDialogos(): void {
+    if (this.recusando()) {
+      if (this.erroDaRecusa() && !this.podeDecidir()) {
+        this.erro.set(this.erroDaRecusa());
+        this.recusando.set(false);
+      } else if (this.motivo.hasError('backend')) {
+        this.edicao.focarErroDoMotivo();
+      }
+    }
+    if (this.confirmando() && !this.acaoPermitida(this.acaoPendente())) {
+      this.confirmando.set(false);
+    }
   }
 
   protected pedirConfirmacao(acao: Acao, campo?: HTMLInputElement): void {
-    this.edicao.pedirConfirmacao(acao, this.informaPrazo(), campo);
+    if (this.acaoPermitida(acao)) this.edicao.pedirConfirmacao(acao, this.informaPrazo(), campo);
   }
 
   protected executar(): Promise<void> {
-    return this.edicao.executar(this.informaPrazo());
+    return this.acaoPermitida(this.acaoPendente())
+      ? this.edicao.executar(this.informaPrazo())
+      : Promise.resolve();
   }
 
   protected abrirRecusa(): void {
-    this.edicao.abrirRecusa();
+    if (this.acaoPermitida('aprovar')) this.edicao.abrirRecusa();
   }
 
   protected recusar(): Promise<void> {
-    return this.edicao.recusar(this.podeDecidir);
+    return this.acaoPermitida('aprovar')
+      ? this.edicao.recusar(this.podeDecidir)
+      : Promise.resolve();
+  }
+
+  private acaoPermitida(acao: Acao): boolean {
+    if (this.store.carregando() || this.store.erro()) return false;
+    if (acao === 'aprovar') return this.podeDecidir();
+    return acao === 'aceitar' ? this.podeAceitar() : this.podeCancelar();
   }
 
   protected irParaOAnexo(): void {

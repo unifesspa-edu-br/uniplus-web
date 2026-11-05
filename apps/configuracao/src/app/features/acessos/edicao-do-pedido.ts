@@ -75,7 +75,7 @@ export class EdicaoDoPedido {
   }
 
   pedirConfirmacao(acao: Acao, informaPrazo: boolean, campoPrazo?: HTMLInputElement): void {
-    if (this.enviando()) return;
+    if (this.indisponivel()) return;
     this.erro.set(null);
     if (acao === 'aprovar' && informaPrazo) {
       this.prazo.updateValueAndValidity();
@@ -90,7 +90,7 @@ export class EdicaoDoPedido {
   }
 
   abrirRecusa(): void {
-    if (this.enviando()) return;
+    if (this.indisponivel()) return;
     this.erroDaRecusa.set(null);
     this.motivo.reset('');
     this.tentouRecusar.set(false);
@@ -98,13 +98,13 @@ export class EdicaoDoPedido {
   }
 
   async recusar(podeDecidir: Signal<boolean>): Promise<void> {
-    if (this.enviando()) return;
+    if (this.indisponivel()) return;
     this.erroDaRecusa.set(null);
     this.tentouRecusar.set(true);
     const motivo = this.motivo.value.trim();
     if (!motivo || this.motivo.invalid) {
       if (!motivo) this.motivo.setErrors({ required: true });
-      this.focarErro();
+      this.focarErroDoMotivo();
       return;
     }
     const id = this.store.id() ?? '';
@@ -141,7 +141,7 @@ export class EdicaoDoPedido {
   }
 
   private async cancelar(): Promise<void> {
-    if (this.enviando()) return;
+    if (this.indisponivel()) return;
     this.enviando.set(true);
     try {
       const resultado = await firstValueFrom(this.api.cancelar(this.store.id() ?? ''));
@@ -164,7 +164,7 @@ export class EdicaoDoPedido {
     enviar: () => ReturnType<typeof comChave<PedidoDeConcessaoDto>>,
     destinoDoErro = this.erro,
   ): Promise<boolean> {
-    if (this.enviando()) return false;
+    if (this.indisponivel()) return false;
     this.enviando.set(true);
     this.erro.set(null);
     try {
@@ -173,7 +173,6 @@ export class EdicaoDoPedido {
         if (destinoDoErro !== this.erroDaRecusa || !this.aplicarErroDoMotivo(resultado.problem)) {
           destinoDoErro.set(this.texto(resultado.problem));
         }
-        // A recusa pode vir de o pedido ter mudado de etapa: a tela volta a mostrar o que a API tem.
         this.store.recarregar();
         return false;
       }
@@ -190,17 +189,21 @@ export class EdicaoDoPedido {
     }
   }
 
+  private indisponivel(): boolean {
+    return this.enviando() || this.store.carregando() || this.store.erro() !== null;
+  }
+
   private aplicarErroDoMotivo(problema: ProblemDetails): boolean {
     const erro = problema.errors?.find((item) => item.field.toLowerCase() === 'motivo');
     if (!erro) return false;
     this.motivo.setErrors({ backend: { code: erro.code, message: erro.message } });
     this.motivo.markAsTouched();
     this.tentouRecusar.set(true);
-    this.focarErro();
+    this.focarErroDoMotivo();
     return true;
   }
 
-  private focarErro(): void {
+  focarErroDoMotivo(): void {
     afterNextRender(
       () =>
         this.host.nativeElement

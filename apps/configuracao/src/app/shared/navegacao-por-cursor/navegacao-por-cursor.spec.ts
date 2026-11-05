@@ -19,7 +19,8 @@ function criar() {
   const value = signal<ApiResult<readonly string[]> | undefined>(undefined);
   const headers = signal<HttpHeaders | undefined>(undefined);
   const carregando = signal(false);
-  const lista = { value, headers, isLoading: carregando } as unknown as UseApiResourceRef<
+  const error = signal<unknown>(undefined);
+  const lista = { value, headers, error, isLoading: carregando } as unknown as UseApiResourceRef<
     readonly string[]
   >;
   const pagina = signal<CursorPagina | undefined>(undefined);
@@ -28,7 +29,7 @@ function criar() {
     headers.set(resultado.headers);
     value.set(resultado);
   };
-  return { navegacao, pagina, carregando, responder };
+  return { navegacao, pagina, carregando, responder, error };
 }
 
 describe('navegacaoPorCursor', () => {
@@ -60,6 +61,20 @@ describe('navegacaoPorCursor', () => {
 
     expect(navegacao.itens()).toEqual(['a']);
     expect(navegacao.proximo()).not.toBeNull();
+  });
+
+  it.each([false, true])('trata exceção de leitura na página navegada: %s', (navegada) => {
+    const { navegacao, responder, error } = criar();
+    responder(apiOk(['a'], 200, new HttpHeaders({ Link: LINK })));
+    expect(navegacao.itens()).toEqual(['a']);
+    expect(navegacao.anterior()).not.toBeNull();
+    if (navegada) navegacao.irParaProxima();
+
+    error.set(new Error('interceptor'));
+
+    expect(navegacao.itens()).toEqual(navegada ? ['a'] : []);
+    expect(navegacao.anterior() === null).toBe(!navegada);
+    expect(navegacao.proximo() === null).toBe(!navegada);
   });
 
   it('não navega enquanto uma consulta está em curso', () => {

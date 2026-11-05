@@ -38,17 +38,17 @@ function derivadoDaResposta<T, R>(
   vazio: R,
   derivar: (dados: readonly T[]) => R,
 ): WritableSignal<R> {
-  return linkedSignal<ApiResult<readonly T[]> | undefined, R>({
-    source: () => lista.value(),
-    computation: (envelope, previous) => {
+  return linkedSignal<{ envelope: ApiResult<readonly T[]> | undefined; erro: unknown }, R>({
+    source: () => ({ envelope: lista.value(), erro: lista.error() }),
+    computation: ({ envelope, erro }, previous) => {
       const atual = previous?.value ?? vazio;
+      if (erro || (envelope !== undefined && !envelope.ok)) {
+        return untracked(() => pagina() === undefined) ? vazio : atual;
+      }
       if (envelope === undefined) {
         return atual;
       }
-      if (!envelope.ok) {
-        return untracked(() => pagina() === undefined) ? vazio : atual;
-      }
-      return derivar(envelope.data);
+      return envelope.ok ? derivar(envelope.data) : atual;
     },
   });
 }
