@@ -127,14 +127,16 @@ describe('CursosPage — escritas pela interface', () => {
     await propagar();
 
     // Somente leitura: os valores ficam, os campos não aceitam edição e o foco segue no botão.
-    expect(elemento<HTMLInputElement>('input[formcontrolname="codigo"]').disabled).toBe(true);
+    expect(elemento<HTMLInputElement>('input[formcontrolname="codigo"]').matches(':disabled')).toBe(
+      true,
+    );
     expect(elemento<HTMLInputElement>('input[formcontrolname="codigo"]').value).toBe('DIR');
     expect(salvar.getAttribute('aria-disabled')).toBe('true');
     expect(salvar.getAttribute('aria-busy')).toBe('true');
     expect(salvar.textContent).toContain('Salvando...');
     expect(document.activeElement).toBe(salvar);
     // Cancelar, X e Esc ficam indisponíveis.
-    expect(botao('.cfg-form-footer button', 'Cancelar').disabled).toBe(true);
+    expect(botao('.form-drawer__footer button', 'Cancelar').disabled).toBe(true);
     expect(
       drawerDoFormulario().querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')
         ?.disabled,
@@ -271,12 +273,12 @@ describe('CursosPage — escritas pela interface', () => {
   });
 
   describe('campo desabilitado por regra de negócio', () => {
-    it('continua desabilitado depois do sucesso e fora da requisição que o libera', async () => {
+    it('continua desabilitado depois do sucesso, e os demais seguem habilitados no modelo', async () => {
       await preencherNovoCurso();
       edicao.form.controls.grau.disable();
       edicao.salvar();
       expect(edicao.form.controls.grau.disabled).toBe(true);
-      expect(edicao.form.controls.nome.disabled).toBe(true);
+      expect(edicao.form.controls.nome.enabled).toBe(true);
 
       controller.expectOne(ESCRITA_URL).flush('id', { status: 201, statusText: 'Created' });
       await propagar();

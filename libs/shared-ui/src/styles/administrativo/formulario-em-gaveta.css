@@ -36,15 +36,32 @@
  * gap do flex em vez de depender só da margem do título — assim um ui-alert
  * inserido entre o título e os campos recebe respiro nos dois lados.
  */
-.form-drawer__form > section {
+.form-drawer__form > section,
+.form-drawer__campos > section {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 }
 
 /* O gap acima já separa o título; zera a margem para não dobrar o espaço. */
-.form-drawer__form > section > .form-section__title {
+.form-drawer__form > section > .form-section__title,
+.form-drawer__campos > section > .form-section__title {
   margin-bottom: 0;
+}
+
+/*
+ * Os campos num <fieldset role="none">: o navegador os bloqueia enquanto a gravação corre (o
+ * [disabled] alcança também os botões e os controles compostos) sem tocar o estado dos controles do
+ * formulário reativo. Faz, dentro do form, o papel de coluna das seções.
+ */
+.form-drawer__campos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .form-drawer__footer {

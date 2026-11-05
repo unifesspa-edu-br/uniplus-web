@@ -12,7 +12,6 @@ import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempot
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CampiApi, CampusDto } from '@uniplus/shared-data/configuracao';
 import { ehErroDeEndereco } from '../../shared/endereco';
-import { bloquearEdicao } from '../../shared/formulario';
 import { CampiStore } from './campi.store';
 import {
   CAMPUS_EM_BRANCO,
@@ -145,12 +144,8 @@ export class EdicaoDosCampi {
       return;
     }
     this.escrita.set(tipo);
-    // Enquanto o envio corre o formulário só mostra os valores: o que se alterasse agora não iria
-    // na requisição, e a recusa do servidor poderia marcar um valor já corrigido.
-    const liberar = tipo === 'salvando' ? bloquearEdicao(this.form) : null;
     operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       this.escrita.set(null);
-      liberar?.();
       aoConcluir(result);
     });
   }

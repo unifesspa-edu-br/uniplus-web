@@ -1,5 +1,5 @@
 <ui-drawer
-  class="cfg-form-drawer"
+  class="form-drawer"
   [(visible)]="aberto"
   [closable]="!salvando()"
   [heading]="titulo()"
@@ -15,60 +15,62 @@
     id="cfg-campus-form"
     (ngSubmit)="aoEnviar()"
     novalidate
-    class="cfg-form"
+    class="form-drawer__form"
   >
-    <section aria-labelledby="cfg-campus-identificacao">
-      <h3 id="cfg-campus-identificacao" class="form-section__title">Identificação</h3>
-      <div class="form-grid">
-        <label class="field" [class.is-error]="erroDoCampo('sigla')">
-          <span class="field__label is-required">Sigla</span>
-          <input
-            class="input"
-            type="text"
-            formControlName="sigla"
-            [attr.aria-invalid]="erroDoCampo('sigla') ? 'true' : null"
-          />
-          @if (erroDoCampo('sigla')) {
-            <span class="field__error">{{ erroDoCampo('sigla') }}</span>
-          }
-        </label>
-        <label class="field" [class.is-error]="erroDoCampo('codigoEmec')">
-          <span class="field__label">Código e-MEC</span>
-          <input
-            class="input"
-            type="text"
-            inputmode="numeric"
-            formControlName="codigoEmec"
-            [attr.aria-invalid]="erroDoCampo('codigoEmec') ? 'true' : null"
-          />
-          @if (erroDoCampo('codigoEmec')) {
-            <span class="field__error">{{ erroDoCampo('codigoEmec') }}</span>
-          }
-        </label>
-        <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
-          <span class="field__label is-required">Nome</span>
-          <input
-            class="input"
-            type="text"
-            formControlName="nome"
-            [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
-          />
-          @if (erroDoCampo('nome')) {
-            <span class="field__error">{{ erroDoCampo('nome') }}</span>
-          }
-        </label>
-      </div>
-    </section>
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-campus-identificacao">
+        <h3 id="cfg-campus-identificacao" class="form-section__title">Identificação</h3>
+        <div class="form-grid">
+          <label class="field" [class.is-error]="erroDoCampo('sigla')">
+            <span class="field__label is-required">Sigla</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="sigla"
+              [attr.aria-invalid]="erroDoCampo('sigla') ? 'true' : null"
+            />
+            @if (erroDoCampo('sigla')) {
+              <span class="field__error">{{ erroDoCampo('sigla') }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('codigoEmec')">
+            <span class="field__label">Código e-MEC</span>
+            <input
+              class="input"
+              type="text"
+              inputmode="numeric"
+              formControlName="codigoEmec"
+              [attr.aria-invalid]="erroDoCampo('codigoEmec') ? 'true' : null"
+            />
+            @if (erroDoCampo('codigoEmec')) {
+              <span class="field__error">{{ erroDoCampo('codigoEmec') }}</span>
+            }
+          </label>
+          <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
+            <span class="field__label is-required">Nome</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="nome"
+              [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+            />
+            @if (erroDoCampo('nome')) {
+              <span class="field__error">{{ erroDoCampo('nome') }}</span>
+            }
+          </label>
+        </div>
+      </section>
 
-    <ui-endereco-geo
-      formControlName="endereco"
-      idPrefix="campus-endereco"
-      legend="Endereço do campus"
-      [erroExterno]="erroDoEndereco()"
-    />
+      <ui-endereco-geo
+        formControlName="endereco"
+        idPrefix="campus-endereco"
+        legend="Endereço do campus"
+        [erroExterno]="erroDoEndereco()"
+      />
+    </fieldset>
   </form>
 
-  <div class="cfg-form-footer">
+  <div class="form-drawer__footer">
     <button
       type="button"
       class="btn btn--tertiary btn--rect"
