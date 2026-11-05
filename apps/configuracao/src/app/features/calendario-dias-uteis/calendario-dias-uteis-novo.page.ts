@@ -165,7 +165,7 @@ function datasNaoUteisSemDuplicidade(control: AbstractControl): ValidationErrors
                 <div class="cfg-dia-card__titulo">
                   <span class="cfg-dia-card__numero" aria-hidden="true">{{ index + 1 }}</span>
                   <div>
-                    <h3 [id]="'cfg-dia-nao-util-' + index">Dia não útil {{ index + 1 }}</h3>
+                    <h3 class="u-h4" [id]="'cfg-dia-nao-util-' + index">Dia não útil {{ index + 1 }}</h3>
                     <span>Informe quando e onde a regra será aplicada.</span>
                   </div>
                 </div>

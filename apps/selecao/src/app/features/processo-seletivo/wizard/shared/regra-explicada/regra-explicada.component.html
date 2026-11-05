@@ -8,7 +8,7 @@
 
 @if (regra().invariantes.length > 0) {
   <p class="regra-explicada__rotulo">{{ rotuloDasGarantias() }}</p>
-  <ul class="regra-explicada__invariantes">
+  <ul class="regra-explicada__invariantes u-list">
     @for (invariante of regra().invariantes; track invariante) {
       <li>{{ invariante }}</li>
     }

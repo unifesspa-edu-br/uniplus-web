@@ -80,7 +80,7 @@ const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
       </div>
 
       @if (recusas().demais.length > 0) {
-        <ul class="editor-formulario__erros" role="alert">
+        <ul class="editor-formulario__erros u-list" role="alert">
           @for (erro of recusas().demais; track $index) {
             <li class="field__error">{{ erro }}</li>
           }
@@ -169,7 +169,7 @@ const SEM_RECUSAS: RecusasDoDocumento = { quando: [], demais: [] };
         (condicoesChange)="trocarCondicoes($event)"
       />
       @if (recusas().quando.length > 0) {
-        <ul class="editor-formulario__erros" role="alert">
+        <ul class="editor-formulario__erros u-list" role="alert">
           @for (erro of recusas().quando; track $index) {
             <li class="field__error">{{ erro }}</li>
           }
@@ -430,7 +430,7 @@ function nomeDe(opcoes: readonly OpcaoDoDocumento[], codigo: string): string {
       </p>
 
       @if (recusasGerais().length > 0) {
-        <ul class="editor-formulario__erros" role="alert">
+        <ul class="editor-formulario__erros u-list" role="alert">
           @for (erro of recusasGerais(); track $index) {
             <li class="field__error">{{ erro }}</li>
           }

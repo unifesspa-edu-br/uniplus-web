@@ -96,7 +96,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
       }
 
       @if (erros().length > 0) {
-        <ul class="editor-formulario__erros" [id]="idDe('erros')">
+        <ul class="editor-formulario__erros u-list" [id]="idDe('erros')">
           @for (erro of erros(); track $index) {
             <li class="field__error">{{ erro }}</li>
           }

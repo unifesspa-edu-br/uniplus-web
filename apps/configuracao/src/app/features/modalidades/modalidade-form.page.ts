@@ -334,7 +334,7 @@ interface ModalidadeForm {
                   <p>Quem atende: {{ leituraDaRegra()[0] }}.</p>
                 } @else {
                   <p>Quem atende a pelo menos uma destas alternativas:</p>
-                  <ul>
+                  <ul class="u-list">
                     @for (alternativa of leituraDaRegra(); track $index) {
                       <li>{{ alternativa }}</li>
                     }
@@ -361,7 +361,7 @@ interface ModalidadeForm {
             }
             @if (errosDaRegra().length > 0) {
               <div class="field__error" role="alert">
-                <ul aria-label="Erros da regra de aplicabilidade">
+                <ul class="u-list" aria-label="Erros da regra de aplicabilidade">
                   @for (erro of errosDaRegra(); track $index) {
                     <li>{{ erro }}</li>
                   }
@@ -403,7 +403,7 @@ interface ModalidadeForm {
 
         <aside class="cond-diagram" aria-label="Resumo das escolhas" aria-live="polite">
           <h2 class="cond-diagram__title">Como estas vagas se comportam</h2>
-          <ul class="cond-diagram__list">
+          <ul class="cond-diagram__list u-list">
             @for (clausula of resumoCondicional(); track clausula) {
               <li class="cond-diagram__item">{{ clausula }}</li>
             }

@@ -1131,7 +1131,7 @@ describe('PesosEnemPage', () => {
     expect(grupos).toHaveLength(4);
     expect(grupos.map((g) => g.controls.grupoCurso.value)).toEqual(GRUPOS);
 
-    const legendas = fixture.nativeElement.querySelectorAll('.pe-drawer-grupo legend');
+    const legendas = fixture.nativeElement.querySelectorAll('.field-group legend');
     expect(legendas).toHaveLength(4);
 
     // As áreas de cada grupo são as da API, na ordem dela, e funcionam com o cadastro vazio.
@@ -2855,7 +2855,7 @@ describe('PesosEnemPage', () => {
     fixture.detectChanges();
 
     const legendas = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('.pe-drawer-grupo legend'),
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.field-group legend'),
       (legenda) => legenda.textContent?.replace(/\s+/g, ' ').trim(),
     );
     expect(legendas).toEqual(['Saúde e Biológicas', 'Tecnológica']);

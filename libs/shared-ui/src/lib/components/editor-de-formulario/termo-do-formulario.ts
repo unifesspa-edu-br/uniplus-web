@@ -47,7 +47,7 @@ const ACEITES = [
       </div>
 
       @if (erros().length > 0) {
-        <ul class="editor-formulario__erros">
+        <ul class="editor-formulario__erros u-list">
           @for (erro of erros(); track $index) {
             <li class="field__error">{{ erro }}</li>
           }

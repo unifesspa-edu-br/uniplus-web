@@ -52,7 +52,7 @@
       @if (recusasGerais().length > 0) {
         <div class="field__erro" role="alert">
           <p>O servidor recusou a gravação:</p>
-          <ul>
+          <ul class="u-list">
             @for (recusa of recusasGerais(); track recusa) {
               <li>{{ recusa }}</li>
             }

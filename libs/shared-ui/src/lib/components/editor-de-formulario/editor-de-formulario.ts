@@ -261,7 +261,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
 
         @if (errosDaEtapa(etapa.codigo); as erros) {
           @if (erros.length > 0) {
-            <ul class="editor-formulario__erros">
+            <ul class="editor-formulario__erros u-list">
               @for (erro of erros; track $index) {
                 <li class="field__error">{{ erro }}</li>
               }

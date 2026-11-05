@@ -14,7 +14,7 @@
         <p class="alert__title">
           {{ recusa().length > 0 ? 'Não foi possível publicar o documento' : 'Falta completar o documento' }}
         </p>
-        <ul class="pub__mensagens">
+        <ul class="pub__mensagens u-list">
           @for (mensagem of recusa().length > 0 ? recusa() : impedimentos(); track $index) {
             <li>{{ mensagem }}</li>
           }
@@ -218,7 +218,7 @@
           candidatos listados abaixo. O sistema não lê o conteúdo do PDF: a conferência é de quem
           publica.
         </p>
-        <ul class="pub__campos" aria-label="Dados dos candidatos que o documento pode mostrar">
+        <ul class="pub__campos u-list" aria-label="Dados dos candidatos que o documento pode mostrar">
           @for (campo of politicaDoCertame.campos; track campo) {
             <li>{{ campo }}</li>
           }

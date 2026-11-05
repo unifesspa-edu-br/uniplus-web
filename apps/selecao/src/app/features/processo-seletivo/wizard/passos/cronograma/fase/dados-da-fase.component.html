@@ -79,7 +79,7 @@
     @let produtos = leitura.produtosDaFase(item.grupo);
     <div class="form-field form-grid__full">
       <h3 class="label" [attr.id]="'cr-produtos-' + item.indice">O que esta fase publica</h3>
-      <ul class="field__hint" [attr.aria-labelledby]="'cr-produtos-' + item.indice">
+      <ul class="field__hint u-list" [attr.aria-labelledby]="'cr-produtos-' + item.indice">
         @for (produto of produtos; track produto.atoCodigo) {
           <li>{{ produto.nome }} — {{ produto.papel }}.</li>
         }

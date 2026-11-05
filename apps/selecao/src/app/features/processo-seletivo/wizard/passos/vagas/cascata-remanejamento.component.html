@@ -14,7 +14,7 @@
         12.711 (em qualquer variação). Corrija a regra de distribuição ou a modalidade no quadro
         de vagas acima:
       </p>
-      <ul>
+      <ul class="u-list">
         @for (oferta of ofertasForaDoRegime(); track oferta.ofertaCursoId) {
           <li>{{ rotuloDaOferta(oferta.ofertaCursoId) }}</li>
         }
@@ -147,7 +147,7 @@
       @if (problemas().length > 0 && !store.emConsulta()) {
         <div class="field__erro" role="alert">
           <p>A matriz desta regra não se encaixa no quadro de vagas configurado acima:</p>
-          <ul>
+          <ul class="u-list">
             @for (problema of problemas(); track $index) {
               <li>{{ rotuloDoProblema(problema) }}</li>
             }

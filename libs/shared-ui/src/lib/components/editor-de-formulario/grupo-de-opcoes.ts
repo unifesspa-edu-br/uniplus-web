@@ -45,7 +45,7 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
         <p class="field__error" [id]="idBase() + '-erro'">{{ texto }}</p>
       }
       @if (recusas().length > 0) {
-        <ul class="editor-formulario__erros" [id]="idBase() + '-recusas'">
+        <ul class="editor-formulario__erros u-list" [id]="idBase() + '-recusas'">
           @for (recusa of recusas(); track $index) {
             <li class="field__error">{{ recusa }}</li>
           }

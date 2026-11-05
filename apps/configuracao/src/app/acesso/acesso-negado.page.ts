@@ -74,7 +74,7 @@ function acaoDo(
           <h2 id="cfg-pedidos-em-aberto-titulo" class="u-caption">
             Você tem pedidos de acesso em aberto
           </h2>
-          <ul>
+          <ul class="u-list">
             @for (item of emAberto(); track item.pedido.id) {
               <li>
                 <span>

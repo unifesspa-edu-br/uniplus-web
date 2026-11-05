@@ -289,7 +289,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
             @if (referenciadaPor(alvo.codigo).length > 0) {
               A modalidade <code>{{ alvo.codigo }}</code> não pode ser removida porque é usada como
               origem, destino, par ou fallback das seguintes modalidades vivas:
-              <ul class="cfg-refs-lista">
+              <ul class="cfg-refs-lista u-list">
                 @for (r of referenciadaPor(alvo.codigo); track r.id) {
                   <li>
                     <code>{{ r.codigo }}</code>

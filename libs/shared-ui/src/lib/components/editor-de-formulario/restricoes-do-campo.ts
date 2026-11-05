@@ -127,7 +127,7 @@ interface CampoCitavel {
                           <p class="field__error" [id]="idDe(restricao, 'erro')">{{ texto }}</p>
                         }
                         @if (recusasDaRestricao(restricao).length > 0) {
-                          <ul class="editor-formulario__erros" [id]="idDe(restricao, 'recusas')">
+                          <ul class="editor-formulario__erros u-list" [id]="idDe(restricao, 'recusas')">
                             @for (recusa of recusasDaRestricao(restricao); track $index) {
                               <li class="field__error">{{ recusa }}</li>
                             }
@@ -202,7 +202,7 @@ interface CampoCitavel {
               <p class="field__error" [id]="idDe(restricao, 'erro')">{{ texto }}</p>
             }
             @if (!erroNaMaxima(restricao) && recusasDaRestricao(restricao).length > 0) {
-              <ul class="editor-formulario__erros" [id]="idDe(restricao, 'recusas')">
+              <ul class="editor-formulario__erros u-list" [id]="idDe(restricao, 'recusas')">
                 @for (recusa of recusasDaRestricao(restricao); track $index) {
                   <li class="field__error">{{ recusa }}</li>
                 }

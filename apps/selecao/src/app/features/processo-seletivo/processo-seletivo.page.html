@@ -52,7 +52,7 @@
               @if (errors.length === 1) { Há 1 erro no formulário } @else { Há {{ errors.length }}
               erros no formulário }
             </strong>
-            <ul class="step-error__list">
+            <ul class="step-error__list u-list">
               @for (error of errors; track error) {
               <li>{{ error }}</li>
               }

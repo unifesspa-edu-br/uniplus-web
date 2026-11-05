@@ -169,7 +169,7 @@
 
     @if (conferencia.problemasDoPadrao().length > 0 && !store.emConsulta()) {
       <div class="field__erro" role="alert">
-        <ul aria-label="Problemas no padrão da distribuição">
+        <ul class="u-list" aria-label="Problemas no padrão da distribuição">
           @for (problema of conferencia.problemasDoPadrao(); track problema) {
             <li>{{ problema }}</li>
           }

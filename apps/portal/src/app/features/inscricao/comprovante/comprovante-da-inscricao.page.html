@@ -114,13 +114,13 @@
     <p>
       <strong>{{ opcao.rotulo }}@if (opcao.curso) { — {{ opcao.curso }} }</strong>
     </p>
-    <ul>
+    <ul class="u-list">
       @for (nome of nomesDaOpcao; track nome) {
       <li>{{ nome }}</li>
       }
     </ul>
     } } } @else {
-    <ul>
+    <ul class="u-list">
       @for (nome of nomes; track nome) {
       <li>{{ nome }}</li>
       }
@@ -213,7 +213,7 @@
         }
       </ui-lista-de-dados>
       @if (documento.arquivos.length > 0) {
-      <ul>
+      <ul class="u-list">
         @for (arquivo of documento.arquivos; track arquivo.codigo) {
         <li>
           {{ arquivo.formato }} · {{ arquivo.tamanho }} · Código de verificação:
@@ -234,7 +234,7 @@
   </ui-secao-de-documento>
   } @if (termos().length > 0) {
   <ui-secao-de-documento titulo="Termos aceitos" largura="inteira">
-    <ul>
+    <ul class="u-list">
       @for (termo of termos(); track $index) {
       <li>{{ termo }}</li>
       }

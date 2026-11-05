@@ -513,7 +513,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
           @for (grupo of pesoLoteForm.controls.grupos.controls; track grupo; let gi = $index) {
             <fieldset
               [formGroupName]="gi"
-              class="pe-drawer-grupo"
+              class="field-group"
               [disabled]="estadoGruposCriacao().get(gi) === 'ok'"
             >
               <legend>

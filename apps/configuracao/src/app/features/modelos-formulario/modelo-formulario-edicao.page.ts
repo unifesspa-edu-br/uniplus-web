@@ -124,7 +124,7 @@ interface CabecalhoForm {
       <div #resumo class="cfg-modelo-resumo" tabindex="-1">
         @if (recusasGerais().length > 0) {
           <ui-alert variant="danger" heading="A API recusou a gravação">
-            <ul>
+            <ul class="u-list">
               @for (recusa of recusasGerais(); track $index) {
                 <li>{{ recusa }}</li>
               }

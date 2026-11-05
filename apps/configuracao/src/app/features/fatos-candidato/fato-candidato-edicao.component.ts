@@ -177,7 +177,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
                   <p>Nada foi gravado. Ajuste o que está listado, ou escolha outra definição, e salve de novo.</p>
                   @for (grupo of citacoes(); track grupo.tipo) {
                     <p><strong>{{ grupo.titulo }}</strong></p>
-                    <ul>
+                    <ul class="u-list">
                       @for (item of grupo.itens; track item.codigo) {
                         <li><code>{{ item.codigo }}</code>: {{ item.mensagem }}</li>
                       }

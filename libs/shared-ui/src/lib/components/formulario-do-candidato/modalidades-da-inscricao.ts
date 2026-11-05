@@ -102,7 +102,7 @@ function blocoDe(
             @case (CONCORRE) {
               <p>Com as respostas dadas até agora, você concorre em:</p>
               <ul
-                class="modalidades-da-inscricao__lista"
+                class="modalidades-da-inscricao__lista u-list"
                 [attr.aria-label]="
                   bloco.titulo
                     ? 'Modalidades em que você concorre na ' + bloco.titulo

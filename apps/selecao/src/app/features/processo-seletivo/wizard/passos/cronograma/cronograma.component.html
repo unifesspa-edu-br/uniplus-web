@@ -205,7 +205,7 @@
   @if (conferencia.problemas().length > 0) {
     <div class="field__erro" role="status">
       <p>Antes de gravar:</p>
-      <ul>
+      <ul class="u-list">
         @for (problema of conferencia.problemas(); track $index) {
           <li>{{ problema }}</li>
         }
@@ -220,7 +220,7 @@
     -->
     <div class="field__hint" role="status">
       <p>Para publicar depois:</p>
-      <ul>
+      <ul class="u-list">
         @for (aviso of conferencia.avisosDeGrupo(); track $index) {
           <li>{{ aviso }}</li>
         }

@@ -197,7 +197,7 @@
             {{ regra.codigo }} ({{ regra.versao }})
           </label>
           @if (regra.descricao.length > 0) {
-            <ul class="field__hint" [id]="'cr-etapa-regra-desc-' + posicao + '-' + $index">
+            <ul class="field__hint u-list" [id]="'cr-etapa-regra-desc-' + posicao + '-' + $index">
               @for (linha of regra.descricao; track linha) {
                 <li>{{ linha }}</li>
               }
