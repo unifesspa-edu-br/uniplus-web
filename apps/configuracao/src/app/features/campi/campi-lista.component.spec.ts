@@ -44,12 +44,14 @@ describe('CampiListaComponent — remoção em curso', () => {
   const botoes = (): HTMLButtonElement[] => [
     ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
   ];
+  const indisponivel = (botao: HTMLButtonElement): boolean =>
+    botao.disabled || botao.getAttribute('aria-disabled') === 'true';
 
   it('com itens e paginação, todo acionador fica indisponível', () => {
     montar([campus], true, true);
 
     expect(botoes().length).toBeGreaterThan(3);
-    expect(botoes().filter((b) => !b.disabled)).toEqual([]);
+    expect(botoes().filter((b) => !indisponivel(b))).toEqual([]);
   });
 
   it('no estado vazio, o acionador de cadastro também fica indisponível', () => {
