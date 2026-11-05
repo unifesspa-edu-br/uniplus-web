@@ -1,4 +1,4 @@
-import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
@@ -6,7 +6,6 @@ import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type FaseCanonicaDto = components['schemas']['FaseCanonicaDto'];
-export type CriarFaseCanonicaCommand = components['schemas']['CriarFaseCanonicaCommand'];
 export type AtualizarFaseCanonicaCommand = components['schemas']['AtualizarFaseCanonicaCommand'];
 
 /** Filtro de listagem de Fases canônicas (cursor pagination, ADR-0026). */
@@ -86,23 +85,6 @@ export class FasesCanonicasApi {
     return this.http.get<ApiResult<readonly FaseCanonicaDto[]>>(
       `${this.basePath}/api/configuracao/fases-canonicas`,
       { params, context: withVendorMime('fase-canonica', 1) },
-    );
-  }
-
-  /** GET `/api/configuracao/fases-canonicas/{id}` — detalhe de uma Fase canônica. */
-  obter(id: string): Observable<ApiResult<FaseCanonicaDto>> {
-    return this.http.get<ApiResult<FaseCanonicaDto>>(
-      `${this.basePath}/api/configuracao/fases-canonicas/${encodeURIComponent(id)}`,
-      { context: withVendorMime('fase-canonica', 1) },
-    );
-  }
-
-  /** POST `/api/configuracao/admin/fases-canonicas` — cria. Idempotency-Key obrigatório. */
-  criar(command: CriarFaseCanonicaCommand, context: HttpContext): Observable<ApiResult<string>> {
-    return this.http.post<ApiResult<string>>(
-      `${this.basePath}/api/configuracao/admin/fases-canonicas`,
-      command,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
 

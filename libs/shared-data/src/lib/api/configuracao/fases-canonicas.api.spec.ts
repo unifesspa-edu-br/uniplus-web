@@ -10,11 +10,7 @@ import {
   isApiOk,
 } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
-import {
-  CriarFaseCanonicaCommand,
-  FaseCanonicaDto,
-  FasesCanonicasApi,
-} from './fases-canonicas.api';
+import { FaseCanonicaDto, FasesCanonicasApi } from './fases-canonicas.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -33,18 +29,6 @@ const faseSeed: FaseCanonicaDto = {
   coletaSolicitacaoIsencao: false,
   origemData: 'NO_EDITAL',
   criadoEm: '2026-06-10T12:00:00Z',
-};
-
-const criarCommand: CriarFaseCanonicaCommand = {
-  codigo: 'AVALIACAO',
-  nome: 'Avaliação',
-  descricao: null,
-  unidadeSugeridaId: null,
-  agrupaEtapas: true,
-  permiteComplementacao: false,
-  baseLegal: null,
-  coletaInscricao: false,
-  coletaSolicitacaoIsencao: false,
 };
 
 describe('FasesCanonicasApi', () => {
@@ -83,17 +67,6 @@ describe('FasesCanonicasApi', () => {
     expect(req.request.params.has('limit')).toBe(false);
     req.flush([faseSeed]);
     await promise;
-  });
-
-  it('criar() faz POST /api/configuracao/admin/fases-canonicas com Idempotency-Key e Accept JSON', async () => {
-    const promise = firstValueFrom(api.criar(criarCommand, withIdempotencyKey('k')));
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/fases-canonicas`);
-    expect(req.request.method).toBe('POST');
-    expect(req.request.headers.get('Idempotency-Key')).toBe('k');
-    expect(req.request.headers.get('Accept')).toBe('application/json');
-    req.flush(ID, { status: 201, statusText: 'Created' });
-    const result = (await promise) as ApiResult<string>;
-    expect(isApiOk(result)).toBe(true);
   });
 
   it('atualizar() faz PUT /api/configuracao/admin/fases-canonicas/{id} sem o campo codigo', async () => {

@@ -71,7 +71,6 @@ export {
   ROTULO_ORIGEM_DATA_FASE,
   type AtualizarFaseCanonicaCommand,
   type CodigoFaseCanonica,
-  type CriarFaseCanonicaCommand,
   type FaseCanonicaDto,
   type FasesCanonicasQuery,
   type OrigemDataFase,
