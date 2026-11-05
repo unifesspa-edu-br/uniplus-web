@@ -1,0 +1,96 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Recurso de Acessibilidade</h1>
+    <p class="page-header__desc">
+      Recursos oferecidos no atendimento especializado, independentes da condição — cadastro
+      identificado pelo código · UNI-REQ-0012.
+    </p>
+  </div>
+</div>
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaRemocao() }}</span>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os recursos de acessibilidade">
+  {{ store.mensagemDeErro() }}
+  <div class="cfg-campi__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="store.carregando() || edicao.saving() ? 'true' : null"
+      (click)="!store.carregando() && !edicao.saving() && store.tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+} @if (store.carregando() && store.recursos().length === 0) {
+<ui-skeleton skeletonKind="card" blockSize="10rem" />
+<ui-skeleton skeletonKind="card" blockSize="10rem" />
+}
+
+<cfg-recursos-acessibilidade-lista
+  [recursosFiltrados]="store.recursosFiltrados()"
+  [termoBusca]="store.termoBusca()"
+  [loading]="store.carregando()"
+  [saving]="edicao.saving()"
+  [removendo]="edicao.removendo()"
+  [recursoEmOperacaoId]="edicao.removendo() ? edicao.recursoParaRemover()?.id ?? null : edicao.recursosAcessibilidadeEmEdicaoId()"
+  [errorMessage]="store.mensagemDeErro()"
+  [prevCursor]="store.anterior() !== null"
+  [nextCursor]="store.proximo() !== null"
+  (buscaAlterada)="store.termoBusca.set($event)"
+  (cadastrar)="edicao.abrirDrawerCriacao()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.abrirRemoverRecurso($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-recurso-acessibilidade-formulario
+  [aberto]="edicao.formOpen()"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [formHeading]="edicao.formHeading()"
+  [formError]="edicao.formError()"
+  [salvando]="edicao.salvando()"
+  (abertoChange)="edicao.formOpen.set($event)"
+  (fechar)="edicao.fechar()"
+  (salvar)="edicao.salvar()"
+/>
+
+<ui-dialog
+  [visible]="edicao.confirmOpen()"
+  (visibleChange)="!edicao.saving() && edicao.confirmOpen.set($event)"
+  [dismissible]="!edicao.saving()"
+  heading="Remover recurso de acessibilidade?"
+  (closed)="!edicao.saving() && edicao.confirmOpen.set(false)"
+>
+  <p>
+    Você está prestes a remover o recurso <strong>{{ edicao.recursoParaRemover()?.nome }}.</strong>
+  </p>
+  <p>
+    A remoção impede novos editais de utilizá-lo, mas
+    <strong>não altera ofertas já congeladas</strong>
+    — a cópia por valor de cada processo permanece íntegra.
+  </p>
+  <div uiDialogFooter>
+    <button
+      type="button"
+      class="btn btn--tertiary"
+      [disabled]="edicao.saving()"
+      (click)="edicao.confirmOpen.set(false)"
+    >
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--danger"
+      [disabled]="edicao.saving()"
+      (click)="edicao.removerConfirmado()"
+    >
+      @if (edicao.saving()) {
+      <ui-spinner size="sm" />
+      } {{ edicao.saving() ? 'Removendo...' : 'Remover' }}
+    </button>
+  </div>
+</ui-dialog>

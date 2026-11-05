@@ -40,14 +40,6 @@ export class RecursoAcessibilidadeApi {
     );
   }
 
-  /** GET `/api/configuracao/recursos-acessibilidade{id}` — detalhe. */
-  obter(id: string): Observable<ApiResult<RecursoAcessibilidadeDto>> {
-    return this.http.get<ApiResult<RecursoAcessibilidadeDto>>(
-      `${this.basePath}/api/configuracao/recursos-acessibilidade/${encodeURIComponent(id)}`,
-      { context: withVendorMime('recurso-acessibilidade', 1) },
-    );
-  }
-
   /** POST `/api/configuracao/admin/recursos-acessibilidade{` — cria. Idempotency-Key (ADR-0027). */
   criar(
     command: CriarRecursoAcessibilidadeCommand,
