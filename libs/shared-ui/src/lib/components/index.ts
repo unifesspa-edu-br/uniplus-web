@@ -62,11 +62,8 @@ export { acrescentarBloco, acrescentarSecao, comEtapa, etapaFixa, moverEtapa, po
 export { acrescentarTermo, comTermo, moverTermo, removerTermo, termosEmOrdem, termosParaAcrescentar } from './editor-de-formulario/modelo/termos';
 export { type ChaveDaEntrada, type ConteudoDoFormulario, ESCOPO_CANDIDATO, ESCOPO_MEMBRO, type EntradaDaSecao, type EscopoDoCampo, type EtapaDoFormulario, type FatoDoFormulario, type GrupoDoFormulario, type Impedimento, type ItemDoFormulario, type LimiteDeDataNoWire, type NumeroDigitado, type OpcaoDoFormulario, type OpcoesCondicionadas, type PredicadoNoWire, type RestricaoDeValor, type ResultadoDaEdicao, type ResultadoDoGrupo, type TermoDisponivel, type TermoDoFormulario } from './editor-de-formulario/modelo/tipos';
 export * from './editor-de-documentos-exigidos/documentos-exigidos';
-export {
-  DocumentoExigidoComponent,
-  EditorDeDocumentosExigidosComponent,
-  type OpcaoDoDocumento,
-} from './editor-de-documentos-exigidos/editor-de-documentos-exigidos';
+export { DocumentoExigidoComponent } from './editor-de-documentos-exigidos/documento-exigido';
+export { EditorDeDocumentosExigidosComponent } from './editor-de-documentos-exigidos/editor-de-documentos-exigidos';
 export * from './editor-de-formulario/termos-disponiveis';
 export { SkeletonComponent } from './skeleton/skeleton';
 export { SkipLinkComponent } from './skip-link/skip-link';

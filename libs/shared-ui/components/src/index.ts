@@ -110,11 +110,8 @@ export { acrescentarBloco, acrescentarSecao, comEtapa, etapaFixa, moverEtapa, po
 export { acrescentarTermo, comTermo, moverTermo, removerTermo, termosEmOrdem, termosParaAcrescentar } from '../../src/lib/components/editor-de-formulario/modelo/termos';
 export { type ChaveDaEntrada, type ConteudoDoFormulario, ESCOPO_CANDIDATO, ESCOPO_MEMBRO, type EntradaDaSecao, type EscopoDoCampo, type EtapaDoFormulario, type FatoDoFormulario, type GrupoDoFormulario, type Impedimento, type ItemDoFormulario, type LimiteDeDataNoWire, type NumeroDigitado, type OpcaoDoFormulario, type OpcoesCondicionadas, type PredicadoNoWire, type RestricaoDeValor, type ResultadoDaEdicao, type ResultadoDoGrupo, type TermoDisponivel, type TermoDoFormulario } from '../../src/lib/components/editor-de-formulario/modelo/tipos';
 export * from '../../src/lib/components/editor-de-documentos-exigidos/documentos-exigidos';
-export {
-  DocumentoExigidoComponent,
-  EditorDeDocumentosExigidosComponent,
-  type OpcaoDoDocumento,
-} from '../../src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos';
+export { DocumentoExigidoComponent } from '../../src/lib/components/editor-de-documentos-exigidos/documento-exigido';
+export { EditorDeDocumentosExigidosComponent } from '../../src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
 export {
   FormularioDoCandidatoComponent,

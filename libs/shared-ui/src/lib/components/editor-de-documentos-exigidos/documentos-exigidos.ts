@@ -5,6 +5,14 @@ import {
   STATUS_BASE_LEGAL_RESOLVIDO,
 } from '@uniplus/shared-utils';
 
+/** Uma opção de vocabulário: fase canônica ou tipo de documento, pelo código. */
+export interface OpcaoDoDocumento {
+  readonly codigo: string;
+  readonly nome: string;
+  /** Só da fase: se ela admite complementação, que a consequência de reenvio exige. */
+  readonly permiteComplementacao?: boolean;
+}
+
 export interface BaseLegalDoDocumento {
   readonly referencia: string;
   readonly abrangencia: string;
