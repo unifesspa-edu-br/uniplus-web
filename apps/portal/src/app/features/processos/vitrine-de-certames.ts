@@ -180,7 +180,9 @@ export class VitrineDeCertames {
     return this.lista.error() ? 'Erro inesperado ao carregar os certames.' : null;
   });
 
+  /** Sem filtro aplicado não há o que limpar: o texto ainda no debounce não é apagado por engano. */
   limparFiltros(): void {
+    if (!this.temFiltrosAtivos()) return;
     this.termoBusca.set('');
     this.situacaoSelecionada.set(null);
   }

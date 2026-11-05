@@ -488,7 +488,9 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       const enviar = page.getByRole('button', { name: 'Enviar inscrição' });
       await expect(enviar).toBeDisabled();
       await expect(enviar).toHaveAccessibleDescription(/Falta(m)? corrigir \d+ (item|itens)\./);
-      await page.getByRole('button', { name: /^Dados do candidato\s*:?\s*\(\d+ (item|itens)\)/ }).click();
+      await page
+        .getByRole('button', { name: /^Dados do candidato\s*:?\s*\(\d+ (item|itens)\)/ })
+        .click();
       // O foco vai ao primeiro campo que falta, que pode ser outro além do nome da mãe.
       await expect(page.locator(':focus')).toHaveAttribute('aria-invalid', 'true');
       const mae = campo(page, 'Nome da mãe');
@@ -690,6 +692,81 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(comprovante(page)).toContainText(MUNICIPIO_DE_RESIDENCIA_DO_FATOR);
       await expect(comprovante(page)).not.toContainText(/[A-Z]+_[A-Z_]+/);
     });
+  });
+
+  /**
+   * Segura a primeira gravação que sai para `sufixo` e conta quantas saem. O navegador real é quem
+   * prova que Enter e Espaço no botão indisponível não geram outra requisição.
+   */
+  async function segurarGravacao(
+    page: Page,
+    sufixo: string,
+    metodo: 'PUT' | 'POST',
+  ): Promise<{ pedidos: () => number; liberar: () => void }> {
+    let total = 0;
+    let liberar = (): void => undefined;
+    const segura = new Promise<void>((resolver) => (liberar = resolver));
+    await page.route(
+      `**/api/selecao/processos-seletivos/${PROCESSO_ID}/${sufixo}`,
+      async (rota) => {
+        if (rota.request().method() !== metodo) return rota.continue();
+        total++;
+        await segura;
+        return rota.continue();
+      },
+    );
+    return { pedidos: () => total, liberar };
+  }
+
+  async function abrirInscricaoComo(page: Page, usuario: string): Promise<void> {
+    await page.goto(`/inscricao/${PROCESSO_ID}`);
+    await keycloakLogin(page, usuario, PERSONA.senha, {
+      expectRedirectTo: new RegExp(`/inscricao/${PROCESSO_ID}`),
+    });
+    await expect(page.getByRole('heading', { level: 1, name: 'Inscrição' })).toBeVisible();
+  }
+
+  test('Enter e Espaço em Enviar inscrição durante a gravação não geram segunda requisição', async ({
+    page,
+  }) => {
+    const gravacao = await segurarGravacao(page, 'inscricao/submissao', 'POST');
+    await abrirInscricaoComo(page, PERSONA.usuario);
+    const enviar = page.getByRole('button', { name: 'Enviar inscrição' });
+    await expect(enviar).not.toHaveAttribute('aria-disabled', 'true');
+    await enviar.focus();
+
+    await page.keyboard.press('Enter');
+    const enviando = page.getByRole('button', { name: 'Enviando…' });
+    await expect(enviando).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Space');
+    await enviando.click();
+
+    expect(gravacao.pedidos()).toBe(1);
+    gravacao.liberar();
+    await expect(page.getByText('Inscrição enviada', { exact: true })).toBeVisible();
+    expect(gravacao.pedidos()).toBe(1);
+  });
+
+  test('Enter e Espaço em Salvar rascunho durante a gravação não geram segunda requisição', async ({
+    page,
+  }) => {
+    const gravacao = await segurarGravacao(page, 'inscricao', 'PUT');
+    await abrirInscricaoComo(page, 'betina.neves');
+    const salvar = page.getByRole('button', { name: 'Salvar rascunho' });
+    await salvar.focus();
+
+    await page.keyboard.press('Enter');
+    const salvando = page.getByRole('button', { name: 'Salvando…' });
+    await expect(salvando).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Space');
+    await salvando.click();
+
+    expect(gravacao.pedidos()).toBe(1);
+    gravacao.liberar();
+    await expect(page.getByRole('button', { name: 'Salvar rascunho' })).toBeFocused();
+    expect(gravacao.pedidos()).toBe(1);
   });
 
   test('quem não tem nome social na conta é orientado, cadastra em Meu perfil e a inscrição passa a usá-lo', async ({

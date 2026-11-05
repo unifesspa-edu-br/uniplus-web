@@ -514,6 +514,22 @@ describe('ProcessosComponent', () => {
     expect(vitrine().erro()).toBeNull();
   });
 
+  it('"Limpar filtros" sem filtro aplicado não apaga o texto que ainda espera o debounce', async () => {
+    await flushLista([sisu], contadoresHeaders);
+    vitrine().termoBusca.set('tecn');
+    fixture.detectChanges();
+
+    botao('Limpar filtros')?.click();
+
+    expect(vitrine().termoBusca()).toBe('tecn');
+    await sleep(DEBOUNCE_FOLGA_MS);
+    await propagate();
+    controller
+      .expectOne((r) => r.url === CERTAMES_URL && r.params.get('q') === 'tecn')
+      .flush([sisu]);
+    await propagate();
+  });
+
   it('"Limpar filtros" acionado mantém o foco no botão, que passa a indisponível sem sair da ordem de tab', async () => {
     await flushLista([sisu, tecnicoEnfermagem], contadoresHeaders);
     vitrine().termoBusca.set('tecnico');

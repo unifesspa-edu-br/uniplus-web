@@ -1827,11 +1827,10 @@ describe('InscricaoDoCandidatoPage', () => {
       expect(document.activeElement).toBe(salvar);
     });
 
-    it('não parte outra gravação por clique nem pelo teclado', async () => {
+    it('não parte outra gravação por clique, nem em Salvar nem em Enviar', async () => {
       const { tela, salvar } = await emCurso();
 
       salvar.click();
-      salvar.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
       botao(tela, 'Enviar inscrição').click();
       fixture.detectChanges();
 
