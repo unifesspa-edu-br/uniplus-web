@@ -31,13 +31,13 @@ import { ChangeDetectionStrategy, Component, computed, input, model, output } fr
             <span>{{ pageSizeLabel() }}</span>
             <select
               data-pager="page-size"
-              [value]="pageSize()"
+              [value]="limiteExibido()"
               [attr.aria-disabled]="isDisabled() ? 'true' : null"
               [attr.aria-label]="pageSizeLabel()"
               (change)="aoTrocarLimite($event)"
             >
               @for (opcao of pageSizeOptions(); track opcao) {
-                <option [value]="opcao" [selected]="opcao === pageSize()">{{ opcao }}</option>
+                <option [value]="opcao" [selected]="opcao === limiteExibido()">{{ opcao }}</option>
               }
             </select>
           </label>
@@ -78,6 +78,8 @@ export class PagerComponent {
   readonly previous = output<void>();
   readonly next = output<void>();
 
+  /** Opção de fato exibida no seletor: o limite atual ou, sem ele, a primeira opção. */
+  protected readonly limiteExibido = computed(() => this.pageSize() ?? this.pageSizeOptions()[0]);
   protected readonly anteriorIndisponivel = computed(
     () => !this.hasPrevious() || this.isDisabled(),
   );
@@ -94,7 +96,7 @@ export class PagerComponent {
   protected aoTrocarLimite(event: Event): void {
     const seletor = event.target as HTMLSelectElement;
     if (this.isDisabled()) {
-      seletor.value = String(this.pageSize());
+      seletor.value = String(this.limiteExibido());
       return;
     }
     const valor = Number(seletor.value);

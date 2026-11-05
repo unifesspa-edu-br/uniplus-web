@@ -122,6 +122,22 @@ describe('PagerComponent (Anterior / Próximo)', () => {
     expect(select.value).toBe('25');
   });
 
+  it('indisponível sem pageSize definido, a recusa volta à opção exibida (a primeira)', () => {
+    fixture.componentRef.setInput('pageSizeOptions', [10, 25, 50]);
+    fixture.componentRef.setInput('isDisabled', true);
+    fixture.detectChanges();
+
+    const select = seletorLimite();
+    if (!select) throw new Error('seletor ausente');
+    expect(select.value).toBe('10');
+
+    select.value = '50';
+    select.dispatchEvent(new Event('change'));
+
+    expect(select.value).toBe('10');
+    expect(fixture.componentInstance.pageSize()).toBeNull();
+  });
+
   it('expõe statusText e navigationLabel acessíveis', () => {
     fixture.componentRef.setInput('statusText', 'Página 2');
     fixture.componentRef.setInput('navigationLabel', 'Paginação de unidades');
