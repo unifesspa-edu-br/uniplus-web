@@ -363,6 +363,20 @@ describe('CampiPage — escritas pela interface', () => {
       );
     });
 
+    it('um novo envio barrado localmente não mantém a recusa antiga do endereço', async () => {
+      await preencherNovoCampus();
+      await enviarERecusar();
+      expect(fixture.nativeElement.querySelector('ui-endereco-geo .field__error')).not.toBeNull();
+
+      digitar('input[formcontrolname="sigla"]', '');
+      enviarFormulario();
+      await propagar();
+
+      controller.expectNone(ESCRITA_URL);
+      expect(fixture.nativeElement.querySelector('ui-endereco-geo .field__error')).toBeNull();
+      expect(elemento('input[formcontrolname="sigla"]').getAttribute('aria-invalid')).toBe('true');
+    });
+
     it('uma falha geral depois da recusa do endereço não leva o foco a ela', async () => {
       await preencherNovoCampus();
       await enviarERecusar();

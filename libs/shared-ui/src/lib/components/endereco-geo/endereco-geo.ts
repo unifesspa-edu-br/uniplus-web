@@ -106,12 +106,21 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   /** Ids das mensagens de quem hospeda (ajuda, pendência) que descrevem o grupo. */
   readonly descritoPor = input<string | null>(null);
 
+  /** Ids que descrevem o grupo: o que o hospedeiro informou e a recusa externa, quando há. */
+  protected readonly descricaoDoGrupo = computed(() => {
+    const ids = [this.descritoPor(), this.erroExterno() ? this.id('erro') : null];
+    return ids.filter((id) => id).join(' ') || null;
+  });
+
   /**
    * Leva o foco ao lugar da recusa externa (`erroExterno`): o campo de cidade, quando ele existe e
    * aceita edição (preenchimento manual); com o endereço resolvido por CEP não há controle para
-   * corrigir, então vai à mensagem da recusa, que descreve o grupo.
+   * corrigir, então vai à mensagem da recusa, que descreve o grupo. Sem recusa, não faz nada.
    */
   focarErro(): void {
+    if (!this.erroExterno()) {
+      return;
+    }
     const idDoCampo = this.cidade()?.campoId();
     const campo = idDoCampo ? document.getElementById(idDoCampo) : null;
     if (campo !== null && !(campo as HTMLInputElement).disabled) {

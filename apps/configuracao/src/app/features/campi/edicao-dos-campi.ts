@@ -93,12 +93,12 @@ export class EdicaoDosCampi {
   }
 
   salvar(): void {
+    this.erro.set(null);
+    this.erroDoEndereco.set(null);
     if (this.form.invalid) {
       this.recusarFormularioInvalido();
       return;
     }
-    this.erro.set(null);
-    this.erroDoEndereco.set(null);
     const chave = withIdempotencyKey(this.chaveDeIdempotencia());
     const valores = this.form.getRawValue();
     const id = this.campusEmEdicaoId();

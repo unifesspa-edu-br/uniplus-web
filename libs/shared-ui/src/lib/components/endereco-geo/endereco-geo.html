@@ -1,7 +1,7 @@
 <fieldset
   class="endereco-geo"
   [disabled]="conducao.disabled()"
-  [attr.aria-describedby]="descritoPor() ?? (erroExterno() ? id('erro') : null)"
+  [attr.aria-describedby]="descricaoDoGrupo()"
   (focusout)="aoSairDoGrupo($event)"
 >
   <legend

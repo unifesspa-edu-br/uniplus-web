@@ -39,11 +39,13 @@ class AnfitriaoComponent {
     [formControl]="controle"
     idPrefix="t"
     [erroExterno]="erro()"
+    [descritoPor]="ajuda()"
   />`,
 })
 class AnfitriaoComErroComponent {
   readonly controle = new FormControl<EnderecoEstruturado | null>(null);
   readonly erro = signal<string | null>(null);
+  readonly ajuda = signal<string | null>(null);
   readonly endereco = viewChild.required(EnderecoGeoComponent);
 }
 
@@ -524,6 +526,35 @@ describe('EnderecoGeoComponent: foco na recusa externa', () => {
     fixture.componentInstance.endereco().focarErro();
 
     expect(document.activeElement).toBe(antes);
+  });
+
+  it('no preenchimento manual com a cidade editável e sem recusa, não mexe no foco', async () => {
+    fixture.componentInstance.controle.setValue(endereco('manual', marata));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const antes = document.activeElement;
+
+    fixture.componentInstance.endereco().focarErro();
+
+    expect(document.activeElement).toBe(antes);
+  });
+
+  it('com a ajuda do hospedeiro e a recusa, o grupo é descrito pelas duas', async () => {
+    fixture.componentInstance.ajuda.set('ajuda-do-hospedeiro');
+    await recusar(endereco('geo-api', marata));
+
+    const ids = fixture.nativeElement.querySelector('fieldset').getAttribute('aria-describedby');
+    expect(ids).toBe(`ajuda-do-hospedeiro ${mensagem().id}`);
+  });
+
+  it('só com a ajuda do hospedeiro, o grupo é descrito por ela', () => {
+    fixture.componentInstance.ajuda.set('ajuda-do-hospedeiro');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('fieldset').getAttribute('aria-describedby')).toBe(
+      'ajuda-do-hospedeiro',
+    );
   });
 
   it('com o endereço resolvido por CEP, não há controle a corrigir: o foco vai à mensagem', async () => {
