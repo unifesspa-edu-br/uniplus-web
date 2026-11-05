@@ -256,9 +256,9 @@ describe('TiposProcessoPage', () => {
     await propagate();
 
     expect(fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['formOpen']()).toBe(true);
-    expect(
-      fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['erroDoCampo']('codigo'),
-    ).toContain('já está reservado');
+    expect(fixture.nativeElement.querySelector('#cfg-tproc-codigo-erro')?.textContent).toContain(
+      'já está reservado',
+    );
     expect(fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['formError']()).toBeNull();
   });
 
@@ -425,7 +425,6 @@ describe('TiposProcessoPage', () => {
     );
     await propagate();
     fixture.detectChanges();
-    expect(edicao.erroDoCampo('nome')).toBe('Nome recusado.');
     const nome = host.querySelector('[formcontrolname="nome"]');
     expect(nome?.getAttribute('aria-invalid')).toBe('true');
     expect(nome?.getAttribute('aria-describedby')).toBe('cfg-tproc-nome-erro');

@@ -212,6 +212,7 @@ export class EdicaoDosTiposProcesso {
     this.formError.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.focarPrimeiroCampoInvalido();
       return;
     }
     const chave = withIdempotencyKey(this.idempotencyKeyAtual());
@@ -250,15 +251,18 @@ export class EdicaoDosTiposProcesso {
     }
     operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((resultado) => {
       concluir(resultado);
-      if (tipo !== 'salvando' && item)
-        this.anuncio.set(
-          resultado.ok
-            ? `Operação concluída para ${item.codigo}.`
-            : `Não foi possível alterar ${item.codigo}.`,
-        );
+      if (tipo !== 'salvando' && item) this.anunciarResultado(item, resultado.ok);
       this.escrita.set(null);
       if (!this.aguardandoRecarga()) this.tipoEmAndamento.set(null);
     });
+  }
+
+  private anunciarResultado(item: TipoProcessoDto, sucesso: boolean): void {
+    this.anuncio.set(
+      sucesso
+        ? `Operação concluída para ${item.codigo}.`
+        : `Não foi possível alterar ${item.codigo}.`,
+    );
   }
 
   private recarregar(): void {
@@ -292,25 +296,6 @@ export class EdicaoDosTiposProcesso {
     });
   }
 
-  erroDoCampo(nome: keyof TipoProcessoForm): string | null {
-    const control = this.form.controls[nome];
-    const shouldShowError = control.touched || control.dirty;
-    if (!shouldShowError || control.errors === null) {
-      return null;
-    }
-    if (control.errors['backend']) {
-      const backend = control.errors['backend'] as { code: string; message: string };
-      return backend.message;
-    }
-    if (control.errors['required']) return 'Campo obrigatório.';
-    if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
-    if (control.errors['minlength']) return 'Valor abaixo do tamanho mínimo.';
-    if (control.errors['pattern']) {
-      return 'Use caixa alta, começando por letra, com letras, números e sublinhado.';
-    }
-    return 'Valor inválido.';
-  }
-
   private handleSalvarResult(result: ApiResult<string | void>): void {
     if (result.ok) {
       this.notifications.success(
@@ -322,6 +307,10 @@ export class EdicaoDosTiposProcesso {
       return;
     }
     this.aplicarFalha(result.problem);
+    this.focarPrimeiroCampoInvalido();
+  }
+
+  private focarPrimeiroCampoInvalido(): void {
     afterNextRender(
       () =>
         this.raiz.nativeElement

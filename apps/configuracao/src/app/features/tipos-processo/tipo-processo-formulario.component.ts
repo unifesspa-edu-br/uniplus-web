@@ -21,7 +21,15 @@ export class TipoProcessoFormularioComponent {
   readonly abertura = output<boolean>();
   readonly salvar = output<void>();
   protected erroDoCampo(nome: keyof TipoProcessoForm): string | null {
-    return mensagemDeErroDoControle(this.form().controls[nome]);
+    const controle = this.form().controls[nome];
+    const mensagem = mensagemDeErroDoControle(controle);
+    if (nome === 'codigo' && mensagem === 'Valor inválido.') {
+      if (controle.hasError('minlength')) return 'Valor abaixo do tamanho mínimo.';
+      if (controle.hasError('pattern')) {
+        return 'Use caixa alta, começando por letra, com letras, números e sublinhado.';
+      }
+    }
+    return mensagem;
   }
   protected alterarAbertura(aberto: boolean): void {
     if (!this.salvando()) this.abertura.emit(aberto);

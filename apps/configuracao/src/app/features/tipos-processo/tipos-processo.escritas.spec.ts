@@ -146,6 +146,37 @@ describe('TiposProcessoPage — escritas pela interface', () => {
     expect(edicao.gravando()).toBe(false);
   });
 
+  it('foca o primeiro campo inválido após validar o formulário', async () => {
+    elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+    await propagar();
+    const salvar = elemento<HTMLButtonElement>('button[form="cfg-tipo-processo-form"]');
+    salvar.focus();
+    enviar();
+    await propagar();
+    await propagar();
+    const codigo = elemento<HTMLInputElement>('input[formcontrolname="codigo"]');
+    expect(document.activeElement).toBe(codigo);
+    expect(codigo.getAttribute('aria-describedby')).toContain('cfg-tproc-codigo-erro');
+    expect(elemento('#cfg-tproc-codigo-erro').textContent).toContain('Campo obrigatório.');
+    controller.expectNone(URL);
+  });
+
+  it.each([
+    ['A', 'Valor abaixo do tamanho mínimo.'],
+    ['1A', 'Use caixa alta, começando por letra, com letras, números e sublinhado.'],
+  ])('exibe orientação para o código inválido %s', async (codigo, mensagem) => {
+    elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+    await propagar();
+    edicao.form.setValue({ codigo, nome: 'Processo seletivo', descricao: '' });
+    enviar();
+    await propagar();
+    const campo = elemento<HTMLInputElement>('input[formcontrolname="codigo"]');
+    expect(campo.getAttribute('aria-invalid')).toBe('true');
+    expect(campo.getAttribute('aria-describedby')).toContain('cfg-tproc-codigo-erro');
+    expect(elemento('#cfg-tproc-codigo-erro').textContent).toContain(mensagem);
+    controller.expectNone(URL);
+  });
+
   it('leva o foco ao campo recusado pelo servidor', async () => {
     await preencher();
     enviar();
