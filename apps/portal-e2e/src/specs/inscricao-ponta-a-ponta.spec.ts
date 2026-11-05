@@ -740,7 +740,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     await expect(enviando).toBeFocused();
     await page.keyboard.press('Enter');
     await page.keyboard.press('Space');
-    await enviando.click();
+    await enviando.click({ force: true });
 
     expect(gravacao.pedidos()).toBe(1);
     gravacao.liberar();
@@ -761,7 +761,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     await expect(salvando).toBeFocused();
     await page.keyboard.press('Enter');
     await page.keyboard.press('Space');
-    await salvando.click();
+    await salvando.click({ force: true });
 
     expect(gravacao.pedidos()).toBe(1);
     gravacao.liberar();
