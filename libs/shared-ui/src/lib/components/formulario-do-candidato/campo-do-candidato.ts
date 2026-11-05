@@ -16,39 +16,19 @@ import { DadoRevelavelComponent } from '../dado-revelavel/dado-revelavel';
 import { ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-municipio';
 import { EnderecoGeoComponent } from '../endereco-geo/endereco-geo';
 import type { EnderecoEstruturado } from '../endereco-geo/endereco-geo.model';
-import { pedeConfirmacao, respostaDoTextoLivre } from './confirmacao-do-campo';
+import { pedeConfirmacao } from './confirmacao-do-campo';
+import { enderecoDa, respostaDoEndereco } from './endereco-do-campo';
+import { problemasDoCampo } from './problemas-do-campo';
+import { entradaDoCampo, numeroNaoReconhecido, respostaDoTexto, textoDa } from './texto-do-campo';
 import { type CampoNoPasso } from './passos-do-formulario';
 import { type ControleDoCampo, controleDoTipo } from './controle-do-campo';
 import { fatoDaUf } from './regras-do-campo';
-import {
-  limitesDaFaixaDeData,
-  mensagensDasRestricoes,
-  textoDosLimitesDeData,
-} from './mensagens-das-restricoes';
+import { limitesDaFaixaDeData, textoDosLimitesDeData } from './mensagens-das-restricoes';
 import { opcoesDoCampo, type OpcaoDoCampo } from './opcoes-do-campo';
 import { type ProblemaDaConfirmacao } from './pendencias-do-passo';
 import { type RespostaFixa } from './formulario-do-candidato.model';
-import { FAIXA_DE_DATA } from './interpretador/restricoes';
 import { codigosDa, estaVazia } from './interpretador/logica';
 import type { ValorJson } from './interpretador/regras-do-formulario';
-
-/** O número como se escreve em pt-BR: vírgula decimal, sem separador de milhar. */
-const NUMERO_BR = /^-?[0-9]+(,[0-9]+)?$/;
-/**
- * O número ainda sendo escrito — o sinal sozinho, ou a vírgula sem as casas decimais —, que não é erro:
- * "1," vale 1 até a casa decimal chegar, e o sinal sozinho é sem resposta.
- */
-const NUMERO_BR_PELA_METADE = /^-?([0-9]+,)?$/;
-
-const ENTRADA_DO_FORMATO: Readonly<
-  Record<string, { inputmode: string; autocomplete: string; tipo: string }>
-> = {
-  CPF: { inputmode: 'numeric', autocomplete: 'off', tipo: 'text' },
-  TELEFONE: { inputmode: 'tel', autocomplete: 'tel', tipo: 'tel' },
-  CEP: { inputmode: 'numeric', autocomplete: 'postal-code', tipo: 'text' },
-  EMAIL: { inputmode: 'email', autocomplete: 'email', tipo: 'email' },
-  NOME_PESSOA: { inputmode: 'text', autocomplete: 'name', tipo: 'text' },
-};
 
 /**
  * Um campo do formulário como o candidato o vê: o controle pelo tipo de renderização, a ajuda, a
@@ -66,195 +46,7 @@ const ENTRADA_DO_FORMATO: Readonly<
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'field' },
-  template: `
-    @switch (controle()) {
-      @case ('fixa') {
-        <label class="field__label" [for]="id()">{{ campo().rotulo }}</label>
-        @if (fixa()?.revelavel; as revelavel) {
-          <ui-dado-revelavel
-            aparencia="campo"
-            [rotulo]="campo().rotulo"
-            [dado]="revelavel"
-            [id]="id()"
-            [descritoPor]="descritoPor()"
-          />
-        } @else {
-          <input
-            class="input"
-            readonly
-            [id]="id()"
-            [value]="fixa()?.exibicao"
-            [attr.aria-describedby]="descritoPor()"
-          />
-        }
-      }
-      @case ('escolha') {
-        <fieldset class="formulario-candidato__escolhas" [attr.aria-describedby]="descritoPor()">
-          <legend class="field__label" [class.is-required]="obrigatorio()">
-            {{ campo().rotulo }}
-          </legend>
-          @for (opcao of opcoes(); track opcao.codigo) {
-            <label [class]="multipla() ? 'checkbox' : 'radio'">
-              <input
-                [type]="multipla() ? 'checkbox' : 'radio'"
-                [name]="id()"
-                [checked]="escolhido(opcao.codigo)"
-                [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
-                [attr.aria-describedby]="opcao.orientacao ? idDaOrientacao(opcao.codigo) : null"
-                (change)="escolher(opcao.codigo, $event)"
-              />
-              <span [class]="multipla() ? 'checkbox__box' : 'radio__dot'" aria-hidden="true"></span>
-              {{ rotuloDa(opcao) }}
-            </label>
-            @if (opcao.orientacao) {
-              <span class="formulario-candidato__orientacao" [id]="idDaOrientacao(opcao.codigo)">{{
-                opcao.orientacao
-              }}</span>
-            }
-          } @empty {
-            <p class="field__hint">Nenhuma opção vale com as respostas dadas até aqui.</p>
-          }
-        </fieldset>
-      }
-      @case ('booleano') {
-        <fieldset class="formulario-candidato__escolhas" [attr.aria-describedby]="descritoPor()">
-          <legend class="field__label" [class.is-required]="obrigatorio()">
-            {{ campo().rotulo }}
-          </legend>
-          <label class="radio">
-            <input
-              type="radio"
-              [name]="id()"
-              [checked]="resposta() === true"
-              (change)="responder(true)"
-            />
-            <span class="radio__dot" aria-hidden="true"></span>
-            Sim
-          </label>
-          <label class="radio">
-            <input
-              type="radio"
-              [name]="id()"
-              [checked]="resposta() === false"
-              (change)="responder(false)"
-            />
-            <span class="radio__dot" aria-hidden="true"></span>
-            Não
-          </label>
-        </fieldset>
-      }
-      @case ('lista') {
-        <label class="field__label" [class.is-required]="obrigatorio()" [for]="id()">{{
-          campo().rotulo
-        }}</label>
-        <select
-          class="select"
-          [id]="id()"
-          [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
-          [attr.aria-describedby]="descritoPor()"
-          (change)="responderTexto(valorDe($event))"
-        >
-          <option value="" [selected]="vazia()">Selecione</option>
-          @for (opcao of opcoes(); track opcao.codigo) {
-            <option [value]="opcao.codigo" [selected]="resposta() === opcao.codigo">
-              {{ rotuloDa(opcao) }}
-            </option>
-          }
-        </select>
-      }
-      @case ('municipio') {
-        <label
-          class="field__label"
-          [class.is-required]="obrigatorio()"
-          [attr.for]="municipio.campoId()"
-          >{{ campo().rotulo }}</label
-        >
-        <ui-valor-de-municipio
-          #municipio
-          [rotulo]="campo().rotulo"
-          [values]="municipios()"
-          [uf]="uf()"
-          [rotulosGravados]="rotulosGravados()"
-          [disabled]="esperaAUf() && municipios().length === 0"
-          [invalido]="problemas().length > 0"
-          [descritoPor]="descritoPor()"
-          (valuesChange)="responder($event[0])"
-        />
-      }
-      @case ('endereco') {
-        <ui-endereco-geo
-          aparencia="campo"
-          [exigeCep]="true"
-          [formControl]="endereco"
-          [idPrefix]="id()"
-          [legend]="campo().rotulo"
-          [obrigatorio]="obrigatorio()"
-          [descritoPor]="descritoPor()"
-        />
-      }
-      @default {
-        <label class="field__label" [class.is-required]="obrigatorio()" [for]="id()">{{
-          campo().rotulo
-        }}</label>
-        <input
-          class="input"
-          [id]="id()"
-          [type]="entrada().tipo"
-          [attr.inputmode]="entrada().inputmode"
-          [attr.autocomplete]="entrada().autocomplete"
-          [value]="texto()"
-          [attr.min]="controle() === 'data' ? calendario().minimo : null"
-          [attr.max]="controle() === 'data' ? calendario().maximo : null"
-          [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
-          [attr.aria-describedby]="descritoPor()"
-          (input)="digitar(valorDe($event))"
-          (blur)="sair()"
-        />
-      }
-    }
-
-    @if (confirmando()) {
-      <label class="field__label" [for]="id() + '-confirmacao'"
-        >Confirme {{ campo().rotulo }}</label
-      >
-      <input
-        class="input"
-        autocomplete="off"
-        [id]="id() + '-confirmacao'"
-        [type]="entrada().tipo"
-        [attr.inputmode]="entrada().inputmode"
-        [value]="confirmacao()"
-        [attr.aria-invalid]="erroDaConfirmacao() ? 'true' : null"
-        [attr.aria-describedby]="erroDaConfirmacao() ? id() + '-confirmacao-erro' : null"
-        (input)="confirmada.emit(valorDe($event))"
-      />
-      @if (erroDaConfirmacao(); as erro) {
-        <span class="field__error" [id]="id() + '-confirmacao-erro'">{{ erro }}</span>
-      }
-    }
-
-    @if (campo().ajuda; as ajuda) {
-      <span class="field__hint" [id]="id() + '-ajuda'">{{ ajuda }}</span>
-    }
-    @if (controle() === 'fixa') {
-      <span class="field__hint" [id]="id() + '-fixa'">Este dado não pode ser alterado aqui.</span>
-    }
-    @if (controle() === 'municipio' && esperaAUf()) {
-      <span class="field__hint" [id]="id() + '-uf'"
-        >Informe antes a UF para escolher o município.</span
-      >
-    }
-    @if (dicaDaData(); as dica) {
-      <span class="field__hint" [id]="id() + '-faixa'">{{ dica }}</span>
-    }
-    @if (problemas().length > 0) {
-      <span class="field__error" [id]="id() + '-erro'">
-        @for (problema of problemas(); track problema) {
-          {{ problema }}
-        }
-      </span>
-    }
-  `,
+  templateUrl: './campo-do-candidato.html',
 })
 export class CampoDoCandidatoComponent {
   readonly noPasso = input.required<CampoNoPasso>();
@@ -295,13 +87,8 @@ export class CampoDoCandidatoComponent {
   protected readonly vazia = computed(() => estaVazia(this.resposta()));
   /** O telefone vai à API só com os dígitos e aparece com a máscara (formato do catálogo). */
   private readonly deTelefone = computed(() => this.campo().formato === 'TELEFONE');
-  protected readonly entrada = computed(
-    () =>
-      ENTRADA_DO_FORMATO[this.campo().formato ?? ''] ?? {
-        inputmode: this.controle() === 'numero' ? 'decimal' : 'text',
-        autocomplete: 'off',
-        tipo: this.controle() === 'data' ? 'date' : 'text',
-      },
+  protected readonly entrada = computed(() =>
+    entradaDoCampo(this.campo().formato, this.controle()),
   );
 
   /**
@@ -401,33 +188,27 @@ export class CampoDoCandidatoComponent {
    */
   protected readonly saiu = signal(false);
 
-  /** As mensagens ao lado do campo: pendência, número não reconhecido, regras violadas e impedimento. */
-  protected readonly problemas = computed(() => {
-    const { avaliado, regra } = this.noPasso();
-    const dataConferida = this.saiu() || this.mostrarPendencia();
-    const violadas = avaliado.restricoesVioladas.filter(
-      (tipo) => tipo !== FAIXA_DE_DATA || dataConferida,
-    );
-    return [
-      ...(this.mostrarPendencia() &&
+  /** O obrigatório sem resposta, com a pendência aberta, ainda deve ser respondido. */
+  private readonly faltaResponder = computed(
+    () =>
+      this.mostrarPendencia() &&
       this.obrigatorio() &&
       this.vazia() &&
       !this.numeroInvalido() &&
-      !this.fixa()
-        ? ['Responda este campo.']
-        : []),
-      ...(this.numeroInvalido() ? ['Escreva um número, com vírgula para as casas decimais.'] : []),
-      ...mensagensDasRestricoes(
-        { ...avaliado, restricoesVioladas: violadas },
-        regra,
-        this.diaDoEnvio(),
-      ),
-      ...(avaliado.impedido === 'VERDADEIRO'
-        ? [regra?.impedimento?.mensagem?.trim() || 'Esta resposta impede a inscrição.']
-        : []),
-      ...(this.erroDoServidor() ? [this.erroDoServidor() as string] : []),
-    ];
-  });
+      !this.fixa(),
+  );
+
+  /** As mensagens ao lado do campo: pendência, número não reconhecido, regras violadas e impedimento. */
+  protected readonly problemas = computed(() =>
+    problemasDoCampo({
+      noPasso: this.noPasso(),
+      diaDoEnvio: this.diaDoEnvio(),
+      faltaResponder: this.faltaResponder(),
+      numeroInvalido: this.numeroInvalido(),
+      dataConferida: this.saiu() || this.mostrarPendencia(),
+      erroDoServidor: this.erroDoServidor(),
+    }),
+  );
 
   protected readonly descritoPor = computed(
     () =>
@@ -496,34 +277,12 @@ export class CampoDoCandidatoComponent {
   protected digitar(texto: string): void {
     this.texto.set(texto);
     this.saiu.set(false);
-    const limpo = texto.trim();
-    this.numeroInvalido.set(
-      this.controle() === 'numero' &&
-        limpo !== '' &&
-        !NUMERO_BR.test(limpo) &&
-        !NUMERO_BR_PELA_METADE.test(limpo),
-    );
+    this.numeroInvalido.set(this.controle() === 'numero' && numeroNaoReconhecido(texto));
     this.responder(this.respostaDoTexto(texto));
   }
 
-  /** A resposta que o texto digitado dá: o número em pt-BR, os códigos separados por ponto e vírgula, ou o texto. */
   private respostaDoTexto(texto: string): ValorJson | undefined {
-    const limpo = texto.trim();
-    if (limpo === '') return undefined;
-    switch (this.controle()) {
-      case 'numero':
-        if (NUMERO_BR.test(limpo)) return Number(limpo.replace(',', '.'));
-        return /^-?[0-9]+,$/.test(limpo) ? Number(limpo.slice(0, -1)) : undefined;
-      case 'codigos': {
-        const codigos = limpo
-          .split(';')
-          .map((parte) => parte.trim())
-          .filter((parte) => parte !== '');
-        return codigos.length === 0 ? undefined : codigos;
-      }
-      default:
-        return respostaDoTextoLivre(this.campo(), texto);
-    }
+    return respostaDoTexto(this.controle(), this.campo(), texto);
   }
 
   /** O texto que a resposta mostra no campo: o telefone, com a máscara. */
@@ -549,59 +308,4 @@ export class CampoDoCandidatoComponent {
   protected responder(valor: ValorJson | undefined): void {
     this.respondida.emit(valor);
   }
-}
-
-function textoDa(resposta: ValorJson | undefined): string {
-  if (resposta === undefined || resposta === null) return '';
-  if (Array.isArray(resposta)) return resposta.join('; ');
-  if (typeof resposta === 'number')
-    return resposta.toLocaleString('pt-BR', { useGrouping: false, maximumFractionDigits: 20 });
-  return String(resposta);
-}
-
-/** O endereço que a resposta guarda, na forma de `EnderecoGeoInput`; outra forma é sem endereço. */
-function enderecoDa(resposta: ValorJson | undefined): EnderecoEstruturado | null {
-  if (
-    resposta === undefined ||
-    resposta === null ||
-    typeof resposta !== 'object' ||
-    Array.isArray(resposta)
-  )
-    return null;
-  const objeto = resposta as { readonly [chave: string]: ValorJson };
-  const cidade = objeto['cidade'];
-  const daCidade =
-    cidade !== null && typeof cidade === 'object' && !Array.isArray(cidade)
-      ? (cidade as { readonly [chave: string]: ValorJson })
-      : null;
-  return {
-    cep: textoOuNulo(objeto['cep']),
-    logradouro: textoOuNulo(objeto['logradouro']),
-    numero: textoOuNulo(objeto['numero']),
-    complemento: textoOuNulo(objeto['complemento']),
-    bairro: textoOuNulo(objeto['bairro']),
-    distrito: textoOuNulo(objeto['distrito']),
-    cidade:
-      daCidade === null
-        ? null
-        : {
-            codigoIbge: textoOuNulo(daCidade['codigoIbge']) ?? '',
-            nome: textoOuNulo(daCidade['nome']) ?? '',
-            uf: textoOuNulo(daCidade['uf']) ?? '',
-          },
-    latitude: textoOuNulo(objeto['latitude']),
-    longitude: textoOuNulo(objeto['longitude']),
-    nivelResolucao: textoOuNulo(objeto['nivelResolucao']),
-    origem: textoOuNulo(objeto['origem']),
-    ...(objeto['cepConfirmado'] === true ? { cepConfirmado: true } : {}),
-  };
-}
-
-/** O endereço como resposta: um objeto JSON com a cidade aninhada. */
-function respostaDoEndereco(endereco: EnderecoEstruturado): ValorJson {
-  return { ...endereco, cidade: endereco.cidade === null ? null : { ...endereco.cidade } };
-}
-
-function textoOuNulo(valor: ValorJson | undefined): string | null {
-  return typeof valor === 'string' ? valor : typeof valor === 'number' ? String(valor) : null;
 }

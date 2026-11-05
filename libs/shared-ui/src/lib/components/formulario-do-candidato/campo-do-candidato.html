@@ -1,0 +1,157 @@
+@switch (controle()) { @case ('fixa') {
+<label class="field__label" [for]="id()">{{ campo().rotulo }}</label>
+@if (fixa()?.revelavel; as revelavel) {
+<ui-dado-revelavel
+  aparencia="campo"
+  [rotulo]="campo().rotulo"
+  [dado]="revelavel"
+  [id]="id()"
+  [descritoPor]="descritoPor()"
+/>
+} @else {
+<input
+  class="input"
+  readonly
+  [id]="id()"
+  [value]="fixa()?.exibicao"
+  [attr.aria-describedby]="descritoPor()"
+/>
+} } @case ('escolha') {
+<fieldset class="formulario-candidato__escolhas" [attr.aria-describedby]="descritoPor()">
+  <legend class="field__label" [class.is-required]="obrigatorio()">{{ campo().rotulo }}</legend>
+  @for (opcao of opcoes(); track opcao.codigo) {
+  <label [class]="multipla() ? 'checkbox' : 'radio'">
+    <input
+      [type]="multipla() ? 'checkbox' : 'radio'"
+      [name]="id()"
+      [checked]="escolhido(opcao.codigo)"
+      [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
+      [attr.aria-describedby]="opcao.orientacao ? idDaOrientacao(opcao.codigo) : null"
+      (change)="escolher(opcao.codigo, $event)"
+    />
+    <span [class]="multipla() ? 'checkbox__box' : 'radio__dot'" aria-hidden="true"></span>
+    {{ rotuloDa(opcao) }}
+  </label>
+  @if (opcao.orientacao) {
+  <span class="formulario-candidato__orientacao" [id]="idDaOrientacao(opcao.codigo)"
+    >{{ opcao.orientacao }}</span
+  >
+  } } @empty {
+  <p class="field__hint">Nenhuma opção vale com as respostas dadas até aqui.</p>
+  }
+</fieldset>
+} @case ('booleano') {
+<fieldset class="formulario-candidato__escolhas" [attr.aria-describedby]="descritoPor()">
+  <legend class="field__label" [class.is-required]="obrigatorio()">{{ campo().rotulo }}</legend>
+  <label class="radio">
+    <input
+      type="radio"
+      [name]="id()"
+      [checked]="resposta() === true"
+      [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
+      (change)="responder(true)"
+    />
+    <span class="radio__dot" aria-hidden="true"></span>
+    Sim
+  </label>
+  <label class="radio">
+    <input
+      type="radio"
+      [name]="id()"
+      [checked]="resposta() === false"
+      [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
+      (change)="responder(false)"
+    />
+    <span class="radio__dot" aria-hidden="true"></span>
+    Não
+  </label>
+</fieldset>
+} @case ('lista') {
+<label class="field__label" [class.is-required]="obrigatorio()" [for]="id()"
+  >{{ campo().rotulo }}</label
+>
+<select
+  class="select"
+  [id]="id()"
+  [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
+  [attr.aria-describedby]="descritoPor()"
+  (change)="responderTexto(valorDe($event))"
+>
+  <option value="" [selected]="vazia()">Selecione</option>
+  @for (opcao of opcoes(); track opcao.codigo) {
+  <option [value]="opcao.codigo" [selected]="resposta() === opcao.codigo">
+    {{ rotuloDa(opcao) }}
+  </option>
+  }
+</select>
+} @case ('municipio') {
+<label class="field__label" [class.is-required]="obrigatorio()" [attr.for]="municipio.campoId()"
+  >{{ campo().rotulo }}</label
+>
+<ui-valor-de-municipio
+  #municipio
+  [rotulo]="campo().rotulo"
+  [values]="municipios()"
+  [uf]="uf()"
+  [rotulosGravados]="rotulosGravados()"
+  [disabled]="esperaAUf() && municipios().length === 0"
+  [invalido]="problemas().length > 0"
+  [descritoPor]="descritoPor()"
+  (valuesChange)="responder($event[0])"
+/>
+} @case ('endereco') {
+<ui-endereco-geo
+  aparencia="campo"
+  [exigeCep]="true"
+  [formControl]="endereco"
+  [idPrefix]="id()"
+  [legend]="campo().rotulo"
+  [obrigatorio]="obrigatorio()"
+  [descritoPor]="descritoPor()"
+/>
+} @default {
+<label class="field__label" [class.is-required]="obrigatorio()" [for]="id()"
+  >{{ campo().rotulo }}</label
+>
+<input
+  class="input"
+  [id]="id()"
+  [type]="entrada().tipo"
+  [attr.inputmode]="entrada().inputmode"
+  [attr.autocomplete]="entrada().autocomplete"
+  [value]="texto()"
+  [attr.min]="controle() === 'data' ? calendario().minimo : null"
+  [attr.max]="controle() === 'data' ? calendario().maximo : null"
+  [attr.aria-invalid]="problemas().length > 0 ? 'true' : null"
+  [attr.aria-describedby]="descritoPor()"
+  (input)="digitar(valorDe($event))"
+  (blur)="sair()"
+/>
+} } @if (confirmando()) {
+<label class="field__label" [for]="id() + '-confirmacao'">Confirme {{ campo().rotulo }}</label>
+<input
+  class="input"
+  autocomplete="off"
+  [id]="id() + '-confirmacao'"
+  [type]="entrada().tipo"
+  [attr.inputmode]="entrada().inputmode"
+  [value]="confirmacao()"
+  [attr.aria-invalid]="erroDaConfirmacao() ? 'true' : null"
+  [attr.aria-describedby]="erroDaConfirmacao() ? id() + '-confirmacao-erro' : null"
+  (input)="confirmada.emit(valorDe($event))"
+/>
+@if (erroDaConfirmacao(); as erro) {
+<span class="field__error" [id]="id() + '-confirmacao-erro'">{{ erro }}</span>
+} } @if (campo().ajuda; as ajuda) {
+<span class="field__hint" [id]="id() + '-ajuda'">{{ ajuda }}</span>
+} @if (controle() === 'fixa') {
+<span class="field__hint" [id]="id() + '-fixa'">Este dado não pode ser alterado aqui.</span>
+} @if (controle() === 'municipio' && esperaAUf()) {
+<span class="field__hint" [id]="id() + '-uf'">Informe antes a UF para escolher o município.</span>
+} @if (dicaDaData(); as dica) {
+<span class="field__hint" [id]="id() + '-faixa'">{{ dica }}</span>
+} @if (problemas().length > 0) {
+<span class="field__error" [id]="id() + '-erro'">
+  @for (problema of problemas(); track problema) { {{ problema }} }
+</span>
+}
