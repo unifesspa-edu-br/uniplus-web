@@ -1,14 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { CampoDoCandidatoComponent } from './campo-do-candidato';
-import {
-  type CampoNoPasso,
-  fatoDaUf,
-  type ErroDoServidor,
-  type GrupoNoPasso,
-  mensagemDosErros,
-  type ProblemaDaConfirmacao,
-} from './formulario-do-candidato.model';
+import { type CampoNoPasso, type GrupoNoPasso } from './passos-do-formulario';
+import { fatoDaUf } from './regras-do-campo';
+import { type ErroDoServidor, mensagemDosErros } from './formulario-do-candidato.model';
+import { type ProblemaDaConfirmacao } from './pendencias-do-passo';
 import {
   FATO_PARENTESCO,
   indiceDaOcorrenciaDoCandidato,
@@ -210,9 +206,7 @@ export class GrupoDoCandidatoComponent {
   /** Cada ocorrência com os campos que aparecem nela, na ordem do grupo. */
   protected readonly naTela = computed<readonly OcorrenciaNaTela[]>(() => {
     const { grupo, avaliado, regras } = this.noPasso();
-    const subitens = [...grupo.subitens].sort(
-      (a, b) => a.ordem - b.ordem,
-    );
+    const subitens = [...grupo.subitens].sort((a, b) => a.ordem - b.ordem);
     const indiceDoCandidato = this.indiceDoCandidato();
     const titulos = titulosDasOcorrencias(
       grupo.incluiCandidato,

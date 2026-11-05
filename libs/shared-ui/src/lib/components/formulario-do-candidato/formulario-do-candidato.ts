@@ -28,21 +28,21 @@ import {
   BLOCO_MODALIDADES_CALCULADAS,
   BLOCO_REVISAO_E_ACEITE,
   campoEm,
-  type CampoNoPasso,
   type ErroDoServidor,
   erroEm,
-  fatoDaUf,
   type FormularioDoCandidato,
   mensagemDosErros,
-  type PassoDoFormulario,
   type PassoPrefixado,
-  type PendenciaDoPasso,
   type RespostaFixa,
+} from './formulario-do-candidato.model';
+import {
+  type CampoNoPasso,
+  type PassoDoFormulario,
   type TermoNoPasso,
   passosDo,
-  pendenciasDo,
-  termoSemAceite,
-} from './formulario-do-candidato.model';
+} from './passos-do-formulario';
+import { fatoDaUf } from './regras-do-campo';
+import { type PendenciaDoPasso, pendenciasDo, termoSemAceite } from './pendencias-do-passo';
 import {
   AGUARDE_A_VERIFICACAO,
   aguardaVerificacaoDeObrigatorio,
@@ -1042,7 +1042,11 @@ export class FormularioDoCandidatoComponent {
   }
 
   protected rotuloGravado(fato: string): string | null {
-    return rotuloGravadoDa(this.municipiosGravados(), chaveDaResposta(fato), this.respostas()[fato]);
+    return rotuloGravadoDa(
+      this.municipiosGravados(),
+      chaveDaResposta(fato),
+      this.respostas()[fato],
+    );
   }
 
   protected confirmar(caminho: string, texto: string): void {

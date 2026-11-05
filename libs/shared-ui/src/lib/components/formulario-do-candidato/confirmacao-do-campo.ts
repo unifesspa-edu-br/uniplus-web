@@ -1,12 +1,9 @@
 import { digitosDoTelefone } from '@uniplus/shared-utils';
 
-import {
-  type CampoRenderizavel,
-  controleDoTipo,
-  type PassoDoFormulario,
-  type ProblemaDaConfirmacao,
-  type RespostaFixa,
-} from './formulario-do-candidato.model';
+import { type CampoRenderizavel, type RespostaFixa } from './formulario-do-candidato.model';
+import { controleDoTipo } from './controle-do-campo';
+import { type PassoDoFormulario } from './passos-do-formulario';
+import { type ProblemaDaConfirmacao } from './pendencias-do-passo';
 import { estaVazia, VERDADEIRO } from './interpretador/logica';
 import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
 

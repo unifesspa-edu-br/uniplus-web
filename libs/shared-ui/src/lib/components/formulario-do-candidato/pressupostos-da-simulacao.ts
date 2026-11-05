@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { CampoDoCandidatoComponent } from './campo-do-candidato';
-import type { CampoNoPasso, PressupostoDoFormulario } from './formulario-do-candidato.model';
+import type { CampoNoPasso } from './passos-do-formulario';
+import type { PressupostoDoFormulario } from './formulario-do-candidato.model';
 import type { ValorJson } from './interpretador/regras-do-formulario';
 
 /** A forma do valor de um pressuposto sem apresentação, que quem simula escolhe. */

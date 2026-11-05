@@ -1,4 +1,4 @@
-import type { PassoDoFormulario } from './formulario-do-candidato.model';
+import type { PassoDoFormulario } from './passos-do-formulario';
 import {
   anunciarMudancaDasModalidades,
   type ModalidadesAvaliadas,

@@ -3,9 +3,9 @@ import type { NomesDeMunicipios } from '../editor-de-condicoes/valor-de-municipi
 import {
   type CampoRenderizavel,
   type DependenciasDaAvaliacao,
-  type PassoDoFormulario,
   type RespostaFixa,
 } from './formulario-do-candidato.model';
+import { type PassoDoFormulario } from './passos-do-formulario';
 import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
 import { respostaExibida } from './resposta-exibida';
@@ -70,9 +70,7 @@ export function resumoDoFator(
         grupo.incluiCandidato,
         lista.map((o) => o.respostas),
       );
-      const subitensNaOrdem = [...grupo.subitens].sort(
-        (a, b) => a.ordem - b.ordem,
-      );
+      const subitensNaOrdem = [...grupo.subitens].sort((a, b) => a.ordem - b.ordem);
       for (const ocorrencia of avaliado.ocorrencias) {
         const indice = lista.findIndex((o) => o.id === ocorrencia.id);
         if (indice < 0) continue;

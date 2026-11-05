@@ -17,19 +17,17 @@ import { ValorDeMunicipioComponent } from '../editor-de-condicoes/valor-de-munic
 import { EnderecoGeoComponent } from '../endereco-geo/endereco-geo';
 import type { EnderecoEstruturado } from '../endereco-geo/endereco-geo.model';
 import { pedeConfirmacao, respostaDoTextoLivre } from './confirmacao-do-campo';
+import { type CampoNoPasso } from './passos-do-formulario';
+import { type ControleDoCampo, controleDoTipo } from './controle-do-campo';
+import { fatoDaUf } from './regras-do-campo';
 import {
-  type CampoNoPasso,
-  type ControleDoCampo,
-  controleDoTipo,
-  fatoDaUf,
   limitesDaFaixaDeData,
   mensagensDasRestricoes,
-  opcoesDoCampo,
-  type OpcaoDoCampo,
-  type ProblemaDaConfirmacao,
-  type RespostaFixa,
   textoDosLimitesDeData,
-} from './formulario-do-candidato.model';
+} from './mensagens-das-restricoes';
+import { opcoesDoCampo, type OpcaoDoCampo } from './opcoes-do-campo';
+import { type ProblemaDaConfirmacao } from './pendencias-do-passo';
+import { type RespostaFixa } from './formulario-do-candidato.model';
 import { FAIXA_DE_DATA } from './interpretador/restricoes';
 import { codigosDa, estaVazia } from './interpretador/logica';
 import type { ValorJson } from './interpretador/regras-do-formulario';

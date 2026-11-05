@@ -1,8 +1,6 @@
 import type { DocumentosAvaliados } from './documentos-avaliados';
-import {
-  type DependenciasDaAvaliacao,
-  type PassoDoFormulario,
-} from './formulario-do-candidato.model';
+import { type DependenciasDaAvaliacao } from './formulario-do-candidato.model';
+import { type PassoDoFormulario } from './passos-do-formulario';
 
 /** As respostas dão o conjunto de modalidades: ele está em `itens`. */
 export const CONCORRE = 'CONCORRE';
