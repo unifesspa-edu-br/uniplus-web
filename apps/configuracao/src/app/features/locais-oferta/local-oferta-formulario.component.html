@@ -52,14 +52,29 @@
               <span class="field__error">{{ erroDoCampo('codigoEmec') }}</span>
             }
           </label>
-          <label class="field form-grid__full">
+          <label
+            class="field form-grid__full"
+            [class.is-error]="erroDoCampo('campusResponsavelId')"
+          >
             <span class="field__label">Campus responsável</span>
-            <select class="select" formControlName="campusResponsavelId">
+            <select
+              class="select"
+              formControlName="campusResponsavelId"
+              [attr.aria-invalid]="erroDoCampo('campusResponsavelId') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('campusResponsavelId') ? 'cfg-local-campus-erro' : null
+              "
+            >
               <option value="">(Sem campus responsável)</option>
               @for (campus of campi(); track campus.id) {
                 <option [value]="campus.id">{{ campus.sigla }} — {{ campus.nome }}</option>
               }
             </select>
+            @if (erroDoCampo('campusResponsavelId')) {
+              <span id="cfg-local-campus-erro" class="field__error">{{
+                erroDoCampo('campusResponsavelId')
+              }}</span>
+            }
             <span class="field__hint">Vínculo opcional ao campus que administra este local.</span>
             @if (campiComErro()) {
               <span class="field__error">
@@ -77,6 +92,7 @@
         formControlName="endereco"
         idPrefix="local-endereco"
         legend="Endereço do local de oferta"
+        [cidadeObrigatoria]="true"
         [erroExterno]="erroDoEndereco()"
       />
     </fieldset>

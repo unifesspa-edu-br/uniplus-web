@@ -302,7 +302,7 @@ describe('LocaisOfertaPage', () => {
       },
     );
     await propagate();
-    expect(edicao.erroDoCampo('codigoEmec')).toBe('Código inválido.');
+    expect(campo.closest('label')?.textContent).toContain('Código inválido.');
     expect(foco).toHaveBeenCalled();
   });
 

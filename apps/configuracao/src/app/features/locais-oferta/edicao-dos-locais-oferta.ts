@@ -236,20 +236,6 @@ export class EdicaoDosLocaisOferta {
       .subscribe((result) => this.handleSalvarResult(result));
   }
 
-  erroDoCampo(nome: keyof LocalOfertaForm): string | null {
-    const control = this.form.controls[nome];
-    const shouldShowError = control.touched || control.dirty;
-    if (!shouldShowError || control.errors === null) {
-      return null;
-    }
-    if (control.errors['backend']) {
-      const backend = control.errors['backend'] as { code: string; message: string };
-      return backend.message;
-    }
-    if (control.errors['required']) return 'Campo obrigatório.';
-    return 'Valor inválido.';
-  }
-
   private handleSalvarResult(result: ApiResult<string | void>): void {
     this.escrita.set(null);
     if (result.ok) {

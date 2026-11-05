@@ -166,6 +166,50 @@ describe('Escritas de locais de oferta', () => {
     expect(edicao.form.controls.codigoEmec.enabled).toBe(true);
   });
 
+  it('apresenta a recusa do campus associado ao select e move o foco', async () => {
+    await abrir();
+    elemento<HTMLButtonElement>('button[form="cfg-local-form"]').focus();
+    elemento<HTMLFormElement>('#cfg-local-form').dispatchEvent(
+      new Event('submit', { cancelable: true }),
+    );
+    controller.expectOne(ESCRITA).flush(
+      JSON.stringify({
+        type: 'about:blank',
+        title: 'Dados inválidos',
+        status: 422,
+        code: 'uniplus.validacao',
+        errors: [
+          {
+            field: 'CampusResponsavelId',
+            code: 'uniplus.configuracao.local.campus_invalido',
+            message: 'Campus inválido.',
+          },
+        ],
+      }),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagar();
+    await propagar();
+    const campo = elemento<HTMLSelectElement>('select[formcontrolname="campusResponsavelId"]');
+    expect(campo.getAttribute('aria-invalid')).toBe('true');
+    const mensagem = elemento<HTMLElement>('#' + campo.getAttribute('aria-describedby'));
+    expect(mensagem.textContent).toContain('Campus inválido.');
+    expect(document.activeElement).toBe(campo);
+  });
+
+  it('comunica que a cidade é obrigatória no preenchimento manual', async () => {
+    await abrir();
+    const link = elemento<HTMLButtonElement>('ui-endereco-geo .endereco-geo__link');
+    link.click();
+    await propagar();
+    const cidade = elemento<HTMLInputElement>('ui-valor-de-municipio input');
+    expect(cidade.getAttribute('aria-required')).toBe('true');
+  });
+
   it('recusa escritas concorrentes e mantém a trava até terminar a recarga', async () => {
     await abrir();
     edicao.salvar();
@@ -229,21 +273,19 @@ describe('Escritas de locais de oferta', () => {
   it('anuncia a recusa da remoção e libera as ações', async () => {
     edicao.pedirRemocao(local);
     edicao.removerConfirmado();
-    controller
-      .expectOne(`${ESCRITA}/${local.id}`)
-      .flush(
-        JSON.stringify({
-          type: 'about:blank',
-          title: 'Recusado',
-          status: 422,
-          code: 'uniplus.validacao',
-        }),
-        {
-          status: 422,
-          statusText: 'Unprocessable Entity',
-          headers: { 'content-type': 'application/problem+json' },
-        },
-      );
+    controller.expectOne(`${ESCRITA}/${local.id}`).flush(
+      JSON.stringify({
+        type: 'about:blank',
+        title: 'Recusado',
+        status: 422,
+        code: 'uniplus.validacao',
+      }),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
     await propagar();
     expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe(
       'Não foi possível remover o local de oferta.',
