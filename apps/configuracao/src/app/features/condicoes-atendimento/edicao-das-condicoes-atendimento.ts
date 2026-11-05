@@ -81,7 +81,6 @@ export class EdicaoDasCondicoesAtendimento {
       : this.resultadoDaRemocao();
   });
   readonly saving = computed(() => this.escrita() !== null || this.recarregando());
-  readonly drawerOpen = signal(false);
   readonly condicaoParaRemover = signal<CondicaoAtendimentoDto | null>(null);
   readonly confirmOpen = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
@@ -181,7 +180,6 @@ export class EdicaoDasCondicoesAtendimento {
     }
     this.formError.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
-    this.drawerOpen.set(false);
     this.formOpen.set(true);
   }
 

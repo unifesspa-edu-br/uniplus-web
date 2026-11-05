@@ -464,7 +464,7 @@ describe('CondicoesAtendimentoListPage', () => {
     await propagate();
     const formulario = fixture.nativeElement.querySelector('fieldset.form-drawer__campos');
     expect(formulario.disabled).toBe(true);
-    expect(fixture.nativeElement.querySelector('tr [role="status"]').textContent).toContain(
+    expect(fixture.nativeElement.querySelector('tr span[aria-hidden="true"]').textContent).toContain(
       'Salvando...',
     );
     expect(getSalvarOuEditarButtonEl().getAttribute('aria-busy')).toBe('true');
@@ -478,7 +478,7 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(edicao.saving()).toBe(true);
     await propagate();
     expect(getEditarButtonEl().getAttribute('aria-disabled')).toBe('true');
-    expect(fixture.nativeElement.querySelector('tr [role="status"]').textContent).toContain(
+    expect(fixture.nativeElement.querySelector('tr span[aria-hidden="true"]').textContent).toContain(
       'Atualizando...',
     );
     edicao.abrirDrawerCriacao();

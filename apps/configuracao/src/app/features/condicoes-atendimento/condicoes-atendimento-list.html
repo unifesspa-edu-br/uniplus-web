@@ -66,6 +66,7 @@
   heading="Remover condição de atendimento?"
   (closed)="confirmOpen.set(false)"
 >
+  <span class="sr-only" role="status">{{ edicao.anuncioDaRemocao() }}</span>
   <p>
     Você está prestes a remover a condição
     <strong>{{ condicaoParaRemover()?.nome }}/{{ condicaoParaRemover()?.codigo }}.</strong>

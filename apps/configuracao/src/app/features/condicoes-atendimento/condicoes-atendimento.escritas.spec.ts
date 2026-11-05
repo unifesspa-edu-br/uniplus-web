@@ -173,7 +173,10 @@ describe('Condições de atendimento — escritas pela interface', () => {
     const requisicao = controller.expectOne(`${ESCRITA}/${condicao.id}`);
     expect(edicao.removendo()).toBe(true);
     expect(edicao.salvando()).toBe(false);
-    expect(elemento('[role="status"]').textContent).toContain('Removendo');
+    expect(elemento('ui-dialog [role="status"]').textContent).toContain('Removendo');
+    const indicador = elemento('tr span[aria-hidden="true"]');
+    expect(indicador.textContent).toContain('Removendo');
+    expect(indicador.hasAttribute('role')).toBe(false);
     const novo = elemento<HTMLButtonElement>('.panel-head .btn--primary');
     expect(novo.getAttribute('aria-disabled')).toBe('true');
     novo.click();
@@ -190,13 +193,16 @@ describe('Condições de atendimento — escritas pela interface', () => {
   it('mantém uma região de status para anunciar o início e o fim da remoção', async () => {
     const status = elemento<HTMLElement>('.sr-only[role="status"]');
     await remover();
-    expect(status.textContent).toContain('Removendo');
+    const statusDoDialogo = elemento<HTMLElement>('ui-dialog [role="status"]');
+    expect(statusDoDialogo.textContent?.trim()).toBe('Removendo a condição de atendimento Ledor.');
+    expect(edicao.confirmOpen()).toBe(true);
     controller.expectOne(`${ESCRITA}/${condicao.id}`).flush(null, {
       status: 204,
       statusText: 'No Content',
     });
     await concluirRecarga();
-    expect(status.textContent).toContain('removida');
+    expect(edicao.confirmOpen()).toBe(false);
+    expect(status.textContent?.trim()).toBe('Condição de atendimento Ledor removida.');
   });
 
   it('não inicia outra escrita durante o salvamento ou a recarga', async () => {
