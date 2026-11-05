@@ -17,7 +17,7 @@
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [disabled]="loading()"
+      [disabled]="loading() || edicao.gravando()"
       (click)="tentarNovamente()"
     >
       Tentar novamente
@@ -38,6 +38,7 @@
   [prevCursor]="store.anterior()"
   [nextCursor]="store.proximo()"
   [gravando]="edicao.gravando()"
+  [emAndamento]="edicao.emAndamento()"
   (criar)="edicao.abrirCriacao()"
   (ativar)="edicao.ativar($event)"
   (desativar)="edicao.desativar($event)"

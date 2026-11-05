@@ -1,34 +1,40 @@
-<ui-filter-bar
-  ariaLabel="Filtrar modelos de formulário"
-  searchPlaceholder="Buscar por código ou nome…"
-  searchAriaLabel="Buscar modelo de formulário"
-  [(searchValue)]="termoBusca"
-  [filtrosAtivos]="filtrosAtivos()"
+<fieldset
+  role="none"
+  [disabled]="gravando()"
+  style="border: 0; padding: 0; margin: 0; min-width: 0"
 >
-  <ng-container uiFilterBarSecondary>
-    <span class="u-eyebrow">Finalidade</span>
-    <ui-filter-chips
-      [options]="finalidadeChips"
-      [(selected)]="filtroFinalidade"
-      ariaLabel="Filtrar por finalidade"
-    />
-    <span class="u-eyebrow">Situação</span>
-    <ui-filter-chips
-      [options]="situacaoChips"
-      [(selected)]="filtroSituacao"
-      ariaLabel="Filtrar por situação"
-    />
-    <label class="field">
-      <span class="u-eyebrow">Tipo de processo</span>
-      <select class="select" [value]="filtroTipo()" (change)="filtroTipo.set(valorDe($event))">
-        <option value="">Todos</option>
-        @for (tipo of tiposDeProcesso(); track tipo.codigo) {
-          <option [value]="tipo.codigo">{{ tipo.nome }}</option>
-        }
-      </select>
-    </label>
-  </ng-container>
-</ui-filter-bar>
+  <ui-filter-bar
+    ariaLabel="Filtrar modelos de formulário"
+    searchPlaceholder="Buscar por código ou nome…"
+    searchAriaLabel="Buscar modelo de formulário"
+    [(searchValue)]="termoBusca"
+    [filtrosAtivos]="filtrosAtivos()"
+  >
+    <ng-container uiFilterBarSecondary>
+      <span class="u-eyebrow">Finalidade</span>
+      <ui-filter-chips
+        [options]="finalidadeChips"
+        [(selected)]="filtroFinalidade"
+        ariaLabel="Filtrar por finalidade"
+      />
+      <span class="u-eyebrow">Situação</span>
+      <ui-filter-chips
+        [options]="situacaoChips"
+        [(selected)]="filtroSituacao"
+        ariaLabel="Filtrar por situação"
+      />
+      <label class="field">
+        <span class="u-eyebrow">Tipo de processo</span>
+        <select class="select" [value]="filtroTipo()" (change)="filtroTipo.set(valorDe($event))">
+          <option value="">Todos</option>
+          @for (tipo of tiposDeProcesso(); track tipo.codigo) {
+            <option [value]="tipo.codigo">{{ tipo.nome }}</option>
+          }
+        </select>
+      </label>
+    </ng-container>
+  </ui-filter-bar>
+</fieldset>
 
 <section class="panel" aria-labelledby="cfg-modelos-list-title">
   <div class="panel-head">
@@ -42,7 +48,8 @@
       *authTemPermissao="permissaoDeManter"
       type="button"
       class="btn btn--primary"
-      (click)="criar.emit()"
+      [attr.aria-disabled]="gravando()"
+      (click)="criarModelo($event)"
     >
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
       Novo modelo
@@ -81,9 +88,15 @@
                 }
               </td>
               <td data-label="Situação">
-                <ui-tag [variant]="modelo.ativo ? 'success' : 'neutral'">{{
-                  modelo.ativo ? 'Ativo' : 'Desativado'
-                }}</ui-tag>
+                @if (emAndamento() === modelo.id) {
+                  <span aria-hidden="true">{{
+                    modelo.ativo ? 'Desativando...' : 'Ativando...'
+                  }}</span>
+                } @else {
+                  <ui-tag [variant]="modelo.ativo ? 'success' : 'neutral'">{{
+                    modelo.ativo ? 'Ativo' : 'Desativado'
+                  }}</ui-tag>
+                }
               </td>
               <td class="table-responsive__actions" data-label="Ações">
                 <ui-icon-button
@@ -92,12 +105,14 @@
                   [accessibleName]="'Editar o modelo ' + modelo.codigo"
                   tooltip="Editar modelo"
                   [link]="[modelo.id]"
+                  [isDisabled]="gravando()"
                 />
                 <ui-icon-button
                   icon="pi-play"
                   [accessibleName]="'Simular o modelo ' + modelo.codigo + ' (abre em nova aba)'"
                   tooltip="Simular formulário"
                   [link]="['/simulador-de-formulario']"
+                  [isDisabled]="gravando()"
                   [queryParams]="{ modelo: modelo.id }"
                   novaAba
                 />
@@ -138,7 +153,7 @@
       navigationLabel="Paginação de modelos de formulário"
       [hasPrevious]="prevCursor() !== null"
       [hasNext]="nextCursor() !== null"
-      [isDisabled]="loading()"
+      [isDisabled]="loading() || gravando()"
       (previous)="anterior.emit()"
       (next)="proximo.emit()"
     />

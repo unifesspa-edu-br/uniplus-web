@@ -54,7 +54,11 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
     vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
-    controller.expectOne((r) => r.url === URL).flush([modelo]);
+    controller
+      .expectOne((r) => r.url === URL)
+      .flush([modelo, { ...modelo, id: 'modelo-2', codigo: 'INATIVO', ativo: false }], {
+        headers: { Link: '</api/itens?cursor=abc&direction=next>; rel="next"' },
+      });
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-processo`).flush([]);
     await propagar();
   });
@@ -192,6 +196,40 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
     await propagar();
     controller.expectOne((r) => r.url === URL).flush([modelo]);
   });
+
+  it.each([true, false])(
+    'bloqueia a lista e indica a troca de situação (ativo: %s)',
+    async (ativo) => {
+      const codigo = ativo ? 'INSCRICAO' : 'INATIVO';
+      const id = ativo ? modelo.id : 'modelo-2';
+      elemento<HTMLButtonElement>(
+        `[aria-label="${ativo ? 'Desativar' : 'Ativar'} o modelo ${codigo}"]`,
+      ).click();
+      const requisicao = controller.expectOne(ativo ? `${URL}/${id}` : `${URL}/${id}/ativacao`);
+      await propagar();
+      expect(elemento('tbody').textContent).toContain(ativo ? 'Desativando...' : 'Ativando...');
+      const editar = elemento<HTMLAnchorElement>(`[aria-label="Editar o modelo ${codigo}"]`);
+      expect(editar.getAttribute('aria-disabled')).toBe('true');
+      expect(editar.getAttribute('href')).toBeNull();
+      expect(
+        editar.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })),
+      ).toBe(false);
+      const novo = elemento<HTMLButtonElement>('.panel-head .btn--primary');
+      expect(novo.getAttribute('aria-disabled')).toBe('true');
+      novo.click();
+      expect(edicao.drawerAberto()).toBe(false);
+      expect(elemento<HTMLInputElement>('input[type="search"]').matches(':disabled')).toBe(true);
+      expect(elemento<HTMLButtonElement>('.filter-bar__alternar').matches(':disabled')).toBe(true);
+      expect(elemento<HTMLSelectElement>('.filter-bar select').matches(':disabled')).toBe(true);
+      const proximo = elemento<HTMLButtonElement>('ui-pager [data-pager="next"]');
+      expect(proximo.getAttribute('aria-disabled')).toBe('true');
+      proximo.click();
+      controller.expectNone((r) => r.url === URL);
+      requisicao.flush(null, { status: 204, statusText: 'No Content' });
+      await propagar();
+      controller.expectOne((r) => r.url === URL).flush([modelo]);
+    },
+  );
 
   it('anuncia o início e o fim da troca de situação em uma região de status', async () => {
     edicao.desativar(modelo);

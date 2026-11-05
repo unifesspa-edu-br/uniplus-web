@@ -43,6 +43,7 @@ export class ModelosFormularioListaComponent {
   readonly prevCursor = input.required<string | null>();
   readonly nextCursor = input.required<string | null>();
   readonly gravando = input.required<boolean>();
+  readonly emAndamento = input.required<string | null>();
   readonly criar = output<void>();
   readonly ativar = output<ModeloFormularioView>();
   readonly desativar = output<ModeloFormularioView>();
@@ -76,6 +77,13 @@ export class ModelosFormularioListaComponent {
     if (tipo) ativos.push({ nome: 'Tipo de processo', valor: this.rotuloDoTipo(tipo) });
     return ativos;
   });
+  protected criarModelo(evento: Event): void {
+    if (this.gravando()) {
+      evento.preventDefault();
+      return;
+    }
+    this.criar.emit();
+  }
   protected valorDe(evento: Event): string {
     return (evento.target as HTMLSelectElement).value;
   }
