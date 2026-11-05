@@ -222,6 +222,38 @@ describe('ComboboxComponent', () => {
     expect(campo().getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('Enter sem opção apontada fecha a lista e devolve o texto do valor escolhido', () => {
+    fixture.componentInstance.escolhido.set('rg');
+    fixture.detectChanges();
+    campo().dispatchEvent(new Event('focus'));
+    digitar('CP');
+
+    const evento = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    campo().dispatchEvent(evento);
+    fixture.detectChanges();
+
+    expect(campo().getAttribute('aria-expanded')).toBe('false');
+    expect(campo().value).toBe('RG');
+    expect(evento.defaultPrevented).toBe(false);
+  });
+
+  it('a lista aberta fecha quando um fieldset desabilita o campo', () => {
+    const fieldset = document.createElement('fieldset');
+    nativo.parentElement?.appendChild(fieldset);
+    fieldset.appendChild(nativo);
+    campo().dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    expect(campo().getAttribute('aria-expanded')).toBe('true');
+
+    fieldset.disabled = true;
+    fixture.componentRef.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(campo().getAttribute('aria-expanded')).toBe('false');
+    expect(nativo.querySelector('[role="listbox"]')).toBeNull();
+  });
+
   it('desabilitado não abre', () => {
     campo().dispatchEvent(new Event('focus'));
     fixture.detectChanges();

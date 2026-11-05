@@ -69,8 +69,3 @@
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
-
-/* Bloqueado por um fieldset desabilitado, o campo não tem o que escolher: a lista some com ele. */
-fieldset:disabled .combobox__lista {
-  display: none;
-}

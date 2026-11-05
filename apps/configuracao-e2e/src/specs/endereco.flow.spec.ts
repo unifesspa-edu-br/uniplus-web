@@ -227,13 +227,18 @@ test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
     await cidade.press('Enter');
     await expect.poll(() => capturado.post).toBeDefined();
 
+    // O Enter fecha a lista e devolve o texto do valor escolhido antes de enviar.
     await expect(cidade).toBeDisabled();
-    await expect(outra).toBeHidden();
-    await page.locator('.combobox__opcao', { hasText: 'Parauapebas' }).dispatchEvent('mousedown');
+    await expect(cidade).toHaveAttribute('aria-expanded', 'false');
+    await expect(cidade).toHaveValue('Marabá (PA)');
     liberar();
 
-    expect(capturado.post).toMatchObject({ cidadeCodigoIbge: '1504208' });
+    // Com a recusa, o formulário volta a ser editável sem a lista reaberta nem texto divergente.
+    await expect(cidade).toBeEnabled();
+    await expect(cidade).toHaveAttribute('aria-expanded', 'false');
+    await expect(outra).toBeHidden();
     await expect(cidade).toHaveValue('Marabá (PA)');
+    expect(capturado.post).toMatchObject({ cidadeCodigoIbge: '1504208' });
   });
 
   test('CA-06: CEP inexistente exibe erro inline e oculta os campos de endereço', async ({

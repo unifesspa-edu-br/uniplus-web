@@ -7,6 +7,7 @@ import {
   inject,
   input,
   output,
+  afterEveryRender,
   signal,
   viewChild,
 } from '@angular/core';
@@ -106,6 +107,14 @@ export class ComboboxComponent {
   private readonly campo = viewChild.required<ElementRef<HTMLInputElement>>('campo');
 
   protected readonly aberto = signal(false);
+
+  constructor() {
+    // Um `fieldset` desabilitado bloqueia o input sem aviso ao componente: a lista não pode
+    // continuar aberta sobre um campo que não aceita mais escolha.
+    afterEveryRender(() => {
+      if (this.aberto() && this.campo().nativeElement.matches(':disabled')) this.fechar();
+    });
+  }
   protected readonly destacada = signal<string | null>(null);
 
   /** O que está escrito no campo: a busca em curso, ou o rótulo do que já foi escolhido. */
@@ -263,7 +272,13 @@ export class ComboboxComponent {
 
     if (evento.key === 'Enter') {
       const alvo = this.destacada();
-      if (!this.aberto() || alvo === null) return;
+      if (!this.aberto()) return;
+      if (alvo === null) {
+        // Sem opção ativa o Enter não escolhe nada: fecha a lista e devolve o texto do valor
+        // escolhido, e o formulário envia com o que o campo mostra.
+        this.fechar();
+        return;
+      }
       evento.preventDefault();
       // A opção apontada pode ter ficado indisponível depois de apontada; a marcada segue removível.
       const opcao = this.todasAsOpcoes().find((candidata) => candidata.value === alvo);
