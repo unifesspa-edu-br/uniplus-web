@@ -1,0 +1,111 @@
+<ui-filter-bar
+  ariaLabel="Filtrar as decisões"
+  searchPlaceholder="Buscar por nome ou código do item…"
+  searchAriaLabel="Buscar decisão pelo nome ou código do item"
+  secondaryRole="group"
+  secondaryAriaLabel="Filtros das decisões"
+  [(searchValue)]="termoBusca"
+  [filtrosAtivos]="filtrosAtivos()"
+>
+  <ng-container uiFilterBarSecondary>
+    <span class="u-eyebrow" id="cfg-dec-filtro-decisao">Decisão</span>
+    <div class="filter-chips" role="group" aria-labelledby="cfg-dec-filtro-decisao">
+      @for (opcao of decisoes; track opcao.valor) {
+        <button
+          type="button"
+          class="filter-chip"
+          [attr.aria-pressed]="filtros().ato.includes(opcao.valor) ? 'true' : 'false'"
+          (click)="alternarDecisao(opcao.valor)"
+        >
+          <span>{{ opcao.rotulo }}</span>
+        </button>
+      }
+    </div>
+    <span class="u-eyebrow">Cadastro</span>
+    <ui-filter-chips
+      [options]="cadastros"
+      [selected]="filtros().cadastro"
+      (selectedChange)="trocarCadastro($event)"
+      ariaLabel="Filtrar por cadastro"
+    />
+    <div class="cfg-filtro-periodo">
+      <label class="field" [class.is-error]="periodoComErro()">
+        <span class="field__label">Decidido a partir de</span>
+        <input
+          class="input"
+          type="date"
+          [value]="filtros().de"
+          [attr.aria-invalid]="periodoComErro() ? 'true' : null"
+          [attr.aria-describedby]="periodoComErro() ? 'cfg-dec-periodo-erro' : null"
+          (change)="aplicar({ de: valorDe($event) })"
+        />
+      </label>
+      <label class="field" [class.is-error]="periodoComErro()">
+        <span class="field__label">Decidido até</span>
+        <input
+          class="input"
+          type="date"
+          [value]="filtros().ate"
+          [attr.aria-invalid]="periodoComErro() ? 'true' : null"
+          [attr.aria-describedby]="periodoComErro() ? 'cfg-dec-periodo-erro' : null"
+          (change)="aplicar({ ate: valorDe($event) })"
+        />
+      </label>
+    </div>
+    @if (periodoComErro()) {
+      <span class="field__error" id="cfg-dec-periodo-erro" role="alert">
+        A data final deve ser igual ou posterior à inicial.
+      </span>
+    }
+    <label class="checkbox">
+      <input
+        type="checkbox"
+        [checked]="filtros().minhas"
+        (change)="aplicar({ minhas: marcadoEm($event) })"
+      />
+      <span class="checkbox__box" aria-hidden="true"></span>
+      Só as minhas
+    </label>
+  </ng-container>
+</ui-filter-bar>
+
+@if (mensagemDeErro(); as mensagem) {
+  <ui-alert variant="danger" heading="Não foi possível carregar as decisões">
+    {{ mensagem }}
+    <div class="list-state__retry">
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        [disabled]="pagina.carregando()"
+        (click)="carregar()"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  </ui-alert>
+}
+
+<cfg-decisoes-da-protecao-lista
+  [itens]="pagina.itens()"
+  [carregando]="pagina.carregando()"
+  [mensagemDeErro]="mensagemDeErro()"
+  [temFiltro]="temFiltro()"
+  [limite]="limite()"
+  [temAnterior]="pagina.anterior() !== null"
+  [temProximo]="pagina.proximo() !== null"
+  (abrir)="abrir($event)"
+  (limpar)="limparFiltros()"
+  (trocarLimite)="aoTrocarLimite($event)"
+  (anterior)="pagina.voltar()"
+  (proximo)="pagina.proxima()"
+/>
+
+<cfg-decisao-da-protecao-detalhe
+  [(drawerAberto)]="drawerAberto"
+  [selecionada]="selecionada()"
+  [historico]="historico()"
+  [carregandoHistorico]="carregandoHistorico()"
+  [erroDoHistorico]="erroDoHistorico()"
+  [itemInexistente]="itemInexistente()"
+  (recarregar)="lerHistorico($event)"
+/>

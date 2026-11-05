@@ -1,9 +1,12 @@
-import { DestroyRef, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, switchMap } from 'rxjs';
-import { ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
+import { computed, inject, signal } from '@angular/core';
 import {
-  ProtecaoDoCatalogoApi,
+  ProblemI18nService,
+  STATUS_HTTP,
+  useApiResource,
+  withVendorMime,
+} from '@uniplus/shared-core/http';
+import {
+  CONFIGURACAO_BASE_PATH,
   type CadastroDoCatalogo,
   type DetalheDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
@@ -13,53 +16,43 @@ interface Pedido {
   readonly id: string;
 }
 
-/**
- * A leitura do detalhe de um item do catálogo para a proteção de dados: carga, recusa e item
- * inexistente. Cada leitura cancela a anterior, então a resposta velha que chega depois não
- * sobrescreve a nova; quem a usa lê os sinais e chama `ler` e `recarregar`.
- */
+const SEGMENTOS: Readonly<Record<CadastroDoCatalogo, string>> = {
+  TIPO_DOCUMENTO: 'tipos-documento',
+  FATO: 'fatos',
+};
+
+/** Leitura reativa do detalhe de um item do catálogo. */
 export class LeituraDoDetalhe {
-  readonly detalhe = signal<DetalheDaProtecaoDoCatalogoDto | null>(null);
-  readonly carregando = signal(false);
-  readonly erro = signal<string | null>(null);
-  readonly naoEncontrado = signal(false);
+  private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
+  private readonly problemI18n = inject(ProblemI18nService);
+  private readonly pedido = signal<Pedido | null>(null);
+  private readonly recurso = useApiResource<DetalheDaProtecaoDoCatalogoDto>(() => {
+    const pedido = this.pedido();
+    return pedido === null
+      ? undefined
+      : {
+          url: `${this.basePath}/api/configuracao/admin/protecao-do-catalogo/${SEGMENTOS[pedido.cadastro]}/${pedido.id}`,
+          context: withVendorMime('protecao-do-catalogo-detalhe', 1),
+        };
+  });
 
-  private readonly pedidos = new Subject<Pedido>();
-  private ultimoPedido: Pedido | null = null;
-
-  constructor(api: ProtecaoDoCatalogoApi, problemI18n: ProblemI18nService, destroyRef: DestroyRef) {
-    this.pedidos
-      .pipe(
-        switchMap((pedido) => {
-          this.carregando.set(true);
-          this.erro.set(null);
-          this.naoEncontrado.set(false);
-          this.detalhe.set(null);
-          return api.detalhar(pedido.cadastro, pedido.id);
-        }),
-        takeUntilDestroyed(destroyRef),
-      )
-      .subscribe((resultado) => {
-        this.carregando.set(false);
-        if (resultado.ok) {
-          this.detalhe.set(resultado.data);
-          return;
-        }
-        this.naoEncontrado.set(resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO);
-        this.erro.set(
-          this.naoEncontrado()
-            ? 'O item não existe mais no catálogo.'
-            : problemI18n.resolve(resultado.problem).title,
-        );
-      });
-  }
+  readonly detalhe = this.recurso.data;
+  readonly carregando = this.recurso.isLoading;
+  readonly naoEncontrado = computed(
+    () => this.recurso.problem()?.status === STATUS_HTTP.NAO_ENCONTRADO,
+  );
+  readonly erro = computed(() => {
+    const problem = this.recurso.problem();
+    if (this.naoEncontrado()) return 'O item não existe mais no catálogo.';
+    if (problem) return this.problemI18n.resolve(problem).title;
+    return this.recurso.error() ? 'Não foi possível carregar o detalhe.' : null;
+  });
 
   ler(cadastro: CadastroDoCatalogo, id: string): void {
-    this.ultimoPedido = { cadastro, id };
-    this.pedidos.next(this.ultimoPedido);
+    this.pedido.set({ cadastro, id });
   }
 
   recarregar(): void {
-    if (this.ultimoPedido !== null) this.pedidos.next(this.ultimoPedido);
+    this.recurso.reload();
   }
 }

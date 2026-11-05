@@ -1,0 +1,96 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="drawerAberto"
+  [heading]="selecionada()?.itemNome ?? 'Decisão'"
+  ariaLabel="Detalhe da decisão"
+  focoInicial="titulo"
+  position="right"
+>
+  @if (drawerAberto() && selecionada(); as decisao) {
+    <div
+      class="form-drawer__form"
+      role="region"
+      tabindex="0"
+      aria-label="Dados da decisão"
+      [attr.aria-busy]="carregandoHistorico()"
+    >
+      <section class="cfg-detalhe-secao">
+        <h3 class="cfg-detalhe-secao__titulo">A decisão</h3>
+        <dl class="cfg-detalhe">
+          <div>
+            <dt>Decisão</dt>
+            <dd>
+              <ui-tag [variant]="rotuloDoAto(decisao.ato).variante">{{
+                rotuloDoAto(decisao.ato).texto
+              }}</ui-tag>
+            </dd>
+          </div>
+          <div>
+            <dt>Item</dt>
+            <dd>
+              {{ cadastro(decisao.cadastro) }}: {{ decisao.itemNome }} (<code>{{
+                decisao.itemCodigo
+              }}</code
+              >)
+            </dd>
+          </div>
+          <div>
+            <dt>Decidido por</dt>
+            <dd>{{ decisao.atorNome || 'Pessoa não identificada' }}</dd>
+          </div>
+          <div>
+            <dt>Decidido em</dt>
+            <dd>{{ dataEHora(decisao.instante) }}</dd>
+          </div>
+          @if (decisao.classificacaoRecomendada; as recomendada) {
+            <div>
+              <dt>Classificação recomendada</dt>
+              <dd>{{ rotulo(classificacoes, recomendada) }}</dd>
+            </div>
+          }
+          @if (decisao.justificativa; as justificativa) {
+            <div>
+              <dt>Justificativa</dt>
+              <dd class="cfg-justificativa">{{ justificativa }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+      <cfg-detalhe-da-protecao titulo="Proteção conferida" [protecao]="decisao" />
+      <section class="cfg-detalhe-secao">
+        <h3 class="cfg-detalhe-secao__titulo">Histórico do item</h3>
+        @if (carregandoHistorico()) {
+          <span class="list-state__loading"><ui-spinner size="sm" /> Carregando o histórico</span>
+        }
+        @if (erroDoHistorico(); as erro) {
+          <ui-alert
+            variant="danger"
+            [heading]="
+              itemInexistente() ? 'Item não encontrado' : 'Não foi possível carregar o histórico'
+            "
+          >
+            {{ erro }}
+            @if (!itemInexistente()) {
+              <div class="list-state__retry">
+                <button
+                  type="button"
+                  class="btn btn--secondary btn--sm"
+                  (click)="recarregar.emit(decisao)"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            }
+          </ui-alert>
+        } @else if (historico(); as atos) {
+          <cfg-atos-da-protecao [atos]="atos" ariaLabel="Histórico completo do item" />
+        }
+      </section>
+    </div>
+    <div class="form-drawer__footer">
+      <button type="button" class="btn btn--tertiary btn--rect" (click)="drawerAberto.set(false)">
+        Fechar
+      </button>
+    </div>
+  }
+</ui-drawer>

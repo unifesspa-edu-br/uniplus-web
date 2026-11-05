@@ -13,6 +13,8 @@ interface Cursores {
   readonly proximo: Cursor | null;
 }
 
+type ListaPaginada<T> = Pick<UseApiResourceRef<readonly T[]>, 'value' | 'headers' | 'isLoading'>;
+
 const SEM_CURSORES: Cursores = { anterior: null, proximo: null };
 
 /** Itens da página corrente de uma listagem por cursor e a navegação entre as páginas. */
@@ -31,7 +33,7 @@ export interface NavegacaoPorCursor<T> {
  * falha na primeira página esvazia, e numa página navegada preserva a página atual.
  */
 function derivadoDaResposta<T, R>(
-  lista: UseApiResourceRef<readonly T[]>,
+  lista: ListaPaginada<T>,
   pagina: Signal<CursorPagina | undefined>,
   vazio: R,
   derivar: (dados: readonly T[]) => R,
@@ -53,7 +55,7 @@ function derivadoDaResposta<T, R>(
 
 /** Deriva de uma listagem por `useApiResource` os itens e os cursores do header `Link`. */
 export function navegacaoPorCursor<T>(
-  lista: UseApiResourceRef<readonly T[]>,
+  lista: ListaPaginada<T>,
   pagina: WritableSignal<CursorPagina | undefined>,
 ): NavegacaoPorCursor<T> {
   const cursores = derivadoDaResposta<T, Cursores>(lista, pagina, SEM_CURSORES, () => {

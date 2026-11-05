@@ -1,0 +1,87 @@
+<section class="panel" aria-labelledby="cfg-decisoes-titulo" [attr.aria-busy]="carregando()">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-decisoes-titulo">Decisões registradas</h2>
+      @if (carregando()) {
+        <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+  </div>
+
+  @if (itens().length > 0) {
+    <div class="table-responsive" role="region" tabindex="0" aria-label="Decisões registradas">
+      <table>
+        <caption class="sr-only">
+          Decisões da proteção de dados do catálogo, da mais recente à mais antiga. Use o nome do
+          item para abrir a decisão.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Item</th>
+            <th scope="col">Cadastro</th>
+            <th scope="col">Decisão</th>
+            <th scope="col">Sensibilidade conferida</th>
+            <th scope="col">Data</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (decisao of itens(); track chaveDe(decisao)) {
+            <tr>
+              <td data-label="Item" class="u-nowrap-desktop">
+                <button
+                  type="button"
+                  class="table-responsive__alvo"
+                  [attr.aria-label]="'Ver a decisão sobre ' + decisao.itemNome"
+                  (click)="abrir.emit(decisao)"
+                >
+                  {{ decisao.itemNome }}
+                </button>
+              </td>
+              <td data-label="Cadastro" class="u-nowrap-desktop">
+                {{ cadastro(decisao.cadastro) }}
+              </td>
+              <td data-label="Decisão" class="u-nowrap-desktop">
+                <ui-tag [variant]="rotuloDoAto(decisao.ato).variante">{{
+                  rotuloDoAto(decisao.ato).texto
+                }}</ui-tag>
+              </td>
+              <td data-label="Sensibilidade conferida" class="u-nowrap-desktop">
+                {{ rotulo(classificacoes, decisao.classificacaoProtecao) }}
+              </td>
+              <td data-label="Data" class="u-nowrap-desktop">{{ data(decisao.instante) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !mensagemDeErro()) {
+    @if (temFiltro()) {
+      <ui-empty-state
+        heading="Nenhuma decisão encontrada"
+        description="Nenhuma decisão corresponde aos filtros. Ajuste ou limpe os filtros."
+      >
+        <button type="button" class="btn btn--secondary" (click)="limpar.emit()">
+          Limpar filtros
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhuma decisão registrada"
+        description="Quando a proteção de dados aprovar, recomendar ajuste ou reprovar um item, a decisão aparece aqui."
+      />
+    }
+  }
+
+  <ui-list-footer
+    navigationLabel="Paginação das decisões"
+    [pageSizeOptions]="opcoesDeLimite"
+    [pageSize]="limite()"
+    (pageSizeChange)="trocarLimite.emit($event)"
+    [hasRows]="itens().length > 0"
+    [hasPrevious]="temAnterior()"
+    [hasNext]="temProximo()"
+    [isDisabled]="carregando()"
+    (previous)="anterior.emit()"
+    (next)="proximo.emit()"
+  />
+</section>

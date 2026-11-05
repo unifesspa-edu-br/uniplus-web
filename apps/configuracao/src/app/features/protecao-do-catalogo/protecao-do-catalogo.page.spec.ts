@@ -1,3 +1,4 @@
+import { EdicaoDaProtecaoDoCatalogo } from './edicao-da-protecao-do-catalogo';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, signal } from '@angular/core';
@@ -59,7 +60,9 @@ const detalheDoLaudo: DetalheDaProtecaoDoCatalogoDto = {
 };
 
 /** O detalhe do fato de texto, que não admite classificação abaixo de pessoal. */
-const detalheDoFato = (extra: Partial<DetalheDaProtecaoDoCatalogoDto> = {}): DetalheDaProtecaoDoCatalogoDto => ({
+const detalheDoFato = (
+  extra: Partial<DetalheDaProtecaoDoCatalogoDto> = {},
+): DetalheDaProtecaoDoCatalogoDto => ({
   ...rural,
   descricao: 'Se o candidato mora em área rural.',
   tipoDocumento: null,
@@ -70,7 +73,11 @@ const detalheDoFato = (extra: Partial<DetalheDaProtecaoDoCatalogoDto> = {}): Det
     sistema: false,
     componenteExibicao: null,
     valores: [
-      { codigo: 'SIM_RURAL', descricao: 'Mora em área rural', orientacao: 'Considere o endereço do comprovante.' },
+      {
+        codigo: 'SIM_RURAL',
+        descricao: 'Mora em área rural',
+        orientacao: 'Considere o endereço do comprovante.',
+      },
       { codigo: 'NAO_RURAL', descricao: 'Não mora em área rural', orientacao: null },
     ],
   },
@@ -98,7 +105,10 @@ describe('ProtecaoDoCatalogoPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-        { provide: PermissoesService, useValue: { tem: (codigo: string) => concedidas().includes(codigo) } },
+        {
+          provide: PermissoesService,
+          useValue: { tem: (codigo: string) => concedidas().includes(codigo) },
+        },
       ],
     });
     fixture = TestBed.createComponent(ProtecaoDoCatalogoPage);
@@ -133,7 +143,9 @@ describe('ProtecaoDoCatalogoPage', () => {
     item: ItemDaProtecaoDoCatalogoDto,
     detalhe: DetalheDaProtecaoDoCatalogoDto,
   ): Promise<void> {
-    tela.querySelector<HTMLButtonElement>(`td button[aria-label="Ver o detalhe de ${item.nome}"]`)?.click();
+    tela
+      .querySelector<HTMLButtonElement>(`td button[aria-label="Ver o detalhe de ${item.nome}"]`)
+      ?.click();
     fixture.detectChanges();
     const segmento = item.tipo === 'FATO' ? 'fatos' : 'tipos-documento';
     controller.expectOne(`${URL}/${segmento}/${item.id}`).flush(detalhe);
@@ -142,14 +154,14 @@ describe('ProtecaoDoCatalogoPage', () => {
 
   const drawer = (tela: HTMLElement) => tela.querySelector('dialog[aria-label^="Detalhe do item"]');
   const botaoDoRodape = (tela: HTMLElement, nome: string): HTMLButtonElement | undefined =>
-    Array.from(drawer(tela)?.querySelectorAll<HTMLButtonElement>('.form-drawer__footer button') ?? []).find(
-      (b) => b.textContent?.trim() === nome,
-    );
+    Array.from(
+      drawer(tela)?.querySelectorAll<HTMLButtonElement>('.form-drawer__footer button') ?? [],
+    ).find((b) => b.textContent?.trim() === nome);
   const dialogo = (tela: HTMLElement) => tela.querySelector('ui-dialog dialog');
   const confirmar = (tela: HTMLElement, rotulo: string): HTMLButtonElement | undefined =>
-    Array.from(dialogo(tela)?.querySelectorAll<HTMLButtonElement>('.uni-dialog__footer button') ?? []).find(
-      (b) => b.textContent?.trim() === rotulo,
-    );
+    Array.from(
+      dialogo(tela)?.querySelectorAll<HTMLButtonElement>('.uni-dialog__footer button') ?? [],
+    ).find((b) => b.textContent?.trim() === rotulo);
   const campoDaJustificativa = (tela: HTMLElement): HTMLTextAreaElement =>
     tela.querySelector('dialog textarea') as HTMLTextAreaElement;
   const digitar = (campo: HTMLTextAreaElement, texto: string): void => {
@@ -161,11 +173,9 @@ describe('ProtecaoDoCatalogoPage', () => {
   it('lista só Cadastro, Item e Sensibilidade, sem código, hipótese, finalidade nem botões', async () => {
     const tela = await carregar([laudo, rural]);
 
-    expect(Array.from(tela.querySelectorAll('thead th')).map((th) => th.textContent?.trim())).toEqual([
-      'Cadastro',
-      'Item',
-      'Sensibilidade',
-    ]);
+    expect(
+      Array.from(tela.querySelectorAll('thead th')).map((th) => th.textContent?.trim()),
+    ).toEqual(['Cadastro', 'Item', 'Sensibilidade']);
     const lista = tela.querySelector('.table-responsive')?.textContent?.replace(/\s+/gu, ' ') ?? '';
     expect(lista).toContain('Laudo médico complementar');
     expect(lista).toContain('Interno');
@@ -174,7 +184,11 @@ describe('ProtecaoDoCatalogoPage', () => {
     expect(lista).not.toContain('Execução de políticas públicas');
     expect(lista).not.toContain('Conferir o laudo');
     expect(tela.querySelector('td button.btn')).toBeNull();
-    expect(Array.from(tela.querySelectorAll('tbody td')).every((td) => td.classList.contains('u-nowrap-desktop'))).toBe(true);
+    expect(
+      Array.from(tela.querySelectorAll('tbody td')).every((td) =>
+        td.classList.contains('u-nowrap-desktop'),
+      ),
+    ).toBe(true);
   });
 
   it('o texto de abertura é curto e não cita o rótulo interno do requisito', async () => {
@@ -194,11 +208,15 @@ describe('ProtecaoDoCatalogoPage', () => {
     alvo?.click();
     fixture.detectChanges();
     const pedido = controller.expectOne(`${URL}/tipos-documento/${laudo.id}`);
-    expect(pedido.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-detalhe', 1));
+    expect(pedido.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('protecao-do-catalogo-detalhe', 1),
+    );
     pedido.flush(detalheDoLaudo);
     await assentar();
 
-    expect(drawer(tela)?.querySelector('.uni-drawer__title')?.textContent?.trim()).toBe('Laudo médico complementar');
+    expect(drawer(tela)?.querySelector('.uni-drawer__title')?.textContent?.trim()).toBe(
+      'Laudo médico complementar',
+    );
   });
 
   it('o detalhe do tipo de documento mostra a proposta, o que é o item e o código só ao fim', async () => {
@@ -218,12 +236,11 @@ describe('ProtecaoDoCatalogoPage', () => {
     expect(texto).toContain('Código no sistema: LAUDO_MEDICO_COMPLEMENTAR');
     expect(texto.indexOf('Código no sistema')).toBeGreaterThan(texto.indexOf('O que é o item'));
     expect(texto.indexOf('O que é o item')).toBeGreaterThan(texto.indexOf('Proposta de proteção'));
-    expect(Array.from(drawer(tela)?.querySelectorAll('.form-drawer__footer button') ?? []).map((b) => b.textContent?.trim())).toEqual([
-      'Fechar',
-      'Reprovar',
-      'Recomendar ajuste',
-      'Aprovar',
-    ]);
+    expect(
+      Array.from(drawer(tela)?.querySelectorAll('.form-drawer__footer button') ?? []).map((b) =>
+        b.textContent?.trim(),
+      ),
+    ).toEqual(['Fechar', 'Reprovar', 'Recomendar ajuste', 'Aprovar']);
   });
 
   it('o detalhe do fato mostra o tipo do dado, a cardinalidade e os valores possíveis com a orientação', async () => {
@@ -244,7 +261,13 @@ describe('ProtecaoDoCatalogoPage', () => {
     fixture.detectChanges();
     controller
       .expectOne(`${URL}/tipos-documento/${laudo.id}`)
-      .flush(...recusa(404, 'uniplus.configuracao.protecao_do_catalogo.item_nao_encontrado', 'Item não encontrado'));
+      .flush(
+        ...recusa(
+          404,
+          'uniplus.configuracao.protecao_do_catalogo.item_nao_encontrado',
+          'Item não encontrado',
+        ),
+      );
     await assentar();
 
     const painel = drawer(tela);
@@ -256,7 +279,10 @@ describe('ProtecaoDoCatalogoPage', () => {
 
   it('item que não está em análise não oferece decisão', async () => {
     const tela = await carregar([laudo]);
-    await abrir(tela, laudo, { ...detalheDoLaudo, aprovacao: { ...SOLICITADA, situacao: 'APROVADA' } });
+    await abrir(tela, laudo, {
+      ...detalheDoLaudo,
+      aprovacao: { ...SOLICITADA, situacao: 'APROVADA' },
+    });
 
     expect(botaoDoRodape(tela, 'Aprovar')).toBeUndefined();
     expect(botaoDoRodape(tela, 'Reprovar')).toBeUndefined();
@@ -283,8 +309,29 @@ describe('ProtecaoDoCatalogoPage', () => {
     controller.expectOne((r) => r.method === 'GET' && r.url === URL).flush([]);
     await assentar();
     expect(tela.textContent).toContain('Nenhum item aguardando a sua decisão');
-    expect(component['detalheAberto']()).toBe(false);
+    expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).detalheAberto()).toBe(false);
     expect(document.activeElement?.id).toBe('cfg-protecao-titulo');
+  });
+
+  it('bloqueia novas decisões e o fechamento enquanto a gravação está pendente', async () => {
+    const tela = await carregar([laudo]);
+    await abrir(tela, laudo, detalheDoLaudo);
+    const edicao = fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo);
+    edicao.aprovar();
+    const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
+
+    edicao.aprovar();
+    edicao.abrirDecisao('REPROVAR');
+    edicao.fecharDetalhe();
+    expect(edicao.detalheAberto()).toBe(true);
+    expect(edicao.decisaoAberta()).toBe(false);
+    controller.expectNone((r) => r.method === 'POST');
+
+    post.flush(null, { status: 204, statusText: 'No Content' });
+    await assentar();
+    controller.expectOne((r) => r.method === 'GET' && r.url === URL).flush([]);
+    await assentar();
+    expect(edicao.detalheAberto()).toBe(false);
   });
 
   describe('recomendar ajuste', () => {
@@ -305,7 +352,9 @@ describe('ProtecaoDoCatalogoPage', () => {
       await assentar();
 
       controller.expectNone((r) => r.method === 'POST');
-      expect(tela.querySelector('#cfg-ajuste-erro')?.textContent).toContain('Indique a classificação recomendada.');
+      expect(tela.querySelector('#cfg-ajuste-erro')?.textContent).toContain(
+        'Indique a classificação recomendada.',
+      );
       const campo = dialogo(tela)?.querySelector('select');
       expect(document.activeElement, 'o foco vai ao seletor').toBe(campo);
       expect(campo?.getAttribute('aria-describedby')).toContain('cfg-ajuste-erro');
@@ -314,7 +363,9 @@ describe('ProtecaoDoCatalogoPage', () => {
     it('oferece só a classificação que a hipótese legal e o tipo do dado admitem, sem a atual', async () => {
       const tela = await abrirDialogo();
 
-      const opcoes = Array.from(dialogo(tela)?.querySelectorAll<HTMLOptionElement>('select option') ?? []).map((o) => o.value);
+      const opcoes = Array.from(
+        dialogo(tela)?.querySelectorAll<HTMLOptionElement>('select option') ?? [],
+      ).map((o) => o.value);
       expect(opcoes).toContain('SENSIVEL');
       expect(opcoes).not.toContain('INTERNO');
     });
@@ -324,11 +375,19 @@ describe('ProtecaoDoCatalogoPage', () => {
         rural,
         detalheDoFato({
           classificacaoProtecao: 'SENSIVEL',
-          fato: { dominio: 'TEXTO', cardinalidade: 'ESCALAR', sistema: false, componenteExibicao: null, valores: [] },
+          fato: {
+            dominio: 'TEXTO',
+            cardinalidade: 'ESCALAR',
+            sistema: false,
+            componenteExibicao: null,
+            valores: [],
+          },
         }),
       );
 
-      const opcoes = Array.from(dialogo(tela)?.querySelectorAll<HTMLOptionElement>('select option') ?? []).map((o) => o.value);
+      const opcoes = Array.from(
+        dialogo(tela)?.querySelectorAll<HTMLOptionElement>('select option') ?? [],
+      ).map((o) => o.value);
       expect(opcoes).toContain('PESSOAL');
       expect(opcoes).not.toContain('PUBLICO');
       expect(opcoes).not.toContain('INTERNO');
@@ -341,14 +400,21 @@ describe('ProtecaoDoCatalogoPage', () => {
         hipoteseLegal: 'INTERESSE_LEGITIMO',
       });
 
-      const opcoes = Array.from(dialogo(tela)?.querySelectorAll<HTMLOptionElement>('select option') ?? []).map((o) => o.value);
-      expect(opcoes, 'interesse legítimo é só do art. 7º: o dado sensível não o admite').not.toContain('SENSIVEL');
+      const opcoes = Array.from(
+        dialogo(tela)?.querySelectorAll<HTMLOptionElement>('select option') ?? [],
+      ).map((o) => o.value);
+      expect(
+        opcoes,
+        'interesse legítimo é só do art. 7º: o dado sensível não o admite',
+      ).not.toContain('SENSIVEL');
       expect(opcoes).toContain('INTERNO');
     });
 
     it('envia a classificação recomendada com a justificativa aparada, que é opcional', async () => {
       const tela = await abrirDialogo();
-      component['recomendada'].setValue('SENSIVEL');
+      fixture.debugElement.injector
+        .get(EdicaoDaProtecaoDoCatalogo)
+        .recomendada.setValue('SENSIVEL');
       digitar(campoDaJustificativa(tela), '  O laudo traz dado de saúde.  ');
 
       confirmar(tela, 'Recomendar ajuste')?.click();
@@ -367,7 +433,9 @@ describe('ProtecaoDoCatalogoPage', () => {
 
     it('sem justificativa envia o ajuste com a justificativa nula', async () => {
       const tela = await abrirDialogo();
-      component['recomendada'].setValue('SENSIVEL');
+      fixture.debugElement.injector
+        .get(EdicaoDaProtecaoDoCatalogo)
+        .recomendada.setValue('SENSIVEL');
       digitar(campoDaJustificativa(tela), '   ');
 
       confirmar(tela, 'Recomendar ajuste')?.click();
@@ -381,7 +449,7 @@ describe('ProtecaoDoCatalogoPage', () => {
 
     it('a recusa da API fica no diálogo, com a mensagem, e a lista não é relida', async () => {
       const tela = await abrirDialogo();
-      component['recomendada'].setValue('PUBLICO');
+      fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).recomendada.setValue('PUBLICO');
       confirmar(tela, 'Recomendar ajuste')?.click();
 
       controller
@@ -395,8 +463,12 @@ describe('ProtecaoDoCatalogoPage', () => {
         );
       await assentar();
 
-      expect(component['decisaoAberta']()).toBe(true);
-      expect(component['erroDaDecisaoNoDialogo']()).toBe('A base legal do item não cabe na classificação recomendada');
+      expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).decisaoAberta()).toBe(
+        true,
+      );
+      expect(
+        fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).erroDaDecisaoNoDialogo(),
+      ).toBe('A base legal do item não cabe na classificação recomendada');
     });
   });
 
@@ -409,6 +481,32 @@ describe('ProtecaoDoCatalogoPage', () => {
       return tela;
     };
 
+    it('mantém a decisão em andamento acessível e impede uma segunda gravação', async () => {
+      const tela = await abrirDialogo();
+      const campo = campoDaJustificativa(tela);
+      digitar(campo, 'Falta a base legal.');
+      const botao = confirmar(tela, 'Reprovar item') as HTMLButtonElement;
+      botao.focus();
+      botao.click();
+      fixture.detectChanges();
+      const requisicao = controller.expectOne((r) => r.url === URL && r.method === 'POST');
+
+      expect(campo.matches(':disabled')).toBe(true);
+      expect(campo.value).toBe('Falta a base legal.');
+      expect(botao.getAttribute('aria-disabled')).toBe('true');
+      expect(botao.getAttribute('aria-busy')).toBe('true');
+      expect(document.activeElement).toBe(botao);
+      expect(dialogo(tela)?.querySelector('[role="status"]')?.textContent).toContain(
+        'Registrando decisão',
+      );
+      botao.click();
+      controller.expectNone((r) => r.url === URL && r.method === 'POST');
+      requisicao.flush(null);
+      await assentar();
+      controller.expectOne((r) => r.url === URL && r.method === 'GET').flush([]);
+      await assentar();
+    });
+
     it('exige a justificativa: em branco não envia, o erro fica associado ao campo e o foco vai a ele', async () => {
       const tela = await abrirDialogo();
       digitar(campoDaJustificativa(tela), '   ');
@@ -419,7 +517,9 @@ describe('ProtecaoDoCatalogoPage', () => {
 
       controller.expectNone((r) => r.method === 'POST');
       const campo = campoDaJustificativa(tela);
-      expect(tela.querySelector('#cfg-justificativa-erro')?.textContent).toContain('Informe a justificativa da reprovação.');
+      expect(tela.querySelector('#cfg-justificativa-erro')?.textContent).toContain(
+        'Informe a justificativa da reprovação.',
+      );
       expect(campo.getAttribute('aria-invalid')).toBe('true');
       expect(campo.getAttribute('aria-describedby')).toContain('cfg-justificativa-erro');
       expect(campo.getAttribute('aria-required')).toBe('true');
@@ -430,9 +530,13 @@ describe('ProtecaoDoCatalogoPage', () => {
       const tela = await abrirDialogo();
 
       expect(campoDaJustificativa(tela).getAttribute('maxlength')).toBe('2000');
-      expect(tela.querySelector('#cfg-justificativa-contador')?.textContent?.trim()).toBe('0 de 2.000');
+      expect(tela.querySelector('#cfg-justificativa-contador')?.textContent?.trim()).toBe(
+        '0 de 2.000',
+      );
       digitar(campoDaJustificativa(tela), 'Falta a base legal.');
-      expect(tela.querySelector('#cfg-justificativa-contador')?.textContent?.trim()).toBe('19 de 2.000');
+      expect(tela.querySelector('#cfg-justificativa-contador')?.textContent?.trim()).toBe(
+        '19 de 2.000',
+      );
     });
 
     it('acima de 2.000 caracteres não envia e informa o limite no campo', async () => {
@@ -443,7 +547,9 @@ describe('ProtecaoDoCatalogoPage', () => {
       fixture.detectChanges();
 
       controller.expectNone((r) => r.method === 'POST');
-      expect(tela.querySelector('#cfg-justificativa-erro')?.textContent).toContain('A justificativa aceita até 2.000 caracteres.');
+      expect(tela.querySelector('#cfg-justificativa-erro')?.textContent).toContain(
+        'A justificativa aceita até 2.000 caracteres.',
+      );
     });
 
     it('envia a justificativa aparada, sem classificação recomendada', async () => {
@@ -453,7 +559,10 @@ describe('ProtecaoDoCatalogoPage', () => {
       confirmar(tela, 'Reprovar item')?.click();
 
       const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
-      expect(post.request.body).toMatchObject({ decisao: 'REPROVAR', justificativa: 'Falta a base legal.' });
+      expect(post.request.body).toMatchObject({
+        decisao: 'REPROVAR',
+        justificativa: 'Falta a base legal.',
+      });
       expect(post.request.body.classificacaoRecomendada).toBeUndefined();
       post.flush(null, { status: 204, statusText: 'No Content' });
       await assentar();
@@ -472,8 +581,10 @@ describe('ProtecaoDoCatalogoPage', () => {
   it('a leitura nova cancela a em voo: a resposta velha não prevalece', async () => {
     await carregar([]);
     component['carregar']();
+    await assentar();
     const velha = controller.expectOne((r) => r.method === 'GET' && r.url === URL);
     component['carregar']();
+    await assentar();
     expect(velha.cancelled).toBe(true);
     controller.expectOne((r) => r.method === 'GET' && r.url === URL).flush([laudo]);
     await assentar();
@@ -497,11 +608,13 @@ describe('ProtecaoDoCatalogoPage', () => {
       );
     await assentar();
 
-    controller.expectOne((r) => r.method === 'GET' && r.url === URL).flush([{ ...laudo, classificacaoProtecao: 'SENSIVEL' }]);
+    controller
+      .expectOne((r) => r.method === 'GET' && r.url === URL)
+      .flush([{ ...laudo, classificacaoProtecao: 'SENSIVEL' }]);
     await assentar();
     expect(tela.textContent).toContain('A proteção do item mudou desde a leitura');
     expect(tela.textContent).toContain('Pessoal sensível');
-    expect(component['detalheAberto']()).toBe(false);
+    expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).detalheAberto()).toBe(false);
     controller.expectNone((r) => r.method === 'POST');
   });
 
@@ -533,10 +646,16 @@ describe('ProtecaoDoCatalogoPage', () => {
 
     controller
       .expectOne((r) => r.method === 'POST' && r.url === URL)
-      .flush(...recusa(422, 'uniplus.configuracao.protecao_do_catalogo.hipotese_incompativel', 'A hipótese legal não cabe na classificação'));
+      .flush(
+        ...recusa(
+          422,
+          'uniplus.configuracao.protecao_do_catalogo.hipotese_incompativel',
+          'A hipótese legal não cabe na classificação',
+        ),
+      );
     await assentar();
 
-    expect(component['detalheAberto']()).toBe(true);
+    expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).detalheAberto()).toBe(true);
     expect(drawer(tela)?.textContent).toContain('A hipótese legal não cabe na classificação');
   });
 
@@ -544,7 +663,10 @@ describe('ProtecaoDoCatalogoPage', () => {
     const tela = await carregar([laudo]);
     await abrir(tela, laudo, detalheDoLaudo);
     const falha = (status: number) =>
-      [JSON.stringify({ status, title: 'Falha' }), { status, statusText: 'Falha', headers: { 'content-type': 'application/problem+json' } }] as const;
+      [
+        JSON.stringify({ status, title: 'Falha' }),
+        { status, statusText: 'Falha', headers: { 'content-type': 'application/problem+json' } },
+      ] as const;
     const postar = () => {
       botaoDoRodape(tela, 'Aprovar')?.click();
       return controller.expectOne((r) => r.method === 'POST' && r.url === URL);
@@ -575,7 +697,9 @@ describe('ProtecaoDoCatalogoPage', () => {
     expect(botaoDoRodape(tela, 'Aprovar')).toBeUndefined();
     expect(botaoDoRodape(tela, 'Recomendar ajuste')).toBeUndefined();
     expect(botaoDoRodape(tela, 'Reprovar')).toBeUndefined();
-    expect(drawer(tela)?.querySelector('.uni-drawer__title')?.textContent?.trim()).toBe('Laudo médico complementar');
+    expect(drawer(tela)?.querySelector('.uni-drawer__title')?.textContent?.trim()).toBe(
+      'Laudo médico complementar',
+    );
   });
 
   describe('abas e a lista de aguardando', () => {
@@ -584,11 +708,12 @@ describe('ProtecaoDoCatalogoPage', () => {
     it('ao abrir direto em ?aba=decisoes não lê a lista de aguardando decisão', async () => {
       controller.expectOne((r) => r.url === URL).flush([]);
       await router().navigateByUrl('/?aba=decisoes');
-      await fixture.whenStable();
+      await assentar();
       controller.expectOne((r) => r.url === `${URL}/decisoes`).flush([]);
 
       const outra = TestBed.createComponent(ProtecaoDoCatalogoPage);
       outra.detectChanges();
+      controller.match((r) => r.url === `${URL}/decisoes`).forEach((req) => req.flush([]));
       await outra.whenStable();
 
       expect(controller.match((r) => r.url === URL)).toHaveLength(0);
@@ -598,20 +723,25 @@ describe('ProtecaoDoCatalogoPage', () => {
     it('ao voltar para "Aguardando decisão" relê a lista', async () => {
       controller.expectOne((r) => r.url === URL).flush([]);
       await router().navigateByUrl('/?aba=decisoes');
-      await fixture.whenStable();
+      await assentar();
       controller.expectOne((r) => r.url === `${URL}/decisoes`).flush([]);
       await assentar();
 
-      const botao = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button')).find(
-        (b) => b.textContent?.trim() === 'Aguardando decisão',
-      );
+      const botao = Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
+      ).find((b) => b.textContent?.trim() === 'Aguardando decisão');
       botao?.click();
-      await fixture.whenStable();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await assentar();
       await assentar();
 
-      controller.expectOne((r) => r.url === URL && r.params.get('situacao') === 'SOLICITADA').flush([laudo]);
+      controller
+        .expectOne((r) => r.url === URL && r.params.get('situacao') === 'SOLICITADA')
+        .flush([laudo]);
       await assentar();
-      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Laudo médico complementar');
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+        'Laudo médico complementar',
+      );
     });
   });
 
@@ -649,10 +779,12 @@ describe('ProtecaoDoCatalogoPage', () => {
     const router = (): Router => TestBed.inject(Router);
     /** A navegação do roteador termina em outra tarefa: espera por ela antes de olhar a tela. */
     const navegar = async (): Promise<void> => {
-      await fixture.whenStable();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await assentar();
       await assentar();
     };
-    const esperar = (ms: number): Promise<void> => new Promise((resolver) => setTimeout(resolver, ms));
+    const esperar = (ms: number): Promise<void> =>
+      new Promise((resolver) => setTimeout(resolver, ms));
 
     /** Abre a aba pelo endereço, como o link ou o botão de voltar a trazem, e atende a primeira página. */
     async function abrirAba(
@@ -669,7 +801,9 @@ describe('ProtecaoDoCatalogoPage', () => {
     }
 
     const botoes = (tela: HTMLElement, texto: string): HTMLButtonElement[] =>
-      Array.from(tela.querySelectorAll<HTMLButtonElement>('button')).filter((b) => b.textContent?.trim() === texto);
+      Array.from(tela.querySelectorAll<HTMLButtonElement>('button')).filter(
+        (b) => b.textContent?.trim() === texto,
+      );
     const decisoesPendentes = () => controller.match((r) => r.url === DECISOES);
 
     it('abre em "Aguardando decisão" e a troca de aba vai para a query string', async () => {
@@ -683,27 +817,33 @@ describe('ProtecaoDoCatalogoPage', () => {
 
       expect(router().url).toBe('/?aba=decisoes');
       expect(botoes(tela, 'Decisões')[0].getAttribute('aria-pressed')).toBe('true');
-      expect(tela.querySelector('.page-header__desc')?.textContent).toContain('decisões já registradas');
+      expect(tela.querySelector('.page-header__desc')?.textContent).toContain(
+        'decisões já registradas',
+      );
       const pedido = controller.expectOne((r) => r.url === DECISOES);
       expect(pedido.request.params.get('limit')).toBe('25');
-      expect(pedido.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-decisao', 1));
+      expect(pedido.request.headers.get('Accept')).toBe(
+        buildVendorMimeAccept('protecao-do-catalogo-decisao', 1),
+      );
       pedido.flush([]);
     });
 
     it('lista Item, Cadastro, Decisão, Sensibilidade conferida e Data, sem quebra de linha no desktop', async () => {
       const tela = await abrirAba('?aba=decisoes');
 
-      expect(Array.from(tela.querySelectorAll('thead th')).map((th) => th.textContent?.trim())).toEqual([
-        'Item',
-        'Cadastro',
-        'Decisão',
-        'Sensibilidade conferida',
-        'Data',
-      ]);
-      const linha = Array.from(tela.querySelectorAll('tbody tr')).map((tr) => tr.textContent?.replace(/\s+/gu, ' ').trim());
+      expect(
+        Array.from(tela.querySelectorAll('thead th')).map((th) => th.textContent?.trim()),
+      ).toEqual(['Item', 'Cadastro', 'Decisão', 'Sensibilidade conferida', 'Data']);
+      const linha = Array.from(tela.querySelectorAll('tbody tr')).map((tr) =>
+        tr.textContent?.replace(/\s+/gu, ' ').trim(),
+      );
       expect(linha[0]).toBe('Renda familiar bruta Fato do candidato Reprovação Pessoal 31/10/2026');
       expect(linha[1]).toContain('Ajuste recomendado');
-      expect(Array.from(tela.querySelectorAll('tbody td')).every((td) => td.classList.contains('u-nowrap-desktop'))).toBe(true);
+      expect(
+        Array.from(tela.querySelectorAll('tbody td')).every((td) =>
+          td.classList.contains('u-nowrap-desktop'),
+        ),
+      ).toBe(true);
       expect(tela.querySelector('tbody .table-responsive__alvo')?.getAttribute('aria-label')).toBe(
         'Ver a decisão sobre Renda familiar bruta',
       );
@@ -732,9 +872,13 @@ describe('ProtecaoDoCatalogoPage', () => {
       expect(botoes(tela, 'Fato do candidato')[0].getAttribute('aria-pressed')).toBe('true');
       expect(tela.querySelector<HTMLInputElement>('input[type="search"]')?.value).toBe('renda');
       expect(tela.querySelector<HTMLInputElement>('.checkbox input')?.checked).toBe(true);
-      const datas = Array.from(tela.querySelectorAll<HTMLInputElement>('input[type="date"]')).map((i) => i.value);
+      const datas = Array.from(tela.querySelectorAll<HTMLInputElement>('input[type="date"]')).map(
+        (i) => i.value,
+      );
       expect(datas).toEqual(['2026-10-01', '2026-10-31']);
-      expect(tela.querySelector('.filter-bar__titulo')?.parentElement?.getAttribute('aria-label')).toContain('4 ativos');
+      expect(
+        tela.querySelector('.filter-bar__titulo')?.parentElement?.getAttribute('aria-label'),
+      ).toContain('4 ativos');
     });
 
     it('escolher uma decisão, um cadastro e "só as minhas" atualiza a URL e relê a primeira página', async () => {
@@ -750,12 +894,16 @@ describe('ProtecaoDoCatalogoPage', () => {
 
       botoes(tela, 'Fato do candidato')[0].click();
       await navegar();
-      controller.expectOne((r) => r.url === DECISOES && r.params.get('cadastro') === 'FATO').flush([decisaoDoFato]);
+      controller
+        .expectOne((r) => r.url === DECISOES && r.params.get('cadastro') === 'FATO')
+        .flush([decisaoDoFato]);
       await assentar();
 
       tela.querySelector<HTMLInputElement>('.checkbox input')?.click();
       await navegar();
-      controller.expectOne((r) => r.url === DECISOES && r.params.get('minhas') === 'true').flush([]);
+      controller
+        .expectOne((r) => r.url === DECISOES && r.params.get('minhas') === 'true')
+        .flush([]);
       await assentar();
       expect(router().url).toBe('/?aba=decisoes&ato=REPROVACAO&cadastro=FATO&minhas=true');
 
@@ -772,15 +920,27 @@ describe('ProtecaoDoCatalogoPage', () => {
       de.value = '2026-10-15';
       de.dispatchEvent(new Event('change'));
       await navegar();
-      const emVoo = controller.expectOne((r) => r.url === DECISOES && r.params.get('de') === '2026-10-15');
+      const emVoo = controller.expectOne(
+        (r) => r.url === DECISOES && r.params.get('de') === '2026-10-15',
+      );
       ate.value = '2026-10-01';
       ate.dispatchEvent(new Event('change'));
       await navegar();
+      await assentar();
 
       expect(emVoo.cancelled).toBe(true);
       expect(tela.querySelector('[aria-busy="true"]')).toBeNull();
       expect(tela.querySelector('tbody')).toBeNull();
       expect(decisoesPendentes()).toHaveLength(0);
+
+      ate.value = '2026-10-20';
+      ate.dispatchEvent(new Event('change'));
+      await navegar();
+      controller
+        .expectOne((r) => r.url === DECISOES && r.params.get('ate') === '2026-10-20')
+        .flush([decisaoDoFato]);
+      await assentar();
+      expect(tela.querySelector('tbody')?.textContent).toContain(decisaoDoFato.itemNome);
     });
 
     it('o período vai à API e a data final antes da inicial avisa sem pedir', async () => {
@@ -790,20 +950,26 @@ describe('ProtecaoDoCatalogoPage', () => {
       de.value = '2026-10-15';
       de.dispatchEvent(new Event('change'));
       await navegar();
-      controller.expectOne((r) => r.url === DECISOES && r.params.get('de') === '2026-10-15').flush([]);
+      controller
+        .expectOne((r) => r.url === DECISOES && r.params.get('de') === '2026-10-15')
+        .flush([]);
       await assentar();
 
       ate.value = '2026-10-01';
       ate.dispatchEvent(new Event('change'));
       await navegar();
       expect(decisoesPendentes()).toHaveLength(0);
-      expect(tela.querySelector('#cfg-dec-periodo-erro')?.textContent).toContain('igual ou posterior');
+      expect(tela.querySelector('#cfg-dec-periodo-erro')?.textContent).toContain(
+        'igual ou posterior',
+      );
       expect(ate.getAttribute('aria-invalid')).toBe('true');
     });
 
     it('a busca espera a pessoa parar de digitar e vai à URL', async () => {
       const tela = await abrirAba('?aba=decisoes');
-      const campo = tela.querySelector<HTMLInputElement>('input[type="search"]') as HTMLInputElement;
+      const campo = tela.querySelector<HTMLInputElement>(
+        'input[type="search"]',
+      ) as HTMLInputElement;
 
       campo.value = 'ren';
       campo.dispatchEvent(new Event('input'));
@@ -814,7 +980,9 @@ describe('ProtecaoDoCatalogoPage', () => {
 
       await esperar(400);
       await assentar();
-      controller.expectOne((r) => r.url === DECISOES && r.params.get('busca') === 'renda').flush([decisaoDoFato]);
+      controller
+        .expectOne((r) => r.url === DECISOES && r.params.get('busca') === 'renda')
+        .flush([decisaoDoFato]);
       await assentar();
       expect(router().url).toBe('/?aba=decisoes&busca=renda');
     });
@@ -829,7 +997,9 @@ describe('ProtecaoDoCatalogoPage', () => {
       expect(proxima.request.params.get('direction')).toBe('next');
       expect(proxima.request.params.get('cadastro')).toBe('FATO');
       expect(proxima.request.params.has('limit')).toBe(false);
-      proxima.flush([decisaoDoTipo], { headers: { Link: '</api/x?cursor=ANT&direction=prev>; rel="prev"' } });
+      proxima.flush([decisaoDoTipo], {
+        headers: { Link: '</api/x?cursor=ANT&direction=prev>; rel="prev"' },
+      });
       await assentar();
       expect(tela.querySelector('tbody')?.textContent).toContain('Laudo médico complementar');
 
@@ -849,7 +1019,9 @@ describe('ProtecaoDoCatalogoPage', () => {
       (seletor as HTMLSelectElement).value = '50';
       (seletor as HTMLSelectElement).dispatchEvent(new Event('change'));
       await navegar();
-      expect(controller.expectOne((r) => r.url === DECISOES).request.params.get('limit')).toBe('50');
+      expect(controller.expectOne((r) => r.url === DECISOES).request.params.get('limit')).toBe(
+        '50',
+      );
     });
 
     it('sem resultado, com filtro, oferece limpar os filtros e a URL volta ao início da aba', async () => {
@@ -859,7 +1031,11 @@ describe('ProtecaoDoCatalogoPage', () => {
       botoes(tela, 'Limpar filtros')[0].click();
       await navegar();
       expect(router().url).toBe('/?aba=decisoes');
-      controller.expectOne((r) => r.url === DECISOES && !r.params.has('cadastro') && !r.params.has('minhas')).flush([]);
+      controller
+        .expectOne(
+          (r) => r.url === DECISOES && !r.params.has('cadastro') && !r.params.has('minhas'),
+        )
+        .flush([]);
       await assentar();
       expect(tela.textContent).toContain('Nenhuma decisão registrada');
     });
@@ -868,7 +1044,9 @@ describe('ProtecaoDoCatalogoPage', () => {
       controller.expectOne((r) => r.url === URL).flush([]);
       await router().navigateByUrl('/?aba=decisoes');
       await assentar();
-      controller.expectOne((r) => r.url === DECISOES).flush(...recusa(403, 'uniplus.auth.proibido', 'Sem permissão'));
+      controller
+        .expectOne((r) => r.url === DECISOES)
+        .flush(...recusa(403, 'uniplus.auth.proibido', 'Sem permissão'));
       await assentar();
       const tela = fixture.nativeElement as HTMLElement;
       expect(tela.textContent).toContain('Não foi possível carregar as decisões');
@@ -886,31 +1064,51 @@ describe('ProtecaoDoCatalogoPage', () => {
       tela.querySelector<HTMLButtonElement>('tbody .table-responsive__alvo')?.click();
       await assentar();
       const detalhe = controller.expectOne(`${URL}/tipos-documento/${laudo.id}`);
-      expect(detalhe.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-detalhe', 1));
+      expect(detalhe.request.headers.get('Accept')).toBe(
+        buildVendorMimeAccept('protecao-do-catalogo-detalhe', 1),
+      );
       detalhe.flush({
         ...detalheDoLaudo,
         atos: [
-          { ...decisaoDoTipo, ato: 'SOLICITACAO', atorNome: 'Isabella Moura', classificacaoRecomendada: null, justificativa: null },
+          {
+            ...decisaoDoTipo,
+            ato: 'SOLICITACAO',
+            atorNome: 'Isabella Moura',
+            classificacaoRecomendada: null,
+            justificativa: null,
+          },
           decisaoDoTipo,
-          { ...decisaoDoTipo, ato: 'ACEITE', atorNome: 'Isabella Moura', classificacaoRecomendada: null, justificativa: null },
+          {
+            ...decisaoDoTipo,
+            ato: 'ACEITE',
+            atorNome: 'Isabella Moura',
+            classificacaoRecomendada: null,
+            justificativa: null,
+          },
         ],
       });
       await assentar();
 
       const painel = tela.querySelector('dialog[aria-label="Detalhe da decisão"]');
       const texto = painel?.textContent?.replace(/\s+/gu, ' ') ?? '';
-      expect(painel?.querySelector('.uni-drawer__title')?.textContent?.trim()).toBe('Laudo médico complementar');
+      expect(painel?.querySelector('.uni-drawer__title')?.textContent?.trim()).toBe(
+        'Laudo médico complementar',
+      );
       expect(texto).toContain('Ajuste recomendado');
       expect(texto).toContain('Decidido porCaroline Ribeiro');
       expect(texto).toContain('Classificação recomendadaPessoal');
       expect(texto).toContain('JustificativaO laudo identifica o candidato.');
       expect(texto).toContain('Proteção conferida');
       expect(texto).toContain('Execução de políticas públicas');
-      const historico = Array.from(painel?.querySelectorAll('.cfg-atos__item') ?? []).map((i) => i.textContent?.replace(/\s+/gu, ' '));
+      const historico = Array.from(painel?.querySelectorAll('.cfg-atos__item') ?? []).map((i) =>
+        i.textContent?.replace(/\s+/gu, ' '),
+      );
       expect(historico).toHaveLength(3);
       expect(historico[0]).toContain('Solicitação');
       expect(historico[2]).toContain('Aceite da recomendação');
-      expect(painel?.querySelector('.form-drawer__footer button')?.textContent?.trim()).toBe('Fechar');
+      expect(painel?.querySelector('.form-drawer__footer button')?.textContent?.trim()).toBe(
+        'Fechar',
+      );
     });
 
     it('se o item não existe mais, mantém a decisão e explica no histórico', async () => {
@@ -918,10 +1116,15 @@ describe('ProtecaoDoCatalogoPage', () => {
 
       tela.querySelector<HTMLButtonElement>('tbody .table-responsive__alvo')?.click();
       await assentar();
-      controller.expectOne(`${URL}/tipos-documento/${laudo.id}`).flush(...recusa(404, 'uniplus.nao_encontrado', 'Não encontrado'));
+      controller
+        .expectOne(`${URL}/tipos-documento/${laudo.id}`)
+        .flush(...recusa(404, 'uniplus.nao_encontrado', 'Não encontrado'));
       await assentar();
 
-      const texto = tela.querySelector('dialog[aria-label="Detalhe da decisão"]')?.textContent?.replace(/\s+/gu, ' ') ?? '';
+      const texto =
+        tela
+          .querySelector('dialog[aria-label="Detalhe da decisão"]')
+          ?.textContent?.replace(/\s+/gu, ' ') ?? '';
       expect(texto).toContain('Decidido porCaroline Ribeiro');
       expect(texto).toContain('O item não existe mais no catálogo.');
     });

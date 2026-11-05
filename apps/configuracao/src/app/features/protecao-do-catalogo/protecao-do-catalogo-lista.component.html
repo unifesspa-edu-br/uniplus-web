@@ -1,0 +1,58 @@
+<section class="panel" aria-labelledby="cfg-protecao-titulo">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-protecao-titulo" tabindex="-1">Itens aguardando a sua decisão</h2>
+      @if (carregando()) {
+        <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+  </div>
+
+  @if (itens().length > 0) {
+    <div
+      class="table-responsive"
+      role="region"
+      tabindex="0"
+      aria-label="Itens aguardando a decisão"
+    >
+      <table>
+        <caption class="sr-only">
+          Itens do catálogo aguardando a decisão da proteção de dados. Use o nome para abrir o
+          detalhe.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Cadastro</th>
+            <th scope="col">Item</th>
+            <th scope="col">Sensibilidade</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of itens(); track item.id) {
+            <tr>
+              <td data-label="Cadastro" class="u-nowrap-desktop">{{ cadastro(item.tipo) }}</td>
+              <td data-label="Item" class="u-nowrap-desktop">
+                <button
+                  type="button"
+                  class="table-responsive__alvo"
+                  [attr.aria-label]="'Ver o detalhe de ' + item.nome"
+                  (click)="abrir.emit(item)"
+                >
+                  {{ item.nome }}
+                </button>
+              </td>
+              <td data-label="Sensibilidade" class="u-nowrap-desktop">
+                {{ rotulo(classificacoes, item.classificacaoProtecao) }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erroDeCarga()) {
+    <ui-empty-state
+      heading="Nenhum item aguardando a sua decisão"
+      description="Quando o administrador do catálogo enviar uma solicitação, os itens aparecem aqui."
+    />
+  }
+</section>

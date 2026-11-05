@@ -1,0 +1,151 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Proteção de Dados do Catálogo</h1>
+    <p class="page-header__desc">
+      {{ aba() === 'decisoes' ? 'As decisões já registradas sobre a proteção de dados dos tipos de
+      documento e dos fatos do catálogo.' : 'Os tipos de documento e os fatos do catálogo que
+      aguardam a sua decisão sobre a proteção de dados.' }}
+    </p>
+  </div>
+</div>
+
+<ui-segmented
+  class="cfg-abas"
+  accessibleName="Mostrar"
+  [choices]="abas"
+  [selectedValue]="aba()"
+  (selectedValueChange)="trocarAba($event)"
+/>
+
+@if (aba() === 'decisoes') {
+<cfg-decisoes-da-protecao />
+} @else { @if (erroDeCarga()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os itens">
+  {{ erroDeCarga() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [disabled]="carregando()"
+      (click)="carregar()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+} @if (edicao.erroDaDecisao()) {
+<ui-alert variant="danger" heading="A decisão não foi registrada"
+  >{{ edicao.erroDaDecisao() }}</ui-alert
+>
+}
+
+<cfg-protecao-do-catalogo-lista
+  [itens]="itens()"
+  [carregando]="carregando()"
+  [erroDeCarga]="erroDeCarga()"
+  (abrir)="abrirDetalhe($event)"
+/>
+
+<ui-drawer
+  class="form-drawer"
+  [visible]="edicao.detalheAberto()"
+  (visibleChange)="!$event && edicao.fecharDetalhe()"
+  [heading]="itemAberto()?.nome ?? 'Item do catálogo'"
+  ariaLabel="Detalhe do item aguardando a decisão"
+  [closable]="!edicao.decidindo()"
+  focoInicial="titulo"
+  position="right"
+>
+  @if (edicao.detalheAberto()) {
+  <div
+    class="form-drawer__form"
+    role="region"
+    tabindex="0"
+    aria-label="Dados do item"
+    [attr.aria-busy]="carregandoDetalhe()"
+  >
+    @if (carregandoDetalhe()) {
+    <span class="list-state__loading"><ui-spinner size="sm" /> Carregando o item</span>
+    } @if (edicao.erroDaDecisaoNoDrawer()) {
+    <ui-alert variant="danger" heading="A decisão não foi registrada"
+      >{{ edicao.erroDaDecisaoNoDrawer() }}</ui-alert
+    >
+    } @if (erroDoDetalhe(); as erro) {
+    <ui-alert
+      variant="danger"
+      [heading]="naoEncontrado() ? 'Item não encontrado' : 'Não foi possível carregar o item'"
+    >
+      {{ erro }} @if (!naoEncontrado()) {
+      <div class="list-state__retry">
+        <button type="button" class="btn btn--secondary btn--sm" (click)="recarregarDetalhe()">
+          Tentar novamente
+        </button>
+      </div>
+      }
+    </ui-alert>
+    } @if (detalhe(); as d) {
+    <cfg-item-da-protecao-detalhe [detalhe]="d" [categorias]="categorias.porCodigo()" />
+    }
+  </div>
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="edicao.decidindo()"
+      (click)="edicao.fecharDetalhe()"
+    >
+      Fechar
+    </button>
+    @if (detalhe(); as d) {
+    <ng-container *authTemPermissao="permissaoDeAprovar">
+      @if (d.aprovacao.situacao === 'SOLICITADA') {
+      <button
+        type="button"
+        class="btn btn--danger"
+        [disabled]="edicao.decidindo()"
+        (click)="edicao.abrirDecisao('REPROVAR')"
+      >
+        Reprovar
+      </button>
+      <button
+        type="button"
+        class="btn btn--secondary"
+        [disabled]="edicao.decidindo()"
+        (click)="edicao.abrirDecisao('RECOMENDAR_AJUSTE')"
+      >
+        Recomendar ajuste
+      </button>
+      <button
+        type="button"
+        class="btn btn--primary"
+        [disabled]="edicao.decidindo()"
+        (click)="edicao.aprovar()"
+      >
+        @if (edicao.decidindo() && edicao.decisaoEmCurso() === 'APROVAR') {
+        <ui-spinner size="sm" />
+        } Aprovar
+      </button>
+      }
+    </ng-container>
+    }
+  </div>
+  }
+</ui-drawer>
+
+<cfg-decisao-da-protecao-dialogo
+  [aberto]="edicao.decisaoAberta()"
+  [detalhe]="detalhe()"
+  [decisao]="edicao.decisaoEmCurso()"
+  [decidindo]="edicao.decidindo()"
+  [erro]="edicao.erroDaDecisaoNoDialogo()"
+  [tentouDecidir]="edicao.tentouDecidir()"
+  [recomendada]="edicao.recomendada"
+  [justificativa]="edicao.justificativa"
+  [opcoes]="edicao.opcoesDaRecomendacao()"
+  [erroDaJustificativa]="edicao.erroDaJustificativa()"
+  [tamanhoDaJustificativa]="edicao.tamanhoDaJustificativa()"
+  (fechar)="edicao.fecharDecisao()"
+  (confirmar)="edicao.confirmarDecisao()"
+/>
+
+}

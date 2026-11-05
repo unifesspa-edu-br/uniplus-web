@@ -1,0 +1,123 @@
+<ui-dialog
+  [visible]="aberto()"
+  (visibleChange)="!$event && fechar.emit()"
+  [heading]="
+    decisao() === 'REPROVAR'
+      ? 'Reprovar a proteção de dados do item'
+      : 'Recomendar ajuste da proteção de dados'
+  "
+  [dismissible]="!decidindo()"
+>
+  @if (detalhe(); as d) {
+    @if (erro()) {
+      <ui-alert variant="danger" heading="A decisão não foi registrada">{{ erro() }}</ui-alert>
+    }
+    <p>
+      {{ cadastro(d.tipo) }}: <strong>{{ d.nome }}</strong
+      >. A classificação proposta é {{ rotulo(classificacoes, d.classificacaoProtecao) }}.
+    </p>
+    <fieldset class="form-drawer__campos" role="none" [disabled]="decidindo()">
+      @if (decisao() === 'RECOMENDAR_AJUSTE') {
+        <label class="field" [class.is-error]="tentouDecidir() && recomendada().invalid">
+          <span class="field__label is-required">Classificação recomendada</span>
+          <select
+            id="cfg-campo-recomendacao"
+            class="select"
+            [formControl]="recomendada()"
+            [attr.aria-invalid]="tentouDecidir() && recomendada().invalid ? 'true' : null"
+            [attr.aria-describedby]="
+              tentouDecidir() && recomendada().invalid
+                ? 'cfg-ajuste-ajuda cfg-ajuste-erro'
+                : 'cfg-ajuste-ajuda'
+            "
+          >
+            <option value="">Selecione…</option>
+            @for (opcao of opcoes(); track opcao.valor) {
+              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          <span class="field__hint" id="cfg-ajuste-ajuda">
+            O administrador vê a classificação recomendada e escolhe aceitá-la ou editar o item. Ela
+            deve combinar com a hipótese legal declarada.
+          </span>
+          @if (opcoes().length === 0) {
+            <span class="field__error">
+              Nenhuma outra classificação combina com a hipótese legal declarada. Cancele e reprove
+              o item ou deixe-o com o administrador, que pode editar a hipótese.
+            </span>
+          }
+          @if (tentouDecidir() && recomendada().invalid) {
+            <span class="field__error" id="cfg-ajuste-erro"
+              >Indique a classificação recomendada.</span
+            >
+          }
+        </label>
+      }
+      <label class="field" [class.is-error]="erroDaJustificativa()">
+        <span class="field__label" [class.is-required]="decisao() === 'REPROVAR'"
+          >Justificativa</span
+        >
+        <textarea
+          id="cfg-campo-justificativa"
+          class="textarea"
+          rows="4"
+          [maxlength]="justificativaMaxima"
+          [formControl]="justificativa()"
+          [attr.aria-required]="decisao() === 'REPROVAR' ? 'true' : null"
+          [attr.aria-invalid]="erroDaJustificativa() ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDaJustificativa()
+              ? 'cfg-justificativa-ajuda cfg-justificativa-contador cfg-justificativa-erro'
+              : 'cfg-justificativa-ajuda cfg-justificativa-contador'
+          "
+        ></textarea>
+        <span class="field__hint" id="cfg-justificativa-ajuda">
+          {{
+            decisao() === 'REPROVAR'
+              ? 'Obrigatória. Explique o motivo da reprovação; o
+      administrador a lê ao editar o item.'
+              : 'Opcional. Explique ao administrador por que a
+      classificação deve mudar.'
+          }}
+        </span>
+        <span class="field__hint" id="cfg-justificativa-contador"
+          >{{ tamanhoDaJustificativa() }} de 2.000</span
+        >
+        @if (erroDaJustificativa(); as erro) {
+          <span class="field__error" id="cfg-justificativa-erro">{{ erro }}</span>
+        }
+      </label>
+    </fieldset>
+  }
+  <span class="sr-only" role="status">{{ decidindo() ? 'Registrando decisão.' : '' }}</span>
+  <ng-container uiDialogFooter>
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="decidindo()"
+      (click)="fechar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn"
+      [class.btn--danger]="decisao() === 'REPROVAR'"
+      [class.btn--primary]="decisao() !== 'REPROVAR'"
+      [attr.aria-disabled]="decidindo()"
+      [attr.aria-busy]="decidindo()"
+      (click)="decidindo() ? $event.preventDefault() : confirmar.emit()"
+    >
+      @if (decidindo()) {
+        <ui-spinner size="sm" />
+      }
+      {{
+        decidindo()
+          ? 'Registrando...'
+          : decisao() === 'REPROVAR'
+            ? 'Reprovar item'
+            : 'Recomendar ajuste'
+      }}
+    </button>
+  </ng-container>
+</ui-dialog>

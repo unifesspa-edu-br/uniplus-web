@@ -23,8 +23,6 @@
 1595 apps/configuracao/src/app/features/ofertas-curso/ofertas-curso.page.ts
 1753 apps/configuracao/src/app/features/pesos-enem/pesos-enem.page.ts
 1059 apps/configuracao/src/app/features/precedencias-fase/precedencias-fase.page.ts
-536 apps/configuracao/src/app/features/protecao-do-catalogo/decisoes-da-protecao.component.ts
-696 apps/configuracao/src/app/features/protecao-do-catalogo/protecao-do-catalogo.page.ts
 746 apps/configuracao/src/app/features/recursos-acessibilidade/recursos-acessibilidade-list.page.ts
 815 apps/configuracao/src/app/features/reserva-demografica/reserva-demografica-list.page.ts
 804 apps/configuracao/src/app/features/termos-consentimento/termos-consentimento-detail.page.ts

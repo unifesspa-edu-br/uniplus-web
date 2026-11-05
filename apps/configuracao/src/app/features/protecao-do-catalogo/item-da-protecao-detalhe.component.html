@@ -1,0 +1,70 @@
+@let d = detalhe();
+<cfg-situacao-da-aprovacao
+  [situacao]="d.aprovacao.situacao"
+  [classificacaoRecomendada]="d.aprovacao.classificacaoRecomendada"
+  [justificativa]="d.aprovacao.justificativa"
+/>
+<cfg-detalhe-da-protecao titulo="Proposta de proteção" [protecao]="d" />
+<section class="cfg-detalhe-secao">
+  <h3 class="cfg-detalhe-secao__titulo">O que é o item</h3>
+  <dl class="cfg-detalhe">
+    <div>
+      <dt>Cadastro</dt>
+      <dd>{{ cadastro(d.tipo) }}</dd>
+    </div>
+    <div>
+      <dt>Descrição</dt>
+      <dd>{{ d.descricao || '—' }}</dd>
+    </div>
+    @if (d.fato; as fato) {
+      <div>
+        <dt>Tipo do dado</dt>
+        <dd>{{ rotulo(dominios, fato.dominio) }}</dd>
+      </div>
+      <div>
+        <dt>Cardinalidade</dt>
+        <dd>{{ rotulo(cardinalidades, fato.cardinalidade) }}</dd>
+      </div>
+      <div>
+        <dt>Componente de exibição</dt>
+        <dd>
+          {{
+            fato.componenteExibicao ? rotulo(componentes, fato.componenteExibicao) : rotuloDoPadrao
+          }}
+        </dd>
+      </div>
+    }
+    @if (d.tipoDocumento; as documento) {
+      <div>
+        <dt>Categoria</dt>
+        <dd>{{ categorias().get(documento.categoria)?.nome ?? documento.categoria }}</dd>
+      </div>
+      <div>
+        <dt>Formatos aceitos</dt>
+        <dd>{{ documento.formatosAceitos || '—' }}</dd>
+      </div>
+      <div>
+        <dt>Tamanho máximo</dt>
+        <dd>{{ documento.tamanhoMaximoMb ? documento.tamanhoMaximoMb + ' MB' : '—' }}</dd>
+      </div>
+    }
+  </dl>
+</section>
+@if (d.fato?.valores?.length) {
+  <section class="cfg-detalhe-secao">
+    <h3 class="cfg-detalhe-secao__titulo">Valores possíveis</h3>
+    <ul class="cfg-detalhe-valores">
+      @for (valor of d.fato?.valores; track valor.codigo) {
+        <li>
+          <div>{{ valor.descricao || valor.codigo }}</div>
+          @if (valor.orientacao) {
+            <p class="cfg-detalhe-valores__orientacao">{{ valor.orientacao }}</p>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}
+<p class="u-caption">
+  Código no sistema: <code>{{ d.codigo }}</code>
+</p>
