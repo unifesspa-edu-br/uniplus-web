@@ -104,7 +104,7 @@ function datasNaoUteisSemDuplicidade(control: AbstractControl): ValidationErrors
     <form
       id="cfg-calendario-dias-uteis-form"
       [formGroup]="form"
-      class="cfg-form cfg-calendario-form"
+      class="form-drawer__form cfg-calendario-form"
       (ngSubmit)="salvar()"
     >
       <section
@@ -355,7 +355,7 @@ function datasNaoUteisSemDuplicidade(control: AbstractControl): ValidationErrors
         </ng-container>
       </section>
     </form>
-    <div class="cfg-form-footer cfg-calendario-form__footer">
+    <div class="form-drawer__footer cfg-calendario-form__footer">
       <a [routerLink]="['/calendario-dias-uteis']" class="btn btn--tertiary btn--rect">Cancelar</a>
       <button
         type="submit"

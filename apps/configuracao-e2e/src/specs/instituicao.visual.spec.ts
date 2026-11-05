@@ -124,15 +124,15 @@ test.describe('Instituição — cobertura visual DS', () => {
     // .form-section__title) = 8 após a migração ao endereço estruturado (#412).
     await expect(drawer.locator('.form-section__title')).toHaveCount(8);
 
-    const footer = drawer.locator('.cfg-form-footer');
+    const footer = drawer.locator('.form-drawer__footer');
     await expect(footer.getByRole('button', { name: 'Remover' })).toBeVisible();
     await expect(footer.getByRole('button', { name: 'Cancelar' })).toBeVisible();
     await expect(footer.getByRole('button', { name: 'Salvar instituição' })).toBeVisible();
 
     const metrics = await drawer.locator('.uni-drawer__panel').evaluate((panel) => {
       const body = panel.querySelector('.uni-drawer__body') as HTMLElement;
-      const form = panel.querySelector('.cfg-form') as HTMLElement;
-      const footer = panel.querySelector('.cfg-form-footer') as HTMLElement;
+      const form = panel.querySelector('.form-drawer__form') as HTMLElement;
+      const footer = panel.querySelector('.form-drawer__footer') as HTMLElement;
       const footerRect = footer.getBoundingClientRect();
       return {
         bodyOverflowY: getComputedStyle(body).overflowY,
@@ -178,7 +178,7 @@ test.describe('Instituição — cobertura visual DS', () => {
     await drawer.getByLabel('Organização acadêmica').fill(INSTITUICAO.organizacaoAcademica);
     await drawer.getByLabel('Categoria administrativa').fill(INSTITUICAO.categoriaAdministrativa);
 
-    const salvar = drawer.locator('.cfg-form-footer').getByRole('button', {
+    const salvar = drawer.locator('.form-drawer__footer').getByRole('button', {
       name: 'Salvar instituição',
     });
     await expect(salvar).toBeEnabled();

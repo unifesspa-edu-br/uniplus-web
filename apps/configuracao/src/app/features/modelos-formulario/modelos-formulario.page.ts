@@ -114,7 +114,7 @@ type CampoDaCriacao = keyof CriacaoForm;
     @if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar os modelos">
         {{ errorMessage() }}
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button
             type="button"
             class="btn btn--secondary btn--sm"
@@ -164,7 +164,7 @@ type CampoDaCriacao = keyof CriacaoForm;
         <div class="panel-head__title">
           <h2 id="cfg-modelos-list-title">Modelos de formulário</h2>
           @if (loading()) {
-            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
         <button
@@ -276,7 +276,7 @@ type CampoDaCriacao = keyof CriacaoForm;
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="drawerAberto"
       heading="Novo modelo de formulário"
       ariaLabel="Novo modelo de formulário"
@@ -286,7 +286,7 @@ type CampoDaCriacao = keyof CriacaoForm;
         <form
           [formGroup]="form"
           id="cfg-modelo-criacao"
-          class="cfg-form"
+          class="form-drawer__form"
           (ngSubmit)="criar()"
           novalidate
         >
@@ -393,7 +393,7 @@ type CampoDaCriacao = keyof CriacaoForm;
           </label>
         </form>
 
-        <div class="cfg-form-footer">
+        <div class="form-drawer__footer">
           <button
             type="button"
             class="btn btn--tertiary btn--rect"

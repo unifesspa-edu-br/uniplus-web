@@ -258,7 +258,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       heading="Editar fase canônica"
       ariaLabel="Formulário de fase canônica"
@@ -273,7 +273,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
         id="cfg-fase-canonica-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-fase-identificacao">
           <h3 id="cfg-fase-identificacao" class="form-section__title">Identificação</h3>
@@ -434,7 +434,7 @@ const FASE_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof FaseForm>([
         }
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

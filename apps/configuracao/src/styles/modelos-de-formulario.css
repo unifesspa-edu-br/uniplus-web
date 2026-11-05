@@ -1,0 +1,11 @@
+/* Edição do modelo de formulário: o resumo das recusas como alvo de foco. */
+.cfg-modelo-cabecalho {
+  margin-bottom: var(--space-4);
+}
+.cfg-modelo-resumo:focus {
+  outline: none;
+}
+.cfg-modelo-resumo:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

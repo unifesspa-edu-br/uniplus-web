@@ -360,7 +360,7 @@ const BACKEND_FIELD_TO_CONTROL = {
     </ng-template>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="drawerOpen"
       heading="Detalhes da unidade"
       ariaLabel="Detalhes da unidade selecionada"
@@ -409,7 +409,7 @@ const BACKEND_FIELD_TO_CONTROL = {
     </ui-drawer>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário de unidade"
@@ -426,7 +426,7 @@ const BACKEND_FIELD_TO_CONTROL = {
         id="cfg-unidade-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-form-identificadores">
           <h3 id="cfg-form-identificadores" class="form-section__title">Identificadores</h3>
@@ -691,7 +691,7 @@ const BACKEND_FIELD_TO_CONTROL = {
         </section>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

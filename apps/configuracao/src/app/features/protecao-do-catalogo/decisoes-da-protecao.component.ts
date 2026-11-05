@@ -156,7 +156,7 @@ const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) 
     @if (mensagemDeErro(); as mensagem) {
       <ui-alert variant="danger" heading="Não foi possível carregar as decisões">
         {{ mensagem }}
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button
             type="button"
             class="btn btn--secondary btn--sm"
@@ -178,7 +178,7 @@ const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) 
         <div class="panel-head__title">
           <h2 id="cfg-decisoes-titulo">Decisões registradas</h2>
           @if (pagina.carregando()) {
-            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
       </div>
@@ -262,7 +262,7 @@ const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) 
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="drawerAberto"
       [heading]="selecionada()?.itemNome ?? 'Decisão'"
       ariaLabel="Detalhe da decisão"
@@ -271,7 +271,7 @@ const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) 
     >
       @if (drawerAberto() && selecionada(); as decisao) {
         <div
-          class="cfg-form"
+          class="form-drawer__form"
           role="region"
           tabindex="0"
           aria-label="Dados da decisão"
@@ -323,7 +323,7 @@ const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) 
           <section class="cfg-detalhe-secao">
             <h3 class="cfg-detalhe-secao__titulo">Histórico do item</h3>
             @if (carregandoHistorico()) {
-              <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando o histórico</span>
+              <span class="list-state__loading"><ui-spinner size="sm" /> Carregando o histórico</span>
             }
             @if (erroDoHistorico(); as erro) {
               <ui-alert
@@ -336,7 +336,7 @@ const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) 
               >
                 {{ erro }}
                 @if (!itemInexistente()) {
-                  <div class="cfg-list__retry">
+                  <div class="list-state__retry">
                     <button
                       type="button"
                       class="btn btn--secondary btn--sm"
@@ -352,7 +352,7 @@ const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) 
             }
           </section>
         </div>
-        <div class="cfg-form-footer">
+        <div class="form-drawer__footer">
           <button
             type="button"
             class="btn btn--tertiary btn--rect"

@@ -1,0 +1,5 @@
+/* Título de seção dentro do formulário: o legend não participa do gap do flex, então o respiro
+   antes dele vem da margem. */
+fieldset.field > legend.form-section__title {
+  margin-block-start: var(--space-5);
+}

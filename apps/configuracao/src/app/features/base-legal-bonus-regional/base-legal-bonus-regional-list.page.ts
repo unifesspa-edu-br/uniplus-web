@@ -153,7 +153,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
     @if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar as bases legais">
         {{ errorMessage() }}
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button
             type="button"
             class="btn btn--secondary btn--sm"
@@ -178,7 +178,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
         <div class="panel-head__title">
           <h2 id="cfg-base-legal-list-title">Bases legais</h2>
           @if (loading()) {
-            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
         <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
@@ -273,7 +273,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [closable]="!savingForm()"
       [heading]="formHeading()"
@@ -287,7 +287,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
       @if (tiposInstrumento.comErro()) {
         <ui-alert variant="warning" heading="Tipos de instrumento não carregados">
           Sem o vocabulário de tipos não é possível classificar a base legal.
-          <div class="cfg-list__retry">
+          <div class="list-state__retry">
             <button
               type="button"
               class="btn btn--secondary btn--sm"
@@ -304,7 +304,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
         id="cfg-base-legal-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <div class="form-grid">
           <label class="field" [class.is-error]="erroDoCampo('tipoInstrumento')">
@@ -391,7 +391,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
                 />
               </div>
               @if (buscaMunicipioCarregando()) {
-                <span class="cfg-list__loading"><ui-spinner size="sm" /> Buscando</span>
+                <span class="list-state__loading"><ui-spinner size="sm" /> Buscando</span>
               } @else if (buscaMunicipioErro()) {
                 <span class="field__error" id="cfg-blbr-municipio-busca-erro" role="alert">
                   Não foi possível buscar municípios.
@@ -446,7 +446,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
         </div>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button
           type="button"
           class="btn btn--tertiary btn--rect"

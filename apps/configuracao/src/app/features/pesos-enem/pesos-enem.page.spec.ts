@@ -264,7 +264,7 @@ describe('PesosEnemPage', () => {
     await propagate();
 
     expect(component['errorMessage']()).toBeTruthy();
-    const botaoRetry = fixture.nativeElement.querySelector('.cfg-list__retry button') as HTMLButtonElement;
+    const botaoRetry = fixture.nativeElement.querySelector('.list-state__retry button') as HTMLButtonElement;
     expect(botaoRetry).not.toBeNull();
 
     botaoRetry.click();
@@ -2031,7 +2031,7 @@ describe('PesosEnemPage', () => {
     expect(component['drawerAberto']()).toBe(false);
 
     const retry = fixture.nativeElement.querySelector(
-      '.cfg-list__retry button',
+      '.list-state__retry button',
     ) as HTMLButtonElement | null;
     expect(retry).not.toBeNull();
     retry?.click();
@@ -2183,7 +2183,7 @@ describe('PesosEnemPage', () => {
     expect(component['listaAreas'].falhou()).toBe(true);
     const raiz = fixture.nativeElement as HTMLElement;
     expect(raiz.querySelector('ui-empty-state')).toBeNull();
-    expect(raiz.querySelector('.cfg-list__retry button')).not.toBeNull();
+    expect(raiz.querySelector('.list-state__retry button')).not.toBeNull();
   });
 
   it('PesosEnemPage_AbrirEdicao_FocaOPrimeiroCampoEditavel', async () => {
@@ -2911,7 +2911,7 @@ describe('PesosEnemPage', () => {
     expect(component['catalogoGrupos'].falhou()).toBe(true);
     const raiz = fixture.nativeElement as HTMLElement;
     expect(raiz.querySelector('ui-empty-state')).toBeNull();
-    expect(raiz.querySelector('.cfg-list__retry button')).not.toBeNull();
+    expect(raiz.querySelector('.list-state__retry button')).not.toBeNull();
     component['abrirDrawerCriacao']();
     expect(component['drawerAberto']()).toBe(false);
   });

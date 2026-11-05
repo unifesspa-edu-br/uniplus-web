@@ -126,7 +126,7 @@ function justificativaPreenchida(controle: AbstractControl<string>): ValidationE
     @if (erroDeCarga()) {
       <ui-alert variant="danger" heading="Não foi possível carregar os itens">
         {{ erroDeCarga() }}
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button type="button" class="btn btn--secondary btn--sm" [disabled]="carregando()" (click)="carregar()">
             Tentar novamente
           </button>
@@ -143,7 +143,7 @@ function justificativaPreenchida(controle: AbstractControl<string>): ValidationE
         <div class="panel-head__title">
           <h2 #titulo id="cfg-protecao-titulo" tabindex="-1">Itens aguardando a sua decisão</h2>
           @if (carregando()) {
-            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
       </div>
@@ -192,7 +192,7 @@ function justificativaPreenchida(controle: AbstractControl<string>): ValidationE
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="detalheAberto"
       [heading]="itemAberto()?.nome ?? 'Item do catálogo'"
       ariaLabel="Detalhe do item aguardando a decisão"
@@ -200,9 +200,9 @@ function justificativaPreenchida(controle: AbstractControl<string>): ValidationE
       position="right"
     >
       @if (detalheAberto()) {
-        <div class="cfg-form" role="region" tabindex="0" aria-label="Dados do item" [attr.aria-busy]="carregandoDetalhe()">
+        <div class="form-drawer__form" role="region" tabindex="0" aria-label="Dados do item" [attr.aria-busy]="carregandoDetalhe()">
           @if (carregandoDetalhe()) {
-            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando o item</span>
+            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando o item</span>
           }
           @if (erroDaDecisaoNoDrawer()) {
             <ui-alert variant="danger" heading="A decisão não foi registrada">{{ erroDaDecisaoNoDrawer() }}</ui-alert>
@@ -211,7 +211,7 @@ function justificativaPreenchida(controle: AbstractControl<string>): ValidationE
             <ui-alert variant="danger" [heading]="naoEncontrado() ? 'Item não encontrado' : 'Não foi possível carregar o item'">
               {{ erro }}
               @if (!naoEncontrado()) {
-                <div class="cfg-list__retry">
+                <div class="list-state__retry">
                   <button type="button" class="btn btn--secondary btn--sm" (click)="recarregarDetalhe()">Tentar novamente</button>
                 </div>
               }
@@ -285,7 +285,7 @@ function justificativaPreenchida(controle: AbstractControl<string>): ValidationE
             </p>
           }
         </div>
-        <div class="cfg-form-footer">
+        <div class="form-drawer__footer">
           <button type="button" class="btn btn--tertiary btn--rect" [disabled]="decidindo()" (click)="detalheAberto.set(false)">
             Fechar
           </button>

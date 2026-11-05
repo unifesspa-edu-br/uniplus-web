@@ -109,7 +109,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
     @if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar as modalidades">
         {{ errorMessage() }}
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button
             type="button"
             class="btn btn--secondary btn--sm"
@@ -158,7 +158,7 @@ const NATUREZA_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
               {{ modalidadesFiltradas().length }}
             </span>
             @if (loading()) {
-              <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
+              <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
             }
           </div>
           <a class="btn btn--primary" routerLink="novo">

@@ -154,10 +154,10 @@ test.describe('Curso — geometria dos drawers (#816)', () => {
     await expect(drawer).toBeVisible();
     await aguardarFimDaEntrada(drawer);
     const painel = drawer.locator('.uni-drawer__panel');
-    const formulario = drawer.locator('form.cfg-form');
-    const rodape = drawer.locator('.cfg-form-footer');
+    const formulario = drawer.locator('form.form-drawer__form');
+    const rodape = drawer.locator('.form-drawer__footer');
 
-    // O alerta fica DENTRO do .cfg-form — é o único elemento do drawer com
+    // O alerta fica DENTRO do .form-drawer__form — é o único elemento do drawer com
     // recuo. Fora dele o conteúdo cola na borda do painel, que é o defeito
     // que a #816 relata.
     const geoPainel = await caixa(painel);

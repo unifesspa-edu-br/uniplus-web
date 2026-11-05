@@ -330,15 +330,15 @@ test.describe('Unidade — cobertura visual DS', () => {
     await expect(drawer.getByText('Classificação e hierarquia')).toBeVisible();
     await expect(drawer.getByText('Vigência', { exact: true })).toBeVisible();
 
-    const footer = drawer.locator('.cfg-form-footer');
+    const footer = drawer.locator('.form-drawer__footer');
     await expect(footer.getByRole('button', { name: 'Cancelar' })).toBeVisible();
     await expect(footer.getByRole('button', { name: 'Criar unidade' })).toBeVisible();
 
     const drawerMetrics = await drawer.locator('.uni-drawer__panel').evaluate((panel) => {
       const body = panel.querySelector('.uni-drawer__body') as HTMLElement;
-      const form = panel.querySelector('.cfg-form') as HTMLElement;
+      const form = panel.querySelector('.form-drawer__form') as HTMLElement;
       const grid = panel.querySelector('.form-grid') as HTMLElement;
-      const footer = panel.querySelector('.cfg-form-footer') as HTMLElement;
+      const footer = panel.querySelector('.form-drawer__footer') as HTMLElement;
       const panelRect = panel.getBoundingClientRect();
       const footerRect = footer.getBoundingClientRect();
       return {

@@ -301,7 +301,7 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário de aresta de precedência"
@@ -323,7 +323,7 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
         id="cfg-precedencia-fase-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-precedencia-par">
           <h3 id="cfg-precedencia-par" class="form-section__title">Par de fases</h3>
@@ -432,7 +432,7 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
         </fieldset>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button
           type="button"
           class="btn btn--tertiary btn--rect"

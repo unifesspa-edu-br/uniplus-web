@@ -451,7 +451,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
     />
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="drawerAberto"
       heading="Cadastrar nova resolução"
       ariaLabel="Formulário de nova resolução de pesos do ENEM"
@@ -469,7 +469,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
         id="cfg-pesos-enem-form"
         (ngSubmit)="criarResolucao()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <div class="form-grid">
           <label class="field form-grid__full" [class.is-error]="erroDoCampoLote('resolucao')">
@@ -587,7 +587,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
           }
         </div>
       </form>
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--secondary" (click)="drawerAberto.set(false)">
           Cancelar
         </button>

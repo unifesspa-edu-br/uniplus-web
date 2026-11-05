@@ -107,7 +107,7 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
     @if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar os tipos de etapa">
         {{ errorMessage() }}
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button
             type="button"
             class="btn btn--secondary btn--sm"
@@ -125,7 +125,7 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
         <div class="panel-head__title">
           <h2 id="cfg-tipos-etapa-list-title">Tipos de etapa</h2>
           @if (loading()) {
-            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
         <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
@@ -238,7 +238,7 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário de tipo de etapa"
@@ -253,7 +253,7 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
         id="cfg-tipo-etapa-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-etapa-identificacao">
           <h3 id="cfg-etapa-identificacao" class="form-section__title">Identificação</h3>
@@ -335,7 +335,7 @@ const ETAPA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof EtapaForm>([
         </section>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

@@ -39,6 +39,7 @@ export const DECISOES_FILTRAVEIS: readonly { readonly valor: AtoDeDecisao; reado
   standalone: true,
   imports: [TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './atos-da-protecao.css',
   template: `
     @if (atos().length === 0) {
       <p class="u-caption">{{ textoVazio() }}</p>

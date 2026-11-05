@@ -261,7 +261,7 @@ interface InstituicaoForm {
     }
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="drawerAberto"
       [heading]="drawerTitulo()"
       ariaLabel="Formulário da instituição"
@@ -278,7 +278,7 @@ interface InstituicaoForm {
         id="cfg-instituicao-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-form-identificacao">
           <h3 id="cfg-form-identificacao" class="form-section__title">Identificação</h3>
@@ -557,7 +557,7 @@ interface InstituicaoForm {
         </section>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         @if (instituicao()) {
           <button
             type="button"

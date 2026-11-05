@@ -264,7 +264,7 @@ const PAGE_SIZE = 50;
     </div>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário do tipo de deficiência"
@@ -280,7 +280,7 @@ const PAGE_SIZE = 50;
         id="cfg-tipo-deficiencia-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-form-identificadores">
           <div class="form-grid">
@@ -347,7 +347,7 @@ const PAGE_SIZE = 50;
         </section>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

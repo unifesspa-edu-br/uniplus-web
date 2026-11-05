@@ -1,0 +1,4 @@
+/* Tipo de ato */
+.cfg-tipos-ato__historico {
+  padding: 0 var(--space-5) var(--space-4);
+}

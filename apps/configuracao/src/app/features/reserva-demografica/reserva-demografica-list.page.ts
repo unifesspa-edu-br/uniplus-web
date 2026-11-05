@@ -249,7 +249,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
     </div>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário de referência demográfica"
@@ -264,7 +264,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
         id="cfg-reserva-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-reserva-dados">
           <h3 id="cfg-reserva-dados" class="form-section__title">Dados do Censo</h3>
@@ -368,7 +368,7 @@ const PERCENTUAL_VALIDATORS = [Validators.required, Validators.min(0), Validator
         </section>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

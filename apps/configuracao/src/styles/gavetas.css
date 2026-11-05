@@ -1,0 +1,27 @@
+/*
+ * Drawer de detalhe (Ofertas de curso): não tem formulário nem rodapé
+ * full-bleed, então mantém a rolagem no body — o default do design system
+ * (components.css: .uni-drawer__body { overflow-y: auto }) — e só acrescenta o
+ * recuo lateral que o default não traz. Lá o padding horizontal é zero porque
+ * o default atende o drawer de navegação mobile, cujas linhas são full-bleed.
+ */
+.cfg-detail-drawer .uni-drawer__panel {
+  /*
+   * Largura fluida, sem o degrau de breakpoint do drawer de formulário: no
+   * piso de 320px ocupa o painel inteiro e daí cresce com a viewport até o
+   * teto de 760px, que é o limite de linha legível do módulo.
+   */
+  max-width: clamp(20rem, 55vw, 47.5rem);
+}
+
+/* Variante larga, para a trilha da concessão: a tabela cabe sem rolar na horizontal; no celular, a largura toda. */
+.cfg-detail-drawer--ampla .uni-drawer__panel {
+  max-width: clamp(20rem, 80vw, 60rem);
+}
+
+.cfg-detail-drawer .uni-drawer__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5);
+}

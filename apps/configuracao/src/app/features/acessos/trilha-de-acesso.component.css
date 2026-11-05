@@ -1,0 +1,31 @@
+/* Trilha de um pedido ou concessão: data, evento e autor numa linha só; o detalhe é cortado com reticências e abre inteiro ao clicar na linha. */
+.cfg-trilha__detalhe {
+  display: block;
+  min-inline-size: 12ch;
+  max-inline-size: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cfg-trilha__texto-completo {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+@media (max-width: 767px) {
+  .cfg-trilha__detalhe {
+    max-inline-size: 100%;
+  }
+}
+
+@media not all and (max-width: 767px) {
+  .cfg-trilha th,
+  .cfg-trilha td {
+    padding-inline: var(--space-3);
+  }
+
+  .cfg-trilha td:not([data-label='Detalhe']) {
+    white-space: nowrap;
+  }
+}

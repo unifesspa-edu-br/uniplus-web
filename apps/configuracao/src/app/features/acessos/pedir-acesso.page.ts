@@ -79,7 +79,7 @@ const FASE: Readonly<Record<FaseDoEnvio, string>> = {
       <ui-alert variant="danger" heading="Não foi possível enviar o pedido">{{ erro() }}</ui-alert>
     }
 
-    <form class="panel cfg-form" [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+    <form class="panel form-drawer__form" [formGroup]="form" (ngSubmit)="enviar()" novalidate>
       <fieldset class="field">
         <legend class="field__label">Para quem é o acesso</legend>
         <label class="radio">
@@ -233,7 +233,7 @@ const FASE: Readonly<Record<FaseDoEnvio, string>> = {
         <p role="status">{{ fase }}</p>
       }
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <a class="btn btn--tertiary btn--rect" routerLink="/acessos/pedidos">Cancelar</a>
         <button type="submit" class="btn btn--primary" [disabled]="enviando()">
           @if (enviando()) {

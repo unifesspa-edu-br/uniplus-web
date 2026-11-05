@@ -923,7 +923,7 @@ describe('TiposDocumentoListPage', () => {
       );
     const rodape = (): string[] =>
       Array.from<HTMLElement>(
-        fixture.nativeElement.querySelectorAll('dialog[aria-label="Detalhe do tipo de documento"] .cfg-form-footer button'),
+        fixture.nativeElement.querySelectorAll('dialog[aria-label="Detalhe do tipo de documento"] .form-drawer__footer button'),
       ).map((b) => b.textContent?.trim() ?? '');
 
     it('o nome da linha é um botão nativo com nome acessível, e não há clique na linha', async () => {
@@ -974,7 +974,7 @@ describe('TiposDocumentoListPage', () => {
       expect(rodape()).toEqual(['Fechar', 'Editar']);
 
       Array.from<HTMLButtonElement>(
-        fixture.nativeElement.querySelectorAll('dialog[aria-label="Detalhe do tipo de documento"] .cfg-form-footer button'),
+        fixture.nativeElement.querySelectorAll('dialog[aria-label="Detalhe do tipo de documento"] .form-drawer__footer button'),
       )
         .find((b) => b.textContent?.trim() === 'Editar')
         ?.click();
@@ -1103,7 +1103,7 @@ describe('TiposDocumentoListPage', () => {
     /** Os botões da página, fora dos diálogos, que ficam no DOM mesmo fechados. */
     const botao = (rotulo: string): HTMLButtonElement | undefined =>
       Array.from<HTMLButtonElement>(
-        fixture.nativeElement.querySelectorAll('.panel-head__actions button, .cfg-form-footer button'),
+        fixture.nativeElement.querySelectorAll('.panel-head__actions button, .form-drawer__footer button'),
       ).find((b) => b.textContent?.includes(rotulo));
 
     it('diz a situação como texto, e a negativa traz a classificação recomendada', async () => {

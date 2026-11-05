@@ -249,7 +249,7 @@ interface CursoForm {
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário de curso"
@@ -260,7 +260,7 @@ interface CursoForm {
         id="cfg-curso-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         @if (formError()) {
           <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
@@ -384,7 +384,7 @@ interface CursoForm {
         </section>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

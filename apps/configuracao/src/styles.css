@@ -4,35 +4,24 @@
 @import '../../../libs/shared-auth/src/styles/components.css';
 @import 'primeicons/primeicons.css';
 @import 'tailwindcss';
-@import './styles/layout-e-painel.css';
-@import './styles/arvore-de-unidades.css';
-@import './styles/drawer-e-formulario.css';
-@import './styles/grade-numerica.css';
-@import './styles/telas-dedicadas.css';
-@import './styles/detalhe-do-catalogo-e-atos.css';
+@import '../../../libs/shared-ui/src/styles/ponte-tailwind.css';
+@import '../../../libs/shared-ui/src/styles/administrativo.css';
+@import './styles/pagina.css';
+@import './styles/utilitarios.css';
+@import './styles/detalhe-de-registro.css';
+@import './styles/gavetas.css';
+@import './styles/pedido-de-acesso.css';
+@import './styles/unidades.css';
+@import './styles/instituicao.css';
+@import './styles/pesos-do-enem.css';
+@import './styles/modalidades.css';
+@import './styles/protecao-do-catalogo.css';
+@import './styles/grupos-de-opcoes.css';
+@import './styles/modelos-de-formulario.css';
+@import './styles/tipos-de-ato.css';
+@import './styles/secao-de-formulario.css';
+@import './styles/perfis.css';
 
 @source './app/**/*.{ts,html}';
 @source '../../../libs/shared-ui/src/lib/**/*.{ts,html}';
 @source '../../../libs/shared-auth/src/lib/**/*.{ts,html}';
-
-@theme inline {
-  --color-primary: var(--color-primary);
-  --color-primary-50: var(--color-primary-50);
-  --color-primary-600: var(--color-primary-600);
-  --color-primary-700: var(--color-primary-700);
-  --color-danger: var(--color-danger-500);
-  --color-success: var(--color-success-600);
-  --color-warning: var(--color-warning-600);
-  --color-info: var(--color-info-600);
-  --color-surface-page: var(--surface-page);
-  --color-surface-card: var(--surface-card);
-  --color-surface-subtle: var(--surface-subtle);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-heading: var(--text-heading);
-  --color-text-muted: var(--text-muted);
-  --color-border: var(--border-default);
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --font-sans: var(--font-sans);
-}

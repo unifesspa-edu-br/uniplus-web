@@ -1,0 +1,12 @@
+/* Diálogo de revogação: campos com o respiro padrão do formulário, e o título alinhado ao botão de fechar. */
+.cfg-dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-block-end: var(--space-4);
+}
+
+/* O cabeçalho pertence ao ui-dialog, fora da visão deste componente: só o ::ng-deep o alcança. */
+:host ::ng-deep .uni-dialog__header {
+  align-items: center;
+}

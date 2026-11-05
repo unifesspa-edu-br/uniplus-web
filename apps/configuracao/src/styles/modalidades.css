@@ -1,0 +1,54 @@
+.cfg-modalidades-scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cfg-refs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.cfg-ref-chip {
+  font-size: var(--text-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+.cfg-refs-lista {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+}
+
+/* Mapa de condicionais — reflete o efeito das escolhas ao operador */
+.cond-diagram {
+  margin-top: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+}
+
+.cond-diagram__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.cond-diagram__list {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cond-diagram__item {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}

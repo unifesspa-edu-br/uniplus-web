@@ -192,7 +192,7 @@ interface CampusForm {
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário de campus"
@@ -207,7 +207,7 @@ interface CampusForm {
         id="cfg-campus-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-campus-identificacao">
           <h3 id="cfg-campus-identificacao" class="form-section__title">Identificação</h3>
@@ -260,7 +260,7 @@ interface CampusForm {
         />
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

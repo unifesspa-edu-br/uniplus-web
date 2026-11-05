@@ -226,7 +226,7 @@ interface LocalOfertaForm {
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário de local de oferta"
@@ -241,7 +241,7 @@ interface LocalOfertaForm {
         id="cfg-local-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-local-classificacao">
           <h3 id="cfg-local-classificacao" class="form-section__title">Classificação</h3>
@@ -304,7 +304,7 @@ interface LocalOfertaForm {
         />
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

@@ -1,0 +1,76 @@
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--surface-page);
+}
+
+cfg-unidades-page,
+cfg-instituicao-page,
+cfg-pesos-enem-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.cfg-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.cfg-page > ui-filter-bar .filter-bar {
+  margin-bottom: 0;
+}
+
+/* Drawer e diálogos fechados não têm caixa própria — o <dialog> interno vira
+   display: none do agente de usuário, mas o host continua um item flex e
+   ainda consome um gap do container, deixando espaço morto no fim da página. Alcança os dois containers de página do módulo: a classe
+   .cfg-page e as páginas estilizadas por seletor de elemento, que repetem o
+   mesmo flex/gap. Nenhum dos três componentes estiliza o próprio host. */
+:is(.cfg-page, cfg-unidades-page, cfg-instituicao-page, cfg-pesos-enem-page)
+  > :is(ui-drawer, ui-dialog, ui-confirm-dialog) {
+  display: contents;
+}
+
+.cfg-unidades-scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.page-header--form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cfg-voltar {
+  align-self: flex-start;
+}
+
+.cfg-form__loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  color: var(--text-secondary);
+}
+
+@media (min-width: 600px) {
+  .page-header {
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-5);
+  }
+}
+
+.panel-head__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}

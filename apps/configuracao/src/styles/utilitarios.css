@@ -1,0 +1,31 @@
+.cfg-link-button {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cfg-link-button:hover {
+  text-decoration: underline;
+}
+
+.cfg-muted {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Realce visual (não normativo) para campos de código curto — o valor
+   digitado não é forçado a maiúsculas, só exibido assim (Tipo de Documento §3.1). */
+.cfg-input-uppercase {
+  text-transform: uppercase;
+}
+
+.cfg-meta {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}

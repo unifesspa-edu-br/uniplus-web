@@ -279,7 +279,7 @@ interface OfertaCursoForm {
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário de oferta de curso"
@@ -294,7 +294,7 @@ interface OfertaCursoForm {
         id="cfg-oferta-curso-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-oferta-vinculos">
           <h3 id="cfg-oferta-vinculos" class="form-section__title">Vínculos</h3>
@@ -572,7 +572,7 @@ interface OfertaCursoForm {
         }
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

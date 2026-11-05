@@ -209,7 +209,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       heading="Editar tipo de banca"
       ariaLabel="Formulário de tipo de banca"
@@ -224,7 +224,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
         id="cfg-tipo-banca-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-banca-identificacao">
           <h3 id="cfg-banca-identificacao" class="form-section__title">Identificação</h3>
@@ -275,7 +275,7 @@ const BANCA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof BancaForm>([
         </section>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

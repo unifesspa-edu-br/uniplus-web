@@ -26,6 +26,7 @@ const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${i
   standalone: true,
   imports: [AlertComponent, DialogComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './solicitacao-da-protecao.dialog.css',
   template: `
     <ui-dialog
       [(visible)]="visible"

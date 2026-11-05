@@ -21,6 +21,7 @@ export function autorDoEvento(autor: EventoDaTrilhaDto['autor']): string {
   selector: 'cfg-trilha-de-acesso',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './trilha-de-acesso.component.css',
   template: `
     @if (eventos().length === 0) {
       <p>Nenhum evento registrado.</p>

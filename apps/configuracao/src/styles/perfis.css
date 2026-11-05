@@ -1,0 +1,7 @@
+/* Subgrupo sob o título do grupo: um nível abaixo, ainda com tamanho e peso de título. */
+fieldset.field > legend.cfg-form__grupo-titulo {
+  margin-block-start: var(--space-5);
+  color: var(--text-heading);
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+}

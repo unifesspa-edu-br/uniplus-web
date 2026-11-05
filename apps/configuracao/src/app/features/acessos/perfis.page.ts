@@ -175,7 +175,7 @@ interface CorpoDoPerfil {
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formAberto"
       [heading]="emEdicao() ? 'Editar perfil' : 'Novo perfil'"
       ariaLabel="Formulário de perfil de acesso"
@@ -186,7 +186,7 @@ interface CorpoDoPerfil {
       }
       <form
         id="cfg-perfil-form"
-        class="cfg-form"
+        class="form-drawer__form"
         [formGroup]="form"
         (ngSubmit)="salvar()"
         novalidate
@@ -262,7 +262,7 @@ interface CorpoDoPerfil {
           >
         </fieldset>
       </form>
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formAberto.set(false)">
           Cancelar
         </button>

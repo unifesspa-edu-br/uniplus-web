@@ -129,7 +129,7 @@ function ultimaChaveDoCaminho(field: string): string {
           }}</ui-alert>
         }
 
-        <form [formGroup]="criarForm" (ngSubmit)="criar()" novalidate class="cfg-form">
+        <form [formGroup]="criarForm" (ngSubmit)="criar()" novalidate class="form-drawer__form">
           <section aria-labelledby="cfg-termo-novo" class="form-section">
             <h2 id="cfg-termo-novo" class="form-section__title">Novo termo</h2>
             <div class="form-grid">
@@ -186,7 +186,7 @@ function ultimaChaveDoCaminho(field: string): string {
             </div>
           </section>
 
-          <div class="cfg-form-footer">
+          <div class="form-drawer__footer">
             <button type="submit" class="btn btn--primary" [disabled]="criando()">
               @if (criando()) {
                 <ui-spinner size="sm" />
@@ -211,7 +211,7 @@ function ultimaChaveDoCaminho(field: string): string {
             [formGroup]="rascunhoForm"
             (ngSubmit)="salvarRascunho()"
             novalidate
-            class="cfg-form"
+            class="form-drawer__form"
           >
             <fieldset class="cfg-termo-consentimento__campos" [disabled]="processando()">
               <legend class="sr-only">Campos do rascunho</legend>
@@ -258,7 +258,7 @@ function ultimaChaveDoCaminho(field: string): string {
               </div>
             </fieldset>
 
-            <div class="cfg-form-footer">
+            <div class="form-drawer__footer">
               <button type="submit" class="btn btn--primary" [disabled]="processando()">
                 @if (acaoEmAndamento() === 'rascunho') {
                   <ui-spinner size="sm" />

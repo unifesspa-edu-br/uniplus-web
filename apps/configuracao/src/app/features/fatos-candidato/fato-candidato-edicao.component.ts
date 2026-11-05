@@ -113,7 +113,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
   standalone: true,
   imports: [NgTemplateOutlet, ReactiveFormsModule, AlertComponent, AvisoDeNovaAprovacaoComponent, EditorDeCondicoesComponent, RecolhivelComponent, SituacaoDaAprovacaoComponent, SpinnerComponent, TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  // O corpo do drawer não rola: o host ocupa a altura dele e o .cfg-form de dentro é o único
+  // O corpo do drawer não rola: o host ocupa a altura dele e o .form-drawer__form de dentro é o único
   // container de rolagem, com o recuo do conteúdo.
   styles: [
     ':host { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }',
@@ -226,7 +226,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
           </dl>
     </ng-template>
 
-    <div class="cfg-form">
+    <div class="form-drawer__form">
     @if (fato(); as f) {
       @if (f.sistema) {
         <ui-alert variant="info" heading="Fato de sistema">
@@ -300,7 +300,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
           @if (fasesComErro()) {
             <ui-alert variant="warning" heading="Fases não carregadas">
               Sem a lista de fases não é possível dizer a partir de quando o fato é conhecido.
-              <div class="cfg-list__retry">
+              <div class="list-state__retry">
                 <button type="button" class="btn btn--secondary btn--sm" (click)="fases.reload()">Tentar novamente</button>
               </div>
             </ui-alert>
@@ -541,7 +541,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
           @if (catalogoComErro()) {
             <ui-alert variant="warning" heading="Catálogo de fatos não carregado">
               Sem o catálogo, as condições das regras não podem ser escritas nem conferidas.
-              <div class="cfg-list__retry">
+              <div class="list-state__retry">
                 <button type="button" class="btn btn--secondary btn--sm" (click)="catalogo.reload()">Tentar novamente</button>
               </div>
             </ui-alert>

@@ -433,7 +433,7 @@ describe('TiposAtoPage', () => {
       '.panel-head .btn--primary',
     ) as HTMLButtonElement;
     const cancelar = Array.from(
-      fixture.nativeElement.querySelectorAll('.cfg-form-footer button'),
+      fixture.nativeElement.querySelectorAll('.form-drawer__footer button'),
     ).find((b) => (b as HTMLButtonElement).textContent?.trim() === 'Cancelar') as HTMLButtonElement;
 
     expect(cadastrar.disabled).toBe(true);

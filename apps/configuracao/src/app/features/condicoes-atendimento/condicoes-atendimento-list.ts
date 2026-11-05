@@ -257,7 +257,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
     </div>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário da condição de atendimento"
@@ -274,7 +274,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
         id="cfg-unidade-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-form-identificadores">
           <div class="form-grid">
@@ -333,7 +333,7 @@ function controlNameFromBackendField(field: string): keyof CondicaoAtendimentoFo
         </section>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

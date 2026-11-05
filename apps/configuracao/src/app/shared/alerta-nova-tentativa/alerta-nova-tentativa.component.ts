@@ -21,7 +21,7 @@ const MENSAGEM_PADRAO = 'A lista não foi carregada.';
   template: `
     <ui-alert [variant]="variante()" [heading]="titulo()">
       <span [attr.id]="idMensagem()">{{ texto() }}</span>
-      <div class="cfg-list__retry">
+      <div class="list-state__retry">
         <button
           type="button"
           [attr.id]="idBotao()"

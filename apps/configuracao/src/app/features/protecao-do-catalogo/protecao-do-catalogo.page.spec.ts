@@ -142,7 +142,7 @@ describe('ProtecaoDoCatalogoPage', () => {
 
   const drawer = (tela: HTMLElement) => tela.querySelector('dialog[aria-label^="Detalhe do item"]');
   const botaoDoRodape = (tela: HTMLElement, nome: string): HTMLButtonElement | undefined =>
-    Array.from(drawer(tela)?.querySelectorAll<HTMLButtonElement>('.cfg-form-footer button') ?? []).find(
+    Array.from(drawer(tela)?.querySelectorAll<HTMLButtonElement>('.form-drawer__footer button') ?? []).find(
       (b) => b.textContent?.trim() === nome,
     );
   const dialogo = (tela: HTMLElement) => tela.querySelector('ui-dialog dialog');
@@ -218,7 +218,7 @@ describe('ProtecaoDoCatalogoPage', () => {
     expect(texto).toContain('Código no sistema: LAUDO_MEDICO_COMPLEMENTAR');
     expect(texto.indexOf('Código no sistema')).toBeGreaterThan(texto.indexOf('O que é o item'));
     expect(texto.indexOf('O que é o item')).toBeGreaterThan(texto.indexOf('Proposta de proteção'));
-    expect(Array.from(drawer(tela)?.querySelectorAll('.cfg-form-footer button') ?? []).map((b) => b.textContent?.trim())).toEqual([
+    expect(Array.from(drawer(tela)?.querySelectorAll('.form-drawer__footer button') ?? []).map((b) => b.textContent?.trim())).toEqual([
       'Fechar',
       'Reprovar',
       'Recomendar ajuste',
@@ -910,7 +910,7 @@ describe('ProtecaoDoCatalogoPage', () => {
       expect(historico).toHaveLength(3);
       expect(historico[0]).toContain('Solicitação');
       expect(historico[2]).toContain('Aceite da recomendação');
-      expect(painel?.querySelector('.cfg-form-footer button')?.textContent?.trim()).toBe('Fechar');
+      expect(painel?.querySelector('.form-drawer__footer button')?.textContent?.trim()).toBe('Fechar');
     });
 
     it('se o item não existe mais, mantém a decisão e explica no histórico', async () => {

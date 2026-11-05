@@ -265,7 +265,7 @@ import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
           <form
             id="cfg-calendario-dias-uteis-form"
             [formGroup]="form"
-            class="cfg-form cfg-calendario-form"
+            class="form-drawer__form cfg-calendario-form"
             (ngSubmit)="salvar()"
           >
             @if (erroDeFormulario(); as recusa) {

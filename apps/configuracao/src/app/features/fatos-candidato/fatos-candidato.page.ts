@@ -170,7 +170,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
     @if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar os fatos">
         {{ errorMessage() }}
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button type="button" class="btn btn--secondary btn--sm" [disabled]="loading()" (click)="tentarNovamente()">
             Tentar novamente
           </button>
@@ -198,7 +198,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
         <div class="panel-head__title">
           <h2 #tituloDaLista id="cfg-fatos-list-title" tabindex="-1">Fatos do candidato</h2>
           @if (loading()) {
-            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
         <div class="panel-head__actions">
@@ -329,7 +329,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="detalheAberto"
       [heading]="detalhe()?.nome ?? 'Fato do candidato'"
       ariaLabel="Detalhe do fato do candidato"
@@ -337,7 +337,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
       position="right"
     >
       @if (detalheAberto() && detalhe(); as fato) {
-        <div class="cfg-form" role="region" tabindex="0" aria-label="Dados do fato do candidato">
+        <div class="form-drawer__form" role="region" tabindex="0" aria-label="Dados do fato do candidato">
           <div class="cfg-detalhe-situacoes">
             <cfg-situacao-da-aprovacao
               [situacao]="fato.aprovacao.situacao"
@@ -432,7 +432,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             <cfg-historico-da-protecao cadastro="FATO" [itemId]="fato.id" />
           </ng-container>
         </div>
-        <div class="cfg-form-footer">
+        <div class="form-drawer__footer">
           <button type="button" class="btn btn--tertiary btn--rect" (click)="detalheAberto.set(false)">Fechar</button>
           <ng-container *authTemPermissao="permissaoDeManter">
             @if (fato.aprovacao.situacao === 'AJUSTE_RECOMENDADO') {
@@ -446,11 +446,11 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
       }
     </ui-drawer>
 
-    <ui-drawer class="cfg-form-drawer" [(visible)]="drawerAberto" [heading]="tituloDoDrawer()" ariaLabel="Fato do candidato" position="right">
+    <ui-drawer class="form-drawer" [(visible)]="drawerAberto" [heading]="tituloDoDrawer()" ariaLabel="Fato do candidato" position="right">
       <!-- O conteúdo só existe com o drawer aberto: reabrir o mesmo fato recarrega do servidor e descarta o rascunho fechado. -->
       @if (drawerAberto() && fatoEmEdicao(); as id) {
         <cfg-fato-candidato-edicao [id]="id" (alterado)="recarregar()" />
-        <div class="cfg-form-footer">
+        <div class="form-drawer__footer">
           <button type="button" class="btn btn--secondary btn--rect" (click)="drawerAberto.set(false)">Fechar</button>
         </div>
       } @else if (drawerAberto()) {
@@ -460,12 +460,12 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
         @if (fasesComErro()) {
           <ui-alert variant="warning" heading="Fases não carregadas">
             Sem a lista de fases não é possível dizer a partir de quando o fato é conhecido.
-            <div class="cfg-list__retry">
+            <div class="list-state__retry">
               <button type="button" class="btn btn--secondary btn--sm" (click)="fases.reload()">Tentar novamente</button>
             </div>
           </ui-alert>
         }
-        <form [formGroup]="form" id="cfg-fato-criacao" class="cfg-form" (ngSubmit)="criar()" novalidate>
+        <form [formGroup]="form" id="cfg-fato-criacao" class="form-drawer__form" (ngSubmit)="criar()" novalidate>
           <fieldset class="field form-grid__full">
             <legend class="field__label is-required">O que o fato é</legend>
             <label class="radio">
@@ -533,7 +533,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
             @if (catalogoComErro()) {
               <ui-alert variant="warning" heading="Fatos de membro não carregados">
                 Sem o catálogo de fatos não é possível escolher o fato de membro que o agregado resume.
-                <div class="cfg-list__retry">
+                <div class="list-state__retry">
                   <button type="button" class="btn btn--secondary btn--sm" (click)="catalogo.reload()">Tentar novamente</button>
                 </div>
               </ui-alert>
@@ -689,7 +689,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
           </fieldset>
         </form>
 
-        <div class="cfg-form-footer">
+        <div class="form-drawer__footer">
           <button type="button" class="btn btn--tertiary btn--rect" (click)="drawerAberto.set(false)">Cancelar</button>
           <button type="submit" form="cfg-fato-criacao" class="btn btn--primary" [disabled]="salvando()">
             @if (salvando()) {

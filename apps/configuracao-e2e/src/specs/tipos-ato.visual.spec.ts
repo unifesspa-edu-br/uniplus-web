@@ -102,13 +102,13 @@ test.describe('Tipo de ato — lista e formulário', () => {
   test('a gaveta rola pelo formulário e mantém o rodapé fixo', async ({ page }) => {
     await page.getByRole('button', { name: 'Novo tipo de ato' }).first().click();
 
-    const formulario = page.locator('form.cfg-form');
+    const formulario = page.locator('form.form-drawer__form');
     await expect(formulario).toBeVisible();
     await expect(formulario).toHaveCSS('overflow-y', 'auto');
 
-    const rodape = page.locator('.cfg-form-footer');
+    const rodape = page.locator('.form-drawer__footer');
     await expect(rodape).toBeVisible();
-    await expect(formulario.locator('.cfg-form-footer')).toHaveCount(0);
+    await expect(formulario.locator('.form-drawer__footer')).toHaveCount(0);
     await expect(rodape.getByRole('button', { name: 'Salvar tipo de ato' })).toBeVisible();
   });
 

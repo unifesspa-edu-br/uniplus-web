@@ -109,7 +109,7 @@ describe('FatosCandidatoPage', () => {
 
     (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
     fixture.detectChanges();
-    const rodape = Array.from(host.querySelectorAll('.cfg-form-footer button')).map((b) => b.textContent?.trim());
+    const rodape = Array.from(host.querySelectorAll('.form-drawer__footer button')).map((b) => b.textContent?.trim());
     expect(rodape).toEqual(['Fechar']);
   });
 
@@ -254,7 +254,7 @@ describe('FatosCandidatoPage', () => {
       const texto = host.querySelector('dialog[aria-label="Detalhe do fato do candidato"]')?.textContent?.replace(/\s+/gu, ' ') ?? '';
       expect(texto).toContain('Regras padrão');
       expect(texto).toContain('Contribui "Mulher cis" quando:');
-      expect(host.querySelector('dialog[aria-label="Detalhe do fato do candidato"] .cfg-form-footer')?.textContent).not.toContain('Editar');
+      expect(host.querySelector('dialog[aria-label="Detalhe do fato do candidato"] .form-drawer__footer')?.textContent).not.toContain('Editar');
     });
 
     it('no fato reprovado mostra a justificativa e oferece "Editar", sem "Aceitar recomendação"', async () => {
@@ -274,7 +274,7 @@ describe('FatosCandidatoPage', () => {
 
       const drawer = host.querySelector('dialog[aria-label="Detalhe do fato do candidato"]');
       expect(drawer?.textContent?.replace(/\s+/gu, ' ')).toContain('Justificativa: Falta base legal.');
-      expect(Array.from(drawer?.querySelectorAll('.cfg-form-footer button') ?? []).map((b) => b.textContent?.trim())).toEqual(['Fechar', 'Editar']);
+      expect(Array.from(drawer?.querySelectorAll('.form-drawer__footer button') ?? []).map((b) => b.textContent?.trim())).toEqual(['Fechar', 'Editar']);
     });
 
     it('"Editar" fecha o detalhe e abre a edição do mesmo fato', async () => {
@@ -282,7 +282,7 @@ describe('FatosCandidatoPage', () => {
       (host.querySelector('.table-responsive__alvo') as HTMLButtonElement).click();
       fixture.detectChanges();
 
-      const editar = Array.from<HTMLButtonElement>(host.querySelectorAll('.cfg-form-footer button')).find((b) => b.textContent?.trim() === 'Editar');
+      const editar = Array.from<HTMLButtonElement>(host.querySelectorAll('.form-drawer__footer button')).find((b) => b.textContent?.trim() === 'Editar');
       editar?.click();
       fixture.detectChanges();
       controller.match(() => true).forEach((req) => req.flush(null));
@@ -622,7 +622,7 @@ describe('FatosCandidatoPage', () => {
       aprovacao: { situacao: 'PENDENTE', solicitadaEm: null, decididaEm: null, classificacaoRecomendada: null, justificativa: null, aceitaEm: null },
     });
     const botaoDaPagina = (host: HTMLElement, rotulo: string) =>
-      Array.from<HTMLButtonElement>(host.querySelectorAll('.panel-head__actions button, .cfg-form-footer button')).find((b) =>
+      Array.from<HTMLButtonElement>(host.querySelectorAll('.panel-head__actions button, .form-drawer__footer button')).find((b) =>
         b.textContent?.includes(rotulo),
       );
 

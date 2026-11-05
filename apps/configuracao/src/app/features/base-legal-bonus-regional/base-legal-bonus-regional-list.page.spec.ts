@@ -419,7 +419,7 @@ describe('BaseLegalBonusRegionalListPage', () => {
     const requisicao = controller.expectOne((r) => r.url === URL_ADMIN && r.method === 'POST');
 
     const cancelarBtn = Array.from(
-      fixture.nativeElement.querySelectorAll('.cfg-form-footer button') as NodeListOf<HTMLButtonElement>,
+      fixture.nativeElement.querySelectorAll('.form-drawer__footer button') as NodeListOf<HTMLButtonElement>,
     ).find((btn) => btn.textContent?.trim() === 'Cancelar');
     const fecharBtn = fixture.nativeElement.querySelector(
       '.uni-drawer__header button',

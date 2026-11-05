@@ -114,7 +114,7 @@ interface CabecalhoForm {
     } @else if (erroAoCarregar()) {
       <ui-alert variant="danger" heading="Não foi possível carregar o modelo">
         {{ erroAoCarregar() }}
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
             Tentar novamente
           </button>
@@ -136,7 +136,7 @@ interface CabecalhoForm {
       @if (termosComErro()) {
         <ui-alert variant="warning" heading="Termos de consentimento não carregados">
           Sem a lista de termos não é possível exigir um termo novo nem trocar a versão.
-          <div class="cfg-list__retry">
+          <div class="list-state__retry">
             <button type="button" class="btn btn--secondary btn--sm" (click)="carregarTermos()">
               Tentar novamente
             </button>
@@ -147,7 +147,7 @@ interface CabecalhoForm {
       @if (catalogoComErro()) {
         <ui-alert variant="warning" heading="Catálogo de fatos não carregado">
           Sem o catálogo não é possível acrescentar campos nem declarar condições.
-          <div class="cfg-list__retry">
+          <div class="list-state__retry">
             <button type="button" class="btn btn--secondary btn--sm" (click)="catalogo.reload()">
               Tentar novamente
             </button>
@@ -216,7 +216,7 @@ interface CabecalhoForm {
       @if (vocabularioDosDocumentosComErro()) {
         <ui-alert variant="warning" heading="Fases ou tipos de documento não carregados">
           Sem as fases e os tipos de documento não é possível acrescentar documentos exigidos.
-          <div class="cfg-list__retry">
+          <div class="list-state__retry">
             <button
               type="button"
               class="btn btn--secondary btn--sm"
@@ -273,7 +273,7 @@ interface CabecalhoForm {
         }
       </p>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <a class="btn btn--tertiary btn--rect" routerLink="/modelos-formulario"
           >Voltar sem salvar</a
         >

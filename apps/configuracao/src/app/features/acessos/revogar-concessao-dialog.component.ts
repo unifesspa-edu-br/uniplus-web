@@ -30,6 +30,7 @@ export interface ConfirmacaoDaRevogacao {
   standalone: true,
   imports: [ReactiveFormsModule, AlertComponent, DialogComponent, SpinnerComponent, DateBrPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './revogar-concessao-dialog.component.css',
   template: `
     <ui-dialog [(visible)]="visible" heading="Revogar a concessão" [dismissible]="!enviando()">
       <div class="cfg-dialog-form">

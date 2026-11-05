@@ -99,7 +99,7 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
       @if (erroAoListar(); as erro) {
         <ui-alert variant="danger" heading="Não foi possível listar os modelos">
           {{ erro }}
-          <div class="cfg-list__retry">
+          <div class="list-state__retry">
             <button type="button" class="btn btn--secondary btn--sm" (click)="listarModelos()">
               Tentar novamente
             </button>
@@ -114,7 +114,7 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
       } @else if (erroAoCarregar()) {
         <ui-alert variant="danger" heading="Não foi possível carregar o modelo">
           {{ erroAoCarregar() }}
-          <div class="cfg-list__retry">
+          <div class="list-state__retry">
             <button type="button" class="btn btn--secondary btn--sm" (click)="carregarModelo()">
               Tentar novamente
             </button>

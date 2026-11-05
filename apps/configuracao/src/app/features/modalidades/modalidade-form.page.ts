@@ -130,7 +130,7 @@ interface ModalidadeForm {
         <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
       }
 
-      <form [formGroup]="form" id="cfg-modalidade-form" (ngSubmit)="salvar()" novalidate class="cfg-form">
+      <form [formGroup]="form" id="cfg-modalidade-form" (ngSubmit)="salvar()" novalidate class="form-drawer__form">
         <section aria-labelledby="cfg-mod-identificacao" class="form-section">
           <h2 id="cfg-mod-identificacao" class="form-section__title">Identificação</h2>
           <div class="form-grid">
@@ -318,7 +318,7 @@ interface ModalidadeForm {
             @if (catalogoComErro()) {
               <ui-alert variant="warning" heading="Catálogo de fatos não carregado">
                 Sem o catálogo, a regra de aplicabilidade não pode ser lida nem escrita.
-                <div class="cfg-list__retry">
+                <div class="list-state__retry">
                   <button type="button" class="btn btn--secondary btn--sm" (click)="catalogo.reload()">
                     Tentar novamente
                   </button>
@@ -411,7 +411,7 @@ interface ModalidadeForm {
         </aside>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <a class="btn btn--tertiary btn--rect" routerLink="/modalidades">Cancelar</a>
         <button type="submit" form="cfg-modalidade-form" class="btn btn--primary" [disabled]="salvando()">
           @if (salvando()) {
@@ -1022,7 +1022,7 @@ export class ModalidadeFormPage {
   }
 
   private focarPrimeiroErro(): void {
-    const primeiro = document.querySelector<HTMLElement>('.cfg-form .is-error .input, .cfg-form .is-error .select');
+    const primeiro = document.querySelector<HTMLElement>('.form-drawer__form .is-error .input, .form-drawer__form .is-error .select');
     primeiro?.focus();
   }
 }

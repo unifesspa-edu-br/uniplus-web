@@ -175,7 +175,7 @@ interface TipoDocumentoForm {
     @if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar os tipos de documento">
         {{ errorMessage() }}
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button
             type="button"
             class="btn btn--secondary btn--sm"
@@ -210,7 +210,7 @@ interface TipoDocumentoForm {
         <div class="panel-head__title">
           <h2 #tituloDaLista id="cfg-tipos-documento-list-title" tabindex="-1">Tipos de documento</h2>
           @if (loading()) {
-            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
         <div class="panel-head__actions">
@@ -345,7 +345,7 @@ interface TipoDocumentoForm {
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="detalheAberto"
       [heading]="detalhe()?.nome ?? 'Tipo de documento'"
       ariaLabel="Detalhe do tipo de documento"
@@ -353,7 +353,7 @@ interface TipoDocumentoForm {
       position="right"
     >
       @if (detalheAberto() && detalhe(); as tipo) {
-        <div class="cfg-form" role="region" tabindex="0" aria-label="Dados do tipo de documento">
+        <div class="form-drawer__form" role="region" tabindex="0" aria-label="Dados do tipo de documento">
           @if (aprovacao.aprovacaoDe(tipo.id); as situacao) {
             <cfg-situacao-da-aprovacao
               [situacao]="situacao.situacao"
@@ -405,7 +405,7 @@ interface TipoDocumentoForm {
             <cfg-historico-da-protecao cadastro="TIPO_DOCUMENTO" [itemId]="tipo.id" />
           </ng-container>
         </div>
-        <div class="cfg-form-footer">
+        <div class="form-drawer__footer">
           <button type="button" class="btn btn--tertiary btn--rect" (click)="detalheAberto.set(false)">
             Fechar
           </button>
@@ -424,7 +424,7 @@ interface TipoDocumentoForm {
     </ui-drawer>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [heading]="formHeading()"
       ariaLabel="Formulário de tipo de documento"
@@ -437,7 +437,7 @@ interface TipoDocumentoForm {
       @if (categorias.comErro()) {
         <ui-alert variant="warning" heading="Categorias não carregadas">
           Sem o catálogo de categorias não é possível classificar o tipo de documento.
-          <div class="cfg-list__retry">
+          <div class="list-state__retry">
             <button
               type="button"
               class="btn btn--secondary btn--sm"
@@ -474,7 +474,7 @@ interface TipoDocumentoForm {
         id="cfg-tipo-documento-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <div class="form-grid">
           @let erroCampoCodigo = erroDoCampo('codigo');
@@ -659,7 +659,7 @@ interface TipoDocumentoForm {
         </fieldset>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
           Cancelar
         </button>

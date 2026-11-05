@@ -181,7 +181,7 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
     @if (errorMessage()) {
       <ui-alert variant="danger" heading="Não foi possível carregar os tipos de ato">
         {{ errorMessage() }}
-        <div class="cfg-list__retry">
+        <div class="list-state__retry">
           <button
             type="button"
             class="btn btn--secondary btn--sm"
@@ -199,7 +199,7 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
         <div class="panel-head__title">
           <h2 id="cfg-tipos-ato-list-title">Tipos de ato</h2>
           @if (loading()) {
-            <span class="cfg-list__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
           }
         </div>
         <button
@@ -352,7 +352,7 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
     </section>
 
     <ui-drawer
-      class="cfg-form-drawer"
+      class="form-drawer"
       [(visible)]="formOpen"
       [closable]="!saving()"
       [heading]="emEdicao() ? 'Editar tipo de ato' : 'Novo tipo de ato'"
@@ -368,7 +368,7 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
         id="cfg-tipo-ato-form"
         (ngSubmit)="salvar()"
         novalidate
-        class="cfg-form"
+        class="form-drawer__form"
       >
         <section aria-labelledby="cfg-ato-identificacao">
           <h3 id="cfg-ato-identificacao" class="form-section__title">Identificação</h3>
@@ -517,7 +517,7 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
         </section>
       </form>
 
-      <div class="cfg-form-footer">
+      <div class="form-drawer__footer">
         <button
           type="button"
           class="btn btn--tertiary btn--rect"
