@@ -1,6 +1,6 @@
 import { type DadoRevelavel, formatarDataBr } from '@uniplus/shared-utils';
 
-import { lerLimiteDeData } from './interpretador/leitura';
+import { lerLimiteDeData } from './interpretador/leitura-da-restricao';
 import { RESOLVIDO, VERDADEIRO } from './interpretador/logica';
 import { diaDoLimite, FAIXA_DE_DATA } from './interpretador/restricoes';
 

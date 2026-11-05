@@ -1,7 +1,8 @@
 import { deslocarDia, diaNoFuso } from '@uniplus/shared-utils';
 
 import { avaliar, type ItemAvaliado, type OcorrenciaRespondida } from './avaliador';
-import { lerRegras, type RegrasInvalidas } from './leitura';
+import type { RegrasInvalidas } from './definicao-do-formulario';
+import { lerRegras } from './leitura';
 import {
   codigosDa,
   estaVazia,

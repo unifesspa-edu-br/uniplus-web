@@ -159,7 +159,7 @@ export {
   interpretarFormulario,
   type InterpretacaoDoFormulario,
 } from '../../src/lib/components/formulario-do-candidato/interpretador/interpretador';
-export type { RegrasInvalidas } from '../../src/lib/components/formulario-do-candidato/interpretador/leitura';
+export type { RegrasInvalidas } from '../../src/lib/components/formulario-do-candidato/interpretador/definicao-do-formulario';
 export type {
   AvaliacaoDoFormulario,
   CampoAvaliado,

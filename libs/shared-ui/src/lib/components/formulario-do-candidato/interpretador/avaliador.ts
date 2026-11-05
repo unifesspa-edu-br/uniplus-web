@@ -6,7 +6,7 @@ import type {
   DefinicaoGrupo,
   DefinicaoItem,
   Obrigatoriedade,
-} from './leitura';
+} from './definicao-do-formulario';
 import {
   codigosDa,
   e,
