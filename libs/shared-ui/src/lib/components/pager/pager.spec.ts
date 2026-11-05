@@ -102,13 +102,24 @@ describe('PagerComponent (Anterior / Próximo)', () => {
     expect(emitido).toEqual([100]);
   });
 
-  it('isDisabled também desabilita o seletor de itens por página', () => {
+  it('isDisabled indisponibiliza o seletor sem tirá-lo do foco e recusa a troca', () => {
     fixture.componentRef.setInput('pageSizeOptions', [10, 25, 50, 100]);
     fixture.componentRef.setInput('pageSize', 25);
     fixture.componentRef.setInput('isDisabled', true);
     fixture.detectChanges();
 
-    expect(seletorLimite()?.disabled).toBe(true);
+    const emitido: Array<number | null> = [];
+    fixture.componentInstance.pageSize.subscribe((v) => emitido.push(v));
+    const select = seletorLimite();
+    if (!select) throw new Error('seletor ausente');
+    expect(select.disabled).toBe(false);
+    expect(select.getAttribute('aria-disabled')).toBe('true');
+
+    select.value = '100';
+    select.dispatchEvent(new Event('change'));
+
+    expect(emitido).toEqual([]);
+    expect(select.value).toBe('25');
   });
 
   it('expõe statusText e navigationLabel acessíveis', () => {

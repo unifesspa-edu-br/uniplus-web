@@ -42,7 +42,7 @@
     background var(--duration-fast) var(--ease-standard),
     border-color var(--duration-fast) var(--ease-standard);
 }
-.pager__btn:hover:not(:disabled) {
+.pager__btn:hover:not(:disabled):not([aria-disabled='true']) {
   background: var(--surface-subtle);
   border-color: var(--color-primary);
   color: var(--color-primary);
@@ -53,6 +53,12 @@
   background: var(--surface-disabled);
   color: var(--text-disabled);
   border-color: transparent;
+}
+.pager__btn[aria-disabled='true'] {
+  cursor: not-allowed;
+  background: var(--surface-disabled);
+  color: var(--text-muted);
+  border-color: var(--border-default);
 }
 .pager__btn svg {
   width: 16px;
@@ -83,4 +89,9 @@
   color: var(--text-primary);
   font-family: inherit;
   font-size: var(--text-sm);
+}
+.pager__per-page select[aria-disabled='true'] {
+  cursor: not-allowed;
+  background: var(--surface-disabled);
+  color: var(--text-muted);
 }

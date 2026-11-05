@@ -32,7 +32,7 @@ import { ChangeDetectionStrategy, Component, computed, input, model, output } fr
             <select
               data-pager="page-size"
               [value]="pageSize()"
-              [disabled]="isDisabled()"
+              [attr.aria-disabled]="isDisabled() ? 'true' : null"
               [attr.aria-label]="pageSizeLabel()"
               (change)="aoTrocarLimite($event)"
             >
@@ -92,7 +92,12 @@ export class PagerComponent {
   }
 
   protected aoTrocarLimite(event: Event): void {
-    const valor = Number((event.target as HTMLSelectElement).value);
+    const seletor = event.target as HTMLSelectElement;
+    if (this.isDisabled()) {
+      seletor.value = String(this.pageSize());
+      return;
+    }
+    const valor = Number(seletor.value);
     if (!Number.isNaN(valor)) {
       this.pageSize.set(valor);
     }
