@@ -40,14 +40,6 @@ export class CondicoesAtendimentoApi {
     );
   }
 
-  /** GET `/api/configuracao/condicoes-atendimento{id}` — detalhe. */
-  obter(id: string): Observable<ApiResult<CondicaoAtendimentoDto>> {
-    return this.http.get<ApiResult<CondicaoAtendimentoDto>>(
-      `${this.basePath}/api/configuracao/condicoes-atendimento/${encodeURIComponent(id)}`,
-      { context: withVendorMime('condicao-atendimento', 1) },
-    );
-  }
-
   /** POST `/api/configuracao/admin/condicoes-atendimento` — cria. Idempotency-Key (ADR-0027). */
   criar(
     command: CriarCondicaoAtendimentoCommand,

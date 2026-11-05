@@ -4,18 +4,17 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import {
-  CONFIGURACAO_BASE_PATH,
-  CondicaoAtendimentoDto,
-} from '@uniplus/shared-data/configuracao';
+import { CONFIGURACAO_BASE_PATH, CondicaoAtendimentoDto } from '@uniplus/shared-data/configuracao';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CondicoesAtendimentoListPage } from './condicoes-atendimento-list';
+import { CondicoesAtendimentoStore } from './condicoes-atendimento.store';
+import { EdicaoDasCondicoesAtendimento } from './edicao-das-condicoes-atendimento';
 
 const BASE = 'http://localhost:5000';
 const CONDICAO_ATENDIMENTO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
 const condicao_atendimento_seed: CondicaoAtendimentoDto = {
-  'id': CONDICAO_ATENDIMENTO_ID,
+  id: CONDICAO_ATENDIMENTO_ID,
   codigo: 'PCD',
   nome: 'Pcd',
   descricao: 'LBI (Lei 13.146/2015), art. 30',
@@ -61,7 +60,9 @@ describe('CondicoesAtendimentoListPage', () => {
   };
 
   async function flushLista(items: readonly CondicaoAtendimentoDto[]): Promise<void> {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`);
+    const req = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`,
+    );
     expect(req.request.params.get('limit')).toBe('50');
     req.flush(items);
     await propagate();
@@ -86,14 +87,14 @@ describe('CondicoesAtendimentoListPage', () => {
   }
 
   // Pós-mutação, `recarregar()` só dá reload no resource da lista principal —
-    // os lookups de Curso/Local de oferta já estão em cache e não recarregam.
-    async function flushRecarregarLista(items: readonly CondicaoAtendimentoDto[]): Promise<void> {
-      await propagate();
-      controller
-        .expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`)
-        .flush(items);
-      await propagate();
-    }
+  // os lookups de Curso/Local de oferta já estão em cache e não recarregam.
+  async function flushRecarregarLista(items: readonly CondicaoAtendimentoDto[]): Promise<void> {
+    await propagate();
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`)
+      .flush(items);
+    await propagate();
+  }
 
   it('drawer mostra empty-state quando condições não tem ofertas vivas', async () => {
     await flushLista([]);
@@ -102,7 +103,9 @@ describe('CondicoesAtendimentoListPage', () => {
 
     expect(component['condicoes']()).toHaveLength(0);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Nenhuma condição de atendimento carregada');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Nenhuma condição de atendimento carregada',
+    );
   });
 
   it('busca sem resultado mostra o empty-state de filtro, não o de lista vazia', async () => {
@@ -112,9 +115,34 @@ describe('CondicoesAtendimentoListPage', () => {
     fixture.detectChanges();
 
     expect(component['condicoesFiltradas']()).toHaveLength(0);
-    expect(fixture.nativeElement.textContent).toContain('Nenhuma condição de atendimento encontrada');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Nenhuma condição de atendimento encontrada',
+    );
     expect(fixture.nativeElement.textContent).toContain('Ajuste a busca para ver resultados.');
-    expect(fixture.nativeElement.textContent).not.toContain('Nenhuma condição de atendimento carregada');
+    expect(fixture.nativeElement.textContent).not.toContain(
+      'Nenhuma condição de atendimento carregada',
+    );
+  });
+
+  it('navega pelo cursor e preserva a página em caso de falha', async () => {
+    const store = fixture.debugElement.injector.get(CondicoesAtendimentoStore);
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`)
+      .flush([condicao_atendimento_seed], {
+        headers: { Link: '</api/itens?cursor=abc&direction=next>; rel="next"' },
+      });
+    await propagate();
+    store.proximaPagina();
+    await propagate();
+    const pagina = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`,
+    );
+    expect(pagina.request.params.get('cursor')).toBe('abc');
+    expect(pagina.request.params.get('direction')).toBe('next');
+    pagina.flush(null, { status: 500, statusText: 'Error' });
+    await propagate();
+    expect(store.condicoes()).toEqual([condicao_atendimento_seed]);
+    expect(store.mensagemDeErro()).toBeTruthy();
   });
 
   it('renderiza a lista de condições de atendimento', async () => {
@@ -145,32 +173,32 @@ describe('CondicoesAtendimentoListPage', () => {
   });
 
   it('cria condição de atendimento com código único, nome, descrição válidos', async () => {
-      await flushLista([]);
+    await flushLista([]);
 
-      component['abrirDrawerCriacao']();
-      component['form'].setValue({
-        codigo: 'PCD',
-        nome: 'Pcd',
-        descricao: 'LBI (Lei 13.146/2015), art. 30',
-      });
-      const key = component['idempotencyKeyAtual']();
+    component['abrirDrawerCriacao']();
+    component['form'].setValue({
+      codigo: 'PCD',
+      nome: 'Pcd',
+      descricao: 'LBI (Lei 13.146/2015), art. 30',
+    });
+    const key = component['idempotencyKeyAtual']();
 
-      component['salvar']();
+    component['salvar']();
 
-      const post = controller.expectOne(`${BASE}/api/configuracao/admin/condicoes-atendimento`);
-      expect(post.request.method).toBe('POST');
-      expect(post.request.headers.get('Idempotency-Key')).toBe(key);
-      expect(post.request.body).toMatchObject({
-        codigo: 'PCD',
-        nome: 'Pcd',
-        descricao: 'LBI (Lei 13.146/2015), art. 30'
-      });
-      post.flush('new-id', { status: 201, statusText: 'Created' });
-      await propagate();
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/condicoes-atendimento`);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.headers.get('Idempotency-Key')).toBe(key);
+    expect(post.request.body).toMatchObject({
+      codigo: 'PCD',
+      nome: 'Pcd',
+      descricao: 'LBI (Lei 13.146/2015), art. 30',
+    });
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
 
-      expect(component['formOpen']()).toBe(false);
-      expect(component['modo']()).toBe('criar');
-      await flushLista([condicao_atendimento_seed]);
+    expect(component['formOpen']()).toBe(false);
+    expect(component['modo']()).toBe('criar');
+    await flushLista([condicao_atendimento_seed]);
   });
 
   it('bloqueia salvar com campos obrigatórios vazios', async () => {
@@ -224,11 +252,13 @@ describe('CondicoesAtendimentoListPage', () => {
 
     fixture.detectChanges();
 
-    expect(getRemoverButtonEl().disabled).toBe(true);
+    expect(getRemoverButtonEl().getAttribute('aria-disabled')).toBe('true');
   });
 
   it('simula cenário que a primeira requisição falha e tenta novamente com sucesso', async () => {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`);
+    const req = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`,
+    );
     req.flush(null, { status: 500, statusText: 'Error' });
     await propagate();
     const tentarNovamenteButtonEl = fixture.nativeElement.querySelector(
@@ -238,17 +268,16 @@ describe('CondicoesAtendimentoListPage', () => {
 
     tentarNovamenteButtonEl.dispatchEvent(new Event('click'));
     fixture.detectChanges();
-    await flushRecarregarLista([condicao_atendimento_seed,]);
+    await flushRecarregarLista([condicao_atendimento_seed]);
     expect(component['condicoes']()).toHaveLength(1);
   });
-
 
   it('filtra a lista client-side por código ou nome', async () => {
     const outraCondicaoAtendimento: CondicaoAtendimentoDto = {
       ...condicao_atendimento_seed,
       id: '2',
       codigo: 'DISLEXIA',
-      nome: 'Dislexia'
+      nome: 'Dislexia',
     };
     await flushLista([condicao_atendimento_seed, outraCondicaoAtendimento]);
 
@@ -277,7 +306,9 @@ describe('CondicoesAtendimentoListPage', () => {
       descricao: '',
     });
 
-    controller.expectNone(`${BASE}/api/configuracao/admin/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`);
+    controller.expectNone(
+      `${BASE}/api/configuracao/admin/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`,
+    );
     expect(component['modo']()).toBe('editar');
     expect(edicaoButtonEl.disabled).toBe(false);
     expect(component['formOpen']()).toBe(true);
@@ -289,7 +320,7 @@ describe('CondicoesAtendimentoListPage', () => {
     const condicao_atendimento: CondicaoAtendimentoDto = {
       ...condicao_atendimento_seed,
       nome: NOVO_NOME_PCD,
-      descricao: NOVA_DESCRICAO_PCD
+      descricao: NOVA_DESCRICAO_PCD,
     };
 
     await flushLista([condicao_atendimento_seed]);
@@ -301,7 +332,9 @@ describe('CondicoesAtendimentoListPage', () => {
     component['form'].controls.descricao.setValue(NOVA_DESCRICAO_PCD);
     component['salvar']();
 
-    const put = controller.expectOne(`${BASE}/api/configuracao/admin/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`);
+    const put = controller.expectOne(
+      `${BASE}/api/configuracao/admin/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`,
+    );
     expect(put.request.method).toBe('PUT');
     expect(put.request.body.nome).toBe(NOVO_NOME_PCD);
     expect(put.request.body.descricao).toBe(NOVA_DESCRICAO_PCD);
@@ -317,16 +350,23 @@ describe('CondicoesAtendimentoListPage', () => {
     await flushLista([condicaoAtiva]);
     fixture.detectChanges();
     expect(component['loading']()).toBe(false);
-    expect(getEditarButtonEl().disabled).toBe(false);
-    expect(getRemoverButtonEl().disabled).toBe(false);
+    expect(getEditarButtonEl().getAttribute('aria-disabled')).toBeNull();
+    expect(getRemoverButtonEl().getAttribute('aria-disabled')).toBeNull();
 
     // Recarga real: reload() deixa loading()=true com o GET em voo, preservando a linha.
     component['tentarNovamente']();
     await propagate();
     fixture.detectChanges();
     expect(component['loading']()).toBe(true);
-    expect(getEditarButtonEl().disabled).toBe(true);
-    expect(getRemoverButtonEl().disabled).toBe(true);
+    expect(getEditarButtonEl().getAttribute('aria-disabled')).toBe('true');
+    expect(getRemoverButtonEl().getAttribute('aria-disabled')).toBe('true');
+    const busca = fixture.nativeElement.querySelector('input[type="search"]') as HTMLInputElement;
+    expect(busca.getAttribute('aria-disabled')).toBe('true');
+    expect(busca.readOnly).toBe(true);
+    getEditarButtonEl().click();
+    getRemoverButtonEl().click();
+    expect(component['formOpen']()).toBe(false);
+    expect(component['confirmOpen']()).toBe(false);
 
     // Encerra o GET pendente para o controller.verify() do afterEach.
     controller
@@ -414,5 +454,73 @@ describe('CondicoesAtendimentoListPage', () => {
     expect(component['confirmOpen']()).toBe(true);
     expect(component['saving']()).toBe(false);
     controller.expectNone((r) => r.url === `${BASE}/api/configuracao/condicoes-atendimento`);
+  });
+  it('mantém a trava durante o envio e a recarga após salvar', async () => {
+    await flushLista([condicaoRemovivel]);
+    const edicao = fixture.debugElement.injector.get(EdicaoDasCondicoesAtendimento);
+    edicao.abrirEdicao(condicaoRemovivel);
+    edicao.form.controls.nome.setValue('Ledor atualizado');
+    edicao.salvar();
+    await propagate();
+    const formulario = fixture.nativeElement.querySelector('fieldset.form-drawer__campos');
+    expect(formulario.disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('tr [role="status"]').textContent).toContain(
+      'Salvando...',
+    );
+    expect(getSalvarOuEditarButtonEl().getAttribute('aria-busy')).toBe('true');
+    edicao.fechar();
+    expect(edicao.formOpen()).toBe(true);
+    edicao.salvar();
+    edicao.abrirRemoverCondicao(condicaoRemovivel);
+    edicao.removerConfirmado();
+    controller.expectNone((r) => r.url === URL_REMOCAO && r.method === 'DELETE');
+    controller.expectOne(URL_REMOCAO).flush(null, { status: 204, statusText: 'No Content' });
+    expect(edicao.saving()).toBe(true);
+    await propagate();
+    expect(getEditarButtonEl().getAttribute('aria-disabled')).toBe('true');
+    expect(fixture.nativeElement.querySelector('tr [role="status"]').textContent).toContain(
+      'Atualizando...',
+    );
+    edicao.abrirDrawerCriacao();
+    expect(edicao.formOpen()).toBe(false);
+    await flushRecarregarLista([condicaoRemovivel]);
+    expect(edicao.saving()).toBe(false);
+  });
+
+  it('aplica recusa ao campo sem habilitar código reservado', async () => {
+    await flushLista([condicao_atendimento_seed]);
+    const edicao = fixture.debugElement.injector.get(EdicaoDasCondicoesAtendimento);
+    edicao.abrirEdicao(condicao_atendimento_seed);
+    edicao.salvar();
+    await propagate();
+    controller
+      .expectOne(`${BASE}/api/configuracao/admin/condicoes-atendimento/${CONDICAO_ATENDIMENTO_ID}`)
+      .flush(
+        {
+          type: 'about:blank',
+          title: 'Dados inválidos',
+          status: 422,
+          code: 'uniplus.validacao',
+          traceId: 'test-trace',
+          errors: [
+            {
+              field: 'Nome',
+              code: 'uniplus.configuracao.condicao_atendimento.invalida',
+              message: 'Nome recusado.',
+            },
+          ],
+        },
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagate();
+    expect(edicao.form.controls.codigo.disabled).toBe(true);
+    expect(edicao.form.controls.nome.errors?.['backend'].message).toBe('Nome recusado.');
+    expect(
+      fixture.nativeElement.querySelector('[formControlName="nome"]').getAttribute('aria-invalid'),
+    ).toBe('true');
   });
 });

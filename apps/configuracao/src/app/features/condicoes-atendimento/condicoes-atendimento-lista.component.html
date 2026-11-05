@@ -1,0 +1,157 @@
+<div data-scope class="cfg-unidades-scope">
+  <div class="filter-bar" role="search" aria-label="Filtrar condições de atendimento">
+    <div class="filter-bar__row">
+      <div class="input-group">
+        <span class="input-group__addon" aria-hidden="true"><i class="pi pi-search"></i></span>
+        <input
+          type="search"
+          class="input"
+          placeholder="Buscar por código ou nome…"
+          aria-label="Buscar condições de atendimento"
+          [value]="termoBusca()"
+          [attr.aria-disabled]="indisponivel() ? 'true' : null"
+          [readOnly]="indisponivel()"
+          (input)="aoDigitar($event)"
+        />
+      </div>
+      <button
+        type="button"
+        class="btn btn--tertiary btn--sm btn--rect"
+        [attr.aria-disabled]="indisponivel() ? 'true' : null"
+        (click)="limparBusca()"
+      >
+        Limpar
+      </button>
+    </div>
+  </div>
+
+  <section class="panel" aria-labelledby="cfg-unidades-list-title">
+    <div class="panel-head">
+      <div class="panel-head__title">
+        <h2 id="cfg-unidades-list-title">Condições de atendimento</h2>
+        <span class="list-count" aria-label="Total de condições carregadas">
+          {{ condicoesFiltradas().length }}
+        </span>
+      </div>
+      <button
+        type="button"
+        class="btn btn--primary"
+        [attr.aria-disabled]="indisponivel() ? 'true' : null"
+        (click)="cadastrarCondicao()"
+      >
+        <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+        Nova condição
+      </button>
+    </div>
+
+    @if (condicoesFiltradas().length > 0) {
+      <div class="table-responsive">
+        <table>
+          <caption class="sr-only">
+            Condições de atendimento especializado, com código e nome
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Código</th>
+              <th scope="col">Nome</th>
+              <th scope="col">
+                <span class="sr-only">Ações</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (condicao of condicoesFiltradas(); track condicao.id) {
+              <tr>
+                <td data-label="Código">
+                  <code>{{ condicao.codigo }}</code>
+                </td>
+                <td data-label="Nome">
+                  <div class="table-responsive__primary">{{ condicao.nome }}</div>
+                  <div class="table-responsive__meta">{{ condicao.descricao }}</div>
+                </td>
+                <td class="table-responsive__actions" data-label="Ações">
+                  <button
+                    type="button"
+                    class="btn btn--sm btn--rect btn--icon-only btn--tertiary"
+                    [attr.aria-label]="'Editar condição de atendimento ' + condicao.codigo"
+                    data-tooltip="Editar condição de atendimento"
+                    [attr.aria-disabled]="indisponivel() ? 'true' : null"
+                    (click)="editarCondicao(condicao)"
+                  >
+                    <i class="pi pi-pencil" aria-hidden="true"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn--sm btn--rect btn--icon-only btn--tertiary"
+                    [attr.aria-label]="'Remover condição de atendimento ' + condicao.codigo"
+                    [attr.aria-describedby]="condicao.codigo === 'PCD' ? 'pcd-protegido' : null"
+                    [attr.data-tooltip]="
+                      condicao.codigo === 'PCD'
+                        ? 'A condição PCD não pode ser removida.'
+                        : 'Remover condição de atendimento'
+                    "
+                    [attr.aria-disabled]="
+                      indisponivel() || condicao.codigo === 'PCD' ? 'true' : null
+                    "
+                    (click)="removerCondicao(condicao)"
+                  >
+                    <i class="pi pi-trash" aria-hidden="true"></i>
+                  </button>
+                  @if (condicao.codigo === 'PCD') {
+                    <span id="pcd-protegido" class="sr-only"
+                      >A condição PCD não pode ser removida.</span
+                    >
+                  }
+                  @if (condicao.id === linhaEmAndamento()) {
+                    <span role="status">{{ rotuloAndamento() }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (!carregando() && !mensagemDeErro()) {
+      @if (temFiltro()) {
+        <ui-empty-state
+          heading="Nenhuma condição de atendimento encontrada"
+          description="Ajuste a busca para ver resultados."
+        >
+          <button
+            type="button"
+            class="btn btn--secondary"
+            [attr.aria-disabled]="indisponivel() ? 'true' : null"
+            (click)="limparBusca()"
+          >
+            Limpar filtros
+          </button>
+        </ui-empty-state>
+      } @else {
+        <ui-empty-state
+          heading="Nenhuma condição de atendimento carregada"
+          description="Cadastre uma condição para iniciar a estrutura institucional."
+        >
+          <button
+            type="button"
+            class="btn btn--primary"
+            [attr.aria-disabled]="indisponivel() ? 'true' : null"
+            (click)="cadastrarCondicao()"
+          >
+            Nova condição
+          </button>
+        </ui-empty-state>
+      }
+    }
+    @if (temAnterior() || temProximo()) {
+      <ui-pager
+        statusText="Navegação por páginas"
+        navigationLabel="Paginação das condições de atendimento"
+        [hasPrevious]="temAnterior()"
+        [hasNext]="temProximo()"
+        [isDisabled]="carregando() || indisponivel()"
+        (previous)="anterior.emit()"
+        (next)="proximo.emit()"
+      />
+    }
+  </section>
+</div>

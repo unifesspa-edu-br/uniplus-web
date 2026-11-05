@@ -1,0 +1,90 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Condição de Atendimento</h1>
+    <p class="page-header__desc">
+      Condições que habilitam o candidato a solicitar atendimento especializado — cadastro
+      independente, identificado por código · UNI-REQ-0012.
+    </p>
+  </div>
+</div>
+<span class="sr-only" role="status">{{ edicao.anuncioDaRemocao() }}</span>
+<ui-alert variant="info" heading="Código editável, com exceção do PCD" [dynamic]="false">
+  O código de uma condição é editável (com nova checagem de unicidade entre as ativas) — as ofertas
+  já congeladas em editais permanecem intactas. A única exceção é o código PCD (Pessoa com
+  Deficiência), reservado e protegido: não pode ser renomeado nem removido, pois a regra de oferta
+  de atendimento o referencia literalmente.
+</ui-alert>
+@if (errorMessage()) {
+<ui-alert variant="danger" heading="Não foi possível carregar as condições de atendimento">
+  {{ errorMessage() }}
+  <div class="cfg-campi__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="loading() || saving() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+} @if (loading() && condicoes().length === 0) {
+<ui-skeleton skeletonKind="card" blockSize="10rem" />
+<ui-skeleton skeletonKind="card" blockSize="10rem" />
+}
+<cfg-condicoes-atendimento-lista
+  [condicoesFiltradas]="condicoesFiltradas()"
+  [carregando]="loading()"
+  [indisponivel]="saving() || loading()"
+  [mensagemDeErro]="errorMessage()"
+  [termoBusca]="termoBusca()"
+  [temFiltro]="temFiltro()"
+  [temAnterior]="prevCursor() !== null"
+  [temProximo]="nextCursor() !== null"
+  [linhaEmAndamento]="edicao.linhaEmAndamento()"
+  [rotuloAndamento]="edicao.rotuloAndamento()"
+  (buscaAlterada)="termoBusca.set($event)"
+  (cadastrar)="abrirDrawerCriacao()"
+  (editar)="abrirEdicao($event)"
+  (remover)="abrirRemoverCondicao($event)"
+  (anterior)="paginaAnterior()"
+  (proximo)="proximaPagina()"
+/>
+<cfg-condicao-atendimento-formulario
+  [(aberto)]="edicao.formOpen"
+  [form]="form"
+  [titulo]="formHeading()"
+  [erro]="formError()"
+  [modo]="modo()"
+  [salvando]="salvando()"
+  (salvar)="salvar()"
+  (cancelar)="edicao.fechar()"
+/>
+
+<ui-dialog
+  [(visible)]="confirmOpen"
+  heading="Remover condição de atendimento?"
+  (closed)="confirmOpen.set(false)"
+>
+  <p>
+    Você está prestes a remover a condição
+    <strong>{{ condicaoParaRemover()?.nome }}/{{ condicaoParaRemover()?.codigo }}.</strong>
+    A remoção impede novos editais de utilizá-la, mas não altera ofertas já congeladas — a cópia por
+    valor de cada processo permanece íntegra.
+  </p>
+  <div uiDialogFooter>
+    <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--danger"
+      [disabled]="saving()"
+      (click)="removerConfirmado()"
+    >
+      @if (saving()) {
+      <ui-spinner size="sm" />
+      } {{ saving() ? 'Removendo...' : 'Remover' }}
+    </button>
+  </div>
+</ui-dialog>
