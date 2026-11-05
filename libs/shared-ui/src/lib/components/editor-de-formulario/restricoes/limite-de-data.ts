@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
+import { ValorLegivelDirective } from '../../valor-legivel/valor-legivel.directive';
 import {
   problemaDoLimiteDeData,
   problemaDosAnos,
@@ -22,6 +23,7 @@ export function problemaDoLimite(limite: LimiteDeDataNoWire | null): string | nu
 @Component({
   selector: 'ui-limite-de-data',
   standalone: true,
+  imports: [ValorLegivelDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../anfitriao.css',
   template: `

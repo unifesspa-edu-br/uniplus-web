@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 
+import { ValorLegivelDirective } from '../../valor-legivel/valor-legivel.directive';
 import { ComboboxComponent } from '../../combobox/combobox';
 import { aplicarEdicao } from '../edicao';
 import { fatosEmGrupo } from '../fatos-em-grupo';
@@ -26,7 +27,7 @@ const SEM_FATO_QUE_CASE = 'Nenhum fato do candidato casa com o que você digitou
 @Component({
   selector: 'ui-acrescentar-na-secao',
   standalone: true,
-  imports: [ComboboxComponent],
+  imports: [ValorLegivelDirective, ComboboxComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../anfitriao.css',
   template: `

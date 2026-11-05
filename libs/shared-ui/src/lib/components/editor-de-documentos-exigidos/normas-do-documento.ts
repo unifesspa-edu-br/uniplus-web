@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, Injector, inject, input, output } from '@angular/core';
 
+import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 import { ABRANGENCIAS_ESCOLHIVEIS, STATUS_BASE_LEGAL_ESCOLHIVEIS } from '@uniplus/shared-utils';
 import { focarDepois } from '../editor-de-formulario/foco';
 import { baseLegalNova, type BaseLegalDoDocumento } from './documentos-exigidos';
@@ -8,6 +9,7 @@ import { baseLegalNova, type BaseLegalDoDocumento } from './documentos-exigidos'
 @Component({
   selector: 'ui-normas-do-documento',
   standalone: true,
+  imports: [ValorLegivelDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../editor-de-formulario/anfitriao.css',
   template: `

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
+import { ValorLegivelDirective } from '../../valor-legivel/valor-legivel.directive';
 import { problemasDasOcorrencias } from '../modelo/grupos';
 import { idsDescritivos } from '../ids';
 import { type GrupoDoFormulario } from '../modelo/tipos';
@@ -19,6 +20,7 @@ export interface MudancaDeContagem {
 @Component({
   selector: 'ui-ocorrencias-do-grupo',
   standalone: true,
+  imports: [ValorLegivelDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../anfitriao.css',
   template: `

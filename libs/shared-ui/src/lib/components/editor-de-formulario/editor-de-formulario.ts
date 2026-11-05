@@ -11,6 +11,7 @@ import {
   signal,
 } from '@angular/core';
 
+import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { AcrescentarNoFimComponent } from './editor/acrescentar-no-fim';
 import { EtapaDoFormularioComponent } from './editor/etapa-do-formulario';
@@ -44,7 +45,7 @@ import {
 @Component({
   selector: 'ui-editor-de-formulario',
   standalone: true,
-  imports: [
+  imports: [ValorLegivelDirective, 
     PressupostosDoFormularioComponent,
     EtapaDoFormularioComponent,
     AcrescentarNoFimComponent,

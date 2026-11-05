@@ -7,6 +7,7 @@ import {
   output,
 } from '@angular/core';
 
+import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 import { type CondicaoEmClausula } from '../editor-de-condicoes/condicoes/condicoes-em-clausulas';
 import {
   nomesDoCatalogo,
@@ -47,7 +48,7 @@ import {
 @Component({
   selector: 'ui-grupo-do-formulario',
   standalone: true,
-  imports: [
+  imports: [ValorLegivelDirective, 
     EditorDeCondicoesComponent,
     OcorrenciasDoGrupoComponent,
     CamposDoGrupoComponent,

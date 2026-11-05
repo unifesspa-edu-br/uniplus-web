@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
+import { ValorLegivelDirective } from '../../valor-legivel/valor-legivel.directive';
 import { numeroDigitadoInvalido } from '../modelo/envio';
 import { type RestricaoDeValor } from '../modelo/tipos';
 
@@ -25,6 +26,7 @@ export function limiteDigitado(texto: string): number | string | null {
 @Component({
   selector: 'ui-faixa-de-limites',
   standalone: true,
+  imports: [ValorLegivelDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../anfitriao.css',
   template: `
