@@ -45,14 +45,13 @@ export { FONTE_GEO_MUNICIPIO, type FatoDoCatalogo, type FatoEscolhivel, type Tip
 export { type CondicaoDeFato, OPERADOR_DIFERENTE, OPERADOR_EM, OPERADOR_IGUAL, OPERADOR_MAIOR_IGUAL, OPERADOR_MENOR_IGUAL, OPERADOR_NAO_EM, type OperadorEscolhivel, RESPOSTAS_BOOLEANAS, VALOR_FALSO, VALOR_VERDADEIRO, comOperador, comValorEscalar, comValoresDeLista, comparaComLista, operadoresDoFato, valorEscalarDe, valoresDeListaDe } from './editor-de-condicoes/condicoes/valor-da-condicao';
 export * from './editor-de-condicoes/leitura-de-condicoes';
 export { EditorDeFormularioComponent } from './editor-de-formulario/editor-de-formulario';
-export { comCandidatoComoMembro, type ContextoDoParentesco } from './editor-de-formulario/modelo/candidato-como-membro';
 export { ehColetavel, fatosDeMembroParaAcrescentar, fatosParaAcrescentar, pressupostosParaAcrescentar, renderizacaoDe } from './editor-de-formulario/modelo/catalogo-de-campos';
 export { comFatosConhecidosAntes, fatosCitadosPeloConteudo, fatosCitaveisPelaSecao, fatosCitaveisPeloItem, fatosCitaveisPelosTermos, fatosOferecidos, fatosQueExigemResposta, predicadosSobreRespostasAnteriores, todosOsCampos } from './editor-de-formulario/modelo/citacoes';
 export { BLOCOS, BLOCO_COMPROVACAO_DOCUMENTAL, BLOCO_MODALIDADES_CALCULADAS, BLOCO_REVISAO_E_ACEITE, FINALIDADES, FINALIDADE_INSCRICAO, LIMITES_DO_FORMULARIO, OBRIGATORIEDADES, OBRIGATORIEDADE_NUNCA, OBRIGATORIEDADE_QUANDO, OBRIGATORIEDADE_SEMPRE, SECAO_DADOS_BASICOS, TIPO_BLOCO, TIPO_SECAO, blocosAdmitidos, conteudoInicial } from './editor-de-formulario/modelo/constantes';
 export { conteudoParaEnvio, numeroDigitadoInvalido, semDadosBasicos } from './editor-de-formulario/modelo/envio';
-export { type NovoGrupo, FATO_PARENTESCO, MAXIMO_DE_CAMPOS_DO_GRUPO, PROPRIO_CANDIDATO, acrescentarCampoAoGrupo, acrescentarGrupo, camposDoGrupo, comCampoDoGrupo, comGrupo, fatosCitaveisPeloCampoDoGrupo, fatosCitaveisPeloGrupo, motivoDaRemocaoTravadaDoGrupo, moverCampoNoGrupo, quantidadeNoTeto, removerCampoDoGrupo, removerGrupo } from './editor-de-formulario/modelo/grupos';
+export { FATO_PARENTESCO, MAXIMO_DE_CAMPOS_DO_GRUPO, PROPRIO_CANDIDATO, acrescentarCampoAoGrupo, camposDoGrupo, comCampoDoGrupo, comGrupo, fatosCitaveisPeloCampoDoGrupo, fatosCitaveisPeloGrupo, motivoDaRemocaoTravadaDoGrupo, moverCampoNoGrupo, quantidadeNoTeto, removerCampoDoGrupo, removerGrupo } from './editor-de-formulario/modelo/grupos';
 export { alternativaSemOProprioCampo, comImpedimento, impedimentoCabe } from './editor-de-formulario/modelo/impedimento';
-export { type ContextoDeCitacao, acrescentarCampo, acrescentarItem, comItem, moverEntrada, moverItem, podeMoverEntrada, podeMoverItem, removerItem, ufsAnteriores } from './editor-de-formulario/modelo/itens';
+export { acrescentarItem, comItem, moverEntrada, moverItem, podeMoverEntrada, podeMoverItem, removerItem, ufsAnteriores } from './editor-de-formulario/modelo/itens';
 export { entradasDaSecao, etapasEmOrdem, renumerar } from './editor-de-formulario/modelo/ordem-das-entradas';
 export { acrescentarPressuposto, removerPressuposto } from './editor-de-formulario/modelo/pressupostos';
 export { problemaDaRestricao, problemaDoGrupoDeOpcoes, problemaDoLimiteDeData, problemaDosAnos, problemaDosDias } from './editor-de-formulario/modelo/problemas-da-restricao';

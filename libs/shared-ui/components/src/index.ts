@@ -93,14 +93,13 @@ export {
 export { EnderecoGeoComponent } from '../../src/lib/components/endereco-geo/endereco-geo';
 export * from '../../src/lib/components/endereco-geo/endereco-geo.model';
 export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
-export { comCandidatoComoMembro, type ContextoDoParentesco } from '../../src/lib/components/editor-de-formulario/modelo/candidato-como-membro';
 export { ehColetavel, fatosDeMembroParaAcrescentar, fatosParaAcrescentar, pressupostosParaAcrescentar, renderizacaoDe } from '../../src/lib/components/editor-de-formulario/modelo/catalogo-de-campos';
 export { comFatosConhecidosAntes, fatosCitadosPeloConteudo, fatosCitaveisPelaSecao, fatosCitaveisPeloItem, fatosCitaveisPelosTermos, fatosOferecidos, fatosQueExigemResposta, predicadosSobreRespostasAnteriores, todosOsCampos } from '../../src/lib/components/editor-de-formulario/modelo/citacoes';
 export { BLOCOS, BLOCO_COMPROVACAO_DOCUMENTAL, BLOCO_MODALIDADES_CALCULADAS, BLOCO_REVISAO_E_ACEITE, FINALIDADES, FINALIDADE_INSCRICAO, LIMITES_DO_FORMULARIO, OBRIGATORIEDADES, OBRIGATORIEDADE_NUNCA, OBRIGATORIEDADE_QUANDO, OBRIGATORIEDADE_SEMPRE, SECAO_DADOS_BASICOS, TIPO_BLOCO, TIPO_SECAO, blocosAdmitidos, conteudoInicial } from '../../src/lib/components/editor-de-formulario/modelo/constantes';
 export { conteudoParaEnvio, numeroDigitadoInvalido, semDadosBasicos } from '../../src/lib/components/editor-de-formulario/modelo/envio';
-export { type NovoGrupo, FATO_PARENTESCO, MAXIMO_DE_CAMPOS_DO_GRUPO, PROPRIO_CANDIDATO, acrescentarCampoAoGrupo, acrescentarGrupo, camposDoGrupo, comCampoDoGrupo, comGrupo, fatosCitaveisPeloCampoDoGrupo, fatosCitaveisPeloGrupo, motivoDaRemocaoTravadaDoGrupo, moverCampoNoGrupo, quantidadeNoTeto, removerCampoDoGrupo, removerGrupo } from '../../src/lib/components/editor-de-formulario/modelo/grupos';
+export { FATO_PARENTESCO, MAXIMO_DE_CAMPOS_DO_GRUPO, PROPRIO_CANDIDATO, acrescentarCampoAoGrupo, camposDoGrupo, comCampoDoGrupo, comGrupo, fatosCitaveisPeloCampoDoGrupo, fatosCitaveisPeloGrupo, motivoDaRemocaoTravadaDoGrupo, moverCampoNoGrupo, quantidadeNoTeto, removerCampoDoGrupo, removerGrupo } from '../../src/lib/components/editor-de-formulario/modelo/grupos';
 export { alternativaSemOProprioCampo, comImpedimento, impedimentoCabe } from '../../src/lib/components/editor-de-formulario/modelo/impedimento';
-export { type ContextoDeCitacao, acrescentarCampo, acrescentarItem, comItem, moverEntrada, moverItem, podeMoverEntrada, podeMoverItem, removerItem, ufsAnteriores } from '../../src/lib/components/editor-de-formulario/modelo/itens';
+export { acrescentarItem, comItem, moverEntrada, moverItem, podeMoverEntrada, podeMoverItem, removerItem, ufsAnteriores } from '../../src/lib/components/editor-de-formulario/modelo/itens';
 export { entradasDaSecao, etapasEmOrdem, renumerar } from '../../src/lib/components/editor-de-formulario/modelo/ordem-das-entradas';
 export { acrescentarPressuposto, removerPressuposto } from '../../src/lib/components/editor-de-formulario/modelo/pressupostos';
 export { problemaDaRestricao, problemaDoGrupoDeOpcoes, problemaDoLimiteDeData, problemaDosAnos, problemaDosDias } from '../../src/lib/components/editor-de-formulario/modelo/problemas-da-restricao';
