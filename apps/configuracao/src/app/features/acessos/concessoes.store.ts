@@ -1,13 +1,5 @@
 import { HttpParams } from '@angular/common/http';
-import {
-  Injectable,
-  computed,
-  effect,
-  inject,
-  linkedSignal,
-  signal,
-  untracked,
-} from '@angular/core';
+import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import {
   CursorPagina,
   ProblemI18nService,
@@ -66,13 +58,6 @@ export class ConcessoesStore {
     else this.concessaoDaTrilha.set(id);
   }
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
-  constructor() {
-    effect(() => {
-      if (this.lista.problem() || this.lista.error()) {
-        untracked(() => this.navegacao.esvaziar());
-      }
-    });
-  }
 
   readonly itens = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;

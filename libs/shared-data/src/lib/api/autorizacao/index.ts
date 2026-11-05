@@ -13,7 +13,6 @@ export {
 export {
   ConcessoesApi,
   type ConcessaoDto,
-  type ConcessoesQuery,
   type EventoDaTrilhaDto,
   type RevogarConcessaoRequest,
   type SituacaoDaConcessao,

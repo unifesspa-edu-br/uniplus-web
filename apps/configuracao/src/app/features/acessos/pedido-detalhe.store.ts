@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
 import {
   AUTORIZACAO_BASE_PATH,
@@ -30,7 +30,11 @@ export class PedidoDetalheStore {
           context: withVendorMime('trilha-do-pedido', 1),
         };
   });
-  readonly pedido = this.pedidoResource.data;
+  readonly pedido = linkedSignal(() => this.pedidoResource.data());
+
+  aplicarPedido(pedido: PedidoDeConcessaoDto): void {
+    this.pedido.set(pedido);
+  }
   readonly trilha = computed(() => this.trilhaResource.data() ?? []);
   readonly carregando = computed(
     () => this.pedidoResource.isLoading() || this.trilhaResource.isLoading(),

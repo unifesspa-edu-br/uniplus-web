@@ -1,5 +1,5 @@
 import { HttpParams } from '@angular/common/http';
-import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   CursorPagina,
   ProblemI18nService,
@@ -59,11 +59,7 @@ export class PerfisStore {
         ? 'Não foi possível carregar a lista. Tente novamente.'
         : null;
   });
-  constructor() {
-    effect(() => {
-      if (this.lista.problem() || this.lista.error()) untracked(() => this.navegacao.esvaziar());
-    });
-  }
+
   proximaPagina(): void {
     this.navegacao.irParaProxima();
   }

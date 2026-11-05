@@ -5,7 +5,6 @@ import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import { PaginaQuery, paramsDaPagina } from './paginacao';
 import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
-import type { EventoDaTrilhaDto } from './concessoes.api';
 
 export type PedidoDeConcessaoDto = components['schemas']['PedidoDeConcessaoDto'];
 export type PedidoResumoDto = components['schemas']['PedidoResumoDto'];
@@ -49,24 +48,6 @@ export class PedidosDeConcessaoApi {
     return this.http.get<ApiResult<readonly PerfilParaPedidoDto[]>>(
       `${this.basePath}/api/autorizacao/perfis-para-pedido`,
       { params: paramsDaPagina(query, {}), context: withVendorMime('perfil-para-pedido', 1) },
-    );
-  }
-
-  /** GET `/api/autorizacao/pedidos-de-concessao/{id}`. */
-  obter(id: string): Observable<ApiResult<PedidoDeConcessaoDto>> {
-    return this.http.get<ApiResult<PedidoDeConcessaoDto>>(
-      `${this.raiz}/${encodeURIComponent(id)}`,
-      {
-        context: withVendorMime('pedido-de-concessao', 1),
-      },
-    );
-  }
-
-  /** GET `/api/autorizacao/pedidos-de-concessao/{id}/trilha`. */
-  trilha(id: string): Observable<ApiResult<readonly EventoDaTrilhaDto[]>> {
-    return this.http.get<ApiResult<readonly EventoDaTrilhaDto[]>>(
-      `${this.raiz}/${encodeURIComponent(id)}/trilha`,
-      { context: withVendorMime('trilha-do-pedido', 1) },
     );
   }
 

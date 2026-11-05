@@ -38,6 +38,7 @@ describe('PedidosDeConcessaoApi', () => {
     expect((await resposta).ok).toBe(true);
   });
 
+
   it('lista a fila pedida pelo vendor MIME do pedido', async () => {
     const resposta = firstValueFrom(api.listar({ fila: 'gestor', situacao: 'aguardando_gestor' }));
     const req = controller.expectOne(`${RAIZ}?fila=gestor&situacao=aguardando_gestor&limit=50`);
@@ -116,16 +117,5 @@ describe('PedidosDeConcessaoApi', () => {
     void firstValueFrom(api.acessoAoAnexo(ID, anexoId));
     const leitura = controller.expectOne(`${RAIZ}/${ID}/anexos/${anexoId}`);
     expect(leitura.request.headers.get('Accept')).toBe(buildVendorMimeAccept('anexo-do-pedido', 1));
-  });
-
-  it('lê pedido e trilha pelos seus vendor MIME', () => {
-    void firstValueFrom(api.obter(ID));
-    void firstValueFrom(api.trilha(ID));
-    expect(controller.expectOne(`${RAIZ}/${ID}`).request.headers.get('Accept')).toBe(
-      buildVendorMimeAccept('pedido-de-concessao', 1),
-    );
-    expect(controller.expectOne(`${RAIZ}/${ID}/trilha`).request.headers.get('Accept')).toBe(
-      buildVendorMimeAccept('trilha-do-pedido', 1),
-    );
   });
 });

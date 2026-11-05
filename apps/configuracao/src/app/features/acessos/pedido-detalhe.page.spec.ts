@@ -588,6 +588,38 @@ describe('PedidoDetalhePage', () => {
     expect(pagina.recusando()).toBe(true);
   });
 
+  it('aplica a decisão retornada enquanto a recarga está pendente', async () => {
+    const { pagina, fixture, host } = await abrir([GESTOR]);
+    const recarga = new Subject<ReturnType<typeof ok>>();
+    api.obter.mockReturnValue(recarga);
+    api.aprovar.mockReturnValue(
+      of(
+        ok(
+          pedido({
+            situacao: 'aguardando_protecao_de_dados',
+            etapaAtual: 'protecao_de_dados',
+          }),
+        ),
+      ),
+    );
+    pagina.pedirConfirmacao('aprovar');
+    await pagina.executar();
+    await esperar(fixture);
+    expect(pagina.carregando()).toBe(true);
+    expect(pagina.podeDecidir()).toBe(false);
+    expect(
+      [...host.querySelectorAll('cfg-pedido-resumo button')].some(
+        (b) => b.textContent?.trim() === 'Aprovar',
+      ),
+    ).toBe(false);
+    recarga.next(
+      ok(pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' })),
+    );
+    recarga.complete();
+    await esperar(fixture);
+    expect(pagina.podeDecidir()).toBe(false);
+  });
+
   it('o beneficiário nomeado aceita o pedido que espera por ele', async () => {
     const aguardando = pedido({
       situacao: 'aguardando_beneficiario',

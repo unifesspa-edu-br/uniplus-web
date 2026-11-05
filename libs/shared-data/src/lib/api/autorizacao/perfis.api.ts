@@ -1,8 +1,7 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
-import { PaginaQuery, paramsDaPagina } from './paginacao';
+import { ApiResult } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
 
@@ -19,25 +18,6 @@ export type AtualizarPerfilCommand = components['schemas']['AtualizarPerfilComma
 export class PerfisApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
-
-  /** GET `/api/autorizacao/perfis` — lista paginada por cursor. */
-  listar(query: PaginaQuery = {}): Observable<ApiResult<readonly PerfilDto[]>> {
-    return this.http.get<ApiResult<readonly PerfilDto[]>>(
-      `${this.basePath}/api/autorizacao/perfis`,
-      {
-        params: paramsDaPagina(query, {}),
-        context: withVendorMime('perfil', 1),
-      },
-    );
-  }
-
-  /** GET `/api/autorizacao/permissoes` — catálogo de permissões, agrupado por módulo e resource. */
-  catalogoDePermissoes(): Observable<ApiResult<readonly ModuloDoCatalogoDto[]>> {
-    return this.http.get<ApiResult<readonly ModuloDoCatalogoDto[]>>(
-      `${this.basePath}/api/autorizacao/permissoes`,
-      { context: withVendorMime('permissao-catalogo', 1) },
-    );
-  }
 
   /** POST `/api/autorizacao/perfis` — cria o perfil e devolve o identificador. */
   criar(command: CriarPerfilCommand, context: HttpContext): Observable<ApiResult<string>> {

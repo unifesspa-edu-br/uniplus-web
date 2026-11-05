@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { PerfisApi } from './perfis.api';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
@@ -29,17 +29,6 @@ describe('PerfisApi', () => {
   });
 
   afterEach(() => controller.verify());
-
-  it('lista perfis e o catálogo pelos vendor MIME próprios', () => {
-    void firstValueFrom(api.listar());
-    void firstValueFrom(api.catalogoDePermissoes());
-    expect(controller.expectOne(`${RAIZ}?limit=50`).request.headers.get('Accept')).toBe(
-      buildVendorMimeAccept('perfil', 1),
-    );
-    expect(
-      controller.expectOne(`${BASE}/api/autorizacao/permissoes`).request.headers.get('Accept'),
-    ).toBe(buildVendorMimeAccept('permissao-catalogo', 1));
-  });
 
   it('cria e atualiza com chave de idempotência', () => {
     const comando = { nome: 'Operador', descricao: 'Opera.', permissoes: ['a:b:c'] };

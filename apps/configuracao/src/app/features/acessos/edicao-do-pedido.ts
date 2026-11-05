@@ -177,6 +177,7 @@ export class EdicaoDoPedido {
         this.store.recarregar();
         return false;
       }
+      this.store.aplicarPedido(resultado.data);
       this.notificacoes.success('Pedido atualizado');
       this.prazo.reset('');
       this.store.recarregar();
