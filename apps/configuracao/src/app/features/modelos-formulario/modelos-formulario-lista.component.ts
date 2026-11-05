@@ -42,7 +42,7 @@ export class ModelosFormularioListaComponent {
   readonly errorMessage = input.required<string | null>();
   readonly prevCursor = input.required<string | null>();
   readonly nextCursor = input.required<string | null>();
-  readonly gravando = input.required<boolean>();
+  readonly ocupada = input.required<boolean>();
   readonly emAndamento = input.required<string | null>();
   readonly criar = output<void>();
   readonly ativar = output<ModeloFormularioView>();
@@ -78,7 +78,7 @@ export class ModelosFormularioListaComponent {
     return ativos;
   });
   protected criarModelo(evento: Event): void {
-    if (this.gravando()) {
+    if (this.ocupada()) {
       evento.preventDefault();
       return;
     }

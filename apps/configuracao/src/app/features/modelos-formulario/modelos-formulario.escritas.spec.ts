@@ -243,4 +243,19 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
     await propagar();
     expect(status.textContent).toContain('Modelo desativado: INSCRICAO.');
   });
+
+  it('mantém as ações da lista indisponíveis até a lista recarregada chegar', async () => {
+    const desativar = (): HTMLButtonElement =>
+      elemento('[aria-label="Desativar o modelo INSCRICAO"]');
+    desativar().click();
+    controller.expectOne(`${URL}/${modelo.id}`).flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+    const recarga = controller.expectOne((r) => r.url === URL);
+    await propagar();
+    expect(desativar().disabled).toBe(true);
+    desativar().click();
+    controller.expectNone(`${URL}/${modelo.id}`);
+    recarga.flush([{ ...modelo, ativo: false }]);
+    await propagar();
+  });
 });
