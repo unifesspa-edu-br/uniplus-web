@@ -1,20 +1,33 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
-import { numeroDigitadoInvalido } from './modelo/envio';
-import { problemaDaRestricao, problemaDoLimiteDeData, problemaDosAnos, problemaDosDias } from './modelo/problemas-da-restricao';
-import { recusasDaRestricao, recusasDoGrupoDeOpcoes, type RecusaDaRestricao } from './modelo/recusas';
-import { ANCORA_DATA_FIXA, ANCORA_ENVIO, RESTRICAO_FAIXA_DE_DATA, RESTRICAO_FAIXA_NUMERICA, RESTRICAO_MUNICIPIOS_DA_UF, RESTRICAO_OPCOES_DAS_RESPOSTAS, RESTRICAO_OPCOES_PERMITIDAS, RESTRICAO_TAMANHO_TEXTO, RESTRICOES, entradaDeOpcoesNova, limiteDeDataNovo, restricaoNova, restricoesParaAcrescentar } from './modelo/restricoes-de-valor';
-import { type ItemDoFormulario, type LimiteDeDataNoWire, type OpcoesCondicionadas, type RestricaoDeValor } from './modelo/tipos';
 import { GrupoDeOpcoesComponent } from './grupo-de-opcoes';
-import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
-
-type LimiteDaFaixa = 'dataMinima' | 'dataMaxima';
-
-const LIMITES_DA_FAIXA: readonly { readonly limite: LimiteDaFaixa; readonly rotulo: string }[] = [
-  { limite: 'dataMinima', rotulo: 'Data mínima' },
-  { limite: 'dataMaxima', rotulo: 'Data máxima' },
-];
+import { problemaDaRestricao } from './modelo/problemas-da-restricao';
+import {
+  recusasDaRestricao,
+  recusasDoGrupoDeOpcoes,
+  type RecusaDaRestricao,
+} from './modelo/recusas';
+import {
+  RESTRICAO_FAIXA_DE_DATA,
+  RESTRICAO_FAIXA_NUMERICA,
+  RESTRICAO_MUNICIPIOS_DA_UF,
+  RESTRICAO_OPCOES_DAS_RESPOSTAS,
+  RESTRICAO_OPCOES_PERMITIDAS,
+  RESTRICAO_TAMANHO_TEXTO,
+  RESTRICOES,
+  entradaDeOpcoesNova,
+  restricaoNova,
+  restricoesParaAcrescentar,
+} from './modelo/restricoes-de-valor';
+import {
+  type ItemDoFormulario,
+  type OpcoesCondicionadas,
+  type RestricaoDeValor,
+} from './modelo/tipos';
+import { ErrosDaRestricaoComponent } from './restricoes/erros-da-restricao';
+import { FaixaDeDatasComponent, type MudancaDeLimiteDeData } from './restricoes/faixa-de-datas';
+import { FaixaDeLimitesComponent, type MudancaDeLimite } from './restricoes/faixa-de-limites';
 
 interface CampoCitavel {
   readonly codigo: string;
@@ -31,7 +44,12 @@ interface CampoCitavel {
 @Component({
   selector: 'ui-restricoes-do-campo',
   standalone: true,
-  imports: [ValorLegivelDirective, GrupoDeOpcoesComponent],
+  imports: [
+    GrupoDeOpcoesComponent,
+    FaixaDeLimitesComponent,
+    FaixaDeDatasComponent,
+    ErrosDaRestricaoComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (restricoes().length > 0 || paraAcrescentar().length > 0) {
@@ -39,98 +57,47 @@ interface CampoCitavel {
         <legend class="field__label">Restrições da resposta</legend>
 
         @for (restricao of restricoes(); track restricao.tipo; let indice = $index) {
-          <fieldset class="editor-formulario__restricao" [attr.aria-describedby]="descricaoDa(restricao)">
+          <fieldset
+            class="editor-formulario__restricao"
+            [attr.aria-describedby]="descricaoDa(restricao)"
+          >
             <legend class="field__label">{{ rotuloDoTipo(restricao.tipo) }}</legend>
 
             @switch (restricao.tipo) {
               @case (faixa) {
-                <div class="form-grid form-grid--pair">
-                  <div class="field">
-                    <label class="field__label" [for]="idDe(restricao, 'minimo')">Mínimo</label>
-                    <input class="input" type="text" inputmode="decimal" [id]="idDe(restricao, 'minimo')" [value]="restricao.minimo ?? ''" [disabled]="disabled()" [attr.aria-invalid]="limiteInvalido(restricao.minimo) ? 'true' : null" [attr.aria-describedby]="limiteInvalido(restricao.minimo) ? idDe(restricao, 'erro') : null" (change)="trocarLimite(indice, 'minimo', $event)" />
-                  </div>
-                  <div class="field">
-                    <label class="field__label" [for]="idDe(restricao, 'maximo')">Máximo</label>
-                    <input class="input" type="text" inputmode="decimal" [id]="idDe(restricao, 'maximo')" [value]="restricao.maximo ?? ''" [disabled]="disabled()" [attr.aria-invalid]="limiteInvalido(restricao.maximo) ? 'true' : null" [attr.aria-describedby]="limiteInvalido(restricao.maximo) ? idDe(restricao, 'erro') : null" (change)="trocarLimite(indice, 'maximo', $event)" />
-                  </div>
-                </div>
+                <ui-faixa-de-limites
+                  rotuloDoMinimo="Mínimo"
+                  rotuloDoMaximo="Máximo"
+                  modoDeEntrada="decimal"
+                  [restricao]="restricao"
+                  [idBase]="idDe(restricao)"
+                  [disabled]="disabled()"
+                  (limiteChange)="trocarLimite(indice, $event)"
+                />
               }
               @case (faixaDeData) {
-                <p class="field__hint" [id]="idDe(restricao, 'dica')">
-                  Cada limite é uma data fixa ou o dia do envio somado a anos e dias; use números negativos para voltar no tempo,
-                  como −18 anos para exigir 18 anos completos. Informe ao menos um limite.
-                </p>
-                <div class="form-grid form-grid--pair">
-                  @for (parte of limitesDaFaixa; track parte.limite) {
-                    <fieldset class="editor-formulario__limite" [attr.aria-describedby]="descricaoDoLimite(restricao, parte.limite)">
-                      <legend class="field__label">{{ parte.rotulo }}</legend>
-                      <div class="field">
-                        <label class="field__label" [for]="idDe(restricao, parte.limite + '-ancora')">Contado de</label>
-                        <select class="select" [id]="idDe(restricao, parte.limite + '-ancora')" [disabled]="disabled()" [attr.aria-describedby]="descricaoDoLimite(restricao, parte.limite)" (change)="trocarAncora(indice, parte.limite, $event)">
-                          <option value="" [selected]="limiteDe(restricao, parte.limite) === null">Sem limite</option>
-                          <option [value]="dataFixa" [selected]="limiteDe(restricao, parte.limite)?.ancora === dataFixa">Data fixa</option>
-                          <option [value]="envio" [selected]="limiteDe(restricao, parte.limite)?.ancora === envio">Dia do envio</option>
-                        </select>
-                      </div>
-                      @if (limiteDe(restricao, parte.limite); as limite) {
-                        @if (limite.ancora === dataFixa) {
-                          <div class="field">
-                            <label class="field__label" [for]="idDe(restricao, parte.limite + '-data')">Data</label>
-                            <input class="input" type="date" [id]="idDe(restricao, parte.limite + '-data')" [value]="limite.data ?? ''" [disabled]="disabled()" [attr.aria-invalid]="problemaDoLimite(restricao, parte.limite) ? 'true' : null" [attr.aria-describedby]="descricaoDoLimite(restricao, parte.limite)" (change)="trocarData(indice, parte.limite, $event)" />
-                          </div>
-                        } @else {
-                          <div class="form-grid form-grid--pair">
-                            <div class="field">
-                              <label class="field__label" [for]="idDe(restricao, parte.limite + '-anos')">Anos a somar ao dia do envio</label>
-                              <input class="input" type="text" [id]="idDe(restricao, parte.limite + '-anos')" [value]="limite.anos ?? ''" [disabled]="disabled()" [attr.aria-invalid]="problemaDosAnos(limite.anos) ? 'true' : null" [attr.aria-describedby]="descricaoDoLimite(restricao, parte.limite, problemaDosAnos(limite.anos) ? idDe(restricao, parte.limite + '-anos-erro') : null)" (change)="trocarDeslocamento(indice, parte.limite, 'anos', $event)" />
-                              @if (problemaDosAnos(limite.anos); as texto) {
-                                <p class="field__error" [id]="idDe(restricao, parte.limite + '-anos-erro')">{{ texto }}</p>
-                              }
-                            </div>
-                            <div class="field">
-                              <label class="field__label" [for]="idDe(restricao, parte.limite + '-dias')">Dias a somar ao dia do envio</label>
-                              <input class="input" type="text" [id]="idDe(restricao, parte.limite + '-dias')" [value]="limite.dias ?? ''" [disabled]="disabled()" [attr.aria-invalid]="problemaDosDias(limite.dias) ? 'true' : null" [attr.aria-describedby]="descricaoDoLimite(restricao, parte.limite, problemaDosDias(limite.dias) ? idDe(restricao, parte.limite + '-dias-erro') : null)" (change)="trocarDeslocamento(indice, parte.limite, 'dias', $event)" />
-                              @if (problemaDosDias(limite.dias); as texto) {
-                                <p class="field__error" [id]="idDe(restricao, parte.limite + '-dias-erro')">{{ texto }}</p>
-                              }
-                            </div>
-                          </div>
-                        }
-                      }
-                      @if (problemaDoLimite(restricao, parte.limite); as texto) {
-                        <p class="field__error" [id]="idDe(restricao, parte.limite + '-erro')">{{ texto }}</p>
-                      }
-                      @if (parte.limite === 'dataMaxima' && erroNaMaxima(restricao)) {
-                        @if (problema(restricao); as texto) {
-                          <p class="field__error" [id]="idDe(restricao, 'erro')">{{ texto }}</p>
-                        }
-                        @if (recusasDaRestricao(restricao).length > 0) {
-                          <ul class="editor-formulario__erros u-list" [id]="idDe(restricao, 'recusas')">
-                            @for (recusa of recusasDaRestricao(restricao); track $index) {
-                              <li class="field__error">{{ recusa }}</li>
-                            }
-                          </ul>
-                        }
-                      }
-                    </fieldset>
-                  }
-                </div>
+                <ui-faixa-de-datas
+                  [restricao]="restricao"
+                  [idBase]="idDe(restricao)"
+                  [recusas]="recusasDaRestricao(restricao)"
+                  [disabled]="disabled()"
+                  (limiteChange)="trocarLimiteDeData(indice, $event)"
+                />
               }
               @case (tamanho) {
-                <div class="form-grid form-grid--pair">
-                  <div class="field">
-                    <label class="field__label" [for]="idDe(restricao, 'minimo')">Mínimo de caracteres</label>
-                    <input class="input" type="text" inputmode="numeric" [id]="idDe(restricao, 'minimo')" [value]="restricao.minimo ?? ''" [disabled]="disabled()" [attr.aria-invalid]="limiteInvalido(restricao.minimo) ? 'true' : null" [attr.aria-describedby]="limiteInvalido(restricao.minimo) ? idDe(restricao, 'erro') : null" (change)="trocarLimite(indice, 'minimo', $event)" />
-                  </div>
-                  <div class="field">
-                    <label class="field__label" [for]="idDe(restricao, 'maximo')">Máximo de caracteres</label>
-                    <input class="input" type="text" inputmode="numeric" [id]="idDe(restricao, 'maximo')" [value]="restricao.maximo ?? ''" [disabled]="disabled()" [attr.aria-invalid]="limiteInvalido(restricao.maximo) ? 'true' : null" [attr.aria-describedby]="limiteInvalido(restricao.maximo) ? idDe(restricao, 'erro') : null" (change)="trocarLimite(indice, 'maximo', $event)" />
-                  </div>
-                </div>
+                <ui-faixa-de-limites
+                  rotuloDoMinimo="Mínimo de caracteres"
+                  rotuloDoMaximo="Máximo de caracteres"
+                  [restricao]="restricao"
+                  [idBase]="idDe(restricao)"
+                  [disabled]="disabled()"
+                  (limiteChange)="trocarLimite(indice, $event)"
+                />
               }
               @case (opcoes) {
                 <p class="field__hint">
-                  O candidato escolhe entre as opções de todos os grupos cuja condição vale. O grupo sem condição vale sempre.
+                  O candidato escolhe entre as opções de todos os grupos cuja condição vale. O grupo
+                  sem condição vale sempre.
                 </p>
                 @for (entrada of restricao.entradas ?? []; track $index; let grupo = $index) {
                   <ui-grupo-de-opcoes
@@ -139,7 +106,7 @@ interface CampoCitavel {
                     [valoresConhecidos]="valoresConhecidos()"
                     [fatos]="fatos()"
                     [nomeDoCampo]="nome()"
-                    [idBase]="idDe(restricao, 'grupo-' + grupo)"
+                    [idBase]="idDe(restricao) + '-grupo-' + grupo"
                     [disabled]="disabled()"
                     [removivel]="(restricao.entradas ?? []).length > 1"
                     [recusas]="recusasDoGrupo(entrada)"
@@ -147,48 +114,78 @@ interface CampoCitavel {
                     (remover)="removerEntrada(indice, grupo)"
                   />
                 }
-                <button class="btn btn--secondary btn--sm" type="button" [disabled]="disabled()" (click)="acrescentarEntrada(indice)">
+                <button
+                  class="btn btn--secondary btn--sm"
+                  type="button"
+                  [disabled]="disabled()"
+                  (click)="acrescentarEntrada(indice)"
+                >
                   Acrescentar grupo de opções
                 </button>
               }
               @case (dasRespostas) {
-                <div class="editor-formulario__opcoes" role="group" [attr.aria-label]="'Campos de onde vêm as opções de ' + nome()">
+                <div
+                  class="editor-formulario__opcoes"
+                  role="group"
+                  [attr.aria-label]="'Campos de onde vêm as opções de ' + nome()"
+                >
                   @for (fonte of fontesDaRestricao(restricao); track fonte.codigo) {
                     <label class="checkbox">
-                      <input type="checkbox" [checked]="(restricao.fatos ?? []).includes(fonte.codigo)" [disabled]="disabled()" (change)="alternarFonte(indice, fonte.codigo)" />
+                      <input
+                        type="checkbox"
+                        [checked]="(restricao.fatos ?? []).includes(fonte.codigo)"
+                        [disabled]="disabled()"
+                        (change)="alternarFonte(indice, fonte.codigo)"
+                      />
                       <span class="checkbox__box" aria-hidden="true"></span>
                       {{ fonte.nome }}
                     </label>
                   }
                 </div>
-                <p class="field__hint">O candidato escolhe entre as respostas que deu nos campos marcados.</p>
+                <p class="field__hint">
+                  O candidato escolhe entre as respostas que deu nos campos marcados.
+                </p>
               }
               @case (municipios) {
                 <div class="field">
-                  <label class="field__label" [for]="idDe(restricao, 'uf')">Campo de UF</label>
-                  <select class="select" [id]="idDe(restricao, 'uf')" [disabled]="disabled()" (change)="trocarUf(indice, $event)">
-                    <option value="" [selected]="(restricao.fatos ?? []).length === 0">Escolha o campo de UF</option>
+                  <label class="field__label" [for]="idDe(restricao) + '-uf'">Campo de UF</label>
+                  <select
+                    class="select"
+                    [id]="idDe(restricao) + '-uf'"
+                    [disabled]="disabled()"
+                    (change)="trocarUf(indice, $event)"
+                  >
+                    <option value="" [selected]="(restricao.fatos ?? []).length === 0">
+                      Escolha o campo de UF
+                    </option>
                     @for (uf of ufsDaRestricao(restricao); track uf.codigo) {
-                      <option [value]="uf.codigo" [selected]="(restricao.fatos ?? [])[0] === uf.codigo">{{ uf.nome }}</option>
+                      <option
+                        [value]="uf.codigo"
+                        [selected]="(restricao.fatos ?? [])[0] === uf.codigo"
+                      >
+                        {{ uf.nome }}
+                      </option>
                     }
                   </select>
                 </div>
               }
             }
 
-            @if (!erroNaMaxima(restricao) && problema(restricao); as texto) {
-              <p class="field__error" [id]="idDe(restricao, 'erro')">{{ texto }}</p>
-            }
-            @if (!erroNaMaxima(restricao) && recusasDaRestricao(restricao).length > 0) {
-              <ul class="editor-formulario__erros u-list" [id]="idDe(restricao, 'recusas')">
-                @for (recusa of recusasDaRestricao(restricao); track $index) {
-                  <li class="field__error">{{ recusa }}</li>
-                }
-              </ul>
+            @if (restricao.tipo !== faixaDeData) {
+              <ui-erros-da-restricao
+                [problema]="problema(restricao)"
+                [recusas]="recusasDaRestricao(restricao)"
+                [idBase]="idDe(restricao)"
+              />
             }
 
             @if (restricao.tipo !== municipios) {
-              <button class="btn btn--tertiary btn--sm" type="button" [disabled]="disabled()" (click)="remover(indice)">
+              <button
+                class="btn btn--tertiary btn--sm"
+                type="button"
+                [disabled]="disabled()"
+                (click)="remover(indice)"
+              >
                 Remover a restrição “{{ rotuloDoTipo(restricao.tipo) }}”
               </button>
             }
@@ -198,15 +195,29 @@ interface CampoCitavel {
         @if (paraAcrescentar().length > 0) {
           <div class="editor-formulario__acrescentar">
             <div class="field">
-              <label class="field__label" [for]="idBase() + '-restricao'">Restrição a acrescentar</label>
-              <select class="select" [id]="idBase() + '-restricao'" [disabled]="disabled()" (change)="escolhida.set(valorDe($event))">
+              <label class="field__label" [for]="idBase() + '-restricao'"
+                >Restrição a acrescentar</label
+              >
+              <select
+                class="select"
+                [id]="idBase() + '-restricao'"
+                [disabled]="disabled()"
+                (change)="escolhida.set(valorDe($event))"
+              >
                 <option value="" [selected]="escolha() === ''">Escolha a restrição</option>
                 @for (opcao of paraAcrescentar(); track opcao.valor) {
-                  <option [value]="opcao.valor" [selected]="escolha() === opcao.valor">{{ opcao.rotulo }}</option>
+                  <option [value]="opcao.valor" [selected]="escolha() === opcao.valor">
+                    {{ opcao.rotulo }}
+                  </option>
                 }
               </select>
             </div>
-            <button class="btn btn--secondary btn--sm" type="button" [disabled]="disabled() || escolha() === ''" (click)="acrescentar()">
+            <button
+              class="btn btn--secondary btn--sm"
+              type="button"
+              [disabled]="disabled() || escolha() === ''"
+              (click)="acrescentar()"
+            >
               Acrescentar restrição
             </button>
           </div>
@@ -234,30 +245,31 @@ export class RestricoesDoCampoComponent {
 
   protected readonly faixa = RESTRICAO_FAIXA_NUMERICA;
   protected readonly faixaDeData = RESTRICAO_FAIXA_DE_DATA;
-  protected readonly limitesDaFaixa = LIMITES_DA_FAIXA;
-  protected readonly dataFixa = ANCORA_DATA_FIXA;
-  protected readonly envio = ANCORA_ENVIO;
   protected readonly tamanho = RESTRICAO_TAMANHO_TEXTO;
   protected readonly opcoes = RESTRICAO_OPCOES_PERMITIDAS;
   protected readonly dasRespostas = RESTRICAO_OPCOES_DAS_RESPOSTAS;
   protected readonly municipios = RESTRICAO_MUNICIPIOS_DA_UF;
   protected readonly problema = problemaDaRestricao;
-  protected readonly limiteInvalido = numeroDigitadoInvalido;
-  protected readonly problemaDosAnos = problemaDosAnos;
-  protected readonly problemaDosDias = problemaDosDias;
 
   protected readonly escolhida = signal('');
   protected readonly restricoes = computed(() => this.item().restricoes ?? []);
   protected readonly nome = computed(() => this.item().rotulo.trim() || this.item().fatoCodigo);
   protected readonly paraAcrescentar = computed(() =>
-    restricoesParaAcrescentar(this.item(), this.valoresConhecidos().length > 0, this.fontesDeOpcoes().length > 0),
+    restricoesParaAcrescentar(
+      this.item(),
+      this.valoresConhecidos().length > 0,
+      this.fontesDeOpcoes().length > 0,
+    ),
   );
   protected readonly escolha = computed(() =>
-    this.paraAcrescentar().some((opcao) => opcao.valor === this.escolhida()) ? this.escolhida() : '',
+    this.paraAcrescentar().some((opcao) => opcao.valor === this.escolhida())
+      ? this.escolhida()
+      : '',
   );
 
-  protected idDe(restricao: RestricaoDeValor, parte: string): string {
-    return `${this.idBase()}-${restricao.tipo}-${parte}`;
+  /** O prefixo dos ids da restrição: um por tipo, já que o campo tem no máximo uma de cada. */
+  protected idDe(restricao: RestricaoDeValor): string {
+    return `${this.idBase()}-${restricao.tipo}`;
   }
 
   protected rotuloDoTipo(tipo: string): string {
@@ -272,47 +284,14 @@ export class RestricoesDoCampoComponent {
     return recusasDaRestricao(this.recusas(), restricao.tipo);
   }
 
-  /**
-   * Onde a API e a conferência local apontam a faixa inteira — a mínima depois da máxima —, o erro fica
-   * no controle da data máxima. Sem limite nenhum, não há controle a que ligá-lo: fica na restrição.
-   */
-  protected erroNaMaxima(restricao: RestricaoDeValor): boolean {
-    return restricao.tipo === RESTRICAO_FAIXA_DE_DATA && (restricao.dataMinima != null || restricao.dataMaxima != null);
-  }
-
-  protected limiteDe(restricao: RestricaoDeValor, limite: LimiteDaFaixa): LimiteDeDataNoWire | null {
-    return restricao[limite] ?? null;
-  }
-
-  /** O problema do limite como um todo; o deslocamento do dia do envio mostra o de cada campo, junto dele. */
-  protected problemaDoLimite(restricao: RestricaoDeValor, limite: LimiteDaFaixa): string | null {
-    const atual = this.limiteDe(restricao, limite);
-    return atual?.ancora === ANCORA_ENVIO ? null : problemaDoLimiteDeData(atual);
-  }
-
-  /**
-   * A dica da faixa e o erro ou a recusa que o controle do limite cita. A API aponta a faixa inteira
-   * (`restricoes[i]`), sem dizer o limite: o problema e a recusa da faixa valem para os dois limites.
-   */
-  protected descricaoDoLimite(restricao: RestricaoDeValor, limite: LimiteDaFaixa, doCampo: string | null = null): string | null {
-    const ids = [
-      this.idDe(restricao, 'dica'),
-      doCampo,
-      this.problemaDoLimite(restricao, limite) === null ? null : this.idDe(restricao, limite + '-erro'),
-      this.problema(restricao) === null ? null : this.idDe(restricao, 'erro'),
-      this.recusasDaRestricao(restricao).length > 0 ? this.idDe(restricao, 'recusas') : null,
-    ];
-    return ids.filter((id) => id !== null).join(' ');
-  }
-
   protected recusasDoGrupo(grupo: OpcoesCondicionadas): readonly string[] {
     return recusasDoGrupoDeOpcoes(this.recusas(), grupo);
   }
 
   protected descricaoDa(restricao: RestricaoDeValor): string | null {
     const ids = [
-      this.problema(restricao) === null ? null : this.idDe(restricao, 'erro'),
-      this.recusasDaRestricao(restricao).length > 0 ? this.idDe(restricao, 'recusas') : null,
+      this.problema(restricao) === null ? null : `${this.idDe(restricao)}-erro`,
+      this.recusasDaRestricao(restricao).length > 0 ? `${this.idDe(restricao)}-recusas` : null,
     ];
     return ids.filter((id) => id !== null).join(' ') || null;
   }
@@ -322,7 +301,10 @@ export class RestricoesDoCampoComponent {
     const oferecidas = new Set(this.fontesDeOpcoes().map((fonte) => fonte.codigo));
     const foraDaLista = (restricao.fatos ?? [])
       .filter((codigo) => !oferecidas.has(codigo))
-      .map((codigo) => ({ codigo, nome: `${this.fatos().find((fato) => fato.codigo === codigo)?.nome ?? codigo} (não vem antes deste campo ou tem opções que não cabem nele)` }));
+      .map((codigo) => ({
+        codigo,
+        nome: `${this.fatos().find((fato) => fato.codigo === codigo)?.nome ?? codigo} (não vem antes deste campo ou tem opções que não cabem nele)`,
+      }));
     return [...this.fontesDeOpcoes(), ...foraDaLista];
   }
 
@@ -334,36 +316,20 @@ export class RestricoesDoCampoComponent {
       : [{ codigo: gravada, nome: `${gravada} (não vem antes deste campo)` }, ...this.ufs()];
   }
 
-  /**
-   * O limite como número quando é número, e o texto como veio quando não é, para o problema dizer o
-   * quê. Converte ao sair do campo: na digitação, o número normalizado sobrescreveria o texto.
-   */
-  protected trocarLimite(indice: number, limite: 'minimo' | 'maximo', evento: Event): void {
-    const texto = this.valorDe(evento).trim().replace(',', '.');
-    const valor = texto === '' ? null : Number.isFinite(Number(texto)) ? Number(texto) : texto;
-    this.trocar(indice, { [limite]: valor });
+  protected trocarLimite(indice: number, mudanca: MudancaDeLimite): void {
+    this.trocar(indice, { [mudanca.limite]: mudanca.valor });
   }
 
-  protected trocarAncora(indice: number, limite: LimiteDaFaixa, evento: Event): void {
-    const ancora = this.valorDe(evento);
-    this.trocar(indice, { [limite]: ancora === '' ? null : limiteDeDataNovo(ancora) });
-  }
-
-  protected trocarData(indice: number, limite: LimiteDaFaixa, evento: Event): void {
-    const data = this.valorDe(evento);
-    this.trocar(indice, { [limite]: { ancora: ANCORA_DATA_FIXA, data: data === '' ? null : data } });
-  }
-
-  /** O deslocamento como número quando é número, e o texto como veio quando não é, para o problema dizer o quê. */
-  protected trocarDeslocamento(indice: number, limite: LimiteDaFaixa, parte: 'anos' | 'dias', evento: Event): void {
-    const texto = this.valorDe(evento).trim().replace('−', '-');
-    const valor = texto === '' ? 0 : Number.isFinite(Number(texto)) ? Number(texto) : texto;
-    const atual = this.restricoes()[indice]?.[limite] ?? limiteDeDataNovo(ANCORA_ENVIO);
-    this.trocar(indice, { [limite]: { ...atual, ancora: ANCORA_ENVIO, [parte]: valor } });
+  protected trocarLimiteDeData(indice: number, mudanca: MudancaDeLimiteDeData): void {
+    this.trocar(indice, { [mudanca.limite]: mudanca.valor });
   }
 
   protected trocarEntrada(indice: number, grupo: number, entrada: OpcoesCondicionadas): void {
-    this.trocar(indice, { entradas: this.entradasDe(indice).map((atual, posicao) => (posicao === grupo ? entrada : atual)) });
+    this.trocar(indice, {
+      entradas: this.entradasDe(indice).map((atual, posicao) =>
+        posicao === grupo ? entrada : atual,
+      ),
+    });
   }
 
   protected acrescentarEntrada(indice: number): void {
@@ -371,12 +337,16 @@ export class RestricoesDoCampoComponent {
   }
 
   protected removerEntrada(indice: number, grupo: number): void {
-    this.trocar(indice, { entradas: this.entradasDe(indice).filter((_, posicao) => posicao !== grupo) });
+    this.trocar(indice, {
+      entradas: this.entradasDe(indice).filter((_, posicao) => posicao !== grupo),
+    });
   }
 
   protected alternarFonte(indice: number, codigo: string): void {
     const atual = this.restricoes()[indice]?.fatos ?? [];
-    this.trocar(indice, { fatos: atual.includes(codigo) ? atual.filter((fato) => fato !== codigo) : [...atual, codigo] });
+    this.trocar(indice, {
+      fatos: atual.includes(codigo) ? atual.filter((fato) => fato !== codigo) : [...atual, codigo],
+    });
   }
 
   protected trocarUf(indice: number, evento: Event): void {
@@ -401,6 +371,10 @@ export class RestricoesDoCampoComponent {
   }
 
   private trocar(indice: number, mudanca: Partial<RestricaoDeValor>): void {
-    this.restricoesChange.emit(this.restricoes().map((restricao, posicao) => (posicao === indice ? { ...restricao, ...mudanca } : restricao)));
+    this.restricoesChange.emit(
+      this.restricoes().map((restricao, posicao) =>
+        posicao === indice ? { ...restricao, ...mudanca } : restricao,
+      ),
+    );
   }
 }

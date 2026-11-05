@@ -1,0 +1,11 @@
+/* O anfitrião de uma parte da restrição ocupa a coluna inteira e esconde o que está vazio. */
+:host {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+:host(:empty) {
+  display: none;
+}
