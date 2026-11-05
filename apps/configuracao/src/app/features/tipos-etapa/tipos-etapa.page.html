@@ -61,8 +61,7 @@
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
 />
-@if (!edicao.confirmOpen()) {
-<span class="sr-only" role="status">{{ edicao.anuncioDaRemocao() }}</span> }
+<span class="sr-only" role="status">{{ edicao.anuncioDaRemocao() }}</span>
 <ui-confirm-dialog
   [(visible)]="edicao.confirmOpen"
   heading="Inativar tipo de etapa"

@@ -333,7 +333,7 @@ describe('TiposEtapaPage', () => {
     await flushLista([analiseDocumental, provaObjetiva]);
     expect(component['edicao'].gravando()).toBe(false);
   });
-  it('mantém a trava após falha da recarga até uma nova leitura bem-sucedida', async () => {
+  it('libera a trava após falha da recarga e permite tentar novamente', async () => {
     await flushLista([analiseDocumental]);
     component['edicao'].pedirRemocao(analiseDocumental);
     component['edicao'].removerConfirmado();
@@ -345,7 +345,8 @@ describe('TiposEtapaPage', () => {
       .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-etapa`)
       .flush({ title: 'Falha', status: 500 }, { status: 500, statusText: 'Erro' });
     await propagate();
-    expect(component['edicao'].gravando()).toBe(true);
+    expect(component['edicao'].gravando()).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('Tentar novamente');
     component['tentarNovamente']();
     await propagate();
     await flushLista([]);

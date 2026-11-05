@@ -68,8 +68,8 @@ export class EdicaoDosTiposEtapa {
       const resultado = this.store.resultado();
       if (
         this.escrita() === 'recarregando' &&
-        resultado?.ok &&
-        resultado !== this.resultadoAnterior
+        !this.store.carregando() &&
+        (resultado !== this.resultadoAnterior || this.store.mensagemDeErro() !== null)
       ) {
         this.escrita.set(null);
         this.idEmAndamento.set(null);

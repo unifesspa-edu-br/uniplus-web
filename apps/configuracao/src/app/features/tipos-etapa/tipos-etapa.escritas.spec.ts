@@ -66,29 +66,27 @@ describe('TiposEtapaPage — escritas pela interface', () => {
     elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
     await propagar();
   };
-  const recusar = (): void => {
-    http
-      .expectOne(ESCRITA)
-      .flush(
-        {
-          type: 'about:blank',
-          title: 'Dados inválidos',
-          status: 422,
-          code: 'uniplus.validacao',
-          errors: [
-            {
-              field: 'Nome',
-              code: 'uniplus.configuracao.tipo_etapa.nome_invalido',
-              message: 'Nome recusado.',
-            },
-          ],
-        },
-        {
-          status: 422,
-          statusText: 'Unprocessable Entity',
-          headers: { 'content-type': 'application/problem+json' },
-        },
-      );
+  const recusar = (campo = 'Nome', mensagem = 'Nome recusado.'): void => {
+    http.expectOne(ESCRITA).flush(
+      {
+        type: 'about:blank',
+        title: 'Dados inválidos',
+        status: 422,
+        code: 'uniplus.validacao',
+        errors: [
+          {
+            field: campo,
+            code: 'uniplus.configuracao.tipo_etapa.nome_invalido',
+            message: mensagem,
+          },
+        ],
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
   };
   beforeEach(async () => {
     TestBed.configureTestingModule({
@@ -177,6 +175,77 @@ describe('TiposEtapaPage — escritas pela interface', () => {
     );
     expect(document.activeElement).toBe(nome);
   });
+  for (const [campo, seletor, idErro] of [
+    ['Descricao', 'textarea', 'cfg-etapa-descricao-erro'],
+    ['AdmitePontuacao', 'input', 'cfg-etapa-pontuacao-erro'],
+    ['AdmiteEliminacao', 'input', 'cfg-etapa-eliminacao-erro'],
+  ]) {
+    it(`associa e foca a recusa de ${campo}`, async () => {
+      await preencher();
+      salvar().focus();
+      salvar().click();
+      await propagar();
+      recusar(campo, 'Valor recusado.');
+      await propagar();
+      await propagar();
+      const nome = campo.charAt(0).toLowerCase() + campo.slice(1);
+      const controle = elemento<HTMLElement>(`${seletor}[formcontrolname="${nome}"]`);
+      expect(controle.getAttribute('aria-invalid')).toBe('true');
+      expect(controle.getAttribute('aria-describedby')?.split(' ')).toContain(idErro);
+      expect(elemento(`#${idErro}`).textContent?.trim()).toBe('Valor recusado.');
+      expect(controle.closest('.field')?.classList.contains('is-error')).toBe(true);
+      if (campo !== 'Descricao') {
+        expect(controle.getAttribute('aria-describedby')?.split(' ')).toContain(
+          'cfg-etapa-admite-ajuda',
+        );
+      }
+      expect(document.activeElement).toBe(controle);
+    });
+  }
+  it('mantém a região externa e anuncia também no diálogo durante a inativação', async () => {
+    const externa = elemento<HTMLElement>(':scope > .sr-only[role="status"]');
+    elemento<HTMLButtonElement>('button[aria-label="Inativar tipo de etapa PROVA"]').click();
+    await propagar();
+    expect(elemento(':scope > .sr-only[role="status"]')).toBe(externa);
+    elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
+    await propagar();
+    expect(elemento(':scope > .sr-only[role="status"]')).toBe(externa);
+    expect(externa.textContent?.trim()).toBe('Inativando o tipo de etapa PROVA.');
+    expect(elemento('ui-confirm-dialog [role="status"]').textContent?.trim()).toBe(
+      'Inativando o tipo de etapa PROVA.',
+    );
+    http.expectOne(`${ESCRITA}/${tipo.id}`).flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+    expect(elemento(':scope > .sr-only[role="status"]')).toBe(externa);
+    expect(externa.textContent?.trim()).toBe('Tipo de etapa PROVA inativado.');
+    await lista();
+  });
+  for (const operacao of ['salvar', 'inativar'] as const) {
+    it(`libera ações e permite nova leitura se a recarga após ${operacao} falhar`, async () => {
+      if (operacao === 'salvar') {
+        await preencher();
+        salvar().click();
+        http.expectOne(ESCRITA).flush('id', { status: 201, statusText: 'Created' });
+      } else {
+        await inativar();
+        http
+          .expectOne(`${ESCRITA}/${tipo.id}`)
+          .flush(null, { status: 204, statusText: 'No Content' });
+      }
+      await propagar();
+      http
+        .expectOne((r) => r.url === LISTA)
+        .flush({ title: 'Falha', status: 503 }, { status: 503, statusText: 'Erro' });
+      await propagar();
+      expect(edicao.gravando()).toBe(false);
+      const tentar = elemento<HTMLButtonElement>('ui-alert .list-state__retry button');
+      expect(tentar.getAttribute('aria-disabled')).toBe('false');
+      tentar.click();
+      await propagar();
+      await lista();
+      expect(store.mensagemDeErro()).toBeNull();
+    });
+  }
   for (const sucesso of [true, false]) {
     it(`preserva controle desabilitado após ${sucesso ? 'sucesso' : 'recusa'}`, async () => {
       await preencher();
@@ -215,7 +284,9 @@ describe('TiposEtapaPage — escritas pela interface', () => {
     remocao.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
     expect(edicao.gravando()).toBe(true);
-    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe('Tipo de etapa PROVA inativado.');
+    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe(
+      'Tipo de etapa PROVA inativado.',
+    );
     elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
     expect(edicao.formOpen()).toBe(false);
     await lista();

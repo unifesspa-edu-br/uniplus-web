@@ -61,7 +61,7 @@ export class TipoEtapaFormularioComponent {
   private focarErro(): void {
     if (!this.aberto()) return;
     const campos = this.raiz.nativeElement.querySelectorAll<HTMLElement>(
-      '.field.is-error :is(input, select, textarea)',
+      '.field.is-error :is(input[aria-invalid=true], select[aria-invalid=true], textarea[aria-invalid=true])',
     );
     [...campos].find((campo) => !campo.hasAttribute('readonly'))?.focus();
   }
