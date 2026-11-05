@@ -51,6 +51,7 @@ export class DecisoesDaProtecaoStore {
     value: computed(() => this.lista()?.value()),
     headers: computed(() => this.lista()?.headers()),
     isLoading: computed(() => this.lista()?.isLoading() ?? false),
+    error: computed(() => this.lista()?.error()),
   };
   private readonly navegacao = navegacaoPorCursor(this.recursoDaLista, this.pagina);
   private readonly leituraDoItem = new LeituraDoDetalhe();
