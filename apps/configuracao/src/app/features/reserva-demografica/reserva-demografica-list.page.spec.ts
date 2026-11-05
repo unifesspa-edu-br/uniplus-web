@@ -14,6 +14,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ReservaDemograficaListPage } from './reserva-demografica-list.page';
+import { ReservaDemograficaStore } from './reserva-demografica.store';
 
 const BASE = 'http://localhost:5000';
 const URL = `${BASE}/api/configuracao/referencias-reserva-demografica`;
@@ -118,6 +119,28 @@ describe('ReservaDemograficaListPage', () => {
     await flushLista([seed, { ...seed, id: 'x2', censoReferencia: '2010' }]);
     component['busca'].set('2010');
     expect(component['referenciasFiltradas']().map((r) => r.censoReferencia)).toEqual(['2010']);
+  });
+
+  it('navega pelo cursor e recarrega a primeira página após uma alteração', async () => {
+    const store = fixture.debugElement.injector.get(ReservaDemograficaStore);
+    controller
+      .expectOne((r) => r.url === URL)
+      .flush([seed], {
+        headers: { Link: '</referencias?cursor=abc&direction=next>; rel="next"' },
+      });
+    await propagate();
+    store.proximaPagina();
+    await propagate();
+    const pagina = controller.expectOne((r) => r.url === URL);
+    expect(pagina.request.params.get('cursor')).toBe('abc');
+    expect(pagina.request.params.get('direction')).toBe('next');
+    pagina.flush([{ ...seed, censoReferencia: '2010' }]);
+    await propagate();
+    expect(store.referencias()[0].censoReferencia).toBe('2010');
+    store.recarregar();
+    await propagate();
+    await flushLista([seed]);
+    expect(store.referencias()).toEqual([seed]);
   });
 
   it('envia null nos campos de texto preenchidos só com espaços', async () => {
@@ -298,7 +321,9 @@ describe('ReservaDemograficaListPage', () => {
     await flushLista([seed]);
     fixture.detectChanges();
 
-    const botao = fixture.nativeElement.querySelector('ui-icon-button[icon="pi-trash"] button');
+    const botao = fixture.nativeElement.querySelector(
+      'button[aria-label="Remover reserva demográfica do censo 2022"]',
+    );
 
     expect(botao).not.toBeNull();
     expect(botao?.querySelector('i')?.classList.contains('pi-trash')).toBe(true);
@@ -337,6 +362,28 @@ describe('ReservaDemograficaListPage', () => {
 
     expect(component['saving']()).toBe(false);
     expect(component['referencias']()).toEqual([seed]);
+  });
+
+  it('mantém a recusa de remoção anunciada dentro do diálogo', async () => {
+    await flushLista([seed]);
+    component['pedirRemocao'](seed);
+    fixture.detectChanges();
+    component['removerConfirmado']();
+    fixture.detectChanges();
+    const dialogo = fixture.nativeElement.querySelector('ui-dialog dialog') as HTMLDialogElement;
+    expect(dialogo.querySelector('[role="status"]')?.textContent).toContain('Removendo');
+    flushProblem(
+      controller.expectOne(`${ADMIN_URL}/${seed.id}`),
+      'uniplus.configuracao.referencia_reserva_demografica.remocao_falhou',
+      'Não foi possível remover a referência',
+      409,
+    );
+    await propagate();
+    expect(component['confirmOpen']()).toBe(true);
+    expect(dialogo.textContent).toContain('Não foi possível remover a referência');
+    expect(dialogo.querySelector('[role="status"]')?.textContent).toContain(
+      'Não foi possível remover',
+    );
   });
 
   it('não permite duas remoções simultâneas', async () => {
@@ -382,5 +429,106 @@ describe('ReservaDemograficaListPage', () => {
       fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
     ).map((th) => th.textContent?.trim());
     expect(cabecalhos).toEqual(['Censo', 'PPI %', 'Quilombola %', 'PcD %', 'Base legal', 'Ações']);
+  });
+  it('bloqueia o formulário durante o envio e mantém a trava até chegar a recarga', async () => {
+    await flushLista([]);
+    const post = submeterCadastro();
+    fixture.detectChanges();
+    const campos = fixture.nativeElement.querySelector(
+      '#cfg-reserva-form fieldset',
+    ) as HTMLFieldSetElement;
+    const salvar = fixture.nativeElement.querySelector(
+      'button[form="cfg-reserva-form"]',
+    ) as HTMLButtonElement;
+    expect(campos.disabled).toBe(true);
+    expect(salvar.getAttribute('aria-disabled')).toBe('true');
+    component['edicao'].fechar();
+    component['salvar']();
+    expect(component['formOpen']()).toBe(true);
+    controller.expectNone(ADMIN_URL);
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    expect(component['edicao'].gravando()).toBe(true);
+    component['abrirCadastro']();
+    expect(component['formOpen']()).toBe(false);
+    await flushLista([seed]);
+    expect(component['edicao'].gravando()).toBe(false);
+  });
+
+  it('foca o primeiro campo inválido e associa a mensagem ao controle', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    fixture.detectChanges();
+    component['salvar']();
+    await propagate();
+    const campo = fixture.nativeElement.querySelector(
+      '[formControlName="censoReferencia"]',
+    ) as HTMLInputElement;
+    expect(document.activeElement).toBe(campo);
+    expect(campo.getAttribute('aria-describedby')).toBe('erro-censoReferencia');
+    controller.expectNone(ADMIN_URL);
+  });
+
+  it('bloqueia novas ações durante a recarga após remover', async () => {
+    await flushLista([seed]);
+    component['pedirRemocao'](seed);
+    component['removerConfirmado']();
+    controller
+      .expectOne(`${ADMIN_URL}/${seed.id}`)
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    expect(component['edicao'].gravando()).toBe(true);
+    component['abrirEdicao'](seed);
+    component['pedirRemocao'](seed);
+    component['removerConfirmado']();
+    expect(component['formOpen']()).toBe(false);
+    controller.expectNone(`${ADMIN_URL}/${seed.id}`);
+    await flushLista([]);
+    expect(component['edicao'].gravando()).toBe(false);
+  });
+  it('mostra a recusa por campo e leva o foco ao campo recusado', async () => {
+    await flushLista([]);
+    const post = submeterCadastro();
+    await propagate();
+    post.flush(
+      JSON.stringify({
+        title: 'Dados inválidos',
+        status: 422,
+        code: 'uniplus.validacao',
+        errors: [
+          {
+            field: 'PpiPercentual',
+            code: 'uniplus.percentual.invalido',
+            message: 'Percentual recusado.',
+          },
+        ],
+      }),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+    const campo = fixture.nativeElement.querySelector(
+      '[formControlName="ppiPercentual"]',
+    ) as HTMLInputElement;
+    expect(component['erroDoCampo']('ppiPercentual')).toBe('Percentual recusado.');
+    expect(document.activeElement).toBe(campo);
+    expect(campo.getAttribute('aria-describedby')).toBe('erro-ppiPercentual');
+  });
+  it('libera as ações após falha de recarga e permite tentar novamente', async () => {
+    await flushLista([]);
+    const post = submeterCadastro();
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
+    controller.expectOne((r) => r.url === URL).flush('Falha', { status: 500, statusText: 'Erro' });
+    await propagate();
+    expect(component['edicao'].gravando()).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('Tentar novamente');
+    component['tentarNovamente']();
+    await propagate();
+    await flushLista([seed]);
+    expect(component['edicao'].gravando()).toBe(false);
   });
 });

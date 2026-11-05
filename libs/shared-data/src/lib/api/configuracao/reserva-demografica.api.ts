@@ -50,14 +50,6 @@ export class ReservaDemograficaApi {
     );
   }
 
-  /** GET `/api/configuracao/referencias-reserva-demografica/{id}` — detalhe. */
-  obter(id: string): Observable<ApiResult<ReferenciaReservaDemograficaDto>> {
-    return this.http.get<ApiResult<ReferenciaReservaDemograficaDto>>(
-      `${this.basePath}/api/configuracao/referencias-reserva-demografica/${encodeURIComponent(id)}`,
-      { context: withVendorMime('referencia-reserva-demografica', 1) },
-    );
-  }
-
   /** POST `/api/configuracao/admin/referencias-reserva-demografica` — cria. Idempotency-Key (ADR-0027). */
   criar(
     command: CriarReferenciaReservaDemograficaCommand,

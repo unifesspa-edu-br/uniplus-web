@@ -1,0 +1,153 @@
+<div data-scope class="cfg-reserva-scope">
+  <div class="filter-bar" role="search" aria-label="Filtrar referências demográficas">
+    <div class="filter-bar__row">
+      <div class="input-group">
+        <span class="input-group__addon" aria-hidden="true"><i class="pi pi-search"></i></span>
+        <input
+          type="search"
+          class="input"
+          placeholder="Buscar por Censo..."
+          aria-label="Buscar censo"
+          [value]="busca()"
+          [attr.aria-disabled]="bloqueado()"
+          (input)="mudarBusca($event)"
+        />
+      </div>
+      <button
+        type="button"
+        class="btn btn--tertiary btn--sm btn--rect"
+        [attr.aria-disabled]="bloqueado()"
+        (click)="!bloqueado() && alterarBusca.emit('')"
+      >
+        Limpar
+      </button>
+    </div>
+  </div>
+
+  <section class="panel" aria-labelledby="cfg-reserva-list-title">
+    <div class="panel-head">
+      <div class="panel-head__title">
+        <h2 id="cfg-reserva-list-title">Referências</h2>
+        <span class="list-count" aria-label="Total de referências carregadas">
+          {{ referenciasFiltradas().length }}
+        </span>
+        @if (loading()) {
+          <span class="cfg-reserva__loading"><ui-spinner size="sm" /> Carregando</span>
+        }
+      </div>
+      <button
+        type="button"
+        class="btn btn--primary"
+        [attr.aria-disabled]="bloqueado()"
+        (click)="!bloqueado() && cadastrar.emit()"
+      >
+        <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+        Novo censo
+      </button>
+    </div>
+
+    @if (referenciasFiltradas().length > 0) {
+      <div class="table-responsive">
+        <table>
+          <caption class="sr-only">
+            Reservas demográficas por censo, com percentuais de PPI, quilombola e PcD e respectiva
+            base legal.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Censo</th>
+              <th scope="col">PPI %</th>
+              <th scope="col">Quilombola %</th>
+              <th scope="col">PcD %</th>
+              <th scope="col">Base legal</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ref of referenciasFiltradas(); track ref.id) {
+              <tr>
+                <td data-label="Censo">
+                  <code>{{ ref.censoReferencia }}</code>
+                </td>
+                <td data-label="PPI %" class="cfg-num">{{ pct(ref.ppiPercentual) }}</td>
+                <td data-label="Quilombola %" class="cfg-num">
+                  {{ pct(ref.quilombolaPercentual) }}
+                </td>
+                <td data-label="PcD %" class="cfg-num">{{ pct(ref.pcdPercentual) }}</td>
+                <td data-label="Base legal">{{ ref.baseLegal }}</td>
+                <td class="table-responsive__actions" data-label="Ações">
+                  @if (idAfetado() === ref.id && bloqueado()) {
+                    <span aria-hidden="true">{{ andamento() }}</span>
+                  }
+                  <button
+                    type="button"
+                    class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
+                    [attr.aria-label]="'Editar reserva demográfica do censo ' + ref.censoReferencia"
+                    data-tooltip="Editar reserva demográfica"
+                    [attr.aria-disabled]="loading() || bloqueado()"
+                    (click)="!loading() && !bloqueado() && editar.emit(ref)"
+                  >
+                    <i class="pi pi-pencil" aria-hidden="true"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
+                    [attr.aria-label]="
+                      'Remover reserva demográfica do censo ' + ref.censoReferencia
+                    "
+                    data-tooltip="Remover reserva demográfica"
+                    [attr.aria-disabled]="loading() || bloqueado()"
+                    (click)="!loading() && !bloqueado() && remover.emit(ref)"
+                  >
+                    <i class="pi pi-trash" aria-hidden="true"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (!loading() && !errorMessage()) {
+      @if (busca().trim().length > 0) {
+        <ui-empty-state
+          heading="Nenhuma referência encontrada"
+          description="Ajuste a busca por Censo para ver resultados."
+        >
+          <button
+            type="button"
+            class="btn btn--secondary"
+            [attr.aria-disabled]="bloqueado()"
+            (click)="!bloqueado() && alterarBusca.emit('')"
+          >
+            Limpar filtros
+          </button>
+        </ui-empty-state>
+      } @else {
+        <ui-empty-state
+          heading="Nenhuma referência cadastrada"
+          description="Cadastre os percentuais do primeiro Censo para habilitar a distribuição por reserva."
+        >
+          <button
+            type="button"
+            class="btn btn--primary"
+            [attr.aria-disabled]="bloqueado()"
+            (click)="!bloqueado() && cadastrar.emit()"
+          >
+            Novo censo
+          </button>
+        </ui-empty-state>
+      }
+    }
+    @if (prevCursor() !== null || nextCursor() !== null) {
+      <ui-pager
+        statusText="Navegação por páginas"
+        navigationLabel="Paginação de referências demográficas"
+        [hasPrevious]="prevCursor() !== null"
+        [hasNext]="nextCursor() !== null"
+        [isDisabled]="loading() || bloqueado()"
+        (previous)="anterior.emit()"
+        (next)="proximo.emit()"
+      />
+    }
+  </section>
+</div>
