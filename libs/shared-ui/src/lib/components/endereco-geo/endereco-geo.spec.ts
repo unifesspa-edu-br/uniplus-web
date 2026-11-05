@@ -1,5 +1,5 @@
 import { HttpHeaders } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { apiOk } from '@uniplus/shared-core/http';
@@ -29,6 +29,22 @@ const CEP_DO_GEO: CepEncontrado = {
 })
 class AnfitriaoComponent {
   readonly controle = new FormControl<EnderecoEstruturado | null>(null);
+}
+
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule, EnderecoGeoComponent],
+  template: `<ui-endereco-geo
+    #endereco
+    [formControl]="controle"
+    idPrefix="t"
+    [erroExterno]="erro()"
+  />`,
+})
+class AnfitriaoComErroComponent {
+  readonly controle = new FormControl<EnderecoEstruturado | null>(null);
+  readonly erro = signal<string | null>(null);
+  readonly endereco = viewChild.required(EnderecoGeoComponent);
 }
 
 @Component({
@@ -452,5 +468,93 @@ describe('EnderecoGeoComponent com CEP de faixa num controle que atualiza no blu
     fixture.detectChanges();
 
     expect(fixture.componentInstance.controle.value?.cepConfirmado).toBe(true);
+  });
+});
+
+describe('EnderecoGeoComponent: foco na recusa externa', () => {
+  let fixture: ComponentFixture<AnfitriaoComErroComponent>;
+
+  const endereco = (
+    origem: string,
+    cidade: EnderecoEstruturado['cidade'],
+  ): EnderecoEstruturado => ({
+    cep: origem === 'manual' ? null : '68507590',
+    logradouro: null,
+    numero: null,
+    complemento: null,
+    bairro: null,
+    distrito: null,
+    cidade,
+    latitude: null,
+    longitude: null,
+    nivelResolucao: origem === 'manual' ? null : 'cidade',
+    origem,
+  });
+  const marata = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [AnfitriaoComErroComponent],
+      providers: [
+        { provide: BUSCA_DE_CEP, useValue: () => of(apiOk(CEP_DO_GEO, 200, new HttpHeaders())) },
+        {
+          provide: BUSCA_DE_MUNICIPIOS,
+          useValue: () => of({ ok: true, data: [marata] }),
+        },
+      ],
+    });
+    fixture = TestBed.createComponent(AnfitriaoComErroComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+  });
+
+  async function recusar(valor: EnderecoEstruturado): Promise<void> {
+    fixture.componentInstance.controle.setValue(valor);
+    fixture.componentInstance.erro.set('A cidade não corresponde ao CEP informado.');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  const mensagem = () => fixture.nativeElement.querySelector('#t-erro') as HTMLElement;
+
+  it('sem recusa externa, não mexe no foco', () => {
+    const antes = document.activeElement;
+
+    fixture.componentInstance.endereco().focarErro();
+
+    expect(document.activeElement).toBe(antes);
+  });
+
+  it('com o endereço resolvido por CEP, não há controle a corrigir: o foco vai à mensagem', async () => {
+    await recusar(endereco('geo-api', marata));
+
+    fixture.componentInstance.endereco().focarErro();
+
+    expect(document.activeElement).toBe(mensagem());
+  });
+
+  it('a mensagem de recusa descreve o grupo do endereço', async () => {
+    await recusar(endereco('geo-api', marata));
+
+    expect(fixture.nativeElement.querySelector('fieldset').getAttribute('aria-describedby')).toBe(
+      mensagem().id,
+    );
+  });
+
+  it('no preenchimento manual com a cidade editável, o foco vai ao campo da cidade', async () => {
+    await recusar(endereco('manual', marata));
+
+    fixture.componentInstance.endereco().focarErro();
+
+    expect(document.activeElement?.closest('ui-valor-de-municipio')).not.toBeNull();
+  });
+
+  it('no preenchimento manual sem UF, a cidade está indisponível: o foco vai à mensagem', async () => {
+    await recusar(endereco('manual', null));
+
+    fixture.componentInstance.endereco().focarErro();
+
+    expect(document.activeElement).toBe(mensagem());
   });
 });

@@ -7,6 +7,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, CursoDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CursosPage } from './cursos.page';
+import { CursosStore } from './cursos.store';
 import { EdicaoDosCursos } from './edicao-dos-cursos';
 
 const BASE = 'http://localhost:5000';
@@ -28,6 +29,7 @@ const cursoSeed: CursoDto = {
 describe('CursosPage — escritas pela interface', () => {
   let fixture: ComponentFixture<CursosPage>;
   let edicao: EdicaoDosCursos;
+  let store: CursosStore;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
 
@@ -43,6 +45,7 @@ describe('CursosPage — escritas pela interface', () => {
     });
     fixture = TestBed.createComponent(CursosPage);
     edicao = fixture.debugElement.injector.get(EdicaoDosCursos);
+    store = fixture.debugElement.injector.get(CursosStore);
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
@@ -170,6 +173,37 @@ describe('CursosPage — escritas pela interface', () => {
     await responderLista([]);
     expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe('Curso ENG-CIV removido.');
     expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(false);
+  });
+
+  it('com remoção pendente e a listagem falhando, o "Tentar novamente" da página fica indisponível', async () => {
+    await pedirRemocao();
+    const remocao = controller.expectOne(`${ESCRITA_URL}/${cursoSeed.id}`);
+    store.recarregar();
+    await propagar();
+    controller
+      .expectOne((r) => r.url === LISTA_URL)
+      .flush(
+        JSON.stringify({
+          type: 'about:blank',
+          title: 'Indisponível',
+          status: 503,
+          code: 'uniplus.indisponivel',
+          traceId: 'test-trace',
+        }),
+        {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagar();
+
+    expect(botao('ui-alert button', 'Tentar novamente').disabled).toBe(true);
+
+    remocao.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+    await responderLista([]);
+    await propagar();
   });
 
   describe('trava da classe de edição contra chamadas concorrentes', () => {

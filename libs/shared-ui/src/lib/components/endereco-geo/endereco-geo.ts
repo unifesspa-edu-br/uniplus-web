@@ -84,6 +84,8 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly injector = inject(Injector);
   private readonly campoCep = viewChild<ElementRef<HTMLInputElement>>('campoCep');
+  private readonly cidade = viewChild(ValorDeMunicipioComponent);
+  private readonly mensagemDaRecusa = viewChild<ElementRef<HTMLElement>>('erroDaRecusa');
 
   /** Prefixo dos `id`/`for` — único por instância para a11y. */
   readonly idPrefix = input('endereco');
@@ -103,6 +105,21 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   readonly exigeCep = input(false);
   /** Ids das mensagens de quem hospeda (ajuda, pendência) que descrevem o grupo. */
   readonly descritoPor = input<string | null>(null);
+
+  /**
+   * Leva o foco ao lugar da recusa externa (`erroExterno`): o campo de cidade, quando ele existe e
+   * aceita edição (preenchimento manual); com o endereço resolvido por CEP não há controle para
+   * corrigir, então vai à mensagem da recusa, que descreve o grupo.
+   */
+  focarErro(): void {
+    const idDoCampo = this.cidade()?.campoId();
+    const campo = idDoCampo ? document.getElementById(idDoCampo) : null;
+    if (campo !== null && !(campo as HTMLInputElement).disabled) {
+      campo.focus();
+      return;
+    }
+    this.mensagemDaRecusa()?.nativeElement.focus();
+  }
 
   protected readonly urlBuscaDeCepDosCorreios = URL_BUSCA_DE_CEP_DOS_CORREIOS;
   protected readonly limiteDoComplemento = LIMITE_DO_COMPLEMENTO;

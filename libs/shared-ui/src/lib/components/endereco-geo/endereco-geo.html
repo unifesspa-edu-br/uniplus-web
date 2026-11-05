@@ -1,7 +1,7 @@
 <fieldset
   class="endereco-geo"
   [disabled]="conducao.disabled()"
-  [attr.aria-describedby]="descritoPor()"
+  [attr.aria-describedby]="descritoPor() ?? (erroExterno() ? id('erro') : null)"
   (focusout)="aoSairDoGrupo($event)"
 >
   <legend
@@ -302,6 +302,6 @@
   </div>
 
   @if (erroExterno(); as erro) {
-  <p [id]="id('erro')" class="field__error" role="alert">{{ erro }}</p>
+  <p #erroDaRecusa [id]="id('erro')" class="field__error" role="alert" tabindex="-1">{{ erro }}</p>
   }
 </fieldset>

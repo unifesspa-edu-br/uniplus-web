@@ -98,6 +98,7 @@ export class EdicaoDosCampi {
       return;
     }
     this.erro.set(null);
+    this.erroDoEndereco.set(null);
     const chave = withIdempotencyKey(this.chaveDeIdempotencia());
     const valores = this.form.getRawValue();
     const id = this.campusEmEdicaoId();

@@ -9,6 +9,7 @@ import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CampiPage } from './campi.page';
+import { CampiStore } from './campi.store';
 import { EdicaoDosCampi } from './edicao-dos-campi';
 
 const BASE = 'http://localhost:5000';
@@ -43,6 +44,7 @@ const enderecoResolvido: EnderecoEstruturado = {
 describe('CampiPage — escritas pela interface', () => {
   let fixture: ComponentFixture<CampiPage>;
   let edicao: EdicaoDosCampi;
+  let store: CampiStore;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
 
@@ -59,6 +61,7 @@ describe('CampiPage — escritas pela interface', () => {
     });
     fixture = TestBed.createComponent(CampiPage);
     edicao = fixture.debugElement.injector.get(EdicaoDosCampi);
+    store = fixture.debugElement.injector.get(CampiStore);
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
@@ -184,6 +187,37 @@ describe('CampiPage — escritas pela interface', () => {
     await propagar();
     expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe('Campus MARABA removido.');
     expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(false);
+  });
+
+  it('com remoção pendente e a listagem falhando, o "Tentar novamente" da página fica indisponível', async () => {
+    await pedirRemocao();
+    const remocao = controller.expectOne(`${ESCRITA_URL}/${campusSeed.id}`);
+    store.recarregar();
+    await propagar();
+    controller
+      .expectOne((r) => r.url === LISTA_URL)
+      .flush(
+        JSON.stringify({
+          type: 'about:blank',
+          title: 'Indisponível',
+          status: 503,
+          code: 'uniplus.indisponivel',
+          traceId: 'test-trace',
+        }),
+        {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagar();
+
+    expect(botao('ui-alert button', 'Tentar novamente').disabled).toBe(true);
+
+    remocao.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+    controller.expectOne((r) => r.url === LISTA_URL).flush([]);
+    await propagar();
   });
 
   describe('trava da classe de edição contra chamadas concorrentes', () => {
@@ -329,7 +363,37 @@ describe('CampiPage — escritas pela interface', () => {
       );
     });
 
-    it('com o endereço manual, o foco também vai à mensagem da recusa', async () => {
+    it('uma falha geral depois da recusa do endereço não leva o foco a ela', async () => {
+      await preencherNovoCampus();
+      await enviarERecusar();
+      expect(elemento('ui-endereco-geo .field__error')).toBeDefined();
+
+      const salvar = elemento<HTMLButtonElement>('button[form="cfg-campus-form"]');
+      salvar.focus();
+      salvar.click();
+      await propagar();
+      controller.expectOne(ESCRITA_URL).flush(
+        JSON.stringify({
+          type: 'about:blank',
+          title: 'Erro interno',
+          status: 500,
+          code: 'uniplus.erro_interno',
+          traceId: 'test-trace',
+        }),
+        {
+          status: 500,
+          statusText: 'Server Error',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+      await propagar();
+      await propagar();
+
+      expect(fixture.nativeElement.querySelector('ui-endereco-geo .field__error')).toBeNull();
+      expect(document.activeElement).toBe(salvar);
+    });
+
+    it('com o endereço manual e a cidade editável, o foco vai ao campo da cidade', async () => {
       await preencherNovoCampus();
       edicao.form.controls.endereco.setValue({
         ...enderecoResolvido,
@@ -341,7 +405,7 @@ describe('CampiPage — escritas pela interface', () => {
       await propagar();
       await enviarERecusar();
 
-      expect(document.activeElement).toBe(elemento('ui-endereco-geo .field__error'));
+      expect(document.activeElement?.closest('ui-valor-de-municipio')).not.toBeNull();
     });
   });
 

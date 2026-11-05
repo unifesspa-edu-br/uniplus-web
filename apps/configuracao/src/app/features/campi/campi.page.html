@@ -14,7 +14,7 @@
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [disabled]="store.carregando()"
+      [disabled]="store.carregando() || edicao.removendo()"
       (click)="store.tentarNovamente()"
     >
       Tentar novamente

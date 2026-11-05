@@ -9,6 +9,7 @@ import {
   input,
   model,
   output,
+  viewChild,
 } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import {
@@ -19,10 +20,6 @@ import {
 } from '@uniplus/shared-ui/components';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { CampusForm } from './campus-form';
-
-const PREFIXO_DO_ENDERECO = 'campus-endereco';
-/** Id da mensagem de recusa que o `ui-endereco-geo` monta a partir do prefixo. */
-const ID_DO_ERRO_DO_ENDERECO = `${PREFIXO_DO_ENDERECO}-erro`;
 
 /** O drawer com o formulário de cadastro e edição de campus. */
 @Component({
@@ -42,9 +39,8 @@ const ID_DO_ERRO_DO_ENDERECO = `${PREFIXO_DO_ENDERECO}-erro`;
 export class CampusFormularioComponent {
   private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  private readonly endereco = viewChild(EnderecoGeoComponent);
 
-  protected readonly prefixoDoEndereco = PREFIXO_DO_ENDERECO;
-  protected readonly idDoErroDoEndereco = ID_DO_ERRO_DO_ENDERECO;
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<CampusForm>>();
   readonly modo = input.required<'criar' | 'editar'>();
@@ -88,13 +84,9 @@ export class CampusFormularioComponent {
       invalido.focus();
       return;
     }
-    // Recusa só do endereço: com o endereço resolvido por CEP não há controle inválido, então o
-    // foco vai à mensagem da recusa, que descreve o grupo. A mensagem não é focável por padrão.
-    const mensagem = this.raiz.nativeElement.querySelector<HTMLElement>(
-      `#${ID_DO_ERRO_DO_ENDERECO}`,
-    );
-    mensagem?.setAttribute('tabindex', '-1');
-    mensagem?.focus();
+    if (this.erroDoEndereco() !== null) {
+      this.endereco()?.focarErro();
+    }
   }
 
   /** Enquanto envia, o botão está indisponível: o clique (e Enter ou Espaço, que o geram) não envia. */
