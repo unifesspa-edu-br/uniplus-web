@@ -54,3 +54,11 @@
 1610 libs/shared-ui/src/lib/components/editor-de-formulario/formulario-editavel.ts
 506 libs/shared-ui/src/lib/components/editor-de-formulario/grupo-do-formulario.ts
 428 libs/shared-ui/src/lib/components/editor-de-formulario/restricoes-do-campo.ts
+411 libs/shared-ui/src/lib/components/formulario-do-candidato/arquivo-do-formulario.ts
+609 libs/shared-ui/src/lib/components/formulario-do-candidato/campo-do-candidato.ts
+700 libs/shared-ui/src/lib/components/formulario-do-candidato/documentos-avaliados.ts
+584 libs/shared-ui/src/lib/components/formulario-do-candidato/formulario-do-candidato.model.ts
+1328 libs/shared-ui/src/lib/components/formulario-do-candidato/formulario-do-candidato.ts
+507 libs/shared-ui/src/lib/components/formulario-do-candidato/interpretador/avaliador.ts
+613 libs/shared-ui/src/lib/components/formulario-do-candidato/interpretador/leitura.ts
+552 libs/shared-ui/src/styles/tokens.css
