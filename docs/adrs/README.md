@@ -57,6 +57,7 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0026](0026-navegacao-lista-prev-next-cursor-bidirecional.md) | Navegação de lista por prev/next sobre cursor bidirecional | accepted | 2026-06-16 |
 | [0027](0027-modelagem-papeis-dominio-frontend.md) | Modelagem de papéis de domínio no frontend — `UserRole` como contrato de display | accepted | 2026-06-24 |
 | [0028](0028-base-href-parametrizado-em-runtime.md) | `base href` parametrizado em runtime pelo container Nginx | accepted | 2026-07-15 |
+| [0029](0029-reset-do-tailwind-como-base-dos-apps.md) | Reset do Tailwind como base dos apps | accepted | 2026-11-05 |
 
 ## Como adicionar um novo ADR
 
