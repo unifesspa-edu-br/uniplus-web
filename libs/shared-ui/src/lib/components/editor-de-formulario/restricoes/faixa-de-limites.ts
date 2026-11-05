@@ -26,7 +26,7 @@ export function limiteDigitado(texto: string): number | string | null {
   selector: 'ui-faixa-de-limites',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styleUrl: './anfitriao.css',
+  styleUrl: '../anfitriao.css',
   template: `
     <div class="form-grid form-grid--pair">
       @for (campo of campos(); track campo.limite) {

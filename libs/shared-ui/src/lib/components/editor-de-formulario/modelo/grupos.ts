@@ -304,3 +304,38 @@ export function motivoDaRemocaoTravadaDoGrupo(
       .find((motivo) => motivo !== undefined) ?? null
   );
 }
+
+/** O que impede a contagem de ocorrências do grupo de ser gravada, nos termos da API; nulo quando nada. */
+export interface ProblemasDasOcorrencias {
+  readonly minimo: string | null;
+  readonly maximo: string | null;
+  /** A relação entre os dois só se confere quando cada um é válido. */
+  readonly relacao: string | null;
+}
+
+export function problemasDasOcorrencias(
+  grupo: Pick<GrupoDoFormulario, 'minimo' | 'maximo'>,
+): ProblemasDasOcorrencias {
+  const minimo = Number(grupo.minimo);
+  const maximo = grupo.maximo === null ? null : Number(grupo.maximo);
+  const doMinimo = problemaDoMinimo(minimo);
+  const doMaximo = problemaDoMaximo(maximo);
+  const semRelacao = doMinimo !== null || doMaximo !== null || maximo === null || maximo >= minimo;
+  return {
+    minimo: doMinimo,
+    maximo: doMaximo,
+    relacao: semRelacao ? null : 'O máximo não pode ficar abaixo do mínimo.',
+  };
+}
+
+function problemaDoMinimo(minimo: number): string | null {
+  return Number.isInteger(minimo) && minimo >= 0
+    ? null
+    : 'O mínimo é um número inteiro, a partir de zero.';
+}
+
+function problemaDoMaximo(maximo: number | null): string | null {
+  return maximo === null || (Number.isInteger(maximo) && maximo >= 1)
+    ? null
+    : 'O máximo é um número inteiro, a partir de um.';
+}

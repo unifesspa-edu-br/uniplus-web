@@ -118,3 +118,10 @@ export function fatosDeMembroParaAcrescentar(
     (fato) => fato.fonteValores !== FONTE_GEO_MUNICIPIO,
   );
 }
+
+/** O nome de cada fato do catálogo, pelo código: o que as frases de recusa citam. */
+export function nomesDosFatos(
+  catalogo: readonly Pick<FatoDoFormulario, 'codigo' | 'nome'>[],
+): ReadonlyMap<string, string> {
+  return new Map(catalogo.map((fato) => [fato.codigo, fato.nome]));
+}

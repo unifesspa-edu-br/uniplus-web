@@ -23,7 +23,7 @@ export function problemaDoLimite(limite: LimiteDeDataNoWire | null): string | nu
   selector: 'ui-limite-de-data',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styleUrl: './anfitriao.css',
+  styleUrl: '../anfitriao.css',
   template: `
     <fieldset class="editor-formulario__limite" [attr.aria-describedby]="descricao()">
       <legend class="field__label">{{ rotulo() }}</legend>

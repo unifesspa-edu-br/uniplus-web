@@ -27,7 +27,7 @@ export interface MudancaDeLimiteDeData {
   standalone: true,
   imports: [LimiteDeDataComponent, ErrosDaRestricaoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styleUrl: './anfitriao.css',
+  styleUrl: '../anfitriao.css',
   template: `
     <p class="field__hint" [id]="idBase() + '-dica'">
       Cada limite é uma data fixa ou o dia do envio somado a anos e dias; use números negativos para
