@@ -1,7 +1,12 @@
 import { deslocarDia, diaNoFuso } from '@uniplus/shared-utils';
 
-import { avaliar, type ItemAvaliado, type OcorrenciaRespondida } from './avaliador';
-import type { RegrasInvalidas } from './definicao-do-formulario';
+import {
+  avaliar,
+  type AvaliacaoInterna,
+  type ItemAvaliado,
+  type OcorrenciaRespondida,
+} from './avaliador';
+import type { DefinicaoFormulario, RegrasInvalidas } from './definicao-do-formulario';
 import { lerRegras } from './leitura';
 import {
   codigosDa,
@@ -50,27 +55,12 @@ export function interpretarFormulario(
   if (!leitura.valida) return leitura;
   const { definicao } = leitura;
 
-  const dentroDaOferta = (
-    respostas: Iterable<readonly [string, ValorJson]>,
-  ): Map<string, ValorJson> =>
-    new Map(
-      [...respostas].filter(([fato, resposta]) => {
-        const oferta = definicao.ofertas.get(fato);
-        const codigos = codigosDa(resposta);
-        return (
-          !oferta ||
-          estaVazia(resposta) ||
-          (codigos !== null && codigos.every((c) => oferta.has(c)))
-        );
-      }),
-    );
-
   const avaliacao = avaliar(definicao, {
-    respostas: dentroDaOferta(Object.entries(simulacao.respostas ?? {})),
+    respostas: dentroDaOferta(definicao, Object.entries(simulacao.respostas ?? {})),
     grupos: new Map(
       [...grupos.entries()].map(([grupo, ocorrencias]) => [
         grupo,
-        ocorrencias.map((o) => ({ id: o.id, respostas: dentroDaOferta(o.respostas) })),
+        ocorrencias.map((o) => ({ id: o.id, respostas: dentroDaOferta(definicao, o.respostas) })),
       ]),
     ),
     etapasConcluidas: new Set(simulacao.etapasConcluidas ?? []),
@@ -78,32 +68,48 @@ export function interpretarFormulario(
     diaDoEnvio,
     fatosFixos,
   });
+  return { valida: true, avaliacao: comoAvaliacaoDoFormulario(avaliacao) };
+}
 
+/** As respostas dentro da oferta do campo; a fora dela não vale e é descartada. */
+function dentroDaOferta(
+  definicao: DefinicaoFormulario,
+  respostas: Iterable<readonly [string, ValorJson]>,
+): Map<string, ValorJson> {
+  return new Map(
+    [...respostas].filter(([fato, resposta]) => {
+      const oferta = definicao.ofertas.get(fato);
+      const codigos = codigosDa(resposta);
+      return (
+        !oferta || estaVazia(resposta) || (codigos !== null && codigos.every((c) => oferta.has(c)))
+      );
+    }),
+  );
+}
+
+function comoAvaliacaoDoFormulario(avaliacao: AvaliacaoInterna): AvaliacaoDoFormulario {
   return {
-    valida: true,
-    avaliacao: {
-      etapas: avaliacao.etapas.map((e) => ({ codigo: e.codigo, visivel: e.visivel })),
-      campos: avaliacao.itens.map((i) => campo(i, avaliacao.fatos)),
-      grupos: avaliacao.grupos.map((g) => ({
-        codigo: g.codigo,
-        etapaCodigo: g.etapaCodigo,
-        visivel: g.visivel,
-        obrigatorio: g.obrigatorio,
-        estado: g.estado,
-        contagemValida: g.contagemValida,
-        ocorrenciaDoCandidatoValida: g.ocorrenciaDoCandidatoValida,
-        ocorrencias: g.ocorrencias.map((o) => ({
-          id: o.id,
-          estado: o.estado,
-          campos: o.itens.map((i) => campo(i, o.fatos)),
-        })),
+    etapas: avaliacao.etapas.map((e) => ({ codigo: e.codigo, visivel: e.visivel })),
+    campos: avaliacao.itens.map((i) => campo(i, avaliacao.fatos)),
+    grupos: avaliacao.grupos.map((g) => ({
+      codigo: g.codigo,
+      etapaCodigo: g.etapaCodigo,
+      visivel: g.visivel,
+      obrigatorio: g.obrigatorio,
+      estado: g.estado,
+      contagemValida: g.contagemValida,
+      ocorrenciaDoCandidatoValida: g.ocorrenciaDoCandidatoValida,
+      ocorrencias: g.ocorrencias.map((o) => ({
+        id: o.id,
+        estado: o.estado,
+        campos: o.itens.map((i) => campo(i, o.fatos)),
       })),
-      termos: avaliacao.termos.map((t) => ({
-        codigo: t.codigo,
-        visivel: t.visivel,
-        obrigatorio: t.obrigatorio,
-      })),
-    },
+    })),
+    termos: avaliacao.termos.map((t) => ({
+      codigo: t.codigo,
+      visivel: t.visivel,
+      obrigatorio: t.obrigatorio,
+    })),
   };
 }
 
@@ -116,26 +122,39 @@ function lerOcorrencias(
 ): Map<string, OcorrenciaRespondida[]> | RegrasInvalidas {
   const lidas = new Map<string, OcorrenciaRespondida[]>();
   for (const [grupo, recebidas] of Object.entries(grupos ?? {})) {
-    const vistas = new Set<string>();
-    const respondidas: OcorrenciaRespondida[] = [];
-    if (recebidas !== null && recebidas !== undefined && !Array.isArray(recebidas)) {
-      return { caminho: `grupos.${grupo}`, mensagem: 'As ocorrências do grupo são uma lista.' };
-    }
-    for (const [i, ocorrencia] of (recebidas ?? []).entries()) {
-      const id = ocorrencia?.id;
-      if (typeof id !== 'string' || id.trim() === '' || vistas.has(id)) {
-        return {
-          caminho: `grupos.${grupo}[${i}].id`,
-          mensagem:
-            'Cada ocorrência do grupo precisa de uma identidade própria, que não se repita no grupo.',
-        };
-      }
-      vistas.add(id);
-      respondidas.push({ id, respostas: new Map(Object.entries(ocorrencia.respostas ?? {})) });
-    }
+    const respondidas = lerOcorrenciasDoGrupo(grupo, recebidas);
+    if ('caminho' in respondidas) return respondidas;
     lidas.set(grupo, respondidas);
   }
   return lidas;
+}
+
+function identidadeValida(id: unknown, vistas: ReadonlySet<string>): id is string {
+  return typeof id === 'string' && id.trim() !== '' && !vistas.has(id);
+}
+
+function lerOcorrenciasDoGrupo(
+  grupo: string,
+  recebidas: readonly OcorrenciaSimulada[] | null | undefined,
+): OcorrenciaRespondida[] | RegrasInvalidas {
+  if (recebidas !== null && recebidas !== undefined && !Array.isArray(recebidas)) {
+    return { caminho: `grupos.${grupo}`, mensagem: 'As ocorrências do grupo são uma lista.' };
+  }
+  const vistas = new Set<string>();
+  const respondidas: OcorrenciaRespondida[] = [];
+  for (const [i, ocorrencia] of (recebidas ?? []).entries()) {
+    const id = ocorrencia?.id;
+    if (!identidadeValida(id, vistas)) {
+      return {
+        caminho: `grupos.${grupo}[${i}].id`,
+        mensagem:
+          'Cada ocorrência do grupo precisa de uma identidade própria, que não se repita no grupo.',
+      };
+    }
+    vistas.add(id);
+    respondidas.push({ id, respostas: new Map(Object.entries(ocorrencia.respostas ?? {})) });
+  }
+  return respondidas;
 }
 
 const INSTANTE_COM_ZONA = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
