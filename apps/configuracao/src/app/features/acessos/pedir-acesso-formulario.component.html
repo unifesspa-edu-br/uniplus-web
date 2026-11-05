@@ -22,6 +22,7 @@
       <label class="field" [class.is-error]="invalido('beneficiarioEmail')">
         <span class="field__label is-required">E-mail institucional do beneficiário</span>
         <input
+          aria-required="true"
           class="input"
           type="email"
           autocomplete="off"
@@ -49,6 +50,7 @@
       <label class="field" [class.is-error]="invalido('perfilId')">
         <span class="field__label is-required">Perfil de acesso</span>
         <select
+          aria-required="true"
           class="select"
           formControlName="perfilId"
           [attr.aria-invalid]="invalido('perfilId') ? 'true' : null"
@@ -73,6 +75,7 @@
       <label class="field" [class.is-error]="invalido('unidadeId')">
         <span class="field__label is-required">Unidade</span>
         <select
+          aria-required="true"
           class="select"
           formControlName="unidadeId"
           [attr.aria-invalid]="invalido('unidadeId') ? 'true' : null"
@@ -96,6 +99,7 @@
     <label class="field" [class.is-error]="invalido('justificativa')">
       <span class="field__label is-required">Justificativa</span>
       <textarea
+        aria-required="true"
         class="textarea"
         formControlName="justificativa"
         [attr.aria-invalid]="invalido('justificativa') ? 'true' : null"

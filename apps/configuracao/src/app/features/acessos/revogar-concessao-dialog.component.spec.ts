@@ -83,6 +83,8 @@ describe('RevogarConcessaoDialogComponent', () => {
 
   it('mostra a concessão e mantém o botão inativo até o e-mail ser preenchido', () => {
     const { host, digitar, botao } = montar();
+    expect(host.querySelector('input[type="email"]')?.getAttribute('aria-required')).toBe('true');
+    expect(host.querySelector('textarea')?.getAttribute('aria-required')).toBe('true');
 
     expect(host.textContent).toContain('Betina Marina das Neves');
     expect(host.textContent).toContain('Operador de inscrições');

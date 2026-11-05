@@ -113,6 +113,15 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
     );
   }
 
+  it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
+    await preencher();
+    for (const campo of ['nome', 'codigo', 'finalidade']) {
+      expect(elemento<HTMLElement>(`[formcontrolname="${campo}"]`).getAttribute('aria-required')).toBe(
+        'true',
+      );
+    }
+  });
+
   it('mantém os campos somente leitura, o foco e o drawer aberto enquanto cria', async () => {
     await preencher();
     const botao = salvar();

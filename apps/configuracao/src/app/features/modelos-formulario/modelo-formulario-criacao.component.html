@@ -29,6 +29,7 @@
         <label class="field" [class.is-error]="erro('nome')">
           <span class="field__label is-required">Nome</span>
           <input
+            aria-required="true"
             class="input"
             type="text"
             formControlName="nome"
@@ -44,6 +45,7 @@
         <label class="field" [class.is-error]="erro('codigo')">
           <span class="field__label is-required">Código</span>
           <input
+            aria-required="true"
             class="input cfg-input-uppercase"
             type="text"
             formControlName="codigo"
@@ -61,6 +63,7 @@
         <label class="field" [class.is-error]="erro('finalidade')">
           <span class="field__label is-required">Finalidade</span>
           <select
+            aria-required="true"
             class="select"
             formControlName="finalidade"
             [attr.aria-invalid]="erro('finalidade') ? 'true' : null"

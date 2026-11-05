@@ -187,6 +187,8 @@ describe('PerfisPage', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
+    expect(host.querySelector('[formcontrolname="nome"]')?.getAttribute('aria-required')).toBe('true');
+    expect(host.querySelector('[formcontrolname="descricao"]')?.getAttribute('aria-required')).toBe('true');
 
     const grupos = [...host.querySelectorAll('fieldset.field fieldset.field legend')].map((l) =>
       l.textContent?.trim(),

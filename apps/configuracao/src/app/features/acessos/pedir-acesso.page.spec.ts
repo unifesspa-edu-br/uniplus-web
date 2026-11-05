@@ -96,6 +96,18 @@ describe('PedirAcessoPage', async () => {
     vi.resetAllMocks();
   });
 
+  it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
+    const { host, digitar, campo, fixture } = await montar();
+    digitar('select[formcontrolname="perfilId"]', 'perfil-1');
+    campo<HTMLInputElement>('input[value="outra"]').click();
+    fixture.detectChanges();
+    for (const campo of ['perfilId', 'justificativa', 'unidadeId', 'beneficiarioEmail']) {
+      expect(host.querySelector(`[formcontrolname="${campo}"]`)?.getAttribute('aria-required')).toBe(
+        'true',
+      );
+    }
+  });
+
   it('mantém os valores e o foco durante o envio e recusa nova submissão', async () => {
     const resposta = new Subject<ReturnType<typeof ok<ReturnType<typeof pedido>>>>();
     api.criar.mockReturnValue(resposta);

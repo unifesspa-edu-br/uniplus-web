@@ -90,6 +90,15 @@ describe('Condições de atendimento — escritas pela interface', () => {
   });
   afterEach(() => controller.verify());
 
+  it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
+    await preencher();
+    for (const campo of ['codigo', 'nome']) {
+      expect(elemento<HTMLElement>(`[formcontrolname="${campo}"]`).getAttribute('aria-required')).toBe(
+        'true',
+      );
+    }
+  });
+
   it('mantém o formulário somente leitura e impede fechar durante o envio', async () => {
     await preencher();
     const botao = salvar();

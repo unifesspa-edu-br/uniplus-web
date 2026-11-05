@@ -118,6 +118,15 @@ describe('CursosPage — escritas pela interface', () => {
   const drawerDoFormulario = (): HTMLDialogElement =>
     elemento<HTMLDialogElement>('dialog[aria-label="Formulário de curso"]');
 
+  it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
+    await preencherNovoCurso();
+    for (const campo of ['codigo', 'nome', 'grau', 'nivelEnsino']) {
+      expect(elemento<HTMLElement>(`[formcontrolname="${campo}"]`).getAttribute('aria-required')).toBe(
+        'true',
+      );
+    }
+  });
+
   it('gravação pendente deixa o formulário somente leitura e impede fechar', async () => {
     await preencherNovoCurso();
     const salvar = elemento<HTMLButtonElement>('button[form="cfg-curso-form"]');

@@ -28,6 +28,7 @@ export const LIMITE_DO_MOTIVO = 500;
         <label class="field" [class.is-error]="tentou() && motivo().invalid">
           <span class="field__label is-required">Motivo</span>
           <textarea
+            aria-required="true"
             class="textarea"
             [formControl]="motivo()"
             [attr.maxlength]="limite"

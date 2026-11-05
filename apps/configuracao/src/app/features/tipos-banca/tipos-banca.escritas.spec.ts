@@ -76,6 +76,15 @@ describe('TiposBancaPage — escritas', () => {
     await propagate();
   }
 
+  it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
+    await flushLista([bancaSeed]);
+    await abrirEdicao(bancaSeed);
+    for (const campo of ['codigo', 'nome']) {
+      const controle = (fixture.nativeElement as HTMLElement).querySelector(`[formcontrolname="${campo}"]`);
+      expect(controle?.getAttribute('aria-required')).toBe('true');
+    }
+  });
+
   it('CA-07: código é readonly na edição e o payload de atualização não inclui o campo codigo', async () => {
     await flushLista([bancaSeed]);
     await abrirEdicao(bancaSeed);

@@ -50,6 +50,7 @@ describe('MotivoDialogComponent', () => {
 
   it('emite a confirmação com o motivo informado ao hospedeiro', () => {
     const { fixture, campo, botao } = montar();
+    expect(campo.getAttribute('aria-required')).toBe('true');
     campo.value = '  Saiu da função.  ';
     campo.dispatchEvent(new Event('input'));
     botao.click();

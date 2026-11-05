@@ -131,6 +131,15 @@ describe('CampiPage — escritas pela interface', () => {
   const drawerDoFormulario = (): HTMLDialogElement =>
     elemento<HTMLDialogElement>('dialog[aria-label="Formulário de campus"]');
 
+  it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
+    await preencherNovoCampus();
+    for (const campo of ['sigla', 'nome']) {
+      expect(elemento<HTMLElement>(`[formcontrolname="${campo}"]`).getAttribute('aria-required')).toBe(
+        'true',
+      );
+    }
+  });
+
   it('gravação pendente deixa o formulário somente leitura e impede fechar', async () => {
     await preencherNovoCampus();
     const salvar = elemento<HTMLButtonElement>('button[form="cfg-campus-form"]');

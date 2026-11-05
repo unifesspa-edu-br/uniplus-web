@@ -64,6 +64,7 @@ export interface ConfirmacaoDaRevogacao {
           >
             <span class="field__label is-required">E-mail do beneficiário</span>
             <input
+              aria-required="true"
               class="input"
               type="email"
               autocomplete="off"
@@ -83,6 +84,7 @@ export interface ConfirmacaoDaRevogacao {
           <label class="field" [class.is-error]="tentou() && motivo().invalid">
             <span class="field__label is-required">Motivo</span>
             <textarea
+              aria-required="true"
               class="textarea"
               [formControl]="motivo()"
               [attr.maxlength]="limite"

@@ -20,6 +20,7 @@
       <label class="field" [class.is-error]="invalido('nome')">
         <span class="field__label is-required">Nome</span>
         <input
+          aria-required="true"
           class="input"
           type="text"
           formControlName="nome"
@@ -33,6 +34,7 @@
       <label class="field" [class.is-error]="invalido('descricao')">
         <span class="field__label is-required">Descrição</span>
         <textarea
+          aria-required="true"
           class="textarea"
           formControlName="descricao"
           [readOnly]="criacaoEmAberto()"

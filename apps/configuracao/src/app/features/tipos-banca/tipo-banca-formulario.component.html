@@ -24,6 +24,7 @@
           <label class="field" [class.is-error]="erroDoCampo('codigo')">
             <span class="field__label is-required">Código</span>
             <input
+              aria-required="true"
               class="input"
               type="text"
               formControlName="codigo"
@@ -38,6 +39,7 @@
           <label class="field" [class.is-error]="erroDoCampo('nome')">
             <span class="field__label is-required">Nome</span>
             <input
+              aria-required="true"
               class="input"
               type="text"
               formControlName="nome"
