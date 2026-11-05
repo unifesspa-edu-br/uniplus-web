@@ -104,4 +104,16 @@ describe('IconButtonComponent (ação só-ícone com dica)', () => {
     const link = fixture.debugElement.query(By.css('a')).nativeElement as HTMLAnchorElement;
     expect(link.getAttribute('href')).toBe('/simulador?modelo=abc');
   });
+
+  it('link indisponível não navega, segue focável e se anuncia como indisponível', () => {
+    fixture.componentRef.setInput('link', ['123']);
+    fixture.componentRef.setInput('isDisabled', true);
+    fixture.detectChanges();
+
+    const link = fixture.debugElement.query(By.css('a')).nativeElement as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBeNull();
+    expect(link.getAttribute('aria-disabled')).toBe('true');
+    expect(link.getAttribute('role')).toBe('link');
+    expect(link.tabIndex).toBe(0);
+  });
 });

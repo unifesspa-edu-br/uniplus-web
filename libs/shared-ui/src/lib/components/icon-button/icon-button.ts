@@ -29,9 +29,8 @@ export type UiTooltipPosition = 'top' | 'bottom' | 'left' | 'right';
  *
  * `link` troca o `<button>` por `<a [routerLink]>`: use para ações de
  * navegação (ex.: "Editar" que abre outra rota) — preserva abrir em nova
- * aba, "Copiar endereço do link" e o papel `link` no leitor de tela, que um
- * `<button>` + `Router.navigate` não tem. Nesse modo `isDisabled` e
- * `triggered` não se aplicam (a navegação é feita pelo próprio `routerLink`).
+ * aba, "Copiar endereço do link" e o papel `link` no leitor de tela.
+ * `isDisabled` impede a navegação; `triggered` só se aplica ao botão.
  */
 @Component({
   selector: 'ui-icon-button',
@@ -44,7 +43,11 @@ export type UiTooltipPosition = 'top' | 'bottom' | 'left' | 'right';
         class="btn btn--sm btn--rect btn--icon-only"
         [class.btn--tertiary]="!danger()"
         [class.btn--danger]="danger()"
-        [routerLink]="destino"
+        [routerLink]="isDisabled() ? null : destino"
+        [attr.aria-disabled]="isDisabled() ? true : null"
+        [attr.role]="isDisabled() ? 'link' : null"
+        [attr.tabindex]="isDisabled() ? 0 : null"
+        (click)="recusarLinkIndisponivel($event)"
         [queryParams]="queryParams()"
         [target]="novaAba() ? '_blank' : undefined"
         [attr.rel]="novaAba() ? 'noopener' : null"
@@ -106,6 +109,10 @@ export class IconButtonComponent {
   /** No modo `link`, os parâmetros de consulta do destino; ausente, o destino vai sem eles. */
   readonly queryParams = input<Params | null>(null);
   readonly triggered = output<void>();
+
+  protected recusarLinkIndisponivel(evento: MouseEvent): void {
+    if (this.isDisabled()) evento.preventDefault();
+  }
 
   protected readonly iconClasses = computed(() => `pi ${this.icon()}`);
   protected readonly descriptionId = `ui-icon-button-desc-${++IconButtonComponent.idSeed}`;
