@@ -1,5 +1,6 @@
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
+import { SELETORES_DE_COMPONENTE } from '../../tools/eslint/seletor-de-componente.mjs';
 
 export default [
   ...nx.configs['flat/angular'],
@@ -18,12 +19,12 @@ export default [
       ],
       '@angular-eslint/component-selector': [
         'error',
-        {
-          type: 'element',
-          prefix: 'ing',
-          style: 'kebab-case',
-        },
+        [
+          { type: 'element', prefix: 'ing', style: 'kebab-case' },
+          { type: 'attribute', prefix: 'ing', style: 'camelCase' },
+        ],
       ],
+      'no-restricted-syntax': ['error', ...SELETORES_DE_COMPONENTE],
     },
   },
   {

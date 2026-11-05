@@ -1,17 +1,6 @@
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
-
-// Seletor com atributo em qualquer elemento que não seja `tr`, `table` ou `details`.
-const ATRIBUTO_FORA_DE_TR_TABLE_DETAILS = String.raw`/(^|,)\s*(?!(tr|table|details)\[)[a-zA-Z0-9-]*\[/`;
-
-const SELETORES_DE_COMPONENTE = [
-  'Literal[value=%ATRIBUTO%]',
-  'TemplateLiteral > TemplateElement[value.cooked=%ATRIBUTO%]',
-].map((alvo) => ({
-  selector: `Decorator[expression.callee.name='Component'] Property[key.name='selector'] > ${alvo.replaceAll('%ATRIBUTO%', ATRIBUTO_FORA_DE_TR_TABLE_DETAILS)}`,
-  message:
-    'Componente usa seletor de elemento (`sel-x`). Seletor de atributo só vale em `tr`, `table` e `details`, onde o HTML obriga.',
-}));
+import { SELETORES_DE_COMPONENTE } from '../../tools/eslint/seletor-de-componente.mjs';
 
 // Listas de valores de catálogo institucional não se declaram no wizard: vêm dos clientes da API.
 const CATALOGOS_DA_API = [
@@ -80,7 +69,6 @@ export default [
           { type: 'attribute', prefix: 'sel', style: 'camelCase' },
         ],
       ],
-      // Seletor de atributo só onde o HTML obriga: `tr`, `table` e `details`.
       'no-restricted-syntax': ['error', ...SELETORES_DE_COMPONENTE],
     },
   },
