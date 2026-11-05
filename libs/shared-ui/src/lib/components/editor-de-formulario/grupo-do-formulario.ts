@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 
 import {
+  nomesDoCatalogo,
   type CondicaoEmClausula,
   type FatoEscolhivel,
 } from '../editor-de-condicoes/condicoes-de-fatos';
@@ -16,7 +17,6 @@ import { TagComponent } from '../tag/tag';
 import { CamposDoGrupoComponent } from './grupo/campos-do-grupo';
 import { OcorrenciasDoGrupoComponent, type MudancaDeContagem } from './grupo/ocorrencias-do-grupo';
 import { comCandidatoComoMembro } from './modelo/candidato-como-membro';
-import { nomesDosFatos } from './modelo/catalogo-de-campos';
 import { fatosOferecidos } from './modelo/citacoes';
 import {
   LIMITES_DO_FORMULARIO,
@@ -244,7 +244,7 @@ export class GrupoDoFormularioComponent {
   protected readonly obrigatoriedade = computed(
     () => this.grupo().obrigatoriedade ?? OBRIGATORIEDADE_SEMPRE,
   );
-  private readonly nomes = computed(() => nomesDosFatos(this.catalogo()));
+  private readonly nomes = computed(() => nomesDoCatalogo(this.catalogo()));
 
   /** Remover o grupo leva os campos dele: o campo travado trava o grupo. */
   protected readonly remocaoDoGrupoTravada = computed(() =>

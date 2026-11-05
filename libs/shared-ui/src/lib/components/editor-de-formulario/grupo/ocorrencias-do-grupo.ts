@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { problemasDasOcorrencias } from '../modelo/grupos';
-import { idsDescritivos } from '../ids-descritivos';
+import { idsDescritivos } from '../ids';
 import { type GrupoDoFormulario } from '../modelo/tipos';
 
 export type Contagem = 'minimo' | 'maximo';

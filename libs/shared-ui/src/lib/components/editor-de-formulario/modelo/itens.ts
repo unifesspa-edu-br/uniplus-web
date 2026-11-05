@@ -117,7 +117,7 @@ export function comItem(
   };
 }
 
-function ehAEntrada(entrada: EntradaDaSecao, chave: ChaveDaEntrada): boolean {
+export function ehAEntrada(entrada: EntradaDaSecao, chave: ChaveDaEntrada): boolean {
   return chave.tipo === 'item'
     ? entrada.tipo === 'item' && entrada.item.fatoCodigo === chave.fatoCodigo
     : entrada.tipo === 'grupo' && entrada.grupo.codigo === chave.codigo;

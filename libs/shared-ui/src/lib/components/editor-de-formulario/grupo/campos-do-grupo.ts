@@ -9,10 +9,10 @@ import {
   signal,
 } from '@angular/core';
 
-import { fatoEscolhivel } from '../../editor-de-condicoes/condicoes-de-fatos';
+import { fatoEscolhivel, nomesDoCatalogo } from '../../editor-de-condicoes/condicoes-de-fatos';
 import { focarDepois } from '../foco';
 import { ItemDoFormularioComponent } from '../item-do-formulario';
-import { fatosDeMembroParaAcrescentar, nomesDosFatos } from '../modelo/catalogo-de-campos';
+import { fatosDeMembroParaAcrescentar } from '../modelo/catalogo-de-campos';
 import { fatosOferecidos, predicadosSobreRespostasAnteriores } from '../modelo/citacoes';
 import { LIMITES_DO_FORMULARIO } from '../modelo/constantes';
 import {
@@ -135,7 +135,7 @@ export class CamposDoGrupoComponent {
   protected readonly escolhido = signal('');
   protected readonly nome = computed(() => this.grupo().rotulo.trim() || this.grupo().codigo);
   protected readonly campos = computed(() => camposDoGrupo(this.grupo()));
-  private readonly nomes = computed(() => nomesDosFatos(this.catalogo()));
+  private readonly nomes = computed(() => nomesDoCatalogo(this.catalogo()));
   protected readonly desativados = computed(
     () =>
       new Set(
