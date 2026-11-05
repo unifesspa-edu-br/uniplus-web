@@ -13,6 +13,11 @@ import { EdicaoDosPerfis } from './edicao-dos-perfis';
 import { PerfisPage } from './perfis.page';
 import { ok, recusa } from './testes';
 
+function presente<T>(valor: T | null | undefined): T {
+  if (valor == null) throw new Error('elemento ausente');
+  return valor;
+}
+
 const COMUM: PerfilDto = {
   id: 'p1',
   nome: 'Operador de inscrições',
@@ -187,8 +192,12 @@ describe('PerfisPage', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(host.querySelector('[formcontrolname="nome"]')?.getAttribute('aria-required')).toBe('true');
-    expect(host.querySelector('[formcontrolname="descricao"]')?.getAttribute('aria-required')).toBe('true');
+    expect(host.querySelector('[formcontrolname="nome"]')?.getAttribute('aria-required')).toBe(
+      'true',
+    );
+    expect(host.querySelector('[formcontrolname="descricao"]')?.getAttribute('aria-required')).toBe(
+      'true',
+    );
 
     const grupos = [...host.querySelectorAll('fieldset.field fieldset.field legend')].map((l) =>
       l.textContent?.trim(),
@@ -247,7 +256,7 @@ describe('PerfisPage', async () => {
     pagina.form.patchValue({ nome: 'Consulta', descricao: 'Só consulta.' });
     fixture.detectChanges();
 
-    const botao = host.querySelector<HTMLButtonElement>('button[form="cfg-perfil-form"]')!;
+    const botao = presente(host.querySelector<HTMLButtonElement>('button[form="cfg-perfil-form"]'));
     botao.focus();
     botao.click();
     fixture.detectChanges();
@@ -259,23 +268,23 @@ describe('PerfisPage', async () => {
     expect(botao.getAttribute('aria-busy')).toBe('true');
     expect(host.querySelector('[role="status"]')?.textContent).toContain('Salvando perfil');
     expect(pagina.salvando()).toBe(true);
-    const fechar = host.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')!;
-    const cancelar = [...host.querySelectorAll('button')].find((b) =>
-      b.textContent?.includes('Cancelar'),
-    )!;
+    const fechar = presente(host.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]'));
+    const cancelar = presente(
+      [...host.querySelectorAll('button')].find((b) => b.textContent?.includes('Cancelar')),
+    );
     expect(fechar.disabled).toBe(true);
     expect(cancelar.disabled).toBe(true);
     fechar.click();
     cancelar.click();
     const escape = new Event('cancel', { cancelable: true });
-    host.querySelector('dialog')!.dispatchEvent(escape);
+    presente(host.querySelector('dialog')).dispatchEvent(escape);
     expect(escape.defaultPrevented).toBe(true);
     expect(pagina.formAberto()).toBe(true);
     expect(document.activeElement).toBe(botao);
     botao.click();
-    host
-      .querySelector('form')!
-      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    presente(host.querySelector('form')).dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    );
     await pagina.alternarAtivacao(COMUM);
     await pagina.salvar();
     expect(api.criar).toHaveBeenCalledTimes(1);
@@ -338,7 +347,7 @@ describe('PerfisPage', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    const campo = host.querySelector<HTMLInputElement>('input[formControlName="nome"]')!;
+    const campo = presente(host.querySelector<HTMLInputElement>('input[formControlName="nome"]'));
     expect(campo.getAttribute('aria-invalid')).toBe('true');
     expect(host.textContent).toContain('Nome recusado.');
     expect(document.activeElement).toBe(campo);

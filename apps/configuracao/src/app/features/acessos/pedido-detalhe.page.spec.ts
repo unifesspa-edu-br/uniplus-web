@@ -21,6 +21,11 @@ import { EdicaoDoPedido } from './edicao-do-pedido';
 import { PedidoDetalhePage } from './pedido-detalhe.page';
 import { EU, concedidas, ok, pedido, recusa, UNIDADES } from './testes';
 
+function presente<T>(valor: T | null | undefined): T {
+  if (valor == null) throw new Error('elemento ausente');
+  return valor;
+}
+
 const GESTOR = 'autorizacao:pedidos:aprovar-funcional';
 const PROTECAO_DE_DADOS = 'autorizacao:pedidos:aprovar-protecao-de-dados';
 
@@ -289,7 +294,7 @@ describe('PedidoDetalhePage', () => {
     expect(confirmar?.getAttribute('aria-disabled')).toBe('true');
     expect(dialogo?.querySelector('[role="status"]')?.textContent).toContain('Enviando');
     expect(
-      [...dialogo!.querySelectorAll('button')].find((botao) =>
+      [...presente(dialogo).querySelectorAll('button')].find((botao) =>
         botao.textContent?.includes('Voltar'),
       )?.disabled,
     ).toBe(true);
@@ -363,7 +368,7 @@ describe('PedidoDetalhePage', () => {
   describe('fim de vigência', () => {
     const campo = (host: HTMLElement) => host.querySelector<HTMLInputElement>('input[type="date"]');
     const digitar = (host: HTMLElement, valor: string) => {
-      const el = campo(host)!;
+      const el = presente(campo(host));
       el.value = valor;
       el.dispatchEvent(new Event('input'));
     };
@@ -435,12 +440,12 @@ describe('PedidoDetalhePage', () => {
     it('ao aprovar com prazo inválido, o resumo encaminha o foco ao campo', async () => {
       const { host, fixture } = await abrir([GESTOR]);
       digitar(host, '2020-01-01');
-      const focar = vi.spyOn(campo(host)!, 'focus');
+      const focar = vi.spyOn(presente(campo(host)), 'focus');
       const aprovar = [...host.querySelectorAll('cfg-pedido-resumo button')].find(
         (botao) => botao.textContent?.trim() === 'Aprovar',
       );
 
-      aprovar!.click();
+      presente(aprovar).click();
       fixture.detectChanges();
 
       expect(focar).toHaveBeenCalled();

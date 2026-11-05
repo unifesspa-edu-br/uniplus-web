@@ -122,18 +122,8 @@ export class EdicaoDoPedidoDeAcesso {
   async enviar(): Promise<void> {
     if (this.enviando()) return;
     this.erro.set(null);
-    Object.values(this.form.controls).forEach((controle) =>
-      controle.updateValueAndValidity({ emitEvent: false }),
-    );
-    this.aplicarObrigatoriedades();
-    this.tentouEnviar.set(true);
-    if (this.form.invalid || this.erroDoDocumento() !== null) {
-      this.form.markAllAsTouched();
-      this.focarPrimeiroInvalido();
-      return;
-    }
+    if (!this.validarParaEnviar()) return;
     this.enviando.set(true);
-    this.erro.set(null);
 
     const corpo = this.corpoDoPedido();
     try {
@@ -153,6 +143,20 @@ export class EdicaoDoPedidoDeAcesso {
       this.enviando.set(false);
       this.faseDoEnvio.set(null);
     }
+  }
+
+  private validarParaEnviar(): boolean {
+    Object.values(this.form.controls).forEach((controle) =>
+      controle.updateValueAndValidity({ emitEvent: false }),
+    );
+    this.aplicarObrigatoriedades();
+    this.tentouEnviar.set(true);
+    if (this.form.invalid || this.erroDoDocumento() !== null) {
+      this.form.markAllAsTouched();
+      this.focarPrimeiroInvalido();
+      return false;
+    }
+    return true;
   }
 
   impedirDuranteEnvio(evento: Event): void {
