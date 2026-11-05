@@ -1,0 +1,105 @@
+<div class="page-header page-header--form">
+  <a
+    class="btn btn--tertiary btn--sm btn--rect cfg-voltar"
+    [routerLink]="edicao.salvando() ? null : '/modalidades'"
+    [attr.aria-disabled]="edicao.salvando() ? 'true' : null"
+    [attr.role]="edicao.salvando() ? 'link' : null"
+    [attr.tabindex]="edicao.salvando() ? 0 : null"
+    (click)="aoClicarEmVoltar($event)"
+  >
+    <i class="pi pi-chevron-left" aria-hidden="true"></i>
+    Voltar à lista
+  </a>
+  <div class="page-header__content">
+    <h1 #tituloPagina class="page-header__title" tabindex="-1">{{ titulo }}</h1>
+    <p class="page-header__desc">
+      Configure a natureza legal, a composição das vagas e a cascata de remanejamento. As escolhas
+      se condicionam entre si — o resumo abaixo do formulário reflete o efeito atual.
+    </p>
+  </div>
+</div>
+
+@if (store.carregando()) {
+<div class="cfg-form__loading" role="status"><ui-spinner size="md" /> Carregando modalidade...</div>
+} @else { @if (store.erroCarregar()) {
+<ui-alert variant="danger" heading="Não foi possível carregar a modalidade">
+  {{ store.erroCarregar() }}
+</ui-alert>
+}
+
+<cfg-modalidade-formulario
+  [form]="edicao.form"
+  [modoEdicao]="edicao.modoEdicao"
+  [salvando]="edicao.salvando()"
+  [erro]="edicao.erro()"
+  [resumo]="edicao.resumo()"
+  [conferencias]="edicao.conferencias()"
+  (salvar)="edicao.salvar()"
+>
+  <cfg-modalidade-identificacao
+    [form]="edicao.form"
+    [conferencias]="edicao.conferencias()"
+    [modoEdicao]="edicao.modoEdicao"
+    (codigoSaiu)="edicao.verificarCodigoDuplicado()"
+  />
+  <cfg-modalidade-vagas
+    [form]="edicao.form"
+    [conferencias]="edicao.conferencias()"
+    [mostraOrigem]="edicao.mostraOrigem()"
+    [opcoesReferencia]="edicao.opcoesReferencia()"
+    (naturezaMudou)="edicao.aoMudarNatureza()"
+    (composicaoMudou)="edicao.aoMudarComposicao()"
+  />
+  @if (edicao.mostraRemanejamento()) {
+  <cfg-modalidade-remanejamento
+    [form]="edicao.form"
+    [conferencias]="edicao.conferencias()"
+    [natureza]="edicao.natureza()"
+    [mostraDestino]="edicao.mostraDestino()"
+    [mostraParFallback]="edicao.mostraParFallback()"
+    [opcoesReferencia]="edicao.opcoesReferencia()"
+    (regraMudou)="edicao.aoMudarRegra()"
+  />
+  }
+  <cfg-modalidade-regra
+    [estadoDoCatalogo]="aplicabilidade.estadoDoCatalogo()"
+    [leitura]="aplicabilidade.leitura()"
+    [fixadaEmLei]="aplicabilidade.fixadaEmLei()"
+    [condicoes]="aplicabilidade.condicoes()"
+    [fatos]="aplicabilidade.fatos()"
+    [errosDasCondicoes]="aplicabilidade.errosDasCondicoes()"
+    [recusas]="aplicabilidade.recusas()"
+    [salvando]="edicao.salvando()"
+    (condicoesChange)="aplicabilidade.trocar($event)"
+    (recarregarCatalogo)="aplicabilidade.recarregarCatalogo()"
+  />
+  <cfg-modalidade-enquadramento [form]="edicao.form" [conferencias]="edicao.conferencias()" />
+</cfg-modalidade-formulario>
+}
+
+<ui-dialog
+  [(visible)]="edicao.confirmandoReset"
+  heading="Redefinir remanejamento?"
+  (closed)="edicao.cancelarResetNatureza()"
+>
+  <p>
+    A natureza escolhida é incompatível com a regra de remanejamento atual. Se continuar, a regra e
+    seus argumentos (destino, par e fallback) serão limpos.
+  </p>
+  <div uiDialogFooter>
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      (click)="edicao.cancelarResetNatureza()"
+    >
+      Manter natureza anterior
+    </button>
+    <button
+      type="button"
+      class="btn btn--danger btn--rect"
+      (click)="edicao.confirmarResetNatureza()"
+    >
+      Redefinir campos
+    </button>
+  </div>
+</ui-dialog>

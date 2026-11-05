@@ -1,0 +1,78 @@
+<section aria-labelledby="cfg-mod-vagas" class="form-section" [formGroup]="form()">
+  <h2 id="cfg-mod-vagas" class="form-section__title">Composição de vagas</h2>
+  <div class="form-grid">
+    <label class="field form-grid__full" [class.is-error]="erroDoCampo('naturezaLegal')">
+      <span class="field__label is-required">Natureza legal</span>
+      <select
+        class="select"
+        formControlName="naturezaLegal"
+        [attr.aria-describedby]="erroDoCampo('naturezaLegal') ? 'cfg-mod-naturezaLegal-erro' : null"
+        aria-required="true"
+        [attr.aria-invalid]="erroDoCampo('naturezaLegal') ? 'true' : null"
+        (change)="naturezaMudou.emit()"
+      >
+        @for (op of naturezas; track op.value) {
+          <option [value]="op.value">{{ op.label }}</option>
+        }
+      </select>
+      <span class="field__hint">Governa as regras de remanejamento disponíveis.</span>
+      @if (erroDoCampo('naturezaLegal')) {
+        <span id="cfg-mod-naturezaLegal-erro" class="field__error">{{
+          erroDoCampo('naturezaLegal')
+        }}</span>
+      }
+    </label>
+
+    <label class="field form-grid__full" [class.is-error]="erroDoCampo('composicaoVagas')">
+      <span class="field__label is-required">Composição de vagas</span>
+      <select
+        class="select"
+        formControlName="composicaoVagas"
+        [attr.aria-describedby]="
+          erroDoCampo('composicaoVagas') ? 'cfg-mod-composicaoVagas-erro' : null
+        "
+        aria-required="true"
+        [attr.aria-invalid]="erroDoCampo('composicaoVagas') ? 'true' : null"
+        (change)="composicaoMudou.emit()"
+      >
+        @for (op of composicoes; track op.value) {
+          <option [value]="op.value">{{ op.label }}</option>
+        }
+      </select>
+      <span class="field__hint">"Retira de" exige informar a modalidade de origem.</span>
+      @if (erroDoCampo('composicaoVagas')) {
+        <span id="cfg-mod-composicaoVagas-erro" class="field__error">{{
+          erroDoCampo('composicaoVagas')
+        }}</span>
+      }
+    </label>
+
+    @if (mostraOrigem()) {
+      <label class="field form-grid__full" [class.is-error]="erroDoCampo('composicaoOrigem')">
+        <span class="field__label is-required">Origem (modalidade)</span>
+        <select
+          class="select"
+          formControlName="composicaoOrigem"
+          [attr.aria-describedby]="
+            erroDoCampo('composicaoOrigem') ? 'cfg-mod-composicaoOrigem-erro' : null
+          "
+          aria-required="true"
+          [attr.aria-invalid]="erroDoCampo('composicaoOrigem') ? 'true' : null"
+        >
+          <option value="">Selecione uma modalidade</option>
+          @for (op of opcoesReferencia(); track op.value) {
+            <option [value]="op.value">{{ op.label }}</option>
+          }
+        </select>
+        <span class="field__hint"
+          >De qual modalidade viva estas vagas são retiradas (por código).</span
+        >
+        @if (erroDoCampo('composicaoOrigem')) {
+          <span id="cfg-mod-composicaoOrigem-erro" class="field__error">{{
+            erroDoCampo('composicaoOrigem')
+          }}</span>
+        }
+      </label>
+    }
+  </div>
+</section>

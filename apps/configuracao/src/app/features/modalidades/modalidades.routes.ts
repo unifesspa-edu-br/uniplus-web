@@ -8,19 +8,16 @@ import { Routes } from '@angular/router';
 export const MODALIDADES_ROUTES: Routes = [
   {
     path: '',
-    loadComponent: () =>
-      import('./modalidades-list.page').then((m) => m.ModalidadesListPage),
+    loadComponent: () => import('./modalidades-list.page').then((m) => m.ModalidadesListPage),
   },
   {
     path: 'novo',
     data: { breadcrumb: 'Nova modalidade' },
-    loadComponent: () =>
-      import('./modalidade-form.page').then((m) => m.ModalidadeFormPage),
+    loadComponent: () => import('./modalidade-form.page').then((m) => m.ModalidadeFormPage),
   },
   {
     path: ':id',
     data: { breadcrumb: 'Editar modalidade' },
-    loadComponent: () =>
-      import('./modalidade-form.page').then((m) => m.ModalidadeFormPage),
+    loadComponent: () => import('./modalidade-form.page').then((m) => m.ModalidadeFormPage),
   },
 ];

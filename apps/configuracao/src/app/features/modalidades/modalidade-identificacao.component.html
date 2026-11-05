@@ -1,0 +1,45 @@
+<section aria-labelledby="cfg-mod-identificacao" class="form-section" [formGroup]="form()">
+  <h2 id="cfg-mod-identificacao" class="form-section__title">Identificação</h2>
+  <div class="form-grid">
+    <label class="field form-grid__full" [class.is-error]="erroDoCampo('codigo')">
+      <span class="field__label is-required">Código</span>
+      <input
+        class="input"
+        type="text"
+        formControlName="codigo"
+        [attr.aria-describedby]="erroDoCampo('codigo') ? 'cfg-mod-codigo-erro' : null"
+        aria-required="true"
+        autocapitalize="characters"
+        [readonly]="modoEdicao()"
+        [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
+        (input)="normalizarCodigo($event)"
+        (blur)="codigoSaiu.emit()"
+      />
+      <span class="field__hint">
+        Maiúsculas, dígitos e sublinhado (ex.: <code>LB_PPI</code>). Único entre as modalidades
+        vivas. {{ modoEdicao() ? 'Não pode ser alterado após a criação.' : '' }}
+      </span>
+      @if (erroDoCampo('codigo')) {
+        <span id="cfg-mod-codigo-erro" class="field__error">{{ erroDoCampo('codigo') }}</span>
+      }
+    </label>
+
+    <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
+      <span class="field__label">Descrição</span>
+      <input
+        class="input"
+        type="text"
+        formControlName="descricao"
+        [attr.aria-describedby]="erroDoCampo('descricao') ? 'cfg-mod-descricao-erro' : null"
+        placeholder="Ex.: Cota PPI baixa renda"
+        [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
+      />
+      <span class="field__hint"
+        >Rótulo legível da modalidade (até {{ descricaoMax }} caracteres).</span
+      >
+      @if (erroDoCampo('descricao')) {
+        <span id="cfg-mod-descricao-erro" class="field__error">{{ erroDoCampo('descricao') }}</span>
+      }
+    </label>
+  </div>
+</section>

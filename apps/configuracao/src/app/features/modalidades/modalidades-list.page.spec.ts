@@ -7,7 +7,9 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
+import { EdicaoDasModalidades } from './edicao-das-modalidades';
 import { ModalidadesListPage } from './modalidades-list.page';
+import { ModalidadesStore } from './modalidades.store';
 
 const BASE = 'http://localhost:5000';
 const URL = `${BASE}/api/configuracao/modalidades`;
@@ -188,11 +190,16 @@ describe('ModalidadesListPage', () => {
     expect(component['remocaoBloqueada']()).toBe(false);
     component['removerConfirmado']();
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/modalidades/${V.id}`);
+    expect(component['removendo']()).toBe(true);
+    component['removerConfirmado']();
+    controller.expectNone(`${BASE}/api/configuracao/admin/modalidades/${V.id}`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     expect(component['dialogAberto']()).toBe(false);
+    expect(component['removendo']()).toBe(true);
     await flushLista([AC]);
+    expect(component['removendo']()).toBe(false);
   });
 
   it('ModalidadeRemocaoDialog_409Servidor: 409 mantém bloqueio autoritativo', async () => {
@@ -201,7 +208,12 @@ describe('ModalidadesListPage', () => {
     component['removerConfirmado']();
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/modalidades/${V.id}`);
     req.flush(
-      { type: 'about:blank', title: 'Conflito', status: 409, code: 'Modalidade.RemocaoBloqueadaPorReferencia' },
+      {
+        type: 'about:blank',
+        title: 'Conflito',
+        status: 409,
+        code: 'Modalidade.RemocaoBloqueadaPorReferencia',
+      },
       { status: 409, statusText: 'Conflict' },
     );
     await propagate();
@@ -210,6 +222,82 @@ describe('ModalidadesListPage', () => {
     // A mensagem do servidor é capturada para exibição quando o referente não está na página.
     expect(component['mensagemBloqueioServidor']()).toBeTruthy();
     await flushLista([AC, V]);
+  });
+
+  it('titula o bloqueio por referência com o título de referência', async () => {
+    await flushLista([AC, V]);
+    component['pedirRemocao'](V);
+    component['removerConfirmado']();
+    controller.expectOne(`${BASE}/api/configuracao/admin/modalidades/${V.id}`).flush(
+      JSON.stringify({
+        type: 'about:blank',
+        title: 'Referenciada',
+        status: 409,
+        code: 'uniplus.configuracao.modalidade.remocao_bloqueada_por_referencia',
+      }),
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('dialog ui-alert[variant="warning"]')?.textContent,
+    ).toContain('Modalidade referenciada por outra viva');
+    await flushLista([AC, V]);
+  });
+
+  it('titula com o genérico o 409 que não é de referência', async () => {
+    const livre = modalidade({ id: 'id-livre', codigo: 'LIVRE', descricao: 'Sem referência' });
+    await flushLista([livre]);
+    component['pedirRemocao'](livre);
+    component['removerConfirmado']();
+    controller.expectOne(`${BASE}/api/configuracao/admin/modalidades/${livre.id}`).flush(
+      JSON.stringify({
+        type: 'about:blank',
+        title: 'A modalidade legal fixa não pode ser removida',
+        status: 409,
+        code: 'uniplus.configuracao.modalidade.remocao_bloqueada_codigo_protegido',
+      }),
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('dialog ui-alert[variant="warning"]')?.textContent,
+    ).toContain('Não é possível remover');
+    await flushLista([livre]);
+  });
+
+  it('mostra uma só vez a mensagem do 409 quando a referência está fora da página', async () => {
+    const livre = modalidade({ id: 'id-livre', codigo: 'LIVRE', descricao: 'Sem referência' });
+    await flushLista([livre]);
+    component['pedirRemocao'](livre);
+    component['removerConfirmado']();
+    controller
+      .expectOne(`${BASE}/api/configuracao/admin/modalidades/${livre.id}`)
+      .flush(
+        { type: 'about:blank', title: 'Conflito', status: 409, code: 'erro.conflito.remocao' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await propagate();
+    fixture.detectChanges();
+
+    const mensagem = component['mensagemBloqueioServidor']() ?? '';
+    const alertas = Array.from(
+      fixture.nativeElement.querySelectorAll('dialog ui-alert'),
+    ) as HTMLElement[];
+    const ocorrencias = alertas.filter((alerta) => alerta.textContent?.includes(mensagem));
+    expect(mensagem).not.toBe('');
+    expect(ocorrencias).toHaveLength(1);
+    expect(ocorrencias[0].textContent?.split(mensagem)).toHaveLength(2);
+    await flushLista([livre]);
   });
 
   it('expõe legenda acessível descrevendo a tabela', async () => {
@@ -239,5 +327,101 @@ describe('ModalidadesListPage', () => {
       'Referenciada por',
       'Ações',
     ]);
+  });
+
+  describe('leitura e remoção com falha', () => {
+    const problema = (status: number): Record<string, unknown> => ({
+      type: 'about:blank',
+      title: 'Indisponível',
+      status,
+      code: 'erro',
+    });
+    const falhar = (req: ReturnType<HttpTestingController['expectOne']>, status: number): void =>
+      req.flush(problema(status), { status, statusText: 'Falha' });
+
+    it('navega entre páginas por cursor e volta à primeira ao recarregar', async () => {
+      const store = fixture.debugElement.injector.get(ModalidadesStore);
+      controller
+        .expectOne((r) => r.url === URL)
+        .flush([AC], { headers: { Link: `<${URL}?cursor=p2&direction=next>; rel="next"` } });
+      controller.match(URL_CATALOGO).forEach((r) => r.flush(CATALOGO));
+      await propagate();
+      expect(store.proximo()).not.toBeNull();
+
+      store.proximaPagina();
+      await propagate();
+      const segunda = controller.expectOne((r) => r.params.get('cursor') === 'p2');
+      expect(segunda.request.params.get('direction')).toBe('next');
+      segunda.flush([V], { headers: { Link: `<${URL}?cursor=p1&direction=prev>; rel="prev"` } });
+      await propagate();
+      expect(store.modalidades().map((m) => m.codigo)).toEqual(['V']);
+
+      store.paginaAnterior();
+      await propagate();
+      const volta = controller.expectOne((r) => r.params.get('cursor') === 'p1');
+      expect(volta.request.params.get('direction')).toBe('prev');
+      volta.flush([AC]);
+      await propagate();
+
+      store.recarregar();
+      await propagate();
+      expect(
+        controller.expectOne((r) => r.params.get('cursor') === null).request.params.get('limit'),
+      ).toBe('100');
+    });
+
+    it('explica a falha da listagem e só tenta de novo quando não está carregando', async () => {
+      const store = fixture.debugElement.injector.get(ModalidadesStore);
+      falhar(
+        controller.expectOne((r) => r.url === URL),
+        503,
+      );
+      controller.match(URL_CATALOGO).forEach((r) => r.flush(CATALOGO));
+      await propagate();
+      expect(store.mensagemDeErro()).toBeTruthy();
+
+      store.tentarNovamente();
+      store.tentarNovamente();
+      await propagate();
+      controller.expectOne((r) => r.url === URL).flush([AC]);
+      await propagate();
+      expect(store.mensagemDeErro()).toBeNull();
+    });
+
+    it('explica que não conectou quando a listagem falha sem resposta do servidor', async () => {
+      const store = fixture.debugElement.injector.get(ModalidadesStore);
+      controller.expectOne((r) => r.url === URL).error(new ProgressEvent('error'));
+      controller.match(URL_CATALOGO).forEach((r) => r.flush(CATALOGO));
+      await propagate();
+      expect(store.mensagemDeErro()).toBe('Não foi possível conectar ao servidor');
+    });
+
+    it('libera a remoção e informa quando o servidor falha sem ser conflito', async () => {
+      await flushLista([V]);
+      const edicao = fixture.debugElement.injector.get(EdicaoDasModalidades);
+      edicao.remover(V);
+      falhar(controller.expectOne(`${BASE}/api/configuracao/admin/modalidades/${V.id}`), 500);
+      await propagate();
+      expect(edicao.removendo()).toBe(false);
+      expect(edicao.mensagemBloqueioServidor()).toBeTruthy();
+      expect(edicao.bloqueioServidor()).toBe(false);
+    });
+
+    it('anuncia quando a recarga depois da remoção falha', async () => {
+      await flushLista([V]);
+      const edicao = fixture.debugElement.injector.get(EdicaoDasModalidades);
+      edicao.remover(V);
+      controller
+        .expectOne(`${BASE}/api/configuracao/admin/modalidades/${V.id}`)
+        .flush(null, { status: 204, statusText: 'No Content' });
+      await propagate();
+      falhar(
+        controller.expectOne((r) => r.url === URL),
+        503,
+      );
+      await propagate();
+      expect(edicao.removendo()).toBe(false);
+      expect(edicao.anuncio()).toBe('Não foi possível recarregar as modalidades.');
+    });
   });
 });

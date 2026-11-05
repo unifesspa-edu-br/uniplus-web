@@ -1,12 +1,19 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
+import { EdicaoDaModalidade } from './edicao-da-modalidade';
+import { comandoDeCriacao, regraDesabilitada } from './modalidade-form';
 import { ModalidadeFormPage } from './modalidade-form.page';
+import { ModalidadeFormStore } from './modalidade-form.store';
 
 const BASE = 'http://localhost:5000';
 const URL = `${BASE}/api/configuracao/modalidades`;
@@ -64,7 +71,7 @@ const BONUS = modalidade({
 
 describe('ModalidadeFormPage', () => {
   let fixture: ComponentFixture<ModalidadeFormPage>;
-  let component: ModalidadeFormPage;
+  let edicao: EdicaoDaModalidade;
   let controller: HttpTestingController;
 
   beforeEach(() => {
@@ -84,15 +91,22 @@ describe('ModalidadeFormPage', () => {
     });
   });
 
-  afterEach(() => controller.verify());
+  afterEach(() => {
+    controller.match(URL_CATALOGO).forEach((req) => req.flush([]));
+    controller.verify();
+  });
 
   /** Instancia o componente e libera o GET das modalidades vivas (selects de FK). */
-  function montar(vivas: readonly ModalidadeDto[] = [AC, LB_PPI]): void {
+  async function montar(vivas: readonly ModalidadeDto[] = [AC, LB_PPI]): Promise<void> {
     fixture = TestBed.createComponent(ModalidadeFormPage);
-    component = fixture.componentInstance;
+    edicao = fixture.debugElement.injector.get(EdicaoDaModalidade);
     controller = TestBed.inject(HttpTestingController);
+    TestBed.tick();
     const req = controller.expectOne((r) => r.url === URL && r.params.get('limit') === '100');
     req.flush([...vivas]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+    TestBed.tick();
   }
 
   /** Reconfigura a rota para modo edição antes de montar. */
@@ -105,11 +119,11 @@ describe('ModalidadeFormPage', () => {
   /** Abre em edição a modalidade dada, com o catálogo de fatos carregado. */
   async function editar(dto: ModalidadeDto): Promise<void> {
     usarRota(dto.id);
-    montar();
+    await montar();
     controller.expectOne(`${URL}/${dto.id}`).flush(dto);
     TestBed.tick();
     controller.expectOne(URL_CATALOGO).flush([...CATALOGO]);
-    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
   }
 
@@ -119,179 +133,189 @@ describe('ModalidadeFormPage', () => {
     ).textContent?.replace(/\s+/g, ' ') ?? '';
 
   const setControl = (nome: string, valor: string): void => {
-    component['form'].get(nome)?.setValue(valor);
+    edicao.form.get(nome)?.setValue(valor);
   };
 
-  it('percorre todas as páginas de modalidades vivas sem truncar', () => {
+  it('percorre todas as páginas de modalidades vivas sem truncar', async () => {
     fixture = TestBed.createComponent(ModalidadeFormPage);
-    component = fixture.componentInstance;
+    edicao = fixture.debugElement.injector.get(EdicaoDaModalidade);
     controller = TestBed.inject(HttpTestingController);
 
+    TestBed.tick();
     const pagina1 = controller.expectOne((r) => r.url === URL && r.params.get('limit') === '100');
     pagina1.flush([AC], {
       headers: { Link: `<${URL}?cursor=pagina-2&direction=next>; rel="next"` },
     });
 
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+    TestBed.tick();
     const pagina2 = controller.expectOne(
       (r) => r.url === URL && r.params.get('cursor') === 'pagina-2',
     );
     expect(pagina2.request.params.get('direction')).toBe('next');
     pagina2.flush([LB_PPI]);
 
-    expect(component['modalidades'].opcoes()).toHaveLength(2);
-    expect(component['modalidades'].opcoes().map((m) => m.codigo)).toEqual(['AC', 'LB_PPI']);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+    TestBed.tick();
+    const store = fixture.debugElement.injector.get(ModalidadeFormStore);
+    expect(store.opcoes()).toHaveLength(2);
+    expect(store.opcoes().map((m) => m.codigo)).toEqual(['AC', 'LB_PPI']);
   });
 
-  it('ModalidadeForm_Natureza_AmplaOcultaRemanejamento', () => {
-    montar();
+  it('ModalidadeForm_Natureza_AmplaOcultaRemanejamento', async () => {
+    await montar();
     setControl('naturezaLegal', 'AMPLA');
-    component['aoMudarNatureza']();
-    expect(component['mostraRemanejamento']()).toBe(false);
-    expect(component['form'].controls.regraRemanejamento.value).toBe('');
+    edicao.aoMudarNatureza();
+    expect(edicao.mostraRemanejamento()).toBe(false);
+    expect(edicao.form.controls.regraRemanejamento.value).toBe('');
   });
 
-  it('ModalidadeForm_Natureza_CotaFixaCascata', () => {
-    montar();
+  it('ModalidadeForm_Natureza_CotaFixaCascata', async () => {
+    await montar();
     setControl('naturezaLegal', 'COTA_RESERVADA');
-    component['aoMudarNatureza']();
-    expect(component['form'].controls.regraRemanejamento.value).toBe('SEGUE_CASCATA');
-    expect(component['regraDesabilitada']('SEGUE_CASCATA')).toBe(false);
-    expect(component['regraDesabilitada']('DESTINO_UNICO')).toBe(true);
-    expect(component['regraDesabilitada']('CRUZADO')).toBe(true);
+    edicao.aoMudarNatureza();
+    expect(edicao.form.controls.regraRemanejamento.value).toBe('SEGUE_CASCATA');
+    expect(regraDesabilitada(edicao.natureza(), 'SEGUE_CASCATA')).toBe(false);
+    expect(regraDesabilitada(edicao.natureza(), 'DESTINO_UNICO')).toBe(true);
+    expect(regraDesabilitada(edicao.natureza(), 'CRUZADO')).toBe(true);
   });
 
-  it('ModalidadeForm_Natureza_AcaoAfirmativaOfertaDestinoOuCruzado', () => {
-    montar();
+  it('ModalidadeForm_Natureza_AcaoAfirmativaOfertaDestinoOuCruzado', async () => {
+    await montar();
     setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
-    component['aoMudarNatureza']();
-    expect(component['regraDesabilitada']('SEGUE_CASCATA')).toBe(true);
-    expect(component['regraDesabilitada']('DESTINO_UNICO')).toBe(false);
-    expect(component['regraDesabilitada']('CRUZADO')).toBe(false);
+    edicao.aoMudarNatureza();
+    expect(regraDesabilitada(edicao.natureza(), 'SEGUE_CASCATA')).toBe(true);
+    expect(regraDesabilitada(edicao.natureza(), 'DESTINO_UNICO')).toBe(false);
+    expect(regraDesabilitada(edicao.natureza(), 'CRUZADO')).toBe(false);
     // Regra passa a ser obrigatória.
-    expect(component['form'].controls.regraRemanejamento.invalid).toBe(true);
+    expect(edicao.form.controls.regraRemanejamento.invalid).toBe(true);
   });
 
-  it('ModalidadeForm_RetiraDe_ExigeOrigem', () => {
-    montar();
+  it('ModalidadeForm_RetiraDe_ExigeOrigem', async () => {
+    await montar();
     setControl('composicaoVagas', 'RETIRA_DE');
-    component['aoMudarComposicao']();
-    expect(component['mostraOrigem']()).toBe(true);
-    expect(component['form'].controls.composicaoOrigem.invalid).toBe(true);
-    component['form'].controls.composicaoOrigem.setValue('AC');
-    expect(component['form'].controls.composicaoOrigem.valid).toBe(true);
+    edicao.aoMudarComposicao();
+    expect(edicao.mostraOrigem()).toBe(true);
+    expect(edicao.form.controls.composicaoOrigem.invalid).toBe(true);
+    edicao.form.controls.composicaoOrigem.setValue('AC');
+    expect(edicao.form.controls.composicaoOrigem.valid).toBe(true);
     // Voltar para outra composição limpa e desobriga a origem.
     setControl('composicaoVagas', 'RESIDUAL_DO_VO');
-    component['aoMudarComposicao']();
-    expect(component['mostraOrigem']()).toBe(false);
-    expect(component['form'].controls.composicaoOrigem.value).toBe('');
+    edicao.aoMudarComposicao();
+    expect(edicao.mostraOrigem()).toBe(false);
+    expect(edicao.form.controls.composicaoOrigem.value).toBe('');
   });
 
-  it('ModalidadeForm_Args_PorRegra', () => {
-    montar();
+  it('ModalidadeForm_Args_PorRegra', async () => {
+    await montar();
     setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
-    component['aoMudarNatureza']();
+    edicao.aoMudarNatureza();
     setControl('regraRemanejamento', 'DESTINO_UNICO');
-    component['aoMudarRegra']();
-    expect(component['mostraDestino']()).toBe(true);
-    expect(component['mostraParFallback']()).toBe(false);
-    expect(component['form'].controls.remanejamentoDestino.invalid).toBe(true);
+    edicao.aoMudarRegra();
+    expect(edicao.mostraDestino()).toBe(true);
+    expect(edicao.mostraParFallback()).toBe(false);
+    expect(edicao.form.controls.remanejamentoDestino.invalid).toBe(true);
 
     setControl('remanejamentoDestino', 'AC');
     setControl('regraRemanejamento', 'CRUZADO');
-    component['aoMudarRegra']();
+    edicao.aoMudarRegra();
     // Destino é limpo; par e fallback passam a ser exigidos.
-    expect(component['form'].controls.remanejamentoDestino.value).toBe('');
-    expect(component['mostraParFallback']()).toBe(true);
-    expect(component['form'].controls.remanejamentoPar.invalid).toBe(true);
-    expect(component['form'].controls.remanejamentoFallback.invalid).toBe(true);
+    expect(edicao.form.controls.remanejamentoDestino.value).toBe('');
+    expect(edicao.mostraParFallback()).toBe(true);
+    expect(edicao.form.controls.remanejamentoPar.invalid).toBe(true);
+    expect(edicao.form.controls.remanejamentoFallback.invalid).toBe(true);
   });
 
-  it('ModalidadeForm_Codigo_RegexEUnicidade', () => {
-    montar();
-    const codigo = component['form'].controls.codigo;
+  it('ModalidadeForm_Codigo_RegexEUnicidade', async () => {
+    await montar();
+    const codigo = edicao.form.controls.codigo;
     codigo.setValue('AB-C');
     expect(codigo.hasError('pattern')).toBe(true);
     codigo.setValue('AB_C');
     expect(codigo.valid).toBe(true);
     // Unicidade entre vivas carregadas.
     codigo.setValue('AC');
-    component['verificarCodigoDuplicado']();
+    edicao.verificarCodigoDuplicado();
     expect(codigo.hasError('duplicado')).toBe(true);
   });
 
-  it('ModalidadeForm_Codigo_ReadonlyNaEdicao', () => {
+  it('ModalidadeForm_Codigo_ReadonlyNaEdicao', async () => {
     usarRota('id-lb');
-    montar();
+    await montar();
     const obter = controller.expectOne(`${URL}/id-lb`);
     obter.flush(LB_PPI);
-    expect(component['modoEdicao']()).toBe(true);
-    expect(component['form'].controls.codigo.disabled).toBe(true);
-    expect(component['form'].controls.codigo.value).toBe('LB_PPI');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+    expect(edicao.modoEdicao).toBe(true);
+    expect(edicao.form.controls.codigo.disabled).toBe(true);
+    expect(edicao.form.controls.codigo.value).toBe('LB_PPI');
   });
 
-  it('ModalidadeForm_TrocaNatureza_ResetaDependentes', () => {
-    montar();
+  it('ModalidadeForm_TrocaNatureza_ResetaDependentes', async () => {
+    await montar();
     setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
-    component['aoMudarNatureza']();
+    edicao.aoMudarNatureza();
     setControl('regraRemanejamento', 'CRUZADO');
-    component['aoMudarRegra']();
-    component['form'].controls.remanejamentoPar.setValue('AC');
-    component['form'].controls.remanejamentoFallback.setValue('LB_PPI');
+    edicao.aoMudarRegra();
+    edicao.form.controls.remanejamentoPar.setValue('AC');
+    edicao.form.controls.remanejamentoFallback.setValue('LB_PPI');
 
     // Trocar para AMPLA com args preenchidos pede confirmação.
     setControl('naturezaLegal', 'AMPLA');
-    component['aoMudarNatureza']();
-    expect(component['confirmResetAberto']()).toBe(true);
-    expect(component['form'].controls.regraRemanejamento.value).toBe('CRUZADO');
+    edicao.aoMudarNatureza();
+    expect(edicao.confirmandoReset()).toBe(true);
+    expect(edicao.form.controls.regraRemanejamento.value).toBe('CRUZADO');
 
-    component['confirmarResetNatureza']();
-    expect(component['confirmResetAberto']()).toBe(false);
-    expect(component['mostraRemanejamento']()).toBe(false);
-    expect(component['form'].controls.regraRemanejamento.value).toBe('');
-    expect(component['form'].controls.remanejamentoPar.value).toBe('');
-    expect(component['form'].controls.remanejamentoFallback.value).toBe('');
+    edicao.confirmarResetNatureza();
+    expect(edicao.confirmandoReset()).toBe(false);
+    expect(edicao.mostraRemanejamento()).toBe(false);
+    expect(edicao.form.controls.regraRemanejamento.value).toBe('');
+    expect(edicao.form.controls.remanejamentoPar.value).toBe('');
+    expect(edicao.form.controls.remanejamentoFallback.value).toBe('');
   });
 
-  it('ModalidadeForm_TrocaNatureza_CancelarPreserva', () => {
-    montar();
+  it('ModalidadeForm_TrocaNatureza_CancelarPreserva', async () => {
+    await montar();
     setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
-    component['aoMudarNatureza']();
+    edicao.aoMudarNatureza();
     setControl('regraRemanejamento', 'DESTINO_UNICO');
-    component['aoMudarRegra']();
-    component['form'].controls.remanejamentoDestino.setValue('AC');
+    edicao.aoMudarRegra();
+    edicao.form.controls.remanejamentoDestino.setValue('AC');
 
     setControl('naturezaLegal', 'COTA_RESERVADA');
-    component['aoMudarNatureza']();
-    expect(component['confirmResetAberto']()).toBe(true);
+    edicao.aoMudarNatureza();
+    expect(edicao.confirmandoReset()).toBe(true);
 
-    component['cancelarResetNatureza']();
+    edicao.cancelarResetNatureza();
     // Reverte a natureza e preserva os campos.
-    expect(component['form'].controls.naturezaLegal.value).toBe('ACAO_AFIRMATIVA');
-    expect(component['form'].controls.remanejamentoDestino.value).toBe('AC');
+    expect(edicao.form.controls.naturezaLegal.value).toBe('ACAO_AFIRMATIVA');
+    expect(edicao.form.controls.remanejamentoDestino.value).toBe('AC');
   });
 
-  it('ModalidadeForm_TrocaNatureza_CascataAutoNaoPrompt', () => {
-    montar();
+  it('ModalidadeForm_TrocaNatureza_CascataAutoNaoPrompt', async () => {
+    await montar();
     setControl('naturezaLegal', 'COTA_RESERVADA');
-    component['aoMudarNatureza']();
+    edicao.aoMudarNatureza();
     // regra auto-preenchida SEGUE_CASCATA, sem argumentos digitados pelo usuário.
     setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
-    component['aoMudarNatureza']();
+    edicao.aoMudarNatureza();
     // Não pede confirmação (nada do usuário a descartar); aplica direto.
-    expect(component['confirmResetAberto']()).toBe(false);
-    expect(component['form'].controls.naturezaLegal.value).toBe('ACAO_AFIRMATIVA');
-    expect(component['form'].controls.regraRemanejamento.value).toBe('');
-    expect(component['regraDesabilitada']('SEGUE_CASCATA')).toBe(true);
+    expect(edicao.confirmandoReset()).toBe(false);
+    expect(edicao.form.controls.naturezaLegal.value).toBe('ACAO_AFIRMATIVA');
+    expect(edicao.form.controls.regraRemanejamento.value).toBe('');
+    expect(regraDesabilitada(edicao.natureza(), 'SEGUE_CASCATA')).toBe(true);
   });
 
-  it('montarComandoCriar anula campos inaplicáveis por coerência', () => {
-    montar();
+  it('montarComandoCriar anula campos inaplicáveis por coerência', async () => {
+    await montar();
     setControl('codigo', 'AC2');
     setControl('naturezaLegal', 'AMPLA');
-    component['aoMudarNatureza']();
+    edicao.aoMudarNatureza();
     setControl('composicaoVagas', 'RESIDUAL_DO_VO');
-    component['aoMudarComposicao']();
-    const cmd = component['montarComandoCriar']();
+    edicao.aoMudarComposicao();
+    const cmd = comandoDeCriacao(edicao.form.getRawValue(), []);
     expect(cmd.codigo).toBe('AC2');
     expect(cmd.regraRemanejamento).toBeNull();
     expect(cmd.composicaoOrigem).toBeNull();
@@ -300,20 +324,20 @@ describe('ModalidadeFormPage', () => {
     expect(cmd.remanejamentoFallback).toBeNull();
   });
 
-  it('CA-02: cria modalidade válida (POST com Idempotency-Key)', () => {
-    montar();
+  it('CA-02: cria modalidade válida (POST com Idempotency-Key)', async () => {
+    await montar();
     setControl('codigo', 'V');
     setControl('descricao', 'PcD ampla concorrência');
     setControl('naturezaLegal', 'ACAO_AFIRMATIVA');
-    component['aoMudarNatureza']();
+    edicao.aoMudarNatureza();
     setControl('composicaoVagas', 'RETIRA_DE');
-    component['aoMudarComposicao']();
+    edicao.aoMudarComposicao();
     setControl('composicaoOrigem', 'AC');
     setControl('regraRemanejamento', 'DESTINO_UNICO');
-    component['aoMudarRegra']();
+    edicao.aoMudarRegra();
     setControl('remanejamentoDestino', 'AC');
 
-    component['salvar']();
+    edicao.salvar();
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/modalidades`);
     expect(post.request.method).toBe('POST');
     expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
@@ -324,12 +348,73 @@ describe('ModalidadeFormPage', () => {
     post.flush('novo-id', { status: 201, statusText: 'Created' });
   });
 
-  it('CA-05: código inválido bloqueia o submit (sem POST)', () => {
-    montar();
+  it('CA-05: código inválido bloqueia o submit (sem POST)', async () => {
+    await montar();
     setControl('codigo', '');
-    component['salvar']();
+    edicao.salvar();
     controller.expectNone(`${BASE}/api/configuracao/admin/modalidades`);
-    expect(component['form'].controls.codigo.invalid).toBe(true);
+    expect(edicao.form.controls.codigo.invalid).toBe(true);
+  });
+
+  describe('edição', () => {
+    it('mantém o que foi digitado ao trocar a natureza ou a composição', async () => {
+      await editar(modalidade({ ...BONUS, regraRemanejamento: null, remanejamentoDestino: null }));
+      edicao.form.controls.descricao.setValue('Descrição digitada');
+
+      setControl('composicaoVagas', 'RETIRA_DE');
+      edicao.aoMudarComposicao();
+      TestBed.tick();
+      setControl('naturezaLegal', 'COTA_RESERVADA');
+      edicao.aoMudarNatureza();
+      TestBed.tick();
+
+      expect(edicao.form.controls.descricao.value).toBe('Descrição digitada');
+      expect(edicao.form.controls.composicaoVagas.value).toBe('RETIRA_DE');
+      expect(edicao.form.controls.naturezaLegal.value).toBe('COTA_RESERVADA');
+      expect(edicao.natureza()).toBe('COTA_RESERVADA');
+      expect(edicao.mostraOrigem()).toBe(true);
+    });
+
+    it('mantém a chave e mostra o título quando a gravação original ainda está em processamento (409)', async () => {
+      await editar(BONUS);
+      const enviar = (): TestRequest => {
+        edicao.salvar();
+        return controller.expectOne(`${URL_ADMIN}/${BONUS.id}`);
+      };
+      const primeira = enviar();
+      const chave = primeira.request.headers.get('Idempotency-Key');
+      primeira.flush(
+        JSON.stringify({
+          type: 'about:blank',
+          title: 'Requisição em processamento',
+          status: 409,
+          code: 'uniplus.idempotency.processing_conflict',
+        }),
+        {
+          status: 409,
+          statusText: 'Conflict',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(edicao.erro()).toBe('Requisição em processamento');
+      const segunda = enviar();
+      expect(segunda.request.headers.get('Idempotency-Key')).toBe(chave);
+      segunda.flush(null, { status: 204, statusText: 'No Content' });
+    });
+  });
+
+  describe('código na edição', () => {
+    it('não normaliza nem altera o código, que é somente leitura', async () => {
+      await editar(BONUS);
+      const campo = fixture.nativeElement.querySelector(
+        'input[formcontrolname="codigo"]',
+      ) as HTMLInputElement;
+      campo.dispatchEvent(new Event('input'));
+      expect(campo.readOnly || campo.disabled).toBe(true);
+      expect(edicao.form.controls.codigo.value).toBe('AA_REGIONAL');
+    });
   });
 
   describe('regra de aplicabilidade', () => {
@@ -355,7 +440,7 @@ describe('ModalidadeFormPage', () => {
       expect(fixture.nativeElement.querySelector('ui-editor-de-condicoes')).toBeNull();
       expect(textoDaRegra()).toContain('Quem atende: Cor/raça é um de Preta, Parda, Indígena.');
 
-      component['salvar']();
+      edicao.salvar();
       const put = controller.expectOne(`${URL_ADMIN}/${LB_PPI.id}`);
       expect(put.request.body.regraDeAplicabilidade).toEqual(LB_PPI.regraDeAplicabilidade);
       put.flush(null, { status: 204, statusText: 'No Content' });
@@ -365,10 +450,10 @@ describe('ModalidadeFormPage', () => {
       await editar(BONUS);
       expect(fixture.nativeElement.querySelector('ui-editor-de-condicoes')).not.toBeNull();
 
-      component['trocarRegra']([
+      edicao.aplicabilidade.trocar([
         { clausula: 1, fato: 'COR_RACA', operador: 'NAO_EM', valor: '["PRETA"]' },
       ]);
-      component['salvar']();
+      edicao.salvar();
 
       const put = controller.expectOne(`${URL_ADMIN}/${BONUS.id}`);
       expect(put.request.body.regraDeAplicabilidade).toEqual([
@@ -380,8 +465,8 @@ describe('ModalidadeFormPage', () => {
     it('envia a regra sem condição como lista vazia, nunca ausente', async () => {
       await editar(BONUS);
 
-      component['trocarRegra']([]);
-      component['salvar']();
+      edicao.aplicabilidade.trocar([]);
+      edicao.salvar();
 
       const put = controller.expectOne(`${URL_ADMIN}/${BONUS.id}`);
       expect(put.request.body.regraDeAplicabilidade).toEqual([]);
@@ -391,7 +476,7 @@ describe('ModalidadeFormPage', () => {
     it('não oferece ao editor o fato da própria modalidade', async () => {
       await editar(BONUS);
 
-      expect(component['fatosDaRegra']().map((fato) => fato.codigo)).toEqual([
+      expect(edicao.aplicabilidade.fatos().map((fato) => fato.codigo)).toEqual([
         'ESCOLA_PUBLICA',
         'COR_RACA',
       ]);
@@ -400,17 +485,19 @@ describe('ModalidadeFormPage', () => {
     it('recusa enviar a condição sem valor e aponta a condição', async () => {
       await editar(BONUS);
 
-      component['trocarRegra']([{ clausula: 1, fato: 'COR_RACA', operador: 'IGUAL', valor: '' }]);
-      component['salvar']();
+      edicao.aplicabilidade.trocar([
+        { clausula: 1, fato: 'COR_RACA', operador: 'IGUAL', valor: '' },
+      ]);
+      edicao.salvar();
 
       controller.expectNone(`${URL_ADMIN}/${BONUS.id}`);
-      expect(component['errosDasCondicoes']()).toEqual({ 0: '"Cor/raça" está sem valor' });
+      expect(edicao.aplicabilidade.errosDasCondicoes()).toEqual({ 0: '"Cor/raça" está sem valor' });
     });
 
     it('mostra no campo da regra a recusa da API à regra', async () => {
       await editar(BONUS);
 
-      component['salvar']();
+      edicao.salvar();
       controller.expectOne(`${URL_ADMIN}/${BONUS.id}`).flush(
         {
           type: 'https://uniplus.unifesspa.edu.br/errors/validacao',
@@ -443,7 +530,7 @@ describe('ModalidadeFormPage', () => {
       expect(Array.from(itens ?? [], (item) => item.textContent?.trim())).toEqual([
         "O fato 'ESCOLA_PUBLICA' está desativado e não aceita citação nova.",
       ]);
-      expect(component['formError']()).toBeNull();
+      expect(edicao.erro()).toBeNull();
     });
   });
 });

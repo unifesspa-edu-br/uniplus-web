@@ -1,0 +1,102 @@
+<section aria-labelledby="cfg-mod-remanejamento" class="form-section" [formGroup]="form()">
+  <h2 id="cfg-mod-remanejamento" class="form-section__title">Remanejamento</h2>
+  <div class="form-grid">
+    <label class="field form-grid__full" [class.is-error]="erroDoCampo('regraRemanejamento')">
+      <span class="field__label is-required">Regra de remanejamento</span>
+      <select
+        class="select"
+        formControlName="regraRemanejamento"
+        [attr.aria-describedby]="
+          erroDoCampo('regraRemanejamento') ? 'cfg-mod-regraRemanejamento-erro' : null
+        "
+        aria-required="true"
+        [attr.aria-invalid]="erroDoCampo('regraRemanejamento') ? 'true' : null"
+        (change)="regraMudou.emit()"
+      >
+        <option value="">Selecione uma regra</option>
+        @for (op of regras; track op.value) {
+          <option [value]="op.value" [disabled]="desabilitada(op.value)">{{ op.label }}</option>
+        }
+      </select>
+      <span class="field__hint">{{ dica() }}</span>
+      @if (erroDoCampo('regraRemanejamento')) {
+        <span id="cfg-mod-regraRemanejamento-erro" class="field__error">{{
+          erroDoCampo('regraRemanejamento')
+        }}</span>
+      }
+    </label>
+
+    @if (mostraDestino()) {
+      <label class="field form-grid__full" [class.is-error]="erroDoCampo('remanejamentoDestino')">
+        <span class="field__label is-required">Destino</span>
+        <select
+          class="select"
+          formControlName="remanejamentoDestino"
+          [attr.aria-describedby]="
+            erroDoCampo('remanejamentoDestino') ? 'cfg-mod-remanejamentoDestino-erro' : null
+          "
+          aria-required="true"
+          [attr.aria-invalid]="erroDoCampo('remanejamentoDestino') ? 'true' : null"
+        >
+          <option value="">Selecione uma modalidade</option>
+          @for (op of opcoesReferencia(); track op.value) {
+            <option [value]="op.value">{{ op.label }}</option>
+          }
+        </select>
+        @if (erroDoCampo('remanejamentoDestino')) {
+          <span id="cfg-mod-remanejamentoDestino-erro" class="field__error">{{
+            erroDoCampo('remanejamentoDestino')
+          }}</span>
+        }
+      </label>
+    }
+    @if (mostraParFallback()) {
+      <div class="form-grid">
+        <label class="field" [class.is-error]="erroDoCampo('remanejamentoPar')">
+          <span class="field__label is-required">Par</span>
+          <select
+            class="select"
+            formControlName="remanejamentoPar"
+            [attr.aria-describedby]="
+              erroDoCampo('remanejamentoPar') ? 'cfg-mod-remanejamentoPar-erro' : null
+            "
+            aria-required="true"
+            [attr.aria-invalid]="erroDoCampo('remanejamentoPar') ? 'true' : null"
+          >
+            <option value="">Selecione uma modalidade</option>
+            @for (op of opcoesReferencia(); track op.value) {
+              <option [value]="op.value">{{ op.label }}</option>
+            }
+          </select>
+          @if (erroDoCampo('remanejamentoPar')) {
+            <span id="cfg-mod-remanejamentoPar-erro" class="field__error">{{
+              erroDoCampo('remanejamentoPar')
+            }}</span>
+          }
+        </label>
+        <label class="field" [class.is-error]="erroDoCampo('remanejamentoFallback')">
+          <span class="field__label is-required">Fallback</span>
+          <select
+            class="select"
+            formControlName="remanejamentoFallback"
+            [attr.aria-describedby]="
+              erroDoCampo('remanejamentoFallback') ? 'cfg-mod-remanejamentoFallback-erro' : null
+            "
+            aria-required="true"
+            [attr.aria-invalid]="erroDoCampo('remanejamentoFallback') ? 'true' : null"
+          >
+            <option value="">Selecione uma modalidade</option>
+            @for (op of opcoesReferencia(); track op.value) {
+              <option [value]="op.value">{{ op.label }}</option>
+            }
+          </select>
+          @if (erroDoCampo('remanejamentoFallback')) {
+            <span id="cfg-mod-remanejamentoFallback-erro" class="field__error">{{
+              erroDoCampo('remanejamentoFallback')
+            }}</span>
+          }
+        </label>
+      </div>
+    }
+  </div>
+</section>

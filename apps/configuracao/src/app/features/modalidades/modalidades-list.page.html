@@ -1,0 +1,128 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Modalidade de concorrência</h1>
+    <p class="page-header__desc">
+      Formas de disputa de vagas de um processo — ampla concorrência e as cotas das ações
+      afirmativas (Lei 12.711/2012, atualizada pela Lei 14.723/2023), com composição e cascata de
+      remanejamento · UNI-REQ-0011.
+    </p>
+  </div>
+</div>
+
+<ui-alert variant="info" heading="Configuração viva — congelamento por snapshot" [dynamic]="false">
+  Mudanças neste cadastro não afetam processos já publicados, que congelam os dados no momento da
+  criação. Origem, destino, par e fallback referenciam outra modalidade pelo seu código.
+</ui-alert>
+
+<span class="sr-only" role="status" [attr.aria-live]="dialogAberto() ? 'off' : 'polite'"
+  >{{ dialogAberto() ? '' : anuncio() }}</span
+>
+
+@if (errorMessage()) {
+<ui-alert variant="danger" heading="Não foi possível carregar as modalidades">
+  {{ errorMessage() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [disabled]="loading() || removendo()"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<cfg-modalidades-lista
+  [(busca)]="busca"
+  [(naturezaSelecionada)]="naturezaSelecionada"
+  [filtrosAtivos]="filtrosAtivos()"
+  [chipsNatureza]="chipsNatureza()"
+  [modalidadesFiltradas]="modalidadesFiltradas()"
+  [quemConcorre]="quemConcorre()"
+  [referencias]="referenciasReversas()"
+  [loading]="loading()"
+  [errorMessage]="errorMessage()"
+  [temFiltroAtivo]="temFiltroAtivo()"
+  [prevCursor]="prevCursor()"
+  [nextCursor]="nextCursor()"
+  [removendo]="removendo()"
+  [modalidadeEmRemocao]="modalidadeParaRemover()"
+  (limpar)="limparFiltros()"
+  (remover)="pedirRemocao($event)"
+  (anterior)="paginaAnterior()"
+  (proximo)="proximaPagina()"
+/>
+
+<ui-dialog
+  [(visible)]="dialogAberto"
+  [dismissible]="!removendo()"
+  [heading]="remocaoBloqueada() ? 'Remoção bloqueada' : 'Remover modalidade'"
+  (closed)="aoFecharDialog()"
+>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  @if (mensagemBloqueioServidor() && !remocaoBloqueada()) {
+  <ui-alert variant="danger" heading="Não foi possível remover"
+    >{{ mensagemBloqueioServidor() }}</ui-alert
+  >
+  } @if (modalidadeParaRemover(); as alvo) { @if (remocaoBloqueada()) {
+  <ui-alert variant="warning" [heading]="tituloDoBloqueio()" [dynamic]="false">
+    @if (mensagemBloqueioServidor()) {
+    <p>{{ mensagemBloqueioServidor() }}</p>
+    } @if (referenciadaPor(alvo.codigo).length > 0) { A modalidade
+    <code>{{ alvo.codigo }}</code> não pode ser removida porque é usada como origem, destino, par ou
+    fallback das seguintes modalidades vivas:
+    <ul class="cfg-refs-lista u-list">
+      @for (r of referenciadaPor(alvo.codigo); track r.id) {
+      <li>
+        <code>{{ r.codigo }}</code>
+        @if (r.descricao) { — {{ r.descricao }} }
+      </li>
+      }
+    </ul>
+    Ajuste ou remova essas referências antes de removê-la. } @else if (!mensagemBloqueioServidor())
+    { {{ mensagemBloqueioPadrao }} }
+  </ui-alert>
+  } @else {
+  <p>
+    A modalidade <code>{{ alvo.codigo }}</code> é removida (soft-delete) e mantida na trilha de
+    auditoria. Cópias congeladas por snapshot em processos publicados não são afetadas. Confirma?
+  </p>
+  } }
+
+  <div uiDialogFooter>
+    @if (remocaoBloqueada()) {
+    <button
+      #entendi
+      type="button"
+      class="btn btn--primary btn--rect"
+      [attr.aria-disabled]="removendo() ? 'true' : null"
+      [attr.aria-busy]="removendo() ? 'true' : null"
+      (click)="fecharBloqueio()"
+    >
+      Entendi
+    </button>
+    } @else {
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="removendo()"
+      (click)="dialogAberto.set(false)"
+    >
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--danger btn--rect"
+      [attr.aria-disabled]="removendo() ? 'true' : null"
+      [attr.aria-busy]="removendo() ? 'true' : null"
+      (click)="removerConfirmado()"
+    >
+      @if (removendo()) {
+      <ui-spinner size="sm" />
+      } {{ removendo() ? 'Removendo...' : 'Remover' }}
+    </button>
+    }
+  </div>
+</ui-dialog>

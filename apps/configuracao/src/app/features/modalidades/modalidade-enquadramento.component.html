@@ -1,0 +1,44 @@
+<section aria-labelledby="cfg-mod-enquadramento" class="form-section" [formGroup]="form()">
+  <h2 id="cfg-mod-enquadramento" class="form-section__title">Enquadramento</h2>
+  <div class="form-grid">
+    <label class="field form-grid__full">
+      <span class="field__label">Ação quando indeferido</span>
+      <select
+        class="select"
+        formControlName="acaoQuandoIndeferido"
+        [attr.aria-describedby]="
+          erroDoCampo('acaoQuandoIndeferido') ? 'cfg-mod-acaoQuandoIndeferido-erro' : null
+        "
+        [attr.aria-invalid]="erroDoCampo('acaoQuandoIndeferido') ? 'true' : null"
+      >
+        <option value="">Não se aplica</option>
+        @for (op of acoes; track op.value) {
+          <option [value]="op.value">{{ op.label }}</option>
+        }
+      </select>
+      <span class="field__hint"
+        >Destino do candidato indeferido nesta modalidade (aplicável a cotas).</span
+      >
+      @if (erroDoCampo('acaoQuandoIndeferido')) {
+        <span id="cfg-mod-acaoQuandoIndeferido-erro" class="field__error">{{
+          erroDoCampo('acaoQuandoIndeferido')
+        }}</span>
+      }
+    </label>
+
+    <label class="field form-grid__full" [class.is-error]="erroDoCampo('baseLegal')">
+      <span class="field__label">Base legal</span>
+      <input
+        class="input"
+        type="text"
+        formControlName="baseLegal"
+        [attr.aria-describedby]="erroDoCampo('baseLegal') ? 'cfg-mod-baseLegal-erro' : null"
+        placeholder="Ex.: Lei 12.711/2012, art. 1º"
+        [attr.aria-invalid]="erroDoCampo('baseLegal') ? 'true' : null"
+      />
+      @if (erroDoCampo('baseLegal')) {
+        <span id="cfg-mod-baseLegal-erro" class="field__error">{{ erroDoCampo('baseLegal') }}</span>
+      }
+    </label>
+  </div>
+</section>

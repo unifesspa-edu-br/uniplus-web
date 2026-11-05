@@ -10,8 +10,6 @@
 1362 apps/configuracao/src/app/features/fatos-candidato/fato-candidato-edicao.component.ts
 1277 apps/configuracao/src/app/features/fatos-candidato/fatos-candidato.page.ts
 1054 apps/configuracao/src/app/features/instituicao/instituicao.page.ts
-1067 apps/configuracao/src/app/features/modalidades/modalidade-form.page.ts
-634 apps/configuracao/src/app/features/modalidades/modalidades-list.page.ts
 1595 apps/configuracao/src/app/features/ofertas-curso/ofertas-curso.page.ts
 1753 apps/configuracao/src/app/features/pesos-enem/pesos-enem.page.ts
 1059 apps/configuracao/src/app/features/precedencias-fase/precedencias-fase.page.ts

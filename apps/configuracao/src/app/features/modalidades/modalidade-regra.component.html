@@ -1,0 +1,66 @@
+<section aria-labelledby="cfg-mod-regra" class="form-section">
+  <h2 id="cfg-mod-regra" class="form-section__title">Quem concorre nesta modalidade</h2>
+  <div class="field form-grid__full" [class.is-error]="recusas().length > 0">
+    @switch (estadoDoCatalogo()) {
+      @case ('erro') {
+        <ui-alert variant="warning" heading="Catálogo de fatos não carregado">
+          Sem o catálogo, a regra de aplicabilidade não pode ser lida nem escrita.
+          <div class="list-state__retry">
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              (click)="recarregarCatalogo.emit()"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </ui-alert>
+      }
+      @case ('carregando') {
+        <p class="field__hint" role="status">Carregando o catálogo de fatos...</p>
+      }
+      @default {
+        <div>
+          @if (leitura().length === 0) {
+            <p>{{ todosOsCandidatos }}.</p>
+          } @else if (leitura().length === 1) {
+            <p>Quem atende: {{ leitura()[0] }}.</p>
+          } @else {
+            <p>Quem atende a pelo menos uma destas alternativas:</p>
+            <ul class="u-list">
+              @for (alternativa of leitura(); track $index) {
+                <li>{{ alternativa }}</li>
+              }
+            </ul>
+          }
+        </div>
+
+        @if (fixadaEmLei()) {
+          <span class="field__hint">
+            Modalidade do catálogo legal fixo: a regra é definida em lei e não se edita aqui.
+          </span>
+        } @else {
+          <ui-editor-de-condicoes
+            [condicoes]="condicoes()"
+            [fatos]="fatos()"
+            idBase="cfg-mod-regra"
+            legenda="Condições da regra"
+            textoSemCondicao="Sem condição: todos os candidatos concorrem nesta modalidade."
+            [disabled]="salvando()"
+            [erros]="errosDasCondicoes()"
+            (condicoesChange)="condicoesChange.emit($event)"
+          />
+        }
+      }
+    }
+    @if (recusas().length > 0) {
+      <div class="field__error" role="alert">
+        <ul class="u-list" aria-label="Erros da regra de aplicabilidade">
+          @for (erro of recusas(); track $index) {
+            <li>{{ erro }}</li>
+          }
+        </ul>
+      </div>
+    }
+  </div>
+</section>

@@ -1,0 +1,49 @@
+@if (erro()) {
+  <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+}
+
+<form
+  [formGroup]="form()"
+  id="cfg-modalidade-form"
+  (ngSubmit)="aoEnviar()"
+  novalidate
+  class="form-drawer__form"
+>
+  <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+    <ng-content />
+
+    <aside class="cond-diagram" aria-label="Resumo das escolhas" aria-live="polite">
+      <h2 class="cond-diagram__title">Como estas vagas se comportam</h2>
+      <ul class="cond-diagram__list u-list">
+        @for (clausula of resumo(); track clausula) {
+          <li class="cond-diagram__item">{{ clausula }}</li>
+        }
+      </ul>
+    </aside>
+  </fieldset>
+</form>
+
+<div class="form-drawer__footer">
+  <a
+    class="btn btn--tertiary btn--rect"
+    [routerLink]="salvando() ? null : '/modalidades'"
+    [attr.aria-disabled]="salvando() ? 'true' : null"
+    [attr.role]="salvando() ? 'link' : null"
+    [attr.tabindex]="salvando() ? 0 : null"
+    (click)="aoClicarEmCancelar($event)"
+    >Cancelar</a
+  >
+  <button
+    type="submit"
+    form="cfg-modalidade-form"
+    class="btn btn--primary"
+    [attr.aria-disabled]="salvando() ? 'true' : null"
+    [attr.aria-busy]="salvando()"
+    (click)="aoClicarEmSalvar($event)"
+  >
+    @if (salvando()) {
+      <ui-spinner size="sm" />
+    }
+    {{ salvando() ? 'Salvando...' : modoEdicao() ? 'Salvar modalidade' : 'Criar modalidade' }}
+  </button>
+</div>
