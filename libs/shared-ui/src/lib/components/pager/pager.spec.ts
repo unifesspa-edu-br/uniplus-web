@@ -138,6 +138,23 @@ describe('PagerComponent (Anterior / Próximo)', () => {
     expect(fixture.componentInstance.pageSize()).toBeNull();
   });
 
+  it('indisponível com pageSize fora das opções, a recusa volta à opção exibida (a primeira)', () => {
+    fixture.componentRef.setInput('pageSizeOptions', [10, 25, 50]);
+    fixture.componentRef.setInput('pageSize', 30);
+    fixture.componentRef.setInput('isDisabled', true);
+    fixture.detectChanges();
+
+    const select = seletorLimite();
+    if (!select) throw new Error('seletor ausente');
+    expect(select.value).toBe('10');
+
+    select.value = '50';
+    select.dispatchEvent(new Event('change'));
+
+    expect(select.value).toBe('10');
+    expect(fixture.componentInstance.pageSize()).toBe(30);
+  });
+
   it('expõe statusText e navigationLabel acessíveis', () => {
     fixture.componentRef.setInput('statusText', 'Página 2');
     fixture.componentRef.setInput('navigationLabel', 'Paginação de unidades');

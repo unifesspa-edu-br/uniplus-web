@@ -78,8 +78,15 @@ export class PagerComponent {
   readonly previous = output<void>();
   readonly next = output<void>();
 
-  /** Opção de fato exibida no seletor: o limite atual ou, sem ele, a primeira opção. */
-  protected readonly limiteExibido = computed(() => this.pageSize() ?? this.pageSizeOptions()[0]);
+  /**
+   * Opção de fato exibida no seletor: o limite atual quando ele é uma das
+   * opções; fora delas (ou sem limite), o navegador mostra a primeira.
+   */
+  protected readonly limiteExibido = computed(() => {
+    const opcoes = this.pageSizeOptions();
+    const atual = this.pageSize();
+    return atual !== null && opcoes.includes(atual) ? atual : opcoes[0];
+  });
   protected readonly anteriorIndisponivel = computed(
     () => !this.hasPrevious() || this.isDisabled(),
   );
