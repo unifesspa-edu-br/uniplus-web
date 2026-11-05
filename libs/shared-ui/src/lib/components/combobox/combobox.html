@@ -1,0 +1,67 @@
+<div class="combobox" [class.is-open]="aberto()">
+  <input
+    class="input combobox__campo"
+    type="text"
+    role="combobox"
+    autocomplete="off"
+    #campo
+    [id]="campoId"
+    [attr.aria-expanded]="aberto()"
+    [attr.aria-controls]="listaId"
+    [attr.aria-activedescendant]="
+      aberto() && destacada() !== null ? opcaoId(destacada()!) : null
+    "
+    aria-autocomplete="list"
+    [attr.aria-describedby]="descricoes()"
+    [attr.aria-invalid]="invalido() ? 'true' : null"
+    [attr.placeholder]="placeholder()"
+    [disabled]="disabled()"
+    [value]="texto()"
+    (input)="digitar($any($event.target).value)"
+    (keydown)="teclar($event)"
+    (focus)="abrir()"
+  />
+
+  @if (aberto()) {
+  <ul
+    class="combobox__lista"
+    role="listbox"
+    [id]="listaId"
+    [attr.aria-label]="rotulo()"
+    [attr.aria-multiselectable]="multiplo() ? 'true' : null"
+  >
+    @for (grupo of gruposVisiveis(); track grupo.label) {
+    <li role="presentation">
+      <p class="combobox__grupo" [id]="grupoId(grupo.label)">{{ grupo.label }}</p>
+      <ul role="group" [attr.aria-labelledby]="grupoId(grupo.label)">
+        @for (opcao of grupo.options; track opcao.value) {
+        <li
+          class="combobox__opcao"
+          role="option"
+          [id]="opcaoId(opcao.value)"
+          [class.is-destacada]="destacada() === opcao.value"
+          [class.is-desabilitada]="indisponivel(opcao)"
+          [attr.aria-selected]="marcada(opcao.value)"
+          [attr.aria-disabled]="indisponivel(opcao) ? 'true' : null"
+          (mousedown)="escolherComOMouse($event, opcao)"
+          (mousemove)="indisponivel(opcao) ? null : destacada.set(opcao.value)"
+        >
+          {{ opcao.label }}
+        </li>
+        }
+      </ul>
+    </li>
+    } @if (exibidas() === 0) {
+    <li class="combobox__vazio" role="presentation">{{ textoSemResultado() }}</li>
+    }
+  </ul>
+  }
+</div>
+
+<!--
+  A contagem é anunciada a cada busca: quem não enxerga a lista precisa saber se o que
+  digitou alcançou alguma coisa antes de apertar a seta para baixo.
+-->
+<p [class]="contagemVisivel() ? 'field__hint' : 'sr-only'" role="status" [id]="contagemId">
+  {{ contagem() }}
+</p>

@@ -8,6 +8,7 @@ import {
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { normalizarParaBusca } from '@uniplus/shared-utils';
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
@@ -50,73 +51,7 @@ let comboboxIdSeed = 0;
   imports: [ValorLegivelDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:mousedown)': 'aoClicarNoDocumento($event.target)' },
-  template: `
-    <div class="combobox" [class.is-open]="aberto()">
-      <input
-        class="input combobox__campo"
-        type="text"
-        role="combobox"
-        autocomplete="off"
-        [id]="campoId"
-        [attr.aria-expanded]="aberto()"
-        [attr.aria-controls]="listaId"
-        [attr.aria-activedescendant]="aberto() && destacada() !== null ? opcaoId(destacada()!) : null"
-        aria-autocomplete="list"
-        [attr.aria-describedby]="descricoes()"
-        [attr.aria-invalid]="invalido() ? 'true' : null"
-        [attr.placeholder]="placeholder()"
-        [disabled]="disabled()"
-        [value]="texto()"
-        (input)="digitar($any($event.target).value)"
-        (keydown)="teclar($event)"
-        (focus)="abrir()"
-      />
-
-      @if (aberto()) {
-        <ul
-          class="combobox__lista"
-          role="listbox"
-          [id]="listaId"
-          [attr.aria-label]="rotulo()"
-          [attr.aria-multiselectable]="multiplo() ? 'true' : null"
-        >
-          @for (grupo of gruposVisiveis(); track grupo.label) {
-            <li role="presentation">
-              <p class="combobox__grupo" [id]="grupoId(grupo.label)">{{ grupo.label }}</p>
-              <ul role="group" [attr.aria-labelledby]="grupoId(grupo.label)">
-                @for (opcao of grupo.options; track opcao.value) {
-                  <li
-                    class="combobox__opcao"
-                    role="option"
-                    [id]="opcaoId(opcao.value)"
-                    [class.is-destacada]="destacada() === opcao.value"
-                    [class.is-desabilitada]="indisponivel(opcao)"
-                    [attr.aria-selected]="marcada(opcao.value)"
-                    [attr.aria-disabled]="indisponivel(opcao) ? 'true' : null"
-                    (mousedown)="escolherComOMouse($event, opcao)"
-                    (mousemove)="indisponivel(opcao) ? null : destacada.set(opcao.value)"
-                  >
-                    {{ opcao.label }}
-                  </li>
-                }
-              </ul>
-            </li>
-          }
-          @if (exibidas() === 0) {
-            <li class="combobox__vazio" role="presentation">{{ textoSemResultado() }}</li>
-          }
-        </ul>
-      }
-    </div>
-
-    <!--
-      A contagem é anunciada a cada busca: quem não enxerga a lista precisa saber se o que
-      digitou alcançou alguma coisa antes de apertar a seta para baixo.
-    -->
-    <p [class]="contagemVisivel() ? 'field__hint' : 'sr-only'" role="status" [id]="contagemId">
-      {{ contagem() }}
-    </p>
-  `,
+  templateUrl: './combobox.html',
 })
 export class ComboboxComponent {
   private readonly hospedeiro = inject(ElementRef<HTMLElement>);
@@ -142,7 +77,9 @@ export class ComboboxComponent {
   readonly invalido = input<boolean>(false);
   /** Ids de fora que descrevem o campo — o erro dele, por exemplo —, somados à contagem da lista. */
   readonly descritoPor = input<string | null>(null);
-  protected readonly descricoes = computed(() => [this.contagemId, this.descritoPor()].filter((id) => id !== null && id !== '').join(' '));
+  protected readonly descricoes = computed(() =>
+    [this.contagemId, this.descritoPor()].filter((id) => id !== null && id !== '').join(' '),
+  );
   /** O que dizer quando a busca não alcança nada — o assunto é de quem usa o campo. */
   readonly textoSemResultado = input<string>('Nada encontrado.');
 
@@ -165,6 +102,8 @@ export class ComboboxComponent {
   readonly valueChange = output<string>();
   readonly valuesChange = output<readonly string[]>();
   readonly buscaChange = output<string>();
+
+  private readonly campo = viewChild.required<ElementRef<HTMLInputElement>>('campo');
 
   protected readonly aberto = signal(false);
   protected readonly destacada = signal<string | null>(null);
@@ -234,7 +173,10 @@ export class ComboboxComponent {
 
   /** Quantas a pessoa pode escolher: é o que o leitor de tela ouve, sem as indisponíveis (WCAG 4.1.3). */
   protected readonly alcancadas = computed(() =>
-    this.gruposVisiveis().reduce((total, grupo) => total + grupo.options.filter((opcao) => !this.indisponivel(opcao)).length, 0),
+    this.gruposVisiveis().reduce(
+      (total, grupo) => total + grupo.options.filter((opcao) => !this.indisponivel(opcao)).length,
+      0,
+    ),
   );
 
   protected readonly contagem = computed(() => {
@@ -248,13 +190,16 @@ export class ComboboxComponent {
     // Na busca externa, a lista vazia pode ser busca em curso ou termo curto demais, e só o
     // hospedeiro sabe dizer qual.
     if (total === 0 && this.exibidas() > 0) return `Nenhuma opção disponível para “${termo}”.`;
-    if (total === 0) return this.buscaExterna() ? this.textoSemResultado() : `Nada encontrado para “${termo}”.`;
+    if (total === 0)
+      return this.buscaExterna() ? this.textoSemResultado() : `Nada encontrado para “${termo}”.`;
     return total === 1 ? `1 opção casa com “${termo}”.` : `${total} opções casam com “${termo}”.`;
   });
 
   /** A lista, achatada na ordem em que aparece — é por ela que as setas andam. */
   private readonly navegaveis = computed<readonly string[]>(() =>
-    this.gruposVisiveis().flatMap((grupo) => grupo.options.filter((opcao) => !this.indisponivel(opcao)).map((opcao) => opcao.value)),
+    this.gruposVisiveis().flatMap((grupo) =>
+      grupo.options.filter((opcao) => !this.indisponivel(opcao)).map((opcao) => opcao.value),
+    ),
   );
 
   protected opcaoId(value: string): string {
@@ -352,13 +297,23 @@ export class ComboboxComponent {
     this.destacada.set(lista[proximo]);
   }
 
+  /**
+   * O campo pode estar bloqueado por quem o envolve (um `fieldset` desabilitado), sem que o
+   * `disabled` do componente saiba: `:disabled` do input enxerga os dois casos.
+   */
+  private bloqueado(): boolean {
+    return this.disabled() || this.campo().nativeElement.matches(':disabled');
+  }
+
   private escolher(value: string): void {
+    if (this.bloqueado()) {
+      this.fechar();
+      return;
+    }
     if (this.multiplo()) {
       const marcados = this.values();
       this.valuesChange.emit(
-        marcados.includes(value)
-          ? marcados.filter((item) => item !== value)
-          : [...marcados, value],
+        marcados.includes(value) ? marcados.filter((item) => item !== value) : [...marcados, value],
       );
       // A lista fica aberta e o termo volta a VAZIO — não a "sem busca". São estados
       // diferentes: sem busca, o campo mostra o resumo do que já está marcado, e quem digita

@@ -188,6 +188,54 @@ test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
     await expect(form.getByRole('button', { name: 'Limpar cidade' })).toBeVisible();
   });
 
+  test('envio em curso com a lista de cidades aberta: a cidade escolhida não muda', async ({
+    page,
+  }) => {
+    const capturado: { post?: unknown } = {};
+    await mockApi(page, capturado);
+    let liberar: () => void = () => undefined;
+    const retida = new Promise<void>((resolve) => (liberar = resolve));
+    await page.route(/\/api\/configuracao\/admin\/campi$/, async (route) => {
+      if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+      capturado.post = route.request().postDataJSON();
+      await retida;
+      await route.fulfill({
+        status: 422,
+        contentType: 'application/json',
+        headers: CORS_HEADERS,
+        body: '{}',
+      });
+    });
+    await abrirCadastroCampus(page);
+    const form = page.locator('#cfg-campus-form');
+    await form.locator('[formControlName="sigla"]').fill('MARABA');
+    await form.locator('[formControlName="nome"]').fill('Campus de Marabá');
+    await page.getByRole('button', { name: 'preencher sem CEP' }).click();
+    await form.getByRole('combobox', { name: /^UF\b/ }).selectOption('PA');
+    const cidade = form.getByRole('combobox', { name: /^Cidade\b/ });
+    await cidade.fill('Mara');
+    await page.getByRole('option', { name: 'Marabá (PA)' }).click();
+    await expect(cidade).toHaveValue('Marabá (PA)');
+
+    // A lista fica aberta com uma busca em curso, sem opção destacada, quando o Enter envia.
+    await cidade.fill('Para');
+    const outra = page.getByRole('option', { name: 'Parauapebas (PA)' });
+    await expect(outra).toBeVisible();
+    await cidade.press('Enter');
+    await expect.poll(() => capturado.post).toBeDefined();
+
+    await expect(cidade).toBeDisabled();
+    await expect(outra).toBeHidden();
+    await page.locator('.combobox__opcao', { hasText: 'Parauapebas' }).dispatchEvent('mousedown');
+    liberar();
+
+    expect(capturado.post).toMatchObject({ cidadeCodigoIbge: '1504208' });
+    await expect(cidade).toHaveValue('Marabá (PA)');
+  });
+
   test('CA-06: CEP inexistente exibe erro inline e oculta os campos de endereço', async ({
     page,
   }) => {

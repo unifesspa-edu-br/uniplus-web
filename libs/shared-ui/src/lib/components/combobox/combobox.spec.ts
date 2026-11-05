@@ -204,6 +204,24 @@ describe('ComboboxComponent', () => {
     expect(marcada.map((o) => o.textContent?.trim())).toEqual(['CPF']);
   });
 
+  it('bloqueado por um fieldset desabilitado, não escolhe pelo mouse nem pelo teclado', () => {
+    const fieldset = document.createElement('fieldset');
+    nativo.parentElement?.appendChild(fieldset);
+    fieldset.appendChild(nativo);
+    campo().dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    teclar('ArrowDown');
+    expect(opcoes().length).toBeGreaterThan(0);
+
+    fieldset.disabled = true;
+    opcoes()[1].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    teclar('Enter');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.escolhido()).toBe('');
+    expect(campo().getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('desabilitado não abre', () => {
     campo().dispatchEvent(new Event('focus'));
     fixture.detectChanges();
@@ -277,7 +295,9 @@ describe('ComboboxComponent', () => {
     });
 
     it('a contagem anunciada só conta o que se pode escolher', () => {
-      expect(nativo.querySelector('[role="status"]')?.textContent?.trim()).toBe('2 opções disponíveis.');
+      expect(nativo.querySelector('[role="status"]')?.textContent?.trim()).toBe(
+        '2 opções disponíveis.',
+      );
     });
 
     it('o clique nela não escolhe', () => {
@@ -291,7 +311,13 @@ describe('ComboboxComponent', () => {
       campo().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
       campo().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
       fixture.componentInstance.grupos.set([
-        { label: 'Identificação', options: [{ value: 'rg', label: 'RG' }, { value: 'cpf', label: 'CPF — aguarda', disabled: true }] },
+        {
+          label: 'Identificação',
+          options: [
+            { value: 'rg', label: 'RG' },
+            { value: 'cpf', label: 'CPF — aguarda', disabled: true },
+          ],
+        },
       ]);
       fixture.detectChanges();
 
@@ -365,9 +391,9 @@ describe('ComboboxComponent', () => {
 
     it('anuncia que a lista aceita mais de uma escolha', () => {
       abrir();
-      expect(nativoMulti.querySelector('[role="listbox"]')?.getAttribute('aria-multiselectable')).toBe(
-        'true',
-      );
+      expect(
+        nativoMulti.querySelector('[role="listbox"]')?.getAttribute('aria-multiselectable'),
+      ).toBe('true');
     });
 
     /** Marcar três não pode custar reabrir a lista três vezes. */
@@ -418,7 +444,11 @@ describe('ComboboxComponent', () => {
           label: 'Modalidades',
           options: [
             { value: 'ac', label: 'Ampla concorrência' },
-            { value: 'ppi', label: 'PPI — aguarda a aprovação da proteção de dados', disabled: true },
+            {
+              value: 'ppi',
+              label: 'PPI — aguarda a aprovação da proteção de dados',
+              disabled: true,
+            },
           ],
         },
       ]);
@@ -426,7 +456,9 @@ describe('ComboboxComponent', () => {
       multi.detectChanges();
       abrir();
 
-      const opcao = [...nativoMulti.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent?.includes('PPI'));
+      const opcao = [...nativoMulti.querySelectorAll<HTMLElement>('[role="option"]')].find((o) =>
+        o.textContent?.includes('PPI'),
+      );
       expect(opcao?.getAttribute('aria-disabled')).toBeNull();
 
       campoMulti().dispatchEvent(new KeyboardEvent('keydown', { key: 'End' }));
@@ -438,7 +470,10 @@ describe('ComboboxComponent', () => {
 
     it('a opção desabilitada que não está marcada segue fora do alcance no modo múltiplo', () => {
       multi.componentInstance.grupos.set([
-        { label: 'Modalidades', options: [{ value: 'ppi', label: 'PPI — aguarda', disabled: true }] },
+        {
+          label: 'Modalidades',
+          options: [{ value: 'ppi', label: 'PPI — aguarda', disabled: true }],
+        },
       ]);
       multi.detectChanges();
       abrir();
@@ -497,13 +532,17 @@ describe('ComboboxComponent', () => {
   `,
 })
 class HospedeiroDaBuscaExterna {
-  readonly grupos = signal<readonly UiComboboxGroup[]>([{ label: 'Encontrados', options: [{ value: '1504208', label: 'Marabá (PA)' }] }]);
+  readonly grupos = signal<readonly UiComboboxGroup[]>([
+    { label: 'Encontrados', options: [{ value: '1504208', label: 'Marabá (PA)' }] },
+  ]);
   readonly termos: string[] = [];
 }
 
 describe('ComboboxComponent com a busca do hospedeiro', () => {
   it('entrega o termo ao hospedeiro e mostra o que ele achou, sem filtrar de novo', async () => {
-    await TestBed.configureTestingModule({ imports: [HospedeiroDaBuscaExterna] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [HospedeiroDaBuscaExterna],
+    }).compileComponents();
     const fixture = TestBed.createComponent(HospedeiroDaBuscaExterna);
     fixture.detectChanges();
     const nativo = fixture.nativeElement as HTMLElement;
@@ -514,7 +553,9 @@ describe('ComboboxComponent com a busca do hospedeiro', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.termos).toEqual(['maraba pa']);
-    expect([...nativo.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim())).toEqual(['Marabá (PA)']);
+    expect(
+      [...nativo.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim()),
+    ).toEqual(['Marabá (PA)']);
   });
 });
 
@@ -536,7 +577,13 @@ describe('ComboboxComponent com a busca do hospedeiro', () => {
 })
 class HospedeiroDaBuscaExternaMultipla {
   readonly grupos = signal<readonly UiComboboxGroup[]>([
-    { label: 'Encontrados', options: [{ value: '1504208', label: 'Marabá (PA)' }, { value: '1500107', label: 'Abaetetuba (PA)' }] },
+    {
+      label: 'Encontrados',
+      options: [
+        { value: '1504208', label: 'Marabá (PA)' },
+        { value: '1500107', label: 'Abaetetuba (PA)' },
+      ],
+    },
   ]);
   readonly marcados = signal<readonly string[]>([]);
   readonly termos: string[] = [];
@@ -544,7 +591,9 @@ class HospedeiroDaBuscaExternaMultipla {
 
 describe('ComboboxComponent com a busca do hospedeiro e escolha múltipla', () => {
   it('marcar um resultado não refaz a busca: os outros da mesma consulta continuam para marcar', async () => {
-    await TestBed.configureTestingModule({ imports: [HospedeiroDaBuscaExternaMultipla] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [HospedeiroDaBuscaExternaMultipla],
+    }).compileComponents();
     const fixture = TestBed.createComponent(HospedeiroDaBuscaExternaMultipla);
     fixture.detectChanges();
     const nativo = fixture.nativeElement as HTMLElement;
@@ -553,7 +602,9 @@ describe('ComboboxComponent com a busca do hospedeiro e escolha múltipla', () =
     campo.value = 'pa';
     campo.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    nativo.querySelector('[role="option"]')?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    nativo
+      .querySelector('[role="option"]')
+      ?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     fixture.detectChanges();
 
     expect(fixture.componentInstance.marcados()).toEqual(['1504208']);
@@ -569,7 +620,9 @@ describe('ComboboxComponent com erro de fora', () => {
     fixture.componentRef.setInput('invalido', true);
     fixture.componentRef.setInput('descritoPor', 'condicao-erro');
     fixture.detectChanges();
-    const campo = (fixture.nativeElement as HTMLElement).querySelector('input[role="combobox"]') as HTMLInputElement;
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(
+      'input[role="combobox"]',
+    ) as HTMLInputElement;
 
     expect(campo.getAttribute('aria-invalid')).toBe('true');
     expect(campo.getAttribute('aria-describedby')?.split(' ')).toContain('condicao-erro');
@@ -583,8 +636,13 @@ describe('ComboboxComponent com o estado da busca do hospedeiro', () => {
     fixture.componentRef.setInput('buscaExterna', true);
     fixture.componentRef.setInput('multiplo', true);
     fixture.componentRef.setInput('values', ['1504208']);
-    fixture.componentRef.setInput('grupos', [{ label: 'Escolhido', options: [{ value: '1504208', label: 'Marabá (PA)' }] }]);
-    fixture.componentRef.setInput('estadoDaBusca', 'Não foi possível buscar os municípios: serviço indisponível');
+    fixture.componentRef.setInput('grupos', [
+      { label: 'Escolhido', options: [{ value: '1504208', label: 'Marabá (PA)' }] },
+    ]);
+    fixture.componentRef.setInput(
+      'estadoDaBusca',
+      'Não foi possível buscar os municípios: serviço indisponível',
+    );
     fixture.detectChanges();
     const nativo = fixture.nativeElement as HTMLElement;
     const campo = nativo.querySelector('input[role="combobox"]') as HTMLInputElement;
@@ -593,6 +651,8 @@ describe('ComboboxComponent com o estado da busca do hospedeiro', () => {
     campo.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    expect(nativo.querySelector('[role="status"]')?.textContent).toContain('Não foi possível buscar os municípios');
+    expect(nativo.querySelector('[role="status"]')?.textContent).toContain(
+      'Não foi possível buscar os municípios',
+    );
   });
 });
