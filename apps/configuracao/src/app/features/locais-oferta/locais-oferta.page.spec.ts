@@ -1,4 +1,4 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
   TestRequest,
@@ -14,8 +14,9 @@ import {
   TipoLocalOferta,
 } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaisOfertaPage } from './locais-oferta.page';
+import { LocaisOfertaStore } from './locais-oferta.store';
 import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
 
 const BASE = 'http://localhost:5000';
@@ -121,7 +122,7 @@ describe('LocaisOfertaPage', () => {
 
     const primeira = expectLookup(`${BASE}/api/configuracao/campi`);
 
-    component['campi'].recarregar();
+    fixture.debugElement.injector.get(LocaisOfertaStore).campi.recarregar();
     await propagate();
 
     // A primeira travessia precisa ter sido cancelada de verdade (não só
@@ -143,7 +144,7 @@ describe('LocaisOfertaPage', () => {
     ]);
     await propagate();
 
-    expect(component['campi'].opcoes()).toHaveLength(1);
+    expect(fixture.debugElement.injector.get(LocaisOfertaStore).campi.opcoes()).toHaveLength(1);
 
     // Se a primeira ainda estivesse "viva", flush aqui explodiria (request já
     // consumido) ou reabriria uma disputa — confirma que não sobra nada pendente.
@@ -152,10 +153,37 @@ describe('LocaisOfertaPage', () => {
 
   it('renderiza a lista com tipo e cidade', async () => {
     await flushLista([localSeed]);
-    expect(component['locais']()).toHaveLength(1);
+    expect(fixture.debugElement.injector.get(LocaisOfertaStore).locais()).toHaveLength(1);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Polo EAD');
     expect(fixture.nativeElement.textContent).toContain('Marabá — PA');
+  });
+
+  it('navega pelo cursor e volta à primeira página ao recarregar', async () => {
+    const store = fixture.debugElement.injector.get(LocaisOfertaStore);
+    const primeira = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/locais-oferta`,
+    );
+    expect(primeira.request.params.get('limit')).toBe('50');
+    primeira.flush([localSeed], {
+      headers: new HttpHeaders({
+        Link: `<${BASE}/api/configuracao/locais-oferta?cursor=pagina-2&direction=next>; rel="next"`,
+      }),
+    });
+    await propagate();
+    store.proximaPagina();
+    await propagate();
+    const segunda = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/locais-oferta`);
+    expect(segunda.request.params.get('cursor')).toBe('pagina-2');
+    expect(segunda.request.params.get('direction')).toBe('next');
+    segunda.flush([]);
+    await propagate();
+    store.recarregar();
+    await propagate();
+    const recarga = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/locais-oferta`);
+    expect(recarga.request.params.get('limit')).toBe('50');
+    recarga.flush([localSeed]);
+    await propagate();
   });
 
   it('CA-04: cria local de oferta com tipo + endereço aninhado', async () => {
@@ -163,14 +191,14 @@ describe('LocaisOfertaPage', () => {
 
     component['abrirCadastro']();
     await flushCampiLookup();
-    component['form'].setValue({
+    component['edicao'].form.setValue({
       tipo: TipoLocalOferta.poloEad,
       codigoEmec: '999',
       campusResponsavelId: '',
       endereco: enderecoResolvido,
     });
 
-    component['salvar']();
+    component['edicao'].salvar();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/locais-oferta`);
     expect(post.request.method).toBe('POST');
@@ -183,7 +211,99 @@ describe('LocaisOfertaPage', () => {
     post.flush('new-id', { status: 201, statusText: 'Created' });
     await propagate();
     await flushLista([localSeed]);
-    expect(component['formOpen']()).toBe(false);
+    expect(component['edicao'].formOpen()).toBe(false);
+  });
+
+  it('bloqueia ações durante a gravação e a recarga, liberando após receber a lista', async () => {
+    await flushLista([localSeed]);
+    component['abrirEdicao'](localSeed);
+    await flushCampiLookup();
+    const edicao = component['edicao'];
+    edicao.form.controls.endereco.setValue(enderecoResolvido);
+    edicao.salvar();
+    const escrita = controller.expectOne((r) => r.method === 'PUT');
+    edicao.fechar();
+    edicao.pedirRemocao(localSeed);
+    edicao.salvar();
+    expect(edicao.formOpen()).toBe(true);
+    expect(edicao.confirmOpen()).toBe(false);
+    escrita.flush(null);
+    await propagate();
+    expect(edicao.gravando()).toBe(true);
+    component['abrirCadastro']();
+    expect(edicao.formOpen()).toBe(false);
+    await flushLista([localSeed]);
+    expect(edicao.gravando()).toBe(false);
+    component['abrirCadastro']();
+    expect(edicao.formOpen()).toBe(true);
+  });
+
+  it('mantém ações indisponíveis e anuncia o salvamento dentro do drawer', async () => {
+    await flushLista([localSeed]);
+    component['abrirEdicao'](localSeed);
+    await flushCampiLookup();
+    const edicao = component['edicao'];
+    edicao.form.controls.endereco.setValue(enderecoResolvido);
+    edicao.salvar();
+    const escrita = controller.expectOne((r) => r.method === 'PUT');
+    await propagate();
+    const host = fixture.nativeElement as HTMLElement;
+    const acao = host.querySelector<HTMLButtonElement>(
+      'cfg-locais-oferta-lista button[aria-label^="Remover"]',
+    );
+    expect(acao?.getAttribute('aria-disabled')).toBe('true');
+    expect(
+      host.querySelector('cfg-local-oferta-formulario dialog p[role="status"]')?.textContent,
+    ).toContain('Salvando');
+    expect(
+      host.querySelector('cfg-locais-oferta-lista td span[aria-hidden="true"]')?.textContent,
+    ).toContain('Salvando');
+    acao?.click();
+    expect(edicao.confirmOpen()).toBe(false);
+    escrita.flush(null);
+    await propagate();
+    await flushLista([localSeed]);
+  });
+
+  it('marca o campo recusado pelo servidor e leva o foco até ele', async () => {
+    await flushLista([]);
+    component['abrirCadastro']();
+    await flushCampiLookup();
+    const edicao = component['edicao'];
+    edicao.form.setValue({
+      tipo: TipoLocalOferta.poloEad,
+      codigoEmec: '999',
+      campusResponsavelId: '',
+      endereco: enderecoResolvido,
+    });
+    const campo = fixture.nativeElement.querySelector(
+      'input[formcontrolname="codigoEmec"]',
+    ) as HTMLInputElement;
+    const foco = vi.spyOn(campo, 'focus');
+    edicao.salvar();
+    controller.expectOne(`${BASE}/api/configuracao/admin/locais-oferta`).flush(
+      JSON.stringify({
+        type: 'about:blank',
+        code: 'uniplus.validacao',
+        status: 422,
+        title: 'Recusado',
+        errors: [
+          {
+            field: 'codigoEmec',
+            code: 'uniplus.configuracao.local.codigo_invalido',
+            message: 'Código inválido.',
+          },
+        ],
+      }),
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+    expect(edicao.erroDoCampo('codigoEmec')).toBe('Código inválido.');
+    expect(foco).toHaveBeenCalled();
   });
 
   it('I1: lista com local vinculado dispara o lookup de campi e exibe a sigla/nome', async () => {
@@ -202,7 +322,12 @@ describe('LocaisOfertaPage', () => {
       },
     ]);
     await propagate();
-    expect(component['campusLabel']('cmp1')).toBe('MAB — Campus de Marabá');
+    expect(
+      fixture.debugElement.injector
+        .get(LocaisOfertaStore)
+        .campi.opcoes()
+        .map((campus) => `${campus.sigla} — ${campus.nome}`)[0],
+    ).toBe('MAB — Campus de Marabá');
   });
 
   // A coluna resolvia o campus por lookup e, quando a busca falhava, trocava o
@@ -229,9 +354,8 @@ describe('LocaisOfertaPage', () => {
     const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--warning');
     expect(alerta.textContent).toContain('Recarregar campi');
 
-    const botaoRecarregar: HTMLButtonElement = fixture.nativeElement.querySelector(
-      '.alert--warning button',
-    );
+    const botaoRecarregar: HTMLButtonElement =
+      fixture.nativeElement.querySelector('.alert--warning button');
     botaoRecarregar.click();
     await propagate();
     expectLookup(`${BASE}/api/configuracao/campi`).flush([
@@ -329,9 +453,19 @@ describe('LocaisOfertaPage', () => {
     ]);
     await propagate();
 
-    expect(component['campi'].opcoes()).toHaveLength(2);
-    expect(component['campusLabel']('cmp1')).toBe('MAB — Campus de Marabá');
-    expect(component['campusLabel']('cmp2')).toBe('XIN — Campus de Xinguara');
+    expect(fixture.debugElement.injector.get(LocaisOfertaStore).campi.opcoes()).toHaveLength(2);
+    expect(
+      fixture.debugElement.injector
+        .get(LocaisOfertaStore)
+        .campi.opcoes()
+        .map((campus) => `${campus.sigla} — ${campus.nome}`)[0],
+    ).toBe('MAB — Campus de Marabá');
+    expect(
+      fixture.debugElement.injector
+        .get(LocaisOfertaStore)
+        .campi.opcoes()
+        .map((campus) => `${campus.sigla} — ${campus.nome}`)[1],
+    ).toBe('XIN — Campus de Xinguara');
   });
 
   it('exige tipo e cidade — bloqueia salvar inválido', async () => {
@@ -339,9 +473,9 @@ describe('LocaisOfertaPage', () => {
     component['abrirCadastro']();
     await flushCampiLookup();
     // sem tipo nem cidade
-    component['salvar']();
+    component['edicao'].salvar();
     controller.expectNone(`${BASE}/api/configuracao/admin/locais-oferta`);
-    expect(component['enderecoErro']()).toContain('cidade');
+    expect(component['edicao'].enderecoErro()).toContain('cidade');
   });
 
   it('expõe legenda acessível descrevendo a tabela', async () => {

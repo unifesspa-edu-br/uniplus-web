@@ -1,0 +1,126 @@
+<section class="panel" aria-labelledby="cfg-locais-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-locais-list-title">Locais de oferta</h2>
+      @if (carregando()) {
+        <span class="cfg-locais__loading"><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+    <button
+      type="button"
+      class="btn btn--primary"
+      [attr.aria-disabled]="indisponivel() || carregando() ? 'true' : null"
+      (click)="acionarCadastro()"
+    >
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Novo local de oferta
+    </button>
+  </div>
+
+  @if (falhas().length) {
+    <ui-alert variant="warning" heading="Rótulos não carregados">
+      A coluna afetada mostra “Não carregado” até a busca ser refeita.
+      <span class="lookup-alert__acoes">
+        @for (falha of falhas(); track falha.nome) {
+          <button
+            type="button"
+            class="lookup-alert__retry"
+            [attr.aria-disabled]="indisponivel() || carregando() ? 'true' : null"
+            (click)="recarregar(falha)"
+          >
+            Recarregar {{ falha.nome }}
+          </button>
+        }
+      </span>
+    </ui-alert>
+  }
+
+  @if (locais().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Locais de oferta, com tipo, cidade, campus responsável e código e-MEC
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Tipo</th>
+            <th scope="col">Cidade</th>
+            <th scope="col">Campus responsável</th>
+            <th scope="col">Código e-MEC</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (local of locais(); track local.id) {
+            <tr>
+              <td data-label="Tipo">
+                <span class="tag">{{ tipoLabel(local.tipo) }}</span>
+              </td>
+              <td data-label="Cidade">{{ cidadeLabel(local) }}</td>
+              <td data-label="Campus responsável">
+                @if (local.campusResponsavelId === null) {
+                  —
+                } @else {
+                  <ui-lookup-label [resolucao]="resolucoes().get(local.campusResponsavelId)!" />
+                }
+              </td>
+              <td data-label="Código e-MEC">{{ local.codigoEmec || '—' }}</td>
+              <td class="table-responsive__actions" data-label="Ações">
+                @if (localAfetadoId() === local.id && andamento()) {
+                  <span aria-hidden="true">{{ andamento() }}</span>
+                }
+                <button
+                  type="button"
+                  class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
+                  [attr.aria-label]="
+                    'Editar local de oferta ' + tipoLabel(local.tipo) + ' — ' + cidadeLabel(local)
+                  "
+                  [attr.aria-disabled]="indisponivel() || carregando() ? 'true' : null"
+                  (click)="acionarEdicao(local)"
+                >
+                  <i class="pi pi-pencil" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
+                  [attr.aria-label]="
+                    'Remover local de oferta ' + tipoLabel(local.tipo) + ' — ' + cidadeLabel(local)
+                  "
+                  [attr.aria-disabled]="indisponivel() || carregando() ? 'true' : null"
+                  (click)="acionarRemocao(local)"
+                >
+                  <i class="pi pi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !mensagemDeErro()) {
+    <ui-empty-state
+      heading="Nenhum local de oferta cadastrado"
+      description="Cadastre polos, campi fora de sede e convênios de interiorização."
+    >
+      <button
+        type="button"
+        class="btn btn--primary"
+        [attr.aria-disabled]="indisponivel() || carregando() ? 'true' : null"
+        (click)="acionarCadastro()"
+      >
+        Novo local de oferta
+      </button>
+    </ui-empty-state>
+  }
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de locais de oferta"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="carregando() || indisponivel()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

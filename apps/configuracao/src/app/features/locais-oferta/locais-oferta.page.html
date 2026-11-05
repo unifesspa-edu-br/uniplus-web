@@ -1,0 +1,67 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Locais de oferta</h1>
+    <p class="page-header__desc">
+      Locais de oferta (polos, campi fora de sede, convênios) com endereço estruturado ·
+      UNI-REQ-0010.
+    </p>
+  </div>
+</div>
+
+@if (leitura.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os locais de oferta">
+  {{ leitura.mensagemDeErro() }}
+  <div class="cfg-locais__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="leitura.carregando() || edicao.gravando() ? 'true' : null"
+      (click)="!edicao.gravando() && leitura.tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<p class="sr-only" role="status">{{ edicao.anuncio() }}</p>
+<cfg-locais-oferta-lista
+  [locais]="leitura.locais()"
+  [carregando]="leitura.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [mensagemDeErro]="leitura.mensagemDeErro()"
+  [temAnterior]="leitura.anterior() !== null"
+  [temProximo]="leitura.proximo() !== null"
+  [falhas]="leitura.lookupsComFalha()"
+  [resolucoes]="leitura.resolucoes()"
+  [localAfetadoId]="edicao.localAfetadoId()"
+  [andamento]="edicao.andamento()"
+  (cadastrar)="abrirCadastro()"
+  (editar)="abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (anterior)="leitura.paginaAnterior()"
+  (proximo)="leitura.proximaPagina()"
+/>
+<cfg-local-oferta-formulario
+  [aberto]="edicao.formOpen()"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [titulo]="edicao.formHeading()"
+  [erro]="edicao.formError()"
+  [erroDoEndereco]="edicao.enderecoErro()"
+  [salvando]="edicao.saving()"
+  [gravando]="edicao.gravando()"
+  [campi]="leitura.campi.opcoes()"
+  [campiComErro]="leitura.campi.comErro()"
+  (recarregarCampi)="leitura.campi.recarregar()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+/>
+<ui-confirm-dialog
+  [(visible)]="edicao.confirmOpen"
+  heading="Remover local de oferta"
+  [message]="edicao.confirmMessage()"
+  confirmLabel="Remover"
+  confirmVariant="danger"
+  (confirmed)="edicao.removerConfirmado()"
+/>

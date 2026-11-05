@@ -64,14 +64,6 @@ export class LocaisOfertaApi {
     );
   }
 
-  /** GET `/api/configuracao/locais-oferta/{id}` — detalhe de um Local de Oferta. */
-  obter(id: string): Observable<ApiResult<LocalOfertaDto>> {
-    return this.http.get<ApiResult<LocalOfertaDto>>(
-      `${this.basePath}/api/configuracao/locais-oferta/${encodeURIComponent(id)}`,
-      { context: withVendorMime('local-oferta', 1) },
-    );
-  }
-
   /** POST `/api/configuracao/admin/locais-oferta` — cria. Idempotency-Key obrigatório (ADR-0027). */
   criar(command: CriarLocalOfertaCommand, context: HttpContext): Observable<ApiResult<string>> {
     return this.http.post<ApiResult<string>>(

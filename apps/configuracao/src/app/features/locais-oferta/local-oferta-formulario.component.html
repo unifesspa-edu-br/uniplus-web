@@ -1,0 +1,116 @@
+<ui-drawer
+  class="form-drawer"
+  [visible]="aberto()"
+  (visibleChange)="$event ? null : cancelar.emit()"
+  [closable]="!gravando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário de local de oferta"
+  position="right"
+>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-local-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-local-classificacao">
+        <h3 id="cfg-local-classificacao" class="form-section__title">Classificação</h3>
+        <div class="form-grid">
+          <label class="field" [class.is-error]="erroDoCampo('tipo')">
+            <span class="field__label is-required">Tipo</span>
+            <select
+              class="select"
+              formControlName="tipo"
+              aria-required="true"
+              [attr.aria-invalid]="erroDoCampo('tipo') ? 'true' : null"
+            >
+              <option value="" disabled>Selecione o tipo</option>
+              @for (opcao of tipoOptions; track opcao.value) {
+                <option [value]="opcao.value">{{ opcao.label }}</option>
+              }
+            </select>
+            @if (erroDoCampo('tipo')) {
+              <span class="field__error">{{ erroDoCampo('tipo') }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('codigoEmec')">
+            <span class="field__label">Código e-MEC</span>
+            <input
+              class="input"
+              type="text"
+              inputmode="numeric"
+              formControlName="codigoEmec"
+              [attr.aria-invalid]="erroDoCampo('codigoEmec') ? 'true' : null"
+            />
+            @if (erroDoCampo('codigoEmec')) {
+              <span class="field__error">{{ erroDoCampo('codigoEmec') }}</span>
+            }
+          </label>
+          <label class="field form-grid__full">
+            <span class="field__label">Campus responsável</span>
+            <select class="select" formControlName="campusResponsavelId">
+              <option value="">(Sem campus responsável)</option>
+              @for (campus of campi(); track campus.id) {
+                <option [value]="campus.id">{{ campus.sigla }} — {{ campus.nome }}</option>
+              }
+            </select>
+            <span class="field__hint">Vínculo opcional ao campus que administra este local.</span>
+            @if (campiComErro()) {
+              <span class="field__error">
+                Não foi possível carregar os campi para seleção.
+                <button type="button" class="cfg-link-button" (click)="recarregarCampi.emit()">
+                  Tentar novamente
+                </button>
+              </span>
+            }
+          </label>
+        </div>
+      </section>
+
+      <ui-endereco-geo
+        formControlName="endereco"
+        idPrefix="local-endereco"
+        legend="Endereço do local de oferta"
+        [erroExterno]="erroDoEndereco()"
+      />
+    </fieldset>
+  </form>
+
+  <p class="sr-only" role="status">{{ salvando() ? 'Salvando local de oferta…' : '' }}</p>
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="gravando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-local-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando()"
+      [attr.aria-busy]="salvando()"
+      (click)="salvando() && $event.preventDefault()"
+    >
+      @if (salvando()) {
+        <ui-spinner size="sm" />
+      }
+      {{
+        salvando()
+          ? 'Salvando...'
+          : modo() === 'criar'
+            ? 'Criar local'
+            : 'Salvar
+      local'
+      }}
+    </button>
+  </div>
+</ui-drawer>
