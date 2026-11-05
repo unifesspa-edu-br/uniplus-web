@@ -1,0 +1,219 @@
+<div class="formulario-candidato">
+  <p class="sr-only" aria-live="polite">{{ anuncio() }}</p>
+  <!-- Fora da seção dela: a resposta que muda a avaliação é dada em outra seção. -->
+  <p class="sr-only" aria-live="polite">{{ anuncioDaAvaliacao() }}</p>
+
+  @if (recusa(); as erro) {
+  <ui-alert variant="danger" heading="As regras do formulário não podem ser interpretadas">
+    {{ erro.mensagem }} (em {{ erro.caminho }})
+  </ui-alert>
+  } @else if (passos().length === 0 && passosPrefixados().length === 0) {
+  <ui-alert variant="info" [dynamic]="false">O formulário não tem seção a mostrar.</ui-alert>
+  } @else {
+  <div
+    class="formulario-candidato__layout"
+    [class.formulario-candidato__layout--lateral]="lateral()"
+  >
+    @if (lateral()) {
+    <ui-steps-responsivo
+      [rotuloDaNavegacao]="indicador.rotuloDaNavegacao()"
+      [nomeDaLista]="indicador.nomeDaLista()"
+      [titulo]="indicador.tituloDoPassoAtual()"
+      [meta]="indicador.posicao()"
+      [progresso]="indicador.progresso()"
+      [items]="indicador.itens()"
+      (selecionado)="conferencia.irParaSePermitido($event)"
+    />
+    } @else {
+    <ui-steps
+      variante="chips"
+      [rotuloDaNavegacao]="indicador.rotuloDaNavegacao()"
+      [items]="indicador.itens()"
+      (selecionado)="conferencia.irParaSePermitido($event)"
+    />
+    }
+    <div class="formulario-candidato__corpo">
+      <!-- Cada partida nova — outro formulário, outra simulação inicial — recria os campos: o que
+         se digitou pela metade e a confirmação não passam de uma partida para outra. -->
+      @for (partidaAtual of [partida()]; track partidaAtual) { @if (navegacao.passoAtual() ??
+      navegacao.prefixadoAtual(); as atual) {
+      <section class="formulario-candidato__secao" [attr.aria-labelledby]="idBase() + '-titulo'">
+        <h3 #titulo class="formulario-candidato__titulo" tabindex="-1" [id]="idBase() + '-titulo'">
+          {{ atual.titulo }}
+          <span class="sr-only">, {{ indicador.posicao().toLowerCase() }}</span>
+        </h3>
+        @if (atual.descricao) {
+        <p class="formulario-candidato__descricao">{{ atual.descricao }}</p>
+        } @if (navegacao.passoAtual(); as passo) { @if (passo.aviso) {
+        <ui-alert variant="warning" [dynamic]="false">{{ passo.aviso }}</ui-alert>
+        } @if (recusas.daSecao(passo); as recusadas) {
+        <ui-alert variant="danger" [dynamic]="false" [heading]="tituloDasRecusas(recusadas)">
+          Corrija o que está marcado nesta seção e tente de novo.
+        </ui-alert>
+        } @switch (passo.bloco) { @case (BLOCO_MODALIDADES_CALCULADAS) { @if (avaliacao(); as
+        avaliacao) {
+        <ui-modalidades-da-inscricao
+          [avaliacao]="avaliacao"
+          [secoes]="revisao.secoesQueDefinem()"
+          (irAoCampo)="navegacao.irAoCampo($event)"
+          (irASecao)="navegacao.irASecao($event)"
+          (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
+        />
+        } @else {
+        <p>
+          As modalidades em que o candidato concorre são calculadas pelo sistema a partir das
+          respostas dadas.
+        </p>
+        } } @case (BLOCO_COMPROVACAO_DOCUMENTAL) { @if (avaliacao(); as avaliacao) {
+        <ui-documentos-da-inscricao
+          [avaliacao]="avaliacao"
+          [arvore]="documentosDaAvaliacao()?.arvore ?? null"
+          [pendencias]="documentosDaAvaliacao()?.pendencias ?? []"
+          [semDocumentos]="semDocumentos()"
+          [envioDeDocumentos]="envioDeDocumentos()"
+          [arquivosEnviados]="arquivosDosDocumentos()"
+          [situacoes]="situacoesDosDocumentos()"
+          [aguardaVerificacao]="aguardaVerificacaoDosDocumentos()"
+          [podeEnviar]="podeEnviarDocumentos()"
+          [podeRemover]="podeRemoverDocumentos()"
+          [ocorrenciasGravadas]="ocorrenciasGravadas()"
+          [errosDoServidor]="erros()"
+          (irAoCampo)="navegacao.irAoCampo($event)"
+          (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
+        />
+        } @else if (documentos(); as lista) {
+        <ui-lista-de-documentos [documentos]="lista" [semDocumentos]="semDocumentos()" />
+        } @else {
+        <p>Os documentos exigidos são listados a partir da publicação do processo.</p>
+        } } } @for (campo of passo.campos; track campo.campo.fatoCodigo) {
+        <ui-campo-do-candidato
+          [attr.data-campo]="campo.campo.fatoCodigo"
+          [noPasso]="campo"
+          [id]="idBase() + '-' + campo.campo.fatoCodigo"
+          [resposta]="dados.respostasComAsFixas()[campo.campo.fatoCodigo]"
+          [rotuloGravado]="rotuloGravado(campo.campo.fatoCodigo)"
+          [respostaDaUf]="respostaDaUf(campo)"
+          [mostrarPendencia]="navegacao.mostraPendencia(passo)"
+          [fixa]="respostasFixas()[campo.campo.fatoCodigo] ?? null"
+          [erroDoServidor]="mensagemDosErros(erros(), campo.campo.fatoCodigo)"
+          [diaDoEnvio]="diaDoEnvio()"
+          [confirmacao]="dados.confirmacoes()[campo.campo.fatoCodigo] ?? ''"
+          [problemaDaConfirmacao]="
+                      problemasDaConfirmacao().get(campo.campo.fatoCodigo) ?? null
+                    "
+          (respondida)="dados.responder(campo.campo.fatoCodigo, $event)"
+          (confirmada)="dados.confirmar(campo.campo.fatoCodigo, $event)"
+        />
+        } @for (grupo of passo.grupos; track grupo.grupo.codigo) {
+        <ui-grupo-do-candidato
+          [attr.data-campo]="grupo.grupo.codigo"
+          [noPasso]="grupo"
+          [id]="idBase() + '-' + grupo.grupo.codigo"
+          [ocorrencias]="dados.grupos()[grupo.grupo.codigo]"
+          [respostasDoCandidato]="dados.respostasComAsFixas()"
+          [municipiosGravados]="municipiosGravados()"
+          [mostrarPendencia]="navegacao.mostraPendencia(passo)"
+          [errosDoServidor]="recusas.em(grupo.grupo.codigo)"
+          [diaDoEnvio]="diaDoEnvio()"
+          [confirmacoes]="dados.confirmacoes()"
+          [problemasDaConfirmacao]="problemasDaConfirmacao()"
+          (ocorrenciasChange)="dados.responderGrupo(grupo.grupo.codigo, $event)"
+          (confirmada)="dados.confirmar($event.campo, $event.texto)"
+        />
+        } @if (passo.bloco === BLOCO_REVISAO_E_ACEITE) { @for (item of
+        revisao.resumosDosPrefixados(); track item.chave) {
+        <article
+          class="formulario-candidato__resumo"
+          [attr.aria-labelledby]="idBase() + '-resumo-' + item.chave"
+        >
+          <h4 [id]="idBase() + '-resumo-' + item.chave">{{ item.titulo }}</h4>
+          <dl>
+            @for (linha of item.resumo; track $index) {
+            <dt>{{ linha.rotulo }}</dt>
+            <dd>{{ linha.valor }}</dd>
+            }
+          </dl>
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            (click)="navegacao.irAoPasso(item.chave)"
+          >
+            Alterar<span class="sr-only"> {{ item.titulo }}</span>
+          </button>
+        </article>
+        } @if (revisao.avaliacaoDerivada(); as avaliacao) {
+        <ui-modalidades-da-inscricao
+          [avaliacao]="avaliacao"
+          [secoes]="revisao.secoesQueDefinem()"
+          [resumo]="true"
+          (irAoCampo)="navegacao.irAoCampo($event)"
+          (irASecao)="navegacao.irASecao($event)"
+          (tentarDeNovo)="tentarAvaliarDeNovo.emit()"
+        />
+        } @if (revisao.fatorNaRevisao(); as resumo) {
+        <ui-fator-de-atenuacao-da-inscricao
+          [resumo]="resumo"
+          [idBase]="idBase() + '-fator'"
+          (irASecao)="navegacao.irASecao($event)"
+        />
+        } @for (termo of passo.termos; track termo.termo.codigo) {
+        <article
+          class="formulario-candidato__termo"
+          [attr.data-campo]="termo.termo.codigo"
+          [attr.aria-labelledby]="idBase() + '-termo-' + termo.termo.codigo"
+        >
+          <h4 [id]="idBase() + '-termo-' + termo.termo.codigo">{{ termo.termo.nome }}</h4>
+          <p class="formulario-candidato__termo-texto">{{ termo.termo.texto }}</p>
+          <p class="field__hint">Base legal: {{ termo.termo.baseLegal }}</p>
+          <label class="checkbox">
+            <input
+              type="checkbox"
+              [checked]="dados.aceitos().has(termo.termo.codigo)"
+              [attr.aria-invalid]="revisao.problemaDoTermo(passo, termo) ? 'true' : null"
+              [attr.aria-describedby]="
+                            revisao.problemaDoTermo(passo, termo)
+                              ? idBase() + '-termo-' + termo.termo.codigo + '-erro'
+                              : null
+                          "
+              (change)="alternarAceite(termo.termo.codigo, $event)"
+            />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            Li e aceito{{ termo.avaliado.obrigatorio === 'VERDADEIRO' ? ' (obrigatório)' : '' }}
+          </label>
+          @if (revisao.problemaDoTermo(passo, termo); as problema) {
+          <span class="field__error" [id]="idBase() + '-termo-' + termo.termo.codigo + '-erro'">
+            {{ problema }}
+          </span>
+          }
+        </article>
+        } @empty {
+        <p>Nenhum termo a aceitar.</p>
+        } } } @else {
+        <ng-content />
+        }
+      </section>
+
+      <div class="formulario-candidato__acoes">
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="navegacao.indice() === 0"
+          (click)="navegacao.irPara(navegacao.indice() - 1)"
+        >
+          {{ indicador.rotuloDoAnterior() }}
+        </button>
+        @if (navegacao.indice() < navegacao.total() - 1) {
+        <button type="button" class="btn btn--primary" (click)="conferencia.avancar()">
+          {{ indicador.rotuloDoProximo() }}
+        </button>
+        } @else if (concluirNaUltimaSecao()) {
+        <button type="button" class="btn btn--primary" (click)="conferencia.avancar()">
+          Concluir a seção
+        </button>
+        }
+      </div>
+      } }
+    </div>
+  </div>
+  }
+</div>
