@@ -13,7 +13,7 @@ import type { OfertaExibida } from '@uniplus/shared-data/selecao';
     @if (ofertas().length === 1) {
       {{ ofertas()[0].nome }}
     } @else if (ofertas().length > 1) {
-      <ol class="ofertas u-list">
+      <ol class="ofertas u-list u-list--ordered">
         @for (oferta of ofertas(); track oferta.id) {
           <li [value]="oferta.ordem">{{ oferta.nome }}</li>
         }
