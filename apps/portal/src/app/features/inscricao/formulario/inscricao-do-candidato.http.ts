@@ -10,7 +10,6 @@ import {
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
   type ComprovanteInscricaoDto,
-  type FormularioRenderizavelDto,
   type InscricaoDto,
   type InscricaoRequest,
   InscricoesApi,
@@ -37,10 +36,6 @@ export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
 
   obter(processoId: string): Observable<ApiResult<InscricaoDto>> {
     return this.api.obter(processoId);
-  }
-
-  obterFormulario(processoId: string): Observable<ApiResult<FormularioRenderizavelDto>> {
-    return this.api.obterFormulario(processoId);
   }
 
   salvar(

@@ -1,8 +1,22 @@
-import { DestroyRef, Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Injectable,
+  computed,
+  effect,
+  inject,
+  linkedSignal,
+  signal,
+  untracked,
+} from '@angular/core';
 import type { Subscription } from 'rxjs';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
-import { type ApiFailure, ProblemI18nService } from '@uniplus/shared-core/http';
-import type { FormularioRenderizavelDto, InscricaoDto } from '@uniplus/shared-data/selecao';
+import { ProblemI18nService, useApiResource } from '@uniplus/shared-core/http';
+import {
+  type FormularioRenderizavelDto,
+  type InscricaoDto,
+  SELECAO_BASE_PATH,
+  formularioDaInscricaoRequest,
+} from '@uniplus/shared-data/selecao';
 import {
   type MunicipiosGravados,
   LEITURA_DE_MUNICIPIO_POR_CODIGO,
@@ -42,10 +56,18 @@ export type MotivoDoRecarregar = 'envio' | 'incerta';
 
 type EstadoDaLeitura = 'carregando' | 'erro' | 'pronto';
 
+/** O que o início da inscrição devolveu: a inscrição, e o processo a que o formulário se refere. */
+interface InscricaoIniciada {
+  readonly processoId: string;
+  readonly inscricao: InscricaoDto;
+}
+
 /**
  * A inscrição do candidato como o servidor a tem: a lida ao abrir a página e a última salva, enviada
- * ou relida. Inicia a inscrição e lê o formulário da versão dela e as ofertas do processo. Quem grava
- * a adota por `adotar` e `adotarETag`; só a leitura troca a inscrição por inteira. Provida pela página.
+ * ou relida. Inicia a inscrição (POST) e, só depois dele, lê o formulário da versão dela (GET,
+ * `useApiResource`, ADR-0018) e as ofertas do processo. Uma nova leitura cancela a anterior: o início
+ * pendente é descartado e o GET do formulário é cancelado pelo próprio recurso. Quem grava adota a
+ * inscrição por `adotar` e `adotarETag`; só a leitura a troca por inteira. Provida pela página.
  */
 @Injectable()
 export class LeituraDaInscricao {
@@ -55,17 +77,40 @@ export class LeituraDaInscricao {
   private readonly avaliacao = inject(AvaliacaoDaInscricaoEstado);
   private readonly nomes = inject(NomesDeMunicipios);
   private readonly lerMunicipio = inject(LEITURA_DE_MUNICIPIO_POR_CODIGO);
-  private leituraEmCurso: Subscription | null = null;
+  private readonly basePath = inject(SELECAO_BASE_PATH);
+  private inicioEmCurso: Subscription | null = null;
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.leituraEmCurso?.unsubscribe());
+    inject(DestroyRef).onDestroy(() => this.inicioEmCurso?.unsubscribe());
+    effect(() => {
+      const iniciada = this.iniciada();
+      const formulario = this.formularioLido.data();
+      if (iniciada && formulario) {
+        untracked(() => this.adotarCarga(iniciada, formulario));
+      }
+    });
   }
 
   readonly processoId = signal<string | null>(null);
-  readonly estado = signal<EstadoDaLeitura>('carregando');
-  readonly erroAoCarregar = signal<string | null>(null);
+  private readonly iniciada = signal<InscricaoIniciada | null>(null);
+  private readonly falhaAoIniciar = signal<string | null>(null);
+  /** O formulário só é pedido depois de a inscrição ser iniciada: a versão que vale é a dela. */
+  private readonly formularioLido = useApiResource<FormularioRenderizavelDto>(() => {
+    const iniciada = this.iniciada();
+    return iniciada ? formularioDaInscricaoRequest(this.basePath, iniciada.processoId) : undefined;
+  });
   /** O que chegou na última leitura; só ela o troca, nunca uma gravação. */
   readonly carregada = signal<InscricaoCarregada | null>(null);
+  readonly erroAoCarregar = computed(() => {
+    const falha = this.falhaAoIniciar();
+    if (falha !== null) return falha;
+    const problema = this.formularioLido.problem();
+    return problema ? this.problemas.resolve(problema).title : null;
+  });
+  readonly estado = computed<EstadoDaLeitura>(() => {
+    if (this.erroAoCarregar() !== null) return 'erro';
+    return this.carregada() === null ? 'carregando' : 'pronto';
+  });
   private readonly atual = linkedSignal<InscricaoDto | null>(
     () => this.carregada()?.inscricao ?? null,
   );
@@ -86,14 +131,13 @@ export class LeituraDaInscricao {
   /** Inicia a inscrição e, com ela, lê o formulário da versão da inscrição e as ofertas do processo. */
   carregar(processoId: string): void {
     this.processoId.set(processoId);
-    this.estado.set('carregando');
-    this.leituraEmCurso?.unsubscribe();
-    this.leituraEmCurso = this.servico.iniciar(processoId).subscribe((inscricao) => {
-      if (!inscricao.ok) return this.falhar(inscricao);
-      this.leituraEmCurso = this.servico.obterFormulario(processoId).subscribe((formulario) => {
-        if (!formulario.ok) return this.falhar(formulario);
-        this.adotarCarga(processoId, inscricao.data, formulario.data);
-      });
+    this.inicioEmCurso?.unsubscribe();
+    this.iniciada.set(null);
+    this.carregada.set(null);
+    this.falhaAoIniciar.set(null);
+    this.inicioEmCurso = this.servico.iniciar(processoId).subscribe((resultado) => {
+      if (resultado.ok) this.iniciada.set({ processoId, inscricao: resultado.data });
+      else this.falhaAoIniciar.set(this.problemas.resolve(resultado.problem).title);
     });
   }
 
@@ -113,14 +157,8 @@ export class LeituraDaInscricao {
     this.atual.update((inscricao) => (inscricao ? { ...inscricao, eTag } : inscricao));
   }
 
-  private falhar(falha: ApiFailure): void {
-    this.erroAoCarregar.set(this.problemas.resolve(falha.problem).title);
-    this.estado.set('erro');
-  }
-
   private adotarCarga(
-    processoId: string,
-    inscricao: InscricaoDto,
+    { processoId, inscricao }: InscricaoIniciada,
     formulario: FormularioRenderizavelDto,
   ): void {
     const municipios = this.respostasIniciais(inscricao, formulario);
@@ -136,7 +174,6 @@ export class LeituraDaInscricao {
     this.nomes.carregar(municipios.semNome, this.lerMunicipio);
     this.iniciarAAvaliacao(processoId, carga);
     this.carregada.set(carga);
-    this.estado.set('pronto');
   }
 
   private iniciarAAvaliacao(processoId: string, carga: InscricaoCarregada): void {

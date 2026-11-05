@@ -1,4 +1,4 @@
-import { HttpHeaders, provideHttpClient } from '@angular/common/http';
+import { HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
@@ -7,7 +7,7 @@ import { of, Subject, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
-import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
+import { type ApiResult, apiFailure, apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
@@ -15,6 +15,7 @@ import {
   type FormularioRenderizavelDto,
   type InscricaoDto,
   type InscricaoRequest,
+  SELECAO_BASE_PATH,
   SituacaoDoArquivoDoCandidato,
   SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
@@ -30,6 +31,7 @@ import { ESPERA_DA_CONSULTA_MS } from './avaliacao-da-inscricao.estado';
 import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';
 import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.mock';
 import { InscricaoDoCandidatoPage } from './inscricao-do-candidato.page';
+import { LeituraDaInscricao } from './leitura-da-inscricao';
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
 
 /** Fernanda Drumond, persona fictícia do portal de documentação. */
@@ -170,7 +172,6 @@ class ServicoDublê extends InscricaoDoCandidatoService {
   }
   iniciar = () => ok(this.lida());
   obter = () => ok(this.lida());
-  obterFormulario = () => ok(this.formulario);
   salvar = (_: string, request: InscricaoRequest) => {
     this.salvos.push(request);
     return ok(this.inscricao);
@@ -211,8 +212,9 @@ describe('InscricaoDoCandidatoPage', () => {
       imports: [InscricaoDoCandidatoPage],
       providers: [
         provideRouter([]),
-        provideHttpClient(),
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
         provideHttpClientTesting(),
+        { provide: SELECAO_BASE_PATH, useValue: 'http://api.teste' },
         { provide: InscricaoDoCandidatoService, useValue: servico },
         {
           provide: EnvioDeDocumentosDaInscricao,
@@ -240,12 +242,24 @@ describe('InscricaoDoCandidatoPage', () => {
     vi.restoreAllMocks();
   });
 
+  /** Responde ao GET do formulário que a leitura pede depois de iniciar a inscrição. */
+  const atenderOFormulario = async (): Promise<void> => {
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    await Promise.resolve();
+    fixture.detectChanges();
+    for (const pedido of http.match((r) => r.url.endsWith('/inscricao/formulario'))) {
+      pedido.flush(servico.formulario);
+    }
+    // Com o relógio todo simulado `whenStable` não termina: avança só o que já está pendente.
+    if (vi.isFakeTimers()) await vi.advanceTimersByTimeAsync(0);
+    else await fixture.whenStable();
+    fixture.detectChanges();
+  };
   const abrir = async (): Promise<HTMLElement> => {
     fixture = TestBed.createComponent(InscricaoDoCandidatoPage);
     fixture.componentRef.setInput('processoId', PROCESSO);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await atenderOFormulario();
     return fixture.nativeElement as HTMLElement;
   };
   const botao = (tela: HTMLElement, texto: string): HTMLButtonElement =>
@@ -256,9 +270,7 @@ describe('InscricaoDoCandidatoPage', () => {
     botao?.getAttribute('aria-disabled') === 'true';
   const clicar = async (elemento: HTMLElement): Promise<void> => {
     elemento.click();
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await atenderOFormulario();
   };
   const passos = (tela: HTMLElement): HTMLButtonElement[] => [
     ...tela.querySelectorAll<HTMLButtonElement>('ui-formulario-do-candidato nav button'),
@@ -874,8 +886,8 @@ describe('InscricaoDoCandidatoPage', () => {
 
   it('o titular revela o CPF da conta para conferir, sem nova consulta', async () => {
     const tela = await abrir();
-    const consultas = (['iniciar', 'obter', 'obterFormulario', 'salvar', 'submeter'] as const).map(
-      (metodo) => vi.spyOn(servico, metodo),
+    const consultas = (['iniciar', 'obter', 'salvar', 'submeter'] as const).map((metodo) =>
+      vi.spyOn(servico, metodo),
     );
 
     await clicar(
@@ -1794,6 +1806,49 @@ describe('InscricaoDoCandidatoPage', () => {
       tela.querySelectorAll('nav[aria-label="Passos da inscrição"] li.is-done, nav li.is-done'),
     ).toHaveLength(0);
     expect(indisponivel(botao(tela, 'Enviar inscrição'))).toBe(true);
+  });
+
+  describe('leituras que se cruzam', () => {
+    const abrirSemAtender = (): LeituraDaInscricao => {
+      fixture = TestBed.createComponent(InscricaoDoCandidatoPage);
+      fixture.componentRef.setInput('processoId', PROCESSO);
+      fixture.detectChanges();
+      return fixture.debugElement.injector.get(LeituraDaInscricao);
+    };
+
+    it('o início que responde depois de uma leitura mais nova não a substitui', async () => {
+      const primeira = new Subject<ApiResult<InscricaoDto>>();
+      const original = servico.iniciar;
+      let chamadas = 0;
+      servico.iniciar = () => (chamadas++ === 0 ? primeira : original());
+      const leitura = abrirSemAtender();
+
+      servico.inscricao = inscricao({ eTag: '"novo"' });
+      leitura.recarregar();
+      await atenderOFormulario();
+      expect(leitura.inscricao()?.eTag).toBe('"novo"');
+
+      primeira.next(apiOk(inscricao({ eTag: '"velho"' }), 200, new HttpHeaders()));
+      await atenderOFormulario();
+
+      expect(leitura.inscricao()?.eTag).toBe('"novo"');
+      expect(leitura.estado()).toBe('pronto');
+    });
+
+    it('a leitura do formulário que ficou para trás é cancelada pela nova', async () => {
+      const http = TestBed.inject(HttpTestingController);
+      const leitura = abrirSemAtender();
+      await Promise.resolve();
+      fixture.detectChanges();
+      const antiga = http.expectOne((r) => r.url.endsWith('/inscricao/formulario'));
+
+      servico.inscricao = inscricao({ eTag: '"novo"' });
+      leitura.recarregar();
+      await atenderOFormulario();
+
+      expect(antiga.cancelled).toBe(true);
+      expect(leitura.inscricao()?.eTag).toBe('"novo"');
+    });
   });
 
   describe('gravação em curso', () => {

@@ -4,7 +4,6 @@ import type {
   AvaliacaoDaInscricaoDto,
   AvaliacaoDaInscricaoRequest,
   ComprovanteInscricaoDto,
-  FormularioRenderizavelDto,
   InscricaoDto,
   InscricaoRequest,
 } from '@uniplus/shared-data/selecao';
@@ -18,8 +17,6 @@ export abstract class InscricaoDoCandidatoService {
   abstract iniciar(processoId: string): Observable<ApiResult<InscricaoDto>>;
   /** A inscrição como está gravada agora, com o ETag da revisão corrente. */
   abstract obter(processoId: string): Observable<ApiResult<InscricaoDto>>;
-  /** O formulário da versão em que está a inscrição: no rascunho, a vigente. */
-  abstract obterFormulario(processoId: string): Observable<ApiResult<FormularioRenderizavelDto>>;
   abstract salvar(
     processoId: string,
     request: InscricaoRequest,
